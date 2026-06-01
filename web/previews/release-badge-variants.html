@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Release Badge Variants</title>
+  <link rel="stylesheet" href="/web/styles/tokens.css">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-body);
+      color: var(--text-main);
+      background: var(--bg-soft);
+    }
+
+    .preview-shell {
+      min-height: 100vh;
+      padding: 56px 24px;
+      background:
+        linear-gradient(rgba(247, 249, 251, 0.64), rgba(247, 249, 251, 0.72)),
+        url("/web/assets/decor/subtle-animated-background-decor.png") center / cover no-repeat;
+    }
+
+    .preview-inner {
+      width: min(100%, 1120px);
+      margin: 0 auto;
+    }
+
+    .preview-heading {
+      max-width: 720px;
+      margin-bottom: 32px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      color: var(--text-strong);
+      font-family: var(--font-heading);
+      font-size: var(--fs-display);
+      line-height: var(--lh-display);
+      letter-spacing: 0;
+    }
+
+    .preview-heading p {
+      margin: 0;
+      max-width: 620px;
+      color: var(--text-body);
+      font-size: var(--fs-body);
+      line-height: var(--lh-normal);
+    }
+
+    .variants-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .variant-card {
+      min-height: 248px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 28px;
+      padding: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.62);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: 0 18px 34px -24px rgba(45, 48, 87, 0.3), 0 8px 18px -18px rgba(45, 48, 87, 0.18);
+    }
+
+    .variant-card h2 {
+      margin: 0;
+      color: var(--text-strong);
+      font-family: var(--font-heading);
+      font-size: var(--fs-body);
+      line-height: var(--lh-tight);
+      letter-spacing: 0;
+    }
+
+    .variant-note {
+      margin: 8px 0 0;
+      color: var(--text-muted);
+      font-size: var(--fs-caption);
+      font-weight: var(--fw-semibold);
+      line-height: var(--lh-snug);
+    }
+
+    .badge-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 44px;
+    }
+
+    .release-badge {
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
+      font-family: var(--font-heading);
+      line-height: 1;
+    }
+
+    .badge-border-pill {
+      gap: 8px;
+      padding: 7px 10px;
+      border: 1px solid rgba(70, 72, 212, 0.18);
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.64);
+      color: var(--text-muted);
+      font-size: var(--fs-caption);
+      font-weight: var(--fw-bold);
+    }
+
+    .badge-border-pill strong {
+      padding: 3px 6px;
+      border-radius: var(--radius-pill);
+      background: var(--accent-surface);
+      color: var(--accent);
+      font-weight: var(--fw-extrabold);
+    }
+
+    .badge-solid {
+      gap: 8px;
+      padding: 8px 11px;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(135deg, var(--accent), var(--accent-bright));
+      color: rgba(255, 255, 255, 0.82);
+      font-size: var(--fs-caption);
+      font-weight: var(--fw-semibold);
+      box-shadow: 0 12px 22px -16px rgba(70, 72, 212, 0.56);
+    }
+
+    .badge-solid strong {
+      color: #fff;
+      font-weight: var(--fw-extrabold);
+    }
+
+    .badge-dot {
+      gap: 8px;
+      padding: 7px 10px 7px 8px;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--text-body);
+      font-size: var(--fs-caption);
+      font-weight: var(--fw-bold);
+      box-shadow: 0 8px 18px -18px rgba(15, 23, 42, 0.28);
+    }
+
+    .badge-dot::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: var(--radius-pill);
+      background: var(--success);
+      box-shadow: 0 0 0 4px var(--success-soft);
+    }
+
+    .badge-dot strong {
+      color: var(--text-strong);
+      font-weight: var(--fw-extrabold);
+    }
+
+    .badge-segmented {
+      gap: 0;
+      overflow: hidden;
+      border: 1px solid rgba(70, 72, 212, 0.18);
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--text-muted);
+      font-size: var(--fs-caption);
+      font-weight: var(--fw-bold);
+    }
+
+    .badge-segmented span,
+    .badge-segmented strong {
+      padding: 8px 10px;
+    }
+
+    .badge-segmented strong {
+      border-left: 1px solid rgba(70, 72, 212, 0.14);
+      background: var(--accent-surface);
+      color: var(--accent);
+      font-weight: var(--fw-extrabold);
+    }
+
+    .badge-tag {
+      gap: 7px;
+      padding: 7px 9px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)) padding-box,
+        linear-gradient(135deg, rgba(70, 72, 212, 0.28), rgba(96, 99, 238, 0.12)) border-box;
+      color: var(--accent);
+      font-size: var(--fs-caption);
+      font-weight: var(--fw-bold);
+    }
+
+    .badge-tag strong {
+      color: var(--text-strong);
+      font-weight: var(--fw-extrabold);
+    }
+
+    @media (max-width: 1040px) {
+      .variants-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 620px) {
+      .preview-shell {
+        padding: 32px 16px;
+      }
+
+      .variants-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="preview-shell">
+    <div class="preview-inner">
+      <header class="preview-heading">
+        <h1>Release badge variants</h1>
+        <p>Five common badge patterns adapted to the login-card surface and project tokens.</p>
+      </header>
+
+      <section class="variants-grid" aria-label="Release badge variants">
+        <article class="variant-card">
+          <div>
+            <h2>Bordered pill</h2>
+            <p class="variant-note">Common default for metadata.</p>
+          </div>
+          <div class="badge-row">
+            <div class="release-badge badge-border-pill">Релиз <strong>1.2.9</strong></div>
+          </div>
+        </article>
+
+        <article class="variant-card">
+          <div>
+            <h2>Solid pill</h2>
+            <p class="variant-note">High visibility for launch notes.</p>
+          </div>
+          <div class="badge-row">
+            <div class="release-badge badge-solid">Релиз <strong>1.2.9</strong></div>
+          </div>
+        </article>
+
+        <article class="variant-card">
+          <div>
+            <h2>Status dot</h2>
+            <p class="variant-note">Familiar system-status pattern.</p>
+          </div>
+          <div class="badge-row">
+            <div class="release-badge badge-dot">Релиз <strong>1.2.9</strong></div>
+          </div>
+        </article>
+
+        <article class="variant-card">
+          <div>
+            <h2>Segmented pill</h2>
+            <p class="variant-note">Label and value read separately.</p>
+          </div>
+          <div class="badge-row">
+            <div class="release-badge badge-segmented"><span>Релиз</span><strong>1.2.9</strong></div>
+          </div>
+        </article>
+
+        <article class="variant-card">
+          <div>
+            <h2>Soft tag</h2>
+            <p class="variant-note">Compact rectangular app label.</p>
+          </div>
+          <div class="badge-row">
+            <div class="release-badge badge-tag">Релиз <strong>1.2.9</strong></div>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,323 @@
+.admin-prompt-lab-shell {
+    gap: var(--space-4);
+}
+
+.admin-prompt-lab-tabbar {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    background: #f3f5fd;
+    border: 1px solid rgba(70, 72, 212, 0.08);
+    width: fit-content;
+    flex-wrap: wrap;
+}
+
+.admin-prompt-lab-tab-button {
+    padding: var(--space-2) var(--space-3);
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-heading);
+    font-size: var(--fs-body-sm);
+    font-weight: var(--fw-bold);
+    cursor: pointer;
+}
+
+.admin-prompt-lab-tab-button.is-active {
+    background: #ffffff;
+    color: var(--accent);
+    box-shadow: 0 10px 24px rgba(31, 38, 64, 0.08);
+}
+
+.admin-prompt-lab-pane {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.admin-prompt-lab-form {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.admin-prompt-lab-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: start;
+}
+
+.admin-prompt-lab-field {
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+    margin-top: 0;
+    color: #475569;
+    font-family: var(--font-heading);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-bold);
+}
+
+.admin-prompt-lab-field > span {
+    min-height: 18px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.admin-prompt-lab-field textarea {
+    width: 100%;
+    min-height: 220px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-4);
+    color: var(--text-main);
+    background: #fff;
+    resize: vertical;
+    line-height: var(--lh-normal);
+    font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+    font-size: var(--fs-meta);
+}
+
+.admin-prompt-lab-field.muted {
+    opacity: 0.58;
+}
+
+.admin-prompt-lab-two {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+    align-items: start;
+}
+
+.admin-prompt-lab-profile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+    align-items: start;
+    margin-top: 0;
+}
+
+.admin-prompt-lab-case-picker-stack {
+    display: grid;
+    gap: var(--space-2);
+    min-height: 92px;
+}
+
+.admin-prompt-lab-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.admin-prompt-lab-progress {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: var(--radius-md);
+    background: #f8fafc;
+}
+
+.admin-prompt-lab-progress-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.admin-prompt-lab-progress-head strong {
+    color: #0f172a;
+    font-family: var(--font-heading);
+    font-size: var(--fs-body-sm);
+    font-weight: var(--fw-bold);
+}
+
+.admin-prompt-lab-progress-head span {
+    color: #475569;
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-bold);
+}
+
+.admin-prompt-lab-progress-text {
+    margin: 0;
+    color: #64748b;
+    font-size: var(--fs-meta);
+    line-height: var(--lh-normal);
+}
+
+.admin-prompt-lab-progress-track {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: rgba(148, 163, 184, 0.16);
+}
+
+.admin-prompt-lab-progress-bar {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #6063ee 0%, #4648d4 100%);
+    transition: width 0.25s ease;
+}
+
+.admin-prompt-lab-run {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.admin-prompt-lab-run strong {
+    color: #0f172a;
+    font-family: var(--font-heading);
+    font-size: var(--fs-body-sm);
+    font-weight: var(--fw-bold);
+}
+
+.admin-prompt-lab-run span {
+    color: #64748b;
+    font-size: var(--fs-meta);
+}
+
+.admin-prompt-lab-result-body {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.admin-prompt-lab-result-summary {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    flex-wrap: wrap;
+    color: #64748b;
+    font-size: var(--fs-meta);
+}
+
+.admin-prompt-lab-result-summary strong {
+    color: #0f172a;
+    font-family: var(--font-heading);
+    font-weight: var(--fw-bold);
+}
+
+.admin-prompt-lab-output-block {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.admin-prompt-lab-task-card {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+}
+
+.admin-prompt-lab-case-compare {
+    display: grid;
+    gap: var(--space-2);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 980px) {
+    .admin-prompt-lab-case-compare {
+        grid-template-columns: 1fr;
+    }
+}
+
+.admin-prompt-lab-task-head {
+    display: grid;
+    gap: var(--space-1);
+}
+
+.admin-prompt-lab-task-head span {
+    color: #64748b;
+    font-family: var(--font-heading);
+    font-size: var(--fs-micro);
+    font-weight: var(--fw-extrabold);
+    letter-spacing: var(--ls-eyebrow);
+    text-transform: uppercase;
+}
+
+.admin-prompt-lab-task-head strong {
+    color: #0f172a;
+    font-family: var(--font-heading);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-bold);
+}
+
+.admin-prompt-lab-output-block h4 {
+    margin: 0;
+    color: #334155;
+    font-size: var(--fs-body-sm);
+}
+
+.admin-prompt-lab-output-block pre {
+    max-height: 360px;
+    overflow: auto;
+    margin: 0;
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    background: #f8fafc;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    color: #0f172a;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+    font-size: var(--fs-meta);
+    line-height: var(--lh-normal);
+}
+
+.admin-prompt-lab-dialog-compose {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.admin-prompt-lab-dialog-history {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.admin-prompt-lab-dialog-message {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: var(--radius-md);
+    background: #ffffff;
+}
+
+.admin-prompt-lab-dialog-message.role-user {
+    background: #f8fafc;
+}
+
+.admin-prompt-lab-dialog-message strong {
+    color: #334155;
+    font-family: var(--font-heading);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-bold);
+}
+
+.admin-prompt-lab-dialog-message pre {
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+@media (max-width: 920px) {
+    .admin-prompt-lab-grid,
+    .admin-prompt-lab-two,
+    .admin-prompt-lab-profile-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
