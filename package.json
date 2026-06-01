@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "build:web": "rm -rf web/dist && bun build web/js/main.js --outdir web/dist --target browser --format esm --splitting --public-path /web/dist/ --entry-naming '[name].js' --chunk-naming '[name]-[hash].js' --production --minify",
+    "dev:web": "bun build web/js/main.js --outdir web/dist --target browser --format esm --splitting --public-path /web/dist/ --entry-naming '[name].js' --chunk-naming '[name]-[hash].js' --watch",
+    "lint:dead": "knip",
+    "lint:js": "eslint web/js/**/*.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0",
+    "eslint": "^10.4.0",
+    "globals": "^17.6.0",
+    "knip": "^6.14.1"
+  }
+}

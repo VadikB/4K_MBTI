@@ -1,0 +1,698 @@
+/* Scoped additions from main kept on top of the design-fix baseline. */
+.admin-methodology-panel {
+    background: var(--bg-soft);
+}
+
+.admin-methodology-shell,
+.admin-methodology-workspace,
+.admin-methodology-view,
+.admin-methodology-summary,
+.admin-methodology-risk-list,
+.admin-methodology-risk-shell,
+.admin-methodology-risk-body,
+.admin-methodology-detail-stack,
+.admin-methodology-personalization-table,
+.admin-methodology-personalization-editor-table,
+.admin-methodology-checks,
+.admin-methodology-signals,
+.admin-methodology-history {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.admin-methodology-tabs {
+    display: inline-flex;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    background: #f3f5fd;
+    border: 1px solid rgba(70, 72, 212, 0.08);
+    width: fit-content;
+}
+
+.admin-methodology-tab {
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-heading);
+    font-size: var(--fs-body-sm);
+    font-weight: var(--fw-bold);
+}
+
+.admin-methodology-tab.active {
+    background: #ffffff;
+    color: var(--accent);
+    box-shadow: 0 10px 24px rgba(31, 38, 64, 0.08);
+}
+
+.admin-methodology-columns,
+.admin-methodology-row {
+    grid-template-columns: minmax(220px, 1.5fr) 180px 220px 130px 180px;
+}
+
+.admin-methodology-difficulty-cell {
+    display: grid;
+    gap: var(--space-1);
+    justify-items: center;
+}
+
+.admin-methodology-difficulty-cell small {
+    color: var(--text-muted);
+}
+
+.admin-methodology-row-id {
+    display: block;
+    margin-top: var(--space-1);
+    font-family: "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+}
+
+.admin-methodology-row {
+    cursor: default;
+}
+
+.admin-methodology-row:hover,
+.admin-methodology-row:focus-visible {
+    transform: none;
+}
+
+.admin-methodology-title-cell,
+.admin-methodology-status-cell,
+.admin-methodology-id-cell {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.admin-methodology-status-cell {
+    justify-items: center;
+}
+
+.admin-methodology-id-cell span {
+    font-family: "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-bold);
+    color: var(--text-main);
+}
+
+.admin-methodology-id-cell small,
+.admin-methodology-status-cell small,
+.admin-methodology-row small {
+    color: var(--text-muted);
+}
+
+.admin-methodology-row-meta {
+    display: block;
+    line-height: 1.45;
+}
+
+.admin-methodology-inline-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.admin-methodology-inline-tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-pill);
+    background: rgba(92, 108, 255, 0.1);
+    color: var(--accent);
+    font-family: var(--font-heading);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-bold);
+}
+
+.admin-methodology-passports {
+    display: grid;
+    padding-top: var(--space-3);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3);
+}
+
+.admin-methodology-coverage-row,
+.admin-methodology-risk-item,
+.admin-methodology-detail-field,
+.admin-methodology-detail-block,
+.admin-methodology-personalization-box,
+.admin-methodology-check-item,
+.admin-methodology-history-item,
+.admin-methodology-chip-group {
+    border: 1px solid var(--line);
+    background: #ffffff;
+}
+
+.admin-methodology-passport-card {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.admin-methodology-passport-card h4 {
+    margin: 0;
+    font-size: var(--fs-h3);
+}
+
+.admin-methodology-passport-card p,
+.admin-methodology-passport-card small {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-normal);
+}
+
+.admin-methodology-passport-head,
+.admin-methodology-passport-meta,
+.admin-methodology-branch-head,
+.admin-methodology-branch-stat,
+.admin-methodology-risk-toolbar,
+.admin-methodology-risk-pagination,
+.admin-methodology-risk-toolbar-controls,
+.admin-methodology-risk-head,
+.admin-methodology-drawer-head,
+.admin-methodology-drawer-actions,
+.admin-methodology-section-head,
+.admin-methodology-personalization-box-head,
+.admin-methodology-personalization-actions,
+.admin-methodology-signal-head,
+.admin-methodology-history-head {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.admin-methodology-passport-head,
+.admin-methodology-passport-meta,
+.admin-methodology-branch-head,
+.admin-methodology-branch-stat,
+.admin-methodology-risk-toolbar,
+.admin-methodology-risk-pagination,
+.admin-methodology-drawer-head,
+.admin-methodology-section-head,
+.admin-methodology-personalization-box-head,
+.admin-methodology-signal-head,
+.admin-methodology-history-head {
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-methodology-passport-meta,
+.admin-methodology-risk-toolbar-controls,
+.admin-methodology-drawer-actions,
+.admin-methodology-personalization-actions {
+    flex-wrap: wrap;
+}
+
+.admin-methodology-branches-grid,
+.admin-methodology-coverage-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+}
+
+.admin-methodology-branch-card {
+    display: grid;
+    gap: var(--space-2);
+}
+
+@media (max-width: 1000px) {
+    .admin-methodology-tabs {
+        justify-self: center;
+        max-width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .admin-methodology-branches-grid,
+    .admin-methodology-coverage-grid,
+    .admin-methodology-passports {
+        grid-template-columns: 1fr;
+    }
+}
+
+.admin-methodology-branch-head span,
+.admin-methodology-branch-stat span,
+.admin-methodology-summary span,
+.admin-methodology-risk-summary span,
+.admin-methodology-risk-head span,
+.admin-methodology-detail-field span,
+.admin-methodology-detail-block-label,
+.admin-methodology-chip-group-title,
+.admin-methodology-signal-card small,
+.admin-methodology-history-head span,
+.admin-methodology-history-item small {
+    color: var(--text-muted);
+}
+admin-methodology-risk-toolbar
+.admin-methodology-branch-stat strong,
+.admin-methodology-summary strong {
+    color: var(--accent);
+}
+
+.admin-methodology-branch-stat.secondary strong {
+    color: #b47a00;
+}
+
+.admin-methodology-panel .admin-report-score-track {
+    width: 100%;
+    margin: 0;
+}
+
+.admin-methodology-panel .admin-report-score-track span {
+    min-width: 6px;
+}
+
+.admin-report-score-track.warm span {
+    background: linear-gradient(135deg, #f0b768, #d4872b);
+}
+
+.admin-methodology-coverage-table {
+    display: grid;
+    gap: var(--space-2);
+    padding-top: var(--space-3);
+}
+
+.admin-methodology-coverage-head,
+.admin-methodology-coverage-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) repeat(3, minmax(54px, 64px));
+    gap: var(--space-2);
+    align-items: center;
+    min-width: 0;
+}
+
+.admin-methodology-coverage-head > *,
+.admin-methodology-coverage-row > * {
+    min-width: 0;
+}
+
+.admin-methodology-coverage-row > span:first-child {
+    overflow-wrap: anywhere;
+}
+
+.admin-methodology-coverage-head > span:not(:first-child),
+.admin-methodology-coverage-row > span:not(:first-child) {
+    text-align: center;
+}
+
+.admin-methodology-coverage-head,
+.admin-methodology-personalization-head,
+.admin-methodology-personalization-editor-head {
+    color: var(--text-muted);
+    font-family: var(--font-heading);
+    font-size: var(--fs-micro);
+    font-weight: var(--fw-extrabold);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-eyebrow);
+}
+
+.admin-methodology-coverage-row,
+.admin-methodology-risk-item,
+.admin-methodology-detail-field,
+.admin-methodology-detail-block,
+.admin-methodology-personalization-box,
+.admin-methodology-check-item,
+.admin-methodology-signal-card,
+.admin-methodology-history-item,
+.admin-methodology-chip-group {
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-lg);
+}
+
+.admin-methodology-summary div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-2);
+    padding-top: var(--space-3);
+    border-bottom: 1px solid rgba(204, 208, 232, 0.6);
+}
+
+.admin-methodology-summary div:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.admin-methodology-risk-toolbar {
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    background: rgba(247, 248, 254, 0.96);
+    border: 1px solid rgba(204, 208, 232, 0.72);
+}
+
+.admin-methodology-risk-shell {
+    margin-top: var(--space-2);
+}
+
+.admin-methodology-risk-summary {
+    display: grid;
+    gap: 2px;
+}
+
+.admin-methodology-risk-summary strong {
+    font-family: var(--font-heading);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-bold);
+    color: var(--text-main);
+}
+
+.admin-methodology-risk-pagination-summary {
+    color: var(--text-muted);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+}
+
+.admin-methodology-risk-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.admin-methodology-risk-item p,
+.admin-methodology-risk-item small,
+.admin-methodology-signal-card p {
+    margin: 0;
+}
+
+.admin-methodology-risk-item.critical {
+    border-color: rgba(214, 77, 77, 0.24);
+    background: rgba(255, 243, 243, 0.95);
+}
+
+.admin-methodology-risk-item.warning {
+    border-color: rgba(214, 158, 57, 0.24);
+    background: rgba(255, 249, 239, 0.95);
+}
+
+.admin-methodology-risk-item.case-quality {
+    border-color: rgba(88, 118, 214, 0.18);
+    background: rgba(244, 247, 255, 0.95);
+}
+
+.admin-methodology-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+}
+
+.admin-methodology-drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 22, 38, 0.34);
+    backdrop-filter: blur(3px);
+}
+
+.admin-methodology-drawer-panel {
+    position: absolute;
+    top: var(--space-2);
+    right: 0;
+    width: min(600px, 100%);
+    max-height: calc(100vh - 24px);
+    background: rgba(255, 255, 255, 0.98);
+    border-left: 1px solid rgba(70, 72, 212, 0.12);
+    box-shadow: -18px 0 44px rgba(17, 22, 38, 0.14);
+    display: grid;
+    grid-template-rows: auto 1fr;
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+    overflow: hidden;
+}
+
+.admin-methodology-drawer-head {
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-bottom: 1px solid rgba(204, 208, 232, 0.7);
+}
+
+.admin-methodology-drawer-head > div:first-child {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.admin-methodology-drawer-actions {
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.admin-methodology-drawer-body {
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+}
+
+.admin-methodology-drawer-head h3 {
+    margin: var(--space-1) 0 0;
+    font-size: var(--fs-h3);
+    line-height: var(--lh-tight);
+    max-width: none;
+}
+
+.admin-methodology-save-status,
+.admin-methodology-edit-hint {
+    color: var(--text-muted);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-bold);
+}
+
+.admin-methodology-detail-card {
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+    flex: 0 0 auto;
+}
+
+.admin-methodology-detail-grid,
+.admin-methodology-inline-controls,
+.admin-methodology-status-controls,
+.admin-methodology-detail-chip-groups,
+.admin-methodology-detail-columns {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.admin-methodology-detail-grid,
+.admin-methodology-inline-controls,
+.admin-methodology-detail-chip-groups,
+.admin-methodology-detail-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-methodology-status-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-methodology-detail-field,
+.admin-methodology-status-field,
+.admin-methodology-chip-group {
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+}
+
+.admin-methodology-chip-group-wide {
+    grid-column: 1 / -1;
+}
+
+.admin-methodology-detail-card h4 {
+    margin: 2px 0 0;
+    font-size: var(--fs-h4);
+    line-height: var(--lh-tight);
+}
+
+.admin-methodology-value,
+.admin-methodology-case-text,
+.admin-methodology-detail-block p,
+.admin-methodology-signal-card p {
+    line-height: var(--lh-normal);
+    font-size: var(--fs-body-sm);
+}
+
+.admin-methodology-case-text {
+    line-height: var(--lh-loose);
+    font-size: var(--fs-body);
+}
+
+.admin-methodology-inline-variable {
+    display: inline;
+    padding: 0 2px;
+    border-radius: var(--radius-sm);
+    background: rgba(70, 72, 212, 0.1);
+    color: var(--accent);
+    font-weight: var(--fw-bold);
+}
+
+.admin-methodology-scenario-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border-radius: var(--radius-pill);
+    background: rgba(243, 245, 255, 0.98);
+    border: 1px solid rgba(204, 208, 232, 0.72);
+}
+
+.admin-methodology-scenario-toolbar {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.admin-methodology-scenario-tab {
+    padding: var(--space-2);
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-heading);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-bold);
+}
+
+.admin-methodology-scenario-tab.active {
+    background: rgba(70, 72, 212, 0.14);
+    color: var(--accent);
+}
+
+.admin-methodology-case-text-block {
+    gap: var(--space-2);
+}
+
+.admin-methodology-personalization-row,
+.admin-methodology-personalization-editor-row {
+    display: grid;
+    gap: var(--space-2);
+    align-items: center;
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    background: #fff;
+    border: 1px solid rgba(204, 208, 232, 0.56);
+    font-size: var(--fs-caption);
+    line-height: var(--lh-snug);
+}
+
+.admin-methodology-personalization-row {
+    grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.4fr) minmax(132px, 0.9fr);
+}
+
+.admin-methodology-personalization-editor-row {
+    grid-template-columns: minmax(132px, 0.9fr) minmax(0, 1.35fr) minmax(150px, 0.95fr) auto;
+}
+
+.admin-methodology-personalization-code {
+    font-family: "SF Mono", "Menlo", monospace;
+    color: var(--accent);
+    font-weight: var(--fw-bold);
+}
+
+.admin-methodology-personalization-source,
+.admin-methodology-personalization-help,
+.admin-methodology-personalization-profile-hint {
+    color: var(--text-muted);
+    font-size: var(--fs-caption);
+    line-height: var(--lh-normal);
+}
+
+.admin-methodology-input {
+    width: 100%;
+    border: 1px solid rgba(204, 208, 232, 0.92);
+    border-radius: var(--radius-md);
+    padding: var(--space-2);
+    font-family: var(--font-body);
+    font-size: var(--fs-body-sm);
+    color: var(--text-main);
+    background: #ffffff;
+    resize: vertical;
+}
+
+.admin-methodology-input:focus {
+    outline: none;
+    border-color: rgba(70, 72, 212, 0.6);
+    box-shadow: 0 0 0 4px rgba(70, 72, 212, 0.12);
+}
+
+.admin-methodology-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-1);
+}
+
+.admin-methodology-chip,
+.admin-methodology-chip-button {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-pill);
+    background: rgba(70, 72, 212, 0.1);
+    color: var(--accent);
+    font-family: var(--font-heading);
+    font-size: var(--fs-micro);
+    font-weight: var(--fw-bold);
+}
+
+.admin-methodology-chip.muted {
+    background: rgba(226, 230, 244, 0.9);
+    color: var(--text-muted);
+}
+
+.admin-methodology-chip-button {
+    border: 0;
+    cursor: pointer;
+}
+
+.admin-methodology-chip-button.selected {
+    background: rgba(70, 72, 212, 0.16);
+    box-shadow: 0 8px 18px rgba(70, 72, 212, 0.12);
+}
+
+.admin-methodology-icon-button {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(204, 208, 232, 0.92);
+    border-radius: var(--radius-md);
+    background: #fff;
+    color: #c15757;
+    cursor: pointer;
+}
+
+.admin-methodology-icon-button svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.admin-methodology-detail-list {
+    margin: 0;
+    padding-left: var(--space-3);
+    display: grid;
+    gap: var(--space-1);
+    line-height: var(--lh-snug);
+    font-size: var(--fs-meta);
+}
+
+.admin-methodology-check-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-1) var(--space-3);
+    align-items: center;
+}
+
+.admin-methodology-check-item small {
+    grid-column: 1 / -1;
+    line-height: var(--lh-snug);
+}
+
+.admin-methodology-check-item.passed span {
+    color: #2f8b58;
+    font-weight: 800;
+}
+
+.admin-methodology-check-item.failed span {
+    color: #b47a00;
+    font-weight: 800;
+}

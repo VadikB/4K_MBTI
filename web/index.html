@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4K Ассистент</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- CSS is modularized under /web/styles/. Load order: tokens → base → components → screens → utilities. -->
+  <link rel="stylesheet" href="/web/styles/tokens.css?v=20260516-merged">
+  <link rel="stylesheet" href="/web/styles/base.css?v=20260517-scrollbar">
+  <link rel="stylesheet" href="/web/styles/components.css?v=20260516-merged">
+  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=20260516-merged">
+  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=20260521-onboarding-progress-transition">
+  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=20260516-merged">
+  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=20260517-redesign-3">
+  <link rel="stylesheet" href="/web/styles/screens/report.css?v=20260521-report-mobile-skill-table">
+  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=20260516-merged">
+  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=20260516-merged">
+  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=20260524-mic-button">
+  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=20260521-mobile-compact-input">
+  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=20260517-dashboard-soon-button">
+  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=20260516-merged">
+  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=20260516-merged">
+  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=20260518-mbti-preview">
+  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=20260516-merged">
+  <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=20260516-merged">
+  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=20260516-merged">
+  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=20260516-merged">
+  <link rel="stylesheet" href="/web/styles/utilities.css?v=20260521-interview-mobile-compact">
+      <!--Favicons-->
+  <link rel="icon" href="/favicons/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png">
+  <link rel="manifest" href="/favicons/site.webmanifest">
+</head>
+<body>
+  <div id="app-loader" class="app-loader hidden" aria-live="polite">
+    <div class="card app-loader-card">
+      <div class="app-loader-spinner"></div>
+      <strong id="app-loader-title">Подождите, пожалуйста</strong>
+      <p id="app-loader-text">Система обрабатывает ваш запрос.</p>
+      <div class="app-loader-progress">
+        <div class="app-loader-progress-head">
+          <span id="app-loader-progress-label">Подготовка</span>
+          <span id="app-loader-progress-value">0%</span>
+        </div>
+        <div class="app-loader-progress-track">
+          <div id="app-loader-progress-bar" class="app-loader-progress-bar"></div>
+        </div>
+      </div>
+      <div id="app-loader-steps" class="app-loader-steps"></div>
+    </div>
+  </div>
+  <main class="shell">
+    <section class="panel auth-panel" id="auth-panel">
+      <div class="auth-panel-head">
+        <div class="brand">4K Ассистент</div>
+        <div id="app-release-badge" class="release-badge">Релиз <span id="app-release-number">1</span></div>
+      </div>
+      <div class="auth-panel-copy">
+        <h1>Добро пожаловать</h1>
+        <p class="subtitle">Введите номер телефона, чтобы продолжить.</p>
+      </div>
+      <form id="phone-form" class="stack">
+        <label class="field">
+          <span>Телефон</span>
+          <input id="phone-input" name="phone" type="tel" placeholder="+7 999 999 99 99" autocomplete="tel" required>
+        </label>
+        <button type="submit" class="primary-button">Продолжить</button>
+      </form>
+      <p id="auth-error" class="error" hidden></p>
+    </section>
+
+    <section class="panel onboarding-panel hidden" id="onboarding-panel">
+      <div class="onboarding-shell">
+        <div class="onboarding-topbar">
+          <div class="brand dashboard-brand">4K Ассистент</div>
+        </div>
+        <div class="onboarding-copy">
+          <div class="step-badge" id="step-badge">
+            <button id="onboarding-step-back" type="button" class="step-badge-back" aria-label="Назад" hidden></button>
+            <span class="step-progress" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+            <span id="step-badge-label">Шаг 01</span>
+          </div>
+          <h2 id="onboarding-title">Познакомьтесь с AI-ассистентом</h2>
+          <p class="subtitle" id="onboarding-description"></p>
+          <div class="feature-list" id="feature-list"></div>
+          <div class="onboarding-actions">
+            <button id="onboarding-next" type="button" class="primary-button">Далее</button>
+            <button id="onboarding-skip" type="button" class="ghost-button">Пропустить</button>
+          </div>
+        </div>
+        <div class="onboarding-visual" id="onboarding-visual"></div>
+      </div>
+    </section>
+
+    <section class="panel dashboard-panel hidden" id="dashboard-panel">
+      <div class="dashboard-topbar">
+        <div class="brand dashboard-brand">4K Ассистент</div>
+        <div class="dashboard-topbar-actions">
+          <div class="user-menu">
+            <div class="user-chip" tabindex="0" aria-haspopup="true" aria-label="Меню пользователя">
+              <div class="user-chip-copy">
+                <strong id="dashboard-user-name">Александр</strong>
+                <span id="dashboard-user-role">Product Lead</span>
+              </div>
+              <div id="dashboard-avatar" class="user-avatar">А</div>
+            </div>
+            <div class="user-menu-dropdown" role="menu" aria-label="Меню пользователя">
+              <button id="dashboard-profile-button" class="user-menu-item" type="button" role="menuitem">Настройки</button>
+              <button id="dashboard-restart-button" class="user-menu-item" type="button" role="menuitem">Выйти</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-hero">
+        <h2 id="dashboard-greeting">Добро пожаловать</h2>
+        <p class="dashboard-subtitle">Ваш текущий прогресс развития компетенций</p>
+      </div>
+
+      <section class="dashboard-section">
+        <p class="section-label accent-label">Продолжить ассессмент</p>
+        <div class="card card--lg assessment-card">
+          <div class="assessment-icon">4K</div>
+          <div class="assessment-copy">
+            <h3 id="assessment-title">Компетенции 4К</h3>
+            <p id="assessment-description"></p>
+            <div class="assessment-meta">
+              <span id="assessment-status-label" class="assessment-state"></span>
+              <span id="assessment-cases-label"></span>
+            </div>
+            <div class="progress-track">
+              <div id="assessment-progress-bar" class="progress-bar"></div>
+            </div>
+          </div>
+          <div class="assessment-actions">
+            <button id="assessment-action-button" type="button" class="primary-button">Продолжить</button>
+            <div id="assessment-preparing" class="preparing-hero hidden" style="--progress: 0%;" aria-live="polite">
+              <div class="preparing-hero-row">
+                <span class="preparing-hero-pulse" aria-hidden="true"></span>
+                <strong class="preparing-hero-label">Подготовка кейсов</strong>
+                <span id="assessment-preparing-percent" class="preparing-hero-value">0%</span>
+              </div>
+              <div class="preparing-hero-meter">
+                <div class="preparing-hero-meter-fill"></div>
+                <div class="preparing-hero-meter-shimmer" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-section">
+        <div class="section-row">
+          <div>
+            <p class="section-label">Библиотека</p>
+            <h3 class="dashboard-section-title">Доступные ассессменты</h3>
+          </div>
+          <button type="button" class="text-link">Смотреть все</button>
+        </div>
+        <div id="available-assessments" class="assessment-grid"></div>
+      </section>
+
+        <section class="dashboard-section">
+          <div>
+            <p class="section-label">Ваши отчеты</p>
+            <h3 class="dashboard-section-title">Отчеты по ассессменту</h3>
+          </div>
+          <div id="reports-list" class="reports-list"></div>
+        </section>
+      </section>
+
+    <section class="panel ai-welcome-panel hidden" id="ai-welcome-panel">
+      <div class="dashboard-topbar">
+        <div class="brand dashboard-brand">4K Ассистент</div>
+        <div class="dashboard-topbar-actions">
+          <button class="icon-button" type="button" aria-label="Уведомления">⌁</button>
+          <button id="welcome-profile-button" class="topbar-profile-button" type="button">Профиль</button>
+          <button id="new-user-exit-button" class="topbar-exit-button" type="button">
+            <span class="topbar-user-icon" aria-hidden="true">👤</span>
+            <span>Выйти</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="ai-welcome-shell">
+        <section class="card card--lg ai-hero-card">
+          <div class="ai-hero-copy">
+            <h2>Добро пожаловать в систему AI-оценки</h2>
+            <p id="ai-hero-description">Пройдите первый ассессмент, чтобы получить ваш профиль компетенций и персонализированные рекомендации от искусственного интеллекта.</p>
+            <button id="start-first-assessment" type="button" class="primary-button">Начать первый ассессмент</button>
+            <div id="welcome-assessment-preparing" class="preparing-hero hidden" aria-live="polite">
+              <div class="preparing-hero-row">
+                <span class="preparing-hero-pulse" aria-hidden="true"></span>
+                <strong id="welcome-assessment-title" class="preparing-hero-label">Подготовка кейсов</strong>
+                <span id="welcome-assessment-percent" class="preparing-hero-value">0%</span>
+              </div>
+              <div id="welcome-assessment-ring" class="preparing-hero-meter" style="--progress: 0%;">
+                <div class="preparing-hero-meter-fill"></div>
+                <div class="preparing-hero-meter-shimmer" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+          <div class="ai-hero-illustration">◔</div>
+        </section>
+
+        <section class="ai-library-section">
+          <div>
+            <h3 class="dashboard-section-title compact-title">Доступны для прохождения</h3>
+            <p class="library-subtitle">Выберите тест для начала анализа</p>
+          </div>
+          <div class="assessment-grid static-grid">
+            <article class="card assessment-mini-card">
+              <div class="mini-card-icon"><img src="/web/assets/icons/4k-icon.svg" alt="" aria-hidden="true"></div>
+              <h3>Оценка 4К компетенций</h3>
+              <p>Комплексный анализ ключевых навыков будущего: Креативность, Критическое мышление, Коммуникация и Кооперация.</p>
+              <div class="mini-card-footer">
+                <span>45 минут</span>
+                <button id="library-start-button" type="button" class="mini-start-button">Начать</button>
+                <div id="library-assessment-preparing" class="preparing-hero preparing-hero--mini hidden" aria-live="polite">
+                  <div id="library-assessment-ring" class="preparing-hero-row" style="--progress: 0%;">
+                    <span class="preparing-hero-pulse" aria-hidden="true"></span>
+                    <span id="library-assessment-percent" class="preparing-hero-value">0%</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+            <article class="card is-placeholder assessment-mini-card muted-card warm">
+              <div class="mini-card-icon muted-icon"><img src="/web/assets/icons/4k-icon.svg" alt="" aria-hidden="true"></div>
+              <h3>Проверка профиля MBTI</h3>
+              <p>AI-анализ типа личности для понимания паттернов поведения и наиболее подходящих форматов работы.</p>
+              <div class="mini-card-footer"><span>15 минут</span><button type="button" class="mini-start-button disabled" disabled>Скоро</button></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="card card--lg importance-card">
+          <div>
+            <p class="section-label accent-label"><img src="/web/assets/icons/info-icon.svg" alt="" aria-hidden="true">Почему это важно?</p>
+            <h3>Постройте свой карьерный трек на данных</h3>
+            <p>Ваш профиль в 4K Assistant это не просто результаты тестов. Это динамическая модель компетенций, которую вы можете использовать для развития, внутреннего роста и планирования обучения.</p>
+          </div>
+          <div class="importance-metric">
+            <strong>1.2M+</strong>
+            <span>пройдено ассессментов</span>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel admin-panel hidden" id="admin-panel">
+      <div class="dashboard-topbar">
+        <div class="brand dashboard-brand">4K Ассистент</div>
+        <div class="dashboard-topbar-actions">
+          <div class="user-menu">
+            <div class="topbar-user-chip" tabindex="0" aria-haspopup="true" aria-label="Меню администратора">
+              <div class="topbar-user-copy">
+                <strong id="admin-user-name">Администратор системы</strong>
+                <span id="admin-user-role">Администратор</span>
+              </div>
+              <div id="admin-avatar" class="user-avatar">АД</div>
+            </div>
+            <div class="user-menu-dropdown" role="menu" aria-label="Меню администратора">
+              <button id="admin-profile-button" class="user-menu-item" type="button" role="menuitem">Настройки</button>
+              <button id="admin-logout-button" class="user-menu-item" type="button" role="menuitem">Выйти</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-shell">
+        <section class="card card--lg admin-hero-card">
+          <div>
+            <p class="section-label accent-label">Административный раздел</p>
+            <h2 id="admin-title">Сводный отчет</h2>
+          </div>
+          <div class="admin-hero-actions">
+            <button id="admin-open-methodology-button" type="button" class="ghost-button compact-ghost">Управление кейсами</button>
+            <button id="admin-open-prompt-lab-button" type="button" class="ghost-button compact-ghost">Prompt Lab</button>
+            <button id="admin-open-reports-button" type="button" class="primary-button compact-primary">Подробные отчеты</button>
+          </div>
+        </section>
+
+        <section class="admin-metrics-grid" id="admin-metrics-grid"></section>
+
+        <section class="admin-analytics-grid">
+          <article class="card card--lg admin-analytics-card">
+            <div class="report-card-head">
+              <div>
+                <p class="section-label accent-label">Компетенции</p>
+                <h3>Средний % по компетенциям</h3>
+              </div>
+            </div>
+            <div id="admin-competency-chart" class="admin-competency-chart">
+              <canvas id="admin-competency-bar-chart" aria-label="Средний процент по компетенциям"></canvas>
+              <div id="admin-competency-chart-fallback" class="admin-competency-chart-fallback hidden"></div>
+            </div>
+          </article>
+
+          <article class="card card--lg admin-analytics-card">
+            <div class="report-card-head">
+              <div>
+                <p class="section-label accent-label">MBTI распределение</p>
+                <div class="admin-chart-title-row">
+                  <h3>Сводка по типам</h3>
+                  <span id="admin-mbti-preview-pill" class="admin-preview-pill hidden">Preview</span>
+                </div>
+              </div>
+            </div>
+            <div id="admin-mbti-chart" class="admin-mbti-chart">
+              <canvas id="admin-mbti-pie-chart" aria-label="MBTI распределение по типам"></canvas>
+              <div id="admin-mbti-chart-fallback" class="admin-mbti-chart-fallback hidden"></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="card card--lg admin-insights-card">
+          <div class="report-card-head">
+            <div>
+              <p class="section-label accent-label">Инсайты</p>
+              <h3>Ключевые выводы</h3>
+            </div>
+          </div>
+          <div id="admin-insights-grid" class="admin-insights-grid"></div>
+        </section>
+
+        <section class="card card--lg admin-activity-card">
+          <div class="report-card-head admin-activity-head">
+            <div>
+              <p class="section-label accent-label">Динамика</p>
+              <h3 id="admin-activity-title">Количество завершенных ассессментов</h3>
+            </div>
+            <div class="admin-activity-controls">
+              <label class="admin-filter-field">
+                <span>Период</span>
+                <select id="admin-period-select">
+                  <option value="7d">7 дней</option>
+                  <option value="14d">14 дней</option>
+                  <option value="30d" selected>30 дней</option>
+                  <option value="90d">3 месяца</option>
+                  <option value="180d">6 месяцев</option>
+                  <option value="365d">12 месяцев</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <div class="admin-activity-plot">
+            <div id="admin-activity-chart" class="admin-activity-chart">
+              <canvas id="admin-activity-bar-chart" aria-label="Количество завершенных ассессментов за период"></canvas>
+              <div id="admin-activity-chart-fallback" class="admin-activity-chart-fallback hidden"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel admin-methodology-panel hidden" id="admin-methodology-panel">
+      <div class="dashboard-topbar">
+        <div class="brand dashboard-brand">Управление кейсами</div>
+        <div class="dashboard-topbar-actions">
+          <button id="admin-methodology-back-button" class="ghost-button compact-ghost" type="button">Назад</button>
+        </div>
+      </div>
+
+      <div class="admin-shell admin-methodology-shell">
+        <section class="card card--lg admin-hero-card admin-methodology-hero">
+          <div>
+            <p class="section-label accent-label">Управление кейсами</p>
+            <h2 id="admin-methodology-title">Библиотека кейсов</h2>
+            <p id="admin-methodology-subtitle">Настройка библиотеки кейсов, веток тестирования и покрытия навыков.</p>
+          </div>
+          <div class="admin-reports-actions">
+            <label class="admin-search-field">
+              <input id="admin-methodology-search" type="search" placeholder="Поиск по кейсам...">
+            </label>
+          </div>
+        </section>
+
+        <section id="admin-methodology-metrics" class="admin-metrics-grid"></section>
+
+        <section class="admin-methodology-workspace">
+          <div class="admin-methodology-tabs">
+            <button id="admin-methodology-tab-passports" type="button" class="admin-methodology-tab active">Паспорта типов кейсов</button>
+            <button id="admin-methodology-tab-library" type="button" class="admin-methodology-tab">Библиотека кейсов</button>
+            <button id="admin-methodology-tab-branches" type="button" class="admin-methodology-tab">Ветки и покрытие</button>
+          </div>
+
+          <div id="admin-methodology-passports-view" class="admin-methodology-view">
+            <section class="card card--lg admin-analytics-card admin-methodology-passports-card">
+              <div class="report-card-head">
+                <div>
+                  <p class="section-label accent-label">Паспорта типов</p>
+                  <h3>Методические типы кейсов</h3>
+                </div>
+              </div>
+              <div id="admin-methodology-passports" class="admin-methodology-passports"></div>
+            </section>
+          </div>
+
+          <div id="admin-methodology-library-view" class="admin-methodology-view hidden">
+            <section class="card card--lg admin-reports-table-card">
+              <div class="admin-reports-table-head">
+                <div class="admin-reports-columns admin-methodology-columns" aria-hidden="true">
+                  <span>Название</span>
+                  <span>Роли</span>
+                  <span>4K навыки</span>
+                  <span>Сложность</span>
+                  <span>Статус / QA</span>
+                </div>
+              </div>
+              <div id="admin-methodology-cases" class="admin-reports-list admin-methodology-cases"></div>
+              <div class="admin-reports-pagination admin-methodology-pagination">
+                <span id="admin-methodology-page-summary" class="admin-reports-page-summary">Показано 0 из 0 кейсов</span>
+                <div class="admin-reports-pagination-controls">
+                  <button id="admin-methodology-prev-button" type="button" class="ghost-button compact-ghost">Назад</button>
+                  <span id="admin-methodology-page-indicator" class="admin-reports-page-indicator">1 / 1</span>
+                  <button id="admin-methodology-next-button" type="button" class="ghost-button compact-ghost">Вперед</button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div id="admin-methodology-branches-view" class="admin-methodology-view hidden">
+            <section class="admin-methodology-branches-grid" id="admin-methodology-branches"></section>
+
+            <section class="admin-methodology-coverage-grid">
+              <article class="card card--lg admin-analytics-card">
+                <div class="report-card-head">
+                  <div>
+                    <p class="section-label accent-label">Матрица покрытия</p>
+                    <h3>Компетенции по ролям</h3>
+                  </div>
+                </div>
+                <div class="admin-methodology-coverage-table">
+                  <div class="admin-methodology-coverage-head">
+                    <span>Компетенция</span>
+                    <span>Линейный</span>
+                    <span>Менеджер</span>
+                    <span>Лидер</span>
+                  </div>
+                  <div id="admin-methodology-coverage-body" class="admin-methodology-coverage-body"></div>
+                </div>
+              </article>
+
+              <article class="card card--lg admin-analytics-card admin-methodology-summary-card">
+                <div class="report-card-head">
+                  <div>
+                    <p class="section-label accent-label">Статистика базы</p>
+                    <h3>Состояние методического слоя</h3>
+                  </div>
+                </div>
+                <div id="admin-methodology-summary" class="admin-methodology-summary"></div>
+              </article>
+
+              <article class="card card--lg admin-analytics-card admin-methodology-risk-card">
+                <div class="report-card-head">
+                  <div>
+                    <p class="section-label accent-label">Дефицит покрытия</p>
+                    <h3>Роли и навыки с риском</h3>
+                  </div>
+                </div>
+                <div id="admin-methodology-skill-gaps" class="admin-methodology-risk-list"></div>
+              </article>
+
+              <article class="card card--lg admin-analytics-card admin-methodology-risk-card">
+                <div class="report-card-head">
+                  <div>
+                    <p class="section-label accent-label">Риск зависимости</p>
+                    <h3>Навыки на одном типе кейса</h3>
+                  </div>
+                </div>
+                <div id="admin-methodology-single-points" class="admin-methodology-risk-list"></div>
+              </article>
+
+              <article class="card card--lg admin-analytics-card admin-methodology-risk-card">
+                <div class="report-card-head">
+                  <div>
+                    <p class="section-label accent-label">Качество кейсов</p>
+                    <h3>Проблемные кейсы по результатам прохождений</h3>
+                  </div>
+                </div>
+                <div id="admin-methodology-case-quality" class="admin-methodology-risk-list"></div>
+              </article>
+            </section>
+          </div>
+        </section>
+      </div>
+
+      <div id="admin-methodology-drawer" class="admin-methodology-drawer hidden">
+        <div id="admin-methodology-drawer-backdrop" class="admin-methodology-drawer-backdrop"></div>
+        <aside class="admin-methodology-drawer-panel">
+          <div class="admin-methodology-drawer-head">
+            <div>
+              <p class="section-label accent-label">Редактирование кейса</p>
+              <h3 id="admin-methodology-detail-title">Кейс</h3>
+            </div>
+            <div class="admin-methodology-drawer-actions">
+              <span id="admin-methodology-detail-save-status" class="admin-methodology-save-status hidden">Сохраняем...</span>
+              <button id="admin-methodology-detail-edit" type="button" class="ghost-button compact-ghost">Редактировать</button>
+              <button id="admin-methodology-detail-cancel" type="button" class="ghost-button compact-ghost hidden">Отмена</button>
+              <button id="admin-methodology-detail-save" type="button" class="primary-button compact-primary hidden">Сохранить</button>
+              <button id="admin-methodology-detail-close" type="button" class="ghost-button compact-ghost">Закрыть</button>
+            </div>
+          </div>
+
+          <div class="admin-methodology-drawer-body">
+            <section class="card admin-methodology-detail-card">
+              <div class="admin-methodology-section-head">
+                <div>
+                  <p class="section-label accent-label">Основная информация</p>
+                  <h4 id="admin-methodology-detail-subtitle">Паспорт типа и параметры</h4>
+                </div>
+              </div>
+              <div class="admin-methodology-detail-grid">
+                <div class="admin-methodology-detail-field">
+                  <span>Название кейса</span>
+                  <div id="admin-methodology-detail-case-name" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-field">
+                  <span>Тип оценки</span>
+                  <div id="admin-methodology-detail-artifact" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-field">
+                  <span>Статус</span>
+                  <div id="admin-methodology-detail-status" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-field">
+                  <span>Время / сложность</span>
+                  <div id="admin-methodology-detail-timing" class="admin-methodology-value">—</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="card admin-methodology-detail-card">
+              <div class="admin-methodology-section-head">
+                <div>
+                  <p class="section-label accent-label">Текст кейса</p>
+                  <h4>Сценарий кейса</h4>
+                </div>
+              </div>
+              <div class="admin-methodology-scenario-toolbar">
+                <div class="admin-methodology-scenario-tabs">
+                  <button id="admin-methodology-scenario-template" type="button" class="admin-methodology-scenario-tab active">Шаблон</button>
+                  <button id="admin-methodology-scenario-preview" type="button" class="admin-methodology-scenario-tab">Предпросмотр</button>
+                </div>
+              </div>
+              <div class="admin-methodology-detail-block admin-methodology-case-text-block">
+                <span class="admin-methodology-detail-block-label">Текст шаблона</span>
+                <div id="admin-methodology-detail-scenario" class="admin-methodology-value admin-methodology-case-text">—</div>
+              </div>
+              <div id="admin-methodology-detail-edit-fields" class="admin-methodology-detail-stack hidden">
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Вводные и контекст</span>
+                  <div id="admin-methodology-detail-intro" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Данные и факты</span>
+                  <div id="admin-methodology-detail-facts" class="admin-methodology-value hidden">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Задача для оцениваемого</span>
+                  <div id="admin-methodology-detail-task" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Ограничения и условия</span>
+                  <div id="admin-methodology-detail-constraints" class="admin-methodology-value hidden">—</div>
+                </div>
+              </div>
+              <div class="admin-methodology-personalization-box">
+                <div class="admin-methodology-personalization-box-head">
+                  <span class="admin-methodology-chip-group-title">Переменные персонализации</span>
+                </div>
+                <div id="admin-methodology-detail-personalization-table" class="admin-methodology-personalization-table"></div>
+              </div>
+              <div class="admin-methodology-detail-chip-groups">
+                <div class="admin-methodology-chip-group">
+                  <span class="admin-methodology-chip-group-title">Роли</span>
+                  <div id="admin-methodology-detail-roles" class="admin-methodology-chip-list"></div>
+                </div>
+                <div class="admin-methodology-chip-group">
+                  <span class="admin-methodology-chip-group-title">Навыки</span>
+                  <div id="admin-methodology-detail-skills" class="admin-methodology-chip-list"></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="card admin-methodology-detail-card">
+              <div class="admin-methodology-section-head">
+                <div>
+                  <p class="section-label accent-label">Методическая разметка</p>
+                  <h4>Артефакт, red flags и QA</h4>
+                </div>
+              </div>
+              <div class="admin-methodology-detail-columns">
+                <div>
+                  <strong>Обязательные блоки ответа</strong>
+                  <ul id="admin-methodology-detail-blocks" class="admin-methodology-detail-list"></ul>
+                </div>
+                <div>
+                  <strong>Red flags</strong>
+                  <ul id="admin-methodology-detail-redflags" class="admin-methodology-detail-list"></ul>
+                </div>
+              </div>
+              <div>
+                <strong>Чеклист QA</strong>
+                <ul id="admin-methodology-detail-blockers" class="admin-methodology-detail-list"></ul>
+                <div id="admin-methodology-detail-checks" class="admin-methodology-checks"></div>
+              </div>
+            </section>
+
+            <section class="card admin-methodology-detail-card">
+              <div class="admin-methodology-section-head">
+                <div>
+                  <p class="section-label accent-label">Расширенные поля</p>
+                  <h4>Методические параметры кейса</h4>
+                </div>
+              </div>
+              <div class="admin-methodology-detail-stack">
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Стейкхолдеры</span>
+                  <div id="admin-methodology-detail-stakeholders" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Роли и участники</span>
+                  <div id="admin-methodology-detail-participants" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Ожидаемый артефакт ответа</span>
+                  <div id="admin-methodology-detail-expected-artifact" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Подсказка по структуре ответа</span>
+                  <div id="admin-methodology-detail-answer-structure" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Интерактивность</span>
+                  <div id="admin-methodology-detail-interactivity" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Рекомендуемая длина ответа</span>
+                  <div id="admin-methodology-detail-answer-length" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Уточняющие вопросы / ходы</span>
+                  <div id="admin-methodology-detail-dialog-turns" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Варианты персонализации</span>
+                  <div id="admin-methodology-detail-personalization-options" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Крутилки сложности</span>
+                  <div id="admin-methodology-detail-difficulty-toggles" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Теги для подбора</span>
+                  <div id="admin-methodology-detail-selection-tags" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Ролевые правила персонализации</span>
+                  <div id="admin-methodology-detail-role-rules" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Контроль формата ответа</span>
+                  <div id="admin-methodology-detail-format-rules" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Правила агрегации оценки</span>
+                  <div id="admin-methodology-detail-scoring-rules" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Ограничения и риски плохого кейса</span>
+                  <div id="admin-methodology-detail-bad-case-risks" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Примечания для генерации</span>
+                  <div id="admin-methodology-detail-generation-notes" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Заметки для оценивания</span>
+                  <div id="admin-methodology-detail-evaluation-notes" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Автор</span>
+                  <div id="admin-methodology-detail-author-name" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Проверяющий</span>
+                  <div id="admin-methodology-detail-reviewer-name" class="admin-methodology-value">—</div>
+                </div>
+                <div class="admin-methodology-detail-block">
+                  <span class="admin-methodology-detail-block-label">Комментарий методиста</span>
+                  <div id="admin-methodology-detail-methodologist-comment" class="admin-methodology-value">—</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="card admin-methodology-detail-card">
+              <div class="admin-methodology-section-head">
+                <div>
+                  <p class="section-label accent-label">Критерии оценки</p>
+                  <h4>Сигналы по навыкам и evidence</h4>
+                </div>
+              </div>
+              <div id="admin-methodology-detail-signals" class="admin-methodology-signals"></div>
+            </section>
+
+            <section class="card admin-methodology-detail-card">
+              <div class="admin-methodology-section-head">
+                <div>
+                  <p class="section-label accent-label">Lifecycle</p>
+                  <h4>Статусы и журнал изменений</h4>
+                </div>
+              </div>
+              <div id="admin-methodology-detail-history" class="admin-methodology-history"></div>
+            </section>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="panel admin-reports-panel hidden" id="admin-reports-panel">
+      <div class="dashboard-topbar">
+        <div class="brand dashboard-brand">Подробные отчеты</div>
+        <div class="dashboard-topbar-actions">
+          <button id="admin-reports-back-button" class="ghost-button compact-ghost" type="button">Назад</button>
+        </div>
+      </div>
+
+      <div class="admin-shell admin-reports-shell">
+          <section class="card card--lg admin-hero-card admin-reports-hero">
+            <div>
+              <h2 id="admin-reports-title">Отдельные отчеты</h2>
+              <p id="admin-reports-subtitle">Управление и анализ индивидуальных результатов тестирования персонала.</p>
+            </div>
+            <div class="admin-reports-actions">
+              <label class="admin-search-field">
+                <input id="admin-reports-search" type="search" placeholder="Поиск по отчетам...">
+              </label>
+              <button
+                id="admin-reports-expert-group-button"
+                type="button"
+                class="ghost-button admin-export-button"
+              >Выгрузить ассесменты</button>
+              <button id="admin-reports-pdf-button" type="button" class="ghost-button admin-export-button"><span class="button-icon button-icon--download" aria-hidden="true"></span>Скачать все</button>
+            </div>
+          </section>
+
+          <section class="card card--lg admin-reports-table-card">
+            <div class="admin-reports-table-head">
+              <div id="admin-reports-found" class="admin-reports-found">Найдено: 0</div>
+              <div class="admin-reports-columns" aria-hidden="true">
+                <span></span>
+                <span>Сотрудник / ID</span>
+                <span>Группа / роль</span>
+                <span>Статус</span>
+                <span>4K score</span>
+                <span>Тип MBTI</span>
+                <span>Дата</span>
+                <span>Отчет PDF</span>
+              </div>
+            </div>
+            <div id="admin-reports-list" class="admin-reports-list"></div>
+            <div class="admin-reports-pagination">
+              <span id="admin-reports-page-summary" class="admin-reports-page-summary">Показано 0 из 0 отчетов</span>
+              <div class="admin-reports-pagination-controls">
+                <button id="admin-reports-prev-button" type="button" class="ghost-button compact-ghost">Назад</button>
+                <span id="admin-reports-page-indicator" class="admin-reports-page-indicator">1 / 1</span>
+                <button id="admin-reports-next-button" type="button" class="ghost-button compact-ghost">Вперед</button>
+              </div>
+            </div>
+          </section>
+
+        <section class="card card--lg admin-reports-summary-card">
+          <div>
+            <p class="section-label accent-label">Сводка</p>
+            <h3>Средний % по списку</h3>
+          </div>
+          <strong id="admin-reports-summary-score">0%</strong>
+        </section>
+      </div>
+
+      <dialog id="admin-reports-group-dialog" class="admin-prompt-lab-case-dialog">
+        <form method="dialog" class="card card--lg admin-prompt-lab-case-dialog-card">
+          <div class="admin-prompt-lab-case-dialog-head">
+            <div>
+              <p class="section-label accent-label">Выбор пользователей</p>
+              <h3>Групповая выгрузка для эксперта</h3>
+            </div>
+            <button id="admin-reports-group-dialog-close" type="submit" class="ghost-button compact-ghost">Закрыть</button>
+          </div>
+          <div id="admin-reports-group-dialog-summary" class="admin-prompt-lab-case-picker-summary">Выберите завершенные ассессменты для выгрузки.</div>
+          <div id="admin-reports-group-dialog-list" class="admin-prompt-lab-case-dialog-list"></div>
+          <div class="admin-prompt-lab-actions">
+            <button id="admin-reports-group-dialog-export" type="button" class="primary-button compact-primary"><span class="button-icon button-icon--download" aria-hidden="true"></span>Скачать архив</button>
+          </div>
+        </form>
+      </dialog>
+    </section>
+
+    <section class="panel admin-prompt-lab-panel hidden" id="admin-prompt-lab-panel">
+      <div class="dashboard-topbar">
+        <div class="brand dashboard-brand">Prompt Lab</div>
+        <div class="dashboard-topbar-actions">
+          <button id="admin-prompt-lab-back-button" class="ghost-button compact-ghost" type="button">Назад</button>
+        </div>
+      </div>
+
+      <div class="admin-shell admin-prompt-lab-shell">
+        <section class="card card--lg admin-hero-card admin-prompt-lab-hero">
+          <div>
+            <p class="section-label accent-label">Лаборатория промтов</p>
+            <h2>Персонализация кейсов</h2>
+            <p>Проверяйте, как системный промт влияет на персонализированный кейс, карту подстановок и итоговый промт интервьюера.</p>
+          </div>
+        </section>
+
+        <div class="admin-prompt-lab-tabbar" role="tablist" aria-label="Режим Prompt Lab">
+          <button id="admin-prompt-lab-tab-cases" type="button" class="admin-prompt-lab-tab-button is-active" role="tab" aria-selected="true">Моделирование кейсов</button>
+          <button id="admin-prompt-lab-tab-dialog" type="button" class="admin-prompt-lab-tab-button" role="tab" aria-selected="false">Моделирование диалога</button>
+        </div>
+
+        <div id="admin-prompt-lab-pane-cases" class="admin-prompt-lab-pane">
+          <section class="admin-prompt-lab-grid">
+            <article class="card card--lg admin-analytics-card admin-prompt-lab-form">
+              <div class="report-card-head">
+                <div>
+                  <p class="section-label accent-label">Новый запуск</p>
+                  <h3>Проверка промта</h3>
+                </div>
+              </div>
+              <label class="admin-prompt-lab-field">
+                <span>Источник системного промта</span>
+                <select id="admin-prompt-lab-source-select">
+                  <option value="file">Системный промт</option>
+                  <option value="custom">Пользовательский промт</option>
+                </select>
+              </label>
+              <label class="admin-prompt-lab-field">
+                <span>Название версии</span>
+                <input id="admin-prompt-lab-prompt-name" type="text" placeholder="Например: v2 - больше конкретики">
+              </label>
+              <label class="admin-prompt-lab-field">
+                <span>Системный промт</span>
+                <textarea id="admin-prompt-lab-prompt-text" rows="10" placeholder="Опишите правила формирования персонализированного кейса..."></textarea>
+              </label>
+              <div class="admin-prompt-lab-two">
+                <label class="admin-prompt-lab-field">
+                  <span>Пользователь</span>
+                  <select id="admin-prompt-lab-user-select"></select>
+                </label>
+                <label class="admin-prompt-lab-field">
+                  <span>Кейс</span>
+                  <div class="admin-prompt-lab-case-picker-stack">
+                    <button id="admin-prompt-lab-case-picker-button" type="button" class="ghost-button compact-ghost admin-prompt-lab-case-picker-button">Выбрать кейсы</button>
+                    <div id="admin-prompt-lab-case-picker-summary" class="admin-prompt-lab-case-picker-summary">Кейсы не выбраны</div>
+                  </div>
+                  <select id="admin-prompt-lab-case-select" multiple size="10" class="hidden"></select>
+                </label>
+              </div>
+              <div class="admin-prompt-lab-profile-grid">
+                <label class="admin-prompt-lab-field">
+                  <span>ФИО</span>
+                  <input id="admin-prompt-lab-user-name" type="text">
+                </label>
+                <label class="admin-prompt-lab-field">
+                  <span>Роль</span>
+                  <select id="admin-prompt-lab-role-select"></select>
+                </label>
+                <label class="admin-prompt-lab-field">
+                  <span>Должность</span>
+                  <input id="admin-prompt-lab-position" type="text">
+                </label>
+                <label class="admin-prompt-lab-field">
+                  <span>Сфера компании</span>
+                  <input id="admin-prompt-lab-company-industry" type="text">
+                </label>
+              </div>
+              <label class="admin-prompt-lab-field">
+                <span>Задачи и обязанности</span>
+                <textarea id="admin-prompt-lab-duties" rows="5"></textarea>
+              </label>
+              <label class="admin-prompt-lab-field">
+                <span>Расширенный профиль JSON</span>
+                <textarea id="admin-prompt-lab-profile-json" rows="7" placeholder='{"user_tasks":["..."],"user_risks":["..."]}'></textarea>
+              </label>
+              <div class="admin-prompt-lab-actions">
+                <button id="admin-prompt-lab-run-button" type="button" class="primary-button compact-primary">Сформировать кейсы</button>
+                <span id="admin-prompt-lab-status" class="admin-methodology-save-status hidden"></span>
+              </div>
+              <div id="admin-prompt-lab-progress" class="admin-prompt-lab-progress hidden" aria-live="polite">
+                <div class="admin-prompt-lab-progress-head">
+                  <strong id="admin-prompt-lab-progress-title">Формируем кейсы</strong>
+                  <span id="admin-prompt-lab-progress-value">0%</span>
+                </div>
+                <p id="admin-prompt-lab-progress-text" class="admin-prompt-lab-progress-text">Готовим запрос к генерации.</p>
+                <div class="admin-prompt-lab-progress-track">
+                  <div id="admin-prompt-lab-progress-bar" class="admin-prompt-lab-progress-bar"></div>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <section class="card card--lg admin-analytics-card admin-prompt-lab-result">
+            <div class="report-card-head">
+              <div>
+                <p class="section-label accent-label">Результат</p>
+                <h3>Сформированные кейсы</h3>
+              </div>
+            </div>
+            <div id="admin-prompt-lab-result" class="admin-prompt-lab-result-body">
+              <p class="report-empty-state">Сформируйте кейсы, чтобы увидеть полный набор кейсов пользователя.</p>
+            </div>
+          </section>
+        </div>
+
+        <div id="admin-prompt-lab-pane-dialog" class="admin-prompt-lab-pane hidden">
+          <section class="admin-prompt-lab-grid">
+            <article class="card card--lg admin-analytics-card admin-prompt-lab-form">
+              <div class="report-card-head">
+                <div>
+                  <p class="section-label accent-label">Новый запуск</p>
+                  <h3>Моделирование диалога</h3>
+                </div>
+              </div>
+              <div class="admin-prompt-lab-two">
+                <label class="admin-prompt-lab-field">
+                  <span>Пользователь</span>
+                  <select id="admin-prompt-lab-dialog-user-select"></select>
+                </label>
+                <label class="admin-prompt-lab-field">
+                  <span>Кейс</span>
+                  <select id="admin-prompt-lab-dialog-case-select" class="hidden"></select>
+                  <button id="admin-prompt-lab-dialog-case-picker-button" type="button" class="ghost-button admin-prompt-lab-case-picker-button">Выбрать кейс</button>
+                  <div id="admin-prompt-lab-dialog-case-picker-summary" class="admin-prompt-lab-case-picker-summary">Кейс не выбран</div>
+                  <small id="admin-prompt-lab-dialog-case-hint" class="admin-prompt-lab-case-hint hidden"></small>
+                </label>
+              </div>
+              <div class="admin-prompt-lab-actions">
+                <button id="admin-prompt-lab-dialog-prepare-button" type="button" class="primary-button compact-primary">Подготовить диалог</button>
+                <span id="admin-prompt-lab-dialog-status" class="admin-methodology-save-status hidden"></span>
+              </div>
+              <label class="admin-prompt-lab-field">
+                <span>Источник промта персонализации кейса</span>
+                <select id="admin-prompt-lab-dialog-case-source-select">
+                  <option value="system">Системный промт</option>
+                  <option value="custom">Пользовательский промт</option>
+                </select>
+              </label>
+              <label class="admin-prompt-lab-field">
+                <span>Промт персонализации кейса</span>
+                <textarea id="admin-prompt-lab-dialog-case-prompt-text" rows="10"></textarea>
+              </label>
+              <label class="admin-prompt-lab-field">
+                <span>Источник промта интервьюера</span>
+                <select id="admin-prompt-lab-dialog-source-select">
+                  <option value="system">Системный промт</option>
+                  <option value="custom">Пользовательский промт</option>
+                </select>
+              </label>
+              <label class="admin-prompt-lab-field">
+                <span>Промт интервьюера</span>
+                <textarea id="admin-prompt-lab-dialog-prompt-text" rows="10"></textarea>
+              </label>
+              <div class="admin-prompt-lab-actions">
+                <button id="admin-prompt-lab-dialog-reset-button" type="button" class="ghost-button compact-ghost">Сбросить диалог</button>
+              </div>
+            </article>
+          </section>
+
+          <section class="card card--lg admin-analytics-card admin-prompt-lab-result">
+            <div class="report-card-head">
+              <div>
+                <p class="section-label accent-label">Результат</p>
+                <h3>Диалог с агентом</h3>
+              </div>
+            </div>
+            <div id="admin-prompt-lab-dialog-result" class="admin-prompt-lab-result-body">
+              <p class="report-empty-state">Подготовьте диалог, чтобы увидеть персонализированный кейс, промт интервьюера и ход общения.</p>
+            </div>
+            <div class="admin-prompt-lab-dialog-compose">
+              <label class="admin-prompt-lab-field">
+                <span>Ответ пользователя</span>
+                <textarea id="admin-prompt-lab-dialog-user-message" rows="4" placeholder="Введите ответ пользователя по кейсу..."></textarea>
+              </label>
+              <div class="admin-prompt-lab-actions">
+                <button id="admin-prompt-lab-dialog-send-button" type="button" class="primary-button compact-primary">Отправить ответ</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <dialog id="admin-prompt-lab-case-dialog" class="admin-prompt-lab-case-dialog">
+        <form method="dialog" class="card card--lg admin-prompt-lab-case-dialog-card">
+          <div class="admin-prompt-lab-case-dialog-head">
+            <div>
+              <p class="section-label accent-label">Выбор кейсов</p>
+              <h3>Шаблоны для генерации</h3>
+            </div>
+            <button id="admin-prompt-lab-case-dialog-close" type="submit" class="ghost-button compact-ghost">Готово</button>
+          </div>
+          <div id="admin-prompt-lab-case-dialog-list" class="admin-prompt-lab-case-dialog-list"></div>
+        </form>
+      </dialog>
+
+      <dialog id="admin-prompt-lab-dialog-case-dialog" class="admin-prompt-lab-case-dialog">
+        <form method="dialog" class="card card--lg admin-prompt-lab-case-dialog-card">
+          <div class="admin-prompt-lab-case-dialog-head">
+            <div>
+              <p class="section-label accent-label">Выбор кейса</p>
+              <h3>Кейс для моделирования диалога</h3>
+            </div>
+            <button id="admin-prompt-lab-dialog-case-dialog-close" type="submit" class="ghost-button compact-ghost">Готово</button>
+          </div>
+          <div id="admin-prompt-lab-dialog-case-dialog-list" class="admin-prompt-lab-case-dialog-list"></div>
+        </form>
+      </dialog>
+    </section>
+
+    <section class="panel admin-report-detail-panel hidden" id="admin-report-detail-panel">
+      <div class="dashboard-topbar">
+        <div class="brand dashboard-brand">Отчет по оценке<img class="report-title-icon" src="/web/assets/icons/report-star-icon.svg" alt="" aria-hidden="true"></div>
+        <div class="dashboard-topbar-actions">
+          <button id="admin-report-detail-pdf-button" class="ghost-button compact-ghost" type="button"><img class="button-icon" src="/web/assets/icons/download-icon.svg" alt="" aria-hidden="true">Скачать PDF</button>
+          <button id="admin-report-detail-expert-pdf-button" class="ghost-button compact-ghost" type="button"><img class="button-icon" src="/web/assets/icons/download-icon.svg" alt="" aria-hidden="true">Эксперт PDF</button>
+          <button id="admin-report-detail-dialogues-pdf-button" class="ghost-button compact-ghost" type="button"><img class="button-icon" src="/web/assets/icons/download-icon.svg" alt="" aria-hidden="true">Скачать все диалоги</button>
+          <button id="admin-report-detail-back-button" class="ghost-button compact-ghost" type="button">Назад</button>
+        </div>
+      </div>
+
+      <div class="report-shell admin-report-detail-shell">
+        <section class="report-hero">
+          <div class="report-hero-copy">
+            <h2>Индивидуальный отчет</h2>
+            <p id="admin-report-detail-date">Без даты</p>
+          </div>
+        </section>
+
+        <section class="card card--lg admin-detail-user-card">
+          <div class="admin-detail-user-header">
+            <div class="admin-detail-user-identity">
+              <div class="admin-detail-photo-card">
+                <div id="admin-report-detail-avatar" class="admin-detail-photo">A</div>
+                <span class="admin-detail-photo-status" aria-hidden="true"></span>
+              </div>
+              <div class="admin-detail-user-identity-copy">
+                <div class="admin-detail-user-badges">
+                  <span class="admin-detail-badge">4K Report</span>
+                  <span class="admin-detail-badge muted" id="admin-report-detail-status-badge">Черновик</span>
+                </div>
+                <strong id="admin-report-detail-name">Пользователь</strong>
+                <span id="admin-report-detail-role" class="admin-detail-user-role">Роль не указана</span>
+              </div>
+            </div>
+            <div class="admin-detail-user-score">
+              <span class="admin-detail-user-score-label">Интегральный показатель</span>
+              <strong id="admin-report-detail-score">0%</strong>
+            </div>
+          </div>
+          <dl class="admin-detail-user-meta">
+            <div class="admin-detail-user-meta-item">
+              <dt>Группа</dt>
+              <dd id="admin-report-detail-group">Группа не указана</dd>
+            </div>
+            <div class="admin-detail-user-meta-item">
+              <dt>Телефон</dt>
+              <dd id="admin-report-detail-phone">Телефон не указан</dd>
+            </div>
+            <div class="admin-detail-user-meta-item">
+              <dt>Telegram</dt>
+              <dd id="admin-report-detail-telegram">Telegram не указан</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="card card--lg admin-detail-expert-comment-card">
+          <div class="report-card-head">
+            <div>
+              <p class="section-label accent-label">Комментарий эксперта</p>
+              <h3>Вывод по результатам ассессмента</h3>
+            </div>
+          </div>
+          <div class="admin-detail-expert-comment-body">
+            <div class="admin-detail-expert-meta-grid">
+              <label class="field">
+                <span>ФИО эксперта</span>
+                <input id="admin-report-detail-expert-name" type="text" placeholder="Введите ФИО эксперта">
+              </label>
+              <label class="field">
+                <span>Контактные данные</span>
+                <input id="admin-report-detail-expert-contacts" type="text" placeholder="Телефон, email или иной контакт">
+              </label>
+              <label class="field">
+                <span>Дата оценки</span>
+                <input id="admin-report-detail-expert-assessed-at" type="date">
+              </label>
+            </div>
+            <textarea
+              id="admin-report-detail-expert-comment"
+              class="admin-detail-expert-comment-input"
+              rows="5"
+              placeholder="Комментарий эксперта появится после завершения ассессмента."
+            ></textarea>
+            <div class="admin-detail-expert-comment-actions">
+              <div class="admin-detail-expert-comment-secondary-actions">
+                <span id="admin-report-detail-expert-comment-status" class="admin-inline-status"></span>
+                <button id="admin-report-detail-expert-comment-edit" class="ghost-button compact-ghost" type="button">Редактировать</button>
+                <button id="admin-report-detail-expert-comment-cancel" class="ghost-button compact-ghost" type="button">Отмена</button>
+              </div>
+              <button id="admin-report-detail-expert-comment-save" class="primary-button" type="button">Сохранить комментарий</button>
+            </div>
+          </div>
+        </section>
+
+        <article class="card report-competencies-card">
+          <div class="report-card-head">
+            <div>
+              <p class="section-label accent-label">Компетенции (4К)</p>
+            </div>
+          </div>
+          <section class="admin-detail-skill-radar-section" aria-labelledby="admin-report-detail-skills-radar-title">
+            <div class="admin-detail-skill-radar-head">
+              <strong id="admin-report-detail-skills-radar-title">Распределение по 13 навыкам</strong>
+              <p>Каждая <span class="inline-accent">Компетенция</span> состоит из <span class="inline-accent">Навыков</span>.</p>
+            </div>
+            <div class="card admin-detail-skills-radar-card">
+              <div class="admin-detail-skills-radar-frame">
+                <canvas id="admin-report-detail-skills-radar-chart" aria-label="Радар навыков 4K" role="img"></canvas>
+                <div id="admin-report-detail-skills-radar-labels" class="admin-detail-radar-competency-labels hidden" aria-hidden="true">
+                  <span data-competency="communication">Коммуникация</span>
+                  <span data-competency="teamwork">Командная работа</span>
+                  <span data-competency="creativity">Креативность</span>
+                  <span data-competency="critical-thinking">Критическое мышление</span>
+                </div>
+                <div id="admin-report-detail-skills-radar-fallback" class="admin-detail-skills-radar-fallback hidden" aria-live="polite"></div>
+              </div>
+            </div>
+          </section>
+        </article>
+
+        <section class="card card--lg card--accent admin-detail-profile-summary-card">
+          <div class="report-card-head">
+            <div>
+              <p class="section-label accent-label">Персонализированный профиль</p>
+              <h3>Контекст пользователя для генерации кейсов</h3>
+            </div>
+          </div>
+          <div class="admin-detail-profile-summary-grid">
+            <article class="card card--inset admin-detail-profile-summary-item">
+              <strong>Должность</strong>
+              <p id="admin-report-detail-profile-position">Нет данных</p>
+            </article>
+            <article class="card card--inset admin-detail-profile-summary-item">
+              <strong>Обязанности</strong>
+              <p id="admin-report-detail-profile-duties">Нет данных</p>
+            </article>
+            <article class="card card--inset admin-detail-profile-summary-item">
+              <strong>Домен</strong>
+              <p id="admin-report-detail-profile-domain">Нет данных</p>
+            </article>
+            <article class="card card--inset admin-detail-profile-summary-item">
+              <strong>Процессы</strong>
+              <ul id="admin-report-detail-profile-processes" class="admin-detail-profile-summary-list"></ul>
+            </article>
+            <article class="card card--inset admin-detail-profile-summary-item">
+              <strong>Задачи</strong>
+              <ul id="admin-report-detail-profile-tasks" class="admin-detail-profile-summary-list"></ul>
+            </article>
+            <article class="card card--inset admin-detail-profile-summary-item">
+              <strong>Стейкхолдеры</strong>
+              <ul id="admin-report-detail-profile-stakeholders" class="admin-detail-profile-summary-list"></ul>
+            </article>
+            <article class="card card--inset admin-detail-profile-summary-item">
+              <strong>Ограничения</strong>
+              <ul id="admin-report-detail-profile-constraints" class="admin-detail-profile-summary-list"></ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="card card--lg admin-detail-insights-card">
+          <div class="report-card-head">
+            <div>
+              <p class="section-label accent-label">Инсайты и рекомендации</p>
+              <h3>Сильные стороны и зоны роста</h3>
+            </div>
+            <span class="admin-detail-card-icon accent">✦</span>
+          </div>
+          <div class="card card--accent admin-detail-insights-summary">
+            <h4 id="admin-report-detail-insight-title">AI insight недоступен</h4>
+            <p id="admin-report-detail-insight-text">После загрузки результатов здесь появится интерпретация профиля пользователя.</p>
+            <ul id="admin-report-detail-basis" class="admin-detail-basis-list"></ul>
+          </div>
+          <div class="admin-detail-insights-grid">
+            <article class="card card--inset admin-detail-insight-column">
+              <strong>Сильные стороны</strong>
+              <ul id="admin-report-detail-strengths" class="report-recommendations"></ul>
+            </article>
+            <article class="card card--inset admin-detail-insight-column">
+              <strong>Зоны роста</strong>
+              <ul id="admin-report-detail-growth" class="report-recommendations"></ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="card card--lg admin-detail-quotes-card">
+          <div class="report-card-head">
+            <div>
+              <p class="section-label accent-label">Цитаты из оценки</p>
+              <h3>Фрагменты, повлиявшие на результат</h3>
+            </div>
+          </div>
+          <div id="admin-report-detail-quotes" class="admin-detail-quotes-grid"></div>
+        </section>
+
+        <section class="card card--lg admin-detail-cases-card">
+          <div class="report-card-head">
+            <div>
+              <p class="section-label accent-label">Кейсы и диалоги</p>
+              <h3>Материалы прохождения по кейсам</h3>
+            </div>
+          </div>
+          <div id="admin-report-detail-cases" class="admin-detail-cases-list"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel prechat-panel hidden" id="prechat-panel">
+      <div class="prechat-shell">
+        <div class="prechat-topbar">
+          <div class="brand centered-brand">4K Ассистент</div>
+          <button
+            id="prechat-exit-button"
+            class="topbar-exit-button"
+            type="button"
+            onclick="this.disabled=true;this.setAttribute('aria-busy','true');var s=this.querySelector('span:last-child');if(s){s.textContent='Выходим...';}window.location.href='/?reset=1';"
+          >
+            <span class="topbar-user-icon" aria-hidden="true">👤</span>
+            <span>Выйти</span>
+          </button>
+        </div>
+        <div class="prechat-copy">
+          <h2>Добро пожаловать в систему<br><span>ИИ-оценки</span></h2>
+          <p>Решите серию кейсов, чтобы узнать свой потенциал в 4К и определить MBTI профиль через нейросетевой анализ.</p>
+        </div>
+        <div class="prechat-steps">
+          <article class="card prechat-step-card">
+            <div class="mini-card-icon"><img src="/web/assets/icons/file-icon-accent.svg" alt="" aria-hidden="true"></div>
+            <h3>1. Получение кейса</h3>
+            <p>Ознакомьтесь с подробными условиями бизнес-задачи, вводными данными и контекстом рынка.</p>
+          </article>
+          <article class="card prechat-step-card">
+            <div class="mini-card-icon"><img src="/web/assets/icons/free-form-writing-icon.svg" alt="" aria-hidden="true"></div>
+            <h3>2. Свободный ответ</h3>
+            <p>Опишите свое решение в свободной форме. Мы ценим оригинальность мышления и аргументацию.</p>
+          </article>
+          <article class="card prechat-step-card">
+            <div class="mini-card-icon"><img src="/web/assets/icons/specialized-agents-icon.svg" alt="" aria-hidden="true"></div>
+            <h3>3. Анализ</h3>
+            <p>Мульти-агентная система ИИ оценит ваши компетенции и сформирует детальный профиль навыков.</p>
+          </article>
+        </div>
+        <button id="prechat-start-button" type="button" class="primary-button prechat-start">Начать</button>
+        <div id="prechat-assessment-preparing" class="preparing-hero hidden" aria-live="polite">
+          <div class="preparing-hero-row">
+            <span class="preparing-hero-pulse" aria-hidden="true"></span>
+            <strong id="prechat-assessment-title" class="preparing-hero-label">Подготовка кейсов</strong>
+            <span id="prechat-assessment-percent" class="preparing-hero-value">0%</span>
+          </div>
+          <div id="prechat-assessment-ring" class="preparing-hero-meter" style="--progress: 0%;">
+            <div class="preparing-hero-meter-fill"></div>
+            <div class="preparing-hero-meter-shimmer" aria-hidden="true"></div>
+          </div>
+        </div>
+        <p id="prechat-error" class="error" hidden></p>
+        <p class="prechat-duration"><img src="/web/assets/icons/clock-icon.svg" alt="" aria-hidden="true">45 минут</p>
+        <div class="prechat-social-proof">Система запущена недавно — вы проходите один из первых ассессментов</div>
+      </div>
+    </section>
+
+    <section class="panel interview-panel hidden" id="interview-panel">
+      <div class="interview-topbar">
+        <div class="interview-topbar-head">
+          <div class="interview-title-row">
+            <strong id="interview-section-title">Интервью</strong>
+            <span id="interview-case-badge" class="interview-case-badge">Кейс 1 из 5</span>
+          </div>
+          <div class="interview-topbar-actions">
+            <button id="interview-profile-button" type="button" class="ghost-button compact-ghost">Домой</button>
+            <button id="interview-exit-button" type="button" class="topbar-exit-button">
+              <span class="topbar-user-icon" aria-hidden="true">👤</span>
+              <span>Выйти</span>
+            </button>
+          </div>
+        </div>
+        <div class="interview-progress-labels">
+          <span class="active">Оценка</span>
+          <span>Анализ</span>
+          <span>Результаты</span>
+        </div>
+        <div class="interview-progress-line">
+          <div id="interview-progress-fill" class="interview-progress-fill"></div>
+        </div>
+      </div>
+
+      <div class="interview-layout">
+        <aside class="case-sidebar">
+          <button
+            id="case-sidebar-toggle"
+            class="case-sidebar-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="case-progress-list"
+          >
+            <span id="case-sidebar-toggle-label" class="case-sidebar-toggle-label">Кейс</span>
+            <span class="case-sidebar-toggle-icon" aria-hidden="true">⌄</span>
+          </button>
+          <div class="case-sidebar-header">
+            <strong>Маршрут по кейсам</strong>
+            <span id="interview-route-label">Подготовка</span>
+          </div>
+          <div id="case-progress-list" class="case-progress-list"></div>
+        </aside>
+
+        <div class="interview-main">
+          <div class="interview-case-header">
+            <div class="interview-case-heading">
+              <h3 id="interview-case-title">Кейс</h3>
+              <span id="interview-timer-badge" class="interview-timer-badge">00:00</span>
+            </div>
+            <p id="interview-case-status">Ожидается запуск интервью</p>
+          </div>
+
+          <div class="interview-messages-shell">
+            <div id="interview-scroll-area" class="interview-scroll-area">
+              <div id="interview-summary" class="interview-summary hidden"></div>
+              <div id="interview-messages" class="interview-messages"></div>
+            </div>
+            <button id="interview-messages-scroll" class="interview-messages-scroll" type="button" hidden aria-label="К последним сообщениям">
+              <img src="/web/assets/icons/arrow-down-icon.svg" alt="" aria-hidden="true">
+            </button>
+          </div>
+          <div id="interview-complete-actions" class="interview-complete-actions hidden">
+            <button id="interview-go-processing-button" type="button" class="primary-button">Перейти к анализу</button>
+          </div>
+
+          <form id="interview-form" class="interview-form">
+            <textarea id="interview-textarea" placeholder="Опишите ваше решение..."></textarea>
+            <div class="interview-form-footer">
+              <div class="interview-action-buttons">
+                <button id="interview-mic-button" type="button" class="mic-button hidden" aria-label="Продиктовать ответ" title="Продиктовать ответ">
+                  <img class="mic-button-icon mic-button-icon-idle" src="/web/assets/icons/microphone-icon.svg" alt="" aria-hidden="true">
+                  <img class="mic-button-icon mic-button-icon-active" src="/web/assets/icons/microphone-fill-icon.svg" alt="" aria-hidden="true">
+                </button>
+                <button id="interview-finish-button" type="button" class="ghost-button interview-finish-button">Завершить кейс</button>
+                <button id="interview-submit-button" type="submit" class="primary-button">Отправить ответ<img class="button-icon" src="/web/assets/icons/arrowtriangle-forward-white-icon.svg" alt="" aria-hidden="true"></button>
+              </div>
+            </div>
+          </form>
+          <p id="interview-error" class="error" hidden></p>
+          <p class="interview-footnote">Ответы анализируются алгоритмами AI для оценки компетенций</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel profile-panel hidden" id="profile-panel">
+      <div class="dashboard-topbar">
+        <div class="brand dashboard-brand">Профиль пользователя</div>
+        <div class="dashboard-topbar-actions">
+          <button id="profile-back-button" class="ghost-button compact-ghost" type="button">Назад</button>
+        </div>
+      </div>
+
+      <div class="profile-shell">
+        <section class="profile-hero">
+          <div class="profile-hero-bg" aria-hidden="true"></div>
+          <div class="profile-hero-inner">
+            <div class="profile-hero-identity">
+              <div class="profile-avatar-card">
+                <div id="profile-avatar" class="profile-avatar">A</div>
+                <img id="profile-avatar-image" class="profile-avatar-image hidden" alt="Фото пользователя">
+                <label class="profile-avatar-upload" for="profile-avatar-input" title="Загрузить фото">
+                  <img src="/web/assets/icons/pencil-icon-white.svg" alt="" aria-hidden="true">
+                </label>
+                <input id="profile-avatar-input" type="file" accept="image/*" hidden>
+              </div>
+              <div class="profile-hero-copy">
+                <strong id="profile-name">Пользователь</strong>
+                <span id="profile-role">Должность не указана</span>
+              </div>
+            </div>
+            <div class="profile-hero-stats">
+              <article class="profile-stat">
+                <span class="profile-stat-label">Ассессменты</span>
+                <strong id="profile-total-assessments">0</strong>
+              </article>
+              <span class="profile-stat-divider" aria-hidden="true"></span>
+              <article class="profile-stat">
+                <span class="profile-stat-label">Средний результат</span>
+                <strong id="profile-average-score">0%</strong>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="profile-grid">
+          <article class="card profile-card profile-contacts-card">
+            <header class="profile-section-head">
+              <div>
+                <h3>Контактные данные</h3>
+                <p>Email и Telegram сохраняются автоматически. Имя и телефон управляются учетной записью.</p>
+              </div>
+            </header>
+            <div class="profile-fields">
+              <label class="profile-field is-readonly">
+                <span class="profile-field-label">ФИО</span>
+                <input id="profile-full-name" type="text" readonly>
+              </label>
+              <label class="profile-field is-readonly">
+                <span class="profile-field-label">Телефон</span>
+                <input id="profile-phone" type="text" readonly>
+              </label>
+              <label class="profile-field is-editable">
+                <span class="profile-field-label">Email</span>
+                <div class="profile-input-wrap">
+                  <input id="profile-email" type="email" placeholder="name@example.com">
+                  <span class="profile-field-edit-icon" aria-hidden="true"><img src="/web/assets/icons/pencil-icon-white.svg" alt=""></span>
+                </div>
+              </label>
+              <label class="profile-field is-editable">
+                <span class="profile-field-label">Telegram</span>
+                <div class="profile-input-wrap">
+                  <input id="profile-telegram" type="text" placeholder="@username">
+                  <span class="profile-field-edit-icon" aria-hidden="true"><img src="/web/assets/icons/pencil-icon-white.svg" alt=""></span>
+                </div>
+              </label>
+            </div>
+            <p id="profile-save-status" class="profile-save-status" hidden></p>
+          </article>
+
+          <article class="card profile-card profile-work-card">
+            <header class="profile-section-head">
+              <div>
+                <h3>Профессиональный контекст</h3>
+                <p>Используется ассистентом при подборе кейсов под вашу роль.</p>
+              </div>
+              <span class="profile-section-badge profile-section-badge--muted">Из интервью</span>
+            </header>
+            <div class="profile-fields">
+              <label class="profile-field is-readonly">
+                <span class="profile-field-label">Должность</span>
+                <input id="profile-job-description" type="text" readonly>
+              </label>
+              <label class="profile-field is-readonly">
+                <span class="profile-field-label">Индустрия</span>
+                <input id="profile-company-industry" type="text" readonly>
+              </label>
+            </div>
+            <div class="profile-work-hint">
+              <p>Чтобы обновить рабочий контекст, пройдите интервью заново — данные собираются на этапе подготовки.</p>
+            </div>
+          </article>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel reports-panel hidden" id="reports-panel">
+      <div class="dashboard-topbar">
+        <div class="brand dashboard-brand">Отчеты по ассессменту</div>
+        <div class="dashboard-topbar-actions">
+          <button id="reports-back-button" class="ghost-button compact-ghost" type="button">Назад</button>
+        </div>
+      </div>
+
+      <div class="profile-shell reports-shell">
+        <aside class="reports-howto-hint" role="note" aria-label="Как смотреть результаты">
+          <span class="reports-howto-hint-label">Как смотреть результаты</span>
+          <p>Нажмите на нужную сессию, чтобы развернуть разбор по навыкам и комментарий эксперта. Внутри откроются кнопки <strong>«Открыть отчет»</strong> для полного экрана и <strong>«Скачать PDF»</strong> для сохранения копии.</p>
+        </aside>
+        <section class="card profile-history-card reports-history-card">
+          <div class="profile-card-head">
+            <h3>История прохождений</h3>
+            <p>Выберите нужное прохождение и откройте его детали.</p>
+          </div>
+          <div id="profile-history-list" class="profile-history-list"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel processing-panel hidden" id="processing-panel">
+      <div class="processing-topbar">
+        <button id="processing-back-button" class="ghost-button processing-back-button" type="button">4K Ассистент</button>
+        <span class="processing-safe-badge">Безопасная среда</span>
+      </div>
+
+      <div class="processing-shell">
+        <div class="processing-copy">
+          <h2>Анализируем ваши ответы...</h2>
+          <p>Наши алгоритмы обрабатывают данные сессии и формируют итоговый профиль по четырем направлениям оценки.</p>
+        </div>
+
+        <div class="processing-orbit">
+          <div class="processing-node top" id="processing-node-communication">Коммуникация</div>
+          <div class="processing-node left" id="processing-node-teamwork">Командная работа</div>
+          <div class="processing-node right" id="processing-node-creativity">Креативность</div>
+          <div class="processing-node center active" id="processing-node-critical">Критическое мышление</div>
+          <div class="processing-connector connector-top"></div>
+          <div class="processing-connector connector-left"></div>
+          <div class="processing-connector connector-right"></div>
+        </div>
+
+        <section class="card card--lg processing-status-card">
+          <div class="processing-status-header">
+            <div>
+              <p class="section-label accent-label">Статус системы</p>
+              <h3>Общий прогресс анализа</h3>
+            </div>
+            <strong id="processing-total-progress">0%</strong>
+          </div>
+          <div class="processing-progress-track">
+            <div id="processing-total-progress-bar" class="processing-progress-fill"></div>
+          </div>
+          <p id="processing-status-text" class="processing-status-text">Подготавливаем мульти-агентную оценку по результатам кейсов.</p>
+        </section>
+
+        <section class="card card--lg processing-agents-card">
+          <div class="processing-agents-header">
+            <p class="section-label">Активные агенты</p>
+            <span id="processing-phase-label">Этап 1 из 4</span>
+          </div>
+          <div id="processing-agents-list" class="processing-agents-list"></div>
+        </section>
+
+      </div>
+    </section>
+
+    <section class="panel report-panel hidden" id="report-panel">
+      <div class="dashboard-topbar">
+        <div class="report-title-group">
+          <button id="report-back-button" class="report-back-button" type="button" aria-label="Назад"></button>
+          <div class="brand dashboard-brand">Профиль компетенций<img class="report-title-icon" src="/web/assets/icons/report-star-icon.svg" alt="" aria-hidden="true"></div>
+        </div>
+        <div class="dashboard-topbar-actions">
+          <button id="report-home-button" class="ghost-button compact-ghost" type="button">Главная</button>
+          <button id="report-download-button" class="primary-button compact-primary" type="button"><img class="button-icon" src="/web/assets/icons/download-icon.svg" alt="" aria-hidden="true">Скачать PDF</button>
+        </div>
+      </div>
+
+      <div class="report-shell">
+        <section class="report-hero">
+          <div class="report-hero-copy">
+            <h2>Ваш профиль компетенций</h2>
+            <p id="report-summary-text">Глубокий анализ оценок по четырем направлениям и детализация результатов по каждому навыку.</p>
+          </div>
+          <div class="report-hero-score">
+            <strong id="report-overall-score">0%</strong>
+            <span class="report-hero-score-label">
+              Интегральный показатель
+              <span class="report-score-hint" tabindex="0" aria-label="Формула интегрального показателя">
+                ?
+                <span class="report-score-tooltip">
+                  Интегральный показатель = среднее по компетенциям. Для каждой компетенции сначала считается среднее по навыкам:
+                  L1 = 45, L2 = 70, L3 = 92, N/A = 0.
+                </span>
+              </span>
+            </span>
+          </div>
+        </section>
+
+        <section class="report-overview-grid">
+          <div class="report-overview-sidebar">
+            <article class="card report-profile-card">
+              <p class="section-label accent-label">Профиль пользователя</p>
+              <div class="report-profile-user">
+                <div id="report-profile-avatar" class="user-avatar">A</div>
+                <div>
+                  <strong id="report-profile-name">Пользователь</strong>
+                  <span id="report-profile-role">Должность не указана</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="card report-metadata-card">
+              <p class="section-label accent-label">Данные ассессмента</p>
+              <dl id="report-metadata-list" class="report-metadata-list"></dl>
+            </article>
+
+            <article class="card report-recommendations-card report-profile-box">
+              <strong>Рекомендации по росту</strong>
+              <ul id="report-recommendations" class="report-recommendations"></ul>
+            </article>
+          </div>
+
+          <div class="report-overview-main">
+            <article class="card report-competencies-card">
+              <div class="report-card-head">
+                <div>
+                  <p class="section-label accent-label">Навыки 4K</p>
+                  <h3>Сводные показатели по компетенциям</h3>
+                </div>
+              </div>
+              <div id="report-competency-bars" class="report-competency-bars">
+                <canvas id="report-competency-bar-chart" aria-label="Сводные показатели по компетенциям"></canvas>
+                <div id="report-competency-bars-fallback" class="report-competency-bars-fallback hidden"></div>
+              </div>
+            </article>
+
+            <article class="card report-insight-card">
+              <p class="section-label accent-label">AI insights</p>
+              <h3 id="report-strength-title">Сильная сторона пока формируется</h3>
+              <div id="report-strength-text" class="report-insight-body">Здесь появится интерпретация результатов после завершения анализа и загрузки данных по навыкам.</div>
+            </article>
+
+            <article id="report-mbti-card" class="card report-mbti-card hidden">
+              <div class="report-card-head report-mbti-head">
+                <div>
+                  <p class="section-label accent-label">MBTI-анализ</p>
+                  <h3 id="report-mbti-title">Профиль по ответам на кейсы</h3>
+                </div>
+                <div id="report-mbti-score" class="report-mbti-score hidden">
+                  <strong>0/100</strong>
+                  <span>Уверенность</span>
+                </div>
+              </div>
+              <div class="report-mbti-body">
+                <div id="report-mbti-signals" class="report-mbti-signals"></div>
+                <p id="report-mbti-summary" class="report-mbti-summary"></p>
+                <div id="report-mbti-missing-block" class="report-mbti-missing-block hidden">
+                  <strong>Что еще стоит уточнить</strong>
+                  <ul id="report-mbti-missing" class="report-mbti-missing-list"></ul>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="card report-details-card">
+          <div class="report-card-head report-details-head">
+            <div>
+              <p class="section-label">Детализация компетенций</p>
+              <h3 id="report-detail-title">Коммуникация</h3>
+            </div>
+            <div id="report-tabs" class="report-tabs"></div>
+            <select id="report-tab-select" class="report-tab-select" aria-label="Выберите компетенцию"></select>
+          </div>
+
+          <div class="report-detail-columns" aria-hidden="true">
+            <span class="report-detail-column-name">Навык</span>
+            <span class="report-detail-column-level">Уровень</span>
+            <span class="report-detail-column-progress">Прогресс</span>
+          </div>
+
+          <div id="report-detail-list" class="report-detail-list"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel chat-panel hidden" id="chat-panel">
+      <div class="chat-header">
+        <div>
+          <div class="brand">4K Ассистент</div>
+          <h2>Агент профиля сотрудника</h2>
+        </div>
+        <button id="restart-button" class="topbar-exit-button" type="button">
+          <span class="topbar-user-icon" aria-hidden="true">👤</span>
+          <span>Выйти</span>
+        </button>
+      </div>
+
+      <div id="status-card" class="status-card hidden"></div>
+      <div id="messages" class="messages"></div>
+      <div id="chat-consent-details" class="chat-consent-details hidden"></div>
+      <div id="chat-role-options" class="chat-role-options hidden"></div>
+
+      <form id="chat-form" class="chat-form">
+        <input id="chat-input" type="text" placeholder="Введите ответ..." autocomplete="off" required>
+        <button id="chat-mic-button" type="button" class="mic-button hidden" aria-label="Продиктовать ответ" title="Продиктовать ответ">
+          <img class="mic-button-icon mic-button-icon-idle" src="/web/assets/icons/microphone-icon.svg" alt="" aria-hidden="true">
+          <img class="mic-button-icon mic-button-icon-active" src="/web/assets/icons/microphone-fill-icon.svg" alt="" aria-hidden="true">
+        </button>
+        <button type="submit" class="primary-button">Отправить</button>
+      </form>
+      <p id="chat-error" class="error" hidden></p>
+    </section>
+  </main>
+
+  <div id="report-info-modal" class="report-info-modal hidden" aria-hidden="true">
+    <article class="report-info-dialog" role="dialog" aria-modal="true" aria-labelledby="report-info-modal-title">
+      <button id="report-info-modal-close" class="report-info-close" type="button" aria-label="Закрыть"></button>
+      <p id="report-info-modal-eyebrow" class="report-info-eyebrow">Детали</p>
+      <h3 id="report-info-modal-title">Информация</h3>
+      <div id="report-info-modal-body" class="report-info-body"></div>
+    </article>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+  <script type="module" src="/web/dist/main.js?v=20260518-admin-mbti-preview"></script>
+</body>
+</html>

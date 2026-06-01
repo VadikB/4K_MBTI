@@ -1,0 +1,349 @@
+.card {
+    background: #ffffff;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-4);
+}
+
+.card--lg {
+    padding: var(--space-5);
+}
+
+.card--ghost {
+    border: 0;
+    background: transparent;
+    padding: 0;
+}
+
+.card--inset {
+    background: var(--bg-soft);
+}
+
+.card--accent {
+    border-color: var(--accent-soft);
+}
+
+.card.is-placeholder {
+    border-color: transparent;
+    outline: 4px dashed var(--line-strong);
+    outline-offset: -4px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+}
+
+input,
+select {
+    font-family: var(--font-body);
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--fs-body);
+    color: var(--text-main);
+    background: #fff;
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        outline-color 0.2s ease;
+}
+
+input:focus,
+select:focus {
+    border-color: var(--accent);
+    outline: 3px solid rgba(70, 72, 212, 0.2);
+}
+
+button {
+    font-family: var(--font-heading);
+    border: 0;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-snug);
+    color: inherit;
+    transition:
+        background-color 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        opacity 0.18s ease,
+        transform 0.12s ease;
+}
+
+button:focus-visible {
+    outline: 2px solid rgba(70, 72, 212, 0.32);
+    outline-offset: 2px;
+}
+
+button:disabled,
+button[disabled],
+button.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+textarea {
+    font-family: var(--font-body);
+}
+
+.primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: var(--space-2) var(--space-4);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--accent-bright);
+    color: #fff;
+    font-family: var(--font-heading);
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-snug);
+    white-space: nowrap;
+}
+
+.primary-button:hover:not(:disabled):not([disabled]):not(.disabled) {
+    background: var(--accent);
+}
+
+.primary-button:active:not(:disabled):not([disabled]):not(.disabled) {
+    transform: translateY(1px);
+}
+
+.primary-button:disabled,
+.primary-button[disabled],
+.primary-button.disabled {
+    background: var(--button-muted);
+    color: var(--text-soft);
+    cursor: not-allowed;
+    opacity: 1;
+    transform: none;
+}
+
+.primary-button.compact-primary,
+.compact-primary {
+    min-height: 36px;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--fs-meta);
+    line-height: var(--lh-snug);
+}
+
+.primary-button.is-large {
+    min-height: 56px;
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--fs-body);
+    line-height: var(--lh-snug);
+}
+
+.admin-prompt-lab-case-picker-button {
+    font-family: var(--font-heading);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-bold);
+    width: 100%;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--line);
+    background: #fff;
+}
+
+.admin-prompt-lab-case-picker-summary {
+    margin-top: var(--space-2);
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    padding: var(--space-2);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: var(--radius-sm);
+    background: #f8fafc;
+    color: var(--text-muted);
+    font-size: var(--fs-meta);
+    line-height: var(--lh-normal);
+}
+
+.admin-prompt-lab-case-dialog {
+    width: min(760px, calc(100vw - 40px));
+    border: 0;
+    border-radius: var(--radius-xl);
+    padding: 0;
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.18);
+}
+
+.admin-prompt-lab-case-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.42);
+}
+
+.admin-prompt-lab-case-dialog-card {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.admin-prompt-lab-case-dialog-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.admin-prompt-lab-case-dialog-head h3 {
+    margin: var(--space-1) 0 0;
+    font-size: var(--fs-h2);
+}
+
+.admin-prompt-lab-case-dialog-list {
+    display: grid;
+    gap: var(--space-2);
+    max-height: 60vh;
+    overflow: auto;
+    padding-right: var(--space-1);
+}
+
+.admin-prompt-lab-case-option {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: #fff;
+}
+
+.admin-prompt-lab-case-option.is-dialog-case {
+    border-color: rgba(219, 39, 119, 0.18);
+    background: linear-gradient(180deg, rgba(253, 242, 248, 0.88) 0%, rgba(255, 255, 255, 0.98) 100%);
+}
+
+.admin-prompt-lab-case-option input {
+    width: 18px;
+    height: 18px;
+    margin-top: var(--space-1);
+}
+
+.admin-prompt-lab-case-option-copy {
+    display: grid;
+    gap: var(--space-1);
+}
+
+.admin-prompt-lab-case-option-copy strong {
+    font-family: var(--font-heading);
+    font-size: var(--fs-body-sm);
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-snug);
+    color: var(--text-main);
+}
+
+.admin-prompt-lab-case-option-copy small {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-pill);
+    background: rgba(148, 163, 184, 0.1);
+    color: #64748b;
+    font-family: var(--font-heading);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-bold);
+    line-height: 1;
+}
+
+.admin-prompt-lab-case-option-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.admin-prompt-lab-case-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    background: #eef2f7;
+    color: #64748b;
+    font-family: var(--font-heading);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-bold);
+    line-height: 1;
+    letter-spacing: var(--ls-eyebrow);
+    text-transform: uppercase;
+}
+
+.admin-prompt-lab-case-badge.dialog {
+    border-color: rgba(244, 114, 182, 0.18);
+    background: rgba(244, 114, 182, 0.12);
+    color: #be185d;
+}
+
+.admin-prompt-lab-case-badge.turn {
+    border-color: rgba(59, 130, 246, 0.16);
+    background: rgba(59, 130, 246, 0.1);
+    color: #1d4ed8;
+}
+
+.admin-prompt-lab-case-hint {
+    display: inline-flex;
+    align-items: center;
+    margin-top: var(--space-2);
+    min-height: 24px;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    background: #eef2f7;
+    color: #64748b;
+    font-family: var(--font-heading);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+}
+
+.admin-prompt-lab-case-hint.is-dialog-case {
+    border-color: rgba(244, 114, 182, 0.18);
+    background: rgba(244, 114, 182, 0.12);
+    color: #be185d;
+}
+
+.admin-prompt-lab-case-hint.is-turn-case {
+    border-color: rgba(59, 130, 246, 0.16);
+    background: rgba(59, 130, 246, 0.1);
+    color: #1d4ed8;
+}
+
+.ghost-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid rgba(70, 72, 212, 0.22);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--accent);
+    font-family: var(--font-heading);
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-snug);
+    white-space: nowrap;
+}
+
+.ghost-button:hover:not(:disabled):not([disabled]):not(.disabled) {
+    background: rgba(70, 72, 212, 0.08);
+    border-color: rgba(70, 72, 212, 0.38);
+}
+
+.ghost-button:active:not(:disabled):not([disabled]):not(.disabled) {
+    transform: translateY(1px);
+}
+
+.ghost-button:disabled,
+.ghost-button[disabled],
+.ghost-button.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    transform: none;
+}
