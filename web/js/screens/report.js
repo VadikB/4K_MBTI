@@ -45,9 +45,33 @@ const reportMbtiSignals = document.getElementById('report-mbti-signals');
 const reportMbtiSummary = document.getElementById('report-mbti-summary');
 const reportMbtiMissingBlock = document.getElementById('report-mbti-missing-block');
 const reportMbtiMissing = document.getElementById('report-mbti-missing');
+const reportMbtiRefineActions = document.getElementById('report-mbti-refine-actions');
+const reportMbtiRefineButton = document.getElementById('report-mbti-refine-button');
+const reportMbtiRefineStatus = document.getElementById('report-mbti-refine-status');
+const reportMbtiRefinePanel = document.getElementById('report-mbti-refine-panel');
+const reportMbtiRefineProgress = document.getElementById('report-mbti-refine-progress');
+const reportMbtiRefineQuestion = document.getElementById('report-mbti-refine-question');
+const reportMbtiRefineAnswer = document.getElementById('report-mbti-refine-answer');
+const reportMbtiRefineSubmit = document.getElementById('report-mbti-refine-submit');
 
 let reportCompetencyBarChart = null;
 let reportInfoModalCloseTimer = null;
+const reportMbtiRefinementState = {
+  loadedKey: null,
+  loading: false,
+  refinementId: null,
+  active: false,
+  completed: false,
+  questionIndex: 0,
+  questionTotal: 0,
+  currentConfidence: 0,
+  targetConfidence: 75,
+  currentQuestion: null,
+  remainingGaps: [],
+  resolvedGaps: [],
+  panelVisible: false,
+  statusText: '',
+};
 
 const getMbtiOverallBlock = () => {
   const payload = state.assessmentMbtiSummary;
@@ -83,6 +107,14 @@ const getMbtiSummaryText = () => {
   return parts.join(' ');
 };
 
+const getMbtiScore = () => {
+  const overallBlock = getMbtiOverallBlock();
+  if (!overallBlock || typeof overallBlock !== 'object') {
+    return 0;
+  }
+  return Number(overallBlock['оценка'] ?? overallBlock.score ?? 0) || 0;
+};
+
 const getMbtiSignals = () => {
   const overallBlock = getMbtiOverallBlock();
   if (!overallBlock || typeof overallBlock !== 'object') {
@@ -101,6 +133,202 @@ const getMbtiMissingInfo = () => {
   return Array.isArray(overallBlock['недостающая_информация'])
     ? overallBlock['недостающая_информация'].map((item) => String(item || '').trim()).filter(Boolean)
     : [];
+};
+
+const getMbtiRefinementKey = () => {
+  if (!state.pendingUser?.id || !state.assessmentSessionId) {
+    return null;
+  }
+  return String(state.pendingUser.id) + ':' + String(state.assessmentSessionId);
+};
+
+const resetMbtiRefinementState = () => {
+  reportMbtiRefinementState.loadedKey = null;
+  reportMbtiRefinementState.loading = false;
+  reportMbtiRefinementState.refinementId = null;
+  reportMbtiRefinementState.active = false;
+  reportMbtiRefinementState.completed = false;
+  reportMbtiRefinementState.questionIndex = 0;
+  reportMbtiRefinementState.questionTotal = 0;
+  reportMbtiRefinementState.currentConfidence = 0;
+  reportMbtiRefinementState.targetConfidence = 75;
+  reportMbtiRefinementState.currentQuestion = null;
+  reportMbtiRefinementState.remainingGaps = [];
+  reportMbtiRefinementState.resolvedGaps = [];
+  reportMbtiRefinementState.panelVisible = false;
+  reportMbtiRefinementState.statusText = '';
+};
+
+const applyMbtiRefinementPayload = (payload) => {
+  if (!payload || typeof payload !== 'object') {
+    return;
+  }
+  reportMbtiRefinementState.refinementId = payload.refinement_id ?? null;
+  reportMbtiRefinementState.active = Boolean(payload.active);
+  reportMbtiRefinementState.completed = Boolean(payload.completed);
+  reportMbtiRefinementState.questionIndex = Number(payload.question_index || 0);
+  reportMbtiRefinementState.questionTotal = Number(payload.question_total || 0);
+  reportMbtiRefinementState.currentConfidence = Number(payload.current_confidence || 0);
+  reportMbtiRefinementState.targetConfidence = Number(payload.target_confidence || 75);
+  reportMbtiRefinementState.currentQuestion =
+    payload.current_question && typeof payload.current_question === 'object' ? payload.current_question : null;
+  reportMbtiRefinementState.remainingGaps = Array.isArray(payload.remaining_gaps) ? payload.remaining_gaps : [];
+  reportMbtiRefinementState.resolvedGaps = Array.isArray(payload.resolved_gaps) ? payload.resolved_gaps : [];
+
+  if (payload.updated_mbti_summary && typeof payload.updated_mbti_summary === 'object') {
+    state.assessmentMbtiSummary = payload.updated_mbti_summary;
+    persistAssessmentContext();
+  }
+
+  if (reportMbtiRefinementState.active && reportMbtiRefinementState.currentQuestion) {
+    reportMbtiRefinementState.panelVisible = true;
+    reportMbtiRefinementState.statusText = 'Отвечайте по одному вопросу, и мы обновим MBTI-профиль.';
+  } else if (reportMbtiRefinementState.completed) {
+    reportMbtiRefinementState.panelVisible = false;
+    reportMbtiRefinementState.statusText = 'Уточнение завершено. Сводка MBTI обновлена.';
+  } else {
+    reportMbtiRefinementState.panelVisible = false;
+    reportMbtiRefinementState.statusText = '';
+  }
+};
+
+const syncMbtiRefinementUi = () => {
+  if (!reportMbtiRefineActions || !reportMbtiRefineButton) {
+    return;
+  }
+
+  const hasUserAndSession = Boolean(state.pendingUser?.id && state.assessmentSessionId);
+  const missingInfo = getMbtiMissingInfo();
+  const score = getMbtiScore();
+  const targetConfidence = reportMbtiRefinementState.targetConfidence || 75;
+  const canRefine = hasUserAndSession && (missingInfo.length > 0 || score < targetConfidence || reportMbtiRefinementState.active);
+
+  reportMbtiRefineActions.classList.toggle('hidden', !canRefine && !reportMbtiRefinementState.completed);
+  reportMbtiRefineButton.classList.toggle('hidden', !canRefine);
+  reportMbtiRefineButton.disabled = reportMbtiRefinementState.loading;
+  reportMbtiRefineButton.textContent = reportMbtiRefinementState.active
+    ? 'Продолжить уточнение'
+    : reportMbtiRefinementState.completed && canRefine
+      ? 'Уточнить еще'
+      : 'Уточнить MBTI';
+
+  if (reportMbtiRefineStatus) {
+    const text = reportMbtiRefinementState.statusText;
+    reportMbtiRefineStatus.textContent = text;
+    reportMbtiRefineStatus.classList.toggle('hidden', !text);
+  }
+
+  if (reportMbtiRefinePanel) {
+    const showPanel = Boolean(reportMbtiRefinementState.panelVisible && reportMbtiRefinementState.currentQuestion);
+    reportMbtiRefinePanel.classList.toggle('hidden', !showPanel);
+    if (showPanel) {
+      if (reportMbtiRefineProgress) {
+        reportMbtiRefineProgress.textContent =
+          'Вопрос ' +
+          String(reportMbtiRefinementState.questionIndex || 1) +
+          ' из ' +
+          String(reportMbtiRefinementState.questionTotal || 1);
+      }
+      if (reportMbtiRefineQuestion) {
+        reportMbtiRefineQuestion.textContent = String(reportMbtiRefinementState.currentQuestion?.text || '');
+      }
+      if (reportMbtiRefineSubmit) {
+        reportMbtiRefineSubmit.disabled = reportMbtiRefinementState.loading;
+        reportMbtiRefineSubmit.textContent = reportMbtiRefinementState.loading ? 'Отправляем...' : 'Отправить ответ';
+      }
+    }
+  }
+};
+
+const ensureMbtiRefinementStateLoaded = async (force = false) => {
+  const key = getMbtiRefinementKey();
+  if (!key) {
+    resetMbtiRefinementState();
+    syncMbtiRefinementUi();
+    return;
+  }
+  if (!force && reportMbtiRefinementState.loadedKey === key) {
+    return;
+  }
+  reportMbtiRefinementState.loadedKey = key;
+  try {
+    const response = await fetch(
+      '/users/' + state.pendingUser.id + '/assessment/' + state.assessmentSessionId + '/mbti-refinement',
+    );
+    const payload = await readApiResponse(response, 'Не удалось загрузить состояние уточнения MBTI.');
+    applyMbtiRefinementPayload(payload);
+    renderReport();
+  } catch (error) {
+    console.warn('Failed to load MBTI refinement state', error);
+  }
+};
+
+const startMbtiRefinement = async () => {
+  if (!state.pendingUser?.id || !state.assessmentSessionId || reportMbtiRefinementState.loading) {
+    return;
+  }
+  reportMbtiRefinementState.loading = true;
+  reportMbtiRefinementState.statusText = 'Подбираем уточняющий вопрос...';
+  syncMbtiRefinementUi();
+  try {
+    const response = await fetch(
+      '/users/' + state.pendingUser.id + '/assessment/' + state.assessmentSessionId + '/mbti-refinement/start',
+      { method: 'POST' },
+    );
+    const payload = await readApiResponse(response, 'Не удалось запустить уточнение MBTI.');
+    applyMbtiRefinementPayload(payload);
+    if (reportMbtiRefineAnswer) {
+      reportMbtiRefineAnswer.value = '';
+    }
+    renderReport();
+  } catch (error) {
+    reportMbtiRefinementState.statusText = error instanceof Error ? error.message : 'Не удалось запустить уточнение MBTI.';
+    syncMbtiRefinementUi();
+  } finally {
+    reportMbtiRefinementState.loading = false;
+    syncMbtiRefinementUi();
+  }
+};
+
+const submitMbtiRefinementAnswer = async () => {
+  if (!state.pendingUser?.id || !state.assessmentSessionId || !reportMbtiRefinementState.refinementId) {
+    return;
+  }
+  const answer = String(reportMbtiRefineAnswer?.value || '').trim();
+  if (!answer) {
+    reportMbtiRefinementState.statusText = 'Введите ответ перед отправкой.';
+    syncMbtiRefinementUi();
+    return;
+  }
+  reportMbtiRefinementState.loading = true;
+  reportMbtiRefinementState.statusText = 'Сохраняем ответ и пересчитываем профиль...';
+  syncMbtiRefinementUi();
+  try {
+    const response = await fetch(
+      '/users/' + state.pendingUser.id + '/assessment/' + state.assessmentSessionId + '/mbti-refinement/message',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          refinement_id: reportMbtiRefinementState.refinementId,
+          answer,
+        }),
+      },
+    );
+    const payload = await readApiResponse(response, 'Не удалось отправить ответ на уточняющий вопрос.');
+    applyMbtiRefinementPayload(payload);
+    if (reportMbtiRefineAnswer) {
+      reportMbtiRefineAnswer.value = '';
+    }
+    renderReport();
+  } catch (error) {
+    reportMbtiRefinementState.statusText =
+      error instanceof Error ? error.message : 'Не удалось отправить ответ на уточняющий вопрос.';
+    syncMbtiRefinementUi();
+  } finally {
+    reportMbtiRefinementState.loading = false;
+    syncMbtiRefinementUi();
+  }
 };
 
 const renderReportMbti = () => {
@@ -159,6 +387,28 @@ const renderReportMbti = () => {
       reportMbtiMissingBlock.classList.add('hidden');
     }
   }
+
+  if (reportMbtiRefineButton) {
+    reportMbtiRefineButton.onclick = () => {
+      if (reportMbtiRefinementState.active && reportMbtiRefinementState.currentQuestion) {
+        reportMbtiRefinementState.panelVisible = true;
+        reportMbtiRefinementState.statusText = 'Продолжаем уточнение MBTI.';
+        syncMbtiRefinementUi();
+        reportMbtiRefineAnswer?.focus();
+        return;
+      }
+      void startMbtiRefinement();
+    };
+  }
+
+  if (reportMbtiRefineSubmit) {
+    reportMbtiRefineSubmit.onclick = () => {
+      void submitMbtiRefinementAnswer();
+    };
+  }
+
+  syncMbtiRefinementUi();
+  void ensureMbtiRefinementStateLoaded();
 };
 
 export const buildArtifactHint = (skill) => {

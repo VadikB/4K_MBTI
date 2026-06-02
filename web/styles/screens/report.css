@@ -302,6 +302,87 @@
     line-height: var(--lh-normal);
 }
 
+.report-mbti-refine-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.report-mbti-refine-status {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-normal);
+}
+
+.report-mbti-refine-panel {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid rgba(70, 72, 212, 0.14);
+    border-radius: var(--radius-sm);
+    background: rgba(70, 72, 212, 0.04);
+}
+
+.report-mbti-refine-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.report-mbti-refine-head strong {
+    font-family: var(--font-heading);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-bold);
+}
+
+.report-mbti-refine-progress {
+    color: var(--text-muted);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-eyebrow);
+}
+
+.report-mbti-refine-question {
+    margin: 0;
+    color: var(--text-main);
+    font-size: var(--fs-body);
+    line-height: var(--lh-loose);
+}
+
+.report-mbti-refine-field {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.report-mbti-refine-field span {
+    color: var(--text-muted);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-eyebrow);
+}
+
+.report-mbti-refine-field textarea {
+    width: 100%;
+    min-height: 112px;
+    padding: var(--space-3);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+    font: inherit;
+    color: var(--text-main);
+    background: #fff;
+}
+
+.report-mbti-refine-controls {
+    display: flex;
+    justify-content: flex-start;
+}
+
 .report-tabs {
     display: flex;
     flex-wrap: wrap;

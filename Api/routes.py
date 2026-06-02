@@ -17,6 +17,7 @@ from Api.database import get_connection, get_level_percent_map, recompute_case_q
 from Api.database import get_case_methodology_versions
 from Api.pdf_report_service import pdf_report_service
 from Api.progress_service import operation_progress_service
+from Api.mbti_refinement_service import mbti_refinement_service
 from Api.report_growth_logic import (
     WEAK_SIGNAL_RECOMMENDATIONS,
     build_ai_insight_copy,
@@ -69,6 +70,10 @@ from Api.schemas import (
     AssessmentMessageRequest,
     AssessmentMessageResponse,
     AssessmentTimerControlRequest,
+    MbtiRefinementMessageRequest,
+    MbtiRefinementMessageResponse,
+    MbtiRefinementStartResponse,
+    MbtiRefinementStateResponse,
     AssessmentSessionLookupResponse,
     AssessmentCard,
     AssessmentReportInterpretationResponse,
@@ -3852,6 +3857,52 @@ def pause_assessment_timer(payload: AssessmentTimerControlRequest) -> dict:
         return {"ok": True}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/{user_id}/assessment/{session_id}/mbti-refinement/start", response_model=MbtiRefinementStartResponse)
+def start_mbti_refinement(user_id: int, session_id: int) -> MbtiRefinementStartResponse:
+    with get_connection() as connection:
+        try:
+            result = mbti_refinement_service.start(connection, user_id=user_id, session_id=session_id)
+        except ValueError as exc:
+            detail = str(exc)
+            status_code = 404 if 'not found' in detail.lower() else 409 if 'доступно только после завершения' in detail.lower() else 400
+            raise HTTPException(status_code=status_code, detail=detail) from exc
+    return MbtiRefinementStartResponse(**result)
+
+
+@router.post("/{user_id}/assessment/{session_id}/mbti-refinement/message", response_model=MbtiRefinementMessageResponse)
+def submit_mbti_refinement_answer(
+    user_id: int,
+    session_id: int,
+    payload: MbtiRefinementMessageRequest,
+) -> MbtiRefinementMessageResponse:
+    with get_connection() as connection:
+        try:
+            result = mbti_refinement_service.submit_answer(
+                connection,
+                user_id=user_id,
+                session_id=session_id,
+                refinement_id=payload.refinement_id,
+                answer=payload.answer,
+            )
+        except ValueError as exc:
+            detail = str(exc)
+            status_code = 404 if 'not found' in detail.lower() else 409 if 'already completed' in detail.lower() else 400
+            raise HTTPException(status_code=status_code, detail=detail) from exc
+    return MbtiRefinementMessageResponse(**result)
+
+
+@router.get("/{user_id}/assessment/{session_id}/mbti-refinement", response_model=MbtiRefinementStateResponse)
+def get_mbti_refinement_state(user_id: int, session_id: int) -> MbtiRefinementStateResponse:
+    with get_connection() as connection:
+        try:
+            result = mbti_refinement_service.get_state(connection, user_id=user_id, session_id=session_id)
+        except ValueError as exc:
+            detail = str(exc)
+            status_code = 404 if 'not found' in detail.lower() else 400
+            raise HTTPException(status_code=status_code, detail=detail) from exc
+    return MbtiRefinementStateResponse(**result)
 
 
 @router.get("/{user_id}/assessment/{session_id}/skill-assessments", response_model=list[SkillAssessmentResponse])

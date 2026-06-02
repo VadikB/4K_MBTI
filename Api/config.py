@@ -28,6 +28,8 @@ class Settings:
     mbti_followup_mode: str = os.getenv("MBTI_FOLLOWUP_MODE", "assist").strip().lower() or "assist"
     mbti_followup_max_per_case: int = int(os.getenv("MBTI_FOLLOWUP_MAX_PER_CASE", "2"))
     mbti_followup_score_threshold: int = int(os.getenv("MBTI_FOLLOWUP_SCORE_THRESHOLD", "60"))
+    mbti_refinement_target_confidence: int = int(os.getenv("MBTI_REFINEMENT_TARGET_CONFIDENCE", "75"))
+    mbti_refinement_max_questions: int = int(os.getenv("MBTI_REFINEMENT_MAX_QUESTIONS", "6"))
     esco_api_enabled: bool = os.getenv("ESCO_API_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
     esco_api_base_url: str = os.getenv("ESCO_API_BASE_URL", "https://ec.europa.eu/esco/api")
     esco_api_version: str = os.getenv("ESCO_API_VERSION", "v1.2.0")

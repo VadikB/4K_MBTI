@@ -827,6 +827,58 @@ class AssessmentReportInterpretationResponse(BaseModel):
     mbti_summary: dict | None = None
 
 
+class MbtiRefinementQuestion(BaseModel):
+    code: str
+    text: str
+
+
+class MbtiRefinementStartResponse(BaseModel):
+    active: bool
+    completed: bool
+    refinement_id: int
+    question_index: int
+    question_total: int
+    current_confidence: int
+    target_confidence: int
+    current_question: MbtiRefinementQuestion | None = None
+    remaining_gaps: list[str] = Field(default_factory=list)
+    resolved_gaps: list[str] = Field(default_factory=list)
+    updated_mbti_summary: dict | None = None
+
+
+class MbtiRefinementMessageRequest(BaseModel):
+    refinement_id: int
+    answer: str
+
+
+class MbtiRefinementMessageResponse(BaseModel):
+    active: bool
+    completed: bool
+    refinement_id: int
+    question_index: int
+    question_total: int
+    current_confidence: int
+    target_confidence: int
+    current_question: MbtiRefinementQuestion | None = None
+    remaining_gaps: list[str] = Field(default_factory=list)
+    resolved_gaps: list[str] = Field(default_factory=list)
+    updated_mbti_summary: dict | None = None
+
+
+class MbtiRefinementStateResponse(BaseModel):
+    active: bool
+    completed: bool
+    refinement_id: int | None = None
+    question_index: int = 0
+    question_total: int = 0
+    current_confidence: int = 0
+    target_confidence: int = 75
+    current_question: MbtiRefinementQuestion | None = None
+    remaining_gaps: list[str] = Field(default_factory=list)
+    resolved_gaps: list[str] = Field(default_factory=list)
+    updated_mbti_summary: dict | None = None
+
+
 class UserAssessmentHistoryItem(BaseModel):
     session_id: int
     session_code: str

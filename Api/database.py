@@ -2813,6 +2813,47 @@ def ensure_core_schema() -> None:
         connection.execute("ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS expert_assessed_at TIMESTAMP")
         connection.execute("ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS expert_comment_updated_at TIMESTAMP")
         connection.execute("ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS mbti_summary_json JSONB NOT NULL DEFAULT '{}'::jsonb")
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS session_mbti_refinements (
+                id BIGSERIAL PRIMARY KEY,
+                session_id BIGINT NOT NULL REFERENCES user_sessions(id) ON DELETE CASCADE,
+                user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                status TEXT NOT NULL DEFAULT 'active',
+                target_confidence INT NOT NULL DEFAULT 75,
+                current_confidence INT NOT NULL DEFAULT 0,
+                question_count INT NOT NULL DEFAULT 0,
+                max_questions INT NOT NULL DEFAULT 6,
+                source_summary_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+                updated_summary_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+                gaps_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+                resolved_gaps_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+                current_question_code TEXT,
+                current_question_text TEXT,
+                asked_questions_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+                answers_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                completed_at TIMESTAMP
+            )
+            """
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_mbti_refinements_session_id ON session_mbti_refinements(session_id)"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_mbti_refinements_user_id ON session_mbti_refinements(user_id)"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_mbti_refinements_status ON session_mbti_refinements(status)"
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_mbti_refinement_active_per_session
+            ON session_mbti_refinements(session_id)
+            WHERE status = 'active'
+            """
+        )
         connection.execute("ALTER TABLE user_role_profiles ADD COLUMN IF NOT EXISTS role_selected TEXT")
         connection.execute("ALTER TABLE user_role_profiles ADD COLUMN IF NOT EXISTS role_selected_code TEXT")
         connection.execute("ALTER TABLE user_role_profiles ADD COLUMN IF NOT EXISTS role_consistency_status TEXT")
