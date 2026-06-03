@@ -62,15 +62,23 @@
       </div>
       <div class="auth-panel-copy">
         <h1>Добро пожаловать</h1>
-        <p class="subtitle">Введите номер телефона, чтобы продолжить.</p>
+        <p class="subtitle">Введите рабочий email, чтобы получить одноразовую ссылку для входа.</p>
       </div>
-      <form id="phone-form" class="stack">
+      <form id="auth-email-form" class="stack">
         <label class="field">
-          <span>Телефон</span>
-          <input id="phone-input" name="phone" type="tel" placeholder="+7 999 999 99 99" autocomplete="tel" required>
+          <span>Email</span>
+          <input id="email-input" name="email" type="email" placeholder="name@company.com" autocomplete="email" required>
         </label>
-        <button type="submit" class="primary-button">Продолжить</button>
+        <button id="request-magic-link-button" type="submit" class="primary-button">Получить ссылку</button>
       </form>
+      <form id="auth-token-form" class="stack hidden">
+        <label class="field">
+          <span>Код или ссылка для входа</span>
+          <input id="magic-token-input" name="magic-token" type="text" placeholder="Вставьте код или ссылку из письма" autocomplete="one-time-code" required>
+        </label>
+        <button id="verify-magic-link-button" type="submit" class="primary-button">Войти</button>
+      </form>
+      <p id="auth-status" class="subtitle auth-status hidden"></p>
       <p id="auth-error" class="error" hidden></p>
     </section>
 

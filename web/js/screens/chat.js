@@ -17,8 +17,11 @@ import {
   interviewFinishButton,
   interviewError,
   authPanel,
+  authTokenForm,
+  authStatus,
   authError,
-  phoneInput,
+  emailInput,
+  magicTokenInput,
 } from '../dom.js';
 import {
   processingAgentsBlueprint,
@@ -148,6 +151,10 @@ export const resetChat = () => {
   chatForm.classList.remove('hidden');
   showError(chatError, '');
   showError(authError, '');
+  if (authStatus) {
+    authStatus.textContent = '';
+    authStatus.classList.add('hidden');
+  }
   chatRoleOptions.innerHTML = '';
   chatRoleOptions.classList.add('hidden');
   if (chatConsentDetails) {
@@ -159,7 +166,15 @@ export const resetChat = () => {
   hideAllPanels();
   authPanel.classList.remove('hidden');
   hideLoader();
-  phoneInput.focus();
+  if (authTokenForm) {
+    authTokenForm.classList.add('hidden');
+  }
+  if (magicTokenInput) {
+    magicTokenInput.value = '';
+  }
+  if (emailInput) {
+    emailInput.focus();
+  }
 };
 
 export const setStatus = (data) => {
@@ -194,7 +209,7 @@ export const setStatus = (data) => {
     dd.textContent = value;
     meta.append(dt, dd);
   };
-  addRow('Телефон', user.phone || 'не указан');
+  addRow('Email', user.email || 'не указан');
   addRow('Должность', job);
   addRow('Обязанности', duties);
 

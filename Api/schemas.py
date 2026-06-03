@@ -80,6 +80,41 @@ class CheckOrCreateUserRequest(BaseModel):
         return value
 
 
+class AuthEmailRequest(BaseModel):
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        cleaned = str(value or "").strip().lower()
+        if not cleaned or "@" not in cleaned:
+            raise ValueError("Введите корректный email.")
+        local, _, domain = cleaned.partition("@")
+        if not local or not domain or "." not in domain:
+            raise ValueError("Введите корректный email.")
+        return cleaned
+
+
+class AuthEmailRequestResponse(BaseModel):
+    ok: bool = True
+    message: str
+    email: str
+    expires_in_seconds: int
+    dev_magic_token: str | None = None
+
+
+class AuthEmailVerifyRequest(BaseModel):
+    token: str
+
+    @field_validator("token")
+    @classmethod
+    def validate_token(cls, value: str) -> str:
+        cleaned = str(value or "").strip()
+        if not cleaned:
+            raise ValueError("Введите код или вставьте ссылку для входа.")
+        return cleaned
+
+
 class AgentReply(BaseModel):
     session_id: str
     message: str

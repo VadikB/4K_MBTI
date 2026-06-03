@@ -2,7 +2,7 @@ export const APP_RELEASE = "1.2.12";
 export const PROFILE_NO_CHANGES_LABEL = "Профиль актуален";
 export const PROFILE_NO_CHANGES_MESSAGE = "Профиль актуален";
 
-export const ADMIN_PHONE = "89001000000";
+export const ADMIN_EMAIL = "admin@agent4k.local";
 export const PROFILE_HISTORY_PAGE_SIZE = 10;
 export const ADMIN_REPORTS_PAGE_SIZE = 10;
 export const ADMIN_METHODOLOGY_RISK_PAGE_SIZE = 10;
@@ -43,7 +43,7 @@ export const loaderFlows = {
         {
             label: "Ищем профиль пользователя",
             description:
-                "Проверяем, есть ли пользователь в базе данных по номеру телефона.",
+                "Проверяем, есть ли пользователь в базе данных по email.",
         },
         {
             label: "Готовим сценарий входа",

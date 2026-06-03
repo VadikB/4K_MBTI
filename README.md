@@ -172,6 +172,32 @@ bun run build:web
 
 Команда собирает модульный фронтенд из `web/js/main.js` в `web/dist/main.js` и дополнительные lazy-loaded файлы в `web/dist/`. В деплой-коммит должны попасть `web/index.html` и весь свежий каталог `web/dist/`, иначе браузер не загрузит актуальный интерфейс.
 
+- Для production логирование теперь лучше разделено на два канала:
+  - `runtime logs` приложения идут в `stdout` и/или файлы
+  - `audit logs` по важным действиям и ошибкам остаются в таблице `system_logs`
+
+- Рекомендуемые настройки для `.env`:
+
+```env
+LOG_LEVEL=INFO
+LOG_TO_STDOUT=true
+LOG_TO_FILE=true
+LOG_DIR=./logs
+LOG_FILENAME=agent4k.log
+LOG_ERROR_FILENAME=agent4k-error.log
+LOG_ROTATION_WHEN=midnight
+LOG_BACKUP_COUNT=14
+AUDIT_LOGS_TO_DB=true
+RUNTIME_LOGS_TO_DB=false
+```
+
+- При такой схеме:
+  - ежедневные runtime-логи пишутся в каталог `logs/`
+  - старые файлы ротируются автоматически
+  - PostgreSQL не засоряется каждым техническим сообщением и запросом к статике
+
+- Если приложение запускается под `systemd`, Docker или другим процесс-менеджером, предпочтительно оставить `LOG_TO_STDOUT=true` даже при включенных файловых логах.
+
 - для production рекомендуется запускать приложение за reverse proxy
 - реальные секреты не следует хранить в репозитории
 - для передачи проекта на другой сервер используйте:

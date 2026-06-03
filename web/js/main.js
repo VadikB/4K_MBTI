@@ -1,5 +1,5 @@
 import { APP_RELEASE } from './config.js';
-import { appReleaseNumber, authPanel, phoneInput } from './dom.js';
+import { appReleaseNumber, authPanel, emailInput, authTokenForm, magicTokenInput, authStatus } from './dom.js';
 import {
   state,
   safeStorage,
@@ -57,9 +57,19 @@ const resetInitialState = () => {
   state.currentScreen = 'auth';
   hideAllPanels();
   authPanel.classList.remove('hidden');
-  if (phoneInput) {
-    phoneInput.disabled = false;
-    phoneInput.focus();
+  if (authTokenForm) {
+    authTokenForm.classList.add('hidden');
+  }
+  if (authStatus) {
+    authStatus.textContent = '';
+    authStatus.classList.add('hidden');
+  }
+  if (magicTokenInput) {
+    magicTokenInput.value = '';
+  }
+  if (emailInput) {
+    emailInput.disabled = false;
+    emailInput.focus();
   }
 };
 

@@ -11,6 +11,7 @@ from fastapi.responses import Response
 from Api.admin_report_dialogue_pdf_service import admin_report_dialogue_pdf_service
 from Api.admin_report_expert_export_service import admin_report_expert_export_service
 from Api.admin_reports_pdf_service import admin_reports_pdf_service
+from Api.auth_service import auth_service, normalize_email
 from Api.assessment_service import assessment_service
 from Api.agent import interviewer_agent
 from Api.database import get_connection, get_level_percent_map, recompute_case_quality_checks
@@ -52,6 +53,9 @@ from Api.schemas import (
     AdminExpertGroupExportRequest,
     AdminInsightCard,
     AdminMetricCard,
+    AuthEmailRequest,
+    AuthEmailRequestResponse,
+    AuthEmailVerifyRequest,
     PromptLabCaseOption,
     PromptLabCaseRunRequest,
     PromptLabCaseRunResponse,
@@ -97,7 +101,6 @@ from Api.schemas import (
 
 router = APIRouter(prefix="/users", tags=["users"])
 SESSION_COOKIE_NAME = "agent4k_session_token"
-ADMIN_PHONE = "89001000000"
 ADMIN_ROLE_CODE = "admin"
 ADMIN_ROLE_NAME = "Администратор"
 ADMIN_FULL_NAME = "Администратор системы"
@@ -656,10 +659,10 @@ def _ensure_admin_user(connection) -> UserResponse:
     existing_user = connection.execute(
         USER_SELECT_SQL
         + """
-        WHERE regexp_replace(COALESCE(u.phone, ''), '\\D', '', 'g') = %s
+        WHERE LOWER(COALESCE(u.email, '')) = %s
         LIMIT 1
         """,
-        (ADMIN_PHONE,),
+        (ADMIN_EMAIL.lower(),),
     ).fetchone()
     if existing_user is not None:
         if existing_user["role_id"] != admin_role_id or existing_user["job_description"] != ADMIN_ROLE_NAME:
@@ -696,7 +699,7 @@ def _ensure_admin_user(connection) -> UserResponse:
             ADMIN_EMAIL,
             admin_role_id,
             ADMIN_ROLE_NAME,
-            ADMIN_PHONE,
+            None,
             "Администрирование платформы оценки компетенций",
         ),
     ).fetchone()
@@ -716,7 +719,7 @@ def _ensure_admin_user(connection) -> UserResponse:
 def _is_admin_user(connection, user: UserResponse | None) -> bool:
     if user is None:
         return False
-    if "".join(symbol for symbol in str(user.phone or "") if symbol.isdigit()) == ADMIN_PHONE:
+    if str(user.email or "").strip().lower() == ADMIN_EMAIL.lower():
         return True
     if not user.role_id:
         return False
@@ -824,9 +827,9 @@ def _build_admin_dashboard(connection, period_key: str = "30d") -> AdminDashboar
             COUNT(*)::int AS total_users,
             COUNT(*) FILTER (WHERE role_id IS NOT NULL)::int AS profiled_users
         FROM users
-        WHERE regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') <> %s
+        WHERE LOWER(COALESCE(email, '')) <> %s
         """,
-        (ADMIN_PHONE,),
+        (ADMIN_EMAIL.lower(),),
     ).fetchone()
 
     session_row = connection.execute(
@@ -983,10 +986,10 @@ def _build_admin_reports(connection) -> AdminDetailedReportsResponse:
                 GROUP BY ssa.session_id
         ) AS score_stats ON score_stats.session_id = us.id
         WHERE us.assessment_code = 'competencies_4k'
-          AND regexp_replace(COALESCE(u.phone, ''), '\\D', '', 'g') <> %s
+          AND LOWER(COALESCE(u.email, '')) <> %s
         ORDER BY COALESCE(us.finished_at, us.started_at) DESC NULLS LAST, us.id DESC
         """,
-        (ADMIN_PHONE,),
+        (ADMIN_EMAIL.lower(),),
     ).fetchall()
 
     items = [
@@ -1064,10 +1067,10 @@ def _build_admin_report_detail(connection, session_id: int) -> AdminReportDetail
         ) p ON TRUE
         WHERE us.id = %s
           AND us.assessment_code = 'competencies_4k'
-          AND regexp_replace(COALESCE(u.phone, ''), '\\D', '', 'g') <> %s
+          AND LOWER(COALESCE(u.email, '')) <> %s
         LIMIT 1
         """,
-        (session_id, ADMIN_PHONE),
+        (session_id, ADMIN_EMAIL.lower()),
     ).fetchone()
     if session_row is None:
         raise HTTPException(status_code=404, detail="Assessment report not found")
@@ -2210,104 +2213,105 @@ def _clear_user_session_cookie(response: FastAPIResponse) -> None:
     response.delete_cookie(key=SESSION_COOKIE_NAME, path="/")
 
 
-@router.post("/check-or-create", response_model=CheckOrCreateUserResponse)
-def check_or_create_user(payload: CheckOrCreateUserRequest, request: Request, response: FastAPIResponse) -> CheckOrCreateUserResponse:
-    phone = payload.phone.strip()
-    normalized_phone = _normalize_phone_digits(phone)
-    operation_id = request.headers.get("X-Agent4K-Operation-Id")
+def _build_authenticated_user_response(
+    *,
+    connection,
+    user: UserResponse,
+    response: FastAPIResponse,
+    login_identifier: str,
+    is_new_user: bool,
+) -> CheckOrCreateUserResponse:
+    compact_user = _compact_user_response(user)
+    _set_user_session_cookie(response, web_session_service.create_session(user.id))
 
-    if not normalized_phone:
-        raise HTTPException(status_code=400, detail="Phone is required")
-
-    operation_progress_service.begin(
-        operation_id,
-        title="Проверяем профиль",
-        message="Система ищет пользователя по номеру телефона и подготавливает следующий шаг.",
-        steps=LOOKUP_USER_STEPS,
-    )
-
-    with get_connection() as connection:
-        if normalized_phone == _normalize_phone_digits(ADMIN_PHONE):
-            user = _ensure_admin_user(connection)
-            user = _compact_user_response(user)
-            _set_user_session_cookie(response, web_session_service.create_session(user.id))
-            operation_progress_service.complete(
-                operation_id,
-                title="Администратор найден",
-                message="Открываем административную панель без пользовательского опроса и кейсов.",
-            )
-            return CheckOrCreateUserResponse(
-                exists=True,
-                message="Выполнен вход в административный раздел.",
-                user=user,
-                requires_user_data=False,
-                agent=AgentReply(
-                    session_id="admin-session",
-                    message="Выполнен вход администратора.",
-                    stage="admin",
-                    completed=True,
-                    user=user,
-                ),
-                is_admin=True,
-                admin_dashboard=_build_admin_dashboard(connection),
-            )
-
-        existing_row = connection.execute(
-            USER_SELECT_SQL
-            + """
-            WHERE RIGHT(regexp_replace(COALESCE(u.phone, ''), '\\D', '', 'g'), 10) = %s
-            LIMIT 1
-            """,
-            (normalized_phone[-10:],),
-        ).fetchone()
-        operation_progress_service.advance(
-            operation_id,
-            1,
-            message="Определяем сценарий входа и подготавливаем нужный маршрут для пользователя.",
+    if _is_admin_user(connection, user):
+        return CheckOrCreateUserResponse(
+            exists=True,
+            message="Выполнен вход в административный раздел.",
+            user=compact_user,
+            requires_user_data=False,
+            agent=AgentReply(
+                session_id="admin-session",
+                message="Выполнен вход администратора.",
+                stage="admin",
+                completed=True,
+                user=compact_user,
+            ),
+            is_admin=True,
+            admin_dashboard=_build_admin_dashboard(connection),
         )
 
-        if existing_row is not None:
-            user = _user_response_from_row(existing_row)
-            if (
+    agent = interviewer_agent.start(
+        login_identifier=login_identifier,
+        user=user,
+        bootstrap_user_id=user.id if is_new_user else None,
+    )
+    agent = agent.model_copy(update={"user": compact_user})
+    return CheckOrCreateUserResponse(
+        exists=not is_new_user,
+        message="Пользователь авторизован по email." if not is_new_user else "Email подтвержден. Продолжаем создание профиля.",
+        user=compact_user,
+        requires_user_data=is_new_user,
+        agent=agent,
+        dashboard=None if is_new_user else _build_dashboard(connection, user),
+    )
+
+
+@router.post("/check-or-create", response_model=CheckOrCreateUserResponse)
+def check_or_create_user(payload: CheckOrCreateUserRequest, request: Request, response: FastAPIResponse) -> CheckOrCreateUserResponse:
+    raise HTTPException(
+        status_code=410,
+        detail="Вход по номеру телефона отключен. Используйте авторизацию по email.",
+    )
+
+
+@router.post("/auth/email/request-link", response_model=AuthEmailRequestResponse)
+def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> AuthEmailRequestResponse:
+    client_ip = request.client.host if request.client else None
+    user_agent = request.headers.get("User-Agent")
+    result = auth_service.create_magic_link_request(
+        email=payload.email,
+        client_ip=client_ip,
+        user_agent=user_agent,
+    )
+    return AuthEmailRequestResponse(
+        message="Если email доступен для входа, мы подготовили одноразовую ссылку.",
+        email=result.email,
+        expires_in_seconds=max(int((result.expires_at - datetime.now(result.expires_at.tzinfo)).total_seconds()), 0),
+        dev_magic_token=result.dev_magic_token,
+    )
+
+
+@router.post("/auth/email/verify", response_model=CheckOrCreateUserResponse)
+def verify_email_magic_link(payload: AuthEmailVerifyRequest, response: FastAPIResponse) -> CheckOrCreateUserResponse:
+    token = payload.token.strip()
+    if "/auth/email/verify?token=" in token:
+        token = token.split("/auth/email/verify?token=", 1)[1]
+    if "token=" in token:
+        token = token.split("token=", 1)[1]
+
+    verification = auth_service.verify_magic_link(token=token)
+    with get_connection() as connection:
+        user = verification.user
+        if (
+            not verification.is_new_user
+            and (
                 not user.role_id
                 or not (user.company_industry and user.company_industry.strip())
                 or not user.active_profile_id
                 or not (user.normalized_duties and user.normalized_duties.strip())
-            ):
-                repaired_user = interviewer_agent.backfill_user_profile(user.id)
-                if repaired_user is not None:
-                    user = _strip_avatar(repaired_user)
-            _set_user_session_cookie(response, web_session_service.create_session(user.id))
-            agent = interviewer_agent.start(phone=phone, user=user)
-            compact_user = _compact_user_response(user)
-            agent = agent.model_copy(update={"user": compact_user})
-            operation_progress_service.complete(
-                operation_id,
-                title="Профиль найден",
-                message="Пользователь найден. Открываем актуализацию профиля и следующий шаг.",
             )
-            return CheckOrCreateUserResponse(
-                exists=True,
-                message="Пользователь с таким номером телефона уже существует.",
-                user=compact_user,
-                requires_user_data=False,
-                agent=agent,
-                dashboard=_build_dashboard(connection, user),
-            )
-
-    agent = interviewer_agent.start(phone=normalized_phone, user=None)
-    operation_progress_service.complete(
-        operation_id,
-        title="Профиль не найден",
-        message="Пользователь не найден. Открываем сценарий регистрации нового профиля.",
-    )
-    return CheckOrCreateUserResponse(
-        exists=False,
-        message="Пользователь не найден. Агент начал сбор данных для создания записи.",
-        user=None,
-        requires_user_data=True,
-        agent=agent,
-    )
+        ):
+            repaired_user = interviewer_agent.backfill_user_profile(user.id)
+            if repaired_user is not None:
+                user = _strip_avatar(repaired_user)
+        return _build_authenticated_user_response(
+            connection=connection,
+            user=user,
+            response=response,
+            login_identifier=verification.email,
+            is_new_user=verification.is_new_user,
+        )
 
 
 @router.get("/operations/{operation_id}", response_model=OperationProgressResponse)
@@ -2339,6 +2343,22 @@ def restore_user_session(request: Request) -> UserSessionRestoreResponse:
             authenticated=True,
             user=compact_user,
             dashboard=_build_dashboard(connection, full_user),
+        )
+
+
+@router.post("/session/reopen-profile", response_model=CheckOrCreateUserResponse)
+def reopen_profile_session(request: Request, response: FastAPIResponse) -> CheckOrCreateUserResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Сессия не найдена. Войдите заново.")
+    with get_connection() as connection:
+        return _build_authenticated_user_response(
+            connection=connection,
+            user=user,
+            response=response,
+            login_identifier=str(user.email or "").strip().lower(),
+            is_new_user=False,
         )
 
 

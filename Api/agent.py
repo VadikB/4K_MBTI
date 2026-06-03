@@ -197,7 +197,7 @@ class RoleMatch:
 @dataclass(slots=True)
 class ConversationState:
     session_id: str
-    phone: str
+    login_identifier: str
     mode: ConversationMode
     stage: ConversationStage
     user: UserResponse | None = None
@@ -251,7 +251,8 @@ class InterviewerAgent:
                 """
                 CREATE TABLE IF NOT EXISTS agent_conversation_sessions (
                     session_id TEXT PRIMARY KEY,
-                    phone TEXT NOT NULL,
+                    phone TEXT,
+                    login_identifier TEXT,
                     mode TEXT NOT NULL,
                     stage TEXT NOT NULL,
                     user_id INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
@@ -278,6 +279,18 @@ class InterviewerAgent:
             connection.execute(
                 """
                 ALTER TABLE agent_conversation_sessions
+                ADD COLUMN IF NOT EXISTS login_identifier TEXT
+                """
+            )
+            connection.execute(
+                """
+                ALTER TABLE agent_conversation_sessions
+                ALTER COLUMN phone DROP NOT NULL
+                """
+            )
+            connection.execute(
+                """
+                ALTER TABLE agent_conversation_sessions
                 ADD COLUMN IF NOT EXISTS consent_version INTEGER NULL
                 """
             )
@@ -297,6 +310,7 @@ class InterviewerAgent:
                 INSERT INTO agent_conversation_sessions (
                     session_id,
                     phone,
+                    login_identifier,
                     mode,
                     stage,
                     user_id,
@@ -311,9 +325,10 @@ class InterviewerAgent:
                     history_json,
                     updated_at
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
                 ON CONFLICT (session_id) DO UPDATE SET
                     phone = EXCLUDED.phone,
+                    login_identifier = EXCLUDED.login_identifier,
                     mode = EXCLUDED.mode,
                     stage = EXCLUDED.stage,
                     user_id = EXCLUDED.user_id,
@@ -330,7 +345,8 @@ class InterviewerAgent:
                 """,
                 (
                     state.session_id,
-                    state.phone,
+                    None,
+                    state.login_identifier,
                     state.mode.value,
                     state.stage.value,
                     state.user_id,
@@ -355,6 +371,7 @@ class InterviewerAgent:
                 SELECT
                     session_id,
                     phone,
+                    login_identifier,
                     mode,
                     stage,
                     user_id,
@@ -383,7 +400,7 @@ class InterviewerAgent:
                 history = []
         return ConversationState(
             session_id=row["session_id"],
-            phone=row["phone"],
+                    login_identifier=row["login_identifier"] or row["phone"] or "",
             mode=ConversationMode(str(row["mode"])),
             stage=ConversationStage(str(row["stage"])),
             user=user,
@@ -2755,7 +2772,7 @@ class InterviewerAgent:
         self,
         *,
         full_name: str,
-        phone: str,
+        email: str,
         telegram: str | None,
         consent_version: int | None,
         consent_text: str | None,
@@ -2763,9 +2780,9 @@ class InterviewerAgent:
         duties: str | None,
         selected_role_id: int | None,
         company_industry: str | None,
+        existing_user_id: int | None = None,
         progress_operation_id: str | None = None,
     ) -> tuple[UserResponse, RoleMatch | None]:
-        generated_email = f"user-{uuid4().hex[:12]}@auto.local"
         normalization = build_profile_normalization_result(
             position=position,
             duties=duties,
@@ -2791,28 +2808,58 @@ class InterviewerAgent:
         role_match = selected_role_match or detected_role_match
         normalized_telegram = self.normalize_telegram(telegram)
         with get_connection() as connection:
-            row = connection.execute(
-                """
-                INSERT INTO users (
-                    full_name, email, phone, telegram, personal_data_consent_accepted_at,
-                    personal_data_consent_version, personal_data_consent_text,
-                    job_description, role_id, company_industry
-                )
-                VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP, %s, %s, %s, %s, %s)
-                RETURNING id
-                """,
-                (
-                    full_name,
-                    generated_email,
-                    phone,
-                    normalized_telegram,
-                    consent_version,
-                    consent_text,
-                    clean_position,
-                    selected_role_match.role_id if selected_role_match else None,
-                    company_industry,
-                ),
-            ).fetchone()
+            if existing_user_id:
+                row = connection.execute(
+                    """
+                    UPDATE users
+                    SET full_name = %s,
+                        email = %s,
+                        phone = NULL,
+                        telegram = %s,
+                        personal_data_consent_accepted_at = CURRENT_TIMESTAMP,
+                        personal_data_consent_version = %s,
+                        personal_data_consent_text = %s,
+                        job_description = %s,
+                        role_id = %s,
+                        company_industry = %s
+                    WHERE id = %s
+                    RETURNING id
+                    """,
+                    (
+                        full_name,
+                        email,
+                        normalized_telegram,
+                        consent_version,
+                        consent_text,
+                        clean_position,
+                        selected_role_match.role_id if selected_role_match else None,
+                        company_industry,
+                        existing_user_id,
+                    ),
+                ).fetchone()
+            else:
+                row = connection.execute(
+                    """
+                    INSERT INTO users (
+                        full_name, email, phone, telegram, personal_data_consent_accepted_at,
+                        personal_data_consent_version, personal_data_consent_text,
+                        job_description, role_id, company_industry
+                    )
+                    VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP, %s, %s, %s, %s, %s)
+                    RETURNING id
+                    """,
+                    (
+                        full_name,
+                        email,
+                        None,
+                        normalized_telegram,
+                        consent_version,
+                        consent_text,
+                        clean_position,
+                        selected_role_match.role_id if selected_role_match else None,
+                        company_industry,
+                    ),
+                ).fetchone()
             operation_progress_service.advance(
                 progress_operation_id,
                 3,
@@ -2911,7 +2958,7 @@ class InterviewerAgent:
 
         return user_response, role_match
 
-    def start(self, phone: str, user: UserResponse | None) -> AgentReply:
+    def start(self, login_identifier: str, user: UserResponse | None, bootstrap_user_id: int | None = None) -> AgentReply:
         session_id = uuid4().hex
         if user is not None:
             consent_version, consent_title, consent_text = self._build_personal_data_consent_prompt()
@@ -2920,7 +2967,7 @@ class InterviewerAgent:
             initial_stage = ConversationStage.ASK_PERSONAL_DATA_CONSENT if consent_missing else (missing_stage or ConversationStage.ASK_POSITION)
             state = ConversationState(
                 session_id=session_id,
-                phone=phone,
+                login_identifier=login_identifier,
                 mode=ConversationMode.EXISTING_USER,
                 stage=initial_stage,
                 user=user,
@@ -2966,9 +3013,10 @@ class InterviewerAgent:
             consent_version, consent_title, consent_text = self._build_personal_data_consent_prompt()
             state = ConversationState(
                 session_id=session_id,
-                phone=phone,
+                login_identifier=login_identifier,
                 mode=ConversationMode.NEW_USER,
                 stage=ConversationStage.ASK_PERSONAL_DATA_CONSENT,
+                user_id=bootstrap_user_id,
                 consent_version=consent_version,
                 consent_text=consent_text,
             )
@@ -3041,7 +3089,7 @@ class InterviewerAgent:
         if state.stage == ConversationStage.COMPLETE:
             return AgentReply(
                 session_id=state.session_id,
-                message="Сценарий уже завершен. Начните новый поиск по номеру телефона.",
+                message="Сценарий уже завершен. При необходимости начните вход заново по email.",
                 stage=state.stage,
                 completed=True,
             )
@@ -3068,7 +3116,7 @@ class InterviewerAgent:
                 )
             if self._is_consent_declined(text):
                 state.stage = ConversationStage.COMPLETE
-                reply_text = "Без согласия на обработку персональных данных мы не можем продолжить работу. Если захотите вернуться, начните заново с ввода номера телефона."
+                reply_text = "Без согласия на обработку персональных данных мы не можем продолжить работу. Если захотите вернуться, начните заново с входа по email."
                 state.history.append({"role": "assistant", "content": reply_text})
                 return AgentReply(
                     session_id=state.session_id,
@@ -3288,7 +3336,7 @@ class InterviewerAgent:
         if state.stage == ConversationStage.COMPLETE:
             return AgentReply(
                 session_id=state.session_id,
-                message="Сценарий уже завершен. Начните новый поиск по номеру телефона.",
+                message="Сценарий уже завершен. При необходимости начните вход заново по email.",
                 stage=state.stage,
                 completed=True,
             )
@@ -3306,7 +3354,7 @@ class InterviewerAgent:
                 )
             if self._is_consent_declined(text):
                 state.stage = ConversationStage.COMPLETE
-                reply_text = "Без согласия на обработку персональных данных мы не можем продолжить регистрацию. Если захотите вернуться, начните заново с ввода номера телефона."
+                reply_text = "Без согласия на обработку персональных данных мы не можем продолжить регистрацию. Если захотите вернуться, начните заново с входа по email."
                 state.history.append({"role": "assistant", "content": reply_text})
                 return AgentReply(
                     session_id=state.session_id,
@@ -3407,7 +3455,7 @@ class InterviewerAgent:
         state.company_industry = text
         user, role_match = self.create_user(
             full_name=state.full_name or "",
-            phone=state.phone,
+            email=state.login_identifier,
             telegram=state.telegram,
             consent_version=state.consent_version,
             consent_text=state.consent_text,
@@ -3415,6 +3463,7 @@ class InterviewerAgent:
             duties=state.duties,
             selected_role_id=state.selected_role_id,
             company_industry=state.company_industry,
+            existing_user_id=state.user_id,
             progress_operation_id=progress_operation_id,
         )
         state.user = user

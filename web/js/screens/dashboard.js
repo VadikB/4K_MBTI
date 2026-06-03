@@ -25,6 +25,93 @@ import {
 import { handleAssessmentEntryClick } from './interview.js';
 import { openReports } from './reports.js';
 
+const resolveLatestCompletedSession = async () => {
+  if (!state.pendingUser?.id) {
+    return null;
+  }
+  const response = await fetch('/users/' + state.pendingUser.id + '/profile-summary');
+  const payload = await response.json();
+  const history = Array.isArray(payload?.history) ? payload.history : [];
+  const completed = history.find((item) => String(item?.status || '').toLowerCase() === 'completed');
+  if (!completed?.session_id) {
+    return null;
+  }
+  state.assessmentSessionId = Number(completed.session_id);
+  if (completed.session_code) {
+    state.assessmentSessionCode = completed.session_code;
+  }
+  persistAssessmentContext();
+  return completed;
+};
+
+const openLatestMbtiReport = async () => {
+  if (!state.pendingUser?.id) {
+    return;
+  }
+  if (!state.assessmentSessionId) {
+    await resolveLatestCompletedSession();
+  }
+  const reportModule = await import('./report.js');
+  await reportModule.loadSkillAssessments();
+  reportModule.openReport({ returnTarget: 'home' });
+};
+
+const updateDashboardMbtiCardState = (card, button, status, { ready = false, loading = false, statusText = '' } = {}) => {
+  if (!card || !button || !status) {
+    return;
+  }
+  card.classList.toggle('dashboard-mbti-ready', ready);
+  button.disabled = !ready || loading;
+  button.classList.toggle('disabled', !ready || loading);
+  button.textContent = loading ? 'Открываем...' : ready ? 'Уточнить MBTI' : 'Скоро';
+  status.textContent = statusText;
+  status.classList.toggle('hidden', !statusText);
+};
+
+const prepareDashboardMbtiCard = async (card, button, status) => {
+  if (!card || !button || !status) {
+    return;
+  }
+
+  if (state.assessmentSessionId) {
+    updateDashboardMbtiCardState(card, button, status, {
+      ready: true,
+      statusText: 'Откроем последний завершенный отчет с MBTI-анализом.',
+    });
+    return;
+  }
+
+  if (!state.pendingUser?.id && !hasCompletedAssessmentBefore()) {
+    updateDashboardMbtiCardState(card, button, status, {
+      ready: false,
+      statusText: 'Кнопка станет доступна после первого завершенного ассессмента.',
+    });
+    return;
+  }
+
+  updateDashboardMbtiCardState(card, button, status, {
+    ready: false,
+    loading: true,
+    statusText: 'Проверяем доступность MBTI...',
+  });
+
+  try {
+    const session = await resolveLatestCompletedSession();
+    updateDashboardMbtiCardState(card, button, status, {
+      ready: Boolean(session?.session_id),
+      statusText: session?.session_id
+        ? 'Откроем последний завершенный отчет с MBTI-анализом.'
+        : 'Кнопка станет доступна после первого завершенного ассессмента.',
+    });
+  } catch (error) {
+    console.warn('Failed to resolve dashboard MBTI launcher state', error);
+    updateDashboardMbtiCardState(card, button, status, {
+      ready: false,
+      statusText: 'Не удалось проверить доступность MBTI. Попробуйте позже.',
+    });
+  }
+};
+
 export const renderDashboard = () => {
   const dashboard = state.dashboard;
   if (!dashboard) {
@@ -107,7 +194,19 @@ export const renderDashboard = () => {
       '</p>' +
       '<div class="mini-card-meta"><span>' +
       item.duration +
-      '</span><span>Скоро</span></div>';
+      '</span><button class="mini-start-button disabled" type="button" disabled>Скоро</button></div>' +
+      '<p class="dashboard-mbti-status hidden"></p>';
+
+    if (String(item.title || '').toLowerCase().includes('mbti')) {
+      const button = card.querySelector('.mini-start-button');
+      const status = card.querySelector('.dashboard-mbti-status');
+      if (button && status) {
+        button.addEventListener('click', () => {
+          void openLatestMbtiReport();
+        });
+        void prepareDashboardMbtiCard(card, button, status);
+      }
+    }
     availableAssessments.appendChild(card);
   });
 

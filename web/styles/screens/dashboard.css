@@ -526,6 +526,13 @@
     color: var(--text-soft);
 }
 
+.dashboard-mbti-status {
+    margin: var(--space-2) 0 0;
+    color: var(--text-muted);
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-normal);
+}
+
 .assessment-mini-card.muted-card .mini-card-meta span:last-child {
     display: inline-flex;
     align-items: center;
@@ -542,6 +549,23 @@
     line-height: var(--lh-snug);
     white-space: nowrap;
     cursor: not-allowed;
+}
+
+.assessment-mini-card.dashboard-mbti-ready {
+    border-color: rgba(70, 72, 212, 0.18);
+    background: linear-gradient(180deg, #ffffff 0%, #f9f8ff 100%);
+}
+
+.assessment-mini-card.dashboard-mbti-ready .mini-card-icon img {
+    opacity: 1;
+    filter: none;
+}
+
+.assessment-mini-card.dashboard-mbti-ready h3,
+.assessment-mini-card.dashboard-mbti-ready p,
+.assessment-mini-card.dashboard-mbti-ready .dashboard-mbti-status,
+.assessment-mini-card.dashboard-mbti-ready .mini-card-meta {
+    color: var(--text-main);
 }
 
 .mini-card-action-button {

@@ -8,18 +8,9 @@ export const shouldRecoverProfileOnAssessmentError = (message) => {
 };
 
 export const recoverProfileCompletionForAssessment = async () => {
-  if (!state.pendingUser?.phone) {
-    throw new Error('Не удалось вернуть пользователя к настройке профиля: телефон не найден.');
-  }
-
-  const response = await fetch('/users/check-or-create', {
+  const response = await fetch('/users/session/reopen-profile', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      phone: state.pendingUser.phone,
-    }),
+    credentials: 'same-origin',
   });
   const data = await readApiResponse(response, 'Не удалось вернуть пользователя к настройке профиля.');
   const agent = data?.agent;

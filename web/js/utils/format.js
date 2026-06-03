@@ -1,4 +1,4 @@
-import { ADMIN_PHONE } from '../config.js';
+import { ADMIN_EMAIL } from '../config.js';
 
 export const buildInitials = (fullName) => {
   if (!fullName) {
@@ -111,8 +111,7 @@ export const isAdminUserPayload = (user, explicitFlag = false) => {
   if (explicitFlag) {
     return true;
   }
-  const digits = String(user?.phone || '').replace(/\D/g, '');
-  return digits === ADMIN_PHONE;
+  return String(user?.email || '').trim().toLowerCase() === ADMIN_EMAIL;
 };
 
 export const buildExistingUserAgentMessage = (user, fallbackMessage = '') => {

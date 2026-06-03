@@ -62,7 +62,7 @@ const prepareWelcomeMbtiEntry = async () => {
     return;
   }
   const hasSummary = Boolean(state.assessmentMbtiSummary && typeof state.assessmentMbtiSummary === 'object');
-  if (state.assessmentSessionId && hasSummary) {
+  if (state.assessmentSessionId) {
     updateWelcomeMbtiCardState({
       ready: true,
       statusText: 'Уточнение доступно по последнему завершенному ассессменту.',
@@ -70,7 +70,7 @@ const prepareWelcomeMbtiEntry = async () => {
     return;
   }
 
-  if (!hasCompletedAssessmentBefore()) {
+  if (!state.pendingUser?.id && !hasCompletedAssessmentBefore()) {
     updateWelcomeMbtiCardState({
       ready: false,
       statusText: 'Кнопка станет доступна после первого завершенного ассессмента.',
@@ -84,7 +84,9 @@ const prepareWelcomeMbtiEntry = async () => {
     updateWelcomeMbtiCardState({
       ready: Boolean(session?.session_id),
       statusText: session?.session_id
-        ? 'Откроем последний отчет сразу на блоке MBTI.'
+        ? hasSummary
+          ? 'Уточнение доступно по последнему завершенному ассессменту.'
+          : 'Откроем последний завершенный отчет сразу на блоке MBTI.'
         : 'MBTI станет доступен после завершения ассессмента и формирования отчета.',
     });
   } catch (error) {
