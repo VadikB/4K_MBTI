@@ -112,10 +112,24 @@ export const startLoaderProgressPolling = (operationId) => {
 };
 
 export const showLoader = (title, text, steps = null) => {
-  void title;
-  void text;
-  void steps;
-  appLoader.classList.add('hidden');
+  appLoaderTitle.textContent = title || 'Подождите, пожалуйста';
+  appLoaderText.textContent = text || 'Система обрабатывает ваш запрос.';
+  loaderFlowSteps = Array.isArray(steps) && steps.length
+    ? steps.map((step) => ({
+        label: String(step.label || '').trim() || 'Подготовка',
+        description: String(step.description || '').trim(),
+      }))
+    : [
+        {
+          label: 'Подготовка',
+          description: 'Система обрабатывает ваш запрос.',
+        },
+      ];
+  loaderFlowStepIndex = 0;
+  loaderProgressValueOverride = null;
+  clearLoaderFlowTimer();
+  renderLoaderFlow();
+  appLoader.classList.remove('hidden');
 };
 
 export const hideLoader = () => {

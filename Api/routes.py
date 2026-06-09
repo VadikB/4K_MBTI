@@ -354,6 +354,25 @@ PROFILE_SAVE_STEPS = [
     {"label": "Подготавливаем следующий экран", "description": "Завершаем сценарий и обновляем состояние пользователя."},
 ]
 
+ASSESSMENT_MESSAGE_STEPS = [
+    {
+        "label": "Фиксируем ответ",
+        "description": "Сохраняем ответ и проверяем состояние текущего кейса.",
+    },
+    {
+        "label": "Проверяем кейс",
+        "description": "Оцениваем ответ и подготавливаем результат по текущему кейсу.",
+    },
+    {
+        "label": "Уточняем сигналы",
+        "description": "При необходимости собираем MBTI-сигналы и уточняющие вопросы.",
+    },
+    {
+        "label": "Открываем следующий шаг",
+        "description": "Показываем следующий кейс или завершаем всю assessment-сессию.",
+    },
+]
+
 ASSESSMENT_START_STEPS = [
     {"label": "Проверяем профиль оценки", "description": "Уточняем роль пользователя и состояние активной assessment-сессии."},
     {"label": "Подбираем релевантные кейсы", "description": "При необходимости выбираем набор кейсов, покрывающий нужные навыки."},
@@ -2290,7 +2309,10 @@ def verify_email_magic_link(payload: AuthEmailVerifyRequest, response: FastAPIRe
     if "token=" in token:
         token = token.split("token=", 1)[1]
 
-    verification = auth_service.verify_magic_link(token=token)
+    try:
+        verification = auth_service.verify_magic_link(token=token)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     with get_connection() as connection:
         user = verification.user
         if (
@@ -2318,7 +2340,21 @@ def verify_email_magic_link(payload: AuthEmailVerifyRequest, response: FastAPIRe
 def get_operation_progress(operation_id: str) -> OperationProgressResponse:
     snapshot = operation_progress_service.snapshot(operation_id)
     if snapshot is None:
-        raise HTTPException(status_code=404, detail="Operation not found")
+        return OperationProgressResponse(
+            operation_id=operation_id,
+            title="Подготавливаем данные",
+            message="Операция уже создается. Обновляем статус...",
+            status="pending",
+            current_step_index=0,
+            progress_percent=5,
+            steps=[
+                OperationProgressStep(
+                    label="Ожидание запуска",
+                    description="Система подготавливает прогресс операции для отображения.",
+                    status="active",
+                )
+            ],
+        )
     return OperationProgressResponse(**snapshot)
 
 
@@ -3860,13 +3896,28 @@ def start_assessment(user_id: int, request: Request) -> AssessmentStartResponse:
 
 
 @router.post("/assessment/message", response_model=AssessmentMessageResponse)
-def process_assessment_message(payload: AssessmentMessageRequest) -> AssessmentMessageResponse:
+def process_assessment_message(payload: AssessmentMessageRequest, request: Request) -> AssessmentMessageResponse:
+    operation_id = request.headers.get("X-Agent4K-Operation-Id")
     try:
-        return interviewer_agent.continue_case_interview(
+        operation_progress_service.begin(
+            operation_id,
+            title="Обрабатываем ответ по кейсу",
+            message="Сохраняем ответ и подготавливаем следующий шаг интервью.",
+            steps=ASSESSMENT_MESSAGE_STEPS,
+        )
+        result = interviewer_agent.continue_case_interview(
             session_code=payload.session_code,
             message=payload.message,
+            progress_operation_id=operation_id,
         )
+        operation_progress_service.complete(
+            operation_id,
+            title="Следующий шаг готов",
+            message="Интервью обновлено. Можно продолжать работу с кейсом.",
+        )
+        return result
     except ValueError as exc:
+        operation_progress_service.fail(operation_id, message=str(exc))
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 

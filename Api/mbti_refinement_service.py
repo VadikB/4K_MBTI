@@ -17,6 +17,10 @@ class RefinementQuestion:
 
 
 class MbtiRefinementService:
+    LEGACY_GENERIC_QUESTION = (
+        'Уточните, пожалуйста, как вы обычно действуете в подобных неоднозначных ситуациях и что для вас является главным критерием выбора?'
+    )
+
     GAP_QUESTION_MAP: list[tuple[tuple[str, ...], str, str]] = [
         (("хаос", "неопредел"), "reaction_to_chaos", "Представьте, что план сорвался, данных мало, а команда предлагает несколько противоречивых путей. Как вы будете действовать в первые 30 минут?"),
         (("людей", "stress", "стресс", "feeling"), "people_vs_result_under_stress", "Если ради дедлайна нужно принять решение, которое может демотивировать часть команды, что для вас будет главным при выборе?"),
@@ -98,6 +102,17 @@ class MbtiRefinementService:
                 result.append(text)
         return result
 
+    def _build_contextual_fallback_question_text(self, gap: str) -> str:
+        gap_text = str(gap or '').strip().rstrip('.')
+        return (
+            f"Нам нужно уточнить такой момент профиля: «{gap_text}». "
+            "Опишите одну конкретную рабочую ситуацию, где это проявилось: "
+            "что происходило, как вы действовали и какой критерий выбора был для вас главным?"
+        ) if gap_text else (
+            "Опишите одну конкретную рабочую ситуацию, где это проявилось: "
+            "что происходило, как вы действовали и какой критерий выбора был для вас главным?"
+        )
+
     def _question_for_gap(self, gap: str, used_codes: set[str]) -> RefinementQuestion:
         normalized = gap.lower()
         for markers, code, text in self.GAP_QUESTION_MAP:
@@ -108,9 +123,59 @@ class MbtiRefinementService:
         fallback_index = len(used_codes) + 1
         return RefinementQuestion(
             code=f'gap_followup_{fallback_index}',
-            text='Уточните, пожалуйста, как вы обычно действуете в подобных неоднозначных ситуациях и что для вас является главным критерием выбора?',
+            text=self._build_contextual_fallback_question_text(gap),
             gap=gap,
         )
+
+    def _is_legacy_generic_question(self, text: str | None) -> bool:
+        return str(text or '').strip() == self.LEGACY_GENERIC_QUESTION
+
+    def _refresh_legacy_active_refinement(self, connection, row):
+        if row is None or row.get('status') != 'active':
+            return row
+        asked_questions = row.get('asked_questions_json') or []
+        if not isinstance(asked_questions, list) or not asked_questions:
+            return row
+
+        changed = False
+        refreshed_questions: list[dict[str, Any]] = []
+        current_code = str(row.get('current_question_code') or '').strip()
+        current_text = str(row.get('current_question_text') or '').strip()
+        refreshed_current_text = current_text
+
+        for item in asked_questions:
+            payload = dict(item) if isinstance(item, dict) else {}
+            gap = str(payload.get('gap') or '').strip()
+            question_text = str(payload.get('text') or '').strip()
+            question_code = str(payload.get('code') or '').strip()
+            if self._is_legacy_generic_question(question_text):
+                payload['text'] = self._build_contextual_fallback_question_text(gap)
+                question_text = payload['text']
+                changed = True
+            if question_code and question_code == current_code and self._is_legacy_generic_question(current_text):
+                refreshed_current_text = question_text
+            refreshed_questions.append(payload)
+
+        if not changed and refreshed_current_text == current_text:
+            return row
+
+        updated_row = connection.execute(
+            """
+            UPDATE session_mbti_refinements
+            SET asked_questions_json = %s::jsonb,
+                current_question_text = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            RETURNING *
+            """,
+            (
+                json.dumps(refreshed_questions, ensure_ascii=False),
+                refreshed_current_text,
+                row['id'],
+            ),
+        ).fetchone()
+        connection.commit()
+        return updated_row or row
 
     def _build_question_plan(self, summary: dict[str, Any]) -> list[dict[str, str]]:
         gaps = self._extract_gaps(summary)
@@ -191,6 +256,7 @@ class MbtiRefinementService:
 
         active_row = self._get_active_refinement(connection, session_id=session_id)
         if active_row is not None:
+            active_row = self._refresh_legacy_active_refinement(connection, active_row)
             return self._row_to_state(active_row)
 
         gaps = self._extract_gaps(summary)
@@ -249,6 +315,7 @@ class MbtiRefinementService:
                 'resolved_gaps': [],
                 'updated_mbti_summary': None,
             }
+        row = self._refresh_legacy_active_refinement(connection, row)
         return self._row_to_state(row)
 
     def _refine_summary(self, *, source_summary: dict[str, Any], answers: list[dict[str, Any]]) -> dict[str, Any]:
@@ -306,6 +373,7 @@ class MbtiRefinementService:
             raise ValueError('MBTI refinement not found')
         if row.get('status') != 'active':
             raise ValueError('MBTI refinement already completed')
+        row = self._refresh_legacy_active_refinement(connection, row)
         answer_text = str(answer or '').strip()
         if not answer_text:
             raise ValueError('Введите ответ на уточняющий вопрос.')

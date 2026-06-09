@@ -325,6 +325,14 @@ const handleEmailMagicLinkRequest = async () => {
   }
 
   try {
+    if (requestMagicLinkButton) {
+      requestMagicLinkButton.disabled = true;
+      requestMagicLinkButton.textContent = 'Отправляем...';
+    }
+    if (emailInput) {
+      emailInput.disabled = true;
+    }
+    setAuthStatus('Отправляем одноразовую ссылку...');
     clearAssessmentContext();
     state.sessionId = null;
     state.pendingAgentMessage = null;
@@ -362,6 +370,14 @@ const handleEmailMagicLinkRequest = async () => {
   } catch (error) {
     hideLoader();
     showError(authError, error.message);
+  } finally {
+    if (requestMagicLinkButton) {
+      requestMagicLinkButton.disabled = false;
+      requestMagicLinkButton.textContent = 'Получить ссылку';
+    }
+    if (emailInput) {
+      emailInput.disabled = false;
+    }
   }
 };
 
@@ -399,6 +415,16 @@ authEmailForm.addEventListener('submit', (event) => {
   event.preventDefault();
   void handleEmailMagicLinkRequest();
 });
+
+if (requestMagicLinkButton) {
+  requestMagicLinkButton.addEventListener('click', (event) => {
+    if (!authEmailForm.reportValidity()) {
+      return;
+    }
+    event.preventDefault();
+    void handleEmailMagicLinkRequest();
+  });
+}
 
 authTokenForm.addEventListener('submit', (event) => {
   if (!authTokenForm.reportValidity()) {

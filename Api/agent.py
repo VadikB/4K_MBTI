@@ -3141,7 +3141,7 @@ class InterviewerAgent:
                 user=state.user,
             )
 
-        if _means_no_changes(text):
+        if state.stage == ConversationStage.ASK_POSITION and _means_no_changes(text):
             missing_stage = self._get_missing_profile_stage_for_existing_user(state.user)
             if missing_stage == ConversationStage.ASK_PERSONAL_DATA_CONSENT:
                 state.stage = ConversationStage.ASK_PERSONAL_DATA_CONSENT
@@ -3283,7 +3283,7 @@ class InterviewerAgent:
             )
 
         if state.stage == ConversationStage.ASK_TELEGRAM:
-            state.telegram = text
+            state.telegram = self.normalize_telegram(text)
             state.stage = ConversationStage.ASK_COMPANY_INDUSTRY
             reply_text = (
                 "Спасибо. Теперь укажите сферу деятельности компании, в которой вы работаете. "
@@ -3390,7 +3390,7 @@ class InterviewerAgent:
             )
 
         if state.stage == ConversationStage.ASK_TELEGRAM:
-            state.telegram = text
+            state.telegram = self.normalize_telegram(text)
             state.stage = ConversationStage.ASK_POSITION
             reply_text = "Спасибо. Укажите вашу должность."
             state.history.append({"role": "assistant", "content": reply_text})
@@ -3532,10 +3532,17 @@ class InterviewerAgent:
             mbti_summary=reply.mbti_summary,
         )
 
-    def continue_case_interview(self, *, session_code: str, message: str) -> AssessmentMessageResponse:
+    def continue_case_interview(
+        self,
+        *,
+        session_code: str,
+        message: str,
+        progress_operation_id: str | None = None,
+    ) -> AssessmentMessageResponse:
         reply = assessment_service.process_case_message(
             session_code=session_code,
             message=message,
+            progress_operation_id=progress_operation_id,
         )
         return AssessmentMessageResponse(
             session_code=reply.session_code,

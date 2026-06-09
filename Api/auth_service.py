@@ -138,6 +138,15 @@ class AuthService:
         with get_connection() as connection:
             connection.execute(
                 """
+                UPDATE auth_magic_links
+                SET used_at = NOW()
+                WHERE LOWER(email) = %s
+                  AND used_at IS NULL
+                """,
+                (normalized_email,),
+            )
+            connection.execute(
+                """
                 INSERT INTO auth_magic_links (email, token_hash, expires_at, client_ip, user_agent)
                 VALUES (%s, %s, %s, %s, %s)
                 """,

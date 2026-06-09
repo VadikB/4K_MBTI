@@ -35,6 +35,9 @@ import {
 import { readApiResponse } from '../api.js';
 import { hideAllPanels, syncUrlState } from '../router.js';
 import { showError } from '../components/errors.js';
+import { createOperationId } from '../api.js';
+import { showLoader, hideLoader, startLoaderProgressPolling } from '../utils/loader.js';
+import { loaderFlows } from '../config.js';
 import {
   canReusePreparedAssessment,
   renderAssessmentPreparationState,
@@ -45,6 +48,8 @@ import {
 import { openPrechat } from './ai-welcome.js';
 import { openProcessing } from './processing.js';
 import { recoverProfileCompletionForAssessment, shouldRecoverProfileOnAssessmentError } from './profile-recovery.js';
+
+const interviewCaseContextByKey = new Map();
 
 export const parseInterviewAssistantMessage = (text) => {
   const normalized = String(text || '').trim();
@@ -220,6 +225,34 @@ const scrollInterviewToBottom = () => {
   updateInterviewMessagesScrollIndicator();
 };
 
+const ensureLatestInterviewMessageVisible = () => {
+  if (!interviewMessages || !interviewScrollArea) {
+    return;
+  }
+  const lastMessage = interviewMessages.lastElementChild;
+  if (!(lastMessage instanceof HTMLElement)) {
+    scrollInterviewToBottom();
+    return;
+  }
+  lastMessage.scrollIntoView({ block: 'end', inline: 'nearest' });
+  scrollInterviewToBottom();
+};
+
+const scheduleInterviewBottomAlignment = () => {
+  const align = () => ensureLatestInterviewMessageVisible();
+  if (typeof window.requestAnimationFrame === 'function') {
+    window.requestAnimationFrame(() => {
+      align();
+      window.setTimeout(align, 80);
+      window.setTimeout(align, 220);
+    });
+    return;
+  }
+  align();
+  window.setTimeout(align, 80);
+  window.setTimeout(align, 220);
+};
+
 const updateInterviewMessagesScrollIndicator = () => {
   if (!interviewScrollArea) return;
   const distanceFromBottom =
@@ -290,6 +323,78 @@ const renderSingleTurnCaseCard = (text) => {
     );
   } else {
     interviewSummary.textContent = text;
+  }
+
+  interviewSummary.classList.remove('hidden');
+};
+
+const cacheCurrentCaseContext = (caseKey, assistantMessage) => {
+  if (!caseKey || !assistantMessage) {
+    return;
+  }
+  const parsed = parseInterviewAssistantMessage(assistantMessage);
+  if (parsed) {
+    interviewCaseContextByKey.set(caseKey, {
+      context: normalizeInterviewSituationText(parsed.context) || parsed.context,
+      task: parsed.task,
+    });
+    return;
+  }
+  const normalized = String(assistantMessage || '').trim();
+  if (normalized) {
+    interviewCaseContextByKey.set(caseKey, {
+      context: normalized,
+      task: '',
+    });
+  }
+};
+
+const renderFollowupCaseContext = (caseKey, mbtiFeedbackText = '') => {
+  const cached = caseKey ? interviewCaseContextByKey.get(caseKey) : null;
+  interviewSummary.innerHTML = '';
+
+  const introBlock = renderInterviewStructuredBlock({
+    label: 'Кейс, по которому уточняем ответ',
+    body:
+      'Сначала напомним исходную ситуацию, чтобы уточняющий вопрос оставался привязанным к тому же кейсу.',
+  });
+  interviewSummary.appendChild(introBlock);
+
+  if (cached?.context) {
+    interviewSummary.appendChild(
+      renderInterviewStructuredBlock({
+        label: 'Ситуация',
+        body: cached.context,
+      }),
+    );
+  }
+
+  if (cached?.task) {
+    interviewSummary.appendChild(
+      renderInterviewStructuredBlock({
+        label: 'Что нужно было сделать',
+        body: cached.task,
+        variant: 'task',
+      }),
+    );
+  }
+
+  if (!cached?.context && !cached?.task) {
+    interviewSummary.appendChild(
+      renderInterviewStructuredBlock({
+        label: 'Кейс',
+        body: state.assessmentCaseTitle || 'Контекст кейса временно недоступен, но уточнение относится к только что завершенному кейсу.',
+      }),
+    );
+  }
+
+  if (mbtiFeedbackText) {
+    interviewSummary.appendChild(
+      renderInterviewStructuredBlock({
+        label: 'MBTI по кейсу',
+        body: mbtiFeedbackText,
+      }),
+    );
   }
 
   interviewSummary.classList.remove('hidden');
@@ -435,6 +540,38 @@ const clearAssessmentAutoFinishTimer = () => {
   }
 };
 
+let assessmentTransitionLoaderTimerId = null;
+
+const clearAssessmentTransitionLoaderTimer = () => {
+  if (assessmentTransitionLoaderTimerId) {
+    window.clearTimeout(assessmentTransitionLoaderTimerId);
+    assessmentTransitionLoaderTimerId = null;
+  }
+};
+
+const scheduleAssessmentTransitionLoader = (operationId) => {
+  clearAssessmentTransitionLoaderTimer();
+  if (!operationId) {
+    return;
+  }
+  const isFinalCase =
+    Number(state.assessmentCaseNumber || 0) >= Number(state.assessmentTotalCases || 0) &&
+    Number(state.assessmentTotalCases || 0) > 0;
+  const title = isFinalCase ? 'Формируем итоговый отчет' : 'Завершаем кейс';
+  const text = isFinalCase
+    ? 'Проверяем последний кейс, обновляем MBTI и собираем итоговый профиль компетенций.'
+    : 'Проверяем ответ, уточняем сигналы по кейсу и подготавливаем следующий шаг.';
+  assessmentTransitionLoaderTimerId = window.setTimeout(() => {
+    showLoader(title, text, loaderFlows.assessmentTurn);
+    startLoaderProgressPolling(operationId);
+  }, 650);
+};
+
+const stopAssessmentTransitionLoader = () => {
+  clearAssessmentTransitionLoaderTimer();
+  hideLoader();
+};
+
 const updateInterviewTimer = () => {
   const remainingMs = getRemainingCaseTimeMs();
   if (remainingMs === null) {
@@ -553,6 +690,10 @@ const handleAssessmentResponse = (data) => {
     state.assessmentCaseTitle = incidentTitle;
   }
 
+  if (!data.mbti_followup_pending && assistantMessage && nextCaseKey) {
+    cacheCurrentCaseContext(nextCaseKey, assistantMessage);
+  }
+
   renderInterviewMeta();
   renderCaseProgress(Boolean(data.assessment_completed));
   clearInterviewTimer();
@@ -578,7 +719,10 @@ const handleAssessmentResponse = (data) => {
   }
 
   const mbtiFeedbackText = data.case_completed || data.mbti_followup_pending ? buildMbtiCaseFeedbackText(data) : '';
-  if (mbtiFeedbackText && !isDialogCase && !interviewSummary.classList.contains('hidden')) {
+  if (data.mbti_followup_pending) {
+    renderFollowupCaseContext(nextCaseKey || previousCaseKey, mbtiFeedbackText);
+  }
+  if (mbtiFeedbackText && !data.mbti_followup_pending && !isDialogCase && !interviewSummary.classList.contains('hidden')) {
     const mbtiBlock = renderInterviewStructuredBlock({
       label: 'MBTI по кейсу',
       body: mbtiFeedbackText,
@@ -621,6 +765,7 @@ const handleAssessmentResponse = (data) => {
     interviewPanel.classList.remove('completed');
     interviewCompleteActions.classList.add('hidden');
     interviewTextarea.focus();
+    scheduleInterviewBottomAlignment();
     return;
   }
 
@@ -645,6 +790,7 @@ const handleAssessmentResponse = (data) => {
   interviewPanel.classList.remove('completed');
   interviewCompleteActions.classList.add('hidden');
   interviewTextarea.focus();
+  scheduleInterviewBottomAlignment();
 
   if (!updateInterviewTimer()) {
     state.assessmentTimerId = window.setInterval(() => {
@@ -669,18 +815,27 @@ const handleAssessmentResponse = (data) => {
 };
 
 const submitAssessmentMessage = async (text) => {
-  const response = await fetch('/users/assessment/message', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      session_code: state.assessmentSessionCode,
-      message: text,
-    }),
-  });
-  const data = await readApiResponse(response, 'Не удалось обработать ответ по кейсу.');
-  handleAssessmentResponse(data);
+  const operationId = createOperationId();
+  scheduleAssessmentTransitionLoader(operationId);
+  try {
+    const response = await fetch('/users/assessment/message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Agent4K-Operation-Id': operationId,
+      },
+      body: JSON.stringify({
+        session_code: state.assessmentSessionCode,
+        message: text,
+      }),
+    });
+    const data = await readApiResponse(response, 'Не удалось обработать ответ по кейсу.');
+    stopAssessmentTransitionLoader();
+    handleAssessmentResponse(data);
+  } catch (error) {
+    stopAssessmentTransitionLoader();
+    throw error;
+  }
 };
 
 export const openInterview = () => {
@@ -702,6 +857,7 @@ const startAssessmentInterview = async () => {
 
   showError(prechatError, '');
   interviewMessages.innerHTML = '';
+  interviewCaseContextByKey.clear();
   interviewSummary.classList.add('hidden');
   interviewSummary.textContent = '';
   renderCaseProgress(false);
