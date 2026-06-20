@@ -73,6 +73,17 @@ const reportMbtiRefinementState = {
   statusText: '',
 };
 
+const disableTextareaAssistFeatures = (element) => {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+  element.setAttribute('autocomplete', 'off');
+  element.setAttribute('autocorrect', 'off');
+  element.setAttribute('autocapitalize', 'off');
+  element.setAttribute('spellcheck', 'false');
+  element.setAttribute('data-form-type', 'other');
+};
+
 const getMbtiOverallBlock = () => {
   const payload = state.assessmentMbtiSummary;
   if (!payload || typeof payload !== 'object') {
@@ -1785,6 +1796,7 @@ export const tryOpenReportAfterProcessing = () => {
 };
 
 export const initReport = () => {
+  disableTextareaAssistFeatures(reportMbtiRefineAnswer);
   reportCompetencyCompactQuery?.addEventListener('change', () => {
     if (!reportPanel?.classList.contains('hidden') && state.skillAssessments.length) {
       renderReport();

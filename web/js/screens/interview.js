@@ -400,6 +400,17 @@ const renderFollowupCaseContext = (caseKey, mbtiFeedbackText = '') => {
   interviewSummary.classList.remove('hidden');
 };
 
+const disableTextareaAssistFeatures = (element) => {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+  element.setAttribute('autocomplete', 'off');
+  element.setAttribute('autocorrect', 'off');
+  element.setAttribute('autocapitalize', 'off');
+  element.setAttribute('spellcheck', 'false');
+  element.setAttribute('data-form-type', 'other');
+};
+
 const renderInterviewMeta = () => {
   interviewCaseBadge.textContent = 'Кейс ' + state.assessmentCaseNumber + ' из ' + state.assessmentTotalCases;
   interviewCaseTitle.textContent = state.assessmentCaseTitle || 'Кейс';
@@ -911,6 +922,7 @@ export const handleAssessmentEntryClick = () => {
 };
 
 export const initInterview = () => {
+  disableTextareaAssistFeatures(interviewTextarea);
   placeInterviewTimerBadge();
   interviewCompactQuery?.addEventListener('change', placeInterviewTimerBadge);
 

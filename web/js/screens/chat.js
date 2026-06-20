@@ -36,6 +36,7 @@ import {
   sanitizeDisplayMetaText,
   buildExistingUserAgentMessage,
   shouldOfferNoChangesQuickReply,
+  harmonizeNoChangesPrompt,
 } from '../utils/format.js';
 import { addMessage, showAgentTyping, hideAgentTyping } from '../components/chat-messages.js';
 import { showError } from '../components/errors.js';
@@ -222,6 +223,7 @@ export const renderChatRoleOptions = () => {
     return;
   }
   const options = Array.isArray(state.pendingRoleOptions) ? state.pendingRoleOptions : [];
+  const hasPendingConsent = Boolean(state.pendingConsentText);
   const actionOptions = (Array.isArray(state.pendingActionOptions) ? state.pendingActionOptions : []).filter((option) => {
     if (!state.pendingConsentText) {
       return true;
@@ -229,7 +231,7 @@ export const renderChatRoleOptions = () => {
     return String(option?.value || '').trim().toLowerCase() === 'согласен';
   });
   const hasCompactActions = actionOptions.length > 0;
-  const showNoChangesQuickReply = Boolean(state.pendingNoChangesQuickReply);
+  const showNoChangesQuickReply = Boolean(state.pendingNoChangesQuickReply) && !hasPendingConsent;
   chatRoleOptions.innerHTML = '';
   chatPanel.classList.toggle('compact-chat-flow', hasCompactActions);
   chatForm.classList.toggle('hidden', hasCompactActions || state.completed);
@@ -240,7 +242,7 @@ export const renderChatRoleOptions = () => {
       details.className = 'chat-consent-accordion';
       details.innerHTML =
         '<summary>' +
-        escapeHtml(state.pendingConsentTitle || 'Текст согласия') +
+        escapeHtml(state.pendingConsentTitle || 'Согласие на обработку персональных данных') +
         '</summary>' +
         '<div class="chat-consent-accordion-body"><p>' +
         escapeHtml(state.pendingConsentText).replace(/\\n/g, '<br>') +
@@ -269,7 +271,9 @@ export const renderChatRoleOptions = () => {
   } else if (actionOptions.length) {
     const label = document.createElement('p');
     label.className = 'chat-role-options-label';
-    label.textContent = state.pendingConsentText ? 'Подтвердите согласие:' : 'Подтвердите выбор:';
+    label.textContent = state.pendingConsentText
+      ? 'Подтвердите согласие на обработку персональных данных:'
+      : 'Подтвердите выбор:';
     chatRoleOptions.appendChild(label);
   }
 
@@ -311,7 +315,9 @@ export const renderChatRoleOptions = () => {
     }
     const title = document.createElement('span');
     title.className = 'chat-role-option-title';
-    title.textContent = option.label || option.value;
+    title.textContent = state.pendingConsentText
+      ? 'Согласен на обработку персональных данных'
+      : option.label || option.value;
     button.appendChild(title);
     button.addEventListener('click', () => {
       void sendChatMessage(String(option.value), String(option.label || option.value));
@@ -399,8 +405,9 @@ export const sendChatMessage = async (text, displayText = null) => {
     });
     const data = await readApiResponse(response, 'Не удалось обработать сообщение.');
 
+    const botMessage = harmonizeNoChangesPrompt(data.message);
     hideAgentTyping();
-    addMessage('bot', data.message);
+    addMessage('bot', botMessage);
     state.completed = data.completed;
     state.pendingUser = data.user || state.pendingUser;
     state.assessmentSessionCode = data.assessment_session_code || state.assessmentSessionCode;
@@ -408,8 +415,8 @@ export const sendChatMessage = async (text, displayText = null) => {
     state.pendingActionOptions = Array.isArray(data.action_options) ? data.action_options : [];
     state.pendingConsentTitle = data.consent_title || null;
     state.pendingConsentText = data.consent_text || null;
-    state.pendingAgentMessage = data.message || state.pendingAgentMessage;
-    state.pendingNoChangesQuickReply = shouldOfferNoChangesQuickReply(data.message);
+    state.pendingAgentMessage = botMessage || state.pendingAgentMessage;
+    state.pendingNoChangesQuickReply = shouldOfferNoChangesQuickReply(botMessage);
     setStatus(data.user ? data : {});
     if (state.isNewUserFlow) {
       hideLoader();
