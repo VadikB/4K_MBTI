@@ -5,9 +5,11 @@ import logging
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 
 from Api.config import settings
 from Api.database import get_connection
+from Api.email_service import send_magic_link_email
 from Api.schemas import UserResponse
 from Api.web_session_service import USER_SELECT_SQL
 
@@ -153,6 +155,14 @@ class AuthService:
                 (normalized_email, token_hash, expires_at, client_ip, user_agent),
             )
             connection.commit()
+
+        login_url = settings.app_base_url.rstrip("/") + "/?token=" + quote(raw_token, safe="")
+        if not settings.auth_magic_link_dev_mode:
+            send_magic_link_email(
+                email=normalized_email,
+                login_url=login_url,
+                expires_at=expires_at,
+            )
 
         logger.info("Magic link requested for %s", normalized_email)
         return MagicLinkRequestResult(

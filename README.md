@@ -172,6 +172,41 @@ bun run build:web
 
 Команда собирает модульный фронтенд из `web/js/main.js` в `web/dist/main.js` и дополнительные lazy-loaded файлы в `web/dist/`. В деплой-коммит должны попасть `web/index.html` и весь свежий каталог `web/dist/`, иначе браузер не загрузит актуальный интерфейс.
 
+- Чтобы поднять новый номер релиза согласованно в backend и frontend, используйте:
+
+```bash
+./.venv/bin/python scripts/bump_version.py 2.1.1
+```
+
+или:
+
+```bash
+npm run bump:version -- 2.1.1
+```
+
+Скрипт обновляет:
+  - `pyproject.toml`
+  - `uv.lock`
+  - `web/js/config.js`
+
+После изменения версии пересоберите фронтенд и перезапустите приложение, чтобы в главном окне отобразилась уже запущенная версия.
+
+- Для окружений можно использовать готовые шаблоны:
+  - `.env.local.example` — локальная разработка и ngrok/dev magic link
+  - `.env.production.example` — production с реальной email-доставкой через Postmark
+
+Простой способ переключения:
+
+```bash
+cp .env.local.example .env
+```
+
+или:
+
+```bash
+cp .env.production.example .env
+```
+
 - Для production логирование теперь лучше разделено на два канала:
   - `runtime logs` приложения идут в `stdout` и/или файлы
   - `audit logs` по важным действиям и ошибкам остаются в таблице `system_logs`

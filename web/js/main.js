@@ -10,7 +10,7 @@ import {
 } from './state.js';
 import { restoreServerSession, restoreLocalUserSession } from './session.js';
 import { hideAllPanels, returnToStart } from './router.js';
-import { initWiring } from './wiring.js';
+import { initWiring, verifyEmailMagicLinkToken } from './wiring.js';
 import {
   openProcessingScreen,
   openReportScreen,
@@ -35,7 +35,29 @@ if (appReleaseNumber) {
   appReleaseNumber.textContent = APP_RELEASE;
 }
 
+const syncRuntimeReleaseNumber = async () => {
+  if (!appReleaseNumber) {
+    return;
+  }
+  try {
+    const response = await fetch('/users/version', {
+      credentials: 'same-origin',
+    });
+    if (!response.ok) {
+      return;
+    }
+    const payload = await response.json();
+    const runtimeVersion = String(payload?.version || '').trim();
+    if (runtimeVersion) {
+      appReleaseNumber.textContent = runtimeVersion;
+    }
+  } catch (_error) {
+    // keep fallback release number from the frontend config
+  }
+};
+
 initWiring();
+void syncRuntimeReleaseNumber();
 
 const resetInitialState = () => {
   state.sessionId = null;
@@ -76,6 +98,7 @@ const resetInitialState = () => {
 const bootApp = async () => {
   resetInitialState();
   const params = new URLSearchParams(window.location.search);
+  const authTokenFromLink = String(params.get('token') || '').trim();
   if (params.get('reset') === '1') {
     clearAssessmentContext();
     try {
@@ -91,6 +114,21 @@ const bootApp = async () => {
   const screen = params.get('screen') || (safeStorage.getItem(STORAGE_KEYS.completionPending) ? 'processing' : null);
   restoreAssessmentContext();
   restoreAssessmentContextFromParams(params);
+  if (authTokenFromLink) {
+    if (authTokenForm) {
+      authTokenForm.classList.remove('hidden');
+    }
+    if (magicTokenInput) {
+      magicTokenInput.value = authTokenFromLink;
+    }
+    if (authStatus) {
+      authStatus.textContent = 'Подтверждаем ссылку для входа...';
+      authStatus.classList.remove('hidden');
+    }
+    window.history.replaceState({}, '', '/?ui=' + Date.now());
+    await verifyEmailMagicLinkToken(authTokenFromLink);
+    return;
+  }
   if (screen && screen !== 'processing' && screen !== 'report') {
     state.currentScreen = screen;
   }

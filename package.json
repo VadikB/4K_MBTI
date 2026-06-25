@@ -2,6 +2,7 @@
   "scripts": {
     "build:web": "rm -rf web/dist && bun build web/js/main.js --outdir web/dist --target browser --format esm --splitting --public-path /web/dist/ --entry-naming '[name].js' --chunk-naming '[name]-[hash].js' --production --minify",
     "dev:web": "bun build web/js/main.js --outdir web/dist --target browser --format esm --splitting --public-path /web/dist/ --entry-naming '[name].js' --chunk-naming '[name]-[hash].js' --watch",
+    "bump:version": "./.venv/bin/python scripts/bump_version.py",
     "lint:dead": "knip",
     "lint:js": "eslint web/js/**/*.js"
   },

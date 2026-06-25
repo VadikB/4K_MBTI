@@ -30,6 +30,10 @@ class Settings:
     auth_magic_link_ttl_minutes: int = int(os.getenv("AUTH_MAGIC_LINK_TTL_MINUTES", "15"))
     auth_magic_link_dev_mode: bool = os.getenv("AUTH_MAGIC_LINK_DEV_MODE", "true").strip().lower() in {"1", "true", "yes", "on"}
     auth_magic_link_from_email: str = os.getenv("AUTH_MAGIC_LINK_FROM_EMAIL", "no-reply@agent4k.local").strip() or "no-reply@agent4k.local"
+    auth_magic_link_subject: str = os.getenv("AUTH_MAGIC_LINK_SUBJECT", "Вход в 4K Ассистент").strip() or "Вход в 4K Ассистент"
+    email_provider: str = os.getenv("EMAIL_PROVIDER", "").strip().lower()
+    postmark_server_token: str = os.getenv("POSTMARK_SERVER_TOKEN", "").strip()
+    postmark_message_stream: str = os.getenv("POSTMARK_MESSAGE_STREAM", "outbound").strip() or "outbound"
     deepseek_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
     deepseek_api_key_2: str = os.getenv("DEEPSEEK_API_KEY_2", "")
     deepseek_api_key_3: str = os.getenv("DEEPSEEK_API_KEY_3", "")

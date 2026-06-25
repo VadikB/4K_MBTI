@@ -381,9 +381,9 @@ const handleEmailMagicLinkRequest = async () => {
   }
 };
 
-const handleEmailMagicLinkVerify = async () => {
+export const verifyEmailMagicLinkToken = async (tokenValue = null) => {
   showError(authError, '');
-  const token = magicTokenInput.value.trim();
+  const token = String(tokenValue ?? magicTokenInput?.value ?? '').trim();
   if (!token) {
     showError(authError, 'вставьте код или ссылку из письма');
     magicTokenInput.focus();
@@ -431,7 +431,7 @@ authTokenForm.addEventListener('submit', (event) => {
     return;
   }
   event.preventDefault();
-  void handleEmailMagicLinkVerify();
+  void verifyEmailMagicLinkToken();
 });
 
 setupSpeechInput(chatMicButton, chatInput);

@@ -1001,6 +1001,10 @@ class UserSessionBootstrapResponse(BaseModel):
     admin_dashboard: AdminDashboard | None = None
 
 
+class AppVersionResponse(BaseModel):
+    version: str
+
+
 class OperationProgressStep(BaseModel):
     label: str
     description: str

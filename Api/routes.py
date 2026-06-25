@@ -11,6 +11,7 @@ from fastapi.responses import Response
 from Api.admin_report_dialogue_pdf_service import admin_report_dialogue_pdf_service
 from Api.admin_report_expert_export_service import admin_report_expert_export_service
 from Api.admin_reports_pdf_service import admin_reports_pdf_service
+from Api.app_version import get_app_version
 from Api.auth_service import auth_service, normalize_email
 from Api.assessment_service import assessment_service
 from Api.agent import interviewer_agent
@@ -53,6 +54,7 @@ from Api.schemas import (
     AdminExpertGroupExportRequest,
     AdminInsightCard,
     AdminMetricCard,
+    AppVersionResponse,
     AuthEmailRequest,
     AuthEmailRequestResponse,
     AuthEmailVerifyRequest,
@@ -127,6 +129,11 @@ MONTH_LABELS_RU = {
     11: "ноя",
     12: "дек",
 }
+
+
+@router.get("/version", response_model=AppVersionResponse)
+def get_application_version() -> AppVersionResponse:
+    return AppVersionResponse(version=get_app_version())
 ADMIN_PERSONALIZATION_SOURCE_LABELS = {
     "static": "задано в шаблоне кейса",
     "from_user_profile": "из профиля пользователя",
@@ -2288,11 +2295,14 @@ def check_or_create_user(payload: CheckOrCreateUserRequest, request: Request, re
 def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> AuthEmailRequestResponse:
     client_ip = request.client.host if request.client else None
     user_agent = request.headers.get("User-Agent")
-    result = auth_service.create_magic_link_request(
-        email=payload.email,
-        client_ip=client_ip,
-        user_agent=user_agent,
-    )
+    try:
+        result = auth_service.create_magic_link_request(
+            email=payload.email,
+            client_ip=client_ip,
+            user_agent=user_agent,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     return AuthEmailRequestResponse(
         message="Если email доступен для входа, мы подготовили одноразовую ссылку.",
         email=result.email,
