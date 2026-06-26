@@ -1,7 +1,10 @@
 import { state, persistAssessmentContext, clearAssessmentContext } from './state.js';
 import {
   authPanel,
-  phoneInput,
+  emailInput,
+  authTokenForm,
+  magicTokenInput,
+  authStatus,
   onboardingPanel,
   dashboardPanel,
   adminPanel,
@@ -118,8 +121,20 @@ export const returnToStart = () => {
   state.currentScreen = 'auth';
   hideAllPanels();
   authPanel.classList.remove('hidden');
-  phoneInput.value = '';
-  phoneInput.focus();
+  if (emailInput) {
+    emailInput.value = '';
+    emailInput.focus();
+  }
+  if (magicTokenInput) {
+    magicTokenInput.value = '';
+  }
+  if (authTokenForm) {
+    authTokenForm.classList.add('hidden');
+  }
+  if (authStatus) {
+    authStatus.textContent = '';
+    authStatus.classList.add('hidden');
+  }
   window.history.replaceState({ screen: 'auth' }, '', '/');
 };
 

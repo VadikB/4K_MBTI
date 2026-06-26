@@ -80,6 +80,41 @@ class CheckOrCreateUserRequest(BaseModel):
         return value
 
 
+class AuthEmailRequest(BaseModel):
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        cleaned = str(value or "").strip().lower()
+        if not cleaned or "@" not in cleaned:
+            raise ValueError("Введите корректный email.")
+        local, _, domain = cleaned.partition("@")
+        if not local or not domain or "." not in domain:
+            raise ValueError("Введите корректный email.")
+        return cleaned
+
+
+class AuthEmailRequestResponse(BaseModel):
+    ok: bool = True
+    message: str
+    email: str
+    expires_in_seconds: int
+    dev_magic_token: str | None = None
+
+
+class AuthEmailVerifyRequest(BaseModel):
+    token: str
+
+    @field_validator("token")
+    @classmethod
+    def validate_token(cls, value: str) -> str:
+        cleaned = str(value or "").strip()
+        if not cleaned:
+            raise ValueError("Введите код или вставьте ссылку для входа.")
+        return cleaned
+
+
 class AgentReply(BaseModel):
     session_id: str
     message: str
@@ -827,6 +862,58 @@ class AssessmentReportInterpretationResponse(BaseModel):
     mbti_summary: dict | None = None
 
 
+class MbtiRefinementQuestion(BaseModel):
+    code: str
+    text: str
+
+
+class MbtiRefinementStartResponse(BaseModel):
+    active: bool
+    completed: bool
+    refinement_id: int
+    question_index: int
+    question_total: int
+    current_confidence: int
+    target_confidence: int
+    current_question: MbtiRefinementQuestion | None = None
+    remaining_gaps: list[str] = Field(default_factory=list)
+    resolved_gaps: list[str] = Field(default_factory=list)
+    updated_mbti_summary: dict | None = None
+
+
+class MbtiRefinementMessageRequest(BaseModel):
+    refinement_id: int
+    answer: str
+
+
+class MbtiRefinementMessageResponse(BaseModel):
+    active: bool
+    completed: bool
+    refinement_id: int
+    question_index: int
+    question_total: int
+    current_confidence: int
+    target_confidence: int
+    current_question: MbtiRefinementQuestion | None = None
+    remaining_gaps: list[str] = Field(default_factory=list)
+    resolved_gaps: list[str] = Field(default_factory=list)
+    updated_mbti_summary: dict | None = None
+
+
+class MbtiRefinementStateResponse(BaseModel):
+    active: bool
+    completed: bool
+    refinement_id: int | None = None
+    question_index: int = 0
+    question_total: int = 0
+    current_confidence: int = 0
+    target_confidence: int = 75
+    current_question: MbtiRefinementQuestion | None = None
+    remaining_gaps: list[str] = Field(default_factory=list)
+    resolved_gaps: list[str] = Field(default_factory=list)
+    updated_mbti_summary: dict | None = None
+
+
 class UserAssessmentHistoryItem(BaseModel):
     session_id: int
     session_code: str
@@ -912,6 +999,10 @@ class UserSessionBootstrapResponse(BaseModel):
     dashboard: UserDashboard
     is_admin: bool = False
     admin_dashboard: AdminDashboard | None = None
+
+
+class AppVersionResponse(BaseModel):
+    version: str
 
 
 class OperationProgressStep(BaseModel):

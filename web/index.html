@@ -62,15 +62,23 @@
       </div>
       <div class="auth-panel-copy">
         <h1>Добро пожаловать</h1>
-        <p class="subtitle">Введите номер телефона, чтобы продолжить.</p>
+        <p class="subtitle">Введите рабочий email, чтобы получить одноразовую ссылку для входа.</p>
       </div>
-      <form id="phone-form" class="stack">
+      <form id="auth-email-form" class="stack">
         <label class="field">
-          <span>Телефон</span>
-          <input id="phone-input" name="phone" type="tel" placeholder="+7 999 999 99 99" autocomplete="tel" required>
+          <span>Email</span>
+          <input id="email-input" name="email" type="email" placeholder="name@company.com" autocomplete="email" required>
         </label>
-        <button type="submit" class="primary-button">Продолжить</button>
+        <button id="request-magic-link-button" type="submit" class="primary-button">Получить ссылку</button>
       </form>
+      <form id="auth-token-form" class="stack hidden">
+        <label class="field">
+          <span>Код или ссылка для входа</span>
+          <input id="magic-token-input" name="magic-token" type="text" placeholder="Вставьте код или ссылку из письма" autocomplete="one-time-code" required>
+        </label>
+        <button id="verify-magic-link-button" type="submit" class="primary-button">Войти</button>
+      </form>
+      <p id="auth-status" class="subtitle auth-status hidden"></p>
       <p id="auth-error" class="error" hidden></p>
     </section>
 
@@ -233,11 +241,15 @@
                 </div>
               </div>
             </article>
-            <article class="card is-placeholder assessment-mini-card muted-card warm">
+            <article id="welcome-mbti-card" class="card is-placeholder assessment-mini-card muted-card warm">
               <div class="mini-card-icon muted-icon"><img src="/web/assets/icons/4k-icon.svg" alt="" aria-hidden="true"></div>
               <h3>Проверка профиля MBTI</h3>
               <p>AI-анализ типа личности для понимания паттернов поведения и наиболее подходящих форматов работы.</p>
-              <div class="mini-card-footer"><span>15 минут</span><button type="button" class="mini-start-button disabled" disabled>Скоро</button></div>
+              <div class="mini-card-footer">
+                <span>15 минут</span>
+                <button id="welcome-mbti-button" type="button" class="mini-start-button disabled" disabled>Скоро</button>
+              </div>
+              <p id="welcome-mbti-status" class="welcome-mbti-status hidden"></p>
             </article>
           </div>
         </section>
@@ -1353,7 +1365,15 @@
           </div>
 
           <form id="interview-form" class="interview-form">
-            <textarea id="interview-textarea" placeholder="Опишите ваше решение..."></textarea>
+            <textarea
+              id="interview-textarea"
+              placeholder="Опишите ваше решение..."
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+              data-form-type="other"
+            ></textarea>
             <div class="interview-form-footer">
               <div class="interview-action-buttons">
                 <button id="interview-mic-button" type="button" class="mic-button hidden" aria-label="Продиктовать ответ" title="Продиктовать ответ">
@@ -1636,6 +1656,33 @@
                 <div id="report-mbti-missing-block" class="report-mbti-missing-block hidden">
                   <strong>Что еще стоит уточнить</strong>
                   <ul id="report-mbti-missing" class="report-mbti-missing-list"></ul>
+                </div>
+                <div id="report-mbti-refine-actions" class="report-mbti-refine-actions hidden">
+                  <button id="report-mbti-refine-button" class="primary-button compact-primary" type="button">Уточнить MBTI</button>
+                  <p id="report-mbti-refine-status" class="report-mbti-refine-status hidden"></p>
+                </div>
+                <div id="report-mbti-refine-panel" class="report-mbti-refine-panel hidden">
+                  <div class="report-mbti-refine-head">
+                    <strong>Уточняющие вопросы по профилю</strong>
+                    <span id="report-mbti-refine-progress" class="report-mbti-refine-progress">Вопрос 1 из 1</span>
+                  </div>
+                  <p id="report-mbti-refine-question" class="report-mbti-refine-question"></p>
+                  <label class="report-mbti-refine-field">
+                    <span>Ваш ответ</span>
+                    <textarea
+                      id="report-mbti-refine-answer"
+                      rows="4"
+                      placeholder="Опишите, как вы обычно действуете в такой ситуации."
+                      autocomplete="off"
+                      autocorrect="off"
+                      autocapitalize="off"
+                      spellcheck="false"
+                      data-form-type="other"
+                    ></textarea>
+                  </label>
+                  <div class="report-mbti-refine-controls">
+                    <button id="report-mbti-refine-submit" class="primary-button compact-primary" type="button">Отправить ответ</button>
+                  </div>
                 </div>
               </div>
             </article>

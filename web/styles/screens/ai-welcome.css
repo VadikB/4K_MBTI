@@ -392,6 +392,13 @@
     color: var(--text-soft);
 }
 
+.welcome-mbti-status {
+    margin: var(--space-2) 0 0;
+    color: var(--text-muted);
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-normal);
+}
+
 .ai-welcome-panel .mini-card-footer {
     width: 100%;
     margin-top: auto;
@@ -418,6 +425,23 @@
     background: var(--control-bg);
     color: var(--text-soft);
     cursor: not-allowed;
+}
+
+.ai-welcome-panel .assessment-mini-card.welcome-mbti-ready {
+    border-color: rgba(70, 72, 212, 0.18);
+    background: linear-gradient(180deg, #ffffff 0%, #f9f8ff 100%);
+}
+
+.ai-welcome-panel .assessment-mini-card.welcome-mbti-ready .mini-card-icon img {
+    opacity: 1;
+    filter: none;
+}
+
+.ai-welcome-panel .assessment-mini-card.welcome-mbti-ready h3,
+.ai-welcome-panel .assessment-mini-card.welcome-mbti-ready p,
+.ai-welcome-panel .assessment-mini-card.welcome-mbti-ready .welcome-mbti-status,
+.ai-welcome-panel .assessment-mini-card.welcome-mbti-ready .mini-card-footer {
+    color: var(--text-main);
 }
 
 .ai-welcome-panel .importance-card {

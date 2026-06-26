@@ -1,4 +1,4 @@
-import { ADMIN_PHONE } from '../config.js';
+import { ADMIN_EMAIL } from '../config.js';
 
 export const buildInitials = (fullName) => {
   if (!fullName) {
@@ -111,12 +111,23 @@ export const isAdminUserPayload = (user, explicitFlag = false) => {
   if (explicitFlag) {
     return true;
   }
-  const digits = String(user?.phone || '').replace(/\D/g, '');
-  return digits === ADMIN_PHONE;
+  return String(user?.email || '').trim().toLowerCase() === ADMIN_EMAIL;
+};
+
+export const harmonizeNoChangesPrompt = (message) => {
+  const text = String(message || '').trim();
+  if (!text) {
+    return '';
+  }
+
+  return text.replace(
+    /Если изменений нет,\s*просто напишите,\s*что профиль актуален или что ничего не изменилось\./gi,
+    'Если изменений нет, нажмите кнопку «Профиль актуален» ниже.',
+  );
 };
 
 export const buildExistingUserAgentMessage = (user, fallbackMessage = '') => {
-  const fallback = String(fallbackMessage || '').trim();
+  const fallback = harmonizeNoChangesPrompt(fallbackMessage);
   const normalizedFallback = fallback.toLowerCase().replace(/ё/g, 'е');
   if (
     normalizedFallback.includes('нужно ли внести изменения') &&
@@ -136,11 +147,7 @@ export const buildExistingUserAgentMessage = (user, fallbackMessage = '') => {
 
   if (position || duties) {
     message += 'Нужно ли внести изменения в должность и должностные обязанности? ';
-    if (!position && !duties) {
-      message += 'Если изменений нет, просто напишите, что профиль актуален или что ничего не изменилось. ';
-    } else {
-      message += 'Если изменений нет, просто напишите, что профиль актуален или что ничего не изменилось. ';
-    }
+    message += 'Если изменений нет, нажмите кнопку «Профиль актуален» ниже. ';
     message += 'Если изменения есть, отправьте сначала актуальную должность.';
     return message;
   }

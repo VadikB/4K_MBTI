@@ -4,6 +4,7 @@ import traceback
 from time import perf_counter
 from pathlib import Path
 
+from Api.config import settings
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException as FastAPIHTTPException
 from fastapi.requests import Request
@@ -12,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 
 from Api.database import ensure_core_schema
 from Api.routes import router as users_router
-from Api.system_logging import configure_database_logging, write_system_log
+from Api.system_logging import configure_application_logging, configure_database_logging, write_system_log
 from Api.web_session_service import web_session_service
 
 app = FastAPI(title="Agent_4K API")
@@ -25,7 +26,9 @@ DEV_PREVIEWS_DIR = BASE_DIR / "dev_previews"
 
 ensure_core_schema()
 web_session_service.ensure_schema()
-configure_database_logging()
+configure_application_logging()
+if settings.runtime_logs_to_db:
+    configure_database_logging()
 logger.info("Agent_4K API startup complete")
 
 app.mount("/favicons", StaticFiles(directory=WEB_DIR / "favicons"), name="favicons")
@@ -44,6 +47,26 @@ def _resolve_request_user(request: Request):
     return current_user
 
 
+def _is_static_request_path(path: str) -> bool:
+    return (
+        path == "/"
+        or path.startswith("/web/")
+        or path.startswith("/favicons/")
+        or path.startswith("/__screen")
+    )
+
+
+def _should_persist_request_audit(request: Request, status_code: int) -> bool:
+    path = str(request.url.path)
+    if _is_static_request_path(path):
+        return False
+    if status_code >= 500:
+        return True
+    if request.method.upper() != "GET":
+        return True
+    return False
+
+
 @app.middleware("http")
 async def disable_browser_cache(request: Request, call_next):
     started_at = perf_counter()
@@ -54,22 +77,23 @@ async def disable_browser_cache(request: Request, call_next):
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
-    write_system_log(
-        level="INFO",
-        logger_name="http.access",
-        message=f"{request.method} {request.url.path} -> {response.status_code}",
-        event_type="http_request",
-        source="fastapi",
-        request_method=request.method,
-        request_path=str(request.url.path),
-        status_code=response.status_code,
-        user_id=current_user.id if current_user else None,
-        client_ip=client_ip,
-        payload={
-            "duration_ms": round((perf_counter() - started_at) * 1000, 2),
-            "query_params": dict(request.query_params),
-        },
-    )
+    if settings.audit_logs_to_db and _should_persist_request_audit(request, response.status_code):
+        write_system_log(
+            level="INFO",
+            logger_name="http.audit",
+            message=f"{request.method} {request.url.path} -> {response.status_code}",
+            event_type="http_request",
+            source="fastapi",
+            request_method=request.method,
+            request_path=str(request.url.path),
+            status_code=response.status_code,
+            user_id=current_user.id if current_user else None,
+            client_ip=client_ip,
+            payload={
+                "duration_ms": round((perf_counter() - started_at) * 1000, 2),
+                "query_params": dict(request.query_params),
+            },
+        )
     return response
 
 
@@ -84,23 +108,24 @@ async def log_unhandled_exceptions(request: Request, call_next):
         raise
     except Exception as exc:
         traceback_text = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-        write_system_log(
-            level="ERROR",
-            logger_name="http.exception",
-            message=f"Unhandled exception during {request.method} {request.url.path}: {exc}",
-            event_type="http_exception",
-            source="fastapi",
-            request_method=request.method,
-            request_path=str(request.url.path),
-            status_code=500,
-            user_id=current_user.id if current_user else None,
-            client_ip=client_ip,
-            payload={
-                "duration_ms": round((perf_counter() - started_at) * 1000, 2),
-                "query_params": dict(request.query_params),
-            },
-            traceback_text=traceback_text,
-        )
+        if settings.audit_logs_to_db:
+            write_system_log(
+                level="ERROR",
+                logger_name="http.exception",
+                message=f"Unhandled exception during {request.method} {request.url.path}: {exc}",
+                event_type="http_exception",
+                source="fastapi",
+                request_method=request.method,
+                request_path=str(request.url.path),
+                status_code=500,
+                user_id=current_user.id if current_user else None,
+                client_ip=client_ip,
+                payload={
+                    "duration_ms": round((perf_counter() - started_at) * 1000, 2),
+                    "query_params": dict(request.query_params),
+                },
+                traceback_text=traceback_text,
+            )
         logger.exception("Unhandled exception for %s %s", request.method, request.url.path)
         raise
 

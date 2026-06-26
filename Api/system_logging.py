@@ -6,12 +6,17 @@ import sys
 import threading
 import traceback
 from datetime import datetime, timezone
+from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 from typing import Any
 
+from Api.config import settings
 from Api.database import get_connection
 
 _handler_lock = threading.Lock()
 _logging_guard = threading.local()
+_managed_handler_flag = "_agent4k_managed_handler"
+_managed_logger_flag = "_agent4k_managed_logger"
 
 
 def _utc_now() -> datetime:
@@ -112,6 +117,99 @@ class DatabaseLogHandler(logging.Handler):
             )
         except Exception as exc:
             print(f"[system_logs] handler emit failed: {exc}", file=sys.stderr)
+
+
+def _resolve_log_level(level_name: str) -> int:
+    return getattr(logging, str(level_name or "INFO").upper(), logging.INFO)
+
+
+def _build_log_formatter() -> logging.Formatter:
+    return logging.Formatter(
+        "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        "%Y-%m-%d %H:%M:%S",
+    )
+
+
+def _mark_handler(handler: logging.Handler) -> logging.Handler:
+    setattr(handler, _managed_handler_flag, True)
+    return handler
+
+
+def _is_managed_handler(handler: logging.Handler) -> bool:
+    return bool(getattr(handler, _managed_handler_flag, False))
+
+
+def _clear_logger_handlers(target_logger: logging.Logger, *, managed_only: bool = False) -> None:
+    handlers = list(target_logger.handlers)
+    for handler in handlers:
+        if managed_only and not _is_managed_handler(handler):
+            continue
+        target_logger.removeHandler(handler)
+        try:
+            handler.close()
+        except Exception:
+            pass
+
+
+def _ensure_log_directory() -> Path:
+    log_dir = Path(settings.log_dir).expanduser()
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir
+
+
+def _build_runtime_handlers() -> list[logging.Handler]:
+    formatter = _build_log_formatter()
+    handlers: list[logging.Handler] = []
+    if settings.log_to_stdout:
+        stream_handler = _mark_handler(logging.StreamHandler(sys.stdout))
+        stream_handler.setLevel(_resolve_log_level(settings.log_level))
+        stream_handler.setFormatter(formatter)
+        handlers.append(stream_handler)
+    if settings.log_to_file:
+        log_dir = _ensure_log_directory()
+        file_handler = _mark_handler(
+            TimedRotatingFileHandler(
+                log_dir / settings.log_filename,
+                when=settings.log_rotation_when,
+                backupCount=max(settings.log_backup_count, 1),
+                encoding="utf-8",
+                utc=True,
+            )
+        )
+        file_handler.setLevel(_resolve_log_level(settings.log_level))
+        file_handler.setFormatter(formatter)
+        handlers.append(file_handler)
+
+        error_handler = _mark_handler(
+            TimedRotatingFileHandler(
+                log_dir / settings.log_error_filename,
+                when=settings.log_rotation_when,
+                backupCount=max(settings.log_backup_count, 1),
+                encoding="utf-8",
+                utc=True,
+            )
+        )
+        error_handler.setLevel(logging.ERROR)
+        error_handler.setFormatter(formatter)
+        handlers.append(error_handler)
+    return handlers
+
+
+def configure_application_logging() -> None:
+    with _handler_lock:
+        root_logger = logging.getLogger()
+        _clear_logger_handlers(root_logger)
+        root_logger.setLevel(_resolve_log_level(settings.log_level))
+
+        for handler in _build_runtime_handlers():
+            root_logger.addHandler(handler)
+
+        for logger_name in ("agent4k", "uvicorn", "uvicorn.error", "uvicorn.access", "fastapi"):
+            target_logger = logging.getLogger(logger_name)
+            _clear_logger_handlers(target_logger)
+            target_logger.setLevel(_resolve_log_level(settings.log_level))
+            target_logger.propagate = True
+            setattr(target_logger, _managed_logger_flag, True)
 
 
 def configure_database_logging() -> None:

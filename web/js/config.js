@@ -1,8 +1,8 @@
-export const APP_RELEASE = "1.2.12";
+export const APP_RELEASE = "2.1.1";
 export const PROFILE_NO_CHANGES_LABEL = "Профиль актуален";
 export const PROFILE_NO_CHANGES_MESSAGE = "Профиль актуален";
 
-export const ADMIN_PHONE = "89001000000";
+export const ADMIN_EMAIL = "admin@agent4k.local";
 export const PROFILE_HISTORY_PAGE_SIZE = 10;
 export const ADMIN_REPORTS_PAGE_SIZE = 10;
 export const ADMIN_METHODOLOGY_RISK_PAGE_SIZE = 10;
@@ -43,7 +43,7 @@ export const loaderFlows = {
         {
             label: "Ищем профиль пользователя",
             description:
-                "Проверяем, есть ли пользователь в базе данных по номеру телефона.",
+                "Проверяем, есть ли пользователь в базе данных по email.",
         },
         {
             label: "Готовим сценарий входа",
@@ -103,6 +103,28 @@ export const loaderFlows = {
             label: "Подготавливаем интервью",
             description:
                 "Открываем текущий или первый готовый кейс для ответа пользователя.",
+        },
+    ],
+    assessmentTurn: [
+        {
+            label: "Фиксируем ответ",
+            description:
+                "Сохраняем ответ пользователя и проверяем, можно ли завершить текущий кейс.",
+        },
+        {
+            label: "Проверяем кейс",
+            description:
+                "Оцениваем ответ по кейсу и собираем сигналы для следующего шага.",
+        },
+        {
+            label: "Уточняем профиль MBTI",
+            description:
+                "При необходимости готовим MBTI-сигналы и уточняющие вопросы по текущему кейсу.",
+        },
+        {
+            label: "Открываем следующий шаг",
+            description:
+                "Показываем следующий кейс или собираем финальный профиль по всей сессии.",
         },
     ],
 };

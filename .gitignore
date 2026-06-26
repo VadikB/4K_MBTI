@@ -15,6 +15,7 @@ dist/
 !web/dist/
 !web/dist/**
 build/
+logs/
 *.dump
 *.sql
 dev_previews/*.png

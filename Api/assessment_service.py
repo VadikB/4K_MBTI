@@ -2159,8 +2159,20 @@ class AssessmentService:
                 **history_fields,
             )
 
-    def process_case_message(self, *, session_code: str, message: str) -> AssessmentTurnReply:
+    def process_case_message(
+        self,
+        *,
+        session_code: str,
+        message: str,
+        progress_operation_id: str | None = None,
+    ) -> AssessmentTurnReply:
         with get_connection() as connection:
+            operation_progress_service.advance(
+                progress_operation_id,
+                0,
+                title="Фиксируем ответ по кейсу",
+                message="Сохраняем ответ пользователя и проверяем текущее состояние кейса.",
+            )
             session_row = connection.execute(
                 """
                 SELECT us.id, us.session_code, us.user_id, us.role_id, u.full_name, u.job_description,
@@ -2180,12 +2192,19 @@ class AssessmentService:
 
             pending_followup_row = self._get_pending_mbti_followup(connection, session_row["id"])
             if pending_followup_row is not None:
+                operation_progress_service.advance(
+                    progress_operation_id,
+                    2,
+                    title="Уточняем ответы по кейсу",
+                    message="Обрабатываем ответ на уточняющий вопрос MBTI и готовим следующий шаг.",
+                )
                 pending_reply = self._handle_pending_mbti_followup(
                     connection=connection,
                     session_row=session_row,
                     session_code=session_code,
                     message=message,
                     pending_row=pending_followup_row,
+                    progress_operation_id=progress_operation_id,
                 )
                 if pending_reply is not None:
                     return pending_reply
@@ -2299,6 +2318,7 @@ class AssessmentService:
                     turn=timeout_turn,
                     session_code=session_code,
                     time_expired=True,
+                    progress_operation_id=progress_operation_id,
                 )
 
             if message == "__finish_case__":
@@ -2342,6 +2362,7 @@ class AssessmentService:
                     turn=finish_turn,
                     session_code=session_code,
                     time_expired=False,
+                    progress_operation_id=progress_operation_id,
                 )
 
             if message == "__auto_finish_case__":
@@ -2370,6 +2391,7 @@ class AssessmentService:
                     turn=auto_finish_turn,
                     session_code=session_code,
                     time_expired=False,
+                    progress_operation_id=progress_operation_id,
                 )
 
             dialogue_rows_before_user = connection.execute(
@@ -2440,6 +2462,7 @@ class AssessmentService:
                     turn=finish_turn,
                     session_code=session_code,
                     time_expired=False,
+                    progress_operation_id=progress_operation_id,
                 )
 
             if is_dialog_case and self._looks_like_explicit_finish_request(message):
@@ -2490,6 +2513,7 @@ class AssessmentService:
                     turn=finish_turn,
                     session_code=session_code,
                     time_expired=False,
+                    progress_operation_id=progress_operation_id,
                 )
 
             if is_dialog_case and awaiting_finish_confirmation and self._looks_like_continue_after_confirmation(message):
@@ -2725,6 +2749,12 @@ class AssessmentService:
             )
 
             if turn.is_case_complete:
+                operation_progress_service.advance(
+                    progress_operation_id,
+                    1,
+                    title="Проверяем завершенный кейс",
+                    message="Фиксируем результат кейса и подготавливаем следующий этап.",
+                )
                 return self._complete_case_and_continue(
                     connection=connection,
                     session_row=session_row,
@@ -2732,6 +2762,7 @@ class AssessmentService:
                     turn=turn,
                     session_code=session_code,
                     time_expired=False,
+                    progress_operation_id=progress_operation_id,
                 )
 
             connection.commit()
@@ -2768,6 +2799,7 @@ class AssessmentService:
         turn: DeepSeekTurnResult,
         session_code: str,
         time_expired: bool,
+        progress_operation_id: str | None = None,
     ) -> AssessmentTurnReply:
         self._finish_case(
             connection=connection,
@@ -2780,6 +2812,12 @@ class AssessmentService:
         completed_case_context = self._get_personalized_case_context(connection, plan.current_session_case_id, completed_case_row)
         completed_case_task = self._get_personalized_case_task(connection, plan.current_session_case_id, completed_case_row)
         completed_user_answer = self._get_case_user_messages_text(connection, plan.current_session_case_id)
+        operation_progress_service.advance(
+            progress_operation_id,
+            2,
+            title="Уточняем сигналы по кейсу",
+            message="Строим MBTI-сигналы и, если нужно, готовим уточняющие вопросы по текущему кейсу.",
+        )
         mbti_case_result, mbti_followup_questions = mbti_assessment_service.evaluate_case(
             session_case_id=plan.current_session_case_id,
             case_title=plan.current_case_title or completed_case_row["title"],
@@ -2796,6 +2834,12 @@ class AssessmentService:
             followup_questions=mbti_followup_questions,
         )
         if mbti_followup_questions:
+            operation_progress_service.advance(
+                progress_operation_id,
+                3,
+                title="Готовим уточняющие вопросы",
+                message="Остаемся на текущем кейсе и задаем короткие уточнения, чтобы не терять контекст ответа.",
+            )
             followup_prompt = self._build_mbti_followup_prompt(mbti_followup_questions, 0)
             connection.execute(
                 """
@@ -2842,6 +2886,7 @@ class AssessmentService:
             time_expired=time_expired,
             mbti_case_result=mbti_case_result,
             mbti_followup_questions=mbti_followup_questions,
+            progress_operation_id=progress_operation_id,
         )
 
     def _finish_case(
@@ -3206,9 +3251,16 @@ class AssessmentService:
         time_expired: bool,
         mbti_case_result: dict[str, object] | None,
         mbti_followup_questions: list[str] | None,
+        progress_operation_id: str | None = None,
     ) -> AssessmentTurnReply:
         next_plan = self._build_plan(connection, session_row["id"], session_code)
         if next_plan.current_session_case_id is None:
+            operation_progress_service.advance(
+                progress_operation_id,
+                3,
+                title="Собираем итоговый профиль",
+                message="Завершаем assessment-сессию, считаем итоговые оценки и формируем финальный MBTI-профиль.",
+            )
             finished_at = self._utc_now()
             connection.execute(
                 """
@@ -3258,6 +3310,12 @@ class AssessmentService:
                 **self._get_session_case_history_fields(connection, completed_plan.current_session_case_id),
             )
 
+        operation_progress_service.advance(
+            progress_operation_id,
+            3,
+            title="Открываем следующий кейс",
+            message="Текущий кейс завершен. Подготавливаем следующий кейс без лишнего ожидания.",
+        )
         next_case_row = self._get_case_for_session_case(connection, next_plan.current_session_case_id)
         intro_message = deepseek_client.build_opening_message(
             case_title=next_case_row["title"],
@@ -3328,6 +3386,7 @@ class AssessmentService:
         session_code: str,
         message: str,
         pending_row,
+        progress_operation_id: str | None = None,
     ) -> AssessmentTurnReply:
         raw_questions = pending_row["mbti_followup_questions"] or []
         raw_answers = pending_row["mbti_followup_answers"] or []
@@ -3408,6 +3467,12 @@ class AssessmentService:
         )
 
         if len(answers) < len(questions):
+            operation_progress_service.advance(
+                progress_operation_id,
+                3,
+                title="Показываем следующее уточнение",
+                message="Сохраняем ответ и задаем следующий короткий вопрос по этому же кейсу.",
+            )
             prompt = self._build_mbti_followup_prompt(questions, len(answers))
             connection.execute(
                 """
@@ -3468,6 +3533,7 @@ class AssessmentService:
             time_expired=False,
             mbti_case_result=None,
             mbti_followup_questions=None,
+            progress_operation_id=progress_operation_id,
         )
 
     def _pause_case_timer(self, connection, session_case_id: int) -> int | None:

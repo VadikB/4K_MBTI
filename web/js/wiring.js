@@ -1,7 +1,12 @@
 import { state, persistAssessmentContext, clearAssessmentContext, safeStorage, STORAGE_KEYS, setCurrentScreen } from './state.js';
 import {
-  phoneForm,
-  phoneInput,
+  authEmailForm,
+  emailInput,
+  authTokenForm,
+  magicTokenInput,
+  requestMagicLinkButton,
+  verifyMagicLinkButton,
+  authStatus,
   authError,
   chatForm,
   chatInput,
@@ -263,24 +268,71 @@ const changeAdminReportsPage = (direction) => {
   withScreen(loadAdminReports, (module) => module.renderAdminReports());
 };
 
-const handlePhoneLogin = async () => {
-  showError(authError, '');
+const setAuthStatus = (message = '', { isError = false } = {}) => {
+  if (!authStatus) {
+    return;
+  }
+  authStatus.textContent = message;
+  authStatus.classList.toggle('hidden', !message);
+  authStatus.classList.toggle('error', isError);
+};
 
-  const rawPhone = phoneInput.value.trim();
-  const normalizedPhone = rawPhone.replace(/\D/g, '');
-  if (!normalizedPhone) {
-    showError(authError, 'введите номер телефона');
-    phoneInput.focus();
+const applyAuthResponse = async (data) => {
+  const agent = data.agent || null;
+
+  state.sessionId = agent?.session_id || null;
+  state.pendingUser = data.user || null;
+  state.dashboard = data.dashboard || null;
+  state.isAdmin = isAdminUserPayload(data.user, Boolean(data.is_admin));
+  state.adminDashboard = data.admin_dashboard || null;
+  state.pendingRoleOptions = Array.isArray(agent?.role_options) ? agent.role_options : [];
+  state.pendingActionOptions = Array.isArray(agent?.action_options) ? agent.action_options : [];
+  state.pendingConsentTitle = agent?.consent_title || null;
+  state.pendingConsentText = agent?.consent_text || null;
+  state.isNewUserFlow = !data.exists;
+  state.pendingAgentMessage = data.exists
+    ? buildExistingUserAgentMessage(data.user, agent?.message || data.message || '')
+    : agent?.message || data.message || null;
+  state.pendingNoChangesQuickReply = data.exists && shouldOfferNoChangesQuickReply(state.pendingAgentMessage);
+
+  if (state.isAdmin) {
+    state.sessionId = null;
+    state.pendingAgentMessage = null;
+    state.pendingRoleOptions = [];
+    state.pendingNoChangesQuickReply = false;
+    setCurrentScreen('admin');
+    persistAssessmentContext();
+    hideLoader();
+    const adminDashboardModule = await loadAdminDashboard();
+    adminDashboardModule.openAdminDashboard();
     return;
   }
 
-  if (normalizedPhone.length < 10) {
-    showError(authError, 'введите телефон в полном формате');
-    phoneInput.focus();
+  hideLoader();
+  const chatModule = await loadChat();
+  chatModule.openChat();
+};
+
+const handleEmailMagicLinkRequest = async () => {
+  showError(authError, '');
+  setAuthStatus('');
+
+  const email = emailInput.value.trim();
+  if (!email) {
+    showError(authError, 'введите email');
+    emailInput.focus();
     return;
   }
 
   try {
+    if (requestMagicLinkButton) {
+      requestMagicLinkButton.disabled = true;
+      requestMagicLinkButton.textContent = 'Отправляем...';
+    }
+    if (emailInput) {
+      emailInput.disabled = true;
+    }
+    setAuthStatus('Отправляем одноразовую ссылку...');
     clearAssessmentContext();
     state.sessionId = null;
     state.pendingAgentMessage = null;
@@ -295,72 +347,92 @@ const handlePhoneLogin = async () => {
     safeStorage.removeItem(STORAGE_KEYS.pendingAgentMessage);
     safeStorage.removeItem(STORAGE_KEYS.pendingRoleOptions);
     safeStorage.removeItem(STORAGE_KEYS.pendingNoChangesQuickReply);
-    const response = await fetch('/users/check-or-create', {
+    const response = await fetch('/users/auth/email/request-link', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ phone: normalizedPhone }),
+      body: JSON.stringify({ email }),
     });
-    const data = await readApiResponse(response, 'Не удалось проверить пользователя.');
-    const agent = data.agent || null;
-
-    state.sessionId = agent?.session_id || null;
-    state.pendingUser = data.user || null;
-    state.dashboard = data.dashboard || null;
-    state.isAdmin = isAdminUserPayload(data.user, Boolean(data.is_admin));
-    state.adminDashboard = data.admin_dashboard || null;
-    state.pendingRoleOptions = Array.isArray(agent?.role_options) ? agent.role_options : [];
-    state.pendingActionOptions = Array.isArray(agent?.action_options) ? agent.action_options : [];
-    state.pendingConsentTitle = agent?.consent_title || null;
-    state.pendingConsentText = agent?.consent_text || null;
-    state.isNewUserFlow = !data.exists;
-    state.pendingAgentMessage = data.exists
-      ? buildExistingUserAgentMessage(data.user, agent?.message || data.message || '')
-      : agent?.message || data.message || null;
-    state.pendingNoChangesQuickReply = data.exists && shouldOfferNoChangesQuickReply(state.pendingAgentMessage);
-
-    if (state.isAdmin) {
-      state.sessionId = null;
-      state.pendingAgentMessage = null;
-      state.pendingRoleOptions = [];
-      state.pendingNoChangesQuickReply = false;
-      setCurrentScreen('admin');
-      persistAssessmentContext();
-      hideLoader();
-      const adminDashboardModule = await loadAdminDashboard();
-      adminDashboardModule.openAdminDashboard();
-      return;
+    const data = await readApiResponse(response, 'Не удалось отправить ссылку для входа.');
+    if (authTokenForm) {
+      authTokenForm.classList.remove('hidden');
     }
-
-    if (data.exists) {
-      hideLoader();
-      const chatModule = await loadChat();
-      chatModule.openChat();
-      return;
+    if (magicTokenInput) {
+      magicTokenInput.value = data.dev_magic_token || '';
+      magicTokenInput.focus();
     }
-
-    hideLoader();
-    const chatModule = await loadChat();
-    chatModule.openChat();
+    setAuthStatus(
+      data.dev_magic_token
+        ? 'Dev-режим: токен подставлен автоматически. Можно сразу нажать «Войти».'
+        : data.message || 'Проверьте почту и вставьте код или ссылку для входа.',
+    );
   } catch (error) {
     hideLoader();
+    showError(authError, error.message);
+  } finally {
+    if (requestMagicLinkButton) {
+      requestMagicLinkButton.disabled = false;
+      requestMagicLinkButton.textContent = 'Получить ссылку';
+    }
+    if (emailInput) {
+      emailInput.disabled = false;
+    }
+  }
+};
+
+export const verifyEmailMagicLinkToken = async (tokenValue = null) => {
+  showError(authError, '');
+  const token = String(tokenValue ?? magicTokenInput?.value ?? '').trim();
+  if (!token) {
+    showError(authError, 'вставьте код или ссылку из письма');
+    magicTokenInput.focus();
+    return;
+  }
+
+  try {
+    const response = await fetch('/users/auth/email/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({ token }),
+    });
+    const data = await readApiResponse(response, 'Не удалось подтвердить вход.');
+    setAuthStatus('Email подтвержден. Загружаем ваш профиль...');
+    await applyAuthResponse(data);
+  } catch (error) {
     showError(authError, error.message);
   }
 };
 
 export const initWiring = () => {
-phoneForm.addEventListener('submit', (event) => {
-  if (!phoneForm.reportValidity()) {
+authEmailForm.addEventListener('submit', (event) => {
+  if (!authEmailForm.reportValidity()) {
     return;
   }
   event.preventDefault();
-  void handlePhoneLogin();
+  void handleEmailMagicLinkRequest();
 });
 
+if (requestMagicLinkButton) {
+  requestMagicLinkButton.addEventListener('click', (event) => {
+    if (!authEmailForm.reportValidity()) {
+      return;
+    }
+    event.preventDefault();
+    void handleEmailMagicLinkRequest();
+  });
+}
 
-
-
+authTokenForm.addEventListener('submit', (event) => {
+  if (!authTokenForm.reportValidity()) {
+    return;
+  }
+  event.preventDefault();
+  void verifyEmailMagicLinkToken();
+});
 
 setupSpeechInput(chatMicButton, chatInput);
 setupSpeechInput(interviewMicButton, interviewTextarea);
