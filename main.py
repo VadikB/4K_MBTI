@@ -9,20 +9,24 @@ from fastapi import FastAPI
 from fastapi.exceptions import HTTPException as FastAPIHTTPException
 from fastapi.requests import Request
 from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
 
 from Api.database import ensure_core_schema
 from Api.routes import router as users_router
 from Api.system_logging import configure_application_logging, configure_database_logging, write_system_log
 from Api.web_session_service import web_session_service
 
-app = FastAPI(title="Agent_4K API")
+app = FastAPI(title="Agent_4K API", docs_url=None)
+app.add_middleware(GZipMiddleware, minimum_size=500)
 app.include_router(users_router)
 logger = logging.getLogger("agent4k")
 
 BASE_DIR = Path(__file__).resolve().parent
 WEB_DIR = BASE_DIR / "web"
 DEV_PREVIEWS_DIR = BASE_DIR / "dev_previews"
+SWAGGER_UI_DIR = WEB_DIR / "vendor" / "swagger-ui"
 
 ensure_core_schema()
 web_session_service.ensure_schema()
@@ -33,6 +37,7 @@ logger.info("Agent_4K API startup complete")
 
 app.mount("/favicons", StaticFiles(directory=WEB_DIR / "favicons"), name="favicons")
 app.mount("/web", StaticFiles(directory=WEB_DIR), name="web")
+app.mount("/swagger-ui", StaticFiles(directory=SWAGGER_UI_DIR), name="swagger-ui")
 if os.getenv("AGENT4K_ENABLE_SCREEN_PREVIEWS") == "1":
     app.mount("/__screen-previews", StaticFiles(directory=DEV_PREVIEWS_DIR), name="screen-previews")
 
@@ -128,6 +133,16 @@ async def log_unhandled_exceptions(request: Request, call_next):
             )
         logger.exception("Unhandled exception for %s %s", request.method, request.url.path)
         raise
+
+
+@app.get("/docs", include_in_schema=False)
+def custom_swagger_ui_html() -> HTMLResponse:
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=f"{app.title} - Swagger UI",
+        swagger_js_url="/swagger-ui/swagger-ui-bundle.js",
+        swagger_css_url="/swagger-ui/swagger-ui.css",
+    )
 
 
 @app.get("/")

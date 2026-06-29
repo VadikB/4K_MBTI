@@ -20,3 +20,8 @@ logs/
 *.sql
 dev_previews/*.png
 AGENTS.md
+
+# Server-local deployment artifacts
+.env.before-*
+*.before-*
+data/faiss/
