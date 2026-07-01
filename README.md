@@ -1,178 +1,283 @@
-# Agent_4K
+# 4K MBTI
 
-Интеллектуальная система оценки 4К-компетенций на основе кейсового интервью, профилирования пользователя и агентной пост-оценки навыков.
+Сервис оценки 4К-компетенций и MBTI-профиля через персонализированное кейсовое интервью. Пользователь проходит ассессмент, система подбирает кейсы под роль и контекст, оценивает ответы, формирует отчет, MBTI-сводку и административную аналитику по организациям.
 
-## Что есть в проекте
+## Текущее состояние
 
-- backend на `FastAPI`
-- база данных `PostgreSQL`
-- веб-интерфейс на `HTML/CSS/JavaScript`
-- интеграция с `DeepSeek`
-- PDF-отчет по результатам оценки
+- Backend: `FastAPI`, `PostgreSQL`.
+- Frontend: plain `HTML/CSS/JavaScript`, сборка в `web/dist`.
+- Авторизация: email magic link.
+- Роли доступа: суперадмин, администратор организации, участник организации.
+- Организации: создание, домены, админы, участники, CSV-импорт участников.
+- Оценивание: персонализированные кейсы, диалоговый режим, таймеры, авто/ручное завершение кейсов.
+- Отчеты: пользовательский отчет, админские детальные отчеты, PDF/ZIP exports.
+- MBTI: FAISS/RAG индекс, summary по завершенной assessment-сессии, уточняющие вопросы.
+- Регрессионные тесты в суперадминке: быстрый smoke и полный assessment-прогон.
 
-## Требования
+## Репозиторий и ветки
 
-- Python `3.12+`
-- PostgreSQL `15+`
-- Bun для сборки фронтенда из `web/js/`
-
-## Быстрый старт
-
-### 1. Клонирование проекта
+Основной репозиторий:
 
 ```bash
-git clone https://github.com/nuclearys/4K-Assistant.git
-cd 4K-Assistant
+git clone https://github.com/VadikB/4K_MBTI.git
+cd 4K_MBTI
 ```
 
-### 2. Создание виртуального окружения
+Рабочая схема:
+
+- `main` — основная ветка разработки и деплоя.
+- `dev/andrey` — ветка Андрея, синхронизируется с `main` по договоренности.
+- Серверный проект подтягивает `main`.
+
+Перед началом работы:
+
+```bash
+git checkout main
+git pull --ff-only
+```
+
+## Локальный запуск
+
+### 1. Виртуальное окружение
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-### 3. Установка зависимостей
-
-```bash
 pip install -r requirements.txt
 ```
 
-### 4. Настройка переменных окружения
+### 2. Настройка `.env`
 
-Скопируйте шаблон:
+Можно начать с шаблона:
 
 ```bash
-cp .env.example .env
+cp .env.local.example .env
 ```
 
-Заполните в `.env`:
+Ключевые параметры:
 
-- `DB_HOST`
-- `DB_PORT`
-- `DB_NAME`
-- `DB_USER`
-- `DB_PASSWORD`
-- `DEEPSEEK_API_KEY`
-- при необходимости `DEEPSEEK_BASE_URL`
-- при необходимости `DEEPSEEK_MODEL`
-- `MBTI_ENABLED`
-- `MBTI_FAISS_INDEX_DIR`
-- при необходимости `MBTI_TOP_K`
-- при необходимости `MBTI_FOLLOWUP_MODE`
-- при необходимости `MBTI_FOLLOWUP_MAX_PER_CASE`
-- при необходимости `MBTI_FOLLOWUP_SCORE_THRESHOLD`
+```env
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=app_db_mbti
+DB_USER=app_user
+DB_PASSWORD=...
 
+DEEPSEEK_API_KEY=...
+DEEPSEEK_BASE_URL=...
+DEEPSEEK_MODEL=...
 
-### MBTI integration
+SUPERADMIN_EMAILS=your@email
 
-Для MBTI-ветки нужен локальный FAISS-индекс книги.
-
-Минимально:
-
-```bash
 MBTI_ENABLED=true
-MBTI_FAISS_INDEX_DIR=/Users/vadim_bogachev/Desktop/mbti/mbti_rag/data/faiss
-```
-
-Дополнительно можно управлять генерацией уточняющих вопросов:
-
-```bash
+MBTI_FAISS_INDEX_DIR=/path/to/mbti/faiss
+MBTI_TOP_K=5
 MBTI_FOLLOWUP_MODE=assist
 MBTI_FOLLOWUP_MAX_PER_CASE=2
 MBTI_FOLLOWUP_SCORE_THRESHOLD=60
 ```
 
-Значения `MBTI_FOLLOWUP_MODE`:
+`SUPERADMIN_EMAILS` задает суперадминов через email. Несколько адресов можно перечислить через запятую.
 
-- `off` — не задавать уточняющие вопросы
-- `assist` — задавать только если данных недостаточно
-- `strict` — всегда пытаться задать уточняющие вопросы после кейса
+### 3. База данных
 
-После каждого завершенного кейса API может вернуть:
+Для локальной разработки используйте актуальный дамп или пустую БД с нужными справочниками/методологией. Production-подобная база сейчас называется `app_db_mbti`.
 
-- `mbti_case_result`
-- `mbti_followup_questions`
-
-После завершения всей сессии API может вернуть:
-
-- `mbti_summary`
-
-### 5. Подготовка базы данных
-
-Создайте базу данных PostgreSQL и пользователя, затем восстановите дамп:
+Пример восстановления:
 
 ```bash
-pg_restore -h localhost -p 5432 -U app_user -d app_db agent_4k_app_db_2026-04-14.dump
+pg_restore -h localhost -p 5432 -U app_user -d app_db_mbti dump_file.dump
 ```
 
-Если дампа нет, можно поднять пустую БД — необходимые служебные структуры веб-сессий будут созданы автоматически при старте приложения.
-
-### 6. Запуск приложения
+### 4. Backend
 
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+source .venv/bin/activate
+uvicorn main:app --host 127.0.0.1 --port 18000 --reload
 ```
 
-Документация API:
+Swagger:
 
-- [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- http://127.0.0.1:18000/docs
 
-### Локальная разработка фронтенда
-
-`web/index.html` подключает собранный модуль `web/dist/main.js` и lazy-loaded чанки из `web/dist/`, поэтому после изменений в `web/js/` нужно пересобрать фронтенд. Для удобной разработки держите сборщик в режиме watch во втором терминале:
+Если видите старый процесс на другом порту, проверьте:
 
 ```bash
-bun run dev:web
+ps aux | grep uvicorn
 ```
 
-Обычный локальный запуск тогда выглядит так:
+### 5. Frontend
+
+`web/index.html` грузит собранный `web/dist/main.js`. После изменений в `web/js` нужна сборка:
 
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+npm run build:web
 ```
+
+Для watch-режима:
 
 ```bash
-bun run dev:web
+npm run dev:web
 ```
 
-После изменений в JavaScript обновите страницу в браузере. Изменения CSS по-прежнему подхватываются напрямую из файлов `web/styles/` после обновления страницы.
+Если `bun` недоступен, можно временно собрать через локальный `esbuild`, но штатный путь проекта — `npm run build:web`.
 
-### Превью экранов
+CSS из `web/styles` подключается напрямую, обычно достаточно обновить страницу. Для обхода кеша удобно добавлять query string:
 
-Для проверки экранов без переходов по реальному пользовательскому сценарию можно включить dev-only галерею:
+```text
+http://127.0.0.1:18000/?ui=dev
+```
+
+## Администрирование
+
+### Суперадмин
+
+Суперадмин определяется через `SUPERADMIN_EMAILS` в `.env`.
+
+Может:
+
+- создавать организации;
+- добавлять домены организаций;
+- назначать админов организаций;
+- импортировать участников через CSV;
+- видеть сводные отчеты по всем организациям;
+- управлять методологией и кейсами;
+- запускать регрессионные тесты.
+
+### Админ организации
+
+Админ организации видит только данные своей организации. Он может:
+
+- добавлять участников своей организации;
+- импортировать участников через CSV;
+- смотреть отчеты по своей организации;
+- проходить оценивание сам через кнопку **Пройти оценивание** в админской панели.
+
+### Участники
+
+Участники привязываются к организации:
+
+- по email-домену организации;
+- вручную админом;
+- через CSV-импорт.
+
+## CSV-импорт участников
+
+Ожидаемый формат:
+
+```csv
+email,full_name,role_description,job_instructions
+user@example.com,Иван Иванов,Руководитель поддержки,Описание обязанностей
+```
+
+Обязательное поле только `email`. Остальные поля опциональны.
+
+Поддерживаемые синонимы заголовков:
+
+- `email`, `e-mail`, `mail`
+- `full_name`, `name`, `fio`, `фио`
+- `role_description`, `position`, `job_title`, `role`, `должность`, `роль`
+- `job_instructions`, `duties`, `instructions`, `job_description`, `обязанности`, `инструкции`
+
+Защита от дублей:
+
+- email нормализуется;
+- существующий пользователь переиспользуется;
+- повторная привязка к той же организации не создает дубль membership.
+
+Если один и тот же человек должен быть админом организации, сначала можно импортировать его как участника, затем добавить тот же email в поле администратора организации.
+
+## Регрессионные тесты
+
+Раздел доступен суперадмину: **Админка → Регрессионные тесты**.
+
+Есть два режима:
+
+- **Запустить smoke** — быстрый тест без реального LLM-прохождения кейсов. Создает тестовую организацию, 3 пользователей, технические completed-сессии с MBTI payload, проверяет отчеты и очищается вручную кнопкой очистки.
+- **Полный прогон** — создает `__autotest__` организацию и 3 пользователей, запускает реальные assessment-сессии через основной `assessment_service`, отвечает автоответами по кейсам, завершает сессии, проверяет результаты кейсов и MBTI summary.
+
+Перед полным прогоном интерфейс просит подтверждение, потому что режим делает реальные LLM-вызовы и может занять несколько минут.
+
+Тестовые данные имеют префикс:
+
+```text
+__autotest__
+```
+
+Их можно удалить кнопкой **Очистить __autotest__**.
+
+## MBTI
+
+MBTI включается переменной:
+
+```env
+MBTI_ENABLED=true
+```
+
+Индекс задается так:
+
+```env
+MBTI_FAISS_INDEX_DIR=/path/to/faiss
+```
+
+Режим уточняющих вопросов:
+
+```env
+MBTI_FOLLOWUP_MODE=off|assist|strict
+```
+
+- `off` — не задавать уточняющие вопросы.
+- `assist` — задавать, если данных недостаточно.
+- `strict` — пытаться задавать после каждого кейса.
+
+После кейсов API может вернуть `mbti_case_result` и `mbti_followup_questions`. После завершения всей сессии формируется `mbti_summary`.
+
+## Деплой
+
+Текущий production/pilot сервер:
 
 ```bash
-AGENT4K_ENABLE_SCREEN_PREVIEWS=1 uv run uvicorn main:app --host 127.0.0.1 --port 8010 --reload
+ssh -i ~/.ssh/mobius_ssh.key user1@176.123.166.242
+cd /home/user1/projects/4K-Mbti
 ```
 
-После запуска откройте:
+Сайт:
 
-- [http://127.0.0.1:8010/__screens](http://127.0.0.1:8010/__screens)
+- http://pilot.4k-assistant.ru/
 
-Галерея использует текущие `web/index.html`, стили из `web/styles/` и собранный фронтенд из `web/dist/`, но подставляет фейковые ответы API.
-
-## Основные файлы
-
-- [main.py](/Users/andrey/PycharmProjects/Agent_4K/main.py) — точка входа приложения
-- [Api/routes.py](/Users/andrey/PycharmProjects/Agent_4K/Api/routes.py) — HTTP API
-- [Api/agent.py](/Users/andrey/PycharmProjects/Agent_4K/Api/agent.py) — логика интервьюера
-- [Api/assessment_service.py](/Users/andrey/PycharmProjects/Agent_4K/Api/assessment_service.py) — подбор кейсов и кейсовое интервью
-- [Api/communication_agent.py](/Users/andrey/PycharmProjects/Agent_4K/Api/communication_agent.py) — оценка навыков
-- [Api/pdf_report_service.py](/Users/andrey/PycharmProjects/Agent_4K/Api/pdf_report_service.py) — генерация PDF
-- [web/index.html](/Users/andrey/PycharmProjects/Agent_4K/web/index.html) — интерфейс
-
-## Примечания по развертыванию
-
-- Перед деплоем после изменений в `web/js/` нужно пересобрать браузерный бандл:
+Типовой деплой:
 
 ```bash
-bun run build:web
+git pull --ff-only
+sudo systemctl restart agent4k-mbti.service
+systemctl is-active agent4k-mbti.service
+curl -fsS http://127.0.0.1:8000/users/version
 ```
 
-Команда собирает модульный фронтенд из `web/js/main.js` в `web/dist/main.js` и дополнительные lazy-loaded файлы в `web/dist/`. В деплой-коммит должны попасть `web/index.html` и весь свежий каталог `web/dist/`, иначе браузер не загрузит актуальный интерфейс.
+Публичная проверка:
 
-- Чтобы поднять новый номер релиза согласованно в backend и frontend, используйте:
+```bash
+curl -fsS http://pilot.4k-assistant.ru/users/version
+```
+
+Если менялся frontend в `web/js`, перед коммитом обязательно:
+
+```bash
+npm run build:web
+git add web/dist web/index.html web/js web/styles
+```
+
+`web/dist` хранится в git, поэтому серверу достаточно `git pull` и restart.
+
+## Версия
+
+Текущий runtime endpoint:
+
+```text
+/users/version
+```
+
+Для согласованного bump backend/frontend версии:
 
 ```bash
 ./.venv/bin/python scripts/bump_version.py 2.1.1
@@ -184,34 +289,27 @@ bun run build:web
 npm run bump:version -- 2.1.1
 ```
 
-Скрипт обновляет:
-  - `pyproject.toml`
-  - `uv.lock`
-  - `web/js/config.js`
+После bump версии пересоберите frontend и перезапустите сервис.
 
-После изменения версии пересоберите фронтенд и перезапустите приложение, чтобы в главном окне отобразилась уже запущенная версия.
+## Важные файлы
 
-- Для окружений можно использовать готовые шаблоны:
-  - `.env.local.example` — локальная разработка и ngrok/dev magic link
-  - `.env.production.example` — production с реальной email-доставкой через Postmark
+- `main.py` — точка входа FastAPI.
+- `Api/routes.py` — HTTP API.
+- `Api/agent.py` — логика профилирования и интервьюера.
+- `Api/assessment_service.py` — подбор кейсов, assessment-сессии, обработка ответов.
+- `Api/regression_tests.py` — smoke/full регрессионные тесты.
+- `Api/org_access.py` — организации, scope, суперадмины.
+- `Api/mbti/` — MBTI/RAG/FAISS-логика.
+- `Api/pdf_report_service.py` — пользовательский PDF.
+- `Api/admin_report_*` — админские PDF/экспорты.
+- `web/index.html` — основная HTML-страница.
+- `web/js/` — модульный frontend.
+- `web/styles/` — стили.
+- `web/dist/` — собранный frontend, хранится в git.
 
-Простой способ переключения:
+## Логи
 
-```bash
-cp .env.local.example .env
-```
-
-или:
-
-```bash
-cp .env.production.example .env
-```
-
-- Для production логирование теперь лучше разделено на два канала:
-  - `runtime logs` приложения идут в `stdout` и/или файлы
-  - `audit logs` по важным действиям и ошибкам остаются в таблице `system_logs`
-
-- Рекомендуемые настройки для `.env`:
+Рекомендуемые production-настройки:
 
 ```env
 LOG_LEVEL=INFO
@@ -226,17 +324,4 @@ AUDIT_LOGS_TO_DB=true
 RUNTIME_LOGS_TO_DB=false
 ```
 
-- При такой схеме:
-  - ежедневные runtime-логи пишутся в каталог `logs/`
-  - старые файлы ротируются автоматически
-  - PostgreSQL не засоряется каждым техническим сообщением и запросом к статике
-
-- Если приложение запускается под `systemd`, Docker или другим процесс-менеджером, предпочтительно оставить `LOG_TO_STDOUT=true` даже при включенных файловых логах.
-
-- для production рекомендуется запускать приложение за reverse proxy
-- реальные секреты не следует хранить в репозитории
-- для передачи проекта на другой сервер используйте:
-  - код проекта
-  - `.env.example`
-  - `requirements.txt`
-  - дамп БД
+Runtime-логи пишутся в `logs/`, audit-события остаются в таблице `system_logs`.
