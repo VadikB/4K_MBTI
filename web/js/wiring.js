@@ -17,6 +17,7 @@ import {
   dashboardProfileButton,
   adminLogoutButton,
   adminProfileButton,
+  adminStartAssessmentButton,
   adminOpenReportsButton,
   adminOpenPromptLabButton,
   adminOpenMethodologyButton,
@@ -475,6 +476,12 @@ adminLogoutButton.addEventListener('click', (event) => {
 if (adminOpenReportsButton) {
   adminOpenReportsButton.addEventListener('click', () => {
     withScreen(loadAdminReports, (module) => module.openAdminReports());
+  });
+}
+
+if (adminStartAssessmentButton) {
+  adminStartAssessmentButton.addEventListener('click', () => {
+    withScreen(loadAdminDashboard, (module) => module.openAdminAssessmentDashboard());
   });
 }
 

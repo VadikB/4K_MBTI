@@ -1,1 +1,6 @@
-export { openAdminDashboard, loadAdminDashboard, renderAdminDashboard } from '../screens/admin/dashboard.js';
+export {
+  openAdminAssessmentDashboard,
+  openAdminDashboard,
+  loadAdminDashboard,
+  renderAdminDashboard,
+} from '../screens/admin/dashboard.js';

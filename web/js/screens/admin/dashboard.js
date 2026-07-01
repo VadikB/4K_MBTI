@@ -106,3 +106,20 @@ export const openAdminDashboard = () => {
   adminPanel.classList.remove('hidden');
   renderAdminDashboard();
 };
+
+export const openAdminAssessmentDashboard = async () => {
+  if (!state.pendingUser?.id) {
+    return;
+  }
+  const response = await fetch('/users/' + state.pendingUser.id + '/session-bootstrap', {
+    credentials: 'same-origin',
+  });
+  const data = await readApiResponse(response, 'Не удалось открыть оценивание для администратора.');
+  state.pendingUser = data.user;
+  state.dashboard = data.dashboard;
+  state.isAdmin = Boolean(data.is_admin);
+  state.adminDashboard = data.admin_dashboard || state.adminDashboard;
+  persistAssessmentContext();
+  const module = await import('../dashboard.js');
+  module.openDashboard();
+};

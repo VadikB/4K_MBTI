@@ -65,6 +65,7 @@ export const adminProfileButton = document.getElementById('admin-profile-button'
 export const adminLogoutButton = document.getElementById('admin-logout-button');
 export const adminTitle = document.getElementById('admin-title');
 export const adminSubtitle = document.getElementById('admin-subtitle');
+export const adminStartAssessmentButton = document.getElementById('admin-start-assessment-button');
 export const adminOpenMethodologyButton = document.getElementById('admin-open-methodology-button');
 export const adminOpenOrganizationsButton = document.getElementById('admin-open-organizations-button');
 export const adminOpenRegressionTestsButton = document.getElementById('admin-open-regression-tests-button');
