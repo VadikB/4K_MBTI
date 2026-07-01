@@ -256,6 +256,21 @@ class AuthService:
 
             connection.execute(
                 """
+                UPDATE users
+                SET email = %s
+                WHERE id = %s
+                  AND (
+                    email IS NULL
+                    OR TRIM(email) = ''
+                    OR LOWER(email) = %s
+                    OR LOWER(email) LIKE '%%@auto.local'
+                  )
+                """,
+                (normalized_email, user_id, normalized_email),
+            )
+
+            connection.execute(
+                """
                 UPDATE auth_magic_links
                 SET used_at = NOW()
                 WHERE id = %s
