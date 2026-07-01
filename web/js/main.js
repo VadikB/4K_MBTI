@@ -23,6 +23,8 @@ import {
   openReportsScreen,
   openAdminDashboardScreen,
   loadAdminDashboardData,
+  openAdminOrganizationsScreen,
+  loadAdminOrganizationsData,
   openAdminPromptLabScreen,
   openAdminReportsScreen,
   loadAdminReportsData,
@@ -180,6 +182,15 @@ const bootApp = async () => {
     }
     if (state.currentScreen === 'admin-prompt-lab' && state.isAdmin) {
       void openAdminPromptLabScreen();
+      return;
+    }
+    if (state.currentScreen === 'admin-organizations' && state.isAdmin) {
+      try {
+        await loadAdminOrganizationsData();
+      } catch (error) {
+        console.error('Failed to restore admin organizations', error);
+      }
+      void openAdminOrganizationsScreen();
       return;
     }
     if (state.currentScreen === 'admin-reports' && state.isAdmin) {

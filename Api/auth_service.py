@@ -10,6 +10,7 @@ from urllib.parse import quote
 from Api.config import settings
 from Api.database import get_connection
 from Api.email_service import send_magic_link_email
+from Api.org_access import assign_user_organization_from_email, ensure_configured_organizations
 from Api.schemas import UserResponse
 from Api.web_session_service import USER_SELECT_SQL
 
@@ -261,6 +262,8 @@ class AuthService:
                 """,
                 (link_row["id"],),
             )
+            ensure_configured_organizations(connection)
+            assign_user_organization_from_email(connection, user_id=user_id, email=normalized_email)
 
             user_row = connection.execute(
                 USER_SELECT_SQL

@@ -141,6 +141,10 @@
     order: 2;
 }
 
+.dashboard-mobile-exit-button {
+    display: none;
+}
+
 .topbar-profile-button {
     position: relative;
     display: inline-flex;
@@ -216,6 +220,13 @@
 
 .topbar-exit-button .topbar-user-icon {
     display: none;
+}
+
+@media (max-width: 720px) {
+    .dashboard-mobile-exit-button {
+        display: inline-flex;
+        flex: 0 0 auto;
+    }
 }
 
 .topbar-user-icon {

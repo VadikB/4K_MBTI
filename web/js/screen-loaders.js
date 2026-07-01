@@ -41,6 +41,8 @@ export const loadInterview = async () => {
 };
 export const loadAdminDashboard = () =>
   loadModule('admin-dashboard', () => import('./entries/admin-dashboard.js'));
+export const loadAdminOrganizations = () =>
+  loadModule('admin-organizations', () => import('./entries/admin-organizations.js'));
 export const loadAdminPromptLab = () =>
   loadModule('admin-prompt-lab', () => import('./entries/admin-prompt-lab.js'));
 export const loadAdminReports = () =>
@@ -114,6 +116,16 @@ export const openAdminDashboardScreen = async () => {
 export const loadAdminDashboardData = async (periodKey) => {
   const module = await loadAdminDashboard();
   return module.loadAdminDashboard(periodKey);
+};
+
+export const openAdminOrganizationsScreen = async () => {
+  const module = await loadAdminOrganizations();
+  await module.openAdminOrganizations();
+};
+
+export const loadAdminOrganizationsData = async () => {
+  const module = await loadAdminOrganizations();
+  return module.loadAdminOrganizations();
 };
 
 export const openAdminPromptLabScreen = async () => {

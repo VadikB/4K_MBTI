@@ -1,0 +1,256 @@
+.admin-organizations-shell {
+    gap: var(--space-4);
+}
+
+.admin-organizations-hero {
+    align-items: flex-start;
+}
+
+.admin-organizations-create-card,
+.admin-organizations-list-card {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.admin-organizations-form,
+.admin-organization-inline-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr) auto;
+    gap: var(--space-3);
+    align-items: end;
+}
+
+.admin-organization-inline-form {
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin-top: var(--space-3);
+}
+
+.admin-organization-member-form,
+.admin-organization-import-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+    gap: var(--space-3);
+    align-items: end;
+    margin-top: var(--space-3);
+}
+
+.admin-organization-member-form textarea {
+    grid-column: span 2;
+    min-height: 84px;
+    resize: vertical;
+}
+
+.admin-organization-import-form span {
+    color: var(--text-muted);
+    font-size: var(--fs-meta);
+}
+
+.admin-filter-field input,
+.admin-organization-inline-form input,
+.admin-organization-member-form input,
+.admin-organization-member-form textarea,
+.admin-organization-import-form input {
+    height: 44px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(70, 72, 212, 0.16);
+    background: #fff;
+    padding: 0 var(--space-3);
+    font: inherit;
+    color: var(--text-main);
+    min-width: 0;
+}
+
+.admin-organization-member-form textarea {
+    height: auto;
+    padding-top: var(--space-3);
+    line-height: 1.45;
+}
+
+.admin-organizations-status {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--fs-body-sm);
+}
+
+.admin-organizations-status[data-tone="error"] {
+    color: #ba2d2d;
+}
+
+.admin-organizations-status[data-tone="success"] {
+    color: #1f7a4d;
+}
+
+.admin-organizations-list {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.admin-organization-card {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.admin-organization-head {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    align-items: flex-start;
+}
+
+.admin-organization-head h3,
+.admin-organization-columns h4 {
+    margin: 0;
+}
+
+.admin-organization-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--fs-meta);
+}
+
+.admin-organization-state {
+    margin: var(--space-1) 0 0;
+    color: var(--text-muted);
+    font-size: var(--fs-meta);
+}
+
+.admin-organization-stats span {
+    border: 1px solid rgba(70, 72, 212, 0.12);
+    border-radius: var(--radius-pill);
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.admin-organization-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+}
+
+.admin-organization-members-section {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.admin-organization-members-section h4 {
+    margin: 0;
+}
+
+.admin-organization-members {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.admin-organization-member {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    align-items: flex-start;
+    border: 1px solid rgba(70, 72, 212, 0.12);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.78);
+    padding: var(--space-3);
+}
+
+.admin-organization-member strong,
+.admin-organization-member span {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.admin-organization-member span {
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: var(--fs-meta);
+}
+
+.admin-organization-member button {
+    flex: 0 0 auto;
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(70, 72, 212, 0.1);
+    color: var(--text-main);
+    cursor: pointer;
+}
+
+.compact-ghost.danger {
+    border-color: rgba(186, 45, 45, 0.25);
+    color: #9a2626;
+}
+
+.admin-organization-columns section {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+}
+
+.admin-organizations-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.admin-organizations-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    max-width: 100%;
+    border: 1px solid rgba(70, 72, 212, 0.16);
+    border-radius: var(--radius-pill);
+    background: #fff;
+    padding: 6px 8px 6px 12px;
+    color: var(--text-main);
+    font-size: var(--fs-body-sm);
+}
+
+.admin-organizations-tag span {
+    overflow-wrap: anywhere;
+}
+
+.admin-organizations-tag button {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(70, 72, 212, 0.1);
+    color: var(--text-main);
+    cursor: pointer;
+}
+
+.admin-organizations-empty {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--fs-body-sm);
+}
+
+@media (max-width: 860px) {
+    .admin-organizations-form,
+    .admin-organization-inline-form,
+    .admin-organization-member-form,
+    .admin-organization-import-form,
+    .admin-organization-columns {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .admin-organization-member-form textarea {
+        grid-column: auto;
+    }
+
+    .admin-organization-head {
+        display: grid;
+    }
+
+    .admin-organization-stats {
+        justify-content: flex-start;
+    }
+}

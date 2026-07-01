@@ -159,8 +159,7 @@ export const shouldOfferNoChangesQuickReply = (message) => {
   const normalized = String(message || '').toLowerCase();
   return (
     normalized.includes('если изменений нет') &&
-    normalized.includes('профиль актуален') &&
-    normalized.includes('ничего не изменилось')
+    (normalized.includes('профиль актуален') || normalized.includes('ничего не изменилось'))
   );
 };
 

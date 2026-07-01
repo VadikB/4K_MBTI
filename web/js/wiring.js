@@ -13,12 +13,17 @@ import {
   chatMicButton,
   restartButton,
   dashboardRestartButton,
+  dashboardMobileExitButton,
   dashboardProfileButton,
   adminLogoutButton,
   adminProfileButton,
   adminOpenReportsButton,
   adminOpenPromptLabButton,
   adminOpenMethodologyButton,
+  adminOpenOrganizationsButton,
+  adminOrganizationsBackButton,
+  adminOrganizationCreateForm,
+  adminOrganizationsList,
   adminPeriodSelect,
   adminReportsBackButton,
   adminReportsSearch,
@@ -138,6 +143,7 @@ import {
   loadProcessing,
   loadReport,
   loadAdminDashboard,
+  loadAdminOrganizations,
   loadAdminPromptLab,
   loadAdminReports,
   loadAdminMethodology,
@@ -451,6 +457,12 @@ dashboardRestartButton.addEventListener('click', (event) => {
   void logoutAndReturnToStart(event.currentTarget);
 });
 
+if (dashboardMobileExitButton) {
+  dashboardMobileExitButton.addEventListener('click', (event) => {
+    void logoutAndReturnToStart(event.currentTarget);
+  });
+}
+
 adminLogoutButton.addEventListener('click', (event) => {
   void logoutAndReturnToStart(event.currentTarget);
 });
@@ -458,6 +470,12 @@ adminLogoutButton.addEventListener('click', (event) => {
 if (adminOpenReportsButton) {
   adminOpenReportsButton.addEventListener('click', () => {
     withScreen(loadAdminReports, (module) => module.openAdminReports());
+  });
+}
+
+if (adminOpenOrganizationsButton) {
+  adminOpenOrganizationsButton.addEventListener('click', () => {
+    withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations());
   });
 }
 
@@ -498,6 +516,115 @@ if (adminReportsBackButton) {
 if (adminPromptLabBackButton) {
   adminPromptLabBackButton.addEventListener('click', () => {
     withScreen(loadAdminDashboard, (module) => module.openAdminDashboard());
+  });
+}
+
+if (adminOrganizationsBackButton) {
+  adminOrganizationsBackButton.addEventListener('click', () => {
+    withScreen(loadAdminDashboard, (module) => module.openAdminDashboard());
+  });
+}
+
+if (adminOrganizationCreateForm) {
+  adminOrganizationCreateForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    withScreen(loadAdminOrganizations, (module) => module.createAdminOrganization());
+  });
+}
+
+if (adminOrganizationsList) {
+  adminOrganizationsList.addEventListener('submit', (event) => {
+    const form = event.target instanceof HTMLFormElement ? event.target : null;
+    if (!form) {
+      return;
+    }
+    event.preventDefault();
+    const card = form.closest('[data-organization-id]');
+    const organizationId = Number(card?.getAttribute('data-organization-id'));
+    const input = form.querySelector('input');
+    const value = input?.value || '';
+    if (!organizationId) {
+      return;
+    }
+    if (form.dataset.action === 'add-domain') {
+      withScreen(loadAdminOrganizations, async (module) => {
+        await module.addAdminOrganizationDomain(organizationId, value);
+        if (input) input.value = '';
+      });
+      return;
+    }
+    if (form.dataset.action === 'add-admin') {
+      withScreen(loadAdminOrganizations, async (module) => {
+        await module.addAdminOrganizationAdmin(organizationId, value);
+        if (input) input.value = '';
+      });
+      return;
+    }
+    if (form.dataset.action === 'add-member') {
+      const formData = new FormData(form);
+      withScreen(loadAdminOrganizations, async (module) => {
+        await module.addAdminOrganizationMember(organizationId, {
+          email: formData.get('email'),
+          full_name: formData.get('full_name'),
+          role_description: formData.get('role_description'),
+          job_instructions: formData.get('job_instructions'),
+        });
+        form.reset();
+      });
+      return;
+    }
+    if (form.dataset.action === 'import-members') {
+      const fileInput = form.querySelector('input[type="file"]');
+      const file = fileInput?.files?.[0];
+      if (!file) {
+        return;
+      }
+      file.text().then((csvText) => {
+        withScreen(loadAdminOrganizations, async (module) => {
+          await module.importAdminOrganizationMembers(organizationId, csvText);
+          form.reset();
+        });
+      });
+    }
+  });
+
+  adminOrganizationsList.addEventListener('click', (event) => {
+    const button = event.target instanceof Element ? event.target.closest('button[data-action]') : null;
+    if (!button) {
+      return;
+    }
+    const card = button.closest('[data-organization-id]');
+    const organizationId = Number(card?.getAttribute('data-organization-id'));
+    const value = button.getAttribute('data-value') || '';
+    if (!organizationId) {
+      return;
+    }
+    if (button.dataset.action === 'delete-organization') {
+      const organizationName = card?.querySelector('h3')?.textContent?.trim() || 'организацию';
+      const isDeleteAction = String(button.textContent || '').trim().toLowerCase().includes('удал');
+      const message = isDeleteAction
+        ? 'Удалить организацию «' + organizationName + '»? Это действие нельзя отменить.'
+        : 'Деактивировать организацию «' + organizationName + '»? Новые пользователи больше не будут автоматически привязываться к ней.';
+      if (!window.confirm(message)) {
+        return;
+      }
+      withScreen(loadAdminOrganizations, (module) => module.deleteOrDeactivateAdminOrganization(organizationId, organizationName));
+      return;
+    }
+    if (!value) {
+      return;
+    }
+    if (button.dataset.action === 'delete-domain') {
+      withScreen(loadAdminOrganizations, (module) => module.deleteAdminOrganizationDomain(organizationId, value));
+      return;
+    }
+    if (button.dataset.action === 'delete-admin') {
+      withScreen(loadAdminOrganizations, (module) => module.deleteAdminOrganizationAdmin(organizationId, value));
+      return;
+    }
+    if (button.dataset.action === 'delete-member') {
+      withScreen(loadAdminOrganizations, (module) => module.deleteAdminOrganizationMember(organizationId, value));
+    }
   });
 }
 

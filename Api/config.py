@@ -31,6 +31,10 @@ class Settings:
     auth_magic_link_dev_mode: bool = os.getenv("AUTH_MAGIC_LINK_DEV_MODE", "true").strip().lower() in {"1", "true", "yes", "on"}
     auth_magic_link_from_email: str = os.getenv("AUTH_MAGIC_LINK_FROM_EMAIL", "no-reply@agent4k.local").strip() or "no-reply@agent4k.local"
     auth_magic_link_subject: str = os.getenv("AUTH_MAGIC_LINK_SUBJECT", "Вход в 4K Ассистент").strip() or "Вход в 4K Ассистент"
+    superadmin_emails_raw: str = os.getenv("SUPERADMIN_EMAILS", "")
+    org_admin_emails_raw: str = os.getenv("ORG_ADMIN_EMAILS", "")
+    org_member_domains_raw: str = os.getenv("ORG_MEMBER_DOMAINS", "")
+    org_names_raw: str = os.getenv("ORG_NAMES", "")
     email_provider: str = os.getenv("EMAIL_PROVIDER", "").strip().lower()
     postmark_server_token: str = os.getenv("POSTMARK_SERVER_TOKEN", "").strip()
     postmark_message_stream: str = os.getenv("POSTMARK_MESSAGE_STREAM", "outbound").strip() or "outbound"

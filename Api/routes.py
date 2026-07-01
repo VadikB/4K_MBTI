@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import io
 import json
 import re
 from urllib.parse import quote
@@ -20,6 +22,14 @@ from Api.database import get_case_methodology_versions
 from Api.pdf_report_service import pdf_report_service
 from Api.progress_service import operation_progress_service
 from Api.mbti_refinement_service import mbti_refinement_service
+from Api.org_access import (
+    AdminScope,
+    admin_scope_sql,
+    assign_user_organization_from_email,
+    ensure_configured_organizations,
+    get_admin_scope,
+    normalize_org_code,
+)
 from Api.report_growth_logic import (
     WEAK_SIGNAL_RECOMMENDATIONS,
     build_ai_insight_copy,
@@ -54,6 +64,15 @@ from Api.schemas import (
     AdminExpertGroupExportRequest,
     AdminInsightCard,
     AdminMetricCard,
+    AdminOrganizationImportResult,
+    AdminOrganizationAdminRequest,
+    AdminOrganizationCreateRequest,
+    AdminOrganizationDomainRequest,
+    AdminOrganizationItem,
+    AdminOrganizationMemberRequest,
+    AdminOrganizationMembersImportRequest,
+    AdminOrganizationsResponse,
+    AdminOrganizationUpdateRequest,
     AppVersionResponse,
     AuthEmailRequest,
     AuthEmailRequestResponse,
@@ -747,24 +766,448 @@ def _is_admin_user(connection, user: UserResponse | None) -> bool:
         return False
     if str(user.email or "").strip().lower() == ADMIN_EMAIL.lower():
         return True
-    if not user.role_id:
-        return False
-    role_row = connection.execute(
-        "SELECT code FROM roles WHERE id = %s LIMIT 1",
-        (user.role_id,),
+    return get_admin_scope(connection, user).can_admin
+
+
+def _get_admin_scope_or_403(connection, user: UserResponse | None) -> AdminScope:
+    if user is None:
+        raise HTTPException(status_code=401, detail="Admin session not found")
+    if str(user.email or "").strip().lower() == ADMIN_EMAIL.lower():
+        return AdminScope(is_superadmin=True)
+    scope = get_admin_scope(connection, user)
+    connection.commit()
+    if not scope.can_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return scope
+
+
+def _require_superadmin(connection, user: UserResponse | None) -> AdminScope:
+    scope = _get_admin_scope_or_403(connection, user)
+    if not scope.is_superadmin:
+        raise HTTPException(status_code=403, detail="Superadmin access required")
+    return scope
+
+
+def _normalize_admin_org_name(value: str | None) -> str:
+    name = str(value or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Organization name is required")
+    return name[:255]
+
+
+def _normalize_admin_org_code(value: str | None) -> str:
+    code = normalize_org_code(value)
+    if not code:
+        raise HTTPException(status_code=400, detail="Organization code is required")
+    if len(code) > 80:
+        raise HTTPException(status_code=400, detail="Organization code is too long")
+    return code
+
+
+def _normalize_admin_org_domain(value: str | None) -> str:
+    domain = str(value or "").strip().lower().lstrip("@")
+    if not domain or "." not in domain or any(symbol.isspace() for symbol in domain):
+        raise HTTPException(status_code=400, detail="Valid email domain is required")
+    return domain[:255]
+
+
+def _normalize_optional_admin_text(value: str | None, *, max_length: int = 4000) -> str | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    return text[:max_length]
+
+
+def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
+    ensure_configured_organizations(connection)
+    connection.commit()
+    org_rows = connection.execute(
+        """
+        SELECT id, code, name, is_active, created_at, updated_at
+        FROM organizations
+        ORDER BY is_active DESC, name ASC, code ASC
+        """
+    ).fetchall()
+    org_ids = [int(row["id"]) for row in org_rows]
+    domains_by_org: dict[int, list[str]] = {org_id: [] for org_id in org_ids}
+    admins_by_org: dict[int, list[dict]] = {org_id: [] for org_id in org_ids}
+    members_by_org_list: dict[int, list[dict]] = {org_id: [] for org_id in org_ids}
+    members_by_org: dict[int, int] = {org_id: 0 for org_id in org_ids}
+    reports_by_org: dict[int, int] = {org_id: 0 for org_id in org_ids}
+    if org_ids:
+        domain_rows = connection.execute(
+            """
+            SELECT organization_id, domain
+            FROM organization_email_domains
+            WHERE organization_id = ANY(%s)
+            ORDER BY domain ASC
+            """,
+            (org_ids,),
+        ).fetchall()
+        for row in domain_rows:
+            domains_by_org.setdefault(int(row["organization_id"]), []).append(str(row["domain"] or ""))
+
+        admin_rows = connection.execute(
+            """
+            SELECT om.organization_id, u.id AS user_id, u.email, u.full_name
+            FROM organization_memberships om
+            JOIN users u ON u.id = om.user_id
+            WHERE om.organization_id = ANY(%s)
+              AND om.role = 'admin'
+            ORDER BY LOWER(COALESCE(u.email, '')) ASC
+            """,
+            (org_ids,),
+        ).fetchall()
+        for row in admin_rows:
+            email = str(row["email"] or "").strip()
+            if not email:
+                continue
+            admins_by_org.setdefault(int(row["organization_id"]), []).append(
+                {"user_id": int(row["user_id"]), "email": email, "full_name": row["full_name"]}
+            )
+
+        member_detail_rows = connection.execute(
+            """
+            SELECT
+                om.organization_id,
+                om.role,
+                u.id AS user_id,
+                u.email,
+                u.full_name,
+                u.job_description,
+                p.raw_position,
+                p.raw_duties
+            FROM organization_memberships om
+            JOIN users u ON u.id = om.user_id
+            LEFT JOIN user_role_profiles p ON p.id = u.active_profile_id
+            WHERE om.organization_id = ANY(%s)
+            ORDER BY LOWER(COALESCE(u.email, '')) ASC
+            LIMIT 500
+            """,
+            (org_ids,),
+        ).fetchall()
+        for row in member_detail_rows:
+            email = str(row["email"] or "").strip()
+            if not email:
+                continue
+            members_by_org_list.setdefault(int(row["organization_id"]), []).append(
+                {
+                    "user_id": int(row["user_id"]),
+                    "email": email,
+                    "full_name": row["full_name"],
+                    "role": row["role"] or "member",
+                    "job_description": row["job_description"],
+                    "raw_position": row["raw_position"],
+                    "raw_duties": row["raw_duties"],
+                }
+            )
+
+        member_rows = connection.execute(
+            """
+            SELECT organization_id, COUNT(*)::int AS member_count
+            FROM organization_memberships
+            WHERE organization_id = ANY(%s)
+            GROUP BY organization_id
+            """,
+            (org_ids,),
+        ).fetchall()
+        for row in member_rows:
+            members_by_org[int(row["organization_id"])] = int(row["member_count"] or 0)
+
+        report_rows = connection.execute(
+            """
+            SELECT om.organization_id, COUNT(DISTINCT us.id)::int AS reports_count
+            FROM organization_memberships om
+            JOIN user_sessions us ON us.user_id = om.user_id
+            WHERE om.organization_id = ANY(%s)
+              AND us.assessment_code = 'competencies_4k'
+            GROUP BY om.organization_id
+            """,
+            (org_ids,),
+        ).fetchall()
+        for row in report_rows:
+            reports_by_org[int(row["organization_id"])] = int(row["reports_count"] or 0)
+
+    return AdminOrganizationsResponse(
+        title="Организации",
+        subtitle="Управление доменами и администраторами организаций.",
+        items=[
+            AdminOrganizationItem(
+                id=int(row["id"]),
+                code=str(row["code"]),
+                name=str(row["name"]),
+                is_active=bool(row["is_active"]),
+                domains=domains_by_org.get(int(row["id"]), []),
+                admins=admins_by_org.get(int(row["id"]), []),
+                members=members_by_org_list.get(int(row["id"]), []),
+                members_count=members_by_org.get(int(row["id"]), 0),
+                reports_count=reports_by_org.get(int(row["id"]), 0),
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+            )
+            for row in org_rows
+        ],
+    )
+
+
+def _ensure_org_admin_user(connection, *, email: str, full_name: str | None = None) -> int:
+    normalized_email = normalize_email(email)
+    if not normalized_email:
+        raise HTTPException(status_code=400, detail="Valid admin email is required")
+    user_row = connection.execute(
+        """
+        SELECT id
+        FROM users
+        WHERE LOWER(email) = %s
+        LIMIT 1
+        """,
+        (normalized_email,),
     ).fetchone()
-    return role_row is not None and role_row["code"] == ADMIN_ROLE_CODE
+    if user_row is not None:
+        user_id = int(user_row["id"])
+    else:
+        fallback_name = str(full_name or normalized_email.split("@", 1)[0]).replace(".", " ").replace("_", " ").strip()
+        created_user = connection.execute(
+            """
+            INSERT INTO users (full_name, email, role_id, job_description, phone, company_industry)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (fallback_name[:255] or "Администратор организации", normalized_email, None, None, None, None),
+        ).fetchone()
+        user_id = int(created_user["id"])
+
+    identity_row = connection.execute(
+        """
+        SELECT id
+        FROM user_identities
+        WHERE LOWER(email) = %s
+        LIMIT 1
+        """,
+        (normalized_email,),
+    ).fetchone()
+    if identity_row is None:
+        connection.execute(
+            """
+            INSERT INTO user_identities (user_id, provider, provider_subject, email, is_primary, is_verified, verified_at, updated_at)
+            VALUES (%s, %s, %s, %s, TRUE, TRUE, NOW(), NOW())
+            ON CONFLICT (provider, provider_subject) WHERE provider_subject IS NOT NULL DO UPDATE
+            SET user_id = EXCLUDED.user_id,
+                email = EXCLUDED.email,
+                is_verified = TRUE,
+                verified_at = NOW(),
+                updated_at = NOW()
+            """,
+            (user_id, "email_magic_link", normalized_email, normalized_email),
+        )
+    else:
+        connection.execute(
+            """
+            UPDATE user_identities
+            SET user_id = %s,
+                provider = %s,
+                provider_subject = %s,
+                is_primary = TRUE,
+                is_verified = TRUE,
+                verified_at = NOW(),
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (user_id, "email_magic_link", normalized_email, int(identity_row["id"])),
+        )
+    return user_id
 
 
-def _build_activity_series(connection, period_key: str) -> tuple[list[str], list[int], int, str]:
+def _ensure_org_member_user(
+    connection,
+    *,
+    email: str,
+    full_name: str | None = None,
+    role_description: str | None = None,
+) -> int:
+    normalized_email = normalize_email(email)
+    if not normalized_email:
+        raise HTTPException(status_code=400, detail="Valid member email is required")
+    clean_name = _normalize_optional_admin_text(full_name, max_length=255)
+    fallback_name = str(clean_name or normalized_email.split("@", 1)[0]).replace(".", " ").replace("_", " ").strip()
+    clean_role = _normalize_optional_admin_text(role_description, max_length=1000)
+    user_row = connection.execute(
+        """
+        SELECT id
+        FROM users
+        WHERE LOWER(email) = %s
+        LIMIT 1
+        """,
+        (normalized_email,),
+    ).fetchone()
+    if user_row is None:
+        created_user = connection.execute(
+            """
+            INSERT INTO users (full_name, email, role_id, job_description, phone, company_industry)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (fallback_name[:255] or "Пользователь", normalized_email, None, clean_role, None, None),
+        ).fetchone()
+        user_id = int(created_user["id"])
+    else:
+        user_id = int(user_row["id"])
+        connection.execute(
+            """
+            UPDATE users
+            SET full_name = COALESCE(%s, full_name),
+                job_description = COALESCE(%s, job_description)
+            WHERE id = %s
+            """,
+            (clean_name, clean_role, user_id),
+        )
+
+    connection.execute(
+        """
+        INSERT INTO user_identities (user_id, provider, provider_subject, email, is_primary, is_verified, verified_at, updated_at)
+        VALUES (%s, %s, %s, %s, TRUE, TRUE, NOW(), NOW())
+        ON CONFLICT (provider, provider_subject) WHERE provider_subject IS NOT NULL DO UPDATE
+        SET user_id = EXCLUDED.user_id,
+            email = EXCLUDED.email,
+            is_verified = TRUE,
+            verified_at = NOW(),
+            updated_at = NOW()
+        """,
+        (user_id, "email_magic_link", normalized_email, normalized_email),
+    )
+    return user_id
+
+
+def _upsert_org_member_profile(
+    connection,
+    *,
+    user_id: int,
+    role_description: str | None = None,
+    job_instructions: str | None = None,
+) -> None:
+    clean_role = _normalize_optional_admin_text(role_description, max_length=1000)
+    clean_instructions = _normalize_optional_admin_text(job_instructions, max_length=12000)
+    if not clean_role and not clean_instructions:
+        return
+    active_row = connection.execute(
+        "SELECT active_profile_id FROM users WHERE id = %s LIMIT 1",
+        (user_id,),
+    ).fetchone()
+    if active_row is not None and active_row["active_profile_id"] is not None:
+        connection.execute(
+            """
+            UPDATE user_role_profiles
+            SET raw_position = COALESCE(%s, raw_position),
+                raw_duties = COALESCE(%s, raw_duties),
+                normalized_duties = COALESCE(%s, normalized_duties),
+                raw_input = COALESCE(raw_input, '{}'::jsonb) || %s::jsonb,
+                profile_updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+            """,
+            (
+                clean_role,
+                clean_instructions,
+                clean_instructions,
+                json.dumps({"source": "organization_csv", "role_description": clean_role, "job_instructions": clean_instructions}, ensure_ascii=False),
+                int(active_row["active_profile_id"]),
+            ),
+        )
+        return
+
+    version_row = connection.execute(
+        "SELECT COALESCE(MAX(profile_version), 0) + 1 AS next_version FROM user_role_profiles WHERE user_id = %s",
+        (user_id,),
+    ).fetchone()
+    profile_row = connection.execute(
+        """
+        INSERT INTO user_role_profiles (
+            user_id, raw_position, raw_duties, normalized_duties,
+            profile_metadata, raw_input, normalized_input, profile_quality,
+            user_context_vars, profile_version, profile_updated_at
+        )
+        VALUES (%s, %s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb, %s, CURRENT_TIMESTAMP)
+        RETURNING id
+        """,
+        (
+            user_id,
+            clean_role,
+            clean_instructions,
+            clean_instructions,
+            json.dumps({"source": "organization_import", "status": "draft"}, ensure_ascii=False),
+            json.dumps({"role_description": clean_role, "job_instructions": clean_instructions}, ensure_ascii=False),
+            json.dumps({"position": clean_role, "duties": clean_instructions}, ensure_ascii=False),
+            json.dumps({"completeness": "draft", "needs_clarification": True}, ensure_ascii=False),
+            json.dumps({"job_title": clean_role, "job_instructions": clean_instructions}, ensure_ascii=False),
+            int(version_row["next_version"] or 1),
+        ),
+    ).fetchone()
+    connection.execute("UPDATE users SET active_profile_id = %s WHERE id = %s", (int(profile_row["id"]), user_id))
+
+
+def _attach_user_to_organization(
+    connection,
+    *,
+    organization_id: int,
+    email: str,
+    full_name: str | None = None,
+    role_description: str | None = None,
+    job_instructions: str | None = None,
+) -> int:
+    org_row = connection.execute(
+        "SELECT id FROM organizations WHERE id = %s AND is_active = TRUE LIMIT 1",
+        (organization_id,),
+    ).fetchone()
+    if org_row is None:
+        raise HTTPException(status_code=404, detail="Active organization not found")
+    user_id = _ensure_org_member_user(
+        connection,
+        email=email,
+        full_name=full_name,
+        role_description=role_description,
+    )
+    connection.execute(
+        """
+        INSERT INTO organization_memberships (organization_id, user_id, role)
+        VALUES (%s, %s, 'member')
+        ON CONFLICT (organization_id, user_id) DO UPDATE
+        SET updated_at = NOW()
+        """,
+        (organization_id, user_id),
+    )
+    connection.execute("SAVEPOINT org_member_profile")
+    try:
+        _upsert_org_member_profile(
+            connection,
+            user_id=user_id,
+            role_description=role_description,
+            job_instructions=job_instructions,
+        )
+        connection.execute("RELEASE SAVEPOINT org_member_profile")
+    except Exception:
+        connection.execute("ROLLBACK TO SAVEPOINT org_member_profile")
+        connection.execute("RELEASE SAVEPOINT org_member_profile")
+    return user_id
+
+
+def _csv_value(row: dict[str, str], *names: str) -> str | None:
+    normalized = {str(key or "").strip().lower(): value for key, value in row.items()}
+    for name in names:
+        value = normalized.get(name)
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return None
+
+
+def _build_activity_series(connection, scope: AdminScope, period_key: str) -> tuple[list[str], list[int], int, str]:
     period = ADMIN_PERIODS.get(period_key, ADMIN_PERIODS["30d"])
     bucket = period["bucket"]
     days = int(period["days"])
     period_label = str(period["label"])
+    scope_sql, scope_params = admin_scope_sql(scope)
 
     if bucket == "day":
         rows = connection.execute(
-            """
+            f"""
             WITH bounds AS (
                 SELECT CURRENT_DATE - (%s::int - 1) * INTERVAL '1 day' AS start_day,
                        CURRENT_DATE AS end_day
@@ -781,9 +1224,12 @@ def _build_activity_series(connection, period_key: str) -> tuple[list[str], list
                     DATE_TRUNC('day', finished_at) AS bucket_start,
                     COUNT(*)::int AS session_count
                 FROM user_sessions
+                JOIN users u ON u.id = user_sessions.user_id
                 WHERE assessment_code = 'competencies_4k'
                   AND status = 'completed'
                   AND finished_at >= (SELECT start_day FROM bounds)
+                  AND LOWER(COALESCE(u.email, '')) <> %s
+                  {scope_sql}
                 GROUP BY DATE_TRUNC('day', finished_at)
             )
             SELECT
@@ -793,12 +1239,12 @@ def _build_activity_series(connection, period_key: str) -> tuple[list[str], list
             LEFT JOIN stats ON stats.bucket_start = axis.bucket_start
             ORDER BY axis.bucket_start
             """,
-            (days,),
+            (days, ADMIN_EMAIL.lower(), *scope_params),
         ).fetchall()
     else:
         month_count = max(1, round(days / 30))
         rows = connection.execute(
-            """
+            f"""
             WITH bounds AS (
                 SELECT DATE_TRUNC('month', CURRENT_DATE) - (%s::int - 1) * INTERVAL '1 month' AS start_month,
                        DATE_TRUNC('month', CURRENT_DATE) AS end_month
@@ -815,9 +1261,12 @@ def _build_activity_series(connection, period_key: str) -> tuple[list[str], list
                     DATE_TRUNC('month', finished_at) AS bucket_start,
                     COUNT(*)::int AS session_count
                 FROM user_sessions
+                JOIN users u ON u.id = user_sessions.user_id
                 WHERE assessment_code = 'competencies_4k'
                   AND status = 'completed'
                   AND finished_at >= (SELECT start_month FROM bounds)
+                  AND LOWER(COALESCE(u.email, '')) <> %s
+                  {scope_sql}
                 GROUP BY DATE_TRUNC('month', finished_at)
             )
             SELECT
@@ -828,7 +1277,7 @@ def _build_activity_series(connection, period_key: str) -> tuple[list[str], list
             LEFT JOIN stats ON stats.bucket_start = axis.bucket_start
             ORDER BY axis.bucket_start
             """,
-            (month_count,),
+            (month_count, ADMIN_EMAIL.lower(), *scope_params),
         ).fetchall()
         rows = [
             {
@@ -846,20 +1295,22 @@ def _build_activity_series(connection, period_key: str) -> tuple[list[str], list
     return labels, points, axis_max, period_label
 
 
-def _build_admin_dashboard(connection, period_key: str = "30d") -> AdminDashboard:
+def _build_admin_dashboard(connection, scope: AdminScope, period_key: str = "30d") -> AdminDashboard:
+    scope_sql, scope_params = admin_scope_sql(scope)
     totals_row = connection.execute(
-        """
+        f"""
         SELECT
             COUNT(*)::int AS total_users,
             COUNT(*) FILTER (WHERE role_id IS NOT NULL)::int AS profiled_users
-        FROM users
-        WHERE LOWER(COALESCE(email, '')) <> %s
+        FROM users u
+        WHERE LOWER(COALESCE(u.email, '')) <> %s
+          {scope_sql}
         """,
-        (ADMIN_EMAIL.lower(),),
+        (ADMIN_EMAIL.lower(), *scope_params),
     ).fetchone()
 
     session_row = connection.execute(
-        """
+        f"""
         SELECT
             COUNT(*)::int AS total_sessions,
             COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_sessions,
@@ -870,15 +1321,19 @@ def _build_admin_dashboard(connection, period_key: str = "30d") -> AdminDashboar
                 us.status,
                 COUNT(sc.id) FILTER (WHERE sc.status IN ('answered', 'assessed'))::int AS completed_cases
             FROM user_sessions us
+            JOIN users u ON u.id = us.user_id
             LEFT JOIN session_cases sc ON sc.session_id = us.id
             WHERE us.assessment_code = 'competencies_4k'
+              AND LOWER(COALESCE(u.email, '')) <> %s
+              {scope_sql}
             GROUP BY us.id, us.status
         ) AS session_stats
-        """
+        """,
+        (ADMIN_EMAIL.lower(), *scope_params),
     ).fetchone()
 
     score_row = connection.execute(
-        """
+        f"""
         SELECT
             ROUND(AVG(score_percent)::numeric, 1)::numeric AS avg_score_percent
         FROM (
@@ -886,18 +1341,22 @@ def _build_admin_dashboard(connection, period_key: str = "30d") -> AdminDashboar
                 us.id,
                 AVG(alw.percent_value) AS score_percent
             FROM user_sessions us
+            JOIN users u ON u.id = us.user_id
             JOIN session_skill_assessments ssa ON ssa.session_id = us.id
             JOIN assessment_level_weights alw ON alw.level_code = ssa.assessed_level_code
             WHERE us.assessment_code = 'competencies_4k'
               AND us.status = 'completed'
               AND ssa.assessed_level_code IS NOT NULL
+              AND LOWER(COALESCE(u.email, '')) <> %s
+              {scope_sql}
             GROUP BY us.id
         ) AS score_stats
-        """
+        """,
+        (ADMIN_EMAIL.lower(), *scope_params),
     ).fetchone()
 
     duration_row = connection.execute(
-        """
+        f"""
         SELECT
             ROUND(
                 AVG(
@@ -910,28 +1369,36 @@ def _build_admin_dashboard(connection, period_key: str = "30d") -> AdminDashboar
                 us.id,
                 SUM(COALESCE(sc.actual_duration_seconds, 0))::numeric / 60.0 AS session_actual_minutes
             FROM user_sessions us
+            JOIN users u ON u.id = us.user_id
             JOIN session_cases sc ON sc.session_id = us.id
             WHERE us.assessment_code = 'competencies_4k'
               AND us.status = 'completed'
+              AND LOWER(COALESCE(u.email, '')) <> %s
+              {scope_sql}
             GROUP BY us.id
         ) AS duration_stats
-        """
+        """,
+        (ADMIN_EMAIL.lower(), *scope_params),
     ).fetchone()
 
     competency_rows = connection.execute(
-        """
+        f"""
         SELECT
             ssa.competency_name,
             ROUND(AVG(alw.percent_value))::int AS avg_percent
         FROM session_skill_assessments ssa
         JOIN user_sessions us ON us.id = ssa.session_id
+        JOIN users u ON u.id = us.user_id
         JOIN assessment_level_weights alw ON alw.level_code = ssa.assessed_level_code
         WHERE us.assessment_code = 'competencies_4k'
           AND us.status = 'completed'
           AND ssa.assessed_level_code IS NOT NULL
+          AND LOWER(COALESCE(u.email, '')) <> %s
+          {scope_sql}
         GROUP BY ssa.competency_name
         ORDER BY ssa.competency_name
-        """
+        """,
+        (ADMIN_EMAIL.lower(), *scope_params),
     ).fetchall()
 
     total_users = int(totals_row["total_users"] or 0)
@@ -942,7 +1409,7 @@ def _build_admin_dashboard(connection, period_key: str = "30d") -> AdminDashboar
     avg_actual_duration = float(duration_row["avg_actual_minutes"] or 0)
     avg_completed_cases = float(session_row["avg_completed_cases"] or 0)
     completion_percent = round((completed_sessions / total_sessions) * 100) if total_sessions else 0
-    activity_labels, activity_points, activity_axis_max, activity_period_label = _build_activity_series(connection, period_key)
+    activity_labels, activity_points, activity_axis_max, activity_period_label = _build_activity_series(connection, scope, period_key)
 
     competency_average = [
         {
@@ -965,6 +1432,7 @@ def _build_admin_dashboard(connection, period_key: str = "30d") -> AdminDashboar
     return AdminDashboard(
         title="Сводный отчет",
         subtitle="Комплексный анализ компетенций и продуктовых метрик по сотрудникам платформы.",
+        is_superadmin=scope.is_superadmin,
         metrics=[
             AdminMetricCard(label="Пользователи", value=f"{total_users}", delta=f"+{profiled_users} с профилем"),
             AdminMetricCard(label="Процент завершения", value=f"{completion_percent}%", delta=f"{completed_sessions} из {total_sessions} сессий"),
@@ -986,9 +1454,10 @@ def _build_admin_dashboard(connection, period_key: str = "30d") -> AdminDashboar
     )
 
 
-def _build_admin_reports(connection) -> AdminDetailedReportsResponse:
+def _build_admin_reports(connection, scope: AdminScope) -> AdminDetailedReportsResponse:
+    scope_sql, scope_params = admin_scope_sql(scope)
     rows = connection.execute(
-        """
+        f"""
         SELECT
             us.id AS session_id,
             us.user_id,
@@ -1013,9 +1482,10 @@ def _build_admin_reports(connection) -> AdminDetailedReportsResponse:
         ) AS score_stats ON score_stats.session_id = us.id
         WHERE us.assessment_code = 'competencies_4k'
           AND LOWER(COALESCE(u.email, '')) <> %s
+          {scope_sql}
         ORDER BY COALESCE(us.finished_at, us.started_at) DESC NULLS LAST, us.id DESC
         """,
-        (ADMIN_EMAIL.lower(),),
+        (ADMIN_EMAIL.lower(), *scope_params),
     ).fetchall()
 
     items = [
@@ -1045,9 +1515,10 @@ def _build_admin_reports(connection) -> AdminDetailedReportsResponse:
     )
 
 
-def _build_admin_report_detail(connection, session_id: int) -> AdminReportDetailResponse:
+def _build_admin_report_detail(connection, session_id: int, scope: AdminScope) -> AdminReportDetailResponse:
+    scope_sql, scope_params = admin_scope_sql(scope)
     session_row = connection.execute(
-        """
+        f"""
         SELECT
             us.id AS session_id,
             us.user_id,
@@ -1094,9 +1565,10 @@ def _build_admin_report_detail(connection, session_id: int) -> AdminReportDetail
         WHERE us.id = %s
           AND us.assessment_code = 'competencies_4k'
           AND LOWER(COALESCE(u.email, '')) <> %s
+          {scope_sql}
         LIMIT 1
         """,
-        (session_id, ADMIN_EMAIL.lower()),
+        (session_id, ADMIN_EMAIL.lower(), *scope_params),
     ).fetchone()
     if session_row is None:
         raise HTTPException(status_code=404, detail="Assessment report not found")
@@ -2249,8 +2721,10 @@ def _build_authenticated_user_response(
 ) -> CheckOrCreateUserResponse:
     compact_user = _compact_user_response(user)
     _set_user_session_cookie(response, web_session_service.create_session(user.id))
+    assign_user_organization_from_email(connection, user_id=user.id, email=user.email)
+    admin_scope = _get_admin_scope_or_403(connection, user) if _is_admin_user(connection, user) else AdminScope()
 
-    if _is_admin_user(connection, user):
+    if admin_scope.can_admin:
         return CheckOrCreateUserResponse(
             exists=True,
             message="Выполнен вход в административный раздел.",
@@ -2264,7 +2738,7 @@ def _build_authenticated_user_response(
                 user=compact_user,
             ),
             is_admin=True,
-            admin_dashboard=_build_admin_dashboard(connection),
+            admin_dashboard=_build_admin_dashboard(connection, admin_scope),
         )
 
     agent = interviewer_agent.start(
@@ -2378,12 +2852,13 @@ def restore_user_session(request: Request) -> UserSessionRestoreResponse:
     compact_user = _compact_user_response(full_user)
 
     with get_connection() as connection:
-        if _is_admin_user(connection, full_user):
+        admin_scope = _get_admin_scope_or_403(connection, full_user) if _is_admin_user(connection, full_user) else AdminScope()
+        if admin_scope.can_admin:
             return UserSessionRestoreResponse(
                 authenticated=True,
                 user=compact_user,
                 is_admin=True,
-                admin_dashboard=_build_admin_dashboard(connection),
+                admin_dashboard=_build_admin_dashboard(connection, admin_scope),
             )
         return UserSessionRestoreResponse(
             authenticated=True,
@@ -2424,12 +2899,13 @@ def bootstrap_user_session(user_id: int) -> UserSessionBootstrapResponse:
             raise HTTPException(status_code=404, detail="User not found")
 
         user = _user_response_from_row(row)
-        if _is_admin_user(connection, user):
+        admin_scope = _get_admin_scope_or_403(connection, user) if _is_admin_user(connection, user) else AdminScope()
+        if admin_scope.can_admin:
             return UserSessionBootstrapResponse(
                 user=_compact_user_response(user),
                 dashboard=_build_dashboard(connection, user),
                 is_admin=True,
-                admin_dashboard=_build_admin_dashboard(connection),
+                admin_dashboard=_build_admin_dashboard(connection, admin_scope),
             )
         return UserSessionBootstrapResponse(
             user=_compact_user_response(user),
@@ -2444,9 +2920,309 @@ def get_admin_dashboard(request: Request, period: str = "30d") -> AdminDashboard
     if user is None:
         raise HTTPException(status_code=401, detail="Admin session not found")
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
-        return _build_admin_dashboard(connection, period)
+        scope = _get_admin_scope_or_403(connection, user)
+        return _build_admin_dashboard(connection, scope, period)
+
+
+@router.get("/admin/organizations", response_model=AdminOrganizationsResponse)
+def get_admin_organizations(request: Request) -> AdminOrganizationsResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        return _build_admin_organizations(connection)
+
+
+@router.post("/admin/organizations", response_model=AdminOrganizationsResponse)
+def create_admin_organization(payload: AdminOrganizationCreateRequest, request: Request) -> AdminOrganizationsResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    org_code = _normalize_admin_org_code(payload.code)
+    org_name = _normalize_admin_org_name(payload.name)
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        try:
+            connection.execute(
+                """
+                INSERT INTO organizations (code, name)
+                VALUES (%s, %s)
+                """,
+                (org_code, org_name),
+            )
+            connection.commit()
+        except Exception as exc:
+            connection.rollback()
+            raise HTTPException(status_code=409, detail="Organization with this code already exists") from exc
+        return _build_admin_organizations(connection)
+
+
+@router.patch("/admin/organizations/{organization_id}", response_model=AdminOrganizationsResponse)
+def update_admin_organization(organization_id: int, payload: AdminOrganizationUpdateRequest, request: Request) -> AdminOrganizationsResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    normalized_code = _normalize_admin_org_code(payload.code) if payload.code is not None else None
+    normalized_name = _normalize_admin_org_name(payload.name) if payload.name is not None else None
+    if normalized_code is None and normalized_name is None:
+        raise HTTPException(status_code=400, detail="No organization changes provided")
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        org_row = connection.execute("SELECT id FROM organizations WHERE id = %s LIMIT 1", (organization_id,)).fetchone()
+        if org_row is None:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        try:
+            connection.execute(
+                """
+                UPDATE organizations
+                SET code = COALESCE(%s, code),
+                    name = COALESCE(%s, name),
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (normalized_code, normalized_name, organization_id),
+            )
+            connection.commit()
+        except Exception as exc:
+            connection.rollback()
+            raise HTTPException(status_code=409, detail="Organization with this code already exists") from exc
+        return _build_admin_organizations(connection)
+
+
+@router.delete("/admin/organizations/{organization_id}", response_model=AdminOrganizationsResponse)
+def delete_or_deactivate_admin_organization(organization_id: int, request: Request) -> AdminOrganizationsResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        org_row = connection.execute("SELECT id FROM organizations WHERE id = %s LIMIT 1", (organization_id,)).fetchone()
+        if org_row is None:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        counts = connection.execute(
+            """
+            SELECT
+                (SELECT COUNT(*)::int FROM organization_memberships WHERE organization_id = %s) AS members_count,
+                (SELECT COUNT(DISTINCT us.id)::int
+                 FROM organization_memberships om
+                 JOIN user_sessions us ON us.user_id = om.user_id
+                 WHERE om.organization_id = %s) AS reports_count
+            """,
+            (organization_id, organization_id),
+        ).fetchone()
+        is_empty = not any(int(counts[key] or 0) for key in ("members_count", "reports_count"))
+        if is_empty:
+            connection.execute("DELETE FROM organizations WHERE id = %s", (organization_id,))
+        else:
+            connection.execute(
+                "UPDATE organizations SET is_active = FALSE, updated_at = NOW() WHERE id = %s",
+                (organization_id,),
+            )
+        connection.commit()
+        return _build_admin_organizations(connection)
+
+
+@router.post("/admin/organizations/{organization_id}/domains", response_model=AdminOrganizationsResponse)
+def add_admin_organization_domain(organization_id: int, payload: AdminOrganizationDomainRequest, request: Request) -> AdminOrganizationsResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    domain = _normalize_admin_org_domain(payload.domain)
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        org_row = connection.execute("SELECT id FROM organizations WHERE id = %s LIMIT 1", (organization_id,)).fetchone()
+        if org_row is None:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        try:
+            connection.execute(
+                """
+                INSERT INTO organization_email_domains (organization_id, domain)
+                VALUES (%s, %s)
+                ON CONFLICT (organization_id, domain) DO NOTHING
+                """,
+                (organization_id, domain),
+            )
+            connection.commit()
+        except Exception as exc:
+            connection.rollback()
+            raise HTTPException(status_code=409, detail="This domain is already assigned to another organization") from exc
+        return _build_admin_organizations(connection)
+
+
+@router.delete("/admin/organizations/{organization_id}/domains", response_model=AdminOrganizationsResponse)
+def delete_admin_organization_domain(organization_id: int, domain: str, request: Request) -> AdminOrganizationsResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    normalized_domain = _normalize_admin_org_domain(domain)
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        connection.execute(
+            """
+            DELETE FROM organization_email_domains
+            WHERE organization_id = %s
+              AND LOWER(domain) = %s
+            """,
+            (organization_id, normalized_domain),
+        )
+        connection.commit()
+        return _build_admin_organizations(connection)
+
+
+@router.post("/admin/organizations/{organization_id}/admins", response_model=AdminOrganizationsResponse)
+def add_admin_organization_admin(organization_id: int, payload: AdminOrganizationAdminRequest, request: Request) -> AdminOrganizationsResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    normalized_email = normalize_email(payload.email)
+    if not normalized_email:
+        raise HTTPException(status_code=400, detail="Valid admin email is required")
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        org_row = connection.execute("SELECT id FROM organizations WHERE id = %s LIMIT 1", (organization_id,)).fetchone()
+        if org_row is None:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        user_id = _ensure_org_admin_user(connection, email=normalized_email, full_name=payload.full_name)
+        connection.execute(
+            """
+            INSERT INTO organization_memberships (organization_id, user_id, role)
+            VALUES (%s, %s, 'admin')
+            ON CONFLICT (organization_id, user_id) DO UPDATE
+            SET role = 'admin',
+                updated_at = NOW()
+            """,
+            (organization_id, user_id),
+        )
+        connection.commit()
+        return _build_admin_organizations(connection)
+
+
+@router.delete("/admin/organizations/{organization_id}/admins", response_model=AdminOrganizationsResponse)
+def delete_admin_organization_admin(organization_id: int, email: str, request: Request) -> AdminOrganizationsResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    normalized_email = normalize_email(email)
+    if not normalized_email:
+        raise HTTPException(status_code=400, detail="Valid admin email is required")
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        user_row = connection.execute(
+            """
+            SELECT id
+            FROM users
+            WHERE LOWER(email) = %s
+            LIMIT 1
+            """,
+            (normalized_email,),
+        ).fetchone()
+        if user_row is not None:
+            connection.execute(
+                """
+                DELETE FROM organization_memberships
+                WHERE organization_id = %s
+                  AND user_id = %s
+                  AND role = 'admin'
+                """,
+                (organization_id, int(user_row["id"])),
+            )
+            connection.commit()
+        return _build_admin_organizations(connection)
+
+
+@router.post("/admin/organizations/{organization_id}/members", response_model=AdminOrganizationsResponse)
+def add_admin_organization_member(organization_id: int, payload: AdminOrganizationMemberRequest, request: Request) -> AdminOrganizationsResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    normalized_email = normalize_email(payload.email)
+    if not normalized_email:
+        raise HTTPException(status_code=400, detail="Valid member email is required")
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        _attach_user_to_organization(
+            connection,
+            organization_id=organization_id,
+            email=normalized_email,
+            full_name=payload.full_name,
+            role_description=payload.role_description,
+            job_instructions=payload.job_instructions,
+        )
+        connection.commit()
+        return _build_admin_organizations(connection)
+
+
+@router.delete("/admin/organizations/{organization_id}/members", response_model=AdminOrganizationsResponse)
+def delete_admin_organization_member(organization_id: int, email: str, request: Request) -> AdminOrganizationsResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    normalized_email = normalize_email(email)
+    if not normalized_email:
+        raise HTTPException(status_code=400, detail="Valid member email is required")
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        user_row = connection.execute(
+            """
+            SELECT id
+            FROM users
+            WHERE LOWER(email) = %s
+            LIMIT 1
+            """,
+            (normalized_email,),
+        ).fetchone()
+        if user_row is not None:
+            connection.execute(
+                """
+                DELETE FROM organization_memberships
+                WHERE organization_id = %s
+                  AND user_id = %s
+                  AND role = 'member'
+                """,
+                (organization_id, int(user_row["id"])),
+            )
+            connection.commit()
+        return _build_admin_organizations(connection)
+
+
+@router.post("/admin/organizations/{organization_id}/members/import", response_model=AdminOrganizationImportResult)
+def import_admin_organization_members(
+    organization_id: int,
+    payload: AdminOrganizationMembersImportRequest,
+    request: Request,
+) -> AdminOrganizationImportResult:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    csv_text = str(payload.csv_text or "").strip("\ufeff\n\r ")
+    if not csv_text:
+        raise HTTPException(status_code=400, detail="CSV content is required")
+
+    imported_count = 0
+    skipped_count = 0
+    errors: list[str] = []
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        reader = csv.DictReader(io.StringIO(csv_text))
+        if not reader.fieldnames:
+            raise HTTPException(status_code=400, detail="CSV header is required")
+        for line_number, row in enumerate(reader, start=2):
+            email = normalize_email(_csv_value(row, "email", "e-mail", "mail"))
+            if not email:
+                skipped_count += 1
+                errors.append(f"Строка {line_number}: email не указан или некорректен")
+                continue
+            try:
+                _attach_user_to_organization(
+                    connection,
+                    organization_id=organization_id,
+                    email=email,
+                    full_name=_csv_value(row, "full_name", "name", "fio", "фио"),
+                    role_description=_csv_value(row, "role_description", "position", "job_title", "role", "должность", "роль"),
+                    job_instructions=_csv_value(row, "job_instructions", "duties", "instructions", "job_description", "обязанности", "инструкции"),
+                )
+                imported_count += 1
+            except Exception as exc:
+                skipped_count += 1
+                errors.append(f"Строка {line_number}: {exc}")
+        connection.commit()
+        organizations = _build_admin_organizations(connection)
+    return AdminOrganizationImportResult(
+        imported_count=imported_count,
+        skipped_count=skipped_count,
+        errors=errors[:20],
+        organizations=organizations,
+    )
 
 
 @router.get("/admin/reports", response_model=AdminDetailedReportsResponse)
@@ -2456,9 +3232,8 @@ def get_admin_reports(request: Request) -> AdminDetailedReportsResponse:
     if user is None:
         raise HTTPException(status_code=401, detail="Admin session not found")
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
-        return _build_admin_reports(connection)
+        scope = _get_admin_scope_or_403(connection, user)
+        return _build_admin_reports(connection, scope)
 
 
 @router.get("/admin/reports/{session_id}", response_model=AdminReportDetailResponse)
@@ -2468,9 +3243,8 @@ def get_admin_report_detail(session_id: int, request: Request) -> AdminReportDet
     if user is None:
         raise HTTPException(status_code=401, detail="Admin session not found")
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
-        return _build_admin_report_detail(connection, session_id)
+        scope = _get_admin_scope_or_403(connection, user)
+        return _build_admin_report_detail(connection, session_id, scope)
 
 
 @router.patch("/admin/reports/{session_id}/expert-comment", response_model=AdminReportDetailResponse)
@@ -2483,17 +3257,19 @@ def update_admin_report_expert_comment(session_id: int, payload: AdminExpertComm
     normalized_expert_name = str(payload.expert_name or "").strip() or None
     normalized_expert_contacts = str(payload.expert_contacts or "").strip() or None
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        scope = _get_admin_scope_or_403(connection, user)
+        scope_sql, scope_params = admin_scope_sql(scope)
         session_row = connection.execute(
-            """
+            f"""
             SELECT id, status
-            FROM user_sessions
-            WHERE id = %s
-              AND assessment_code = 'competencies_4k'
+            FROM user_sessions us
+            JOIN users u ON u.id = us.user_id
+            WHERE us.id = %s
+              AND us.assessment_code = 'competencies_4k'
+              {scope_sql}
             LIMIT 1
             """,
-            (session_id,),
+            (session_id, *scope_params),
         ).fetchone()
         if session_row is None:
             raise HTTPException(status_code=404, detail="Assessment report not found")
@@ -2520,7 +3296,7 @@ def update_admin_report_expert_comment(session_id: int, payload: AdminExpertComm
             ),
         )
         connection.commit()
-        return _build_admin_report_detail(connection, session_id)
+        return _build_admin_report_detail(connection, session_id, scope)
 
 
 @router.get("/admin/reports/{session_id}/dialogue.pdf")
@@ -2530,10 +3306,9 @@ def download_admin_report_dialogue_pdf(session_id: int, request: Request) -> Res
     if user is None:
         raise HTTPException(status_code=401, detail="Admin session not found")
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        scope = _get_admin_scope_or_403(connection, user)
         try:
-            detail = _build_admin_report_detail(connection, session_id)
+            detail = _build_admin_report_detail(connection, session_id, scope)
             filename, pdf_bytes = admin_report_dialogue_pdf_service.build_pdf(detail)
         except FileNotFoundError as exc:
             raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -2558,9 +3333,8 @@ def download_admin_report_expert_excel(session_id: int, request: Request) -> Res
     if user is None:
         raise HTTPException(status_code=401, detail="Admin session not found")
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
-        detail = _build_admin_report_detail(connection, session_id)
+        scope = _get_admin_scope_or_403(connection, user)
+        detail = _build_admin_report_detail(connection, session_id, scope)
         filename, excel_bytes = admin_report_expert_export_service.build_excel(detail)
 
     return Response(
@@ -2583,10 +3357,9 @@ def download_admin_report_expert_pdf(session_id: int, request: Request) -> Respo
     if user is None:
         raise HTTPException(status_code=401, detail="Admin session not found")
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        scope = _get_admin_scope_or_403(connection, user)
         try:
-            detail = _build_admin_report_detail(connection, session_id)
+            detail = _build_admin_report_detail(connection, session_id, scope)
             filename, pdf_bytes = admin_report_expert_export_service.build_pdf(detail)
         except FileNotFoundError as exc:
             raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -2615,25 +3388,28 @@ def download_admin_reports_expert_group_zip(payload: AdminExpertGroupExportReque
         raise HTTPException(status_code=400, detail="No assessment sessions selected")
 
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        scope = _get_admin_scope_or_403(connection, user)
+        scope_sql, scope_params = admin_scope_sql(scope)
 
         session_rows = connection.execute(
-            """
-            SELECT id
-            FROM user_sessions
-            WHERE assessment_code = 'competencies_4k'
-              AND status = 'completed'
-              AND id = ANY(%s)
-            ORDER BY finished_at DESC NULLS LAST, id DESC
+            f"""
+            SELECT us.id
+            FROM user_sessions us
+            JOIN users u ON u.id = us.user_id
+            WHERE us.assessment_code = 'competencies_4k'
+              AND us.status = 'completed'
+              AND us.id = ANY(%s)
+              AND LOWER(COALESCE(u.email, '')) <> %s
+              {scope_sql}
+            ORDER BY us.finished_at DESC NULLS LAST, us.id DESC
             """,
-            (session_ids,),
+            (session_ids, ADMIN_EMAIL.lower(), *scope_params),
         ).fetchall()
         completed_session_ids = [int(row["id"]) for row in session_rows]
         if not completed_session_ids:
             raise HTTPException(status_code=400, detail="No completed assessments found in selection")
 
-        details = [_build_admin_report_detail(connection, session_id) for session_id in completed_session_ids]
+        details = [_build_admin_report_detail(connection, session_id, scope) for session_id in completed_session_ids]
         filename, zip_bytes = admin_report_expert_export_service.build_group_pdf_bundle(details)
 
     return Response(
@@ -2673,25 +3449,28 @@ def download_admin_reports_expert_group_zip_get(request: Request) -> Response:
         raise HTTPException(status_code=400, detail="No assessment sessions selected")
 
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        scope = _get_admin_scope_or_403(connection, user)
+        scope_sql, scope_params = admin_scope_sql(scope)
 
         session_rows = connection.execute(
-            """
-            SELECT id
-            FROM user_sessions
-            WHERE assessment_code = 'competencies_4k'
-              AND status = 'completed'
-              AND id = ANY(%s)
-            ORDER BY finished_at DESC NULLS LAST, id DESC
+            f"""
+            SELECT us.id
+            FROM user_sessions us
+            JOIN users u ON u.id = us.user_id
+            WHERE us.assessment_code = 'competencies_4k'
+              AND us.status = 'completed'
+              AND us.id = ANY(%s)
+              AND LOWER(COALESCE(u.email, '')) <> %s
+              {scope_sql}
+            ORDER BY us.finished_at DESC NULLS LAST, us.id DESC
             """,
-            (normalized_session_ids,),
+            (normalized_session_ids, ADMIN_EMAIL.lower(), *scope_params),
         ).fetchall()
         completed_session_ids = [int(row["id"]) for row in session_rows]
         if not completed_session_ids:
             raise HTTPException(status_code=400, detail="No completed assessments found in selection")
 
-        details = [_build_admin_report_detail(connection, session_id) for session_id in completed_session_ids]
+        details = [_build_admin_report_detail(connection, session_id, scope) for session_id in completed_session_ids]
         filename, zip_bytes = admin_report_expert_export_service.build_group_pdf_bundle(details)
 
     return Response(
@@ -2714,10 +3493,9 @@ def download_admin_report_case_dialogue_pdf(session_id: int, session_case_id: in
     if user is None:
         raise HTTPException(status_code=401, detail="Admin session not found")
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        scope = _get_admin_scope_or_403(connection, user)
         try:
-            detail = _build_admin_report_detail(connection, session_id)
+            detail = _build_admin_report_detail(connection, session_id, scope)
             case_item = next((item for item in detail.case_items if int(item.session_case_id) == int(session_case_id)), None)
             if case_item is None:
                 raise HTTPException(status_code=404, detail="Case dialogue not found")
@@ -2745,10 +3523,9 @@ def download_admin_reports_pdf(request: Request) -> Response:
     if user is None:
         raise HTTPException(status_code=401, detail="Admin session not found")
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        scope = _get_admin_scope_or_403(connection, user)
         try:
-            filename, pdf_bytes = admin_reports_pdf_service.build_pdf(_build_admin_reports(connection))
+            filename, pdf_bytes = admin_reports_pdf_service.build_pdf(_build_admin_reports(connection, scope))
         except FileNotFoundError as exc:
             raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -3331,8 +4108,7 @@ def get_prompt_lab_dashboard(request: Request) -> PromptLabDashboard:
     token = request.cookies.get(SESSION_COOKIE_NAME)
     current_user = web_session_service.get_user_by_token(token) if token else None
     with get_connection() as connection:
-        if not _is_admin_user(connection, current_user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        _require_superadmin(connection, current_user)
         return _build_prompt_lab_dashboard(connection)
 
 
@@ -3353,8 +4129,7 @@ def create_prompt_lab_case_run(payload: PromptLabCaseRunRequest, request: Reques
     use_file_prompt = prompt_source in {"file", "files", "default", "production"}
     prompt_text = None
     with get_connection() as connection:
-        if not _is_admin_user(connection, current_user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        _require_superadmin(connection, current_user)
         if use_file_prompt:
             production_prompt_row = connection.execute(
                 """
@@ -3558,8 +4333,7 @@ def get_prompt_lab_system_case_preview(
     token = request.cookies.get(SESSION_COOKIE_NAME)
     current_user = web_session_service.get_user_by_token(token) if token else None
     with get_connection() as connection:
-        if not _is_admin_user(connection, current_user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        _require_superadmin(connection, current_user)
     try:
         artifacts = assessment_service.preview_personalized_case(
             user_id=user_id,
@@ -3588,8 +4362,7 @@ def create_prompt_lab_dialog_preview(payload: PromptLabDialoguePreviewRequest, r
     token = request.cookies.get(SESSION_COOKIE_NAME)
     current_user = web_session_service.get_user_by_token(token) if token else None
     with get_connection() as connection:
-        if not _is_admin_user(connection, current_user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        _require_superadmin(connection, current_user)
     try:
         result = assessment_service.preview_prompt_lab_dialog(
             user_id=payload.user_id,
@@ -3612,8 +4385,7 @@ def create_prompt_lab_dialog_turn(payload: PromptLabDialogueTurnRequest, request
     token = request.cookies.get(SESSION_COOKIE_NAME)
     current_user = web_session_service.get_user_by_token(token) if token else None
     with get_connection() as connection:
-        if not _is_admin_user(connection, current_user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        _require_superadmin(connection, current_user)
     try:
         result = assessment_service.simulate_prompt_lab_dialog_turn(
             system_prompt=payload.system_prompt,
@@ -3636,8 +4408,7 @@ def get_admin_methodology(request: Request) -> AdminMethodologyResponse:
     if user is None:
         raise HTTPException(status_code=401, detail="Admin session not found")
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        _require_superadmin(connection, user)
         return _build_admin_methodology(connection)
 
 
@@ -3648,8 +4419,7 @@ def get_admin_methodology_case_detail(case_id_code: str, request: Request) -> Ad
     if user is None:
         raise HTTPException(status_code=401, detail="Admin session not found")
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        _require_superadmin(connection, user)
         return _build_admin_methodology_case_detail(connection, case_id_code)
 
 
@@ -3664,8 +4434,7 @@ def update_admin_methodology_case(
     if user is None:
         raise HTTPException(status_code=401, detail="Admin session not found")
     with get_connection() as connection:
-        if not _is_admin_user(connection, user):
-            raise HTTPException(status_code=403, detail="Admin access required")
+        _require_superadmin(connection, user)
         return _upsert_admin_methodology_case(connection, case_id_code, payload, user.full_name or ADMIN_FULL_NAME)
 
 

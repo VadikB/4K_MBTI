@@ -10,6 +10,7 @@ export const state = {
   dashboard: null,
   isAdmin: false,
   adminDashboard: null,
+  adminOrganizations: null,
   adminPromptLab: null,
   adminPromptLabPreviewResult: null,
   adminPromptLabResult: null,
@@ -111,6 +112,7 @@ export const STORAGE_KEYS = {
   dashboard: 'agent4k.dashboard',
   isAdmin: 'agent4k.isAdmin',
   adminDashboard: 'agent4k.adminDashboard',
+  adminOrganizations: 'agent4k.adminOrganizations',
   adminMethodology: 'agent4k.adminMethodology',
   adminMethodologyDetail: 'agent4k.adminMethodologyDetail',
   adminMethodologyDetailCode: 'agent4k.adminMethodologyDetailCode',
@@ -211,6 +213,9 @@ export const persistAssessmentContext = () => {
   if (state.adminDashboard) {
     safeStorage.setItem(STORAGE_KEYS.adminDashboard, JSON.stringify(state.adminDashboard));
   }
+  if (state.adminOrganizations) {
+    safeStorage.setItem(STORAGE_KEYS.adminOrganizations, JSON.stringify(state.adminOrganizations));
+  }
   if (state.adminMethodology) {
     safeStorage.setItem(STORAGE_KEYS.adminMethodology, JSON.stringify(state.adminMethodology));
   }
@@ -268,6 +273,7 @@ export const restoreAssessmentContext = () => {
     const storedSessionId = safeStorage.getItem(STORAGE_KEYS.assessmentSessionId);
     const storedIsAdmin = safeStorage.getItem(STORAGE_KEYS.isAdmin);
     const storedAdminDashboard = safeStorage.getItem(STORAGE_KEYS.adminDashboard);
+    const storedAdminOrganizations = safeStorage.getItem(STORAGE_KEYS.adminOrganizations);
     const storedAdminMethodology = safeStorage.getItem(STORAGE_KEYS.adminMethodology);
     const storedAdminMethodologyDetail = safeStorage.getItem(STORAGE_KEYS.adminMethodologyDetail);
     const storedAdminMethodologyDetailCode = safeStorage.getItem(STORAGE_KEYS.adminMethodologyDetailCode);
@@ -306,6 +312,9 @@ export const restoreAssessmentContext = () => {
     }
     if (storedAdminDashboard) {
       state.adminDashboard = JSON.parse(storedAdminDashboard);
+    }
+    if (storedAdminOrganizations) {
+      state.adminOrganizations = JSON.parse(storedAdminOrganizations);
     }
     if (storedAdminMethodology) {
       state.adminMethodology = JSON.parse(storedAdminMethodology);

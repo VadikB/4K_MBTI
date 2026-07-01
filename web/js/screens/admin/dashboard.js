@@ -5,6 +5,9 @@ import {
   adminUserRole,
   adminAvatar,
   adminTitle,
+  adminOpenMethodologyButton,
+  adminOpenOrganizationsButton,
+  adminOpenPromptLabButton,
   adminActivityTitle,
   adminMetricsGrid,
   adminInsightsGrid,
@@ -39,6 +42,12 @@ export const renderAdminDashboard = () => {
   adminAvatar.textContent = buildInitials(user.full_name || 'Администратор системы');
   adminTitle.textContent = adminDashboard.title || 'Сводный отчет';
   adminActivityTitle.innerHTML = 'Количество завершенных ассессментов за период';
+  const isSuperadmin = Boolean(adminDashboard.is_superadmin);
+  [adminOpenOrganizationsButton, adminOpenMethodologyButton, adminOpenPromptLabButton].forEach((button) => {
+    if (button) {
+      button.classList.toggle('hidden', !isSuperadmin);
+    }
+  });
 
   adminMetricsGrid.innerHTML = '';
   (adminDashboard.metrics || []).forEach((metric) => {

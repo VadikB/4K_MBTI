@@ -575,6 +575,7 @@ class AdminMethodologyResponse(BaseModel):
 class AdminDashboard(BaseModel):
     title: str
     subtitle: str
+    is_superadmin: bool = False
     metrics: list[AdminMetricCard]
     competency_average: list[dict[str, str | int | float]]
     mbti_distribution: list[dict[str, str | int]]
@@ -606,6 +607,79 @@ class AdminDetailedReportsResponse(BaseModel):
     total_items: int
     summary_score_percent: float | None = None
     items: list[AdminDetailedReportItem]
+
+
+class AdminOrganizationAdminItem(BaseModel):
+    user_id: int
+    email: str
+    full_name: str | None = None
+
+
+class AdminOrganizationMemberItem(BaseModel):
+    user_id: int
+    email: str
+    full_name: str | None = None
+    role: str = "member"
+    job_description: str | None = None
+    raw_position: str | None = None
+    raw_duties: str | None = None
+
+
+class AdminOrganizationItem(BaseModel):
+    id: int
+    code: str
+    name: str
+    is_active: bool = True
+    domains: list[str] = Field(default_factory=list)
+    admins: list[AdminOrganizationAdminItem] = Field(default_factory=list)
+    members: list[AdminOrganizationMemberItem] = Field(default_factory=list)
+    members_count: int = 0
+    reports_count: int = 0
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class AdminOrganizationsResponse(BaseModel):
+    title: str
+    subtitle: str
+    items: list[AdminOrganizationItem]
+
+
+class AdminOrganizationCreateRequest(BaseModel):
+    code: str
+    name: str
+
+
+class AdminOrganizationUpdateRequest(BaseModel):
+    code: str | None = None
+    name: str | None = None
+
+
+class AdminOrganizationDomainRequest(BaseModel):
+    domain: str
+
+
+class AdminOrganizationAdminRequest(BaseModel):
+    email: str
+    full_name: str | None = None
+
+
+class AdminOrganizationMemberRequest(BaseModel):
+    email: str
+    full_name: str | None = None
+    role_description: str | None = None
+    job_instructions: str | None = None
+
+
+class AdminOrganizationMembersImportRequest(BaseModel):
+    csv_text: str
+
+
+class AdminOrganizationImportResult(BaseModel):
+    imported_count: int = 0
+    skipped_count: int = 0
+    errors: list[str] = Field(default_factory=list)
+    organizations: AdminOrganizationsResponse
 
 
 class AdminReportCaseMessage(BaseModel):

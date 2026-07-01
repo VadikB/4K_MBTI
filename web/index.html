@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="/web/styles/screens/reports.css?v=20260516-merged">
   <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=20260516-merged">
   <link rel="stylesheet" href="/web/styles/screens/admin.css?v=20260518-mbti-preview">
+  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=20260629-org-admin">
   <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=20260516-merged">
   <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=20260516-merged">
   <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=20260516-merged">
@@ -113,6 +114,10 @@
       <div class="dashboard-topbar">
         <div class="brand dashboard-brand">4K Ассистент</div>
         <div class="dashboard-topbar-actions">
+          <button id="dashboard-mobile-exit-button" class="topbar-exit-button dashboard-mobile-exit-button" type="button">
+            <span class="topbar-user-icon" aria-hidden="true">👤</span>
+            <span>Выйти</span>
+          </button>
           <div class="user-menu">
             <div class="user-chip" tabindex="0" aria-haspopup="true" aria-label="Меню пользователя">
               <div class="user-chip-copy">
@@ -295,6 +300,7 @@
             <h2 id="admin-title">Сводный отчет</h2>
           </div>
           <div class="admin-hero-actions">
+            <button id="admin-open-organizations-button" type="button" class="ghost-button compact-ghost">Организации</button>
             <button id="admin-open-methodology-button" type="button" class="ghost-button compact-ghost">Управление кейсами</button>
             <button id="admin-open-prompt-lab-button" type="button" class="ghost-button compact-ghost">Prompt Lab</button>
             <button id="admin-open-reports-button" type="button" class="primary-button compact-primary">Подробные отчеты</button>
@@ -370,6 +376,56 @@
               <div id="admin-activity-chart-fallback" class="admin-activity-chart-fallback hidden"></div>
             </div>
           </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel admin-organizations-panel hidden" id="admin-organizations-panel">
+      <div class="dashboard-topbar">
+        <div class="brand dashboard-brand">Организации</div>
+        <div class="dashboard-topbar-actions">
+          <button id="admin-organizations-back-button" class="ghost-button compact-ghost" type="button">Назад</button>
+        </div>
+      </div>
+
+      <div class="admin-shell admin-organizations-shell">
+        <section class="card card--lg admin-hero-card admin-organizations-hero">
+          <div>
+            <p class="section-label accent-label">Суперадмин</p>
+            <h2 id="admin-organizations-title">Организации</h2>
+            <p id="admin-organizations-subtitle">Управление доменами и администраторами организаций.</p>
+          </div>
+        </section>
+
+        <section class="card card--lg admin-organizations-create-card">
+          <div class="report-card-head">
+            <div>
+              <p class="section-label accent-label">Новая организация</p>
+              <h3>Создать организацию</h3>
+            </div>
+          </div>
+          <form id="admin-organization-create-form" class="admin-organizations-form">
+            <label class="admin-filter-field">
+              <span>Название</span>
+              <input id="admin-organization-name-input" type="text" autocomplete="off" placeholder="Например, ACME">
+            </label>
+            <label class="admin-filter-field">
+              <span>Код</span>
+              <input id="admin-organization-code-input" type="text" autocomplete="off" placeholder="acme">
+            </label>
+            <button id="admin-organization-create-button" type="submit" class="primary-button compact-primary">Создать</button>
+          </form>
+          <p id="admin-organizations-status" class="admin-organizations-status hidden"></p>
+        </section>
+
+        <section class="card card--lg admin-organizations-list-card">
+          <div class="report-card-head">
+            <div>
+              <p class="section-label accent-label">Список</p>
+              <h3>Активные организации</h3>
+            </div>
+          </div>
+          <div id="admin-organizations-list" class="admin-organizations-list"></div>
         </section>
       </div>
     </section>
@@ -1749,6 +1805,6 @@
   </div>
 
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=20260518-admin-mbti-preview"></script>
+  <script type="module" src="/web/dist/main.js?v=20260630-mobile-fixes"></script>
 </body>
 </html>

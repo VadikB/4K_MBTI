@@ -2790,6 +2790,55 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS organizations (
+                id BIGSERIAL PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE")
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS organization_email_domains (
+                id BIGSERIAL PRIMARY KEY,
+                organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+                domain TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (organization_id, domain)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_organization_email_domains_domain
+            ON organization_email_domains(LOWER(domain))
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS organization_memberships (
+                id BIGSERIAL PRIMARY KEY,
+                organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+                user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('member', 'admin')),
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (organization_id, user_id)
+            )
+            """
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_organization_memberships_user_id ON organization_memberships(user_id)"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_organization_memberships_org_role ON organization_memberships(organization_id, role)"
+        )
+        connection.execute(
+            """
             INSERT INTO consent_documents (
                 consent_code,
                 title,
