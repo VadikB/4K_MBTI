@@ -50,7 +50,7 @@ const requestOrganizationsImport = async (url, csvText) => {
     body: JSON.stringify({ csv_text: csvText }),
   });
   const data = await readApiResponse(response, 'Не удалось импортировать участников.');
-  state.adminOrganizations = data.organizations;
+  state.adminOrganizations = data.organizations || data;
   persistAssessmentContext();
   renderAdminOrganizations();
   return data;
@@ -365,14 +365,12 @@ export const openAdminOrganizations = async () => {
   hideAllPanels();
   adminOrganizationsPanel?.classList.remove('hidden');
   setStatus('');
-  if (!state.adminOrganizations) {
-    adminOrganizationsList.innerHTML = '<p class="report-empty-state">Загружаем организации...</p>';
-    try {
-      await loadAdminOrganizations();
-    } catch (error) {
-      adminOrganizationsList.innerHTML = '<p class="report-empty-state">' + escapeHtml(error.message) + '</p>';
-      return;
-    }
+  adminOrganizationsList.innerHTML = '<p class="report-empty-state">Загружаем организации...</p>';
+  try {
+    await loadAdminOrganizations();
+  } catch (error) {
+    adminOrganizationsList.innerHTML = '<p class="report-empty-state">' + escapeHtml(error.message) + '</p>';
+    return;
   }
   renderAdminOrganizations();
 };

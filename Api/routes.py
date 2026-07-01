@@ -1454,6 +1454,66 @@ def _build_admin_dashboard(connection, scope: AdminScope, period_key: str = "30d
     )
 
 
+
+def _extract_admin_mbti_payload(summary_payload) -> tuple[str | None, str | None, list[dict[str, str | int]]]:
+    default_axes = [
+        {"left": "Экстраверсия", "right": "Интроверсия", "value": 0},
+        {"left": "Интуиция", "right": "Сенсорика", "value": 0},
+        {"left": "Мышление", "right": "Чувство", "value": 0},
+        {"left": "Суждение", "right": "Восприятие", "value": 0},
+    ]
+    if isinstance(summary_payload, str):
+        try:
+            summary_payload = json.loads(summary_payload)
+        except Exception:
+            summary_payload = None
+    if not isinstance(summary_payload, dict) or not summary_payload:
+        return None, None, default_axes
+
+    total = summary_payload.get("общий_итог") if isinstance(summary_payload.get("общий_итог"), dict) else summary_payload
+    summary_text = str(
+        total.get("краткий_вывод")
+        or total.get("summary")
+        or total.get("вывод")
+        or ""
+    ).strip() or None
+
+    mbti_type = str(
+        total.get("mbti_type")
+        or total.get("тип")
+        or total.get("темперамент")
+        or total.get("вероятный_тип")
+        or ""
+    ).strip() or None
+    if not mbti_type and summary_text:
+        type_match = re.search(r"\b([IE][NS][FT][JP])\b", summary_text)
+        temperament_match = re.search(r"\b(SJ|SP|NT|NF)\b", summary_text)
+        named_match = re.search(r"(Guardian|Artisan|Rational|Idealist)[-/ ]?([A-Z]{2})?", summary_text, flags=re.IGNORECASE)
+        if type_match:
+            mbti_type = type_match.group(1)
+        elif named_match:
+            label = named_match.group(1).capitalize()
+            suffix = (named_match.group(2) or "").upper()
+            mbti_type = f"{label}/{suffix}" if suffix else label
+        elif temperament_match:
+            mbti_type = temperament_match.group(1)
+
+    axes_payload = total.get("оси") or total.get("axes") or summary_payload.get("mbti_axes")
+    axes: list[dict[str, str | int]] = []
+    if isinstance(axes_payload, list):
+        for item in axes_payload:
+            if not isinstance(item, dict):
+                continue
+            left = str(item.get("left") or item.get("левая_шкала") or item.get("left_label") or "").strip()
+            right = str(item.get("right") or item.get("правая_шкала") or item.get("right_label") or "").strip()
+            try:
+                value = int(item.get("value") or item.get("значение") or 0)
+            except Exception:
+                value = 0
+            if left and right:
+                axes.append({"left": left, "right": right, "value": max(0, min(100, value))})
+    return mbti_type, summary_text, axes or default_axes
+
 def _build_admin_reports(connection, scope: AdminScope) -> AdminDetailedReportsResponse:
     scope_sql, scope_params = admin_scope_sql(scope)
     rows = connection.execute(
@@ -1468,6 +1528,7 @@ def _build_admin_reports(connection, scope: AdminScope) -> AdminDetailedReportsR
             us.status,
             us.expert_comment,
             score_stats.overall_score_percent,
+            us.mbti_summary_json,
             us.started_at,
             us.finished_at
         FROM user_sessions us
@@ -1488,22 +1549,24 @@ def _build_admin_reports(connection, scope: AdminScope) -> AdminDetailedReportsR
         (ADMIN_EMAIL.lower(), *scope_params),
     ).fetchall()
 
-    items = [
-        AdminDetailedReportItem(
-            session_id=int(row["session_id"]),
-            user_id=int(row["user_id"]),
-            full_name=row["full_name"] or "Без имени",
-            phone=row["phone"],
-            group_name=row["group_name"],
-            role_name=row["role_name"],
-            status="Завершено" if row["status"] == "completed" else "В процессе" if row["status"] == "active" else "Черновик",
-            score_percent=int(row["overall_score_percent"]) if row["overall_score_percent"] is not None else None,
-            mbti_type=None,
-            started_at=row["started_at"],
-            finished_at=row["finished_at"],
+    items = []
+    for row in rows:
+        mbti_type, _, _ = _extract_admin_mbti_payload(row.get("mbti_summary_json"))
+        items.append(
+            AdminDetailedReportItem(
+                session_id=int(row["session_id"]),
+                user_id=int(row["user_id"]),
+                full_name=row["full_name"] or "Без имени",
+                phone=row["phone"],
+                group_name=row["group_name"],
+                role_name=row["role_name"],
+                status="Завершено" if row["status"] == "completed" else "В процессе" if row["status"] == "active" else "Черновик",
+                score_percent=int(row["overall_score_percent"]) if row["overall_score_percent"] is not None else None,
+                mbti_type=mbti_type,
+                started_at=row["started_at"],
+                finished_at=row["finished_at"],
+            )
         )
-        for row in rows
-    ]
 
     score_values = [item.score_percent for item in items if item.score_percent is not None]
     return AdminDetailedReportsResponse(
@@ -1529,6 +1592,7 @@ def _build_admin_report_detail(connection, session_id: int, scope: AdminScope) -
             us.expert_name,
             us.expert_contacts,
             us.expert_assessed_at,
+            us.mbti_summary_json,
             u.full_name,
             u.phone,
             u.telegram,
@@ -1821,6 +1885,8 @@ def _build_admin_report_detail(connection, session_id: int, scope: AdminScope) -
             }
         )
 
+    mbti_type, mbti_summary, mbti_axes = _extract_admin_mbti_payload(session_row.get("mbti_summary_json"))
+
     return AdminReportDetailResponse(
         session_id=int(session_row["session_id"]),
         user_id=int(session_row["user_id"]),
@@ -1833,14 +1899,9 @@ def _build_admin_report_detail(connection, session_id: int, scope: AdminScope) -
         score_percent=score_percent,
         report_date=session_row["finished_at"] or session_row["started_at"],
         competency_average=competency_average,
-        mbti_type=None,
-        mbti_summary="Данные MBTI пока не рассчитаны для данного пользователя. После подключения отдельного ассессмента блок заполнится автоматически.",
-        mbti_axes=[
-            {"left": "Экстраверсия", "right": "Интроверсия", "value": 0},
-            {"left": "Интуиция", "right": "Сенсорика", "value": 0},
-            {"left": "Мышление", "right": "Чувство", "value": 0},
-            {"left": "Суждение", "right": "Восприятие", "value": 0},
-        ],
+        mbti_type=mbti_type,
+        mbti_summary=mbti_summary,
+        mbti_axes=mbti_axes,
         insight_title=interpretation["insight_title"],
         insight_text=interpretation["insight_text"],
         basis_items=interpretation["basis_items"],
