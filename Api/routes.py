@@ -37,6 +37,7 @@ from Api.report_growth_logic import (
     build_interpretation_basis_items,
     build_response_pattern_text,
 )
+from Api.regression_tests import cleanup_autotest_data, get_regression_status, run_smoke_regression
 from Api.web_session_service import web_session_service
 from Api.schemas import (
     AdminDashboard,
@@ -73,6 +74,8 @@ from Api.schemas import (
     AdminOrganizationMembersImportRequest,
     AdminOrganizationsResponse,
     AdminOrganizationUpdateRequest,
+    AdminRegressionTestRunResponse,
+    AdminRegressionTestStatusResponse,
     AppVersionResponse,
     AuthEmailRequest,
     AuthEmailRequestResponse,
@@ -2983,6 +2986,34 @@ def get_admin_dashboard(request: Request, period: str = "30d") -> AdminDashboard
     with get_connection() as connection:
         scope = _get_admin_scope_or_403(connection, user)
         return _build_admin_dashboard(connection, scope, period)
+
+
+@router.get("/admin/regression-tests", response_model=AdminRegressionTestStatusResponse)
+def get_admin_regression_tests(request: Request) -> AdminRegressionTestStatusResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+    return get_regression_status()
+
+
+@router.post("/admin/regression-tests/run", response_model=AdminRegressionTestRunResponse)
+def run_admin_regression_tests(request: Request) -> AdminRegressionTestRunResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+    return run_smoke_regression()
+
+
+@router.post("/admin/regression-tests/cleanup")
+def cleanup_admin_regression_tests(request: Request) -> dict[str, object]:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+    counts = cleanup_autotest_data()
+    return {"ok": True, "deleted": counts}
 
 
 @router.get("/admin/organizations", response_model=AdminOrganizationsResponse)

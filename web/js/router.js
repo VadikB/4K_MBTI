@@ -9,6 +9,7 @@ import {
   dashboardPanel,
   adminPanel,
   adminOrganizationsPanel,
+  adminRegressionTestsPanel,
   adminPromptLabPanel,
   adminMethodologyPanel,
   adminReportsPanel,
@@ -30,6 +31,9 @@ export const hideAllPanels = () => {
   adminPanel.classList.add('hidden');
   if (adminOrganizationsPanel) {
     adminOrganizationsPanel.classList.add('hidden');
+  }
+  if (adminRegressionTestsPanel) {
+    adminRegressionTestsPanel.classList.add('hidden');
   }
   if (adminPromptLabPanel) {
     adminPromptLabPanel.classList.add('hidden');

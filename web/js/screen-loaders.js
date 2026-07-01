@@ -43,6 +43,8 @@ export const loadAdminDashboard = () =>
   loadModule('admin-dashboard', () => import('./entries/admin-dashboard.js'));
 export const loadAdminOrganizations = () =>
   loadModule('admin-organizations', () => import('./entries/admin-organizations.js'));
+export const loadAdminRegressionTests = () =>
+  loadModule('admin-regression-tests', () => import('./entries/admin-regression-tests.js'));
 export const loadAdminPromptLab = () =>
   loadModule('admin-prompt-lab', () => import('./entries/admin-prompt-lab.js'));
 export const loadAdminReports = () =>
@@ -126,6 +128,11 @@ export const openAdminOrganizationsScreen = async () => {
 export const loadAdminOrganizationsData = async () => {
   const module = await loadAdminOrganizations();
   return module.loadAdminOrganizations();
+};
+
+export const openAdminRegressionTestsScreen = async () => {
+  const module = await loadAdminRegressionTests();
+  await module.openAdminRegressionTests();
 };
 
 export const openAdminPromptLabScreen = async () => {

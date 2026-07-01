@@ -7,6 +7,7 @@ import {
   adminTitle,
   adminOpenMethodologyButton,
   adminOpenOrganizationsButton,
+  adminOpenRegressionTestsButton,
   adminOpenPromptLabButton,
   adminActivityTitle,
   adminMetricsGrid,
@@ -43,7 +44,7 @@ export const renderAdminDashboard = () => {
   adminTitle.textContent = adminDashboard.title || 'Сводный отчет';
   adminActivityTitle.innerHTML = 'Количество завершенных ассессментов за период';
   const isSuperadmin = Boolean(adminDashboard.is_superadmin);
-  [adminOpenOrganizationsButton, adminOpenMethodologyButton, adminOpenPromptLabButton].forEach((button) => {
+  [adminOpenOrganizationsButton, adminOpenRegressionTestsButton, adminOpenMethodologyButton, adminOpenPromptLabButton].forEach((button) => {
     if (button) {
       button.classList.toggle('hidden', !isSuperadmin);
     }

@@ -609,6 +609,34 @@ class AdminDetailedReportsResponse(BaseModel):
     items: list[AdminDetailedReportItem]
 
 
+class AdminRegressionTestStep(BaseModel):
+    name: str
+    status: str
+    message: str
+
+
+class AdminRegressionTestRunResponse(BaseModel):
+    status: str
+    title: str
+    summary: str
+    started_at: datetime
+    finished_at: datetime
+    duration_seconds: float
+    organization_id: int | None = None
+    user_ids: list[int] = Field(default_factory=list)
+    session_ids: list[int] = Field(default_factory=list)
+    steps: list[AdminRegressionTestStep] = Field(default_factory=list)
+
+
+class AdminRegressionTestStatusResponse(BaseModel):
+    title: str
+    subtitle: str
+    mbti_enabled: bool = False
+    mbti_store_available: bool = False
+    last_run: AdminRegressionTestRunResponse | None = None
+    cleanup_hint: str
+
+
 class AdminOrganizationAdminItem(BaseModel):
     user_id: int
     email: str

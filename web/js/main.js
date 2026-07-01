@@ -25,6 +25,7 @@ import {
   loadAdminDashboardData,
   openAdminOrganizationsScreen,
   loadAdminOrganizationsData,
+  openAdminRegressionTestsScreen,
   openAdminPromptLabScreen,
   openAdminReportsScreen,
   loadAdminReportsData,
@@ -191,6 +192,10 @@ const bootApp = async () => {
         console.error('Failed to restore admin organizations', error);
       }
       void openAdminOrganizationsScreen();
+      return;
+    }
+    if (state.currentScreen === 'admin-regression-tests' && state.isAdmin) {
+      void openAdminRegressionTestsScreen();
       return;
     }
     if (state.currentScreen === 'admin-reports' && state.isAdmin) {

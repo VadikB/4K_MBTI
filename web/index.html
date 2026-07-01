@@ -301,6 +301,7 @@
           </div>
           <div class="admin-hero-actions">
             <button id="admin-open-organizations-button" type="button" class="ghost-button compact-ghost">Организации</button>
+            <button id="admin-open-regression-tests-button" type="button" class="ghost-button compact-ghost">Регрессионные тесты</button>
             <button id="admin-open-methodology-button" type="button" class="ghost-button compact-ghost">Управление кейсами</button>
             <button id="admin-open-prompt-lab-button" type="button" class="ghost-button compact-ghost">Prompt Lab</button>
             <button id="admin-open-reports-button" type="button" class="primary-button compact-primary">Подробные отчеты</button>
@@ -376,6 +377,42 @@
               <div id="admin-activity-chart-fallback" class="admin-activity-chart-fallback hidden"></div>
             </div>
           </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel admin-regression-tests-panel hidden" id="admin-regression-tests-panel">
+      <div class="dashboard-topbar">
+        <div class="brand dashboard-brand">Регрессионные тесты</div>
+        <div class="dashboard-topbar-actions">
+          <button id="admin-regression-tests-back-button" class="ghost-button compact-ghost" type="button">Назад</button>
+        </div>
+      </div>
+
+      <div class="admin-shell admin-regression-tests-shell">
+        <section class="card card--lg admin-hero-card">
+          <div>
+            <p class="section-label accent-label">Суперадмин</p>
+            <h2 id="admin-regression-tests-title">Регрессионные тесты</h2>
+            <p id="admin-regression-tests-subtitle">Быстрые проверки организации, пользователей, отчетов и MBTI readiness.</p>
+          </div>
+          <div class="admin-hero-actions">
+            <button id="admin-regression-tests-cleanup-button" type="button" class="ghost-button compact-ghost">Очистить __autotest__</button>
+            <button id="admin-regression-tests-run-button" type="button" class="primary-button compact-primary">Запустить smoke</button>
+          </div>
+        </section>
+
+        <section class="admin-metrics-grid admin-regression-tests-metrics" id="admin-regression-tests-metrics"></section>
+
+        <section class="card card--lg admin-regression-tests-result-card">
+          <div class="report-card-head">
+            <div>
+              <p class="section-label accent-label">Результат</p>
+              <h3 id="admin-regression-tests-result-title">Тесты еще не запускались</h3>
+            </div>
+          </div>
+          <p id="admin-regression-tests-status" class="admin-regression-tests-status hidden"></p>
+          <div id="admin-regression-tests-steps" class="admin-regression-tests-steps"></div>
         </section>
       </div>
     </section>

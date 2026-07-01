@@ -1,0 +1,176 @@
+import { readApiResponse } from '../../api.js';
+import {
+  adminRegressionTestsCleanupButton,
+  adminRegressionTestsMetrics,
+  adminRegressionTestsPanel,
+  adminRegressionTestsResultTitle,
+  adminRegressionTestsRunButton,
+  adminRegressionTestsStatus,
+  adminRegressionTestsSteps,
+  adminRegressionTestsSubtitle,
+  adminRegressionTestsTitle,
+} from '../../dom.js';
+import { hideAllPanels, syncUrlState } from '../../router.js';
+import { persistAssessmentContext, setCurrentScreen, state } from '../../state.js';
+
+const escapeHtml = (value) =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const setStatus = (message, tone = 'muted') => {
+  if (!adminRegressionTestsStatus) {
+    return;
+  }
+  adminRegressionTestsStatus.textContent = message || '';
+  adminRegressionTestsStatus.classList.toggle('hidden', !message);
+  adminRegressionTestsStatus.dataset.tone = tone;
+};
+
+const setButtonsDisabled = (disabled) => {
+  if (adminRegressionTestsRunButton) {
+    adminRegressionTestsRunButton.disabled = disabled;
+    adminRegressionTestsRunButton.textContent = disabled ? 'Запускаем...' : 'Запустить smoke';
+  }
+  if (adminRegressionTestsCleanupButton) {
+    adminRegressionTestsCleanupButton.disabled = disabled;
+  }
+};
+
+const renderMetric = (label, value, delta = '') =>
+  '<article class="card admin-metric-card"><span>' +
+  escapeHtml(label) +
+  '</span><strong>' +
+  escapeHtml(value) +
+  '</strong><small>' +
+  escapeHtml(delta) +
+  '</small></article>';
+
+const renderSteps = (steps = []) => {
+  if (!adminRegressionTestsSteps) {
+    return;
+  }
+  if (!steps.length) {
+    adminRegressionTestsSteps.innerHTML = '<p class="report-empty-state">Запустите smoke-тест, чтобы увидеть шаги проверки.</p>';
+    return;
+  }
+  adminRegressionTestsSteps.innerHTML = steps
+    .map((step) => {
+      const status = String(step.status || 'pending').toLowerCase();
+      return (
+        '<article class="admin-regression-test-step" data-status="' +
+        escapeHtml(status) +
+        '">' +
+        '<strong>' +
+        escapeHtml(step.name || 'Шаг') +
+        '</strong><span>' +
+        escapeHtml(status) +
+        '</span><p>' +
+        escapeHtml(step.message || '') +
+        '</p></article>'
+      );
+    })
+    .join('');
+};
+
+export const renderAdminRegressionTests = () => {
+  const data = state.adminRegressionTests || {};
+  const lastRun = data.last_run || null;
+
+  if (adminRegressionTestsTitle) {
+    adminRegressionTestsTitle.textContent = data.title || 'Регрессионные тесты';
+  }
+  if (adminRegressionTestsSubtitle) {
+    adminRegressionTestsSubtitle.textContent =
+      data.subtitle || 'Быстрые проверки организации, пользователей, отчетов и MBTI readiness.';
+  }
+  if (adminRegressionTestsMetrics) {
+    adminRegressionTestsMetrics.innerHTML =
+      renderMetric('MBTI', data.mbti_enabled ? 'Включен' : 'Выключен', data.mbti_store_available ? 'Индекс доступен' : 'Индекс не загружен') +
+      renderMetric('Последний запуск', lastRun ? lastRun.status : 'Нет', lastRun ? lastRun.duration_seconds + ' сек' : 'Smoke еще не запускался') +
+      renderMetric('Тестовые данные', '__autotest__', data.cleanup_hint || 'Удаляются отдельно') +
+      renderMetric('Режим', 'Smoke', 'Без полного LLM-прогона кейсов');
+  }
+  if (adminRegressionTestsResultTitle) {
+    adminRegressionTestsResultTitle.textContent = lastRun
+      ? lastRun.title + ': ' + lastRun.status
+      : 'Тесты еще не запускались';
+  }
+  renderSteps(lastRun?.steps || []);
+};
+
+export const loadAdminRegressionTests = async () => {
+  const response = await fetch('/users/admin/regression-tests', { credentials: 'same-origin' });
+  const data = await readApiResponse(response, 'Не удалось загрузить регрессионные тесты.');
+  state.adminRegressionTests = data;
+  persistAssessmentContext();
+  renderAdminRegressionTests();
+  return data;
+};
+
+export const runAdminRegressionTests = async () => {
+  setButtonsDisabled(true);
+  setStatus('Запускаем smoke-регрессию...', 'muted');
+  try {
+    const response = await fetch('/users/admin/regression-tests/run', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await readApiResponse(response, 'Не удалось запустить регрессионные тесты.');
+    state.adminRegressionTests = {
+      ...(state.adminRegressionTests || {}),
+      last_run: data,
+    };
+    persistAssessmentContext();
+    renderAdminRegressionTests();
+    setStatus(data.summary || 'Smoke-регрессия завершена.', data.status === 'passed' ? 'success' : 'error');
+  } catch (error) {
+    setStatus(error.message || 'Не удалось запустить регрессионные тесты.', 'error');
+  } finally {
+    setButtonsDisabled(false);
+  }
+};
+
+export const cleanupAdminRegressionTests = async () => {
+  setButtonsDisabled(true);
+  setStatus('Удаляем __autotest__ данные...', 'muted');
+  try {
+    const response = await fetch('/users/admin/regression-tests/cleanup', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await readApiResponse(response, 'Не удалось очистить __autotest__ данные.');
+    await loadAdminRegressionTests();
+    const deleted = data.deleted || {};
+    setStatus(
+      'Удалено: пользователей ' +
+        Number(deleted.users || 0) +
+        ', сессий ' +
+        Number(deleted.sessions || 0) +
+        ', организаций ' +
+        Number(deleted.organizations || 0) +
+        '.',
+      'success',
+    );
+  } catch (error) {
+    setStatus(error.message || 'Не удалось очистить __autotest__ данные.', 'error');
+  } finally {
+    setButtonsDisabled(false);
+  }
+};
+
+export const openAdminRegressionTests = async () => {
+  setCurrentScreen('admin-regression-tests');
+  persistAssessmentContext();
+  syncUrlState('admin-regression-tests');
+  hideAllPanels();
+  adminRegressionTestsPanel?.classList.remove('hidden');
+  setStatus('');
+  renderAdminRegressionTests();
+  await loadAdminRegressionTests();
+};

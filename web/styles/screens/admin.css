@@ -258,6 +258,66 @@
     padding: var(--space-3) var(--space-4);
 }
 
+.admin-regression-tests-status {
+    margin: 0 0 var(--space-4);
+    color: var(--text-muted);
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-normal);
+}
+
+.admin-regression-tests-status[data-tone="success"] {
+    color: var(--success);
+}
+
+.admin-regression-tests-status[data-tone="error"] {
+    color: var(--danger);
+}
+
+.admin-regression-tests-steps {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.admin-regression-test-step {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid rgba(70, 72, 212, 0.12);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.admin-regression-test-step strong {
+    font-family: var(--font-heading);
+    font-size: var(--fs-body-sm);
+    font-weight: var(--fw-bold);
+}
+
+.admin-regression-test-step span {
+    align-self: start;
+    padding: 3px 8px;
+    border-radius: var(--radius-pill);
+    background: rgba(70, 72, 212, 0.08);
+    color: var(--accent);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-bold);
+}
+
+.admin-regression-test-step[data-status="failed"] span,
+.admin-regression-test-step[data-status="error"] span {
+    background: rgba(204, 63, 63, 0.1);
+    color: var(--danger);
+}
+
+.admin-regression-test-step p {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-normal);
+}
+
 .admin-insight-card strong {
     display: block;
     margin-bottom: var(--space-2);

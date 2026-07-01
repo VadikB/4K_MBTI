@@ -21,6 +21,10 @@ import {
   adminOpenPromptLabButton,
   adminOpenMethodologyButton,
   adminOpenOrganizationsButton,
+  adminOpenRegressionTestsButton,
+  adminRegressionTestsBackButton,
+  adminRegressionTestsRunButton,
+  adminRegressionTestsCleanupButton,
   adminOrganizationsBackButton,
   adminOrganizationCreateForm,
   adminOrganizationsList,
@@ -144,6 +148,7 @@ import {
   loadReport,
   loadAdminDashboard,
   loadAdminOrganizations,
+  loadAdminRegressionTests,
   loadAdminPromptLab,
   loadAdminReports,
   loadAdminMethodology,
@@ -479,6 +484,12 @@ if (adminOpenOrganizationsButton) {
   });
 }
 
+if (adminOpenRegressionTestsButton) {
+  adminOpenRegressionTestsButton.addEventListener('click', () => {
+    withScreen(loadAdminRegressionTests, (module) => module.openAdminRegressionTests());
+  });
+}
+
 if (adminOpenPromptLabButton) {
   adminOpenPromptLabButton.addEventListener('click', () => {
     withScreen(loadAdminPromptLab, (module) => module.openAdminPromptLab());
@@ -522,6 +533,27 @@ if (adminPromptLabBackButton) {
 if (adminOrganizationsBackButton) {
   adminOrganizationsBackButton.addEventListener('click', () => {
     withScreen(loadAdminDashboard, (module) => module.openAdminDashboard());
+  });
+}
+
+if (adminRegressionTestsBackButton) {
+  adminRegressionTestsBackButton.addEventListener('click', () => {
+    withScreen(loadAdminDashboard, (module) => module.openAdminDashboard());
+  });
+}
+
+if (adminRegressionTestsRunButton) {
+  adminRegressionTestsRunButton.addEventListener('click', () => {
+    withScreen(loadAdminRegressionTests, (module) => module.runAdminRegressionTests());
+  });
+}
+
+if (adminRegressionTestsCleanupButton) {
+  adminRegressionTestsCleanupButton.addEventListener('click', () => {
+    if (!window.confirm('Удалить только данные с префиксом __autotest__?')) {
+      return;
+    }
+    withScreen(loadAdminRegressionTests, (module) => module.cleanupAdminRegressionTests());
   });
 }
 
