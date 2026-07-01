@@ -75,6 +75,7 @@ export const adminRegressionTestsBackButton = document.getElementById('admin-reg
 export const adminRegressionTestsTitle = document.getElementById('admin-regression-tests-title');
 export const adminRegressionTestsSubtitle = document.getElementById('admin-regression-tests-subtitle');
 export const adminRegressionTestsRunButton = document.getElementById('admin-regression-tests-run-button');
+export const adminRegressionTestsRunFullButton = document.getElementById('admin-regression-tests-run-full-button');
 export const adminRegressionTestsCleanupButton = document.getElementById('admin-regression-tests-cleanup-button');
 export const adminRegressionTestsMetrics = document.getElementById('admin-regression-tests-metrics');
 export const adminRegressionTestsResultTitle = document.getElementById('admin-regression-tests-result-title');

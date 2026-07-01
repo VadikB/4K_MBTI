@@ -6,10 +6,12 @@ import time
 from datetime import datetime
 from threading import Lock
 
+from Api.agent import interviewer_agent
 from Api.config import settings
 from Api.database import get_connection
 from Api.mbti.service import mbti_assessment_service
-from Api.schemas import AdminRegressionTestRunResponse, AdminRegressionTestStatusResponse, AdminRegressionTestStep
+from Api.schemas import AdminRegressionTestRunResponse, AdminRegressionTestStatusResponse, AdminRegressionTestStep, UserResponse
+from Api.web_session_service import USER_SELECT_SQL
 
 
 AUTOTEST_ORG_CODE = "__autotest__smoke"
@@ -19,6 +21,7 @@ AUTOTEST_EMAIL_PREFIX = "__autotest__"
 
 _last_run: AdminRegressionTestRunResponse | None = None
 _lock = Lock()
+FULL_RUN_MAX_TURNS_PER_USER = 24
 
 
 def _json(value) -> str:
@@ -196,6 +199,161 @@ def _create_profile(connection, *, user_id: int, role_id: int, role_name: str, r
     return profile_id
 
 
+def _create_autotest_users(connection) -> tuple[int, list[int], dict[int, str]]:
+    _cleanup_autotest_data(connection)
+    org_row = connection.execute(
+        """
+        INSERT INTO organizations (code, name, is_active)
+        VALUES (%s, %s, TRUE)
+        RETURNING id
+        """,
+        (AUTOTEST_ORG_CODE, AUTOTEST_ORG_NAME),
+    ).fetchone()
+    organization_id = int(org_row["id"])
+    connection.execute(
+        "INSERT INTO organization_email_domains (organization_id, domain) VALUES (%s, %s)",
+        (organization_id, AUTOTEST_DOMAIN),
+    )
+
+    roles = {
+        row["code"]: {"id": int(row["id"]), "name": row["name"]}
+        for row in connection.execute("SELECT id, code, name FROM roles WHERE code IN ('linear_employee', 'manager', 'leader')").fetchall()
+    }
+    if len(roles) != 3:
+        raise RuntimeError("Не найдены все системные роли для автотеста.")
+
+    user_ids: list[int] = []
+    role_by_user_id: dict[int, str] = {}
+    run_suffix = secrets.token_hex(4)
+    for role_code in ("linear_employee", "manager", "leader"):
+        fixture = _role_payload(role_code)
+        email = f"{AUTOTEST_EMAIL_PREFIX}{role_code}.{run_suffix}@{AUTOTEST_DOMAIN}"
+        role = roles[role_code]
+        user_row = connection.execute(
+            """
+            INSERT INTO users (
+                full_name, email, role_id, job_description, company_industry,
+                personal_data_consent_accepted_at, personal_data_consent_version, personal_data_consent_text
+            )
+            VALUES (%s, %s, %s, %s, %s, NOW(), 1, %s)
+            RETURNING id
+            """,
+            (
+                fixture["full_name"],
+                email,
+                role["id"],
+                fixture["position"],
+                "Автотест: телеком, поддержка, SLA",
+                "__autotest__ consent",
+            ),
+        ).fetchone()
+        user_id = int(user_row["id"])
+        user_ids.append(user_id)
+        role_by_user_id[user_id] = role_code
+        _create_profile(connection, user_id=user_id, role_id=role["id"], role_name=role["name"], role_code=role_code, fixture=fixture)
+        connection.execute(
+            """
+            INSERT INTO user_identities (
+                user_id, provider, provider_subject, email,
+                is_primary, is_verified, verified_at, updated_at
+            )
+            VALUES (%s, 'email_magic_link', %s, %s, TRUE, TRUE, NOW(), NOW())
+            """,
+            (user_id, email, email),
+        )
+        connection.execute(
+            "INSERT INTO organization_memberships (organization_id, user_id, role) VALUES (%s, %s, 'member')",
+            (organization_id, user_id),
+        )
+    return organization_id, user_ids, role_by_user_id
+
+
+def _fetch_user(user_id: int) -> UserResponse:
+    with get_connection() as connection:
+        row = connection.execute(
+            USER_SELECT_SQL
+            + """
+            WHERE u.id = %s
+            LIMIT 1
+            """,
+            (user_id,),
+        ).fetchone()
+    if row is None:
+        raise RuntimeError(f"Autotest user {user_id} not found")
+    return UserResponse(**dict(row))
+
+
+def _autotest_case_answer(role_code: str, case_title: str | None = None) -> str:
+    fixture = _role_payload(role_code)
+    title = str(case_title or "кейсу").strip()
+    return (
+        f"Автотестовый ответ по кейсу «{title}». "
+        f"Роль: {fixture['position']}. "
+        "Я фиксирую проблему, выделяю влияние на клиента и SLA, проверяю факты в CRM и сервис-деске, "
+        "приоритизирую действия, назначаю ответственных, эскалирую риски и описываю ожидаемый результат. "
+        "Критерии успеха: восстановление сервиса, прозрачная коммуникация, контроль сроков и предотвращение повторения."
+    )
+
+
+def _autotest_mbti_followup_answer(role_code: str) -> str:
+    fixture = _role_payload(role_code)
+    return (
+        f"Для роли «{fixture['position']}» я обычно действую структурно: сначала собираю факты, затем сверяю риски, "
+        "договариваюсь о плане и контролирую результат. В стрессовой ситуации предпочитаю ясные приоритеты, "
+        "короткую коммуникацию и проверку гипотез на данных."
+    )
+
+
+def _run_full_assessment_for_user(user_id: int, role_code: str) -> tuple[int, int, int]:
+    user = _fetch_user(user_id)
+    response = interviewer_agent.start_case_interview(user=user)
+    session_id = int(response.session_id)
+    answered_cases: set[int] = set()
+    completed_cases = 0
+
+    for _ in range(FULL_RUN_MAX_TURNS_PER_USER):
+        if response.assessment_completed:
+            break
+        case_id = int(response.session_case_id or 0)
+        if response.case_completed:
+            completed_cases += 1
+        if response.mbti_followup_pending:
+            message = _autotest_mbti_followup_answer(role_code)
+        elif response.pending_auto_finish:
+            message = "__auto_finish_case__"
+        elif case_id and case_id in answered_cases:
+            message = "__finish_case__"
+        else:
+            if case_id:
+                answered_cases.add(case_id)
+            message = _autotest_case_answer(role_code, response.case_title)
+
+        response = interviewer_agent.continue_case_interview(session_code=response.session_code, message=message)
+
+    if not response.assessment_completed:
+        raise RuntimeError(f"Полный прогон для пользователя {user_id} не завершился за {FULL_RUN_MAX_TURNS_PER_USER} ходов.")
+
+    with get_connection() as connection:
+        case_count = int(
+            connection.execute(
+                "SELECT COUNT(*)::int AS count FROM session_cases WHERE session_id = %s AND status = 'completed'",
+                (session_id,),
+            ).fetchone()["count"]
+            or 0
+        )
+        has_mbti = bool(
+            connection.execute(
+                "SELECT mbti_summary_json IS NOT NULL AS has_mbti FROM user_sessions WHERE id = %s",
+                (session_id,),
+            ).fetchone()["has_mbti"]
+        )
+    if case_count <= 0:
+        raise RuntimeError(f"Для пользователя {user_id} не найдено завершенных кейсов.")
+    if settings.mbti_enabled and not has_mbti:
+        raise RuntimeError(f"Для пользователя {user_id} не сформирован MBTI summary.")
+    return session_id, case_count, completed_cases
+
+
 def run_smoke_regression() -> AdminRegressionTestRunResponse:
     global _last_run
 
@@ -210,72 +368,15 @@ def run_smoke_regression() -> AdminRegressionTestRunResponse:
 
         try:
             with get_connection() as connection:
-                _cleanup_autotest_data(connection)
+                organization_id, user_ids, _role_by_user_id = _create_autotest_users(connection)
                 steps.append(_step("cleanup", "passed", "Предыдущие __autotest__ данные удалены."))
-
-                org_row = connection.execute(
-                    """
-                    INSERT INTO organizations (code, name, is_active)
-                    VALUES (%s, %s, TRUE)
-                    RETURNING id
-                    """,
-                    (AUTOTEST_ORG_CODE, AUTOTEST_ORG_NAME),
-                ).fetchone()
-                organization_id = int(org_row["id"])
-                connection.execute(
-                    "INSERT INTO organization_email_domains (organization_id, domain) VALUES (%s, %s)",
-                    (organization_id, AUTOTEST_DOMAIN),
-                )
                 steps.append(_step("organization", "passed", f"Создана организация {AUTOTEST_ORG_NAME}."))
 
-                roles = {
-                    row["code"]: {"id": int(row["id"]), "name": row["name"]}
-                    for row in connection.execute("SELECT id, code, name FROM roles WHERE code IN ('linear_employee', 'manager', 'leader')").fetchall()
+                roles_by_id = {
+                    int(row["id"]): int(row["role_id"])
+                    for row in connection.execute("SELECT id, role_id FROM users WHERE id = ANY(%s)", (user_ids,)).fetchall()
                 }
-                if len(roles) != 3:
-                    raise RuntimeError("Не найдены все системные роли для автотеста.")
-
-                run_suffix = secrets.token_hex(4)
-                for role_code in ("linear_employee", "manager", "leader"):
-                    fixture = _role_payload(role_code)
-                    email = f"{AUTOTEST_EMAIL_PREFIX}{role_code}.{run_suffix}@{AUTOTEST_DOMAIN}"
-                    role = roles[role_code]
-                    user_row = connection.execute(
-                        """
-                        INSERT INTO users (
-                            full_name, email, role_id, job_description, company_industry,
-                            personal_data_consent_accepted_at, personal_data_consent_version, personal_data_consent_text
-                        )
-                        VALUES (%s, %s, %s, %s, %s, NOW(), 1, %s)
-                        RETURNING id
-                        """,
-                        (
-                            fixture["full_name"],
-                            email,
-                            role["id"],
-                            fixture["position"],
-                            "Автотест: телеком, поддержка, SLA",
-                            "__autotest__ consent",
-                        ),
-                    ).fetchone()
-                    user_id = int(user_row["id"])
-                    user_ids.append(user_id)
-                    _create_profile(connection, user_id=user_id, role_id=role["id"], role_name=role["name"], role_code=role_code, fixture=fixture)
-                    connection.execute(
-                        """
-                        INSERT INTO user_identities (
-                            user_id, provider, provider_subject, email,
-                            is_primary, is_verified, verified_at, updated_at
-                        )
-                        VALUES (%s, 'email_magic_link', %s, %s, TRUE, TRUE, NOW(), NOW())
-                        """,
-                        (user_id, email, email),
-                    )
-                    connection.execute(
-                        "INSERT INTO organization_memberships (organization_id, user_id, role) VALUES (%s, %s, 'member')",
-                        (organization_id, user_id),
-                    )
-
+                for user_id in user_ids:
                     mbti_summary = {
                         "общий_итог": {
                             "оценка": 50,
@@ -292,7 +393,7 @@ def run_smoke_regression() -> AdminRegressionTestRunResponse:
                         VALUES (%s, %s, %s, 'completed', '__autotest__', 'Smoke regression session', 'competencies_4k', NOW(), NOW(), %s::jsonb)
                         RETURNING id
                         """,
-                        (f"__autotest__{secrets.token_hex(12)}", user_id, role["id"], _json(mbti_summary)),
+                        (f"__autotest__{secrets.token_hex(12)}", user_id, roles_by_id[user_id], _json(mbti_summary)),
                     ).fetchone()
                     session_ids.append(int(session_row["id"]))
                 steps.append(_step("users", "passed", "Созданы 3 пользователя: linear_employee, manager, leader."))
@@ -335,6 +436,79 @@ def run_smoke_regression() -> AdminRegressionTestRunResponse:
         return run
 
 
+def run_full_regression() -> AdminRegressionTestRunResponse:
+    global _last_run
+
+    with _lock:
+        started_at = datetime.utcnow()
+        start_time = time.monotonic()
+        steps: list[AdminRegressionTestStep] = []
+        user_ids: list[int] = []
+        session_ids: list[int] = []
+        organization_id: int | None = None
+        status = "passed"
+
+        try:
+            with get_connection() as connection:
+                organization_id, user_ids, role_by_user_id = _create_autotest_users(connection)
+                connection.commit()
+            steps.append(_step("cleanup", "passed", "Предыдущие __autotest__ данные удалены."))
+            steps.append(_step("organization", "passed", f"Создана организация {AUTOTEST_ORG_NAME} и 3 пользователя."))
+
+            total_completed_cases = 0
+            for user_id in user_ids:
+                role_code = role_by_user_id[user_id]
+                session_id, case_count, _completed_during_loop = _run_full_assessment_for_user(user_id, role_code)
+                session_ids.append(session_id)
+                total_completed_cases += case_count
+                steps.append(_step("assessment", "passed", f"Пользователь {user_id}: завершена сессия {session_id}, кейсов: {case_count}."))
+
+            with get_connection() as connection:
+                completed_sessions = int(
+                    connection.execute(
+                        "SELECT COUNT(*)::int AS count FROM user_sessions WHERE id = ANY(%s) AND status = 'completed'",
+                        (session_ids,),
+                    ).fetchone()["count"]
+                    or 0
+                )
+                report_rows = int(
+                    connection.execute(
+                        "SELECT COUNT(*)::int AS count FROM session_case_results WHERE session_id = ANY(%s)",
+                        (session_ids,),
+                    ).fetchone()["count"]
+                    or 0
+                )
+            if completed_sessions != len(user_ids):
+                raise RuntimeError("Не все assessment-сессии завершены.")
+            if report_rows <= 0:
+                raise RuntimeError("Не сформированы результаты кейсов для отчетов.")
+            steps.append(_step("assertions", "passed", f"Проверены completed sessions: {completed_sessions}, case results: {report_rows}."))
+            steps.append(_step("summary", "passed", f"Полный прогон завершен: пользователей {len(user_ids)}, кейсов {total_completed_cases}."))
+        except Exception as exc:
+            status = "failed"
+            steps.append(_step("failure", "failed", str(exc)))
+
+        finished_at = datetime.utcnow()
+        run = AdminRegressionTestRunResponse(
+            status=status,
+            title="Full regression",
+            summary=(
+                "Полный регрессионный прогон прошел успешно."
+                if status == "passed"
+                else "Полный регрессионный прогон завершился с ошибкой."
+            ),
+            started_at=started_at,
+            finished_at=finished_at,
+            duration_seconds=round(time.monotonic() - start_time, 2),
+            organization_id=organization_id,
+            user_ids=user_ids,
+            session_ids=session_ids,
+            steps=steps,
+        )
+        _last_run = run
+        return run
+
+
 def get_regression_status() -> AdminRegressionTestStatusResponse:
     store_available = False
     if settings.mbti_enabled:
@@ -344,7 +518,7 @@ def get_regression_status() -> AdminRegressionTestStatusResponse:
             store_available = False
     return AdminRegressionTestStatusResponse(
         title="Регрессионные тесты",
-        subtitle="Быстрые суперадминские проверки организации, пользователей, отчетов и MBTI readiness.",
+        subtitle="Smoke-проверки и полный прогон assessment-сценариев для автотестовых пользователей.",
         mbti_enabled=bool(settings.mbti_enabled),
         mbti_store_available=store_available,
         last_run=_last_run,

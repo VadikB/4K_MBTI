@@ -25,6 +25,7 @@ import {
   adminOpenRegressionTestsButton,
   adminRegressionTestsBackButton,
   adminRegressionTestsRunButton,
+  adminRegressionTestsRunFullButton,
   adminRegressionTestsCleanupButton,
   adminOrganizationsBackButton,
   adminOrganizationCreateForm,
@@ -552,6 +553,15 @@ if (adminRegressionTestsBackButton) {
 if (adminRegressionTestsRunButton) {
   adminRegressionTestsRunButton.addEventListener('click', () => {
     withScreen(loadAdminRegressionTests, (module) => module.runAdminRegressionTests());
+  });
+}
+
+if (adminRegressionTestsRunFullButton) {
+  adminRegressionTestsRunFullButton.addEventListener('click', () => {
+    if (!window.confirm('Запустить полный прогон assessment-сценариев? Это может занять несколько минут и выполнить реальные LLM-вызовы.')) {
+      return;
+    }
+    withScreen(loadAdminRegressionTests, (module) => module.runAdminFullRegressionTests());
   });
 }
 

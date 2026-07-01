@@ -4,6 +4,7 @@ import {
   adminRegressionTestsMetrics,
   adminRegressionTestsPanel,
   adminRegressionTestsResultTitle,
+  adminRegressionTestsRunFullButton,
   adminRegressionTestsRunButton,
   adminRegressionTestsStatus,
   adminRegressionTestsSteps,
@@ -34,6 +35,10 @@ const setButtonsDisabled = (disabled) => {
   if (adminRegressionTestsRunButton) {
     adminRegressionTestsRunButton.disabled = disabled;
     adminRegressionTestsRunButton.textContent = disabled ? 'Запускаем...' : 'Запустить smoke';
+  }
+  if (adminRegressionTestsRunFullButton) {
+    adminRegressionTestsRunFullButton.disabled = disabled;
+    adminRegressionTestsRunFullButton.textContent = disabled ? 'Прогоняем...' : 'Полный прогон';
   }
   if (adminRegressionTestsCleanupButton) {
     adminRegressionTestsCleanupButton.disabled = disabled;
@@ -92,7 +97,7 @@ export const renderAdminRegressionTests = () => {
       renderMetric('MBTI', data.mbti_enabled ? 'Включен' : 'Выключен', data.mbti_store_available ? 'Индекс доступен' : 'Индекс не загружен') +
       renderMetric('Последний запуск', lastRun ? lastRun.status : 'Нет', lastRun ? lastRun.duration_seconds + ' сек' : 'Smoke еще не запускался') +
       renderMetric('Тестовые данные', '__autotest__', data.cleanup_hint || 'Удаляются отдельно') +
-      renderMetric('Режим', 'Smoke', 'Без полного LLM-прогона кейсов');
+      renderMetric('Режимы', 'Smoke / Full', 'Full запускает реальные assessment-сессии');
   }
   if (adminRegressionTestsResultTitle) {
     adminRegressionTestsResultTitle.textContent = lastRun
@@ -130,6 +135,30 @@ export const runAdminRegressionTests = async () => {
     setStatus(data.summary || 'Smoke-регрессия завершена.', data.status === 'passed' ? 'success' : 'error');
   } catch (error) {
     setStatus(error.message || 'Не удалось запустить регрессионные тесты.', 'error');
+  } finally {
+    setButtonsDisabled(false);
+  }
+};
+
+export const runAdminFullRegressionTests = async () => {
+  setButtonsDisabled(true);
+  setStatus('Запускаем полный регрессионный прогон. Это может занять несколько минут...', 'muted');
+  try {
+    const response = await fetch('/users/admin/regression-tests/run-full', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await readApiResponse(response, 'Не удалось запустить полный регрессионный прогон.');
+    state.adminRegressionTests = {
+      ...(state.adminRegressionTests || {}),
+      last_run: data,
+    };
+    persistAssessmentContext();
+    renderAdminRegressionTests();
+    setStatus(data.summary || 'Полный регрессионный прогон завершен.', data.status === 'passed' ? 'success' : 'error');
+  } catch (error) {
+    setStatus(error.message || 'Не удалось запустить полный регрессионный прогон.', 'error');
   } finally {
     setButtonsDisabled(false);
   }
