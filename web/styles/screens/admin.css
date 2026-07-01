@@ -16,6 +16,8 @@
 .admin-hero-card {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-4);
 }
 
 .admin-hero-card h2 {
@@ -35,9 +37,11 @@
 
 .admin-hero-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-3);
     justify-content: flex-end;
     align-items: center;
+    max-width: min(100%, 760px);
 }
 
 .admin-metrics-grid {
