@@ -3,34 +3,12 @@ import { readApiResponse } from './api.js';
 import { isAdminUserPayload } from './utils/format.js';
 import { resetChatScreen } from './screen-loaders.js';
 import { returnToStart } from './router.js';
+import { applyLogoutButtonPendingState } from './logout-ui.js';
 
 const wait = (ms) =>
   new Promise((resolve) => {
     window.setTimeout(resolve, ms);
   });
-
-const applyLogoutButtonPendingState = (button) => {
-  if (!(button instanceof HTMLElement)) {
-    return () => {};
-  }
-
-  const originalDisabled = button.disabled;
-  const labelNode =
-    button.querySelector('.topbar-exit-button span:last-child') ||
-    button.querySelector('span:last-child') ||
-    button;
-  const originalLabel = labelNode.textContent;
-
-  button.disabled = true;
-  button.setAttribute('aria-busy', 'true');
-  labelNode.textContent = 'Выходим...';
-
-  return () => {
-    button.disabled = originalDisabled;
-    button.removeAttribute('aria-busy');
-    labelNode.textContent = originalLabel;
-  };
-};
 
 export const isMissingUserError = (error) => {
   const message = String(error?.message || '').toLowerCase();

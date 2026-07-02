@@ -1,3 +1,5 @@
+import { resetLogoutButtonsState } from './logout-ui.js';
+
 const moduleCache = new Map();
 const initialized = new Set();
 
@@ -111,6 +113,7 @@ export const openReportsScreen = async () => {
 };
 
 export const openAdminDashboardScreen = async () => {
+  resetLogoutButtonsState();
   const module = await loadAdminDashboard();
   module.openAdminDashboard();
 };
@@ -121,6 +124,7 @@ export const loadAdminDashboardData = async (periodKey) => {
 };
 
 export const openAdminOrganizationsScreen = async () => {
+  resetLogoutButtonsState();
   const module = await loadAdminOrganizations();
   await module.openAdminOrganizations();
 };
@@ -131,16 +135,19 @@ export const loadAdminOrganizationsData = async () => {
 };
 
 export const openAdminRegressionTestsScreen = async () => {
+  resetLogoutButtonsState();
   const module = await loadAdminRegressionTests();
   await module.openAdminRegressionTests();
 };
 
 export const openAdminPromptLabScreen = async () => {
+  resetLogoutButtonsState();
   const module = await loadAdminPromptLab();
   await module.openAdminPromptLab();
 };
 
 export const openAdminReportsScreen = async () => {
+  resetLogoutButtonsState();
   const module = await loadAdminReports();
   await module.openAdminReports();
 };
@@ -151,6 +158,7 @@ export const loadAdminReportsData = async () => {
 };
 
 export const openAdminMethodologyScreen = async () => {
+  resetLogoutButtonsState();
   const module = await loadAdminMethodology();
   await module.openAdminMethodology();
 };
@@ -161,6 +169,7 @@ export const loadAdminMethodologyData = async () => {
 };
 
 export const openAdminReportDetailScreen = async (sessionId) => {
+  resetLogoutButtonsState();
   const module = await loadAdminReportDetail();
   await module.openAdminReportDetail(sessionId);
 };
