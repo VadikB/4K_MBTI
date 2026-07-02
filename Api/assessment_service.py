@@ -249,8 +249,6 @@ class AssessmentService:
         case_skills: list[str],
         interactivity_mode: str | None = None,
     ) -> str:
-        if deepseek_client._is_dialog_interactivity_mode(interactivity_mode):
-            return repeated_message
         previous_assistant_messages = [
             str(row["message_text"] or "").strip()
             for row in dialogue_rows
@@ -1780,10 +1778,7 @@ class AssessmentService:
             {"role": item["role"], "message_text": item["content"]}
             for item in normalized_dialogue
         ]
-        if (
-            not deepseek_client._is_dialog_interactivity_mode(context.get("interactivity_mode"))
-            and self._needs_non_repeating_follow_up(turn.assistant_message, dialogue_rows)
-        ):
+        if self._needs_non_repeating_follow_up(turn.assistant_message, dialogue_rows):
             turn.assistant_message = self._build_non_repeating_follow_up(
                 repeated_message=turn.assistant_message,
                 user_message=normalized_user_message,
@@ -2728,10 +2723,7 @@ class AssessmentService:
                 user_profile=user_profile,
             )
 
-            if (
-                not deepseek_client._is_dialog_interactivity_mode(methodical_context.get("interactivity_mode"))
-                and self._needs_non_repeating_follow_up(turn.assistant_message, dialogue_rows)
-            ):
+            if self._needs_non_repeating_follow_up(turn.assistant_message, dialogue_rows):
                 turn.assistant_message = self._build_non_repeating_follow_up(
                     repeated_message=turn.assistant_message,
                     user_message=message,
