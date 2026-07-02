@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+if [ "${SKIP_VERSION_BUMP:-}" = "1" ]; then
+  exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+staged_non_version_files="$(git diff --cached --name-only --diff-filter=ACMR | grep -Ev '^(pyproject\.toml|uv\.lock|web/js/config\.js)$' || true)"
+if [ -z "$staged_non_version_files" ]; then
+  exit 0
+fi
+
+python_bin=".venv/bin/python"
+if [ ! -x "$python_bin" ]; then
+  python_bin="python3"
+fi
+
+"$python_bin" scripts/bump_patch_version.py
+git add pyproject.toml uv.lock web/js/config.js

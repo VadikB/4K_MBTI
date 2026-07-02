@@ -36,6 +36,30 @@ git checkout main
 git pull --ff-only
 ```
 
+## Версионирование
+
+Правило проекта: каждый содержательный коммит увеличивает patch-версию на 1.
+
+Один раз после клонирования включите git hooks:
+
+```bash
+./scripts/setup_git_hooks.sh
+```
+
+После этого `git commit` автоматически обновляет:
+
+- `pyproject.toml`
+- `uv.lock`
+- `web/js/config.js`
+
+Если нужно поднять версию вручную:
+
+```bash
+.venv/bin/python scripts/bump_patch_version.py
+```
+
+После деплоя версии нужен рестарт backend-процесса, потому что `/users/version` читает версию из `pyproject.toml` и кеширует ее в процессе приложения.
+
 ## Локальный запуск
 
 ### 1. Виртуальное окружение
