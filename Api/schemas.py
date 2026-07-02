@@ -620,7 +620,7 @@ class AdminRegressionTestRunResponse(BaseModel):
     title: str
     summary: str
     started_at: datetime
-    finished_at: datetime
+    finished_at: datetime | None = None
     duration_seconds: float
     organization_id: int | None = None
     user_ids: list[int] = Field(default_factory=list)

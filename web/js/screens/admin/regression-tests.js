@@ -22,6 +22,27 @@ const escapeHtml = (value) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+const STEP_LABELS = {
+  cleanup: 'Очистка данных',
+  organization: 'Организация и пользователи',
+  assessment_linear_employee: 'Assessment: линейный сотрудник',
+  assessment_manager: 'Assessment: менеджер',
+  assessment_leader: 'Assessment: лидер',
+  assertions: 'Проверка результатов',
+  summary: 'Итог',
+};
+
+const getStepLabel = (name) => STEP_LABELS[String(name || '')] || name || 'Шаг';
+
+let regressionPollTimerId = null;
+
+const stopRegressionPolling = () => {
+  if (regressionPollTimerId) {
+    window.clearInterval(regressionPollTimerId);
+    regressionPollTimerId = null;
+  }
+};
+
 const setStatus = (message, tone = 'muted') => {
   if (!adminRegressionTestsStatus) {
     return;
@@ -70,7 +91,7 @@ const renderSteps = (steps = []) => {
         escapeHtml(status) +
         '">' +
         '<strong>' +
-        escapeHtml(step.name || 'Шаг') +
+        escapeHtml(getStepLabel(step.name)) +
         '</strong><span>' +
         escapeHtml(status) +
         '</span><p>' +
@@ -79,6 +100,47 @@ const renderSteps = (steps = []) => {
       );
     })
     .join('');
+};
+
+const getRunProgress = (run) => {
+  const steps = Array.isArray(run?.steps) ? run.steps : [];
+  const total = Math.max(steps.length, 1);
+  const passed = steps.filter((step) => String(step.status || '').toLowerCase() === 'passed').length;
+  const failed = steps.some((step) => ['failed', 'error'].includes(String(step.status || '').toLowerCase()));
+  const runningIndex = steps.findIndex((step) => String(step.status || '').toLowerCase() === 'running');
+  if (run?.status === 'passed') {
+    return 100;
+  }
+  if (failed || run?.status === 'failed') {
+    return Math.round((passed / total) * 100);
+  }
+  const runningBonus = runningIndex >= 0 ? 0.5 : 0;
+  return Math.max(5, Math.min(95, Math.round(((passed + runningBonus) / total) * 100)));
+};
+
+const renderRunProgress = (run) => {
+  if (!adminRegressionTestsSteps || !run || !['running', 'passed', 'failed'].includes(String(run.status || '').toLowerCase())) {
+    return '';
+  }
+  const progress = getRunProgress(run);
+  const elapsed = Number(run.duration_seconds || 0);
+  const currentStep = (run.steps || []).find((step) => String(step.status || '').toLowerCase() === 'running');
+  const statusText =
+    run.status === 'running'
+      ? currentStep?.message || run.summary || 'Полный прогон выполняется.'
+      : run.summary || 'Прогон завершен.';
+  return (
+    '<section class="admin-regression-progress" aria-label="Прогресс регрессионного теста">' +
+    '<div class="admin-regression-progress-row"><strong>' +
+    escapeHtml(run.title || 'Regression') +
+    '</strong><span>' +
+    escapeHtml(progress + '% · ' + elapsed.toFixed(1) + ' сек') +
+    '</span></div><div class="admin-regression-progress-track"><span style="width: ' +
+    escapeHtml(progress) +
+    '%"></span></div><p>' +
+    escapeHtml(statusText) +
+    '</p></section>'
+  );
 };
 
 export const renderAdminRegressionTests = () => {
@@ -104,7 +166,30 @@ export const renderAdminRegressionTests = () => {
       ? lastRun.title + ': ' + lastRun.status
       : 'Тесты еще не запускались';
   }
+  if (lastRun?.status === 'running') {
+    setButtonsDisabled(true);
+    setStatus(lastRun.summary || 'Полный регрессионный прогон выполняется...', 'muted');
+  } else {
+    stopRegressionPolling();
+  }
+  if (adminRegressionTestsSteps) {
+    adminRegressionTestsSteps.parentElement?.querySelector('.admin-regression-progress')?.remove();
+    adminRegressionTestsSteps.insertAdjacentHTML('beforebegin', renderRunProgress(lastRun));
+  }
   renderSteps(lastRun?.steps || []);
+};
+
+const pollAdminRegressionTests = async () => {
+  try {
+    await loadAdminRegressionTests();
+  } catch (error) {
+    setStatus(error.message || 'Не удалось обновить статус полного прогона.', 'error');
+  }
+};
+
+const startRegressionPolling = () => {
+  stopRegressionPolling();
+  regressionPollTimerId = window.setInterval(pollAdminRegressionTests, 2500);
 };
 
 export const loadAdminRegressionTests = async () => {
@@ -143,6 +228,7 @@ export const runAdminRegressionTests = async () => {
 export const runAdminFullRegressionTests = async () => {
   setButtonsDisabled(true);
   setStatus('Запускаем полный регрессионный прогон. Это может занять несколько минут...', 'muted');
+  startRegressionPolling();
   try {
     const response = await fetch('/users/admin/regression-tests/run-full', {
       method: 'POST',
@@ -160,6 +246,7 @@ export const runAdminFullRegressionTests = async () => {
   } catch (error) {
     setStatus(error.message || 'Не удалось запустить полный регрессионный прогон.', 'error');
   } finally {
+    stopRegressionPolling();
     setButtonsDisabled(false);
   }
 };
@@ -202,4 +289,7 @@ export const openAdminRegressionTests = async () => {
   setStatus('');
   renderAdminRegressionTests();
   await loadAdminRegressionTests();
+  if (state.adminRegressionTests?.last_run?.status === 'running') {
+    startRegressionPolling();
+  }
 };

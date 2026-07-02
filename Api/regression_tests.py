@@ -22,6 +22,15 @@ AUTOTEST_EMAIL_PREFIX = "__autotest__"
 _last_run: AdminRegressionTestRunResponse | None = None
 _lock = Lock()
 FULL_RUN_MAX_TURNS_PER_USER = 24
+FULL_RUN_STEP_NAMES = [
+    "cleanup",
+    "organization",
+    "assessment_linear_employee",
+    "assessment_manager",
+    "assessment_leader",
+    "assertions",
+    "summary",
+]
 
 
 def _json(value) -> str:
@@ -30,6 +39,47 @@ def _json(value) -> str:
 
 def _step(name: str, status: str, message: str) -> AdminRegressionTestStep:
     return AdminRegressionTestStep(name=name, status=status, message=message)
+
+
+def _full_run_initial_steps() -> list[AdminRegressionTestStep]:
+    return [
+        _step(name, "pending", "Ожидает запуска.")
+        for name in FULL_RUN_STEP_NAMES
+    ]
+
+
+def _set_step_status(steps: list[AdminRegressionTestStep], name: str, status: str, message: str) -> None:
+    for step in steps:
+        if step.name == name:
+            step.status = status
+            step.message = message
+            return
+    steps.append(_step(name, status, message))
+
+
+def _publish_full_run_progress(
+    *,
+    started_at: datetime,
+    start_time: float,
+    steps: list[AdminRegressionTestStep],
+    summary: str,
+    organization_id: int | None = None,
+    user_ids: list[int] | None = None,
+    session_ids: list[int] | None = None,
+) -> None:
+    global _last_run
+    _last_run = AdminRegressionTestRunResponse(
+        status="running",
+        title="Full regression",
+        summary=summary,
+        started_at=started_at,
+        finished_at=None,
+        duration_seconds=round(time.monotonic() - start_time, 2),
+        organization_id=organization_id,
+        user_ids=list(user_ids or []),
+        session_ids=list(session_ids or []),
+        steps=list(steps),
+    )
 
 
 def _role_payload(role_code: str) -> dict:
@@ -442,27 +492,73 @@ def run_full_regression() -> AdminRegressionTestRunResponse:
     with _lock:
         started_at = datetime.utcnow()
         start_time = time.monotonic()
-        steps: list[AdminRegressionTestStep] = []
+        steps: list[AdminRegressionTestStep] = _full_run_initial_steps()
         user_ids: list[int] = []
         session_ids: list[int] = []
         organization_id: int | None = None
         status = "passed"
 
         try:
+            _set_step_status(steps, "cleanup", "running", "Удаляем предыдущие __autotest__ данные и готовим организацию.")
+            _publish_full_run_progress(
+                started_at=started_at,
+                start_time=start_time,
+                steps=steps,
+                summary="Полный регрессионный прогон запущен.",
+            )
             with get_connection() as connection:
                 organization_id, user_ids, role_by_user_id = _create_autotest_users(connection)
                 connection.commit()
-            steps.append(_step("cleanup", "passed", "Предыдущие __autotest__ данные удалены."))
-            steps.append(_step("organization", "passed", f"Создана организация {AUTOTEST_ORG_NAME} и 3 пользователя."))
+            _set_step_status(steps, "cleanup", "passed", "Предыдущие __autotest__ данные удалены.")
+            _set_step_status(steps, "organization", "passed", f"Создана организация {AUTOTEST_ORG_NAME} и 3 пользователя.")
+            _publish_full_run_progress(
+                started_at=started_at,
+                start_time=start_time,
+                steps=steps,
+                summary="Организация и пользователи созданы. Запускаем assessment-сессии.",
+                organization_id=organization_id,
+                user_ids=user_ids,
+                session_ids=session_ids,
+            )
 
             total_completed_cases = 0
             for user_id in user_ids:
                 role_code = role_by_user_id[user_id]
+                step_name = f"assessment_{role_code}"
+                _set_step_status(steps, step_name, "running", f"Пользователь {user_id}: идет assessment-прогон.")
+                _publish_full_run_progress(
+                    started_at=started_at,
+                    start_time=start_time,
+                    steps=steps,
+                    summary=f"Идет assessment-прогон для пользователя {user_id}.",
+                    organization_id=organization_id,
+                    user_ids=user_ids,
+                    session_ids=session_ids,
+                )
                 session_id, case_count, _completed_during_loop = _run_full_assessment_for_user(user_id, role_code)
                 session_ids.append(session_id)
                 total_completed_cases += case_count
-                steps.append(_step("assessment", "passed", f"Пользователь {user_id}: завершена сессия {session_id}, кейсов: {case_count}."))
+                _set_step_status(steps, step_name, "passed", f"Пользователь {user_id}: завершена сессия {session_id}, кейсов: {case_count}.")
+                _publish_full_run_progress(
+                    started_at=started_at,
+                    start_time=start_time,
+                    steps=steps,
+                    summary=f"Пользователь {user_id} завершен. Продолжаем полный прогон.",
+                    organization_id=organization_id,
+                    user_ids=user_ids,
+                    session_ids=session_ids,
+                )
 
+            _set_step_status(steps, "assertions", "running", "Проверяем completed-сессии и результаты кейсов.")
+            _publish_full_run_progress(
+                started_at=started_at,
+                start_time=start_time,
+                steps=steps,
+                summary="Assessment-сессии завершены. Проверяем результаты.",
+                organization_id=organization_id,
+                user_ids=user_ids,
+                session_ids=session_ids,
+            )
             with get_connection() as connection:
                 completed_sessions = int(
                     connection.execute(
@@ -482,11 +578,16 @@ def run_full_regression() -> AdminRegressionTestRunResponse:
                 raise RuntimeError("Не все assessment-сессии завершены.")
             if report_rows <= 0:
                 raise RuntimeError("Не сформированы результаты кейсов для отчетов.")
-            steps.append(_step("assertions", "passed", f"Проверены completed sessions: {completed_sessions}, case results: {report_rows}."))
-            steps.append(_step("summary", "passed", f"Полный прогон завершен: пользователей {len(user_ids)}, кейсов {total_completed_cases}."))
+            _set_step_status(steps, "assertions", "passed", f"Проверены completed sessions: {completed_sessions}, case results: {report_rows}.")
+            _set_step_status(steps, "summary", "passed", f"Полный прогон завершен: пользователей {len(user_ids)}, кейсов {total_completed_cases}.")
         except Exception as exc:
             status = "failed"
-            steps.append(_step("failure", "failed", str(exc)))
+            running_step = next((step for step in steps if step.status == "running"), None)
+            if running_step is not None:
+                running_step.status = "failed"
+                running_step.message = str(exc)
+            else:
+                steps.append(_step("failure", "failed", str(exc)))
 
         finished_at = datetime.utcnow()
         run = AdminRegressionTestRunResponse(
