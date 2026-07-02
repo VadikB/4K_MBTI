@@ -53,6 +53,8 @@ import { beginAssessmentPreparation, stopAssessmentPreparationPolling } from './
 import { openDashboard } from './dashboard.js';
 import { openOnboardingScreen } from '../screen-loaders.js';
 
+const PERSONAL_DATA_CONSENT_URL = '/web/assets/docs/personal-data-consent.pdf';
+
 const getChatSubmitButton = () => chatForm.querySelector('button[type="submit"]');
 
 export const clearProcessingTimer = () => {
@@ -246,7 +248,9 @@ export const renderChatRoleOptions = () => {
         '</summary>' +
         '<div class="chat-consent-accordion-body"><p>' +
         escapeHtml(state.pendingConsentText).replace(/\\n/g, '<br>') +
-        '</p></div>';
+        '</p><a class="chat-consent-document-link" href="' +
+        PERSONAL_DATA_CONSENT_URL +
+        '" target="_blank" rel="noopener noreferrer">Открыть документ согласия</a></div>';
       chatConsentDetails.appendChild(details);
       chatConsentDetails.classList.remove('hidden');
     } else {

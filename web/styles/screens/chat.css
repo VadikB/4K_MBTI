@@ -238,6 +238,22 @@
     margin: 0;
 }
 
+.chat-consent-document-link {
+    display: inline-flex;
+    align-items: center;
+    margin-top: var(--space-2);
+    color: var(--accent);
+    font-family: var(--font-heading);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-bold);
+    text-decoration: none;
+}
+
+.chat-consent-document-link:hover,
+.chat-consent-document-link:focus-visible {
+    text-decoration: underline;
+}
+
 .chat-role-options-label {
     margin: 0;
     color: var(--text-muted);
