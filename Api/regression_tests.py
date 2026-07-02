@@ -384,21 +384,58 @@ def _run_full_assessment_for_user(user_id: int, role_code: str) -> tuple[int, in
         raise RuntimeError(f"Полный прогон для пользователя {user_id} не завершился за {FULL_RUN_MAX_TURNS_PER_USER} ходов.")
 
     with get_connection() as connection:
-        case_count = int(
-            connection.execute(
-                "SELECT COUNT(*)::int AS count FROM session_cases WHERE session_id = %s AND status = 'completed'",
-                (session_id,),
-            ).fetchone()["count"]
-            or 0
-        )
-        has_mbti = bool(
-            connection.execute(
-                "SELECT mbti_summary_json IS NOT NULL AS has_mbti FROM user_sessions WHERE id = %s",
-                (session_id,),
-            ).fetchone()["has_mbti"]
-        )
-    if case_count <= 0:
-        raise RuntimeError(f"Для пользователя {user_id} не найдено завершенных кейсов.")
+        case_summary = connection.execute(
+            """
+            SELECT
+                COUNT(*) FILTER (WHERE sc.status IN ('completed', 'answered', 'assessed'))::int AS completed_count,
+                COUNT(scr.id)::int AS result_count,
+                COALESCE(
+                    jsonb_object_agg(sc.status, status_counts.count) FILTER (WHERE sc.status IS NOT NULL),
+                    '{}'::jsonb
+                ) AS status_counts
+            FROM session_cases sc
+            LEFT JOIN session_case_results scr ON scr.session_case_id = sc.id
+            LEFT JOIN (
+                SELECT status, COUNT(*)::int AS count
+                FROM session_cases
+                WHERE session_id = %s
+                GROUP BY status
+            ) status_counts ON status_counts.status = sc.status
+            WHERE sc.session_id = %s
+            """,
+            (session_id, session_id),
+        ).fetchone()
+        case_count = int(case_summary["completed_count"] or 0)
+        result_count = int(case_summary["result_count"] or 0)
+        status_counts = dict(case_summary["status_counts"] or {})
+        session_row = connection.execute(
+            "SELECT status, mbti_summary_json IS NOT NULL AS has_mbti FROM user_sessions WHERE id = %s",
+            (session_id,),
+        ).fetchone()
+        if session_row is None:
+            raise RuntimeError(f"Для пользователя {user_id} не найдена assessment-сессия {session_id}.")
+        session_status = str(session_row["status"] or "")
+        has_mbti = bool(session_row["has_mbti"])
+        if case_count <= 0 and session_status == "completed" and result_count > 0:
+            case_count = result_count
+        if case_count <= 0:
+            raw_case_count = int(
+                connection.execute(
+                    "SELECT COUNT(*)::int AS count FROM session_cases WHERE session_id = %s",
+                    (session_id,),
+                ).fetchone()["count"]
+                or 0
+            )
+            raise RuntimeError(
+                f"Для пользователя {user_id} не найдено завершенных кейсов. "
+                f"session_id={session_id}, session_status={session_status}, "
+                f"cases_total={raw_case_count}, case_statuses={status_counts}, results={result_count}."
+            )
+        if result_count <= 0:
+            raise RuntimeError(
+                f"Для пользователя {user_id} не сформированы результаты кейсов. "
+                f"session_id={session_id}, session_status={session_status}, case_statuses={status_counts}."
+            )
     if settings.mbti_enabled and not has_mbti:
         raise RuntimeError(f"Для пользователя {user_id} не сформирован MBTI summary.")
     return session_id, case_count, completed_cases
