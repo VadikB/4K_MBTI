@@ -10,6 +10,23 @@ const wait = (ms) =>
     window.setTimeout(resolve, ms);
   });
 
+const postLogoutWithTimeout = async (timeoutMs = 900) => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    await fetch('/users/session/logout', {
+      method: 'POST',
+      credentials: 'same-origin',
+      keepalive: true,
+      signal: controller.signal,
+    });
+  } catch (_error) {
+    // ignore logout network issues and still clear local state
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
+
 export const isMissingUserError = (error) => {
   const message = String(error?.message || '').toLowerCase();
   return message.includes('user not found') || message.includes('пользователь не найден');
@@ -91,14 +108,7 @@ export const restoreLocalUserSession = async () => {
 export const logoutAndReturnToStart = async (trigger = null) => {
   const restoreButton = applyLogoutButtonPendingState(trigger);
   const startedAt = Date.now();
-  try {
-    await fetch('/users/session/logout', {
-      method: 'POST',
-      credentials: 'same-origin',
-    });
-  } catch (_error) {
-    // ignore logout network issues and still clear local state
-  }
+  await postLogoutWithTimeout();
   try {
     const elapsed = Date.now() - startedAt;
     if (elapsed < 250) {
