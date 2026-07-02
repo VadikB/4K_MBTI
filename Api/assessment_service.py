@@ -80,6 +80,7 @@ class AssessmentService:
     MBTI_FOLLOWUP_INTRO_TEXT = "Прежде чем перейти к следующему кейсу, ответьте, пожалуйста, на уточняющие вопросы по только что завершенному кейсу."
     MBTI_FOLLOWUP_COMPLETE_TEXT = "Спасибо, уточнения по кейсу зафиксированы."
     CASE_AUTO_FINISH_DELAY_MS = 2200
+    MIN_FIRST_CASE_ANSWER_WORDS = 9
     PROMPT_LAB_PREVIEW_CACHE_TTL_SECONDS = 600
     PROMPT_LAB_LLM_PERSONALIZATION_TIMEOUT_SECONDS = 45
 
@@ -285,6 +286,65 @@ class AssessmentService:
                 continue
             return candidate
         return "Уточните, пожалуйста, какие контрольные точки и критерии пересмотра решения вы бы зафиксировали."
+
+    def _looks_like_thin_case_answer(self, message: str | None) -> bool:
+        normalized = str(message or "").strip().lower()
+        if not normalized:
+            return True
+        words = re.findall(r"[a-zа-яё0-9]+", normalized, flags=re.IGNORECASE)
+        if len(words) < self.MIN_FIRST_CASE_ANSWER_WORDS:
+            return True
+        generic_markers = (
+            "разобрался",
+            "разберусь",
+            "решил проблему",
+            "решу проблему",
+            "исправил бы",
+            "исправлю",
+            "сделал бы все",
+            "сделаю все",
+            "поговорил бы",
+            "уточнил бы",
+            "надо разобраться",
+            "нужно разобраться",
+            "все решим",
+            "решим вопрос",
+            "решить вопрос",
+        )
+        if any(marker in normalized for marker in generic_markers) and len(words) < 18:
+            return True
+        evidence_markers = (
+            "риск",
+            "метрик",
+            "kpi",
+            "срок",
+            "ответствен",
+            "приоритет",
+            "эскалац",
+            "данн",
+            "провер",
+            "контрол",
+            "клиент",
+            "команд",
+            "участник",
+            "результат",
+            "план",
+            "шаг",
+        )
+        if len(words) < 14 and not any(marker in normalized for marker in evidence_markers):
+            return True
+        return False
+
+    def _build_thin_case_answer_follow_up(self, *, user_message: str, dialogue_rows, case_skills: list[str]) -> str:
+        follow_up = self._build_non_repeating_follow_up(
+            repeated_message="",
+            user_message=user_message,
+            dialogue_rows=dialogue_rows,
+            case_skills=case_skills,
+        )
+        if "кей" in follow_up.lower():
+            return follow_up
+        return "По текущему кейсу уточните, пожалуйста: " + follow_up[:1].lower() + follow_up[1:]
 
     def _has_same_follow_up_topic(self, current_message: str | None, previous_message: str | None) -> bool:
         current_topics = deepseek_client._infer_follow_up_topics_from_text(current_message)
@@ -2624,6 +2684,47 @@ class AssessmentService:
             )
             user_message_count = sum(1 for row in dialogue_rows if row["role"] == "user")
             max_user_messages = interactivity_limits.get("max_user_messages")
+            case_skills = self._get_case_skill_names(connection, plan.current_session_case_id)
+
+            if user_message_count == 1 and self._looks_like_thin_case_answer(message):
+                case_follow_up_message = self._build_thin_case_answer_follow_up(
+                    user_message=message,
+                    dialogue_rows=dialogue_rows,
+                    case_skills=case_skills,
+                )
+                connection.execute(
+                    """
+                    INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
+                    VALUES (%s, %s, 'assistant', %s)
+                    """,
+                    (plan.current_session_case_id, session_row["id"], case_follow_up_message),
+                )
+                connection.commit()
+                return AssessmentTurnReply(
+                    session_code=session_code,
+                    session_id=session_row["id"],
+                    session_case_id=plan.current_session_case_id,
+                    case_title=plan.current_case_title,
+                    case_number=plan.current_case_number,
+                    total_cases=plan.total_cases,
+                    message=case_follow_up_message,
+                    case_completed=False,
+                    assessment_completed=False,
+                    result_status=None,
+                    completion_score=None,
+                    evaluator_summary=None,
+                    case_time_limit_minutes=plan.current_case_time_limit_minutes,
+                    planned_case_duration_minutes=plan.current_case_planned_duration_minutes,
+                    case_started_at=plan.current_case_started_at,
+                    case_time_remaining_seconds=self._get_remaining_case_seconds(
+                        plan.current_case_started_at,
+                        plan.current_case_time_limit_minutes,
+                    ),
+                    is_dialog_case=is_dialog_case,
+                    pending_auto_finish=False,
+                    auto_finish_delay_ms=None,
+                    **history_fields,
+                )
 
             if max_user_messages is not None and user_message_count > max_user_messages:
                 auto_finish_turn = DeepSeekTurnResult(
@@ -2710,7 +2811,7 @@ class AssessmentService:
                 system_prompt=prompt_row["final_prompt_text"] if prompt_row else "",
                 dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                 case_title=case_row["title"],
-                case_skills=self._get_case_skill_names(connection, plan.current_session_case_id),
+                case_skills=case_skills,
                 user_identifier=str(session_row["user_id"]),
                 interactivity_mode=methodical_context.get("interactivity_mode"),
                 format_control_rules=methodical_context.get("format_control_rules"),
@@ -2728,7 +2829,7 @@ class AssessmentService:
                     repeated_message=turn.assistant_message,
                     user_message=message,
                     dialogue_rows=dialogue_rows,
-                    case_skills=self._get_case_skill_names(connection, plan.current_session_case_id),
+                    case_skills=case_skills,
                     interactivity_mode=methodical_context.get("interactivity_mode"),
                 )
 
