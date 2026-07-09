@@ -14,7 +14,7 @@ from Api.admin_report_dialogue_pdf_service import admin_report_dialogue_pdf_serv
 from Api.admin_report_expert_export_service import admin_report_expert_export_service
 from Api.admin_reports_pdf_service import admin_reports_pdf_service
 from Api.app_version import get_app_version
-from Api.auth_service import AuthRateLimitError, auth_service, normalize_email
+from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_service, normalize_email
 from Api.config import settings
 from Api.assessment_service import assessment_service
 from Api.agent import interviewer_agent
@@ -2841,6 +2841,8 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
         try:
             email = normalize_email(payload.email)
             auth_mode = auth_service.get_password_auth_mode(email=email)
+        except AuthAccessDeniedError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         is_registration = auth_mode == "password_registration"
@@ -2859,6 +2861,8 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
             client_ip=client_ip,
             user_agent=user_agent,
         )
+    except AuthAccessDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     except AuthRateLimitError as exc:
         raise HTTPException(status_code=429, detail=str(exc)) from exc
     except RuntimeError as exc:
@@ -2919,6 +2923,8 @@ def register_email_password(
             password=payload.password,
             password_confirm=payload.password_confirm,
         )
+    except AuthAccessDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return _build_password_auth_response(verification=verification, response=response)
@@ -2936,6 +2942,8 @@ def login_with_email_password(
             email=payload.email,
             password=payload.password,
         )
+    except AuthAccessDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
     return _build_password_auth_response(verification=verification, response=response)
@@ -2951,6 +2959,8 @@ def verify_email_magic_link(payload: AuthEmailVerifyRequest, response: FastAPIRe
 
     try:
         verification = auth_service.verify_magic_link(token=token)
+    except AuthAccessDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     with get_connection() as connection:

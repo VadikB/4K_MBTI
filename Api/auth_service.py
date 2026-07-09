@@ -10,7 +10,7 @@ from urllib.parse import quote
 from Api.config import settings
 from Api.database import get_connection
 from Api.email_service import send_magic_link_email
-from Api.org_access import assign_user_organization_from_email, ensure_configured_organizations
+from Api.org_access import assign_user_organization_from_email, email_has_organization_access, ensure_configured_organizations
 from Api.schemas import UserResponse
 from Api.web_session_service import USER_SELECT_SQL
 
@@ -22,6 +22,10 @@ PASSWORD_HASH_ITERATIONS = 210_000
 
 
 class AuthRateLimitError(ValueError):
+    pass
+
+
+class AuthAccessDeniedError(ValueError):
     pass
 
 
@@ -195,6 +199,12 @@ class AuthService:
             )
             connection.commit()
 
+    def _ensure_email_can_authenticate(self, connection, *, email: str) -> None:
+        if not email_has_organization_access(connection, email=email):
+            raise AuthAccessDeniedError(
+                "Пользователь с таким email не найден в активных организациях. Обратитесь к администратору организации."
+            )
+
     def _enforce_magic_link_rate_limit(
         self,
         connection,
@@ -267,6 +277,7 @@ class AuthService:
         expires_at = _utc_now() + timedelta(minutes=max(settings.auth_magic_link_ttl_minutes, 5))
 
         with get_connection() as connection:
+            self._ensure_email_can_authenticate(connection, email=normalized_email)
             self._enforce_magic_link_rate_limit(
                 connection,
                 email=normalized_email,
@@ -331,6 +342,7 @@ class AuthService:
                 raise ValueError("Срок действия ссылки истек. Запросите новую ссылку.")
 
             normalized_email = normalize_email(link_row["email"])
+            self._ensure_email_can_authenticate(connection, email=normalized_email)
             identity_row = connection.execute(
                 """
                 SELECT user_id
@@ -527,6 +539,7 @@ class AuthService:
         self.ensure_schema()
         normalized_email = normalize_email(email)
         with get_connection() as connection:
+            self._ensure_email_can_authenticate(connection, email=normalized_email)
             credential_row = connection.execute(
                 """
                 SELECT id
@@ -558,6 +571,7 @@ class AuthService:
         validate_password_strength(password, password_confirm=password_confirm)
 
         with get_connection() as connection:
+            self._ensure_email_can_authenticate(connection, email=normalized_email)
             credential_row = connection.execute(
                 """
                 SELECT id
@@ -631,6 +645,7 @@ class AuthService:
             raise ValueError("Введите пароль.")
 
         with get_connection() as connection:
+            self._ensure_email_can_authenticate(connection, email=normalized_email)
             credential_row = connection.execute(
                 """
                 SELECT user_id, email, password_hash, password_salt

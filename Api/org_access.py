@@ -174,6 +174,55 @@ def assign_user_organization_from_email(connection, *, user_id: int, email: str 
         _upsert_membership(connection, organization_id=int(domain_row["organization_id"]), user_id=user_id, role=ORG_MEMBER_ROLE)
 
 
+def email_has_organization_access(connection, *, email: str | None) -> bool:
+    normalized_email = normalize_email_for_access(email)
+    if not normalized_email:
+        return False
+    if normalized_email in configured_superadmin_emails():
+        return True
+
+    ensure_configured_organizations(connection)
+
+    for emails in configured_org_admin_emails().values():
+        if normalized_email in emails:
+            return True
+
+    membership_row = connection.execute(
+        """
+        SELECT 1
+        FROM organization_memberships om
+        JOIN organizations o ON o.id = om.organization_id
+        JOIN users u ON u.id = om.user_id
+        LEFT JOIN user_identities ui ON ui.user_id = u.id
+        WHERE o.is_active = TRUE
+          AND (
+            LOWER(u.email) = %s
+            OR LOWER(ui.email) = %s
+          )
+        LIMIT 1
+        """,
+        (normalized_email, normalized_email),
+    ).fetchone()
+    if membership_row is not None:
+        return True
+
+    domain = email_domain(normalized_email)
+    if not domain:
+        return False
+    domain_row = connection.execute(
+        """
+        SELECT 1
+        FROM organization_email_domains oed
+        JOIN organizations o ON o.id = oed.organization_id
+        WHERE o.is_active = TRUE
+          AND LOWER(oed.domain) = %s
+        LIMIT 1
+        """,
+        (domain,),
+    ).fetchone()
+    return domain_row is not None
+
+
 def _upsert_membership(connection, *, organization_id: int, user_id: int, role: str) -> None:
     connection.execute(
         """
