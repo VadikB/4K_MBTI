@@ -417,6 +417,7 @@ const handleEmailMagicLinkRequest = async () => {
     );
   } catch (error) {
     hideLoader();
+    setAuthStatus('');
     showError(authError, error.message);
   } finally {
     if (requestMagicLinkButton) {

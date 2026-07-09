@@ -202,6 +202,9 @@ class AuthService:
         email: str,
         client_ip: str | None,
     ) -> None:
+        if settings.auth_magic_link_dev_mode:
+            return
+
         cooldown_seconds = max(int(settings.auth_magic_link_resend_cooldown_seconds or 0), 0)
         if cooldown_seconds:
             recent_row = connection.execute(
