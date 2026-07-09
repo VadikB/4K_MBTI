@@ -21,6 +21,7 @@ import {
   renderAdminMbtiPieChart,
   renderAdminActivityBarChart,
 } from './charts.js';
+import { recoverProfileCompletionForAssessment } from '../profile-recovery.js';
 
 const renderAdminSection = (sectionName, render) => {
   try {
@@ -117,9 +118,11 @@ export const openAdminAssessmentDashboard = async () => {
   const data = await readApiResponse(response, 'Не удалось открыть оценивание для администратора.');
   state.pendingUser = data.user;
   state.dashboard = data.dashboard;
-  state.isAdmin = Boolean(data.is_admin);
   state.adminDashboard = data.admin_dashboard || state.adminDashboard;
+  state.isAdmin = false;
+  state.preparedAssessmentStartResponse = null;
+  state.assessmentPreparationStatus = 'idle';
+  state.assessmentPreparationProgressPercent = 0;
   persistAssessmentContext();
-  const module = await import('../dashboard.js');
-  module.openDashboard();
+  await recoverProfileCompletionForAssessment();
 };

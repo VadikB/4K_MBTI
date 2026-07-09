@@ -841,8 +841,8 @@ const submitAssessmentMessage = async (text) => {
       }),
     });
     const data = await readApiResponse(response, 'Не удалось обработать ответ по кейсу.');
-    stopAssessmentTransitionLoader();
     handleAssessmentResponse(data);
+    stopAssessmentTransitionLoader();
   } catch (error) {
     stopAssessmentTransitionLoader();
     throw error;

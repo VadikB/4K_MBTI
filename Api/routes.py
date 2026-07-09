@@ -114,6 +114,7 @@ from Api.schemas import (
     UserDashboard,
     UserAssessmentHistoryItem,
     OperationProgressResponse,
+    OperationProgressStep,
     SessionCaseStructuredAnalysisResponse,
     UserProfileUpdateRequest,
     UserProfileSummaryResponse,
@@ -4790,10 +4791,15 @@ def process_assessment_message(payload: AssessmentMessageRequest, request: Reque
             message=payload.message,
             progress_operation_id=operation_id,
         )
+        assessment_completed = bool(getattr(result, "assessment_completed", False))
         operation_progress_service.complete(
             operation_id,
-            title="Следующий шаг готов",
-            message="Интервью обновлено. Можно продолжать работу с кейсом.",
+            title="Итоговый отчет готов" if assessment_completed else "Следующий шаг готов",
+            message=(
+                "Все кейсы обработаны. Открываем экран итогового анализа."
+                if assessment_completed
+                else "Интервью обновлено. Можно продолжать работу с кейсом."
+            ),
         )
         return result
     except ValueError as exc:
