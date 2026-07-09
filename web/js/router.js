@@ -3,7 +3,10 @@ import {
   authPanel,
   emailInput,
   authTokenForm,
+  authCredentialLabel,
   magicTokenInput,
+  authPasswordConfirmField,
+  authPasswordConfirmInput,
   authStatus,
   onboardingPanel,
   dashboardPanel,
@@ -135,6 +138,19 @@ export const returnToStart = () => {
   }
   if (magicTokenInput) {
     magicTokenInput.value = '';
+    magicTokenInput.type = 'text';
+    magicTokenInput.autocomplete = 'one-time-code';
+    magicTokenInput.placeholder = 'Вставьте код или ссылку из письма';
+  }
+  if (authCredentialLabel) {
+    authCredentialLabel.textContent = 'Код или ссылка для входа';
+  }
+  if (authPasswordConfirmField) {
+    authPasswordConfirmField.classList.add('hidden');
+  }
+  if (authPasswordConfirmInput) {
+    authPasswordConfirmInput.required = false;
+    authPasswordConfirmInput.value = '';
   }
   if (authTokenForm) {
     authTokenForm.classList.add('hidden');

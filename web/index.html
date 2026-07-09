@@ -60,19 +60,23 @@
       </div>
       <div class="auth-panel-copy">
         <h1>Добро пожаловать</h1>
-        <p class="subtitle">Введите рабочий email, чтобы получить одноразовую ссылку для входа.</p>
+        <p class="subtitle">Введите рабочий email, чтобы продолжить вход.</p>
       </div>
       <form id="auth-email-form" class="stack">
         <label class="field">
           <span>Email</span>
           <input id="email-input" name="email" type="email" placeholder="name@company.com" autocomplete="email" required>
         </label>
-        <button id="request-magic-link-button" type="submit" class="primary-button">Получить ссылку</button>
+        <button id="request-magic-link-button" type="submit" class="primary-button">Продолжить</button>
       </form>
       <form id="auth-token-form" class="stack hidden">
         <label class="field">
-          <span>Код или ссылка для входа</span>
+          <span id="auth-credential-label">Код или ссылка для входа</span>
           <input id="magic-token-input" name="magic-token" type="text" placeholder="Вставьте код или ссылку из письма" autocomplete="one-time-code" required>
+        </label>
+        <label id="auth-password-confirm-field" class="field hidden">
+          <span>Повторите пароль</span>
+          <input id="auth-password-confirm-input" name="password-confirm" type="password" placeholder="Повторите пароль" autocomplete="new-password">
         </label>
         <button id="verify-magic-link-button" type="submit" class="primary-button">Войти</button>
       </form>

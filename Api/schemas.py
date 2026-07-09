@@ -100,6 +100,9 @@ class AuthEmailRequestResponse(BaseModel):
     message: str
     email: str
     expires_in_seconds: int
+    dev_mode: bool = False
+    delivery_method: str = "email"
+    auth_mode: str = "magic_link"
     dev_magic_token: str | None = None
 
 
@@ -112,6 +115,42 @@ class AuthEmailVerifyRequest(BaseModel):
         cleaned = str(value or "").strip()
         if not cleaned:
             raise ValueError("Введите код или вставьте ссылку для входа.")
+        return cleaned
+
+
+class AuthPasswordLoginRequest(BaseModel):
+    email: str
+    password: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        cleaned = str(value or "").strip().lower()
+        if not cleaned or "@" not in cleaned:
+            raise ValueError("Введите корректный email.")
+        local, _, domain = cleaned.partition("@")
+        if not local or not domain or "." not in domain:
+            raise ValueError("Введите корректный email.")
+        return cleaned
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        cleaned = str(value or "")
+        if not cleaned:
+            raise ValueError("Введите пароль.")
+        return cleaned
+
+
+class AuthPasswordRegisterRequest(AuthPasswordLoginRequest):
+    password_confirm: str
+
+    @field_validator("password_confirm")
+    @classmethod
+    def validate_password_confirm(cls, value: str) -> str:
+        cleaned = str(value or "")
+        if not cleaned:
+            raise ValueError("Подтвердите пароль.")
         return cleaned
 
 

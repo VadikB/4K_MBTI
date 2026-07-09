@@ -3,7 +3,10 @@ import {
   authEmailForm,
   emailInput,
   authTokenForm,
+  authCredentialLabel,
   magicTokenInput,
+  authPasswordConfirmField,
+  authPasswordConfirmInput,
   requestMagicLinkButton,
   verifyMagicLinkButton,
   authStatus,
@@ -290,6 +293,34 @@ const setAuthStatus = (message = '', { isError = false } = {}) => {
   authStatus.classList.toggle('error', isError);
 };
 
+let authCredentialMode = 'dev_token';
+let authCredentialEmail = '';
+
+const configureAuthCredentialForm = (mode) => {
+  authCredentialMode = mode || 'dev_token';
+  const isRegistration = authCredentialMode === 'password_registration';
+  const isPasswordMode = authCredentialMode === 'password' || isRegistration;
+  if (authCredentialLabel) {
+    authCredentialLabel.textContent = isPasswordMode ? 'Пароль' : 'Код или ссылка для входа';
+  }
+  if (magicTokenInput) {
+    magicTokenInput.type = isPasswordMode ? 'password' : 'text';
+    magicTokenInput.autocomplete = isRegistration ? 'new-password' : isPasswordMode ? 'current-password' : 'one-time-code';
+    magicTokenInput.placeholder = isPasswordMode ? 'Введите пароль' : 'Вставьте код или ссылку из письма';
+    magicTokenInput.value = '';
+  }
+  if (authPasswordConfirmField) {
+    authPasswordConfirmField.classList.toggle('hidden', !isRegistration);
+  }
+  if (authPasswordConfirmInput) {
+    authPasswordConfirmInput.required = isRegistration;
+    authPasswordConfirmInput.value = '';
+  }
+  if (verifyMagicLinkButton) {
+    verifyMagicLinkButton.textContent = isRegistration ? 'Задать пароль и войти' : 'Войти';
+  }
+};
+
 const applyAuthResponse = async (data) => {
   const agent = data.agent || null;
 
@@ -340,12 +371,12 @@ const handleEmailMagicLinkRequest = async () => {
   try {
     if (requestMagicLinkButton) {
       requestMagicLinkButton.disabled = true;
-      requestMagicLinkButton.textContent = 'Отправляем...';
+      requestMagicLinkButton.textContent = 'Проверяем...';
     }
     if (emailInput) {
       emailInput.disabled = true;
     }
-    setAuthStatus('Отправляем одноразовую ссылку...');
+    setAuthStatus('Проверяем email...');
     clearAssessmentContext();
     state.sessionId = null;
     state.pendingAgentMessage = null;
@@ -368,6 +399,10 @@ const handleEmailMagicLinkRequest = async () => {
       body: JSON.stringify({ email }),
     });
     const data = await readApiResponse(response, 'Не удалось отправить ссылку для входа.');
+    const isDevMode = Boolean(data.dev_mode || data.dev_magic_token);
+    const nextMode = isDevMode ? 'dev_token' : data.auth_mode || data.delivery_method || 'password';
+    authCredentialEmail = data.email || email;
+    configureAuthCredentialForm(nextMode);
     if (authTokenForm) {
       authTokenForm.classList.remove('hidden');
     }
@@ -376,9 +411,9 @@ const handleEmailMagicLinkRequest = async () => {
       magicTokenInput.focus();
     }
     setAuthStatus(
-      data.dev_magic_token
+      isDevMode
         ? 'Dev-режим: токен подставлен автоматически. Можно сразу нажать «Войти».'
-        : data.message || 'Проверьте почту и вставьте код или ссылку для входа.',
+        : data.message || 'Введите пароль для входа.',
     );
   } catch (error) {
     hideLoader();
@@ -386,7 +421,7 @@ const handleEmailMagicLinkRequest = async () => {
   } finally {
     if (requestMagicLinkButton) {
       requestMagicLinkButton.disabled = false;
-      requestMagicLinkButton.textContent = 'Получить ссылку';
+      requestMagicLinkButton.textContent = 'Продолжить';
     }
     if (emailInput) {
       emailInput.disabled = false;
@@ -420,6 +455,62 @@ export const verifyEmailMagicLinkToken = async (tokenValue = null) => {
   }
 };
 
+const submitEmailPassword = async () => {
+  showError(authError, '');
+  const email = String(authCredentialEmail || emailInput?.value || '').trim();
+  const password = String(magicTokenInput?.value || '');
+  const passwordConfirm = String(authPasswordConfirmInput?.value || '');
+  const isRegistration = authCredentialMode === 'password_registration';
+
+  if (!email) {
+    showError(authError, 'введите email');
+    emailInput?.focus();
+    return;
+  }
+  if (!password) {
+    showError(authError, 'введите пароль');
+    magicTokenInput?.focus();
+    return;
+  }
+  if (isRegistration && password !== passwordConfirm) {
+    showError(authError, 'пароли не совпадают');
+    authPasswordConfirmInput?.focus();
+    return;
+  }
+
+  try {
+    if (verifyMagicLinkButton) {
+      verifyMagicLinkButton.disabled = true;
+      verifyMagicLinkButton.textContent = isRegistration ? 'Регистрируем...' : 'Входим...';
+    }
+    const response = await fetch(
+      isRegistration ? '/users/auth/email/password-register' : '/users/auth/email/password-login',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(
+          isRegistration
+            ? { email, password, password_confirm: passwordConfirm }
+            : { email, password },
+        ),
+      },
+    );
+    const data = await readApiResponse(response, 'Не удалось выполнить вход.');
+    setAuthStatus(isRegistration ? 'Пароль задан. Загружаем профиль...' : 'Вход выполнен. Загружаем профиль...');
+    await applyAuthResponse(data);
+  } catch (error) {
+    showError(authError, error.message);
+  } finally {
+    if (verifyMagicLinkButton) {
+      verifyMagicLinkButton.disabled = false;
+      verifyMagicLinkButton.textContent = isRegistration ? 'Задать пароль и войти' : 'Войти';
+    }
+  }
+};
+
 export const initWiring = () => {
 authEmailForm.addEventListener('submit', (event) => {
   if (!authEmailForm.reportValidity()) {
@@ -444,6 +535,10 @@ authTokenForm.addEventListener('submit', (event) => {
     return;
   }
   event.preventDefault();
+  if (authCredentialMode === 'password' || authCredentialMode === 'password_registration') {
+    void submitEmailPassword();
+    return;
+  }
   void verifyEmailMagicLinkToken();
 });
 

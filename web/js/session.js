@@ -3,7 +3,7 @@ import { readApiResponse } from './api.js';
 import { isAdminUserPayload } from './utils/format.js';
 import { resetChatScreen } from './screen-loaders.js';
 import { returnToStart } from './router.js';
-import { applyLogoutButtonPendingState } from './logout-ui.js';
+import { applyLogoutButtonPendingState, resetLogoutButtonsState } from './logout-ui.js';
 
 const wait = (ms) =>
   new Promise((resolve) => {
@@ -108,17 +108,23 @@ export const restoreLocalUserSession = async () => {
 export const logoutAndReturnToStart = async (trigger = null) => {
   const restoreButton = applyLogoutButtonPendingState(trigger);
   const startedAt = Date.now();
-  await postLogoutWithTimeout();
   try {
+    await postLogoutWithTimeout();
     const elapsed = Date.now() - startedAt;
     if (elapsed < 250) {
       await wait(250 - elapsed);
     }
     clearAssessmentContext();
-    await resetChatScreen();
+    try {
+      await resetChatScreen();
+    } catch (_error) {
+      // The user must still be able to return to auth even if lazy screen reset fails.
+    }
     returnToStart();
   } catch (_error) {
     restoreButton();
     throw _error;
+  } finally {
+    resetLogoutButtonsState();
   }
 };

@@ -14,7 +14,8 @@ from Api.admin_report_dialogue_pdf_service import admin_report_dialogue_pdf_serv
 from Api.admin_report_expert_export_service import admin_report_expert_export_service
 from Api.admin_reports_pdf_service import admin_reports_pdf_service
 from Api.app_version import get_app_version
-from Api.auth_service import auth_service, normalize_email
+from Api.auth_service import AuthRateLimitError, auth_service, normalize_email
+from Api.config import settings
 from Api.assessment_service import assessment_service
 from Api.agent import interviewer_agent
 from Api.database import get_connection, get_level_percent_map, recompute_case_quality_checks
@@ -80,6 +81,8 @@ from Api.schemas import (
     AuthEmailRequest,
     AuthEmailRequestResponse,
     AuthEmailVerifyRequest,
+    AuthPasswordLoginRequest,
+    AuthPasswordRegisterRequest,
     PromptLabCaseOption,
     PromptLabCaseRunRequest,
     PromptLabCaseRunResponse,
@@ -2834,20 +2837,108 @@ def check_or_create_user(payload: CheckOrCreateUserRequest, request: Request, re
 def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> AuthEmailRequestResponse:
     client_ip = request.client.host if request.client else None
     user_agent = request.headers.get("User-Agent")
+    if not settings.auth_magic_link_dev_mode:
+        try:
+            email = normalize_email(payload.email)
+            auth_mode = auth_service.get_password_auth_mode(email=email)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        is_registration = auth_mode == "password_registration"
+        return AuthEmailRequestResponse(
+            message="Задайте пароль для первичного входа." if is_registration else "Введите пароль для входа.",
+            email=email,
+            expires_in_seconds=0,
+            dev_mode=False,
+            delivery_method=auth_mode,
+            auth_mode=auth_mode,
+            dev_magic_token=None,
+        )
     try:
         result = auth_service.create_magic_link_request(
             email=payload.email,
             client_ip=client_ip,
             user_agent=user_agent,
         )
+    except AuthRateLimitError as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     return AuthEmailRequestResponse(
-        message="Если email доступен для входа, мы подготовили одноразовую ссылку.",
+        message=(
+            "Dev-режим: токен создан локально."
+            if settings.auth_magic_link_dev_mode
+            else "Если email доступен для входа, мы отправили одноразовую ссылку на почту."
+        ),
         email=result.email,
         expires_in_seconds=max(int((result.expires_at - datetime.now(result.expires_at.tzinfo)).total_seconds()), 0),
+        dev_mode=settings.auth_magic_link_dev_mode,
+        delivery_method="dev-token" if settings.auth_magic_link_dev_mode else settings.email_provider or "email",
+        auth_mode="dev_token" if settings.auth_magic_link_dev_mode else "magic_link",
         dev_magic_token=result.dev_magic_token,
     )
+
+
+def _build_password_auth_response(
+    *,
+    verification,
+    response: FastAPIResponse,
+) -> CheckOrCreateUserResponse:
+    with get_connection() as connection:
+        user = verification.user
+        if (
+            not verification.is_new_user
+            and (
+                not user.role_id
+                or not (user.company_industry and user.company_industry.strip())
+                or not user.active_profile_id
+                or not (user.normalized_duties and user.normalized_duties.strip())
+            )
+        ):
+            repaired_user = interviewer_agent.backfill_user_profile(user.id)
+            if repaired_user is not None:
+                user = _strip_avatar(repaired_user)
+        return _build_authenticated_user_response(
+            connection=connection,
+            user=user,
+            response=response,
+            login_identifier=verification.email,
+            is_new_user=verification.is_new_user,
+        )
+
+
+@router.post("/auth/email/password-register", response_model=CheckOrCreateUserResponse)
+def register_email_password(
+    payload: AuthPasswordRegisterRequest,
+    response: FastAPIResponse,
+) -> CheckOrCreateUserResponse:
+    if settings.auth_magic_link_dev_mode:
+        raise HTTPException(status_code=400, detail="В dev-режиме используйте одноразовый токен.")
+    try:
+        verification = auth_service.register_password(
+            email=payload.email,
+            password=payload.password,
+            password_confirm=payload.password_confirm,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _build_password_auth_response(verification=verification, response=response)
+
+
+@router.post("/auth/email/password-login", response_model=CheckOrCreateUserResponse)
+def login_with_email_password(
+    payload: AuthPasswordLoginRequest,
+    response: FastAPIResponse,
+) -> CheckOrCreateUserResponse:
+    if settings.auth_magic_link_dev_mode:
+        raise HTTPException(status_code=400, detail="В dev-режиме используйте одноразовый токен.")
+    try:
+        verification = auth_service.verify_password_login(
+            email=payload.email,
+            password=payload.password,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    return _build_password_auth_response(verification=verification, response=response)
 
 
 @router.post("/auth/email/verify", response_model=CheckOrCreateUserResponse)
@@ -2939,6 +3030,27 @@ def reopen_profile_session(request: Request, response: FastAPIResponse) -> Check
     if user is None:
         raise HTTPException(status_code=401, detail="Сессия не найдена. Войдите заново.")
     with get_connection() as connection:
+        compact_user = _compact_user_response(user)
+        _set_user_session_cookie(response, web_session_service.create_session(user.id))
+        assign_user_organization_from_email(connection, user_id=user.id, email=user.email)
+        admin_scope = _get_admin_scope_or_403(connection, user) if _is_admin_user(connection, user) else AdminScope()
+        if admin_scope.can_admin:
+            login_identifier = str(user.email or "").strip().lower()
+            agent = interviewer_agent.start(
+                login_identifier=login_identifier,
+                user=user,
+                bootstrap_user_id=None,
+            )
+            agent = agent.model_copy(update={"user": compact_user})
+            return CheckOrCreateUserResponse(
+                exists=True,
+                message="Открыта актуализация профиля перед оцениванием.",
+                user=compact_user,
+                requires_user_data=False,
+                agent=agent,
+                is_admin=True,
+                admin_dashboard=_build_admin_dashboard(connection, admin_scope),
+            )
         return _build_authenticated_user_response(
             connection=connection,
             user=user,
