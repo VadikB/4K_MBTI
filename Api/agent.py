@@ -165,8 +165,7 @@ USER_SELECT_SQL = """
 def _is_assessment_allowed_for_user(user: UserResponse | None) -> bool:
     if user is None:
         return False
-    normalized_role = str(user.job_description or "").strip().lower()
-    return normalized_role != "администратор"
+    return bool(user.role_id)
 
 
 class ConversationMode(StrEnum):
@@ -3077,6 +3076,10 @@ class InterviewerAgent:
             return None
         if user.personal_data_consent_accepted_at is None:
             return ConversationStage.ASK_PERSONAL_DATA_CONSENT
+        if not (user.raw_position or user.job_description):
+            return ConversationStage.ASK_POSITION
+        if not (user.raw_duties or user.normalized_duties):
+            return ConversationStage.ASK_DUTIES
         if not user.role_id:
             return ConversationStage.ASK_ROLE
         if not (user.telegram and user.telegram.strip()):
@@ -3493,7 +3496,7 @@ class InterviewerAgent:
 
     def start_case_interview(self, *, user: UserResponse, progress_operation_id: str | None = None) -> AssessmentStartResponse:
         if not _is_assessment_allowed_for_user(user):
-            raise ValueError("Для роли «Администратор» ассессмент недоступен.")
+            raise ValueError("Для пользователя не определена роль. Завершите настройку профиля и выберите роль.")
         plan = assessment_service.ensure_assessment_session(user, progress_operation_id=progress_operation_id)
         if plan is None:
             raise ValueError("Не удалось подготовить assessment-сессию для пользователя.")

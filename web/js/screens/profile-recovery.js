@@ -22,6 +22,7 @@ export const recoverProfileCompletionForAssessment = async () => {
   state.completed = false;
   state.isChatSubmitting = false;
   state.isNewUserFlow = false;
+  state.isAdmin = false;
   state.pendingUser = data.user || agent.user || state.pendingUser;
   state.pendingAgentMessage = agent.message || 'Продолжим настройку профиля.';
   state.pendingRoleOptions = Array.isArray(agent.role_options) ? agent.role_options : [];

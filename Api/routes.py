@@ -635,7 +635,7 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
         for row in report_rows
     ]
 
-    assessment_allowed = str(user.job_description or "").strip().lower() != ADMIN_ROLE_NAME.lower()
+    assessment_allowed = bool(user.role_id)
     available_assessments: list[AvailableAssessment] = []
     if assessment_allowed and not is_complete:
         available_assessments.append(
@@ -654,15 +654,15 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
         description=(
             "Комплексная оценка критического мышления, креативности, коммуникации и кооперации."
             if assessment_allowed
-            else "Для роли «Администратор» прохождение ассессмента недоступно."
+            else "Перед прохождением ассессмента нужно завершить настройку профиля."
         ),
         progress_percent=progress_percent if assessment_allowed else 0,
         completed_cases=completed_cases if assessment_allowed else 0,
         total_cases=total_cases if assessment_allowed else 0,
         status_label=(
             "Новый цикл оценки" if is_complete else "Продолжить ассессмент"
-        ) if assessment_allowed else "Недоступно для роли",
-        button_label=("Пройти ассессмент снова" if is_complete else "Продолжить") if assessment_allowed else "Недоступно",
+        ) if assessment_allowed else "Нужно заполнить профиль",
+        button_label=("Пройти ассессмент снова" if is_complete else "Продолжить") if assessment_allowed else "Заполнить профиль",
     )
 
     greeting_name = user.full_name.split()[0] if user.full_name else "коллега"
@@ -4885,6 +4885,15 @@ def start_assessment(user_id: int, request: Request) -> AssessmentStartResponse:
         raise HTTPException(status_code=404, detail="User not found")
 
     user = _user_response_from_row(row)
+    if (
+        not user.role_id
+        or not (user.company_industry and user.company_industry.strip())
+        or not user.active_profile_id
+        or not (user.normalized_duties and user.normalized_duties.strip())
+    ):
+        repaired_user = interviewer_agent.backfill_user_profile(user.id)
+        if repaired_user is not None:
+            user = repaired_user
     try:
         result = interviewer_agent.start_case_interview(user=user, progress_operation_id=operation_id)
         operation_progress_service.complete(
