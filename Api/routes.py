@@ -3400,6 +3400,42 @@ def delete_admin_organization_member(organization_id: int, email: str, request: 
         return _build_admin_organizations(connection)
 
 
+@router.post("/admin/organizations/{organization_id}/members/reset-password", response_model=AdminOrganizationsResponse)
+def reset_admin_organization_member_password(organization_id: int, email: str, request: Request) -> AdminOrganizationsResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    normalized_email = normalize_email(email)
+    if not normalized_email:
+        raise HTTPException(status_code=400, detail="Valid member email is required")
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        user_row = connection.execute(
+            """
+            SELECT u.id
+            FROM users u
+            JOIN organization_memberships om ON om.user_id = u.id
+            WHERE om.organization_id = %s
+              AND LOWER(u.email) = %s
+            LIMIT 1
+            """,
+            (organization_id, normalized_email),
+        ).fetchone()
+        if user_row is None:
+            raise HTTPException(status_code=404, detail="Organization member not found")
+        user_id = int(user_row["id"])
+        connection.execute(
+            """
+            DELETE FROM auth_password_credentials
+            WHERE LOWER(email) = %s
+               OR user_id = %s
+            """,
+            (normalized_email, user_id),
+        )
+        connection.execute("DELETE FROM web_user_sessions WHERE user_id = %s", (user_id,))
+        connection.commit()
+        return _build_admin_organizations(connection)
+
+
 @router.post("/admin/organizations/{organization_id}/members/import", response_model=AdminOrganizationImportResult)
 def import_admin_organization_members(
     organization_id: int,

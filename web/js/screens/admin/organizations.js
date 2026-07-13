@@ -188,6 +188,19 @@ export const deleteAdminOrganizationMember = async (organizationId, email) => {
   }
 };
 
+export const resetAdminOrganizationMemberPassword = async (organizationId, email) => {
+  try {
+    await requestOrganizations(
+      '/users/admin/organizations/' + organizationId + '/members/reset-password?email=' + encodeURIComponent(email),
+      { method: 'POST', headers: {} },
+      'Не удалось сбросить пароль участника.',
+    );
+    setStatus('Пароль участника сброшен. При следующем входе пользователь задаст новый пароль.', 'success');
+  } catch (error) {
+    setStatus(error.message || 'Не удалось сбросить пароль участника.', 'error');
+  }
+};
+
 export const importAdminOrganizationMembers = async (organizationId, csvText) => {
   const text = String(csvText || '').trim();
   if (!text) {
@@ -273,6 +286,9 @@ const renderMemberList = (items) => {
           '</strong>' +
           (details ? '<span>' + escapeHtml(details) + '</span>' : '') +
           '</div>' +
+          '<button type="button" data-action="reset-member-password" data-value="' +
+          escapeHtml(item.email) +
+          '">Сбросить пароль</button>' +
           '<button type="button" data-action="delete-member" data-value="' +
           escapeHtml(item.email) +
           '" aria-label="Отвязать">×</button>' +

@@ -769,6 +769,13 @@ if (adminOrganizationsList) {
     }
     if (button.dataset.action === 'delete-member') {
       withScreen(loadAdminOrganizations, (module) => module.deleteAdminOrganizationMember(organizationId, value));
+      return;
+    }
+    if (button.dataset.action === 'reset-member-password') {
+      if (!window.confirm('Сбросить пароль пользователя ' + value + '? При следующем входе он задаст новый пароль.')) {
+        return;
+      }
+      withScreen(loadAdminOrganizations, (module) => module.resetAdminOrganizationMemberPassword(organizationId, value));
     }
   });
 }
