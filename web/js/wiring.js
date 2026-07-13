@@ -6,7 +6,12 @@ import {
   authCredentialLabel,
   magicTokenInput,
   authPasswordConfirmField,
+  authPasswordRequirements,
+  authPasswordGenerateRow,
+  authPasswordGenerateButton,
+  authPasswordToggleButton,
   authPasswordConfirmInput,
+  authPasswordConfirmToggleButton,
   requestMagicLinkButton,
   verifyMagicLinkButton,
   authStatus,
@@ -295,6 +300,61 @@ const setAuthStatus = (message = '', { isError = false } = {}) => {
 
 let authCredentialMode = 'dev_token';
 let authCredentialEmail = '';
+let authPasswordVisible = false;
+let authPasswordConfirmVisible = false;
+
+const syncAuthPasswordVisibility = () => {
+  const isRegistration = authCredentialMode === 'password_registration';
+  const isPasswordMode = authCredentialMode === 'password' || isRegistration;
+  if (magicTokenInput) {
+    magicTokenInput.type = isPasswordMode && authPasswordVisible ? 'text' : isPasswordMode ? 'password' : 'text';
+  }
+  if (authPasswordConfirmInput) {
+    authPasswordConfirmInput.type = authPasswordConfirmVisible ? 'text' : 'password';
+  }
+  if (authPasswordToggleButton) {
+    authPasswordToggleButton.textContent = authPasswordVisible ? 'Скрыть' : 'Показать';
+  }
+  if (authPasswordConfirmToggleButton) {
+    authPasswordConfirmToggleButton.textContent = authPasswordConfirmVisible ? 'Скрыть' : 'Показать';
+  }
+};
+
+const passwordRandomInt = (max) => {
+  if (window.crypto?.getRandomValues) {
+    const bucket = new Uint32Array(1);
+    window.crypto.getRandomValues(bucket);
+    return bucket[0] % max;
+  }
+  return Math.floor(Math.random() * max);
+};
+
+const shufflePasswordChars = (chars) => {
+  const result = [...chars];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const swapIndex = passwordRandomInt(index + 1);
+    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+  }
+  return result.join('');
+};
+
+const generateStrongPassword = () => {
+  const lower = 'abcdefghijkmnopqrstuvwxyz';
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const digits = '23456789';
+  const symbols = '!@#$%+-_=';
+  const all = lower + upper + digits + symbols;
+  const chars = [
+    lower[passwordRandomInt(lower.length)],
+    upper[passwordRandomInt(upper.length)],
+    digits[passwordRandomInt(digits.length)],
+    symbols[passwordRandomInt(symbols.length)],
+  ];
+  while (chars.length < 16) {
+    chars.push(all[passwordRandomInt(all.length)]);
+  }
+  return shufflePasswordChars(chars);
+};
 
 const configureAuthCredentialForm = (mode) => {
   authCredentialMode = mode || 'dev_token';
@@ -303,8 +363,9 @@ const configureAuthCredentialForm = (mode) => {
   if (authCredentialLabel) {
     authCredentialLabel.textContent = isPasswordMode ? 'Пароль' : 'Код или ссылка для входа';
   }
+  authPasswordVisible = false;
+  authPasswordConfirmVisible = false;
   if (magicTokenInput) {
-    magicTokenInput.type = isPasswordMode ? 'password' : 'text';
     magicTokenInput.autocomplete = isRegistration ? 'new-password' : isPasswordMode ? 'current-password' : 'one-time-code';
     magicTokenInput.placeholder = isPasswordMode ? 'Введите пароль' : 'Вставьте код или ссылку из письма';
     magicTokenInput.value = '';
@@ -316,10 +377,55 @@ const configureAuthCredentialForm = (mode) => {
     authPasswordConfirmInput.required = isRegistration;
     authPasswordConfirmInput.value = '';
   }
+  if (authPasswordRequirements) {
+    authPasswordRequirements.classList.toggle('hidden', !isRegistration);
+  }
+  if (authPasswordGenerateRow) {
+    authPasswordGenerateRow.classList.toggle('hidden', !isRegistration);
+  }
+  if (authPasswordToggleButton) {
+    authPasswordToggleButton.classList.toggle('hidden', !isPasswordMode);
+  }
+  if (authPasswordConfirmToggleButton) {
+    authPasswordConfirmToggleButton.classList.toggle('hidden', !isRegistration);
+  }
+  syncAuthPasswordVisibility();
   if (verifyMagicLinkButton) {
     verifyMagicLinkButton.textContent = isRegistration ? 'Задать пароль и войти' : 'Войти';
   }
 };
+
+if (authPasswordToggleButton) {
+  authPasswordToggleButton.addEventListener('click', () => {
+    authPasswordVisible = !authPasswordVisible;
+    syncAuthPasswordVisibility();
+    magicTokenInput?.focus();
+  });
+}
+
+if (authPasswordConfirmToggleButton) {
+  authPasswordConfirmToggleButton.addEventListener('click', () => {
+    authPasswordConfirmVisible = !authPasswordConfirmVisible;
+    syncAuthPasswordVisibility();
+    authPasswordConfirmInput?.focus();
+  });
+}
+
+if (authPasswordGenerateButton) {
+  authPasswordGenerateButton.addEventListener('click', () => {
+    const password = generateStrongPassword();
+    if (magicTokenInput) {
+      magicTokenInput.value = password;
+    }
+    if (authPasswordConfirmInput) {
+      authPasswordConfirmInput.value = password;
+    }
+    authPasswordVisible = true;
+    authPasswordConfirmVisible = true;
+    syncAuthPasswordVisibility();
+    magicTokenInput?.focus();
+  });
+}
 
 const applyAuthResponse = async (data) => {
   const agent = data.agent || null;
@@ -768,6 +874,14 @@ if (adminOrganizationsList) {
       return;
     }
     if (button.dataset.action === 'delete-member') {
+      const normalizedValue = value.trim().toLowerCase();
+      if (normalizedValue.startsWith('__autotest__') || normalizedValue.endsWith('@autotest.local')) {
+        window.alert('Autotest-пользователей нельзя отвязывать из списка организаций. Используйте очистку регрессионных тестов.');
+        return;
+      }
+      if (!window.confirm('Отвязать пользователя ' + value + ' от организации?')) {
+        return;
+      }
       withScreen(loadAdminOrganizations, (module) => module.deleteAdminOrganizationMember(organizationId, value));
       return;
     }

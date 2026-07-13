@@ -3375,6 +3375,8 @@ def delete_admin_organization_member(organization_id: int, email: str, request: 
     normalized_email = normalize_email(email)
     if not normalized_email:
         raise HTTPException(status_code=400, detail="Valid member email is required")
+    if normalized_email.startswith("__autotest__") or normalized_email.endswith("@autotest.local"):
+        raise HTTPException(status_code=400, detail="Autotest members are protected. Use regression test cleanup instead.")
     with get_connection() as connection:
         _require_superadmin(connection, user)
         user_row = connection.execute(

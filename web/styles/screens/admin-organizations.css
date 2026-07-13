@@ -22,7 +22,7 @@
 
 .admin-organization-inline-form {
     grid-template-columns: minmax(0, 1fr) auto;
-    margin-top: var(--space-3);
+    margin-top: auto;
 }
 
 .admin-organization-member-form,
@@ -155,6 +155,10 @@
     padding: var(--space-3);
 }
 
+.admin-organization-member-main {
+    min-width: 0;
+}
+
 .admin-organization-member strong,
 .admin-organization-member span {
     display: block;
@@ -167,17 +171,36 @@
     font-size: var(--fs-meta);
 }
 
+.admin-organization-member-actions {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
 .admin-organization-member button {
     flex: 0 0 auto;
     display: inline-grid;
     place-items: center;
-    width: 28px;
     height: 28px;
     border: 0;
-    border-radius: 50%;
+    border-radius: var(--radius-pill);
     background: rgba(70, 72, 212, 0.1);
     color: var(--text-main);
     cursor: pointer;
+}
+
+.admin-organization-password-button {
+    min-width: 72px;
+    padding: 0 var(--space-3);
+    color: var(--accent);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-bold);
+}
+
+.admin-organization-remove-button {
+    width: 28px;
+    border-radius: 50%;
 }
 
 .compact-ghost.danger {
@@ -187,8 +210,9 @@
 
 .admin-organization-columns section {
     display: grid;
+    grid-template-rows: auto minmax(34px, auto) auto;
     gap: var(--space-3);
-    align-content: start;
+    align-content: stretch;
 }
 
 .admin-organizations-tags {

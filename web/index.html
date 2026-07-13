@@ -72,11 +72,21 @@
       <form id="auth-token-form" class="stack hidden">
         <label class="field">
           <span id="auth-credential-label">Код или ссылка для входа</span>
-          <input id="magic-token-input" name="magic-token" type="text" placeholder="Вставьте код или ссылку из письма" autocomplete="one-time-code" required>
+          <span class="auth-password-input-row">
+            <input id="magic-token-input" name="magic-token" type="text" placeholder="Вставьте код или ссылку из письма" autocomplete="one-time-code" required>
+            <button id="auth-password-toggle-button" class="auth-password-tool hidden" type="button">Показать</button>
+          </span>
         </label>
+        <p id="auth-password-requirements" class="subtitle auth-password-requirements hidden">Пароль должен содержать минимум 10 символов, строчную и заглавную буквы, а также цифру.</p>
+        <div id="auth-password-generate-row" class="auth-password-generate-row hidden">
+          <button id="auth-password-generate-button" class="ghost-button compact-ghost" type="button">Сгенерировать надежный пароль</button>
+        </div>
         <label id="auth-password-confirm-field" class="field hidden">
           <span>Повторите пароль</span>
-          <input id="auth-password-confirm-input" name="password-confirm" type="password" placeholder="Повторите пароль" autocomplete="new-password">
+          <span class="auth-password-input-row">
+            <input id="auth-password-confirm-input" name="password-confirm" type="password" placeholder="Повторите пароль" autocomplete="new-password">
+            <button id="auth-password-confirm-toggle-button" class="auth-password-tool hidden" type="button">Показать</button>
+          </span>
         </label>
         <button id="verify-magic-link-button" type="submit" class="primary-button">Войти</button>
       </form>

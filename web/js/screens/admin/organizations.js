@@ -277,21 +277,28 @@ const renderMemberList = (items) => {
     '<div class="admin-organization-members">' +
     items
       .map((item) => {
-        const label = item.full_name ? item.full_name + ' · ' + item.email : item.email;
+        const email = String(item.email || '');
+        const isAutotest = email.toLowerCase().startsWith('__autotest__') || email.toLowerCase().endsWith('@autotest.local');
+        const label = item.full_name ? item.full_name + ' · ' + email : email;
         const details = item.raw_position || item.job_description || item.raw_duties || '';
+        const removeButton = isAutotest
+          ? ''
+          : '<button class="admin-organization-remove-button" type="button" data-action="delete-member" data-value="' +
+            escapeHtml(email) +
+            '" aria-label="Отвязать">×</button>';
         return (
           '<div class="admin-organization-member">' +
-          '<div><strong>' +
+          '<div class="admin-organization-member-main"><strong>' +
           escapeHtml(label) +
           '</strong>' +
           (details ? '<span>' + escapeHtml(details) + '</span>' : '') +
           '</div>' +
-          '<button type="button" data-action="reset-member-password" data-value="' +
-          escapeHtml(item.email) +
-          '">Сбросить пароль</button>' +
-          '<button type="button" data-action="delete-member" data-value="' +
-          escapeHtml(item.email) +
-          '" aria-label="Отвязать">×</button>' +
+          '<div class="admin-organization-member-actions">' +
+          '<button class="admin-organization-password-button" type="button" data-action="reset-member-password" data-value="' +
+          escapeHtml(email) +
+          '" title="Сбросить пароль" aria-label="Сбросить пароль">Пароль</button>' +
+          removeButton +
+          '</div>' +
           '</div>'
         );
       })
