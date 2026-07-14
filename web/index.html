@@ -62,18 +62,19 @@
         <h1>Добро пожаловать</h1>
         <p class="subtitle">Введите рабочий email, чтобы продолжить вход.</p>
       </div>
-      <form id="auth-email-form" class="stack">
+      <form id="auth-email-form" class="stack" autocomplete="on">
         <label class="field">
           <span>Email</span>
-          <input id="email-input" name="email" type="email" placeholder="name@company.com" autocomplete="email" required>
+          <input id="email-input" name="email" type="email" placeholder="name@company.com" autocomplete="username email" required>
         </label>
         <button id="request-magic-link-button" type="submit" class="primary-button">Продолжить</button>
       </form>
-      <form id="auth-token-form" class="stack hidden">
+      <form id="auth-token-form" class="stack hidden" autocomplete="on">
+        <input id="auth-credential-email-input" name="username" type="email" autocomplete="username" hidden>
         <label class="field">
           <span id="auth-credential-label">Код или ссылка для входа</span>
           <span class="auth-password-input-row">
-            <input id="magic-token-input" name="magic-token" type="text" placeholder="Вставьте код или ссылку из письма" autocomplete="one-time-code" required>
+            <input id="magic-token-input" name="one-time-code" type="text" placeholder="Вставьте код или ссылку из письма" autocomplete="one-time-code" required>
             <button id="auth-password-toggle-button" class="auth-password-tool hidden" type="button">Показать</button>
           </span>
         </label>
@@ -84,7 +85,7 @@
         <label id="auth-password-confirm-field" class="field hidden">
           <span>Повторите пароль</span>
           <span class="auth-password-input-row">
-            <input id="auth-password-confirm-input" name="password-confirm" type="password" placeholder="Повторите пароль" autocomplete="new-password">
+            <input id="auth-password-confirm-input" name="new-password-confirm" type="password" placeholder="Повторите пароль" autocomplete="new-password">
             <button id="auth-password-confirm-toggle-button" class="auth-password-tool hidden" type="button">Показать</button>
           </span>
         </label>

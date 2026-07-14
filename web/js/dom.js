@@ -19,6 +19,7 @@ export const chatPanel = document.getElementById('chat-panel');
 export const authEmailForm = document.getElementById('auth-email-form');
 export const emailInput = document.getElementById('email-input');
 export const authTokenForm = document.getElementById('auth-token-form');
+export const authCredentialEmailInput = document.getElementById('auth-credential-email-input');
 export const authCredentialLabel = document.getElementById('auth-credential-label');
 export const magicTokenInput = document.getElementById('magic-token-input');
 export const authPasswordConfirmField = document.getElementById('auth-password-confirm-field');

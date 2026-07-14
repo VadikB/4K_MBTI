@@ -3,6 +3,7 @@ import {
   authEmailForm,
   emailInput,
   authTokenForm,
+  authCredentialEmailInput,
   authCredentialLabel,
   magicTokenInput,
   authPasswordConfirmField,
@@ -365,7 +366,11 @@ const configureAuthCredentialForm = (mode) => {
   }
   authPasswordVisible = false;
   authPasswordConfirmVisible = false;
+  if (authCredentialEmailInput) {
+    authCredentialEmailInput.value = String(authCredentialEmail || emailInput?.value || '').trim();
+  }
   if (magicTokenInput) {
+    magicTokenInput.name = isRegistration ? 'new-password' : isPasswordMode ? 'password' : 'one-time-code';
     magicTokenInput.autocomplete = isRegistration ? 'new-password' : isPasswordMode ? 'current-password' : 'one-time-code';
     magicTokenInput.placeholder = isPasswordMode ? 'Введите пароль' : 'Вставьте код или ссылку из письма';
     magicTokenInput.value = '';
@@ -374,6 +379,7 @@ const configureAuthCredentialForm = (mode) => {
     authPasswordConfirmField.classList.toggle('hidden', !isRegistration);
   }
   if (authPasswordConfirmInput) {
+    authPasswordConfirmInput.name = isRegistration ? 'new-password-confirm' : 'password-confirm-disabled';
     authPasswordConfirmInput.required = isRegistration;
     authPasswordConfirmInput.value = '';
   }
@@ -508,6 +514,9 @@ const handleEmailMagicLinkRequest = async () => {
     const isDevMode = Boolean(data.dev_mode || data.dev_magic_token);
     const nextMode = isDevMode ? 'dev_token' : data.auth_mode || data.delivery_method || 'password';
     authCredentialEmail = data.email || email;
+    if (authCredentialEmailInput) {
+      authCredentialEmailInput.value = authCredentialEmail;
+    }
     configureAuthCredentialForm(nextMode);
     if (authTokenForm) {
       authTokenForm.classList.remove('hidden');
