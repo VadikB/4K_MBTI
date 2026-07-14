@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import logging
 import re
 from urllib.parse import quote
 from datetime import datetime
@@ -128,6 +129,7 @@ from Api.schemas import (
 
 
 router = APIRouter(prefix="/users", tags=["users"])
+logger = logging.getLogger("agent4k.admin")
 SESSION_COOKIE_NAME = "agent4k_session_token"
 ADMIN_ROLE_CODE = "admin"
 ADMIN_ROLE_NAME = "Администратор"
@@ -882,10 +884,12 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
                 u.email,
                 u.full_name,
                 u.job_description,
+                c.user_id IS NOT NULL AS has_password,
                 p.raw_position,
                 p.raw_duties
             FROM organization_memberships om
             JOIN users u ON u.id = om.user_id
+            LEFT JOIN auth_password_credentials c ON c.user_id = u.id OR LOWER(c.email) = LOWER(u.email)
             LEFT JOIN user_role_profiles p ON p.id = u.active_profile_id
             WHERE om.organization_id = ANY(%s)
             ORDER BY LOWER(COALESCE(u.email, '')) ASC
@@ -903,6 +907,7 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
                     "email": email,
                     "full_name": row["full_name"],
                     "role": row["role"] or "member",
+                    "has_password": bool(row["has_password"]),
                     "job_description": row["job_description"],
                     "raw_position": row["raw_position"],
                     "raw_duties": row["raw_duties"],
@@ -3425,7 +3430,7 @@ def reset_admin_organization_member_password(organization_id: int, email: str, r
         if user_row is None:
             raise HTTPException(status_code=404, detail="Organization member not found")
         user_id = int(user_row["id"])
-        connection.execute(
+        deleted_credentials = connection.execute(
             """
             DELETE FROM auth_password_credentials
             WHERE LOWER(email) = %s
@@ -3433,8 +3438,16 @@ def reset_admin_organization_member_password(organization_id: int, email: str, r
             """,
             (normalized_email, user_id),
         )
+        if deleted_credentials.rowcount == 0:
+            raise HTTPException(status_code=400, detail="Пароль пользователя еще не задан.")
         connection.execute("DELETE FROM web_user_sessions WHERE user_id = %s", (user_id,))
         connection.commit()
+        logger.info(
+            "Password reset by admin %s for organization_id=%s member=%s",
+            str(user.email or "").strip().lower() if user else "",
+            organization_id,
+            normalized_email,
+        )
         return _build_admin_organizations(connection)
 
 

@@ -687,6 +687,7 @@ class AdminOrganizationMemberItem(BaseModel):
     email: str
     full_name: str | None = None
     role: str = "member"
+    has_password: bool = False
     job_description: str | None = None
     raw_position: str | None = None
     raw_duties: str | None = None

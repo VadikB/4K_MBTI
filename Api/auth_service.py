@@ -663,9 +663,11 @@ class AuthService:
                     salt=credential_row["password_salt"],
                     password_hash=credential_row["password_hash"],
                 ):
-                    raise ValueError("Неверный email или пароль.")
+                    logger.warning("Password login rejected for %s: bad password", normalized_email)
+                    raise ValueError("Неверный пароль.")
                 user_id = int(credential_row["user_id"])
             else:
+                logger.warning("Password login rejected for %s: password not set", normalized_email)
                 raise ValueError("Пароль еще не задан. Пройдите первичную регистрацию.")
 
             connection.execute(
