@@ -36,6 +36,7 @@ import {
   sanitizeDisplayMetaText,
   buildExistingUserAgentMessage,
   shouldOfferNoChangesQuickReply,
+  hasRequiredProfileFields,
   harmonizeNoChangesPrompt,
 } from '../utils/format.js';
 import { addMessage, showAgentTyping, hideAgentTyping } from '../components/chat-messages.js';
@@ -188,8 +189,10 @@ export const setStatus = (data) => {
     return;
   }
 
-  const job = sanitizeDisplayRole(user.job_description || '') || 'не указана';
-  const duties = sanitizeDisplayMetaText(user.raw_duties || '') || 'не указаны';
+  const jobValue = sanitizeDisplayRole(user.raw_position || user.job_description || '');
+  const dutiesValue = sanitizeDisplayMetaText(user.raw_duties || user.normalized_duties || '');
+  const job = jobValue || 'не указана (обязательно)';
+  const duties = dutiesValue || 'не указаны (обязательно)';
 
   const header = document.createElement('div');
   header.className = 'status-card__header';
@@ -213,8 +216,8 @@ export const setStatus = (data) => {
     meta.append(dt, dd);
   };
   addRow('Email', user.email || 'не указан');
-  addRow('Должность', job);
-  addRow('Обязанности', duties);
+  addRow('Должность *', job);
+  addRow('Обязанности *', duties);
 
   statusCard.replaceChildren(header, meta);
   statusCard.classList.remove('hidden');
@@ -233,7 +236,8 @@ export const renderChatRoleOptions = () => {
     return String(option?.value || '').trim().toLowerCase() === 'согласен';
   });
   const hasCompactActions = actionOptions.length > 0;
-  const showNoChangesQuickReply = Boolean(state.pendingNoChangesQuickReply) && !hasPendingConsent;
+  const canConfirmNoChanges = hasRequiredProfileFields(state.pendingUser);
+  const showNoChangesQuickReply = Boolean(state.pendingNoChangesQuickReply) && !hasPendingConsent && canConfirmNoChanges;
   chatRoleOptions.innerHTML = '';
   chatPanel.classList.toggle('compact-chat-flow', hasCompactActions);
   chatForm.classList.toggle('hidden', hasCompactActions || state.completed);
@@ -420,7 +424,7 @@ export const sendChatMessage = async (text, displayText = null) => {
     state.pendingConsentTitle = data.consent_title || null;
     state.pendingConsentText = data.consent_text || null;
     state.pendingAgentMessage = botMessage || state.pendingAgentMessage;
-    state.pendingNoChangesQuickReply = shouldOfferNoChangesQuickReply(botMessage);
+    state.pendingNoChangesQuickReply = shouldOfferNoChangesQuickReply(botMessage) && hasRequiredProfileFields(state.pendingUser);
     setStatus(data.user ? data : {});
     if (state.isNewUserFlow) {
       hideLoader();

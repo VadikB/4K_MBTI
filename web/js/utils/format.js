@@ -126,6 +126,12 @@ export const harmonizeNoChangesPrompt = (message) => {
   );
 };
 
+export const hasRequiredProfileFields = (user) => {
+  const position = sanitizeDisplayRole(user?.raw_position || user?.job_description || '');
+  const duties = sanitizeDisplayMetaText(user?.raw_duties || user?.normalized_duties || '');
+  return Boolean(position && duties);
+};
+
 export const buildExistingUserAgentMessage = (user, fallbackMessage = '') => {
   const fallback = harmonizeNoChangesPrompt(fallbackMessage);
   const normalizedFallback = fallback.toLowerCase().replace(/ё/g, 'е');
@@ -141,15 +147,25 @@ export const buildExistingUserAgentMessage = (user, fallbackMessage = '') => {
   }
 
   const name = String(user.full_name || 'пользователь').trim();
-  const position = sanitizeDisplayRole(user.job_description || '');
-  const duties = sanitizeDisplayMetaText(user.raw_duties || '');
+  const position = sanitizeDisplayRole(user.raw_position || user.job_description || '');
+  const duties = sanitizeDisplayMetaText(user.raw_duties || user.normalized_duties || '');
   let message = 'Пользователь найден: ' + name + '. ';
 
-  if (position || duties) {
+  if (position && duties) {
     message += 'Нужно ли внести изменения в должность и должностные обязанности? ';
     message += 'Если изменений нет, нажмите кнопку «Профиль актуален» ниже. ';
     message += 'Если изменения есть, отправьте сначала актуальную должность.';
     return message;
+  }
+
+  if (!position && !duties) {
+    return message + 'Чтобы продолжить работу с кейсами, укажите должность и должностные обязанности. Эти поля обязательны.';
+  }
+  if (!position) {
+    return message + 'Чтобы продолжить работу с кейсами, укажите должность. Это обязательное поле.';
+  }
+  if (!duties) {
+    return message + 'Чтобы продолжить работу с кейсами, опишите должностные обязанности. Это обязательное поле.';
   }
 
   return message + 'Продолжим актуализацию профиля.';

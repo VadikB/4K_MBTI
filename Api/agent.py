@@ -3001,6 +3001,16 @@ class InterviewerAgent:
                     "Чтобы продолжить работу с кейсами, укажите сферу деятельности компании, "
                     "в которой вы работаете. Например: банк, retail, телеком, производство, IT-продукт."
                 )
+            elif missing_stage == ConversationStage.ASK_POSITION:
+                reply_text = (
+                    f"Пользователь найден: {user.full_name}. "
+                    "Чтобы продолжить работу с кейсами, укажите вашу должность. Это обязательное поле."
+                )
+            elif missing_stage == ConversationStage.ASK_DUTIES:
+                reply_text = (
+                    f"Пользователь найден: {user.full_name}. "
+                    "Чтобы продолжить работу с кейсами, опишите ваши должностные обязанности. Это обязательное поле."
+                )
             else:
                 reply_text = (
                     f"Пользователь найден: {user.full_name}. "
@@ -3101,14 +3111,30 @@ class InterviewerAgent:
             if self._is_consent_accepted(text):
                 if state.user_id:
                     state.user = self._record_user_personal_data_consent(state.user_id, state.consent_version, state.consent_text)
-                reply_text = (
-                    f"Спасибо. Согласие зафиксировано.\n\n"
-                    f"Пользователь найден: {state.user.full_name if state.user else 'Пользователь'}. "
-                    "Нужно ли внести изменения в должность и должностные обязанности? "
-                    "Если изменений нет, просто напишите, что профиль актуален или что ничего не изменилось. "
-                    "Если изменения есть, отправьте сначала актуальную должность."
-                )
-                state.stage = ConversationStage.ASK_POSITION
+                missing_stage = self._get_missing_profile_stage_for_existing_user(state.user)
+                if missing_stage == ConversationStage.ASK_POSITION:
+                    reply_text = (
+                        f"Спасибо. Согласие зафиксировано.\n\n"
+                        f"Пользователь найден: {state.user.full_name if state.user else 'Пользователь'}. "
+                        "Чтобы продолжить работу с кейсами, укажите вашу должность. Это обязательное поле."
+                    )
+                    state.stage = ConversationStage.ASK_POSITION
+                elif missing_stage == ConversationStage.ASK_DUTIES:
+                    reply_text = (
+                        f"Спасибо. Согласие зафиксировано.\n\n"
+                        f"Пользователь найден: {state.user.full_name if state.user else 'Пользователь'}. "
+                        "Чтобы продолжить работу с кейсами, опишите ваши должностные обязанности. Это обязательное поле."
+                    )
+                    state.stage = ConversationStage.ASK_DUTIES
+                else:
+                    reply_text = (
+                        f"Спасибо. Согласие зафиксировано.\n\n"
+                        f"Пользователь найден: {state.user.full_name if state.user else 'Пользователь'}. "
+                        "Нужно ли внести изменения в должность и должностные обязанности? "
+                        "Если изменений нет, просто напишите, что профиль актуален или что ничего не изменилось. "
+                        "Если изменения есть, отправьте сначала актуальную должность."
+                    )
+                    state.stage = ConversationStage.ASK_POSITION
                 state.history.append({"role": "assistant", "content": reply_text})
                 return AgentReply(
                     session_id=state.session_id,
@@ -3162,6 +3188,34 @@ class InterviewerAgent:
                     consent_title=consent_title,
                     consent_text=state.consent_text,
                     action_options=self._build_personal_data_consent_actions(),
+                    user=state.user,
+                )
+            if missing_stage == ConversationStage.ASK_POSITION:
+                state.stage = ConversationStage.ASK_POSITION
+                reply_text = (
+                    "Должность обязательна для подготовки кейсов. "
+                    "Пожалуйста, укажите вашу должность."
+                )
+                state.history.append({"role": "assistant", "content": reply_text})
+                return AgentReply(
+                    session_id=state.session_id,
+                    message=reply_text,
+                    stage=state.stage,
+                    completed=False,
+                    user=state.user,
+                )
+            if missing_stage == ConversationStage.ASK_DUTIES:
+                state.stage = ConversationStage.ASK_DUTIES
+                reply_text = (
+                    "Должностные обязанности обязательны для подготовки кейсов. "
+                    "Пожалуйста, опишите ваши должностные обязанности."
+                )
+                state.history.append({"role": "assistant", "content": reply_text})
+                return AgentReply(
+                    session_id=state.session_id,
+                    message=reply_text,
+                    stage=state.stage,
+                    completed=False,
                     user=state.user,
                 )
             if missing_stage == ConversationStage.ASK_ROLE:

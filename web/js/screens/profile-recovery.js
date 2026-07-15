@@ -1,6 +1,6 @@
 import { readApiResponse } from '../api.js';
 import { state, persistAssessmentContext } from '../state.js';
-import { shouldOfferNoChangesQuickReply } from '../utils/format.js';
+import { hasRequiredProfileFields, shouldOfferNoChangesQuickReply } from '../utils/format.js';
 
 export const shouldRecoverProfileOnAssessmentError = (message) => {
   const normalized = String(message || '').toLowerCase();
@@ -29,7 +29,7 @@ export const recoverProfileCompletionForAssessment = async () => {
   state.pendingActionOptions = Array.isArray(agent.action_options) ? agent.action_options : [];
   state.pendingConsentTitle = agent.consent_title || null;
   state.pendingConsentText = agent.consent_text || null;
-  state.pendingNoChangesQuickReply = shouldOfferNoChangesQuickReply(state.pendingAgentMessage);
+  state.pendingNoChangesQuickReply = shouldOfferNoChangesQuickReply(state.pendingAgentMessage) && hasRequiredProfileFields(state.pendingUser);
   state.preparedAssessmentStartResponse = null;
   state.resumeAssessmentAfterProfileCompletion = true;
   persistAssessmentContext();

@@ -140,6 +140,7 @@ import { readApiResponse } from './api.js';
 import {
   buildExistingUserAgentMessage,
   shouldOfferNoChangesQuickReply,
+  hasRequiredProfileFields,
   isAdminUserPayload,
 } from './utils/format.js';
 import { showError } from './components/errors.js';
@@ -500,7 +501,7 @@ const applyAuthResponse = async (data) => {
   state.pendingAgentMessage = data.exists
     ? buildExistingUserAgentMessage(data.user, agent?.message || data.message || '')
     : agent?.message || data.message || null;
-  state.pendingNoChangesQuickReply = data.exists && shouldOfferNoChangesQuickReply(state.pendingAgentMessage);
+  state.pendingNoChangesQuickReply = data.exists && shouldOfferNoChangesQuickReply(state.pendingAgentMessage) && hasRequiredProfileFields(data.user);
 
   if (state.isAdmin) {
     state.sessionId = null;
