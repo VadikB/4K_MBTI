@@ -357,6 +357,57 @@ const generateStrongPassword = () => {
   return shufflePasswordChars(chars);
 };
 
+const normalizeCredentialEmail = (value) => String(value || '').trim().toLowerCase();
+
+const fillStoredPasswordIfAvailable = async () => {
+  if (authCredentialMode !== 'password' || !magicTokenInput || magicTokenInput.value) {
+    return;
+  }
+  if (!window.PasswordCredential || !navigator.credentials?.get) {
+    return;
+  }
+  const email = normalizeCredentialEmail(authCredentialEmail || emailInput?.value);
+  if (!email) {
+    return;
+  }
+  try {
+    const credential = await navigator.credentials.get({
+      password: true,
+      mediation: 'optional',
+    });
+    if (
+      credential?.type === 'password' &&
+      normalizeCredentialEmail(credential.id) === email &&
+      typeof credential.password === 'string'
+    ) {
+      magicTokenInput.value = credential.password;
+    }
+  } catch {
+    // Browser password managers are optional; login must keep working without them.
+  }
+};
+
+const offerPasswordSave = async ({ email, password }) => {
+  if (!window.PasswordCredential || !navigator.credentials?.store) {
+    return;
+  }
+  const normalizedEmail = normalizeCredentialEmail(email);
+  if (!normalizedEmail || !password) {
+    return;
+  }
+  try {
+    await navigator.credentials.store(
+      new window.PasswordCredential({
+        id: normalizedEmail,
+        name: normalizedEmail,
+        password,
+      }),
+    );
+  } catch {
+    // A declined or unsupported save prompt should not block successful auth.
+  }
+};
+
 const configureAuthCredentialForm = (mode) => {
   authCredentialMode = mode || 'dev_token';
   const isRegistration = authCredentialMode === 'password_registration';
@@ -525,6 +576,7 @@ const handleEmailMagicLinkRequest = async () => {
       magicTokenInput.value = data.dev_magic_token || '';
       magicTokenInput.focus();
     }
+    void fillStoredPasswordIfAvailable();
     setAuthStatus(
       isDevMode
         ? 'Dev-режим: токен подставлен автоматически. Можно сразу нажать «Войти».'
@@ -615,6 +667,7 @@ const submitEmailPassword = async () => {
       },
     );
     const data = await readApiResponse(response, 'Не удалось выполнить вход.');
+    await offerPasswordSave({ email, password });
     setAuthStatus(isRegistration ? 'Пароль задан. Загружаем профиль...' : 'Вход выполнен. Загружаем профиль...');
     await applyAuthResponse(data);
   } catch (error) {

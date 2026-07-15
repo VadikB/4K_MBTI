@@ -9,6 +9,7 @@ export {
   deleteAdminOrganizationAdmin,
   addAdminOrganizationMember,
   deleteAdminOrganizationMember,
+  resetAdminOrganizationMemberPassword,
   importAdminOrganizationMembers,
   deleteOrDeactivateAdminOrganization,
 } from '../screens/admin/organizations.js';
