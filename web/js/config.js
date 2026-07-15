@@ -1,4 +1,4 @@
-export const APP_RELEASE = "2.1.16";
+export const APP_RELEASE = "2.1.17";
 export const PROFILE_NO_CHANGES_LABEL = "Профиль актуален";
 export const PROFILE_NO_CHANGES_MESSAGE = "Профиль актуален";
 
