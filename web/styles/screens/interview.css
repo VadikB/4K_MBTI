@@ -654,6 +654,7 @@
 }
 
 .interview-message.own {
+    flex-direction: column;
     align-items: flex-end;
     justify-content: flex-end;
 }
@@ -710,6 +711,49 @@
 .interview-bubble.user::before {
     content: "Вы";
     right: 0;
+}
+
+.interview-message-delivery {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 24px;
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: var(--fs-caption);
+    line-height: var(--lh-snug);
+}
+
+.interview-message-delivery[hidden] {
+    display: none;
+}
+
+.interview-message.delivery-failed .interview-message-delivery-status {
+    color: var(--danger);
+    font-weight: var(--fw-bold);
+}
+
+.interview-message.delivery-failed .interview-bubble.user {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 35%, transparent);
+}
+
+.interview-message-retry {
+    padding: 2px 0;
+    border: 0;
+    background: transparent;
+    color: var(--accent-bright);
+    font: inherit;
+    font-weight: var(--fw-bold);
+    cursor: pointer;
+}
+
+.interview-message-retry:hover {
+    text-decoration: underline;
+}
+
+.interview-message-retry:focus-visible {
+    outline: 2px solid var(--accent-bright);
+    outline-offset: 2px;
 }
 
 .interview-form {

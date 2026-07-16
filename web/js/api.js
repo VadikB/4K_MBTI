@@ -15,6 +15,11 @@ export const readApiResponse = async (response, fallbackMessage) => {
       throw new Error(data.detail);
     }
     if (rawText && rawText.trim()) {
+      const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+      const looksLikeHtml = contentType.includes('text/html') || /^\s*<(?:!doctype|html|head|body)\b/i.test(rawText);
+      if (looksLikeHtml) {
+        throw new Error(`${fallbackMessage} Сервер вернул ошибку ${response.status}. Попробуйте отправить еще раз.`);
+      }
       throw new Error(rawText.trim().slice(0, 240));
     }
     throw new Error(fallbackMessage);

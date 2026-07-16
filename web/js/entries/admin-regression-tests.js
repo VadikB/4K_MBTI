@@ -4,5 +4,7 @@ export {
   openAdminRegressionTests,
   renderAdminRegressionTests,
   runAdminFullRegressionTests,
+  runAdminOfflineRegressionTests,
   runAdminRegressionTests,
+  runAdminTechnicalRegressionTests,
 } from '../screens/admin/regression-tests.js';

@@ -34,6 +34,8 @@ import {
   adminOpenRegressionTestsButton,
   adminRegressionTestsBackButton,
   adminRegressionTestsRunButton,
+  adminRegressionTestsRunOfflineButton,
+  adminRegressionTestsRunTechnicalButton,
   adminRegressionTestsRunFullButton,
   adminRegressionTestsCleanupButton,
   adminOrganizationsBackButton,
@@ -821,6 +823,18 @@ if (adminRegressionTestsRunButton) {
   });
 }
 
+if (adminRegressionTestsRunOfflineButton) {
+  adminRegressionTestsRunOfflineButton.addEventListener('click', () => {
+    withScreen(loadAdminRegressionTests, (module) => module.runAdminOfflineRegressionTests());
+  });
+}
+
+if (adminRegressionTestsRunTechnicalButton) {
+  adminRegressionTestsRunTechnicalButton.addEventListener('click', () => {
+    withScreen(loadAdminRegressionTests, (module) => module.runAdminTechnicalRegressionTests());
+  });
+}
+
 if (adminRegressionTestsRunFullButton) {
   adminRegressionTestsRunFullButton.addEventListener('click', () => {
     if (!window.confirm('Запустить полный прогон assessment-сценариев? Это может занять несколько минут и выполнить реальные LLM-вызовы.')) {
@@ -1524,6 +1538,64 @@ if (prechatExitButton) {
   });
 }
 
+let failedInterviewMessage = null;
+
+const resumeInterviewTimerAfterSendError = (interviewModule) => {
+  if (!interviewModule.updateInterviewTimer()) {
+    state.assessmentTimerId = window.setInterval(() => {
+      if (typeof state.assessmentRemainingSeconds === 'number' && state.assessmentRemainingSeconds > 0) {
+        state.assessmentRemainingSeconds -= 1;
+      }
+      if (interviewModule.updateInterviewTimer() && !state.assessmentTimeoutInFlight) {
+        state.assessmentTimeoutInFlight = true;
+        interviewTextarea.disabled = true;
+        interviewSubmitButton.disabled = true;
+        interviewFinishButton.disabled = true;
+        void interviewModule.submitAssessmentMessage('__timeout__');
+      }
+    }, 1000);
+  }
+};
+
+const sendInterviewAnswer = async (text, existingMessageRow = null) => {
+  showError(interviewError, '');
+  const interviewModule = await loadInterview();
+  const messageRow = existingMessageRow || interviewModule.addInterviewMessage('user', text);
+  interviewModule.setInterviewMessageDeliveryState(messageRow, 'pending');
+  if (interviewTextarea.value.trim() === text) {
+    interviewTextarea.value = '';
+  }
+  interviewTextarea.disabled = true;
+  interviewSubmitButton.disabled = true;
+  interviewFinishButton.disabled = true;
+  interviewModule.clearInterviewTimer();
+  try {
+    await interviewModule.submitAssessmentMessage(text);
+    interviewModule.setInterviewMessageDeliveryState(messageRow, 'sent');
+    if (failedInterviewMessage?.row === messageRow) {
+      failedInterviewMessage = null;
+    }
+  } catch (error) {
+    const rawErrorMessage = String(error?.message || '');
+    const errorMessage = /failed to fetch|networkerror|load failed/i.test(rawErrorMessage)
+      ? 'Ответ не отправлен. Проверьте соединение и повторите попытку.'
+      : rawErrorMessage || 'Не удалось отправить ответ. Проверьте соединение и попробуйте еще раз.';
+    showError(interviewError, errorMessage);
+    failedInterviewMessage = { row: messageRow, text };
+    interviewModule.setInterviewMessageDeliveryState(messageRow, 'failed', () => {
+      void sendInterviewAnswer(text, messageRow);
+    });
+    if (!interviewTextarea.value.trim()) {
+      interviewTextarea.value = text;
+    }
+    interviewTextarea.disabled = false;
+    interviewSubmitButton.disabled = false;
+    interviewFinishButton.disabled = false;
+    interviewTextarea.focus();
+    resumeInterviewTimerAfterSendError(interviewModule);
+  }
+};
+
 interviewForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   showError(interviewError, '');
@@ -1538,36 +1610,15 @@ interviewForm.addEventListener('submit', async (event) => {
     return;
   }
 
-  try {
-    const interviewModule = await loadInterview();
-    interviewModule.addInterviewMessage('user', text);
-    interviewTextarea.value = '';
-    interviewTextarea.disabled = true;
-    interviewSubmitButton.disabled = true;
-    interviewFinishButton.disabled = true;
-    interviewModule.clearInterviewTimer();
-    await interviewModule.submitAssessmentMessage(text);
-  } catch (error) {
-    showError(interviewError, error.message);
-    interviewTextarea.disabled = false;
-    interviewSubmitButton.disabled = false;
-    interviewFinishButton.disabled = false;
-    const interviewModule = await loadInterview();
-    if (!interviewModule.updateInterviewTimer()) {
-      state.assessmentTimerId = window.setInterval(() => {
-        if (typeof state.assessmentRemainingSeconds === 'number' && state.assessmentRemainingSeconds > 0) {
-          state.assessmentRemainingSeconds -= 1;
-        }
-        if (interviewModule.updateInterviewTimer() && !state.assessmentTimeoutInFlight) {
-          state.assessmentTimeoutInFlight = true;
-          interviewTextarea.disabled = true;
-          interviewSubmitButton.disabled = true;
-          interviewFinishButton.disabled = true;
-          void interviewModule.submitAssessmentMessage('__timeout__');
-        }
-      }, 1000);
-    }
+  if (failedInterviewMessage && !failedInterviewMessage.row?.isConnected) {
+    failedInterviewMessage = null;
   }
+  if (failedInterviewMessage && failedInterviewMessage.text !== text) {
+    failedInterviewMessage.row?.remove();
+    failedInterviewMessage = null;
+  }
+  const reusableFailedRow = failedInterviewMessage?.text === text ? failedInterviewMessage.row : null;
+  await sendInterviewAnswer(text, reusableFailedRow);
 });
 
 interviewFinishButton.addEventListener('click', async () => {

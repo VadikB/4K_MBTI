@@ -175,6 +175,7 @@ const renderInterviewStructuredBlock = ({ label, body = '', items = [], variant 
 export const addInterviewMessage = (role, text) => {
   const row = document.createElement('div');
   row.className = 'interview-message' + (role === 'user' ? ' own' : '');
+  row.dataset.messageText = role === 'user' ? String(text ?? '').trim() : '';
   if (role !== 'user') {
     const avatar = document.createElement('div');
     avatar.className = 'interview-avatar bot';
@@ -214,7 +215,54 @@ export const addInterviewMessage = (role, text) => {
     }
   }
   row.appendChild(bubble);
+  if (role === 'user') {
+    const delivery = document.createElement('div');
+    delivery.className = 'interview-message-delivery';
+    delivery.hidden = true;
+    delivery.setAttribute('aria-live', 'polite');
+
+    const status = document.createElement('span');
+    status.className = 'interview-message-delivery-status';
+    delivery.appendChild(status);
+
+    const retryButton = document.createElement('button');
+    retryButton.type = 'button';
+    retryButton.className = 'interview-message-retry';
+    retryButton.textContent = 'Повторить';
+    retryButton.hidden = true;
+    delivery.appendChild(retryButton);
+    row.appendChild(delivery);
+  }
   interviewMessages.appendChild(row);
+  scrollInterviewToBottom();
+  return row;
+};
+
+export const setInterviewMessageDeliveryState = (row, deliveryState, onRetry = null) => {
+  if (!(row instanceof HTMLElement)) return;
+  const delivery = row.querySelector('.interview-message-delivery');
+  const status = row.querySelector('.interview-message-delivery-status');
+  const retryButton = row.querySelector('.interview-message-retry');
+  if (!delivery || !status || !retryButton) return;
+
+  row.classList.toggle('delivery-pending', deliveryState === 'pending');
+  row.classList.toggle('delivery-failed', deliveryState === 'failed');
+  retryButton.onclick = null;
+
+  if (deliveryState === 'pending') {
+    delivery.hidden = false;
+    status.textContent = 'Отправляем...';
+    retryButton.hidden = true;
+  } else if (deliveryState === 'failed') {
+    delivery.hidden = false;
+    status.textContent = 'Не отправлено';
+    retryButton.hidden = false;
+    retryButton.onclick = () => onRetry?.();
+  } else {
+    delivery.hidden = true;
+    status.textContent = '';
+    retryButton.hidden = true;
+  }
   scrollInterviewToBottom();
 };
 

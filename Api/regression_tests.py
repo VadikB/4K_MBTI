@@ -4,6 +4,7 @@ import json
 import secrets
 import time
 from datetime import datetime
+from pathlib import Path
 from threading import Lock
 
 from Api.agent import interviewer_agent
@@ -18,6 +19,7 @@ AUTOTEST_ORG_CODE = "__autotest__smoke"
 AUTOTEST_ORG_NAME = "__autotest__ Smoke Regression"
 AUTOTEST_DOMAIN = "autotest.local"
 AUTOTEST_EMAIL_PREFIX = "__autotest__"
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 _last_run: AdminRegressionTestRunResponse | None = None
 _lock = Lock()
@@ -30,6 +32,38 @@ FULL_RUN_STEP_NAMES = [
     "assessment_leader",
     "assertions",
     "summary",
+]
+OFFLINE_CASES_PER_USER = 2
+OFFLINE_SKILLS_PER_USER = 3
+OFFLINE_RUN_STEP_NAMES = [
+    "cleanup",
+    "organization",
+    "fixtures",
+    "sessions",
+    "assertions",
+    "summary",
+]
+TECHNICAL_TABLE_CHECKS = [
+    "users",
+    "user_identities",
+    "web_user_sessions",
+    "organizations",
+    "organization_memberships",
+    "roles",
+    "skills",
+    "assessment_level_weights",
+    "user_role_profiles",
+    "user_sessions",
+    "session_cases",
+    "session_case_messages",
+    "session_case_results",
+    "session_skill_assessments",
+    "session_case_skill_analysis",
+    "session_case_skills",
+    "session_skills",
+    "cases_registry",
+    "case_texts",
+    "case_type_passports",
 ]
 
 
@@ -45,6 +79,13 @@ def _full_run_initial_steps() -> list[AdminRegressionTestStep]:
     return [
         _step(name, "pending", "Ожидает запуска.")
         for name in FULL_RUN_STEP_NAMES
+    ]
+
+
+def _offline_run_initial_steps() -> list[AdminRegressionTestStep]:
+    return [
+        _step(name, "pending", "Ожидает запуска.")
+        for name in OFFLINE_RUN_STEP_NAMES
     ]
 
 
@@ -352,6 +393,472 @@ def _autotest_mbti_followup_answer(role_code: str) -> str:
         "договариваюсь о плане и контролирую результат. В стрессовой ситуации предпочитаю ясные приоритеты, "
         "короткую коммуникацию и проверку гипотез на данных."
     )
+
+
+def _load_offline_skill_fixtures(connection, limit: int = OFFLINE_SKILLS_PER_USER) -> list[dict]:
+    rows = connection.execute(
+        """
+        SELECT
+            s.id AS skill_id,
+            s.skill_code,
+            s.skill_name,
+            COALESCE(s.competency_name, '4K компетенции') AS competency_name,
+            cs.id AS competency_skill_id
+        FROM skills s
+        LEFT JOIN competency_skills cs ON cs.skill_code = s.skill_code
+        ORDER BY s.competency_name ASC NULLS LAST, s.id ASC
+        LIMIT %s
+        """,
+        (limit,),
+    ).fetchall()
+    fixtures = [dict(row) for row in rows]
+    if not fixtures:
+        raise RuntimeError("Не найдены skills для offline-регрессии.")
+    return fixtures
+
+
+def _offline_case_fixture(role_code: str, case_number: int) -> dict[str, str]:
+    fixture = _role_payload(role_code)
+    if case_number == 1:
+        title = "Сбой клиентского сервиса и риск нарушения SLA"
+        task = "Опишите решение по восстановлению сервиса, коммуникации с клиентом и контролю SLA."
+        context = (
+            "В телеком-сервисе Ростелеком-like возник массовый сбой. "
+            "Клиенты обращаются в поддержку, SLA близок к нарушению, команда эксплуатации просит приоритизацию."
+        )
+    else:
+        title = "Оценка идеи улучшения клиентского опыта"
+        task = "Примите решение по идее улучшения и опишите план ограниченного внедрения."
+        context = (
+            "Команда предложила изменить процесс обработки повторных обращений. "
+            "Нужно оценить влияние на клиентов, нагрузку команды, метрики качества и риски внедрения."
+        )
+    answer = (
+        f"Роль: {fixture['position']}. "
+        f"По кейсу «{title}» я фиксирую факты, выделяю влияние на клиента и SLA, назначаю ответственных, "
+        "согласую короткий план действий, задаю контрольные точки, прозрачно коммуницирую риски и проверяю результат по данным CRM."
+    )
+    return {"title": title, "task": task, "context": context, "answer": answer}
+
+
+def _insert_offline_case(
+    connection,
+    *,
+    session_id: int,
+    user_id: int,
+    role_id: int,
+    role_code: str,
+    case_number: int,
+    skill_fixtures: list[dict],
+) -> int:
+    fixture = _offline_case_fixture(role_code, case_number)
+    session_case_row = connection.execute(
+        """
+        INSERT INTO session_cases (
+            session_id, user_id, role_id, status, selection_reason,
+            planned_duration_minutes, started_at, completed_at, actual_duration_seconds
+        )
+        VALUES (%s, %s, %s, 'answered', %s, 10, NOW(), NOW(), 120)
+        RETURNING id
+        """,
+        (session_id, user_id, role_id, "__autotest__ offline fixture"),
+    ).fetchone()
+    session_case_id = int(session_case_row["id"])
+    connection.execute(
+        """
+        INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
+        VALUES (%s, %s, 'assistant', %s), (%s, %s, 'user', %s)
+        """,
+        (
+            session_case_id,
+            session_id,
+            fixture["context"] + "\n\n" + fixture["task"],
+            session_case_id,
+            session_id,
+            fixture["answer"],
+        ),
+    )
+    connection.execute(
+        """
+        INSERT INTO session_case_results (
+            session_case_id, session_id, user_id, result_status, completion_score, evaluator_summary, passed_at
+        )
+        VALUES (%s, %s, %s, 'passed', 0.82, %s, NOW())
+        ON CONFLICT (session_case_id) DO UPDATE SET
+            result_status = EXCLUDED.result_status,
+            completion_score = EXCLUDED.completion_score,
+            evaluator_summary = EXCLUDED.evaluator_summary,
+            passed_at = EXCLUDED.passed_at
+        """,
+        (session_case_id, session_id, user_id, "__autotest__ offline case result"),
+    )
+    for skill in skill_fixtures:
+        skill_id = int(skill["skill_id"])
+        connection.execute(
+            """
+            INSERT INTO session_case_skills (session_case_id, skill_id, coverage_status)
+            VALUES (%s, %s, 'covered')
+            ON CONFLICT (session_case_id, skill_id) DO UPDATE SET coverage_status = EXCLUDED.coverage_status
+            """,
+            (session_case_id, skill_id),
+        )
+        connection.execute(
+            """
+            INSERT INTO session_case_skill_analysis (
+                session_id, user_id, session_case_id, skill_id, competency_name,
+                artifact_compliance_percent, structural_elements, detected_required_blocks,
+                missing_required_blocks, block_coverage_percent, red_flags, found_evidence,
+                detected_signals, evidence_excerpt, source_message_count
+            )
+            VALUES (%s, %s, %s, %s, %s, 82, %s, %s, %s, 85, %s, %s, %s, %s, 1)
+            ON CONFLICT (session_case_id, skill_id) DO UPDATE SET
+                artifact_compliance_percent = EXCLUDED.artifact_compliance_percent,
+                structural_elements = EXCLUDED.structural_elements,
+                detected_required_blocks = EXCLUDED.detected_required_blocks,
+                missing_required_blocks = EXCLUDED.missing_required_blocks,
+                block_coverage_percent = EXCLUDED.block_coverage_percent,
+                red_flags = EXCLUDED.red_flags,
+                found_evidence = EXCLUDED.found_evidence,
+                detected_signals = EXCLUDED.detected_signals,
+                evidence_excerpt = EXCLUDED.evidence_excerpt,
+                source_message_count = EXCLUDED.source_message_count,
+                updated_at = NOW()
+            """,
+            (
+                session_id,
+                user_id,
+                session_case_id,
+                skill_id,
+                skill["competency_name"],
+                _json({"offline": True, "has_decision": True, "has_plan": True}),
+                _json(["решение", "план", "контроль SLA"]),
+                _json([]),
+                _json([]),
+                _json(["фиксирует факты", "назначает ответственных", "контролирует результат"]),
+                _json(["decision", "communication", "control"]),
+                fixture["answer"][:240],
+            ),
+        )
+    return session_case_id
+
+
+def _insert_offline_skill_assessments(
+    connection,
+    *,
+    session_id: int,
+    user_id: int,
+    skill_fixtures: list[dict],
+    session_case_ids: list[int],
+) -> None:
+    for index, skill in enumerate(skill_fixtures):
+        level_code = "L3" if index == 0 else "L2"
+        level_name = "Уверенный уровень" if level_code == "L3" else "Рабочий уровень"
+        connection.execute(
+            """
+            INSERT INTO session_skill_assessments (
+                session_id, user_id, skill_id, competency_skill_id, competency_name, skill_code, skill_name,
+                assessed_level_code, assessed_level_name, rubric_match_scores, structural_elements,
+                red_flags, found_evidence, detected_required_blocks, missing_required_blocks,
+                block_coverage_percent, rationale, evidence_excerpt, source_session_case_ids
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (session_id, skill_id)
+            DO UPDATE SET
+                competency_skill_id = EXCLUDED.competency_skill_id,
+                competency_name = EXCLUDED.competency_name,
+                skill_code = EXCLUDED.skill_code,
+                skill_name = EXCLUDED.skill_name,
+                assessed_level_code = EXCLUDED.assessed_level_code,
+                assessed_level_name = EXCLUDED.assessed_level_name,
+                rubric_match_scores = EXCLUDED.rubric_match_scores,
+                structural_elements = EXCLUDED.structural_elements,
+                red_flags = EXCLUDED.red_flags,
+                found_evidence = EXCLUDED.found_evidence,
+                detected_required_blocks = EXCLUDED.detected_required_blocks,
+                missing_required_blocks = EXCLUDED.missing_required_blocks,
+                block_coverage_percent = EXCLUDED.block_coverage_percent,
+                rationale = EXCLUDED.rationale,
+                evidence_excerpt = EXCLUDED.evidence_excerpt,
+                source_session_case_ids = EXCLUDED.source_session_case_ids,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (
+                session_id,
+                user_id,
+                int(skill["skill_id"]),
+                int(skill["competency_skill_id"]) if skill.get("competency_skill_id") is not None else None,
+                skill["competency_name"],
+                skill["skill_code"],
+                skill["skill_name"],
+                level_code,
+                level_name,
+                _json({"L1": 1, "L2": 2, "L3": 1 if level_code == "L3" else 0}),
+                _json({"offline": True, "has_structure": True, "has_evidence": True}),
+                _json([]),
+                _json(["Фикстурный ответ содержит решение, коммуникацию, контроль сроков и критерии результата."]),
+                _json(["решение", "план", "контроль"]),
+                _json([]),
+                85,
+                "__autotest__ offline оценка без вызова LLM.",
+                "Фикстурный ответ: решение, план, ответственные, контроль результата.",
+                _json(session_case_ids),
+            ),
+        )
+
+
+def _technical_file_step(name: str, relative_path: str) -> AdminRegressionTestStep:
+    path = BASE_DIR / relative_path
+    if path.is_file() and path.stat().st_size > 0:
+        return _step(name, "passed", f"{relative_path}: найден, размер {path.stat().st_size} байт.")
+    return _step(name, "failed", f"{relative_path}: файл не найден или пустой.")
+
+
+def _technical_table_step(connection, table_name: str) -> AdminRegressionTestStep:
+    exists_row = connection.execute("SELECT to_regclass(%s) AS reg", (table_name,)).fetchone()
+    if not exists_row or not exists_row["reg"]:
+        return _step(f"table_{table_name}", "failed", f"Таблица {table_name} не найдена.")
+    count_row = connection.execute(f"SELECT COUNT(*)::int AS count FROM {table_name}").fetchone()
+    return _step(f"table_{table_name}", "passed", f"Таблица {table_name}: строк {int(count_row['count'] or 0)}.")
+
+
+def _technical_data_step(connection, name: str, sql: str, success_message: str, failure_message: str) -> AdminRegressionTestStep:
+    row = connection.execute(sql).fetchone()
+    value = int(row["count"] or 0) if row and "count" in row else 0
+    if value > 0:
+        return _step(name, "passed", f"{success_message}: {value}.")
+    return _step(name, "failed", failure_message)
+
+
+def run_technical_regression() -> AdminRegressionTestRunResponse:
+    global _last_run
+
+    with _lock:
+        started_at = datetime.utcnow()
+        start_time = time.monotonic()
+        steps: list[AdminRegressionTestStep] = [
+            _technical_file_step("file_index_html", "web/index.html"),
+            _technical_file_step("file_dist_main_js", "web/dist/main.js"),
+            _technical_file_step("file_chat_css", "web/styles/screens/chat.css"),
+            _technical_file_step("file_admin_css", "web/styles/screens/admin.css"),
+            _technical_file_step("file_personal_data_consent_pdf", "web/assets/docs/personal-data-consent.pdf"),
+        ]
+        try:
+            with get_connection() as connection:
+                steps.extend(_technical_table_step(connection, table_name) for table_name in TECHNICAL_TABLE_CHECKS)
+                steps.extend(
+                    [
+                        _technical_data_step(
+                            connection,
+                            "data_roles",
+                            "SELECT COUNT(*)::int AS count FROM roles WHERE code IN ('linear_employee', 'manager', 'leader')",
+                            "Базовые роли assessment найдены",
+                            "Не найдены все базовые роли assessment.",
+                        ),
+                        _technical_data_step(
+                            connection,
+                            "data_skills",
+                            "SELECT COUNT(*)::int AS count FROM skills WHERE COALESCE(skill_code, '') <> ''",
+                            "Skills с кодами найдены",
+                            "Не найдены skills с кодами.",
+                        ),
+                        _technical_data_step(
+                            connection,
+                            "data_level_weights",
+                            "SELECT COUNT(*)::int AS count FROM assessment_level_weights WHERE level_code IN ('L1', 'L2', 'L3')",
+                            "Веса уровней оценки найдены",
+                            "Не найдены веса уровней L1/L2/L3.",
+                        ),
+                        _technical_data_step(
+                            connection,
+                            "data_case_registry",
+                            "SELECT COUNT(*)::int AS count FROM cases_registry",
+                            "Кейсы в registry найдены",
+                            "В cases_registry нет кейсов.",
+                        ),
+                        _technical_data_step(
+                            connection,
+                            "data_prompt_profiles",
+                            "SELECT COUNT(*)::int AS count FROM assessment_agent_prompt_profiles WHERE is_active IS TRUE",
+                            "Активные prompt profiles найдены",
+                            "Не найдены активные prompt profiles.",
+                        ),
+                    ]
+                )
+        except Exception as exc:
+            steps.append(_step("technical_failure", "failed", str(exc)))
+
+        failed_steps = [step for step in steps if str(step.status).lower() != "passed"]
+        status = "failed" if failed_steps else "passed"
+        finished_at = datetime.utcnow()
+        run = AdminRegressionTestRunResponse(
+            status=status,
+            title="Technical regression 30",
+            summary=(
+                "Техническая проверка 30 контуров прошла успешно."
+                if status == "passed"
+                else f"Техническая проверка нашла проблем: {len(failed_steps)}."
+            ),
+            started_at=started_at,
+            finished_at=finished_at,
+            duration_seconds=round(time.monotonic() - start_time, 2),
+            steps=steps,
+        )
+        _last_run = run
+        return run
+
+
+def run_offline_regression() -> AdminRegressionTestRunResponse:
+    global _last_run
+
+    with _lock:
+        started_at = datetime.utcnow()
+        start_time = time.monotonic()
+        steps: list[AdminRegressionTestStep] = _offline_run_initial_steps()
+        user_ids: list[int] = []
+        session_ids: list[int] = []
+        organization_id: int | None = None
+        status = "passed"
+        total_cases = 0
+
+        try:
+            _set_step_status(steps, "cleanup", "running", "Удаляем старые __autotest__ данные.")
+            with get_connection() as connection:
+                organization_id, user_ids, role_by_user_id = _create_autotest_users(connection)
+                _set_step_status(steps, "cleanup", "passed", "Предыдущие __autotest__ данные удалены.")
+                _set_step_status(steps, "organization", "passed", f"Создана организация {AUTOTEST_ORG_NAME} и 3 пользователя.")
+
+                skill_fixtures = _load_offline_skill_fixtures(connection)
+                _set_step_status(steps, "fixtures", "passed", f"Загружено skills для offline-оценок: {len(skill_fixtures)}.")
+
+                roles_by_id = {
+                    int(row["id"]): int(row["role_id"])
+                    for row in connection.execute("SELECT id, role_id FROM users WHERE id = ANY(%s)", (user_ids,)).fetchall()
+                }
+                _set_step_status(steps, "sessions", "running", "Создаем completed-сессии, кейсы, ответы и оценки без LLM.")
+                for user_id in user_ids:
+                    role_id = roles_by_id[user_id]
+                    role_code = role_by_user_id[user_id]
+                    mbti_summary = {
+                        "общий_итог": {
+                            "оценка": 62,
+                            "темперамент": "__autotest__ offline",
+                            "краткий_вывод": "Offline-регрессия создала MBTI-сводку без вызова LLM.",
+                        }
+                    }
+                    session_row = connection.execute(
+                        """
+                        INSERT INTO user_sessions (
+                            session_code, user_id, role_id, status, source, notes,
+                            assessment_code, started_at, finished_at, mbti_summary_json
+                        )
+                        VALUES (%s, %s, %s, 'completed', '__autotest__offline', 'Offline regression fixture session', 'competencies_4k', NOW(), NOW(), %s::jsonb)
+                        RETURNING id
+                        """,
+                        (f"__autotest__offline{secrets.token_hex(12)}", user_id, role_id, _json(mbti_summary)),
+                    ).fetchone()
+                    session_id = int(session_row["id"])
+                    session_ids.append(session_id)
+                    for skill in skill_fixtures:
+                        connection.execute(
+                            """
+                            INSERT INTO session_skills (session_id, skill_id, status, assigned_case_count, completed_case_count, covered_at)
+                            VALUES (%s, %s, 'covered', %s, %s, NOW())
+                            ON CONFLICT (session_id, skill_id) DO UPDATE SET
+                                status = EXCLUDED.status,
+                                assigned_case_count = EXCLUDED.assigned_case_count,
+                                completed_case_count = EXCLUDED.completed_case_count,
+                                covered_at = EXCLUDED.covered_at
+                            """,
+                            (session_id, int(skill["skill_id"]), OFFLINE_CASES_PER_USER, OFFLINE_CASES_PER_USER),
+                        )
+                    session_case_ids = [
+                        _insert_offline_case(
+                            connection,
+                            session_id=session_id,
+                            user_id=user_id,
+                            role_id=role_id,
+                            role_code=role_code,
+                            case_number=case_number,
+                            skill_fixtures=skill_fixtures,
+                        )
+                        for case_number in range(1, OFFLINE_CASES_PER_USER + 1)
+                    ]
+                    total_cases += len(session_case_ids)
+                    _insert_offline_skill_assessments(
+                        connection,
+                        session_id=session_id,
+                        user_id=user_id,
+                        skill_fixtures=skill_fixtures,
+                        session_case_ids=session_case_ids,
+                    )
+
+                _set_step_status(steps, "sessions", "passed", f"Созданы completed-сессии: {len(session_ids)}, кейсов: {total_cases}.")
+
+                completed_sessions = int(
+                    connection.execute(
+                        "SELECT COUNT(*)::int AS count FROM user_sessions WHERE id = ANY(%s) AND status = 'completed'",
+                        (session_ids,),
+                    ).fetchone()["count"]
+                    or 0
+                )
+                completed_cases = int(
+                    connection.execute(
+                        "SELECT COUNT(*)::int AS count FROM session_cases WHERE session_id = ANY(%s) AND status = 'answered'",
+                        (session_ids,),
+                    ).fetchone()["count"]
+                    or 0
+                )
+                result_rows = int(
+                    connection.execute(
+                        "SELECT COUNT(*)::int AS count FROM session_case_results WHERE session_id = ANY(%s)",
+                        (session_ids,),
+                    ).fetchone()["count"]
+                    or 0
+                )
+                skill_rows = int(
+                    connection.execute(
+                        "SELECT COUNT(*)::int AS count FROM session_skill_assessments WHERE session_id = ANY(%s)",
+                        (session_ids,),
+                    ).fetchone()["count"]
+                    or 0
+                )
+                if completed_sessions != len(user_ids):
+                    raise RuntimeError("Offline-проверка completed sessions не прошла.")
+                if completed_cases != len(user_ids) * OFFLINE_CASES_PER_USER or result_rows != completed_cases:
+                    raise RuntimeError("Offline-проверка кейсов/результатов не прошла.")
+                if skill_rows < len(user_ids):
+                    raise RuntimeError("Offline-проверка skill assessments не прошла.")
+                _set_step_status(steps, "assertions", "passed", f"Проверены sessions={completed_sessions}, cases={completed_cases}, results={result_rows}, skills={skill_rows}.")
+                _set_step_status(steps, "summary", "passed", "Offline-регрессия без LLM и генерации кейсов прошла успешно.")
+                connection.commit()
+        except Exception as exc:
+            status = "failed"
+            running_step = next((step for step in steps if step.status == "running"), None)
+            if running_step is not None:
+                running_step.status = "failed"
+                running_step.message = str(exc)
+            else:
+                steps.append(_step("failure", "failed", str(exc)))
+
+        finished_at = datetime.utcnow()
+        run = AdminRegressionTestRunResponse(
+            status=status,
+            title="Offline regression",
+            summary=(
+                "Быстрый offline-прогон без LLM прошел успешно."
+                if status == "passed"
+                else "Offline-прогон завершился с ошибкой."
+            ),
+            started_at=started_at,
+            finished_at=finished_at,
+            duration_seconds=round(time.monotonic() - start_time, 2),
+            organization_id=organization_id,
+            user_ids=user_ids,
+            session_ids=session_ids,
+            steps=steps,
+        )
+        _last_run = run
+        return run
 
 
 def _run_full_assessment_for_user(user_id: int, role_code: str) -> tuple[int, int, int]:

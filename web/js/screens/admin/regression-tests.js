@@ -5,7 +5,9 @@ import {
   adminRegressionTestsPanel,
   adminRegressionTestsResultTitle,
   adminRegressionTestsRunFullButton,
+  adminRegressionTestsRunOfflineButton,
   adminRegressionTestsRunButton,
+  adminRegressionTestsRunTechnicalButton,
   adminRegressionTestsStatus,
   adminRegressionTestsSteps,
   adminRegressionTestsSubtitle,
@@ -28,11 +30,18 @@ const STEP_LABELS = {
   assessment_linear_employee: 'Assessment: линейный сотрудник',
   assessment_manager: 'Assessment: менеджер',
   assessment_leader: 'Assessment: лидер',
+  fixtures: 'Offline fixtures',
+  sessions: 'Сессии и кейсы',
   assertions: 'Проверка результатов',
   summary: 'Итог',
 };
 
-const getStepLabel = (name) => STEP_LABELS[String(name || '')] || name || 'Шаг';
+const getTechnicalTableLabel = (name) => {
+  const normalized = String(name || '');
+  return normalized.startsWith('table_') ? 'Таблица: ' + normalized.slice(6) : null;
+};
+
+const getStepLabel = (name) => getTechnicalTableLabel(name) || STEP_LABELS[String(name || '')] || name || 'Шаг';
 
 let regressionPollTimerId = null;
 
@@ -60,6 +69,14 @@ const setButtonsDisabled = (disabled) => {
   if (adminRegressionTestsRunFullButton) {
     adminRegressionTestsRunFullButton.disabled = disabled;
     adminRegressionTestsRunFullButton.textContent = disabled ? 'Прогоняем...' : 'Полный прогон';
+  }
+  if (adminRegressionTestsRunOfflineButton) {
+    adminRegressionTestsRunOfflineButton.disabled = disabled;
+    adminRegressionTestsRunOfflineButton.textContent = disabled ? 'Готовим...' : 'Быстрый offline';
+  }
+  if (adminRegressionTestsRunTechnicalButton) {
+    adminRegressionTestsRunTechnicalButton.disabled = disabled;
+    adminRegressionTestsRunTechnicalButton.textContent = disabled ? 'Проверяем...' : 'Техническая 30';
   }
   if (adminRegressionTestsCleanupButton) {
     adminRegressionTestsCleanupButton.disabled = disabled;
@@ -159,7 +176,7 @@ export const renderAdminRegressionTests = () => {
       renderMetric('MBTI', data.mbti_enabled ? 'Включен' : 'Выключен', data.mbti_store_available ? 'Индекс доступен' : 'Индекс не загружен') +
       renderMetric('Последний запуск', lastRun ? lastRun.status : 'Нет', lastRun ? lastRun.duration_seconds + ' сек' : 'Smoke еще не запускался') +
       renderMetric('Тестовые данные', '__autotest__', data.cleanup_hint || 'Удаляются отдельно') +
-      renderMetric('Режимы', 'Smoke / Full', 'Full запускает реальные assessment-сессии');
+      renderMetric('Режимы', 'Smoke / Offline / Tech / Full', 'Offline и Tech не вызывают LLM');
   }
   if (adminRegressionTestsResultTitle) {
     adminRegressionTestsResultTitle.textContent = lastRun
@@ -220,6 +237,54 @@ export const runAdminRegressionTests = async () => {
     setStatus(data.summary || 'Smoke-регрессия завершена.', data.status === 'passed' ? 'success' : 'error');
   } catch (error) {
     setStatus(error.message || 'Не удалось запустить регрессионные тесты.', 'error');
+  } finally {
+    setButtonsDisabled(false);
+  }
+};
+
+export const runAdminOfflineRegressionTests = async () => {
+  setButtonsDisabled(true);
+  setStatus('Запускаем offline-регрессию без LLM...', 'muted');
+  try {
+    const response = await fetch('/users/admin/regression-tests/run-offline', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await readApiResponse(response, 'Не удалось запустить offline-регрессию.');
+    state.adminRegressionTests = {
+      ...(state.adminRegressionTests || {}),
+      last_run: data,
+    };
+    persistAssessmentContext();
+    renderAdminRegressionTests();
+    setStatus(data.summary || 'Offline-регрессия завершена.', data.status === 'passed' ? 'success' : 'error');
+  } catch (error) {
+    setStatus(error.message || 'Не удалось запустить offline-регрессию.', 'error');
+  } finally {
+    setButtonsDisabled(false);
+  }
+};
+
+export const runAdminTechnicalRegressionTests = async () => {
+  setButtonsDisabled(true);
+  setStatus('Запускаем техническую проверку 30 контуров...', 'muted');
+  try {
+    const response = await fetch('/users/admin/regression-tests/run-technical', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await readApiResponse(response, 'Не удалось запустить техническую проверку.');
+    state.adminRegressionTests = {
+      ...(state.adminRegressionTests || {}),
+      last_run: data,
+    };
+    persistAssessmentContext();
+    renderAdminRegressionTests();
+    setStatus(data.summary || 'Техническая проверка завершена.', data.status === 'passed' ? 'success' : 'error');
+  } catch (error) {
+    setStatus(error.message || 'Не удалось запустить техническую проверку.', 'error');
   } finally {
     setButtonsDisabled(false);
   }

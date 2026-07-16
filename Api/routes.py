@@ -39,7 +39,14 @@ from Api.report_growth_logic import (
     build_interpretation_basis_items,
     build_response_pattern_text,
 )
-from Api.regression_tests import cleanup_autotest_data, get_regression_status, run_full_regression, run_smoke_regression
+from Api.regression_tests import (
+    cleanup_autotest_data,
+    get_regression_status,
+    run_full_regression,
+    run_offline_regression,
+    run_smoke_regression,
+    run_technical_regression,
+)
 from Api.web_session_service import web_session_service
 from Api.schemas import (
     AdminDashboard,
@@ -3132,6 +3139,24 @@ def run_admin_regression_tests(request: Request) -> AdminRegressionTestRunRespon
     with get_connection() as connection:
         _require_superadmin(connection, user)
     return run_smoke_regression()
+
+
+@router.post("/admin/regression-tests/run-offline", response_model=AdminRegressionTestRunResponse)
+def run_admin_offline_regression_tests(request: Request) -> AdminRegressionTestRunResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+    return run_offline_regression()
+
+
+@router.post("/admin/regression-tests/run-technical", response_model=AdminRegressionTestRunResponse)
+def run_admin_technical_regression_tests(request: Request) -> AdminRegressionTestRunResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+    return run_technical_regression()
 
 
 @router.post("/admin/regression-tests/run-full", response_model=AdminRegressionTestRunResponse)
