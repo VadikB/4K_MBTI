@@ -106,6 +106,7 @@ from Api.schemas import (
     PromptLabUserOption,
     AgentMessageRequest,
     AgentReply,
+    AssessmentClientEventRequest,
     AssessmentMessageRequest,
     AssessmentMessageResponse,
     AssessmentTimerControlRequest,
@@ -137,6 +138,7 @@ from Api.schemas import (
 
 router = APIRouter(prefix="/users", tags=["users"])
 logger = logging.getLogger("agent4k.admin")
+assessment_logger = logging.getLogger("agent4k.assessment")
 SESSION_COOKIE_NAME = "agent4k_session_token"
 ADMIN_ROLE_CODE = "admin"
 ADMIN_ROLE_NAME = "Администратор"
@@ -5012,6 +5014,20 @@ def process_assessment_message(payload: AssessmentMessageRequest, request: Reque
     except ValueError as exc:
         operation_progress_service.fail(operation_id, message=str(exc))
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/assessment/client-event")
+def log_assessment_client_event(payload: AssessmentClientEventRequest, request: Request) -> dict:
+    assessment_logger.info(
+        "Assessment client event event=%s message_type=%s session_code=%s case_number=%s error_type=%s user_agent=%s",
+        payload.event[:64],
+        (payload.message_type or "")[:32],
+        payload.session_code[:64],
+        payload.case_number,
+        (payload.error_type or "")[:64],
+        (request.headers.get("user-agent") or "")[:240],
+    )
+    return {"ok": True}
 
 
 @router.post("/assessment/pause")

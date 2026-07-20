@@ -19,7 +19,6 @@ import {
   authError,
   chatForm,
   chatInput,
-  chatMicButton,
   restartButton,
   dashboardRestartButton,
   dashboardMobileExitButton,
@@ -111,8 +110,8 @@ import {
   adminMethodologyTabPassports,
   interviewForm,
   interviewTextarea,
-  interviewMicButton,
   interviewSubmitButton,
+  interviewSubmitLabel,
   interviewFinishButton,
   interviewError,
   interviewGoProcessingButton,
@@ -181,106 +180,6 @@ const isEditableKeyboardTarget = (target) => {
     return false;
   }
   return Boolean(target.closest('input, textarea, select, [contenteditable="true"]'));
-};
-
-const appendTranscript = (field, transcript) => {
-  const cleanTranscript = String(transcript || '').trim();
-  if (!field || !cleanTranscript) {
-    return;
-  }
-
-  const value = field.value || '';
-  const selectionStart = typeof field.selectionStart === 'number' ? field.selectionStart : value.length;
-  const selectionEnd = typeof field.selectionEnd === 'number' ? field.selectionEnd : selectionStart;
-  const before = value.slice(0, selectionStart);
-  const after = value.slice(selectionEnd);
-  const prefix = before && !/\s$/.test(before) ? ' ' : '';
-  const suffix = after && !/^\s/.test(after) ? ' ' : '';
-  const insertion = prefix + cleanTranscript + suffix;
-
-  field.value = before + insertion + after;
-  const nextPosition = before.length + insertion.length;
-  if (typeof field.setSelectionRange === 'function') {
-    field.setSelectionRange(nextPosition, nextPosition);
-  }
-  field.dispatchEvent(new Event('input', { bubbles: true }));
-  field.focus();
-};
-
-const setupSpeechInput = (button, field) => {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!button || !field || !SpeechRecognition) {
-    return;
-  }
-
-  let recognition = null;
-  let listening = false;
-  let shouldListen = false;
-
-  const syncDisabled = () => {
-    button.disabled = field.disabled;
-    if (field.disabled && recognition && listening) {
-      shouldListen = false;
-      recognition.abort();
-    }
-  };
-
-  const setListening = (nextListening) => {
-    listening = nextListening;
-    button.classList.toggle('is-listening', listening);
-    button.setAttribute('aria-pressed', listening ? 'true' : 'false');
-    button.title = listening ? 'Остановить диктовку' : 'Продиктовать ответ';
-    button.setAttribute('aria-label', button.title);
-  };
-
-  button.classList.remove('hidden');
-  button.setAttribute('aria-pressed', 'false');
-  syncDisabled();
-
-  const disabledObserver = new MutationObserver(syncDisabled);
-  disabledObserver.observe(field, { attributes: true, attributeFilter: ['disabled'] });
-
-  button.addEventListener('click', () => {
-    if (field.disabled) {
-      return;
-    }
-    if (recognition && listening) {
-      shouldListen = false;
-      recognition.stop();
-      return;
-    }
-
-    shouldListen = true;
-    recognition = new SpeechRecognition();
-    recognition.lang = 'ru-RU';
-    recognition.interimResults = false;
-    recognition.continuous = true;
-    recognition.maxAlternatives = 1;
-
-    recognition.addEventListener('start', () => setListening(true));
-    recognition.addEventListener('end', () => {
-      setListening(false);
-      if (shouldListen && !field.disabled) {
-        recognition.start();
-      }
-    });
-    recognition.addEventListener('error', (event) => {
-      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        shouldListen = false;
-      }
-      setListening(false);
-    });
-    recognition.addEventListener('result', (event) => {
-      const transcript = Array.from(event.results)
-        .slice(event.resultIndex)
-        .filter((result) => result.isFinal)
-        .map((result) => result[0]?.transcript || '')
-        .join(' ');
-      appendTranscript(field, transcript);
-    });
-
-    recognition.start();
-  });
 };
 
 const changeAdminReportsPage = (direction) => {
@@ -713,9 +612,6 @@ authTokenForm.addEventListener('submit', (event) => {
   }
   void verifyEmailMagicLinkToken();
 });
-
-setupSpeechInput(chatMicButton, chatInput);
-setupSpeechInput(interviewMicButton, interviewTextarea);
 
 chatForm.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -1539,6 +1435,31 @@ if (prechatExitButton) {
 }
 
 let failedInterviewMessage = null;
+let interviewSendInFlight = false;
+
+const setInterviewSubmitLabel = (label) => {
+  if (interviewSubmitLabel) {
+    interviewSubmitLabel.textContent = label;
+  }
+};
+
+const logAssessmentClientEvent = (event, messageType = 'answer', errorType = null) => {
+  if (!state.assessmentSessionCode) {
+    return;
+  }
+  void fetch('/users/assessment/client-event', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session_code: state.assessmentSessionCode,
+      event,
+      message_type: messageType,
+      case_number: Number(state.assessmentCaseNumber || 0) || null,
+      error_type: errorType,
+    }),
+    keepalive: true,
+  }).catch(() => {});
+};
 
 const resumeInterviewTimerAfterSendError = (interviewModule) => {
   if (!interviewModule.updateInterviewTimer()) {
@@ -1570,17 +1491,21 @@ const sendInterviewAnswer = async (text, existingMessageRow = null) => {
   interviewFinishButton.disabled = true;
   interviewModule.clearInterviewTimer();
   try {
+    logAssessmentClientEvent('request_started');
     await interviewModule.submitAssessmentMessage(text);
     interviewModule.setInterviewMessageDeliveryState(messageRow, 'sent');
+    logAssessmentClientEvent('request_succeeded');
     if (failedInterviewMessage?.row === messageRow) {
       failedInterviewMessage = null;
     }
+    return true;
   } catch (error) {
     const rawErrorMessage = String(error?.message || '');
     const errorMessage = /failed to fetch|networkerror|load failed/i.test(rawErrorMessage)
       ? 'Ответ не отправлен. Проверьте соединение и повторите попытку.'
       : rawErrorMessage || 'Не удалось отправить ответ. Проверьте соединение и попробуйте еще раз.';
     showError(interviewError, errorMessage);
+    logAssessmentClientEvent('request_failed', 'answer', error?.name || 'unknown');
     failedInterviewMessage = { row: messageRow, text };
     interviewModule.setInterviewMessageDeliveryState(messageRow, 'failed', () => {
       void sendInterviewAnswer(text, messageRow);
@@ -1593,11 +1518,14 @@ const sendInterviewAnswer = async (text, existingMessageRow = null) => {
     interviewFinishButton.disabled = false;
     interviewTextarea.focus();
     resumeInterviewTimerAfterSendError(interviewModule);
+    return false;
   }
 };
 
-interviewForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
+const submitCurrentInterviewAnswer = async () => {
+  if (interviewSendInFlight) {
+    return;
+  }
   showError(interviewError, '');
 
   const text = interviewTextarea.value.trim();
@@ -1618,14 +1546,53 @@ interviewForm.addEventListener('submit', async (event) => {
     failedInterviewMessage = null;
   }
   const reusableFailedRow = failedInterviewMessage?.text === text ? failedInterviewMessage.row : null;
-  await sendInterviewAnswer(text, reusableFailedRow);
+  interviewSendInFlight = true;
+  setInterviewSubmitLabel('Отправляем...');
+  logAssessmentClientEvent('submit_clicked');
+  try {
+    const sent = await sendInterviewAnswer(text, reusableFailedRow);
+    setInterviewSubmitLabel(sent ? 'Ответ сохранён' : 'Повторить отправку');
+    if (sent) {
+      window.setTimeout(() => setInterviewSubmitLabel('Отправить ответ'), 1200);
+    }
+  } catch (error) {
+    showError(interviewError, error?.message || 'Не удалось подготовить отправку ответа. Повторите попытку.');
+    logAssessmentClientEvent('request_failed', 'answer', error?.name || 'prepare_failed');
+    setInterviewSubmitLabel('Повторить отправку');
+    interviewTextarea.disabled = false;
+    interviewSubmitButton.disabled = false;
+    interviewFinishButton.disabled = false;
+    interviewTextarea.focus();
+  } finally {
+    interviewSendInFlight = false;
+  }
+};
+
+interviewForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  void submitCurrentInterviewAnswer();
+});
+
+interviewSubmitButton.addEventListener('click', (event) => {
+  event.preventDefault();
+  void submitCurrentInterviewAnswer();
 });
 
 interviewFinishButton.addEventListener('click', async () => {
   showError(interviewError, '');
 
+  if (interviewTextarea.value.trim()) {
+    showError(interviewError, 'В поле есть неотправленный ответ. Сначала нажмите «Отправить ответ».');
+    interviewTextarea.focus();
+    return;
+  }
+
   if (!state.assessmentSessionCode) {
     showError(interviewError, 'Сессия кейсового интервью не инициализирована.');
+    return;
+  }
+
+  if (!window.confirm('Пропустить текущий кейс? Он будет принудительно завершён.')) {
     return;
   }
 
@@ -1636,7 +1603,8 @@ interviewFinishButton.addEventListener('click', async () => {
   try {
     const interviewModule = await loadInterview();
     interviewModule.clearInterviewTimer();
-    await interviewModule.submitAssessmentMessage('__finish_case__');
+    logAssessmentClientEvent('skip_clicked', 'skip');
+    await interviewModule.submitAssessmentMessage('__skip_case__');
   } catch (error) {
     showError(interviewError, error.message);
     interviewTextarea.disabled = false;

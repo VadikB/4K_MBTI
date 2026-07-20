@@ -821,6 +821,15 @@
     line-height: var(--lh-snug);
 }
 
+.interview-form .primary-button #interview-submit-label {
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
 .interview-form .primary-button .button-icon {
     display: block;
     width: 13px;

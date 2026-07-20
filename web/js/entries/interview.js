@@ -1,6 +1,7 @@
 export {
   initInterview,
   addInterviewMessage,
+  setInterviewMessageDeliveryState,
   clearInterviewTimer,
   startAssessmentInterview,
   submitAssessmentMessage,

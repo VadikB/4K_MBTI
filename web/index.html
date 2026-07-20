@@ -1485,12 +1485,8 @@
             ></textarea>
             <div class="interview-form-footer">
               <div class="interview-action-buttons">
-                <button id="interview-mic-button" type="button" class="mic-button hidden" aria-label="Продиктовать ответ" title="Продиктовать ответ">
-                  <img class="mic-button-icon mic-button-icon-idle" src="/web/assets/icons/microphone-icon.svg" alt="" aria-hidden="true">
-                  <img class="mic-button-icon mic-button-icon-active" src="/web/assets/icons/microphone-fill-icon.svg" alt="" aria-hidden="true">
-                </button>
-                <button id="interview-finish-button" type="button" class="ghost-button interview-finish-button">Завершить кейс</button>
-                <button id="interview-submit-button" type="submit" class="primary-button">Отправить ответ<img class="button-icon" src="/web/assets/icons/arrowtriangle-forward-white-icon.svg" alt="" aria-hidden="true"></button>
+                <button id="interview-finish-button" type="button" class="ghost-button interview-finish-button" title="Принудительно завершить кейс">Пропустить</button>
+                <button id="interview-submit-button" type="button" class="primary-button"><span id="interview-submit-label">Отправить ответ</span><img class="button-icon" src="/web/assets/icons/arrowtriangle-forward-white-icon.svg" alt="" aria-hidden="true"></button>
               </div>
             </div>
           </form>
@@ -1838,10 +1834,6 @@
 
       <form id="chat-form" class="chat-form">
         <input id="chat-input" type="text" placeholder="Введите ответ..." autocomplete="off" required>
-        <button id="chat-mic-button" type="button" class="mic-button hidden" aria-label="Продиктовать ответ" title="Продиктовать ответ">
-          <img class="mic-button-icon mic-button-icon-idle" src="/web/assets/icons/microphone-icon.svg" alt="" aria-hidden="true">
-          <img class="mic-button-icon mic-button-icon-active" src="/web/assets/icons/microphone-fill-icon.svg" alt="" aria-hidden="true">
-        </button>
         <button type="submit" class="primary-button">Отправить</button>
       </form>
       <p id="chat-error" class="error" hidden></p>
@@ -1858,6 +1850,6 @@
   </div>
 
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=20260702-logout-timeout"></script>
+  <script type="module" src="/web/dist/main.js?v=2.1.22"></script>
 </body>
 </html>

@@ -926,6 +926,14 @@ class AssessmentMessageRequest(BaseModel):
     message: str
 
 
+class AssessmentClientEventRequest(BaseModel):
+    session_code: str
+    event: str
+    message_type: str | None = None
+    case_number: int | None = None
+    error_type: str | None = None
+
+
 class AssessmentTimerControlRequest(BaseModel):
     session_code: str
 

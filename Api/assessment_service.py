@@ -2310,7 +2310,7 @@ class AssessmentService:
             user_turn_count = self._get_case_user_turn_count(connection, plan.current_session_case_id)
 
             if (
-                message not in {"__timeout__", "__finish_case__", "__auto_finish_case__"}
+                message not in {"__timeout__", "__finish_case__", "__skip_case__", "__auto_finish_case__"}
                 and user_turn_count == 0
                 and case_meta["started_at"] is not None
                 and self._is_time_expired(case_meta["started_at"], case_meta["estimated_minutes"])
@@ -2376,7 +2376,7 @@ class AssessmentService:
                     progress_operation_id=progress_operation_id,
                 )
 
-            if message == "__finish_case__":
+            if message in {"__finish_case__", "__skip_case__"}:
                 dialogue_rows = connection.execute(
                     """
                     SELECT role, message_text
@@ -2386,6 +2386,8 @@ class AssessmentService:
                     """,
                     (plan.current_session_case_id,),
                 ).fetchall()
+                if message == "__finish_case__" and not any(row["role"] == "user" for row in dialogue_rows):
+                    raise ValueError("Нельзя завершить кейс без сохраненного ответа. Используйте явное действие «Пропустить».")
                 prompt_row = connection.execute(
                     """
                     SELECT final_prompt_text
@@ -2397,12 +2399,22 @@ class AssessmentService:
                     """,
                     (plan.current_session_case_id,),
                 ).fetchone()
-                finish_turn = deepseek_client.build_manual_finish_turn(
-                    system_prompt=prompt_row["final_prompt_text"] if prompt_row else "",
-                    dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
-                    case_title=case_meta["title"],
-                    case_skills=self._get_case_skill_names(connection, plan.current_session_case_id),
-                )
+                if message == "__skip_case__":
+                    user_turn_count = sum(1 for row in dialogue_rows if row["role"] == "user")
+                    finish_turn = DeepSeekTurnResult(
+                        assistant_message=f"Кейс «{case_meta['title']}» принудительно завершен по вашей команде.",
+                        is_case_complete=True,
+                        result_status="passed" if user_turn_count > 0 else "skipped",
+                        completion_score=None,
+                        evaluator_summary="",
+                    )
+                else:
+                    finish_turn = deepseek_client.build_manual_finish_turn(
+                        system_prompt=prompt_row["final_prompt_text"] if prompt_row else "",
+                        dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
+                        case_title=case_meta["title"],
+                        case_skills=self._get_case_skill_names(connection, plan.current_session_case_id),
+                    )
                 connection.execute(
                     """
                     INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
@@ -2901,6 +2913,19 @@ class AssessmentService:
             user_id=session_row["user_id"],
             turn=turn,
         )
+        if turn.result_status == "skipped":
+            return self._advance_after_completed_case(
+                connection=connection,
+                session_row=session_row,
+                completed_plan=plan,
+                session_code=session_code,
+                completion_message=turn.assistant_message,
+                result_status=turn.result_status,
+                time_expired=time_expired,
+                mbti_case_result=None,
+                mbti_followup_questions=None,
+                progress_operation_id=progress_operation_id,
+            )
         completed_case_row = self._get_case_for_session_case(connection, plan.current_session_case_id)
         completed_case_context = self._get_personalized_case_context(connection, plan.current_session_case_id, completed_case_row)
         completed_case_task = self._get_personalized_case_task(connection, plan.current_session_case_id, completed_case_row)
@@ -3493,7 +3518,7 @@ class AssessmentService:
         history_fields = self._get_session_case_history_fields(connection, session_case_id)
         effective_minutes = pending_row["planned_duration_minutes"] or pending_row["estimated_minutes"]
 
-        if message in {"__timeout__", "__finish_case__", "__auto_finish_case__"}:
+        if message in {"__timeout__", "__finish_case__", "__skip_case__", "__auto_finish_case__"}:
             prompt = self._build_mbti_followup_prompt(questions, len(answers))
             connection.commit()
             return AssessmentTurnReply(
