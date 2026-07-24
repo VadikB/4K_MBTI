@@ -70,6 +70,21 @@
     white-space: nowrap;
 }
 
+.admin-report-download-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+}
+
+.admin-report-download-option .admin-report-download-choice {
+    flex: 0 0 auto;
+}
+
 .admin-reports-table-card {
     --admin-reports-grid-columns:
         32px minmax(160px, 1.3fr) minmax(180px, 1fr)

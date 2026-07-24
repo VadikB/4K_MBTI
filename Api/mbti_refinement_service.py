@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from Api.config import settings
+from Api.database import get_active_llm_prompt, get_connection
 from Api.deepseek_client import deepseek_client
 
 
@@ -66,6 +67,14 @@ class MbtiRefinementService:
         for key, value in values.items():
             result = result.replace('{{' + key + '}}', value)
         return result.strip()
+
+    def _prompt(self, prompt_code: str, fallback: str) -> str:
+        try:
+            with get_connection() as connection:
+                stored = get_active_llm_prompt(connection, prompt_code)
+        except Exception:
+            stored = None
+        return str(stored or fallback or '').strip()
 
     def _get_session_row(self, connection, *, user_id: int, session_id: int):
         return connection.execute(
@@ -332,7 +341,7 @@ class MbtiRefinementService:
             return updated
 
         prompt = self._render(
-            self.REFINE_SUMMARY_PROMPT,
+            self._prompt('mbti.refinement', self.REFINE_SUMMARY_PROMPT),
             {
                 'source_summary_json': json.dumps(source_summary, ensure_ascii=False, indent=2),
                 'answers_json': json.dumps(answers, ensure_ascii=False, indent=2),
@@ -341,7 +350,13 @@ class MbtiRefinementService:
         try:
             raw = deepseek_client._post_chat(
                 [
-                    {'role': 'system', 'content': 'Ты уточняешь уже существующую MBTI-сводку и возвращаешь только JSON.'},
+                    {
+                        'role': 'system',
+                        'content': self._prompt(
+                            'mbti.refinement_system',
+                            'Ты уточняешь уже существующую MBTI-сводку и возвращаешь только JSON.',
+                        ),
+                    },
                     {'role': 'user', 'content': prompt},
                 ],
                 temperature=0.0,

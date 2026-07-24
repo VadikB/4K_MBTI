@@ -1,6 +1,7 @@
 import { state, persistAssessmentContext, safeStorage, STORAGE_KEYS, setCurrentScreen } from '../state.js';
 import {
   messages,
+  chatProfileConfirmation,
   statusCard,
   chatPanel,
   chatForm,
@@ -57,6 +58,101 @@ import { openOnboardingScreen } from '../screen-loaders.js';
 const PERSONAL_DATA_CONSENT_URL = '/web/assets/docs/personal-data-consent.pdf';
 
 const getChatSubmitButton = () => chatForm.querySelector('button[type="submit"]');
+
+const renderProfileConfirmation = () => {
+  if (!chatProfileConfirmation) return;
+  const user = state.pendingUser;
+  const shouldShow = Boolean(user && state.sessionId && !state.isNewUserFlow && !state.completed);
+  chatProfileConfirmation.replaceChildren();
+  chatProfileConfirmation.classList.toggle('hidden', !shouldShow);
+  if (!shouldShow) return;
+  chatForm.classList.add('hidden');
+  statusCard.classList.add('hidden');
+  chatRoleOptions.classList.add('hidden');
+  chatConsentDetails?.classList.add('hidden');
+
+  const form = document.createElement('form');
+  const consentRecorded = Boolean(user.personal_data_consent_accepted_at);
+  const roles = Array.isArray(state.pendingRoleOptions) ? state.pendingRoleOptions : [];
+  form.className = 'chat-profile-form';
+  form.innerHTML = `
+    <header><h3>Проверьте профиль</h3><p>Подтвердите сохранённые данные или исправьте их перед продолжением.</p></header>
+    <div class="chat-profile-grid">
+      <label>ФИО<input name="full_name" required value="${escapeHtml(user.full_name || '')}"></label>
+      <label>Email<input name="email" type="email" required value="${escapeHtml(user.email || '')}"></label>
+      <label>Telegram<input name="telegram" placeholder="@username" value="${escapeHtml(user.telegram || '')}"></label>
+      <label>Должность<input name="position" required value="${escapeHtml(user.raw_position || user.job_description || '')}"></label>
+      <label class="chat-profile-wide">Должностные обязанности<textarea name="duties" required rows="3">${escapeHtml(user.raw_duties || user.normalized_duties || '')}</textarea></label>
+      <label>Роль<select name="role_id" required>${roles.map((role) => `<option value="${role.id}" ${Number(role.id) === Number(user.role_id) ? 'selected' : ''}>${escapeHtml(role.name)}</option>`).join('')}</select></label>
+      <label>Сфера деятельности<input name="company_industry" required value="${escapeHtml(user.company_industry || '')}"></label>
+    </div>
+    <label class="chat-profile-consent"><input name="consent_accepted" type="checkbox" ${consentRecorded ? 'checked disabled' : 'required'}><span>${consentRecorded ? 'Согласие на обработку персональных данных уже принято' : 'Согласен на обработку персональных данных'} · <a href="${PERSONAL_DATA_CONSENT_URL}" target="_blank" rel="noopener noreferrer">Открыть документ</a></span></label>
+    <button class="primary-button" type="submit">Подтвердить профиль</button>`;
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const submitButton = form.querySelector('button[type="submit"]');
+    const values = Object.fromEntries(new FormData(form).entries());
+    submitButton.disabled = true;
+    submitButton.textContent = 'Сохраняем профиль…';
+    showError(chatError, '');
+    const operationId = createOperationId();
+    showLoader(
+      'Актуализируем профиль',
+      'Сохраняем данные и подготавливаем переход к следующему экрану.',
+      loaderFlows.createOrUpdateProfile,
+    );
+    startLoaderProgressPolling(operationId);
+    try {
+      const response = await fetch('/users/agent/profile/confirm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Agent4K-Operation-Id': operationId,
+        },
+        body: JSON.stringify({
+          session_id: state.sessionId,
+          full_name: values.full_name,
+          email: values.email,
+          telegram: values.telegram || null,
+          position: values.position,
+          duties: values.duties,
+          role_id: Number(values.role_id),
+          company_industry: values.company_industry,
+          consent_accepted: consentRecorded || values.consent_accepted === 'on',
+        }),
+      });
+      const data = await readApiResponse(response, 'Не удалось сохранить профиль.');
+      state.pendingUser = data.user || state.pendingUser;
+      state.dashboard = data.dashboard || state.dashboard;
+      state.completed = Boolean(data.completed);
+      state.pendingAgentMessage = data.message;
+      addMessage('bot', data.message);
+      setStatus({user: state.pendingUser});
+      persistAssessmentContext();
+      renderProfileConfirmation();
+      chatForm.classList.add('hidden');
+      hideLoader();
+      if (state.resumeAssessmentAfterProfileCompletion) {
+        state.resumeAssessmentAfterProfileCompletion = false;
+        persistAssessmentContext();
+        if (state.dashboard) {
+          openDashboard();
+        }
+        void beginAssessmentPreparation({force: true});
+      } else if (state.dashboard) {
+        openDashboard();
+      } else {
+        returnToStart();
+      }
+    } catch (error) {
+      hideLoader();
+      showError(chatError, error.message);
+      submitButton.disabled = false;
+      submitButton.textContent = 'Подтвердить профиль';
+    }
+  });
+  chatProfileConfirmation.appendChild(form);
+};
 
 export const clearProcessingTimer = () => {
   if (state.processingTimerId) {
@@ -358,8 +454,9 @@ export const openChat = () => {
     addMessage('bot', state.pendingAgentMessage);
   }
   renderChatRoleOptions();
+  renderProfileConfirmation();
   if (!state.completed) {
-    chatInput.focus();
+    if (state.isNewUserFlow) chatInput.focus();
   }
 };
 
@@ -430,6 +527,7 @@ export const sendChatMessage = async (text, displayText = null) => {
       hideLoader();
     }
     renderChatRoleOptions();
+    renderProfileConfirmation();
     persistAssessmentContext();
 
     if (state.completed) {

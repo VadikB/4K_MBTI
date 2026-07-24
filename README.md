@@ -100,7 +100,7 @@ DB_NAME=app_db_mbti
 DB_USER=app_user
 DB_PASSWORD=...
 
-DEEPSEEK_API_KEY=...
+DEEPSEEK_API_KEYS=key_1,key_2,key_3
 DEEPSEEK_BASE_URL=...
 DEEPSEEK_MODEL=...
 
@@ -115,6 +115,12 @@ MBTI_FOLLOWUP_SCORE_THRESHOLD=60
 ```
 
 `SUPERADMIN_EMAILS` задает суперадминов через email. Несколько адресов можно перечислить через запятую.
+
+`DEEPSEEK_API_KEYS` задает пул ключей через запятую. Клиент равномерно
+распределяет разные пользовательские сессии по пулу и при ошибке автоматически
+пробует следующий ключ. Для обратной совместимости поддерживаются
+`DEEPSEEK_API_KEY`, `DEEPSEEK_API_KEY_2` и `DEEPSEEK_API_KEY_3`; дубликаты
+удаляются автоматически.
 
 ### 3. База данных
 

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from Api.config import BASE_DIR, settings
+from Api.database import get_active_llm_prompt, get_connection
 from Api.deepseek_client import deepseek_client
 from Api.mbti.prompts import FOLLOWUP_PROMPT, PAIR_EVALUATION_PROMPT, SUMMARY_PROMPT, SYSTEM_PROMPT
 
@@ -51,6 +52,14 @@ class MbtiAssessmentService:
         for key, value in values.items():
             result = result.replace("{{" + key + "}}", value)
         return result.strip()
+
+    def _prompt(self, prompt_code: str, fallback: str) -> str:
+        try:
+            with get_connection() as connection:
+                stored = get_active_llm_prompt(connection, prompt_code)
+        except Exception:
+            stored = None
+        return str(stored or fallback or "").strip()
 
     def _parse_json_object(self, raw: str) -> dict[str, Any] | None:
         text = str(raw or "").strip()
@@ -139,7 +148,7 @@ class MbtiAssessmentService:
         query = "\n".join(part for part in [case_title, case_context, case_task, answer_text] if str(part or "").strip())
         results = store.search(query, top_k=settings.mbti_top_k)
         prompt = self._render(
-            PAIR_EVALUATION_PROMPT,
+            self._prompt("mbti.case_evaluation", PAIR_EVALUATION_PROMPT),
             {
                 "case_title": case_title,
                 "case_context": case_context,
@@ -151,7 +160,7 @@ class MbtiAssessmentService:
         try:
             raw = deepseek_client._post_chat(
                 [
-                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "system", "content": self._prompt("mbti.system", SYSTEM_PROMPT)},
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.0,
@@ -192,7 +201,7 @@ class MbtiAssessmentService:
         if max_questions <= 0:
             return []
         prompt = self._render(
-            FOLLOWUP_PROMPT,
+            self._prompt("mbti.followup", FOLLOWUP_PROMPT),
             {
                 "case_title": case_title,
                 "case_task": case_task,
@@ -204,7 +213,7 @@ class MbtiAssessmentService:
         try:
             raw = deepseek_client._post_chat(
                 [
-                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "system", "content": self._prompt("mbti.system", SYSTEM_PROMPT)},
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.0,
@@ -270,13 +279,13 @@ class MbtiAssessmentService:
             return None
 
         prompt = self._render(
-            SUMMARY_PROMPT,
+            self._prompt("mbti.session_summary", SUMMARY_PROMPT),
             {"case_results_json": json.dumps(case_results, ensure_ascii=False, indent=2)},
         )
         try:
             raw = deepseek_client._post_chat(
                 [
-                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "system", "content": self._prompt("mbti.system", SYSTEM_PROMPT)},
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.0,

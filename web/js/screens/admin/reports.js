@@ -18,6 +18,10 @@ import {
   adminReportsGroupDialogList,
   adminReportsGroupDialogSummary,
   adminReportsGroupDialogExport,
+  adminReportDownloadDialog,
+  adminReportDownloadDialogTitle,
+  adminReportDownloadDialogSummary,
+  adminReportDownloadDialogList,
   adminReportsBackButton,
 } from '../../dom.js';
 import { ADMIN_REPORTS_PAGE_SIZE } from '../../config.js';
@@ -48,6 +52,52 @@ export const getFilteredAdminReports = () => {
       .toLowerCase();
     return haystack.includes(query);
   });
+};
+
+const openReportDownloadDialog = (userId) => {
+  if (!adminReportDownloadDialog || !adminReportDownloadDialogList) {
+    return;
+  }
+  const userReports = (Array.isArray(state.adminReports?.items) ? state.adminReports.items : [])
+    .filter((item) => Number(item.user_id) === Number(userId))
+    .sort((left, right) => {
+      const leftDate = new Date(left.finished_at || left.started_at || 0).getTime();
+      const rightDate = new Date(right.finished_at || right.started_at || 0).getTime();
+      return rightDate - leftDate || Number(right.session_id) - Number(left.session_id);
+    });
+  const userName = userReports[0]?.full_name || 'Пользователь';
+  adminReportDownloadDialogTitle.textContent = 'Выберите отчет — ' + userName;
+  adminReportDownloadDialogSummary.textContent =
+    'Доступно отчетов: ' + userReports.length + '. Выберите прохождение по дате.';
+  adminReportDownloadDialogList.innerHTML = userReports
+    .map((item) => {
+      const scoreLabel = typeof item.score_percent === 'number' ? item.score_percent + '%' : 'Без оценки';
+      const disabled = item.status !== 'Завершено';
+      return (
+        '<div class="admin-report-download-option">' +
+        '<div class="admin-prompt-lab-case-option-copy">' +
+        '<strong>' + escapeHtml(formatAdminReportDate(item)) + '</strong>' +
+        '<small>' + escapeHtml(item.status) + ' · ' + escapeHtml(scoreLabel) + ' · сессия ' + Number(item.session_id) + '</small>' +
+        '</div>' +
+        '<button class="ghost-button compact-ghost admin-report-download-choice" type="button" data-session-id="' +
+        Number(item.session_id) +
+        '" data-user-id="' +
+        Number(item.user_id) +
+        '"' +
+        (disabled ? ' disabled title="Отчет станет доступен после завершения"' : '') +
+        '>Скачать PDF</button>' +
+        '</div>'
+      );
+    })
+    .join('');
+  adminReportDownloadDialogList.querySelectorAll('.admin-report-download-choice').forEach((button) => {
+    button.addEventListener('click', () => {
+      const selectedUserId = Number(button.dataset.userId);
+      const sessionId = Number(button.dataset.sessionId);
+      window.location.href = '/users/' + selectedUserId + '/assessment/' + sessionId + '/report.pdf';
+    });
+  });
+  adminReportDownloadDialog.showModal();
 };
 
 export const renderAdminReports = () => {
@@ -201,7 +251,7 @@ export const renderAdminReports = () => {
       reportDownloadButton.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        window.location.href = '/users/' + item.user_id + '/assessment/' + item.session_id + '/report.pdf';
+        openReportDownloadDialog(item.user_id);
       });
     }
     row.addEventListener('click', openDetail);

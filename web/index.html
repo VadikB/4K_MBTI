@@ -925,6 +925,20 @@
           </div>
         </form>
       </dialog>
+
+      <dialog id="admin-report-download-dialog" class="admin-prompt-lab-case-dialog">
+        <form method="dialog" class="card card--lg admin-prompt-lab-case-dialog-card">
+          <div class="admin-prompt-lab-case-dialog-head">
+            <div>
+              <p class="section-label accent-label">Отчеты пользователя</p>
+              <h3 id="admin-report-download-dialog-title">Выберите отчет</h3>
+            </div>
+            <button type="submit" class="ghost-button compact-ghost">Закрыть</button>
+          </div>
+          <div id="admin-report-download-dialog-summary" class="admin-prompt-lab-case-picker-summary"></div>
+          <div id="admin-report-download-dialog-list" class="admin-prompt-lab-case-dialog-list"></div>
+        </form>
+      </dialog>
     </section>
 
     <section class="panel admin-prompt-lab-panel hidden" id="admin-prompt-lab-panel">
@@ -1829,6 +1843,7 @@
 
       <div id="status-card" class="status-card hidden"></div>
       <div id="messages" class="messages"></div>
+      <div id="chat-profile-confirmation" class="chat-profile-confirmation hidden"></div>
       <div id="chat-consent-details" class="chat-consent-details hidden"></div>
       <div id="chat-role-options" class="chat-role-options hidden"></div>
 

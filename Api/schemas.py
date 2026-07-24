@@ -882,6 +882,34 @@ class AgentMessageRequest(BaseModel):
     message: str
 
 
+class AgentProfileConfirmRequest(BaseModel):
+    session_id: str
+    full_name: str
+    email: str
+    telegram: str | None = None
+    position: str
+    duties: str
+    role_id: int
+    company_industry: str
+    consent_accepted: bool = False
+
+    @field_validator("session_id", "full_name", "email", "position", "duties", "company_industry", mode="before")
+    @classmethod
+    def normalize_required_text(cls, value: object) -> str:
+        normalized = str(value or "").strip()
+        if not normalized:
+            raise ValueError("Заполните обязательные поля профиля.")
+        return normalized
+
+    @field_validator("email")
+    @classmethod
+    def validate_profile_email(cls, value: str) -> str:
+        local, separator, domain = value.partition("@")
+        if not separator or not local or "." not in domain:
+            raise ValueError("Введите корректный email.")
+        return value
+
+
 class AssessmentStartResponse(BaseModel):
     session_code: str
     session_id: int

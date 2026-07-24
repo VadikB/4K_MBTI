@@ -2890,6 +2890,8 @@ class InterviewerAgent:
         selected_role_id: int | None,
         company_industry: str | None,
         telegram: str | None = None,
+        full_name: str | None = None,
+        email: str | None = None,
         progress_operation_id: str | None = None,
     ) -> tuple[UserResponse, RoleMatch | None]:
         normalization = build_profile_normalization_result(
@@ -2920,7 +2922,9 @@ class InterviewerAgent:
             row = connection.execute(
                 """
                 UPDATE users
-                SET job_description = %s,
+                SET full_name = COALESCE(%s, full_name),
+                    email = COALESCE(%s, email),
+                    job_description = %s,
                     role_id = %s,
                     telegram = COALESCE(%s, telegram),
                     company_industry = %s
@@ -2928,6 +2932,8 @@ class InterviewerAgent:
                 RETURNING id
                 """,
                 (
+                    full_name,
+                    email,
                     clean_position,
                     selected_role_match.role_id if selected_role_match else None,
                     normalized_telegram,
@@ -2979,45 +2985,11 @@ class InterviewerAgent:
                 consent_text=consent_text,
                 company_industry=user.company_industry,
             )
-            if initial_stage == ConversationStage.ASK_PERSONAL_DATA_CONSENT:
-                reply_text = (
-                    f"Пользователь найден: {user.full_name}. "
-                    "Пожалуйста, ознакомьтесь с текстом согласия ниже и подтвердите выбор."
-                )
-            elif initial_stage == ConversationStage.ASK_ROLE:
-                reply_text = (
-                    f"Пользователь найден: {user.full_name}. "
-                    "Чтобы продолжить работу с кейсами, " + self._build_role_selection_guidance(include_intro=False)
-                )
-            elif initial_stage == ConversationStage.ASK_TELEGRAM:
-                reply_text = (
-                    f"Пользователь найден: {user.full_name}. "
-                    "Чтобы продолжить работу с кейсами, укажите ваш Telegram username, например @username. "
-                    "Если Telegram нет, напишите «нет»."
-                )
-            elif initial_stage == ConversationStage.ASK_COMPANY_INDUSTRY:
-                reply_text = (
-                    f"Пользователь найден: {user.full_name}. "
-                    "Чтобы продолжить работу с кейсами, укажите сферу деятельности компании, "
-                    "в которой вы работаете. Например: банк, retail, телеком, производство, IT-продукт."
-                )
-            elif missing_stage == ConversationStage.ASK_POSITION:
-                reply_text = (
-                    f"Пользователь найден: {user.full_name}. "
-                    "Чтобы продолжить работу с кейсами, укажите вашу должность. Это обязательное поле."
-                )
-            elif missing_stage == ConversationStage.ASK_DUTIES:
-                reply_text = (
-                    f"Пользователь найден: {user.full_name}. "
-                    "Чтобы продолжить работу с кейсами, опишите ваши должностные обязанности. Это обязательное поле."
-                )
-            else:
-                reply_text = (
-                    f"Пользователь найден: {user.full_name}. "
-                    "Нужно ли внести изменения в должность и должностные обязанности? "
-                    "Если изменений нет, просто напишите, что профиль актуален или что ничего не изменилось. "
-                    "Если изменения есть, отправьте сначала актуальную должность."
-                )
+            reply_text = (
+                f"Пользователь найден: {user.full_name}. "
+                "Проверьте сохранённые данные в форме ниже. Вы можете подтвердить профиль без изменений "
+                "или отредактировать нужные поля перед продолжением."
+            )
         else:
             consent_version, consent_title, consent_text = self._build_personal_data_consent_prompt()
             state = ConversationState(
@@ -3048,7 +3020,7 @@ class InterviewerAgent:
             consent_text=state.consent_text if state.stage == ConversationStage.ASK_PERSONAL_DATA_CONSENT else None,
             action_options=self._build_personal_data_consent_actions() if state.stage == ConversationStage.ASK_PERSONAL_DATA_CONSENT else None,
             user=user,
-            role_options=self._build_role_options() if state.stage == ConversationStage.ASK_ROLE else None,
+            role_options=self._build_role_options() if user is not None or state.stage == ConversationStage.ASK_ROLE else None,
         )
 
     def reply(self, session_id: str, message: str, progress_operation_id: str | None = None) -> AgentReply:
@@ -3075,6 +3047,70 @@ class InterviewerAgent:
 
         self._persist_session(state)
         return reply
+
+    def confirm_existing_profile(
+        self,
+        *,
+        session_id: str,
+        full_name: str,
+        email: str,
+        telegram: str | None,
+        position: str,
+        duties: str,
+        selected_role_id: int,
+        company_industry: str,
+        consent_accepted: bool,
+        authenticated_user_id: int,
+        progress_operation_id: str | None = None,
+    ) -> AgentReply:
+        with self._lock:
+            state = self._sessions.get(session_id)
+        if state is None:
+            state = self._restore_session(session_id)
+        if state is None or state.mode != ConversationMode.EXISTING_USER or not state.user_id:
+            raise KeyError("Session not found")
+        if state.user_id != authenticated_user_id:
+            raise PermissionError("Profile session does not belong to the authenticated user")
+        if state.user and state.user.personal_data_consent_accepted_at is None and not consent_accepted:
+            raise ValueError("Необходимо подтвердить согласие на обработку персональных данных.")
+        if self._resolve_selected_role(str(selected_role_id)) is None:
+            raise ValueError("Выберите роль из списка.")
+
+        if consent_accepted and state.user and state.user.personal_data_consent_accepted_at is None:
+            state.user = self._record_user_personal_data_consent(
+                state.user_id, state.consent_version, state.consent_text
+            )
+        user, role_match = self.update_user(
+            user_id=state.user_id,
+            position=position,
+            duties=duties,
+            selected_role_id=selected_role_id,
+            telegram=telegram,
+            full_name=full_name.strip(),
+            email=email.strip(),
+            company_industry=company_industry,
+            progress_operation_id=progress_operation_id,
+        )
+        state.user = user
+        state.position = position
+        state.duties = duties
+        state.selected_role_id = selected_role_id
+        state.telegram = telegram
+        state.company_industry = company_industry
+        state.stage = ConversationStage.COMPLETE
+        reply_text = "Профиль подтвержден и сохранен. " + self._build_role_reply_suffix(role_match)
+        state.history.extend([
+            {"role": "user", "content": "Подтверждение профиля через форму"},
+            {"role": "assistant", "content": reply_text},
+        ])
+        self._persist_session(state)
+        return AgentReply(
+            session_id=state.session_id,
+            message=reply_text,
+            stage=state.stage,
+            completed=True,
+            user=user,
+        )
 
     def _build_role_reply_suffix(self, role_match: RoleMatch | None) -> str:
         if role_match is None:

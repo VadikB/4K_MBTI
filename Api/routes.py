@@ -105,6 +105,7 @@ from Api.schemas import (
     PromptLabPromptVersion,
     PromptLabUserOption,
     AgentMessageRequest,
+    AgentProfileConfirmRequest,
     AgentReply,
     AssessmentClientEventRequest,
     AssessmentMessageRequest,
@@ -4938,6 +4939,49 @@ def process_agent_message(payload: AgentMessageRequest, request: Request, respon
     except ValueError as exc:
         operation_progress_service.fail(operation_id, message=str(exc))
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/agent/profile/confirm", response_model=AgentReply)
+def confirm_agent_profile(payload: AgentProfileConfirmRequest, request: Request, response: FastAPIResponse) -> AgentReply:
+    operation_id = request.headers.get("X-Agent4K-Operation-Id")
+    try:
+        authenticated_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+        if authenticated_user is None:
+            raise HTTPException(status_code=401, detail="Требуется авторизация")
+        operation_progress_service.begin(
+            operation_id,
+            title="Подтверждаем профиль",
+            message="Сохраняем актуальные данные профиля.",
+            steps=PROFILE_SAVE_STEPS,
+        )
+        reply = interviewer_agent.confirm_existing_profile(
+            session_id=payload.session_id,
+            full_name=payload.full_name,
+            email=payload.email,
+            telegram=payload.telegram,
+            position=payload.position,
+            duties=payload.duties,
+            selected_role_id=payload.role_id,
+            company_industry=payload.company_industry,
+            consent_accepted=payload.consent_accepted,
+            authenticated_user_id=authenticated_user.id,
+            progress_operation_id=operation_id,
+        )
+        if reply.user is not None:
+            with get_connection() as connection:
+                reply = reply.model_copy(update={"dashboard": _build_dashboard(connection, reply.user)})
+            _set_user_session_cookie(response, web_session_service.create_session(reply.user.id))
+        operation_progress_service.complete(operation_id, title="Профиль готов", message="Данные подтверждены.")
+        return reply
+    except KeyError as exc:
+        operation_progress_service.fail(operation_id, message=str(exc))
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        operation_progress_service.fail(operation_id, message=str(exc))
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except PermissionError as exc:
+        operation_progress_service.fail(operation_id, message=str(exc))
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @router.post("/{user_id}/assessment/start", response_model=AssessmentStartResponse)

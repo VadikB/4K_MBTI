@@ -2741,6 +2741,19 @@ def ensure_core_schema() -> None:
     with get_connection() as connection:
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS llm_prompts (
+                prompt_code TEXT PRIMARY KEY,
+                prompt_name TEXT NOT NULL,
+                prompt_text TEXT NOT NULL,
+                prompt_version INTEGER NOT NULL DEFAULT 1,
+                is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
             CREATE TABLE IF NOT EXISTS consent_documents (
                 id SERIAL PRIMARY KEY,
                 consent_code TEXT NOT NULL UNIQUE,
@@ -4947,9 +4960,8 @@ def ensure_core_schema() -> None:
                     ),
                 )
 
-        # Prompt contents for assessment agents and interviewer are maintained
-        # directly in the database by an Administrator. The application runtime
-        # must not seed or update them automatically.
+        # Assessment-agent and interviewer prompts are maintained directly in
+        # the database by an Administrator and are not overwritten here.
 
         recompute_case_quality_checks(connection)
         connection.commit()
@@ -4973,6 +4985,22 @@ def get_active_interviewer_prompt(connection: psycopg.Connection, prompt_code: s
         """
         SELECT prompt_text
         FROM interviewer_agent_prompts
+        WHERE prompt_code = %s
+          AND is_active = TRUE
+        LIMIT 1
+        """,
+        (prompt_code,),
+    ).fetchone()
+    if row is None:
+        return None
+    return str(row["prompt_text"] or "").strip() or None
+
+
+def get_active_llm_prompt(connection: psycopg.Connection, prompt_code: str) -> str | None:
+    row = connection.execute(
+        """
+        SELECT prompt_text
+        FROM llm_prompts
         WHERE prompt_code = %s
           AND is_active = TRUE
         LIMIT 1
