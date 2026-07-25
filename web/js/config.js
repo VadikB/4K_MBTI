@@ -1,6 +1,8 @@
-export const APP_RELEASE = "2.1.24";
+export const APP_RELEASE = "2.1.25";
 export const PROFILE_NO_CHANGES_LABEL = "Профиль актуален";
 export const PROFILE_NO_CHANGES_MESSAGE = "Профиль актуален";
+export const DUTIES_DETAIL_EXAMPLE =
+    "Например: обрабатываю обращения клиентов, уточняю проблему, консультирую по продукту, фиксирую результат в системе и передаю сложные случаи разработчикам.";
 
 export const ADMIN_EMAIL = "admin@agent4k.local";
 export const PROFILE_HISTORY_PAGE_SIZE = 10;

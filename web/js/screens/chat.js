@@ -29,6 +29,7 @@ import {
   loaderFlows,
   PROFILE_NO_CHANGES_LABEL,
   PROFILE_NO_CHANGES_MESSAGE,
+  DUTIES_DETAIL_EXAMPLE,
 } from '../config.js';
 import { readApiResponse, createOperationId } from '../api.js';
 import {
@@ -82,7 +83,7 @@ const renderProfileConfirmation = () => {
       <label>Email<input name="email" type="email" required value="${escapeHtml(user.email || '')}"></label>
       <label>Telegram<input name="telegram" placeholder="@username" value="${escapeHtml(user.telegram || '')}"></label>
       <label>Должность<input name="position" required value="${escapeHtml(user.raw_position || user.job_description || '')}"></label>
-      <label class="chat-profile-wide">Должностные обязанности<textarea name="duties" required rows="3">${escapeHtml(user.raw_duties || user.normalized_duties || '')}</textarea></label>
+      <label class="chat-profile-wide">Должностные обязанности<textarea name="duties" required rows="3" aria-describedby="duties-detail-example" placeholder="${escapeHtml(DUTIES_DETAIL_EXAMPLE)}">${escapeHtml(user.raw_duties || user.normalized_duties || '')}</textarea><span id="duties-detail-example" class="chat-profile-field-hint">Опишите конкретные действия, зоны ответственности и взаимодействие с коллегами. ${escapeHtml(DUTIES_DETAIL_EXAMPLE)}</span></label>
       <label>Роль<select name="role_id" required>${roles.map((role) => `<option value="${role.id}" ${Number(role.id) === Number(user.role_id) ? 'selected' : ''}>${escapeHtml(role.name)}</option>`).join('')}</select></label>
       <label>Сфера деятельности<input name="company_industry" required value="${escapeHtml(user.company_industry || '')}"></label>
     </div>

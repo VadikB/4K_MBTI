@@ -1474,6 +1474,15 @@
             <p id="interview-case-status">Ожидается запуск интервью</p>
           </div>
 
+          <aside class="interview-case-guide" aria-labelledby="interview-case-guide-title">
+            <strong id="interview-case-guide-title">Как работать с кейсом</strong>
+            <ol>
+              <li>Изучите ситуацию и опишите своё решение в поле ответа.</li>
+              <li><b>«Отправить ответ»</b> сохраняет сообщение и продолжает диалог с AI. Если появится уточняющий вопрос, ответьте и снова нажмите эту кнопку.</li>
+              <li><b>«Завершить кейс»</b> фиксирует весь диалог и переводит к следующему кейсу. Текст из поля сначала нужно отправить.</li>
+            </ol>
+          </aside>
+
           <div class="interview-messages-shell">
             <div id="interview-scroll-area" class="interview-scroll-area">
               <div id="interview-summary" class="interview-summary hidden"></div>
@@ -1499,7 +1508,7 @@
             ></textarea>
             <div class="interview-form-footer">
               <div class="interview-action-buttons">
-                <button id="interview-finish-button" type="button" class="ghost-button interview-finish-button" title="Принудительно завершить кейс">Пропустить</button>
+                <button id="interview-finish-button" type="button" class="ghost-button interview-finish-button" title="Зафиксировать ответы и перейти к следующему кейсу">Завершить кейс</button>
                 <button id="interview-submit-button" type="button" class="primary-button"><span id="interview-submit-label">Отправить ответ</span><img class="button-icon" src="/web/assets/icons/arrowtriangle-forward-white-icon.svg" alt="" aria-hidden="true"></button>
               </div>
             </div>

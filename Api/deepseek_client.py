@@ -4896,6 +4896,30 @@ class DeepSeekClient:
             )
         )
 
+    def _is_learning_and_development_profile(
+        self,
+        *,
+        position: str | None,
+        duties: str | None,
+        company_industry: str | None,
+    ) -> bool:
+        source = f"{position or ''} {duties or ''} {company_industry or ''}".lower()
+        return any(
+            marker in source
+            for marker in (
+                "корпоративн обучен",
+                "обучен",
+                "l&d",
+                "learning and development",
+                "lms",
+                "курс",
+                "тренинг",
+                "учебн",
+                "программ развития",
+                "развитие персонала",
+            )
+        )
+
     def _is_it_support_profile(
         self,
         *,
@@ -4975,6 +4999,16 @@ class DeepSeekClient:
         company_industry: str | None,
     ) -> str:
         source = f"{position or ''} {duties or ''} {company_industry or ''}".lower()
+        # L&D specialists often describe their work as "разработка программ
+        # обучения". Check that explicit domain before the broad engineering
+        # marker "разработ", otherwise training profiles become software or
+        # engineering profiles.
+        if self._is_learning_and_development_profile(
+            position=position,
+            duties=duties,
+            company_industry=company_industry,
+        ):
+            return "learning_and_development"
         if self._is_engineering_industry_profile(position=position, duties=duties, company_industry=company_industry):
             return "engineering"
         if self._is_beauty_industry_profile(position=position, duties=duties, company_industry=company_industry):
@@ -5010,8 +5044,6 @@ class DeepSeekClient:
             return "business_analysis"
         if any(word in source for word in ("финанс", "оплат", "счет", "бюджет", "платеж", "банк")):
             return "finance"
-        if any(word in source for word in ("обучен", "l&d", "lms", "курс", "тренинг", "учебн", "развит", "подрядчик", "эксперт")):
-            return "learning_and_development"
         if any(word in source for word in ("hr", "персонал", "подбор", "адаптац", "кадр", "рекрут")):
             return "hr"
         if any(word in source for word in ("логист", "склад", "достав", "маршрут", "отгруз")):
@@ -5029,7 +5061,7 @@ class DeepSeekClient:
             "it_support": ("service desk", "jira", "vpn", "картридж", "принтер", "инцидент", "эскалац", "заявк", "учетн", "вторая линия"),
             "business_analysis": ("тз", "требован", "story", "критерии приемки", "jira", "аналитик"),
             "finance": ("платеж", "1с", "счет", "бюджет", "согласование оплаты"),
-            "hr": ("кандидат", "оффер", "hrm", "адаптац", "рекрут", "обучен", "l&d", "lms", "курс", "тренинг", "учебн", "подрядчик", "эксперт"),
+            "hr": ("кандидат", "оффер", "hrm", "адаптац", "рекрут", "кадров", "подбор персонала"),
             "learning_and_development": ("обучен", "l&d", "lms", "курс", "тренинг", "учебн", "подрядчик", "эксперт", "программа обучения", "эффективность обучения"),
             "logistics": ("отгруз", "маршрут", "склад", "достав", "tms"),
         }
@@ -7901,6 +7933,12 @@ class DeepSeekClient:
         company_industry: str | None,
     ) -> bool:
         source = f"{position or ''} {duties or ''} {company_industry or ''}".lower()
+        if self._is_learning_and_development_profile(
+            position=position,
+            duties=duties,
+            company_industry=company_industry,
+        ):
+            return True
         if self._is_engineering_industry_profile(position=position, duties=duties, company_industry=company_industry):
             return True
         if self._is_it_support_profile(position=position, duties=duties, company_industry=company_industry):

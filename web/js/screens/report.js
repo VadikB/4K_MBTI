@@ -30,6 +30,7 @@ import {
   buildInitials,
   sanitizeDisplayRole,
   parseJsonArrayField,
+  parseApiDateTime,
 } from '../utils/format.js';
 import { getLevelPercent } from '../utils/competency.js';
 import { readApiResponse } from '../api.js';
@@ -583,8 +584,8 @@ const formatReportDateTime = (value) => {
   if (!value) {
     return 'Без даты';
   }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
+  const date = parseApiDateTime(value);
+  if (!date) {
     return 'Без даты';
   }
   return date.toLocaleString('ru-RU', {
@@ -600,9 +601,9 @@ const formatReportDuration = (startedAt, finishedAt) => {
   if (!finishedAt) {
     return 'В процессе';
   }
-  const start = new Date(startedAt);
-  const finish = new Date(finishedAt);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(finish.getTime()) || finish < start) {
+  const start = parseApiDateTime(startedAt);
+  const finish = parseApiDateTime(finishedAt);
+  if (!start || !finish || finish < start) {
     return 'Не рассчитано';
   }
 
@@ -657,7 +658,8 @@ const renderReportMetadata = () => {
   const totalCases = Number(summary.total_cases) || 0;
   const rows = [
     ['Сессия', '#' + summary.session_id],
-    [summary.finished_at ? 'Завершена' : 'Начата', formatReportDateTime(summary.finished_at || summary.started_at)],
+    ['Начата', formatReportDateTime(summary.started_at)],
+    ['Завершена', summary.finished_at ? formatReportDateTime(summary.finished_at) : 'В процессе'],
     ['Кейсы', completedCases + '/' + totalCases],
     ['Время прохождения', formatReportDuration(summary.started_at, summary.finished_at)],
     ['Статус', getReportStatusLabel(summary.status)],

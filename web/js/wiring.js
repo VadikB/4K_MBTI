@@ -1592,7 +1592,7 @@ interviewFinishButton.addEventListener('click', async () => {
     return;
   }
 
-  if (!window.confirm('Пропустить текущий кейс? Он будет принудительно завершён.')) {
+  if (!window.confirm('Завершить текущий кейс? Ответы будут зафиксированы, после чего откроется следующий кейс.')) {
     return;
   }
 
@@ -1603,8 +1603,8 @@ interviewFinishButton.addEventListener('click', async () => {
   try {
     const interviewModule = await loadInterview();
     interviewModule.clearInterviewTimer();
-    logAssessmentClientEvent('skip_clicked', 'skip');
-    await interviewModule.submitAssessmentMessage('__skip_case__');
+    logAssessmentClientEvent('finish_clicked', 'finish');
+    await interviewModule.submitAssessmentMessage('__finish_case__');
   } catch (error) {
     showError(interviewError, error.message);
     interviewTextarea.disabled = false;

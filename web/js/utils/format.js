@@ -1,4 +1,17 @@
-import { ADMIN_EMAIL } from '../config.js';
+import { ADMIN_EMAIL, DUTIES_DETAIL_EXAMPLE } from '../config.js';
+
+export const parseApiDateTime = (value) => {
+  if (!value) {
+    return null;
+  }
+  const normalized = String(value).trim();
+  if (!normalized) {
+    return null;
+  }
+  const hasExplicitTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized);
+  const date = new Date(hasExplicitTimezone ? normalized : normalized + 'Z');
+  return Number.isNaN(date.getTime()) ? null : date;
+};
 
 export const buildInitials = (fullName) => {
   if (!fullName) {
@@ -159,13 +172,13 @@ export const buildExistingUserAgentMessage = (user, fallbackMessage = '') => {
   }
 
   if (!position && !duties) {
-    return message + 'Чтобы продолжить работу с кейсами, укажите должность и должностные обязанности. Эти поля обязательны.';
+    return message + 'Чтобы продолжить работу с кейсами, укажите должность и подробно опишите должностные обязанности. Эти поля обязательны. ' + DUTIES_DETAIL_EXAMPLE;
   }
   if (!position) {
     return message + 'Чтобы продолжить работу с кейсами, укажите должность. Это обязательное поле.';
   }
   if (!duties) {
-    return message + 'Чтобы продолжить работу с кейсами, опишите должностные обязанности. Это обязательное поле.';
+    return message + 'Чтобы продолжить работу с кейсами, подробно опишите должностные обязанности: конкретные действия, зоны ответственности и взаимодействие с коллегами. ' + DUTIES_DETAIL_EXAMPLE;
   }
 
   return message + 'Продолжим актуализацию профиля.';

@@ -120,6 +120,12 @@
     resize: vertical;
 }
 
+.chat-profile-field-hint {
+    color: var(--text-muted);
+    font-size: var(--fs-meta);
+    line-height: 1.45;
+}
+
 .chat-profile-consent {
     grid-template-columns: auto 1fr;
     align-items: center;

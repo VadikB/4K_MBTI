@@ -54,6 +54,7 @@ import {
   normalizeExpertAssessmentDateForApi,
   highlightAdminInsightFigures,
   parseJsonArrayField,
+  parseApiDateTime,
 } from '../../utils/format.js';
 import { readApiResponse } from '../../api.js';
 import { hideAllPanels, syncUrlState } from '../../router.js';
@@ -417,8 +418,10 @@ export const renderAdminReportDetail = () => {
           assessed: 'Оценен',
           completed: 'Завершен',
         };
-        const startedAt = item.started_at
-          ? new Date(item.started_at).toLocaleString('ru-RU', {
+        const startedDate = parseApiDateTime(item.started_at);
+        const finishedDate = parseApiDateTime(item.finished_at);
+        const startedAt = startedDate
+          ? startedDate.toLocaleString('ru-RU', {
               day: '2-digit',
               month: '2-digit',
               year: 'numeric',
@@ -426,8 +429,8 @@ export const renderAdminReportDetail = () => {
               minute: '2-digit',
             })
           : 'Нет данных';
-        const finishedAt = item.finished_at
-          ? new Date(item.finished_at).toLocaleString('ru-RU', {
+        const finishedAt = finishedDate
+          ? finishedDate.toLocaleString('ru-RU', {
               day: '2-digit',
               month: '2-digit',
               year: 'numeric',
@@ -435,6 +438,21 @@ export const renderAdminReportDetail = () => {
               minute: '2-digit',
             })
           : 'Нет данных';
+        const durationSeconds =
+          startedDate && finishedDate && finishedDate >= startedDate
+            ? Math.max(0, Math.round((finishedDate.getTime() - startedDate.getTime()) / 1000))
+            : null;
+        const duration =
+          durationSeconds === null
+            ? 'Нет данных'
+            : durationSeconds < 60
+              ? '<1 мин'
+              : Math.floor(durationSeconds / 3600) > 0
+                ? Math.floor(durationSeconds / 3600) +
+                  ' ч ' +
+                  Math.floor((durationSeconds % 3600) / 60) +
+                  ' мин'
+                : Math.floor(durationSeconds / 60) + ' мин';
         const textBlocks = [
           renderCaseTextBlock('Контекст', item.personalized_context),
           renderCaseTextBlock('Задача', item.personalized_task),
@@ -486,6 +504,8 @@ export const renderAdminReportDetail = () => {
           escapeHtml(startedAt) +
           '</span><span>Завершение: ' +
           escapeHtml(finishedAt) +
+          '</span><span>Время прохождения: ' +
+          escapeHtml(duration) +
           '</span></div>' +
           '<div class="admin-detail-case-text-stack">' +
           (textBlocks || '<p class="report-empty-state">Текст кейса в этой сессии не сохранен.</p>') +
