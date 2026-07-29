@@ -16,6 +16,9 @@ class Settings:
     db_name: str = os.getenv("DB_NAME", "app_db")
     db_user: str = os.getenv("DB_USER", "app_user")
     db_password: str = os.getenv("DB_PASSWORD", "")
+    db_pool_min_size: int = int(os.getenv("DB_POOL_MIN_SIZE", "1"))
+    db_pool_max_size: int = int(os.getenv("DB_POOL_MAX_SIZE", "15"))
+    db_pool_timeout_seconds: float = float(os.getenv("DB_POOL_TIMEOUT_SECONDS", "10"))
     log_level: str = (os.getenv("LOG_LEVEL", "INFO").strip() or "INFO").upper()
     log_to_stdout: bool = os.getenv("LOG_TO_STDOUT", "true").strip().lower() in {"1", "true", "yes", "on"}
     log_to_file: bool = os.getenv("LOG_TO_FILE", "false").strip().lower() in {"1", "true", "yes", "on"}
@@ -47,6 +50,25 @@ class Settings:
     deepseek_api_keys_raw: str = os.getenv("DEEPSEEK_API_KEYS", "")
     deepseek_base_url: str = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
     deepseek_model: str = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+    deepseek_max_concurrency: int = int(os.getenv("DEEPSEEK_MAX_CONCURRENCY", "10"))
+    deepseek_queue_timeout_seconds: float = float(os.getenv("DEEPSEEK_QUEUE_TIMEOUT_SECONDS", "30"))
+    assessment_preparation_max_concurrency: int = int(os.getenv("ASSESSMENT_PREPARATION_MAX_CONCURRENCY", "2"))
+    assessment_preparation_queue_timeout_seconds: float = float(
+        os.getenv("ASSESSMENT_PREPARATION_QUEUE_TIMEOUT_SECONDS", "10")
+    )
+    assessment_queue_worker_threads: int = int(os.getenv("ASSESSMENT_QUEUE_WORKER_THREADS", "1"))
+    assessment_queue_poll_interval_seconds: float = float(
+        os.getenv("ASSESSMENT_QUEUE_POLL_INTERVAL_SECONDS", "1")
+    )
+    assessment_queue_lease_timeout_seconds: int = int(
+        os.getenv("ASSESSMENT_QUEUE_LEASE_TIMEOUT_SECONDS", "900")
+    )
+    assessment_queue_max_attempts: int = int(os.getenv("ASSESSMENT_QUEUE_MAX_ATTEMPTS", "3"))
+    assessment_queue_retention_hours: int = int(os.getenv("ASSESSMENT_QUEUE_RETENTION_HOURS", "168"))
+    case_set_reuse_mode: str = os.getenv("CASE_SET_REUSE_MODE", "off").strip().lower() or "off"
+    case_set_reuse_min_score: float = float(os.getenv("CASE_SET_REUSE_MIN_SCORE", "0.88"))
+    case_set_reuse_max_age_days: int = int(os.getenv("CASE_SET_REUSE_MAX_AGE_DAYS", "90"))
+    case_set_reuse_candidate_limit: int = int(os.getenv("CASE_SET_REUSE_CANDIDATE_LIMIT", "100"))
     mbti_enabled: bool = os.getenv("MBTI_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
     mbti_faiss_index_dir: str = os.getenv("MBTI_FAISS_INDEX_DIR", "")
     mbti_top_k: int = int(os.getenv("MBTI_TOP_K", "5"))

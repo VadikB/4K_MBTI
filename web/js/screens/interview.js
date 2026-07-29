@@ -42,6 +42,7 @@ import {
   canReusePreparedAssessment,
   renderAssessmentPreparationState,
   beginAssessmentPreparation,
+  enqueueAssessmentPreparation,
   retryAssessmentPreparation,
   resetAssessmentPreparationState,
 } from './assessment.js';
@@ -932,10 +933,8 @@ const startAssessmentInterview = async () => {
     const preparedData = state.preparedAssessmentStartResponse;
     let data = preparedData;
     if (!data) {
-      const response = await fetch('/users/' + state.pendingUser.id + '/assessment/start', {
-        method: 'POST',
-      });
-      data = await readApiResponse(response, 'Не удалось запустить интервью по кейсам.');
+      const prepared = await enqueueAssessmentPreparation(state.pendingUser.id);
+      data = await prepared.resultPromise;
     }
 
     state.preparedAssessmentStartResponse = null;

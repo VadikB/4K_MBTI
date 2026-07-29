@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 
 from Api.case_context_builder import build_case_context
+from Api.case_reuse_service import case_reuse_service
 from Api.communication_agent import competency_assessment_agents
 from Api.database import get_case_methodology_versions, get_connection
 from Api.deepseek_client import DeepSeekTurnResult, deepseek_client
@@ -89,6 +90,46 @@ class AssessmentService:
 
     def _utc_now(self) -> datetime:
         return datetime.utcnow()
+
+    def _pause_connection_for_external_io(self, connection) -> None:
+        pause = getattr(connection, "pause", None)
+        if callable(pause):
+            pause(commit=True)
+        else:
+            connection.commit()
+
+    def _insert_user_case_message_once(
+        self,
+        connection,
+        *,
+        session_case_id: int,
+        session_id: int,
+        message: str,
+    ) -> bool:
+        last_row = connection.execute(
+            """
+            SELECT role, message_text
+            FROM session_case_messages
+            WHERE session_case_id = %s
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (session_case_id,),
+        ).fetchone()
+        if (
+            last_row is not None
+            and last_row["role"] == "user"
+            and str(last_row["message_text"] or "").strip() == str(message or "").strip()
+        ):
+            return False
+        connection.execute(
+            """
+            INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
+            VALUES (%s, %s, 'user', %s)
+            """,
+            (session_case_id, session_id, message),
+        )
+        return True
 
     def _get_is_dialog_case_for_session_case(self, connection, session_case_id: int | None) -> bool:
         if not session_case_id:
@@ -633,6 +674,23 @@ class AssessmentService:
                 (session_id,),
             )
             connection.commit()
+
+            reuse_decision = case_reuse_service.evaluate(
+                connection=connection,
+                session_id=session_id,
+                user_id=user.id,
+                role_id=user.role_id,
+                profile_id=user.active_profile_id,
+                profile=user_profile,
+            )
+            if reuse_decision.mode != "off":
+                case_reuse_service.record(
+                    connection=connection,
+                    session_id=session_id,
+                    profile_id=user.active_profile_id,
+                    decision=reuse_decision,
+                )
+                connection.commit()
 
             operation_progress_service.advance(
                 progress_operation_id,
@@ -2387,7 +2445,10 @@ class AssessmentService:
                     (plan.current_session_case_id,),
                 ).fetchall()
                 if message == "__finish_case__" and not any(row["role"] == "user" for row in dialogue_rows):
-                    raise ValueError("Нельзя завершить кейс без сохраненного ответа. Используйте явное действие «Пропустить».")
+                    raise ValueError(
+                        "Вы ещё не отправили ответ по этому кейсу. "
+                        "Введите решение в поле, нажмите «Отправить ответ», а после сохранения — «Завершить кейс»."
+                    )
                 prompt_row = connection.execute(
                     """
                     SELECT final_prompt_text
@@ -2482,12 +2543,11 @@ class AssessmentService:
             awaiting_finish_confirmation = self._is_finish_confirmation_prompt(last_assistant_before_user)
 
             if is_dialog_case and awaiting_finish_confirmation and self._looks_like_finish_confirmation(message):
-                connection.execute(
-                    """
-                    INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-                    VALUES (%s, %s, 'user', %s)
-                    """,
-                    (plan.current_session_case_id, session_row["id"], message),
+                self._insert_user_case_message_once(
+                    connection,
+                    session_case_id=plan.current_session_case_id,
+                    session_id=session_row["id"],
+                    message=message,
                 )
                 dialogue_rows = connection.execute(
                     """
@@ -2533,12 +2593,11 @@ class AssessmentService:
                 )
 
             if is_dialog_case and self._looks_like_explicit_finish_request(message):
-                connection.execute(
-                    """
-                    INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-                    VALUES (%s, %s, 'user', %s)
-                    """,
-                    (plan.current_session_case_id, session_row["id"], message),
+                self._insert_user_case_message_once(
+                    connection,
+                    session_case_id=plan.current_session_case_id,
+                    session_id=session_row["id"],
+                    message=message,
                 )
                 dialogue_rows = connection.execute(
                     """
@@ -2584,12 +2643,11 @@ class AssessmentService:
                 )
 
             if is_dialog_case and awaiting_finish_confirmation and self._looks_like_continue_after_confirmation(message):
-                connection.execute(
-                    """
-                    INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-                    VALUES (%s, %s, 'user', %s)
-                    """,
-                    (plan.current_session_case_id, session_row["id"], message),
+                self._insert_user_case_message_once(
+                    connection,
+                    session_case_id=plan.current_session_case_id,
+                    session_id=session_row["id"],
+                    message=message,
                 )
                 connection.execute(
                     """
@@ -2625,12 +2683,11 @@ class AssessmentService:
                     **history_fields,
                 )
 
-            connection.execute(
-                """
-                INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-                VALUES (%s, %s, 'user', %s)
-                """,
-                (plan.current_session_case_id, session_row["id"], message),
+            self._insert_user_case_message_once(
+                connection,
+                session_case_id=plan.current_session_case_id,
+                session_id=session_row["id"],
+                message=message,
             )
             if is_dialog_case and self._looks_like_defer_or_refusal(message):
                 connection.execute(
@@ -3576,12 +3633,11 @@ class AssessmentService:
             """,
             (json.dumps(answers, ensure_ascii=False), session_case_id),
         )
-        connection.execute(
-            """
-            INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-            VALUES (%s, %s, 'user', %s)
-            """,
-            (session_case_id, session_row["id"], user_answer),
+        self._insert_user_case_message_once(
+            connection,
+            session_case_id=session_case_id,
+            session_id=session_row["id"],
+            message=user_answer,
         )
 
         if len(answers) < len(questions):

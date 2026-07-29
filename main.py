@@ -13,8 +13,9 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.gzip import GZipMiddleware
 
-from Api.database import ensure_core_schema
+from Api.database import ensure_core_schema, get_connection, get_connection_pool_stats
 from Api.routes import router as users_router
+from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.system_logging import configure_application_logging, configure_database_logging, write_system_log
 from Api.web_session_service import web_session_service
 
@@ -40,6 +41,16 @@ app.mount("/web", StaticFiles(directory=WEB_DIR), name="web")
 app.mount("/swagger-ui", StaticFiles(directory=SWAGGER_UI_DIR), name="swagger-ui")
 if os.getenv("AGENT4K_ENABLE_SCREEN_PREVIEWS") == "1":
     app.mount("/__screen-previews", StaticFiles(directory=DEV_PREVIEWS_DIR), name="screen-previews")
+
+
+@app.on_event("startup")
+def start_background_workers() -> None:
+    assessment_preparation_queue.start()
+
+
+@app.on_event("shutdown")
+def stop_background_workers() -> None:
+    assessment_preparation_queue.stop()
 
 
 def _resolve_request_user(request: Request):
@@ -133,6 +144,20 @@ async def log_unhandled_exceptions(request: Request, call_next):
             )
         logger.exception("Unhandled exception for %s %s", request.method, request.url.path)
         raise
+
+
+@app.get("/health/ready", include_in_schema=False)
+def readiness() -> dict:
+    with get_connection() as connection:
+        connection.execute("SELECT 1").fetchone()
+    return {
+        "status": "ready",
+        "database": "ready",
+        "database_pool": get_connection_pool_stats(),
+        "llm_enabled": bool(settings.deepseek_api_keys),
+        "llm_max_concurrency_per_worker": settings.deepseek_max_concurrency,
+        "assessment_queue": assessment_preparation_queue.stats(),
+    }
 
 
 @app.get("/docs", include_in_schema=False)

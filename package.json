@@ -6,6 +6,9 @@
     "predev:web": "npm run clean:web",
     "dev:web": "esbuild web/js/main.js --outdir=web/dist --target=es2020 --format=esm --splitting --public-path=/web/dist/ --entry-names=[name] --chunk-names=[name]-[hash] --bundle --watch",
     "bump:version": "./.venv/bin/python scripts/bump_version.py",
+    "test:backend": ".venv/bin/python -m pytest -m \"not integration and not e2e and not llm\"",
+    "test:backend:integration": ".venv/bin/python -m pytest --run-integration -m integration",
+    "test:backend:coverage": ".venv/bin/python -m pytest -m \"not integration and not e2e and not llm\" --cov=Api --cov-report=term-missing",
     "lint:dead": "knip",
     "lint:js": "eslint web/js/**/*.js"
   },

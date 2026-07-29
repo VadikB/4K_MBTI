@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import json
 import re
+import threading
+from types import TracebackType
+from typing import Any
 
 import psycopg
+from psycopg.conninfo import make_conninfo
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 from Api.config import settings
 
@@ -16,6 +21,105 @@ DEFAULT_LEVEL_PERCENT_MAP = {
 }
 
 PERSONALIZATION_PLACEHOLDER_PATTERN = re.compile(r"\{([^{}]+)\}")
+
+_connection_pool = ConnectionPool(
+    conninfo=make_conninfo(
+        host=settings.db_host,
+        port=settings.db_port,
+        dbname=settings.db_name,
+        user=settings.db_user,
+        password=settings.db_password,
+    ),
+    min_size=max(0, settings.db_pool_min_size),
+    max_size=max(1, settings.db_pool_max_size),
+    timeout=max(0.1, settings.db_pool_timeout_seconds),
+    kwargs={"row_factory": dict_row},
+)
+_thread_connection_state = threading.local()
+
+
+class ResumablePooledConnection:
+    """A pooled connection lease that can be returned during slow external I/O."""
+
+    def __init__(self) -> None:
+        self._lease = None
+        self._connection: psycopg.Connection | None = None
+
+    def __enter__(self) -> "ResumablePooledConnection":
+        self._acquire()
+        active = getattr(_thread_connection_state, "active", None)
+        if active is None:
+            active = []
+            _thread_connection_state.active = active
+        active.append(self)
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool:
+        active = getattr(_thread_connection_state, "active", None)
+        if active:
+            try:
+                active.remove(self)
+            except ValueError:
+                pass
+        if self._lease is None:
+            return False
+        lease = self._lease
+        self._lease = None
+        self._connection = None
+        return bool(lease.__exit__(exc_type, exc_value, traceback))
+
+    def _acquire(self) -> psycopg.Connection:
+        if self._connection is None:
+            lease = _connection_pool.connection(timeout=max(0.1, settings.db_pool_timeout_seconds))
+            connection = lease.__enter__()
+            self._lease = lease
+            self._connection = connection
+        return self._connection
+
+    def pause(self, *, commit: bool = True) -> None:
+        """Return the current lease to the pool; the next SQL call reacquires one."""
+        if self._lease is None or self._connection is None:
+            return
+        lease = self._lease
+        connection = self._connection
+        self._lease = None
+        self._connection = None
+        if commit:
+            connection.commit()
+        else:
+            connection.rollback()
+        lease.__exit__(None, None, None)
+
+    def execute(self, *args, **kwargs):
+        return self._acquire().execute(*args, **kwargs)
+
+    def commit(self) -> None:
+        self._acquire().commit()
+
+    def rollback(self) -> None:
+        self._acquire().rollback()
+
+    def cursor(self, *args, **kwargs):
+        return self._acquire().cursor(*args, **kwargs)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._acquire(), name)
+
+
+def pause_thread_connections_for_external_io() -> int:
+    """Return every connection leased by this request thread before network I/O."""
+    active = list(getattr(_thread_connection_state, "active", ()) or ())
+    paused = 0
+    for connection in reversed(active):
+        if connection._lease is not None:
+            connection.pause(commit=True)
+            paused += 1
+    return paused
 
 
 def _extract_interactivity_limits(
@@ -2726,19 +2830,74 @@ def _extract_role_codes_from_role_level(value: str | None) -> list[str]:
     return result
 
 
-def get_connection() -> psycopg.Connection:
-    return psycopg.connect(
-        host=settings.db_host,
-        port=settings.db_port,
-        dbname=settings.db_name,
-        user=settings.db_user,
-        password=settings.db_password,
-        row_factory=dict_row,
-    )
+def get_connection():
+    """Borrow a PostgreSQL connection and return it to the shared process pool."""
+    return ResumablePooledConnection()
+
+
+def get_connection_pool_stats() -> dict[str, int]:
+    return dict(_connection_pool.get_stats())
+
+
+def close_connection_pool() -> None:
+    _connection_pool.close()
 
 
 def ensure_core_schema() -> None:
     with get_connection() as connection:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS operation_progress (
+                operation_id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                steps_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+                current_step_index INTEGER NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'in_progress',
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_operation_progress_updated_at
+            ON operation_progress(updated_at)
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_preparation_jobs (
+                id BIGSERIAL PRIMARY KEY,
+                operation_id TEXT NOT NULL UNIQUE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                user_payload_json JSONB NOT NULL,
+                status TEXT NOT NULL DEFAULT 'queued',
+                attempts INTEGER NOT NULL DEFAULT 0,
+                max_attempts INTEGER NOT NULL DEFAULT 3,
+                result_json JSONB,
+                error_message TEXT,
+                worker_id TEXT,
+                locked_at TIMESTAMP,
+                next_attempt_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                completed_at TIMESTAMP
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_assessment_preparation_jobs_claim
+            ON assessment_preparation_jobs(status, next_attempt_at, created_at)
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_assessment_preparation_jobs_active_user
+            ON assessment_preparation_jobs(user_id)
+            WHERE status IN ('queued', 'running')
+            """
+        )
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS llm_prompts (
@@ -2875,6 +3034,29 @@ def ensure_core_schema() -> None:
         connection.execute("ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS expert_assessed_at TIMESTAMP")
         connection.execute("ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS expert_comment_updated_at TIMESTAMP")
         connection.execute("ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS mbti_summary_json JSONB NOT NULL DEFAULT '{}'::jsonb")
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS case_set_reuse_audits (
+                id BIGSERIAL PRIMARY KEY,
+                session_id BIGINT NOT NULL UNIQUE REFERENCES user_sessions(id) ON DELETE CASCADE,
+                profile_id BIGINT REFERENCES user_role_profiles(id) ON DELETE SET NULL,
+                mode TEXT NOT NULL,
+                verdict TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                similarity_score DOUBLE PRECISION,
+                similarity_components JSONB NOT NULL DEFAULT '{}'::jsonb,
+                source_session_id BIGINT REFERENCES user_sessions(id) ON DELETE SET NULL,
+                source_profile_id BIGINT REFERENCES user_role_profiles(id) ON DELETE SET NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_case_set_reuse_audits_verdict_created
+            ON case_set_reuse_audits(verdict, created_at)
+            """
+        )
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS session_mbti_refinements (

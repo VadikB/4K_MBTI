@@ -4,10 +4,11 @@ import json
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum
-from threading import Lock
+from threading import BoundedSemaphore, Lock
 from uuid import uuid4
 
 from Api.assessment_service import assessment_service
+from Api.config import settings
 from Api.database import get_connection
 from Api.deepseek_client import deepseek_client
 from Api.domain_sources import external_knowledge_service
@@ -242,6 +243,9 @@ class InterviewerAgent:
     def __init__(self) -> None:
         self._sessions: dict[str, ConversationState] = {}
         self._lock = Lock()
+        self._assessment_preparation_slots = BoundedSemaphore(
+            max(1, settings.assessment_preparation_max_concurrency)
+        )
         self._ensure_session_schema()
 
     def _ensure_session_schema(self) -> None:
@@ -3587,7 +3591,18 @@ class InterviewerAgent:
     def start_case_interview(self, *, user: UserResponse, progress_operation_id: str | None = None) -> AssessmentStartResponse:
         if not _is_assessment_allowed_for_user(user):
             raise ValueError("Для пользователя не определена роль. Завершите настройку профиля и выберите роль.")
-        plan = assessment_service.ensure_assessment_session(user, progress_operation_id=progress_operation_id)
+        slot_acquired = self._assessment_preparation_slots.acquire(
+            timeout=max(0.1, settings.assessment_preparation_queue_timeout_seconds)
+        )
+        if not slot_acquired:
+            raise ValueError(
+                "Сейчас одновременно подготавливается много ассессментов. "
+                "Подождите немного и нажмите «Начать» ещё раз."
+            )
+        try:
+            plan = assessment_service.ensure_assessment_session(user, progress_operation_id=progress_operation_id)
+        finally:
+            self._assessment_preparation_slots.release()
         if plan is None:
             raise ValueError("Не удалось подготовить assessment-сессию для пользователя.")
 

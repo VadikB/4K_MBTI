@@ -192,7 +192,48 @@ export const startAssessmentPreparationPolling = (operationId) => {
   void poll();
   state.assessmentPreparationPollId = window.setInterval(() => {
     void poll();
-  }, 500);
+  }, 1500);
+};
+
+const waitForAssessmentPreparationResult = async (operationId) => {
+  while (true) {
+    try {
+      const response = await fetch('/users/assessment/preparation/' + encodeURIComponent(operationId), {
+        credentials: 'same-origin',
+      });
+      const job = await readApiResponse(response, 'Не удалось получить статус подготовки кейсов.');
+      if (job.status === 'completed') {
+        if (!job.result) {
+          throw new Error('Подготовка завершена без данных для запуска интервью.');
+        }
+        return job.result;
+      }
+      if (job.status === 'failed') {
+        throw new Error(job.error_message || 'Не удалось подготовить кейсы.');
+      }
+    } catch (error) {
+      const message = String(error?.message || '');
+      if (!/failed to fetch|networkerror|load failed|получить статус подготовки/i.test(message)) {
+        throw error;
+      }
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, 1500));
+  }
+};
+
+export const enqueueAssessmentPreparation = async (userId, operationId = createOperationId()) => {
+  const response = await fetch('/users/' + userId + '/assessment/start', {
+    method: 'POST',
+    headers: {
+      'X-Agent4K-Operation-Id': operationId,
+    },
+  });
+  const queued = await readApiResponse(response, 'Не удалось поставить подготовку кейсов в очередь.');
+  const actualOperationId = queued.operation_id || operationId;
+  return {
+    operationId: actualOperationId,
+    resultPromise: waitForAssessmentPreparationResult(actualOperationId),
+  };
 };
 
 export const shouldPrepareAssessmentInBackground = () => {
@@ -230,16 +271,15 @@ export const beginAssessmentPreparation = async ({ force = false } = {}) => {
   startAssessmentPreparationPolling(operationId);
 
   try {
-    const response = await fetch('/users/' + state.pendingUser.id + '/assessment/start', {
-      method: 'POST',
-      headers: {
-        'X-Agent4K-Operation-Id': operationId,
-      },
-    });
-    const data = await readApiResponse(response, 'Не удалось подготовить кейсы.');
-    if (state.assessmentPreparationOperationId !== operationId) {
+    const prepared = await enqueueAssessmentPreparation(state.pendingUser.id, operationId);
+    if (prepared.operationId !== operationId) {
+      state.assessmentPreparationOperationId = prepared.operationId;
+      startAssessmentPreparationPolling(prepared.operationId);
+    }
+    if (state.assessmentPreparationOperationId !== prepared.operationId) {
       return;
     }
+    const data = await prepared.resultPromise;
     stopAssessmentPreparationPolling();
     state.preparedAssessmentStartResponse = data;
     state.assessmentPreparationStatus = 'ready';

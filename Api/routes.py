@@ -7,6 +7,7 @@ import logging
 import re
 from urllib.parse import quote
 from datetime import datetime
+from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Request, Response as FastAPIResponse
 from fastapi.responses import Response
@@ -18,6 +19,7 @@ from Api.app_version import get_app_version
 from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_service, normalize_email
 from Api.config import settings
 from Api.assessment_service import assessment_service
+from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.agent import interviewer_agent
 from Api.database import get_connection, get_level_percent_map, recompute_case_quality_checks
 from Api.database import get_case_methodology_versions
@@ -110,6 +112,8 @@ from Api.schemas import (
     AssessmentClientEventRequest,
     AssessmentMessageRequest,
     AssessmentMessageResponse,
+    AssessmentPreparationEnqueueResponse,
+    AssessmentPreparationStatusResponse,
     AssessmentTimerControlRequest,
     MbtiRefinementMessageRequest,
     MbtiRefinementMessageResponse,
@@ -4984,13 +4988,17 @@ def confirm_agent_profile(payload: AgentProfileConfirmRequest, request: Request,
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
-@router.post("/{user_id}/assessment/start", response_model=AssessmentStartResponse)
-def start_assessment(user_id: int, request: Request) -> AssessmentStartResponse:
-    operation_id = request.headers.get("X-Agent4K-Operation-Id")
+@router.post(
+    "/{user_id}/assessment/start",
+    response_model=AssessmentPreparationEnqueueResponse,
+    status_code=202,
+)
+def start_assessment(user_id: int, request: Request) -> AssessmentPreparationEnqueueResponse:
+    operation_id = request.headers.get("X-Agent4K-Operation-Id") or uuid4().hex
     operation_progress_service.begin(
         operation_id,
         title="Подготавливаем ассессмент",
-        message="Проверяем профиль пользователя и запускаем формирование оценочной сессии.",
+        message="Задание поставлено в очередь подготовки.",
         steps=ASSESSMENT_START_STEPS,
     )
     with get_connection() as connection:
@@ -5006,27 +5014,28 @@ def start_assessment(user_id: int, request: Request) -> AssessmentStartResponse:
         operation_progress_service.fail(operation_id, message="Пользователь не найден.")
         raise HTTPException(status_code=404, detail="User not found")
 
-    user = _user_response_from_row(row)
-    if (
-        not user.role_id
-        or not (user.company_industry and user.company_industry.strip())
-        or not user.active_profile_id
-        or not (user.normalized_duties and user.normalized_duties.strip())
-    ):
-        repaired_user = interviewer_agent.backfill_user_profile(user.id)
-        if repaired_user is not None:
-            user = repaired_user
-    try:
-        result = interviewer_agent.start_case_interview(user=user, progress_operation_id=operation_id)
-        operation_progress_service.complete(
-            operation_id,
-            title="Ассессмент готов",
-            message="Первый кейс подготовлен. Можно начинать интервью.",
-        )
-        return result
-    except ValueError as exc:
-        operation_progress_service.fail(operation_id, message=str(exc))
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    queued = assessment_preparation_queue.enqueue(
+        operation_id=operation_id,
+        user=_user_response_from_row(row),
+    )
+    return AssessmentPreparationEnqueueResponse(**queued)
+
+
+@router.get(
+    "/assessment/preparation/{operation_id}",
+    response_model=AssessmentPreparationStatusResponse,
+)
+def get_assessment_preparation(operation_id: str) -> AssessmentPreparationStatusResponse:
+    job = assessment_preparation_queue.get_status(operation_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Задание подготовки ассессмента не найдено.")
+    result_payload = job.pop("result_json", None)
+    if isinstance(result_payload, str):
+        result_payload = json.loads(result_payload)
+    return AssessmentPreparationStatusResponse(
+        **job,
+        result=AssessmentStartResponse.model_validate(result_payload) if result_payload else None,
+    )
 
 
 @router.post("/assessment/message", response_model=AssessmentMessageResponse)

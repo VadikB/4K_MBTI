@@ -943,6 +943,26 @@ class AssessmentStartResponse(BaseModel):
     mbti_summary: dict | None = None
 
 
+class AssessmentPreparationEnqueueResponse(BaseModel):
+    operation_id: str
+    status: str
+    attempts: int = 0
+    created_at: datetime
+
+
+class AssessmentPreparationStatusResponse(BaseModel):
+    operation_id: str
+    user_id: int
+    status: str
+    attempts: int
+    max_attempts: int
+    result: AssessmentStartResponse | None = None
+    error_message: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None = None
+
+
 class AssessmentSessionLookupResponse(BaseModel):
     user_id: int
     session_id: int

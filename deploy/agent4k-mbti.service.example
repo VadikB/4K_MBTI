@@ -1,0 +1,20 @@
+[Unit]
+Description=Agent4K MBTI API
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=user1
+Group=user1
+WorkingDirectory=/home/user1/projects/4K-Mbti
+EnvironmentFile=/home/user1/projects/4K-Mbti/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/user1/projects/4K-Mbti/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --workers 4 --limit-concurrency 160 --timeout-keep-alive 10
+Restart=always
+RestartSec=3
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target
