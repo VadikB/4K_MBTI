@@ -1,22 +1,16 @@
 #!/bin/sh
 set -eu
 
-if [ "${SKIP_VERSION_BUMP:-}" = "1" ]; then
-  exit 0
-fi
-
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-staged_non_version_files="$(git diff --cached --name-only --diff-filter=ACMR | grep -Ev '^(pyproject\.toml|uv\.lock|web/js/config\.js)$' || true)"
-if [ -z "$staged_non_version_files" ]; then
-  exit 0
-fi
+git diff --cached --check
 
-python_bin=".venv/bin/python"
-if [ ! -x "$python_bin" ]; then
-  python_bin="python3"
-fi
+staged_frontend_sources="$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^web/js/' || true)"
+staged_frontend_build="$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^web/dist/' || true)"
 
-"$python_bin" scripts/bump_patch_version.py
-git add pyproject.toml uv.lock web/js/config.js
+if [ -n "$staged_frontend_sources" ] && [ -z "$staged_frontend_build" ]; then
+  echo "Frontend sources changed, but web/dist is not staged." >&2
+  echo "Run 'npm run build:web' and stage web/dist before committing." >&2
+  exit 1
+fi
