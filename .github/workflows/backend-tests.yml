@@ -79,3 +79,41 @@ jobs:
 
       - name: Integration tests
         run: python -m pytest --run-integration -m integration
+
+  deploy-test:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - frontend
+      - pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: test
+      url: https://test.4k-assistant.ru
+    concurrency:
+      group: deploy-test
+      cancel-in-progress: false
+
+    steps:
+      - name: Configure SSH
+        env:
+          TEST_SSH_PRIVATE_KEY: ${{ secrets.TEST_SSH_PRIVATE_KEY }}
+          TEST_SSH_KNOWN_HOSTS: ${{ secrets.TEST_SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$TEST_SSH_PRIVATE_KEY" > ~/.ssh/test_deploy_key
+          chmod 600 ~/.ssh/test_deploy_key
+          printf '%s\n' "$TEST_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy main to test
+        env:
+          TEST_SSH_HOST: ${{ secrets.TEST_SSH_HOST }}
+          TEST_SSH_USER: ${{ secrets.TEST_SSH_USER }}
+        run: |
+          ssh \
+            -i ~/.ssh/test_deploy_key \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            "$TEST_SSH_USER@$TEST_SSH_HOST" \
+            sh /home/user1/projects/4K-Mbti-Test/scripts/deploy_test_remote.sh

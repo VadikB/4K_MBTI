@@ -88,3 +88,17 @@ npm run build:web
 
 Если часть общей тестовой сборки не прошла приёмку, изменение исправляется
 новым Pull Request либо откатывается отдельным revert-коммитом.
+
+## Секреты деплоя test
+
+GitHub Environment `test` должен содержать:
+
+- `TEST_SSH_HOST` — адрес сервера;
+- `TEST_SSH_USER` — пользователь SSH;
+- `TEST_SSH_PRIVATE_KEY` — закрытый ключ CI;
+- `TEST_SSH_KNOWN_HOSTS` — проверенная строка host key сервера.
+
+После успешных frontend и backend jobs workflow подключается к серверу и
+запускает `scripts/deploy_test_remote.sh`. Скрипт обновляет только test-каталог,
+перезапускает только test-сервис и возвращает предыдущий commit, если
+smoke-check не прошёл.
