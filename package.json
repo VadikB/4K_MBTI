@@ -1,6 +1,9 @@
 {
   "scripts": {
+    "clean:web": "node scripts/clean_web_dist.mjs",
+    "prebuild:web": "npm run clean:web",
     "build:web": "esbuild web/js/main.js --outdir=web/dist --target=es2020 --format=esm --splitting --public-path=/web/dist/ --entry-names=[name] --chunk-names=[name]-[hash] --bundle --minify",
+    "predev:web": "npm run clean:web",
     "dev:web": "esbuild web/js/main.js --outdir=web/dist --target=es2020 --format=esm --splitting --public-path=/web/dist/ --entry-names=[name] --chunk-names=[name]-[hash] --bundle --watch",
     "bump:version": "./.venv/bin/python scripts/bump_version.py",
     "lint:dead": "knip",
