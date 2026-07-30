@@ -699,8 +699,15 @@ class AssessmentService:
                 message="Готовим персонализированный контекст и промты для каждого кейса.",
             )
             used_case_signatures: list[dict[str, str]] = []
-            for session_case_id, case_row in prepared_session_cases:
+            total_prepared_cases = len(prepared_session_cases)
+            for case_index, (session_case_id, case_row) in enumerate(prepared_session_cases, start=1):
                 try:
+                    operation_progress_service.advance(
+                        progress_operation_id,
+                        3,
+                        title=f"Формируем кейс {case_index} из {total_prepared_cases}",
+                        message=str(case_row.get("title") or "Персонализируем материалы кейса."),
+                    )
                     connection.execute(
                         """
                         UPDATE session_cases

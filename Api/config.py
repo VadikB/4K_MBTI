@@ -65,6 +65,10 @@ class Settings:
     )
     assessment_queue_max_attempts: int = int(os.getenv("ASSESSMENT_QUEUE_MAX_ATTEMPTS", "3"))
     assessment_queue_retention_hours: int = int(os.getenv("ASSESSMENT_QUEUE_RETENTION_HOURS", "168"))
+    assessment_external_answer_transfer_enabled: bool = (
+        os.getenv("ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED", "true").strip().lower()
+        in {"1", "true", "yes", "on"}
+    )
     case_set_reuse_mode: str = os.getenv("CASE_SET_REUSE_MODE", "off").strip().lower() or "off"
     case_set_reuse_min_score: float = float(os.getenv("CASE_SET_REUSE_MIN_SCORE", "0.88"))
     case_set_reuse_max_age_days: int = int(os.getenv("CASE_SET_REUSE_MAX_AGE_DAYS", "90"))

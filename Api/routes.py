@@ -113,6 +113,9 @@ from Api.schemas import (
     AssessmentMessageRequest,
     AssessmentMessageResponse,
     AssessmentPreparationEnqueueResponse,
+    AssessmentPreparationBatchEnqueueResponse,
+    AssessmentPreparationBatchParticipant,
+    AssessmentPreparationBatchStatusResponse,
     AssessmentPreparationStatusResponse,
     AssessmentTimerControlRequest,
     MbtiRefinementMessageRequest,
@@ -857,6 +860,7 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
     members_by_org_list: dict[int, list[dict]] = {org_id: [] for org_id in org_ids}
     members_by_org: dict[int, int] = {org_id: 0 for org_id in org_ids}
     reports_by_org: dict[int, int] = {org_id: 0 for org_id in org_ids}
+    latest_batch_by_org: dict[int, str] = {}
     if org_ids:
         domain_rows = connection.execute(
             """
@@ -898,13 +902,33 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
                 u.email,
                 u.full_name,
                 u.job_description,
+                u.role_id,
+                u.active_profile_id,
+                u.company_industry,
+                p.normalized_duties,
                 c.user_id IS NOT NULL AS has_password,
                 p.raw_position,
-                p.raw_duties
+                p.raw_duties,
+                prep.operation_id AS assessment_preparation_operation_id,
+                prep.status AS assessment_preparation_status,
+                EXISTS (
+                    SELECT 1
+                    FROM user_sessions us
+                    WHERE us.user_id = u.id
+                      AND us.assessment_code = 'competencies_4k'
+                      AND us.status IN ('created', 'active')
+                ) AS assessment_prepared
             FROM organization_memberships om
             JOIN users u ON u.id = om.user_id
             LEFT JOIN auth_password_credentials c ON c.user_id = u.id OR LOWER(c.email) = LOWER(u.email)
             LEFT JOIN user_role_profiles p ON p.id = u.active_profile_id
+            LEFT JOIN LATERAL (
+                SELECT operation_id, status
+                FROM assessment_preparation_jobs
+                WHERE user_id = u.id
+                ORDER BY created_at DESC
+                LIMIT 1
+            ) prep ON TRUE
             WHERE om.organization_id = ANY(%s)
             ORDER BY LOWER(COALESCE(u.email, '')) ASC
             LIMIT 500
@@ -925,6 +949,15 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
                     "job_description": row["job_description"],
                     "raw_position": row["raw_position"],
                     "raw_duties": row["raw_duties"],
+                    "assessment_preparation_operation_id": row["assessment_preparation_operation_id"],
+                    "assessment_preparation_status": row["assessment_preparation_status"],
+                    "assessment_prepared": bool(row["assessment_prepared"]),
+                    "assessment_profile_ready": bool(
+                        row["role_id"]
+                        and row["active_profile_id"]
+                        and row["company_industry"]
+                        and row["normalized_duties"]
+                    ),
                 }
             )
 
@@ -954,6 +987,18 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
         for row in report_rows:
             reports_by_org[int(row["organization_id"])] = int(row["reports_count"] or 0)
 
+        batch_rows = connection.execute(
+            """
+            SELECT DISTINCT ON (organization_id) organization_id, batch_id
+            FROM assessment_preparation_batches
+            WHERE organization_id = ANY(%s)
+            ORDER BY organization_id, created_at DESC, id DESC
+            """,
+            (org_ids,),
+        ).fetchall()
+        for row in batch_rows:
+            latest_batch_by_org[int(row["organization_id"])] = str(row["batch_id"])
+
     return AdminOrganizationsResponse(
         title="Организации",
         subtitle="Управление доменами и администраторами организаций.",
@@ -968,6 +1013,7 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
                 members=members_by_org_list.get(int(row["id"]), []),
                 members_count=members_by_org.get(int(row["id"]), 0),
                 reports_count=reports_by_org.get(int(row["id"]), 0),
+                assessment_preparation_batch_id=latest_batch_by_org.get(int(row["id"])),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
             )
@@ -3481,6 +3527,250 @@ def reset_admin_organization_member_password(organization_id: int, email: str, r
             normalized_email,
         )
         return _build_admin_organizations(connection)
+
+
+@router.post(
+    "/admin/organizations/{organization_id}/members/{user_id}/prepare-assessment",
+    response_model=AssessmentPreparationEnqueueResponse,
+    status_code=202,
+)
+def prepare_admin_organization_member_assessment(
+    organization_id: int,
+    user_id: int,
+    request: Request,
+) -> AssessmentPreparationEnqueueResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    current_user = web_session_service.get_user_by_token(token)
+    operation_id = request.headers.get("X-Agent4K-Operation-Id") or uuid4().hex
+    with get_connection() as connection:
+        _require_superadmin(connection, current_user)
+        row = connection.execute(
+            USER_SELECT_SQL
+            + """
+            JOIN organization_memberships om ON om.user_id = u.id
+            WHERE u.id = %s
+              AND om.organization_id = %s
+            """,
+            (user_id, organization_id),
+        ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Organization member not found")
+    user = _user_response_from_row(row)
+    if not user.role_id or not user.active_profile_id or not user.company_industry or not user.normalized_duties:
+        raise HTTPException(
+            status_code=400,
+            detail="Сначала заполните роль, должностные обязанности и сферу деятельности пользователя.",
+        )
+    operation_progress_service.begin(
+        operation_id,
+        title="Предварительно готовим кейсы",
+        message="Задание поставлено в очередь фоновой подготовки.",
+        steps=ASSESSMENT_START_STEPS,
+    )
+    queued = assessment_preparation_queue.enqueue(
+        operation_id=operation_id,
+        user=user,
+        prepare_only=True,
+    )
+    return AssessmentPreparationEnqueueResponse(**queued)
+
+
+def _build_assessment_preparation_batch_status(
+    connection,
+    batch_id: str,
+) -> AssessmentPreparationBatchStatusResponse | None:
+    batch = connection.execute(
+        """
+        SELECT batch_id, organization_id
+        FROM assessment_preparation_batches
+        WHERE batch_id = %s
+        """,
+        (batch_id,),
+    ).fetchone()
+    if batch is None:
+        return None
+    rows = connection.execute(
+        """
+        SELECT
+            item.user_id,
+            u.full_name,
+            u.email,
+            item.operation_id,
+            CASE
+                WHEN item.operation_id IS NULL THEN item.initial_status
+                ELSE COALESCE(job.status, item.initial_status)
+            END AS status,
+            COALESCE(progress.title, '') AS progress_title,
+            COALESCE(progress.message, item.status_message, '') AS progress_message
+        FROM assessment_preparation_batch_items item
+        JOIN users u ON u.id = item.user_id
+        LEFT JOIN assessment_preparation_jobs job ON job.operation_id = item.operation_id
+        LEFT JOIN operation_progress progress ON progress.operation_id = item.operation_id
+        WHERE item.batch_id = %s
+        ORDER BY item.id ASC
+        """,
+        (batch_id,),
+    ).fetchall()
+    participants = [
+        AssessmentPreparationBatchParticipant(
+            user_id=int(row["user_id"]),
+            full_name=row["full_name"],
+            email=str(row["email"] or ""),
+            status=str(row["status"] or "queued"),
+            operation_id=row["operation_id"],
+            progress_title=str(row["progress_title"] or "") or None,
+            progress_message=str(row["progress_message"] or "") or None,
+        )
+        for row in rows
+    ]
+    terminal_statuses = {"completed", "failed", "skipped"}
+    completed = sum(item.status == "completed" for item in participants)
+    failed = sum(item.status == "failed" for item in participants)
+    skipped = sum(item.status == "skipped" for item in participants)
+    processed = completed + failed + skipped
+    current = next((item for item in participants if item.status == "running"), None)
+    if current is None:
+        current = next((item for item in participants if item.status == "queued"), None)
+    if not participants or all(item.status in terminal_statuses for item in participants):
+        status = "failed" if failed and not completed else "completed"
+    else:
+        status = "in_progress"
+    return AssessmentPreparationBatchStatusResponse(
+        batch_id=str(batch["batch_id"]),
+        organization_id=int(batch["organization_id"]),
+        status=status,
+        total_participants=len(participants),
+        processed_participants=processed,
+        remaining_participants=max(0, len(participants) - processed),
+        completed_participants=completed,
+        failed_participants=failed,
+        skipped_participants=skipped,
+        current_participant=current,
+        participants=participants,
+    )
+
+
+@router.post(
+    "/admin/organizations/{organization_id}/prepare-assessments",
+    response_model=AssessmentPreparationBatchEnqueueResponse,
+    status_code=202,
+)
+def prepare_admin_organization_assessments(
+    organization_id: int,
+    request: Request,
+) -> AssessmentPreparationBatchEnqueueResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    current_user = web_session_service.get_user_by_token(token)
+    batch_id = uuid4().hex
+    with get_connection() as connection:
+        _require_superadmin(connection, current_user)
+        organization = connection.execute(
+            "SELECT id FROM organizations WHERE id = %s AND is_active = TRUE",
+            (organization_id,),
+        ).fetchone()
+        if organization is None:
+            raise HTTPException(status_code=404, detail="Active organization not found")
+        rows = connection.execute(
+            USER_SELECT_SQL
+            + """
+            JOIN organization_memberships om ON om.user_id = u.id
+            WHERE om.organization_id = %s
+              AND om.role = 'member'
+            ORDER BY u.id
+            """,
+            (organization_id,),
+        ).fetchall()
+        connection.execute(
+            """
+            INSERT INTO assessment_preparation_batches (
+                batch_id, organization_id, created_by_user_id
+            )
+            VALUES (%s, %s, %s)
+            """,
+            (batch_id, organization_id, current_user.id if current_user else None),
+        )
+
+    queued_count = 0
+    completed_count = 0
+    skipped_count = 0
+    for row in rows:
+        user = _user_response_from_row(row)
+        with get_connection() as connection:
+            prepared = connection.execute(
+                """
+                SELECT 1
+                FROM user_sessions
+                WHERE user_id = %s
+                  AND assessment_code = 'competencies_4k'
+                  AND status IN ('created', 'active')
+                LIMIT 1
+                """,
+                (user.id,),
+            ).fetchone()
+        if prepared is not None:
+            initial_status = "completed"
+            status_message = "Кейсы уже были подготовлены."
+            operation_id = None
+            completed_count += 1
+        elif not user.role_id or not user.active_profile_id or not user.company_industry or not user.normalized_duties:
+            initial_status = "skipped"
+            status_message = "Не заполнены роль, обязанности или сфера деятельности."
+            operation_id = None
+            skipped_count += 1
+        else:
+            requested_operation_id = uuid4().hex
+            operation_progress_service.begin(
+                requested_operation_id,
+                title="Предварительно готовим кейсы",
+                message="Задание поставлено в очередь фоновой подготовки.",
+                steps=ASSESSMENT_START_STEPS,
+            )
+            queued = assessment_preparation_queue.enqueue(
+                operation_id=requested_operation_id,
+                user=user,
+                prepare_only=True,
+            )
+            initial_status = str(queued["status"])
+            status_message = "Поставлен в очередь подготовки."
+            operation_id = str(queued["operation_id"])
+            queued_count += 1
+        with get_connection() as connection:
+            connection.execute(
+                """
+                INSERT INTO assessment_preparation_batch_items (
+                    batch_id, user_id, operation_id, initial_status, status_message
+                )
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (batch_id, user.id, operation_id, initial_status, status_message),
+            )
+    return AssessmentPreparationBatchEnqueueResponse(
+        batch_id=batch_id,
+        organization_id=organization_id,
+        total_participants=len(rows),
+        queued_participants=queued_count,
+        completed_participants=completed_count,
+        skipped_participants=skipped_count,
+    )
+
+
+@router.get(
+    "/admin/organizations/{organization_id}/prepare-assessments/{batch_id}",
+    response_model=AssessmentPreparationBatchStatusResponse,
+)
+def get_admin_organization_assessment_preparation_batch(
+    organization_id: int,
+    batch_id: str,
+    request: Request,
+) -> AssessmentPreparationBatchStatusResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    current_user = web_session_service.get_user_by_token(token)
+    with get_connection() as connection:
+        _require_superadmin(connection, current_user)
+        result = _build_assessment_preparation_batch_status(connection, batch_id)
+    if result is None or result.organization_id != organization_id:
+        raise HTTPException(status_code=404, detail="Assessment preparation batch not found")
+    return result
 
 
 @router.post("/admin/organizations/{organization_id}/members/import", response_model=AdminOrganizationImportResult)

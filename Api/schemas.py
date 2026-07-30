@@ -691,6 +691,10 @@ class AdminOrganizationMemberItem(BaseModel):
     job_description: str | None = None
     raw_position: str | None = None
     raw_duties: str | None = None
+    assessment_preparation_status: str | None = None
+    assessment_preparation_operation_id: str | None = None
+    assessment_prepared: bool = False
+    assessment_profile_ready: bool = False
 
 
 class AdminOrganizationItem(BaseModel):
@@ -703,6 +707,7 @@ class AdminOrganizationItem(BaseModel):
     members: list[AdminOrganizationMemberItem] = Field(default_factory=list)
     members_count: int = 0
     reports_count: int = 0
+    assessment_preparation_batch_id: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -961,6 +966,39 @@ class AssessmentPreparationStatusResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     completed_at: datetime | None = None
+
+
+class AssessmentPreparationBatchEnqueueResponse(BaseModel):
+    batch_id: str
+    organization_id: int
+    total_participants: int
+    queued_participants: int
+    completed_participants: int
+    skipped_participants: int
+
+
+class AssessmentPreparationBatchParticipant(BaseModel):
+    user_id: int
+    full_name: str | None = None
+    email: str
+    status: str
+    operation_id: str | None = None
+    progress_title: str | None = None
+    progress_message: str | None = None
+
+
+class AssessmentPreparationBatchStatusResponse(BaseModel):
+    batch_id: str
+    organization_id: int
+    status: str
+    total_participants: int
+    processed_participants: int
+    remaining_participants: int
+    completed_participants: int
+    failed_participants: int
+    skipped_participants: int
+    current_participant: AssessmentPreparationBatchParticipant | None = None
+    participants: list[AssessmentPreparationBatchParticipant] = Field(default_factory=list)
 
 
 class AssessmentSessionLookupResponse(BaseModel):

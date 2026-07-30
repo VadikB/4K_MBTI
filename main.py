@@ -8,7 +8,7 @@ from Api.config import settings
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException as FastAPIHTTPException
 from fastapi.requests import Request
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.gzip import GZipMiddleware
@@ -158,6 +158,22 @@ def readiness() -> dict:
         "llm_max_concurrency_per_worker": settings.deepseek_max_concurrency,
         "assessment_queue": assessment_preparation_queue.stats(),
     }
+
+
+@app.get("/app-config.js", include_in_schema=False)
+def app_config() -> Response:
+    external_transfer_enabled = (
+        "true" if settings.assessment_external_answer_transfer_enabled else "false"
+    )
+    return Response(
+        content=(
+            "window.__APP_CONFIG__ = Object.freeze({"
+            f"assessmentExternalAnswerTransferEnabled: {external_transfer_enabled}"
+            "});"
+        ),
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @app.get("/docs", include_in_schema=False)

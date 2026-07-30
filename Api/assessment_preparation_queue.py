@@ -23,6 +23,12 @@ def _get_interviewer_agent():
     return interviewer_agent
 
 
+def _get_assessment_service():
+    from Api.assessment_service import assessment_service
+
+    return assessment_service
+
+
 @dataclass(slots=True)
 class AssessmentPreparationJob:
     id: int
@@ -32,6 +38,7 @@ class AssessmentPreparationJob:
     attempts: int
     max_attempts: int
     worker_id: str
+    prepare_only: bool = False
 
 
 class AssessmentPreparationQueue:
@@ -72,8 +79,9 @@ class AssessmentPreparationQueue:
             thread.join(timeout=5)
         logger.info("Assessment preparation queue stopped")
 
-    def enqueue(self, *, operation_id: str, user: UserResponse) -> dict:
+    def enqueue(self, *, operation_id: str, user: UserResponse, prepare_only: bool = False) -> dict:
         payload = user.model_dump(mode="json")
+        payload["_prepare_only"] = prepare_only
         with get_connection() as connection:
             connection.execute("SELECT pg_advisory_xact_lock(%s, %s)", (424242, int(user.id)))
             existing = connection.execute(
@@ -183,6 +191,7 @@ class AssessmentPreparationQueue:
         payload = claimed["user_payload_json"]
         if isinstance(payload, str):
             payload = json.loads(payload)
+        prepare_only = bool(payload.pop("_prepare_only", False))
         return AssessmentPreparationJob(
             id=int(claimed["id"]),
             operation_id=str(claimed["operation_id"]),
@@ -191,6 +200,7 @@ class AssessmentPreparationQueue:
             attempts=int(claimed["attempts"]),
             max_attempts=int(claimed["max_attempts"]),
             worker_id=worker_id,
+            prepare_only=prepare_only,
         )
 
     def _run_maintenance_if_due(self) -> None:
@@ -249,10 +259,19 @@ class AssessmentPreparationQueue:
                 repaired_user = interviewer_agent.backfill_user_profile(user.id)
                 if repaired_user is not None:
                     user = repaired_user
-            result = interviewer_agent.start_case_interview(
-                user=user,
-                progress_operation_id=job.operation_id,
-            )
+            if job.prepare_only:
+                plan = _get_assessment_service().ensure_assessment_session(
+                    user,
+                    progress_operation_id=job.operation_id,
+                )
+                if plan is None:
+                    raise ValueError("Не удалось предварительно подготовить assessment-сессию.")
+                result = None
+            else:
+                result = interviewer_agent.start_case_interview(
+                    user=user,
+                    progress_operation_id=job.operation_id,
+                )
             self._complete(job, result)
         except ValueError as exc:
             message = str(exc)
@@ -293,8 +312,8 @@ class AssessmentPreparationQueue:
             except Exception:
                 logger.exception("Assessment queue heartbeat failed operation_id=%s", job.operation_id)
 
-    def _complete(self, job: AssessmentPreparationJob, result: AssessmentStartResponse) -> None:
-        result_json = json.dumps(result.model_dump(mode="json"), ensure_ascii=False)
+    def _complete(self, job: AssessmentPreparationJob, result: AssessmentStartResponse | None) -> None:
+        result_json = json.dumps(result.model_dump(mode="json"), ensure_ascii=False) if result is not None else None
         with get_connection() as connection:
             cursor = connection.execute(
                 """
@@ -318,8 +337,12 @@ class AssessmentPreparationQueue:
             return
         operation_progress_service.complete(
             job.operation_id,
-            title="Ассессмент готов",
-            message="Первый кейс подготовлен. Можно начинать интервью.",
+            title="Кейсы подготовлены" if job.prepare_only else "Ассессмент готов",
+            message=(
+                "Персонализированные кейсы подготовлены заранее. Пользователь сможет начать без повторной генерации."
+                if job.prepare_only
+                else "Первый кейс подготовлен. Можно начинать интервью."
+            ),
         )
         logger.info("Assessment preparation completed operation_id=%s user_id=%s", job.operation_id, job.user_id)
 

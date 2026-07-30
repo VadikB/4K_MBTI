@@ -2900,6 +2900,37 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS assessment_preparation_batches (
+                id BIGSERIAL PRIMARY KEY,
+                batch_id TEXT NOT NULL UNIQUE,
+                organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+                created_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_preparation_batch_items (
+                id BIGSERIAL PRIMARY KEY,
+                batch_id TEXT NOT NULL REFERENCES assessment_preparation_batches(batch_id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                operation_id TEXT REFERENCES assessment_preparation_jobs(operation_id) ON DELETE SET NULL,
+                initial_status TEXT NOT NULL DEFAULT 'queued',
+                status_message TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (batch_id, user_id)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_assessment_preparation_batch_items_batch
+            ON assessment_preparation_batch_items(batch_id, created_at)
+            """
+        )
+        connection.execute(
+            """
             CREATE TABLE IF NOT EXISTS llm_prompts (
                 prompt_code TEXT PRIMARY KEY,
                 prompt_name TEXT NOT NULL,

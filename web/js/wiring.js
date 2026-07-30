@@ -108,7 +108,9 @@ import {
   adminMethodologyTabLibrary,
   adminMethodologyTabBranches,
   adminMethodologyTabPassports,
+  interviewPanel,
   interviewForm,
+  interviewMessages,
   interviewTextarea,
   interviewSubmitButton,
   interviewSubmitLabel,
@@ -167,6 +169,7 @@ import {
   loadAdminMethodology,
   loadAdminReportDetail,
 } from './screen-loaders.js';
+import { ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED } from './config.js';
 
 const withScreen = (loader, callback) => {
   void (async () => {
@@ -835,6 +838,12 @@ if (adminOrganizationsList) {
       withScreen(loadAdminOrganizations, (module) => module.deleteOrDeactivateAdminOrganization(organizationId, organizationName));
       return;
     }
+    if (button.dataset.action === 'prepare-organization-assessments') {
+      button.disabled = true;
+      button.textContent = 'Запускаем…';
+      withScreen(loadAdminOrganizations, (module) => module.prepareAdminOrganizationAssessments(organizationId));
+      return;
+    }
     if (!value) {
       return;
     }
@@ -863,6 +872,16 @@ if (adminOrganizationsList) {
         return;
       }
       withScreen(loadAdminOrganizations, (module) => module.resetAdminOrganizationMemberPassword(organizationId, value));
+      return;
+    }
+    if (button.dataset.action === 'prepare-member-assessment') {
+      const userId = Number(button.getAttribute('data-user-id'));
+      if (!userId) {
+        return;
+      }
+      withScreen(loadAdminOrganizations, (module) =>
+        module.prepareAdminOrganizationMemberAssessment(organizationId, userId),
+      );
     }
   });
 }
@@ -1572,6 +1591,57 @@ interviewForm.addEventListener('submit', (event) => {
   event.preventDefault();
   void submitCurrentInterviewAnswer();
 });
+
+if (!ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED) {
+  interviewPanel.classList.add('external-transfer-disabled');
+  interviewMessages.classList.add('external-transfer-disabled');
+
+  const blockExternalTransfer = (event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (event.clipboardData) {
+      event.clipboardData.clearData();
+      event.clipboardData.setData('text/plain', '');
+    }
+    showError(
+      interviewError,
+      'Копирование вопросов и вставка готовых ответов отключены для этого тестирования.',
+    );
+  };
+
+  const isInterviewScreenActive = () => {
+    return state.currentScreen === 'interview' && !interviewPanel.classList.contains('hidden');
+  };
+
+  document.addEventListener('copy', (event) => {
+    if (isInterviewScreenActive()) {
+      blockExternalTransfer(event);
+    }
+  }, true);
+  document.addEventListener('cut', (event) => {
+    if (isInterviewScreenActive()) {
+      blockExternalTransfer(event);
+    }
+  }, true);
+  document.addEventListener('keydown', (event) => {
+    if (
+      isInterviewScreenActive() &&
+      (event.ctrlKey || event.metaKey) &&
+      ['c', 'x'].includes(String(event.key || '').toLowerCase())
+    ) {
+      blockExternalTransfer(event);
+    }
+  }, true);
+  interviewMessages.addEventListener('contextmenu', blockExternalTransfer);
+  interviewMessages.addEventListener('dragstart', blockExternalTransfer);
+  interviewTextarea.addEventListener('paste', blockExternalTransfer);
+  interviewTextarea.addEventListener('drop', blockExternalTransfer);
+  interviewTextarea.addEventListener('beforeinput', (event) => {
+    if (event.inputType === 'insertFromPaste' || event.inputType === 'insertFromDrop') {
+      blockExternalTransfer(event);
+    }
+  });
+}
 
 interviewSubmitButton.addEventListener('click', (event) => {
   event.preventDefault();
