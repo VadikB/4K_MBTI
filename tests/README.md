@@ -34,6 +34,14 @@ export TEST_DATABASE_URL='postgresql://app_user:password@127.0.0.1:5432/app_db_m
 .venv/bin/python -m pytest --run-integration -m integration
 ```
 
+Integration-набор проверяет обе постоянные очереди:
+
+- подготовку assessment-сессии;
+- итоговый анализ `cases_completed → analyzing → completed/report_ready`;
+- дедупликацию активных заданий;
+- восстановление истекшего lease;
+- окончательную ошибку и ручной повторный запуск.
+
 Защита в `conftest.py` запрещает integration-прогон, если имя базы не содержит
 `test` или `pytest`, либо совпадает с `DB_NAME`. Рабочую `app_db` использовать
 для pytest нельзя.

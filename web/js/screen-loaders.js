@@ -82,9 +82,9 @@ export const loadSkillAssessmentsForReport = async () => {
   return module.loadSkillAssessments();
 };
 
-export const openOnboardingScreen = async () => {
+export const openOnboardingScreen = async (options = {}) => {
   const module = await loadOnboarding();
-  module.openOnboarding();
+  return module.openOnboarding(options);
 };
 
 export const openWelcomeScreenLazy = async () => {

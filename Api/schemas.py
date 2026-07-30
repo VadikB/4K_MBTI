@@ -1058,6 +1058,25 @@ class AssessmentMessageResponse(BaseModel):
     mbti_followup_index: int | None = None
     mbti_followup_total: int | None = None
     mbti_summary: dict | None = None
+    assessment_status: str | None = None
+    analysis_operation_id: str | None = None
+
+
+class AssessmentAnalysisStatusResponse(BaseModel):
+    operation_id: str
+    session_id: int
+    status: str
+    session_status: str
+    progress_percent: int
+    current_step: str
+    attempts: int
+    max_attempts: int
+    error_code: str | None = None
+    error_message: str | None = None
+    retryable: bool = False
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None = None
 
 
 class SkillAssessmentResponse(BaseModel):
@@ -1235,6 +1254,39 @@ class UserSessionBootstrapResponse(BaseModel):
     dashboard: UserDashboard
     is_admin: bool = False
     admin_dashboard: AdminDashboard | None = None
+
+
+class ProfileStateResponse(BaseModel):
+    status: str
+    missing_fields: list[str] = Field(default_factory=list)
+
+
+class OnboardingStateUpdateRequest(BaseModel):
+    status: str
+    current_step: int = 0
+
+
+class OnboardingStateResponse(BaseModel):
+    status: str
+    current_step: int = 0
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    skipped_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class JourneyAssessmentState(BaseModel):
+    status: str
+    session_id: int | None = None
+    session_code: str | None = None
+
+
+class UserJourneyStateResponse(BaseModel):
+    profile: ProfileStateResponse
+    onboarding: OnboardingStateResponse
+    assessment: JourneyAssessmentState
+    report_status: str
+    next_action: str
 
 
 class AppVersionResponse(BaseModel):

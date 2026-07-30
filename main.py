@@ -16,6 +16,7 @@ from starlette.middleware.gzip import GZipMiddleware
 from Api.database import ensure_core_schema, get_connection, get_connection_pool_stats
 from Api.routes import router as users_router
 from Api.assessment_preparation_queue import assessment_preparation_queue
+from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.system_logging import configure_application_logging, configure_database_logging, write_system_log
 from Api.web_session_service import web_session_service
 
@@ -46,11 +47,13 @@ if os.getenv("AGENT4K_ENABLE_SCREEN_PREVIEWS") == "1":
 @app.on_event("startup")
 def start_background_workers() -> None:
     assessment_preparation_queue.start()
+    assessment_analysis_queue.start()
 
 
 @app.on_event("shutdown")
 def stop_background_workers() -> None:
     assessment_preparation_queue.stop()
+    assessment_analysis_queue.stop()
 
 
 def _resolve_request_user(request: Request):
@@ -157,6 +160,7 @@ def readiness() -> dict:
         "llm_enabled": bool(settings.deepseek_api_keys),
         "llm_max_concurrency_per_worker": settings.deepseek_max_concurrency,
         "assessment_queue": assessment_preparation_queue.stats(),
+        "analysis_queue": assessment_analysis_queue.stats(),
     }
 
 

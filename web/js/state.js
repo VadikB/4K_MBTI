@@ -84,6 +84,7 @@ export const state = {
   processingAnimationDone: false,
   processingDataLoaded: false,
   processingAutoTransitionStarted: false,
+  processingServerProgress: null,
   assessmentPreparationStatus: 'idle',
   assessmentPreparationProgressPercent: 0,
   assessmentPreparationTitle: '',

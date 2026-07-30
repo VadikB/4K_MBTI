@@ -2900,6 +2900,83 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS assessment_analysis_jobs (
+                id BIGSERIAL PRIMARY KEY,
+                operation_id TEXT NOT NULL UNIQUE,
+                session_id INTEGER NOT NULL REFERENCES user_sessions(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                status TEXT NOT NULL DEFAULT 'queued',
+                progress_percent INTEGER NOT NULL DEFAULT 0,
+                current_step TEXT NOT NULL DEFAULT 'queued',
+                attempts INTEGER NOT NULL DEFAULT 0,
+                max_attempts INTEGER NOT NULL DEFAULT 3,
+                error_code TEXT,
+                error_message TEXT,
+                retryable BOOLEAN NOT NULL DEFAULT TRUE,
+                worker_id TEXT,
+                locked_at TIMESTAMP,
+                next_attempt_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                completed_at TIMESTAMP,
+                CONSTRAINT assessment_analysis_jobs_status_check
+                    CHECK (status IN ('queued', 'running', 'completed', 'failed')),
+                CONSTRAINT assessment_analysis_jobs_progress_check
+                    CHECK (progress_percent BETWEEN 0 AND 100)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_assessment_analysis_jobs_claim
+            ON assessment_analysis_jobs(status, next_attempt_at, created_at)
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_assessment_analysis_jobs_active_session
+            ON assessment_analysis_jobs(session_id)
+            WHERE status IN ('queued', 'running')
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS analysis_started_at TIMESTAMP
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS analysis_completed_at TIMESTAMP
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS error_stage TEXT
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS error_code TEXT
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS error_message TEXT
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS error_retryable BOOLEAN NOT NULL DEFAULT FALSE
+            """
+        )
+        connection.execute(
+            """
             CREATE TABLE IF NOT EXISTS assessment_preparation_batches (
                 id BIGSERIAL PRIMARY KEY,
                 batch_id TEXT NOT NULL UNIQUE,
@@ -2989,6 +3066,23 @@ def ensure_core_schema() -> None:
             """
             ALTER TABLE users
             ADD COLUMN IF NOT EXISTS avatar_data_url TEXT
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_onboarding_state (
+                user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                status TEXT NOT NULL DEFAULT 'not_started',
+                current_step INTEGER NOT NULL DEFAULT 0,
+                started_at TIMESTAMP,
+                completed_at TIMESTAMP,
+                skipped_at TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                CONSTRAINT user_onboarding_state_status_check
+                    CHECK (status IN ('not_started', 'in_progress', 'completed', 'skipped')),
+                CONSTRAINT user_onboarding_state_step_check
+                    CHECK (current_step >= 0)
+            )
             """
         )
         connection.execute(

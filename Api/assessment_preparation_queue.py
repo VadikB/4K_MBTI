@@ -13,6 +13,7 @@ from Api.config import settings
 from Api.database import get_connection
 from Api.progress_service import operation_progress_service
 from Api.schemas import AssessmentStartResponse, UserResponse
+from Api.user_journey import evaluate_profile_state
 
 logger = logging.getLogger("agent4k.assessment_queue")
 
@@ -250,15 +251,24 @@ class AssessmentPreparationQueue:
         try:
             interviewer_agent = _get_interviewer_agent()
             user = UserResponse.model_validate(job.user_payload)
-            if (
-                not user.role_id
-                or not (user.company_industry and user.company_industry.strip())
-                or not user.active_profile_id
-                or not (user.normalized_duties and user.normalized_duties.strip())
-            ):
+            profile_state = evaluate_profile_state(user)
+            user_fixable_fields = {"duties", "role", "company_industry", "active_profile"}
+            non_repairable_fields = set(profile_state.missing_fields) - user_fixable_fields
+            if non_repairable_fields:
+                raise ValueError(
+                    "Завершите настройку профиля перед оценкой. "
+                    "Не заполнены поля: " + ", ".join(sorted(non_repairable_fields)) + "."
+                )
+            if not profile_state.is_complete:
                 repaired_user = interviewer_agent.backfill_user_profile(user.id)
                 if repaired_user is not None:
                     user = repaired_user
+                repaired_state = evaluate_profile_state(user)
+                if not repaired_state.is_complete:
+                    raise ValueError(
+                        "Завершите настройку профиля перед оценкой. "
+                        "Не заполнены поля: " + ", ".join(repaired_state.missing_fields) + "."
+                    )
             if job.prepare_only:
                 plan = _get_assessment_service().ensure_assessment_session(
                     user,

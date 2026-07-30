@@ -20,6 +20,7 @@ from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_ser
 from Api.config import settings
 from Api.assessment_service import assessment_service
 from Api.assessment_preparation_queue import assessment_preparation_queue
+from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.agent import interviewer_agent
 from Api.database import get_connection, get_level_percent_map, recompute_case_quality_checks
 from Api.database import get_case_methodology_versions
@@ -50,6 +51,13 @@ from Api.regression_tests import (
     run_technical_regression,
 )
 from Api.web_session_service import web_session_service
+from Api.user_journey import (
+    determine_next_action,
+    evaluate_profile_state,
+    get_or_create_onboarding_state,
+    normalize_assessment_status,
+    update_onboarding_state,
+)
 from Api.schemas import (
     AdminDashboard,
     AdminDetailedReportItem,
@@ -110,6 +118,7 @@ from Api.schemas import (
     AgentProfileConfirmRequest,
     AgentReply,
     AssessmentClientEventRequest,
+    AssessmentAnalysisStatusResponse,
     AssessmentMessageRequest,
     AssessmentMessageResponse,
     AssessmentPreparationEnqueueResponse,
@@ -140,6 +149,11 @@ from Api.schemas import (
     UserProfileSummaryResponse,
     UserSessionBootstrapResponse,
     UserSessionRestoreResponse,
+    JourneyAssessmentState,
+    OnboardingStateResponse,
+    OnboardingStateUpdateRequest,
+    ProfileStateResponse,
+    UserJourneyStateResponse,
     UserResponse,
 )
 
@@ -556,6 +570,7 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
         FROM user_sessions us
         WHERE us.user_id = %s
           AND us.assessment_code = 'competencies_4k'
+          AND us.status = 'completed'
         """,
         (user.id,),
     ).fetchone()
@@ -577,6 +592,7 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
             FROM user_sessions us
             WHERE us.user_id = %s
               AND us.assessment_code = 'competencies_4k'
+              AND us.status = 'completed'
         )
         SELECT
             rs.id AS session_id,
@@ -2954,15 +2970,7 @@ def _build_password_auth_response(
 ) -> CheckOrCreateUserResponse:
     with get_connection() as connection:
         user = verification.user
-        if (
-            not verification.is_new_user
-            and (
-                not user.role_id
-                or not (user.company_industry and user.company_industry.strip())
-                or not user.active_profile_id
-                or not (user.normalized_duties and user.normalized_duties.strip())
-            )
-        ):
+        if not verification.is_new_user and not evaluate_profile_state(user).is_complete:
             repaired_user = interviewer_agent.backfill_user_profile(user.id)
             if repaired_user is not None:
                 user = _strip_avatar(repaired_user)
@@ -3030,15 +3038,7 @@ def verify_email_magic_link(payload: AuthEmailVerifyRequest, response: FastAPIRe
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     with get_connection() as connection:
         user = verification.user
-        if (
-            not verification.is_new_user
-            and (
-                not user.role_id
-                or not (user.company_industry and user.company_industry.strip())
-                or not user.active_profile_id
-                or not (user.normalized_duties and user.normalized_duties.strip())
-            )
-        ):
+        if not verification.is_new_user and not evaluate_profile_state(user).is_complete:
             repaired_user = interviewer_agent.backfill_user_profile(user.id)
             if repaired_user is not None:
                 user = _strip_avatar(repaired_user)
@@ -3163,6 +3163,94 @@ def bootstrap_user_session(user_id: int) -> UserSessionBootstrapResponse:
             user=_compact_user_response(user),
             dashboard=_build_dashboard(connection, user),
         )
+
+
+def _require_matching_session_user(request: Request, user_id: int) -> UserResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Сессия не найдена. Войдите заново.")
+    if user.id != user_id:
+        raise HTTPException(status_code=403, detail="Нет доступа к состоянию другого пользователя.")
+    return user
+
+
+def _onboarding_response(payload: dict) -> OnboardingStateResponse:
+    return OnboardingStateResponse(
+        status=str(payload["status"]),
+        current_step=int(payload["current_step"] or 0),
+        started_at=payload.get("started_at"),
+        completed_at=payload.get("completed_at"),
+        skipped_at=payload.get("skipped_at"),
+        updated_at=payload.get("updated_at"),
+    )
+
+
+@router.get("/{user_id}/journey-state", response_model=UserJourneyStateResponse)
+def get_user_journey_state(user_id: int, request: Request) -> UserJourneyStateResponse:
+    user = _require_matching_session_user(request, user_id)
+    profile_state = evaluate_profile_state(user)
+    with get_connection() as connection:
+        onboarding = get_or_create_onboarding_state(connection, user_id)
+        session_row = connection.execute(
+            """
+            SELECT id, session_code, status
+            FROM user_sessions
+            WHERE user_id = %s
+              AND assessment_code = 'competencies_4k'
+            ORDER BY
+                CASE WHEN status IN ('created', 'active', 'cases_completed', 'analyzing') THEN 0 ELSE 1 END,
+                COALESCE(started_at, created_at) DESC,
+                id DESC
+            LIMIT 1
+            """,
+            (user_id,),
+        ).fetchone()
+        connection.commit()
+
+    assessment_status = normalize_assessment_status(str(session_row["status"]) if session_row else None)
+    report_status = "ready" if assessment_status == "report_ready" else "not_ready"
+    next_action = determine_next_action(
+        profile_status=profile_state.status,
+        onboarding_status=str(onboarding["status"]),
+        assessment_status=assessment_status,
+    )
+
+    return UserJourneyStateResponse(
+        profile=ProfileStateResponse(
+            status=profile_state.status,
+            missing_fields=list(profile_state.missing_fields),
+        ),
+        onboarding=_onboarding_response(onboarding),
+        assessment=JourneyAssessmentState(
+            status=assessment_status,
+            session_id=int(session_row["id"]) if session_row else None,
+            session_code=str(session_row["session_code"]) if session_row and session_row["session_code"] else None,
+        ),
+        report_status=report_status,
+        next_action=next_action,
+    )
+
+
+@router.put("/{user_id}/onboarding", response_model=OnboardingStateResponse)
+def set_user_onboarding_state(
+    user_id: int,
+    payload: OnboardingStateUpdateRequest,
+    request: Request,
+) -> OnboardingStateResponse:
+    _require_matching_session_user(request, user_id)
+    with get_connection() as connection:
+        try:
+            onboarding = update_onboarding_state(
+                connection,
+                user_id,
+                status=payload.status,
+                current_step=payload.current_step,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        connection.commit()
+    return _onboarding_response(onboarding)
 
 
 @router.get("/admin/dashboard", response_model=AdminDashboard)
@@ -3556,7 +3644,7 @@ def prepare_admin_organization_member_assessment(
     if row is None:
         raise HTTPException(status_code=404, detail="Organization member not found")
     user = _user_response_from_row(row)
-    if not user.role_id or not user.active_profile_id or not user.company_industry or not user.normalized_duties:
+    if not evaluate_profile_state(user).is_complete:
         raise HTTPException(
             status_code=400,
             detail="Сначала заполните роль, должностные обязанности и сферу деятельности пользователя.",
@@ -3712,7 +3800,7 @@ def prepare_admin_organization_assessments(
             status_message = "Кейсы уже были подготовлены."
             operation_id = None
             completed_count += 1
-        elif not user.role_id or not user.active_profile_id or not user.company_industry or not user.normalized_duties:
+        elif not evaluate_profile_state(user).is_complete:
             initial_status = "skipped"
             status_message = "Не заполнены роль, обязанности или сфера деятельности."
             operation_id = None
@@ -5119,6 +5207,7 @@ def get_user_profile_summary(user_id: int) -> UserProfileSummaryResponse:
             ) AS score_stats ON score_stats.session_id = us.id AND score_stats.user_id = us.user_id
             WHERE us.user_id = %s
               AND us.assessment_code = 'competencies_4k'
+              AND us.status = 'completed'
             ORDER BY us.started_at DESC NULLS LAST, us.id DESC
             """,
             (user_id,),
@@ -5344,11 +5433,13 @@ def process_assessment_message(payload: AssessmentMessageRequest, request: Reque
             progress_operation_id=operation_id,
         )
         assessment_completed = bool(getattr(result, "assessment_completed", False))
+        if assessment_completed:
+            assessment_analysis_queue.notify()
         operation_progress_service.complete(
             operation_id,
-            title="Итоговый отчет готов" if assessment_completed else "Следующий шаг готов",
+            title="Итоговый анализ запущен" if assessment_completed else "Следующий шаг готов",
             message=(
-                "Все кейсы обработаны. Открываем экран итогового анализа."
+                "Все кейсы обработаны. Итоговый профиль формируется в фоне."
                 if assessment_completed
                 else "Интервью обновлено. Можно продолжать работу с кейсом."
             ),
@@ -5357,6 +5448,55 @@ def process_assessment_message(payload: AssessmentMessageRequest, request: Reque
     except ValueError as exc:
         operation_progress_service.fail(operation_id, message=str(exc))
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get(
+    "/{user_id}/assessment/{session_id}/analysis-status",
+    response_model=AssessmentAnalysisStatusResponse,
+)
+def get_assessment_analysis_status(
+    user_id: int,
+    session_id: int,
+    request: Request,
+) -> AssessmentAnalysisStatusResponse:
+    _require_matching_session_user(request, user_id)
+    job = assessment_analysis_queue.get_status(session_id=session_id, user_id=user_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Задание итогового анализа не найдено.")
+    return AssessmentAnalysisStatusResponse(**job)
+
+
+@router.post(
+    "/{user_id}/assessment/{session_id}/analysis-retry",
+    response_model=AssessmentAnalysisStatusResponse,
+)
+def retry_assessment_analysis(
+    user_id: int,
+    session_id: int,
+    request: Request,
+) -> AssessmentAnalysisStatusResponse:
+    _require_matching_session_user(request, user_id)
+    with get_connection() as connection:
+        session_row = connection.execute(
+            """
+            SELECT id, user_id, status
+            FROM user_sessions
+            WHERE id = %s
+              AND user_id = %s
+            """,
+            (session_id, user_id),
+        ).fetchone()
+    if session_row is None:
+        raise HTTPException(status_code=404, detail="Assessment session not found")
+    if str(session_row["status"]) == "completed":
+        raise HTTPException(status_code=409, detail="Итоговый отчет уже готов.")
+    if str(session_row["status"]) not in {"cases_completed", "analyzing", "failed"}:
+        raise HTTPException(status_code=409, detail="Повторный анализ доступен только после завершения всех кейсов.")
+    assessment_analysis_queue.enqueue_retry(session_id=session_id, user_id=user_id)
+    job = assessment_analysis_queue.get_status(session_id=session_id, user_id=user_id)
+    if job is None:
+        raise HTTPException(status_code=500, detail="Не удалось повторно запустить итоговый анализ.")
+    return AssessmentAnalysisStatusResponse(**job)
 
 
 @router.post("/assessment/client-event")

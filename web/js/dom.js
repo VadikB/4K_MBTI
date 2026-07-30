@@ -55,6 +55,7 @@ export const dashboardUserName = document.getElementById('dashboard-user-name');
 export const dashboardUserRole = document.getElementById('dashboard-user-role');
 export const dashboardAvatar = document.getElementById('dashboard-avatar');
 export const dashboardProfileButton = document.getElementById('dashboard-profile-button');
+export const dashboardOnboardingButton = document.getElementById('dashboard-onboarding-button');
 export const assessmentTitle = document.getElementById('assessment-title');
 export const assessmentDescription = document.getElementById('assessment-description');
 export const assessmentStatusLabel = document.getElementById('assessment-status-label');

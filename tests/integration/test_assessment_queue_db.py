@@ -63,10 +63,12 @@ def make_test_user() -> UserResponse:
         created_at=datetime.now(UTC),
         role_id=1,
         job_description="Менеджер",
+        raw_position="Менеджер",
         raw_duties="Управляет задачами",
         normalized_duties="Управляет задачами",
         active_profile_id=1,
         company_industry="ИТ",
+        personal_data_consent_accepted_at=datetime.now(UTC),
     )
 
 

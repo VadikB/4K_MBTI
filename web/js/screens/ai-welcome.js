@@ -12,7 +12,6 @@ import { showError } from '../components/errors.js';
 import {
   canReusePreparedAssessment,
   renderAssessmentPreparationState,
-  beginAssessmentPreparation,
 } from './assessment.js';
 import {
   hasIncompleteAssessment,
@@ -180,7 +179,6 @@ export const openAiWelcome = () => {
   renderAiWelcomeState();
   hideAllPanels();
   aiWelcomePanel.classList.remove('hidden');
-  void beginAssessmentPreparation();
 };
 
 export const openWelcomeScreen = () => {
@@ -226,5 +224,4 @@ export const openPrechat = () => {
   showError(prechatError, '');
   renderAssessmentPreparationState();
   prechatPanel.classList.remove('hidden');
-  void beginAssessmentPreparation();
 };

@@ -23,6 +23,7 @@ import {
   dashboardRestartButton,
   dashboardMobileExitButton,
   dashboardProfileButton,
+  dashboardOnboardingButton,
   adminLogoutButton,
   adminProfileButton,
   adminStartAssessmentButton,
@@ -168,6 +169,7 @@ import {
   loadAdminReports,
   loadAdminMethodology,
   loadAdminReportDetail,
+  openOnboardingScreen,
 } from './screen-loaders.js';
 import { ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED } from './config.js';
 
@@ -1403,6 +1405,12 @@ if (adminReportDetailExpertAssessedAt) {
 dashboardProfileButton.addEventListener('click', () => {
   withScreen(loadProfile, (module) => module.openProfile());
 });
+
+if (dashboardOnboardingButton) {
+  dashboardOnboardingButton.addEventListener('click', () => {
+    void openOnboardingScreen({ currentStep: 0, reviewMode: true });
+  });
+}
 
 if (adminProfileButton) {
   adminProfileButton.addEventListener('click', () => {

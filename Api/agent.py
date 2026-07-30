@@ -22,6 +22,7 @@ from Api.profile_normalization import (
     normalize_text as normalize_profile_text,
     parse_bullets as parse_bullet_list,
 )
+from Api.user_journey import evaluate_profile_state
 from Api.progress_service import operation_progress_service
 from Api.schemas import (
     AgentReply,
@@ -3124,17 +3125,16 @@ class InterviewerAgent:
     def _get_missing_profile_stage_for_existing_user(self, user: UserResponse | None) -> ConversationStage | None:
         if user is None:
             return None
-        if user.personal_data_consent_accepted_at is None:
+        missing_fields = set(evaluate_profile_state(user).missing_fields)
+        if "personal_data_consent" in missing_fields:
             return ConversationStage.ASK_PERSONAL_DATA_CONSENT
-        if not (user.raw_position or user.job_description):
+        if "position" in missing_fields:
             return ConversationStage.ASK_POSITION
-        if not (user.raw_duties or user.normalized_duties):
+        if "duties" in missing_fields or "active_profile" in missing_fields:
             return ConversationStage.ASK_DUTIES
-        if not user.role_id:
+        if "role" in missing_fields:
             return ConversationStage.ASK_ROLE
-        if not (user.telegram and user.telegram.strip()):
-            return ConversationStage.ASK_TELEGRAM
-        if not (user.company_industry and user.company_industry.strip()):
+        if "company_industry" in missing_fields:
             return ConversationStage.ASK_COMPANY_INDUSTRY
         return None
 

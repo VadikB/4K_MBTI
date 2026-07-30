@@ -65,6 +65,7 @@ class Settings:
     )
     assessment_queue_max_attempts: int = int(os.getenv("ASSESSMENT_QUEUE_MAX_ATTEMPTS", "3"))
     assessment_queue_retention_hours: int = int(os.getenv("ASSESSMENT_QUEUE_RETENTION_HOURS", "168"))
+    assessment_analysis_worker_threads: int = int(os.getenv("ASSESSMENT_ANALYSIS_WORKER_THREADS", "1"))
     assessment_external_answer_transfer_enabled: bool = (
         os.getenv("ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED", "true").strip().lower()
         in {"1", "true", "yes", "on"}

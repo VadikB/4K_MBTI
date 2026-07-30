@@ -9,12 +9,13 @@ from uuid import uuid4
 
 from Api.case_context_builder import build_case_context
 from Api.case_reuse_service import case_reuse_service
-from Api.communication_agent import competency_assessment_agents
+from Api.config import settings
 from Api.database import get_case_methodology_versions, get_connection
 from Api.deepseek_client import DeepSeekTurnResult, deepseek_client
 from Api.mbti.service import mbti_assessment_service
 from Api.progress_service import operation_progress_service
 from Api.schemas import UserResponse
+from Api.user_journey import evaluate_profile_state
 
 
 @dataclass(slots=True)
@@ -66,6 +67,8 @@ class AssessmentTurnReply:
     mbti_followup_index: int | None = None
     mbti_followup_total: int | None = None
     mbti_summary: dict[str, object] | None = None
+    assessment_status: str | None = None
+    analysis_operation_id: str | None = None
 
 
 class AssessmentService:
@@ -420,8 +423,12 @@ class AssessmentService:
     def ensure_assessment_session(self, user: UserResponse, progress_operation_id: str | None = None) -> AssessmentSessionPlan | None:
         if not user.id:
             raise ValueError("Пользователь не найден.")
-        if not user.role_id:
-            raise ValueError("Для пользователя не определена роль. Завершите настройку профиля и выберите роль.")
+        profile_state = evaluate_profile_state(user)
+        if not profile_state.is_complete:
+            raise ValueError(
+                "Завершите настройку профиля перед оценкой. "
+                "Не заполнены поля: " + ", ".join(profile_state.missing_fields) + "."
+            )
 
         with get_connection() as connection:
             operation_progress_service.advance(
@@ -1873,15 +1880,6 @@ class AssessmentService:
                 "stop_reason": "message_limit_reached",
             }
 
-        if str(context.get("interactivity_mode") or "").strip().lower() == "1 ход" and user_message_count >= 1:
-            return {
-                "assistant_message": "Ответ зафиксирован. Завершаем кейс автоматически.",
-                "case_completed": False,
-                "stop_reason": "single_turn_auto_finish",
-                "pending_auto_finish": True,
-                "auto_finish_delay_ms": self.CASE_AUTO_FINISH_DELAY_MS,
-            }
-
         turn = deepseek_client.evaluate_case_turn(
             system_prompt=system_prompt,
             dialogue=normalized_dialogue,
@@ -2844,45 +2842,6 @@ class AssessmentService:
                     **history_fields,
                 )
 
-            if str(methodical_context.get("interactivity_mode") or "").strip().lower() == "1 ход" and user_message_count >= 1:
-                connection.execute(
-                    """
-                    INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-                    VALUES (%s, %s, 'assistant', %s)
-                    """,
-                    (
-                        plan.current_session_case_id,
-                        session_row["id"],
-                        "Ответ зафиксирован. Завершаем кейс автоматически.",
-                    ),
-                )
-                connection.commit()
-                return AssessmentTurnReply(
-                    session_code=session_code,
-                    session_id=session_row["id"],
-                    session_case_id=plan.current_session_case_id,
-                    case_title=plan.current_case_title,
-                    case_number=plan.current_case_number,
-                    total_cases=plan.total_cases,
-                    message="Ответ зафиксирован. Завершаем кейс автоматически.",
-                    case_completed=False,
-                    assessment_completed=False,
-                    result_status=None,
-                    completion_score=None,
-                    evaluator_summary=None,
-                    case_time_limit_minutes=plan.current_case_time_limit_minutes,
-                    planned_case_duration_minutes=plan.current_case_planned_duration_minutes,
-                    case_started_at=plan.current_case_started_at,
-                    case_time_remaining_seconds=self._get_remaining_case_seconds(
-                        plan.current_case_started_at,
-                        plan.current_case_time_limit_minutes,
-                    ),
-                    is_dialog_case=False,
-                    pending_auto_finish=True,
-                    auto_finish_delay_ms=self.CASE_AUTO_FINISH_DELAY_MS,
-                    **history_fields,
-                )
-
             turn = deepseek_client.evaluate_case_turn(
                 system_prompt=prompt_row["final_prompt_text"] if prompt_row else "",
                 dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
@@ -3440,27 +3399,52 @@ class AssessmentService:
             operation_progress_service.advance(
                 progress_operation_id,
                 3,
-                title="Собираем итоговый профиль",
-                message="Завершаем assessment-сессию, считаем итоговые оценки и формируем финальный MBTI-профиль.",
+                title="Запускаем итоговый анализ",
+                message="Все кейсы завершены. Ставим формирование итогового профиля в очередь.",
             )
-            finished_at = self._utc_now()
+            analysis_operation_id = f"analysis-{session_row['id']}-{uuid4().hex}"
             connection.execute(
                 """
                 UPDATE user_sessions
-                SET status = 'completed',
-                    finished_at = COALESCE(finished_at, %s)
+                SET status = 'cases_completed',
+                    error_stage = NULL,
+                    error_code = NULL,
+                    error_message = NULL,
+                    error_retryable = FALSE
                 WHERE id = %s
                 """,
-                (finished_at, session_row["id"]),
+                (session_row["id"],),
             )
-            for agent in competency_assessment_agents:
-                agent.evaluate_session(
-                    connection=connection,
-                    session_id=session_row["id"],
-                    user_id=session_row["user_id"],
+            connection.execute(
+                """
+                INSERT INTO assessment_analysis_jobs (
+                    operation_id, session_id, user_id, status, max_attempts
                 )
-            final_message = completion_message + " Оценка по всем кейсам завершена."
-            mbti_summary = mbti_assessment_service.summarize_session(connection, session_id=session_row["id"])
+                VALUES (%s, %s, %s, 'queued', %s)
+                ON CONFLICT (session_id) WHERE status IN ('queued', 'running')
+                DO NOTHING
+                """,
+                (
+                    analysis_operation_id,
+                    session_row["id"],
+                    session_row["user_id"],
+                    max(1, settings.assessment_queue_max_attempts),
+                ),
+            )
+            queued_row = connection.execute(
+                """
+                SELECT operation_id
+                FROM assessment_analysis_jobs
+                WHERE session_id = %s
+                  AND status IN ('queued', 'running')
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (session_row["id"],),
+            ).fetchone()
+            if queued_row is not None:
+                analysis_operation_id = str(queued_row["operation_id"])
+            final_message = completion_message + " Все кейсы завершены. Запущен итоговый анализ."
             connection.commit()
             return AssessmentTurnReply(
                 session_code=session_code,
@@ -3488,7 +3472,9 @@ class AssessmentService:
                 is_dialog_case=self._get_is_dialog_case_for_session_case(connection, completed_plan.current_session_case_id),
                 mbti_case_result=mbti_case_result,
                 mbti_followup_questions=mbti_followup_questions,
-                mbti_summary=mbti_summary,
+                mbti_summary=None,
+                assessment_status="analyzing",
+                analysis_operation_id=analysis_operation_id,
                 **self._get_session_case_history_fields(connection, completed_plan.current_session_case_id),
             )
 
