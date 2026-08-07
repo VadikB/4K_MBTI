@@ -3098,6 +3098,13 @@ def ensure_core_schema() -> None:
             """
         )
         connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS profile TEXT")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS founded_year INTEGER")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS employee_count INTEGER")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS industry TEXT")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS website TEXT")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS headquarters TEXT")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS notes TEXT")
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS organization_email_domains (

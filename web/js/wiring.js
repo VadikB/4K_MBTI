@@ -40,6 +40,7 @@ import {
   adminRegressionTestsCleanupButton,
   adminOrganizationsBackButton,
   adminOrganizationCreateForm,
+  adminOrganizationSelect,
   adminOrganizationsList,
   adminPeriodSelect,
   adminReportsBackButton,
@@ -761,6 +762,12 @@ if (adminOrganizationCreateForm) {
   });
 }
 
+if (adminOrganizationSelect) {
+  adminOrganizationSelect.addEventListener('change', () => {
+    withScreen(loadAdminOrganizations, (module) => module.selectAdminOrganization(adminOrganizationSelect.value));
+  });
+}
+
 if (adminOrganizationsList) {
   adminOrganizationsList.addEventListener('submit', (event) => {
     const form = event.target instanceof HTMLFormElement ? event.target : null;
@@ -773,6 +780,25 @@ if (adminOrganizationsList) {
     const input = form.querySelector('input');
     const value = input?.value || '';
     if (!organizationId) {
+      return;
+    }
+    if (form.dataset.action === 'update-profile') {
+      const formData = new FormData(form);
+      const optionalNumber = (name) => {
+        const value = String(formData.get(name) || '').trim();
+        return value ? Number(value) : null;
+      };
+      withScreen(loadAdminOrganizations, (module) =>
+        module.updateAdminOrganizationProfile(organizationId, {
+          profile: String(formData.get('profile') || '').trim() || null,
+          founded_year: optionalNumber('founded_year'),
+          employee_count: optionalNumber('employee_count'),
+          industry: String(formData.get('industry') || '').trim() || null,
+          website: String(formData.get('website') || '').trim() || null,
+          headquarters: String(formData.get('headquarters') || '').trim() || null,
+          notes: String(formData.get('notes') || '').trim() || null,
+        }),
+      );
       return;
     }
     if (form.dataset.action === 'add-domain') {

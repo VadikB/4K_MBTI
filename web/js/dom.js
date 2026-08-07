@@ -101,6 +101,7 @@ export const adminOrganizationNameInput = document.getElementById('admin-organiz
 export const adminOrganizationCodeInput = document.getElementById('admin-organization-code-input');
 export const adminOrganizationCreateButton = document.getElementById('admin-organization-create-button');
 export const adminOrganizationsStatus = document.getElementById('admin-organizations-status');
+export const adminOrganizationSelect = document.getElementById('admin-organization-select');
 export const adminOrganizationsList = document.getElementById('admin-organizations-list');
 export const adminPromptLabBackButton = document.getElementById('admin-prompt-lab-back-button');
 export const adminPromptLabTabCasesButton = document.getElementById('admin-prompt-lab-tab-cases');

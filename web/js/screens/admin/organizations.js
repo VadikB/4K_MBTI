@@ -3,6 +3,7 @@ import {
   adminOrganizationCodeInput,
   adminOrganizationCreateButton,
   adminOrganizationNameInput,
+  adminOrganizationSelect,
   adminOrganizationsList,
   adminOrganizationsPanel,
   adminOrganizationsStatus,
@@ -11,6 +12,8 @@ import {
 } from '../../dom.js';
 import { hideAllPanels, syncUrlState } from '../../router.js';
 import { persistAssessmentContext, setCurrentScreen, state } from '../../state.js';
+
+let selectedOrganizationId = null;
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -91,6 +94,25 @@ export const createAdminOrganization = async () => {
     if (adminOrganizationCreateButton) {
       adminOrganizationCreateButton.disabled = false;
     }
+  }
+};
+
+export const selectAdminOrganization = (organizationId) => {
+  selectedOrganizationId = Number(organizationId) || null;
+  renderAdminOrganizations();
+};
+
+export const updateAdminOrganizationProfile = async (organizationId, payload) => {
+  try {
+    selectedOrganizationId = Number(organizationId);
+    await requestOrganizations(
+      '/users/admin/organizations/' + organizationId,
+      { method: 'PATCH', body: JSON.stringify(payload) },
+      'Не удалось сохранить карточку организации.',
+    );
+    setStatus('Карточка организации сохранена.', 'success');
+  } catch (error) {
+    setStatus(error.message || 'Не удалось сохранить карточку организации.', 'error');
   }
 };
 
@@ -244,7 +266,7 @@ export const prepareAdminOrganizationMemberAssessment = async (organizationId, u
 
 const renderOrganizationBatchProgress = (organizationId) => {
   const batch = state.adminOrganizationPreparationBatches?.[organizationId];
-  if (!batch) {
+  if (!batch || batch.status !== 'in_progress') {
     return '';
   }
   const current = batch.current_participant;
@@ -252,9 +274,7 @@ const renderOrganizationBatchProgress = (organizationId) => {
     ? (current.full_name || current.email) +
       (current.progress_title ? ' · ' + current.progress_title : '') +
       (current.progress_message ? ' · ' + current.progress_message : '')
-    : batch.status === 'completed'
-      ? 'Подготовка завершена'
-      : 'Ожидание запуска';
+    : 'Ожидание запуска';
   const percent = batch.total_participants
     ? Math.round((Number(batch.processed_participants || 0) / Number(batch.total_participants)) * 100)
     : 100;
@@ -300,6 +320,9 @@ const pollOrganizationPreparationBatch = async (organizationId, batchId) => {
     };
     renderAdminOrganizations();
     if (batch.status === 'completed' || batch.status === 'failed') {
+      const nextBatches = { ...(state.adminOrganizationPreparationBatches || {}) };
+      delete nextBatches[organizationId];
+      state.adminOrganizationPreparationBatches = nextBatches;
       await loadAdminOrganizations();
       setStatus(
         batch.failed_participants
@@ -327,12 +350,16 @@ const restoreOrganizationPreparationBatches = async (data) => {
         { credentials: 'same-origin' },
       );
       const batch = await readApiResponse(response, 'Не удалось восстановить прогресс подготовки.');
-      state.adminOrganizationPreparationBatches = {
-        ...(state.adminOrganizationPreparationBatches || {}),
-        [org.id]: batch,
-      };
       if (batch.status === 'in_progress') {
+        state.adminOrganizationPreparationBatches = {
+          ...(state.adminOrganizationPreparationBatches || {}),
+          [org.id]: batch,
+        };
         void pollOrganizationPreparationBatch(Number(org.id), batchId);
+      } else if (state.adminOrganizationPreparationBatches?.[org.id]) {
+        const nextBatches = { ...state.adminOrganizationPreparationBatches };
+        delete nextBatches[org.id];
+        state.adminOrganizationPreparationBatches = nextBatches;
       }
     }),
   );
@@ -507,10 +534,26 @@ export const renderAdminOrganizations = () => {
   }
   const organizations = Array.isArray(data?.items) ? data.items : [];
   if (!organizations.length) {
+    if (adminOrganizationSelect) adminOrganizationSelect.innerHTML = '<option value="">Нет организаций</option>';
     adminOrganizationsList.innerHTML = '<p class="report-empty-state">Организации пока не созданы.</p>';
     return;
   }
+  if (!organizations.some((org) => Number(org.id) === Number(selectedOrganizationId))) {
+    selectedOrganizationId = Number(organizations.find((org) => org.is_active !== false)?.id || organizations[0].id);
+  }
+  if (adminOrganizationSelect) {
+    adminOrganizationSelect.innerHTML = organizations
+      .map(
+        (org) =>
+          '<option value="' + Number(org.id) + '"' +
+          (Number(org.id) === Number(selectedOrganizationId) ? ' selected' : '') + '>' +
+          escapeHtml(org.name) + ' · ' + escapeHtml(org.code) + (org.is_active === false ? ' — неактивна' : '') +
+          '</option>',
+      )
+      .join('');
+  }
   adminOrganizationsList.innerHTML = organizations
+    .filter((org) => Number(org.id) === Number(selectedOrganizationId))
     .map((org) => {
       const orgId = Number(org.id);
       const isActive = org.is_active !== false;
@@ -542,6 +585,17 @@ export const renderAdminOrganizations = () => {
         '</button></div>' +
         '</div>' +
         renderOrganizationBatchProgress(orgId) +
+        '<form class="admin-organization-profile-form" data-action="update-profile">' +
+        '<div class="admin-organization-profile-heading"><div><p class="section-label accent-label">Профиль</p><h4>Сведения об организации</h4></div>' +
+        '<button class="primary-button compact-primary" type="submit">Сохранить карточку</button></div>' +
+        '<label class="admin-organization-profile-wide"><span>Профиль организации</span><textarea name="profile" placeholder="Кратко опишите организацию, её деятельность и особенности">' + escapeHtml(org.profile || '') + '</textarea></label>' +
+        '<label><span>Год основания</span><input name="founded_year" type="number" min="1000" max="2100" value="' + escapeHtml(org.founded_year ?? '') + '" placeholder="Например, 2012"></label>' +
+        '<label><span>Численность</span><input name="employee_count" type="number" min="0" value="' + escapeHtml(org.employee_count ?? '') + '" placeholder="Количество сотрудников"></label>' +
+        '<label><span>Отрасль</span><input name="industry" type="text" value="' + escapeHtml(org.industry || '') + '" placeholder="Например, финтех"></label>' +
+        '<label><span>Сайт</span><input name="website" type="url" value="' + escapeHtml(org.website || '') + '" placeholder="https://company.ru"></label>' +
+        '<label><span>Штаб-квартира</span><input name="headquarters" type="text" value="' + escapeHtml(org.headquarters || '') + '" placeholder="Город, страна"></label>' +
+        '<label class="admin-organization-profile-wide"><span>Прочая существенная информация</span><textarea name="notes" placeholder="Структура, география, культура и другие важные сведения">' + escapeHtml(org.notes || '') + '</textarea></label>' +
+        '</form>' +
         '<div class="admin-organization-columns">' +
         '<section><h4>Домены</h4>' +
         renderTagList(org.domains || [], 'Домены не заданы.', 'domain', 'delete-domain') +

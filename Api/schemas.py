@@ -702,6 +702,13 @@ class AdminOrganizationItem(BaseModel):
     code: str
     name: str
     is_active: bool = True
+    profile: str | None = None
+    founded_year: int | None = None
+    employee_count: int | None = None
+    industry: str | None = None
+    website: str | None = None
+    headquarters: str | None = None
+    notes: str | None = None
     domains: list[str] = Field(default_factory=list)
     admins: list[AdminOrganizationAdminItem] = Field(default_factory=list)
     members: list[AdminOrganizationMemberItem] = Field(default_factory=list)
@@ -726,6 +733,13 @@ class AdminOrganizationCreateRequest(BaseModel):
 class AdminOrganizationUpdateRequest(BaseModel):
     code: str | None = None
     name: str | None = None
+    profile: str | None = None
+    founded_year: int | None = None
+    employee_count: int | None = None
+    industry: str | None = None
+    website: str | None = None
+    headquarters: str | None = None
+    notes: str | None = None
 
 
 class AdminOrganizationDomainRequest(BaseModel):

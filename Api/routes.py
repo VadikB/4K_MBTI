@@ -865,7 +865,8 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
     connection.commit()
     org_rows = connection.execute(
         """
-        SELECT id, code, name, is_active, created_at, updated_at
+        SELECT id, code, name, is_active, profile, founded_year, employee_count,
+               industry, website, headquarters, notes, created_at, updated_at
         FROM organizations
         ORDER BY is_active DESC, name ASC, code ASC
         """
@@ -1024,6 +1025,13 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
                 code=str(row["code"]),
                 name=str(row["name"]),
                 is_active=bool(row["is_active"]),
+                profile=row["profile"],
+                founded_year=row["founded_year"],
+                employee_count=row["employee_count"],
+                industry=row["industry"],
+                website=row["website"],
+                headquarters=row["headquarters"],
+                notes=row["notes"],
                 domains=domains_by_org.get(int(row["id"]), []),
                 admins=admins_by_org.get(int(row["id"]), []),
                 members=members_by_org_list.get(int(row["id"]), []),
@@ -3357,8 +3365,17 @@ def update_admin_organization(organization_id: int, payload: AdminOrganizationUp
     user = web_session_service.get_user_by_token(token)
     normalized_code = _normalize_admin_org_code(payload.code) if payload.code is not None else None
     normalized_name = _normalize_admin_org_name(payload.name) if payload.name is not None else None
-    if normalized_code is None and normalized_name is None:
+    profile_fields_supplied = any(
+        field in payload.model_fields_set
+        for field in ("profile", "founded_year", "employee_count", "industry", "website", "headquarters", "notes")
+    )
+    if normalized_code is None and normalized_name is None and not profile_fields_supplied:
         raise HTTPException(status_code=400, detail="No organization changes provided")
+    current_year = datetime.now().year
+    if payload.founded_year is not None and not 1000 <= payload.founded_year <= current_year + 1:
+        raise HTTPException(status_code=400, detail="Founded year is invalid")
+    if payload.employee_count is not None and payload.employee_count < 0:
+        raise HTTPException(status_code=400, detail="Employee count cannot be negative")
     with get_connection() as connection:
         _require_superadmin(connection, user)
         org_row = connection.execute("SELECT id FROM organizations WHERE id = %s LIMIT 1", (organization_id,)).fetchone()
@@ -3370,10 +3387,35 @@ def update_admin_organization(organization_id: int, payload: AdminOrganizationUp
                 UPDATE organizations
                 SET code = COALESCE(%s, code),
                     name = COALESCE(%s, name),
+                    profile = CASE WHEN %s THEN %s ELSE profile END,
+                    founded_year = CASE WHEN %s THEN %s ELSE founded_year END,
+                    employee_count = CASE WHEN %s THEN %s ELSE employee_count END,
+                    industry = CASE WHEN %s THEN %s ELSE industry END,
+                    website = CASE WHEN %s THEN %s ELSE website END,
+                    headquarters = CASE WHEN %s THEN %s ELSE headquarters END,
+                    notes = CASE WHEN %s THEN %s ELSE notes END,
                     updated_at = NOW()
                 WHERE id = %s
                 """,
-                (normalized_code, normalized_name, organization_id),
+                (
+                    normalized_code,
+                    normalized_name,
+                    "profile" in payload.model_fields_set,
+                    _normalize_optional_admin_text(payload.profile),
+                    "founded_year" in payload.model_fields_set,
+                    payload.founded_year,
+                    "employee_count" in payload.model_fields_set,
+                    payload.employee_count,
+                    "industry" in payload.model_fields_set,
+                    _normalize_optional_admin_text(payload.industry, max_length=255),
+                    "website" in payload.model_fields_set,
+                    _normalize_optional_admin_text(payload.website, max_length=500),
+                    "headquarters" in payload.model_fields_set,
+                    _normalize_optional_admin_text(payload.headquarters, max_length=255),
+                    "notes" in payload.model_fields_set,
+                    _normalize_optional_admin_text(payload.notes),
+                    organization_id,
+                ),
             )
             connection.commit()
         except Exception as exc:

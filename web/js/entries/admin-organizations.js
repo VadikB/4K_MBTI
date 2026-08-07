@@ -3,6 +3,8 @@ export {
   loadAdminOrganizations,
   renderAdminOrganizations,
   createAdminOrganization,
+  selectAdminOrganization,
+  updateAdminOrganizationProfile,
   addAdminOrganizationDomain,
   deleteAdminOrganizationDomain,
   addAdminOrganizationAdmin,

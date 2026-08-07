@@ -85,9 +85,87 @@
     gap: var(--space-3);
 }
 
+.admin-organization-picker {
+    display: grid;
+    gap: var(--space-2);
+    max-width: 560px;
+    color: var(--text-muted);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-bold);
+}
+
+.admin-organization-picker select {
+    width: 100%;
+    height: 48px;
+    border: 1px solid rgba(70, 72, 212, 0.2);
+    border-radius: var(--radius-md);
+    background: #fff;
+    padding: 0 var(--space-3);
+    color: var(--text-main);
+    font: inherit;
+}
+
 .admin-organization-card {
     display: grid;
     gap: var(--space-4);
+}
+
+.admin-organization-profile-form {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid rgba(70, 72, 212, 0.14);
+    border-radius: var(--radius-lg);
+    background: rgba(70, 72, 212, 0.035);
+}
+
+.admin-organization-profile-heading,
+.admin-organization-profile-wide {
+    grid-column: 1 / -1;
+}
+
+.admin-organization-profile-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.admin-organization-profile-heading h4,
+.admin-organization-profile-heading p {
+    margin: 0;
+}
+
+.admin-organization-profile-form label {
+    display: grid;
+    gap: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-bold);
+}
+
+.admin-organization-profile-form input,
+.admin-organization-profile-form textarea {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid rgba(70, 72, 212, 0.16);
+    border-radius: var(--radius-md);
+    background: #fff;
+    padding: var(--space-3);
+    color: var(--text-main);
+    font: inherit;
+    font-weight: var(--fw-regular);
+}
+
+.admin-organization-profile-form input {
+    height: 44px;
+}
+
+.admin-organization-profile-form textarea {
+    min-height: 96px;
+    resize: vertical;
+    line-height: 1.45;
 }
 
 .admin-organization-head {
@@ -342,8 +420,19 @@
     .admin-organization-inline-form,
     .admin-organization-member-form,
     .admin-organization-import-form,
-    .admin-organization-columns {
+    .admin-organization-columns,
+    .admin-organization-profile-form {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .admin-organization-profile-heading,
+    .admin-organization-profile-wide {
+        grid-column: auto;
+    }
+
+    .admin-organization-profile-heading {
+        align-items: stretch;
+        flex-direction: column;
     }
 
     .admin-organization-member-form textarea {
