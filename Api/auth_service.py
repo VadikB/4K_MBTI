@@ -9,7 +9,7 @@ from urllib.parse import quote
 
 from Api.config import settings
 from Api.database import get_connection
-from Api.email_service import send_magic_link_email
+from Api.email_service import send_auth_action_email, send_magic_link_email
 from Api.org_access import assign_user_organization_from_email, email_has_organization_access, ensure_configured_organizations
 from Api.schemas import UserResponse
 from Api.web_session_service import USER_SELECT_SQL
@@ -48,6 +48,13 @@ class PasswordLoginResult:
     user: UserResponse
     is_new_user: bool
     email: str
+
+
+@dataclass(slots=True)
+class AuthActionTokenResult:
+    email: str
+    expires_at: datetime
+    dev_token: str | None = None
 
 
 def _utc_now() -> datetime:
@@ -160,6 +167,21 @@ class AuthService:
                 """
             )
             connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS auth_action_tokens (
+                    id BIGSERIAL PRIMARY KEY,
+                    email TEXT NOT NULL,
+                    purpose TEXT NOT NULL,
+                    token_hash TEXT NOT NULL UNIQUE,
+                    expires_at TIMESTAMP NOT NULL,
+                    used_at TIMESTAMP,
+                    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                    client_ip TEXT,
+                    user_agent TEXT
+                )
+                """
+            )
+            connection.execute(
                 "CREATE INDEX IF NOT EXISTS idx_user_identities_user_id ON user_identities(user_id)"
             )
             connection.execute(
@@ -197,7 +219,98 @@ class AuthService:
             connection.execute(
                 "CREATE INDEX IF NOT EXISTS idx_auth_password_credentials_user_id ON auth_password_credentials(user_id)"
             )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS idx_auth_action_tokens_email_purpose ON auth_action_tokens(LOWER(email), purpose)"
+            )
             connection.commit()
+
+    def create_auth_action_request(
+        self,
+        *,
+        email: str,
+        purpose: str,
+        client_ip: str | None = None,
+        user_agent: str | None = None,
+    ) -> AuthActionTokenResult:
+        if purpose not in {"email_verification", "password_reset"}:
+            raise ValueError("Неизвестный тип операции авторизации.")
+        self.ensure_schema()
+        normalized_email = normalize_email(email)
+        raw_token = secrets.token_urlsafe(32)
+        expires_at = _utc_now() + timedelta(minutes=max(settings.auth_action_token_ttl_minutes, 5))
+        with get_connection() as connection:
+            self._ensure_email_can_authenticate(connection, email=normalized_email)
+            recent = connection.execute(
+                """
+                SELECT created_at FROM auth_action_tokens
+                WHERE LOWER(email) = %s AND purpose = %s
+                  AND created_at > NOW() - (%s * INTERVAL '1 second')
+                ORDER BY created_at DESC LIMIT 1
+                """,
+                (normalized_email, purpose, max(settings.auth_magic_link_resend_cooldown_seconds, 0)),
+            ).fetchone()
+            if recent is not None:
+                raise AuthRateLimitError("Письмо уже отправлено. Повторите попытку чуть позже.")
+            hourly = connection.execute(
+                """
+                SELECT COUNT(*) AS request_count FROM auth_action_tokens
+                WHERE LOWER(email) = %s AND created_at > NOW() - INTERVAL '1 hour'
+                """,
+                (normalized_email,),
+            ).fetchone()
+            if int(hourly["request_count"] or 0) >= max(settings.auth_magic_link_email_hourly_limit, 1):
+                raise AuthRateLimitError("Слишком много запросов для этого email. Попробуйте позже.")
+            if purpose == "password_reset":
+                credential = connection.execute(
+                    "SELECT id FROM auth_password_credentials WHERE LOWER(email) = %s LIMIT 1",
+                    (normalized_email,),
+                ).fetchone()
+                if credential is None:
+                    raise ValueError("Учетная запись не найдена.")
+            connection.execute(
+                "UPDATE auth_action_tokens SET used_at = NOW() WHERE LOWER(email) = %s AND purpose = %s AND used_at IS NULL",
+                (normalized_email, purpose),
+            )
+            connection.execute(
+                """
+                INSERT INTO auth_action_tokens (email, purpose, token_hash, expires_at, client_ip, user_agent)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (normalized_email, purpose, _hash_magic_token(raw_token), expires_at, client_ip, user_agent),
+            )
+            connection.commit()
+        action_url = settings.app_base_url.rstrip("/") + "/?auth_action=" + purpose + "&token=" + quote(raw_token, safe="")
+        if not settings.auth_magic_link_dev_mode and settings.email_provider != "console":
+            send_auth_action_email(email=normalized_email, action_url=action_url, expires_at=expires_at, purpose=purpose)
+        return AuthActionTokenResult(
+            normalized_email,
+            expires_at,
+            raw_token if settings.auth_magic_link_dev_mode or settings.email_provider == "console" else None,
+        )
+
+    def verify_auth_action_token(self, *, token: str, purpose: str, consume: bool = False) -> str:
+        self.ensure_schema()
+        cleaned_token = str(token or "").strip()
+        if not cleaned_token:
+            raise ValueError("Ссылка недействительна.")
+        with get_connection() as connection:
+            row = connection.execute(
+                """
+                SELECT id, email, expires_at, used_at FROM auth_action_tokens
+                WHERE token_hash = %s AND purpose = %s LIMIT 1
+                """,
+                (_hash_magic_token(cleaned_token), purpose),
+            ).fetchone()
+            if row is None or row["used_at"] is not None:
+                raise ValueError("Ссылка недействительна или уже использована.")
+            if row["expires_at"] is None or row["expires_at"] < datetime.now():
+                raise ValueError("Срок действия ссылки истек.")
+            email = normalize_email(row["email"])
+            self._ensure_email_can_authenticate(connection, email=email)
+            if consume:
+                connection.execute("UPDATE auth_action_tokens SET used_at = NOW() WHERE id = %s", (row["id"],))
+                connection.commit()
+            return email
 
     def _ensure_email_can_authenticate(self, connection, *, email: str) -> None:
         if not email_has_organization_access(connection, email=email):
@@ -565,10 +678,30 @@ class AuthService:
                 return "password_registration"
         raise ValueError("Пользователь с таким email не найден. Обратитесь к администратору организации.")
 
-    def register_password(self, *, email: str, password: str, password_confirm: str) -> PasswordLoginResult:
+    def register_password(
+        self,
+        *,
+        email: str,
+        password: str,
+        password_confirm: str,
+        verification_token: str | None = None,
+    ) -> PasswordLoginResult:
         self.ensure_schema()
         normalized_email = normalize_email(email)
         validate_password_strength(password, password_confirm=password_confirm)
+        if settings.auth_email_verification_required and not settings.auth_magic_link_dev_mode:
+            verified_email = self.verify_auth_action_token(
+                token=str(verification_token or ""),
+                purpose="email_verification",
+                consume=False,
+            )
+            if verified_email != normalized_email:
+                raise ValueError("Ссылка подтверждения выпущена для другого email.")
+            self.verify_auth_action_token(
+                token=str(verification_token or ""),
+                purpose="email_verification",
+                consume=True,
+            )
 
         with get_connection() as connection:
             self._ensure_email_can_authenticate(connection, email=normalized_email)
@@ -636,6 +769,33 @@ class AuthService:
             is_new_user=is_new_user,
             email=normalized_email,
         )
+
+    def reset_password(self, *, token: str, password: str, password_confirm: str) -> str:
+        if not settings.auth_password_reset_enabled:
+            raise ValueError("Восстановление пароля отключено.")
+        validate_password_strength(password, password_confirm=password_confirm)
+        email = self.verify_auth_action_token(token=token, purpose="password_reset", consume=True)
+        salt, password_hash = _hash_password(password)
+        with get_connection() as connection:
+            row = connection.execute(
+                "SELECT user_id FROM auth_password_credentials WHERE LOWER(email) = %s LIMIT 1",
+                (email,),
+            ).fetchone()
+            if row is None:
+                raise ValueError("Учетная запись не найдена.")
+            user_id = int(row["user_id"])
+            connection.execute(
+                """
+                UPDATE auth_password_credentials
+                SET password_hash = %s, password_salt = %s, updated_at = NOW(), last_login_at = NULL
+                WHERE LOWER(email) = %s
+                """,
+                (password_hash, salt, email),
+            )
+            connection.execute("DELETE FROM web_user_sessions WHERE user_id = %s", (user_id,))
+            connection.commit()
+        logger.info("Password reset completed for %s", email)
+        return email
 
     def verify_password_login(self, *, email: str, password: str) -> PasswordLoginResult:
         self.ensure_schema()

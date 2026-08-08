@@ -65,7 +65,6 @@ export const loadAdminOrganizations = async () => {
     { method: 'GET', headers: {} },
     'Не удалось загрузить организации.',
   );
-  await restoreOrganizationPreparationBatches(data);
   return data;
 };
 
@@ -337,33 +336,6 @@ const pollOrganizationPreparationBatch = async (organizationId, batchId) => {
   } finally {
     activeBatchPolls.delete(batchId);
   }
-};
-
-const restoreOrganizationPreparationBatches = async (data) => {
-  const organizations = Array.isArray(data?.items) ? data.items : [];
-  await Promise.all(
-    organizations.map(async (org) => {
-      const batchId = String(org.assessment_preparation_batch_id || '');
-      if (!batchId) return;
-      const response = await fetch(
-        '/users/admin/organizations/' + org.id + '/prepare-assessments/' + encodeURIComponent(batchId),
-        { credentials: 'same-origin' },
-      );
-      const batch = await readApiResponse(response, 'Не удалось восстановить прогресс подготовки.');
-      if (batch.status === 'in_progress') {
-        state.adminOrganizationPreparationBatches = {
-          ...(state.adminOrganizationPreparationBatches || {}),
-          [org.id]: batch,
-        };
-        void pollOrganizationPreparationBatch(Number(org.id), batchId);
-      } else if (state.adminOrganizationPreparationBatches?.[org.id]) {
-        const nextBatches = { ...state.adminOrganizationPreparationBatches };
-        delete nextBatches[org.id];
-        state.adminOrganizationPreparationBatches = nextBatches;
-      }
-    }),
-  );
-  renderAdminOrganizations();
 };
 
 export const prepareAdminOrganizationAssessments = async (organizationId) => {

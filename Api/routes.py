@@ -99,8 +99,11 @@ from Api.schemas import (
     AuthEmailRequest,
     AuthEmailRequestResponse,
     AuthEmailVerifyRequest,
+    AuthActionResponse,
+    AuthPasswordForgotRequest,
     AuthPasswordLoginRequest,
     AuthPasswordRegisterRequest,
+    AuthPasswordResetRequest,
     PromptLabCaseOption,
     PromptLabCaseRunRequest,
     PromptLabCaseRunResponse,
@@ -2858,6 +2861,7 @@ def _set_user_session_cookie(response: FastAPIResponse, token: str) -> None:
         key=SESSION_COOKIE_NAME,
         value=token,
         httponly=True,
+        secure=settings.auth_session_secure_cookie,
         samesite="lax",
         max_age=60 * 60 * 24 * 14,
         path="/",
@@ -2935,6 +2939,27 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         is_registration = auth_mode == "password_registration"
+        if is_registration and settings.auth_email_verification_required:
+            try:
+                action_result = auth_service.create_auth_action_request(
+                    email=email,
+                    purpose="email_verification",
+                    client_ip=client_ip,
+                    user_agent=user_agent,
+                )
+            except AuthRateLimitError as exc:
+                raise HTTPException(status_code=429, detail=str(exc)) from exc
+            except RuntimeError as exc:
+                raise HTTPException(status_code=503, detail=str(exc)) from exc
+            return AuthEmailRequestResponse(
+                message="Отправили ссылку подтверждения. Проверьте почту.",
+                email=email,
+                expires_in_seconds=max(settings.auth_action_token_ttl_minutes * 60, 0),
+                dev_mode=False,
+                delivery_method=settings.email_provider or "email",
+                auth_mode="verification_pending",
+                dev_magic_token=action_result.dev_token,
+            )
         return AuthEmailRequestResponse(
             message="Задайте пароль для первичного входа." if is_registration else "Введите пароль для входа.",
             email=email,
@@ -3003,12 +3028,76 @@ def register_email_password(
             email=payload.email,
             password=payload.password,
             password_confirm=payload.password_confirm,
+            verification_token=payload.verification_token,
         )
     except AuthAccessDeniedError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return _build_password_auth_response(verification=verification, response=response)
+
+
+@router.post("/auth/email/confirm", response_model=AuthActionResponse)
+def confirm_registration_email(payload: AuthEmailVerifyRequest) -> AuthActionResponse:
+    try:
+        email = auth_service.verify_auth_action_token(
+            token=payload.token,
+            purpose="email_verification",
+            consume=False,
+        )
+    except (AuthAccessDeniedError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return AuthActionResponse(
+        message="Email подтвержден. Задайте пароль.",
+        email=email,
+        auth_mode="password_registration",
+    )
+
+
+@router.post("/auth/password/forgot", response_model=AuthActionResponse)
+def forgot_password(payload: AuthPasswordForgotRequest, request: Request) -> AuthActionResponse:
+    neutral_message = "Если учетная запись существует, мы отправили ссылку для восстановления пароля."
+    if not settings.auth_password_reset_enabled:
+        raise HTTPException(status_code=404, detail="Восстановление пароля отключено.")
+    try:
+        action_result = auth_service.create_auth_action_request(
+            email=payload.email,
+            purpose="password_reset",
+            client_ip=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent"),
+        )
+    except (AuthAccessDeniedError, AuthRateLimitError, ValueError):
+        action_result = None
+        pass
+    except RuntimeError as exc:
+        logger.exception("Password reset email delivery failed")
+        raise HTTPException(status_code=503, detail="Не удалось отправить письмо. Попробуйте позже.") from exc
+    return AuthActionResponse(
+        message=neutral_message,
+        dev_action_token=action_result.dev_token if action_result is not None else None,
+    )
+
+
+@router.post("/auth/password/reset/validate", response_model=AuthActionResponse)
+def validate_password_reset_token(payload: AuthEmailVerifyRequest) -> AuthActionResponse:
+    try:
+        email = auth_service.verify_auth_action_token(token=payload.token, purpose="password_reset")
+    except (AuthAccessDeniedError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return AuthActionResponse(message="Ссылка действительна. Задайте новый пароль.", email=email, auth_mode="password_reset")
+
+
+@router.post("/auth/password/reset", response_model=AuthActionResponse)
+def reset_password(payload: AuthPasswordResetRequest) -> AuthActionResponse:
+    try:
+        email = auth_service.reset_password(
+            token=payload.token,
+            password=payload.password,
+            password_confirm=payload.password_confirm,
+        )
+    except (AuthAccessDeniedError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return AuthActionResponse(message="Пароль изменён. Теперь можно войти.", email=email, auth_mode="password")
 
 
 @router.post("/auth/email/password-login", response_model=CheckOrCreateUserResponse)

@@ -68,7 +68,18 @@
           <input id="email-input" name="email" type="email" placeholder="name@company.com" autocomplete="username email" required>
         </label>
         <button id="request-magic-link-button" type="submit" class="primary-button">Продолжить</button>
+        <button id="forgot-password-button" type="button" class="ghost-button auth-secondary-action">Забыли пароль?</button>
       </form>
+      <div id="auth-email-sent" class="auth-email-sent hidden" role="status" aria-live="polite">
+        <div class="auth-email-sent-icon" aria-hidden="true">✓</div>
+        <div class="auth-email-sent-copy">
+          <h2>Проверьте почту</h2>
+          <p>Мы отправили ссылку для подтверждения на <strong id="auth-email-sent-address"></strong>.</p>
+          <p class="subtitle">Откройте письмо и перейдите по ссылке. Эта страница продолжит регистрацию автоматически.</p>
+        </div>
+        <button id="auth-resend-email-button" type="button" class="primary-button" disabled>Отправить повторно через 60 сек.</button>
+        <button id="auth-change-email-button" type="button" class="ghost-button auth-secondary-action">Указать другой email</button>
+      </div>
       <form id="auth-token-form" class="stack hidden" autocomplete="on">
         <input id="auth-credential-email-input" name="username" type="email" autocomplete="username" hidden>
         <label class="field">

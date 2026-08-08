@@ -6,7 +6,7 @@
 
 - Backend: `FastAPI`, `PostgreSQL`.
 - Frontend: plain `HTML/CSS/JavaScript`, сборка в `web/dist`.
-- Авторизация: email magic link.
+- Авторизация: рабочий email, подтверждение адреса, пароль и восстановление через почту.
 - Роли доступа: суперадмин, администратор организации, участник организации.
 - Организации: создание, домены, админы, участники, CSV-импорт участников.
 - Оценивание: персонализированные кейсы, диалоговый режим, таймеры, авто/ручное завершение кейсов.
@@ -124,6 +124,15 @@ DB_POOL_TIMEOUT_SECONDS=10
 
 SUPERADMIN_EMAILS=your@email
 
+APP_BASE_URL=https://app.example.com
+AUTH_MAGIC_LINK_DEV_MODE=false
+AUTH_EMAIL_VERIFICATION_REQUIRED=true
+AUTH_PASSWORD_RESET_ENABLED=true
+AUTH_ACTION_TOKEN_TTL_MINUTES=30
+AUTH_SESSION_SECURE_COOKIE=true
+EMAIL_PROVIDER=postmark
+POSTMARK_SERVER_TOKEN=...
+
 MBTI_ENABLED=true
 MBTI_FAISS_INDEX_DIR=/path/to/mbti/faiss
 MBTI_TOP_K=5
@@ -133,6 +142,12 @@ MBTI_FOLLOWUP_SCORE_THRESHOLD=60
 ```
 
 `SUPERADMIN_EMAILS` задает суперадминов через email. Несколько адресов можно перечислить через запятую.
+
+В production `AUTH_MAGIC_LINK_DEV_MODE` должен быть `false`: новый пользователь
+сначала получает одноразовую ссылку подтверждения email и только после нее задает
+пароль. Ссылка восстановления также одноразовая; после смены пароля все активные
+сессии пользователя отзываются. `APP_BASE_URL` должен указывать на публичный HTTPS
+адрес приложения, а `AUTH_SESSION_SECURE_COOKIE` — быть `true`.
 
 `DEEPSEEK_API_KEYS` задает пул ключей через запятую. Клиент равномерно
 распределяет разные пользовательские сессии по пулу и при ошибке автоматически

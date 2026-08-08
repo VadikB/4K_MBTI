@@ -144,6 +144,7 @@ class AuthPasswordLoginRequest(BaseModel):
 
 class AuthPasswordRegisterRequest(AuthPasswordLoginRequest):
     password_confirm: str
+    verification_token: str | None = None
 
     @field_validator("password_confirm")
     @classmethod
@@ -152,6 +153,32 @@ class AuthPasswordRegisterRequest(AuthPasswordLoginRequest):
         if not cleaned:
             raise ValueError("Подтвердите пароль.")
         return cleaned
+
+
+class AuthPasswordForgotRequest(BaseModel):
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        cleaned = str(value or "").strip().lower()
+        if not cleaned or "@" not in cleaned:
+            raise ValueError("Введите корректный email.")
+        return cleaned
+
+
+class AuthPasswordResetRequest(BaseModel):
+    token: str
+    password: str
+    password_confirm: str
+
+
+class AuthActionResponse(BaseModel):
+    ok: bool = True
+    message: str
+    email: str | None = None
+    auth_mode: str | None = None
+    dev_action_token: str | None = None
 
 
 class AgentReply(BaseModel):

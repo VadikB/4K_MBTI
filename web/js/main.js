@@ -10,7 +10,7 @@ import {
 } from './state.js';
 import { restoreServerSession, restoreLocalUserSession, loadUserJourneyState } from './session.js';
 import { hideAllPanels, returnToStart } from './router.js';
-import { initWiring, verifyEmailMagicLinkToken } from './wiring.js';
+import { handleAuthActionToken, initWiring, verifyEmailMagicLinkToken } from './wiring.js';
 import {
   openProcessingScreen,
   openReportScreen,
@@ -102,6 +102,7 @@ const bootApp = async () => {
   resetInitialState();
   const params = new URLSearchParams(window.location.search);
   const authTokenFromLink = String(params.get('token') || '').trim();
+  const authAction = String(params.get('auth_action') || '').trim();
   if (params.get('reset') === '1') {
     clearAssessmentContext();
     try {
@@ -129,7 +130,11 @@ const bootApp = async () => {
       authStatus.classList.remove('hidden');
     }
     window.history.replaceState({}, '', '/?ui=' + Date.now());
-    await verifyEmailMagicLinkToken(authTokenFromLink);
+    if (authAction === 'email_verification' || authAction === 'password_reset') {
+      await handleAuthActionToken(authAction, authTokenFromLink);
+    } else {
+      await verifyEmailMagicLinkToken(authTokenFromLink);
+    }
     return;
   }
   if (screen && screen !== 'processing' && screen !== 'report') {

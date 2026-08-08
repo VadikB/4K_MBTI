@@ -56,6 +56,60 @@
     line-height: var(--lh-snug);
 }
 
+.auth-secondary-action {
+    width: 100%;
+    min-height: 44px;
+}
+
+.auth-email-sent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    text-align: center;
+}
+
+.auth-email-sent.hidden {
+    display: none;
+}
+
+.auth-email-sent-icon {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--success-soft);
+    color: var(--success);
+    font-family: var(--font-heading);
+    font-size: 28px;
+    font-weight: var(--fw-extrabold);
+}
+
+.auth-email-sent-copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.auth-email-sent-copy h2,
+.auth-email-sent-copy p {
+    margin: 0;
+}
+
+.auth-email-sent-copy h2 {
+    font-size: var(--fs-h3);
+}
+
+.auth-email-sent-copy strong {
+    overflow-wrap: anywhere;
+    color: var(--text-strong);
+}
+
+.auth-email-sent .primary-button {
+    width: 100%;
+}
+
 .auth-panel input {
     padding: 0 var(--space-4);
 }

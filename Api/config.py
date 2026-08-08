@@ -37,6 +37,10 @@ class Settings:
     auth_magic_link_ip_hourly_limit: int = int(os.getenv("AUTH_MAGIC_LINK_IP_HOURLY_LIMIT", "20"))
     auth_magic_link_from_email: str = os.getenv("AUTH_MAGIC_LINK_FROM_EMAIL", "no-reply@agent4k.local").strip() or "no-reply@agent4k.local"
     auth_magic_link_subject: str = os.getenv("AUTH_MAGIC_LINK_SUBJECT", "Вход в 4K Ассистент").strip() or "Вход в 4K Ассистент"
+    auth_email_verification_required: bool = os.getenv("AUTH_EMAIL_VERIFICATION_REQUIRED", "true").strip().lower() in {"1", "true", "yes", "on"}
+    auth_password_reset_enabled: bool = os.getenv("AUTH_PASSWORD_RESET_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
+    auth_action_token_ttl_minutes: int = int(os.getenv("AUTH_ACTION_TOKEN_TTL_MINUTES", "30"))
+    auth_session_secure_cookie: bool = os.getenv("AUTH_SESSION_SECURE_COOKIE", "false").strip().lower() in {"1", "true", "yes", "on"}
     superadmin_emails_raw: str = os.getenv("SUPERADMIN_EMAILS", "")
     org_admin_emails_raw: str = os.getenv("ORG_ADMIN_EMAILS", "")
     org_member_domains_raw: str = os.getenv("ORG_MEMBER_DOMAINS", "")
@@ -44,6 +48,12 @@ class Settings:
     email_provider: str = os.getenv("EMAIL_PROVIDER", "").strip().lower()
     postmark_server_token: str = os.getenv("POSTMARK_SERVER_TOKEN", "").strip()
     postmark_message_stream: str = os.getenv("POSTMARK_MESSAGE_STREAM", "outbound").strip() or "outbound"
+    unisender_go_api_key: str = os.getenv("UNISENDER_GO_API_KEY", "").strip()
+    unisender_go_api_base_url: str = os.getenv(
+        "UNISENDER_GO_API_BASE_URL",
+        "https://goapi.unisender.ru/ru/transactional/api/v1",
+    ).strip().rstrip("/")
+    auth_email_from_name: str = os.getenv("AUTH_EMAIL_FROM_NAME", "4K Ассистент").strip() or "4K Ассистент"
     deepseek_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
     deepseek_api_key_2: str = os.getenv("DEEPSEEK_API_KEY_2", "")
     deepseek_api_key_3: str = os.getenv("DEEPSEEK_API_KEY_3", "")
