@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from contextlib import contextmanager
 
 import psycopg
@@ -8,6 +9,7 @@ from psycopg.rows import dict_row
 
 from Api import assessment_analysis_queue as queue_module
 from Api.assessment_analysis_queue import AssessmentAnalysisQueue
+from Api.assessment_configuration import LEGACY_METHODOLOGY_DEFINITION, LEGACY_SCENARIO_DEFINITION
 
 
 @pytest.fixture
@@ -32,6 +34,7 @@ def analysis_database(test_database_url, monkeypatch):
                 error_message TEXT,
                 error_retryable BOOLEAN NOT NULL DEFAULT FALSE
                 ,current_stage_id TEXT
+                ,execution_snapshot_json JSONB
             )
             """
         )
@@ -89,9 +92,19 @@ def analysis_database(test_database_url, monkeypatch):
         )
         connection.execute(
             """
-            INSERT INTO user_sessions (id, session_code, user_id, status)
-            VALUES (501, 'analysis-integration-session', 101, 'active')
+            INSERT INTO user_sessions (id, session_code, user_id, status, execution_snapshot_json)
+            VALUES (501, 'analysis-integration-session', 101, 'active', %s::jsonb)
             """
+            ,
+            (
+                json.dumps(
+                    {
+                        "methodology": {"definition": LEGACY_METHODOLOGY_DEFINITION},
+                        "scenario": {"definition": LEGACY_SCENARIO_DEFINITION},
+                    },
+                    ensure_ascii=False,
+                ),
+            ),
         )
 
     @contextmanager

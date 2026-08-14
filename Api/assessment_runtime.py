@@ -102,3 +102,86 @@ def complete_stage_run(connection, *, stage_run_id: int, output: dict[str, Any] 
         """,
         (json.dumps(output or {}, ensure_ascii=False), stage_run_id),
     )
+
+
+def fail_stage_run(connection, *, stage_run_id: int, error: Exception) -> None:
+    connection.execute(
+        """
+        UPDATE assessment_stage_runs
+        SET status = 'failed', error_code = %s, error_message = %s, completed_at = NOW()
+        WHERE id = %s
+        """,
+        (error.__class__.__name__, str(error)[:2000], stage_run_id),
+    )
+
+
+@dataclass(slots=True)
+class ScenarioExecutionContext:
+    connection: Any
+    session_id: int
+    user_id: int
+    snapshot: dict[str, Any]
+    stage: dict[str, Any]
+
+    @property
+    def methodology(self) -> dict[str, Any]:
+        return dict(self.snapshot.get("methodology", {}).get("definition") or {})
+
+
+class ScenarioRunner:
+    def load_snapshot(self, connection, *, session_id: int) -> dict[str, Any]:
+        row = connection.execute(
+            "SELECT execution_snapshot_json FROM user_sessions WHERE id = %s",
+            (session_id,),
+        ).fetchone()
+        if row is None or not isinstance(row["execution_snapshot_json"], dict):
+            raise ValueError("Assessment session does not contain an execution snapshot.")
+        return dict(row["execution_snapshot_json"])
+
+    def resolve_stage(self, snapshot: dict[str, Any], *, stage_id: str) -> dict[str, Any]:
+        scenario = dict(snapshot.get("scenario", {}).get("definition") or {})
+        validate_scenario_definition(scenario)
+        for stage in scenario["stages"]:
+            if str(stage.get("id")) == stage_id:
+                return dict(stage)
+        raise ValueError(f"Assessment scenario stage was not found: {stage_id}")
+
+    def run_stage(
+        self,
+        connection,
+        *,
+        session_id: int,
+        user_id: int,
+        stage_id: str,
+        executor: Callable[[ScenarioExecutionContext], dict[str, Any] | None],
+        snapshot: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        effective_snapshot = snapshot or self.load_snapshot(connection, session_id=session_id)
+        stage = self.resolve_stage(effective_snapshot, stage_id=stage_id)
+        component_code = str(stage["component"])
+        component_version = int(stage["component_version"])
+        component_registry.resolve(component_code, component_version)
+        stage_run_id = start_stage_run(
+            connection,
+            session_id=session_id,
+            stage_id=stage_id,
+            component_code=component_code,
+            component_version=component_version,
+        )
+        context = ScenarioExecutionContext(
+            connection=connection,
+            session_id=session_id,
+            user_id=user_id,
+            snapshot=effective_snapshot,
+            stage=stage,
+        )
+        try:
+            output = dict(executor(context) or {})
+        except Exception as exc:
+            fail_stage_run(connection, stage_run_id=stage_run_id, error=exc)
+            raise
+        complete_stage_run(connection, stage_run_id=stage_run_id, output=output)
+        return {"stage": stage, "output": output, "snapshot": effective_snapshot}
+
+
+scenario_runner = ScenarioRunner()

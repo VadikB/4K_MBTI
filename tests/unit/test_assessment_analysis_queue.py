@@ -4,12 +4,23 @@ import pytest
 
 from Api import assessment_analysis_queue as queue_module
 from Api.assessment_analysis_queue import AssessmentAnalysisJob, AssessmentAnalysisQueue
+from Api.assessment_configuration import LEGACY_METHODOLOGY_DEFINITION, LEGACY_SCENARIO_DEFINITION
 
 
 class Cursor:
     rowcount = 1
 
+    def __init__(self, statement: str = "") -> None:
+        self.statement = statement
+
     def fetchone(self):
+        if "execution_snapshot_json" in self.statement:
+            return {
+                "execution_snapshot_json": {
+                    "methodology": {"definition": LEGACY_METHODOLOGY_DEFINITION},
+                    "scenario": {"definition": LEGACY_SCENARIO_DEFINITION},
+                }
+            }
         return {"id": 77}
 
 
@@ -20,7 +31,7 @@ class RecordingConnection:
 
     def execute(self, statement: str, _params=None):
         self.statements.append(" ".join(statement.split()))
-        return Cursor()
+        return Cursor(statement)
 
     def commit(self) -> None:
         self.commits += 1

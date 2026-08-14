@@ -11,7 +11,7 @@ from uuid import uuid4
 from Api.communication_agent import competency_assessment_agents
 from Api.config import settings
 from Api.database import get_connection
-from Api.assessment_runtime import complete_stage_run, start_stage_run
+from Api.assessment_runtime import ScenarioExecutionContext, component_registry, scenario_runner
 
 logger = logging.getLogger("agent4k.analysis_queue")
 
@@ -237,36 +237,34 @@ class AssessmentAnalysisQueue:
         heartbeat.start()
         try:
             with get_connection() as connection:
-                stage_run_id = start_stage_run(
+                analysis_run = scenario_runner.run_stage(
                     connection,
                     session_id=job.session_id,
+                    user_id=job.user_id,
                     stage_id="evaluate_competencies",
-                    component_code="evaluation.run_methodology_evaluators",
-                    component_version=1,
+                    executor=lambda context: self._execute_methodology_evaluators(context, job),
                 )
-                step_progress = [15, 35, 55, 75]
-                for index, agent in enumerate(competency_assessment_agents):
-                    self._update_progress(
-                        connection,
-                        job,
-                        progress=step_progress[min(index, len(step_progress) - 1)],
-                        current_step=f"competency_{index + 1}",
-                    )
-                    agent.evaluate_session(
-                        connection=connection,
-                        session_id=job.session_id,
-                        user_id=job.user_id,
-                    )
                 self._update_progress(
                     connection,
                     job,
                     progress=90,
                     current_step="finalizing_assessment",
                 )
-                complete_stage_run(
+                scenario_runner.run_stage(
                     connection,
-                    stage_run_id=stage_run_id,
-                    output={"evaluators_completed": len(competency_assessment_agents)},
+                    session_id=job.session_id,
+                    user_id=job.user_id,
+                    stage_id="aggregate",
+                    snapshot=analysis_run["snapshot"],
+                    executor=lambda _context: {"mode": "legacy_evaluations_materialized"},
+                )
+                scenario_runner.run_stage(
+                    connection,
+                    session_id=job.session_id,
+                    user_id=job.user_id,
+                    stage_id="build_report",
+                    snapshot=analysis_run["snapshot"],
+                    executor=lambda _context: {"mode": "report_materialized_on_read"},
                 )
                 cursor = connection.execute(
                     """
@@ -313,6 +311,42 @@ class AssessmentAnalysisQueue:
         finally:
             heartbeat_stop.set()
             heartbeat.join(timeout=2)
+
+    def _execute_methodology_evaluators(
+        self,
+        context: ScenarioExecutionContext,
+        job: AssessmentAnalysisJob,
+    ) -> dict[str, object]:
+        competency_definitions = list(context.methodology.get("competencies") or [])
+        agents_by_component = {
+            f"evaluation.{str(getattr(agent, 'agent_code', '')).strip()}": agent
+            for agent in competency_assessment_agents
+            if str(getattr(agent, "agent_code", "")).strip()
+        }
+        completed: list[str] = []
+        step_progress = [15, 35, 55, 75]
+        for index, competency in enumerate(competency_definitions):
+            component_code = str(competency.get("evaluator") or "").strip()
+            component_version = int(competency.get("evaluator_version") or 0)
+            component_registry.resolve(component_code, component_version)
+            agent = agents_by_component.get(component_code)
+            if agent is None and index < len(competency_assessment_agents):
+                agent = competency_assessment_agents[index]
+            if agent is None:
+                raise RuntimeError(f"Evaluator implementation is not available: {component_code} v{component_version}")
+            self._update_progress(
+                context.connection,
+                job,
+                progress=step_progress[min(index, len(step_progress) - 1)],
+                current_step=component_code,
+            )
+            agent.evaluate_session(
+                connection=context.connection,
+                session_id=context.session_id,
+                user_id=context.user_id,
+            )
+            completed.append(component_code)
+        return {"evaluators_completed": completed}
 
     def _update_progress(
         self,
