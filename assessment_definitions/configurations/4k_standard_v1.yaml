@@ -1,0 +1,11 @@
+schema_version: 1
+kind: assessment_configuration
+code: 4k_standard_v1
+version: 1
+name: Стандартная оценка 4K
+methodology:
+  code: competencies_4k
+  version: 1
+scenario:
+  code: standard_4k_interview
+  version: 1
