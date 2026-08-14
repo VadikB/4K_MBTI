@@ -68,7 +68,7 @@ class FakeDialogPolicy:
         return text.startswith("META:")
 
     def looks_like_domain_drift(self, text, forbidden):
-        return any(item in text for item in forbidden)
+        return any(item.strip() in text for item in forbidden.split(",") if item.strip())
 
 
 def test_manual_finish_uses_fallback_without_llm() -> None:
@@ -161,7 +161,7 @@ def test_execute_dialog_case_retries_meta_response_in_role() -> None:
 
 
 def test_execute_dialog_case_raises_after_persistent_domain_drift() -> None:
-    gateway = FakeGateway(enabled=True, responses=["foreign reply", "foreign retry"])
+    gateway = FakeGateway(enabled=True, responses=["кандидаты", "кандидаты снова"])
     fallback = InterviewerTurnResult("fallback", False, "in_progress", None, "")
 
     try:
@@ -171,7 +171,7 @@ def test_execute_dialog_case_raises_after_persistent_domain_drift() -> None:
             fallback=fallback,
             dialog_case_mode=True,
             routing_key="dialog:case",
-            system_prompt="system",
+            system_prompt="Инцидент в Service Desk",
             company_industry="industry",
             user_profile={},
         )

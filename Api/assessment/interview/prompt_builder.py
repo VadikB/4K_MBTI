@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from Api.assessment.interview.context_builder import DialogContextBuilder
 from Api.assessment.interview.dialog_policy import DialogPolicy
 from Api.llm.contracts import LlmMessage
 
@@ -75,8 +76,14 @@ DIALOG_SYSTEM_PROMPT = (
 
 
 class InterviewerPromptBuilder:
-    def __init__(self, *, dialog_policy: DialogPolicy | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        dialog_policy: DialogPolicy | None = None,
+        context_builder: DialogContextBuilder | None = None,
+    ) -> None:
         self.dialog_policy = dialog_policy or DialogPolicy()
+        self.context_builder = context_builder or DialogContextBuilder()
 
     def build_case_turn_messages(
         self,
@@ -99,7 +106,11 @@ class InterviewerPromptBuilder:
         prompt_snapshot: dict[str, Any] | None,
     ) -> list[LlmMessage]:
         dialog_context = (
-            policy._build_dialog_llm_context(system_prompt=system_prompt, dialogue=dialogue)
+            self.context_builder.build_runtime_context(
+                policy=policy,
+                system_prompt=system_prompt,
+                dialogue=dialogue,
+            )
             if dialog_case_mode
             else None
         )
@@ -112,18 +123,19 @@ class InterviewerPromptBuilder:
             "dialog_counterpart_role": counterpart_role,
             "dialog_role_contract": self.dialog_policy.role_contract(counterpart_role),
             "dialog_case_title": str(case_title or "").strip() or "без названия",
-            "dialog_scene_anchor": policy._build_dialog_scene_anchor(
+            "dialog_scene_anchor": self.context_builder.build_scene_anchor(
                 system_prompt=system_prompt,
                 case_title=case_title,
             ),
-            "dialog_domain_anchor": policy._build_dialog_domain_anchor(
+            "dialog_domain_anchor": self.context_builder.build_domain_anchor(
+                policy=policy,
                 role_name=role_name,
                 position=position,
                 duties=duties,
                 company_industry=company_industry,
                 user_profile=user_profile,
             ),
-            "dialog_forbidden_drift": policy._build_dialog_forbidden_drift(
+            "dialog_forbidden_drift": self.context_builder.build_forbidden_drift(
                 system_prompt=system_prompt,
                 company_industry=company_industry,
                 user_profile=user_profile,

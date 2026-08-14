@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Protocol
 
 from Api.assessment.interview.contracts import InterviewerTurnResult
+from Api.assessment.interview.context_builder import DialogContextBuilder
 from Api.assessment.interview.dialog_policy import DialogPolicy
 from Api.llm.contracts import LlmMessage
 
@@ -24,9 +25,16 @@ class InterviewGateway(Protocol):
 class InterviewerService:
     """Runs interviewer use cases independently from a concrete LLM client facade."""
 
-    def __init__(self, *, gateway: InterviewGateway, dialog_policy: DialogPolicy | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        gateway: InterviewGateway,
+        dialog_policy: DialogPolicy | None = None,
+        context_builder: DialogContextBuilder | None = None,
+    ) -> None:
         self.gateway = gateway
         self.dialog_policy = dialog_policy or DialogPolicy()
+        self.context_builder = context_builder or DialogContextBuilder()
 
     def execute_case_turn(
         self,
@@ -64,7 +72,7 @@ class InterviewerService:
                     retry_raw = self.gateway.chat(retry_messages, temperature=0.45, routing_key=routing_key)
                     assistant_message = policy._extract_dialog_assistant_message(retry_raw)
 
-                forbidden_drift = policy._build_dialog_forbidden_drift(
+                forbidden_drift = self.context_builder.build_forbidden_drift(
                     system_prompt=system_prompt,
                     company_industry=company_industry,
                     user_profile=user_profile,
