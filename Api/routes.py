@@ -21,6 +21,8 @@ from Api.config import settings
 from Api.assessment_service import assessment_service
 from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.assessment_analysis_queue import assessment_analysis_queue
+from Api.assessment_authoring_service import assessment_authoring_service, ENTITY_CONFIG
+from Api.platform_access import require_platform_permission
 from Api.agent import interviewer_agent
 from Api.database import get_connection, get_level_percent_map, recompute_case_quality_checks
 from Api.database import get_case_methodology_versions
@@ -158,6 +160,11 @@ from Api.schemas import (
     ProfileStateResponse,
     UserJourneyStateResponse,
     UserResponse,
+    AssessmentDefinitionCloneRequest,
+    AssessmentDefinitionTransitionRequest,
+    AssessmentDefinitionUpdateRequest,
+    AssessmentDefinitionVersionResponse,
+    PlatformRoleAssignmentRequest,
 )
 
 
@@ -5252,6 +5259,236 @@ def update_admin_methodology_case(
     with get_connection() as connection:
         _require_superadmin(connection, user)
         return _upsert_admin_methodology_case(connection, case_id_code, payload, user.full_name or ADMIN_FULL_NAME)
+
+
+def _assessment_definition_user(request: Request):
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Admin session not found")
+    return user
+
+
+def _assessment_definition_permission(entity_type: str, action: str) -> str:
+    config = ENTITY_CONFIG.get(entity_type)
+    if config is None:
+        raise HTTPException(status_code=404, detail="Assessment definition type not found")
+    key = f"{action}_permission"
+    permission = config.get(key)
+    if not permission:
+        raise HTTPException(status_code=400, detail="Unsupported assessment definition operation")
+    return permission
+
+
+def _require_assessment_definition_permission(connection, user, entity_type: str, action: str) -> None:
+    try:
+        require_platform_permission(connection, user, _assessment_definition_permission(entity_type, action))
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@router.get(
+    "/admin/assessment-definitions/{entity_type}",
+    response_model=list[AssessmentDefinitionVersionResponse],
+)
+def list_assessment_definition_versions(entity_type: str, request: Request) -> list[AssessmentDefinitionVersionResponse]:
+    user = _assessment_definition_user(request)
+    permission = "methodology.view" if entity_type == "methodology" else "scenario.view"
+    if entity_type not in ENTITY_CONFIG:
+        raise HTTPException(status_code=404, detail="Assessment definition type not found")
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, permission)
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        return [
+            AssessmentDefinitionVersionResponse(**row)
+            for row in assessment_authoring_service.list_versions(connection, entity_type=entity_type)
+        ]
+
+
+@router.post(
+    "/admin/assessment-definitions/{entity_type}/{version_id}/clone",
+    response_model=AssessmentDefinitionVersionResponse,
+)
+def clone_assessment_definition_version(
+    entity_type: str,
+    version_id: int,
+    payload: AssessmentDefinitionCloneRequest,
+    request: Request,
+) -> AssessmentDefinitionVersionResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_assessment_definition_permission(connection, user, entity_type, "edit")
+        try:
+            row = assessment_authoring_service.clone_version(
+                connection,
+                entity_type=entity_type,
+                source_version_id=version_id,
+                actor_user_id=int(user.id),
+                description=payload.description,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentDefinitionVersionResponse(**row)
+
+
+@router.put(
+    "/admin/assessment-definitions/{entity_type}/{version_id}",
+    response_model=AssessmentDefinitionVersionResponse,
+)
+def update_assessment_definition_version(
+    entity_type: str,
+    version_id: int,
+    payload: AssessmentDefinitionUpdateRequest,
+    request: Request,
+) -> AssessmentDefinitionVersionResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_assessment_definition_permission(connection, user, entity_type, "edit")
+        try:
+            row = assessment_authoring_service.update_draft(
+                connection,
+                entity_type=entity_type,
+                version_id=version_id,
+                definition=payload.definition,
+                description=payload.description,
+                actor_user_id=int(user.id),
+                comment=payload.comment,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentDefinitionVersionResponse(**row)
+
+
+@router.post("/admin/assessment-definitions/{entity_type}/{version_id}/validate")
+def validate_assessment_definition_version(entity_type: str, version_id: int, request: Request) -> dict[str, object]:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_assessment_definition_permission(connection, user, entity_type, "edit")
+        try:
+            return assessment_authoring_service.validate_version(
+                connection,
+                entity_type=entity_type,
+                version_id=version_id,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post(
+    "/admin/assessment-definitions/{entity_type}/{version_id}/submit",
+    response_model=AssessmentDefinitionVersionResponse,
+)
+def submit_assessment_definition_version(
+    entity_type: str,
+    version_id: int,
+    payload: AssessmentDefinitionTransitionRequest,
+    request: Request,
+) -> AssessmentDefinitionVersionResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_assessment_definition_permission(connection, user, entity_type, "submit")
+        try:
+            row = assessment_authoring_service.submit_for_review(
+                connection,
+                entity_type=entity_type,
+                version_id=version_id,
+                actor_user_id=int(user.id),
+                comment=payload.comment,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentDefinitionVersionResponse(**row)
+
+
+@router.post(
+    "/admin/assessment-definitions/{entity_type}/{version_id}/publish",
+    response_model=AssessmentDefinitionVersionResponse,
+)
+def publish_assessment_definition_version(
+    entity_type: str,
+    version_id: int,
+    payload: AssessmentDefinitionTransitionRequest,
+    request: Request,
+) -> AssessmentDefinitionVersionResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_assessment_definition_permission(connection, user, entity_type, "publish")
+        try:
+            row = assessment_authoring_service.publish(
+                connection,
+                entity_type=entity_type,
+                version_id=version_id,
+                actor_user_id=int(user.id),
+                comment=payload.comment,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentDefinitionVersionResponse(**row)
+
+
+@router.post("/admin/platform-role-assignments")
+def assign_platform_role(payload: PlatformRoleAssignmentRequest, request: Request) -> dict[str, object]:
+    current_user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_superadmin(connection, current_user)
+        role = connection.execute(
+            "SELECT id, code FROM platform_roles WHERE code = %s LIMIT 1",
+            (payload.role_code.strip(),),
+        ).fetchone()
+        if role is None:
+            raise HTTPException(status_code=404, detail="Platform role not found")
+        target_user = connection.execute("SELECT id FROM users WHERE id = %s", (payload.user_id,)).fetchone()
+        if target_user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        existing = connection.execute(
+            """
+            SELECT id
+            FROM user_platform_roles
+            WHERE user_id = %s
+              AND platform_role_id = %s
+              AND COALESCE(organization_id, 0) = COALESCE(%s, 0)
+              AND revoked_at IS NULL
+            LIMIT 1
+            """,
+            (payload.user_id, role["id"], payload.organization_id),
+        ).fetchone()
+        if existing is None:
+            assignment = connection.execute(
+                """
+                INSERT INTO user_platform_roles (
+                    user_id, platform_role_id, organization_id, granted_by
+                )
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (payload.user_id, role["id"], payload.organization_id, current_user.id),
+            ).fetchone()
+            assignment_id = int(assignment["id"])
+        else:
+            assignment_id = int(existing["id"])
+        return {"ok": True, "assignment_id": assignment_id, "role_code": str(role["code"])}
+
+
+@router.delete("/admin/platform-role-assignments/{assignment_id}")
+def revoke_platform_role(assignment_id: int, request: Request) -> dict[str, object]:
+    current_user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_superadmin(connection, current_user)
+        row = connection.execute(
+            """
+            UPDATE user_platform_roles
+            SET revoked_at = NOW()
+            WHERE id = %s
+              AND revoked_at IS NULL
+            RETURNING id
+            """,
+            (assignment_id,),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Active platform role assignment not found")
+        return {"ok": True, "assignment_id": int(row["id"])}
 
 
 @router.post("/session/logout")

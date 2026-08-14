@@ -42,7 +42,7 @@ LEGACY_SCENARIO_DEFINITION: dict[str, Any] = {
 
 
 def canonical_json(payload: dict[str, Any]) -> str:
-    return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
 
 
 def definition_checksum(payload: dict[str, Any]) -> str:

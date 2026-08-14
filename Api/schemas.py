@@ -1348,3 +1348,36 @@ class OperationProgressResponse(BaseModel):
     current_step_index: int
     progress_percent: int
     steps: list[OperationProgressStep]
+
+
+class AssessmentDefinitionVersionResponse(BaseModel):
+    id: int
+    code: str | None = None
+    name: str | None = None
+    version: int
+    status: str
+    description: str | None = None
+    definition_json: dict
+    checksum: str
+    created_at: datetime
+    published_at: datetime | None = None
+
+
+class AssessmentDefinitionCloneRequest(BaseModel):
+    description: str | None = None
+
+
+class AssessmentDefinitionUpdateRequest(BaseModel):
+    definition: dict
+    description: str | None = None
+    comment: str | None = None
+
+
+class AssessmentDefinitionTransitionRequest(BaseModel):
+    comment: str | None = None
+
+
+class PlatformRoleAssignmentRequest(BaseModel):
+    user_id: int
+    role_code: str
+    organization_id: int | None = None
