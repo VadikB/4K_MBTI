@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from Api.assessment.interview.state_machine import DialogStateMachine
 
 
@@ -9,10 +7,82 @@ class DialogFallbackEngine:
     def __init__(self, *, state_machine: DialogStateMachine | None = None) -> None:
         self.state_machine = state_machine or DialogStateMachine()
 
+    @staticmethod
+    def build_direct_answer(
+        *,
+        normalized_user: str,
+        counterpart_role: str,
+        asked_stages: set[str],
+    ) -> str | None:
+        if "?" not in normalized_user and not any(
+            token in normalized_user
+            for token in ("почему", "из-за чего", "что мешает", "что именно", "какая поддержка", "что нужно")
+        ):
+            return None
+
+        if counterpart_role == "peer":
+            if any(token in normalized_user for token in ("почему", "из-за чего", "не закрыл", "сорвался срок", "что случилось")):
+                return (
+                    "Потому что меня в тот момент сорвало на срочную эскалацию, и я не зафиксировал нормально новый срок и статус. "
+                    "Давай разберем, что у нас в этом месте ломается чаще всего."
+                )
+            if any(token in normalized_user for token in ("что мешает", "что тебе мешает", "в чем проблема", "в чём проблема")):
+                return (
+                    "Сильнее всего мешает резкое переключение между срочными эскалациями и обычной очередью, "
+                    "из-за этого я проваливаю обновление статуса и договоренности по сроку. "
+                    "Надо понять, как это лучше фиксировать заранее."
+                )
+            if any(token in normalized_user for token in ("какая поддержка", "что тебе нужно", "что нужно от меня")):
+                return (
+                    "От тебя мне нужна понятная договоренность: если я понимаю, что срок срывается, я сразу пишу это в Service Desk, "
+                    "а мы отдельно сверяем новый срок и следующий шаг, а не оставляем заявку без обновления."
+                )
+            if any(token in normalized_user for token in ("что именно нужно", "какой минимум", "что должно быть")):
+                return (
+                    "Минимум для меня такой: актуальный статус, что уже проверено, почему срок сдвигается и какой следующий шаг мы фиксируем. "
+                    "Тогда следующая передача не повисает в воздухе."
+                )
+
+        if counterpart_role == "employee":
+            if any(token in normalized_user for token in ("почему", "из-за чего", "что случилось")):
+                return (
+                    "Потому что в последнее время я начал терять приоритет между срочными задачами и регулярной работой, "
+                    "и это стало бить по предсказуемости результата. "
+                    "Давайте разберем, где именно это проявляется сильнее всего."
+                )
+            if any(token in normalized_user for token in ("какая поддержка", "что нужно от нас", "что вам нужно")):
+                return (
+                    "Мне нужна понятная рамка ожиданий, короткая сверка по приоритетам и контрольная точка, "
+                    "чтобы изменение не осталось только договоренностью на словах."
+                )
+
+        if counterpart_role == "stakeholder" and any(
+            token in normalized_user for token in ("что для вас критично", "что вам нужно", "почему не получается")
+        ):
+            return (
+                "Для нас критично не потерять темп и не зависнуть без понятного следующего шага. "
+                "Со своей стороны я хочу сразу проговорить ограничения и понять, на чем мы можем зафиксироваться сейчас."
+            )
+
+        if counterpart_role == "client" and any(
+            token in normalized_user for token in ("когда", "какой срок", "что происходит", "почему")
+        ):
+            return (
+                "Сейчас я не готов обещать срок без подтверждения следующего шага, но могу сразу зафиксировать, "
+                "что вопрос не закрыт и требует обновления статуса. "
+                "Давайте тогда определим, что именно делаем следующим действием."
+            )
+
+        if counterpart_role in {"manager", "stakeholder"} and "criticality" not in asked_stages:
+            return (
+                "С моей стороны важно не потерять управляемость ситуации и не оставить ее без договоренности. "
+                "Давайте тогда зафиксируем, что для вас сейчас самое критичное."
+            )
+        return None
+
     def build_reply(
         self,
         *,
-        policy: Any,
         user_message: str,
         dialogue: list[dict[str, str]],
     ) -> str:
@@ -281,7 +351,7 @@ class DialogFallbackEngine:
                 "Что именно в процессе сейчас нужно прояснить в первую очередь?"
             )
 
-        direct_answer = policy._build_dialog_direct_answer(
+        direct_answer = self.build_direct_answer(
             normalized_user=normalized_user,
             counterpart_role=counterpart_role,
             asked_stages=asked_stages,
