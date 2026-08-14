@@ -13,6 +13,7 @@ from Api.assessment_analysis_queue import AssessmentAnalysisQueue
 @pytest.fixture
 def analysis_database(test_database_url, monkeypatch):
     with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
+        connection.execute("DROP TABLE IF EXISTS assessment_stage_runs")
         connection.execute("DROP TABLE IF EXISTS assessment_analysis_jobs")
         connection.execute("DROP TABLE IF EXISTS user_sessions")
         connection.execute(
@@ -30,6 +31,28 @@ def analysis_database(test_database_url, monkeypatch):
                 error_code TEXT,
                 error_message TEXT,
                 error_retryable BOOLEAN NOT NULL DEFAULT FALSE
+                ,current_stage_id TEXT
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE assessment_stage_runs (
+                id BIGSERIAL PRIMARY KEY,
+                session_id INTEGER NOT NULL REFERENCES user_sessions(id) ON DELETE CASCADE,
+                stage_id TEXT NOT NULL,
+                component_code TEXT NOT NULL,
+                component_version INTEGER NOT NULL,
+                attempt INTEGER NOT NULL DEFAULT 1,
+                status TEXT NOT NULL,
+                input_json JSONB,
+                output_json JSONB,
+                error_code TEXT,
+                error_message TEXT,
+                started_at TIMESTAMP,
+                completed_at TIMESTAMP,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (session_id, stage_id, attempt)
             )
             """
         )
@@ -80,6 +103,7 @@ def analysis_database(test_database_url, monkeypatch):
     yield test_connection
 
     with psycopg.connect(test_database_url) as connection:
+        connection.execute("DROP TABLE IF EXISTS assessment_stage_runs")
         connection.execute("DROP TABLE IF EXISTS assessment_analysis_jobs")
         connection.execute("DROP TABLE IF EXISTS user_sessions")
 
@@ -118,7 +142,6 @@ def test_analysis_claim_process_and_report_ready_transition(analysis_database, m
             return []
 
     monkeypatch.setattr(queue_module, "competency_assessment_agents", [Agent(), Agent(), Agent(), Agent()])
-    monkeypatch.setattr(queue_module.mbti_assessment_service, "summarize_session", lambda *_args, **_kwargs: {})
     monkeypatch.setattr(queue, "_run_job_heartbeat", lambda *_args: None)
 
     enqueue_analysis(queue)

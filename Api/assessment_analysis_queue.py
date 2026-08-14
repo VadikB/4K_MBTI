@@ -11,7 +11,7 @@ from uuid import uuid4
 from Api.communication_agent import competency_assessment_agents
 from Api.config import settings
 from Api.database import get_connection
-from Api.mbti.service import mbti_assessment_service
+from Api.assessment_runtime import complete_stage_run, start_stage_run
 
 logger = logging.getLogger("agent4k.analysis_queue")
 
@@ -237,6 +237,13 @@ class AssessmentAnalysisQueue:
         heartbeat.start()
         try:
             with get_connection() as connection:
+                stage_run_id = start_stage_run(
+                    connection,
+                    session_id=job.session_id,
+                    stage_id="evaluate_competencies",
+                    component_code="evaluation.run_methodology_evaluators",
+                    component_version=1,
+                )
                 step_progress = [15, 35, 55, 75]
                 for index, agent in enumerate(competency_assessment_agents):
                     self._update_progress(
@@ -254,9 +261,13 @@ class AssessmentAnalysisQueue:
                     connection,
                     job,
                     progress=90,
-                    current_step="mbti_summary",
+                    current_step="finalizing_assessment",
                 )
-                mbti_assessment_service.summarize_session(connection, session_id=job.session_id)
+                complete_stage_run(
+                    connection,
+                    stage_run_id=stage_run_id,
+                    output={"evaluators_completed": len(competency_assessment_agents)},
+                )
                 cursor = connection.execute(
                     """
                     UPDATE assessment_analysis_jobs

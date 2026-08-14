@@ -9,6 +9,9 @@ from Api.assessment_analysis_queue import AssessmentAnalysisJob, AssessmentAnaly
 class Cursor:
     rowcount = 1
 
+    def fetchone(self):
+        return {"id": 77}
+
 
 class RecordingConnection:
     def __init__(self) -> None:
@@ -52,7 +55,6 @@ def test_analysis_job_completes_report(monkeypatch) -> None:
 
     monkeypatch.setattr(queue_module, "get_connection", fake_connection)
     monkeypatch.setattr(queue_module, "competency_assessment_agents", [Agent(), Agent(), Agent(), Agent()])
-    monkeypatch.setattr(queue_module.mbti_assessment_service, "summarize_session", lambda *_args, **_kwargs: {})
     monkeypatch.setattr(queue, "_run_job_heartbeat", lambda *_args: None)
 
     queue._process(analysis_job())

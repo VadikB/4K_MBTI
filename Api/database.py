@@ -12,6 +12,7 @@ from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
 from Api.config import settings
+from Api.assessment_configuration import backfill_legacy_session_configuration, ensure_legacy_assessment_configuration
 
 DEFAULT_LEVEL_PERCENT_MAP = {
     "L1": 45,
@@ -2845,6 +2846,296 @@ def close_connection_pool() -> None:
 
 def ensure_core_schema() -> None:
     with get_connection() as connection:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_methodologies (
+                id BIGSERIAL PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_methodology_versions (
+                id BIGSERIAL PRIMARY KEY,
+                methodology_id BIGINT NOT NULL REFERENCES assessment_methodologies(id),
+                version INTEGER NOT NULL CHECK (version > 0),
+                status TEXT NOT NULL CHECK (status IN ('draft', 'ready_for_review', 'published', 'retired')),
+                description TEXT,
+                definition_json JSONB NOT NULL,
+                checksum TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                published_at TIMESTAMP,
+                UNIQUE (methodology_id, version)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_scenarios (
+                id BIGSERIAL PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_scenario_versions (
+                id BIGSERIAL PRIMARY KEY,
+                scenario_id BIGINT NOT NULL REFERENCES assessment_scenarios(id),
+                version INTEGER NOT NULL CHECK (version > 0),
+                status TEXT NOT NULL CHECK (status IN ('draft', 'ready_for_review', 'published', 'retired')),
+                description TEXT,
+                definition_json JSONB NOT NULL,
+                checksum TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                published_at TIMESTAMP,
+                UNIQUE (scenario_id, version)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_configurations (
+                id BIGSERIAL PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                methodology_version_id BIGINT NOT NULL REFERENCES assessment_methodology_versions(id),
+                scenario_version_id BIGINT NOT NULL REFERENCES assessment_scenario_versions(id),
+                status TEXT NOT NULL CHECK (status IN ('draft', 'published', 'retired')),
+                is_default BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                published_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS platform_roles (
+                id BIGSERIAL PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS platform_permissions (
+                id BIGSERIAL PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                description TEXT
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS platform_role_permissions (
+                platform_role_id BIGINT NOT NULL REFERENCES platform_roles(id) ON DELETE CASCADE,
+                permission_id BIGINT NOT NULL REFERENCES platform_permissions(id) ON DELETE CASCADE,
+                PRIMARY KEY (platform_role_id, permission_id)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_platform_roles (
+                id BIGSERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                platform_role_id BIGINT NOT NULL REFERENCES platform_roles(id) ON DELETE CASCADE,
+                organization_id INTEGER,
+                granted_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                granted_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                revoked_at TIMESTAMP
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_user_platform_roles_active
+            ON user_platform_roles(user_id, platform_role_id, COALESCE(organization_id, 0))
+            WHERE revoked_at IS NULL
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_definition_audit_log (
+                id BIGSERIAL PRIMARY KEY,
+                entity_type TEXT NOT NULL,
+                entity_id BIGINT NOT NULL,
+                action TEXT NOT NULL,
+                actor_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                before_json JSONB,
+                after_json JSONB,
+                comment TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO platform_roles (code, name, description)
+            VALUES
+                ('methodologist', 'Методолог', 'Создание и проверка draft-версий методологий и сценариев.'),
+                ('assessment_publisher', 'Публикатор assessment', 'Публикация проверенных версий и конфигураций.')
+            ON CONFLICT (code) DO NOTHING
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO platform_permissions (code, description)
+            VALUES
+                ('methodology.view', 'Просмотр методологий и их версий'),
+                ('methodology.edit_draft', 'Создание и изменение draft-методологий'),
+                ('methodology.submit', 'Отправка методологии на проверку'),
+                ('methodology.publish', 'Публикация методологии'),
+                ('scenario.view', 'Просмотр сценариев и их версий'),
+                ('scenario.edit_draft', 'Создание и изменение draft-сценариев'),
+                ('scenario.submit', 'Отправка сценария на проверку'),
+                ('scenario.publish', 'Публикация сценария'),
+                ('configuration.publish', 'Публикация assessment-конфигурации'),
+                ('assessment.test_run', 'Запуск тестового assessment')
+            ON CONFLICT (code) DO NOTHING
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO platform_role_permissions (platform_role_id, permission_id)
+            SELECT role.id, permission.id
+            FROM platform_roles role
+            CROSS JOIN platform_permissions permission
+            WHERE role.code = 'methodologist'
+              AND permission.code IN (
+                  'methodology.view', 'methodology.edit_draft', 'methodology.submit',
+                  'scenario.view', 'scenario.edit_draft', 'scenario.submit', 'assessment.test_run'
+              )
+            ON CONFLICT DO NOTHING
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO platform_role_permissions (platform_role_id, permission_id)
+            SELECT role.id, permission.id
+            FROM platform_roles role
+            CROSS JOIN platform_permissions permission
+            WHERE role.code = 'assessment_publisher'
+            ON CONFLICT DO NOTHING
+            """
+        )
+        connection.execute(
+            """
+            CREATE OR REPLACE FUNCTION prevent_published_assessment_definition_update()
+            RETURNS trigger AS $$
+            BEGIN
+                IF OLD.status = 'published' AND (
+                    NEW.definition_json IS DISTINCT FROM OLD.definition_json
+                    OR NEW.checksum IS DISTINCT FROM OLD.checksum
+                    OR NEW.version IS DISTINCT FROM OLD.version
+                ) THEN
+                    RAISE EXCEPTION 'Published assessment definitions are immutable';
+                END IF;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql
+            """
+        )
+        connection.execute("DROP TRIGGER IF EXISTS trg_methodology_version_immutable ON assessment_methodology_versions")
+        connection.execute(
+            """
+            CREATE TRIGGER trg_methodology_version_immutable
+            BEFORE UPDATE ON assessment_methodology_versions
+            FOR EACH ROW EXECUTE FUNCTION prevent_published_assessment_definition_update()
+            """
+        )
+        connection.execute("DROP TRIGGER IF EXISTS trg_scenario_version_immutable ON assessment_scenario_versions")
+        connection.execute(
+            """
+            CREATE TRIGGER trg_scenario_version_immutable
+            BEFORE UPDATE ON assessment_scenario_versions
+            FOR EACH ROW EXECUTE FUNCTION prevent_published_assessment_definition_update()
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_assessment_configurations_single_default
+            ON assessment_configurations(is_default)
+            WHERE is_default = TRUE
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS assessment_configuration_id BIGINT REFERENCES assessment_configurations(id)
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS methodology_version_id BIGINT REFERENCES assessment_methodology_versions(id)
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS scenario_version_id BIGINT REFERENCES assessment_scenario_versions(id)
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS execution_snapshot_json JSONB
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS execution_checksum TEXT
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS current_stage_id TEXT
+            """
+        )
+        ensure_legacy_assessment_configuration(connection)
+        backfill_legacy_session_configuration(connection)
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_stage_runs (
+                id BIGSERIAL PRIMARY KEY,
+                session_id BIGINT NOT NULL REFERENCES user_sessions(id) ON DELETE CASCADE,
+                stage_id TEXT NOT NULL,
+                component_code TEXT NOT NULL,
+                component_version INTEGER NOT NULL,
+                attempt INTEGER NOT NULL DEFAULT 1,
+                status TEXT NOT NULL CHECK (status IN ('queued', 'running', 'completed', 'failed', 'skipped')),
+                input_json JSONB,
+                output_json JSONB,
+                error_code TEXT,
+                error_message TEXT,
+                started_at TIMESTAMP,
+                completed_at TIMESTAMP,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (session_id, stage_id, attempt)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_assessment_stage_runs_session
+            ON assessment_stage_runs(session_id, created_at)
+            """
+        )
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS operation_progress (

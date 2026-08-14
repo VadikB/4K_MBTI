@@ -9,10 +9,10 @@ from uuid import uuid4
 
 from Api.case_context_builder import build_case_context
 from Api.case_reuse_service import case_reuse_service
+from Api.assessment_configuration import load_default_execution_configuration
 from Api.config import settings
 from Api.database import get_case_methodology_versions, get_connection
 from Api.deepseek_client import DeepSeekTurnResult, deepseek_client
-from Api.mbti.service import mbti_assessment_service
 from Api.progress_service import operation_progress_service
 from Api.schemas import UserResponse
 from Api.user_journey import evaluate_profile_state
@@ -531,13 +531,30 @@ class AssessmentService:
             if not selected_cases:
                 raise ValueError("Для выбранной роли не найдено доступных кейсов для запуска ассессмента.")
 
+            execution_configuration = load_default_execution_configuration(connection)
             session = connection.execute(
                 """
-                INSERT INTO user_sessions (session_code, user_id, role_id, assessment_code, status, source, notes)
-                VALUES (%s, %s, %s, 'competencies_4k', 'created', 'auto', 'Session generated after role detection')
+                INSERT INTO user_sessions (
+                    session_code, user_id, role_id, assessment_code, status, source, notes,
+                    assessment_configuration_id, methodology_version_id, scenario_version_id,
+                    execution_snapshot_json, execution_checksum, current_stage_id
+                )
+                VALUES (
+                    %s, %s, %s, 'competencies_4k', 'created', 'auto',
+                    'Session generated after role detection', %s, %s, %s, %s::jsonb, %s, 'personalize_cases'
+                )
                 RETURNING id, session_code
                 """,
-                (uuid4().hex, user.id, user.role_id),
+                (
+                    uuid4().hex,
+                    user.id,
+                    user.role_id,
+                    execution_configuration["configuration_id"],
+                    execution_configuration["methodology_version_id"],
+                    execution_configuration["scenario_version_id"],
+                    json.dumps(execution_configuration["snapshot"], ensure_ascii=False),
+                    execution_configuration["checksum"],
+                ),
             ).fetchone()
             session_id = session["id"]
             session_code = session["session_code"]
@@ -2308,25 +2325,6 @@ class AssessmentService:
             if session_row is None:
                 raise ValueError("Assessment session not found")
 
-            pending_followup_row = self._get_pending_mbti_followup(connection, session_row["id"])
-            if pending_followup_row is not None:
-                operation_progress_service.advance(
-                    progress_operation_id,
-                    2,
-                    title="Уточняем ответы по кейсу",
-                    message="Обрабатываем ответ на уточняющий вопрос MBTI и готовим следующий шаг.",
-                )
-                pending_reply = self._handle_pending_mbti_followup(
-                    connection=connection,
-                    session_row=session_row,
-                    session_code=session_code,
-                    message=message,
-                    pending_row=pending_followup_row,
-                    progress_operation_id=progress_operation_id,
-                )
-                if pending_reply is not None:
-                    return pending_reply
-
             role_row = connection.execute(
                 "SELECT name FROM roles WHERE id = %s",
                 (session_row["role_id"],),
@@ -2949,74 +2947,6 @@ class AssessmentService:
                 mbti_followup_questions=None,
                 progress_operation_id=progress_operation_id,
             )
-        completed_case_row = self._get_case_for_session_case(connection, plan.current_session_case_id)
-        completed_case_context = self._get_personalized_case_context(connection, plan.current_session_case_id, completed_case_row)
-        completed_case_task = self._get_personalized_case_task(connection, plan.current_session_case_id, completed_case_row)
-        completed_user_answer = self._get_case_user_messages_text(connection, plan.current_session_case_id)
-        operation_progress_service.advance(
-            progress_operation_id,
-            2,
-            title="Уточняем сигналы по кейсу",
-            message="Строим MBTI-сигналы и, если нужно, готовим уточняющие вопросы по текущему кейсу.",
-        )
-        mbti_case_result, mbti_followup_questions = mbti_assessment_service.evaluate_case(
-            session_case_id=plan.current_session_case_id,
-            case_title=plan.current_case_title or completed_case_row["title"],
-            case_number=plan.current_case_number,
-            total_cases=plan.total_cases,
-            case_context=completed_case_context,
-            case_task=completed_case_task,
-            user_answer=completed_user_answer,
-        )
-        mbti_assessment_service.save_case_result(
-            connection,
-            session_case_id=plan.current_session_case_id,
-            case_result=mbti_case_result,
-            followup_questions=mbti_followup_questions,
-        )
-        if mbti_followup_questions:
-            operation_progress_service.advance(
-                progress_operation_id,
-                3,
-                title="Готовим уточняющие вопросы",
-                message="Остаемся на текущем кейсе и задаем короткие уточнения, чтобы не терять контекст ответа.",
-            )
-            followup_prompt = self._build_mbti_followup_prompt(mbti_followup_questions, 0)
-            connection.execute(
-                """
-                INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-                VALUES (%s, %s, 'assistant', %s)
-                """,
-                (plan.current_session_case_id, session_row["id"], followup_prompt),
-            )
-            connection.commit()
-            return AssessmentTurnReply(
-                session_code=session_code,
-                session_id=session_row["id"],
-                session_case_id=plan.current_session_case_id,
-                case_title=plan.current_case_title,
-                case_number=plan.current_case_number,
-                total_cases=plan.total_cases,
-                message=turn.assistant_message + "\n\n" + followup_prompt,
-                case_completed=False,
-                assessment_completed=False,
-                result_status=None,
-                completion_score=None,
-                evaluator_summary=None,
-                case_time_limit_minutes=plan.current_case_time_limit_minutes,
-                planned_case_duration_minutes=plan.current_case_planned_duration_minutes,
-                case_started_at=plan.current_case_started_at,
-                case_time_remaining_seconds=None,
-                time_expired=time_expired,
-                is_dialog_case=self._get_is_dialog_case_for_session_case(connection, plan.current_session_case_id),
-                mbti_case_result=mbti_case_result,
-                mbti_followup_questions=mbti_followup_questions,
-                mbti_followup_pending=True,
-                mbti_followup_index=1,
-                mbti_followup_total=len(mbti_followup_questions),
-                **self._get_session_case_history_fields(connection, plan.current_session_case_id),
-            )
-
         return self._advance_after_completed_case(
             connection=connection,
             session_row=session_row,
@@ -3025,8 +2955,8 @@ class AssessmentService:
             completion_message=turn.assistant_message,
             result_status=turn.result_status,
             time_expired=time_expired,
-            mbti_case_result=mbti_case_result,
-            mbti_followup_questions=mbti_followup_questions,
+            mbti_case_result=None,
+            mbti_followup_questions=None,
             progress_operation_id=progress_operation_id,
         )
 
