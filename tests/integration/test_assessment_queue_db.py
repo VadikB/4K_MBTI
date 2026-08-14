@@ -23,6 +23,8 @@ def queue_database(test_database_url, monkeypatch):
                 operation_id TEXT NOT NULL UNIQUE,
                 user_id INTEGER NOT NULL,
                 user_payload_json JSONB NOT NULL,
+                execution_snapshot_json JSONB,
+                execution_checksum TEXT,
                 status TEXT NOT NULL DEFAULT 'queued',
                 attempts INTEGER NOT NULL DEFAULT 0,
                 max_attempts INTEGER NOT NULL DEFAULT 3,

@@ -11,6 +11,8 @@ from uuid import uuid4
 
 from Api.config import settings
 from Api.database import get_connection
+from Api.assessment_configuration import canonical_json, load_default_execution_configuration
+from Api.assessment_runtime import ScenarioExecutionContext, scenario_runner
 from Api.progress_service import operation_progress_service
 from Api.schemas import AssessmentStartResponse, UserResponse
 from Api.user_journey import evaluate_profile_state
@@ -40,6 +42,7 @@ class AssessmentPreparationJob:
     max_attempts: int
     worker_id: str
     prepare_only: bool = False
+    execution_snapshot: dict | None = None
 
 
 class AssessmentPreparationQueue:
@@ -84,6 +87,7 @@ class AssessmentPreparationQueue:
         payload = user.model_dump(mode="json")
         payload["_prepare_only"] = prepare_only
         with get_connection() as connection:
+            execution_configuration = load_default_execution_configuration(connection)
             connection.execute("SELECT pg_advisory_xact_lock(%s, %s)", (424242, int(user.id)))
             existing = connection.execute(
                 """
@@ -102,15 +106,18 @@ class AssessmentPreparationQueue:
                 row = connection.execute(
                     """
                     INSERT INTO assessment_preparation_jobs (
-                        operation_id, user_id, user_payload_json, status, max_attempts
+                        operation_id, user_id, user_payload_json, execution_snapshot_json,
+                        execution_checksum, status, max_attempts
                     )
-                    VALUES (%s, %s, %s::jsonb, 'queued', %s)
+                    VALUES (%s, %s, %s::jsonb, %s::jsonb, %s, 'queued', %s)
                     RETURNING operation_id, status, attempts, created_at
                     """,
                     (
                         operation_id,
                         user.id,
                         json.dumps(payload, ensure_ascii=False),
+                        canonical_json(execution_configuration["snapshot"]),
+                        execution_configuration["checksum"],
                         max(1, settings.assessment_queue_max_attempts),
                     ),
                 ).fetchone()
@@ -164,7 +171,8 @@ class AssessmentPreparationQueue:
         with get_connection() as connection:
             row = connection.execute(
                 """
-                SELECT id, operation_id, user_id, user_payload_json, attempts, max_attempts
+                SELECT id, operation_id, user_id, user_payload_json, execution_snapshot_json,
+                       attempts, max_attempts
                 FROM assessment_preparation_jobs
                 WHERE status = 'queued'
                   AND next_attempt_at <= NOW()
@@ -185,7 +193,8 @@ class AssessmentPreparationQueue:
                     updated_at = NOW(),
                     error_message = NULL
                 WHERE id = %s
-                RETURNING id, operation_id, user_id, user_payload_json, attempts, max_attempts
+                RETURNING id, operation_id, user_id, user_payload_json, execution_snapshot_json,
+                          attempts, max_attempts
                 """,
                 (worker_id, row["id"]),
             ).fetchone()
@@ -193,6 +202,9 @@ class AssessmentPreparationQueue:
         if isinstance(payload, str):
             payload = json.loads(payload)
         prepare_only = bool(payload.pop("_prepare_only", False))
+        execution_snapshot = claimed["execution_snapshot_json"]
+        if isinstance(execution_snapshot, str):
+            execution_snapshot = json.loads(execution_snapshot)
         return AssessmentPreparationJob(
             id=int(claimed["id"]),
             operation_id=str(claimed["operation_id"]),
@@ -202,6 +214,7 @@ class AssessmentPreparationQueue:
             max_attempts=int(claimed["max_attempts"]),
             worker_id=worker_id,
             prepare_only=prepare_only,
+            execution_snapshot=dict(execution_snapshot) if isinstance(execution_snapshot, dict) else None,
         )
 
     def _run_maintenance_if_due(self) -> None:
@@ -251,28 +264,32 @@ class AssessmentPreparationQueue:
         try:
             interviewer_agent = _get_interviewer_agent()
             user = UserResponse.model_validate(job.user_payload)
-            profile_state = evaluate_profile_state(user)
-            user_fixable_fields = {"duties", "role", "company_industry", "active_profile"}
-            non_repairable_fields = set(profile_state.missing_fields) - user_fixable_fields
-            if non_repairable_fields:
-                raise ValueError(
-                    "Завершите настройку профиля перед оценкой. "
-                    "Не заполнены поля: " + ", ".join(sorted(non_repairable_fields)) + "."
-                )
-            if not profile_state.is_complete:
-                repaired_user = interviewer_agent.backfill_user_profile(user.id)
-                if repaired_user is not None:
-                    user = repaired_user
-                repaired_state = evaluate_profile_state(user)
-                if not repaired_state.is_complete:
-                    raise ValueError(
-                        "Завершите настройку профиля перед оценкой. "
-                        "Не заполнены поля: " + ", ".join(repaired_state.missing_fields) + "."
+            if job.execution_snapshot is not None:
+                prepared: dict[str, UserResponse] = {}
+                with get_connection() as connection:
+                    scenario_runner.run_stage(
+                        connection,
+                        session_id=None,
+                        preparation_job_id=job.id,
+                        user_id=job.user_id,
+                        stage_id="prepare_profile",
+                        snapshot=job.execution_snapshot,
+                        executor=lambda context: self._execute_profile_preparation(
+                            context,
+                            interviewer_agent=interviewer_agent,
+                            user=user,
+                            result_holder=prepared,
+                        ),
                     )
+                user = prepared["user"]
+            else:
+                user = self._prepare_user_profile(interviewer_agent=interviewer_agent, user=user)
             if job.prepare_only:
                 plan = _get_assessment_service().ensure_assessment_session(
                     user,
                     progress_operation_id=job.operation_id,
+                    execution_snapshot=job.execution_snapshot,
+                    preparation_job_id=job.id,
                 )
                 if plan is None:
                     raise ValueError("Не удалось предварительно подготовить assessment-сессию.")
@@ -281,6 +298,8 @@ class AssessmentPreparationQueue:
                 result = interviewer_agent.start_case_interview(
                     user=user,
                     progress_operation_id=job.operation_id,
+                    execution_snapshot=job.execution_snapshot,
+                    preparation_job_id=job.id,
                 )
             self._complete(job, result)
         except ValueError as exc:
@@ -302,6 +321,39 @@ class AssessmentPreparationQueue:
         finally:
             heartbeat_stop.set()
             heartbeat.join(timeout=2)
+
+    def _prepare_user_profile(self, *, interviewer_agent, user: UserResponse) -> UserResponse:
+        profile_state = evaluate_profile_state(user)
+        user_fixable_fields = {"duties", "role", "company_industry", "active_profile"}
+        non_repairable_fields = set(profile_state.missing_fields) - user_fixable_fields
+        if non_repairable_fields:
+            raise ValueError(
+                "Завершите настройку профиля перед оценкой. "
+                "Не заполнены поля: " + ", ".join(sorted(non_repairable_fields)) + "."
+            )
+        if not profile_state.is_complete:
+            repaired_user = interviewer_agent.backfill_user_profile(user.id)
+            if repaired_user is not None:
+                user = repaired_user
+            repaired_state = evaluate_profile_state(user)
+            if not repaired_state.is_complete:
+                raise ValueError(
+                    "Завершите настройку профиля перед оценкой. "
+                    "Не заполнены поля: " + ", ".join(repaired_state.missing_fields) + "."
+                )
+        return user
+
+    def _execute_profile_preparation(
+        self,
+        _context: ScenarioExecutionContext,
+        *,
+        interviewer_agent,
+        user: UserResponse,
+        result_holder: dict[str, UserResponse],
+    ) -> dict[str, object]:
+        prepared_user = self._prepare_user_profile(interviewer_agent=interviewer_agent, user=user)
+        result_holder["user"] = prepared_user
+        return {"profile_ready": True, "active_profile_id": prepared_user.active_profile_id}
 
     def _run_job_heartbeat(self, job: AssessmentPreparationJob, stop_event: threading.Event) -> None:
         interval = max(10, min(60, settings.assessment_queue_lease_timeout_seconds // 3))
@@ -360,6 +412,16 @@ class AssessmentPreparationQueue:
         if retry:
             delay_seconds = min(60, 5 * (2 ** max(0, job.attempts - 1)))
             with get_connection() as connection:
+                connection.execute(
+                    """
+                    UPDATE assessment_stage_runs
+                    SET status = 'failed', error_code = 'preparation_retry',
+                        error_message = %s, completed_at = NOW()
+                    WHERE preparation_job_id = %s
+                      AND status = 'running'
+                    """,
+                    (message[:2000], job.id),
+                )
                 cursor = connection.execute(
                     """
                     UPDATE assessment_preparation_jobs
@@ -388,6 +450,16 @@ class AssessmentPreparationQueue:
             self._wake_event.set()
             return
         with get_connection() as connection:
+            connection.execute(
+                """
+                UPDATE assessment_stage_runs
+                SET status = 'failed', error_code = 'preparation_failed',
+                    error_message = %s, completed_at = NOW()
+                WHERE preparation_job_id = %s
+                  AND status = 'running'
+                """,
+                (message[:2000], job.id),
+            )
             cursor = connection.execute(
                 """
                 UPDATE assessment_preparation_jobs

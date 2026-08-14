@@ -3588,7 +3588,14 @@ class InterviewerAgent:
             detected_role_rationale=role_match.rationale if role_match else None,
         )
 
-    def start_case_interview(self, *, user: UserResponse, progress_operation_id: str | None = None) -> AssessmentStartResponse:
+    def start_case_interview(
+        self,
+        *,
+        user: UserResponse,
+        progress_operation_id: str | None = None,
+        execution_snapshot: dict | None = None,
+        preparation_job_id: int | None = None,
+    ) -> AssessmentStartResponse:
         if not _is_assessment_allowed_for_user(user):
             raise ValueError("Для пользователя не определена роль. Завершите настройку профиля и выберите роль.")
         slot_acquired = self._assessment_preparation_slots.acquire(
@@ -3600,7 +3607,12 @@ class InterviewerAgent:
                 "Подождите немного и нажмите «Начать» ещё раз."
             )
         try:
-            plan = assessment_service.ensure_assessment_session(user, progress_operation_id=progress_operation_id)
+            plan = assessment_service.ensure_assessment_session(
+                user,
+                progress_operation_id=progress_operation_id,
+                execution_snapshot=execution_snapshot,
+                preparation_job_id=preparation_job_id,
+            )
         finally:
             self._assessment_preparation_slots.release()
         if plan is None:

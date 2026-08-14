@@ -72,22 +72,50 @@ def validate_scenario_definition(definition: dict[str, Any]) -> None:
             raise ValueError(f"Unknown success transition '{transition}' for stage '{stage['id']}'.")
 
 
-def start_stage_run(connection, *, session_id: int, stage_id: str, component_code: str, component_version: int) -> int:
+def start_stage_run(
+    connection,
+    *,
+    session_id: int | None,
+    stage_id: str,
+    component_code: str,
+    component_version: int,
+    preparation_job_id: int | None = None,
+) -> int:
+    if session_id is None and preparation_job_id is None:
+        raise ValueError("Assessment stage run requires a session or preparation job.")
     row = connection.execute(
         """
         INSERT INTO assessment_stage_runs (
-            session_id, stage_id, component_code, component_version, attempt, status, started_at
+            session_id, preparation_job_id, stage_id, component_code, component_version, attempt, status, started_at
         )
         VALUES (
-            %s, %s, %s, %s,
-            COALESCE((SELECT MAX(attempt) + 1 FROM assessment_stage_runs WHERE session_id = %s AND stage_id = %s), 1),
+            %s, %s, %s, %s, %s,
+            COALESCE((
+                SELECT MAX(attempt) + 1
+                FROM assessment_stage_runs
+                WHERE stage_id = %s
+                  AND ((%s::bigint IS NOT NULL AND session_id = %s)
+                    OR (%s::bigint IS NOT NULL AND preparation_job_id = %s))
+            ), 1),
             'running', NOW()
         )
         RETURNING id
         """,
-        (session_id, stage_id, component_code, component_version, session_id, stage_id),
+        (
+            session_id,
+            preparation_job_id,
+            stage_id,
+            component_code,
+            component_version,
+            stage_id,
+            session_id,
+            session_id,
+            preparation_job_id,
+            preparation_job_id,
+        ),
     ).fetchone()
-    connection.execute("UPDATE user_sessions SET current_stage_id = %s WHERE id = %s", (stage_id, session_id))
+    if session_id is not None:
+        connection.execute("UPDATE user_sessions SET current_stage_id = %s WHERE id = %s", (stage_id, session_id))
     return int(row["id"])
 
 
@@ -118,7 +146,7 @@ def fail_stage_run(connection, *, stage_run_id: int, error: Exception) -> None:
 @dataclass(slots=True)
 class ScenarioExecutionContext:
     connection: Any
-    session_id: int
+    session_id: int | None
     user_id: int
     snapshot: dict[str, Any]
     stage: dict[str, Any]
@@ -150,13 +178,16 @@ class ScenarioRunner:
         self,
         connection,
         *,
-        session_id: int,
+        session_id: int | None,
         user_id: int,
         stage_id: str,
         executor: Callable[[ScenarioExecutionContext], dict[str, Any] | None],
         snapshot: dict[str, Any] | None = None,
+        preparation_job_id: int | None = None,
     ) -> dict[str, Any]:
-        effective_snapshot = snapshot or self.load_snapshot(connection, session_id=session_id)
+        if snapshot is None and session_id is None:
+            raise ValueError("A bootstrap scenario stage requires an explicit execution snapshot.")
+        effective_snapshot = snapshot or self.load_snapshot(connection, session_id=int(session_id))
         stage = self.resolve_stage(effective_snapshot, stage_id=stage_id)
         component_code = str(stage["component"])
         component_version = int(stage["component_version"])
@@ -167,6 +198,7 @@ class ScenarioRunner:
             stage_id=stage_id,
             component_code=component_code,
             component_version=component_version,
+            preparation_job_id=preparation_job_id,
         )
         context = ScenarioExecutionContext(
             connection=connection,

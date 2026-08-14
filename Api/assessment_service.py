@@ -9,7 +9,8 @@ from uuid import uuid4
 
 from Api.case_context_builder import build_case_context
 from Api.case_reuse_service import case_reuse_service
-from Api.assessment_configuration import load_default_execution_configuration
+from Api.assessment_configuration import definition_checksum, load_default_execution_configuration
+from Api.assessment_runtime import complete_stage_run, fail_stage_run, scenario_runner, start_stage_run
 from Api.config import settings
 from Api.database import get_case_methodology_versions, get_connection
 from Api.deepseek_client import DeepSeekTurnResult, deepseek_client
@@ -420,7 +421,13 @@ class AssessmentService:
                 return True
         return False
 
-    def ensure_assessment_session(self, user: UserResponse, progress_operation_id: str | None = None) -> AssessmentSessionPlan | None:
+    def ensure_assessment_session(
+        self,
+        user: UserResponse,
+        progress_operation_id: str | None = None,
+        execution_snapshot: dict | None = None,
+        preparation_job_id: int | None = None,
+    ) -> AssessmentSessionPlan | None:
         if not user.id:
             raise ValueError("Пользователь не найден.")
         profile_state = evaluate_profile_state(user)
@@ -431,6 +438,18 @@ class AssessmentService:
             )
 
         with get_connection() as connection:
+            execution_configuration = (
+                {
+                    "configuration_id": int(execution_snapshot["configuration"]["id"]),
+                    "methodology_version_id": int(execution_snapshot["methodology"]["id"]),
+                    "scenario_version_id": int(execution_snapshot["scenario"]["id"]),
+                    "snapshot": execution_snapshot,
+                    "checksum": definition_checksum(execution_snapshot),
+                }
+                if execution_snapshot is not None
+                else load_default_execution_configuration(connection)
+            )
+            effective_snapshot = execution_configuration["snapshot"]
             operation_progress_service.advance(
                 progress_operation_id,
                 0,
@@ -460,6 +479,16 @@ class AssessmentService:
                 )
                 if repaired_existing is not None:
                     repaired_session_id, repaired_session_code = repaired_existing
+                    if preparation_job_id is not None:
+                        connection.execute(
+                            """
+                            UPDATE assessment_stage_runs
+                            SET session_id = %s
+                            WHERE preparation_job_id = %s
+                              AND session_id IS NULL
+                            """,
+                            (repaired_session_id, preparation_job_id),
+                        )
                     operation_progress_service.advance(
                         progress_operation_id,
                         4,
@@ -467,6 +496,16 @@ class AssessmentService:
                         message="Существующая assessment-сессия восстановлена и готова к продолжению.",
                     )
                     return self._build_plan(connection, repaired_session_id, repaired_session_code)
+
+            selection_stage = scenario_runner.resolve_stage(effective_snapshot, stage_id="select_cases")
+            selection_run_id = start_stage_run(
+                connection,
+                session_id=None,
+                preparation_job_id=preparation_job_id,
+                stage_id="select_cases",
+                component_code=str(selection_stage["component"]),
+                component_version=int(selection_stage["component_version"]),
+            ) if preparation_job_id is not None else None
 
             passed_case_rows = connection.execute(
                 """
@@ -531,7 +570,6 @@ class AssessmentService:
             if not selected_cases:
                 raise ValueError("Для выбранной роли не найдено доступных кейсов для запуска ассессмента.")
 
-            execution_configuration = load_default_execution_configuration(connection)
             session = connection.execute(
                 """
                 INSERT INTO user_sessions (
@@ -558,6 +596,19 @@ class AssessmentService:
             ).fetchone()
             session_id = session["id"]
             session_code = session["session_code"]
+            if selection_run_id is None:
+                selection_run_id = start_stage_run(
+                    connection,
+                    session_id=session_id,
+                    stage_id="select_cases",
+                    component_code=str(selection_stage["component"]),
+                    component_version=int(selection_stage["component_version"]),
+                )
+            elif preparation_job_id is not None:
+                connection.execute(
+                    "UPDATE assessment_stage_runs SET session_id = %s WHERE id = %s",
+                    (session_id, selection_run_id),
+                )
 
             for skill_id in required_skill_ids:
                 connection.execute(
@@ -697,6 +748,11 @@ class AssessmentService:
                 """,
                 (session_id,),
             )
+            complete_stage_run(
+                connection,
+                stage_run_id=selection_run_id,
+                output={"selected_cases": len(prepared_session_cases), "required_skills": len(required_skill_ids)},
+            )
             connection.commit()
 
             reuse_decision = case_reuse_service.evaluate(
@@ -721,6 +777,15 @@ class AssessmentService:
                 3,
                 title="Персонализируем материалы",
                 message="Готовим персонализированный контекст и промты для каждого кейса.",
+            )
+            personalization_stage = scenario_runner.resolve_stage(effective_snapshot, stage_id="personalize_cases")
+            personalization_run_id = start_stage_run(
+                connection,
+                session_id=session_id,
+                preparation_job_id=preparation_job_id,
+                stage_id="personalize_cases",
+                component_code=str(personalization_stage["component"]),
+                component_version=int(personalization_stage["component_version"]),
             )
             used_case_signatures: list[dict[str, str]] = []
             total_prepared_cases = len(prepared_session_cases)
@@ -816,6 +881,7 @@ class AssessmentService:
                     )
                     connection.commit()
                 except Exception as exc:
+                    fail_stage_run(connection, stage_run_id=personalization_run_id, error=exc)
                     self._archive_broken_session(
                         connection=connection,
                         session_id=session_id,
@@ -823,6 +889,22 @@ class AssessmentService:
                     )
                     connection.commit()
                     raise
+
+            complete_stage_run(
+                connection,
+                stage_run_id=personalization_run_id,
+                output={"personalized_cases": total_prepared_cases},
+            )
+            if preparation_job_id is not None:
+                connection.execute(
+                    """
+                    UPDATE assessment_stage_runs
+                    SET session_id = %s
+                    WHERE preparation_job_id = %s
+                      AND session_id IS NULL
+                    """,
+                    (session_id, preparation_job_id),
+                )
 
             connection.execute(
                 "UPDATE user_sessions SET status = 'active' WHERE id = %s",

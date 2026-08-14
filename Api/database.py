@@ -3113,7 +3113,8 @@ def ensure_core_schema() -> None:
             """
             CREATE TABLE IF NOT EXISTS assessment_stage_runs (
                 id BIGSERIAL PRIMARY KEY,
-                session_id BIGINT NOT NULL REFERENCES user_sessions(id) ON DELETE CASCADE,
+                session_id BIGINT REFERENCES user_sessions(id) ON DELETE CASCADE,
+                preparation_job_id BIGINT,
                 stage_id TEXT NOT NULL,
                 component_code TEXT NOT NULL,
                 component_version INTEGER NOT NULL,
@@ -3130,10 +3131,19 @@ def ensure_core_schema() -> None:
             )
             """
         )
+        connection.execute("ALTER TABLE assessment_stage_runs ALTER COLUMN session_id DROP NOT NULL")
+        connection.execute("ALTER TABLE assessment_stage_runs ADD COLUMN IF NOT EXISTS preparation_job_id BIGINT")
         connection.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_assessment_stage_runs_session
             ON assessment_stage_runs(session_id, created_at)
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_assessment_stage_runs_preparation_attempt
+            ON assessment_stage_runs(preparation_job_id, stage_id, attempt)
+            WHERE preparation_job_id IS NOT NULL
             """
         )
         connection.execute(
@@ -3162,6 +3172,8 @@ def ensure_core_schema() -> None:
                 operation_id TEXT NOT NULL UNIQUE,
                 user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 user_payload_json JSONB NOT NULL,
+                execution_snapshot_json JSONB,
+                execution_checksum TEXT,
                 status TEXT NOT NULL DEFAULT 'queued',
                 attempts INTEGER NOT NULL DEFAULT 0,
                 max_attempts INTEGER NOT NULL DEFAULT 3,
@@ -3174,6 +3186,34 @@ def ensure_core_schema() -> None:
                 updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
                 completed_at TIMESTAMP
             )
+            """
+        )
+        connection.execute("ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS execution_snapshot_json JSONB")
+        connection.execute("ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS execution_checksum TEXT")
+        connection.execute(
+            """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = 'assessment_stage_runs_preparation_job_fk'
+                ) THEN
+                    ALTER TABLE assessment_stage_runs
+                    ADD CONSTRAINT assessment_stage_runs_preparation_job_fk
+                    FOREIGN KEY (preparation_job_id)
+                    REFERENCES assessment_preparation_jobs(id)
+                    ON DELETE CASCADE;
+                END IF;
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = 'assessment_stage_runs_subject_check'
+                ) THEN
+                    ALTER TABLE assessment_stage_runs
+                    ADD CONSTRAINT assessment_stage_runs_subject_check
+                    CHECK (session_id IS NOT NULL OR preparation_job_id IS NOT NULL);
+                END IF;
+            END
+            $$
             """
         )
         connection.execute(

@@ -43,6 +43,7 @@ def analysis_database(test_database_url, monkeypatch):
             CREATE TABLE assessment_stage_runs (
                 id BIGSERIAL PRIMARY KEY,
                 session_id INTEGER NOT NULL REFERENCES user_sessions(id) ON DELETE CASCADE,
+                preparation_job_id BIGINT,
                 stage_id TEXT NOT NULL,
                 component_code TEXT NOT NULL,
                 component_version INTEGER NOT NULL,

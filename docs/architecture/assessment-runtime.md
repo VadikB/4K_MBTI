@@ -33,6 +33,8 @@ draft -> ready_for_review -> published -> retired
 4. Runner исполняет стадии только из snapshot.
 5. Каждый запуск стадии записывается в execution trace.
 
+До создания `user_sessions` подготовительные стадии связываются с `assessment_preparation_jobs`. После создания или восстановления сессии эти stage runs получают также `session_id`, поэтому единый trace сохраняет bootstrap и последующее исполнение.
+
 ## Ограничения scenario definition v1
 
 Первая версия формата поддерживает:
