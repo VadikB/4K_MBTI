@@ -2910,11 +2910,39 @@ def ensure_core_schema() -> None:
                 name TEXT NOT NULL,
                 methodology_version_id BIGINT NOT NULL REFERENCES assessment_methodology_versions(id),
                 scenario_version_id BIGINT NOT NULL REFERENCES assessment_scenario_versions(id),
+                prompt_bundle_json JSONB,
+                prompt_bundle_checksum TEXT,
                 status TEXT NOT NULL CHECK (status IN ('draft', 'published', 'retired')),
                 is_default BOOLEAN NOT NULL DEFAULT FALSE,
                 created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                 published_at TIMESTAMP NOT NULL DEFAULT NOW()
             )
+            """
+        )
+        connection.execute("ALTER TABLE assessment_configurations ADD COLUMN IF NOT EXISTS prompt_bundle_json JSONB")
+        connection.execute("ALTER TABLE assessment_configurations ADD COLUMN IF NOT EXISTS prompt_bundle_checksum TEXT")
+        connection.execute(
+            """
+            CREATE OR REPLACE FUNCTION prevent_published_configuration_prompt_update()
+            RETURNS trigger AS $$
+            BEGIN
+                IF OLD.status = 'published'
+                   AND OLD.prompt_bundle_json IS NOT NULL
+                   AND (NEW.prompt_bundle_json IS DISTINCT FROM OLD.prompt_bundle_json
+                     OR NEW.prompt_bundle_checksum IS DISTINCT FROM OLD.prompt_bundle_checksum) THEN
+                    RAISE EXCEPTION 'Published assessment configuration prompt bundle is immutable';
+                END IF;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql
+            """
+        )
+        connection.execute("DROP TRIGGER IF EXISTS trg_configuration_prompts_immutable ON assessment_configurations")
+        connection.execute(
+            """
+            CREATE TRIGGER trg_configuration_prompts_immutable
+            BEFORE UPDATE ON assessment_configurations
+            FOR EACH ROW EXECUTE FUNCTION prevent_published_configuration_prompt_update()
             """
         )
         connection.execute(

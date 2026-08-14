@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from Api.deepseek_client import deepseek_client
+from Api.assessment_prompt_resolver import prompt_resolver
 
 
 STOP_WORDS = {
@@ -77,7 +78,14 @@ class BaseCompetencyAgent:
             tokens.add(token)
         return tokens
 
-    def _load_agent_prompt_profile(self, connection) -> dict[str, Any]:
+    def _load_agent_prompt_profile(
+        self,
+        connection,
+        prompt_snapshot: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        snapshotted = prompt_resolver.assessment_agent_config(prompt_snapshot, agent_code=self.agent_code)
+        if snapshotted is not None:
+            return snapshotted
         profile_row = connection.execute(
             """
             SELECT agent_code, agent_name, competency_name, purpose_prompt, rationale_prompt,
@@ -108,7 +116,16 @@ class BaseCompetencyAgent:
         skills = self._load_session_skills(connection, session_id)
         if not skills:
             return []
-        agent_prompt_config = self._load_agent_prompt_profile(connection)
+        snapshot_row = connection.execute(
+            "SELECT execution_snapshot_json FROM user_sessions WHERE id = %s",
+            (session_id,),
+        ).fetchone()
+        prompt_snapshot = (
+            snapshot_row["execution_snapshot_json"]
+            if snapshot_row is not None and isinstance(snapshot_row["execution_snapshot_json"], dict)
+            else None
+        )
+        agent_prompt_config = self._load_agent_prompt_profile(connection, prompt_snapshot)
 
         evaluations: list[SkillEvaluation] = []
         for skill in skills:

@@ -5,6 +5,7 @@ import json
 from typing import Any
 
 from Api.assessment_runtime import validate_scenario_definition
+from Api.assessment_prompt_resolver import load_active_prompt_bundle
 
 
 LEGACY_METHODOLOGY_CODE = "competencies_4k"
@@ -129,6 +130,7 @@ def load_default_execution_configuration(connection) -> dict[str, Any]:
         SELECT
             configuration.id AS configuration_id,
             configuration.code AS configuration_code,
+            configuration.prompt_bundle_json,
             methodology_version.id AS methodology_version_id,
             methodology.code AS methodology_code,
             methodology_version.version AS methodology_version,
@@ -158,6 +160,30 @@ def load_default_execution_configuration(connection) -> dict[str, Any]:
         raise RuntimeError("Published default assessment configuration is not available.")
 
     validate_scenario_definition(row["scenario_definition"])
+    prompt_bundle = row.get("prompt_bundle_json") if isinstance(row, dict) else None
+    if not isinstance(prompt_bundle, dict):
+        resolved_bundle = load_active_prompt_bundle(connection)
+        has_resolved_prompts = bool(
+            resolved_bundle.get("interviewer")
+            or resolved_bundle.get("assessment_agents")
+            or resolved_bundle.get("case_generation_instructions")
+        )
+        prompt_bundle = resolved_bundle
+        if has_resolved_prompts:
+            connection.execute(
+                """
+                UPDATE assessment_configurations
+                SET prompt_bundle_json = %s::jsonb,
+                    prompt_bundle_checksum = %s
+                WHERE id = %s
+                  AND prompt_bundle_json IS NULL
+                """,
+                (
+                    canonical_json(prompt_bundle),
+                    definition_checksum(prompt_bundle),
+                    row["configuration_id"],
+                ),
+            )
 
     snapshot = {
         "schema_version": 1,
@@ -174,6 +200,7 @@ def load_default_execution_configuration(connection) -> dict[str, Any]:
             "version": int(row["scenario_version"]),
             "definition": row["scenario_definition"],
         },
+        "prompts": prompt_bundle,
     }
     return {
         "configuration_id": int(row["configuration_id"]),

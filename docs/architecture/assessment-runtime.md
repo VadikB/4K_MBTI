@@ -50,3 +50,5 @@ draft -> ready_for_review -> published -> retired
 ## Разделение LLM и методологии
 
 LLM gateway отвечает только за транспорт. Промпты разрешаются по ссылкам из session snapshot. Domain-компоненты получают gateway и resolved prompt через зависимости и не выбирают текущие активные настройки самостоятельно.
+
+Опубликованная assessment configuration содержит неизменяемый `prompt_bundle_json`. В него входят промпты интервьюера, профили и правила evaluator-агентов и инструкции генерации кейсов. При создании preparation job bundle копируется в execution snapshot; последующее изменение настроечных таблиц не влияет на эту сессию.

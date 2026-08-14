@@ -1165,7 +1165,18 @@ class AssessmentService:
         skill_names: list[str],
         progress_operation_id: str | None = None,
         used_case_signatures: list[dict[str, str]] | None = None,
+        prompt_snapshot: dict | None = None,
     ) -> None:
+        if prompt_snapshot is None:
+            snapshot_row = connection.execute(
+                "SELECT execution_snapshot_json FROM user_sessions WHERE id = %s",
+                (session_id,),
+            ).fetchone()
+            prompt_snapshot = (
+                snapshot_row["execution_snapshot_json"]
+                if snapshot_row is not None and isinstance(snapshot_row["execution_snapshot_json"], dict)
+                else None
+            )
         methodical_context = self._get_case_methodical_context(connection, case_row)
         planned_total_duration_min = case_row["planned_duration_minutes"] or case_row["estimated_minutes"]
         existing_case_contexts = self._get_existing_session_case_contexts(
@@ -1305,6 +1316,7 @@ class AssessmentService:
             personalization_variables=case_row["personalization_variables"],
             personalization_map=personalization_map,
             case_specificity=case_specificity,
+            prompt_snapshot=prompt_snapshot,
         )
         connection.execute(
             """
@@ -2393,7 +2405,7 @@ class AssessmentService:
             session_row = connection.execute(
                 """
                 SELECT us.id, us.session_code, us.user_id, us.role_id, u.full_name, u.job_description,
-                       u.company_industry, p.id AS active_profile_id,
+                       u.company_industry, us.execution_snapshot_json, p.id AS active_profile_id,
                        p.raw_position, p.raw_duties, p.normalized_duties
                 FROM user_sessions us
                 JOIN users u ON u.id = us.user_id
@@ -2501,6 +2513,7 @@ class AssessmentService:
                     system_prompt=prompt_row["final_prompt_text"] if prompt_row else "",
                     dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                     case_title=case_meta["title"],
+                    prompt_snapshot=session_row.get("execution_snapshot_json"),
                 )
                 connection.execute(
                     """
@@ -2560,6 +2573,7 @@ class AssessmentService:
                         dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                         case_title=case_meta["title"],
                         case_skills=self._get_case_skill_names(connection, plan.current_session_case_id),
+                        prompt_snapshot=session_row.get("execution_snapshot_json"),
                     )
                 connection.execute(
                     """
@@ -2659,6 +2673,7 @@ class AssessmentService:
                     dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                     case_title=case_meta["title"],
                     case_skills=self._get_case_skill_names(connection, plan.current_session_case_id),
+                    prompt_snapshot=session_row.get("execution_snapshot_json"),
                 )
                 connection.execute(
                     """
@@ -2709,6 +2724,7 @@ class AssessmentService:
                     dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                     case_title=case_meta["title"],
                     case_skills=self._get_case_skill_names(connection, plan.current_session_case_id),
+                    prompt_snapshot=session_row.get("execution_snapshot_json"),
                 )
                 connection.execute(
                     """
@@ -2937,6 +2953,7 @@ class AssessmentService:
                 duties=session_row["normalized_duties"] or session_row["raw_duties"],
                 company_industry=session_row["company_industry"],
                 user_profile=user_profile,
+                prompt_snapshot=session_row.get("execution_snapshot_json"),
             )
 
             if self._needs_non_repeating_follow_up(turn.assistant_message, dialogue_rows):

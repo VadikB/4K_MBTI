@@ -16,6 +16,7 @@ from Api.case_text_cleanup import cleanup_case_list, cleanup_case_text, join_cas
 from Api.config import settings
 from Api.database import get_active_interviewer_prompt, get_connection
 from Api.llm.deepseek_gateway import DeepSeekGateway
+from Api.assessment_prompt_resolver import prompt_resolver
 
 logger = logging.getLogger("agent4k.deepseek")
 
@@ -146,7 +147,21 @@ class DeepSeekClient:
     def _get_deepseek_key_chain(self, routing_key: str | None, messages: list[dict[str, str]]) -> list[str]:
         return self.gateway.get_key_chain(routing_key, messages)
 
-    def _get_interviewer_prompt_text(self, prompt_code: str, fallback_text: str, **format_values: str) -> str:
+    def _get_interviewer_prompt_text(
+        self,
+        prompt_code: str,
+        fallback_text: str,
+        *,
+        prompt_snapshot: dict[str, Any] | None = None,
+        **format_values: str,
+    ) -> str:
+        if isinstance((prompt_snapshot or {}).get("prompts"), dict):
+            return prompt_resolver.interviewer_prompt(
+                prompt_snapshot,
+                prompt_code=prompt_code,
+                fallback_text=fallback_text,
+                format_values=format_values,
+            )
         stored_text: str | None = None
         try:
             with get_connection() as connection:
@@ -468,6 +483,7 @@ class DeepSeekClient:
         company_industry: str | None,
         role_name: str | None,
         user_profile: dict[str, Any] | None = None,
+        prompt_snapshot: dict[str, Any] | None = None,
         case_type_code: str | None = None,
         case_title: str,
         case_context: str,
@@ -534,6 +550,14 @@ class DeepSeekClient:
             case_specificity=case_specificity,
         )
         extra_instruction = str(case_generation_system_prompt or "").strip()
+        if not extra_instruction and isinstance((prompt_snapshot or {}).get("prompts"), dict):
+            extra_instruction = str(
+                prompt_resolver.case_generation_instruction(
+                    prompt_snapshot,
+                    case_type_code=case_type_code,
+                )
+                or ""
+            ).strip()
         if extra_instruction:
             fallback = (
                 "Additional case generation system prompt:\n"
@@ -1685,6 +1709,7 @@ class DeepSeekClient:
         duties: str | None = None,
         company_industry: str | None = None,
         user_profile: dict[str, Any] | None = None,
+        prompt_snapshot: dict[str, Any] | None = None,
     ) -> DeepSeekTurnResult:
         dialog_case_mode = self._is_dialog_interactivity_mode(interactivity_mode)
         if dialog_case_mode and not self.enabled:
@@ -1806,6 +1831,7 @@ class DeepSeekClient:
             instruction = self._get_interviewer_prompt_text(
                 "case_follow_up",
                 fallback_instruction,
+                prompt_snapshot=prompt_snapshot,
                 **format_values,
             )
         if dialog_case_mode:
@@ -1907,6 +1933,7 @@ class DeepSeekClient:
         dialogue: list[dict[str, str]],
         case_title: str,
         case_skills: list[str],
+        prompt_snapshot: dict[str, Any] | None = None,
     ) -> DeepSeekTurnResult:
         fallback = self._fallback_manual_finish_turn(case_title=case_title, dialogue=dialogue, case_skills=case_skills)
         if not self.enabled:
@@ -1917,7 +1944,11 @@ class DeepSeekClient:
             "Нужно только вежливо сообщить, что кейс завершен и диалог сохранен в системе. "
             "Верни JSON-объект только с полем assistant_message."
         )
-        instruction = self._get_interviewer_prompt_text("manual_finish", fallback_instruction)
+        instruction = self._get_interviewer_prompt_text(
+            "manual_finish",
+            fallback_instruction,
+            prompt_snapshot=prompt_snapshot,
+        )
         messages = [{"role": "system", "content": system_prompt}, {"role": "system", "content": instruction}, *dialogue]
         try:
             raw = self._post_chat(messages, temperature=0.2)
@@ -1940,6 +1971,7 @@ class DeepSeekClient:
         system_prompt: str,
         dialogue: list[dict[str, str]],
         case_title: str,
+        prompt_snapshot: dict[str, Any] | None = None,
     ) -> DeepSeekTurnResult:
         fallback = self._fallback_timeout_turn(case_title=case_title, dialogue=dialogue)
         if not self.enabled:
@@ -1950,7 +1982,11 @@ class DeepSeekClient:
             "Нужно только сообщить, что кейс завершен из-за окончания времени, а диалог сохранен в системе. "
             "Верни JSON-объект только с полем assistant_message."
         )
-        instruction = self._get_interviewer_prompt_text("timeout_finish", fallback_instruction)
+        instruction = self._get_interviewer_prompt_text(
+            "timeout_finish",
+            fallback_instruction,
+            prompt_snapshot=prompt_snapshot,
+        )
         messages = [{"role": "system", "content": system_prompt}, {"role": "system", "content": instruction}, *dialogue]
         try:
             raw = self._post_chat(messages, temperature=0.2)
