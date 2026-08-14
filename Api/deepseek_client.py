@@ -15,6 +15,7 @@ from Api.case_context_builder import build_case_context
 from Api.case_text_cleanup import cleanup_case_list, cleanup_case_text, join_case_list
 from Api.config import settings
 from Api.database import get_active_interviewer_prompt, get_connection
+from Api.assessment.interview import InterviewerService, InterviewerTurnResult
 from Api.llm.deepseek_gateway import DeepSeekGateway
 from Api.assessment_prompt_resolver import prompt_resolver
 
@@ -84,13 +85,7 @@ CASE_TEXT_GENERIC_PATTERNS = (
     r"\bпервом\s+источнике\s+данных\s+и\s+в\s+втором\s+источнике",
 )
 
-@dataclass(slots=True)
-class DeepSeekTurnResult:
-    assistant_message: str
-    is_case_complete: bool
-    result_status: str
-    completion_score: float | None
-    evaluator_summary: str
+DeepSeekTurnResult = InterviewerTurnResult
 
 
 @dataclass(slots=True)
@@ -103,6 +98,7 @@ class DeepSeekRoleDecision:
 class DeepSeekClient:
     def __init__(self) -> None:
         self.gateway = DeepSeekGateway()
+        self.interviewer_service = InterviewerService(gateway=self.gateway)
         self._user_text_template_cache: dict[str, dict[str, Any]] = {}
         self._case_text_build_instruction_cache: dict[str, dict[str, Any] | None] = {}
         self._domain_catalog_cache: dict[str, dict[str, Any]] = {}
@@ -1935,35 +1931,14 @@ class DeepSeekClient:
         case_skills: list[str],
         prompt_snapshot: dict[str, Any] | None = None,
     ) -> DeepSeekTurnResult:
-        fallback = self._fallback_manual_finish_turn(case_title=case_title, dialogue=dialogue, case_skills=case_skills)
-        if not self.enabled:
-            return fallback
-
-        fallback_instruction = (
-            "Пользователь нажал кнопку завершения кейса. "
-            "Нужно только вежливо сообщить, что кейс завершен и диалог сохранен в системе. "
-            "Верни JSON-объект только с полем assistant_message."
-        )
-        instruction = self._get_interviewer_prompt_text(
-            "manual_finish",
-            fallback_instruction,
+        return self.interviewer_service.build_manual_finish_turn(
+            policy=self,
+            system_prompt=system_prompt,
+            dialogue=dialogue,
+            case_title=case_title,
+            case_skills=case_skills,
             prompt_snapshot=prompt_snapshot,
         )
-        messages = [{"role": "system", "content": system_prompt}, {"role": "system", "content": instruction}, *dialogue]
-        try:
-            raw = self._post_chat(messages, temperature=0.2)
-            parsed = self._parse_json(raw)
-            return DeepSeekTurnResult(
-                assistant_message=self._sanitize_interviewer_message(
-                    str(parsed.get("assistant_message") or fallback.assistant_message)
-                ),
-                is_case_complete=True,
-                result_status=str(parsed.get("result_status") or fallback.result_status),
-                completion_score=None,
-                evaluator_summary="",
-            )
-        except Exception:
-            return fallback
 
     def build_timeout_turn(
         self,
@@ -1973,35 +1948,13 @@ class DeepSeekClient:
         case_title: str,
         prompt_snapshot: dict[str, Any] | None = None,
     ) -> DeepSeekTurnResult:
-        fallback = self._fallback_timeout_turn(case_title=case_title, dialogue=dialogue)
-        if not self.enabled:
-            return fallback
-
-        fallback_instruction = (
-            "Время на прохождение кейса закончилось. "
-            "Нужно только сообщить, что кейс завершен из-за окончания времени, а диалог сохранен в системе. "
-            "Верни JSON-объект только с полем assistant_message."
-        )
-        instruction = self._get_interviewer_prompt_text(
-            "timeout_finish",
-            fallback_instruction,
+        return self.interviewer_service.build_timeout_turn(
+            policy=self,
+            system_prompt=system_prompt,
+            dialogue=dialogue,
+            case_title=case_title,
             prompt_snapshot=prompt_snapshot,
         )
-        messages = [{"role": "system", "content": system_prompt}, {"role": "system", "content": instruction}, *dialogue]
-        try:
-            raw = self._post_chat(messages, temperature=0.2)
-            parsed = self._parse_json(raw)
-            return DeepSeekTurnResult(
-                assistant_message=self._sanitize_interviewer_message(
-                    str(parsed.get("assistant_message") or fallback.assistant_message)
-                ),
-                is_case_complete=True,
-                result_status=str(parsed.get("result_status") or fallback.result_status),
-                completion_score=None,
-                evaluator_summary="",
-            )
-        except Exception:
-            return fallback
 
     def _fallback_case_prompt(
         self,
