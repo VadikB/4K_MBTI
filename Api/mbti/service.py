@@ -158,7 +158,7 @@ class MbtiAssessmentService:
             },
         )
         try:
-            raw = deepseek_client._post_chat(
+            raw = deepseek_client.chat(
                 [
                     {"role": "system", "content": self._prompt("mbti.system", SYSTEM_PROMPT)},
                     {"role": "user", "content": prompt},
@@ -211,7 +211,7 @@ class MbtiAssessmentService:
             },
         )
         try:
-            raw = deepseek_client._post_chat(
+            raw = deepseek_client.chat(
                 [
                     {"role": "system", "content": self._prompt("mbti.system", SYSTEM_PROMPT)},
                     {"role": "user", "content": prompt},
@@ -283,7 +283,7 @@ class MbtiAssessmentService:
             {"case_results_json": json.dumps(case_results, ensure_ascii=False, indent=2)},
         )
         try:
-            raw = deepseek_client._post_chat(
+            raw = deepseek_client.chat(
                 [
                     {"role": "system", "content": self._prompt("mbti.system", SYSTEM_PROMPT)},
                     {"role": "user", "content": prompt},

@@ -150,6 +150,72 @@ class DeepSeekClient(CaseGenerationMixin):
     def enabled(self) -> bool:
         return bool(self.api_keys)
 
+    def chat(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        temperature: float = 0.3,
+        timeout_seconds: int = 120,
+        routing_key: str | None = None,
+    ) -> str:
+        return self.gateway.chat(
+            messages,
+            temperature=temperature,
+            timeout_seconds=timeout_seconds,
+            routing_key=routing_key,
+        )
+
+    # Public compatibility API. Application services must not depend on
+    # implementation-level helpers owned by interviewer/case-generation components.
+    def is_dialog_mode(self, interactivity_mode: str | None) -> bool:
+        return self._is_dialog_interactivity_mode(interactivity_mode)
+
+    def infer_follow_up_topics(self, text: str | None) -> set[str]:
+        return self._infer_follow_up_topics_from_text(text)
+
+    def build_follow_up_question(self, **kwargs: Any) -> str:
+        return self._build_follow_up_question(**kwargs)
+
+    def infer_dialog_reply_stages(self, text: str | None) -> set[str]:
+        return self._infer_dialog_reply_stages(text)
+
+    def should_prioritize_runtime_domain(self, **kwargs: Any) -> bool:
+        return self._should_prioritize_runtime_domain(**kwargs)
+
+    def detect_domain_family(self, **kwargs: Any) -> str:
+        return self._detect_domain_family(**kwargs)
+
+    def should_use_llm_user_case_rewrite(self, *, case_type_code: str | None) -> bool:
+        return self._should_use_llm_user_case_rewrite(case_type_code=case_type_code)
+
+    def rewrite_user_case_materials(self, **kwargs: Any) -> tuple[str, str]:
+        return self._rewrite_user_case_materials_with_llm(**kwargs)
+
+    def score_case_text_quality(self, **kwargs: Any) -> dict[str, Any]:
+        return self._score_case_text_quality(**kwargs)
+
+    def get_case_text_build_instruction(self, case_type_code: str | None) -> dict[str, Any] | None:
+        return self._get_case_text_build_instruction(case_type_code)
+
+    def build_local_case_specificity(self, **kwargs: Any) -> dict[str, Any]:
+        return self._fallback_case_specificity(**kwargs)
+
+    def extract_personalization_placeholders(self, text: str) -> list[str]:
+        return self._extract_placeholders(text)
+
+    def build_local_personalization_map(self, **kwargs: Any) -> dict[str, str]:
+        return self._fallback_personalization_map(**kwargs)
+
+    def get_domain_catalog_entry(self, family_name: str | None) -> dict[str, Any] | None:
+        return self._get_domain_catalog_entry(family_name)
+
+    def merge_domain_catalog_template(
+        self,
+        profile: dict[str, Any],
+        catalog_entry: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        return self._merge_domain_catalog_template(profile, catalog_entry)
+
     def _build_deepseek_routing_key(self, routing_key: str | None, messages: list[dict[str, str]]) -> str:
         return self.gateway.build_routing_key(routing_key, messages)
 

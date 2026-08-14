@@ -2056,7 +2056,7 @@ class InterviewerAgent:
         if best_external_candidate and (not current_domain_code or current_domain_code == "generic" or current_domain_family == "generic"):
             external_family = str(best_external_candidate.get("resolved_family_name") or "").strip().lower()
             external_domain_code = str(best_external_candidate.get("resolved_domain_code") or "").strip().lower()
-            catalog_entry = deepseek_client._get_domain_catalog_entry(external_family) if external_family else None
+            catalog_entry = deepseek_client.get_domain_catalog_entry(external_family) if external_family else None
             if catalog_entry:
                 merged_external_profile = {
                     **domain_profile,
@@ -2065,7 +2065,7 @@ class InterviewerAgent:
                     "domain_label": catalog_entry.get("display_name") or domain_profile.get("domain_label"),
                     "domain_catalog_entry": catalog_entry,
                 }
-                domain_profile = deepseek_client._merge_domain_catalog_template(merged_external_profile, catalog_entry)
+                domain_profile = deepseek_client.merge_domain_catalog_template(merged_external_profile, catalog_entry)
         role_consistency_status, role_consistency_comment = self._build_role_consistency(
             selected_role_match=selected_role_match,
             detected_role_match=detected_role_match,

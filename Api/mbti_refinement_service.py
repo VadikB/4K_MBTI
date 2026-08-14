@@ -348,7 +348,7 @@ class MbtiRefinementService:
             },
         )
         try:
-            raw = deepseek_client._post_chat(
+            raw = deepseek_client.chat(
                 [
                     {
                         'role': 'system',

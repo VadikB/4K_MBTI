@@ -628,7 +628,7 @@ class BaseCompetencyAgent:
         )
 
         try:
-            raw = deepseek_client._post_chat(
+            raw = deepseek_client.chat(
                 [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},

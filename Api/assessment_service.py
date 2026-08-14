@@ -140,7 +140,7 @@ class AssessmentService:
             return False
         case_row = self._get_case_for_session_case(connection, session_case_id)
         methodical_context = self._get_case_methodical_context(connection, case_row)
-        return deepseek_client._is_dialog_interactivity_mode(methodical_context.get("interactivity_mode"))
+        return deepseek_client.is_dialog_mode(methodical_context.get("interactivity_mode"))
 
     def _build_prompt_lab_case_preview_cache_key(
         self,
@@ -305,11 +305,11 @@ class AssessmentService:
             for item in previous_assistant_messages
         }
         previous_topics = [
-            deepseek_client._infer_follow_up_topics_from_text(item)
+            deepseek_client.infer_follow_up_topics(item)
             for item in previous_assistant_messages[-3:]
         ]
         candidates = [
-            deepseek_client._build_follow_up_question(
+            deepseek_client.build_follow_up_question(
                 user_message=user_message,
                 dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                 case_skills=case_skills,
@@ -322,7 +322,7 @@ class AssessmentService:
         repeated_normalized = self._normalize_message_for_repeat_check(repeated_message)
         for candidate in candidates:
             candidate_normalized = self._normalize_message_for_repeat_check(candidate)
-            candidate_topics = deepseek_client._infer_follow_up_topics_from_text(candidate)
+            candidate_topics = deepseek_client.infer_follow_up_topics(candidate)
             if candidate_normalized == repeated_normalized:
                 continue
             if candidate_normalized in previous_normalized:
@@ -392,8 +392,8 @@ class AssessmentService:
         return "По текущему кейсу уточните, пожалуйста: " + follow_up[:1].lower() + follow_up[1:]
 
     def _has_same_follow_up_topic(self, current_message: str | None, previous_message: str | None) -> bool:
-        current_topics = deepseek_client._infer_follow_up_topics_from_text(current_message)
-        previous_topics = deepseek_client._infer_follow_up_topics_from_text(previous_message)
+        current_topics = deepseek_client.infer_follow_up_topics(current_message)
+        previous_topics = deepseek_client.infer_follow_up_topics(previous_message)
         if not current_topics or not previous_topics:
             return False
         return bool(current_topics & previous_topics)
@@ -406,17 +406,17 @@ class AssessmentService:
         if not assistant_rows:
             return False
         current_normalized = self._normalize_message_for_repeat_check(current_message)
-        current_topics = deepseek_client._infer_follow_up_topics_from_text(current_message)
-        current_dialog_stages = deepseek_client._infer_dialog_reply_stages(current_message)
+        current_topics = deepseek_client.infer_follow_up_topics(current_message)
+        current_dialog_stages = deepseek_client.infer_dialog_reply_stages(current_message)
         recent_assistant_rows = assistant_rows[-3:]
         for row in recent_assistant_rows:
             previous_text = str(row["message_text"] or "")
             if current_normalized == self._normalize_message_for_repeat_check(previous_text):
                 return True
-            previous_dialog_stages = deepseek_client._infer_dialog_reply_stages(previous_text)
+            previous_dialog_stages = deepseek_client.infer_dialog_reply_stages(previous_text)
             if current_dialog_stages and previous_dialog_stages and (current_dialog_stages & previous_dialog_stages):
                 return True
-            previous_topics = deepseek_client._infer_follow_up_topics_from_text(previous_text)
+            previous_topics = deepseek_client.infer_follow_up_topics(previous_text)
             if current_topics and previous_topics and (current_topics & previous_topics):
                 return True
         return False
@@ -818,13 +818,13 @@ class AssessmentService:
                         used_case_signatures=used_case_signatures,
                     )
                     if user_profile:
-                        prioritize_runtime_domain = deepseek_client._should_prioritize_runtime_domain(
+                        prioritize_runtime_domain = deepseek_client.should_prioritize_runtime_domain(
                             position=user.raw_position or user.job_description,
                             duties=user.normalized_duties or user.raw_duties,
                             company_industry=user.company_industry,
                         )
                         preview_domain_family = (
-                            deepseek_client._detect_domain_family(
+                            deepseek_client.detect_domain_family(
                                 position=user.raw_position or user.job_description,
                                 duties=user.normalized_duties or user.raw_duties,
                                 company_industry=user.company_industry,
@@ -1186,7 +1186,7 @@ class AssessmentService:
         )
         use_direct_deepseek_output = (
             deepseek_client.enabled
-            and deepseek_client._should_use_llm_user_case_rewrite(case_type_code=case_row["type_code"])
+            and deepseek_client.should_use_llm_user_case_rewrite(case_type_code=case_row["type_code"])
         )
         if use_direct_deepseek_output:
             case_specificity = {}
@@ -1213,7 +1213,7 @@ class AssessmentService:
         case_specificity["_used_case_signatures"] = [dict(item) for item in (used_case_signatures or [])]
         if use_direct_deepseek_output:
             personalization_map = {}
-            personalized_context, personalized_task = deepseek_client._rewrite_user_case_materials_with_llm(
+            personalized_context, personalized_task = deepseek_client.rewrite_user_case_materials(
                 case_id_code=case_row.get("case_code"),
                 case_title=case_row["title"],
                 case_type_code=case_row["type_code"],
@@ -1277,7 +1277,7 @@ class AssessmentService:
                 flags=re.IGNORECASE,
             )
             personalized_task = re.sub(r"\b1:\s+1\b", "1:1", personalized_task, flags=re.IGNORECASE)
-        case_quality = deepseek_client._score_case_text_quality(
+        case_quality = deepseek_client.score_case_text_quality(
             case_type_code=case_row["type_code"],
             template_context=case_row["intro_context"] or case_row["domain_context"] or "",
             template_task=case_row["task_for_user"] or "",
@@ -1517,12 +1517,12 @@ class AssessmentService:
             base_task = case_row["task_for_user"] or ""
 
             effective_instruction_text = str(case_generation_system_prompt or "").strip() or str(
-                (deepseek_client._get_case_text_build_instruction(case_row["type_code"]) or {}).get("instruction_text") or ""
+                (deepseek_client.get_case_text_build_instruction(case_row["type_code"]) or {}).get("instruction_text") or ""
             ).strip()
             skill_names = [name for name in (case_row["skill_names"] or []) if name]
             if use_llm_personalization:
                 try:
-                    personalized_context, personalized_task = deepseek_client._rewrite_user_case_materials_with_llm(
+                    personalized_context, personalized_task = deepseek_client.rewrite_user_case_materials(
                         case_id_code=case_row.get("case_code"),
                         case_title=case_row["title"],
                         case_type_code=case_row["type_code"],
@@ -1575,7 +1575,7 @@ class AssessmentService:
                     planned_total_duration_min=planned_total_duration_min,
                     personalization_variables=case_row.get("personalization_variables"),
                 )
-            case_quality = deepseek_client._score_case_text_quality(
+            case_quality = deepseek_client.score_case_text_quality(
                 case_type_code=case_row["type_code"],
                 template_context=base_context,
                 template_task=base_task,
@@ -1813,7 +1813,7 @@ class AssessmentService:
         case_data = artifacts["case"]
         methodical_context = dict(artifacts.get("methodical_context") or {})
         planned_total_duration_min = (case_row["estimated_time_min"] if case_row else None) or 10
-        local_case_specificity = deepseek_client._fallback_case_specificity(
+        local_case_specificity = deepseek_client.build_local_case_specificity(
             position=user_data.get("position"),
             duties=user_data.get("duties"),
             company_industry=user_data.get("company_industry"),
@@ -1824,7 +1824,7 @@ class AssessmentService:
             case_context=artifacts.get("personalized_context") or "",
             case_task=artifacts.get("personalized_task") or "",
         )
-        local_personalization_placeholders = deepseek_client._extract_placeholders(
+        local_personalization_placeholders = deepseek_client.extract_personalization_placeholders(
             "\n".join(
                 filter(
                     None,
@@ -1836,7 +1836,7 @@ class AssessmentService:
                 )
             )
         )
-        local_personalization_map = deepseek_client._fallback_personalization_map(
+        local_personalization_map = deepseek_client.build_local_personalization_map(
             placeholders=local_personalization_placeholders,
             position=user_data.get("position"),
             duties=user_data.get("duties"),
@@ -1879,7 +1879,7 @@ class AssessmentService:
             case_task=artifacts.get("personalized_task") or "",
             interactivity_mode=methodical_context.get("interactivity_mode"),
         )
-        is_dialog_case = deepseek_client._is_dialog_interactivity_mode(methodical_context.get("interactivity_mode"))
+        is_dialog_case = deepseek_client.is_dialog_mode(methodical_context.get("interactivity_mode"))
         prompt_lab_methodical_context = {
             **methodical_context,
             "user_id": user_data.get("id"),
@@ -1939,7 +1939,7 @@ class AssessmentService:
             normalized_dialogue.append({"role": role, "content": content})
 
         context = dict(methodical_context or {})
-        is_dialog_case = deepseek_client._is_dialog_interactivity_mode(context.get("interactivity_mode"))
+        is_dialog_case = deepseek_client.is_dialog_mode(context.get("interactivity_mode"))
         last_assistant_message = next(
             (item["content"] for item in reversed(normalized_dialogue) if item["role"] == "assistant"),
             "",
@@ -2382,7 +2382,7 @@ class AssessmentService:
                     started_row["started_at"] if started_row else plan.current_case_started_at,
                     plan.current_case_time_limit_minutes,
                 ),
-                is_dialog_case=deepseek_client._is_dialog_interactivity_mode(
+                is_dialog_case=deepseek_client.is_dialog_mode(
                     self._get_case_methodical_context(connection, case_row).get("interactivity_mode"),
                 ),
                 **history_fields,
@@ -2638,7 +2638,7 @@ class AssessmentService:
                 connection,
                 self._get_case_for_session_case(connection, plan.current_session_case_id),
             )
-            is_dialog_case = deepseek_client._is_dialog_interactivity_mode(methodical_context.get("interactivity_mode"))
+            is_dialog_case = deepseek_client.is_dialog_mode(methodical_context.get("interactivity_mode"))
             awaiting_finish_confirmation = self._is_finish_confirmation_prompt(last_assistant_before_user)
 
             if is_dialog_case and awaiting_finish_confirmation and self._looks_like_finish_confirmation(message):
@@ -3567,7 +3567,7 @@ class AssessmentService:
                 next_plan.current_case_time_limit_minutes,
             ),
             time_expired=time_expired,
-            is_dialog_case=deepseek_client._is_dialog_interactivity_mode(
+            is_dialog_case=deepseek_client.is_dialog_mode(
                 self._get_case_methodical_context(connection, next_case_row).get("interactivity_mode"),
             ),
             mbti_case_result=mbti_case_result,
