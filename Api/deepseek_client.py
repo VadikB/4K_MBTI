@@ -4,12 +4,9 @@ import ast
 import json
 import logging
 import re
-import threading
-import time
 import zlib
 from dataclasses import dataclass
 from typing import Any
-from urllib import error, request
 
 import psycopg
 from psycopg.rows import dict_row
@@ -17,7 +14,8 @@ from psycopg.rows import dict_row
 from Api.case_context_builder import build_case_context
 from Api.case_text_cleanup import cleanup_case_list, cleanup_case_text, join_case_list
 from Api.config import settings
-from Api.database import get_active_interviewer_prompt, get_connection, pause_thread_connections_for_external_io
+from Api.database import get_active_interviewer_prompt, get_connection
+from Api.llm.deepseek_gateway import DeepSeekGateway
 
 logger = logging.getLogger("agent4k.deepseek")
 
@@ -103,36 +101,50 @@ class DeepSeekRoleDecision:
 
 class DeepSeekClient:
     def __init__(self) -> None:
-        self.api_keys = list(settings.deepseek_api_keys)
-        self.api_key = self.api_keys[0] if self.api_keys else ""
-        self.base_url = settings.deepseek_base_url.rstrip("/")
-        self.model = settings.deepseek_model
+        self.gateway = DeepSeekGateway()
         self._user_text_template_cache: dict[str, dict[str, Any]] = {}
         self._case_text_build_instruction_cache: dict[str, dict[str, Any] | None] = {}
         self._domain_catalog_cache: dict[str, dict[str, Any]] = {}
         self._company_industry_cache: dict[tuple[str, str, str], str] = {}
         self._case_specificity_cache: dict[tuple[str, str, str, str, str, str], dict[str, Any]] = {}
-        self._request_slots = threading.BoundedSemaphore(max(1, settings.deepseek_max_concurrency))
+
+    @property
+    def api_keys(self) -> list[str]:
+        return self.gateway.api_keys
+
+    @api_keys.setter
+    def api_keys(self, value: list[str]) -> None:
+        self.gateway.api_keys = list(value)
+
+    @property
+    def api_key(self) -> str:
+        return self.api_keys[0] if self.api_keys else ""
+
+    @property
+    def base_url(self) -> str:
+        return self.gateway.base_url
+
+    @property
+    def model(self) -> str:
+        return self.gateway.model
+
+    @property
+    def _request_slots(self):
+        return self.gateway.request_slots
+
+    @_request_slots.setter
+    def _request_slots(self, value) -> None:
+        self.gateway.request_slots = value
 
     @property
     def enabled(self) -> bool:
         return bool(self.api_keys)
 
     def _build_deepseek_routing_key(self, routing_key: str | None, messages: list[dict[str, str]]) -> str:
-        if str(routing_key or "").strip():
-            return str(routing_key).strip()
-        try:
-            serialized = json.dumps(messages, ensure_ascii=False, sort_keys=True)
-        except Exception:
-            serialized = repr(messages)
-        return f"messages:{zlib.crc32(serialized.encode('utf-8'))}"
+        return self.gateway.build_routing_key(routing_key, messages)
 
     def _get_deepseek_key_chain(self, routing_key: str | None, messages: list[dict[str, str]]) -> list[str]:
-        if not self.api_keys:
-            return []
-        key_basis = self._build_deepseek_routing_key(routing_key, messages)
-        start_index = zlib.crc32(key_basis.encode("utf-8")) % len(self.api_keys)
-        return [self.api_keys[(start_index + offset) % len(self.api_keys)] for offset in range(len(self.api_keys))]
+        return self.gateway.get_key_chain(routing_key, messages)
 
     def _get_interviewer_prompt_text(self, prompt_code: str, fallback_text: str, **format_values: str) -> str:
         stored_text: str | None = None
@@ -439,66 +451,12 @@ class DeepSeekClient:
         timeout_sec: int = 120,
         routing_key: str | None = None,
     ) -> str:
-        if not self.enabled:
-            raise RuntimeError("DeepSeek API key is not configured")
-
-        paused_connection_count = pause_thread_connections_for_external_io()
-        queue_started_at = time.perf_counter()
-        slot_acquired = self._request_slots.acquire(timeout=max(0.1, settings.deepseek_queue_timeout_seconds))
-        queue_wait_ms = round((time.perf_counter() - queue_started_at) * 1000, 2)
-        if not slot_acquired:
-            logger.warning(
-                "DeepSeek concurrency queue timed out after %.2f ms (limit=%s)",
-                queue_wait_ms,
-                settings.deepseek_max_concurrency,
-            )
-            raise RuntimeError(
-                "Сервис обработки ответов сейчас перегружен. Подождите немного и повторите отправку."
-            )
-
-        payload = json.dumps(
-            {
-                "model": self.model,
-                "messages": messages,
-                "temperature": temperature,
-            }
-        ).encode("utf-8")
-        last_error: Exception | None = None
-        request_started_at = time.perf_counter()
-        try:
-            for api_key in self._get_deepseek_key_chain(routing_key, messages):
-                req = request.Request(
-                    url=f"{self.base_url}/chat/completions",
-                    data=payload,
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {api_key}",
-                    },
-                    method="POST",
-                )
-                try:
-                    with request.urlopen(req, timeout=timeout_sec) as response:
-                        body = json.loads(response.read().decode("utf-8"))
-                    logger.info(
-                        "DeepSeek request completed duration_ms=%.2f queue_wait_ms=%.2f paused_db_connections=%s routing_key=%s",
-                        (time.perf_counter() - request_started_at) * 1000,
-                        queue_wait_ms,
-                        paused_connection_count,
-                        routing_key or "auto",
-                    )
-                    return body["choices"][0]["message"]["content"]
-                except TimeoutError:
-                    last_error = RuntimeError("DeepSeek request timed out")
-                except error.HTTPError as exc:
-                    last_error = RuntimeError(f"DeepSeek request failed with HTTP {exc.code}")
-                except error.URLError as exc:
-                    last_error = RuntimeError(f"DeepSeek request failed: {exc}")
-
-            if last_error is not None:
-                raise last_error
-            raise RuntimeError("DeepSeek request failed: no available API keys")
-        finally:
-            self._request_slots.release()
+        return self.gateway.chat(
+            messages,
+            temperature=temperature,
+            timeout_seconds=timeout_sec,
+            routing_key=routing_key,
+        )
 
     def generate_case_prompt(
         self,
