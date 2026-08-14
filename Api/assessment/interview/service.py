@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Protocol
 
 from Api.assessment.interview.contracts import InterviewerTurnResult
+from Api.assessment.interview.dialog_policy import DialogPolicy
 from Api.llm.contracts import LlmMessage
 
 
@@ -23,8 +24,9 @@ class InterviewGateway(Protocol):
 class InterviewerService:
     """Runs interviewer use cases independently from a concrete LLM client facade."""
 
-    def __init__(self, *, gateway: InterviewGateway) -> None:
+    def __init__(self, *, gateway: InterviewGateway, dialog_policy: DialogPolicy | None = None) -> None:
         self.gateway = gateway
+        self.dialog_policy = dialog_policy or DialogPolicy()
 
     def execute_case_turn(
         self,
@@ -46,7 +48,7 @@ class InterviewerService:
             )
             if dialog_case_mode:
                 assistant_message = policy._extract_dialog_assistant_message(raw)
-                if policy._looks_like_dialog_meta_response(assistant_message):
+                if self.dialog_policy.looks_like_meta_response(assistant_message):
                     retry_messages = [
                         *messages,
                         {
@@ -67,7 +69,7 @@ class InterviewerService:
                     company_industry=company_industry,
                     user_profile=user_profile,
                 )
-                if policy._looks_like_dialog_domain_drift(assistant_message, forbidden_drift):
+                if self.dialog_policy.looks_like_domain_drift(assistant_message, forbidden_drift):
                     retry_messages = [
                         *messages,
                         {
@@ -80,9 +82,9 @@ class InterviewerService:
                     ]
                     retry_raw = self.gateway.chat(retry_messages, temperature=0.4, routing_key=routing_key)
                     assistant_message = policy._extract_dialog_assistant_message(retry_raw)
-                if policy._looks_like_dialog_meta_response(assistant_message):
+                if self.dialog_policy.looks_like_meta_response(assistant_message):
                     raise RuntimeError("DeepSeek returned dialog meta reasoning instead of an in-role reply.")
-                if policy._looks_like_dialog_domain_drift(assistant_message, forbidden_drift):
+                if self.dialog_policy.looks_like_domain_drift(assistant_message, forbidden_drift):
                     raise RuntimeError("DeepSeek returned a dialog reply with domain drift.")
             else:
                 parsed = policy._parse_json(raw)

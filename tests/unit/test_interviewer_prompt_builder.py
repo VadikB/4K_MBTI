@@ -72,7 +72,7 @@ def test_dialog_prompt_has_role_policy_and_case_anchors() -> None:
 
     assert messages[0] == {"role": "system", "content": DIALOG_SYSTEM_PROMPT}
     assert messages[1] == {"role": "system", "content": DIALOG_POLICY_INSTRUCTION}
-    assert "contract:manager" in messages[2]["content"]
+    assert "Ты руководитель или менеджер внутри рабочей сцены" in messages[2]["content"]
     assert "Якорь сцены: scene" in messages[2]["content"]
     assert "Профессиональный контур пользователя: domain" in messages[2]["content"]
     assert messages[-1] == {"role": "user", "content": "answer"}

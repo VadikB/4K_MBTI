@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from Api.assessment.interview.dialog_policy import DialogPolicy
 from Api.llm.contracts import LlmMessage
 
 
@@ -74,6 +75,9 @@ DIALOG_SYSTEM_PROMPT = (
 
 
 class InterviewerPromptBuilder:
+    def __init__(self, *, dialog_policy: DialogPolicy | None = None) -> None:
+        self.dialog_policy = dialog_policy or DialogPolicy()
+
     def build_case_turn_messages(
         self,
         *,
@@ -106,7 +110,7 @@ class InterviewerPromptBuilder:
             "format_control_rules": str(format_control_rules or "").strip() or "не заданы",
             "recommended_answer_length": str(recommended_answer_length or "").strip() or "не задана",
             "dialog_counterpart_role": counterpart_role,
-            "dialog_role_contract": policy._get_dialog_role_contract(counterpart_role),
+            "dialog_role_contract": self.dialog_policy.role_contract(counterpart_role),
             "dialog_case_title": str(case_title or "").strip() or "без названия",
             "dialog_scene_anchor": policy._build_dialog_scene_anchor(
                 system_prompt=system_prompt,

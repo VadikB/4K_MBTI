@@ -63,6 +63,14 @@ class FakePolicy:
         return any(item in text for item in forbidden)
 
 
+class FakeDialogPolicy:
+    def looks_like_meta_response(self, text):
+        return text.startswith("META:")
+
+    def looks_like_domain_drift(self, text, forbidden):
+        return any(item in text for item in forbidden)
+
+
 def test_manual_finish_uses_fallback_without_llm() -> None:
     gateway = FakeGateway(enabled=False)
     policy = FakePolicy()
@@ -116,7 +124,7 @@ def test_execute_regular_case_turn_parses_json_response() -> None:
     gateway = FakeGateway(enabled=True, response='{"assistant_message":"  Следующий вопрос?  "}')
     fallback = InterviewerTurnResult("fallback", False, "in_progress", None, "")
 
-    result = InterviewerService(gateway=gateway).execute_case_turn(
+    result = InterviewerService(gateway=gateway, dialog_policy=FakeDialogPolicy()).execute_case_turn(
         policy=FakePolicy(),
         messages=[{"role": "system", "content": "prompt"}],
         fallback=fallback,
@@ -136,7 +144,7 @@ def test_execute_dialog_case_retries_meta_response_in_role() -> None:
     gateway = FakeGateway(enabled=True, responses=["META: analysis", "Рабочая реплика"])
     fallback = InterviewerTurnResult("fallback", False, "in_progress", None, "")
 
-    result = InterviewerService(gateway=gateway).execute_case_turn(
+    result = InterviewerService(gateway=gateway, dialog_policy=FakeDialogPolicy()).execute_case_turn(
         policy=FakePolicy(),
         messages=[{"role": "system", "content": "prompt"}],
         fallback=fallback,
@@ -157,7 +165,7 @@ def test_execute_dialog_case_raises_after_persistent_domain_drift() -> None:
     fallback = InterviewerTurnResult("fallback", False, "in_progress", None, "")
 
     try:
-        InterviewerService(gateway=gateway).execute_case_turn(
+        InterviewerService(gateway=gateway, dialog_policy=FakeDialogPolicy()).execute_case_turn(
             policy=FakePolicy(),
             messages=[{"role": "system", "content": "prompt"}],
             fallback=fallback,

@@ -15,7 +15,7 @@ from Api.case_context_builder import build_case_context
 from Api.case_text_cleanup import cleanup_case_list, cleanup_case_text, join_case_list
 from Api.config import settings
 from Api.database import get_active_interviewer_prompt, get_connection
-from Api.assessment.interview import InterviewerPromptBuilder, InterviewerService, InterviewerTurnResult
+from Api.assessment.interview import DialogPolicy, InterviewerPromptBuilder, InterviewerService, InterviewerTurnResult
 from Api.llm.deepseek_gateway import DeepSeekGateway
 from Api.assessment_prompt_resolver import prompt_resolver
 
@@ -98,8 +98,9 @@ class DeepSeekRoleDecision:
 class DeepSeekClient:
     def __init__(self) -> None:
         self.gateway = DeepSeekGateway()
-        self.interviewer_service = InterviewerService(gateway=self.gateway)
-        self.interviewer_prompt_builder = InterviewerPromptBuilder()
+        self.dialog_policy = DialogPolicy()
+        self.interviewer_service = InterviewerService(gateway=self.gateway, dialog_policy=self.dialog_policy)
+        self.interviewer_prompt_builder = InterviewerPromptBuilder(dialog_policy=self.dialog_policy)
         self._user_text_template_cache: dict[str, dict[str, Any]] = {}
         self._case_text_build_instruction_cache: dict[str, dict[str, Any] | None] = {}
         self._domain_catalog_cache: dict[str, dict[str, Any]] = {}
@@ -1908,8 +1909,7 @@ class DeepSeekClient:
         )
 
     def _is_dialog_interactivity_mode(self, interactivity_mode: str | None) -> bool:
-        normalized = str(interactivity_mode or "").strip().lower()
-        return "диалог" in normalized
+        return self.dialog_policy.is_dialog_mode(interactivity_mode)
 
     def _build_follow_up_question(
         self,
@@ -2279,40 +2279,10 @@ class DeepSeekClient:
         return ", ".join(forbidden)
 
     def _looks_like_dialog_domain_drift(self, text: str, forbidden_drift: str) -> bool:
-        normalized = str(text or "").lower()
-        items = [item.strip().lower() for item in str(forbidden_drift or "").split(",") if item.strip()]
-        if not normalized or not items:
-            return False
-        return any(item in normalized for item in items)
+        return self.dialog_policy.looks_like_domain_drift(text, forbidden_drift)
 
     def _get_dialog_role_contract(self, counterpart_role: str) -> str:
-        contracts = {
-            "peer": (
-                "Ты коллега или руководитель смежной команды внутри рабочего конфликта. "
-                "Можешь объяснять свои действия, защищать позицию, признавать часть проблемы, спорить и договариваться о правилах взаимодействия."
-            ),
-            "employee": (
-                "Ты сотрудник или ключевой участник развивающей беседы. "
-                "Можешь объяснять, что мешало работе, что готов менять и какая поддержка тебе нужна."
-            ),
-            "stakeholder": (
-                "Ты руководитель смежной команды или стейкхолдер со своими приоритетами и ограничениями. "
-                "Можешь называть зависимости, возражать, объяснять рамки и договариваться о формате совместной работы."
-            ),
-            "manager": (
-                "Ты руководитель или менеджер внутри рабочей сцены. "
-                "Можешь обозначать приоритеты, ограничения, ожидания и обсуждать конкретную договоренность."
-            ),
-            "client": (
-                "Ты клиент или заявитель внутри рабочей ситуации. "
-                "Можешь требовать ясности, следующего шага, объяснения по сроку и по статусу."
-            ),
-            "generic": (
-                "Ты участник рабочей сцены кейса. "
-                "Отвечай естественно, по-человечески и строго в рамках своей роли, а не как интервью-бот."
-            ),
-        }
-        return contracts.get(counterpart_role, contracts["generic"])
+        return self.dialog_policy.role_contract(counterpart_role)
 
     def _get_dialog_stage_plan(self, *, counterpart_role: str, is_development_dialog: bool) -> tuple[str, ...]:
         if is_development_dialog or counterpart_role == "employee":
@@ -12966,24 +12936,7 @@ class DeepSeekClient:
         return self._normalize_prompt_sentences(original).strip()
 
     def _looks_like_dialog_meta_response(self, text: str) -> bool:
-        normalized = str(text or "").strip().lower()
-        if not normalized:
-            return True
-        meta_markers = (
-            "пользователь ответил",
-            "пользователь продолжает",
-            "мне нужно продолжить интервью",
-            "чтобы раскрыть навык",
-            "в рамках",
-            "в контексте кейса",
-            "спрошу об этом",
-            "сценария разговора",
-            "это показывает",
-            "важно понять",
-            "интервью",
-            "оценк",
-        )
-        return any(marker in normalized for marker in meta_markers)
+        return self.dialog_policy.looks_like_meta_response(text)
 
     def _enforce_external_sharing_policy(self, text: str) -> str:
         result = (text or "").strip()
