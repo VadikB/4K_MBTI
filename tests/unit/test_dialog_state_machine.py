@@ -33,3 +33,33 @@ def test_reply_can_mark_multiple_stages_as_asked() -> None:
 
 def test_unknown_stage_has_safe_label() -> None:
     assert DialogStateMachine().stage_label("unknown") == "рабочее продолжение разговора"
+
+
+def test_stage_prompt_advances_to_first_unasked_stage() -> None:
+    prompt = DialogStateMachine().build_stage_prompt(
+        counterpart_role="peer",
+        is_development_dialog=False,
+        asked_stages={"root_cause", "missing_info"},
+    )
+
+    assert "обязательным минимумом в карточке" in str(prompt)
+
+
+def test_stage_prompt_uses_generic_fallback_when_role_has_no_specific_copy() -> None:
+    prompt = DialogStateMachine().build_stage_prompt(
+        counterpart_role="unknown",
+        is_development_dialog=False,
+        asked_stages=set(),
+    )
+
+    assert "следующем рабочем шаге" in str(prompt)
+
+
+def test_stage_prompt_returns_none_after_plan_is_complete() -> None:
+    prompt = DialogStateMachine().build_stage_prompt(
+        counterpart_role="client",
+        is_development_dialog=False,
+        asked_stages={"next_step", "constraints", "agreement", "closure"},
+    )
+
+    assert prompt is None
