@@ -26,6 +26,81 @@ class InterviewerService:
     def __init__(self, *, gateway: InterviewGateway) -> None:
         self.gateway = gateway
 
+    def execute_case_turn(
+        self,
+        *,
+        policy: Any,
+        messages: list[dict[str, str]],
+        fallback: InterviewerTurnResult,
+        dialog_case_mode: bool,
+        routing_key: str,
+        system_prompt: str,
+        company_industry: str | None,
+        user_profile: dict[str, Any] | None,
+    ) -> InterviewerTurnResult:
+        try:
+            raw = self.gateway.chat(
+                messages,
+                temperature=0.6 if dialog_case_mode else 0.35,
+                routing_key=routing_key,
+            )
+            if dialog_case_mode:
+                assistant_message = policy._extract_dialog_assistant_message(raw)
+                if policy._looks_like_dialog_meta_response(assistant_message):
+                    retry_messages = [
+                        *messages,
+                        {
+                            "role": "system",
+                            "content": (
+                                "Ты только что вышел из роли. "
+                                "Не описывай пользователя, не объясняй свою внутреннюю логику, "
+                                "не упоминай навыки, интервью, сценарий, оценку или контекст задания. "
+                                "Сейчас верни одну короткую живую реплику собеседника внутри сцены кейса."
+                            ),
+                        },
+                    ]
+                    retry_raw = self.gateway.chat(retry_messages, temperature=0.45, routing_key=routing_key)
+                    assistant_message = policy._extract_dialog_assistant_message(retry_raw)
+
+                forbidden_drift = policy._build_dialog_forbidden_drift(
+                    system_prompt=system_prompt,
+                    company_industry=company_industry,
+                    user_profile=user_profile,
+                )
+                if policy._looks_like_dialog_domain_drift(assistant_message, forbidden_drift):
+                    retry_messages = [
+                        *messages,
+                        {
+                            "role": "system",
+                            "content": (
+                                "Ты уехал в чужую предметную область. "
+                                "Убери несоответствующие доменные сущности и верни реплику только в рамках этого кейса и профессионального контура."
+                            ),
+                        },
+                    ]
+                    retry_raw = self.gateway.chat(retry_messages, temperature=0.4, routing_key=routing_key)
+                    assistant_message = policy._extract_dialog_assistant_message(retry_raw)
+                if policy._looks_like_dialog_meta_response(assistant_message):
+                    raise RuntimeError("DeepSeek returned dialog meta reasoning instead of an in-role reply.")
+                if policy._looks_like_dialog_domain_drift(assistant_message, forbidden_drift):
+                    raise RuntimeError("DeepSeek returned a dialog reply with domain drift.")
+            else:
+                parsed = policy._parse_json(raw)
+                assistant_message = policy._sanitize_interviewer_message(
+                    str(parsed.get("assistant_message") or fallback.assistant_message)
+                )
+            return InterviewerTurnResult(
+                assistant_message=assistant_message,
+                is_case_complete=False,
+                result_status="in_progress",
+                completion_score=None,
+                evaluator_summary="",
+            )
+        except Exception as exc:
+            if dialog_case_mode:
+                raise RuntimeError(f"DeepSeek dialog generation failed: {exc}") from exc
+            return fallback
+
     def build_manual_finish_turn(
         self,
         *,

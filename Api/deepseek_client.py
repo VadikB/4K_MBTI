@@ -1846,81 +1846,21 @@ class DeepSeekClient:
         if dialog_case_policy_instruction:
             messages.append({"role": "system", "content": dialog_case_policy_instruction})
         messages.extend([{"role": "system", "content": instruction}, *dialogue])
-        try:
-            routing_key = (
-                f"user:{user_identifier}"
-                if str(user_identifier or "").strip()
-                else f"dialog:{case_title}|{role_name or ''}|{company_industry or ''}"
-            )
-            raw = self._post_chat(
-                messages,
-                temperature=0.6 if dialog_case_mode else 0.35,
-                routing_key=routing_key,
-            )
-            if dialog_case_mode:
-                assistant_message = self._extract_dialog_assistant_message(raw)
-                if self._looks_like_dialog_meta_response(assistant_message):
-                    retry_messages = [
-                        *messages,
-                        {
-                            "role": "system",
-                            "content": (
-                                "Ты только что вышел из роли. "
-                                "Не описывай пользователя, не объясняй свою внутреннюю логику, "
-                                "не упоминай навыки, интервью, сценарий, оценку или контекст задания. "
-                                "Сейчас верни одну короткую живую реплику собеседника внутри сцены кейса."
-                            ),
-                        },
-                    ]
-                    retry_raw = self._post_chat(retry_messages, temperature=0.45, routing_key=routing_key)
-                    assistant_message = self._extract_dialog_assistant_message(retry_raw)
-                if self._looks_like_dialog_domain_drift(
-                    assistant_message,
-                    self._build_dialog_forbidden_drift(
-                        system_prompt=system_prompt,
-                        company_industry=company_industry,
-                        user_profile=user_profile,
-                    ),
-                ):
-                    retry_messages = [
-                        *messages,
-                        {
-                            "role": "system",
-                            "content": (
-                                "Ты уехал в чужую предметную область. "
-                                "Убери несоответствующие доменные сущности и верни реплику только в рамках этого кейса и профессионального контура."
-                            ),
-                        },
-                    ]
-                    retry_raw = self._post_chat(retry_messages, temperature=0.4, routing_key=routing_key)
-                    assistant_message = self._extract_dialog_assistant_message(retry_raw)
-                if self._looks_like_dialog_meta_response(assistant_message):
-                    raise RuntimeError("DeepSeek returned dialog meta reasoning instead of an in-role reply.")
-                if self._looks_like_dialog_domain_drift(
-                    assistant_message,
-                    self._build_dialog_forbidden_drift(
-                        system_prompt=system_prompt,
-                        company_industry=company_industry,
-                        user_profile=user_profile,
-                    ),
-                ):
-                    raise RuntimeError("DeepSeek returned a dialog reply with domain drift.")
-            else:
-                parsed = self._parse_json(raw)
-                assistant_message = self._sanitize_interviewer_message(
-                    str(parsed.get("assistant_message") or fallback.assistant_message)
-                )
-            return DeepSeekTurnResult(
-                assistant_message=assistant_message,
-                is_case_complete=False,
-                result_status="in_progress",
-                completion_score=None,
-                evaluator_summary="",
-            )
-        except Exception as exc:
-            if dialog_case_mode:
-                raise RuntimeError(f"DeepSeek dialog generation failed: {exc}") from exc
-            return fallback
+        routing_key = (
+            f"user:{user_identifier}"
+            if str(user_identifier or "").strip()
+            else f"dialog:{case_title}|{role_name or ''}|{company_industry or ''}"
+        )
+        return self.interviewer_service.execute_case_turn(
+            policy=self,
+            messages=messages,
+            fallback=fallback,
+            dialog_case_mode=dialog_case_mode,
+            routing_key=routing_key,
+            system_prompt=system_prompt,
+            company_industry=company_industry,
+            user_profile=user_profile,
+        )
 
     def build_manual_finish_turn(
         self,

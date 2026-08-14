@@ -6,9 +6,17 @@ from Api.assessment.interview import InterviewerService, InterviewerTurnResult
 
 
 class FakeGateway:
-    def __init__(self, *, enabled: bool, response: str = "", error: Exception | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        enabled: bool,
+        response: str = "",
+        responses: list[str] | None = None,
+        error: Exception | None = None,
+    ) -> None:
         self.enabled = enabled
         self.response = response
+        self.responses = list(responses or [])
         self.error = error
         self.calls: list[tuple[list[dict[str, str]], float]] = []
 
@@ -16,6 +24,8 @@ class FakeGateway:
         self.calls.append((messages, temperature))
         if self.error:
             raise self.error
+        if self.responses:
+            return self.responses.pop(0)
         return self.response
 
 
@@ -39,6 +49,18 @@ class FakePolicy:
 
     def _sanitize_interviewer_message(self, text):
         return text.strip()
+
+    def _extract_dialog_assistant_message(self, raw):
+        return raw
+
+    def _looks_like_dialog_meta_response(self, text):
+        return text.startswith("META:")
+
+    def _build_dialog_forbidden_drift(self, **_kwargs):
+        return ["foreign"]
+
+    def _looks_like_dialog_domain_drift(self, text, forbidden):
+        return any(item in text for item in forbidden)
 
 
 def test_manual_finish_uses_fallback_without_llm() -> None:
@@ -88,3 +110,65 @@ def test_timeout_returns_fallback_when_llm_fails() -> None:
     )
 
     assert result is policy.timeout_fallback
+
+
+def test_execute_regular_case_turn_parses_json_response() -> None:
+    gateway = FakeGateway(enabled=True, response='{"assistant_message":"  Следующий вопрос?  "}')
+    fallback = InterviewerTurnResult("fallback", False, "in_progress", None, "")
+
+    result = InterviewerService(gateway=gateway).execute_case_turn(
+        policy=FakePolicy(),
+        messages=[{"role": "system", "content": "prompt"}],
+        fallback=fallback,
+        dialog_case_mode=False,
+        routing_key="user:42",
+        system_prompt="system",
+        company_industry=None,
+        user_profile=None,
+    )
+
+    assert result.assistant_message == "Следующий вопрос?"
+    assert result.result_status == "in_progress"
+    assert gateway.calls[0][1] == 0.35
+
+
+def test_execute_dialog_case_retries_meta_response_in_role() -> None:
+    gateway = FakeGateway(enabled=True, responses=["META: analysis", "Рабочая реплика"])
+    fallback = InterviewerTurnResult("fallback", False, "in_progress", None, "")
+
+    result = InterviewerService(gateway=gateway).execute_case_turn(
+        policy=FakePolicy(),
+        messages=[{"role": "system", "content": "prompt"}],
+        fallback=fallback,
+        dialog_case_mode=True,
+        routing_key="dialog:case",
+        system_prompt="system",
+        company_industry="industry",
+        user_profile={},
+    )
+
+    assert result.assistant_message == "Рабочая реплика"
+    assert [call[1] for call in gateway.calls] == [0.6, 0.45]
+    assert "вышел из роли" in gateway.calls[1][0][-1]["content"]
+
+
+def test_execute_dialog_case_raises_after_persistent_domain_drift() -> None:
+    gateway = FakeGateway(enabled=True, responses=["foreign reply", "foreign retry"])
+    fallback = InterviewerTurnResult("fallback", False, "in_progress", None, "")
+
+    try:
+        InterviewerService(gateway=gateway).execute_case_turn(
+            policy=FakePolicy(),
+            messages=[{"role": "system", "content": "prompt"}],
+            fallback=fallback,
+            dialog_case_mode=True,
+            routing_key="dialog:case",
+            system_prompt="system",
+            company_industry="industry",
+            user_profile={},
+        )
+    except RuntimeError as exc:
+        assert "dialog generation failed" in str(exc)
+        assert "domain drift" in str(exc)
+    else:
+        raise AssertionError("Persistent domain drift must fail a dialog turn")
