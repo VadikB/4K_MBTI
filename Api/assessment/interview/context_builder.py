@@ -4,9 +4,13 @@ import re
 from typing import Any
 
 from Api.case_text_cleanup import cleanup_case_text
+from Api.assessment.interview.state_machine import DialogStateMachine
 
 
 class DialogContextBuilder:
+    def __init__(self, *, state_machine: DialogStateMachine | None = None) -> None:
+        self.state_machine = state_machine or DialogStateMachine()
+
     def build_runtime_context(
         self,
         *,
@@ -22,13 +26,13 @@ class DialogContextBuilder:
         ]
         asked_stages: set[str] = set()
         for message in assistant_messages[-4:]:
-            asked_stages.update(policy._infer_dialog_reply_stages(message))
-        role = policy._infer_dialog_counterpart_role_from_text(f"{system_prompt}\n{scenario_text}")
+            asked_stages.update(self.state_machine.infer_reply_stages(message))
+        role = self.state_machine.infer_counterpart_role(f"{system_prompt}\n{scenario_text}")
         is_development_dialog = role == "employee" or any(
             marker in f"{system_prompt}\n{scenario_text}".lower()
             for marker in ("развивающ", "план развития", "план роста", "зона роста", "обратной связ")
         )
-        plan = policy._get_dialog_stage_plan(
+        plan = self.state_machine.stage_plan(
             counterpart_role=role,
             is_development_dialog=is_development_dialog,
         )
@@ -38,7 +42,7 @@ class DialogContextBuilder:
             "is_development_dialog": is_development_dialog,
             "asked_stages": asked_stages,
             "next_stage": next_stage,
-            "next_stage_label": policy._get_dialog_stage_label(next_stage),
+            "next_stage_label": self.state_machine.stage_label(next_stage),
             "stage_plan": list(plan),
         }
 

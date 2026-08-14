@@ -24,14 +24,14 @@ def test_runtime_context_selects_first_unasked_stage() -> None:
     context = DialogContextBuilder().build_runtime_context(
         policy=FakePolicy(),
         system_prompt="Разговор с сотрудником",
-        dialogue=[{"role": "assistant", "content": "Почему это произошло?"}],
+        dialogue=[{"role": "assistant", "content": "Давайте разберем причину."}],
     )
 
     assert context["counterpart_role"] == "employee"
     assert context["is_development_dialog"] is True
     assert context["asked_stages"] == {"root_cause"}
-    assert context["next_stage"] == "agreement"
-    assert context["next_stage_label"] == "label:agreement"
+    assert context["next_stage"] == "change_commitment"
+    assert context["next_stage_label"] == "личное обязательство по изменению поведения"
 
 
 def test_scene_anchor_extracts_methodological_sections() -> None:

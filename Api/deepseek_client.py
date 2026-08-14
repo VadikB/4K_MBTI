@@ -15,7 +15,7 @@ from Api.case_context_builder import build_case_context
 from Api.case_text_cleanup import cleanup_case_list, cleanup_case_text, join_case_list
 from Api.config import settings
 from Api.database import get_active_interviewer_prompt, get_connection
-from Api.assessment.interview import DialogContextBuilder, DialogPolicy, InterviewerPromptBuilder, InterviewerService, InterviewerTurnResult
+from Api.assessment.interview import DialogContextBuilder, DialogPolicy, DialogStateMachine, InterviewerPromptBuilder, InterviewerService, InterviewerTurnResult
 from Api.llm.deepseek_gateway import DeepSeekGateway
 from Api.assessment_prompt_resolver import prompt_resolver
 
@@ -99,7 +99,8 @@ class DeepSeekClient:
     def __init__(self) -> None:
         self.gateway = DeepSeekGateway()
         self.dialog_policy = DialogPolicy()
-        self.dialog_context_builder = DialogContextBuilder()
+        self.dialog_state_machine = DialogStateMachine()
+        self.dialog_context_builder = DialogContextBuilder(state_machine=self.dialog_state_machine)
         self.interviewer_service = InterviewerService(
             gateway=self.gateway,
             dialog_policy=self.dialog_policy,
@@ -2048,55 +2049,10 @@ class DeepSeekClient:
         return None
 
     def _infer_dialog_counterpart_role_from_text(self, scenario_text: str) -> str:
-        normalized = str(scenario_text or "").lower()
-        if any(
-            marker in normalized
-            for marker in (
-                "между нами как коллегами",
-                "следующая смена",
-                "вторая линия",
-                "смежной команды",
-                "по этой передаче",
-                "ты готов поменять",
-                "ты мог взять инцидент",
-            )
-        ):
-            return "peer"
-        if any(
-            marker in normalized
-            for marker in (
-                "развивающей беседе",
-                "план развития",
-                "зона роста",
-                "сотрудник",
-                "подчинен",
-                "подчинён",
-            )
-        ):
-            return "employee"
-        if any(marker in normalized for marker in ("руковод", "лидер", "менеджер")):
-            return "manager"
-        if any(marker in normalized for marker in ("стейкхолдер", "смежник", "смежная сторона")):
-            return "stakeholder"
-        if any(marker in normalized for marker in ("клиент", "пользоват", "заказчик", "заявител")):
-            return "client"
-        return "generic"
+        return self.dialog_state_machine.infer_counterpart_role(scenario_text)
 
     def _get_dialog_stage_label(self, stage_code: str | None) -> str:
-        mapping = {
-            "root_cause": "прояснение причины и ограничений",
-            "missing_info": "уточнение недостающей информации",
-            "workflow_rule": "согласование рабочего минимума и правил передачи",
-            "future_change": "обсуждение изменения процесса на будущее",
-            "change_commitment": "личное обязательство по изменению поведения",
-            "support_need": "обсуждение нужной поддержки и условий",
-            "agreement": "фиксация рабочей договоренности",
-            "closure": "закрытие разговора и контрольная точка",
-            "criticality": "прояснение критичности и приоритетов",
-            "constraints": "прояснение ограничений и зависимостей",
-            "next_step": "согласование ближайшего следующего шага",
-        }
-        return mapping.get(str(stage_code or "").strip(), "рабочее продолжение разговора")
+        return self.dialog_state_machine.stage_label(stage_code)
 
     def _build_dialog_llm_context(
         self,
@@ -2154,15 +2110,10 @@ class DeepSeekClient:
         return self.dialog_policy.role_contract(counterpart_role)
 
     def _get_dialog_stage_plan(self, *, counterpart_role: str, is_development_dialog: bool) -> tuple[str, ...]:
-        if is_development_dialog or counterpart_role == "employee":
-            return ("root_cause", "change_commitment", "support_need", "agreement", "closure")
-        if counterpart_role == "peer":
-            return ("root_cause", "missing_info", "workflow_rule", "change_commitment", "support_need", "agreement", "closure")
-        if counterpart_role in {"manager", "stakeholder"}:
-            return ("criticality", "constraints", "agreement", "closure")
-        if counterpart_role == "client":
-            return ("next_step", "constraints", "agreement", "closure")
-        return ("root_cause", "agreement", "closure")
+        return self.dialog_state_machine.stage_plan(
+            counterpart_role=counterpart_role,
+            is_development_dialog=is_development_dialog,
+        )
 
     def _build_dialog_stage_prompt(
         self,
@@ -2708,26 +2659,7 @@ class DeepSeekClient:
         return "Хорошо. Скажите прямо: что именно в этой ситуации нужно прояснить или изменить уже сейчас, чтобы разговор сдвинулся с места?"
 
     def _infer_dialog_reply_stages(self, text: str | None) -> set[str]:
-        normalized = str(text or "").lower()
-        stages: set[str] = set()
-        stage_keywords = {
-            "emotion": ("задело", "без общих слов", "сорвался", "сорвал", "резко"),
-            "criticality": ("самое критичное", "что для вас в этой ситуации сейчас самое критичное", "на каком шаге вы хотите договориться"),
-            "root_cause": ("разберем причину", "разберём причину", "где именно сейчас", "основной перегруз", "основной сбой", "из-за которого"),
-            "missing_info": ("чего именно не хватило", "какие данные", "какой информации", "какие комментарии"),
-            "workflow_rule": ("обязательным минимумом", "минимумом в карточке", "что должно быть обязательным"),
-            "future_change": ("что именно должно меняться", "не повторялась", "в следующ", "при следующей передаче"),
-            "change_commitment": ("что именно ты готов поменять", "что именно вы готовы изменить", "уже на этой неделе", "в ближайшие дни"),
-            "next_step": ("следующим шагом", "какой следующий шаг", "не оставить вопрос в подвешенном состоянии"),
-            "constraints": ("какие ограничения", "что ограничивает", "какие зависимости", "что нужно подтвердить"),
-            "support_need": ("какая поддержка", "какая договоренность", "какая договорённость", "с моей стороны тебе нужна", "со второй стороны нужна"),
-            "agreement": ("ты с этим согласен", "готовы на таком варианте договориться", "давайте тогда это зафиксируем"),
-            "closure": ("договорились", "тогда фиксируем так", "с моей стороны я тоже", "рабочее правило"),
-        }
-        for stage, keywords in stage_keywords.items():
-            if any(keyword in normalized for keyword in keywords):
-                stages.add(stage)
-        return stages
+        return self.dialog_state_machine.infer_reply_stages(text)
 
     def _infer_follow_up_topics_from_text(self, text: str | None) -> set[str]:
         normalized = str(text or "").lower()
