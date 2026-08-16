@@ -1367,6 +1367,14 @@ class AssessmentDefinitionCloneRequest(BaseModel):
     description: str | None = None
 
 
+class AssessmentDefinitionCreateRequest(BaseModel):
+    code: str
+    name: str
+    description: str | None = None
+    definition: dict
+    comment: str | None = None
+
+
 class AssessmentDefinitionUpdateRequest(BaseModel):
     definition: dict
     description: str | None = None
@@ -1375,6 +1383,32 @@ class AssessmentDefinitionUpdateRequest(BaseModel):
 
 class AssessmentDefinitionTransitionRequest(BaseModel):
     comment: str | None = None
+
+
+class AssessmentConfigurationCreateRequest(BaseModel):
+    code: str
+    name: str
+    methodology_version_id: int
+    scenario_version_id: int
+    comment: str | None = None
+
+
+class AssessmentConfigurationPublishRequest(BaseModel):
+    make_default: bool = False
+    comment: str | None = None
+
+
+class AssessmentConfigurationResponse(BaseModel):
+    id: int
+    code: str
+    name: str
+    methodology_version_id: int
+    scenario_version_id: int
+    status: str
+    is_default: bool
+    prompt_bundle_checksum: str | None = None
+    created_at: datetime
+    published_at: datetime | None = None
 
 
 class PlatformRoleAssignmentRequest(BaseModel):

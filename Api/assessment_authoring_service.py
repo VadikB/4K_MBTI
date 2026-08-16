@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 from Api.assessment_configuration import canonical_json, definition_checksum
+from Api.assessment_prompt_resolver import load_active_prompt_bundle
 from Api.assessment_runtime import component_registry, validate_scenario_definition
 
 
@@ -47,6 +48,190 @@ class AssessmentAuthoringService:
             """
         ).fetchall()
         return [dict(row) for row in rows]
+
+    def create_definition(
+        self,
+        connection,
+        *,
+        entity_type: str,
+        code: str,
+        name: str,
+        description: str | None,
+        definition: dict[str, Any],
+        actor_user_id: int,
+        comment: str | None,
+    ) -> dict[str, Any]:
+        config = self._config(entity_type)
+        normalized_code = str(code or "").strip()
+        normalized_name = str(name or "").strip()
+        if not normalized_code or not normalized_name:
+            raise ValueError("Assessment definition code and name are required.")
+        if connection.execute(
+            f"SELECT id FROM {config['parents']} WHERE code = %s",
+            (normalized_code,),
+        ).fetchone() is not None:
+            raise ValueError("Assessment definition code already exists.")
+        normalized = dict(definition or {})
+        normalized["code"] = normalized_code
+        normalized["version"] = 1
+        self.validate_definition(entity_type=entity_type, definition=normalized)
+        parent = connection.execute(
+            f"""
+            INSERT INTO {config['parents']} (code, name, description)
+            VALUES (%s, %s, %s)
+            RETURNING id
+            """,
+            (normalized_code, normalized_name, str(description or "").strip() or None),
+        ).fetchone()
+        created = connection.execute(
+            f"""
+            INSERT INTO {config['versions']} (
+                {config['parent_fk']}, version, status, description, definition_json, checksum
+            )
+            VALUES (%s, 1, 'draft', %s, %s::jsonb, %s)
+            RETURNING *
+            """,
+            (
+                int(parent["id"]),
+                str(description or "").strip() or None,
+                canonical_json(normalized),
+                definition_checksum(normalized),
+            ),
+        ).fetchone()
+        self._audit(
+            connection,
+            entity_type=entity_type,
+            entity_id=int(created["id"]),
+            action="definition_created",
+            actor_user_id=actor_user_id,
+            before=None,
+            after=dict(created),
+            comment=comment,
+        )
+        return {**dict(created), "code": normalized_code, "name": normalized_name}
+
+    def list_configurations(self, connection) -> list[dict[str, Any]]:
+        rows = connection.execute(
+            """
+            SELECT id, code, name, methodology_version_id, scenario_version_id,
+                   status, is_default, prompt_bundle_checksum, created_at, published_at
+            FROM assessment_configurations
+            ORDER BY id DESC
+            """
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+    def create_configuration(
+        self,
+        connection,
+        *,
+        code: str,
+        name: str,
+        methodology_version_id: int,
+        scenario_version_id: int,
+        actor_user_id: int,
+        comment: str | None,
+    ) -> dict[str, Any]:
+        normalized_code = str(code or "").strip()
+        normalized_name = str(name or "").strip()
+        if not normalized_code or not normalized_name:
+            raise ValueError("Assessment configuration code and name are required.")
+        if connection.execute(
+            "SELECT id FROM assessment_configurations WHERE code = %s",
+            (normalized_code,),
+        ).fetchone() is not None:
+            raise ValueError("Assessment configuration code already exists.")
+        versions = connection.execute(
+            """
+            SELECT methodology_version.status AS methodology_status,
+                   scenario_version.status AS scenario_status
+            FROM assessment_methodology_versions methodology_version
+            CROSS JOIN assessment_scenario_versions scenario_version
+            WHERE methodology_version.id = %s AND scenario_version.id = %s
+            """,
+            (methodology_version_id, scenario_version_id),
+        ).fetchone()
+        if versions is None:
+            raise ValueError("Methodology or scenario version was not found.")
+        if versions["methodology_status"] != "published" or versions["scenario_status"] != "published":
+            raise ValueError("Assessment configuration requires published methodology and scenario versions.")
+        created = connection.execute(
+            """
+            INSERT INTO assessment_configurations (
+                code, name, methodology_version_id, scenario_version_id,
+                status, is_default
+            )
+            VALUES (%s, %s, %s, %s, 'draft', %s)
+            RETURNING *
+            """,
+            (normalized_code, normalized_name, methodology_version_id, scenario_version_id, False),
+        ).fetchone()
+        self._audit(
+            connection,
+            entity_type="configuration",
+            entity_id=int(created["id"]),
+            action="configuration_created",
+            actor_user_id=actor_user_id,
+            before=None,
+            after=dict(created),
+            comment=comment,
+        )
+        return dict(created)
+
+    def publish_configuration(
+        self,
+        connection,
+        *,
+        configuration_id: int,
+        make_default: bool,
+        actor_user_id: int,
+        comment: str | None,
+    ) -> dict[str, Any]:
+        current = connection.execute(
+            """
+            SELECT configuration.*,
+                   methodology_version.status AS methodology_status,
+                   scenario_version.status AS scenario_status
+            FROM assessment_configurations configuration
+            JOIN assessment_methodology_versions methodology_version
+              ON methodology_version.id = configuration.methodology_version_id
+            JOIN assessment_scenario_versions scenario_version
+              ON scenario_version.id = configuration.scenario_version_id
+            WHERE configuration.id = %s
+            FOR UPDATE OF configuration
+            """,
+            (configuration_id,),
+        ).fetchone()
+        if current is None:
+            raise ValueError("Assessment configuration was not found.")
+        if current["status"] != "draft":
+            raise ValueError("Only draft assessment configurations can be published.")
+        if current["methodology_status"] != "published" or current["scenario_status"] != "published":
+            raise ValueError("Configuration components must remain published.")
+        prompt_bundle = load_active_prompt_bundle(connection)
+        if make_default:
+            connection.execute("UPDATE assessment_configurations SET is_default = FALSE WHERE id <> %s", (configuration_id,))
+        updated = connection.execute(
+            """
+            UPDATE assessment_configurations
+            SET status = 'published', published_at = NOW(), is_default = %s,
+                prompt_bundle_json = %s::jsonb, prompt_bundle_checksum = %s
+            WHERE id = %s
+            RETURNING *
+            """,
+            (bool(make_default), canonical_json(prompt_bundle), definition_checksum(prompt_bundle), configuration_id),
+        ).fetchone()
+        self._audit(
+            connection,
+            entity_type="configuration",
+            entity_id=configuration_id,
+            action="configuration_published",
+            actor_user_id=actor_user_id,
+            before=dict(current),
+            after=dict(updated),
+            comment=comment,
+        )
+        return dict(updated)
 
     def clone_version(
         self,

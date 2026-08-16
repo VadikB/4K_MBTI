@@ -161,9 +161,13 @@ from Api.schemas import (
     UserJourneyStateResponse,
     UserResponse,
     AssessmentDefinitionCloneRequest,
+    AssessmentDefinitionCreateRequest,
     AssessmentDefinitionTransitionRequest,
     AssessmentDefinitionUpdateRequest,
     AssessmentDefinitionVersionResponse,
+    AssessmentConfigurationCreateRequest,
+    AssessmentConfigurationPublishRequest,
+    AssessmentConfigurationResponse,
     PlatformRoleAssignmentRequest,
 )
 
@@ -5308,6 +5312,34 @@ def list_assessment_definition_versions(entity_type: str, request: Request) -> l
 
 
 @router.post(
+    "/admin/assessment-definitions/{entity_type}",
+    response_model=AssessmentDefinitionVersionResponse,
+)
+def create_assessment_definition(
+    entity_type: str,
+    payload: AssessmentDefinitionCreateRequest,
+    request: Request,
+) -> AssessmentDefinitionVersionResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_assessment_definition_permission(connection, user, entity_type, "edit")
+        try:
+            row = assessment_authoring_service.create_definition(
+                connection,
+                entity_type=entity_type,
+                code=payload.code,
+                name=payload.name,
+                description=payload.description,
+                definition=payload.definition,
+                actor_user_id=int(user.id),
+                comment=payload.comment,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentDefinitionVersionResponse(**row)
+
+
+@router.post(
     "/admin/assessment-definitions/{entity_type}/{version_id}/clone",
     response_model=AssessmentDefinitionVersionResponse,
 )
@@ -5426,6 +5458,75 @@ def publish_assessment_definition_version(
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return AssessmentDefinitionVersionResponse(**row)
+
+
+@router.get(
+    "/admin/assessment-configurations",
+    response_model=list[AssessmentConfigurationResponse],
+)
+def list_assessment_configurations(request: Request) -> list[AssessmentConfigurationResponse]:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, "configuration.publish")
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        return [AssessmentConfigurationResponse(**row) for row in assessment_authoring_service.list_configurations(connection)]
+
+
+@router.post(
+    "/admin/assessment-configurations",
+    response_model=AssessmentConfigurationResponse,
+)
+def create_assessment_configuration(
+    payload: AssessmentConfigurationCreateRequest,
+    request: Request,
+) -> AssessmentConfigurationResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, "configuration.publish")
+            row = assessment_authoring_service.create_configuration(
+                connection,
+                code=payload.code,
+                name=payload.name,
+                methodology_version_id=payload.methodology_version_id,
+                scenario_version_id=payload.scenario_version_id,
+                actor_user_id=int(user.id),
+                comment=payload.comment,
+            )
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentConfigurationResponse(**row)
+
+
+@router.post(
+    "/admin/assessment-configurations/{configuration_id}/publish",
+    response_model=AssessmentConfigurationResponse,
+)
+def publish_assessment_configuration(
+    configuration_id: int,
+    payload: AssessmentConfigurationPublishRequest,
+    request: Request,
+) -> AssessmentConfigurationResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, "configuration.publish")
+            row = assessment_authoring_service.publish_configuration(
+                connection,
+                configuration_id=configuration_id,
+                make_default=payload.make_default,
+                actor_user_id=int(user.id),
+                comment=payload.comment,
+            )
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentConfigurationResponse(**row)
 
 
 @router.post("/admin/platform-role-assignments")

@@ -25,6 +25,26 @@ draft -> ready_for_review -> published -> retired
 
 Редактируется только `draft`. Published-версия никогда не меняет definition; для изменения она клонируется в следующий draft.
 
+## Authoring workflow
+
+Новая сущность создаётся через `POST /users/admin/assessment-definitions/{entity_type}` и получает собственный `code` и draft-версию 1. Существующая сущность получает следующую версию через clone endpoint.
+
+Полный путь публикации:
+
+```text
+create draft v1 -> validate -> submit -> publish definition
+                                          │
+published methodology + published scenario
+                     │
+                     ▼
+       create configuration draft -> publish
+                                      │
+                                      ▼
+                      freeze prompt bundle and optionally make default
+```
+
+Default назначается только во время публикации конфигурации. Draft не может вытеснить текущую рабочую default-конфигурацию.
+
 ## Жизненный цикл сессии
 
 1. Выбирается опубликованная assessment configuration.
