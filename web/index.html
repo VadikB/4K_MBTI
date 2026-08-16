@@ -528,6 +528,7 @@
             <button id="admin-methodology-tab-passports" type="button" class="admin-methodology-tab active">Паспорта типов кейсов</button>
             <button id="admin-methodology-tab-library" type="button" class="admin-methodology-tab">Библиотека кейсов</button>
             <button id="admin-methodology-tab-branches" type="button" class="admin-methodology-tab">Ветки и покрытие</button>
+            <button id="admin-methodology-tab-definitions" type="button" class="admin-methodology-tab">Версии и сценарии</button>
           </div>
 
           <div id="admin-methodology-passports-view" class="admin-methodology-view">
@@ -625,6 +626,80 @@
                   </div>
                 </div>
                 <div id="admin-methodology-case-quality" class="admin-methodology-risk-list"></div>
+              </article>
+            </section>
+          </div>
+
+          <div id="admin-methodology-definitions-view" class="admin-methodology-view hidden">
+            <section class="admin-definition-grid">
+              <article class="card card--lg admin-definition-card">
+                <div class="report-card-head">
+                  <div>
+                    <p class="section-label accent-label">Authoring</p>
+                    <h3>Методологии и сценарии</h3>
+                  </div>
+                  <button id="admin-definition-refresh" type="button" class="ghost-button compact-ghost">Обновить</button>
+                </div>
+                <div class="admin-definition-columns">
+                  <div>
+                    <h4>Методологии</h4>
+                    <div id="admin-methodology-version-list" class="admin-definition-list"></div>
+                  </div>
+                  <div>
+                    <h4>Сценарии</h4>
+                    <div id="admin-scenario-version-list" class="admin-definition-list"></div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="card card--lg admin-definition-card">
+                <div class="report-card-head">
+                  <div>
+                    <p class="section-label accent-label">Draft editor</p>
+                    <h3 id="admin-definition-editor-title">Новая методология</h3>
+                  </div>
+                </div>
+                <div class="admin-definition-form-grid">
+                  <label>Тип
+                    <select id="admin-definition-type" class="admin-methodology-input">
+                      <option value="methodology">Методология</option>
+                      <option value="scenario">Сценарий</option>
+                    </select>
+                  </label>
+                  <label>Code<input id="admin-definition-code" class="admin-methodology-input" autocomplete="off"></label>
+                  <label>Название<input id="admin-definition-name" class="admin-methodology-input" autocomplete="off"></label>
+                  <label class="admin-definition-wide">Описание<input id="admin-definition-description" class="admin-methodology-input" autocomplete="off"></label>
+                  <label class="admin-definition-wide">Definition JSON
+                    <textarea id="admin-definition-json" class="admin-methodology-input admin-definition-json" rows="18" spellcheck="false"></textarea>
+                  </label>
+                </div>
+                <div class="admin-definition-actions">
+                  <button id="admin-definition-new" type="button" class="ghost-button compact-ghost">Новый draft v1</button>
+                  <button id="admin-definition-save" type="button" class="primary-button compact-primary">Создать</button>
+                  <button id="admin-definition-validate" type="button" class="ghost-button compact-ghost" disabled>Проверить</button>
+                  <button id="admin-definition-submit" type="button" class="ghost-button compact-ghost" disabled>На review</button>
+                  <button id="admin-definition-publish" type="button" class="ghost-button compact-ghost" disabled>Опубликовать</button>
+                </div>
+                <p id="admin-definition-status" class="admin-methodology-save-status hidden"></p>
+              </article>
+
+              <article class="card card--lg admin-definition-card admin-definition-config-card">
+                <div class="report-card-head">
+                  <div>
+                    <p class="section-label accent-label">Configuration</p>
+                    <h3>Связать опубликованные версии</h3>
+                  </div>
+                </div>
+                <div class="admin-definition-form-grid">
+                  <label>Code<input id="admin-configuration-code" class="admin-methodology-input"></label>
+                  <label>Название<input id="admin-configuration-name" class="admin-methodology-input"></label>
+                  <label>Методология<select id="admin-configuration-methodology" class="admin-methodology-input"></select></label>
+                  <label>Сценарий<select id="admin-configuration-scenario" class="admin-methodology-input"></select></label>
+                </div>
+                <div class="admin-definition-actions">
+                  <button id="admin-configuration-create" type="button" class="primary-button compact-primary">Создать draft</button>
+                </div>
+                <div id="admin-configuration-list" class="admin-definition-list"></div>
               </article>
             </section>
           </div>
