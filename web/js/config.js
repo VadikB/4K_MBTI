@@ -1,4 +1,4 @@
-export const APP_RELEASE = "2.1.27";
+export const APP_RELEASE = "2.1.26";
 export const ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED =
     window.__APP_CONFIG__?.assessmentExternalAnswerTransferEnabled !== false;
 export const PROFILE_NO_CHANGES_LABEL = "Профиль актуален";

@@ -22,7 +22,7 @@ logs/
 *.dump
 *.sql
 dev_previews/*.png
-AGENTS.md
+# AGENTS.md is part of the tracked EVC development contract.
 
 # Server-local deployment artifacts
 .env.before-*

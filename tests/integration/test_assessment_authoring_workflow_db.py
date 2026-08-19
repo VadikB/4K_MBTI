@@ -148,3 +148,88 @@ def test_new_methodology_and_scenario_can_be_published_as_default_configuration(
         "configuration_created",
         "configuration_published",
     }.issubset(actions)
+
+
+@pytest.mark.integration
+def test_published_execution_snapshot_is_unchanged_by_a_new_draft(authoring_connection) -> None:
+    connection = authoring_connection
+    methodology = assessment_authoring_service.create_definition(
+        connection,
+        entity_type="methodology",
+        code="immutable_4k",
+        name="Immutable 4K",
+        description="Published baseline methodology.",
+        definition=LEGACY_METHODOLOGY_DEFINITION,
+        actor_user_id=101,
+        comment="create",
+    )
+    scenario = assessment_authoring_service.create_definition(
+        connection,
+        entity_type="scenario",
+        code="immutable_interview",
+        name="Immutable interview",
+        description="Published baseline scenario.",
+        definition=LEGACY_SCENARIO_DEFINITION,
+        actor_user_id=101,
+        comment="create",
+    )
+    for entity_type, version_id in (("methodology", methodology["id"]), ("scenario", scenario["id"])):
+        assessment_authoring_service.submit_for_review(
+            connection,
+            entity_type=entity_type,
+            version_id=version_id,
+            actor_user_id=101,
+            comment="review",
+        )
+        assessment_authoring_service.publish(
+            connection,
+            entity_type=entity_type,
+            version_id=version_id,
+            actor_user_id=202,
+            comment="publish",
+        )
+    configuration = assessment_authoring_service.create_configuration(
+        connection,
+        code="immutable_default",
+        name="Immutable default",
+        methodology_version_id=methodology["id"],
+        scenario_version_id=scenario["id"],
+        actor_user_id=202,
+        comment="bind",
+    )
+    assessment_authoring_service.publish_configuration(
+        connection,
+        configuration_id=configuration["id"],
+        make_default=True,
+        actor_user_id=202,
+        comment="publish",
+    )
+    before = load_default_execution_configuration(connection)
+
+    draft = assessment_authoring_service.clone_version(
+        connection,
+        entity_type="methodology",
+        source_version_id=methodology["id"],
+        actor_user_id=101,
+        description="Unpublished revision.",
+    )
+    changed_definition = dict(draft["definition_json"])
+    changed_definition["aggregation"] = {
+        "component": "evaluation.aggregate",
+        "component_version": 1,
+        "draft_marker": True,
+    }
+    assessment_authoring_service.update_draft(
+        connection,
+        entity_type="methodology",
+        version_id=draft["id"],
+        definition=changed_definition,
+        description="Unpublished revision.",
+        actor_user_id=101,
+        comment="edit draft",
+    )
+
+    after = load_default_execution_configuration(connection)
+    assert after == before
+    assert after["snapshot"]["methodology"]["version"] == 1
+    assert "draft_marker" not in after["snapshot"]["methodology"]["definition"]["aggregation"]

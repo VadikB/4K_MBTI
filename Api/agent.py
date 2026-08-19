@@ -247,7 +247,6 @@ class InterviewerAgent:
         self._assessment_preparation_slots = BoundedSemaphore(
             max(1, settings.assessment_preparation_max_concurrency)
         )
-        self._ensure_session_schema()
 
     def _ensure_session_schema(self) -> None:
         with get_connection() as connection:

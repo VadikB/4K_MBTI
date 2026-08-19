@@ -3,10 +3,19 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+from Api.agent import InterviewerAgent
 from Api.deepseek_client import DeepSeekClient
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_interviewer_construction_has_no_database_side_effect(monkeypatch) -> None:
+    def fail_if_called():
+        raise AssertionError("InterviewerAgent construction must not initialize database schema")
+
+    monkeypatch.setattr(InterviewerAgent, "_ensure_session_schema", fail_if_called)
+    InterviewerAgent()
 
 
 def test_application_services_do_not_call_private_deepseek_api() -> None:

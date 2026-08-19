@@ -1,5 +1,10 @@
 # Совместная разработка
 
+Командный контракт Enterprise Vibe Coding находится в `AGENTS.md`. Для
+нетривиальной задачи используйте `docs/evc/task-template.md`, а перед передачей
+Pull Request — `docs/evc/review-checklist.md`. Критерии фиксации неизменяемого
+baseline описаны в `docs/evc/baseline-v1.md`.
+
 ## Основной процесс
 
 `main` — единственная постоянная интеграционная ветка. Она должна оставаться
