@@ -3,6 +3,8 @@ export {
   loadAdminOrganizations,
   renderAdminOrganizations,
   createAdminOrganization,
+  selectAdminOrganization,
+  updateAdminOrganizationProfile,
   addAdminOrganizationDomain,
   deleteAdminOrganizationDomain,
   addAdminOrganizationAdmin,
@@ -10,6 +12,8 @@ export {
   addAdminOrganizationMember,
   deleteAdminOrganizationMember,
   resetAdminOrganizationMemberPassword,
+  prepareAdminOrganizationMemberAssessment,
+  prepareAdminOrganizationAssessments,
   importAdminOrganizationMembers,
   deleteOrDeactivateAdminOrganization,
 } from '../screens/admin/organizations.js';

@@ -4,10 +4,11 @@ import json
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum
-from threading import Lock
+from threading import BoundedSemaphore, Lock
 from uuid import uuid4
 
 from Api.assessment_service import assessment_service
+from Api.config import settings
 from Api.database import get_connection
 from Api.deepseek_client import deepseek_client
 from Api.domain_sources import external_knowledge_service
@@ -21,6 +22,7 @@ from Api.profile_normalization import (
     normalize_text as normalize_profile_text,
     parse_bullets as parse_bullet_list,
 )
+from Api.user_journey import evaluate_profile_state
 from Api.progress_service import operation_progress_service
 from Api.schemas import (
     AgentReply,
@@ -242,7 +244,9 @@ class InterviewerAgent:
     def __init__(self) -> None:
         self._sessions: dict[str, ConversationState] = {}
         self._lock = Lock()
-        self._ensure_session_schema()
+        self._assessment_preparation_slots = BoundedSemaphore(
+            max(1, settings.assessment_preparation_max_concurrency)
+        )
 
     def _ensure_session_schema(self) -> None:
         with get_connection() as connection:
@@ -2051,7 +2055,7 @@ class InterviewerAgent:
         if best_external_candidate and (not current_domain_code or current_domain_code == "generic" or current_domain_family == "generic"):
             external_family = str(best_external_candidate.get("resolved_family_name") or "").strip().lower()
             external_domain_code = str(best_external_candidate.get("resolved_domain_code") or "").strip().lower()
-            catalog_entry = deepseek_client._get_domain_catalog_entry(external_family) if external_family else None
+            catalog_entry = deepseek_client.get_domain_catalog_entry(external_family) if external_family else None
             if catalog_entry:
                 merged_external_profile = {
                     **domain_profile,
@@ -2060,7 +2064,7 @@ class InterviewerAgent:
                     "domain_label": catalog_entry.get("display_name") or domain_profile.get("domain_label"),
                     "domain_catalog_entry": catalog_entry,
                 }
-                domain_profile = deepseek_client._merge_domain_catalog_template(merged_external_profile, catalog_entry)
+                domain_profile = deepseek_client.merge_domain_catalog_template(merged_external_profile, catalog_entry)
         role_consistency_status, role_consistency_comment = self._build_role_consistency(
             selected_role_match=selected_role_match,
             detected_role_match=detected_role_match,
@@ -3120,17 +3124,16 @@ class InterviewerAgent:
     def _get_missing_profile_stage_for_existing_user(self, user: UserResponse | None) -> ConversationStage | None:
         if user is None:
             return None
-        if user.personal_data_consent_accepted_at is None:
+        missing_fields = set(evaluate_profile_state(user).missing_fields)
+        if "personal_data_consent" in missing_fields:
             return ConversationStage.ASK_PERSONAL_DATA_CONSENT
-        if not (user.raw_position or user.job_description):
+        if "position" in missing_fields:
             return ConversationStage.ASK_POSITION
-        if not (user.raw_duties or user.normalized_duties):
+        if "duties" in missing_fields or "active_profile" in missing_fields:
             return ConversationStage.ASK_DUTIES
-        if not user.role_id:
+        if "role" in missing_fields:
             return ConversationStage.ASK_ROLE
-        if not (user.telegram and user.telegram.strip()):
-            return ConversationStage.ASK_TELEGRAM
-        if not (user.company_industry and user.company_industry.strip()):
+        if "company_industry" in missing_fields:
             return ConversationStage.ASK_COMPANY_INDUSTRY
         return None
 
@@ -3584,10 +3587,33 @@ class InterviewerAgent:
             detected_role_rationale=role_match.rationale if role_match else None,
         )
 
-    def start_case_interview(self, *, user: UserResponse, progress_operation_id: str | None = None) -> AssessmentStartResponse:
+    def start_case_interview(
+        self,
+        *,
+        user: UserResponse,
+        progress_operation_id: str | None = None,
+        execution_snapshot: dict | None = None,
+        preparation_job_id: int | None = None,
+    ) -> AssessmentStartResponse:
         if not _is_assessment_allowed_for_user(user):
             raise ValueError("Для пользователя не определена роль. Завершите настройку профиля и выберите роль.")
-        plan = assessment_service.ensure_assessment_session(user, progress_operation_id=progress_operation_id)
+        slot_acquired = self._assessment_preparation_slots.acquire(
+            timeout=max(0.1, settings.assessment_preparation_queue_timeout_seconds)
+        )
+        if not slot_acquired:
+            raise ValueError(
+                "Сейчас одновременно подготавливается много ассессментов. "
+                "Подождите немного и нажмите «Начать» ещё раз."
+            )
+        try:
+            plan = assessment_service.ensure_assessment_session(
+                user,
+                progress_operation_id=progress_operation_id,
+                execution_snapshot=execution_snapshot,
+                preparation_job_id=preparation_job_id,
+            )
+        finally:
+            self._assessment_preparation_slots.release()
         if plan is None:
             raise ValueError("Не удалось подготовить assessment-сессию для пользователя.")
 

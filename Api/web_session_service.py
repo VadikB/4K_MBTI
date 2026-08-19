@@ -49,9 +49,13 @@ class WebSessionService:
                     token TEXT PRIMARY KEY,
                     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-                    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+                    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                    expires_at TIMESTAMP NOT NULL DEFAULT (NOW() + INTERVAL '14 days')
                 )
                 """
+            )
+            connection.execute(
+                "ALTER TABLE web_user_sessions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP NOT NULL DEFAULT (NOW() + INTERVAL '14 days')"
             )
             connection.commit()
 
@@ -61,8 +65,8 @@ class WebSessionService:
         with get_connection() as connection:
             connection.execute(
                 """
-                INSERT INTO web_user_sessions (token, user_id)
-                VALUES (%s, %s)
+                INSERT INTO web_user_sessions (token, user_id, expires_at)
+                VALUES (%s, %s, NOW() + INTERVAL '14 days')
                 """,
                 (token, user_id),
             )
@@ -106,6 +110,8 @@ class WebSessionService:
                 + """
                 JOIN web_user_sessions ws ON ws.user_id = u.id
                 WHERE ws.token = %s
+                  AND ws.expires_at > NOW()
+                  AND ws.updated_at > NOW() - INTERVAL '24 hours'
                 LIMIT 1
                 """,
                 (token,),

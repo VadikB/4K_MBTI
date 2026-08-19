@@ -7,6 +7,7 @@ import logging
 import re
 from urllib.parse import quote
 from datetime import datetime
+from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Request, Response as FastAPIResponse
 from fastapi.responses import Response
@@ -18,6 +19,10 @@ from Api.app_version import get_app_version
 from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_service, normalize_email
 from Api.config import settings
 from Api.assessment_service import assessment_service
+from Api.assessment_preparation_queue import assessment_preparation_queue
+from Api.assessment_analysis_queue import assessment_analysis_queue
+from Api.assessment_authoring_service import assessment_authoring_service, ENTITY_CONFIG
+from Api.platform_access import require_platform_permission
 from Api.agent import interviewer_agent
 from Api.database import get_connection, get_level_percent_map, recompute_case_quality_checks
 from Api.database import get_case_methodology_versions
@@ -48,6 +53,13 @@ from Api.regression_tests import (
     run_technical_regression,
 )
 from Api.web_session_service import web_session_service
+from Api.user_journey import (
+    determine_next_action,
+    evaluate_profile_state,
+    get_or_create_onboarding_state,
+    normalize_assessment_status,
+    update_onboarding_state,
+)
 from Api.schemas import (
     AdminDashboard,
     AdminDetailedReportItem,
@@ -89,8 +101,11 @@ from Api.schemas import (
     AuthEmailRequest,
     AuthEmailRequestResponse,
     AuthEmailVerifyRequest,
+    AuthActionResponse,
+    AuthPasswordForgotRequest,
     AuthPasswordLoginRequest,
     AuthPasswordRegisterRequest,
+    AuthPasswordResetRequest,
     PromptLabCaseOption,
     PromptLabCaseRunRequest,
     PromptLabCaseRunResponse,
@@ -108,8 +123,14 @@ from Api.schemas import (
     AgentProfileConfirmRequest,
     AgentReply,
     AssessmentClientEventRequest,
+    AssessmentAnalysisStatusResponse,
     AssessmentMessageRequest,
     AssessmentMessageResponse,
+    AssessmentPreparationEnqueueResponse,
+    AssessmentPreparationBatchEnqueueResponse,
+    AssessmentPreparationBatchParticipant,
+    AssessmentPreparationBatchStatusResponse,
+    AssessmentPreparationStatusResponse,
     AssessmentTimerControlRequest,
     MbtiRefinementMessageRequest,
     MbtiRefinementMessageResponse,
@@ -133,7 +154,21 @@ from Api.schemas import (
     UserProfileSummaryResponse,
     UserSessionBootstrapResponse,
     UserSessionRestoreResponse,
+    JourneyAssessmentState,
+    OnboardingStateResponse,
+    OnboardingStateUpdateRequest,
+    ProfileStateResponse,
+    UserJourneyStateResponse,
     UserResponse,
+    AssessmentDefinitionCloneRequest,
+    AssessmentDefinitionCreateRequest,
+    AssessmentDefinitionTransitionRequest,
+    AssessmentDefinitionUpdateRequest,
+    AssessmentDefinitionVersionResponse,
+    AssessmentConfigurationCreateRequest,
+    AssessmentConfigurationPublishRequest,
+    AssessmentConfigurationResponse,
+    PlatformRoleAssignmentRequest,
 )
 
 
@@ -410,7 +445,7 @@ ASSESSMENT_MESSAGE_STEPS = [
     },
     {
         "label": "Уточняем сигналы",
-        "description": "При необходимости собираем MBTI-сигналы и уточняющие вопросы.",
+        "description": "Фиксируем результат кейса и переходим к следующему этапу оценки.",
     },
     {
         "label": "Открываем следующий шаг",
@@ -549,6 +584,7 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
         FROM user_sessions us
         WHERE us.user_id = %s
           AND us.assessment_code = 'competencies_4k'
+          AND us.status = 'completed'
         """,
         (user.id,),
     ).fetchone()
@@ -570,6 +606,7 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
             FROM user_sessions us
             WHERE us.user_id = %s
               AND us.assessment_code = 'competencies_4k'
+              AND us.status = 'completed'
         )
         SELECT
             rs.id AS session_id,
@@ -842,7 +879,8 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
     connection.commit()
     org_rows = connection.execute(
         """
-        SELECT id, code, name, is_active, created_at, updated_at
+        SELECT id, code, name, is_active, profile, founded_year, employee_count,
+               industry, website, headquarters, notes, created_at, updated_at
         FROM organizations
         ORDER BY is_active DESC, name ASC, code ASC
         """
@@ -853,6 +891,7 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
     members_by_org_list: dict[int, list[dict]] = {org_id: [] for org_id in org_ids}
     members_by_org: dict[int, int] = {org_id: 0 for org_id in org_ids}
     reports_by_org: dict[int, int] = {org_id: 0 for org_id in org_ids}
+    latest_batch_by_org: dict[int, str] = {}
     if org_ids:
         domain_rows = connection.execute(
             """
@@ -894,13 +933,33 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
                 u.email,
                 u.full_name,
                 u.job_description,
+                u.role_id,
+                u.active_profile_id,
+                u.company_industry,
+                p.normalized_duties,
                 c.user_id IS NOT NULL AS has_password,
                 p.raw_position,
-                p.raw_duties
+                p.raw_duties,
+                prep.operation_id AS assessment_preparation_operation_id,
+                prep.status AS assessment_preparation_status,
+                EXISTS (
+                    SELECT 1
+                    FROM user_sessions us
+                    WHERE us.user_id = u.id
+                      AND us.assessment_code = 'competencies_4k'
+                      AND us.status IN ('created', 'active')
+                ) AS assessment_prepared
             FROM organization_memberships om
             JOIN users u ON u.id = om.user_id
             LEFT JOIN auth_password_credentials c ON c.user_id = u.id OR LOWER(c.email) = LOWER(u.email)
             LEFT JOIN user_role_profiles p ON p.id = u.active_profile_id
+            LEFT JOIN LATERAL (
+                SELECT operation_id, status
+                FROM assessment_preparation_jobs
+                WHERE user_id = u.id
+                ORDER BY created_at DESC
+                LIMIT 1
+            ) prep ON TRUE
             WHERE om.organization_id = ANY(%s)
             ORDER BY LOWER(COALESCE(u.email, '')) ASC
             LIMIT 500
@@ -921,6 +980,15 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
                     "job_description": row["job_description"],
                     "raw_position": row["raw_position"],
                     "raw_duties": row["raw_duties"],
+                    "assessment_preparation_operation_id": row["assessment_preparation_operation_id"],
+                    "assessment_preparation_status": row["assessment_preparation_status"],
+                    "assessment_prepared": bool(row["assessment_prepared"]),
+                    "assessment_profile_ready": bool(
+                        row["role_id"]
+                        and row["active_profile_id"]
+                        and row["company_industry"]
+                        and row["normalized_duties"]
+                    ),
                 }
             )
 
@@ -950,6 +1018,18 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
         for row in report_rows:
             reports_by_org[int(row["organization_id"])] = int(row["reports_count"] or 0)
 
+        batch_rows = connection.execute(
+            """
+            SELECT DISTINCT ON (organization_id) organization_id, batch_id
+            FROM assessment_preparation_batches
+            WHERE organization_id = ANY(%s)
+            ORDER BY organization_id, created_at DESC, id DESC
+            """,
+            (org_ids,),
+        ).fetchall()
+        for row in batch_rows:
+            latest_batch_by_org[int(row["organization_id"])] = str(row["batch_id"])
+
     return AdminOrganizationsResponse(
         title="Организации",
         subtitle="Управление доменами и администраторами организаций.",
@@ -959,11 +1039,19 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
                 code=str(row["code"]),
                 name=str(row["name"]),
                 is_active=bool(row["is_active"]),
+                profile=row["profile"],
+                founded_year=row["founded_year"],
+                employee_count=row["employee_count"],
+                industry=row["industry"],
+                website=row["website"],
+                headquarters=row["headquarters"],
+                notes=row["notes"],
                 domains=domains_by_org.get(int(row["id"]), []),
                 admins=admins_by_org.get(int(row["id"]), []),
                 members=members_by_org_list.get(int(row["id"]), []),
                 members_count=members_by_org.get(int(row["id"]), 0),
                 reports_count=reports_by_org.get(int(row["id"]), 0),
+                assessment_preparation_batch_id=latest_batch_by_org.get(int(row["id"])),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
             )
@@ -2784,6 +2872,7 @@ def _set_user_session_cookie(response: FastAPIResponse, token: str) -> None:
         key=SESSION_COOKIE_NAME,
         value=token,
         httponly=True,
+        secure=settings.auth_session_secure_cookie,
         samesite="lax",
         max_age=60 * 60 * 24 * 14,
         path="/",
@@ -2861,6 +2950,27 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         is_registration = auth_mode == "password_registration"
+        if is_registration and settings.auth_email_verification_required:
+            try:
+                action_result = auth_service.create_auth_action_request(
+                    email=email,
+                    purpose="email_verification",
+                    client_ip=client_ip,
+                    user_agent=user_agent,
+                )
+            except AuthRateLimitError as exc:
+                raise HTTPException(status_code=429, detail=str(exc)) from exc
+            except RuntimeError as exc:
+                raise HTTPException(status_code=503, detail=str(exc)) from exc
+            return AuthEmailRequestResponse(
+                message="Отправили ссылку подтверждения. Проверьте почту.",
+                email=email,
+                expires_in_seconds=max(settings.auth_action_token_ttl_minutes * 60, 0),
+                dev_mode=False,
+                delivery_method=settings.email_provider or "email",
+                auth_mode="verification_pending",
+                dev_magic_token=action_result.dev_token,
+            )
         return AuthEmailRequestResponse(
             message="Задайте пароль для первичного входа." if is_registration else "Введите пароль для входа.",
             email=email,
@@ -2904,15 +3014,7 @@ def _build_password_auth_response(
 ) -> CheckOrCreateUserResponse:
     with get_connection() as connection:
         user = verification.user
-        if (
-            not verification.is_new_user
-            and (
-                not user.role_id
-                or not (user.company_industry and user.company_industry.strip())
-                or not user.active_profile_id
-                or not (user.normalized_duties and user.normalized_duties.strip())
-            )
-        ):
+        if not verification.is_new_user and not evaluate_profile_state(user).is_complete:
             repaired_user = interviewer_agent.backfill_user_profile(user.id)
             if repaired_user is not None:
                 user = _strip_avatar(repaired_user)
@@ -2937,12 +3039,76 @@ def register_email_password(
             email=payload.email,
             password=payload.password,
             password_confirm=payload.password_confirm,
+            verification_token=payload.verification_token,
         )
     except AuthAccessDeniedError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return _build_password_auth_response(verification=verification, response=response)
+
+
+@router.post("/auth/email/confirm", response_model=AuthActionResponse)
+def confirm_registration_email(payload: AuthEmailVerifyRequest) -> AuthActionResponse:
+    try:
+        email = auth_service.verify_auth_action_token(
+            token=payload.token,
+            purpose="email_verification",
+            consume=False,
+        )
+    except (AuthAccessDeniedError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return AuthActionResponse(
+        message="Email подтвержден. Задайте пароль.",
+        email=email,
+        auth_mode="password_registration",
+    )
+
+
+@router.post("/auth/password/forgot", response_model=AuthActionResponse)
+def forgot_password(payload: AuthPasswordForgotRequest, request: Request) -> AuthActionResponse:
+    neutral_message = "Если учетная запись существует, мы отправили ссылку для восстановления пароля."
+    if not settings.auth_password_reset_enabled:
+        raise HTTPException(status_code=404, detail="Восстановление пароля отключено.")
+    try:
+        action_result = auth_service.create_auth_action_request(
+            email=payload.email,
+            purpose="password_reset",
+            client_ip=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent"),
+        )
+    except (AuthAccessDeniedError, AuthRateLimitError, ValueError):
+        action_result = None
+        pass
+    except RuntimeError as exc:
+        logger.exception("Password reset email delivery failed")
+        raise HTTPException(status_code=503, detail="Не удалось отправить письмо. Попробуйте позже.") from exc
+    return AuthActionResponse(
+        message=neutral_message,
+        dev_action_token=action_result.dev_token if action_result is not None else None,
+    )
+
+
+@router.post("/auth/password/reset/validate", response_model=AuthActionResponse)
+def validate_password_reset_token(payload: AuthEmailVerifyRequest) -> AuthActionResponse:
+    try:
+        email = auth_service.verify_auth_action_token(token=payload.token, purpose="password_reset")
+    except (AuthAccessDeniedError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return AuthActionResponse(message="Ссылка действительна. Задайте новый пароль.", email=email, auth_mode="password_reset")
+
+
+@router.post("/auth/password/reset", response_model=AuthActionResponse)
+def reset_password(payload: AuthPasswordResetRequest) -> AuthActionResponse:
+    try:
+        email = auth_service.reset_password(
+            token=payload.token,
+            password=payload.password,
+            password_confirm=payload.password_confirm,
+        )
+    except (AuthAccessDeniedError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return AuthActionResponse(message="Пароль изменён. Теперь можно войти.", email=email, auth_mode="password")
 
 
 @router.post("/auth/email/password-login", response_model=CheckOrCreateUserResponse)
@@ -2980,15 +3146,7 @@ def verify_email_magic_link(payload: AuthEmailVerifyRequest, response: FastAPIRe
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     with get_connection() as connection:
         user = verification.user
-        if (
-            not verification.is_new_user
-            and (
-                not user.role_id
-                or not (user.company_industry and user.company_industry.strip())
-                or not user.active_profile_id
-                or not (user.normalized_duties and user.normalized_duties.strip())
-            )
-        ):
+        if not verification.is_new_user and not evaluate_profile_state(user).is_complete:
             repaired_user = interviewer_agent.backfill_user_profile(user.id)
             if repaired_user is not None:
                 user = _strip_avatar(repaired_user)
@@ -3115,6 +3273,94 @@ def bootstrap_user_session(user_id: int) -> UserSessionBootstrapResponse:
         )
 
 
+def _require_matching_session_user(request: Request, user_id: int) -> UserResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Сессия не найдена. Войдите заново.")
+    if user.id != user_id:
+        raise HTTPException(status_code=403, detail="Нет доступа к состоянию другого пользователя.")
+    return user
+
+
+def _onboarding_response(payload: dict) -> OnboardingStateResponse:
+    return OnboardingStateResponse(
+        status=str(payload["status"]),
+        current_step=int(payload["current_step"] or 0),
+        started_at=payload.get("started_at"),
+        completed_at=payload.get("completed_at"),
+        skipped_at=payload.get("skipped_at"),
+        updated_at=payload.get("updated_at"),
+    )
+
+
+@router.get("/{user_id}/journey-state", response_model=UserJourneyStateResponse)
+def get_user_journey_state(user_id: int, request: Request) -> UserJourneyStateResponse:
+    user = _require_matching_session_user(request, user_id)
+    profile_state = evaluate_profile_state(user)
+    with get_connection() as connection:
+        onboarding = get_or_create_onboarding_state(connection, user_id)
+        session_row = connection.execute(
+            """
+            SELECT id, session_code, status
+            FROM user_sessions
+            WHERE user_id = %s
+              AND assessment_code = 'competencies_4k'
+            ORDER BY
+                CASE WHEN status IN ('created', 'active', 'cases_completed', 'analyzing') THEN 0 ELSE 1 END,
+                COALESCE(started_at, created_at) DESC,
+                id DESC
+            LIMIT 1
+            """,
+            (user_id,),
+        ).fetchone()
+        connection.commit()
+
+    assessment_status = normalize_assessment_status(str(session_row["status"]) if session_row else None)
+    report_status = "ready" if assessment_status == "report_ready" else "not_ready"
+    next_action = determine_next_action(
+        profile_status=profile_state.status,
+        onboarding_status=str(onboarding["status"]),
+        assessment_status=assessment_status,
+    )
+
+    return UserJourneyStateResponse(
+        profile=ProfileStateResponse(
+            status=profile_state.status,
+            missing_fields=list(profile_state.missing_fields),
+        ),
+        onboarding=_onboarding_response(onboarding),
+        assessment=JourneyAssessmentState(
+            status=assessment_status,
+            session_id=int(session_row["id"]) if session_row else None,
+            session_code=str(session_row["session_code"]) if session_row and session_row["session_code"] else None,
+        ),
+        report_status=report_status,
+        next_action=next_action,
+    )
+
+
+@router.put("/{user_id}/onboarding", response_model=OnboardingStateResponse)
+def set_user_onboarding_state(
+    user_id: int,
+    payload: OnboardingStateUpdateRequest,
+    request: Request,
+) -> OnboardingStateResponse:
+    _require_matching_session_user(request, user_id)
+    with get_connection() as connection:
+        try:
+            onboarding = update_onboarding_state(
+                connection,
+                user_id,
+                status=payload.status,
+                current_step=payload.current_step,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        connection.commit()
+    return _onboarding_response(onboarding)
+
+
 @router.get("/admin/dashboard", response_model=AdminDashboard)
 def get_admin_dashboard(request: Request, period: str = "30d") -> AdminDashboard:
     token = request.cookies.get(SESSION_COOKIE_NAME)
@@ -3219,8 +3465,17 @@ def update_admin_organization(organization_id: int, payload: AdminOrganizationUp
     user = web_session_service.get_user_by_token(token)
     normalized_code = _normalize_admin_org_code(payload.code) if payload.code is not None else None
     normalized_name = _normalize_admin_org_name(payload.name) if payload.name is not None else None
-    if normalized_code is None and normalized_name is None:
+    profile_fields_supplied = any(
+        field in payload.model_fields_set
+        for field in ("profile", "founded_year", "employee_count", "industry", "website", "headquarters", "notes")
+    )
+    if normalized_code is None and normalized_name is None and not profile_fields_supplied:
         raise HTTPException(status_code=400, detail="No organization changes provided")
+    current_year = datetime.now().year
+    if payload.founded_year is not None and not 1000 <= payload.founded_year <= current_year + 1:
+        raise HTTPException(status_code=400, detail="Founded year is invalid")
+    if payload.employee_count is not None and payload.employee_count < 0:
+        raise HTTPException(status_code=400, detail="Employee count cannot be negative")
     with get_connection() as connection:
         _require_superadmin(connection, user)
         org_row = connection.execute("SELECT id FROM organizations WHERE id = %s LIMIT 1", (organization_id,)).fetchone()
@@ -3232,10 +3487,35 @@ def update_admin_organization(organization_id: int, payload: AdminOrganizationUp
                 UPDATE organizations
                 SET code = COALESCE(%s, code),
                     name = COALESCE(%s, name),
+                    profile = CASE WHEN %s THEN %s ELSE profile END,
+                    founded_year = CASE WHEN %s THEN %s ELSE founded_year END,
+                    employee_count = CASE WHEN %s THEN %s ELSE employee_count END,
+                    industry = CASE WHEN %s THEN %s ELSE industry END,
+                    website = CASE WHEN %s THEN %s ELSE website END,
+                    headquarters = CASE WHEN %s THEN %s ELSE headquarters END,
+                    notes = CASE WHEN %s THEN %s ELSE notes END,
                     updated_at = NOW()
                 WHERE id = %s
                 """,
-                (normalized_code, normalized_name, organization_id),
+                (
+                    normalized_code,
+                    normalized_name,
+                    "profile" in payload.model_fields_set,
+                    _normalize_optional_admin_text(payload.profile),
+                    "founded_year" in payload.model_fields_set,
+                    payload.founded_year,
+                    "employee_count" in payload.model_fields_set,
+                    payload.employee_count,
+                    "industry" in payload.model_fields_set,
+                    _normalize_optional_admin_text(payload.industry, max_length=255),
+                    "website" in payload.model_fields_set,
+                    _normalize_optional_admin_text(payload.website, max_length=500),
+                    "headquarters" in payload.model_fields_set,
+                    _normalize_optional_admin_text(payload.headquarters, max_length=255),
+                    "notes" in payload.model_fields_set,
+                    _normalize_optional_admin_text(payload.notes),
+                    organization_id,
+                ),
             )
             connection.commit()
         except Exception as exc:
@@ -3477,6 +3757,250 @@ def reset_admin_organization_member_password(organization_id: int, email: str, r
             normalized_email,
         )
         return _build_admin_organizations(connection)
+
+
+@router.post(
+    "/admin/organizations/{organization_id}/members/{user_id}/prepare-assessment",
+    response_model=AssessmentPreparationEnqueueResponse,
+    status_code=202,
+)
+def prepare_admin_organization_member_assessment(
+    organization_id: int,
+    user_id: int,
+    request: Request,
+) -> AssessmentPreparationEnqueueResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    current_user = web_session_service.get_user_by_token(token)
+    operation_id = request.headers.get("X-Agent4K-Operation-Id") or uuid4().hex
+    with get_connection() as connection:
+        _require_superadmin(connection, current_user)
+        row = connection.execute(
+            USER_SELECT_SQL
+            + """
+            JOIN organization_memberships om ON om.user_id = u.id
+            WHERE u.id = %s
+              AND om.organization_id = %s
+            """,
+            (user_id, organization_id),
+        ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Organization member not found")
+    user = _user_response_from_row(row)
+    if not evaluate_profile_state(user).is_complete:
+        raise HTTPException(
+            status_code=400,
+            detail="Сначала заполните роль, должностные обязанности и сферу деятельности пользователя.",
+        )
+    operation_progress_service.begin(
+        operation_id,
+        title="Предварительно готовим кейсы",
+        message="Задание поставлено в очередь фоновой подготовки.",
+        steps=ASSESSMENT_START_STEPS,
+    )
+    queued = assessment_preparation_queue.enqueue(
+        operation_id=operation_id,
+        user=user,
+        prepare_only=True,
+    )
+    return AssessmentPreparationEnqueueResponse(**queued)
+
+
+def _build_assessment_preparation_batch_status(
+    connection,
+    batch_id: str,
+) -> AssessmentPreparationBatchStatusResponse | None:
+    batch = connection.execute(
+        """
+        SELECT batch_id, organization_id
+        FROM assessment_preparation_batches
+        WHERE batch_id = %s
+        """,
+        (batch_id,),
+    ).fetchone()
+    if batch is None:
+        return None
+    rows = connection.execute(
+        """
+        SELECT
+            item.user_id,
+            u.full_name,
+            u.email,
+            item.operation_id,
+            CASE
+                WHEN item.operation_id IS NULL THEN item.initial_status
+                ELSE COALESCE(job.status, item.initial_status)
+            END AS status,
+            COALESCE(progress.title, '') AS progress_title,
+            COALESCE(progress.message, item.status_message, '') AS progress_message
+        FROM assessment_preparation_batch_items item
+        JOIN users u ON u.id = item.user_id
+        LEFT JOIN assessment_preparation_jobs job ON job.operation_id = item.operation_id
+        LEFT JOIN operation_progress progress ON progress.operation_id = item.operation_id
+        WHERE item.batch_id = %s
+        ORDER BY item.id ASC
+        """,
+        (batch_id,),
+    ).fetchall()
+    participants = [
+        AssessmentPreparationBatchParticipant(
+            user_id=int(row["user_id"]),
+            full_name=row["full_name"],
+            email=str(row["email"] or ""),
+            status=str(row["status"] or "queued"),
+            operation_id=row["operation_id"],
+            progress_title=str(row["progress_title"] or "") or None,
+            progress_message=str(row["progress_message"] or "") or None,
+        )
+        for row in rows
+    ]
+    terminal_statuses = {"completed", "failed", "skipped"}
+    completed = sum(item.status == "completed" for item in participants)
+    failed = sum(item.status == "failed" for item in participants)
+    skipped = sum(item.status == "skipped" for item in participants)
+    processed = completed + failed + skipped
+    current = next((item for item in participants if item.status == "running"), None)
+    if current is None:
+        current = next((item for item in participants if item.status == "queued"), None)
+    if not participants or all(item.status in terminal_statuses for item in participants):
+        status = "failed" if failed and not completed else "completed"
+    else:
+        status = "in_progress"
+    return AssessmentPreparationBatchStatusResponse(
+        batch_id=str(batch["batch_id"]),
+        organization_id=int(batch["organization_id"]),
+        status=status,
+        total_participants=len(participants),
+        processed_participants=processed,
+        remaining_participants=max(0, len(participants) - processed),
+        completed_participants=completed,
+        failed_participants=failed,
+        skipped_participants=skipped,
+        current_participant=current,
+        participants=participants,
+    )
+
+
+@router.post(
+    "/admin/organizations/{organization_id}/prepare-assessments",
+    response_model=AssessmentPreparationBatchEnqueueResponse,
+    status_code=202,
+)
+def prepare_admin_organization_assessments(
+    organization_id: int,
+    request: Request,
+) -> AssessmentPreparationBatchEnqueueResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    current_user = web_session_service.get_user_by_token(token)
+    batch_id = uuid4().hex
+    with get_connection() as connection:
+        _require_superadmin(connection, current_user)
+        organization = connection.execute(
+            "SELECT id FROM organizations WHERE id = %s AND is_active = TRUE",
+            (organization_id,),
+        ).fetchone()
+        if organization is None:
+            raise HTTPException(status_code=404, detail="Active organization not found")
+        rows = connection.execute(
+            USER_SELECT_SQL
+            + """
+            JOIN organization_memberships om ON om.user_id = u.id
+            WHERE om.organization_id = %s
+              AND om.role = 'member'
+            ORDER BY u.id
+            """,
+            (organization_id,),
+        ).fetchall()
+        connection.execute(
+            """
+            INSERT INTO assessment_preparation_batches (
+                batch_id, organization_id, created_by_user_id
+            )
+            VALUES (%s, %s, %s)
+            """,
+            (batch_id, organization_id, current_user.id if current_user else None),
+        )
+
+    queued_count = 0
+    completed_count = 0
+    skipped_count = 0
+    for row in rows:
+        user = _user_response_from_row(row)
+        with get_connection() as connection:
+            prepared = connection.execute(
+                """
+                SELECT 1
+                FROM user_sessions
+                WHERE user_id = %s
+                  AND assessment_code = 'competencies_4k'
+                  AND status IN ('created', 'active')
+                LIMIT 1
+                """,
+                (user.id,),
+            ).fetchone()
+        if prepared is not None:
+            initial_status = "completed"
+            status_message = "Кейсы уже были подготовлены."
+            operation_id = None
+            completed_count += 1
+        elif not evaluate_profile_state(user).is_complete:
+            initial_status = "skipped"
+            status_message = "Не заполнены роль, обязанности или сфера деятельности."
+            operation_id = None
+            skipped_count += 1
+        else:
+            requested_operation_id = uuid4().hex
+            operation_progress_service.begin(
+                requested_operation_id,
+                title="Предварительно готовим кейсы",
+                message="Задание поставлено в очередь фоновой подготовки.",
+                steps=ASSESSMENT_START_STEPS,
+            )
+            queued = assessment_preparation_queue.enqueue(
+                operation_id=requested_operation_id,
+                user=user,
+                prepare_only=True,
+            )
+            initial_status = str(queued["status"])
+            status_message = "Поставлен в очередь подготовки."
+            operation_id = str(queued["operation_id"])
+            queued_count += 1
+        with get_connection() as connection:
+            connection.execute(
+                """
+                INSERT INTO assessment_preparation_batch_items (
+                    batch_id, user_id, operation_id, initial_status, status_message
+                )
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (batch_id, user.id, operation_id, initial_status, status_message),
+            )
+    return AssessmentPreparationBatchEnqueueResponse(
+        batch_id=batch_id,
+        organization_id=organization_id,
+        total_participants=len(rows),
+        queued_participants=queued_count,
+        completed_participants=completed_count,
+        skipped_participants=skipped_count,
+    )
+
+
+@router.get(
+    "/admin/organizations/{organization_id}/prepare-assessments/{batch_id}",
+    response_model=AssessmentPreparationBatchStatusResponse,
+)
+def get_admin_organization_assessment_preparation_batch(
+    organization_id: int,
+    batch_id: str,
+    request: Request,
+) -> AssessmentPreparationBatchStatusResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    current_user = web_session_service.get_user_by_token(token)
+    with get_connection() as connection:
+        _require_superadmin(connection, current_user)
+        result = _build_assessment_preparation_batch_status(connection, batch_id)
+    if result is None or result.organization_id != organization_id:
+        raise HTTPException(status_code=404, detail="Assessment preparation batch not found")
+    return result
 
 
 @router.post("/admin/organizations/{organization_id}/members/import", response_model=AdminOrganizationImportResult)
@@ -4741,6 +5265,333 @@ def update_admin_methodology_case(
         return _upsert_admin_methodology_case(connection, case_id_code, payload, user.full_name or ADMIN_FULL_NAME)
 
 
+def _assessment_definition_user(request: Request):
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Admin session not found")
+    return user
+
+
+def _assessment_definition_permission(entity_type: str, action: str) -> str:
+    config = ENTITY_CONFIG.get(entity_type)
+    if config is None:
+        raise HTTPException(status_code=404, detail="Assessment definition type not found")
+    key = f"{action}_permission"
+    permission = config.get(key)
+    if not permission:
+        raise HTTPException(status_code=400, detail="Unsupported assessment definition operation")
+    return permission
+
+
+def _require_assessment_definition_permission(connection, user, entity_type: str, action: str) -> None:
+    try:
+        require_platform_permission(connection, user, _assessment_definition_permission(entity_type, action))
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@router.get(
+    "/admin/assessment-definitions/{entity_type}",
+    response_model=list[AssessmentDefinitionVersionResponse],
+)
+def list_assessment_definition_versions(entity_type: str, request: Request) -> list[AssessmentDefinitionVersionResponse]:
+    user = _assessment_definition_user(request)
+    permission = "methodology.view" if entity_type == "methodology" else "scenario.view"
+    if entity_type not in ENTITY_CONFIG:
+        raise HTTPException(status_code=404, detail="Assessment definition type not found")
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, permission)
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        return [
+            AssessmentDefinitionVersionResponse(**row)
+            for row in assessment_authoring_service.list_versions(connection, entity_type=entity_type)
+        ]
+
+
+@router.post(
+    "/admin/assessment-definitions/{entity_type}",
+    response_model=AssessmentDefinitionVersionResponse,
+)
+def create_assessment_definition(
+    entity_type: str,
+    payload: AssessmentDefinitionCreateRequest,
+    request: Request,
+) -> AssessmentDefinitionVersionResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_assessment_definition_permission(connection, user, entity_type, "edit")
+        try:
+            row = assessment_authoring_service.create_definition(
+                connection,
+                entity_type=entity_type,
+                code=payload.code,
+                name=payload.name,
+                description=payload.description,
+                definition=payload.definition,
+                actor_user_id=int(user.id),
+                comment=payload.comment,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentDefinitionVersionResponse(**row)
+
+
+@router.post(
+    "/admin/assessment-definitions/{entity_type}/{version_id}/clone",
+    response_model=AssessmentDefinitionVersionResponse,
+)
+def clone_assessment_definition_version(
+    entity_type: str,
+    version_id: int,
+    payload: AssessmentDefinitionCloneRequest,
+    request: Request,
+) -> AssessmentDefinitionVersionResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_assessment_definition_permission(connection, user, entity_type, "edit")
+        try:
+            row = assessment_authoring_service.clone_version(
+                connection,
+                entity_type=entity_type,
+                source_version_id=version_id,
+                actor_user_id=int(user.id),
+                description=payload.description,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentDefinitionVersionResponse(**row)
+
+
+@router.put(
+    "/admin/assessment-definitions/{entity_type}/{version_id}",
+    response_model=AssessmentDefinitionVersionResponse,
+)
+def update_assessment_definition_version(
+    entity_type: str,
+    version_id: int,
+    payload: AssessmentDefinitionUpdateRequest,
+    request: Request,
+) -> AssessmentDefinitionVersionResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_assessment_definition_permission(connection, user, entity_type, "edit")
+        try:
+            row = assessment_authoring_service.update_draft(
+                connection,
+                entity_type=entity_type,
+                version_id=version_id,
+                definition=payload.definition,
+                description=payload.description,
+                actor_user_id=int(user.id),
+                comment=payload.comment,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentDefinitionVersionResponse(**row)
+
+
+@router.post("/admin/assessment-definitions/{entity_type}/{version_id}/validate")
+def validate_assessment_definition_version(entity_type: str, version_id: int, request: Request) -> dict[str, object]:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_assessment_definition_permission(connection, user, entity_type, "edit")
+        try:
+            return assessment_authoring_service.validate_version(
+                connection,
+                entity_type=entity_type,
+                version_id=version_id,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post(
+    "/admin/assessment-definitions/{entity_type}/{version_id}/submit",
+    response_model=AssessmentDefinitionVersionResponse,
+)
+def submit_assessment_definition_version(
+    entity_type: str,
+    version_id: int,
+    payload: AssessmentDefinitionTransitionRequest,
+    request: Request,
+) -> AssessmentDefinitionVersionResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_assessment_definition_permission(connection, user, entity_type, "submit")
+        try:
+            row = assessment_authoring_service.submit_for_review(
+                connection,
+                entity_type=entity_type,
+                version_id=version_id,
+                actor_user_id=int(user.id),
+                comment=payload.comment,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentDefinitionVersionResponse(**row)
+
+
+@router.post(
+    "/admin/assessment-definitions/{entity_type}/{version_id}/publish",
+    response_model=AssessmentDefinitionVersionResponse,
+)
+def publish_assessment_definition_version(
+    entity_type: str,
+    version_id: int,
+    payload: AssessmentDefinitionTransitionRequest,
+    request: Request,
+) -> AssessmentDefinitionVersionResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_assessment_definition_permission(connection, user, entity_type, "publish")
+        try:
+            row = assessment_authoring_service.publish(
+                connection,
+                entity_type=entity_type,
+                version_id=version_id,
+                actor_user_id=int(user.id),
+                comment=payload.comment,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentDefinitionVersionResponse(**row)
+
+
+@router.get(
+    "/admin/assessment-configurations",
+    response_model=list[AssessmentConfigurationResponse],
+)
+def list_assessment_configurations(request: Request) -> list[AssessmentConfigurationResponse]:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, "configuration.publish")
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        return [AssessmentConfigurationResponse(**row) for row in assessment_authoring_service.list_configurations(connection)]
+
+
+@router.post(
+    "/admin/assessment-configurations",
+    response_model=AssessmentConfigurationResponse,
+)
+def create_assessment_configuration(
+    payload: AssessmentConfigurationCreateRequest,
+    request: Request,
+) -> AssessmentConfigurationResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, "configuration.publish")
+            row = assessment_authoring_service.create_configuration(
+                connection,
+                code=payload.code,
+                name=payload.name,
+                methodology_version_id=payload.methodology_version_id,
+                scenario_version_id=payload.scenario_version_id,
+                actor_user_id=int(user.id),
+                comment=payload.comment,
+            )
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentConfigurationResponse(**row)
+
+
+@router.post(
+    "/admin/assessment-configurations/{configuration_id}/publish",
+    response_model=AssessmentConfigurationResponse,
+)
+def publish_assessment_configuration(
+    configuration_id: int,
+    payload: AssessmentConfigurationPublishRequest,
+    request: Request,
+) -> AssessmentConfigurationResponse:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, "configuration.publish")
+            row = assessment_authoring_service.publish_configuration(
+                connection,
+                configuration_id=configuration_id,
+                make_default=payload.make_default,
+                actor_user_id=int(user.id),
+                comment=payload.comment,
+            )
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AssessmentConfigurationResponse(**row)
+
+
+@router.post("/admin/platform-role-assignments")
+def assign_platform_role(payload: PlatformRoleAssignmentRequest, request: Request) -> dict[str, object]:
+    current_user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_superadmin(connection, current_user)
+        role = connection.execute(
+            "SELECT id, code FROM platform_roles WHERE code = %s LIMIT 1",
+            (payload.role_code.strip(),),
+        ).fetchone()
+        if role is None:
+            raise HTTPException(status_code=404, detail="Platform role not found")
+        target_user = connection.execute("SELECT id FROM users WHERE id = %s", (payload.user_id,)).fetchone()
+        if target_user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        existing = connection.execute(
+            """
+            SELECT id
+            FROM user_platform_roles
+            WHERE user_id = %s
+              AND platform_role_id = %s
+              AND COALESCE(organization_id, 0) = COALESCE(%s, 0)
+              AND revoked_at IS NULL
+            LIMIT 1
+            """,
+            (payload.user_id, role["id"], payload.organization_id),
+        ).fetchone()
+        if existing is None:
+            assignment = connection.execute(
+                """
+                INSERT INTO user_platform_roles (
+                    user_id, platform_role_id, organization_id, granted_by
+                )
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (payload.user_id, role["id"], payload.organization_id, current_user.id),
+            ).fetchone()
+            assignment_id = int(assignment["id"])
+        else:
+            assignment_id = int(existing["id"])
+        return {"ok": True, "assignment_id": assignment_id, "role_code": str(role["code"])}
+
+
+@router.delete("/admin/platform-role-assignments/{assignment_id}")
+def revoke_platform_role(assignment_id: int, request: Request) -> dict[str, object]:
+    current_user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        _require_superadmin(connection, current_user)
+        row = connection.execute(
+            """
+            UPDATE user_platform_roles
+            SET revoked_at = NOW()
+            WHERE id = %s
+              AND revoked_at IS NULL
+            RETURNING id
+            """,
+            (assignment_id,),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Active platform role assignment not found")
+        return {"ok": True, "assignment_id": int(row["id"])}
+
+
 @router.post("/session/logout")
 def logout_user_session(request: Request, response: FastAPIResponse) -> dict[str, bool]:
     web_session_service.delete_session(request.cookies.get(SESSION_COOKIE_NAME))
@@ -4825,6 +5676,7 @@ def get_user_profile_summary(user_id: int) -> UserProfileSummaryResponse:
             ) AS score_stats ON score_stats.session_id = us.id AND score_stats.user_id = us.user_id
             WHERE us.user_id = %s
               AND us.assessment_code = 'competencies_4k'
+              AND us.status = 'completed'
             ORDER BY us.started_at DESC NULLS LAST, us.id DESC
             """,
             (user_id,),
@@ -4984,13 +5836,17 @@ def confirm_agent_profile(payload: AgentProfileConfirmRequest, request: Request,
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
-@router.post("/{user_id}/assessment/start", response_model=AssessmentStartResponse)
-def start_assessment(user_id: int, request: Request) -> AssessmentStartResponse:
-    operation_id = request.headers.get("X-Agent4K-Operation-Id")
+@router.post(
+    "/{user_id}/assessment/start",
+    response_model=AssessmentPreparationEnqueueResponse,
+    status_code=202,
+)
+def start_assessment(user_id: int, request: Request) -> AssessmentPreparationEnqueueResponse:
+    operation_id = request.headers.get("X-Agent4K-Operation-Id") or uuid4().hex
     operation_progress_service.begin(
         operation_id,
         title="Подготавливаем ассессмент",
-        message="Проверяем профиль пользователя и запускаем формирование оценочной сессии.",
+        message="Задание поставлено в очередь подготовки.",
         steps=ASSESSMENT_START_STEPS,
     )
     with get_connection() as connection:
@@ -5006,27 +5862,28 @@ def start_assessment(user_id: int, request: Request) -> AssessmentStartResponse:
         operation_progress_service.fail(operation_id, message="Пользователь не найден.")
         raise HTTPException(status_code=404, detail="User not found")
 
-    user = _user_response_from_row(row)
-    if (
-        not user.role_id
-        or not (user.company_industry and user.company_industry.strip())
-        or not user.active_profile_id
-        or not (user.normalized_duties and user.normalized_duties.strip())
-    ):
-        repaired_user = interviewer_agent.backfill_user_profile(user.id)
-        if repaired_user is not None:
-            user = repaired_user
-    try:
-        result = interviewer_agent.start_case_interview(user=user, progress_operation_id=operation_id)
-        operation_progress_service.complete(
-            operation_id,
-            title="Ассессмент готов",
-            message="Первый кейс подготовлен. Можно начинать интервью.",
-        )
-        return result
-    except ValueError as exc:
-        operation_progress_service.fail(operation_id, message=str(exc))
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    queued = assessment_preparation_queue.enqueue(
+        operation_id=operation_id,
+        user=_user_response_from_row(row),
+    )
+    return AssessmentPreparationEnqueueResponse(**queued)
+
+
+@router.get(
+    "/assessment/preparation/{operation_id}",
+    response_model=AssessmentPreparationStatusResponse,
+)
+def get_assessment_preparation(operation_id: str) -> AssessmentPreparationStatusResponse:
+    job = assessment_preparation_queue.get_status(operation_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Задание подготовки ассессмента не найдено.")
+    result_payload = job.pop("result_json", None)
+    if isinstance(result_payload, str):
+        result_payload = json.loads(result_payload)
+    return AssessmentPreparationStatusResponse(
+        **job,
+        result=AssessmentStartResponse.model_validate(result_payload) if result_payload else None,
+    )
 
 
 @router.post("/assessment/message", response_model=AssessmentMessageResponse)
@@ -5045,11 +5902,13 @@ def process_assessment_message(payload: AssessmentMessageRequest, request: Reque
             progress_operation_id=operation_id,
         )
         assessment_completed = bool(getattr(result, "assessment_completed", False))
+        if assessment_completed:
+            assessment_analysis_queue.notify()
         operation_progress_service.complete(
             operation_id,
-            title="Итоговый отчет готов" if assessment_completed else "Следующий шаг готов",
+            title="Итоговый анализ запущен" if assessment_completed else "Следующий шаг готов",
             message=(
-                "Все кейсы обработаны. Открываем экран итогового анализа."
+                "Все кейсы обработаны. Итоговый профиль формируется в фоне."
                 if assessment_completed
                 else "Интервью обновлено. Можно продолжать работу с кейсом."
             ),
@@ -5058,6 +5917,55 @@ def process_assessment_message(payload: AssessmentMessageRequest, request: Reque
     except ValueError as exc:
         operation_progress_service.fail(operation_id, message=str(exc))
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get(
+    "/{user_id}/assessment/{session_id}/analysis-status",
+    response_model=AssessmentAnalysisStatusResponse,
+)
+def get_assessment_analysis_status(
+    user_id: int,
+    session_id: int,
+    request: Request,
+) -> AssessmentAnalysisStatusResponse:
+    _require_matching_session_user(request, user_id)
+    job = assessment_analysis_queue.get_status(session_id=session_id, user_id=user_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Задание итогового анализа не найдено.")
+    return AssessmentAnalysisStatusResponse(**job)
+
+
+@router.post(
+    "/{user_id}/assessment/{session_id}/analysis-retry",
+    response_model=AssessmentAnalysisStatusResponse,
+)
+def retry_assessment_analysis(
+    user_id: int,
+    session_id: int,
+    request: Request,
+) -> AssessmentAnalysisStatusResponse:
+    _require_matching_session_user(request, user_id)
+    with get_connection() as connection:
+        session_row = connection.execute(
+            """
+            SELECT id, user_id, status
+            FROM user_sessions
+            WHERE id = %s
+              AND user_id = %s
+            """,
+            (session_id, user_id),
+        ).fetchone()
+    if session_row is None:
+        raise HTTPException(status_code=404, detail="Assessment session not found")
+    if str(session_row["status"]) == "completed":
+        raise HTTPException(status_code=409, detail="Итоговый отчет уже готов.")
+    if str(session_row["status"]) not in {"cases_completed", "analyzing", "failed"}:
+        raise HTTPException(status_code=409, detail="Повторный анализ доступен только после завершения всех кейсов.")
+    assessment_analysis_queue.enqueue_retry(session_id=session_id, user_id=user_id)
+    job = assessment_analysis_queue.get_status(session_id=session_id, user_id=user_id)
+    if job is None:
+        raise HTTPException(status_code=500, detail="Не удалось повторно запустить итоговый анализ.")
+    return AssessmentAnalysisStatusResponse(**job)
 
 
 @router.post("/assessment/client-event")

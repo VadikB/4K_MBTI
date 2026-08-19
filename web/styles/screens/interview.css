@@ -642,6 +642,16 @@
     gap: var(--space-4);
 }
 
+.interview-panel.external-transfer-disabled {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.interview-panel.external-transfer-disabled .interview-form textarea {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
 .interview-messages-scroll {
     position: absolute;
     right: var(--space-3);

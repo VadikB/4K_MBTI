@@ -6,7 +6,7 @@
 
 - Backend: `FastAPI`, `PostgreSQL`.
 - Frontend: plain `HTML/CSS/JavaScript`, сборка в `web/dist`.
-- Авторизация: email magic link.
+- Авторизация: рабочий email, подтверждение адреса, пароль и восстановление через почту.
 - Роли доступа: суперадмин, администратор организации, участник организации.
 - Организации: создание, домены, админы, участники, CSV-импорт участников.
 - Оценивание: персонализированные кейсы, диалоговый режим, таймеры, авто/ручное завершение кейсов.
@@ -38,7 +38,10 @@ git pull --ff-only
 
 ## Версионирование
 
-Правило проекта: каждый содержательный коммит увеличивает patch-версию на 1.
+Версия приложения увеличивается один раз при подготовке кандидата для
+тестового контура, а не на каждый рабочий коммит. Командный Git-процесс,
+правила Pull Request и продвижения между контурами описаны в
+`CONTRIBUTING.md`.
 
 Один раз после клонирования включите git hooks:
 
@@ -46,11 +49,8 @@ git pull --ff-only
 ./scripts/setup_git_hooks.sh
 ```
 
-После этого `git commit` автоматически обновляет:
-
-- `pyproject.toml`
-- `uv.lock`
-- `web/js/config.js`
+После этого `git commit` проверяет формат staged diff и не позволяет
+закоммитить изменения `web/js` без пересобранного `web/dist`.
 
 Если нужно поднять версию вручную:
 
@@ -103,8 +103,35 @@ DB_PASSWORD=...
 DEEPSEEK_API_KEYS=key_1,key_2,key_3
 DEEPSEEK_BASE_URL=...
 DEEPSEEK_MODEL=...
+DEEPSEEK_MAX_CONCURRENCY=10
+DEEPSEEK_QUEUE_TIMEOUT_SECONDS=30
+ASSESSMENT_PREPARATION_MAX_CONCURRENCY=2
+ASSESSMENT_PREPARATION_QUEUE_TIMEOUT_SECONDS=10
+ASSESSMENT_QUEUE_WORKER_THREADS=1
+ASSESSMENT_QUEUE_POLL_INTERVAL_SECONDS=1
+ASSESSMENT_QUEUE_LEASE_TIMEOUT_SECONDS=900
+ASSESSMENT_QUEUE_MAX_ATTEMPTS=3
+ASSESSMENT_QUEUE_RETENTION_HOURS=168
+ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED=true
+CASE_SET_REUSE_MODE=off
+CASE_SET_REUSE_MIN_SCORE=0.88
+CASE_SET_REUSE_MAX_AGE_DAYS=90
+CASE_SET_REUSE_CANDIDATE_LIMIT=100
+
+DB_POOL_MIN_SIZE=1
+DB_POOL_MAX_SIZE=15
+DB_POOL_TIMEOUT_SECONDS=10
 
 SUPERADMIN_EMAILS=your@email
+
+APP_BASE_URL=https://app.example.com
+AUTH_MAGIC_LINK_DEV_MODE=false
+AUTH_EMAIL_VERIFICATION_REQUIRED=true
+AUTH_PASSWORD_RESET_ENABLED=true
+AUTH_ACTION_TOKEN_TTL_MINUTES=30
+AUTH_SESSION_SECURE_COOKIE=true
+EMAIL_PROVIDER=postmark
+POSTMARK_SERVER_TOKEN=...
 
 MBTI_ENABLED=true
 MBTI_FAISS_INDEX_DIR=/path/to/mbti/faiss
@@ -116,11 +143,37 @@ MBTI_FOLLOWUP_SCORE_THRESHOLD=60
 
 `SUPERADMIN_EMAILS` задает суперадминов через email. Несколько адресов можно перечислить через запятую.
 
+В production `AUTH_MAGIC_LINK_DEV_MODE` должен быть `false`: новый пользователь
+сначала получает одноразовую ссылку подтверждения email и только после нее задает
+пароль. Ссылка восстановления также одноразовая; после смены пароля все активные
+сессии пользователя отзываются. `APP_BASE_URL` должен указывать на публичный HTTPS
+адрес приложения, а `AUTH_SESSION_SECURE_COOKIE` — быть `true`.
+
 `DEEPSEEK_API_KEYS` задает пул ключей через запятую. Клиент равномерно
 распределяет разные пользовательские сессии по пулу и при ошибке автоматически
 пробует следующий ключ. Для обратной совместимости поддерживаются
 `DEEPSEEK_API_KEY`, `DEEPSEEK_API_KEY_2` и `DEEPSEEK_API_KEY_3`; дубликаты
 удаляются автоматически.
+
+`DEEPSEEK_MAX_CONCURRENCY` ограничивает число одновременных LLM-запросов
+в одном API worker-процессе. Для production-конфигурации из четырех workers
+рекомендуется значение `3`, чтобы суммарно выполнять не более 12 LLM-запросов.
+`DB_POOL_MAX_SIZE=15` при четырех workers ограничивает приложение 60
+соединениями PostgreSQL и оставляет запас для административных операций.
+`ASSESSMENT_PREPARATION_MAX_CONCURRENCY` отдельно ограничивает тяжелую
+персонализацию новых сессий, чтобы массовый старт не занял все LLM-слоты.
+Перед каждым сетевым запросом к DeepSeek активная транзакция фиксируется,
+а PostgreSQL connection возвращается в пул. После ответа следующий SQL-запрос
+автоматически получает connection заново. Поэтому длительное ожидание LLM
+не уменьшает доступную емкость пула соединений.
+
+Подготовка assessment-сессий выполняется через постоянную очередь
+`assessment_preparation_jobs` в PostgreSQL. POST `/users/{user_id}/assessment/start`
+возвращает `202 Accepted` и `operation_id`, а результат читается через
+`/users/assessment/preparation/{operation_id}`. Несколько API workers атомарно
+забирают задания через `FOR UPDATE SKIP LOCKED`. Если процесс завершился во
+время подготовки, lease истечет и задание вернется в очередь. Временные ошибки
+повторяются с экспоненциальной задержкой до `ASSESSMENT_QUEUE_MAX_ATTEMPTS`.
 
 ### 3. База данных
 
@@ -308,6 +361,12 @@ systemctl is-active agent4k-mbti.service
 curl -fsS http://127.0.0.1:8000/users/version
 ```
 
+Пример unit-файла с четырьмя worker-процессами находится в
+`deploy/agent4k-mbti.service.example`. Перед включением проверьте пользователя,
+рабочий каталог и путь к `.env`, затем выполните `systemctl daemon-reload`.
+Прогресс длительных операций хранится в PostgreSQL, поэтому polling продолжает
+работать, даже если последовательные запросы попадают в разные workers.
+
 Публичная проверка:
 
 ```bash
@@ -377,5 +436,30 @@ LOG_BACKUP_COUNT=14
 AUDIT_LOGS_TO_DB=true
 RUNTIME_LOGS_TO_DB=false
 ```
+
+## Автоматические тесты
+
+Установка:
+
+```bash
+.venv/bin/pip install -r requirements-test.txt
+```
+
+Быстрый прогон без внешних сервисов:
+
+```bash
+npm run test:backend
+```
+
+Integration-тесты запускаются только с отдельной PostgreSQL, имя которой
+содержит `test` или `pytest`:
+
+```bash
+export TEST_DATABASE_URL='postgresql://app_user:password@127.0.0.1:5432/app_db_mbti_pytest'
+npm run test:backend:integration
+```
+
+Подробные правила и структура находятся в `tests/README.md`. GitHub Actions
+запускает unit- и integration-наборы автоматически при push и pull request.
 
 Runtime-логи пишутся в `logs/`, audit-события остаются в таблице `system_logs`.

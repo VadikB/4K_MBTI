@@ -532,15 +532,12 @@ export const sendChatMessage = async (text, displayText = null) => {
     persistAssessmentContext();
 
     if (state.completed) {
-      if (state.isNewUserFlow && !data.blocked) {
-        void beginAssessmentPreparation();
-      }
       state.isChatSubmitting = false;
       chatForm.classList.add('hidden');
       chatInput.disabled = true;
       getChatSubmitButton().disabled = true;
 
-      window.setTimeout(() => {
+      window.setTimeout(async () => {
         if (data.blocked) {
           state.completed = false;
           state.pendingAgentMessage = null;
@@ -564,6 +561,26 @@ export const sendChatMessage = async (text, displayText = null) => {
         if (state.isNewUserFlow) {
           void openOnboardingScreen();
           return;
+        }
+
+        if (state.pendingUser?.id) {
+          try {
+            const journeyResponse = await fetch('/users/' + state.pendingUser.id + '/journey-state', {
+              credentials: 'same-origin',
+            });
+            const journey = await readApiResponse(
+              journeyResponse,
+              'Не удалось определить следующий шаг пользователя.',
+            );
+            if (journey?.next_action === 'show_onboarding') {
+              void openOnboardingScreen({
+                currentStep: Number(journey.onboarding?.current_step || 0),
+              });
+              return;
+            }
+          } catch (error) {
+            console.error('Failed to route after profile completion', error);
+          }
         }
 
         if (state.dashboard) {

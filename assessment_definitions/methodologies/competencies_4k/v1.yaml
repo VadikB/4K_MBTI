@@ -1,0 +1,25 @@
+schema_version: 1
+kind: methodology
+code: competencies_4k
+version: 1
+name: Оценка компетенций 4K
+description: Legacy-фиксация текущей методологии оценки четырех компетенций.
+competencies:
+  - code: communication
+    evaluator: evaluation.communication
+    evaluator_version: 1
+  - code: teamwork
+    evaluator: evaluation.teamwork
+    evaluator_version: 1
+  - code: creativity
+    evaluator: evaluation.creativity
+    evaluator_version: 1
+  - code: critical_thinking
+    evaluator: evaluation.critical_thinking
+    evaluator_version: 1
+aggregation:
+  component: evaluation.aggregate
+  component_version: 1
+prompts:
+  interviewer: interviewer.case_dialog
+  case_generation: cases.personalize

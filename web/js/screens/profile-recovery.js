@@ -7,7 +7,7 @@ export const shouldRecoverProfileOnAssessmentError = (message) => {
   return normalized.includes('для пользователя не определена роль') || normalized.includes('завершите настройку профиля');
 };
 
-export const recoverProfileCompletionForAssessment = async () => {
+export const recoverProfileCompletionForAssessment = async ({ resumeAssessment = true } = {}) => {
   const response = await fetch('/users/session/reopen-profile', {
     method: 'POST',
     credentials: 'same-origin',
@@ -31,7 +31,7 @@ export const recoverProfileCompletionForAssessment = async () => {
   state.pendingConsentText = agent.consent_text || null;
   state.pendingNoChangesQuickReply = shouldOfferNoChangesQuickReply(state.pendingAgentMessage) && hasRequiredProfileFields(state.pendingUser);
   state.preparedAssessmentStartResponse = null;
-  state.resumeAssessmentAfterProfileCompletion = true;
+  state.resumeAssessmentAfterProfileCompletion = resumeAssessment;
   persistAssessmentContext();
 
   const chatModule = await import('./chat.js');

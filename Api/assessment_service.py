@@ -8,12 +8,15 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 
 from Api.case_context_builder import build_case_context
-from Api.communication_agent import competency_assessment_agents
+from Api.case_reuse_service import case_reuse_service
+from Api.assessment_configuration import definition_checksum, load_default_execution_configuration
+from Api.assessment_runtime import complete_stage_run, fail_stage_run, scenario_runner, start_stage_run
+from Api.config import settings
 from Api.database import get_case_methodology_versions, get_connection
 from Api.deepseek_client import DeepSeekTurnResult, deepseek_client
-from Api.mbti.service import mbti_assessment_service
 from Api.progress_service import operation_progress_service
 from Api.schemas import UserResponse
+from Api.user_journey import evaluate_profile_state
 
 
 @dataclass(slots=True)
@@ -65,6 +68,8 @@ class AssessmentTurnReply:
     mbti_followup_index: int | None = None
     mbti_followup_total: int | None = None
     mbti_summary: dict[str, object] | None = None
+    assessment_status: str | None = None
+    analysis_operation_id: str | None = None
 
 
 class AssessmentService:
@@ -90,12 +95,52 @@ class AssessmentService:
     def _utc_now(self) -> datetime:
         return datetime.utcnow()
 
+    def _pause_connection_for_external_io(self, connection) -> None:
+        pause = getattr(connection, "pause", None)
+        if callable(pause):
+            pause(commit=True)
+        else:
+            connection.commit()
+
+    def _insert_user_case_message_once(
+        self,
+        connection,
+        *,
+        session_case_id: int,
+        session_id: int,
+        message: str,
+    ) -> bool:
+        last_row = connection.execute(
+            """
+            SELECT role, message_text
+            FROM session_case_messages
+            WHERE session_case_id = %s
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (session_case_id,),
+        ).fetchone()
+        if (
+            last_row is not None
+            and last_row["role"] == "user"
+            and str(last_row["message_text"] or "").strip() == str(message or "").strip()
+        ):
+            return False
+        connection.execute(
+            """
+            INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
+            VALUES (%s, %s, 'user', %s)
+            """,
+            (session_case_id, session_id, message),
+        )
+        return True
+
     def _get_is_dialog_case_for_session_case(self, connection, session_case_id: int | None) -> bool:
         if not session_case_id:
             return False
         case_row = self._get_case_for_session_case(connection, session_case_id)
         methodical_context = self._get_case_methodical_context(connection, case_row)
-        return deepseek_client._is_dialog_interactivity_mode(methodical_context.get("interactivity_mode"))
+        return deepseek_client.is_dialog_mode(methodical_context.get("interactivity_mode"))
 
     def _build_prompt_lab_case_preview_cache_key(
         self,
@@ -260,11 +305,11 @@ class AssessmentService:
             for item in previous_assistant_messages
         }
         previous_topics = [
-            deepseek_client._infer_follow_up_topics_from_text(item)
+            deepseek_client.infer_follow_up_topics(item)
             for item in previous_assistant_messages[-3:]
         ]
         candidates = [
-            deepseek_client._build_follow_up_question(
+            deepseek_client.build_follow_up_question(
                 user_message=user_message,
                 dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                 case_skills=case_skills,
@@ -277,7 +322,7 @@ class AssessmentService:
         repeated_normalized = self._normalize_message_for_repeat_check(repeated_message)
         for candidate in candidates:
             candidate_normalized = self._normalize_message_for_repeat_check(candidate)
-            candidate_topics = deepseek_client._infer_follow_up_topics_from_text(candidate)
+            candidate_topics = deepseek_client.infer_follow_up_topics(candidate)
             if candidate_normalized == repeated_normalized:
                 continue
             if candidate_normalized in previous_normalized:
@@ -347,8 +392,8 @@ class AssessmentService:
         return "По текущему кейсу уточните, пожалуйста: " + follow_up[:1].lower() + follow_up[1:]
 
     def _has_same_follow_up_topic(self, current_message: str | None, previous_message: str | None) -> bool:
-        current_topics = deepseek_client._infer_follow_up_topics_from_text(current_message)
-        previous_topics = deepseek_client._infer_follow_up_topics_from_text(previous_message)
+        current_topics = deepseek_client.infer_follow_up_topics(current_message)
+        previous_topics = deepseek_client.infer_follow_up_topics(previous_message)
         if not current_topics or not previous_topics:
             return False
         return bool(current_topics & previous_topics)
@@ -361,28 +406,50 @@ class AssessmentService:
         if not assistant_rows:
             return False
         current_normalized = self._normalize_message_for_repeat_check(current_message)
-        current_topics = deepseek_client._infer_follow_up_topics_from_text(current_message)
-        current_dialog_stages = deepseek_client._infer_dialog_reply_stages(current_message)
+        current_topics = deepseek_client.infer_follow_up_topics(current_message)
+        current_dialog_stages = deepseek_client.infer_dialog_reply_stages(current_message)
         recent_assistant_rows = assistant_rows[-3:]
         for row in recent_assistant_rows:
             previous_text = str(row["message_text"] or "")
             if current_normalized == self._normalize_message_for_repeat_check(previous_text):
                 return True
-            previous_dialog_stages = deepseek_client._infer_dialog_reply_stages(previous_text)
+            previous_dialog_stages = deepseek_client.infer_dialog_reply_stages(previous_text)
             if current_dialog_stages and previous_dialog_stages and (current_dialog_stages & previous_dialog_stages):
                 return True
-            previous_topics = deepseek_client._infer_follow_up_topics_from_text(previous_text)
+            previous_topics = deepseek_client.infer_follow_up_topics(previous_text)
             if current_topics and previous_topics and (current_topics & previous_topics):
                 return True
         return False
 
-    def ensure_assessment_session(self, user: UserResponse, progress_operation_id: str | None = None) -> AssessmentSessionPlan | None:
+    def ensure_assessment_session(
+        self,
+        user: UserResponse,
+        progress_operation_id: str | None = None,
+        execution_snapshot: dict | None = None,
+        preparation_job_id: int | None = None,
+    ) -> AssessmentSessionPlan | None:
         if not user.id:
             raise ValueError("Пользователь не найден.")
-        if not user.role_id:
-            raise ValueError("Для пользователя не определена роль. Завершите настройку профиля и выберите роль.")
+        profile_state = evaluate_profile_state(user)
+        if not profile_state.is_complete:
+            raise ValueError(
+                "Завершите настройку профиля перед оценкой. "
+                "Не заполнены поля: " + ", ".join(profile_state.missing_fields) + "."
+            )
 
         with get_connection() as connection:
+            execution_configuration = (
+                {
+                    "configuration_id": int(execution_snapshot["configuration"]["id"]),
+                    "methodology_version_id": int(execution_snapshot["methodology"]["id"]),
+                    "scenario_version_id": int(execution_snapshot["scenario"]["id"]),
+                    "snapshot": execution_snapshot,
+                    "checksum": definition_checksum(execution_snapshot),
+                }
+                if execution_snapshot is not None
+                else load_default_execution_configuration(connection)
+            )
+            effective_snapshot = execution_configuration["snapshot"]
             operation_progress_service.advance(
                 progress_operation_id,
                 0,
@@ -412,6 +479,16 @@ class AssessmentService:
                 )
                 if repaired_existing is not None:
                     repaired_session_id, repaired_session_code = repaired_existing
+                    if preparation_job_id is not None:
+                        connection.execute(
+                            """
+                            UPDATE assessment_stage_runs
+                            SET session_id = %s
+                            WHERE preparation_job_id = %s
+                              AND session_id IS NULL
+                            """,
+                            (repaired_session_id, preparation_job_id),
+                        )
                     operation_progress_service.advance(
                         progress_operation_id,
                         4,
@@ -419,6 +496,16 @@ class AssessmentService:
                         message="Существующая assessment-сессия восстановлена и готова к продолжению.",
                     )
                     return self._build_plan(connection, repaired_session_id, repaired_session_code)
+
+            selection_stage = scenario_runner.resolve_stage(effective_snapshot, stage_id="select_cases")
+            selection_run_id = start_stage_run(
+                connection,
+                session_id=None,
+                preparation_job_id=preparation_job_id,
+                stage_id="select_cases",
+                component_code=str(selection_stage["component"]),
+                component_version=int(selection_stage["component_version"]),
+            ) if preparation_job_id is not None else None
 
             passed_case_rows = connection.execute(
                 """
@@ -485,14 +572,43 @@ class AssessmentService:
 
             session = connection.execute(
                 """
-                INSERT INTO user_sessions (session_code, user_id, role_id, assessment_code, status, source, notes)
-                VALUES (%s, %s, %s, 'competencies_4k', 'created', 'auto', 'Session generated after role detection')
+                INSERT INTO user_sessions (
+                    session_code, user_id, role_id, assessment_code, status, source, notes,
+                    assessment_configuration_id, methodology_version_id, scenario_version_id,
+                    execution_snapshot_json, execution_checksum, current_stage_id
+                )
+                VALUES (
+                    %s, %s, %s, 'competencies_4k', 'created', 'auto',
+                    'Session generated after role detection', %s, %s, %s, %s::jsonb, %s, 'personalize_cases'
+                )
                 RETURNING id, session_code
                 """,
-                (uuid4().hex, user.id, user.role_id),
+                (
+                    uuid4().hex,
+                    user.id,
+                    user.role_id,
+                    execution_configuration["configuration_id"],
+                    execution_configuration["methodology_version_id"],
+                    execution_configuration["scenario_version_id"],
+                    json.dumps(execution_configuration["snapshot"], ensure_ascii=False),
+                    execution_configuration["checksum"],
+                ),
             ).fetchone()
             session_id = session["id"]
             session_code = session["session_code"]
+            if selection_run_id is None:
+                selection_run_id = start_stage_run(
+                    connection,
+                    session_id=session_id,
+                    stage_id="select_cases",
+                    component_code=str(selection_stage["component"]),
+                    component_version=int(selection_stage["component_version"]),
+                )
+            elif preparation_job_id is not None:
+                connection.execute(
+                    "UPDATE assessment_stage_runs SET session_id = %s WHERE id = %s",
+                    (session_id, selection_run_id),
+                )
 
             for skill_id in required_skill_ids:
                 connection.execute(
@@ -632,7 +748,29 @@ class AssessmentService:
                 """,
                 (session_id,),
             )
+            complete_stage_run(
+                connection,
+                stage_run_id=selection_run_id,
+                output={"selected_cases": len(prepared_session_cases), "required_skills": len(required_skill_ids)},
+            )
             connection.commit()
+
+            reuse_decision = case_reuse_service.evaluate(
+                connection=connection,
+                session_id=session_id,
+                user_id=user.id,
+                role_id=user.role_id,
+                profile_id=user.active_profile_id,
+                profile=user_profile,
+            )
+            if reuse_decision.mode != "off":
+                case_reuse_service.record(
+                    connection=connection,
+                    session_id=session_id,
+                    profile_id=user.active_profile_id,
+                    decision=reuse_decision,
+                )
+                connection.commit()
 
             operation_progress_service.advance(
                 progress_operation_id,
@@ -640,9 +778,25 @@ class AssessmentService:
                 title="Персонализируем материалы",
                 message="Готовим персонализированный контекст и промты для каждого кейса.",
             )
+            personalization_stage = scenario_runner.resolve_stage(effective_snapshot, stage_id="personalize_cases")
+            personalization_run_id = start_stage_run(
+                connection,
+                session_id=session_id,
+                preparation_job_id=preparation_job_id,
+                stage_id="personalize_cases",
+                component_code=str(personalization_stage["component"]),
+                component_version=int(personalization_stage["component_version"]),
+            )
             used_case_signatures: list[dict[str, str]] = []
-            for session_case_id, case_row in prepared_session_cases:
+            total_prepared_cases = len(prepared_session_cases)
+            for case_index, (session_case_id, case_row) in enumerate(prepared_session_cases, start=1):
                 try:
+                    operation_progress_service.advance(
+                        progress_operation_id,
+                        3,
+                        title=f"Формируем кейс {case_index} из {total_prepared_cases}",
+                        message=str(case_row.get("title") or "Персонализируем материалы кейса."),
+                    )
                     connection.execute(
                         """
                         UPDATE session_cases
@@ -664,13 +818,13 @@ class AssessmentService:
                         used_case_signatures=used_case_signatures,
                     )
                     if user_profile:
-                        prioritize_runtime_domain = deepseek_client._should_prioritize_runtime_domain(
+                        prioritize_runtime_domain = deepseek_client.should_prioritize_runtime_domain(
                             position=user.raw_position or user.job_description,
                             duties=user.normalized_duties or user.raw_duties,
                             company_industry=user.company_industry,
                         )
                         preview_domain_family = (
-                            deepseek_client._detect_domain_family(
+                            deepseek_client.detect_domain_family(
                                 position=user.raw_position or user.job_description,
                                 duties=user.normalized_duties or user.raw_duties,
                                 company_industry=user.company_industry,
@@ -727,6 +881,7 @@ class AssessmentService:
                     )
                     connection.commit()
                 except Exception as exc:
+                    fail_stage_run(connection, stage_run_id=personalization_run_id, error=exc)
                     self._archive_broken_session(
                         connection=connection,
                         session_id=session_id,
@@ -734,6 +889,22 @@ class AssessmentService:
                     )
                     connection.commit()
                     raise
+
+            complete_stage_run(
+                connection,
+                stage_run_id=personalization_run_id,
+                output={"personalized_cases": total_prepared_cases},
+            )
+            if preparation_job_id is not None:
+                connection.execute(
+                    """
+                    UPDATE assessment_stage_runs
+                    SET session_id = %s
+                    WHERE preparation_job_id = %s
+                      AND session_id IS NULL
+                    """,
+                    (session_id, preparation_job_id),
+                )
 
             connection.execute(
                 "UPDATE user_sessions SET status = 'active' WHERE id = %s",
@@ -994,7 +1165,18 @@ class AssessmentService:
         skill_names: list[str],
         progress_operation_id: str | None = None,
         used_case_signatures: list[dict[str, str]] | None = None,
+        prompt_snapshot: dict | None = None,
     ) -> None:
+        if prompt_snapshot is None:
+            snapshot_row = connection.execute(
+                "SELECT execution_snapshot_json FROM user_sessions WHERE id = %s",
+                (session_id,),
+            ).fetchone()
+            prompt_snapshot = (
+                snapshot_row["execution_snapshot_json"]
+                if snapshot_row is not None and isinstance(snapshot_row["execution_snapshot_json"], dict)
+                else None
+            )
         methodical_context = self._get_case_methodical_context(connection, case_row)
         planned_total_duration_min = case_row["planned_duration_minutes"] or case_row["estimated_minutes"]
         existing_case_contexts = self._get_existing_session_case_contexts(
@@ -1004,7 +1186,7 @@ class AssessmentService:
         )
         use_direct_deepseek_output = (
             deepseek_client.enabled
-            and deepseek_client._should_use_llm_user_case_rewrite(case_type_code=case_row["type_code"])
+            and deepseek_client.should_use_llm_user_case_rewrite(case_type_code=case_row["type_code"])
         )
         if use_direct_deepseek_output:
             case_specificity = {}
@@ -1031,7 +1213,7 @@ class AssessmentService:
         case_specificity["_used_case_signatures"] = [dict(item) for item in (used_case_signatures or [])]
         if use_direct_deepseek_output:
             personalization_map = {}
-            personalized_context, personalized_task = deepseek_client._rewrite_user_case_materials_with_llm(
+            personalized_context, personalized_task = deepseek_client.rewrite_user_case_materials(
                 case_id_code=case_row.get("case_code"),
                 case_title=case_row["title"],
                 case_type_code=case_row["type_code"],
@@ -1095,7 +1277,7 @@ class AssessmentService:
                 flags=re.IGNORECASE,
             )
             personalized_task = re.sub(r"\b1:\s+1\b", "1:1", personalized_task, flags=re.IGNORECASE)
-        case_quality = deepseek_client._score_case_text_quality(
+        case_quality = deepseek_client.score_case_text_quality(
             case_type_code=case_row["type_code"],
             template_context=case_row["intro_context"] or case_row["domain_context"] or "",
             template_task=case_row["task_for_user"] or "",
@@ -1134,6 +1316,7 @@ class AssessmentService:
             personalization_variables=case_row["personalization_variables"],
             personalization_map=personalization_map,
             case_specificity=case_specificity,
+            prompt_snapshot=prompt_snapshot,
         )
         connection.execute(
             """
@@ -1334,12 +1517,12 @@ class AssessmentService:
             base_task = case_row["task_for_user"] or ""
 
             effective_instruction_text = str(case_generation_system_prompt or "").strip() or str(
-                (deepseek_client._get_case_text_build_instruction(case_row["type_code"]) or {}).get("instruction_text") or ""
+                (deepseek_client.get_case_text_build_instruction(case_row["type_code"]) or {}).get("instruction_text") or ""
             ).strip()
             skill_names = [name for name in (case_row["skill_names"] or []) if name]
             if use_llm_personalization:
                 try:
-                    personalized_context, personalized_task = deepseek_client._rewrite_user_case_materials_with_llm(
+                    personalized_context, personalized_task = deepseek_client.rewrite_user_case_materials(
                         case_id_code=case_row.get("case_code"),
                         case_title=case_row["title"],
                         case_type_code=case_row["type_code"],
@@ -1392,7 +1575,7 @@ class AssessmentService:
                     planned_total_duration_min=planned_total_duration_min,
                     personalization_variables=case_row.get("personalization_variables"),
                 )
-            case_quality = deepseek_client._score_case_text_quality(
+            case_quality = deepseek_client.score_case_text_quality(
                 case_type_code=case_row["type_code"],
                 template_context=base_context,
                 template_task=base_task,
@@ -1630,7 +1813,7 @@ class AssessmentService:
         case_data = artifacts["case"]
         methodical_context = dict(artifacts.get("methodical_context") or {})
         planned_total_duration_min = (case_row["estimated_time_min"] if case_row else None) or 10
-        local_case_specificity = deepseek_client._fallback_case_specificity(
+        local_case_specificity = deepseek_client.build_local_case_specificity(
             position=user_data.get("position"),
             duties=user_data.get("duties"),
             company_industry=user_data.get("company_industry"),
@@ -1641,7 +1824,7 @@ class AssessmentService:
             case_context=artifacts.get("personalized_context") or "",
             case_task=artifacts.get("personalized_task") or "",
         )
-        local_personalization_placeholders = deepseek_client._extract_placeholders(
+        local_personalization_placeholders = deepseek_client.extract_personalization_placeholders(
             "\n".join(
                 filter(
                     None,
@@ -1653,7 +1836,7 @@ class AssessmentService:
                 )
             )
         )
-        local_personalization_map = deepseek_client._fallback_personalization_map(
+        local_personalization_map = deepseek_client.build_local_personalization_map(
             placeholders=local_personalization_placeholders,
             position=user_data.get("position"),
             duties=user_data.get("duties"),
@@ -1696,7 +1879,7 @@ class AssessmentService:
             case_task=artifacts.get("personalized_task") or "",
             interactivity_mode=methodical_context.get("interactivity_mode"),
         )
-        is_dialog_case = deepseek_client._is_dialog_interactivity_mode(methodical_context.get("interactivity_mode"))
+        is_dialog_case = deepseek_client.is_dialog_mode(methodical_context.get("interactivity_mode"))
         prompt_lab_methodical_context = {
             **methodical_context,
             "user_id": user_data.get("id"),
@@ -1756,7 +1939,7 @@ class AssessmentService:
             normalized_dialogue.append({"role": role, "content": content})
 
         context = dict(methodical_context or {})
-        is_dialog_case = deepseek_client._is_dialog_interactivity_mode(context.get("interactivity_mode"))
+        is_dialog_case = deepseek_client.is_dialog_mode(context.get("interactivity_mode"))
         last_assistant_message = next(
             (item["content"] for item in reversed(normalized_dialogue) if item["role"] == "assistant"),
             "",
@@ -1806,15 +1989,6 @@ class AssessmentService:
                 "assistant_message": self.CASE_MESSAGE_LIMIT_REACHED_TEXT,
                 "case_completed": True,
                 "stop_reason": "message_limit_reached",
-            }
-
-        if str(context.get("interactivity_mode") or "").strip().lower() == "1 ход" and user_message_count >= 1:
-            return {
-                "assistant_message": "Ответ зафиксирован. Завершаем кейс автоматически.",
-                "case_completed": False,
-                "stop_reason": "single_turn_auto_finish",
-                "pending_auto_finish": True,
-                "auto_finish_delay_ms": self.CASE_AUTO_FINISH_DELAY_MS,
             }
 
         turn = deepseek_client.evaluate_case_turn(
@@ -2208,7 +2382,7 @@ class AssessmentService:
                     started_row["started_at"] if started_row else plan.current_case_started_at,
                     plan.current_case_time_limit_minutes,
                 ),
-                is_dialog_case=deepseek_client._is_dialog_interactivity_mode(
+                is_dialog_case=deepseek_client.is_dialog_mode(
                     self._get_case_methodical_context(connection, case_row).get("interactivity_mode"),
                 ),
                 **history_fields,
@@ -2231,7 +2405,7 @@ class AssessmentService:
             session_row = connection.execute(
                 """
                 SELECT us.id, us.session_code, us.user_id, us.role_id, u.full_name, u.job_description,
-                       u.company_industry, p.id AS active_profile_id,
+                       u.company_industry, us.execution_snapshot_json, p.id AS active_profile_id,
                        p.raw_position, p.raw_duties, p.normalized_duties
                 FROM user_sessions us
                 JOIN users u ON u.id = us.user_id
@@ -2244,25 +2418,6 @@ class AssessmentService:
             ).fetchone()
             if session_row is None:
                 raise ValueError("Assessment session not found")
-
-            pending_followup_row = self._get_pending_mbti_followup(connection, session_row["id"])
-            if pending_followup_row is not None:
-                operation_progress_service.advance(
-                    progress_operation_id,
-                    2,
-                    title="Уточняем ответы по кейсу",
-                    message="Обрабатываем ответ на уточняющий вопрос MBTI и готовим следующий шаг.",
-                )
-                pending_reply = self._handle_pending_mbti_followup(
-                    connection=connection,
-                    session_row=session_row,
-                    session_code=session_code,
-                    message=message,
-                    pending_row=pending_followup_row,
-                    progress_operation_id=progress_operation_id,
-                )
-                if pending_reply is not None:
-                    return pending_reply
 
             role_row = connection.execute(
                 "SELECT name FROM roles WHERE id = %s",
@@ -2358,6 +2513,7 @@ class AssessmentService:
                     system_prompt=prompt_row["final_prompt_text"] if prompt_row else "",
                     dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                     case_title=case_meta["title"],
+                    prompt_snapshot=session_row.get("execution_snapshot_json"),
                 )
                 connection.execute(
                     """
@@ -2387,7 +2543,10 @@ class AssessmentService:
                     (plan.current_session_case_id,),
                 ).fetchall()
                 if message == "__finish_case__" and not any(row["role"] == "user" for row in dialogue_rows):
-                    raise ValueError("Нельзя завершить кейс без сохраненного ответа. Используйте явное действие «Пропустить».")
+                    raise ValueError(
+                        "Вы ещё не отправили ответ по этому кейсу. "
+                        "Введите решение в поле, нажмите «Отправить ответ», а после сохранения — «Завершить кейс»."
+                    )
                 prompt_row = connection.execute(
                     """
                     SELECT final_prompt_text
@@ -2414,6 +2573,7 @@ class AssessmentService:
                         dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                         case_title=case_meta["title"],
                         case_skills=self._get_case_skill_names(connection, plan.current_session_case_id),
+                        prompt_snapshot=session_row.get("execution_snapshot_json"),
                     )
                 connection.execute(
                     """
@@ -2478,16 +2638,15 @@ class AssessmentService:
                 connection,
                 self._get_case_for_session_case(connection, plan.current_session_case_id),
             )
-            is_dialog_case = deepseek_client._is_dialog_interactivity_mode(methodical_context.get("interactivity_mode"))
+            is_dialog_case = deepseek_client.is_dialog_mode(methodical_context.get("interactivity_mode"))
             awaiting_finish_confirmation = self._is_finish_confirmation_prompt(last_assistant_before_user)
 
             if is_dialog_case and awaiting_finish_confirmation and self._looks_like_finish_confirmation(message):
-                connection.execute(
-                    """
-                    INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-                    VALUES (%s, %s, 'user', %s)
-                    """,
-                    (plan.current_session_case_id, session_row["id"], message),
+                self._insert_user_case_message_once(
+                    connection,
+                    session_case_id=plan.current_session_case_id,
+                    session_id=session_row["id"],
+                    message=message,
                 )
                 dialogue_rows = connection.execute(
                     """
@@ -2514,6 +2673,7 @@ class AssessmentService:
                     dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                     case_title=case_meta["title"],
                     case_skills=self._get_case_skill_names(connection, plan.current_session_case_id),
+                    prompt_snapshot=session_row.get("execution_snapshot_json"),
                 )
                 connection.execute(
                     """
@@ -2533,12 +2693,11 @@ class AssessmentService:
                 )
 
             if is_dialog_case and self._looks_like_explicit_finish_request(message):
-                connection.execute(
-                    """
-                    INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-                    VALUES (%s, %s, 'user', %s)
-                    """,
-                    (plan.current_session_case_id, session_row["id"], message),
+                self._insert_user_case_message_once(
+                    connection,
+                    session_case_id=plan.current_session_case_id,
+                    session_id=session_row["id"],
+                    message=message,
                 )
                 dialogue_rows = connection.execute(
                     """
@@ -2565,6 +2724,7 @@ class AssessmentService:
                     dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                     case_title=case_meta["title"],
                     case_skills=self._get_case_skill_names(connection, plan.current_session_case_id),
+                    prompt_snapshot=session_row.get("execution_snapshot_json"),
                 )
                 connection.execute(
                     """
@@ -2584,12 +2744,11 @@ class AssessmentService:
                 )
 
             if is_dialog_case and awaiting_finish_confirmation and self._looks_like_continue_after_confirmation(message):
-                connection.execute(
-                    """
-                    INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-                    VALUES (%s, %s, 'user', %s)
-                    """,
-                    (plan.current_session_case_id, session_row["id"], message),
+                self._insert_user_case_message_once(
+                    connection,
+                    session_case_id=plan.current_session_case_id,
+                    session_id=session_row["id"],
+                    message=message,
                 )
                 connection.execute(
                     """
@@ -2625,12 +2784,11 @@ class AssessmentService:
                     **history_fields,
                 )
 
-            connection.execute(
-                """
-                INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-                VALUES (%s, %s, 'user', %s)
-                """,
-                (plan.current_session_case_id, session_row["id"], message),
+            self._insert_user_case_message_once(
+                connection,
+                session_case_id=plan.current_session_case_id,
+                session_id=session_row["id"],
+                message=message,
             )
             if is_dialog_case and self._looks_like_defer_or_refusal(message):
                 connection.execute(
@@ -2780,45 +2938,6 @@ class AssessmentService:
                     **history_fields,
                 )
 
-            if str(methodical_context.get("interactivity_mode") or "").strip().lower() == "1 ход" and user_message_count >= 1:
-                connection.execute(
-                    """
-                    INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-                    VALUES (%s, %s, 'assistant', %s)
-                    """,
-                    (
-                        plan.current_session_case_id,
-                        session_row["id"],
-                        "Ответ зафиксирован. Завершаем кейс автоматически.",
-                    ),
-                )
-                connection.commit()
-                return AssessmentTurnReply(
-                    session_code=session_code,
-                    session_id=session_row["id"],
-                    session_case_id=plan.current_session_case_id,
-                    case_title=plan.current_case_title,
-                    case_number=plan.current_case_number,
-                    total_cases=plan.total_cases,
-                    message="Ответ зафиксирован. Завершаем кейс автоматически.",
-                    case_completed=False,
-                    assessment_completed=False,
-                    result_status=None,
-                    completion_score=None,
-                    evaluator_summary=None,
-                    case_time_limit_minutes=plan.current_case_time_limit_minutes,
-                    planned_case_duration_minutes=plan.current_case_planned_duration_minutes,
-                    case_started_at=plan.current_case_started_at,
-                    case_time_remaining_seconds=self._get_remaining_case_seconds(
-                        plan.current_case_started_at,
-                        plan.current_case_time_limit_minutes,
-                    ),
-                    is_dialog_case=False,
-                    pending_auto_finish=True,
-                    auto_finish_delay_ms=self.CASE_AUTO_FINISH_DELAY_MS,
-                    **history_fields,
-                )
-
             turn = deepseek_client.evaluate_case_turn(
                 system_prompt=prompt_row["final_prompt_text"] if prompt_row else "",
                 dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
@@ -2834,6 +2953,7 @@ class AssessmentService:
                 duties=session_row["normalized_duties"] or session_row["raw_duties"],
                 company_industry=session_row["company_industry"],
                 user_profile=user_profile,
+                prompt_snapshot=session_row.get("execution_snapshot_json"),
             )
 
             if self._needs_non_repeating_follow_up(turn.assistant_message, dialogue_rows):
@@ -2926,74 +3046,6 @@ class AssessmentService:
                 mbti_followup_questions=None,
                 progress_operation_id=progress_operation_id,
             )
-        completed_case_row = self._get_case_for_session_case(connection, plan.current_session_case_id)
-        completed_case_context = self._get_personalized_case_context(connection, plan.current_session_case_id, completed_case_row)
-        completed_case_task = self._get_personalized_case_task(connection, plan.current_session_case_id, completed_case_row)
-        completed_user_answer = self._get_case_user_messages_text(connection, plan.current_session_case_id)
-        operation_progress_service.advance(
-            progress_operation_id,
-            2,
-            title="Уточняем сигналы по кейсу",
-            message="Строим MBTI-сигналы и, если нужно, готовим уточняющие вопросы по текущему кейсу.",
-        )
-        mbti_case_result, mbti_followup_questions = mbti_assessment_service.evaluate_case(
-            session_case_id=plan.current_session_case_id,
-            case_title=plan.current_case_title or completed_case_row["title"],
-            case_number=plan.current_case_number,
-            total_cases=plan.total_cases,
-            case_context=completed_case_context,
-            case_task=completed_case_task,
-            user_answer=completed_user_answer,
-        )
-        mbti_assessment_service.save_case_result(
-            connection,
-            session_case_id=plan.current_session_case_id,
-            case_result=mbti_case_result,
-            followup_questions=mbti_followup_questions,
-        )
-        if mbti_followup_questions:
-            operation_progress_service.advance(
-                progress_operation_id,
-                3,
-                title="Готовим уточняющие вопросы",
-                message="Остаемся на текущем кейсе и задаем короткие уточнения, чтобы не терять контекст ответа.",
-            )
-            followup_prompt = self._build_mbti_followup_prompt(mbti_followup_questions, 0)
-            connection.execute(
-                """
-                INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-                VALUES (%s, %s, 'assistant', %s)
-                """,
-                (plan.current_session_case_id, session_row["id"], followup_prompt),
-            )
-            connection.commit()
-            return AssessmentTurnReply(
-                session_code=session_code,
-                session_id=session_row["id"],
-                session_case_id=plan.current_session_case_id,
-                case_title=plan.current_case_title,
-                case_number=plan.current_case_number,
-                total_cases=plan.total_cases,
-                message=turn.assistant_message + "\n\n" + followup_prompt,
-                case_completed=False,
-                assessment_completed=False,
-                result_status=None,
-                completion_score=None,
-                evaluator_summary=None,
-                case_time_limit_minutes=plan.current_case_time_limit_minutes,
-                planned_case_duration_minutes=plan.current_case_planned_duration_minutes,
-                case_started_at=plan.current_case_started_at,
-                case_time_remaining_seconds=None,
-                time_expired=time_expired,
-                is_dialog_case=self._get_is_dialog_case_for_session_case(connection, plan.current_session_case_id),
-                mbti_case_result=mbti_case_result,
-                mbti_followup_questions=mbti_followup_questions,
-                mbti_followup_pending=True,
-                mbti_followup_index=1,
-                mbti_followup_total=len(mbti_followup_questions),
-                **self._get_session_case_history_fields(connection, plan.current_session_case_id),
-            )
-
         return self._advance_after_completed_case(
             connection=connection,
             session_row=session_row,
@@ -3002,8 +3054,8 @@ class AssessmentService:
             completion_message=turn.assistant_message,
             result_status=turn.result_status,
             time_expired=time_expired,
-            mbti_case_result=mbti_case_result,
-            mbti_followup_questions=mbti_followup_questions,
+            mbti_case_result=None,
+            mbti_followup_questions=None,
             progress_operation_id=progress_operation_id,
         )
 
@@ -3376,27 +3428,52 @@ class AssessmentService:
             operation_progress_service.advance(
                 progress_operation_id,
                 3,
-                title="Собираем итоговый профиль",
-                message="Завершаем assessment-сессию, считаем итоговые оценки и формируем финальный MBTI-профиль.",
+                title="Запускаем итоговый анализ",
+                message="Все кейсы завершены. Ставим формирование итогового профиля в очередь.",
             )
-            finished_at = self._utc_now()
+            analysis_operation_id = f"analysis-{session_row['id']}-{uuid4().hex}"
             connection.execute(
                 """
                 UPDATE user_sessions
-                SET status = 'completed',
-                    finished_at = COALESCE(finished_at, %s)
+                SET status = 'cases_completed',
+                    error_stage = NULL,
+                    error_code = NULL,
+                    error_message = NULL,
+                    error_retryable = FALSE
                 WHERE id = %s
                 """,
-                (finished_at, session_row["id"]),
+                (session_row["id"],),
             )
-            for agent in competency_assessment_agents:
-                agent.evaluate_session(
-                    connection=connection,
-                    session_id=session_row["id"],
-                    user_id=session_row["user_id"],
+            connection.execute(
+                """
+                INSERT INTO assessment_analysis_jobs (
+                    operation_id, session_id, user_id, status, max_attempts
                 )
-            final_message = completion_message + " Оценка по всем кейсам завершена."
-            mbti_summary = mbti_assessment_service.summarize_session(connection, session_id=session_row["id"])
+                VALUES (%s, %s, %s, 'queued', %s)
+                ON CONFLICT (session_id) WHERE status IN ('queued', 'running')
+                DO NOTHING
+                """,
+                (
+                    analysis_operation_id,
+                    session_row["id"],
+                    session_row["user_id"],
+                    max(1, settings.assessment_queue_max_attempts),
+                ),
+            )
+            queued_row = connection.execute(
+                """
+                SELECT operation_id
+                FROM assessment_analysis_jobs
+                WHERE session_id = %s
+                  AND status IN ('queued', 'running')
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (session_row["id"],),
+            ).fetchone()
+            if queued_row is not None:
+                analysis_operation_id = str(queued_row["operation_id"])
+            final_message = completion_message + " Все кейсы завершены. Запущен итоговый анализ."
             connection.commit()
             return AssessmentTurnReply(
                 session_code=session_code,
@@ -3424,7 +3501,9 @@ class AssessmentService:
                 is_dialog_case=self._get_is_dialog_case_for_session_case(connection, completed_plan.current_session_case_id),
                 mbti_case_result=mbti_case_result,
                 mbti_followup_questions=mbti_followup_questions,
-                mbti_summary=mbti_summary,
+                mbti_summary=None,
+                assessment_status="analyzing",
+                analysis_operation_id=analysis_operation_id,
                 **self._get_session_case_history_fields(connection, completed_plan.current_session_case_id),
             )
 
@@ -3488,7 +3567,7 @@ class AssessmentService:
                 next_plan.current_case_time_limit_minutes,
             ),
             time_expired=time_expired,
-            is_dialog_case=deepseek_client._is_dialog_interactivity_mode(
+            is_dialog_case=deepseek_client.is_dialog_mode(
                 self._get_case_methodical_context(connection, next_case_row).get("interactivity_mode"),
             ),
             mbti_case_result=mbti_case_result,
@@ -3576,12 +3655,11 @@ class AssessmentService:
             """,
             (json.dumps(answers, ensure_ascii=False), session_case_id),
         )
-        connection.execute(
-            """
-            INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-            VALUES (%s, %s, 'user', %s)
-            """,
-            (session_case_id, session_row["id"], user_answer),
+        self._insert_user_case_message_once(
+            connection,
+            session_case_id=session_case_id,
+            session_id=session_row["id"],
+            message=user_answer,
         )
 
         if len(answers) < len(questions):

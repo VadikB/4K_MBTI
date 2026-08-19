@@ -144,6 +144,7 @@ class AuthPasswordLoginRequest(BaseModel):
 
 class AuthPasswordRegisterRequest(AuthPasswordLoginRequest):
     password_confirm: str
+    verification_token: str | None = None
 
     @field_validator("password_confirm")
     @classmethod
@@ -152,6 +153,32 @@ class AuthPasswordRegisterRequest(AuthPasswordLoginRequest):
         if not cleaned:
             raise ValueError("Подтвердите пароль.")
         return cleaned
+
+
+class AuthPasswordForgotRequest(BaseModel):
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        cleaned = str(value or "").strip().lower()
+        if not cleaned or "@" not in cleaned:
+            raise ValueError("Введите корректный email.")
+        return cleaned
+
+
+class AuthPasswordResetRequest(BaseModel):
+    token: str
+    password: str
+    password_confirm: str
+
+
+class AuthActionResponse(BaseModel):
+    ok: bool = True
+    message: str
+    email: str | None = None
+    auth_mode: str | None = None
+    dev_action_token: str | None = None
 
 
 class AgentReply(BaseModel):
@@ -691,6 +718,10 @@ class AdminOrganizationMemberItem(BaseModel):
     job_description: str | None = None
     raw_position: str | None = None
     raw_duties: str | None = None
+    assessment_preparation_status: str | None = None
+    assessment_preparation_operation_id: str | None = None
+    assessment_prepared: bool = False
+    assessment_profile_ready: bool = False
 
 
 class AdminOrganizationItem(BaseModel):
@@ -698,11 +729,19 @@ class AdminOrganizationItem(BaseModel):
     code: str
     name: str
     is_active: bool = True
+    profile: str | None = None
+    founded_year: int | None = None
+    employee_count: int | None = None
+    industry: str | None = None
+    website: str | None = None
+    headquarters: str | None = None
+    notes: str | None = None
     domains: list[str] = Field(default_factory=list)
     admins: list[AdminOrganizationAdminItem] = Field(default_factory=list)
     members: list[AdminOrganizationMemberItem] = Field(default_factory=list)
     members_count: int = 0
     reports_count: int = 0
+    assessment_preparation_batch_id: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -721,6 +760,13 @@ class AdminOrganizationCreateRequest(BaseModel):
 class AdminOrganizationUpdateRequest(BaseModel):
     code: str | None = None
     name: str | None = None
+    profile: str | None = None
+    founded_year: int | None = None
+    employee_count: int | None = None
+    industry: str | None = None
+    website: str | None = None
+    headquarters: str | None = None
+    notes: str | None = None
 
 
 class AdminOrganizationDomainRequest(BaseModel):
@@ -943,6 +989,59 @@ class AssessmentStartResponse(BaseModel):
     mbti_summary: dict | None = None
 
 
+class AssessmentPreparationEnqueueResponse(BaseModel):
+    operation_id: str
+    status: str
+    attempts: int = 0
+    created_at: datetime
+
+
+class AssessmentPreparationStatusResponse(BaseModel):
+    operation_id: str
+    user_id: int
+    status: str
+    attempts: int
+    max_attempts: int
+    result: AssessmentStartResponse | None = None
+    error_message: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None = None
+
+
+class AssessmentPreparationBatchEnqueueResponse(BaseModel):
+    batch_id: str
+    organization_id: int
+    total_participants: int
+    queued_participants: int
+    completed_participants: int
+    skipped_participants: int
+
+
+class AssessmentPreparationBatchParticipant(BaseModel):
+    user_id: int
+    full_name: str | None = None
+    email: str
+    status: str
+    operation_id: str | None = None
+    progress_title: str | None = None
+    progress_message: str | None = None
+
+
+class AssessmentPreparationBatchStatusResponse(BaseModel):
+    batch_id: str
+    organization_id: int
+    status: str
+    total_participants: int
+    processed_participants: int
+    remaining_participants: int
+    completed_participants: int
+    failed_participants: int
+    skipped_participants: int
+    current_participant: AssessmentPreparationBatchParticipant | None = None
+    participants: list[AssessmentPreparationBatchParticipant] = Field(default_factory=list)
+
+
 class AssessmentSessionLookupResponse(BaseModel):
     user_id: int
     session_id: int
@@ -1000,6 +1099,25 @@ class AssessmentMessageResponse(BaseModel):
     mbti_followup_index: int | None = None
     mbti_followup_total: int | None = None
     mbti_summary: dict | None = None
+    assessment_status: str | None = None
+    analysis_operation_id: str | None = None
+
+
+class AssessmentAnalysisStatusResponse(BaseModel):
+    operation_id: str
+    session_id: int
+    status: str
+    session_status: str
+    progress_percent: int
+    current_step: str
+    attempts: int
+    max_attempts: int
+    error_code: str | None = None
+    error_message: str | None = None
+    retryable: bool = False
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None = None
 
 
 class SkillAssessmentResponse(BaseModel):
@@ -1179,6 +1297,39 @@ class UserSessionBootstrapResponse(BaseModel):
     admin_dashboard: AdminDashboard | None = None
 
 
+class ProfileStateResponse(BaseModel):
+    status: str
+    missing_fields: list[str] = Field(default_factory=list)
+
+
+class OnboardingStateUpdateRequest(BaseModel):
+    status: str
+    current_step: int = 0
+
+
+class OnboardingStateResponse(BaseModel):
+    status: str
+    current_step: int = 0
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    skipped_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class JourneyAssessmentState(BaseModel):
+    status: str
+    session_id: int | None = None
+    session_code: str | None = None
+
+
+class UserJourneyStateResponse(BaseModel):
+    profile: ProfileStateResponse
+    onboarding: OnboardingStateResponse
+    assessment: JourneyAssessmentState
+    report_status: str
+    next_action: str
+
+
 class AppVersionResponse(BaseModel):
     version: str
 
@@ -1197,3 +1348,70 @@ class OperationProgressResponse(BaseModel):
     current_step_index: int
     progress_percent: int
     steps: list[OperationProgressStep]
+
+
+class AssessmentDefinitionVersionResponse(BaseModel):
+    id: int
+    code: str | None = None
+    name: str | None = None
+    version: int
+    status: str
+    description: str | None = None
+    definition_json: dict
+    checksum: str
+    created_at: datetime
+    published_at: datetime | None = None
+
+
+class AssessmentDefinitionCloneRequest(BaseModel):
+    description: str | None = None
+
+
+class AssessmentDefinitionCreateRequest(BaseModel):
+    code: str
+    name: str
+    description: str | None = None
+    definition: dict
+    comment: str | None = None
+
+
+class AssessmentDefinitionUpdateRequest(BaseModel):
+    definition: dict
+    description: str | None = None
+    comment: str | None = None
+
+
+class AssessmentDefinitionTransitionRequest(BaseModel):
+    comment: str | None = None
+
+
+class AssessmentConfigurationCreateRequest(BaseModel):
+    code: str
+    name: str
+    methodology_version_id: int
+    scenario_version_id: int
+    comment: str | None = None
+
+
+class AssessmentConfigurationPublishRequest(BaseModel):
+    make_default: bool = False
+    comment: str | None = None
+
+
+class AssessmentConfigurationResponse(BaseModel):
+    id: int
+    code: str
+    name: str
+    methodology_version_id: int
+    scenario_version_id: int
+    status: str
+    is_default: bool
+    prompt_bundle_checksum: str | None = None
+    created_at: datetime
+    published_at: datetime | None = None
+
+
+class PlatformRoleAssignmentRequest(BaseModel):
+    user_id: int
+    role_code: str
+    organization_id: int | None = None

@@ -1,0 +1,38 @@
+schema_version: 1
+kind: scenario
+code: standard_4k_interview
+version: 1
+name: Стандартное кейсовое интервью 4K
+description: Legacy-сценарий, повторяющий текущую последовательность assessment без MBTI.
+initial_stage: prepare_profile
+stages:
+  - id: prepare_profile
+    component: profile.prepare
+    component_version: 1
+    on_success: select_cases
+  - id: select_cases
+    component: cases.select
+    component_version: 1
+    on_success: personalize_cases
+  - id: personalize_cases
+    component: cases.personalize
+    component_version: 1
+    execution: parallel
+    on_success: interview
+  - id: interview
+    component: interview.case_dialog
+    component_version: 1
+    on_success: evaluate_competencies
+  - id: evaluate_competencies
+    component: evaluation.run_methodology_evaluators
+    component_version: 1
+    execution: parallel
+    on_success: aggregate
+  - id: aggregate
+    component: evaluation.aggregate
+    component_version: 1
+    on_success: build_report
+  - id: build_report
+    component: report.build
+    component_version: 1
+    on_success: complete_session

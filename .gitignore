@@ -1,5 +1,6 @@
 .DS_Store
 .env
+.env.test
 .venv/
 node_modules/
 .idea/
@@ -9,6 +10,8 @@ __pycache__/
 *.pyd
 *.egg-info/
 .pytest_cache/
+.coverage
+htmlcov/
 .mypy_cache/
 .ruff_cache/
 dist/
@@ -19,7 +22,7 @@ logs/
 *.dump
 *.sql
 dev_previews/*.png
-AGENTS.md
+# AGENTS.md is part of the tracked EVC development contract.
 
 # Server-local deployment artifacts
 .env.before-*

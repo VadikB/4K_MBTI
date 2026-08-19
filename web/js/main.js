@@ -8,9 +8,9 @@ import {
   restoreAssessmentContextFromParams,
   clearAssessmentContext,
 } from './state.js';
-import { restoreServerSession, restoreLocalUserSession } from './session.js';
+import { restoreServerSession, restoreLocalUserSession, loadUserJourneyState } from './session.js';
 import { hideAllPanels, returnToStart } from './router.js';
-import { initWiring, verifyEmailMagicLinkToken } from './wiring.js';
+import { handleAuthActionToken, initWiring, verifyEmailMagicLinkToken } from './wiring.js';
 import {
   openProcessingScreen,
   openReportScreen,
@@ -102,6 +102,7 @@ const bootApp = async () => {
   resetInitialState();
   const params = new URLSearchParams(window.location.search);
   const authTokenFromLink = String(params.get('token') || '').trim();
+  const authAction = String(params.get('auth_action') || '').trim();
   if (params.get('reset') === '1') {
     clearAssessmentContext();
     try {
@@ -129,7 +130,11 @@ const bootApp = async () => {
       authStatus.classList.remove('hidden');
     }
     window.history.replaceState({}, '', '/?ui=' + Date.now());
-    await verifyEmailMagicLinkToken(authTokenFromLink);
+    if (authAction === 'email_verification' || authAction === 'password_reset') {
+      await handleAuthActionToken(authAction, authTokenFromLink);
+    } else {
+      await verifyEmailMagicLinkToken(authTokenFromLink);
+    }
     return;
   }
   if (screen && screen !== 'processing' && screen !== 'report') {
@@ -230,6 +235,38 @@ const bootApp = async () => {
       }
       await openAdminDashboardScreen();
       return;
+    }
+    if (!state.isAdmin && !['profile', 'reports', 'report'].includes(state.currentScreen)) {
+      try {
+        const journey = await loadUserJourneyState();
+        if (journey?.assessment?.session_id) {
+          state.assessmentSessionId = Number(journey.assessment.session_id);
+        }
+        if (journey?.assessment?.session_code) {
+          state.assessmentSessionCode = journey.assessment.session_code;
+        }
+        if (journey?.next_action === 'complete_profile') {
+          const profileRecovery = await import('./screens/profile-recovery.js');
+          await profileRecovery.recoverProfileCompletionForAssessment({ resumeAssessment: false });
+          return;
+        }
+        if (journey?.next_action === 'show_onboarding') {
+          await openOnboardingScreen({
+            currentStep: Number(journey.onboarding?.current_step || 0),
+          });
+          return;
+        }
+        if (journey?.next_action === 'resume_assessment' && state.assessmentSessionCode) {
+          await openPrechatScreen();
+          return;
+        }
+        if (['show_processing', 'show_assessment_error'].includes(journey?.next_action)) {
+          await openProcessingScreen();
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to route by server journey state', error);
+      }
     }
     if (state.currentScreen === 'interview' && state.assessmentSessionCode) {
       await openPrechatScreen();

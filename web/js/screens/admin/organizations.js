@@ -3,6 +3,7 @@ import {
   adminOrganizationCodeInput,
   adminOrganizationCreateButton,
   adminOrganizationNameInput,
+  adminOrganizationSelect,
   adminOrganizationsList,
   adminOrganizationsPanel,
   adminOrganizationsStatus,
@@ -11,6 +12,8 @@ import {
 } from '../../dom.js';
 import { hideAllPanels, syncUrlState } from '../../router.js';
 import { persistAssessmentContext, setCurrentScreen, state } from '../../state.js';
+
+let selectedOrganizationId = null;
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -56,8 +59,14 @@ const requestOrganizationsImport = async (url, csvText) => {
   return data;
 };
 
-export const loadAdminOrganizations = async () =>
-  requestOrganizations('/users/admin/organizations', { method: 'GET', headers: {} }, 'Не удалось загрузить организации.');
+export const loadAdminOrganizations = async () => {
+  const data = await requestOrganizations(
+    '/users/admin/organizations',
+    { method: 'GET', headers: {} },
+    'Не удалось загрузить организации.',
+  );
+  return data;
+};
 
 export const createAdminOrganization = async () => {
   const name = String(adminOrganizationNameInput?.value || '').trim();
@@ -84,6 +93,25 @@ export const createAdminOrganization = async () => {
     if (adminOrganizationCreateButton) {
       adminOrganizationCreateButton.disabled = false;
     }
+  }
+};
+
+export const selectAdminOrganization = (organizationId) => {
+  selectedOrganizationId = Number(organizationId) || null;
+  renderAdminOrganizations();
+};
+
+export const updateAdminOrganizationProfile = async (organizationId, payload) => {
+  try {
+    selectedOrganizationId = Number(organizationId);
+    await requestOrganizations(
+      '/users/admin/organizations/' + organizationId,
+      { method: 'PATCH', body: JSON.stringify(payload) },
+      'Не удалось сохранить карточку организации.',
+    );
+    setStatus('Карточка организации сохранена.', 'success');
+  } catch (error) {
+    setStatus(error.message || 'Не удалось сохранить карточку организации.', 'error');
   }
 };
 
@@ -201,6 +229,146 @@ export const resetAdminOrganizationMemberPassword = async (organizationId, email
   }
 };
 
+export const prepareAdminOrganizationMemberAssessment = async (organizationId, userId) => {
+  try {
+    const response = await fetch(
+      '/users/admin/organizations/' + organizationId + '/members/' + userId + '/prepare-assessment',
+      { method: 'POST', credentials: 'same-origin' },
+    );
+    const job = await readApiResponse(response, 'Не удалось запустить предварительную подготовку кейсов.');
+    setStatus('Предварительная подготовка кейсов запущена.', 'success');
+    await loadAdminOrganizations();
+    const operationId = String(job.operation_id || '');
+    if (!operationId) return;
+    for (let attempt = 0; attempt < 120; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 2000));
+      const statusResponse = await fetch('/users/assessment/preparation/' + encodeURIComponent(operationId), {
+        credentials: 'same-origin',
+      });
+      const status = await readApiResponse(statusResponse, 'Не удалось получить статус подготовки кейсов.');
+      if (status.status === 'completed') {
+        await loadAdminOrganizations();
+        setStatus('Кейсы для пользователя подготовлены заранее.', 'success');
+        return;
+      }
+      if (status.status === 'failed') {
+        await loadAdminOrganizations();
+        setStatus(status.error_message || 'Предварительная подготовка кейсов завершилась ошибкой.', 'error');
+        return;
+      }
+    }
+    setStatus('Подготовка продолжается в фоне. Статус обновится при следующем открытии раздела.', 'muted');
+  } catch (error) {
+    setStatus(error.message || 'Не удалось подготовить кейсы.', 'error');
+  }
+};
+
+const renderOrganizationBatchProgress = (organizationId) => {
+  const batch = state.adminOrganizationPreparationBatches?.[organizationId];
+  if (!batch || batch.status !== 'in_progress') {
+    return '';
+  }
+  const current = batch.current_participant;
+  const currentLabel = current
+    ? (current.full_name || current.email) +
+      (current.progress_title ? ' · ' + current.progress_title : '') +
+      (current.progress_message ? ' · ' + current.progress_message : '')
+    : 'Ожидание запуска';
+  const percent = batch.total_participants
+    ? Math.round((Number(batch.processed_participants || 0) / Number(batch.total_participants)) * 100)
+    : 100;
+  return (
+    '<div class="admin-organization-batch-progress">' +
+    '<div class="admin-organization-batch-progress-head"><strong>Массовая подготовка кейсов</strong><span>' +
+    Number(batch.processed_participants || 0) +
+    ' из ' +
+    Number(batch.total_participants || 0) +
+    '</span></div>' +
+    '<div class="admin-organization-batch-progress-track"><span style="width:' +
+    percent +
+    '%"></span></div>' +
+    '<p>' +
+    escapeHtml(currentLabel) +
+    '</p><small>Осталось: ' +
+    Number(batch.remaining_participants || 0) +
+    ' · Готово: ' +
+    Number(batch.completed_participants || 0) +
+    ' · Ошибки: ' +
+    Number(batch.failed_participants || 0) +
+    ' · Пропущено: ' +
+    Number(batch.skipped_participants || 0) +
+    '</small></div>'
+  );
+};
+
+const activeBatchPolls = new Set();
+
+const pollOrganizationPreparationBatch = async (organizationId, batchId) => {
+  if (activeBatchPolls.has(batchId)) return;
+  activeBatchPolls.add(batchId);
+  try {
+  for (let attempt = 0; attempt < 1800; attempt += 1) {
+    const response = await fetch(
+      '/users/admin/organizations/' + organizationId + '/prepare-assessments/' + encodeURIComponent(batchId),
+      { credentials: 'same-origin' },
+    );
+    const batch = await readApiResponse(response, 'Не удалось получить прогресс массовой подготовки.');
+    state.adminOrganizationPreparationBatches = {
+      ...(state.adminOrganizationPreparationBatches || {}),
+      [organizationId]: batch,
+    };
+    renderAdminOrganizations();
+    if (batch.status === 'completed' || batch.status === 'failed') {
+      const nextBatches = { ...(state.adminOrganizationPreparationBatches || {}) };
+      delete nextBatches[organizationId];
+      state.adminOrganizationPreparationBatches = nextBatches;
+      await loadAdminOrganizations();
+      setStatus(
+        batch.failed_participants
+          ? 'Массовая подготовка завершена. Есть участники с ошибками.'
+          : 'Кейсы для участников организации подготовлены.',
+        batch.failed_participants ? 'error' : 'success',
+      );
+      return;
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, 2000));
+  }
+  } finally {
+    activeBatchPolls.delete(batchId);
+  }
+};
+
+export const prepareAdminOrganizationAssessments = async (organizationId) => {
+  try {
+    const response = await fetch('/users/admin/organizations/' + organizationId + '/prepare-assessments', {
+      method: 'POST',
+      credentials: 'same-origin',
+    });
+    const batch = await readApiResponse(response, 'Не удалось запустить массовую подготовку кейсов.');
+    state.adminOrganizationPreparationBatches = {
+      ...(state.adminOrganizationPreparationBatches || {}),
+      [organizationId]: {
+        ...batch,
+        status: 'in_progress',
+        processed_participants: Number(batch.completed_participants || 0) + Number(batch.skipped_participants || 0),
+        remaining_participants:
+          Number(batch.total_participants || 0) -
+          Number(batch.completed_participants || 0) -
+          Number(batch.skipped_participants || 0),
+        failed_participants: 0,
+        current_participant: null,
+      },
+    };
+    renderAdminOrganizations();
+    setStatus('Массовая подготовка кейсов запущена.', 'success');
+    void pollOrganizationPreparationBatch(organizationId, batch.batch_id).catch((error) => {
+      setStatus(error.message || 'Не удалось обновить прогресс массовой подготовки.', 'error');
+    });
+  } catch (error) {
+    setStatus(error.message || 'Не удалось запустить массовую подготовку кейсов.', 'error');
+  }
+};
+
 export const importAdminOrganizationMembers = async (organizationId, csvText) => {
   const text = String(csvText || '').trim();
   if (!text) {
@@ -282,6 +450,19 @@ const renderMemberList = (items) => {
         const hasPassword = item.has_password === true;
         const label = item.full_name ? item.full_name + ' · ' + email : email;
         const details = item.raw_position || item.job_description || item.raw_duties || '';
+        const preparationStatus = String(item.assessment_preparation_status || '');
+        const isPreparing = preparationStatus === 'queued' || preparationStatus === 'running';
+        const isPrepared = item.assessment_prepared === true;
+        const canPrepare = item.assessment_profile_ready === true && !isPreparing && !isPrepared;
+        const preparationButton = isPrepared
+          ? '<span class="admin-organization-preparation-state ready">Кейсы готовы</span>'
+          : isPreparing
+            ? '<span class="admin-organization-preparation-state">Подготовка…</span>'
+            : '<button class="admin-organization-prepare-button" type="button" data-action="prepare-member-assessment" data-user-id="' +
+              Number(item.user_id) +
+              '"' +
+              (canPrepare ? '' : ' disabled title="Заполните роль, обязанности и сферу деятельности"') +
+              '>Подготовить кейсы</button>';
         const removeButton = isAutotest
           ? ''
           : '<button class="admin-organization-remove-button" type="button" data-action="delete-member" data-value="' +
@@ -300,6 +481,7 @@ const renderMemberList = (items) => {
           (details ? '<span>' + escapeHtml(details) + '</span>' : '') +
           '</div>' +
           '<div class="admin-organization-member-actions">' +
+          preparationButton +
           passwordButton +
           removeButton +
           '</div>' +
@@ -324,13 +506,31 @@ export const renderAdminOrganizations = () => {
   }
   const organizations = Array.isArray(data?.items) ? data.items : [];
   if (!organizations.length) {
+    if (adminOrganizationSelect) adminOrganizationSelect.innerHTML = '<option value="">Нет организаций</option>';
     adminOrganizationsList.innerHTML = '<p class="report-empty-state">Организации пока не созданы.</p>';
     return;
   }
+  if (!organizations.some((org) => Number(org.id) === Number(selectedOrganizationId))) {
+    selectedOrganizationId = Number(organizations.find((org) => org.is_active !== false)?.id || organizations[0].id);
+  }
+  if (adminOrganizationSelect) {
+    adminOrganizationSelect.innerHTML = organizations
+      .map(
+        (org) =>
+          '<option value="' + Number(org.id) + '"' +
+          (Number(org.id) === Number(selectedOrganizationId) ? ' selected' : '') + '>' +
+          escapeHtml(org.name) + ' · ' + escapeHtml(org.code) + (org.is_active === false ? ' — неактивна' : '') +
+          '</option>',
+      )
+      .join('');
+  }
   adminOrganizationsList.innerHTML = organizations
+    .filter((org) => Number(org.id) === Number(selectedOrganizationId))
     .map((org) => {
       const orgId = Number(org.id);
       const isActive = org.is_active !== false;
+      const activeBatch = state.adminOrganizationPreparationBatches?.[orgId];
+      const batchIsRunning = activeBatch?.status === 'in_progress';
       const actionLabel = Number(org.members_count || 0) || Number(org.reports_count || 0) ? 'Деактивировать' : 'Удалить';
       return (
         '<article class="card card--inset admin-organization-card" data-organization-id="' +
@@ -350,10 +550,24 @@ export const renderAdminOrganizations = () => {
         Number(org.members_count || 0) +
         ' участников</span><span>' +
         Number(org.reports_count || 0) +
-        ' отчетов</span><button class="ghost-button compact-ghost danger" type="button" data-action="delete-organization">' +
+        ' отчетов</span><button class="ghost-button compact-ghost" type="button" data-action="prepare-organization-assessments"' +
+        (batchIsRunning || !isActive ? ' disabled' : '') +
+        '>Подготовить кейсы всем</button><button class="ghost-button compact-ghost danger" type="button" data-action="delete-organization">' +
         actionLabel +
         '</button></div>' +
         '</div>' +
+        renderOrganizationBatchProgress(orgId) +
+        '<form class="admin-organization-profile-form" data-action="update-profile">' +
+        '<div class="admin-organization-profile-heading"><div><p class="section-label accent-label">Профиль</p><h4>Сведения об организации</h4></div>' +
+        '<button class="primary-button compact-primary" type="submit">Сохранить карточку</button></div>' +
+        '<label class="admin-organization-profile-wide"><span>Профиль организации</span><textarea name="profile" placeholder="Кратко опишите организацию, её деятельность и особенности">' + escapeHtml(org.profile || '') + '</textarea></label>' +
+        '<label><span>Год основания</span><input name="founded_year" type="number" min="1000" max="2100" value="' + escapeHtml(org.founded_year ?? '') + '" placeholder="Например, 2012"></label>' +
+        '<label><span>Численность</span><input name="employee_count" type="number" min="0" value="' + escapeHtml(org.employee_count ?? '') + '" placeholder="Количество сотрудников"></label>' +
+        '<label><span>Отрасль</span><input name="industry" type="text" value="' + escapeHtml(org.industry || '') + '" placeholder="Например, финтех"></label>' +
+        '<label><span>Сайт</span><input name="website" type="url" value="' + escapeHtml(org.website || '') + '" placeholder="https://company.ru"></label>' +
+        '<label><span>Штаб-квартира</span><input name="headquarters" type="text" value="' + escapeHtml(org.headquarters || '') + '" placeholder="Город, страна"></label>' +
+        '<label class="admin-organization-profile-wide"><span>Прочая существенная информация</span><textarea name="notes" placeholder="Структура, география, культура и другие важные сведения">' + escapeHtml(org.notes || '') + '</textarea></label>' +
+        '</form>' +
         '<div class="admin-organization-columns">' +
         '<section><h4>Домены</h4>' +
         renderTagList(org.domains || [], 'Домены не заданы.', 'domain', 'delete-domain') +

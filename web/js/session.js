@@ -105,6 +105,16 @@ export const restoreLocalUserSession = async () => {
   }
 };
 
+export const loadUserJourneyState = async () => {
+  if (!state.pendingUser?.id || state.isAdmin) {
+    return null;
+  }
+  const response = await fetch('/users/' + state.pendingUser.id + '/journey-state', {
+    credentials: 'same-origin',
+  });
+  return readApiResponse(response, 'Не удалось определить следующий шаг пользователя.');
+};
+
 export const logoutAndReturnToStart = async (trigger = null) => {
   const restoreButton = applyLogoutButtonPendingState(trigger);
   const startedAt = Date.now();

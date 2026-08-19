@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Lint frontend
+        run: npm run lint:js
+
+      - name: Build frontend
+        run: npm run build:web
+
+      - name: Verify committed frontend build
+        run: git diff --exit-code -- web/dist
+
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: agent4k_pytest
+          POSTGRES_USER: pytest
+          POSTGRES_PASSWORD: pytest
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pytest -d agent4k_pytest"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_POOL_MIN_SIZE: "0"
+      DEEPSEEK_API_KEYS: ""
+      MBTI_ENABLED: "false"
+      TEST_DATABASE_URL: postgresql://pytest:pytest@127.0.0.1:5432/agent4k_pytest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            "fastapi>=0.115.0" \
+            "pydantic>=2.0.0" \
+            "psycopg[binary]>=3.2.0" \
+            "psycopg_pool>=3.2.0" \
+            "python-dotenv>=1.0.1" \
+            "pytest>=8.3.0" \
+            "pytest-cov>=6.0.0" \
+            "httpx2"
+
+      - name: Unit tests
+        run: python -m pytest -m "not integration and not e2e and not llm"
+
+      - name: HTTP contract smoke tests
+        run: python -m pytest -m e2e tests/e2e
+
+      - name: Integration tests
+        run: python -m pytest --run-integration -m integration
+
+  deploy-test:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - frontend
+      - pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: test
+      url: https://test.4k-assistant.ru
+    concurrency:
+      group: deploy-test
+      cancel-in-progress: false
+
+    steps:
+      - name: Configure SSH
+        env:
+          TEST_SSH_PRIVATE_KEY: ${{ secrets.TEST_SSH_PRIVATE_KEY }}
+          TEST_SSH_KNOWN_HOSTS: ${{ secrets.TEST_SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$TEST_SSH_PRIVATE_KEY" > ~/.ssh/test_deploy_key
+          chmod 600 ~/.ssh/test_deploy_key
+          printf '%s\n' "$TEST_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy main to test
+        env:
+          TEST_SSH_HOST: ${{ secrets.TEST_SSH_HOST }}
+          TEST_SSH_USER: ${{ secrets.TEST_SSH_USER }}
+        run: |
+          ssh \
+            -i ~/.ssh/test_deploy_key \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            "$TEST_SSH_USER@$TEST_SSH_HOST" \
+            sh /home/user1/projects/4K-Mbti-Test/scripts/deploy_test_remote.sh

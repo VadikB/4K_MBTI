@@ -20,7 +20,6 @@ import { sanitizeDisplayRole, getSignupFirstName, buildInitials, escapeHtml } fr
 import {
   canReusePreparedAssessment,
   renderAssessmentPreparationState,
-  beginAssessmentPreparation,
 } from './assessment.js';
 import { handleAssessmentEntryClick } from './interview.js';
 import { openReports } from './reports.js';
@@ -240,7 +239,6 @@ export const openDashboard = () => {
   hideAllPanels();
   renderDashboard();
   dashboardPanel.classList.remove('hidden');
-  void beginAssessmentPreparation();
 };
 
 export const hasIncompleteAssessment = () => {

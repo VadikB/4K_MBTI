@@ -16,6 +16,9 @@ class Settings:
     db_name: str = os.getenv("DB_NAME", "app_db")
     db_user: str = os.getenv("DB_USER", "app_user")
     db_password: str = os.getenv("DB_PASSWORD", "")
+    db_pool_min_size: int = int(os.getenv("DB_POOL_MIN_SIZE", "1"))
+    db_pool_max_size: int = int(os.getenv("DB_POOL_MAX_SIZE", "15"))
+    db_pool_timeout_seconds: float = float(os.getenv("DB_POOL_TIMEOUT_SECONDS", "10"))
     log_level: str = (os.getenv("LOG_LEVEL", "INFO").strip() or "INFO").upper()
     log_to_stdout: bool = os.getenv("LOG_TO_STDOUT", "true").strip().lower() in {"1", "true", "yes", "on"}
     log_to_file: bool = os.getenv("LOG_TO_FILE", "false").strip().lower() in {"1", "true", "yes", "on"}
@@ -34,6 +37,10 @@ class Settings:
     auth_magic_link_ip_hourly_limit: int = int(os.getenv("AUTH_MAGIC_LINK_IP_HOURLY_LIMIT", "20"))
     auth_magic_link_from_email: str = os.getenv("AUTH_MAGIC_LINK_FROM_EMAIL", "no-reply@agent4k.local").strip() or "no-reply@agent4k.local"
     auth_magic_link_subject: str = os.getenv("AUTH_MAGIC_LINK_SUBJECT", "Вход в 4K Ассистент").strip() or "Вход в 4K Ассистент"
+    auth_email_verification_required: bool = os.getenv("AUTH_EMAIL_VERIFICATION_REQUIRED", "true").strip().lower() in {"1", "true", "yes", "on"}
+    auth_password_reset_enabled: bool = os.getenv("AUTH_PASSWORD_RESET_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
+    auth_action_token_ttl_minutes: int = int(os.getenv("AUTH_ACTION_TOKEN_TTL_MINUTES", "30"))
+    auth_session_secure_cookie: bool = os.getenv("AUTH_SESSION_SECURE_COOKIE", "false").strip().lower() in {"1", "true", "yes", "on"}
     superadmin_emails_raw: str = os.getenv("SUPERADMIN_EMAILS", "")
     org_admin_emails_raw: str = os.getenv("ORG_ADMIN_EMAILS", "")
     org_member_domains_raw: str = os.getenv("ORG_MEMBER_DOMAINS", "")
@@ -41,12 +48,42 @@ class Settings:
     email_provider: str = os.getenv("EMAIL_PROVIDER", "").strip().lower()
     postmark_server_token: str = os.getenv("POSTMARK_SERVER_TOKEN", "").strip()
     postmark_message_stream: str = os.getenv("POSTMARK_MESSAGE_STREAM", "outbound").strip() or "outbound"
+    unisender_go_api_key: str = os.getenv("UNISENDER_GO_API_KEY", "").strip()
+    unisender_go_api_base_url: str = os.getenv(
+        "UNISENDER_GO_API_BASE_URL",
+        "https://goapi.unisender.ru/ru/transactional/api/v1",
+    ).strip().rstrip("/")
+    auth_email_from_name: str = os.getenv("AUTH_EMAIL_FROM_NAME", "4K Ассистент").strip() or "4K Ассистент"
     deepseek_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
     deepseek_api_key_2: str = os.getenv("DEEPSEEK_API_KEY_2", "")
     deepseek_api_key_3: str = os.getenv("DEEPSEEK_API_KEY_3", "")
     deepseek_api_keys_raw: str = os.getenv("DEEPSEEK_API_KEYS", "")
     deepseek_base_url: str = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
     deepseek_model: str = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+    deepseek_max_concurrency: int = int(os.getenv("DEEPSEEK_MAX_CONCURRENCY", "10"))
+    deepseek_queue_timeout_seconds: float = float(os.getenv("DEEPSEEK_QUEUE_TIMEOUT_SECONDS", "30"))
+    assessment_preparation_max_concurrency: int = int(os.getenv("ASSESSMENT_PREPARATION_MAX_CONCURRENCY", "2"))
+    assessment_preparation_queue_timeout_seconds: float = float(
+        os.getenv("ASSESSMENT_PREPARATION_QUEUE_TIMEOUT_SECONDS", "10")
+    )
+    assessment_queue_worker_threads: int = int(os.getenv("ASSESSMENT_QUEUE_WORKER_THREADS", "1"))
+    assessment_queue_poll_interval_seconds: float = float(
+        os.getenv("ASSESSMENT_QUEUE_POLL_INTERVAL_SECONDS", "1")
+    )
+    assessment_queue_lease_timeout_seconds: int = int(
+        os.getenv("ASSESSMENT_QUEUE_LEASE_TIMEOUT_SECONDS", "900")
+    )
+    assessment_queue_max_attempts: int = int(os.getenv("ASSESSMENT_QUEUE_MAX_ATTEMPTS", "3"))
+    assessment_queue_retention_hours: int = int(os.getenv("ASSESSMENT_QUEUE_RETENTION_HOURS", "168"))
+    assessment_analysis_worker_threads: int = int(os.getenv("ASSESSMENT_ANALYSIS_WORKER_THREADS", "1"))
+    assessment_external_answer_transfer_enabled: bool = (
+        os.getenv("ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED", "true").strip().lower()
+        in {"1", "true", "yes", "on"}
+    )
+    case_set_reuse_mode: str = os.getenv("CASE_SET_REUSE_MODE", "off").strip().lower() or "off"
+    case_set_reuse_min_score: float = float(os.getenv("CASE_SET_REUSE_MIN_SCORE", "0.88"))
+    case_set_reuse_max_age_days: int = int(os.getenv("CASE_SET_REUSE_MAX_AGE_DAYS", "90"))
+    case_set_reuse_candidate_limit: int = int(os.getenv("CASE_SET_REUSE_CANDIDATE_LIMIT", "100"))
     mbti_enabled: bool = os.getenv("MBTI_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
     mbti_faiss_index_dir: str = os.getenv("MBTI_FAISS_INDEX_DIR", "")
     mbti_top_k: int = int(os.getenv("MBTI_TOP_K", "5"))

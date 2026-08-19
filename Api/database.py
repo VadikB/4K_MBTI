@@ -2,11 +2,17 @@ from __future__ import annotations
 
 import json
 import re
+import threading
+from types import TracebackType
+from typing import Any
 
 import psycopg
+from psycopg.conninfo import make_conninfo
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 from Api.config import settings
+from Api.assessment_configuration import backfill_legacy_session_configuration, ensure_legacy_assessment_configuration
 
 DEFAULT_LEVEL_PERCENT_MAP = {
     "L1": 45,
@@ -16,6 +22,105 @@ DEFAULT_LEVEL_PERCENT_MAP = {
 }
 
 PERSONALIZATION_PLACEHOLDER_PATTERN = re.compile(r"\{([^{}]+)\}")
+
+_connection_pool = ConnectionPool(
+    conninfo=make_conninfo(
+        host=settings.db_host,
+        port=settings.db_port,
+        dbname=settings.db_name,
+        user=settings.db_user,
+        password=settings.db_password,
+    ),
+    min_size=max(0, settings.db_pool_min_size),
+    max_size=max(1, settings.db_pool_max_size),
+    timeout=max(0.1, settings.db_pool_timeout_seconds),
+    kwargs={"row_factory": dict_row},
+)
+_thread_connection_state = threading.local()
+
+
+class ResumablePooledConnection:
+    """A pooled connection lease that can be returned during slow external I/O."""
+
+    def __init__(self) -> None:
+        self._lease = None
+        self._connection: psycopg.Connection | None = None
+
+    def __enter__(self) -> "ResumablePooledConnection":
+        self._acquire()
+        active = getattr(_thread_connection_state, "active", None)
+        if active is None:
+            active = []
+            _thread_connection_state.active = active
+        active.append(self)
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool:
+        active = getattr(_thread_connection_state, "active", None)
+        if active:
+            try:
+                active.remove(self)
+            except ValueError:
+                pass
+        if self._lease is None:
+            return False
+        lease = self._lease
+        self._lease = None
+        self._connection = None
+        return bool(lease.__exit__(exc_type, exc_value, traceback))
+
+    def _acquire(self) -> psycopg.Connection:
+        if self._connection is None:
+            lease = _connection_pool.connection(timeout=max(0.1, settings.db_pool_timeout_seconds))
+            connection = lease.__enter__()
+            self._lease = lease
+            self._connection = connection
+        return self._connection
+
+    def pause(self, *, commit: bool = True) -> None:
+        """Return the current lease to the pool; the next SQL call reacquires one."""
+        if self._lease is None or self._connection is None:
+            return
+        lease = self._lease
+        connection = self._connection
+        self._lease = None
+        self._connection = None
+        if commit:
+            connection.commit()
+        else:
+            connection.rollback()
+        lease.__exit__(None, None, None)
+
+    def execute(self, *args, **kwargs):
+        return self._acquire().execute(*args, **kwargs)
+
+    def commit(self) -> None:
+        self._acquire().commit()
+
+    def rollback(self) -> None:
+        self._acquire().rollback()
+
+    def cursor(self, *args, **kwargs):
+        return self._acquire().cursor(*args, **kwargs)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._acquire(), name)
+
+
+def pause_thread_connections_for_external_io() -> int:
+    """Return every connection leased by this request thread before network I/O."""
+    active = list(getattr(_thread_connection_state, "active", ()) or ())
+    paused = 0
+    for connection in reversed(active):
+        if connection._lease is not None:
+            connection.pause(commit=True)
+            paused += 1
+    return paused
 
 
 def _extract_interactivity_limits(
@@ -2726,19 +2831,540 @@ def _extract_role_codes_from_role_level(value: str | None) -> list[str]:
     return result
 
 
-def get_connection() -> psycopg.Connection:
-    return psycopg.connect(
-        host=settings.db_host,
-        port=settings.db_port,
-        dbname=settings.db_name,
-        user=settings.db_user,
-        password=settings.db_password,
-        row_factory=dict_row,
-    )
+def get_connection():
+    """Borrow a PostgreSQL connection and return it to the shared process pool."""
+    return ResumablePooledConnection()
+
+
+def get_connection_pool_stats() -> dict[str, int]:
+    return dict(_connection_pool.get_stats())
+
+
+def close_connection_pool() -> None:
+    _connection_pool.close()
 
 
 def ensure_core_schema() -> None:
     with get_connection() as connection:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_methodologies (
+                id BIGSERIAL PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_methodology_versions (
+                id BIGSERIAL PRIMARY KEY,
+                methodology_id BIGINT NOT NULL REFERENCES assessment_methodologies(id),
+                version INTEGER NOT NULL CHECK (version > 0),
+                status TEXT NOT NULL CHECK (status IN ('draft', 'ready_for_review', 'published', 'retired')),
+                description TEXT,
+                definition_json JSONB NOT NULL,
+                checksum TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                published_at TIMESTAMP,
+                UNIQUE (methodology_id, version)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_scenarios (
+                id BIGSERIAL PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_scenario_versions (
+                id BIGSERIAL PRIMARY KEY,
+                scenario_id BIGINT NOT NULL REFERENCES assessment_scenarios(id),
+                version INTEGER NOT NULL CHECK (version > 0),
+                status TEXT NOT NULL CHECK (status IN ('draft', 'ready_for_review', 'published', 'retired')),
+                description TEXT,
+                definition_json JSONB NOT NULL,
+                checksum TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                published_at TIMESTAMP,
+                UNIQUE (scenario_id, version)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_configurations (
+                id BIGSERIAL PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                methodology_version_id BIGINT NOT NULL REFERENCES assessment_methodology_versions(id),
+                scenario_version_id BIGINT NOT NULL REFERENCES assessment_scenario_versions(id),
+                prompt_bundle_json JSONB,
+                prompt_bundle_checksum TEXT,
+                status TEXT NOT NULL CHECK (status IN ('draft', 'published', 'retired')),
+                is_default BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                published_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute("ALTER TABLE assessment_configurations ADD COLUMN IF NOT EXISTS prompt_bundle_json JSONB")
+        connection.execute("ALTER TABLE assessment_configurations ADD COLUMN IF NOT EXISTS prompt_bundle_checksum TEXT")
+        connection.execute(
+            """
+            CREATE OR REPLACE FUNCTION prevent_published_configuration_prompt_update()
+            RETURNS trigger AS $$
+            BEGIN
+                IF OLD.status = 'published'
+                   AND OLD.prompt_bundle_json IS NOT NULL
+                   AND (NEW.prompt_bundle_json IS DISTINCT FROM OLD.prompt_bundle_json
+                     OR NEW.prompt_bundle_checksum IS DISTINCT FROM OLD.prompt_bundle_checksum) THEN
+                    RAISE EXCEPTION 'Published assessment configuration prompt bundle is immutable';
+                END IF;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql
+            """
+        )
+        connection.execute("DROP TRIGGER IF EXISTS trg_configuration_prompts_immutable ON assessment_configurations")
+        connection.execute(
+            """
+            CREATE TRIGGER trg_configuration_prompts_immutable
+            BEFORE UPDATE ON assessment_configurations
+            FOR EACH ROW EXECUTE FUNCTION prevent_published_configuration_prompt_update()
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS platform_roles (
+                id BIGSERIAL PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS platform_permissions (
+                id BIGSERIAL PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                description TEXT
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS platform_role_permissions (
+                platform_role_id BIGINT NOT NULL REFERENCES platform_roles(id) ON DELETE CASCADE,
+                permission_id BIGINT NOT NULL REFERENCES platform_permissions(id) ON DELETE CASCADE,
+                PRIMARY KEY (platform_role_id, permission_id)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_platform_roles (
+                id BIGSERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                platform_role_id BIGINT NOT NULL REFERENCES platform_roles(id) ON DELETE CASCADE,
+                organization_id INTEGER,
+                granted_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                granted_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                revoked_at TIMESTAMP
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_user_platform_roles_active
+            ON user_platform_roles(user_id, platform_role_id, COALESCE(organization_id, 0))
+            WHERE revoked_at IS NULL
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_definition_audit_log (
+                id BIGSERIAL PRIMARY KEY,
+                entity_type TEXT NOT NULL,
+                entity_id BIGINT NOT NULL,
+                action TEXT NOT NULL,
+                actor_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                before_json JSONB,
+                after_json JSONB,
+                comment TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO platform_roles (code, name, description)
+            VALUES
+                ('methodologist', 'Методолог', 'Создание и проверка draft-версий методологий и сценариев.'),
+                ('assessment_publisher', 'Публикатор assessment', 'Публикация проверенных версий и конфигураций.')
+            ON CONFLICT (code) DO NOTHING
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO platform_permissions (code, description)
+            VALUES
+                ('methodology.view', 'Просмотр методологий и их версий'),
+                ('methodology.edit_draft', 'Создание и изменение draft-методологий'),
+                ('methodology.submit', 'Отправка методологии на проверку'),
+                ('methodology.publish', 'Публикация методологии'),
+                ('scenario.view', 'Просмотр сценариев и их версий'),
+                ('scenario.edit_draft', 'Создание и изменение draft-сценариев'),
+                ('scenario.submit', 'Отправка сценария на проверку'),
+                ('scenario.publish', 'Публикация сценария'),
+                ('configuration.publish', 'Публикация assessment-конфигурации'),
+                ('assessment.test_run', 'Запуск тестового assessment')
+            ON CONFLICT (code) DO NOTHING
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO platform_role_permissions (platform_role_id, permission_id)
+            SELECT role.id, permission.id
+            FROM platform_roles role
+            CROSS JOIN platform_permissions permission
+            WHERE role.code = 'methodologist'
+              AND permission.code IN (
+                  'methodology.view', 'methodology.edit_draft', 'methodology.submit',
+                  'scenario.view', 'scenario.edit_draft', 'scenario.submit', 'assessment.test_run'
+              )
+            ON CONFLICT DO NOTHING
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO platform_role_permissions (platform_role_id, permission_id)
+            SELECT role.id, permission.id
+            FROM platform_roles role
+            CROSS JOIN platform_permissions permission
+            WHERE role.code = 'assessment_publisher'
+            ON CONFLICT DO NOTHING
+            """
+        )
+        connection.execute(
+            """
+            CREATE OR REPLACE FUNCTION prevent_published_assessment_definition_update()
+            RETURNS trigger AS $$
+            BEGIN
+                IF OLD.status = 'published' AND (
+                    NEW.definition_json IS DISTINCT FROM OLD.definition_json
+                    OR NEW.checksum IS DISTINCT FROM OLD.checksum
+                    OR NEW.version IS DISTINCT FROM OLD.version
+                ) THEN
+                    RAISE EXCEPTION 'Published assessment definitions are immutable';
+                END IF;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql
+            """
+        )
+        connection.execute("DROP TRIGGER IF EXISTS trg_methodology_version_immutable ON assessment_methodology_versions")
+        connection.execute(
+            """
+            CREATE TRIGGER trg_methodology_version_immutable
+            BEFORE UPDATE ON assessment_methodology_versions
+            FOR EACH ROW EXECUTE FUNCTION prevent_published_assessment_definition_update()
+            """
+        )
+        connection.execute("DROP TRIGGER IF EXISTS trg_scenario_version_immutable ON assessment_scenario_versions")
+        connection.execute(
+            """
+            CREATE TRIGGER trg_scenario_version_immutable
+            BEFORE UPDATE ON assessment_scenario_versions
+            FOR EACH ROW EXECUTE FUNCTION prevent_published_assessment_definition_update()
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_assessment_configurations_single_default
+            ON assessment_configurations(is_default)
+            WHERE is_default = TRUE
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS assessment_configuration_id BIGINT REFERENCES assessment_configurations(id)
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS methodology_version_id BIGINT REFERENCES assessment_methodology_versions(id)
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS scenario_version_id BIGINT REFERENCES assessment_scenario_versions(id)
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS execution_snapshot_json JSONB
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS execution_checksum TEXT
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS current_stage_id TEXT
+            """
+        )
+        ensure_legacy_assessment_configuration(connection)
+        backfill_legacy_session_configuration(connection)
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_stage_runs (
+                id BIGSERIAL PRIMARY KEY,
+                session_id BIGINT REFERENCES user_sessions(id) ON DELETE CASCADE,
+                preparation_job_id BIGINT,
+                stage_id TEXT NOT NULL,
+                component_code TEXT NOT NULL,
+                component_version INTEGER NOT NULL,
+                attempt INTEGER NOT NULL DEFAULT 1,
+                status TEXT NOT NULL CHECK (status IN ('queued', 'running', 'completed', 'failed', 'skipped')),
+                input_json JSONB,
+                output_json JSONB,
+                error_code TEXT,
+                error_message TEXT,
+                started_at TIMESTAMP,
+                completed_at TIMESTAMP,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (session_id, stage_id, attempt)
+            )
+            """
+        )
+        connection.execute("ALTER TABLE assessment_stage_runs ALTER COLUMN session_id DROP NOT NULL")
+        connection.execute("ALTER TABLE assessment_stage_runs ADD COLUMN IF NOT EXISTS preparation_job_id BIGINT")
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_assessment_stage_runs_session
+            ON assessment_stage_runs(session_id, created_at)
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_assessment_stage_runs_preparation_attempt
+            ON assessment_stage_runs(preparation_job_id, stage_id, attempt)
+            WHERE preparation_job_id IS NOT NULL
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS operation_progress (
+                operation_id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                steps_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+                current_step_index INTEGER NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'in_progress',
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_operation_progress_updated_at
+            ON operation_progress(updated_at)
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_preparation_jobs (
+                id BIGSERIAL PRIMARY KEY,
+                operation_id TEXT NOT NULL UNIQUE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                user_payload_json JSONB NOT NULL,
+                execution_snapshot_json JSONB,
+                execution_checksum TEXT,
+                status TEXT NOT NULL DEFAULT 'queued',
+                attempts INTEGER NOT NULL DEFAULT 0,
+                max_attempts INTEGER NOT NULL DEFAULT 3,
+                result_json JSONB,
+                error_message TEXT,
+                worker_id TEXT,
+                locked_at TIMESTAMP,
+                next_attempt_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                completed_at TIMESTAMP
+            )
+            """
+        )
+        connection.execute("ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS execution_snapshot_json JSONB")
+        connection.execute("ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS execution_checksum TEXT")
+        connection.execute(
+            """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = 'assessment_stage_runs_preparation_job_fk'
+                ) THEN
+                    ALTER TABLE assessment_stage_runs
+                    ADD CONSTRAINT assessment_stage_runs_preparation_job_fk
+                    FOREIGN KEY (preparation_job_id)
+                    REFERENCES assessment_preparation_jobs(id)
+                    ON DELETE CASCADE;
+                END IF;
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = 'assessment_stage_runs_subject_check'
+                ) THEN
+                    ALTER TABLE assessment_stage_runs
+                    ADD CONSTRAINT assessment_stage_runs_subject_check
+                    CHECK (session_id IS NOT NULL OR preparation_job_id IS NOT NULL);
+                END IF;
+            END
+            $$
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_assessment_preparation_jobs_claim
+            ON assessment_preparation_jobs(status, next_attempt_at, created_at)
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_assessment_preparation_jobs_active_user
+            ON assessment_preparation_jobs(user_id)
+            WHERE status IN ('queued', 'running')
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_analysis_jobs (
+                id BIGSERIAL PRIMARY KEY,
+                operation_id TEXT NOT NULL UNIQUE,
+                session_id INTEGER NOT NULL REFERENCES user_sessions(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                status TEXT NOT NULL DEFAULT 'queued',
+                progress_percent INTEGER NOT NULL DEFAULT 0,
+                current_step TEXT NOT NULL DEFAULT 'queued',
+                attempts INTEGER NOT NULL DEFAULT 0,
+                max_attempts INTEGER NOT NULL DEFAULT 3,
+                error_code TEXT,
+                error_message TEXT,
+                retryable BOOLEAN NOT NULL DEFAULT TRUE,
+                worker_id TEXT,
+                locked_at TIMESTAMP,
+                next_attempt_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                completed_at TIMESTAMP,
+                CONSTRAINT assessment_analysis_jobs_status_check
+                    CHECK (status IN ('queued', 'running', 'completed', 'failed')),
+                CONSTRAINT assessment_analysis_jobs_progress_check
+                    CHECK (progress_percent BETWEEN 0 AND 100)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_assessment_analysis_jobs_claim
+            ON assessment_analysis_jobs(status, next_attempt_at, created_at)
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_assessment_analysis_jobs_active_session
+            ON assessment_analysis_jobs(session_id)
+            WHERE status IN ('queued', 'running')
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS analysis_started_at TIMESTAMP
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS analysis_completed_at TIMESTAMP
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS error_stage TEXT
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS error_code TEXT
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS error_message TEXT
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE user_sessions
+            ADD COLUMN IF NOT EXISTS error_retryable BOOLEAN NOT NULL DEFAULT FALSE
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_preparation_batches (
+                id BIGSERIAL PRIMARY KEY,
+                batch_id TEXT NOT NULL UNIQUE,
+                organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+                created_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_preparation_batch_items (
+                id BIGSERIAL PRIMARY KEY,
+                batch_id TEXT NOT NULL REFERENCES assessment_preparation_batches(batch_id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                operation_id TEXT REFERENCES assessment_preparation_jobs(operation_id) ON DELETE SET NULL,
+                initial_status TEXT NOT NULL DEFAULT 'queued',
+                status_message TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (batch_id, user_id)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_assessment_preparation_batch_items_batch
+            ON assessment_preparation_batch_items(batch_id, created_at)
+            """
+        )
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS llm_prompts (
@@ -2803,6 +3429,23 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS user_onboarding_state (
+                user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                status TEXT NOT NULL DEFAULT 'not_started',
+                current_step INTEGER NOT NULL DEFAULT 0,
+                started_at TIMESTAMP,
+                completed_at TIMESTAMP,
+                skipped_at TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                CONSTRAINT user_onboarding_state_status_check
+                    CHECK (status IN ('not_started', 'in_progress', 'completed', 'skipped')),
+                CONSTRAINT user_onboarding_state_step_check
+                    CHECK (current_step >= 0)
+            )
+            """
+        )
+        connection.execute(
+            """
             CREATE TABLE IF NOT EXISTS organizations (
                 id BIGSERIAL PRIMARY KEY,
                 code TEXT NOT NULL UNIQUE,
@@ -2814,6 +3457,13 @@ def ensure_core_schema() -> None:
             """
         )
         connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS profile TEXT")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS founded_year INTEGER")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS employee_count INTEGER")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS industry TEXT")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS website TEXT")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS headquarters TEXT")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS notes TEXT")
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS organization_email_domains (
@@ -2875,6 +3525,29 @@ def ensure_core_schema() -> None:
         connection.execute("ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS expert_assessed_at TIMESTAMP")
         connection.execute("ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS expert_comment_updated_at TIMESTAMP")
         connection.execute("ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS mbti_summary_json JSONB NOT NULL DEFAULT '{}'::jsonb")
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS case_set_reuse_audits (
+                id BIGSERIAL PRIMARY KEY,
+                session_id BIGINT NOT NULL UNIQUE REFERENCES user_sessions(id) ON DELETE CASCADE,
+                profile_id BIGINT REFERENCES user_role_profiles(id) ON DELETE SET NULL,
+                mode TEXT NOT NULL,
+                verdict TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                similarity_score DOUBLE PRECISION,
+                similarity_components JSONB NOT NULL DEFAULT '{}'::jsonb,
+                source_session_id BIGINT REFERENCES user_sessions(id) ON DELETE SET NULL,
+                source_profile_id BIGINT REFERENCES user_role_profiles(id) ON DELETE SET NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_case_set_reuse_audits_verdict_created
+            ON case_set_reuse_audits(verdict, created_at)
+            """
+        )
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS session_mbti_refinements (

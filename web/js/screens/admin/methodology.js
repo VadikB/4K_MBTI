@@ -80,6 +80,7 @@ import { ADMIN_METHODOLOGY_RISK_PAGE_SIZE, ADMIN_METHODOLOGY_CASES_PAGE_SIZE } f
 import { escapeHtml, highlightAdminInsightFigures, sanitizeDisplayMetaText } from '../../utils/format.js';
 import { readApiResponse } from '../../api.js';
 import { hideAllPanels, syncUrlState } from '../../router.js';
+import { initDefinitionAuthoring, loadDefinitionAuthoring } from './definition-authoring.js';
 export const loadAdminMethodology = async () => {
   const response = await fetch('/users/admin/methodology', {
     credentials: 'same-origin',
@@ -159,6 +160,8 @@ export const getFilteredAdminMethodologyCases = () => {
 
 export const renderAdminMethodologyTab = () => {
   const activeTab = state.adminMethodologyTab || 'passports';
+  const definitionsTab = document.getElementById('admin-methodology-tab-definitions');
+  const definitionsView = document.getElementById('admin-methodology-definitions-view');
   if (adminMethodologyTabPassports) {
     adminMethodologyTabPassports.classList.toggle('active', activeTab === 'passports');
   }
@@ -168,6 +171,9 @@ export const renderAdminMethodologyTab = () => {
   if (adminMethodologyTabBranches) {
     adminMethodologyTabBranches.classList.toggle('active', activeTab === 'branches');
   }
+  if (definitionsTab) {
+    definitionsTab.classList.toggle('active', activeTab === 'definitions');
+  }
   if (adminMethodologyPassportsView) {
     adminMethodologyPassportsView.classList.toggle('hidden', activeTab !== 'passports');
   }
@@ -176,6 +182,9 @@ export const renderAdminMethodologyTab = () => {
   }
   if (adminMethodologyBranchesView) {
     adminMethodologyBranchesView.classList.toggle('hidden', activeTab !== 'branches');
+  }
+  if (definitionsView) {
+    definitionsView.classList.toggle('hidden', activeTab !== 'definitions');
   }
 };
 
@@ -1917,6 +1926,9 @@ export const openAdminMethodology = async () => {
       await loadAdminMethodology();
     }
     renderAdminMethodology();
+    if (state.adminMethodologyTab === 'definitions') {
+      await loadDefinitionAuthoring();
+    }
     if (state.adminMethodologyDetailCode) {
       await openAdminMethodologyDetail(state.adminMethodologyDetailCode);
     }
@@ -1929,6 +1941,16 @@ export const openAdminMethodology = async () => {
 
 
 export const initAdminMethodology = () => {
+  initDefinitionAuthoring();
+  const definitionsTab = document.getElementById('admin-methodology-tab-definitions');
+  if (definitionsTab) {
+    definitionsTab.addEventListener('click', () => {
+      state.adminMethodologyTab = 'definitions';
+      persistAssessmentContext();
+      renderAdminMethodologyTab();
+      void loadDefinitionAuthoring();
+    });
+  }
   if (adminMethodologyScenarioTemplate) {
     adminMethodologyScenarioTemplate.addEventListener('click', () => {
       state.adminMethodologyScenarioMode = 'template';

@@ -68,7 +68,18 @@
           <input id="email-input" name="email" type="email" placeholder="name@company.com" autocomplete="username email" required>
         </label>
         <button id="request-magic-link-button" type="submit" class="primary-button">Продолжить</button>
+        <button id="forgot-password-button" type="button" class="ghost-button auth-secondary-action">Забыли пароль?</button>
       </form>
+      <div id="auth-email-sent" class="auth-email-sent hidden" role="status" aria-live="polite">
+        <div class="auth-email-sent-icon" aria-hidden="true">✓</div>
+        <div class="auth-email-sent-copy">
+          <h2>Проверьте почту</h2>
+          <p>Мы отправили ссылку для подтверждения на <strong id="auth-email-sent-address"></strong>.</p>
+          <p class="subtitle">Откройте письмо и перейдите по ссылке. Эта страница продолжит регистрацию автоматически.</p>
+        </div>
+        <button id="auth-resend-email-button" type="button" class="primary-button" disabled>Отправить повторно через 60 сек.</button>
+        <button id="auth-change-email-button" type="button" class="ghost-button auth-secondary-action">Указать другой email</button>
+      </div>
       <form id="auth-token-form" class="stack hidden" autocomplete="on">
         <input id="auth-credential-email-input" name="username" type="email" autocomplete="username" hidden>
         <label class="field">
@@ -139,6 +150,7 @@
               <div id="dashboard-avatar" class="user-avatar">А</div>
             </div>
             <div class="user-menu-dropdown" role="menu" aria-label="Меню пользователя">
+              <button id="dashboard-onboarding-button" class="user-menu-item" type="button" role="menuitem">Как это работает</button>
               <button id="dashboard-profile-button" class="user-menu-item" type="button" role="menuitem">Настройки</button>
               <button id="dashboard-restart-button" class="user-menu-item" type="button" role="menuitem">Выйти</button>
             </div>
@@ -474,10 +486,14 @@
         <section class="card card--lg admin-organizations-list-card">
           <div class="report-card-head">
             <div>
-              <p class="section-label accent-label">Список</p>
-              <h3>Активные организации</h3>
+              <p class="section-label accent-label">Организация</p>
+              <h3>Профиль и участники</h3>
             </div>
           </div>
+          <label class="admin-organization-picker">
+            <span>Выберите организацию</span>
+            <select id="admin-organization-select" aria-label="Выберите организацию"></select>
+          </label>
           <div id="admin-organizations-list" class="admin-organizations-list"></div>
         </section>
       </div>
@@ -512,6 +528,7 @@
             <button id="admin-methodology-tab-passports" type="button" class="admin-methodology-tab active">Паспорта типов кейсов</button>
             <button id="admin-methodology-tab-library" type="button" class="admin-methodology-tab">Библиотека кейсов</button>
             <button id="admin-methodology-tab-branches" type="button" class="admin-methodology-tab">Ветки и покрытие</button>
+            <button id="admin-methodology-tab-definitions" type="button" class="admin-methodology-tab">Версии и сценарии</button>
           </div>
 
           <div id="admin-methodology-passports-view" class="admin-methodology-view">
@@ -609,6 +626,80 @@
                   </div>
                 </div>
                 <div id="admin-methodology-case-quality" class="admin-methodology-risk-list"></div>
+              </article>
+            </section>
+          </div>
+
+          <div id="admin-methodology-definitions-view" class="admin-methodology-view hidden">
+            <section class="admin-definition-grid">
+              <article class="card card--lg admin-definition-card">
+                <div class="report-card-head">
+                  <div>
+                    <p class="section-label accent-label">Authoring</p>
+                    <h3>Методологии и сценарии</h3>
+                  </div>
+                  <button id="admin-definition-refresh" type="button" class="ghost-button compact-ghost">Обновить</button>
+                </div>
+                <div class="admin-definition-columns">
+                  <div>
+                    <h4>Методологии</h4>
+                    <div id="admin-methodology-version-list" class="admin-definition-list"></div>
+                  </div>
+                  <div>
+                    <h4>Сценарии</h4>
+                    <div id="admin-scenario-version-list" class="admin-definition-list"></div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="card card--lg admin-definition-card">
+                <div class="report-card-head">
+                  <div>
+                    <p class="section-label accent-label">Draft editor</p>
+                    <h3 id="admin-definition-editor-title">Новая методология</h3>
+                  </div>
+                </div>
+                <div class="admin-definition-form-grid">
+                  <label>Тип
+                    <select id="admin-definition-type" class="admin-methodology-input">
+                      <option value="methodology">Методология</option>
+                      <option value="scenario">Сценарий</option>
+                    </select>
+                  </label>
+                  <label>Code<input id="admin-definition-code" class="admin-methodology-input" autocomplete="off"></label>
+                  <label>Название<input id="admin-definition-name" class="admin-methodology-input" autocomplete="off"></label>
+                  <label class="admin-definition-wide">Описание<input id="admin-definition-description" class="admin-methodology-input" autocomplete="off"></label>
+                  <label class="admin-definition-wide">Definition JSON
+                    <textarea id="admin-definition-json" class="admin-methodology-input admin-definition-json" rows="18" spellcheck="false"></textarea>
+                  </label>
+                </div>
+                <div class="admin-definition-actions">
+                  <button id="admin-definition-new" type="button" class="ghost-button compact-ghost">Новый draft v1</button>
+                  <button id="admin-definition-save" type="button" class="primary-button compact-primary">Создать</button>
+                  <button id="admin-definition-validate" type="button" class="ghost-button compact-ghost" disabled>Проверить</button>
+                  <button id="admin-definition-submit" type="button" class="ghost-button compact-ghost" disabled>На review</button>
+                  <button id="admin-definition-publish" type="button" class="ghost-button compact-ghost" disabled>Опубликовать</button>
+                </div>
+                <p id="admin-definition-status" class="admin-methodology-save-status hidden"></p>
+              </article>
+
+              <article class="card card--lg admin-definition-card admin-definition-config-card">
+                <div class="report-card-head">
+                  <div>
+                    <p class="section-label accent-label">Configuration</p>
+                    <h3>Связать опубликованные версии</h3>
+                  </div>
+                </div>
+                <div class="admin-definition-form-grid">
+                  <label>Code<input id="admin-configuration-code" class="admin-methodology-input"></label>
+                  <label>Название<input id="admin-configuration-name" class="admin-methodology-input"></label>
+                  <label>Методология<select id="admin-configuration-methodology" class="admin-methodology-input"></select></label>
+                  <label>Сценарий<select id="admin-configuration-scenario" class="admin-methodology-input"></select></label>
+                </div>
+                <div class="admin-definition-actions">
+                  <button id="admin-configuration-create" type="button" class="primary-button compact-primary">Создать draft</button>
+                </div>
+                <div id="admin-configuration-list" class="admin-definition-list"></div>
               </article>
             </section>
           </div>
@@ -1479,7 +1570,7 @@
             <ol>
               <li>Изучите ситуацию и опишите своё решение в поле ответа.</li>
               <li><b>«Отправить ответ»</b> сохраняет сообщение и продолжает диалог с AI. Если появится уточняющий вопрос, ответьте и снова нажмите эту кнопку.</li>
-              <li><b>«Завершить кейс»</b> фиксирует весь диалог и переводит к следующему кейсу. Текст из поля сначала нужно отправить.</li>
+              <li><b>«Завершить кейс»</b> можно нажимать после отправки хотя бы одного ответа: сначала введите решение и нажмите <b>«Отправить ответ»</b>, затем завершите кейс.</li>
             </ol>
           </aside>
 
@@ -1873,7 +1964,8 @@
     </article>
   </div>
 
+  <script src="/app-config.js"></script>
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=2.1.25"></script>
+  <script type="module" src="/web/dist/main.js?v=2.1.27"></script>
 </body>
 </html>

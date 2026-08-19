@@ -11,8 +11,29 @@ import {
   onboardingPanel,
 } from '../dom.js';
 import { onboardingSteps } from '../config.js';
-import { hideAllPanels, syncUrlState, returnToStart } from '../router.js';
+import { hideAllPanels, syncUrlState } from '../router.js';
 import { openAiWelcome } from './ai-welcome.js';
+import { readApiResponse } from '../api.js';
+
+let onboardingReviewMode = false;
+
+const saveOnboardingState = async (status, currentStep = state.onboardingIndex) => {
+  if (!state.pendingUser?.id) {
+    return null;
+  }
+  const response = await fetch('/users/' + state.pendingUser.id + '/onboarding', {
+    method: 'PUT',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      status,
+      current_step: Math.max(0, Number(currentStep || 0)),
+    }),
+  });
+  return readApiResponse(response, 'Не удалось сохранить состояние онбординга.');
+};
 
 export const renderOnboarding = () => {
   const step = onboardingSteps[state.onboardingIndex];
@@ -53,9 +74,20 @@ export const renderOnboarding = () => {
   window.scrollTo({ top: 0, left: 0 });
 };
 
-export const openOnboarding = () => {
-  state.onboardingIndex = 0;
+export const openOnboarding = async ({ currentStep = 0, reviewMode = false } = {}) => {
+  onboardingReviewMode = Boolean(reviewMode);
+  state.onboardingIndex = Math.min(
+    Math.max(0, Number(currentStep || 0)),
+    Math.max(0, onboardingSteps.length - 1),
+  );
   state.onboardingShown = true;
+  if (!onboardingReviewMode) {
+    try {
+      await saveOnboardingState('in_progress', state.onboardingIndex);
+    } catch (error) {
+      console.error('Failed to persist onboarding start', error);
+    }
+  }
   setCurrentScreen('onboarding');
   persistAssessmentContext();
   renderOnboarding();
@@ -71,22 +103,50 @@ export const goBackInOnboarding = () => {
     return;
   }
 
-  returnToStart();
+  openAiWelcome();
 };
 
 export const initOnboarding = () => {
-  onboardingNext.addEventListener('click', () => {
+  onboardingNext.addEventListener('click', async () => {
     if (state.onboardingIndex < onboardingSteps.length - 1) {
       state.onboardingIndex += 1;
       renderOnboarding();
+      if (!onboardingReviewMode) {
+        try {
+          await saveOnboardingState('in_progress');
+        } catch (error) {
+          console.error('Failed to persist onboarding progress', error);
+        }
+      }
       return;
     }
 
+    if (onboardingReviewMode) {
+      openAiWelcome();
+      return;
+    }
+
+    try {
+      await saveOnboardingState('completed');
+    } catch (error) {
+      console.error('Failed to persist onboarding completion', error);
+      return;
+    }
     openAiWelcome();
   });
 
-  onboardingSkip.addEventListener('click', () => {
-    returnToStart();
+  onboardingSkip.addEventListener('click', async () => {
+    if (onboardingReviewMode) {
+      openAiWelcome();
+      return;
+    }
+    try {
+      await saveOnboardingState('skipped');
+    } catch (error) {
+      console.error('Failed to persist onboarding skip', error);
+      return;
+    }
+    openAiWelcome();
   });
 
   if (onboardingStepBackButton) {
