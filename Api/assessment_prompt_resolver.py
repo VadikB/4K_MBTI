@@ -11,14 +11,15 @@ def load_active_prompt_bundle(connection) -> dict[str, Any]:
         "case_generation_instructions": [],
     }
     try:
-        interviewer_rows = connection.execute(
-            """
-            SELECT prompt_code, prompt_name, prompt_text, prompt_version
-            FROM interviewer_agent_prompts
-            WHERE is_active = TRUE
-            ORDER BY prompt_code ASC
-            """
-        ).fetchall()
+        with connection.transaction():
+            interviewer_rows = connection.execute(
+                """
+                SELECT prompt_code, prompt_name, prompt_text, prompt_version
+                FROM interviewer_agent_prompts
+                WHERE is_active = TRUE
+                ORDER BY prompt_code ASC
+                """
+            ).fetchall()
         bundle["interviewer"] = {
             str(row["prompt_code"]): {
                 "name": str(row["prompt_name"]),
@@ -31,23 +32,24 @@ def load_active_prompt_bundle(connection) -> dict[str, Any]:
         pass
 
     try:
-        profile_rows = connection.execute(
-            """
-            SELECT agent_code, agent_name, competency_name, purpose_prompt, rationale_prompt,
-                   evidence_prompt, red_flag_prompt, prompt_version
-            FROM assessment_agent_prompt_profiles
-            WHERE is_active = TRUE
-            ORDER BY agent_code ASC
-            """
-        ).fetchall()
-        rule_rows = connection.execute(
-            """
-            SELECT agent_code, rule_code, rule_scope, rule_text, display_order
-            FROM assessment_agent_prompt_rules
-            WHERE is_active = TRUE
-            ORDER BY agent_code ASC, display_order ASC, id ASC
-            """
-        ).fetchall()
+        with connection.transaction():
+            profile_rows = connection.execute(
+                """
+                SELECT agent_code, agent_name, competency_name, purpose_prompt, rationale_prompt,
+                       evidence_prompt, red_flag_prompt, prompt_version
+                FROM assessment_agent_prompt_profiles
+                WHERE is_active = TRUE
+                ORDER BY agent_code ASC
+                """
+            ).fetchall()
+            rule_rows = connection.execute(
+                """
+                SELECT agent_code, rule_code, rule_scope, rule_text, display_order
+                FROM assessment_agent_prompt_rules
+                WHERE is_active = TRUE
+                ORDER BY agent_code ASC, display_order ASC, id ASC
+                """
+            ).fetchall()
         rules_by_agent: dict[str, list[dict[str, Any]]] = {}
         for row in rule_rows:
             rules_by_agent.setdefault(str(row["agent_code"]), []).append(dict(row))
@@ -62,15 +64,16 @@ def load_active_prompt_bundle(connection) -> dict[str, Any]:
         pass
 
     try:
-        instruction_rows = connection.execute(
-            """
-            SELECT instruction_code, instruction_name, instruction_text, version,
-                   applies_to_type_code, priority
-            FROM case_text_build_instructions
-            WHERE is_active = TRUE
-            ORDER BY priority ASC, version DESC, id DESC
-            """
-        ).fetchall()
+        with connection.transaction():
+            instruction_rows = connection.execute(
+                """
+                SELECT instruction_code, instruction_name, instruction_text, version,
+                       applies_to_type_code, priority
+                FROM case_text_build_instructions
+                WHERE is_active = TRUE
+                ORDER BY priority ASC, version DESC, id DESC
+                """
+            ).fetchall()
         bundle["case_generation_instructions"] = [dict(row) for row in instruction_rows]
     except Exception:
         pass

@@ -1,6 +1,6 @@
 import pytest
 
-from Api.assessment_prompt_resolver import prompt_resolver
+from Api.assessment_prompt_resolver import load_active_prompt_bundle, prompt_resolver
 from Api.communication_agent import CommunicationAgent
 from Api.deepseek_client import DeepSeekClient
 
@@ -36,6 +36,44 @@ PROMPT_SNAPSHOT = {
         ],
     }
 }
+
+
+@pytest.mark.unit
+def test_missing_optional_prompt_tables_are_isolated_by_savepoints() -> None:
+    class Savepoint:
+        def __init__(self, connection):
+            self.connection = connection
+
+        def __enter__(self):
+            self.connection.savepoints_started += 1
+
+        def __exit__(self, exc_type, _exc, _traceback):
+            if exc_type is not None:
+                self.connection.savepoints_rolled_back += 1
+            return False
+
+    class MissingTablesConnection:
+        def __init__(self):
+            self.savepoints_started = 0
+            self.savepoints_rolled_back = 0
+
+        def transaction(self):
+            return Savepoint(self)
+
+        def execute(self, *_args, **_kwargs):
+            raise RuntimeError("optional prompt table is missing")
+
+    connection = MissingTablesConnection()
+    bundle = load_active_prompt_bundle(connection)
+
+    assert bundle == {
+        "schema_version": 1,
+        "interviewer": {},
+        "assessment_agents": {},
+        "case_generation_instructions": [],
+    }
+    assert connection.savepoints_started == 3
+    assert connection.savepoints_rolled_back == 3
 
 
 @pytest.mark.unit
