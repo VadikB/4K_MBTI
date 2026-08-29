@@ -8,7 +8,13 @@ import {
   restoreAssessmentContextFromParams,
   clearAssessmentContext,
 } from './state.js';
-import { restoreServerSession, restoreLocalUserSession, loadUserJourneyState } from './session.js';
+import {
+  restoreServerSession,
+  restoreLocalUserSession,
+  loadUserJourneyState,
+  resetStaleUserState,
+} from './session.js';
+import { registerUnauthorizedResponseHandler } from './api.js';
 import { hideAllPanels, returnToStart } from './router.js';
 import { handleAuthActionToken, initWiring, verifyEmailMagicLinkToken } from './wiring.js';
 import {
@@ -97,6 +103,8 @@ const resetInitialState = () => {
     emailInput.focus();
   }
 };
+
+registerUnauthorizedResponseHandler(resetStaleUserState);
 
 const bootApp = async () => {
   resetInitialState();
