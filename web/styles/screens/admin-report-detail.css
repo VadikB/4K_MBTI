@@ -23,11 +23,6 @@
     flex: 0 0 12px;
 }
 
-.admin-report-mbti-card {
-    display: grid;
-    gap: var(--space-3);
-}
-
 .admin-detail-skill-radar-section {
     display: grid;
     gap: var(--space-3);
@@ -215,42 +210,6 @@
 .admin-detail-card-icon.accent {
     background: rgba(70, 72, 212, 0.12);
     color: var(--accent);
-}
-
-.admin-detail-mbti-axes {
-    display: grid;
-    gap: var(--space-3);
-}
-
-.admin-detail-mbti-axis {
-    display: grid;
-    gap: var(--space-2);
-}
-
-.admin-detail-mbti-axis-head {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-2);
-    color: var(--text-muted);
-    font-size: var(--fs-meta);
-}
-
-.admin-detail-mbti-axis-track {
-    height: 10px;
-    border-radius: var(--radius-pill);
-    background: rgba(70, 72, 212, 0.12);
-    overflow: hidden;
-}
-
-.admin-detail-mbti-axis-track span {
-    display: block;
-    height: 100%;
-    border-radius: var(--radius-pill);
-    background: linear-gradient(
-        90deg,
-        var(--accent) 0%,
-        var(--accent-bright) 100%
-    );
 }
 
 .admin-detail-insights-grid {

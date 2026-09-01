@@ -12,7 +12,6 @@
 - [ ] Running sessions use their stored snapshot and checksum.
 - [ ] A draft cannot become the default configuration.
 - [ ] Only registered components and predicates can be executed by a scenario.
-- [ ] MBTI remains outside the target 4K methodology/runtime.
 
 ## Data and security
 

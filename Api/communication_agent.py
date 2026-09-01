@@ -5,8 +5,17 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from Api.deepseek_client import deepseek_client
+from Api.assessment_configuration import definition_checksum
+from Api.assessment_evaluation_repository import assessment_evaluation_result_repository
+from Api.assessment_evaluator_contracts import (
+    CaseSkillAnalysisOutput,
+    CompetencyEvaluationInput,
+    CompetencyEvaluationOutput,
+    SkillEvaluationOutput,
+    competency_evaluation_input_builder,
+)
 from Api.assessment_prompt_resolver import prompt_resolver
+from Api.deepseek_client import deepseek_client
 
 
 STOP_WORDS = {
@@ -56,6 +65,34 @@ class SkillEvaluation:
     source_session_case_ids: list[int]
 
 
+@dataclass(slots=True)
+class CaseSkillAnalysis:
+    session_case_id: int
+    case_registry_id: int | None
+    skill_id: int
+    competency_name: str
+    expected_artifact_code: str | None
+    expected_artifact_name: str | None
+    detected_artifact_parts: list[str]
+    missing_artifact_parts: list[str]
+    artifact_compliance_percent: int | None
+    structural_elements: dict[str, bool]
+    detected_required_blocks: list[str]
+    missing_required_blocks: list[str]
+    block_coverage_percent: int | None
+    red_flags: list[str]
+    found_evidence: list[dict[str, str]]
+    detected_signals: list[str]
+    evidence_excerpt: str
+    source_message_count: int
+
+
+@dataclass(slots=True)
+class CompetencyCalculation:
+    assessments: list[SkillEvaluation]
+    case_analyses: list[CaseSkillAnalysis]
+
+
 class BaseCompetencyAgent:
     def __init__(self, competency_name: str, agent_code: str) -> None:
         self.competency_name = competency_name
@@ -83,9 +120,12 @@ class BaseCompetencyAgent:
         connection,
         prompt_snapshot: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        snapshotted = prompt_resolver.assessment_agent_config(prompt_snapshot, agent_code=self.agent_code)
-        if snapshotted is not None:
-            return snapshotted
+        if prompt_snapshot is not None:
+            return prompt_resolver.assessment_agent_config(
+                prompt_snapshot,
+                agent_code=self.agent_code,
+                required=True,
+            )
         profile_row = connection.execute(
             """
             SELECT agent_code, agent_name, competency_name, purpose_prompt, rationale_prompt,
@@ -113,8 +153,8 @@ class BaseCompetencyAgent:
         }
 
     def evaluate_session(self, *, connection, session_id: int, user_id: int) -> list[SkillEvaluation]:
-        skills = self._load_session_skills(connection, session_id)
-        if not skills:
+        session_skills = self._load_session_skills(connection, session_id)
+        if not session_skills:
             return []
         snapshot_row = connection.execute(
             "SELECT execution_snapshot_json FROM user_sessions WHERE id = %s",
@@ -125,17 +165,149 @@ class BaseCompetencyAgent:
             if snapshot_row is not None and isinstance(snapshot_row["execution_snapshot_json"], dict)
             else None
         )
+        agent_prompt_config, skills = self.load_evaluation_materials(
+            connection=connection,
+            session_id=session_id,
+            prompt_snapshot=prompt_snapshot,
+            preloaded_skills=session_skills,
+        )
+        methodology = dict((prompt_snapshot or {}).get("methodology") or {})
+        legacy_definition = {
+            "schema_version": 1,
+            "code": self.agent_code,
+            "version": 1,
+            "competency_code": self.agent_code,
+            "instruction_markdown": str(
+                (agent_prompt_config.get("profile") or {}).get("purpose_prompt")
+                or f"Оцени компетенцию {self.competency_name}."
+            ),
+            "input_contract": {"code": "competency_evaluation_input", "version": 1},
+            "output_contract": {"code": "competency_evaluation_output", "version": 1},
+            "executor": {"code": f"evaluation.{self.agent_code}", "version": 1},
+            "runtime": {"mode": "legacy_adapter"},
+        }
+        frozen_agent_definition = None
+        if prompt_snapshot is not None:
+            methodology_definition = dict(methodology.get("definition") or {})
+            competency = next(
+                (
+                    item
+                    for item in methodology_definition.get("competencies") or []
+                    if str((item or {}).get("code") or "") == self.agent_code
+                ),
+                None,
+            )
+            if not isinstance(competency, dict):
+                raise ValueError(f"Competency is missing from execution snapshot: {self.agent_code}.")
+            frozen_agent_definition = competency_evaluation_input_builder.resolve_agent_definition(
+                snapshot=prompt_snapshot,
+                competency=competency,
+                component_code=f"evaluation.{self.agent_code}",
+                component_version=1,
+            )
+        input_data = CompetencyEvaluationInput(
+            session_id=session_id,
+            user_id=user_id,
+            methodology_code=str(methodology.get("code") or "competencies_4k"),
+            methodology_version=int(methodology.get("version") or 1),
+            competency_code=self.agent_code,
+            component_code=f"evaluation.{self.agent_code}",
+            component_version=1,
+            agent_definition=frozen_agent_definition or {
+                "code": self.agent_code,
+                "name": self.competency_name,
+                "version": 1,
+                "checksum": definition_checksum(legacy_definition),
+                "instruction_markdown": legacy_definition["instruction_markdown"],
+                "input_contract": legacy_definition["input_contract"],
+                "output_contract": legacy_definition["output_contract"],
+                "executor": legacy_definition["executor"],
+                "runtime": legacy_definition["runtime"],
+            },
+            agent_prompt_config=agent_prompt_config,
+            skills=skills,
+        )
+        calculation = self.evaluate_contract(connection=connection, input_data=input_data)
+        output = CompetencyEvaluationOutput(
+            competency_code=input_data.competency_code,
+            component_code=input_data.component_code,
+            component_version=input_data.component_version,
+            status="evaluated" if calculation.assessments else "no_assessments",
+            assessments=[SkillEvaluationOutput.model_validate(item) for item in calculation.assessments],
+            case_analyses=[CaseSkillAnalysisOutput.model_validate(item) for item in calculation.case_analyses],
+        )
+        assessment_evaluation_result_repository.save(
+            connection=connection,
+            input_data=input_data,
+            output=output,
+        )
+        return calculation.assessments
+
+    def load_evaluation_materials(
+        self,
+        *,
+        connection,
+        session_id: int,
+        prompt_snapshot: dict[str, Any] | None,
+        preloaded_skills: list[dict[str, Any]] | None = None,
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        session_skills = (
+            preloaded_skills
+            if preloaded_skills is not None
+            else self._load_session_skills(connection, session_id)
+        )
+        if not session_skills:
+            return {"profile": {}, "rules": []}, []
         agent_prompt_config = self._load_agent_prompt_profile(connection, prompt_snapshot)
+        skills: list[dict[str, Any]] = []
+        for skill in session_skills:
+            skills.append(
+                {
+                    **skill,
+                    "rubric": self._load_rubric(connection, skill["competency_skill_id"]),
+                    "cases": self._load_case_payload_for_skill(connection, session_id, skill["skill_id"]),
+                }
+            )
+        return agent_prompt_config, skills
+
+    def evaluate_contract(
+        self,
+        *,
+        connection,
+        input_data: CompetencyEvaluationInput,
+    ) -> CompetencyCalculation:
+        agent_prompt_config = input_data.agent_prompt_config.model_dump()
+        agent_prompt_config["definition_instruction_markdown"] = input_data.agent_definition.instruction_markdown
+        agent_prompt_config["definition_runtime"] = dict(input_data.agent_definition.runtime)
+        return self._evaluate_materials(
+            connection=connection,
+            session_id=input_data.session_id,
+            user_id=input_data.user_id,
+            agent_prompt_config=agent_prompt_config,
+            skills=[skill.model_dump() for skill in input_data.skills],
+        )
+
+    def _evaluate_materials(
+        self,
+        *,
+        connection,
+        session_id: int,
+        user_id: int,
+        agent_prompt_config: dict[str, Any],
+        skills: list[dict[str, Any]],
+    ) -> CompetencyCalculation:
+        if not skills:
+            return CompetencyCalculation(assessments=[], case_analyses=[])
 
         evaluations: list[SkillEvaluation] = []
+        case_analyses: list[CaseSkillAnalysis] = []
         for skill in skills:
-            case_payload = self._load_case_payload_for_skill(connection, session_id, skill["skill_id"])
+            case_payload = list(skill.get("cases") or [])
             if not case_payload:
                 evaluation = self._build_na_evaluation(
                     skill=skill,
                     rationale="По данному навыку в сессии отсутствуют связанные кейсы или сообщения пользователя.",
                 )
-                self._save_evaluation(connection, session_id, user_id, evaluation)
                 evaluations.append(evaluation)
                 continue
 
@@ -145,19 +317,15 @@ class BaseCompetencyAgent:
                     skill=skill,
                     rationale="По данному навыку не осталось валидных пользовательских ответов: кейсы были пропущены, завершены без ответа или отмечены как отказные.",
                 )
-                self._save_evaluation(connection, session_id, user_id, evaluation)
                 evaluations.append(evaluation)
                 continue
 
-            self._save_case_level_structured_analysis(
-                connection=connection,
-                session_id=session_id,
-                user_id=user_id,
+            case_analyses.extend(self._build_case_level_structured_analyses(
                 skill=skill,
                 case_payload=case_payload,
-            )
+            ))
             user_text = "\n".join(payload["user_text"] for payload in case_payload if payload["user_text"]).strip()
-            rubric = self._load_rubric(connection, skill["competency_skill_id"])
+            rubric = dict(skill.get("rubric") or {})
             structural_elements = self._extract_structural_elements(user_text, case_payload)
             detected_required_blocks, missing_required_blocks, block_coverage_percent = self._summarize_required_blocks(
                 structural_elements=structural_elements,
@@ -222,9 +390,8 @@ class BaseCompetencyAgent:
                 evidence_excerpt=self._build_evidence_excerpt(user_text),
                 source_session_case_ids=[payload["session_case_id"] for payload in case_payload],
             )
-            self._save_evaluation(connection, session_id, user_id, evaluation)
             evaluations.append(evaluation)
-        return evaluations
+        return CompetencyCalculation(assessments=evaluations, case_analyses=case_analyses)
 
     def _build_na_evaluation(self, *, skill: dict[str, Any], rationale: str) -> SkillEvaluation:
         return SkillEvaluation(
@@ -529,6 +696,10 @@ class BaseCompetencyAgent:
                 "rubric": rubric,
                 "purpose_prompt": profile.get("purpose_prompt"),
                 "rules": [str(item.get("rule_text") or "").strip() for item in rules],
+                "definition_instruction_markdown": str(
+                    (agent_prompt_config or {}).get("definition_instruction_markdown") or ""
+                ).strip(),
+                "definition_runtime": dict((agent_prompt_config or {}).get("definition_runtime") or {}),
             },
             ensure_ascii=False,
             sort_keys=True,
@@ -616,6 +787,11 @@ class BaseCompetencyAgent:
             system_prompt += "\nФокус агента: " + str(profile.get("purpose_prompt") or "").strip()
         if rule_lines:
             system_prompt += "\nПравила оценки:\n" + "\n".join(rule_lines)
+        definition_instruction = str(
+            (agent_prompt_config or {}).get("definition_instruction_markdown") or ""
+        ).strip()
+        if definition_instruction:
+            system_prompt += "\n\nВерсионированная инструкция агента:\n" + definition_instruction
 
         user_prompt = (
             f"Компетенция: {self.competency_name}\n"
@@ -1068,15 +1244,13 @@ class BaseCompetencyAgent:
             unique_detected.append(item)
         return unique_detected
 
-    def _save_case_level_structured_analysis(
+    def _build_case_level_structured_analyses(
         self,
         *,
-        connection,
-        session_id: int,
-        user_id: int,
         skill: dict[str, Any],
         case_payload: list[dict[str, Any]],
-    ) -> None:
+    ) -> list[CaseSkillAnalysis]:
+        analyses: list[CaseSkillAnalysis] = []
         for payload in case_payload:
             user_text = payload.get("user_text") or ""
             structural_elements = self._extract_structural_elements(user_text, [payload])
@@ -1101,121 +1275,29 @@ class BaseCompetencyAgent:
                 red_flags=red_flags,
             )
             source_message_count = len([line for line in user_text.splitlines() if line.strip()]) if user_text else 0
-            connection.execute(
-                """
-                INSERT INTO session_case_skill_analysis (
-                    session_id, user_id, session_case_id, case_registry_id, skill_id, competency_name,
-                    expected_artifact_code, expected_artifact_name, detected_artifact_parts,
-                    missing_artifact_parts, artifact_compliance_percent,
-                    structural_elements, detected_required_blocks, missing_required_blocks,
-                    block_coverage_percent, red_flags, found_evidence, detected_signals,
-                    evidence_excerpt, source_message_count, analyzed_at, updated_at
+            analyses.append(
+                CaseSkillAnalysis(
+                    session_case_id=payload["session_case_id"],
+                    case_registry_id=payload.get("case_registry_id"),
+                    skill_id=skill["skill_id"],
+                    competency_name=skill["competency_name"],
+                    expected_artifact_code=payload.get("expected_artifact_code") or None,
+                    expected_artifact_name=payload.get("expected_artifact") or None,
+                    detected_artifact_parts=artifact_detected_parts,
+                    missing_artifact_parts=artifact_missing_parts,
+                    artifact_compliance_percent=artifact_compliance_percent,
+                    structural_elements=structural_elements,
+                    detected_required_blocks=detected_required_blocks,
+                    missing_required_blocks=missing_required_blocks,
+                    block_coverage_percent=block_coverage_percent,
+                    red_flags=red_flags,
+                    found_evidence=found_evidence,
+                    detected_signals=detected_signals,
+                    evidence_excerpt=self._build_evidence_excerpt(user_text),
+                    source_message_count=source_message_count,
                 )
-                VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    NOW(), NOW()
-                )
-                ON CONFLICT (session_case_id, skill_id)
-                DO UPDATE SET
-                    session_id = EXCLUDED.session_id,
-                    user_id = EXCLUDED.user_id,
-                    case_registry_id = EXCLUDED.case_registry_id,
-                    competency_name = EXCLUDED.competency_name,
-                    expected_artifact_code = EXCLUDED.expected_artifact_code,
-                    expected_artifact_name = EXCLUDED.expected_artifact_name,
-                    detected_artifact_parts = EXCLUDED.detected_artifact_parts,
-                    missing_artifact_parts = EXCLUDED.missing_artifact_parts,
-                    artifact_compliance_percent = EXCLUDED.artifact_compliance_percent,
-                    structural_elements = EXCLUDED.structural_elements,
-                    detected_required_blocks = EXCLUDED.detected_required_blocks,
-                    missing_required_blocks = EXCLUDED.missing_required_blocks,
-                    block_coverage_percent = EXCLUDED.block_coverage_percent,
-                    red_flags = EXCLUDED.red_flags,
-                    found_evidence = EXCLUDED.found_evidence,
-                    detected_signals = EXCLUDED.detected_signals,
-                    evidence_excerpt = EXCLUDED.evidence_excerpt,
-                    source_message_count = EXCLUDED.source_message_count,
-                    analyzed_at = EXCLUDED.analyzed_at,
-                    updated_at = EXCLUDED.updated_at
-                """,
-                (
-                    session_id,
-                    user_id,
-                    payload["session_case_id"],
-                    payload.get("case_registry_id"),
-                    skill["skill_id"],
-                    skill["competency_name"],
-                    payload.get("expected_artifact_code") or None,
-                    payload.get("expected_artifact") or None,
-                    json.dumps(artifact_detected_parts, ensure_ascii=False),
-                    json.dumps(artifact_missing_parts, ensure_ascii=False),
-                    artifact_compliance_percent,
-                    json.dumps(structural_elements, ensure_ascii=False),
-                    json.dumps(detected_required_blocks, ensure_ascii=False),
-                    json.dumps(missing_required_blocks, ensure_ascii=False),
-                    block_coverage_percent,
-                    json.dumps(red_flags, ensure_ascii=False),
-                    json.dumps(found_evidence, ensure_ascii=False),
-                    json.dumps(detected_signals, ensure_ascii=False),
-                    self._build_evidence_excerpt(user_text),
-                    source_message_count,
-                ),
             )
-
-    def _save_evaluation(self, connection, session_id: int, user_id: int, evaluation: SkillEvaluation) -> None:
-        connection.execute(
-            """
-            INSERT INTO session_skill_assessments (
-                session_id, user_id, skill_id, competency_skill_id, competency_name, skill_code, skill_name,
-                assessed_level_code, assessed_level_name, rubric_match_scores, structural_elements,
-                red_flags, found_evidence, detected_required_blocks, missing_required_blocks,
-                block_coverage_percent, rationale, evidence_excerpt, source_session_case_ids
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (session_id, skill_id)
-            DO UPDATE SET
-                competency_skill_id = EXCLUDED.competency_skill_id,
-                competency_name = EXCLUDED.competency_name,
-                skill_code = EXCLUDED.skill_code,
-                skill_name = EXCLUDED.skill_name,
-                assessed_level_code = EXCLUDED.assessed_level_code,
-                assessed_level_name = EXCLUDED.assessed_level_name,
-                rubric_match_scores = EXCLUDED.rubric_match_scores,
-                structural_elements = EXCLUDED.structural_elements,
-                red_flags = EXCLUDED.red_flags,
-                found_evidence = EXCLUDED.found_evidence,
-                detected_required_blocks = EXCLUDED.detected_required_blocks,
-                missing_required_blocks = EXCLUDED.missing_required_blocks,
-                block_coverage_percent = EXCLUDED.block_coverage_percent,
-                rationale = EXCLUDED.rationale,
-                evidence_excerpt = EXCLUDED.evidence_excerpt,
-                source_session_case_ids = EXCLUDED.source_session_case_ids,
-                updated_at = CURRENT_TIMESTAMP
-            """,
-            (
-                session_id,
-                user_id,
-                evaluation.skill_id,
-                evaluation.competency_skill_id,
-                evaluation.competency_name,
-                evaluation.skill_code,
-                evaluation.skill_name,
-                evaluation.level_code,
-                evaluation.level_name,
-                json.dumps(evaluation.rubric_match_scores, ensure_ascii=False),
-                json.dumps(evaluation.structural_elements, ensure_ascii=False),
-                json.dumps(evaluation.red_flags, ensure_ascii=False),
-                json.dumps(evaluation.found_evidence, ensure_ascii=False),
-                json.dumps(evaluation.detected_required_blocks, ensure_ascii=False),
-                json.dumps(evaluation.missing_required_blocks, ensure_ascii=False),
-                evaluation.block_coverage_percent,
-                evaluation.rationale,
-                evaluation.evidence_excerpt,
-                json.dumps(evaluation.source_session_case_ids, ensure_ascii=False),
-            ),
-        )
-
+        return analyses
 
 class CommunicationAgent(BaseCompetencyAgent):
     def __init__(self) -> None:

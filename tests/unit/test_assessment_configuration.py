@@ -25,23 +25,5 @@ def test_legacy_methodology_has_exactly_four_evaluators() -> None:
 
 
 @pytest.mark.unit
-def test_legacy_scenario_is_valid_and_contains_no_mbti() -> None:
+def test_legacy_scenario_is_valid() -> None:
     validate_scenario_definition(LEGACY_SCENARIO_DEFINITION)
-    assert "mbti" not in str(LEGACY_SCENARIO_DEFINITION).lower()
-
-
-@pytest.mark.unit
-def test_scenario_rejects_mbti_component() -> None:
-    invalid = {
-        "initial_stage": "evaluate",
-        "stages": [
-            {
-                "id": "evaluate",
-                "component": "evaluation.mbti",
-                "component_version": 1,
-                "on_success": "complete_session",
-            }
-        ],
-    }
-    with pytest.raises(ValueError, match="MBTI"):
-        validate_scenario_definition(invalid)

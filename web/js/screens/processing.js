@@ -20,7 +20,6 @@ const ANALYSIS_STEP_LABELS = {
   competency_2: 'Анализируем командную работу',
   competency_3: 'Анализируем креативность',
   competency_4: 'Анализируем критическое мышление',
-  mbti_summary: 'Формируем итоговый MBTI-профиль',
   retry_wait: 'Ожидаем повторную попытку',
   lease_recovered: 'Восстанавливаем прерванную обработку',
   report_ready: 'Итоговый отчет готов',

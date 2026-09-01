@@ -51,7 +51,6 @@ jobs:
     env:
       DB_POOL_MIN_SIZE: "0"
       DEEPSEEK_API_KEYS: ""
-      MBTI_ENABLED: "false"
       TEST_DATABASE_URL: postgresql://pytest:pytest@127.0.0.1:5432/agent4k_pytest
 
     steps:
@@ -120,4 +119,4 @@ jobs:
             -o BatchMode=yes \
             -o IdentitiesOnly=yes \
             "$TEST_SSH_USER@$TEST_SSH_HOST" \
-            sh /home/user1/projects/4K-Mbti-Test/scripts/deploy_test_remote.sh
+            sh /home/user1/projects/Agent4K-Test/scripts/deploy_test_remote.sh

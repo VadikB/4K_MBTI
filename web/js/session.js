@@ -33,6 +33,19 @@ export const isMissingUserError = (error) => {
 };
 
 export const resetStaleUserState = async () => {
+  clearAssessmentContext();
+  state.sessionId = null;
+  state.pendingUser = null;
+  state.dashboard = null;
+  state.isAdmin = false;
+  state.adminDashboard = null;
+  state.pendingAgentMessage = null;
+  state.pendingRoleOptions = [];
+  state.pendingNoChangesQuickReply = false;
+  state.assessmentSessionId = null;
+  state.assessmentSessionCode = null;
+  state.assessmentTotalCases = 0;
+  returnToStart();
   try {
     await fetch('/users/session/logout', {
       method: 'POST',
@@ -41,9 +54,11 @@ export const resetStaleUserState = async () => {
   } catch (_error) {
     // ignore cleanup network issues
   }
-  clearAssessmentContext();
-  await resetChatScreen();
-  window.history.replaceState({}, '', '/?ui=' + Date.now());
+  try {
+    await resetChatScreen();
+  } catch (_error) {
+    // Expired sessions must still return to auth if lazy screen cleanup fails.
+  }
 };
 
 export const restoreServerSession = async () => {

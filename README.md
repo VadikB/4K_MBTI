@@ -1,6 +1,6 @@
-# 4K MBTI
+# Agent4K
 
-Сервис оценки 4К-компетенций и MBTI-профиля через персонализированное кейсовое интервью. Пользователь проходит ассессмент, система подбирает кейсы под роль и контекст, оценивает ответы, формирует отчет, MBTI-сводку и административную аналитику по организациям.
+Сервис оценки 4К-компетенций через персонализированное кейсовое интервью. Пользователь проходит ассессмент, система подбирает кейсы под роль и контекст, оценивает ответы, формирует отчет и административную аналитику по организациям.
 
 ## Текущее состояние
 
@@ -11,7 +11,6 @@
 - Организации: создание, домены, админы, участники, CSV-импорт участников.
 - Оценивание: персонализированные кейсы, диалоговый режим, таймеры, авто/ручное завершение кейсов.
 - Отчеты: пользовательский отчет, админские детальные отчеты, PDF/ZIP exports.
-- MBTI: FAISS/RAG индекс, summary по завершенной assessment-сессии, уточняющие вопросы.
 - Регрессионные тесты в суперадминке: быстрый smoke и полный assessment-прогон.
 
 ## Репозиторий и ветки
@@ -19,8 +18,8 @@
 Основной репозиторий:
 
 ```bash
-git clone https://github.com/VadikB/4K_MBTI.git
-cd 4K_MBTI
+git clone https://github.com/VadikB/Agent4K.git
+cd Agent4K
 ```
 
 Рабочая схема:
@@ -96,7 +95,7 @@ cp .env.local.example .env
 ```env
 DB_HOST=127.0.0.1
 DB_PORT=5432
-DB_NAME=app_db_mbti
+DB_NAME=agent4k
 DB_USER=app_user
 DB_PASSWORD=...
 
@@ -105,6 +104,8 @@ DEEPSEEK_BASE_URL=...
 DEEPSEEK_MODEL=...
 DEEPSEEK_MAX_CONCURRENCY=10
 DEEPSEEK_QUEUE_TIMEOUT_SECONDS=30
+ASSESSMENT_UNIVERSAL_LLM_ENABLED=false
+ASSESSMENT_UNIVERSAL_LLM_SHADOW_ENABLED=false
 ASSESSMENT_PREPARATION_MAX_CONCURRENCY=2
 ASSESSMENT_PREPARATION_QUEUE_TIMEOUT_SECONDS=10
 ASSESSMENT_QUEUE_WORKER_THREADS=1
@@ -133,12 +134,6 @@ AUTH_SESSION_SECURE_COOKIE=true
 EMAIL_PROVIDER=postmark
 POSTMARK_SERVER_TOKEN=...
 
-MBTI_ENABLED=true
-MBTI_FAISS_INDEX_DIR=/path/to/mbti/faiss
-MBTI_TOP_K=5
-MBTI_FOLLOWUP_MODE=assist
-MBTI_FOLLOWUP_MAX_PER_CASE=2
-MBTI_FOLLOWUP_SCORE_THRESHOLD=60
 ```
 
 `SUPERADMIN_EMAILS` задает суперадминов через email. Несколько адресов можно перечислить через запятую.
@@ -160,6 +155,13 @@ MBTI_FOLLOWUP_SCORE_THRESHOLD=60
 рекомендуется значение `3`, чтобы суммарно выполнять не более 12 LLM-запросов.
 `DB_POOL_MAX_SIZE=15` при четырех workers ограничивает приложение 60
 соединениями PostgreSQL и оставляет запас для административных операций.
+`ASSESSMENT_UNIVERSAL_LLM_ENABLED` — аварийный kill switch универсальных
+оценочных агентов. По умолчанию и в production он должен оставаться `false`;
+включение имеет эффект только для опубликованных AgentDefinition с
+`runtime.mode=universal_llm`. Legacy-агенты от этого флага не зависят.
+`ASSESSMENT_UNIVERSAL_LLM_SHADOW_ENABLED` отдельно разрешает только shadow-запуск;
+он требует также включённый universal switch и frozen `shadow_evaluation` в
+методологии. Shadow никогда не заменяет официальный результат.
 `ASSESSMENT_PREPARATION_MAX_CONCURRENCY` отдельно ограничивает тяжелую
 персонализацию новых сессий, чтобы массовый старт не занял все LLM-слоты.
 Перед каждым сетевым запросом к DeepSeek активная транзакция фиксируется,
@@ -177,12 +179,12 @@ MBTI_FOLLOWUP_SCORE_THRESHOLD=60
 
 ### 3. База данных
 
-Для локальной разработки используйте актуальный дамп или пустую БД с нужными справочниками/методологией. Production-подобная база сейчас называется `app_db_mbti`.
+Для локальной разработки используйте актуальный дамп или пустую БД с нужными справочниками и методологией.
 
 Пример восстановления:
 
 ```bash
-pg_restore -h localhost -p 5432 -U app_user -d app_db_mbti dump_file.dump
+pg_restore -h localhost -p 5432 -U app_user -d agent4k dump_file.dump
 ```
 
 ### 4. Backend
@@ -247,7 +249,7 @@ http://127.0.0.1:18000/?ui=dev
 На сервере:
 
 ```bash
-cd /home/user1/projects/4K-Mbti
+cd /home/user1/projects/Agent4K
 source .venv/bin/activate
 python scripts/reset_password.py --email superadmin@example.com
 
@@ -300,8 +302,8 @@ user@example.com,Иван Иванов,Руководитель поддержк
 
 Есть два режима:
 
-- **Запустить smoke** — быстрый тест без реального LLM-прохождения кейсов. Создает тестовую организацию, 3 пользователей, технические completed-сессии с MBTI payload, проверяет отчеты и очищается вручную кнопкой очистки.
-- **Полный прогон** — создает `__autotest__` организацию и 3 пользователей, запускает реальные assessment-сессии через основной `assessment_service`, отвечает автоответами по кейсам, завершает сессии, проверяет результаты кейсов и MBTI summary.
+- **Запустить smoke** — быстрый тест без реального LLM-прохождения кейсов. Создает тестовую организацию, 3 пользователей, технические completed-сессии, проверяет отчеты и очищается вручную кнопкой очистки.
+- **Полный прогон** — создает `__autotest__` организацию и 3 пользователей, запускает реальные assessment-сессии через основной `assessment_service`, отвечает автоответами по кейсам, завершает сессии и проверяет результаты кейсов.
 
 Перед полным прогоном интерфейс просит подтверждение, потому что режим делает реальные LLM-вызовы и может занять несколько минут.
 
@@ -313,39 +315,13 @@ __autotest__
 
 Их можно удалить кнопкой **Очистить __autotest__**.
 
-## MBTI
-
-MBTI включается переменной:
-
-```env
-MBTI_ENABLED=true
-```
-
-Индекс задается так:
-
-```env
-MBTI_FAISS_INDEX_DIR=/path/to/faiss
-```
-
-Режим уточняющих вопросов:
-
-```env
-MBTI_FOLLOWUP_MODE=off|assist|strict
-```
-
-- `off` — не задавать уточняющие вопросы.
-- `assist` — задавать, если данных недостаточно.
-- `strict` — пытаться задавать после каждого кейса.
-
-После кейсов API может вернуть `mbti_case_result` и `mbti_followup_questions`. После завершения всей сессии формируется `mbti_summary`.
-
 ## Деплой
 
 Текущий production/pilot сервер:
 
 ```bash
 ssh -i ~/.ssh/mobius_ssh.key user1@176.123.166.242
-cd /home/user1/projects/4K-Mbti
+cd /home/user1/projects/Agent4K
 ```
 
 Сайт:
@@ -356,13 +332,13 @@ cd /home/user1/projects/4K-Mbti
 
 ```bash
 git pull --ff-only
-sudo systemctl restart agent4k-mbti.service
-systemctl is-active agent4k-mbti.service
+sudo systemctl restart agent4k.service
+systemctl is-active agent4k.service
 curl -fsS http://127.0.0.1:8000/users/version
 ```
 
 Пример unit-файла с четырьмя worker-процессами находится в
-`deploy/agent4k-mbti.service.example`. Перед включением проверьте пользователя,
+`deploy/agent4k.service.example`. Перед включением проверьте пользователя,
 рабочий каталог и путь к `.env`, затем выполните `systemctl daemon-reload`.
 Прогресс длительных операций хранится в PostgreSQL, поэтому polling продолжает
 работать, даже если последовательные запросы попадают в разные workers.
@@ -412,7 +388,6 @@ npm run bump:version -- 2.1.1
 - `Api/assessment_service.py` — подбор кейсов, assessment-сессии, обработка ответов.
 - `Api/regression_tests.py` — smoke/full регрессионные тесты.
 - `Api/org_access.py` — организации, scope, суперадмины.
-- `Api/mbti/` — MBTI/RAG/FAISS-логика.
 - `Api/pdf_report_service.py` — пользовательский PDF.
 - `Api/admin_report_*` — админские PDF/экспорты.
 - `web/index.html` — основная HTML-страница.
@@ -455,7 +430,7 @@ Integration-тесты запускаются только с отдельной
 содержит `test` или `pytest`:
 
 ```bash
-export TEST_DATABASE_URL='postgresql://app_user:password@127.0.0.1:5432/app_db_mbti_pytest'
+export TEST_DATABASE_URL='postgresql://app_user:password@127.0.0.1:5432/agent4k_pytest'
 npm run test:backend:integration
 ```
 

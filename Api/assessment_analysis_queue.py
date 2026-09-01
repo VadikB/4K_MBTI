@@ -8,10 +8,15 @@ import time
 from dataclasses import dataclass
 from uuid import uuid4
 
+from Api.assessment_evaluation_repository import assessment_evaluation_result_repository
+from Api.assessment_evaluation_material_repository import UniversalEvaluationMaterialProvider
+from Api.assessment_competency_executor import CompetencyEvaluatorExecutor
+from Api.assessment_evaluator_contracts import competency_evaluation_input_builder
 from Api.communication_agent import competency_assessment_agents
 from Api.config import settings
 from Api.database import get_connection
 from Api.assessment_runtime import ScenarioExecutionContext, component_registry, scenario_runner
+from Api.assessment_shadow_repository import assessment_shadow_repository
 
 logger = logging.getLogger("agent4k.analysis_queue")
 
@@ -318,35 +323,122 @@ class AssessmentAnalysisQueue:
         job: AssessmentAnalysisJob,
     ) -> dict[str, object]:
         competency_definitions = list(context.methodology.get("competencies") or [])
-        agents_by_component = {
-            f"evaluation.{str(getattr(agent, 'agent_code', '')).strip()}": agent
-            for agent in competency_assessment_agents
-            if str(getattr(agent, "agent_code", "")).strip()
-        }
+        executor = CompetencyEvaluatorExecutor(competency_assessment_agents)
         completed: list[str] = []
         step_progress = [15, 35, 55, 75]
         for index, competency in enumerate(competency_definitions):
             component_code = str(competency.get("evaluator") or "").strip()
             component_version = int(competency.get("evaluator_version") or 0)
             component_registry.resolve(component_code, component_version)
-            agent = agents_by_component.get(component_code)
-            if agent is None and index < len(competency_assessment_agents):
-                agent = competency_assessment_agents[index]
-            if agent is None:
-                raise RuntimeError(f"Evaluator implementation is not available: {component_code} v{component_version}")
+            frozen_agent = competency_evaluation_input_builder.resolve_agent_definition(
+                snapshot=context.snapshot,
+                competency=competency,
+                component_code=component_code,
+                component_version=component_version,
+            )
+            if frozen_agent["runtime"]["mode"] == "universal_llm":
+                material_provider = UniversalEvaluationMaterialProvider(
+                    skill_codes=list(competency.get("skill_codes") or []),
+                )
+            else:
+                material_provider = executor.resolve_component(component_code, component_version)
+            input_data = competency_evaluation_input_builder.build(
+                snapshot=context.snapshot,
+                session_id=int(context.session_id),
+                user_id=context.user_id,
+                competency=competency,
+                connection=context.connection,
+                agent=material_provider,
+            )
             self._update_progress(
                 context.connection,
                 job,
                 progress=step_progress[min(index, len(step_progress) - 1)],
                 current_step=component_code,
             )
-            agent.evaluate_session(
+            output = executor.execute(
                 connection=context.connection,
-                session_id=context.session_id,
-                user_id=context.user_id,
+                input_data=input_data,
+            )
+            assessment_evaluation_result_repository.save(
+                connection=context.connection,
+                input_data=input_data,
+                output=output,
+            )
+            self._execute_shadow_evaluation(
+                context=context,
+                competency=competency,
+                executor=executor,
+                official_input=input_data,
+                official_output=output,
             )
             completed.append(component_code)
         return {"evaluators_completed": completed}
+
+    def _execute_shadow_evaluation(
+        self,
+        *,
+        context: ScenarioExecutionContext,
+        competency: dict,
+        executor: CompetencyEvaluatorExecutor,
+        official_input,
+        official_output,
+    ) -> None:
+        shadow = competency.get("shadow_evaluation")
+        if (
+            not settings.assessment_universal_llm_enabled
+            or not settings.assessment_universal_llm_shadow_enabled
+            or not isinstance(shadow, dict)
+        ):
+            return
+        shadow_competency = dict(competency)
+        shadow_competency["agent_definition"] = dict(shadow.get("agent_definition") or {})
+        shadow_competency["skill_codes"] = list(shadow.get("skill_codes") or [])
+        shadow_competency.pop("shadow_evaluation", None)
+        shadow_input = None
+        try:
+            provider = UniversalEvaluationMaterialProvider(skill_codes=shadow_competency["skill_codes"])
+            shadow_input = competency_evaluation_input_builder.build(
+                snapshot=context.snapshot,
+                session_id=int(context.session_id),
+                user_id=context.user_id,
+                competency=shadow_competency,
+                connection=context.connection,
+                agent=provider,
+            )
+            if shadow_input.agent_definition.runtime.get("mode") != "universal_llm":
+                raise ValueError("Shadow evaluator runtime must be universal_llm.")
+            shadow_output = executor.execute(connection=context.connection, input_data=shadow_input)
+            assessment_shadow_repository.save_success(
+                connection=context.connection,
+                official_input=official_input,
+                official_output=official_output,
+                shadow_input=shadow_input,
+                shadow_output=shadow_output,
+            )
+        except Exception as exc:
+            if shadow_input is not None:
+                try:
+                    assessment_shadow_repository.save_failure(
+                        connection=context.connection,
+                        official_input=official_input,
+                        official_output=official_output,
+                        shadow_input=shadow_input,
+                        error=exc,
+                    )
+                except Exception as storage_error:
+                    logger.warning(
+                        "Shadow evaluation failure could not be stored session_id=%s competency=%s error=%s",
+                        context.session_id,
+                        official_input.competency_code,
+                        storage_error.__class__.__name__,
+                    )
+            logger.warning(
+                "Shadow evaluation failed without affecting official result session_id=%s competency=%s error=%s",
+                context.session_id,
+                official_input.competency_code,
+                exc.__class__.__name__,
+            )
 
     def _update_progress(
         self,

@@ -72,7 +72,7 @@ def ensure_legacy_assessment_configuration(connection) -> None:
         """,
         (
             methodology_id,
-            "Legacy-фиксация текущей методологии 4K без MBTI.",
+            "Legacy-фиксация текущей методологии 4K.",
             canonical_json(LEGACY_METHODOLOGY_DEFINITION),
             definition_checksum(LEGACY_METHODOLOGY_DEFINITION),
         ),
@@ -99,7 +99,7 @@ def ensure_legacy_assessment_configuration(connection) -> None:
         """,
         (
             scenario_id,
-            "Legacy-сценарий текущего assessment без MBTI.",
+            "Legacy-сценарий текущего assessment.",
             canonical_json(LEGACY_SCENARIO_DEFINITION),
             definition_checksum(LEGACY_SCENARIO_DEFINITION),
         ),

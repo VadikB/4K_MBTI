@@ -29,9 +29,11 @@ class AuthoringContractService:
         self.transitions: list[tuple[str, int, int]] = []
 
     def create_definition(self, _connection, **kwargs):
-        assert kwargs["entity_type"] == "methodology"
         assert kwargs["actor_user_id"] == 7
-        assert kwargs["code"] == "baseline_http_4k"
+        assert kwargs["entity_type"] in {"methodology", "agent"}
+        self.row["code"] = kwargs["code"]
+        self.row["name"] = kwargs["name"]
+        self.row["definition_json"] = {**kwargs["definition"], "code": kwargs["code"], "version": 1}
         return dict(self.row)
 
     def submit_for_review(self, _connection, **kwargs):
@@ -115,3 +117,43 @@ def test_methodology_authoring_requires_session(authoring_http_client) -> None:
     )
     assert response.status_code == 401
     assert response.json()["detail"] == "Admin session not found"
+
+
+@pytest.mark.e2e
+def test_agent_definition_http_contract_create_submit_publish(authoring_http_client) -> None:
+    client, service = authoring_http_client
+    client.cookies.set(routes.SESSION_COOKIE_NAME, "valid")
+    definition = {
+        "schema_version": 1,
+        "competency_code": "communication",
+        "instruction_markdown": "# Communication\n\nEvaluate observable evidence.",
+        "input_contract": {"code": "competency_evaluation_input", "version": 1},
+        "output_contract": {"code": "competency_evaluation_output", "version": 1},
+        "executor": {"code": "evaluation.communication", "version": 1},
+        "runtime": {"mode": "legacy_adapter"},
+    }
+
+    created = client.post(
+        "/users/admin/assessment-definitions/agent",
+        json={
+            "code": "communication",
+            "name": "Communication evaluator",
+            "definition": definition,
+        },
+    )
+    assert created.status_code == 200
+    assert created.json()["definition_json"]["instruction_markdown"].startswith("# Communication")
+
+    submitted = client.post(
+        "/users/admin/assessment-definitions/agent/41/submit",
+        json={"comment": "agent review"},
+    )
+    assert submitted.status_code == 200
+
+    published = client.post(
+        "/users/admin/assessment-definitions/agent/41/publish",
+        json={"comment": "agent approved"},
+    )
+    assert published.status_code == 200
+    assert published.json()["status"] == "published"
+    assert service.transitions == [("submit", 41, 7), ("publish", 41, 7)]

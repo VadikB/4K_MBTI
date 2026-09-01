@@ -24,8 +24,6 @@ def test_application_services_do_not_call_private_deepseek_api() -> None:
         "Api/assessment_service.py",
         "Api/agent.py",
         "Api/communication_agent.py",
-        "Api/mbti_refinement_service.py",
-        "Api/mbti/service.py",
     ):
         tree = ast.parse((PROJECT_ROOT / relative_path).read_text())
         for node in ast.walk(tree):

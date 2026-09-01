@@ -132,7 +132,6 @@ def _render_with_reportlab(payload: dict[str, Any], template_name: str) -> bytes
                 f"Группа: {item.get('group_name') or 'Не указана'}",
                 f"Статус: {item.get('status') or 'Не указан'}",
                 f"Результат: {item.get('score_label') or '—'}",
-                f"MBTI: {item.get('mbti_type') or 'Нет данных'}",
                 f"Дата: {item.get('date_label') or 'Без даты'}",
             ]
             for line in lines:

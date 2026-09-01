@@ -47,7 +47,6 @@ import { hideLoader, showLoader, startLoaderProgressPolling } from '../utils/loa
 import { hideAllPanels, syncUrlState, returnToStart } from '../router.js';
 import {
   destroyAdminCompetencyBarChart,
-  destroyAdminMbtiPieChart,
   destroyAdminActivityBarChart,
 } from './admin/charts.js';
 import { destroyReportCompetencyBarChart } from './report.js';
@@ -209,7 +208,6 @@ export const resetChat = () => {
   state.processingAgents = buildProcessingAgentsState();
   state.assessmentSessionId = null;
   destroyAdminCompetencyBarChart();
-  destroyAdminMbtiPieChart();
   destroyAdminActivityBarChart();
   destroyReportCompetencyBarChart();
   destroyAdminSkillRadarChart();

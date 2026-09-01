@@ -98,7 +98,6 @@ export const state = {
   adminPromptLabOperationId: null,
   adminPromptLabPollId: null,
   preparedAssessmentStartResponse: null,
-  assessmentMbtiSummary: null,
   profileSummary: null,
   profileAvatarDraft: null,
   profileSelectedSessionId: null,
@@ -131,7 +130,6 @@ export const STORAGE_KEYS = {
   assessmentSessionId: 'agent4k.assessmentSessionId',
   assessmentSessionCode: 'agent4k.assessmentSessionCode',
   assessmentTotalCases: 'agent4k.assessmentTotalCases',
-  assessmentMbtiSummary: 'agent4k.assessmentMbtiSummary',
   assessmentCompletedOnce: 'agent4k.assessmentCompletedOnce',
   completionPending: 'agent4k.completionPending',
   sessionId: 'agent4k.sessionId',
@@ -257,11 +255,6 @@ export const persistAssessmentContext = () => {
   if (state.assessmentTotalCases) {
     safeStorage.setItem(STORAGE_KEYS.assessmentTotalCases, String(state.assessmentTotalCases));
   }
-  if (state.assessmentMbtiSummary) {
-    safeStorage.setItem(STORAGE_KEYS.assessmentMbtiSummary, JSON.stringify(state.assessmentMbtiSummary));
-  } else {
-    safeStorage.removeItem(STORAGE_KEYS.assessmentMbtiSummary);
-  }
   if (state.assessmentSessionId || state.skillAssessments.length > 0) {
     safeStorage.setItem(STORAGE_KEYS.assessmentCompletedOnce, '1');
   }
@@ -291,7 +284,6 @@ export const restoreAssessmentContext = () => {
     const storedAdminReportsPage = safeStorage.getItem(STORAGE_KEYS.adminReportsPage);
     const storedSessionCode = safeStorage.getItem(STORAGE_KEYS.assessmentSessionCode);
     const storedTotalCases = safeStorage.getItem(STORAGE_KEYS.assessmentTotalCases);
-    const storedAssessmentMbtiSummary = safeStorage.getItem(STORAGE_KEYS.assessmentMbtiSummary);
     const storedConversationSessionId = safeStorage.getItem(STORAGE_KEYS.sessionId);
     const storedPendingAgentMessage = safeStorage.getItem(STORAGE_KEYS.pendingAgentMessage);
     const storedPendingActionOptions = safeStorage.getItem(STORAGE_KEYS.pendingActionOptions);
@@ -368,9 +360,6 @@ export const restoreAssessmentContext = () => {
     if (storedTotalCases) {
       state.assessmentTotalCases = Number(storedTotalCases);
     }
-    if (storedAssessmentMbtiSummary) {
-      state.assessmentMbtiSummary = JSON.parse(storedAssessmentMbtiSummary);
-    }
     if (storedConversationSessionId) {
       state.sessionId = storedConversationSessionId;
     }
@@ -412,7 +401,6 @@ export const clearAssessmentStorage = () => {
 export const clearAssessmentContext = () => {
   clearAssessmentStorage();
   state.reportInterpretation = null;
-  state.assessmentMbtiSummary = null;
 };
 
 export const restoreAssessmentContextFromParams = (params) => {

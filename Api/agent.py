@@ -3643,12 +3643,6 @@ class InterviewerAgent:
             is_dialog_case=reply.is_dialog_case,
             pending_auto_finish=reply.pending_auto_finish,
             auto_finish_delay_ms=reply.auto_finish_delay_ms,
-            mbti_case_result=reply.mbti_case_result,
-            mbti_followup_questions=reply.mbti_followup_questions,
-            mbti_followup_pending=reply.mbti_followup_pending,
-            mbti_followup_index=reply.mbti_followup_index,
-            mbti_followup_total=reply.mbti_followup_total,
-            mbti_summary=reply.mbti_summary,
         )
 
     def continue_case_interview(
@@ -3691,12 +3685,6 @@ class InterviewerAgent:
             is_dialog_case=reply.is_dialog_case,
             pending_auto_finish=reply.pending_auto_finish,
             auto_finish_delay_ms=reply.auto_finish_delay_ms,
-            mbti_case_result=reply.mbti_case_result,
-            mbti_followup_questions=reply.mbti_followup_questions,
-            mbti_followup_pending=reply.mbti_followup_pending,
-            mbti_followup_index=reply.mbti_followup_index,
-            mbti_followup_total=reply.mbti_followup_total,
-            mbti_summary=reply.mbti_summary,
         )
 
 

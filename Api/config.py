@@ -76,6 +76,14 @@ class Settings:
     assessment_queue_max_attempts: int = int(os.getenv("ASSESSMENT_QUEUE_MAX_ATTEMPTS", "3"))
     assessment_queue_retention_hours: int = int(os.getenv("ASSESSMENT_QUEUE_RETENTION_HOURS", "168"))
     assessment_analysis_worker_threads: int = int(os.getenv("ASSESSMENT_ANALYSIS_WORKER_THREADS", "1"))
+    assessment_universal_llm_enabled: bool = (
+        os.getenv("ASSESSMENT_UNIVERSAL_LLM_ENABLED", "false").strip().lower()
+        in {"1", "true", "yes", "on"}
+    )
+    assessment_universal_llm_shadow_enabled: bool = (
+        os.getenv("ASSESSMENT_UNIVERSAL_LLM_SHADOW_ENABLED", "false").strip().lower()
+        in {"1", "true", "yes", "on"}
+    )
     assessment_external_answer_transfer_enabled: bool = (
         os.getenv("ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED", "true").strip().lower()
         in {"1", "true", "yes", "on"}
@@ -84,14 +92,6 @@ class Settings:
     case_set_reuse_min_score: float = float(os.getenv("CASE_SET_REUSE_MIN_SCORE", "0.88"))
     case_set_reuse_max_age_days: int = int(os.getenv("CASE_SET_REUSE_MAX_AGE_DAYS", "90"))
     case_set_reuse_candidate_limit: int = int(os.getenv("CASE_SET_REUSE_CANDIDATE_LIMIT", "100"))
-    mbti_enabled: bool = os.getenv("MBTI_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
-    mbti_faiss_index_dir: str = os.getenv("MBTI_FAISS_INDEX_DIR", "")
-    mbti_top_k: int = int(os.getenv("MBTI_TOP_K", "5"))
-    mbti_followup_mode: str = os.getenv("MBTI_FOLLOWUP_MODE", "assist").strip().lower() or "assist"
-    mbti_followup_max_per_case: int = int(os.getenv("MBTI_FOLLOWUP_MAX_PER_CASE", "2"))
-    mbti_followup_score_threshold: int = int(os.getenv("MBTI_FOLLOWUP_SCORE_THRESHOLD", "60"))
-    mbti_refinement_target_confidence: int = int(os.getenv("MBTI_REFINEMENT_TARGET_CONFIDENCE", "75"))
-    mbti_refinement_max_questions: int = int(os.getenv("MBTI_REFINEMENT_MAX_QUESTIONS", "6"))
     esco_api_enabled: bool = os.getenv("ESCO_API_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
     esco_api_base_url: str = os.getenv("ESCO_API_BASE_URL", "https://ec.europa.eu/esco/api")
     esco_api_version: str = os.getenv("ESCO_API_VERSION", "v1.2.0")

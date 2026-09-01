@@ -8,6 +8,7 @@ import pytest
 
 from Api.deepseek_client import DeepSeekClient
 from Api.llm import deepseek_gateway as gateway_module
+from Api.llm.deepseek_gateway import DeepSeekGateway
 
 
 class FakeResponse:
@@ -103,3 +104,23 @@ def test_routing_key_produces_stable_key_order() -> None:
         "same-route",
         messages,
     )
+
+
+@pytest.mark.unit
+def test_gateway_sends_explicit_output_token_limit(monkeypatch) -> None:
+    payloads: list[dict] = []
+
+    def fake_urlopen(req, **_kwargs):
+        payloads.append(json.loads(req.data.decode("utf-8")))
+        return FakeResponse()
+
+    monkeypatch.setattr(gateway_module, "pause_thread_connections_for_external_io", lambda: 0)
+    monkeypatch.setattr(gateway_module.request, "urlopen", fake_urlopen)
+
+    result = DeepSeekGateway(api_keys=["test-key"]).chat(
+        [{"role": "user", "content": "synthetic"}],
+        max_tokens=777,
+    )
+
+    assert result == "ok"
+    assert payloads[0]["max_tokens"] == 777

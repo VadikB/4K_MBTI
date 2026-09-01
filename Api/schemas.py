@@ -644,13 +644,56 @@ class AdminDashboard(BaseModel):
     is_superadmin: bool = False
     metrics: list[AdminMetricCard]
     competency_average: list[dict[str, str | int | float]]
-    mbti_distribution: list[dict[str, str | int]]
     insights: list[AdminInsightCard]
     activity_points: list[int]
     activity_labels: list[str]
     activity_axis_max: int
     activity_period_key: str
     activity_period_label: str
+
+
+class AdminShadowComparisonMetrics(BaseModel):
+    run_count: int
+    completed_count: int
+    failed_count: int
+    compared_skill_count: int
+    exact_level_match_count: int
+    exact_level_match_percent: float | None = None
+
+
+class AdminShadowComparisonGroup(AdminShadowComparisonMetrics):
+    competency_code: str
+    official_agent_code: str
+    official_agent_version: int
+    shadow_agent_code: str
+    shadow_agent_version: int
+    first_completed_at: datetime | None = None
+    last_completed_at: datetime | None = None
+
+
+class AdminShadowComparisonResponse(BaseModel):
+    totals: AdminShadowComparisonMetrics
+    groups: list[AdminShadowComparisonGroup]
+
+
+class AdminShadowBatchRequest(BaseModel):
+    dry_run: bool = True
+    max_competency_runs: int = Field(default=1, ge=1, le=4)
+    confirm_paid_calls: bool = False
+
+
+class AdminShadowBatchTarget(BaseModel):
+    session_id: int
+    competency_code: str
+
+
+class AdminShadowBatchResponse(BaseModel):
+    dry_run: bool
+    planned_competency_runs: int
+    maximum_llm_attempts: int
+    completed_runs: int
+    failed_runs: int
+    targets: list[AdminShadowBatchTarget]
 
 
 class AdminDetailedReportItem(BaseModel):
@@ -662,7 +705,6 @@ class AdminDetailedReportItem(BaseModel):
     role_name: str
     status: str
     score_percent: int | None = None
-    mbti_type: str | None = None
     started_at: datetime | None = None
     finished_at: datetime | None = None
 
@@ -697,8 +739,6 @@ class AdminRegressionTestRunResponse(BaseModel):
 class AdminRegressionTestStatusResponse(BaseModel):
     title: str
     subtitle: str
-    mbti_enabled: bool = False
-    mbti_store_available: bool = False
     last_run: AdminRegressionTestRunResponse | None = None
     cleanup_hint: str
 
@@ -850,9 +890,6 @@ class AdminReportDetailResponse(BaseModel):
     score_percent: int | None = None
     report_date: datetime | None = None
     competency_average: list[dict[str, str | int | float]]
-    mbti_type: str | None = None
-    mbti_summary: str | None = None
-    mbti_axes: list[dict[str, str | int]]
     insight_title: str | None = None
     insight_text: str | None = None
     basis_items: list[str] = []
@@ -981,12 +1018,6 @@ class AssessmentStartResponse(BaseModel):
     is_dialog_case: bool = False
     pending_auto_finish: bool = False
     auto_finish_delay_ms: int | None = None
-    mbti_case_result: dict | None = None
-    mbti_followup_questions: list[str] | None = None
-    mbti_followup_pending: bool = False
-    mbti_followup_index: int | None = None
-    mbti_followup_total: int | None = None
-    mbti_summary: dict | None = None
 
 
 class AssessmentPreparationEnqueueResponse(BaseModel):
@@ -1093,12 +1124,6 @@ class AssessmentMessageResponse(BaseModel):
     is_dialog_case: bool = False
     pending_auto_finish: bool = False
     auto_finish_delay_ms: int | None = None
-    mbti_case_result: dict | None = None
-    mbti_followup_questions: list[str] | None = None
-    mbti_followup_pending: bool = False
-    mbti_followup_index: int | None = None
-    mbti_followup_total: int | None = None
-    mbti_summary: dict | None = None
     assessment_status: str | None = None
     analysis_operation_id: str | None = None
 
@@ -1155,59 +1180,6 @@ class AssessmentReportInterpretationResponse(BaseModel):
     has_interpretation_signal: bool
     has_confident_strongest: bool
     response_pattern: str
-    mbti_summary: dict | None = None
-
-
-class MbtiRefinementQuestion(BaseModel):
-    code: str
-    text: str
-
-
-class MbtiRefinementStartResponse(BaseModel):
-    active: bool
-    completed: bool
-    refinement_id: int
-    question_index: int
-    question_total: int
-    current_confidence: int
-    target_confidence: int
-    current_question: MbtiRefinementQuestion | None = None
-    remaining_gaps: list[str] = Field(default_factory=list)
-    resolved_gaps: list[str] = Field(default_factory=list)
-    updated_mbti_summary: dict | None = None
-
-
-class MbtiRefinementMessageRequest(BaseModel):
-    refinement_id: int
-    answer: str
-
-
-class MbtiRefinementMessageResponse(BaseModel):
-    active: bool
-    completed: bool
-    refinement_id: int
-    question_index: int
-    question_total: int
-    current_confidence: int
-    target_confidence: int
-    current_question: MbtiRefinementQuestion | None = None
-    remaining_gaps: list[str] = Field(default_factory=list)
-    resolved_gaps: list[str] = Field(default_factory=list)
-    updated_mbti_summary: dict | None = None
-
-
-class MbtiRefinementStateResponse(BaseModel):
-    active: bool
-    completed: bool
-    refinement_id: int | None = None
-    question_index: int = 0
-    question_total: int = 0
-    current_confidence: int = 0
-    target_confidence: int = 75
-    current_question: MbtiRefinementQuestion | None = None
-    remaining_gaps: list[str] = Field(default_factory=list)
-    resolved_gaps: list[str] = Field(default_factory=list)
-    updated_mbti_summary: dict | None = None
 
 
 class UserAssessmentHistoryItem(BaseModel):

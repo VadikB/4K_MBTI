@@ -8,9 +8,8 @@ from pathlib import Path
 from threading import Lock
 
 from Api.agent import interviewer_agent
-from Api.config import settings
+from Api.assessment_configuration import canonical_json, load_default_execution_configuration
 from Api.database import get_connection
-from Api.mbti.service import mbti_assessment_service
 from Api.schemas import AdminRegressionTestRunResponse, AdminRegressionTestStatusResponse, AdminRegressionTestStep, UserResponse
 from Api.web_session_service import USER_SELECT_SQL
 
@@ -179,7 +178,6 @@ def _cleanup_autotest_data(connection) -> dict[str, int]:
         )
         connection.execute("DELETE FROM session_skill_assessments WHERE user_id = ANY(%s) OR session_id IN (" + sessions_sql + ")", (user_ids, user_ids))
         connection.execute("DELETE FROM session_skills WHERE session_id IN (" + sessions_sql + ")", (user_ids,))
-        connection.execute("DELETE FROM session_mbti_refinements WHERE user_id = ANY(%s) OR session_id IN (" + sessions_sql + ")", (user_ids, user_ids))
         connection.execute("DELETE FROM session_cases WHERE user_id = ANY(%s) OR session_id IN (" + sessions_sql + ")", (user_ids, user_ids))
         connection.execute("DELETE FROM agent_conversation_sessions WHERE user_id = ANY(%s)", (user_ids,))
         connection.execute("DELETE FROM user_skill_coverage WHERE user_id = ANY(%s)", (user_ids,))
@@ -386,15 +384,6 @@ def _autotest_case_answer(role_code: str, case_title: str | None = None) -> str:
     )
 
 
-def _autotest_mbti_followup_answer(role_code: str) -> str:
-    fixture = _role_payload(role_code)
-    return (
-        f"Для роли «{fixture['position']}» я обычно действую структурно: сначала собираю факты, затем сверяю риски, "
-        "договариваюсь о плане и контролирую результат. В стрессовой ситуации предпочитаю ясные приоритеты, "
-        "короткую коммуникацию и проверку гипотез на данных."
-    )
-
-
 def _load_offline_skill_fixtures(connection, limit: int = OFFLINE_SKILLS_PER_USER) -> list[dict]:
     rows = connection.execute(
         """
@@ -452,16 +441,22 @@ def _insert_offline_case(
     skill_fixtures: list[dict],
 ) -> int:
     fixture = _offline_case_fixture(role_code, case_number)
+    registry = connection.execute(
+        "SELECT id FROM cases_registry ORDER BY id ASC LIMIT 1 OFFSET %s",
+        (case_number - 1,),
+    ).fetchone()
+    if registry is None:
+        raise RuntimeError("Offline regression requires at least one case registry entry.")
     session_case_row = connection.execute(
         """
         INSERT INTO session_cases (
-            session_id, user_id, role_id, status, selection_reason,
+            session_id, user_id, role_id, case_registry_id, status, selection_reason,
             planned_duration_minutes, started_at, completed_at, actual_duration_seconds
         )
-        VALUES (%s, %s, %s, 'answered', %s, 10, NOW(), NOW(), 120)
+        VALUES (%s, %s, %s, %s, 'answered', %s, 10, NOW(), NOW(), 120)
         RETURNING id
         """,
-        (session_id, user_id, role_id, "__autotest__ offline fixture"),
+        (session_id, user_id, role_id, int(registry["id"]), "__autotest__ offline fixture"),
     ).fetchone()
     session_case_id = int(session_case_row["id"])
     connection.execute(
@@ -734,27 +729,32 @@ def run_offline_regression() -> AdminRegressionTestRunResponse:
                     int(row["id"]): int(row["role_id"])
                     for row in connection.execute("SELECT id, role_id FROM users WHERE id = ANY(%s)", (user_ids,)).fetchall()
                 }
+                execution = load_default_execution_configuration(connection)
                 _set_step_status(steps, "sessions", "running", "Создаем completed-сессии, кейсы, ответы и оценки без LLM.")
                 for user_id in user_ids:
                     role_id = roles_by_id[user_id]
                     role_code = role_by_user_id[user_id]
-                    mbti_summary = {
-                        "общий_итог": {
-                            "оценка": 62,
-                            "темперамент": "__autotest__ offline",
-                            "краткий_вывод": "Offline-регрессия создала MBTI-сводку без вызова LLM.",
-                        }
-                    }
                     session_row = connection.execute(
                         """
                         INSERT INTO user_sessions (
                             session_code, user_id, role_id, status, source, notes,
-                            assessment_code, started_at, finished_at, mbti_summary_json
+                            assessment_code, started_at, finished_at,
+                            assessment_configuration_id, methodology_version_id, scenario_version_id,
+                            execution_snapshot_json, execution_checksum
                         )
-                        VALUES (%s, %s, %s, 'completed', '__autotest__offline', 'Offline regression fixture session', 'competencies_4k', NOW(), NOW(), %s::jsonb)
+                        VALUES (
+                            %s, %s, %s, 'completed', '__autotest__offline',
+                            'Offline regression fixture session', 'competencies_4k', NOW(), NOW(),
+                            %s, %s, %s, %s::jsonb, %s
+                        )
                         RETURNING id
                         """,
-                        (f"__autotest__offline{secrets.token_hex(12)}", user_id, role_id, _json(mbti_summary)),
+                        (
+                            f"__autotest__offline{secrets.token_hex(12)}", user_id, role_id,
+                            execution["configuration_id"], execution["methodology_version_id"],
+                            execution["scenario_version_id"], canonical_json(execution["snapshot"]),
+                            execution["checksum"],
+                        ),
                     ).fetchone()
                     session_id = int(session_row["id"])
                     session_ids.append(session_id)
@@ -874,9 +874,7 @@ def _run_full_assessment_for_user(user_id: int, role_code: str) -> tuple[int, in
         case_id = int(response.session_case_id or 0)
         if response.case_completed:
             completed_cases += 1
-        if response.mbti_followup_pending:
-            message = _autotest_mbti_followup_answer(role_code)
-        elif response.pending_auto_finish:
+        if response.pending_auto_finish:
             message = "__auto_finish_case__"
         elif case_id and case_id in answered_cases:
             message = "__finish_case__"
@@ -916,13 +914,12 @@ def _run_full_assessment_for_user(user_id: int, role_code: str) -> tuple[int, in
         result_count = int(case_summary["result_count"] or 0)
         status_counts = dict(case_summary["status_counts"] or {})
         session_row = connection.execute(
-            "SELECT status, mbti_summary_json IS NOT NULL AS has_mbti FROM user_sessions WHERE id = %s",
+            "SELECT status FROM user_sessions WHERE id = %s",
             (session_id,),
         ).fetchone()
         if session_row is None:
             raise RuntimeError(f"Для пользователя {user_id} не найдена assessment-сессия {session_id}.")
         session_status = str(session_row["status"] or "")
-        has_mbti = bool(session_row["has_mbti"])
         if case_count <= 0 and session_status == "completed" and result_count > 0:
             case_count = result_count
         if case_count <= 0:
@@ -943,8 +940,6 @@ def _run_full_assessment_for_user(user_id: int, role_code: str) -> tuple[int, in
                 f"Для пользователя {user_id} не сформированы результаты кейсов. "
                 f"session_id={session_id}, session_status={session_status}, case_statuses={status_counts}."
             )
-    if settings.mbti_enabled and not has_mbti:
-        raise RuntimeError(f"Для пользователя {user_id} не сформирован MBTI summary.")
     return session_id, case_count, completed_cases
 
 
@@ -971,27 +966,20 @@ def run_smoke_regression() -> AdminRegressionTestRunResponse:
                     for row in connection.execute("SELECT id, role_id FROM users WHERE id = ANY(%s)", (user_ids,)).fetchall()
                 }
                 for user_id in user_ids:
-                    mbti_summary = {
-                        "общий_итог": {
-                            "оценка": 50,
-                            "темперамент": "__autotest__",
-                            "краткий_вывод": "Автотестовая MBTI-сводка создана для проверки отображения отчетов.",
-                        }
-                    }
                     session_row = connection.execute(
                         """
                         INSERT INTO user_sessions (
                             session_code, user_id, role_id, status, source, notes,
-                            assessment_code, started_at, finished_at, mbti_summary_json
+                            assessment_code, started_at, finished_at
                         )
-                        VALUES (%s, %s, %s, 'completed', '__autotest__', 'Smoke regression session', 'competencies_4k', NOW(), NOW(), %s::jsonb)
+                        VALUES (%s, %s, %s, 'completed', '__autotest__', 'Smoke regression session', 'competencies_4k', NOW(), NOW())
                         RETURNING id
                         """,
-                        (f"__autotest__{secrets.token_hex(12)}", user_id, roles_by_id[user_id], _json(mbti_summary)),
+                        (f"__autotest__{secrets.token_hex(12)}", user_id, roles_by_id[user_id]),
                     ).fetchone()
                     session_ids.append(int(session_row["id"]))
                 steps.append(_step("users", "passed", "Созданы 3 пользователя: linear_employee, manager, leader."))
-                steps.append(_step("sessions", "passed", "Созданы завершенные технические сессии для проверки отчетов и MBTI."))
+                steps.append(_step("sessions", "passed", "Созданы завершенные технические сессии для проверки отчетов."))
 
                 membership_count = connection.execute(
                     "SELECT COUNT(*)::int AS count FROM organization_memberships WHERE organization_id = %s",
@@ -1003,7 +991,7 @@ def run_smoke_regression() -> AdminRegressionTestRunResponse:
                 ).fetchone()["count"]
                 if int(membership_count) != 3 or int(report_count) != 3:
                     raise RuntimeError("Проверка membership/report count не прошла.")
-                steps.append(_step("assertions", "passed", "Проверены membership, completed sessions и MBTI payload."))
+                steps.append(_step("assertions", "passed", "Проверены membership и completed sessions."))
                 connection.commit()
         except Exception as exc:
             status = "failed"
@@ -1155,17 +1143,9 @@ def run_full_regression() -> AdminRegressionTestRunResponse:
 
 
 def get_regression_status() -> AdminRegressionTestStatusResponse:
-    store_available = False
-    if settings.mbti_enabled:
-        try:
-            store_available = mbti_assessment_service._get_store() is not None
-        except Exception:
-            store_available = False
     return AdminRegressionTestStatusResponse(
         title="Регрессионные тесты",
         subtitle="Smoke-проверки и полный прогон assessment-сценариев для автотестовых пользователей.",
-        mbti_enabled=bool(settings.mbti_enabled),
-        mbti_store_available=store_available,
         last_run=_last_run,
         cleanup_hint="Удаляются только данные с префиксом __autotest__.",
     )

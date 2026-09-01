@@ -53,6 +53,23 @@ def queue_database(test_database_url, monkeypatch):
             yield connection
 
     monkeypatch.setattr(queue_module, "get_connection", test_connection)
+    monkeypatch.setattr(
+        queue_module,
+        "load_default_execution_configuration",
+        lambda _connection: {
+            "configuration_id": 1,
+            "methodology_version_id": 1,
+            "scenario_version_id": 1,
+            "snapshot": {
+                "schema_version": 1,
+                "configuration": {"id": 1, "code": "queue_test"},
+                "methodology": {"id": 1, "code": "queue_test", "version": 1, "definition": {}},
+                "scenario": {"id": 1, "code": "queue_test", "version": 1, "definition": {}},
+                "prompts": {},
+            },
+            "checksum": "queue-test-checksum",
+        },
+    )
     yield
 
     with psycopg.connect(test_database_url) as connection:

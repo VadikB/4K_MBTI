@@ -24,9 +24,6 @@ import {
   adminReportDetailSkillsRadarChart,
   adminReportDetailSkillsRadarLabels,
   adminReportDetailSkillsRadarFallback,
-  adminReportDetailMbtiType,
-  adminReportDetailMbtiSummary,
-  adminReportDetailMbtiAxes,
   adminReportDetailInsightTitle,
   adminReportDetailInsightText,
   adminReportDetailBasis,
@@ -102,12 +99,6 @@ export const renderAdminReportDetail = () => {
     if (adminReportDetailStatusBadge) {
       adminReportDetailStatusBadge.textContent = 'Черновик';
     }
-    if (adminReportDetailMbtiType) {
-      adminReportDetailMbtiType.textContent = 'Нет данных';
-    }
-    if (adminReportDetailMbtiSummary) {
-      adminReportDetailMbtiSummary.textContent = 'Данные по отчету пока недоступны.';
-    }
     adminReportDetailInsightTitle.textContent = 'AI insight недоступен';
     adminReportDetailInsightText.textContent =
       'После загрузки результатов здесь появится интерпретация профиля пользователя.';
@@ -125,9 +116,6 @@ export const renderAdminReportDetail = () => {
     renderAdminProfileSummaryList(adminReportDetailProfileStakeholders, []);
     renderAdminProfileSummaryList(adminReportDetailProfileConstraints, []);
     renderAdminSkillRadar([]);
-    if (adminReportDetailMbtiAxes) {
-      adminReportDetailMbtiAxes.innerHTML = '';
-    }
     adminReportDetailBasis.innerHTML = '';
     adminReportDetailStrengths.innerHTML = '<li>Данные будут доступны после появления результатов оценки.</li>';
     adminReportDetailGrowth.innerHTML = '<li>Зоны роста будут определены после накопления результатов.</li>';
@@ -179,15 +167,6 @@ export const renderAdminReportDetail = () => {
       })
     : 'Без даты';
   const scorePercent = typeof detail.score_percent === 'number' ? detail.score_percent : 0;
-  const mbtiAxes =
-    Array.isArray(detail.mbti_axes) && detail.mbti_axes.length
-      ? detail.mbti_axes
-      : [
-          { left: 'Экстраверсия', right: 'Интроверсия', value: 0 },
-          { left: 'Интуиция', right: 'Сенсорика', value: 0 },
-          { left: 'Мышление', right: 'Чувство', value: 0 },
-          { left: 'Суждение', right: 'Восприятие', value: 0 },
-        ];
 
   adminReportDetailDate.textContent = reportDate;
   adminReportDetailScore.textContent = scorePercent + '%';
@@ -203,12 +182,6 @@ export const renderAdminReportDetail = () => {
   }
   if (adminReportDetailStatusBadge) {
     adminReportDetailStatusBadge.textContent = getAdminStatusBadgeLabel(detail.status);
-  }
-  if (adminReportDetailMbtiType) {
-    adminReportDetailMbtiType.textContent = detail.mbti_type || 'Нет данных';
-  }
-  if (adminReportDetailMbtiSummary) {
-    adminReportDetailMbtiSummary.textContent = detail.mbti_summary || 'Данные MBTI пока недоступны для этой записи.';
   }
   adminReportDetailInsightTitle.textContent = detail.insight_title || 'AI insight недоступен';
   adminReportDetailInsightText.innerHTML = highlightAdminInsightFigures(
@@ -332,24 +305,6 @@ export const renderAdminReportDetail = () => {
 
   renderAdminSkillRadar(state.adminReportDetailSkillAssessments);
 
-  if (adminReportDetailMbtiAxes) {
-    adminReportDetailMbtiAxes.innerHTML = '';
-    mbtiAxes.forEach((axis) => {
-      const item = document.createElement('div');
-      item.className = 'admin-detail-mbti-axis';
-      const value = Math.max(0, Math.min(100, Number(axis.value) || 0));
-      item.innerHTML =
-        '<div class="admin-detail-mbti-axis-head"><span>' +
-        (axis.left || 'Нет данных') +
-        '</span><span>' +
-        (axis.right || 'Нет данных') +
-        '</span></div>' +
-        '<div class="admin-detail-mbti-axis-track"><span style="width:' +
-        value +
-        '%"></span></div>';
-      adminReportDetailMbtiAxes.appendChild(item);
-    });
-  }
 
   adminReportDetailBasis.innerHTML = '';
   (detail.basis_items && detail.basis_items.length ? detail.basis_items : []).forEach((text) => {
@@ -819,9 +774,6 @@ export const openAdminReportDetail = async (sessionId) => {
   renderAdminSkillRadar([]);
   adminReportDetailInsightTitle.textContent = 'Загружаем AI insight...';
   adminReportDetailInsightText.textContent = 'Подготавливаем интерпретацию результатов пользователя.';
-  if (adminReportDetailMbtiAxes) {
-    adminReportDetailMbtiAxes.innerHTML = '';
-  }
   adminReportDetailBasis.innerHTML = '';
   adminReportDetailStrengths.innerHTML = '';
   adminReportDetailGrowth.innerHTML = '';
@@ -865,9 +817,6 @@ export const openAdminReportDetail = async (sessionId) => {
     renderAdminSkillRadar([]);
     adminReportDetailInsightTitle.textContent = 'Не удалось загрузить AI insight';
     adminReportDetailInsightText.textContent = error.message;
-    if (adminReportDetailMbtiSummary) {
-      adminReportDetailMbtiSummary.textContent = 'Не удалось загрузить данные MBTI.';
-    }
     adminReportDetailBasis.innerHTML = '';
     adminReportDetailStrengths.innerHTML = '<li>Данные временно недоступны.</li>';
     adminReportDetailGrowth.innerHTML = '<li>Данные временно недоступны.</li>';

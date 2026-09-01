@@ -54,7 +54,7 @@
   )
 }
 
-#let table-columns = (1.35fr, 1.15fr, 0.65fr, 0.52fr, 0.52fr, 0.55fr)
+#let table-columns = (1.35fr, 1.15fr, 0.65fr, 0.52fr, 0.55fr)
 
 #let header-cell(body) = text(size: 7.2pt, weight: 700, fill: text-muted, hyphenate: false, body)
 
@@ -68,7 +68,6 @@
   header-cell[Группа / роль],
   header-cell[Статус],
   align(center, header-cell[4K score]),
-  align(center, header-cell[MBTI]),
   align(center, header-cell[Дата]),
 )
 
@@ -89,7 +88,6 @@
   ],
   status-chip(item.status),
   align(center, text(size: 9pt, weight: 800, fill: accent)[#item.score_label]),
-  align(center, text(size: 8pt, fill: text-body)[#item.mbti_type]),
   align(center, text(size: 8pt, fill: text-body)[#item.date_label]),
 )
 

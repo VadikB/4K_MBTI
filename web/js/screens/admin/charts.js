@@ -2,10 +2,6 @@ import {
   adminCompetencyChart,
   adminCompetencyBarChartCanvas,
   adminCompetencyChartFallback,
-  adminMbtiChart,
-  adminMbtiPieChartCanvas,
-  adminMbtiChartFallback,
-  adminMbtiPreviewPill,
   adminActivityChart,
   adminActivityBarChartCanvas,
   adminActivityChartFallback,
@@ -14,26 +10,9 @@ import { escapeHtml } from '../../utils/format.js';
 import { getCompetencyPalette, getCompetencySortIndex } from '../../utils/competency.js';
 
 let adminCompetencyBarChart = null;
-let adminMbtiPieChart = null;
 let adminActivityBarChart = null;
 
 const resolveElement = (cachedElement, id) => cachedElement || document.getElementById(id);
-const adminMbtiChartPalette = [
-  '#4648d4',
-  '#16a34a',
-  '#2563eb',
-  '#ea580c',
-  '#0f766e',
-  '#be123c',
-  '#7c3aed',
-  '#ca8a04',
-];
-const adminMbtiPreviewDistribution = [
-  { name: 'Analysts', value: 42 },
-  { name: 'Diplomats', value: 28 },
-  { name: 'Sentinels', value: 20 },
-  { name: 'Explorers', value: 10 },
-];
 const adminActivityEmptyFill = '#eef2ff';
 const adminActivityPrimaryGradientStops = ['#e1e0ff', '#6063ee', '#4648d4'];
 
@@ -117,13 +96,6 @@ export const destroyAdminCompetencyBarChart = () => {
   if (adminCompetencyBarChart) {
     adminCompetencyBarChart.destroy();
     adminCompetencyBarChart = null;
-  }
-};
-
-export const destroyAdminMbtiPieChart = () => {
-  if (adminMbtiPieChart) {
-    adminMbtiPieChart.destroy();
-    adminMbtiPieChart = null;
   }
 };
 
@@ -312,140 +284,6 @@ export const renderAdminCompetencyBarChart = (competencies = []) => {
           },
           border: {
             display: false,
-          },
-        },
-      },
-    },
-  });
-};
-
-const buildAdminMbtiFallbackMarkup = (items) =>
-  items
-    .map(
-      (item, index) =>
-        '<div class="admin-mbti-row">' +
-        '<span>' +
-        escapeHtml(item.name) +
-        '</span>' +
-        '<div class="admin-mbti-track"><span style="width:' +
-        Math.min(item.value, 100) +
-        '%; background:' +
-        adminMbtiChartPalette[index % adminMbtiChartPalette.length] +
-        '"></span></div>' +
-        '<strong>' +
-        item.value +
-        '%</strong>' +
-        '</div>',
-    )
-    .join('');
-
-export const renderAdminMbtiPieChart = (distribution = []) => {
-  const chartContainer = resolveElement(adminMbtiChart, 'admin-mbti-chart');
-  const chartCanvas = resolveElement(adminMbtiPieChartCanvas, 'admin-mbti-pie-chart');
-  const fallback = resolveElement(adminMbtiChartFallback, 'admin-mbti-chart-fallback');
-  const previewPill = resolveElement(adminMbtiPreviewPill, 'admin-mbti-preview-pill');
-
-  if (!chartContainer) {
-    return;
-  }
-
-  destroyAdminMbtiPieChart();
-
-  const items = (Array.isArray(distribution) ? distribution : [])
-    .map((item) => ({
-      name: String(item.name || 'Нет данных'),
-      value: Math.max(0, Number(item.value) || 0),
-    }))
-    .filter((item) => item.value > 0);
-  const isPreview = items.length === 0;
-  const chartItems = isPreview ? adminMbtiPreviewDistribution : items;
-
-  if (chartCanvas) {
-    chartCanvas.classList.add('hidden');
-  }
-  if (fallback) {
-    fallback.classList.add('hidden');
-    fallback.innerHTML = '';
-  }
-  if (previewPill) {
-    previewPill.classList.toggle('hidden', !isPreview);
-  }
-
-  if (typeof window.Chart !== 'function' || !chartCanvas) {
-    if (fallback) {
-      fallback.innerHTML = buildAdminMbtiFallbackMarkup(chartItems);
-      fallback.classList.remove('hidden');
-    }
-    return;
-  }
-
-  const context = chartCanvas.getContext('2d');
-  if (!context) {
-    if (fallback) {
-      fallback.innerHTML = buildAdminMbtiFallbackMarkup(chartItems);
-      fallback.classList.remove('hidden');
-    }
-    return;
-  }
-
-  chartCanvas.classList.remove('hidden');
-  const legendPosition = window.matchMedia('(max-width: 640px)').matches ? 'bottom' : 'right';
-  adminMbtiPieChart = new window.Chart(context, {
-    type: 'pie',
-    data: {
-      labels: chartItems.map((item) => item.name),
-      datasets: [
-        {
-          data: chartItems.map((item) => item.value),
-          backgroundColor: chartItems.map((_, index) => adminMbtiChartPalette[index % adminMbtiChartPalette.length]),
-          borderColor: '#ffffff',
-          borderWidth: 4,
-          hoverOffset: 8,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      layout: {
-        padding: 4,
-      },
-      plugins: {
-        legend: {
-          position: legendPosition,
-          labels: {
-            boxHeight: 9,
-            boxWidth: 9,
-            color: '#475569',
-            padding: 14,
-            pointStyle: 'circle',
-            usePointStyle: true,
-            font: {
-              family: 'Inter',
-              size: 12,
-              weight: '700',
-            },
-          },
-        },
-        tooltip: {
-          backgroundColor: '#191c1e',
-          displayColors: false,
-          titleFont: {
-            family: 'Inter',
-            size: 13,
-            weight: '600',
-          },
-          bodyFont: {
-            family: 'Inter',
-            size: 12,
-            weight: '500',
-          },
-          callbacks: {
-            label(context) {
-              const value = Number(context.raw) || 0;
-              return (context.label || 'Тип') + ': ' + value + '%' + (isPreview ? ' · Preview' : '');
-            },
           },
         },
       },

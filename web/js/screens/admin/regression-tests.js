@@ -169,11 +169,10 @@ export const renderAdminRegressionTests = () => {
   }
   if (adminRegressionTestsSubtitle) {
     adminRegressionTestsSubtitle.textContent =
-      data.subtitle || 'Быстрые проверки организации, пользователей, отчетов и MBTI readiness.';
+      data.subtitle || 'Быстрые проверки организации, пользователей и отчетов.';
   }
   if (adminRegressionTestsMetrics) {
     adminRegressionTestsMetrics.innerHTML =
-      renderMetric('MBTI', data.mbti_enabled ? 'Включен' : 'Выключен', data.mbti_store_available ? 'Индекс доступен' : 'Индекс не загружен') +
       renderMetric('Последний запуск', lastRun ? lastRun.status : 'Нет', lastRun ? lastRun.duration_seconds + ' сек' : 'Smoke еще не запускался') +
       renderMetric('Тестовые данные', '__autotest__', data.cleanup_hint || 'Удаляются отдельно') +
       renderMetric('Режимы', 'Smoke / Offline / Tech / Full', 'Offline и Tech не вызывают LLM');
