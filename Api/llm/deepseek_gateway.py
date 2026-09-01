@@ -54,6 +54,7 @@ class DeepSeekGateway:
         *,
         temperature: float = 0.3,
         timeout_seconds: int = 120,
+        max_tokens: int | None = None,
         routing_key: str | None = None,
     ) -> str:
         if not self.enabled:
@@ -73,13 +74,14 @@ class DeepSeekGateway:
                 "Сервис обработки ответов сейчас перегружен. Подождите немного и повторите отправку."
             )
 
-        payload = json.dumps(
-            {
-                "model": self.model,
-                "messages": messages,
-                "temperature": temperature,
-            }
-        ).encode("utf-8")
+        request_payload = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": temperature,
+        }
+        if max_tokens is not None:
+            request_payload["max_tokens"] = int(max_tokens)
+        payload = json.dumps(request_payload).encode("utf-8")
         last_error: Exception | None = None
         request_started_at = time.perf_counter()
         try:

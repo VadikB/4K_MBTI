@@ -198,60 +198,6 @@
     line-height: 1;
 }
 
-.admin-mbti-chart {
-    position: relative;
-    height: 284px;
-    min-height: 284px;
-    padding-top: var(--space-2);
-}
-
-.admin-mbti-chart canvas {
-    width: 100% !important;
-    height: 100% !important;
-}
-
-.admin-mbti-chart-fallback {
-    display: grid;
-    gap: var(--space-3);
-    height: 100%;
-    align-content: center;
-}
-
-.admin-mbti-row {
-    display: grid;
-    grid-template-columns: 110px minmax(0, 1fr) 48px;
-    gap: var(--space-2);
-    align-items: center;
-}
-
-.admin-mbti-row span,
-.admin-mbti-row strong {
-    font-size: var(--fs-body-sm);
-}
-
-.admin-mbti-row strong {
-    font-family: var(--font-heading);
-    font-weight: var(--fw-bold);
-}
-
-.admin-mbti-track {
-    height: 10px;
-    border-radius: var(--radius-pill);
-    background: rgba(70, 72, 212, 0.12);
-    overflow: hidden;
-}
-
-.admin-mbti-track span {
-    display: block;
-    height: 100%;
-    border-radius: var(--radius-pill);
-    background: linear-gradient(
-        90deg,
-        var(--accent) 0%,
-        var(--accent-bright) 100%
-    );
-}
-
 .admin-insights-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

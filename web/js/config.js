@@ -121,11 +121,6 @@ export const loaderFlows = {
                 "Оцениваем ответ по кейсу и собираем сигналы для следующего шага.",
         },
         {
-            label: "Уточняем профиль MBTI",
-            description:
-                "При необходимости готовим MBTI-сигналы и уточняющие вопросы по текущему кейсу.",
-        },
-        {
             label: "Открываем следующий шаг",
             description:
                 "Показываем следующий кейс или собираем финальный профиль по всей сессии.",
@@ -246,12 +241,4 @@ export const onboardingSteps = [
     },
 ];
 
-export const staticAssessments = [
-    {
-        title: "MBTI Profile",
-        description:
-            "Типология личности Майерс-Бриггс для понимания командной динамики.",
-        duration: "20 минут",
-        tone: "warm",
-    },
-];
+export const staticAssessments = [];

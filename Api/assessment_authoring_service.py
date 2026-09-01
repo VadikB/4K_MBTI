@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from Api.assessment_agent_definitions import load_published_agent_definition_bundle
 from Api.assessment_configuration import canonical_json, definition_checksum
 from Api.assessment_prompt_resolver import load_active_prompt_bundle
 from Api.assessment_runtime import component_registry, validate_scenario_definition
+from Api.assessment_evaluator_contracts import validate_agent_runtime
 
 
 ENTITY_CONFIG = {
@@ -16,6 +18,7 @@ ENTITY_CONFIG = {
         "edit_permission": "methodology.edit_draft",
         "submit_permission": "methodology.submit",
         "publish_permission": "methodology.publish",
+        "view_permission": "methodology.view",
     },
     "scenario": {
         "versions": "assessment_scenario_versions",
@@ -24,6 +27,16 @@ ENTITY_CONFIG = {
         "edit_permission": "scenario.edit_draft",
         "submit_permission": "scenario.submit",
         "publish_permission": "scenario.publish",
+        "view_permission": "scenario.view",
+    },
+    "agent": {
+        "versions": "assessment_agent_definition_versions",
+        "parents": "assessment_agent_definitions",
+        "parent_fk": "agent_definition_id",
+        "edit_permission": "agent.edit_draft",
+        "submit_permission": "agent.submit",
+        "publish_permission": "agent.publish",
+        "view_permission": "agent.view",
     },
 }
 
@@ -191,6 +204,7 @@ class AssessmentAuthoringService:
             """
             SELECT configuration.*,
                    methodology_version.status AS methodology_status,
+                   methodology_version.definition_json AS methodology_definition,
                    scenario_version.status AS scenario_status
             FROM assessment_configurations configuration
             JOIN assessment_methodology_versions methodology_version
@@ -209,6 +223,16 @@ class AssessmentAuthoringService:
         if current["methodology_status"] != "published" or current["scenario_status"] != "published":
             raise ValueError("Configuration components must remain published.")
         prompt_bundle = load_active_prompt_bundle(connection)
+        agent_definitions = load_published_agent_definition_bundle(
+            connection,
+            methodology_definition=dict(current["methodology_definition"] or {}),
+        )
+        self._validate_evaluator_prompt_bundle(
+            methodology_definition=dict(current["methodology_definition"] or {}),
+            prompt_bundle=prompt_bundle,
+            agent_definitions=agent_definitions,
+        )
+        prompt_bundle["agent_definitions"] = agent_definitions
         if make_default:
             connection.execute("UPDATE assessment_configurations SET is_default = FALSE WHERE id <> %s", (configuration_id,))
         updated = connection.execute(
@@ -232,6 +256,72 @@ class AssessmentAuthoringService:
             comment=comment,
         )
         return dict(updated)
+
+    def _validate_evaluator_prompt_bundle(
+        self,
+        *,
+        methodology_definition: dict[str, Any],
+        prompt_bundle: dict[str, Any],
+        agent_definitions: dict[str, Any] | None = None,
+    ) -> None:
+        assessment_agents = prompt_bundle.get("assessment_agents")
+        assessment_agents = assessment_agents if isinstance(assessment_agents, dict) else {}
+
+        missing: list[str] = []
+        invalid: list[str] = []
+        for competency in methodology_definition.get("competencies") or []:
+            evaluator_code = str((competency or {}).get("evaluator") or "").strip()
+            agent_code = evaluator_code.removeprefix("evaluation.")
+            reference = (competency or {}).get("agent_definition")
+            reference = dict(reference) if isinstance(reference, dict) else {}
+            definition_code = str(reference.get("code") or agent_code).strip()
+            frozen_definition = dict((agent_definitions or {}).get(definition_code) or {})
+            runtime = dict((frozen_definition.get("definition") or {}).get("runtime") or {})
+            shadow = (competency or {}).get("shadow_evaluation")
+            if isinstance(shadow, dict):
+                shadow_reference = dict(shadow.get("agent_definition") or {})
+                shadow_code = str(shadow_reference.get("code") or "").strip()
+                shadow_frozen = dict((agent_definitions or {}).get(shadow_code) or {})
+                shadow_runtime = dict((shadow_frozen.get("definition") or {}).get("runtime") or {})
+                if runtime.get("mode") != "legacy_adapter":
+                    raise ValueError("Shadow comparison requires an official legacy_adapter evaluator.")
+                if shadow_runtime.get("mode") != "universal_llm":
+                    raise ValueError("Shadow comparison requires a universal_llm shadow agent.")
+                shadow_skill_codes = shadow.get("skill_codes")
+                if not isinstance(shadow_skill_codes, list) or not {
+                    str(code).strip() for code in shadow_skill_codes if str(code).strip()
+                }:
+                    raise ValueError("Shadow evaluation must define skill_codes.")
+            if runtime.get("mode") == "universal_llm":
+                skill_codes = (competency or {}).get("skill_codes")
+                if not isinstance(skill_codes, list) or not {
+                    str(code).strip() for code in skill_codes if str(code).strip()
+                }:
+                    raise ValueError(
+                        f"Universal evaluator competency {competency.get('code')} must define skill_codes."
+                    )
+                continue
+            config = assessment_agents.get(agent_code)
+            if not isinstance(config, dict):
+                missing.append(agent_code)
+                continue
+            profile = config.get("profile")
+            if not isinstance(profile, dict):
+                invalid.append(agent_code)
+                continue
+            profile_agent_code = str(profile.get("agent_code") or "").strip()
+            prompt_version = int(profile.get("prompt_version") or 0)
+            if profile_agent_code != agent_code or prompt_version < 1:
+                invalid.append(agent_code)
+
+        if missing:
+            raise ValueError(
+                "Assessment prompt bundle is missing evaluator profiles: " + ", ".join(sorted(missing)) + "."
+            )
+        if invalid:
+            raise ValueError(
+                "Assessment prompt bundle contains invalid evaluator profiles: " + ", ".join(sorted(invalid)) + "."
+            )
 
     def clone_version(
         self,
@@ -389,10 +479,11 @@ class AssessmentAuthoringService:
 
     def validate_definition(self, *, entity_type: str, definition: dict[str, Any]) -> None:
         self._config(entity_type)
-        if "mbti" in json.dumps(definition, ensure_ascii=False).lower():
-            raise ValueError("MBTI is not allowed in the 4K assessment definition.")
         if entity_type == "scenario":
             validate_scenario_definition(definition)
+            return
+        if entity_type == "agent":
+            self._validate_agent_definition(definition)
             return
         competencies = definition.get("competencies")
         if not isinstance(competencies, list) or not competencies:
@@ -407,7 +498,68 @@ class AssessmentAuthoringService:
             if not code or code in seen:
                 raise ValueError("Competency codes must be present and unique.")
             component_registry.resolve(evaluator, version)
+            agent_reference = competency.get("agent_definition")
+            if agent_reference is not None:
+                if not isinstance(agent_reference, dict):
+                    raise ValueError("Competency agent_definition must be an object.")
+                definition_code = str(agent_reference.get("code") or "").strip()
+                definition_version = int(agent_reference.get("version") or 0)
+                if not definition_code or definition_version < 1:
+                    raise ValueError("Competency agent_definition must declare code and positive version.")
+            shadow = competency.get("shadow_evaluation")
+            if shadow is not None:
+                if not isinstance(shadow, dict):
+                    raise ValueError("Competency shadow_evaluation must be an object.")
+                shadow_reference = shadow.get("agent_definition")
+                if not isinstance(shadow_reference, dict):
+                    raise ValueError("Shadow evaluation must declare agent_definition.")
+                shadow_code = str(shadow_reference.get("code") or "").strip()
+                shadow_version = int(shadow_reference.get("version") or 0)
+                if not shadow_code or shadow_version < 1:
+                    raise ValueError("Shadow agent_definition must declare code and positive version.")
+                official_definition_code = (
+                    str(agent_reference.get("code") or "").strip()
+                    if isinstance(agent_reference, dict)
+                    else evaluator.removeprefix("evaluation.")
+                )
+                if shadow_code == official_definition_code:
+                    raise ValueError("Official and shadow agent definitions must use different codes.")
+                shadow_skill_codes = shadow.get("skill_codes")
+                if not isinstance(shadow_skill_codes, list) or not {
+                    str(item).strip() for item in shadow_skill_codes if str(item).strip()
+                }:
+                    raise ValueError("Shadow evaluation must define skill_codes.")
             seen.add(code)
+
+    def _validate_agent_definition(self, definition: dict[str, Any]) -> None:
+        competency_code = str(definition.get("competency_code") or "").strip()
+        instruction_markdown = str(definition.get("instruction_markdown") or "").strip()
+        if not competency_code:
+            raise ValueError("Agent definition must declare competency_code.")
+        if not instruction_markdown:
+            raise ValueError("Agent definition must contain instruction_markdown.")
+        for field, expected_code in (
+            ("input_contract", "competency_evaluation_input"),
+            ("output_contract", "competency_evaluation_output"),
+        ):
+            reference = definition.get(field)
+            if not isinstance(reference, dict):
+                raise ValueError(f"Agent definition must declare {field}.")
+            code = str(reference.get("code") or "").strip()
+            version = int(reference.get("version") or 0)
+            if code != expected_code or version < 1:
+                raise ValueError(f"Unsupported agent {field}: {code} v{version}.")
+        executor = definition.get("executor")
+        if not isinstance(executor, dict):
+            raise ValueError("Agent definition must declare executor.")
+        component_registry.resolve(
+            str(executor.get("code") or "").strip(),
+            int(executor.get("version") or 0),
+        )
+        runtime = definition.get("runtime")
+        if not isinstance(runtime, dict):
+            raise ValueError("Agent definition runtime must be an object.")
+        validate_agent_runtime(runtime)
 
     def _audit(self, connection, *, entity_type: str, entity_id: int, action: str, actor_user_id: int, before: dict[str, Any] | None, after: dict[str, Any] | None, comment: str | None) -> None:
         connection.execute(

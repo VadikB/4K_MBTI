@@ -22,13 +22,14 @@ from Api.assessment_service import assessment_service
 from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.assessment_authoring_service import assessment_authoring_service, ENTITY_CONFIG
+from Api.assessment_shadow_repository import assessment_shadow_repository
+from Api.assessment_shadow_batch_service import assessment_shadow_batch_service
 from Api.platform_access import require_platform_permission
 from Api.agent import interviewer_agent
 from Api.database import get_connection, get_level_percent_map, recompute_case_quality_checks
 from Api.database import get_case_methodology_versions
 from Api.pdf_report_service import pdf_report_service
 from Api.progress_service import operation_progress_service
-from Api.mbti_refinement_service import mbti_refinement_service
 from Api.org_access import (
     AdminScope,
     admin_scope_sql,
@@ -81,6 +82,9 @@ from Api.schemas import (
     AdminMethodologySkillOption,
     AdminMethodologySkillSignalItem,
     AdminReportDetailResponse,
+    AdminShadowComparisonResponse,
+    AdminShadowBatchRequest,
+    AdminShadowBatchResponse,
     AdminDetailedReportsResponse,
     AdminExpertCommentUpdateRequest,
     AdminExpertGroupExportRequest,
@@ -132,10 +136,6 @@ from Api.schemas import (
     AssessmentPreparationBatchStatusResponse,
     AssessmentPreparationStatusResponse,
     AssessmentTimerControlRequest,
-    MbtiRefinementMessageRequest,
-    MbtiRefinementMessageResponse,
-    MbtiRefinementStartResponse,
-    MbtiRefinementStateResponse,
     AssessmentSessionLookupResponse,
     AssessmentCard,
     AssessmentReportInterpretationResponse,
@@ -1534,8 +1534,6 @@ def _build_admin_dashboard(connection, scope: AdminScope, period_key: str = "30d
         {"name": "Критическое мышление", "value": 0},
     ]
 
-    mbti_distribution = []
-
     weakest = min(competency_average, key=lambda item: item["value"])
     strongest = max(competency_average, key=lambda item: item["value"])
 
@@ -1550,7 +1548,6 @@ def _build_admin_dashboard(connection, scope: AdminScope, period_key: str = "30d
             AdminMetricCard(label="Среднее время прохождения", value=f"{avg_actual_duration:.0f} мин", delta=f"{avg_completed_cases:.1f} кейса в среднем"),
         ],
         competency_average=competency_average,
-        mbti_distribution=mbti_distribution,
         insights=[
             AdminInsightCard(title="Наиболее слабый контур", description=f"Минимальный средний показатель сейчас у направления «{weakest['name']}»."),
             AdminInsightCard(title="Лучшая группа", description=f"Самый высокий средний результат показывает направление «{strongest['name']}»."),
@@ -1564,65 +1561,6 @@ def _build_admin_dashboard(connection, scope: AdminScope, period_key: str = "30d
     )
 
 
-
-def _extract_admin_mbti_payload(summary_payload) -> tuple[str | None, str | None, list[dict[str, str | int]]]:
-    default_axes = [
-        {"left": "Экстраверсия", "right": "Интроверсия", "value": 0},
-        {"left": "Интуиция", "right": "Сенсорика", "value": 0},
-        {"left": "Мышление", "right": "Чувство", "value": 0},
-        {"left": "Суждение", "right": "Восприятие", "value": 0},
-    ]
-    if isinstance(summary_payload, str):
-        try:
-            summary_payload = json.loads(summary_payload)
-        except Exception:
-            summary_payload = None
-    if not isinstance(summary_payload, dict) or not summary_payload:
-        return None, None, default_axes
-
-    total = summary_payload.get("общий_итог") if isinstance(summary_payload.get("общий_итог"), dict) else summary_payload
-    summary_text = str(
-        total.get("краткий_вывод")
-        or total.get("summary")
-        or total.get("вывод")
-        or ""
-    ).strip() or None
-
-    mbti_type = str(
-        total.get("mbti_type")
-        or total.get("тип")
-        or total.get("темперамент")
-        or total.get("вероятный_тип")
-        or ""
-    ).strip() or None
-    if not mbti_type and summary_text:
-        type_match = re.search(r"\b([IE][NS][FT][JP])\b", summary_text)
-        temperament_match = re.search(r"\b(SJ|SP|NT|NF)\b", summary_text)
-        named_match = re.search(r"(Guardian|Artisan|Rational|Idealist)[-/ ]?([A-Z]{2})?", summary_text, flags=re.IGNORECASE)
-        if type_match:
-            mbti_type = type_match.group(1)
-        elif named_match:
-            label = named_match.group(1).capitalize()
-            suffix = (named_match.group(2) or "").upper()
-            mbti_type = f"{label}/{suffix}" if suffix else label
-        elif temperament_match:
-            mbti_type = temperament_match.group(1)
-
-    axes_payload = total.get("оси") or total.get("axes") or summary_payload.get("mbti_axes")
-    axes: list[dict[str, str | int]] = []
-    if isinstance(axes_payload, list):
-        for item in axes_payload:
-            if not isinstance(item, dict):
-                continue
-            left = str(item.get("left") or item.get("левая_шкала") or item.get("left_label") or "").strip()
-            right = str(item.get("right") or item.get("правая_шкала") or item.get("right_label") or "").strip()
-            try:
-                value = int(item.get("value") or item.get("значение") or 0)
-            except Exception:
-                value = 0
-            if left and right:
-                axes.append({"left": left, "right": right, "value": max(0, min(100, value))})
-    return mbti_type, summary_text, axes or default_axes
 
 def _build_admin_reports(connection, scope: AdminScope) -> AdminDetailedReportsResponse:
     scope_sql, scope_params = admin_scope_sql(scope)
@@ -1638,7 +1576,6 @@ def _build_admin_reports(connection, scope: AdminScope) -> AdminDetailedReportsR
             us.status,
             us.expert_comment,
             score_stats.overall_score_percent,
-            us.mbti_summary_json,
             us.started_at,
             us.finished_at
         FROM user_sessions us
@@ -1661,7 +1598,6 @@ def _build_admin_reports(connection, scope: AdminScope) -> AdminDetailedReportsR
 
     items = []
     for row in rows:
-        mbti_type, _, _ = _extract_admin_mbti_payload(row.get("mbti_summary_json"))
         items.append(
             AdminDetailedReportItem(
                 session_id=int(row["session_id"]),
@@ -1672,7 +1608,6 @@ def _build_admin_reports(connection, scope: AdminScope) -> AdminDetailedReportsR
                 role_name=row["role_name"],
                 status="Завершено" if row["status"] == "completed" else "В процессе" if row["status"] == "active" else "Черновик",
                 score_percent=int(row["overall_score_percent"]) if row["overall_score_percent"] is not None else None,
-                mbti_type=mbti_type,
                 started_at=row["started_at"],
                 finished_at=row["finished_at"],
             )
@@ -1702,7 +1637,6 @@ def _build_admin_report_detail(connection, session_id: int, scope: AdminScope) -
             us.expert_name,
             us.expert_contacts,
             us.expert_assessed_at,
-            us.mbti_summary_json,
             u.full_name,
             u.phone,
             u.telegram,
@@ -1995,8 +1929,6 @@ def _build_admin_report_detail(connection, session_id: int, scope: AdminScope) -
             }
         )
 
-    mbti_type, mbti_summary, mbti_axes = _extract_admin_mbti_payload(session_row.get("mbti_summary_json"))
-
     return AdminReportDetailResponse(
         session_id=int(session_row["session_id"]),
         user_id=int(session_row["user_id"]),
@@ -2009,9 +1941,6 @@ def _build_admin_report_detail(connection, session_id: int, scope: AdminScope) -
         score_percent=score_percent,
         report_date=session_row["finished_at"] or session_row["started_at"],
         competency_average=competency_average,
-        mbti_type=mbti_type,
-        mbti_summary=mbti_summary,
-        mbti_axes=mbti_axes,
         insight_title=interpretation["insight_title"],
         insight_text=interpretation["insight_text"],
         basis_items=interpretation["basis_items"],
@@ -5239,6 +5168,53 @@ def get_admin_methodology(request: Request) -> AdminMethodologyResponse:
         return _build_admin_methodology(connection)
 
 
+@router.get(
+    "/admin/assessment-shadow-comparisons",
+    response_model=AdminShadowComparisonResponse,
+)
+def get_admin_assessment_shadow_comparisons(request: Request) -> AdminShadowComparisonResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Admin session not found")
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        return AdminShadowComparisonResponse(
+            **assessment_shadow_repository.aggregate_comparisons(connection=connection)
+        )
+
+
+@router.post(
+    "/admin/assessment-shadow-batches",
+    response_model=AdminShadowBatchResponse,
+)
+def run_admin_assessment_shadow_batch(
+    payload: AdminShadowBatchRequest,
+    request: Request,
+) -> AdminShadowBatchResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Admin session not found")
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        try:
+            if payload.dry_run:
+                result = assessment_shadow_batch_service.preview(
+                    connection=connection,
+                    max_competency_runs=payload.max_competency_runs,
+                )
+            else:
+                result = assessment_shadow_batch_service.execute(
+                    connection=connection,
+                    max_competency_runs=payload.max_competency_runs,
+                    confirm_paid_calls=payload.confirm_paid_calls,
+                )
+        except (ValueError, RuntimeError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from None
+        return AdminShadowBatchResponse(**result)
+
+
 @router.get("/admin/methodology/cases/{case_id_code}", response_model=AdminMethodologyCaseDetailResponse)
 def get_admin_methodology_case_detail(case_id_code: str, request: Request) -> AdminMethodologyCaseDetailResponse:
     token = request.cookies.get(SESSION_COOKIE_NAME)
@@ -5297,9 +5273,9 @@ def _require_assessment_definition_permission(connection, user, entity_type: str
 )
 def list_assessment_definition_versions(entity_type: str, request: Request) -> list[AssessmentDefinitionVersionResponse]:
     user = _assessment_definition_user(request)
-    permission = "methodology.view" if entity_type == "methodology" else "scenario.view"
     if entity_type not in ENTITY_CONFIG:
         raise HTTPException(status_code=404, detail="Assessment definition type not found")
+    permission = _assessment_definition_permission(entity_type, "view")
     with get_connection() as connection:
         try:
             require_platform_permission(connection, user, permission)
@@ -5991,52 +5967,6 @@ def pause_assessment_timer(payload: AssessmentTimerControlRequest) -> dict:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@router.post("/{user_id}/assessment/{session_id}/mbti-refinement/start", response_model=MbtiRefinementStartResponse)
-def start_mbti_refinement(user_id: int, session_id: int) -> MbtiRefinementStartResponse:
-    with get_connection() as connection:
-        try:
-            result = mbti_refinement_service.start(connection, user_id=user_id, session_id=session_id)
-        except ValueError as exc:
-            detail = str(exc)
-            status_code = 404 if 'not found' in detail.lower() else 409 if 'доступно только после завершения' in detail.lower() else 400
-            raise HTTPException(status_code=status_code, detail=detail) from exc
-    return MbtiRefinementStartResponse(**result)
-
-
-@router.post("/{user_id}/assessment/{session_id}/mbti-refinement/message", response_model=MbtiRefinementMessageResponse)
-def submit_mbti_refinement_answer(
-    user_id: int,
-    session_id: int,
-    payload: MbtiRefinementMessageRequest,
-) -> MbtiRefinementMessageResponse:
-    with get_connection() as connection:
-        try:
-            result = mbti_refinement_service.submit_answer(
-                connection,
-                user_id=user_id,
-                session_id=session_id,
-                refinement_id=payload.refinement_id,
-                answer=payload.answer,
-            )
-        except ValueError as exc:
-            detail = str(exc)
-            status_code = 404 if 'not found' in detail.lower() else 409 if 'already completed' in detail.lower() else 400
-            raise HTTPException(status_code=status_code, detail=detail) from exc
-    return MbtiRefinementMessageResponse(**result)
-
-
-@router.get("/{user_id}/assessment/{session_id}/mbti-refinement", response_model=MbtiRefinementStateResponse)
-def get_mbti_refinement_state(user_id: int, session_id: int) -> MbtiRefinementStateResponse:
-    with get_connection() as connection:
-        try:
-            result = mbti_refinement_service.get_state(connection, user_id=user_id, session_id=session_id)
-        except ValueError as exc:
-            detail = str(exc)
-            status_code = 404 if 'not found' in detail.lower() else 400
-            raise HTTPException(status_code=status_code, detail=detail) from exc
-    return MbtiRefinementStateResponse(**result)
-
-
 @router.get("/{user_id}/assessment/{session_id}/skill-assessments", response_model=list[SkillAssessmentResponse])
 def get_skill_assessments(user_id: int, session_id: int) -> list[SkillAssessmentResponse]:
     with get_connection() as connection:
@@ -6049,7 +5979,7 @@ def get_skill_assessments(user_id: int, session_id: int) -> list[SkillAssessment
 
         session_row = connection.execute(
             """
-            SELECT id, mbti_summary_json
+            SELECT id
             FROM user_sessions
             WHERE id = %s
               AND user_id = %s
@@ -6142,7 +6072,7 @@ def get_report_interpretation(user_id: int, session_id: int) -> AssessmentReport
 
         session_row = connection.execute(
             """
-            SELECT id, mbti_summary_json
+            SELECT id
             FROM user_sessions
             WHERE id = %s
               AND user_id = %s
@@ -6203,11 +6133,6 @@ def get_report_interpretation(user_id: int, session_id: int) -> AssessmentReport
             )
         competency_average.sort(key=lambda item: str(item["name"]))
         interpretation = _build_report_interpretation_payload(skill_rows, competency_average)
-        interpretation["mbti_summary"] = (
-            session_row["mbti_summary_json"]
-            if session_row.get("mbti_summary_json") not in (None, {})
-            else None
-        )
 
     return AssessmentReportInterpretationResponse(**interpretation)
 

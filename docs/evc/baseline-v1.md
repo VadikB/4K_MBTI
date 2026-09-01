@@ -8,6 +8,10 @@ This document is the evidence record for turning the assessment-platform branch 
 
 - Methodology, scenario, and assessment configuration are independently versioned.
 - Published definition versions are immutable; changes begin from a cloned draft.
+- Competency-agent definitions are independently versioned and published versions
+  are immutable.
+- Published assessment configurations freeze exact agent definition versions and
+  checksums.
 - A session stores an execution snapshot and checksum.
 - Prompt resolution for a running session uses the frozen snapshot.
 - Methodologist and publisher permissions are separated.

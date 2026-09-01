@@ -1,6 +1,10 @@
 import pytest
 
-from Api.assessment_prompt_resolver import load_active_prompt_bundle, prompt_resolver
+from Api.assessment_prompt_resolver import (
+    MissingSnapshottedEvaluatorConfig,
+    load_active_prompt_bundle,
+    prompt_resolver,
+)
 from Api.communication_agent import CommunicationAgent
 from Api.deepseek_client import DeepSeekClient
 
@@ -113,6 +117,48 @@ def test_assessment_agent_config_is_resolved_from_session_snapshot() -> None:
     config = agent._load_agent_prompt_profile(NoDatabaseLookup(), PROMPT_SNAPSHOT)
     assert config["profile"]["prompt_version"] == 4
     assert config["rules"][0]["rule_code"] == "frozen"
+
+
+@pytest.mark.unit
+def test_missing_snapshotted_agent_config_never_falls_back_to_database() -> None:
+    agent = CommunicationAgent()
+
+    class NoDatabaseLookup:
+        def execute(self, *_args, **_kwargs):
+            raise AssertionError("snapshotted evaluator must not read active prompt tables")
+
+    with pytest.raises(MissingSnapshottedEvaluatorConfig, match="communication"):
+        agent._load_agent_prompt_profile(NoDatabaseLookup(), {"prompts": {}})
+
+
+@pytest.mark.unit
+def test_legacy_call_without_snapshot_can_use_active_prompt_profile() -> None:
+    class Result:
+        def __init__(self, statement: str) -> None:
+            self.statement = statement
+
+        def fetchone(self):
+            return {
+                "agent_code": "communication",
+                "agent_name": "Communication",
+                "competency_name": "Коммуникация",
+                "purpose_prompt": "purpose",
+                "rationale_prompt": "rationale",
+                "evidence_prompt": "evidence",
+                "red_flag_prompt": "red flags",
+                "prompt_version": 1,
+            }
+
+        def fetchall(self):
+            return []
+
+    class ActivePromptConnection:
+        def execute(self, statement, *_args):
+            return Result(statement)
+
+    config = CommunicationAgent()._load_agent_prompt_profile(ActivePromptConnection(), None)
+
+    assert config["profile"]["prompt_version"] == 1
 
 
 @pytest.mark.unit

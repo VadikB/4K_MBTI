@@ -67,12 +67,6 @@
       { label: 'Активные сессии', value: '17', delta: 'сегодня' },
     ],
     competency_average: competencyAverage,
-    mbti_distribution: [
-      { label: 'ENTJ', value: 24 },
-      { label: 'INTJ', value: 18 },
-      { label: 'ENFP', value: 14 },
-      { label: 'ISTJ', value: 11 },
-    ],
     insights: [
       { title: 'Коммуникация лидирует', description: 'Средний уровень выше остальных компетенций на 8 п.п.' },
       { title: 'Критическое мышление растет', description: 'Новые кейсы дают больше evidence по анализу рисков.' },
@@ -225,9 +219,9 @@
     title: 'Отдельные отчеты',
     subtitle: 'Управление и анализ индивидуальных результатов тестирования персонала.',
     items: [
-      { session_id: 501, user_id: 35, full_name: 'Мария Крылова', group_name: 'Product', role_name: 'Руководитель продукта', status: 'Завершено', score_percent: 78, mbti_type: 'ENTJ', report_date: '2026-05-12T10:00:00', phone: '+7 900 100 00 00' },
-      { session_id: 502, user_id: 36, full_name: 'Илья Петров', group_name: 'Analytics', role_name: 'Аналитик', status: 'Завершено', score_percent: 83, mbti_type: 'INTJ', report_date: '2026-05-10T12:30:00', phone: '+7 900 200 00 00' },
-      { session_id: 503, user_id: 37, full_name: 'Анна Смирнова', group_name: 'Design', role_name: 'Дизайн-лид', status: 'В процессе', score_percent: 41, mbti_type: null, report_date: '2026-05-09T09:10:00', phone: '+7 900 300 00 00' },
+      { session_id: 501, user_id: 35, full_name: 'Мария Крылова', group_name: 'Product', role_name: 'Руководитель продукта', status: 'Завершено', score_percent: 78, report_date: '2026-05-12T10:00:00', phone: '+7 900 100 00 00' },
+      { session_id: 502, user_id: 36, full_name: 'Илья Петров', group_name: 'Analytics', role_name: 'Аналитик', status: 'Завершено', score_percent: 83, report_date: '2026-05-10T12:30:00', phone: '+7 900 200 00 00' },
+      { session_id: 503, user_id: 37, full_name: 'Анна Смирнова', group_name: 'Design', role_name: 'Дизайн-лид', status: 'В процессе', score_percent: 41, report_date: '2026-05-09T09:10:00', phone: '+7 900 300 00 00' },
     ],
   };
 
@@ -260,8 +254,6 @@
     report_date: '2026-05-12T10:00:00',
     score_percent: 78,
     status: 'completed',
-    mbti_type: 'ENTJ',
-    mbti_summary: 'Стратегичный профиль с ориентацией на структуру и влияние.',
     insight_title: 'Сильная сторона: коммуникация в конфликтных ситуациях',
     insight_text: 'Пользователь переводит конфликт интересов в критерии решения и явно фиксирует ожидания.',
     basis_items: ['3 кейса с evidence по коммуникации.', 'Высокая полнота артефактов ответа.', 'Низкое количество red flags.'],
@@ -282,12 +274,6 @@
       stakeholders: ['Sales', 'Engineering', 'Customer Success'],
       constraints: ['Сжатые сроки', 'Enterprise SLA', 'Ограниченная команда'],
     },
-    mbti_axes: [
-      { left: 'Экстраверсия', right: 'Интроверсия', value: 62 },
-      { left: 'Интуиция', right: 'Сенсорика', value: 71 },
-      { left: 'Мышление', right: 'Чувство', value: 66 },
-      { left: 'Суждение', right: 'Восприятие', value: 78 },
-    ],
     case_items: [
       {
         session_case_id: 1001,

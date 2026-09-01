@@ -3,7 +3,7 @@ kind: scenario
 code: standard_4k_interview
 version: 1
 name: Стандартное кейсовое интервью 4K
-description: Legacy-сценарий, повторяющий текущую последовательность assessment без MBTI.
+description: Legacy-сценарий, повторяющий текущую последовательность assessment.
 initial_stage: prepare_profile
 stages:
   - id: prepare_profile

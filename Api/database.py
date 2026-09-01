@@ -11,8 +11,12 @@ from psycopg.conninfo import make_conninfo
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
+from Api.assessment_agent_definitions import ensure_legacy_agent_definitions
+from Api.assessment_configuration import (
+    backfill_legacy_session_configuration,
+    ensure_legacy_assessment_configuration,
+)
 from Api.config import settings
-from Api.assessment_configuration import backfill_legacy_session_configuration, ensure_legacy_assessment_configuration
 
 DEFAULT_LEVEL_PERCENT_MAP = {
     "L1": 45,
@@ -2904,6 +2908,34 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS assessment_agent_definitions (
+                id BIGSERIAL PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_agent_definition_versions (
+                id BIGSERIAL PRIMARY KEY,
+                agent_definition_id BIGINT NOT NULL REFERENCES assessment_agent_definitions(id),
+                version INTEGER NOT NULL CHECK (version > 0),
+                status TEXT NOT NULL CHECK (status IN ('draft', 'ready_for_review', 'published', 'retired')),
+                description TEXT,
+                definition_json JSONB NOT NULL,
+                checksum TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                published_at TIMESTAMP,
+                UNIQUE (agent_definition_id, version)
+            )
+            """
+        )
+        connection.execute(
+            """
             CREATE TABLE IF NOT EXISTS assessment_configurations (
                 id BIGSERIAL PRIMARY KEY,
                 code TEXT NOT NULL UNIQUE,
@@ -3030,6 +3062,10 @@ def ensure_core_schema() -> None:
                 ('scenario.edit_draft', 'Создание и изменение draft-сценариев'),
                 ('scenario.submit', 'Отправка сценария на проверку'),
                 ('scenario.publish', 'Публикация сценария'),
+                ('agent.view', 'Просмотр определений оценочных агентов'),
+                ('agent.edit_draft', 'Создание и изменение draft-определений агентов'),
+                ('agent.submit', 'Отправка определения агента на проверку'),
+                ('agent.publish', 'Публикация определения агента'),
                 ('configuration.publish', 'Публикация assessment-конфигурации'),
                 ('assessment.test_run', 'Запуск тестового assessment')
             ON CONFLICT (code) DO NOTHING
@@ -3044,7 +3080,9 @@ def ensure_core_schema() -> None:
             WHERE role.code = 'methodologist'
               AND permission.code IN (
                   'methodology.view', 'methodology.edit_draft', 'methodology.submit',
-                  'scenario.view', 'scenario.edit_draft', 'scenario.submit', 'assessment.test_run'
+                  'scenario.view', 'scenario.edit_draft', 'scenario.submit',
+                  'agent.view', 'agent.edit_draft', 'agent.submit',
+                  'assessment.test_run'
               )
             ON CONFLICT DO NOTHING
             """
@@ -3089,6 +3127,14 @@ def ensure_core_schema() -> None:
             """
             CREATE TRIGGER trg_scenario_version_immutable
             BEFORE UPDATE ON assessment_scenario_versions
+            FOR EACH ROW EXECUTE FUNCTION prevent_published_assessment_definition_update()
+            """
+        )
+        connection.execute("DROP TRIGGER IF EXISTS trg_agent_definition_version_immutable ON assessment_agent_definition_versions")
+        connection.execute(
+            """
+            CREATE TRIGGER trg_agent_definition_version_immutable
+            BEFORE UPDATE ON assessment_agent_definition_versions
             FOR EACH ROW EXECUTE FUNCTION prevent_published_assessment_definition_update()
             """
         )
@@ -3296,6 +3342,36 @@ def ensure_core_schema() -> None:
             CREATE UNIQUE INDEX IF NOT EXISTS idx_assessment_analysis_jobs_active_session
             ON assessment_analysis_jobs(session_id)
             WHERE status IN ('queued', 'running')
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessment_shadow_evaluation_runs (
+                id BIGSERIAL PRIMARY KEY,
+                session_id BIGINT NOT NULL REFERENCES user_sessions(id) ON DELETE CASCADE,
+                competency_code TEXT NOT NULL,
+                official_agent_code TEXT NOT NULL,
+                official_agent_version INTEGER NOT NULL,
+                official_agent_checksum TEXT NOT NULL,
+                shadow_agent_code TEXT NOT NULL,
+                shadow_agent_version INTEGER NOT NULL,
+                shadow_agent_checksum TEXT NOT NULL,
+                status TEXT NOT NULL CHECK (status IN ('completed', 'failed')),
+                official_summary_json JSONB NOT NULL,
+                shadow_summary_json JSONB,
+                comparison_json JSONB,
+                error_code TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                completed_at TIMESTAMP,
+                UNIQUE (session_id, competency_code, shadow_agent_code, shadow_agent_version)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_assessment_shadow_runs_session
+            ON assessment_shadow_evaluation_runs(session_id, competency_code)
             """
         )
         connection.execute(
@@ -3524,7 +3600,6 @@ def ensure_core_schema() -> None:
         connection.execute("ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS expert_contacts TEXT")
         connection.execute("ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS expert_assessed_at TIMESTAMP")
         connection.execute("ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS expert_comment_updated_at TIMESTAMP")
-        connection.execute("ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS mbti_summary_json JSONB NOT NULL DEFAULT '{}'::jsonb")
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS case_set_reuse_audits (
@@ -3546,47 +3621,6 @@ def ensure_core_schema() -> None:
             """
             CREATE INDEX IF NOT EXISTS idx_case_set_reuse_audits_verdict_created
             ON case_set_reuse_audits(verdict, created_at)
-            """
-        )
-        connection.execute(
-            """
-            CREATE TABLE IF NOT EXISTS session_mbti_refinements (
-                id BIGSERIAL PRIMARY KEY,
-                session_id BIGINT NOT NULL REFERENCES user_sessions(id) ON DELETE CASCADE,
-                user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                status TEXT NOT NULL DEFAULT 'active',
-                target_confidence INT NOT NULL DEFAULT 75,
-                current_confidence INT NOT NULL DEFAULT 0,
-                question_count INT NOT NULL DEFAULT 0,
-                max_questions INT NOT NULL DEFAULT 6,
-                source_summary_json JSONB NOT NULL DEFAULT '{}'::jsonb,
-                updated_summary_json JSONB NOT NULL DEFAULT '{}'::jsonb,
-                gaps_json JSONB NOT NULL DEFAULT '[]'::jsonb,
-                resolved_gaps_json JSONB NOT NULL DEFAULT '[]'::jsonb,
-                current_question_code TEXT,
-                current_question_text TEXT,
-                asked_questions_json JSONB NOT NULL DEFAULT '[]'::jsonb,
-                answers_json JSONB NOT NULL DEFAULT '[]'::jsonb,
-                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-                completed_at TIMESTAMP
-            )
-            """
-        )
-        connection.execute(
-            "CREATE INDEX IF NOT EXISTS idx_mbti_refinements_session_id ON session_mbti_refinements(session_id)"
-        )
-        connection.execute(
-            "CREATE INDEX IF NOT EXISTS idx_mbti_refinements_user_id ON session_mbti_refinements(user_id)"
-        )
-        connection.execute(
-            "CREATE INDEX IF NOT EXISTS idx_mbti_refinements_status ON session_mbti_refinements(status)"
-        )
-        connection.execute(
-            """
-            CREATE UNIQUE INDEX IF NOT EXISTS uq_mbti_refinement_active_per_session
-            ON session_mbti_refinements(session_id)
-            WHERE status = 'active'
             """
         )
         connection.execute("ALTER TABLE user_role_profiles ADD COLUMN IF NOT EXISTS role_selected TEXT")
@@ -4160,6 +4194,7 @@ def ensure_core_schema() -> None:
             )
             """
         )
+        ensure_legacy_agent_definitions(connection)
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS case_methodology_change_log (
@@ -4527,24 +4562,6 @@ def ensure_core_schema() -> None:
             """
             ALTER TABLE IF EXISTS session_skill_assessments
             ADD COLUMN IF NOT EXISTS block_coverage_percent INTEGER
-            """
-        )
-        connection.execute(
-            """
-            ALTER TABLE IF EXISTS session_case_results
-            ADD COLUMN IF NOT EXISTS mbti_case_json JSONB NOT NULL DEFAULT '{}'::jsonb
-            """
-        )
-        connection.execute(
-            """
-            ALTER TABLE IF EXISTS session_case_results
-            ADD COLUMN IF NOT EXISTS mbti_followup_questions JSONB NOT NULL DEFAULT '[]'::jsonb
-            """
-        )
-        connection.execute(
-            """
-            ALTER TABLE IF EXISTS session_case_results
-            ADD COLUMN IF NOT EXISTS mbti_followup_answers JSONB NOT NULL DEFAULT '[]'::jsonb
             """
         )
         if _column_exists(connection, "session_cases", "case_template_id"):

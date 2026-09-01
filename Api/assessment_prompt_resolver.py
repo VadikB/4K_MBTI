@@ -3,6 +3,10 @@ from __future__ import annotations
 from typing import Any
 
 
+class MissingSnapshottedEvaluatorConfig(ValueError):
+    pass
+
+
 def load_active_prompt_bundle(connection) -> dict[str, Any]:
     bundle: dict[str, Any] = {
         "schema_version": 1,
@@ -111,9 +115,16 @@ class PromptResolver:
         snapshot: dict[str, Any] | None,
         *,
         agent_code: str,
+        required: bool = False,
     ) -> dict[str, Any] | None:
         config = dict((snapshot or {}).get("prompts") or {}).get("assessment_agents", {}).get(agent_code)
-        return dict(config) if isinstance(config, dict) else None
+        if isinstance(config, dict):
+            return dict(config)
+        if required:
+            raise MissingSnapshottedEvaluatorConfig(
+                f"Execution snapshot does not contain evaluator configuration: {agent_code}."
+            )
+        return None
 
     def case_generation_instruction(
         self,

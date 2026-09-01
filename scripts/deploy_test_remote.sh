@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-project_dir="/home/user1/projects/4K-Mbti-Test"
-service_name="agent4k-mbti-test.service"
+project_dir="/home/user1/projects/Agent4K-Test"
+service_name="agent4k-test.service"
 health_url="http://127.0.0.1:8002/users/version"
 
 cd "$project_dir"

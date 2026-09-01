@@ -270,16 +270,6 @@
                 </div>
               </div>
             </article>
-            <article id="welcome-mbti-card" class="card is-placeholder assessment-mini-card muted-card warm">
-              <div class="mini-card-icon muted-icon"><img src="/web/assets/icons/4k-icon.svg" alt="" aria-hidden="true"></div>
-              <h3>Проверка профиля MBTI</h3>
-              <p>AI-анализ типа личности для понимания паттернов поведения и наиболее подходящих форматов работы.</p>
-              <div class="mini-card-footer">
-                <span>15 минут</span>
-                <button id="welcome-mbti-button" type="button" class="mini-start-button disabled" disabled>Скоро</button>
-              </div>
-              <p id="welcome-mbti-status" class="welcome-mbti-status hidden"></p>
-            </article>
           </div>
         </section>
 
@@ -349,21 +339,6 @@
             </div>
           </article>
 
-          <article class="card card--lg admin-analytics-card">
-            <div class="report-card-head">
-              <div>
-                <p class="section-label accent-label">MBTI распределение</p>
-                <div class="admin-chart-title-row">
-                  <h3>Сводка по типам</h3>
-                  <span id="admin-mbti-preview-pill" class="admin-preview-pill hidden">Preview</span>
-                </div>
-              </div>
-            </div>
-            <div id="admin-mbti-chart" class="admin-mbti-chart">
-              <canvas id="admin-mbti-pie-chart" aria-label="MBTI распределение по типам"></canvas>
-              <div id="admin-mbti-chart-fallback" class="admin-mbti-chart-fallback hidden"></div>
-            </div>
-          </article>
         </section>
 
         <section class="card card--lg admin-insights-card">
@@ -419,7 +394,7 @@
           <div>
             <p class="section-label accent-label">Суперадмин</p>
             <h2 id="admin-regression-tests-title">Регрессионные тесты</h2>
-            <p id="admin-regression-tests-subtitle">Быстрые проверки организации, пользователей, отчетов и MBTI readiness.</p>
+            <p id="admin-regression-tests-subtitle">Быстрые проверки организации, пользователей и отчетов.</p>
           </div>
           <div class="admin-hero-actions">
             <button id="admin-regression-tests-cleanup-button" type="button" class="ghost-button compact-ghost">Очистить __autotest__</button>
@@ -975,7 +950,6 @@
                 <span>Группа / роль</span>
                 <span>Статус</span>
                 <span>4K score</span>
-                <span>Тип MBTI</span>
                 <span>Дата</span>
                 <span>Отчет PDF</span>
               </div>
@@ -1475,7 +1449,7 @@
         </div>
         <div class="prechat-copy">
           <h2>Добро пожаловать в систему<br><span>ИИ-оценки</span></h2>
-          <p>Решите серию кейсов, чтобы узнать свой потенциал в 4К и определить MBTI профиль через нейросетевой анализ.</p>
+          <p>Решите серию кейсов, чтобы определить свой профиль компетенций 4К с помощью нейросетевого анализа.</p>
         </div>
         <div class="prechat-steps">
           <article class="card prechat-step-card">
@@ -1858,53 +1832,6 @@
               <div id="report-strength-text" class="report-insight-body">Здесь появится интерпретация результатов после завершения анализа и загрузки данных по навыкам.</div>
             </article>
 
-            <article id="report-mbti-card" class="card report-mbti-card hidden">
-              <div class="report-card-head report-mbti-head">
-                <div>
-                  <p class="section-label accent-label">MBTI-анализ</p>
-                  <h3 id="report-mbti-title">Профиль по ответам на кейсы</h3>
-                </div>
-                <div id="report-mbti-score" class="report-mbti-score hidden">
-                  <strong>0/100</strong>
-                  <span>Уверенность</span>
-                </div>
-              </div>
-              <div class="report-mbti-body">
-                <div id="report-mbti-signals" class="report-mbti-signals"></div>
-                <p id="report-mbti-summary" class="report-mbti-summary"></p>
-                <div id="report-mbti-missing-block" class="report-mbti-missing-block hidden">
-                  <strong>Что еще стоит уточнить</strong>
-                  <ul id="report-mbti-missing" class="report-mbti-missing-list"></ul>
-                </div>
-                <div id="report-mbti-refine-actions" class="report-mbti-refine-actions hidden">
-                  <button id="report-mbti-refine-button" class="primary-button compact-primary" type="button">Уточнить MBTI</button>
-                  <p id="report-mbti-refine-status" class="report-mbti-refine-status hidden"></p>
-                </div>
-                <div id="report-mbti-refine-panel" class="report-mbti-refine-panel hidden">
-                  <div class="report-mbti-refine-head">
-                    <strong>Уточняющие вопросы по профилю</strong>
-                    <span id="report-mbti-refine-progress" class="report-mbti-refine-progress">Вопрос 1 из 1</span>
-                  </div>
-                  <p id="report-mbti-refine-question" class="report-mbti-refine-question"></p>
-                  <label class="report-mbti-refine-field">
-                    <span>Ваш ответ</span>
-                    <textarea
-                      id="report-mbti-refine-answer"
-                      rows="4"
-                      placeholder="Опишите, как вы обычно действуете в такой ситуации."
-                      autocomplete="off"
-                      autocorrect="off"
-                      autocapitalize="off"
-                      spellcheck="false"
-                      data-form-type="other"
-                    ></textarea>
-                  </label>
-                  <div class="report-mbti-refine-controls">
-                    <button id="report-mbti-refine-submit" class="primary-button compact-primary" type="button">Отправить ответ</button>
-                  </div>
-                </div>
-              </div>
-            </article>
           </div>
         </section>
 

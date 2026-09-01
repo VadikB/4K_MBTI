@@ -64,8 +64,6 @@ def validate_scenario_definition(definition: dict[str, Any]) -> None:
     for stage in stages:
         code = str(stage.get("component") or "").strip()
         version = int(stage.get("component_version") or 0)
-        if "mbti" in code.lower():
-            raise ValueError("MBTI components are not allowed in the 4K assessment runtime.")
         component_registry.resolve(code, version)
         transition = str(stage.get("on_success") or "").strip()
         if transition and transition != "complete_session" and transition not in stage_ids:

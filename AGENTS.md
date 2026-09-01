@@ -18,7 +18,6 @@ Use `docs/evc/task-template.md` for non-trivial work. Do not start implementatio
 - Preserve public API and stored-data compatibility unless the task explicitly authorizes a migration.
 - Never edit a published assessment methodology, scenario, configuration, or prompt bundle in place. Clone it to a new draft version.
 - A running assessment must use its stored execution snapshot; it must not resolve mutable "current" methodology settings.
-- Do not add MBTI to the versioned 4K methodology/runtime defined by ADR-001.
 - Do not read, print, commit, or transmit secrets or production/test personal data.
 - Do not use a developer or production database for automated tests.
 

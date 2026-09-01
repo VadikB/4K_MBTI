@@ -398,57 +398,6 @@ const cacheCurrentCaseContext = (caseKey, assistantMessage) => {
   }
 };
 
-const renderFollowupCaseContext = (caseKey, mbtiFeedbackText = '') => {
-  const cached = caseKey ? interviewCaseContextByKey.get(caseKey) : null;
-  interviewSummary.innerHTML = '';
-
-  const introBlock = renderInterviewStructuredBlock({
-    label: 'Кейс, по которому уточняем ответ',
-    body:
-      'Сначала напомним исходную ситуацию, чтобы уточняющий вопрос оставался привязанным к тому же кейсу.',
-  });
-  interviewSummary.appendChild(introBlock);
-
-  if (cached?.context) {
-    interviewSummary.appendChild(
-      renderInterviewStructuredBlock({
-        label: 'Ситуация',
-        body: cached.context,
-      }),
-    );
-  }
-
-  if (cached?.task) {
-    interviewSummary.appendChild(
-      renderInterviewStructuredBlock({
-        label: 'Что нужно было сделать',
-        body: cached.task,
-        variant: 'task',
-      }),
-    );
-  }
-
-  if (!cached?.context && !cached?.task) {
-    interviewSummary.appendChild(
-      renderInterviewStructuredBlock({
-        label: 'Кейс',
-        body: state.assessmentCaseTitle || 'Контекст кейса временно недоступен, но уточнение относится к только что завершенному кейсу.',
-      }),
-    );
-  }
-
-  if (mbtiFeedbackText) {
-    interviewSummary.appendChild(
-      renderInterviewStructuredBlock({
-        label: 'MBTI по кейсу',
-        body: mbtiFeedbackText,
-      }),
-    );
-  }
-
-  interviewSummary.classList.remove('hidden');
-};
-
 const disableTextareaAssistFeatures = (element) => {
   if (!(element instanceof HTMLElement)) {
     return;
@@ -619,7 +568,7 @@ const scheduleAssessmentTransitionLoader = (operationId) => {
     Number(state.assessmentTotalCases || 0) > 0;
   const title = isFinalCase ? 'Формируем итоговый отчет' : 'Завершаем кейс';
   const text = isFinalCase
-    ? 'Проверяем последний кейс, обновляем MBTI и собираем итоговый профиль компетенций.'
+    ? 'Проверяем последний кейс и собираем итоговый профиль компетенций.'
     : 'Проверяем ответ, уточняем сигналы по кейсу и подготавливаем следующий шаг.';
   assessmentTransitionLoaderTimerId = window.setTimeout(() => {
     showLoader(title, text, loaderFlows.assessmentTurn);
@@ -652,58 +601,6 @@ const updateInterviewTimer = () => {
   return false;
 };
 
-
-const getMbtiOverallBlock = (payload) => {
-  if (!payload || typeof payload !== 'object') {
-    return null;
-  }
-  return payload['общий_итог'] || payload.overall_result || payload.overall || null;
-};
-
-const normalizeMbtiSignals = (overallBlock) => {
-  if (!overallBlock || typeof overallBlock !== 'object') {
-    return [];
-  }
-  const candidates = overallBlock['вероятные_сигналы_темперамента'] || overallBlock.probable_signals || overallBlock.signals;
-  return Array.isArray(candidates)
-    ? candidates.map((item) => String(item || '').trim()).filter(Boolean)
-    : [];
-};
-
-const buildMbtiCaseFeedbackText = (data) => {
-  const overallBlock = getMbtiOverallBlock(data?.mbti_case_result);
-  const signals = normalizeMbtiSignals(overallBlock);
-  const score = overallBlock?.['оценка'] ?? overallBlock?.score ?? null;
-  const conclusion = String(
-    overallBlock?.['краткий_вывод'] || overallBlock?.summary || overallBlock?.conclusion || '',
-  ).trim();
-  const questions = Array.isArray(data?.mbti_followup_questions)
-    ? data.mbti_followup_questions.map((item) => String(item || '').trim()).filter(Boolean)
-    : [];
-  const includeFollowupList = !Boolean(data?.mbti_followup_pending);
-
-  if (!signals.length && score === null && !conclusion && !questions.length) {
-    return '';
-  }
-
-  const parts = [];
-  if (signals.length) {
-    parts.push('MBTI-сигналы по кейсу: ' + signals.join(', ') + '.');
-  }
-  if (score !== null && score !== undefined && score !== '') {
-    parts.push('Уверенность оценки: ' + score + '/100.');
-  }
-  if (conclusion) {
-    parts.push(conclusion);
-  }
-  if (questions.length && includeFollowupList) {
-    parts.push(
-      'Уточняющие вопросы: ' +
-        questions.map((question, index) => (index + 1) + '. ' + question).join(' '),
-    );
-  }
-  return parts.join(' ');
-};
 
 const handleAssessmentResponse = (data) => {
   const previousCaseNumber = state.assessmentCaseNumber;
@@ -750,7 +647,7 @@ const handleAssessmentResponse = (data) => {
     state.assessmentCaseTitle = incidentTitle;
   }
 
-  if (!data.mbti_followup_pending && assistantMessage && nextCaseKey) {
+  if (assistantMessage && nextCaseKey) {
     cacheCurrentCaseContext(nextCaseKey, assistantMessage);
   }
 
@@ -761,11 +658,7 @@ const handleAssessmentResponse = (data) => {
   interviewPanel.classList.toggle('single-turn-mode', !isDialogCase);
 
   if (!isDialogCase && assistantMessage && !suppressAssistantBubble) {
-    if (data.mbti_followup_pending) {
-      addInterviewMessage('assistant', assistantMessage);
-    } else {
-      renderSingleTurnCaseCard(assistantMessage);
-    }
+    renderSingleTurnCaseCard(assistantMessage);
   } else {
     if (isDialogCase) {
       interviewSummary.classList.add('hidden');
@@ -776,26 +669,6 @@ const handleAssessmentResponse = (data) => {
 
   if (isDialogCase && !suppressAssistantBubble) {
     addInterviewMessage('assistant', assistantMessage);
-  }
-
-  const mbtiFeedbackText = data.case_completed || data.mbti_followup_pending ? buildMbtiCaseFeedbackText(data) : '';
-  if (data.mbti_followup_pending) {
-    renderFollowupCaseContext(nextCaseKey || previousCaseKey, mbtiFeedbackText);
-  }
-  if (mbtiFeedbackText && !data.mbti_followup_pending && !isDialogCase && !interviewSummary.classList.contains('hidden')) {
-    const mbtiBlock = renderInterviewStructuredBlock({
-      label: 'MBTI по кейсу',
-      body: mbtiFeedbackText,
-    });
-    interviewSummary.prepend(mbtiBlock);
-  }
-  if (mbtiFeedbackText && !data.mbti_followup_pending) {
-    addInterviewMessage('assistant', mbtiFeedbackText);
-  }
-
-  if (data.mbti_summary && typeof data.mbti_summary === 'object') {
-    state.assessmentMbtiSummary = data.mbti_summary;
-    persistAssessmentContext();
   }
 
   if (data.assessment_completed) {
@@ -809,23 +682,6 @@ const handleAssessmentResponse = (data) => {
     interviewCompleteActions.classList.remove('hidden');
     safeStorage.setItem(STORAGE_KEYS.completionPending, '1');
     openProcessing();
-    return;
-  }
-
-  if (data.mbti_followup_pending) {
-    interviewCaseStatus.textContent =
-      'Уточняем ответы по этому кейсу перед переходом к следующему.';
-    interviewTimerBadge.textContent =
-      data.mbti_followup_index && data.mbti_followup_total
-        ? 'Уточнение ' + data.mbti_followup_index + '/' + data.mbti_followup_total
-        : 'Уточнение';
-    interviewTextarea.disabled = false;
-    interviewSubmitButton.disabled = false;
-    interviewFinishButton.disabled = true;
-    interviewPanel.classList.remove('completed');
-    interviewCompleteActions.classList.add('hidden');
-    interviewTextarea.focus();
-    scheduleInterviewBottomAlignment();
     return;
   }
 

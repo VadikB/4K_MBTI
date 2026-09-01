@@ -16,7 +16,6 @@ class AdminReportsPdfService:
                     "role_name": item.role_name,
                     "status": item.status,
                     "score_label": f"{item.score_percent}%" if item.score_percent is not None else "—",
-                    "mbti_type": item.mbti_type or "Нет данных",
                     "date_label": date_value.strftime("%d.%m.%Y") if date_value else "Без даты",
                 }
             )

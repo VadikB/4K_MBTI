@@ -27,10 +27,10 @@ npm run test:backend
 
 ## Integration
 
-Создайте отдельную базу, например `app_db_mbti_pytest`, и задайте URL:
+Создайте отдельную базу, например `agent4k_pytest`, и задайте URL:
 
 ```bash
-export TEST_DATABASE_URL='postgresql://app_user:password@127.0.0.1:5432/app_db_mbti_pytest'
+export TEST_DATABASE_URL='postgresql://app_user:password@127.0.0.1:5432/agent4k_pytest'
 .venv/bin/python -m pytest --run-integration -m integration
 ```
 

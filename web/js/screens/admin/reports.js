@@ -208,9 +208,6 @@ export const renderAdminReports = () => {
       scorePercent +
       '%"></span></div>' +
       '</div>' +
-      '<div class="admin-report-cell admin-report-mbti">' +
-      (item.mbti_type || 'Нет данных') +
-      '</div>' +
       '<div class="admin-report-cell admin-report-date">' +
       formatAdminReportDate(item) +
       '</div>' +

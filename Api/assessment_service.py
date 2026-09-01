@@ -62,12 +62,6 @@ class AssessmentTurnReply:
     is_dialog_case: bool = False
     pending_auto_finish: bool = False
     auto_finish_delay_ms: int | None = None
-    mbti_case_result: dict[str, object] | None = None
-    mbti_followup_questions: list[str] | None = None
-    mbti_followup_pending: bool = False
-    mbti_followup_index: int | None = None
-    mbti_followup_total: int | None = None
-    mbti_summary: dict[str, object] | None = None
     assessment_status: str | None = None
     analysis_operation_id: str | None = None
 
@@ -82,8 +76,6 @@ class AssessmentService:
         "Если готовы продолжать, просто напишите, что продолжаем."
     )
     CASE_CONTINUE_AFTER_CONFIRMATION_TEXT = "Хорошо, продолжаем диалог. Дайте ваш ответ по ситуации в удобной для вас форме."
-    MBTI_FOLLOWUP_INTRO_TEXT = "Прежде чем перейти к следующему кейсу, ответьте, пожалуйста, на уточняющие вопросы по только что завершенному кейсу."
-    MBTI_FOLLOWUP_COMPLETE_TEXT = "Спасибо, уточнения по кейсу зафиксированы."
     CASE_AUTO_FINISH_DELAY_MS = 2200
     MIN_FIRST_CASE_ANSWER_WORDS = 9
     PROMPT_LAB_PREVIEW_CACHE_TTL_SECONDS = 600
@@ -3042,8 +3034,6 @@ class AssessmentService:
                 completion_message=turn.assistant_message,
                 result_status=turn.result_status,
                 time_expired=time_expired,
-                mbti_case_result=None,
-                mbti_followup_questions=None,
                 progress_operation_id=progress_operation_id,
             )
         return self._advance_after_completed_case(
@@ -3054,8 +3044,6 @@ class AssessmentService:
             completion_message=turn.assistant_message,
             result_status=turn.result_status,
             time_expired=time_expired,
-            mbti_case_result=None,
-            mbti_followup_questions=None,
             progress_operation_id=progress_operation_id,
         )
 
@@ -3370,45 +3358,6 @@ class AssessmentService:
                 return index
         return 0
 
-    def _get_pending_mbti_followup(self, connection, session_id: int) -> dict | None:
-        return connection.execute(
-            """
-            SELECT
-                scr.session_case_id,
-                scr.mbti_case_json,
-                scr.mbti_followup_questions,
-                scr.mbti_followup_answers,
-                sc.started_at,
-                sc.planned_duration_minutes,
-                cr.estimated_time_min AS estimated_minutes,
-                cr.title
-            FROM session_case_results scr
-            JOIN session_cases sc ON sc.id = scr.session_case_id
-            JOIN cases_registry cr ON cr.id = sc.case_registry_id
-            WHERE sc.session_id = %s
-              AND jsonb_array_length(COALESCE(scr.mbti_followup_questions, '[]'::jsonb)) > jsonb_array_length(COALESCE(scr.mbti_followup_answers, '[]'::jsonb))
-            ORDER BY sc.id ASC
-            LIMIT 1
-            """,
-            (session_id,),
-        ).fetchone()
-
-    def _build_mbti_followup_prompt(self, questions: list[str], answered_count: int) -> str:
-        if answered_count >= len(questions):
-            return self.MBTI_FOLLOWUP_COMPLETE_TEXT
-        prefix = self.MBTI_FOLLOWUP_INTRO_TEXT if answered_count == 0 else "Спасибо. И еще один короткий уточняющий вопрос по этому же кейсу."
-        question = questions[answered_count]
-        return (
-            prefix
-            + "\n\n"
-            + "Уточняющий вопрос "
-            + str(answered_count + 1)
-            + " из "
-            + str(len(questions))
-            + ":\n"
-            + question
-        )
-
     def _advance_after_completed_case(
         self,
         *,
@@ -3419,8 +3368,6 @@ class AssessmentService:
         completion_message: str,
         result_status: str | None,
         time_expired: bool,
-        mbti_case_result: dict[str, object] | None,
-        mbti_followup_questions: list[str] | None,
         progress_operation_id: str | None = None,
     ) -> AssessmentTurnReply:
         next_plan = self._build_plan(connection, session_row["id"], session_code)
@@ -3499,9 +3446,6 @@ class AssessmentService:
                 ),
                 time_expired=time_expired,
                 is_dialog_case=self._get_is_dialog_case_for_session_case(connection, completed_plan.current_session_case_id),
-                mbti_case_result=mbti_case_result,
-                mbti_followup_questions=mbti_followup_questions,
-                mbti_summary=None,
                 assessment_status="analyzing",
                 analysis_operation_id=analysis_operation_id,
                 **self._get_session_case_history_fields(connection, completed_plan.current_session_case_id),
@@ -3570,166 +3514,7 @@ class AssessmentService:
             is_dialog_case=deepseek_client.is_dialog_mode(
                 self._get_case_methodical_context(connection, next_case_row).get("interactivity_mode"),
             ),
-            mbti_case_result=mbti_case_result,
-            mbti_followup_questions=mbti_followup_questions,
             **self._get_session_case_history_fields(connection, next_plan.current_session_case_id),
-        )
-
-    def _handle_pending_mbti_followup(
-        self,
-        *,
-        connection,
-        session_row,
-        session_code: str,
-        message: str,
-        pending_row,
-        progress_operation_id: str | None = None,
-    ) -> AssessmentTurnReply:
-        raw_questions = pending_row["mbti_followup_questions"] or []
-        raw_answers = pending_row["mbti_followup_answers"] or []
-        questions = [str(item or "").strip() for item in raw_questions if str(item or "").strip()]
-        answers = [str(item or "").strip() for item in raw_answers if str(item or "").strip()]
-        if not questions or len(answers) >= len(questions):
-            return None
-
-        session_case_id = pending_row["session_case_id"]
-        case_number = self._get_case_number_for_session_case(connection, session_row["id"], session_case_id)
-        history_fields = self._get_session_case_history_fields(connection, session_case_id)
-        effective_minutes = pending_row["planned_duration_minutes"] or pending_row["estimated_minutes"]
-
-        if message in {"__timeout__", "__finish_case__", "__skip_case__", "__auto_finish_case__"}:
-            prompt = self._build_mbti_followup_prompt(questions, len(answers))
-            connection.commit()
-            return AssessmentTurnReply(
-                session_code=session_code,
-                session_id=session_row["id"],
-                session_case_id=session_case_id,
-                case_title=pending_row["title"],
-                case_number=case_number,
-                total_cases=self._build_plan(connection, session_row["id"], session_code).total_cases,
-                message=prompt,
-                case_completed=False,
-                assessment_completed=False,
-                case_time_limit_minutes=effective_minutes,
-                planned_case_duration_minutes=effective_minutes,
-                case_started_at=pending_row["started_at"],
-                case_time_remaining_seconds=None,
-                is_dialog_case=False,
-                mbti_followup_pending=True,
-                mbti_followup_index=len(answers) + 1,
-                mbti_followup_total=len(questions),
-                **history_fields,
-            )
-
-        user_answer = str(message or "").strip()
-        if not user_answer:
-            prompt = self._build_mbti_followup_prompt(questions, len(answers))
-            connection.commit()
-            return AssessmentTurnReply(
-                session_code=session_code,
-                session_id=session_row["id"],
-                session_case_id=session_case_id,
-                case_title=pending_row["title"],
-                case_number=case_number,
-                total_cases=self._build_plan(connection, session_row["id"], session_code).total_cases,
-                message=prompt,
-                case_completed=False,
-                assessment_completed=False,
-                case_time_limit_minutes=effective_minutes,
-                planned_case_duration_minutes=effective_minutes,
-                case_started_at=pending_row["started_at"],
-                case_time_remaining_seconds=None,
-                is_dialog_case=False,
-                mbti_followup_pending=True,
-                mbti_followup_index=len(answers) + 1,
-                mbti_followup_total=len(questions),
-                **history_fields,
-            )
-
-        answers.append(user_answer)
-        connection.execute(
-            """
-            UPDATE session_case_results
-            SET mbti_followup_answers = %s::jsonb
-            WHERE session_case_id = %s
-            """,
-            (json.dumps(answers, ensure_ascii=False), session_case_id),
-        )
-        self._insert_user_case_message_once(
-            connection,
-            session_case_id=session_case_id,
-            session_id=session_row["id"],
-            message=user_answer,
-        )
-
-        if len(answers) < len(questions):
-            operation_progress_service.advance(
-                progress_operation_id,
-                3,
-                title="Показываем следующее уточнение",
-                message="Сохраняем ответ и задаем следующий короткий вопрос по этому же кейсу.",
-            )
-            prompt = self._build_mbti_followup_prompt(questions, len(answers))
-            connection.execute(
-                """
-                INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-                VALUES (%s, %s, 'assistant', %s)
-                """,
-                (session_case_id, session_row["id"], prompt),
-            )
-            connection.commit()
-            return AssessmentTurnReply(
-                session_code=session_code,
-                session_id=session_row["id"],
-                session_case_id=session_case_id,
-                case_title=pending_row["title"],
-                case_number=case_number,
-                total_cases=self._build_plan(connection, session_row["id"], session_code).total_cases,
-                message=prompt,
-                case_completed=False,
-                assessment_completed=False,
-                case_time_limit_minutes=effective_minutes,
-                planned_case_duration_minutes=effective_minutes,
-                case_started_at=pending_row["started_at"],
-                case_time_remaining_seconds=None,
-                is_dialog_case=False,
-                mbti_followup_pending=True,
-                mbti_followup_index=len(answers) + 1,
-                mbti_followup_total=len(questions),
-                **history_fields,
-            )
-
-        completion_message = self.MBTI_FOLLOWUP_COMPLETE_TEXT
-        connection.execute(
-            """
-            INSERT INTO session_case_messages (session_case_id, session_id, role, message_text)
-            VALUES (%s, %s, 'assistant', %s)
-            """,
-            (session_case_id, session_row["id"], completion_message),
-        )
-        completed_plan = AssessmentSessionPlan(
-            session_id=session_row["id"],
-            session_code=session_code,
-            current_session_case_id=session_case_id,
-            current_case_title=pending_row["title"],
-            current_case_number=case_number,
-            total_cases=self._build_plan(connection, session_row["id"], session_code).total_cases,
-            current_case_time_limit_minutes=effective_minutes,
-            current_case_planned_duration_minutes=effective_minutes,
-            current_case_started_at=pending_row["started_at"],
-            opening_message=None,
-        )
-        return self._advance_after_completed_case(
-            connection=connection,
-            session_row=session_row,
-            completed_plan=completed_plan,
-            session_code=session_code,
-            completion_message=completion_message,
-            result_status="passed",
-            time_expired=False,
-            mbti_case_result=None,
-            mbti_followup_questions=None,
-            progress_operation_id=progress_operation_id,
         )
 
     def _pause_case_timer(self, connection, session_case_id: int) -> int | None:

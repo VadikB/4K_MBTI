@@ -18,7 +18,6 @@ import { readApiResponse } from '../../api.js';
 import { hideAllPanels, syncUrlState } from '../../router.js';
 import {
   renderAdminCompetencyBarChart,
-  renderAdminMbtiPieChart,
   renderAdminActivityBarChart,
 } from './charts.js';
 import { recoverProfileCompletionForAssessment } from '../profile-recovery.js';
@@ -70,10 +69,6 @@ export const renderAdminDashboard = () => {
 
   renderAdminSection('competency chart', () => {
     renderAdminCompetencyBarChart(adminDashboard.competency_average || []);
-  });
-
-  renderAdminSection('mbti chart', () => {
-    renderAdminMbtiPieChart(adminDashboard.mbti_distribution || []);
   });
 
   adminInsightsGrid.innerHTML = '';
