@@ -1,45 +1,45 @@
-# EVC review checklist
+# Чек-лист ревью EVC
 
-## Outcome and scope
+## Результат и область
 
-- [ ] The diff implements the stated acceptance criteria and no unrelated behavior.
-- [ ] Public API, data, configuration, and UI behavior changes are documented.
-- [ ] Refactoring is separated from behavior changes or explicitly justified.
+- [ ] Diff реализует заявленные критерии приёмки и не меняет постороннее поведение.
+- [ ] Изменения публичного API, данных, конфигурации и UI документированы.
+- [ ] Рефакторинг отделён от изменения поведения либо его необходимость явно обоснована.
 
-## Assessment invariants
+## Инварианты оценки
 
-- [ ] Published definitions and prompt bundles remain immutable.
-- [ ] Running sessions use their stored snapshot and checksum.
-- [ ] A draft cannot become the default configuration.
-- [ ] Only registered components and predicates can be executed by a scenario.
+- [ ] Опубликованные определения и пакеты промптов остаются неизменяемыми.
+- [ ] Запущенные сессии используют сохранённые снимок и контрольную сумму.
+- [ ] Черновик не может стать конфигурацией по умолчанию.
+- [ ] Сценарий может исполнять только зарегистрированные компоненты и предикаты.
 
-## Data and security
+## Данные и безопасность
 
-- [ ] Authorization is enforced server-side for every new operation.
-- [ ] Logs and responses contain no secrets or unnecessary personal data.
-- [ ] Schema changes are backward compatible or have an explicit migration and rollback.
-- [ ] Tests cannot connect to a developer or production database.
-- [ ] New environment variables are documented in every relevant `.env.*.example`.
+- [ ] Каждая новая операция проверяет авторизацию на сервере.
+- [ ] Логи и ответы не содержат секретов или лишних персональных данных.
+- [ ] Изменения схемы обратно совместимы либо имеют явные миграцию и откат.
+- [ ] Тесты не могут подключиться к базе разработчика или production.
+- [ ] Новые переменные окружения описаны во всех относящихся к ним `.env.*.example`.
 
-## Reliability and operations
+## Надёжность и эксплуатация
 
-- [ ] Retry, idempotency, timeouts, and partial failures are handled where relevant.
-- [ ] Queue jobs can recover from expired leases and do not duplicate active work.
-- [ ] Operational failures are observable without exposing sensitive payloads.
-- [ ] The change has a safe disable/revert path.
+- [ ] Где применимо, обработаны повторные попытки, идемпотентность, тайм-ауты и частичные сбои.
+- [ ] Задачи очереди восстанавливаются после истечения lease и не дублируют активную работу.
+- [ ] Эксплуатационные сбои наблюдаемы без раскрытия чувствительных данных.
+- [ ] Изменение можно безопасно отключить или отменить.
 
-## Verification
+## Проверка
 
-- [ ] A regression test covers each fixed defect.
-- [ ] Relevant unit and integration/HTTP paths are covered.
-- [ ] `npm run lint:js` passes.
-- [ ] `npm run build:web` is reproducible and committed output is current.
-- [ ] `npm run test:backend` passes.
-- [ ] Database integration tests pass when database behavior changed.
-- [ ] `git diff --check` passes.
+- [ ] Каждая исправленная ошибка покрыта регрессионным тестом.
+- [ ] Значимые модульные и интеграционные/HTTP-пути покрыты тестами.
+- [ ] `npm run lint:js` проходит.
+- [ ] `npm run build:web` воспроизводим, а сохранённый результат сборки актуален.
+- [ ] `npm run test:backend` проходит.
+- [ ] При изменении поведения базы данных проходят интеграционные тесты.
+- [ ] `git diff --check` проходит.
 
-## Handoff
+## Передача результата
 
-- [ ] PR links the ticket and gives exact verification steps.
-- [ ] Risks, unverified behavior, deployment steps, and rollback are explicit.
-- [ ] Screenshots, API examples, or logs are attached when they materially aid review.
+- [ ] PR содержит ссылку на тикет и точные шаги проверки.
+- [ ] Риски, непроверенное поведение, шаги развёртывания и откат указаны явно.
+- [ ] Скриншоты, примеры API или логи приложены, если они существенно помогают ревью.

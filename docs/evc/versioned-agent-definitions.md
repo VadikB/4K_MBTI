@@ -1,73 +1,57 @@
-# EVC task brief: versioned competency-agent definitions
+# Краткое описание задачи EVC: версионируемые определения агентов компетенций
 
-## Outcome
+## Результат
 
-Methodologists can create, review, publish, and clone immutable competency-agent
-definitions containing Markdown instructions and structured execution metadata;
-assessment configuration publication freezes the selected published definitions.
+Методологи могут создавать, отправлять на ревью, публиковать и клонировать
+неизменяемые определения агентов компетенций с Markdown-инструкциями и
+структурированными метаданными исполнения. При публикации конфигурации оценки
+выбранные опубликованные определения фиксируются.
 
-## Scope
+## Область
 
-- Included:
-  - `agent` as a versioned assessment definition type;
-  - Markdown instruction, input/output contract, executor and runtime metadata;
-  - draft/review/published/retired-compatible storage and immutable published rows;
-  - platform permissions and existing generic authoring HTTP workflow;
-  - backward-compatible bootstrap from the four active evaluator prompt profiles;
-  - frozen `agent_definitions` section in configuration prompt bundle/snapshot.
-- Excluded:
-  - admin UI editor;
-  - rewriting current scoring algorithms around Markdown;
-  - changing current 4K methodology content;
-  - arbitrary tools or executable code in definitions.
+- Включено: тип определения `agent`; Markdown-инструкция, входной/выходной
+  контракт, исполнитель и runtime-метаданные; статусы `draft`, `review`,
+  `published` и совместимость с `retired`; права платформы и существующий HTTP-процесс;
+  обратно совместимая инициализация четырёх активных профилей; раздел
+  `agent_definitions` в зафиксированном пакете промптов/снимке.
+- Не входит: UI-редактор; перевод текущих алгоритмов оценки на Markdown;
+  изменение методологии 4K; произвольные инструменты или исполняемый код.
 
-## Context
+## Контекст
 
-- Relevant entry points: core schema, assessment authoring service/routes,
-  configuration publication, execution snapshot.
-- Architecture: ADR-001 versioning and immutable snapshot invariants.
-- Existing behavior: evaluator prompts are active-table records frozen into a
-  configuration bundle, but agents have no independently versioned definition.
+- Точки входа: основная схема, сервис/routes управления определениями,
+  публикация конфигурации и снимок исполнения.
+- Архитектура: версионирование ADR-001 и инварианты неизменяемого снимка.
+- Ранее профили промптов фиксировались в пакете конфигурации, но независимого
+  версионируемого определения агента не было.
 
-## Constraints and risks
+## Ограничения и риски
 
-- Compatibility: current methodology resolves definition code from evaluator
-  component suffix; future methodologies may specify definition code/version.
-- Data: additive tables and permissions only; no destructive migration.
-- Security: Markdown is data, never executable Python/SQL/template code.
-- Operations: configuration publication fails when no published compatible agent
-  definition exists.
+- Текущая методология получает код определения из суффикса компонента; будущая
+  может явно задавать код и версию.
+- Изменения таблиц и прав только аддитивные, без разрушительной миграции.
+- Markdown является данными и не исполняется как Python/SQL/шаблон.
+- Публикация конфигурации завершается ошибкой без совместимого опубликованного агента.
 
-## Acceptance criteria
+## Критерии приёмки
 
-- [x] Agent definitions use the standard draft/review/publish/clone lifecycle.
-- [x] Published versions are immutable at service and database levels.
-- [x] Validation requires non-empty Markdown and registered executor metadata.
-- [x] Current four evaluator definitions can be bootstrapped without changing
-      methodology v1.
-- [x] Published configuration freezes exact agent definition versions/checksums.
-- [x] Running session snapshot does not resolve mutable agent definitions.
+- [x] Определения проходят стандартный цикл draft/review/publish/clone.
+- [x] Опубликованные версии неизменяемы на уровнях сервиса и базы данных.
+- [x] Требуются непустой Markdown и зарегистрированные метаданные исполнителя.
+- [x] Четыре текущих определения инициализируются без изменения методологии v1.
+- [x] Конфигурация фиксирует точные версии и контрольные суммы агентов.
+- [x] Снимок работающей сессии не обращается к изменяемым определениям.
 
-## Verification plan
+## Проверка
 
-- Unit: agent definition validation and lifecycle service contracts.
-- Integration: schema/lifecycle/configuration freeze against isolated PostgreSQL.
-- HTTP: generic authoring endpoints with `entity_type=agent`.
-- Manual: deferred to baseline acceptance.
+- Модульная: валидация и жизненный цикл определения.
+- Интеграционная: схема, жизненный цикл и фиксация конфигурации в изолированном PostgreSQL.
+- HTTP: общие endpoints управления с `entity_type=agent`.
 
-## Rollback
+## Откат и передача
 
-Stop resolving agent definitions during configuration publication and leave the
-additive tables unused. Existing prompt bundles and session data remain readable.
-
-## Agent handoff
-
-- Decisions made: reuse generic definition JSON lifecycle; resolve legacy code from
-  evaluator suffix and freeze the exact published version in configuration.
-- Files changed: additive schema/permissions, agent definition bootstrap and bundle
-  resolver, generic authoring validation/API, snapshot publication, architecture
-  docs, unit/integration/HTTP tests, and this brief.
-- Checks completed: 98 backend tests, 3 HTTP contract tests, 12 isolated PostgreSQL
-  integration tests, Python compilation, JS lint, web build, and diff validation.
-- Known gaps: current legacy evaluator algorithm does not yet interpret Markdown.
-- Next safe step: make the generic executor consume the frozen definition.
+Отключить разрешение определений при публикации, оставив аддитивные таблицы
+неиспользуемыми. Сохранённые данные остаются читаемыми. Выполнено: 98 backend-тестов,
+3 HTTP-контрактных, 12 интеграционных PostgreSQL-тестов, компиляция Python,
+JS lint, web build и проверка diff. Известный пробел: legacy-алгоритм пока не
+интерпретирует Markdown. Следующий шаг — исполнение зафиксированного определения.

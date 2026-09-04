@@ -1,51 +1,49 @@
-# Assessment platform baseline v1
+# Базовая версия платформы оценки v1
 
-Status: **candidate — not yet ratified**
+Статус: **кандидат — ещё не утверждён**
 
-This document is the evidence record for turning the assessment-platform branch into an immutable baseline. A baseline is a tested commit/tag, not a moving branch.
+Этот документ фиксирует доказательства, необходимые для превращения ветки платформы оценки в неизменяемую базовую версию. Базовая версия — это проверенный коммит/тег, а не изменяемая ветка.
 
-## Invariants included in the candidate
+## Инварианты кандидата
 
-- Methodology, scenario, and assessment configuration are independently versioned.
-- Published definition versions are immutable; changes begin from a cloned draft.
-- Competency-agent definitions are independently versioned and published versions
-  are immutable.
-- Published assessment configurations freeze exact agent definition versions and
-  checksums.
-- A session stores an execution snapshot and checksum.
-- Prompt resolution for a running session uses the frozen snapshot.
-- Methodologist and publisher permissions are separated.
-- The test environment deploys only after frontend, unit, and database integration checks.
+- Методология, сценарий и конфигурация оценки версионируются независимо.
+- Опубликованные версии определений неизменяемы; изменение начинается с клонированного черновика.
+- Определения агентов компетенций версионируются независимо, а опубликованные версии неизменяемы.
+- Опубликованные конфигурации оценки фиксируют точные версии определений агентов и контрольные суммы.
+- Сессия хранит снимок исполнения и его контрольную сумму.
+- Промпты запущенной сессии разрешаются по зафиксированному снимку.
+- Права методолога и публикатора разделены.
+- Развёртывание в test-среде выполняется только после проверок frontend, модульных и интеграционных тестов базы данных.
 
-## Ratification gates
+## Проверки для утверждения
 
-Record links or immutable identifiers rather than free-form assurances.
+Фиксируйте ссылки или неизменяемые идентификаторы, а не свободные текстовые заверения.
 
-- [ ] Architecture review against ADR-001 — reviewer/result:
-- [ ] Pull request review completed — PR:
-- [ ] CI frontend lint/build passed — run:
-- [ ] CI unit tests passed — run:
-- [ ] CI PostgreSQL integration tests passed — run:
-- [ ] Critical HTTP/user-journey smoke passed — run/evidence:
-- [ ] Exact commit deployed to `test` — commit/version/URL:
-- [ ] Methodologist acceptance completed — tester/date/result:
-- [ ] Technical owner acceptance completed — tester/date/result:
-- [ ] Rollback rehearsal or verified procedure — evidence:
-- [ ] Merge to `main` completed — commit:
-- [ ] Annotated baseline tag created — tag:
+- [ ] Архитектурное ревью по ADR-001 — проверяющий/результат:
+- [ ] Ревью pull request завершено — PR:
+- [ ] CI-проверки lint/build для frontend прошли — запуск:
+- [ ] Модульные тесты CI прошли — запуск:
+- [ ] Интеграционные тесты PostgreSQL в CI прошли — запуск:
+- [ ] Критический smoke-тест HTTP/пользовательского сценария прошёл — запуск/доказательство:
+- [ ] Точный коммит развёрнут в `test` — коммит/версия/URL:
+- [ ] Приёмка методологом завершена — проверяющий/дата/результат:
+- [ ] Приёмка техническим владельцем завершена — проверяющий/дата/результат:
+- [ ] Откат отрепетирован или процедура проверена — доказательство:
+- [ ] Слияние в `main` завершено — коммит:
+- [ ] Создан аннотированный тег базовой версии — тег:
 
-## Known limitations at candidate stage
+## Известные ограничения кандидата
 
-- Real-provider LLM checks are opt-in and are not part of the default suite.
-- Full browser user-journey coverage is not yet part of CI; critical HTTP and database contracts are the minimum ratification gate.
-- Deployment and manual acceptance are external evidence and cannot be satisfied by a source-code commit alone.
+- Проверки с реальным LLM-провайдером включаются явно и не входят в стандартный набор.
+- Полные браузерные пользовательские сценарии пока не входят в CI; минимальная проверка для утверждения — критические HTTP-контракты и контракты базы данных.
+- Развёртывание и ручная приёмка являются внешними доказательствами и не могут подтверждаться только коммитом исходного кода.
 
-## Required tag
+## Обязательный тег
 
-After every gate above is complete, create an annotated tag on the accepted `main` commit:
+После прохождения всех проверок выше создайте аннотированный тег на принятом коммите `main`:
 
 ```bash
 git tag -a assessment-platform-baseline-v1 -m "Assessment platform baseline v1"
 ```
 
-Do not reuse or move this tag. Further work starts from short-lived task branches and produces a new baseline/release identifier when needed.
+Не переиспользуйте и не перемещайте этот тег. Дальнейшая работа начинается в короткоживущих ветках задач и при необходимости создаёт новый идентификатор базовой версии/релиза.

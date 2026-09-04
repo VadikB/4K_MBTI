@@ -1,15 +1,15 @@
-# EVC context map
+# Карта контекста EVC
 
-Load only the context needed for the task. Start with the common files, then add one relevant slice.
+Загружайте только необходимый для задачи контекст. Начните с общих файлов, затем добавьте один относящийся к задаче срез.
 
-## Common
+## Общие файлы
 
-- `AGENTS.md` — development contract and safety boundaries.
-- `README.md` — runtime, setup, and operational behavior.
-- `CONTRIBUTING.md` — branches, CI, environments, and acceptance.
-- `.github/PULL_REQUEST_TEMPLATE.md` — required handoff evidence.
+- `AGENTS.md` — контракт разработки и границы безопасности.
+- `README.md` — запуск, настройка и эксплуатационное поведение.
+- `CONTRIBUTING.md` — ветки, CI, среды и приёмка.
+- `.github/PULL_REQUEST_TEMPLATE.md` — обязательные доказательства при передаче результата.
 
-## Assessment architecture and authoring
+## Архитектура оценки и управление определениями
 
 - `docs/adr/001-assessment-platform-architecture.md`
 - `docs/architecture/assessment-runtime.md`
@@ -20,32 +20,32 @@ Load only the context needed for the task. Start with the common files, then add
 - `tests/unit/test_assessment_configuration.py`
 - `tests/integration/test_assessment_authoring_workflow_db.py`
 
-## Session execution and queues
+## Исполнение сессии и очереди
 
 - `Api/assessment_service.py`
 - `Api/assessment_preparation_queue.py`
 - `Api/assessment_analysis_queue.py`
 - `Api/assessment_prompt_resolver.py`
-- the matching unit and integration queue tests
+- соответствующие модульные и интеграционные тесты очередей
 
-## Interview and case generation
+## Интервью и генерация кейсов
 
 - `Api/assessment/interview/`
 - `Api/assessment/case_generation/`
-- relevant contract/unit tests only; avoid loading the legacy facade unless a compatibility path is involved
+- только относящиеся к задаче контрактные/модульные тесты; не загружайте legacy-фасад, если не затронут путь совместимости
 
-## HTTP and access control
+## HTTP и управление доступом
 
-- the targeted section of `Api/routes.py`
-- related models in `Api/schemas.py`
-- `Api/auth_service.py`, `Api/platform_access.py`, or `Api/org_access.py` as applicable
-- HTTP contract and authorization tests
+- целевой раздел `Api/routes.py`
+- связанные модели в `Api/schemas.py`
+- подходящий из `Api/auth_service.py`, `Api/platform_access.py` или `Api/org_access.py`
+- тесты HTTP-контрактов и авторизации
 
 ## Frontend
 
-- the target entry or screen in `web/js/`
-- shared modules actually imported by that screen
-- matching CSS and preview assets
-- `web/index.html` only when entry loading or static contracts change
+- целевая точка входа или экран в `web/js/`
+- общие модули, фактически импортируемые этим экраном
+- соответствующие CSS и ресурсы preview
+- `web/index.html` — только при изменении загрузки точки входа или статических контрактов
 
-Do not pass `.env`, database dumps, logs, production data, the full generated `web/dist`, or unrelated large legacy modules into agent context.
+Не передавайте в контекст агента `.env`, дампы базы данных, логи, production-данные, весь сгенерированный `web/dist` или не относящиеся к задаче крупные legacy-модули.

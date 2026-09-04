@@ -1,64 +1,38 @@
-# EVC task brief: frozen agent-definition execution
+# Краткое описание задачи EVC: исполнение зафиксированного определения агента
 
-## Outcome
+## Результат
 
-Every competency evaluation is selected and instructed by the immutable
-`AgentDefinition` stored in the session execution snapshot.
+Каждая оценка компетенции выбирается и инструктируется неизменяемым
+`AgentDefinition` из снимка исполнения сессии.
 
-## Scope
+## Область
 
-- Included: strict snapshot resolution and checksum validation; input/output
-  contract and executor validation; one executor registry for current legacy
-  Python strategies; Markdown instructions and runtime metadata passed into the
-  evaluation prompt.
-- Excluded: methodology changes, scoring-formula changes, arbitrary executable
-  tools in Markdown, UI authoring changes, and removal of legacy strategies.
+- Включено: строгое разрешение по снимку и проверка checksum; валидация
+  входного/выходного контракта и исполнителя; единый реестр текущих legacy-стратегий
+  Python; передача Markdown-инструкций и runtime-метаданных в промпт.
+- Не входит: изменение методологии или формулы оценки, исполняемые инструменты в
+  Markdown, изменение UI управления и удаление legacy-стратегий.
 
-## Context
+## Ограничения и риски
 
-- Relevant entry points: evaluator input builder, analysis queue, competency
-  evaluator adapter, semantic rubric prompt.
-- Architecture: ADR-001 and the immutable execution-snapshot invariant.
-- Existing contracts: competency evaluation input/output v1 and published
-  agent-definition v1.
+- Прямые legacy-вызовы получают эквивалентное определение в памяти; исполнение из очереди строго использует снимок.
+- Изменений данных и миграций нет.
+- Markdown остаётся данными промпта и никогда не исполняется.
+- Стандартные тесты не делают реальных LLM-вызовов.
 
-## Constraints and risks
+## Критерии приёмки
 
-- Compatibility: direct legacy facade calls receive an equivalent in-memory
-  definition; queued snapshot execution is strict.
-- Data and migrations: none.
-- Security: Markdown remains prompt data and is never executed.
-- External services/LLM: default tests make no real LLM calls.
+- [x] Исполнение завершается ошибкой, если зафиксированное определение отсутствует или изменено.
+- [x] Исполнитель выбирается по точным коду и версии компонента, а не позиции в списке.
+- [x] Контракт, исполнитель и runtime-метаданные валидируются до оценки.
+- [x] Зафиксированный Markdown влияет на промпт семантической оценки и идентификатор кеша.
+- [x] Текущее поведение оценки доступно через явно выбранные legacy-стратегии.
 
-## Acceptance criteria
+## Проверка, откат и передача
 
-- [x] Queue execution fails if its frozen definition is missing or changed.
-- [x] Executor selection uses exact component code/version, never list position.
-- [x] Contract/executor/runtime metadata is validated before evaluation.
-- [x] Frozen Markdown affects the semantic evaluator prompt and cache identity.
-- [x] Current scoring behavior remains available through explicit legacy strategies.
-
-## Verification plan
-
-- Unit: definition resolution, tamper/mismatch rejection, exact strategy routing,
-  Markdown prompt consumption.
-- Integration: existing isolated PostgreSQL suites.
-- Observability: execution errors identify the invalid definition or executor.
-
-## Rollback
-
-Revert the executor/input changes. Published definitions and snapshots are
-additive data and remain valid for a later rollout.
-
-## Agent handoff
-
-- Decisions made: strict frozen definition for queued and snapshotted legacy
-  execution; exact executor registry; only `legacy_adapter` runtime is accepted.
-- Files changed: evaluator contracts/executor, analysis queue, legacy strategy
-  prompt path, architecture, unit/integration fixtures and tests.
-- Checks completed: 101 backend tests, 3 HTTP tests, 12 isolated PostgreSQL
-  integration tests, JS lint and web build.
-- Known gaps: current deterministic fallback does not interpret free-form Markdown;
-  Markdown drives the semantic LLM path while the Python formula stays unchanged.
-- Next safe step: define the first non-legacy executor contract or add controlled
-  runtime capabilities once the new methodology requirements are approved.
+Проверены разрешение определения, отклонение подмены, точная маршрутизация и
+использование Markdown; применены существующие интеграционные наборы PostgreSQL.
+Откат — отмена изменений исполнителя/входа без удаления аддитивных определений и
+снимков. Выполнено: 101 backend-тест, 3 HTTP-теста, 12 интеграционных тестов,
+JS lint и web build. Детерминированный fallback не интерпретирует свободный
+Markdown: он управляет семантическим LLM-путём, а Python-формула неизменна.

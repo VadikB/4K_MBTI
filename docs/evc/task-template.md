@@ -1,51 +1,51 @@
-# EVC task brief
+# Краткое описание задачи EVC
 
-## Outcome
+## Результат
 
-What observable user or operational result must exist after the change?
+Какой наблюдаемый пользовательский или эксплуатационный результат должен появиться после изменения?
 
-## Scope
+## Область
 
-- Included:
-- Excluded:
+- Включено:
+- Не входит:
 
-## Context
+## Контекст
 
-- Ticket:
-- Relevant entry points:
-- Architecture/ADR:
-- Existing tests and contracts:
+- Тикет:
+- Значимые точки входа:
+- Архитектура/ADR:
+- Существующие тесты и контракты:
 
-## Constraints and risks
+## Ограничения и риски
 
-- Compatibility:
-- Data and migrations:
-- Security and personal data:
-- External services/LLM:
-- Performance and operations:
+- Совместимость:
+- Данные и миграции:
+- Безопасность и персональные данные:
+- Внешние сервисы/LLM:
+- Производительность и эксплуатация:
 
-## Acceptance criteria
+## Критерии приёмки
 
-Write independently verifiable statements.
+Формулируйте независимо проверяемые утверждения.
 
 - [ ]
 - [ ]
 
-## Verification plan
+## План проверки
 
-- Unit:
-- Integration/HTTP:
-- Manual/test environment:
-- Observability:
+- Модульные тесты:
+- Интеграция/HTTP:
+- Ручная проверка/test-среда:
+- Наблюдаемость:
 
-## Rollback
+## Откат
 
-State how to disable or revert the change without losing data.
+Укажите, как отключить или отменить изменение без потери данных.
 
-## Agent handoff
+## Передача результата агентом
 
-- Decisions made:
-- Files changed:
-- Checks completed:
-- Known gaps:
-- Next safe step:
+- Принятые решения:
+- Изменённые файлы:
+- Выполненные проверки:
+- Известные пробелы:
+- Следующий безопасный шаг:

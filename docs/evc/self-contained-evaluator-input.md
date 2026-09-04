@@ -1,70 +1,36 @@
-# EVC task brief: self-contained evaluator input
+# Краткое описание задачи EVC: самодостаточный вход оценщика
 
-## Outcome
+## Результат
 
-Each current 4K competency evaluator receives all prompt configuration, skills,
-rubrics, cases, and user evidence in its validated input contract and performs no
-methodological reads while calculating the result.
+Каждый текущий оценщик компетенции 4K получает в валидированном контракте всю
+конфигурацию промпта, навыки, рубрики, кейсы и свидетельства пользователя и при
+расчёте не выполняет методологических чтений.
 
-## Scope
+## Область
 
-- Included:
-  - typed skill, rubric, case-evidence, and prompt-config input structures;
-  - loading current database material before the evaluator boundary;
-  - evaluation of the supplied material by the existing algorithm;
-  - backward-compatible `evaluate_session` facade and regression tests.
-- Excluded:
-  - moving result persistence out of the legacy evaluator;
-  - changing SQL sources, prompts, scoring, methodology, or database schema;
-  - Markdown agent definitions or new agent version tables.
+- Включено: типизированные структуры навыков, рубрик, свидетельств кейсов и
+  конфигурации промпта; загрузка материала до границы оценщика; расчёт существующим
+  алгоритмом; совместимый фасад `evaluate_session` и регрессионные тесты.
+- Не входит: перенос сохранения результата; изменение SQL-источников, промптов,
+  scoring, методологии или схемы; Markdown-определения и новые таблицы версий.
 
-## Context
+## Ограничения и риски
 
-- Ticket: not provided.
-- Relevant entry points: `Api/communication_agent.py`,
-  `Api/assessment_evaluator_contracts.py`, `Api/assessment_analysis_queue.py`.
-- Architecture/ADR: ADR-001 and `docs/architecture/assessment-runtime.md`.
-- Existing contracts: `SkillEvaluation`, evaluator contract v1, analysis queue
-  unit and integration tests.
+- `evaluate_session` и форматы результатов остаются совместимыми; миграций нет.
+- Свидетельства остаются в памяти процесса и не попадают в логи или результат этапа.
+- Поведение LLM неизменно; новые обращения к базе или сети не добавляются.
 
-## Constraints and risks
+## Критерии приёмки
 
-- Compatibility: `evaluate_session` and stored result formats remain supported.
-- Data and migrations: none.
-- Security and personal data: evidence remains in process memory and must not be
-  added to logs or stage output.
-- External services/LLM: unchanged.
-- Performance and operations: do not add database or network calls; material is
-  loaded before evaluator calculation rather than incrementally per skill.
+- [x] Вход содержит промпты агента, навыки, рубрики, кейсы и свидетельства.
+- [x] Реальные оценщики очереди считают по валидированному материалу контракта.
+- [x] Scoring и сохранение результатов не изменены.
+- [x] Прямой legacy-вход `evaluate_session` совместим.
+- [x] Некорректный вложенный вход отклоняется до расчёта.
 
-## Acceptance criteria
+## Проверка, откат и передача
 
-- [x] Contract input contains agent prompts, skills, rubrics, cases, and evidence.
-- [x] The queue's real evaluators calculate from the validated contract material.
-- [x] No scoring or persistence behavior changes.
-- [x] The legacy direct `evaluate_session` entry point remains compatible.
-- [x] Invalid nested input is rejected before evaluator calculation.
-
-## Verification plan
-
-- Unit: nested contract validation, material loading/adaptation, legacy fallback,
-  and existing queue behavior.
-- Integration/HTTP: existing PostgreSQL queue test when isolated database access
-  is available.
-- Manual/test environment: deferred to baseline acceptance.
-- Observability: do not place evidence in stage output or logs.
-
-## Rollback
-
-Revert the material-loading path and restore the contract v1 orchestration-only
-input. No stored data migration or cleanup is required.
-
-## Agent handoff
-
-- Decisions made: persistence separation is deferred to slice 1c.
-- Files changed: evaluator contracts, legacy competency agent facade/material path,
-  queue wiring, contract tests, and this task brief.
-- Checks completed: focused unit tests and complete non-integration backend suite;
-  final repository gates recorded in the task handoff.
-- Known gaps: evaluator still persists results.
-- Next safe step: introduce an evaluation result repository outside the evaluator.
+Покрыты валидация, загрузка/адаптация материала, legacy fallback и очередь;
+интеграционная проверка использует изолированный PostgreSQL. Откат возвращает
+прежнюю загрузку и orchestration-only контракт v1, без миграции данных. Разделение
+сохранения было отложено до среза 1c; следующий шаг — внешний репозиторий результатов.
