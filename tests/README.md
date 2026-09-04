@@ -1,4 +1,4 @@
-# Backend tests
+# Тесты backend
 
 Тесты разделены по уровню:
 
@@ -25,7 +25,7 @@ npm run test:backend
 .venv/bin/python -m pytest -m "not integration and not e2e and not llm"
 ```
 
-## Integration
+## Интеграционные тесты
 
 Создайте отдельную базу, например `agent4k_pytest`, и задайте URL:
 
@@ -42,7 +42,7 @@ Integration-набор проверяет обе постоянные очере
 - восстановление истекшего lease;
 - окончательную ошибку и ручной повторный запуск.
 
-## HTTP smoke
+## HTTP smoke-тесты
 
 ```bash
 npm run test:backend:http
@@ -55,7 +55,7 @@ npm run test:backend:http
 `test` или `pytest`, либо совпадает с `DB_NAME`. Рабочую `app_db` использовать
 для pytest нельзя.
 
-## Coverage
+## Покрытие
 
 ```bash
 npm run test:backend:coverage
@@ -69,7 +69,7 @@ npm run test:backend:coverage
 4. Реальные DeepSeek-вызовы всегда помечаются `@pytest.mark.llm`.
 5. Тест обязан удалять созданные записи или использовать изолированную схему.
 
-## CI
+## Непрерывная интеграция (CI)
 
 Workflow `.github/workflows/backend-tests.yml` запускается на каждый push и
 pull request. Он поднимает временный PostgreSQL 16, выполняет быстрые тесты,

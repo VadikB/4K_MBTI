@@ -1,33 +1,38 @@
-# First shadow rollout
+# Первое shadow-развёртывание
 
-## Outcome
+## Результат
 
-New assessment sessions freeze a communication shadow evaluator while official evaluation remains unchanged and paid shadow execution remains disabled by default.
+Новые сессии оценки фиксируют shadow-оценщик коммуникации, при этом официальная
+оценка не меняется, а платное shadow-исполнение по умолчанию отключено.
 
-## Scope
+## Область
 
-- Assign both platform roles to the explicitly designated platform owner.
-- Publish `communication_shadow` v1 using the universal runtime contract.
-- Clone `competencies_4k` v1 to v2 and add communication shadow scope `K1.1`–`K1.3`.
-- Publish `4k_standard_shadow_v1` against the existing scenario and make it default.
-- Do not edit any published version in place and do not enable LLM flags.
+- Назначить обе платформенные роли явно указанному владельцу платформы.
+- Опубликовать `communication_shadow` v1 с универсальным runtime-контрактом.
+- Клонировать `competencies_4k` v1 в v2 и добавить shadow-область коммуникации `K1.1`–`K1.3`.
+- Опубликовать `4k_standard_shadow_v1` с существующим сценарием и сделать конфигурацией по умолчанию.
+- Не изменять опубликованные версии на месте и не включать LLM-флаги.
 
-## Acceptance criteria
+## Критерии приёмки
 
-- [x] The designated owner has active methodologist and publisher roles.
-- [x] Agent, methodology and configuration are published with frozen checksums.
-- [x] Official communication agent remains v1 legacy adapter.
-- [x] New default configuration contains frozen communication and shadow definitions.
-- [x] Existing session snapshots remain unchanged.
+- [x] Назначенный владелец имеет активные роли методолога и публикатора.
+- [x] Агент, методология и конфигурация опубликованы с зафиксированными контрольными суммами.
+- [x] Официальный агент коммуникации остаётся legacy adapter v1.
+- [x] Новая конфигурация по умолчанию содержит зафиксированные основное и shadow-определения коммуникации.
+- [x] Снимки существующих сессий не изменены.
 
-## Rollback
+## Откат
 
-Set `4k_standard_v1.is_default=true` and all other configurations to false in one transaction. Published additive versions may remain immutable and unused.
+В одной транзакции установить `4k_standard_v1.is_default=true`, а для остальных
+конфигураций — false. Опубликованные аддитивные версии остаются неизменяемыми и неиспользуемыми.
 
-## Operational result
+## Эксплуатационный результат
 
-- `communication_shadow` v1 with 1200 output tokens failed contract validation on the three-skill synthetic input.
-- The published v1 was not edited. `communication_shadow` v2 increased only `max_output_tokens` to 4096; `competencies_4k` v3 and `4k_standard_shadow_v2` froze that version.
-- One paid synthetic shadow v2 run completed successfully: three skills compared, two exact level matches, 66.67% agreement.
-- Stored comparison payloads passed the sanitization check. Persistent universal/shadow flags remain false.
-- The account combining methodologist and publisher is an explicitly accepted owner-role exception; platform permissions remain independently defined.
+- `communication_shadow` v1 с 1200 output tokens не прошёл валидацию контракта на синтетическом входе из трёх навыков.
+- Опубликованная v1 не изменялась. В `communication_shadow` v2 только `max_output_tokens`
+  увеличен до 4096; `competencies_4k` v3 и `4k_standard_shadow_v2` зафиксировали эту версию.
+- Один платный синтетический shadow-запуск v2 завершился успешно: сопоставлены три
+  навыка, два уровня совпали точно, согласованность — 66,67%.
+- Сохранённые сравнения прошли проверку очистки. Постоянные universal/shadow-флаги остаются false.
+- Объединение ролей методолога и публикатора для этой учётной записи является явно
+  принятым исключением владельца; платформенные права по-прежнему определены независимо.

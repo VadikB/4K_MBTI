@@ -1,59 +1,30 @@
-# EVC task brief: universal evaluator material repository
+# Краткое описание задачи EVC: репозиторий материалов универсального оценщика
 
-## Outcome
+## Результат и область
 
-`runtime.mode=universal_llm` loads skills, rubrics, cases and evidence through a
-generic repository selected by frozen methodology `skill_codes`; it no longer
-requires a competency-specific Python agent or legacy evaluator prompt profile.
+`runtime.mode=universal_llm` загружает навыки, рубрики, кейсы и evidence через
+общий репозиторий по зафиксированным `skill_codes` методологии и больше не требует
+Python-агента компетенции или legacy-профиля промпта. Включены read-only репозиторий,
+явные `skill_codes`, routing очереди/провайдера, проверка совместимости публикации и
+тесты. Не входят изменение опубликованной 4K v1, миграция, новая методология,
+удаление legacy loader, shadow-хранение и production-включение.
 
-## Scope
+## Ограничения и критерии приёмки
 
-- Included: generic read-only material repository; explicit methodology
-  `skill_codes`; queue/provider routing; publication compatibility validation;
-  unit and isolated PostgreSQL tests.
-- Excluded: changing published 4K v1, schema migration, new methodology content,
-  legacy loader removal, shadow persistence and production enablement.
+- Legacy-определения сохраняют агентов/loaders/prompts; репозиторий только читает.
+- Читаются одна сессия и явно зафиксированные коды; реальный LLM не требуется.
+- [x] Universal-очередь не разрешает legacy-стратегию.
+- [x] Материалы ограничены зафиксированными `skill_codes`.
+- [x] Публикация universal-конфигурации не требует legacy-профиля.
+- [x] Публикация без непустых `skill_codes` завершается ошибкой.
+- [x] Legacy-методология и исполнение не меняются.
+- [x] Выход репозитория проходит существующий самодостаточный контракт.
 
-## Constraints and risks
+## Проверка, откат и передача
 
-- Compatibility: legacy definitions keep their existing agents/loaders/prompts.
-- Data: repository reads current session/skill/rubric/case tables; no writes.
-- Security: only the current session and explicitly frozen skill codes are read.
-- LLM: no real provider call is required for this slice.
-
-## Acceptance criteria
-
-- [x] Universal queue execution does not resolve a legacy strategy.
-- [x] Universal materials are restricted to frozen `skill_codes`.
-- [x] Universal configuration publication does not require a legacy prompt profile.
-- [x] Universal publication fails without explicit non-empty `skill_codes`.
-- [x] Legacy methodology and execution remain unchanged.
-- [x] Repository output passes the existing self-contained input contract.
-
-## Verification plan
-
-- Unit: routing and publication validation.
-- Integration: repository SQL and authoring-to-universal execution in isolated DB.
-- Regression: standard backend, HTTP, integration, lint/build and diff gates.
-
-## Rollback
-
-Revert universal provider routing; keep the kill switch false. No data rollback is
-needed because this change is read-only and additive.
-
-## Agent handoff
-
-- Decisions made: skill membership remains methodology content and is frozen as
-  `competency.skill_codes`; AgentDefinition remains behavior/runtime content.
-- Files changed: generic material repository, queue routing, configuration
-  publication validation, runtime architecture, unit/integration tests and brief.
-- Checks completed: 112 default backend tests, 3 HTTP tests, 15 isolated
-  PostgreSQL integration tests, JS lint, web build, Python compile and
-  `git diff --check`.
-- Schema/config/deployment: no schema or environment change; universal kill switch
-  remains false.
-- Security: repository reads only one session and explicitly frozen skill codes;
-  no secrets or external calls.
-- Rollback: revert provider routing or keep universal runtime disabled.
-- Next safe step: add shadow result persistence and comparison gates without
-  changing official assessment results.
+Проверены routing, публикация, SQL репозитория и путь до universal-исполнения в
+изолированной базе. Пройдено 112 backend-, 3 HTTP- и 15 интеграционных тестов,
+JS lint, web build, компиляция и `git diff --check`. Откат возвращает routing,
+kill switch остаётся false; миграции нет. Принадлежность навыков хранится в
+`competency.skill_codes`, поведение — в AgentDefinition. Следующий шаг — безопасное
+shadow-хранение и сравнение.

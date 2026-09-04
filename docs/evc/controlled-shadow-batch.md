@@ -1,45 +1,31 @@
-# Controlled shadow batch
+# Контролируемый пакет shadow-запусков
 
-## Outcome
+## Результат и область
 
-A superadmin can preview and explicitly run a small paid shadow sample over completed sessions without changing official assessment results.
+Суперадминистратор может предварительно просмотреть и явно запустить небольшую
+платную shadow-выборку завершённых сессий без изменения официальных результатов.
+Включены endpoint dry-run/execute, выбор целей от новых к старым, сравнение с
+сохранённым официальным итогом и предел в четыре запуска компетенций. Не входят UI,
+периодические задания, массовый backfill, пересчёт официальных результатов,
+изменение состояния сессии и автоматическое включение feature flag.
 
-## Scope
+## Ограничения и критерии приёмки
 
-- Included: superadmin-only dry-run/execute endpoint, newest-first eligible target selection, stored official summary comparison, maximum four competency runs.
-- Excluded: UI, recurring jobs, bulk backfill, official result recalculation, session state changes, automatic feature-flag activation.
+- API аддитивен, миграции схемы нет; доступ только у superadmin.
+- Ответ содержит только ID сессии и код компетенции, без текста и payload оценки.
+- Платные DeepSeek-вызовы требуют явного подтверждения и обоих universal/shadow-флагов.
+- Выполнение синхронное и ограничено четырьмя попытками; сбой shadow не влияет на официальные данные.
+- [x] Dry-run не вызывает LLM, не пишет в базу и сообщает цели и максимум попыток.
+- [x] Без подтверждения или любого из флагов выполнение отклоняется.
+- [x] Уже существующие shadow-версии идемпотентно пропускаются.
+- [x] Официальные результаты и состояние сессии не обновляются.
+- [x] Результат пишется только в `assessment_shadow_evaluation_runs`.
 
-## Constraints and risks
+## Проверка и откат
 
-- Compatibility: additive API; no schema migration.
-- Security: response contains session ID and competency code only; no user text or evaluation payload.
-- External services: execution may make paid DeepSeek calls and requires explicit confirmation plus both universal/shadow flags.
-- Operations: synchronous and intentionally capped at four competency runs; failed shadow calls are recorded and do not affect official data.
-
-## Acceptance criteria
-
-- [x] Dry-run makes no LLM call or database write and reports targets and maximum attempts.
-- [x] Execution is rejected without confirmation or either feature flag.
-- [x] Existing shadow versions are skipped idempotently.
-- [x] Official results and session state are not updated.
-- [x] Success/failure is stored only in `assessment_shadow_evaluation_runs`.
-- [x] Only superadmin can call the endpoint.
-
-## Verification plan
-
-- Unit: selection, cap, dry-run, confirmation and kill switches, stored summary.
-- HTTP: authentication, authorization and conflict contract.
-- Integration: idempotent selection against isolated pytest database.
-- LLM: excluded from automated suite; controlled real execution remains an explicit operator action.
-
-## Rollback
-
-Remove the batch endpoint and service. Existing sanitized shadow comparison rows can remain or be removed separately by an explicit data operation.
-
-## Verification result
-
-- Default backend: 123 passed.
-- HTTP contracts: 8 passed.
-- Isolated PostgreSQL integration: 20 passed.
-- JS lint, web build and whitespace check: passed.
-- Operational dry-run on the configured local environment: 0 eligible runs and 0 maximum LLM attempts. Existing completed sessions predate frozen shadow configuration and were intentionally not retrofitted.
+Покрыты выбор, лимит, dry-run, подтверждение, kill switches, сохранённый итог,
+HTTP-аутентификация/авторизация и идемпотентность в изолированной pytest-базе.
+Результаты: 123 стандартных backend-теста, 8 HTTP-тестов, 20 интеграционных;
+JS lint, web build и проверка пробелов прошли. Эксплуатационный dry-run нашёл 0
+подходящих запусков: старые сессии созданы до фиксации shadow-конфигурации и не изменялись.
+Откат — удалить endpoint и сервис; очищенные записи сравнений можно оставить.

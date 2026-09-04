@@ -1,67 +1,29 @@
-# EVC task brief: strict snapshotted evaluator prompts
+# Краткое описание задачи EVC: строгие промпты оценщика из снимка
 
-## Outcome
+## Результат и область
 
-Running assessment sessions resolve every competency evaluator configuration only
-from their frozen execution snapshot, and incomplete configurations cannot be
-published.
+Работающие сессии получают конфигурацию каждого оценщика только из снимка
+исполнения, а неполную конфигурацию нельзя опубликовать. Включены явная ошибка при
+отсутствии данных в снимке, запрет fallback к активным таблицам при переданном
+снимке, проверка всех профилей при публикации и тесты. Не входят правила fallback
+интервьюера/генератора кейсов, новые версии агентов и изменение методологии.
 
-## Scope
+## Ограничения и критерии приёмки
 
-- Included:
-  - explicit missing-snapshot configuration error;
-  - no active-table fallback when an execution snapshot is supplied;
-  - publication validation for all methodology evaluator prompt profiles;
-  - unit and PostgreSQL integration contracts.
-- Excluded:
-  - interviewer and case-generation fallback policy;
-  - Markdown definitions and new agent version tables;
-  - methodology content changes.
+- Legacy-вызовы без снимка сохраняют fallback; миграции нет.
+- Неполный ранее созданный снимок завершается явной ошибкой, не меняя поведение задним числом.
+- Ошибки содержат только коды компонентов, без промптов и evidence.
+- [x] Переданный снимок никогда не вызывает чтение таблиц промптов оценщика.
+- [x] Отсутствующая конфигурация снимка вызывает явную ошибку.
+- [x] Legacy-фасад без снимка сохраняет fallback к активной таблице.
+- [x] Для публикации нужны профили всех оценщиков методологии.
+- [x] Опубликованный пакет неизменяем и копируется в снимок сессии.
 
-## Context
+## Проверка, откат и передача
 
-- Relevant entry points: prompt resolver, competency agent material loader,
-  assessment configuration publication.
-- Architecture: ADR-001 requires running sessions to use only their snapshot.
-- Existing behavior: missing evaluator snapshot configuration silently reads the
-  mutable active prompt tables.
-
-## Constraints and risks
-
-- Compatibility: legacy calls that genuinely have no snapshot retain fallback.
-- Data: no migration; configuration publication fails if active evaluator profiles
-  are incomplete.
-- Security: errors contain component codes only, never prompt or evidence text.
-- Operations: already-created incomplete snapshots fail explicitly rather than
-  changing behavior retrospectively.
-
-## Acceptance criteria
-
-- [x] Supplied snapshot never triggers evaluator prompt-table reads.
-- [x] Missing snapshotted evaluator configuration raises an explicit error.
-- [x] No-snapshot legacy facade retains active-table fallback.
-- [x] Configuration publication requires a prompt profile for every methodology
-      evaluator.
-- [x] Published bundle remains immutable and is copied into session snapshot.
-
-## Verification plan
-
-- Unit: resolver/agent strictness and publication bundle validation.
-- Integration: authoring publication and frozen snapshot workflow in isolated DB.
-- HTTP: existing authoring boundary; no route shape changes.
-- Manual: deferred to baseline acceptance.
-
-## Rollback
-
-Restore mutable fallback and remove publish-time completeness validation. No schema
-or stored-data rollback is required.
-
-## Agent handoff
-
-- Decisions made: strictness applies whenever a snapshot object is supplied.
-- Files changed: prompt resolver, competency material loader, configuration
-  publication validation, unit/integration fixtures and tests, and this brief.
-- Checks completed: 95 backend tests, 11 isolated PostgreSQL integration tests,
-  Python compilation, JS lint, web build, and diff whitespace validation.
-- Known gaps: interviewer and case-generation fallbacks remain separate work.
-- Next safe step: versioned Markdown agent definitions.
+Покрыты строгость resolver/агента, проверка пакета и процесс публикации в
+изолированной базе. Откат возвращает изменяемый fallback и убирает проверку
+полноты без отката данных. Пройдено 95 backend- и 11 интеграционных тестов,
+компиляция Python, JS lint, web build и проверка diff. Правила интервьюера и
+генератора кейсов остаются отдельной задачей. Следующий шаг — версионируемые
+Markdown-определения агентов.

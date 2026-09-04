@@ -1,35 +1,35 @@
-# EVC task brief: test SSH host verification
+# Краткое описание задачи EVC: проверка SSH-узла test-среды
 
-## Outcome
+## Результат
 
 GitHub Actions `deploy-test` устанавливает SSH-соединение с test-сервером,
 проверяя его публичный ED25519 fingerprint без многострочного known-hosts secret.
 
-## Scope
+## Область
 
 - Included: настройка SSH в test deployment workflow и документация secrets.
 - Excluded: код приложения, БД, pilot, deploy-скрипт и ключ авторизации.
 
-## Constraints and risks
+## Ограничения и риски
 
 - `StrictHostKeyChecking` остаётся включённым.
 - Приватный ключ не выводится и остаётся GitHub secret.
 - Изменение fingerprint сервера должно останавливать деплой.
 
-## Acceptance criteria
+## Критерии приёмки
 
 - Workflow не читает `TEST_SSH_KNOWN_HOSTS`.
 - Приватный ключ проверяется до SSH-подключения.
 - Полученный ED25519 host key совпадает с зафиксированным fingerprint.
 - При несовпадении fingerprint deployment завершается ошибкой.
 
-## Verification plan
+## План проверки
 
 - Разбор workflow как YAML.
 - Shell-проверка команд fingerprint на текущем сервере.
 - Стандартные проверки репозитория перед PR.
 - Финальная проверка: GitHub Actions `deploy-test` после merge.
 
-## Rollback
+## Откат
 
-Revert коммита возвращает прежнюю передачу `TEST_SSH_KNOWN_HOSTS`.
+Отмена коммита возвращает прежнюю передачу `TEST_SSH_KNOWN_HOSTS`.

@@ -1,4 +1,4 @@
-# Assessment runtime
+# Runtime платформы оценки
 
 ## Основные связи
 
@@ -26,7 +26,7 @@ draft -> ready_for_review -> published -> retired
 
 Редактируется только `draft`. Published-версия никогда не меняет definition; для изменения она клонируется в следующий draft.
 
-## Authoring workflow
+## Процесс управления версиями
 
 Новая сущность создаётся через `POST /users/admin/assessment-definitions/{entity_type}` и получает собственный `code` и draft-версию 1. Существующая сущность получает следующую версию через clone endpoint.
 

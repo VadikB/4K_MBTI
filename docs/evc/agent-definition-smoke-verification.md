@@ -1,44 +1,41 @@
-# EVC task brief: agent-definition scheme smoke verification
+# Краткое описание задачи EVC: smoke-проверка схемы определения агента
 
-## Outcome
+## Результат
 
-An isolated PostgreSQL smoke test proves that an explicitly versioned agent
-definition is published, frozen into a configuration snapshot, resolved by the
-input contract, and routed to the expected evaluator implementation.
+Изолированный smoke-тест PostgreSQL доказывает, что явно версионированное
+определение агента публикуется, фиксируется в снимке конфигурации, разрешается
+входным контрактом и направляется ожидаемой реализации оценщика.
 
-## Scope
+## Область
 
-- Included: authoring lifecycle, explicit methodology reference, configuration
-  publication, snapshot freeze, checksum validation and executor routing.
-- Excluded: real LLM calls, production data, new methodology content, default
-  production configuration changes and UI testing.
+- Включено: жизненный цикл управления, явная ссылка методологии, публикация
+  конфигурации, фиксация снимка, проверка контрольной суммы и маршрутизация исполнителя.
+- Не входит: реальные LLM-вызовы, production-данные, новое содержимое методологии,
+  изменение production-конфигурации по умолчанию и проверка UI.
 
-## Constraints and risks
+## Ограничения и риски
 
-- Only a database whose name contains `test` or `pytest` may be used.
-- The smoke definition uses the current `legacy_adapter`; its Markdown contains a
-  unique marker so the resolved version can be proven without changing scoring.
+- Разрешена только база, имя которой содержит `test` или `pytest`.
+- Smoke-определение использует текущий `legacy_adapter`; его Markdown содержит
+  уникальный маркер версии, не меняющий scoring.
 
-## Acceptance criteria
+## Критерии приёмки
 
-- [x] Agent v2 passes draft/review/publish lifecycle.
-- [x] A draft methodology explicitly selects agent v2.
-- [x] Published configuration freezes v2 and its checksum.
-- [x] Contract builder returns the unique v2 Markdown marker.
-- [x] Executor routes the input to `evaluation.communication` v1.
-- [x] No real LLM call is made.
+- [x] Агент v2 проходит цикл draft/review/publish.
+- [x] Черновая методология явно выбирает агента v2.
+- [x] Опубликованная конфигурация фиксирует v2 и его контрольную сумму.
+- [x] Построитель контракта возвращает уникальный Markdown-маркер v2.
+- [x] Исполнитель направляет вход в `evaluation.communication` v1.
+- [x] Реальный LLM-вызов не выполняется.
 
-## Result
+## Результат проверки
 
-- Dedicated smoke test: 1 passed.
-- Full isolated PostgreSQL integration suite: 13 passed.
-- Production/default database and real LLM were not used.
+- Выделенный smoke-тест: 1 passed.
+- Полный изолированный интеграционный набор PostgreSQL: 13 passed.
+- Production/default-база и реальный LLM не использовались.
 
-## Verification plan
+## План проверки и откат
 
-- Integration: isolated PostgreSQL authoring-to-execution smoke test.
-- Regression: standard backend, HTTP and integration gates.
-
-## Rollback
-
-The change adds only a test and documentation; removing them has no data impact.
+Интеграционная проверка охватывает путь PostgreSQL от управления определением до
+исполнения; регрессия — стандартные backend-, HTTP- и интеграционные ворота.
+Изменение добавляет только тест и документацию, поэтому их удаление не влияет на данные.

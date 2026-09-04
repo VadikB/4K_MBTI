@@ -1,65 +1,33 @@
-# EVC task brief: universal evaluator shadow comparison
+# Краткое описание задачи EVC: shadow-сравнение универсального оценщика
 
-## Outcome
+## Результат и область
 
-An explicitly configured frozen universal agent may run after the official legacy
-evaluator; its sanitized metrics are stored separately for comparison and never
-change the official assessment, report or analysis completion.
+Явно настроенный зафиксированный universal-агент может исполняться после
+официального legacy-оценщика; очищенные метрики сохраняются отдельно и не меняют
+официальную оценку, отчёт или завершение анализа. Включены контракт
+`shadow_evaluation`, зафиксированное определение, выключенный kill switch,
+идемпотентное хранение уровней, red-flag/evidence counts и ссылок на кейсы,
+неблокирующая ошибка и тесты. Не входят production-включение, sampling, UI,
+сохранение сырого rationale/evidence, автопродвижение и новая методология.
 
-## Scope
+## Ограничения и критерии приёмки
 
-- Included: methodology `shadow_evaluation` contract; frozen shadow definition;
-  disabled-by-default kill switch; additive idempotent storage; sanitized level,
-  red-flag/evidence counts and case references; non-blocking failure handling;
-  unit and isolated PostgreSQL integration tests.
-- Excluded: production enablement, sampling, UI, raw shadow rationale/evidence
-  persistence, automatic promotion, report changes and new methodology content.
+- Official-оценщик обязан быть `legacy_adapter`, shadow — `universal_llm`.
+- Таблица аддитивна и не хранит сырой текст или LLM-ответ.
+- Тесты используют fake gateway; оба environment switches по умолчанию false.
+- [x] Версия и checksum shadow-определения фиксируются в пакете промптов.
+- [x] Shadow выключен, пока не включены оба kill switches.
+- [x] Official-результат сохраняется до shadow-вызова.
+- [x] Успех сохраняет только очищенные идемпотентные метрики.
+- [x] Ошибка наблюдаема, но не ломает official-задание.
+- [x] Пути без shadow и legacy не меняются.
 
-## Constraints and risks
+## Проверка, откат и передача
 
-- Compatibility: official evaluator must remain `legacy_adapter`; shadow must be
-  `universal_llm`; configurations without shadow are unchanged.
-- Data: additive table only; no raw user text or LLM output is stored.
-- External LLM: default/integration tests use fake gateway; no paid batch run.
-- Operations: both universal and shadow environment switches default to false.
-
-## Acceptance criteria
-
-- [x] Shadow definition/version/checksum is frozen in the prompt bundle.
-- [x] Shadow is disabled unless both kill switches are true.
-- [x] Official output is persisted before shadow execution.
-- [x] Shadow success stores only sanitized, idempotent comparison metrics.
-- [x] Shadow failure is observable but cannot fail the official analysis job.
-- [x] No-shadow and legacy execution remain unchanged.
-
-## Verification plan
-
-- Unit: contract validation, metric comparison and non-blocking queue behavior.
-- Integration: schema/upsert and queue completion on shadow success/failure.
-- Regression: full backend, HTTP, isolated DB, lint/build and diff gates.
-
-## Rollback
-
-Set `ASSESSMENT_UNIVERSAL_LLM_SHADOW_ENABLED=false`. The additive table may remain
-unused; no destructive rollback is required.
-
-## Agent handoff
-
-- Decisions made: explicit frozen shadow reference; official legacy only; shadow
-  universal only; separate code/version; no sampling in v1; no raw text storage.
-- Schema: additive `assessment_shadow_evaluation_runs`, idempotent on session,
-  competency and shadow agent version.
-- Configuration: both universal switches default false; local `.env` synchronized
-  without reading or changing credentials.
-- Security: stored summaries exclude rationale, excerpts, prompts and raw output.
-- Checks completed: 116 default backend tests, 3 HTTP tests, 18 isolated
-  PostgreSQL integration tests, JS lint, web build, Python compile and diff check.
-- Unverified: full `ensure_core_schema` was not run on a fresh production-shaped
-  clone; the additive DDL and repository lifecycle are covered by isolated schema
-  integration tests.
-- Deployment: apply normal additive core-schema startup, keep shadow false.
-- Rollback: disable `ASSESSMENT_UNIVERSAL_LLM_SHADOW_ENABLED`; table may remain.
-- Follow-up completed: admin-only aggregate comparison API and capped controlled
-  batch API with dry-run and explicit paid-call confirmation are implemented.
-- Operational dry-run found no eligible historical sessions because their immutable
-  execution snapshots predate `shadow_evaluation`; those snapshots were not modified.
+Покрыты контракт, сравнение метрик, неблокирующая очередь, схема/upsert и
+завершение при успехе/сбое. Пройдено 116 backend-, 3 HTTP- и 18 интеграционных
+тестов, JS lint, web build, компиляция и diff. Откат — установить
+`ASSESSMENT_UNIVERSAL_LLM_SHADOW_ENABLED=false`; таблица остаётся. Полный
+`ensure_core_schema` на свежем production-подобном клоне не проверен, но DDL и
+репозиторий покрыты изолированными тестами. Реализованы admin aggregate API и
+ограниченный batch API. Исторические снимки без `shadow_evaluation` не изменялись.
