@@ -101,13 +101,24 @@ jobs:
       - name: Configure SSH
         env:
           TEST_SSH_PRIVATE_KEY: ${{ secrets.TEST_SSH_PRIVATE_KEY }}
-          TEST_SSH_KNOWN_HOSTS: ${{ secrets.TEST_SSH_KNOWN_HOSTS }}
+          TEST_SSH_HOST: ${{ secrets.TEST_SSH_HOST }}
         run: |
+          set -eu
+          test -n "$TEST_SSH_PRIVATE_KEY"
+          test -n "$TEST_SSH_HOST"
           install -m 700 -d ~/.ssh
           printf '%s\n' "$TEST_SSH_PRIVATE_KEY" > ~/.ssh/test_deploy_key
           chmod 600 ~/.ssh/test_deploy_key
-          printf '%s\n' "$TEST_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh-keygen -y -f ~/.ssh/test_deploy_key >/dev/null
+
+          expected_fingerprint="SHA256:wtV3lu90RnXeqjLcbvRjCfdoUdaw4jmzGnnwzr4LRSs"
+          ssh-keyscan -t ed25519 "$TEST_SSH_HOST" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
+          actual_fingerprint="$(ssh-keygen -lf ~/.ssh/known_hosts -E sha256 | awk '{print $2}')"
+          if [ "$actual_fingerprint" != "$expected_fingerprint" ]; then
+            echo "SSH host key fingerprint mismatch" >&2
+            exit 1
+          fi
 
       - name: Deploy main to test
         env:
@@ -118,5 +129,6 @@ jobs:
             -i ~/.ssh/test_deploy_key \
             -o BatchMode=yes \
             -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
             "$TEST_SSH_USER@$TEST_SSH_HOST" \
-            sh /home/user1/projects/Agent4K-Test/scripts/deploy_test_remote.sh
+            sh /home/user1/projects/4K-Mbti-Test/scripts/deploy_test_remote.sh
