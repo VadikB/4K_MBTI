@@ -101,7 +101,11 @@ GitHub Environment `test` должен содержать:
 - `TEST_SSH_HOST` — адрес сервера;
 - `TEST_SSH_USER` — пользователь SSH;
 - `TEST_SSH_PRIVATE_KEY` — закрытый ключ CI;
-- `TEST_SSH_KNOWN_HOSTS` — проверенная строка host key сервера.
+
+Публичный ED25519 fingerprint сервера зафиксирован в workflow. Перед SSH
+подключением runner получает host key, сверяет его fingerprint и оставляет
+`StrictHostKeyChecking` включённым. Многострочный secret `TEST_SSH_KNOWN_HOSTS`
+не используется.
 
 После успешных frontend и backend jobs workflow подключается к серверу и
 запускает `scripts/deploy_test_remote.sh`. Скрипт обновляет только test-каталог,
