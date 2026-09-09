@@ -465,7 +465,7 @@ def test_expired_analysis_lease_is_recovered(analysis_database, monkeypatch) -> 
             """
         )
 
-    queue._last_maintenance_monotonic = 0
+    queue._last_maintenance_monotonic = float("-inf")
     queue._run_maintenance_if_due()
     replacement_claim = queue._claim_next("replacement-analysis-worker")
 
