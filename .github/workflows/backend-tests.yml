@@ -81,7 +81,20 @@ jobs:
         run: python -m pytest -m e2e tests/e2e
 
       - name: Integration tests
-        run: python -m pytest --run-integration -m integration
+        shell: bash
+        run: |
+          set +e
+          python -m pytest --run-integration -m integration > /tmp/integration-tests.log 2>&1
+          status=$?
+          cat /tmp/integration-tests.log
+          if [ "$status" -ne 0 ]; then
+            details="$(tail -n 80 /tmp/integration-tests.log)"
+            details="${details//'%'/'%25'}"
+            details="${details//$'\r'/'%0D'}"
+            details="${details//$'\n'/'%0A'}"
+            echo "::error title=Integration tests failed::$details"
+            exit "$status"
+          fi
 
   deploy-test:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
