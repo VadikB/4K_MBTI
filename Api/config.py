@@ -85,7 +85,7 @@ class Settings:
         in {"1", "true", "yes", "on"}
     )
     assessment_external_answer_transfer_enabled: bool = (
-        os.getenv("ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED", "true").strip().lower()
+        os.getenv("ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED", "false").strip().lower()
         in {"1", "true", "yes", "on"}
     )
     case_set_reuse_mode: str = os.getenv("CASE_SET_REUSE_MODE", "off").strip().lower() or "off"
