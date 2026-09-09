@@ -69,7 +69,9 @@ def run_apply(*, backfill_users: bool, recompute_case_quality: bool) -> None:
 
     if recompute_case_quality:
         print("Recomputing case quality checks...")
-        recompute_case_quality_checks()
+        with get_connection() as connection:
+            recompute_case_quality_checks(connection)
+            connection.commit()
 
     summary = _load_summary()
     summary.backfilled_users = backfilled_users

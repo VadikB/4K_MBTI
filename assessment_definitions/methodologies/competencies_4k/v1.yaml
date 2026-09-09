@@ -4,6 +4,27 @@ code: competencies_4k
 version: 1
 name: Оценка компетенций 4K
 description: Legacy-фиксация текущей методологии оценки четырех компетенций.
+methodology_version: "1.0"
+roles:
+  - code: linear_employee
+    name: Линейный сотрудник
+    description: Выполняет конкретные задачи по правилам, инструкциям или стандартным процессам.
+  - code: manager
+    name: Менеджер
+    description: Координирует людей, задачи, сроки и приоритеты для достижения результата.
+  - code: leader
+    name: Лидер
+    description: Задаёт направление, ведёт изменения и принимает решения с долгосрочными последствиями.
+levels:
+  - code: L1
+    name: Базовый
+    order: 1
+  - code: L2
+    name: Уверенный
+    order: 2
+  - code: L3
+    name: Продвинутый
+    order: 3
 competencies:
   - code: communication
     evaluator: evaluation.communication

@@ -1,7 +1,10 @@
 import pytest
 
 from Api.assessment_configuration import (
+    LEGACY_LEVELS,
     LEGACY_METHODOLOGY_DEFINITION,
+    LEGACY_ROLES,
+    complete_legacy_methodology_definition,
     LEGACY_SCENARIO_DEFINITION,
     definition_checksum,
 )
@@ -22,6 +25,24 @@ def test_legacy_methodology_has_exactly_four_evaluators() -> None:
         "evaluation.creativity",
         "evaluation.critical_thinking",
     ]
+
+
+@pytest.mark.unit
+def test_legacy_methodology_freezes_roles_and_levels() -> None:
+    assert [item["code"] for item in LEGACY_ROLES] == ["linear_employee", "manager", "leader"]
+    assert [item["code"] for item in LEGACY_LEVELS] == ["L1", "L2", "L3"]
+    assert LEGACY_METHODOLOGY_DEFINITION["methodology_version"] == "1.0"
+
+
+@pytest.mark.unit
+def test_pre_baseline_legacy_definition_is_completed_without_mutating_source() -> None:
+    source = {"code": "competencies_4k", "competencies": [{"code": "communication"}]}
+
+    completed = complete_legacy_methodology_definition(source)
+
+    assert "roles" not in source
+    assert [item["code"] for item in completed["roles"]] == ["linear_employee", "manager", "leader"]
+    assert [item["code"] for item in completed["levels"]] == ["L1", "L2", "L3"]
 
 
 @pytest.mark.unit

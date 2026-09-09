@@ -33,9 +33,18 @@ def authoring_connection(test_database_url):
             "assessment_scenarios",
             "assessment_methodology_versions",
             "assessment_methodologies",
+            "roles",
         ):
             connection.execute(f"DROP TABLE IF EXISTS {table} CASCADE")
         connection.execute("CREATE TABLE assessment_methodologies (id BIGSERIAL PRIMARY KEY, code TEXT UNIQUE NOT NULL, name TEXT NOT NULL, description TEXT)")
+        connection.execute(
+            """
+            CREATE TABLE roles (
+                id BIGSERIAL PRIMARY KEY, code TEXT UNIQUE NOT NULL, name TEXT NOT NULL,
+                short_definition TEXT, mission TEXT, personalization_variables TEXT
+            )
+            """
+        )
         connection.execute("CREATE TABLE assessment_scenarios (id BIGSERIAL PRIMARY KEY, code TEXT UNIQUE NOT NULL, name TEXT NOT NULL, description TEXT)")
         connection.execute("CREATE TABLE assessment_agent_definitions (id BIGSERIAL PRIMARY KEY, code TEXT UNIQUE NOT NULL, name TEXT NOT NULL, description TEXT)")
         connection.execute(
@@ -152,6 +161,20 @@ def authoring_connection(test_database_url):
                 (int(parent["id"]), canonical_json(definition), definition_checksum(definition)),
             )
         yield connection
+
+
+@pytest.mark.integration
+def test_legacy_configuration_materializes_roles_and_freezes_dimensions(authoring_connection) -> None:
+    connection = authoring_connection
+
+    ensure_legacy_assessment_configuration(connection)
+    configuration = load_default_execution_configuration(connection)
+
+    role_rows = connection.execute("SELECT code FROM roles ORDER BY id").fetchall()
+    assert [row["code"] for row in role_rows] == ["linear_employee", "manager", "leader"]
+    definition = configuration["snapshot"]["methodology"]["definition"]
+    assert [item["code"] for item in definition["roles"]] == ["linear_employee", "manager", "leader"]
+    assert [item["code"] for item in definition["levels"]] == ["L1", "L2", "L3"]
 
 
 @pytest.mark.integration

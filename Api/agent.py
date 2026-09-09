@@ -8,6 +8,7 @@ from threading import BoundedSemaphore, Lock
 from uuid import uuid4
 
 from Api.assessment_service import assessment_service
+from Api.assessment_configuration import load_default_methodology_roles
 from Api.config import settings
 from Api.database import get_connection
 from Api.deepseek_client import deepseek_client
@@ -556,7 +557,18 @@ class InterviewerAgent:
         return [dict(row) for row in rows]
 
     def _load_selectable_roles(self) -> list[dict]:
-        return [role for role in self._load_roles() if role.get("code") in {"linear_employee", "manager", "leader"}]
+        with get_connection() as connection:
+            methodology_roles = load_default_methodology_roles(connection)
+        roles_by_code = {str(role.get("code")): role for role in self._load_roles()}
+        selectable: list[dict] = []
+        for methodology_role in methodology_roles:
+            role = roles_by_code.get(str(methodology_role.get("code") or ""))
+            if role is None:
+                continue
+            merged = dict(role)
+            merged["methodology_description"] = str(methodology_role.get("description") or "").strip()
+            selectable.append(merged)
+        return selectable
 
     def _get_role_description(self, role_code: str | None) -> str:
         code = str(role_code or "").strip()
@@ -597,7 +609,7 @@ class InterviewerAgent:
                 "id": int(role["id"]),
                 "code": str(role["code"]),
                 "name": str(role["name"]),
-                "description": self._get_role_description(role["code"]),
+                "description": str(role.get("methodology_description") or self._get_role_description(role["code"])),
             }
             for role in self._load_selectable_roles()
         ]

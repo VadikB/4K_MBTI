@@ -12,10 +12,37 @@ LEGACY_METHODOLOGY_CODE = "competencies_4k"
 LEGACY_SCENARIO_CODE = "standard_4k_interview"
 LEGACY_CONFIGURATION_CODE = "4k_standard_v1"
 
+LEGACY_ROLES: list[dict[str, Any]] = [
+    {
+        "code": "linear_employee",
+        "name": "Линейный сотрудник",
+        "description": "Выполняет конкретные задачи по правилам, инструкциям или стандартным процессам.",
+    },
+    {
+        "code": "manager",
+        "name": "Менеджер",
+        "description": "Координирует людей, задачи, сроки и приоритеты для достижения результата.",
+    },
+    {
+        "code": "leader",
+        "name": "Лидер",
+        "description": "Задаёт направление, ведёт изменения и принимает решения с долгосрочными последствиями.",
+    },
+]
+
+LEGACY_LEVELS: list[dict[str, Any]] = [
+    {"code": "L1", "name": "Базовый", "order": 1},
+    {"code": "L2", "name": "Уверенный", "order": 2},
+    {"code": "L3", "name": "Продвинутый", "order": 3},
+]
+
 LEGACY_METHODOLOGY_DEFINITION: dict[str, Any] = {
     "schema_version": 1,
     "code": LEGACY_METHODOLOGY_CODE,
     "version": 1,
+    "methodology_version": "1.0",
+    "roles": LEGACY_ROLES,
+    "levels": LEGACY_LEVELS,
     "competencies": [
         {"code": "communication", "evaluator": "evaluation.communication", "evaluator_version": 1},
         {"code": "teamwork", "evaluator": "evaluation.teamwork", "evaluator_version": 1},
@@ -24,6 +51,59 @@ LEGACY_METHODOLOGY_DEFINITION: dict[str, Any] = {
     ],
     "aggregation": {"component": "evaluation.aggregate", "component_version": 1},
 }
+
+
+def complete_legacy_methodology_definition(definition: dict[str, Any]) -> dict[str, Any]:
+    """Add the frozen 1.0 contract to snapshots created from pre-baseline databases."""
+    completed = dict(definition)
+    completed.setdefault("methodology_version", "1.0")
+    completed.setdefault("roles", LEGACY_ROLES)
+    completed.setdefault("levels", LEGACY_LEVELS)
+    return completed
+
+
+def ensure_methodology_role_projection(connection, definition: dict[str, Any]) -> None:
+    """Materialize versioned roles for legacy tables that still reference numeric role IDs."""
+    for role in definition.get("roles") or []:
+        connection.execute(
+            """
+            INSERT INTO roles (code, name, short_definition, mission, personalization_variables)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (code) DO NOTHING
+            """,
+            (
+                role["code"],
+                role["name"],
+                role["description"],
+                role["description"],
+                "position, duties, company_industry",
+            ),
+        )
+
+
+def load_default_methodology_roles(connection) -> list[dict[str, Any]]:
+    row = connection.execute(
+        """
+        SELECT methodology.code, methodology_version.version, methodology_version.definition_json
+        FROM assessment_configurations configuration
+        JOIN assessment_methodology_versions methodology_version
+          ON methodology_version.id = configuration.methodology_version_id
+        JOIN assessment_methodologies methodology
+          ON methodology.id = methodology_version.methodology_id
+        WHERE configuration.is_default = TRUE
+          AND configuration.status = 'published'
+          AND methodology_version.status = 'published'
+        ORDER BY configuration.id ASC
+        LIMIT 1
+        """
+    ).fetchone()
+    if row is None:
+        return []
+    definition = dict(row["definition_json"] or {})
+    if str(row["code"]) == LEGACY_METHODOLOGY_CODE and int(row["version"]) == 1:
+        definition = complete_legacy_methodology_definition(definition)
+    roles = definition.get("roles") or []
+    return [dict(role) for role in roles if isinstance(role, dict)]
 
 LEGACY_SCENARIO_DEFINITION: dict[str, Any] = {
     "schema_version": 1,
@@ -51,6 +131,7 @@ def definition_checksum(payload: dict[str, Any]) -> str:
 
 
 def ensure_legacy_assessment_configuration(connection) -> None:
+    ensure_methodology_role_projection(connection, LEGACY_METHODOLOGY_DEFINITION)
     methodology = connection.execute(
         """
         INSERT INTO assessment_methodologies (code, name, description)
@@ -185,6 +266,10 @@ def load_default_execution_configuration(connection) -> dict[str, Any]:
                 ),
             )
 
+    methodology_definition = dict(row["methodology_definition"] or {})
+    if str(row["methodology_code"]) == LEGACY_METHODOLOGY_CODE and int(row["methodology_version"]) == 1:
+        methodology_definition = complete_legacy_methodology_definition(methodology_definition)
+
     snapshot = {
         "schema_version": 1,
         "configuration": {"id": int(row["configuration_id"]), "code": str(row["configuration_code"])},
@@ -192,7 +277,7 @@ def load_default_execution_configuration(connection) -> dict[str, Any]:
             "id": int(row["methodology_version_id"]),
             "code": str(row["methodology_code"]),
             "version": int(row["methodology_version"]),
-            "definition": row["methodology_definition"],
+            "definition": methodology_definition,
         },
         "scenario": {
             "id": int(row["scenario_version_id"]),

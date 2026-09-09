@@ -488,6 +488,8 @@ class AssessmentAuthoringService:
         competencies = definition.get("competencies")
         if not isinstance(competencies, list) or not competencies:
             raise ValueError("Assessment methodology must define competencies.")
+        if int(definition.get("schema_version") or 1) >= 2 or "roles" in definition or "levels" in definition:
+            self._validate_methodology_dimensions(definition)
         seen: set[str] = set()
         for competency in competencies:
             if not isinstance(competency, dict):
@@ -530,6 +532,25 @@ class AssessmentAuthoringService:
                 }:
                     raise ValueError("Shadow evaluation must define skill_codes.")
             seen.add(code)
+
+    def _validate_methodology_dimensions(self, definition: dict[str, Any]) -> None:
+        for field in ("roles", "levels"):
+            items = definition.get(field)
+            if not isinstance(items, list) or not items:
+                raise ValueError(f"Assessment methodology must define {field}.")
+            seen: set[str] = set()
+            for item in items:
+                if not isinstance(item, dict):
+                    raise ValueError(f"Every methodology {field} item must be an object.")
+                code = str(item.get("code") or "").strip()
+                name = str(item.get("name") or "").strip()
+                if not code or not name or code in seen:
+                    raise ValueError(f"Methodology {field} codes must be present and unique; names are required.")
+                if field == "roles" and not str(item.get("description") or "").strip():
+                    raise ValueError("Every methodology role must define description.")
+                if field == "levels" and int(item.get("order") or 0) < 1:
+                    raise ValueError("Every methodology level must define a positive order.")
+                seen.add(code)
 
     def _validate_agent_definition(self, definition: dict[str, Any]) -> None:
         competency_code = str(definition.get("competency_code") or "").strip()

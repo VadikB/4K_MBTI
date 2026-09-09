@@ -27,6 +27,20 @@ def test_methodology_validation_rejects_unknown_evaluator() -> None:
 
 
 @pytest.mark.unit
+def test_methodology_dimensions_reject_duplicate_role_codes() -> None:
+    definition = {
+        **LEGACY_METHODOLOGY_DEFINITION,
+        "roles": [
+            {"code": "manager", "name": "Менеджер", "description": "Описание"},
+            {"code": "manager", "name": "Другая роль", "description": "Описание"},
+        ],
+    }
+
+    with pytest.raises(ValueError, match="roles codes must be present and unique"):
+        assessment_authoring_service.validate_definition(entity_type="methodology", definition=definition)
+
+
+@pytest.mark.unit
 def test_scenario_validation_accepts_legacy_scenario() -> None:
     assessment_authoring_service.validate_definition(
         entity_type="scenario",
