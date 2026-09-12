@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import Any, Literal, Protocol
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from Api.assessment_configuration import definition_checksum
 
 
 EVALUATOR_CONTRACT_VERSION = 1
+INDICATOR_EVALUATOR_CONTRACT_VERSION = 2
 
 
 def validate_agent_runtime(runtime: dict[str, Any]) -> dict[str, Any]:
@@ -249,6 +250,182 @@ class CompetencyEvaluationOutput(BaseModel):
     status: Literal["evaluated", "no_assessments"]
     assessments: list[SkillEvaluationOutput]
     case_analyses: list[CaseSkillAnalysisOutput]
+
+
+class IndicatorLevelDescriptorInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    descriptor: str = Field(min_length=1)
+
+
+class IndicatorRedFlagDefinitionInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    code: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+
+
+class IndicatorEvidenceRuleInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    related_response_block_code: str
+    evidence_description: str = Field(min_length=1)
+    expected_signal: str
+
+
+class IndicatorCaseEvidenceInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    session_case_id: int = Field(gt=0)
+    case_registry_id: int | None = None
+    user_text: str
+    expected_artifact_code: str
+    expected_artifact: str
+    answer_structure_hint: str
+    constraints_text: str
+    required_response_blocks: list[RequiredResponseBlockInput]
+    methodical_red_flags: list[MethodicalRedFlagInput]
+    indicator_evidence: list[IndicatorEvidenceRuleInput]
+    is_refusal_case: bool
+
+
+class IndicatorEvaluationMaterialInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    indicator_code: str = Field(pattern=r"^K[1-4]\.I\d{2}$")
+    indicator_name: str = Field(min_length=1)
+    function: str = Field(min_length=1)
+    product: str = Field(min_length=1)
+    levels: dict[Literal["L0", "L1", "L2", "L3"], IndicatorLevelDescriptorInput]
+    boundary: str = Field(min_length=1)
+    evidence_pattern: str = Field(min_length=1)
+    red_flags: list[IndicatorRedFlagDefinitionInput]
+    cases: list[IndicatorCaseEvidenceInput]
+
+    @model_validator(mode="after")
+    def require_all_levels(self) -> "IndicatorEvaluationMaterialInput":
+        if set(self.levels) != {"L0", "L1", "L2", "L3"}:
+            raise ValueError("Indicator material must define exactly L0-L3.")
+        return self
+
+
+class ComponentEvaluationMaterialInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    component_code: str = Field(pattern=r"^K[1-4]\.C\d{2}$")
+    component_name: str = Field(min_length=1)
+    indicators: list[IndicatorEvaluationMaterialInput] = Field(min_length=1)
+
+
+class SkillIndicatorEvaluationMaterialInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    skill_code: str = Field(pattern=r"^K[1-4]\.\d+$")
+    skill_name: str = Field(min_length=1)
+    components: list[ComponentEvaluationMaterialInput] = Field(min_length=1)
+
+
+class CompetencyIndicatorEvaluationInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    contract_version: Literal[2] = INDICATOR_EVALUATOR_CONTRACT_VERSION
+    session_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
+    methodology_code: str = Field(min_length=1)
+    methodology_version_id: int = Field(gt=0)
+    methodology_version: str = Field(min_length=1)
+    competency_code: str = Field(pattern=r"^K[1-4]$")
+    component_code: str = Field(pattern=r"^evaluation\.[a-z0-9_]+$")
+    component_version: int = Field(gt=0)
+    agent_definition: AgentDefinitionInput
+    skills: list[SkillIndicatorEvaluationMaterialInput] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_hierarchy(self) -> "CompetencyIndicatorEvaluationInput":
+        runtime = validate_agent_runtime(self.agent_definition.runtime)
+        if runtime["mode"] != "universal_llm":
+            raise ValueError("Indicator evaluator requires universal_llm runtime.")
+        if (self.agent_definition.input_contract.code, self.agent_definition.input_contract.version) != (
+            "competency_evaluation_input", INDICATOR_EVALUATOR_CONTRACT_VERSION,
+        ):
+            raise ValueError("Indicator evaluator input contract must use version 2.")
+        if (self.agent_definition.output_contract.code, self.agent_definition.output_contract.version) != (
+            "competency_evaluation_output", INDICATOR_EVALUATOR_CONTRACT_VERSION,
+        ):
+            raise ValueError("Indicator evaluator output contract must use version 2.")
+        if (self.agent_definition.executor.code, self.agent_definition.executor.version) != (
+            self.component_code, self.component_version,
+        ):
+            raise ValueError("Indicator evaluator executor does not match input component.")
+        seen: set[str] = set()
+        for skill in self.skills:
+            if not skill.skill_code.startswith(self.competency_code + "."):
+                raise ValueError("Skill does not belong to input competency.")
+            if skill.skill_code in seen:
+                raise ValueError("Duplicate methodology identifier in evaluator input.")
+            seen.add(skill.skill_code)
+            for component in skill.components:
+                if not component.component_code.startswith(self.competency_code + ".C"):
+                    raise ValueError("Component does not belong to input competency.")
+                if component.component_code in seen:
+                    raise ValueError("Duplicate methodology identifier in evaluator input.")
+                seen.add(component.component_code)
+                for indicator in component.indicators:
+                    if not indicator.indicator_code.startswith(self.competency_code + ".I"):
+                        raise ValueError("Indicator does not belong to input competency.")
+                    if indicator.indicator_code in seen:
+                        raise ValueError("Duplicate methodology identifier in evaluator input.")
+                    seen.add(indicator.indicator_code)
+                    flag_codes = [item.code for item in indicator.red_flags]
+                    if len(flag_codes) != len(set(flag_codes)):
+                        raise ValueError("Duplicate red flag code in evaluator input.")
+        return self
+
+
+class IndicatorEvidenceOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    session_case_id: int = Field(gt=0)
+    observation: str = Field(min_length=1)
+    excerpt: str = Field(min_length=1)
+
+
+class IndicatorAssessmentOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    indicator_code: str = Field(pattern=r"^K[1-4]\.I\d{2}$")
+    evidence_state: Literal["observed", "insufficient_evidence", "not_assessed"]
+    level_code: Literal["L0", "L1", "L2", "L3"] | None = None
+    evidence: list[IndicatorEvidenceOutput]
+    red_flag_codes: list[str]
+    rationale: str = Field(min_length=1)
+    confidence: float | None = Field(default=None, ge=0, le=1)
+
+    @model_validator(mode="after")
+    def validate_evidence_state(self) -> "IndicatorAssessmentOutput":
+        if self.evidence_state == "observed":
+            if self.level_code is None or not self.evidence:
+                raise ValueError("Observed indicator requires level_code and evidence.")
+        elif self.level_code is not None or self.evidence:
+            raise ValueError("Unobserved indicator cannot have level_code or evidence.")
+        return self
+
+
+class CompetencyIndicatorEvaluationOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    contract_version: Literal[2] = INDICATOR_EVALUATOR_CONTRACT_VERSION
+    competency_code: str = Field(pattern=r"^K[1-4]$")
+    component_code: str = Field(pattern=r"^evaluation\.[a-z0-9_]+$")
+    component_version: int = Field(gt=0)
+    status: Literal["evaluated", "no_assessments"]
+    indicator_assessments: list[IndicatorAssessmentOutput]
+
+    @model_validator(mode="after")
+    def validate_status(self) -> "CompetencyIndicatorEvaluationOutput":
+        if (self.status == "evaluated") != bool(self.indicator_assessments):
+            raise ValueError("Evaluator output status does not match indicator assessments.")
+        return self
 
 
 class LegacyCompetencyAgent(Protocol):

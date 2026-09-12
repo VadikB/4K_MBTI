@@ -84,6 +84,10 @@ class Settings:
         os.getenv("ASSESSMENT_UNIVERSAL_LLM_SHADOW_ENABLED", "false").strip().lower()
         in {"1", "true", "yes", "on"}
     )
+    assessment_indicator_shadow_enabled: bool = (
+        os.getenv("ASSESSMENT_INDICATOR_SHADOW_ENABLED", "false").strip().lower()
+        in {"1", "true", "yes", "on"}
+    )
     assessment_external_answer_transfer_enabled: bool = (
         os.getenv("ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED", "false").strip().lower()
         in {"1", "true", "yes", "on"}

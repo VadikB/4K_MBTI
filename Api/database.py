@@ -3810,6 +3810,35 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS case_registry_indicators (
+                id BIGSERIAL PRIMARY KEY,
+                cases_registry_id INTEGER NOT NULL REFERENCES cases_registry(id) ON DELETE CASCADE,
+                methodology_version_id BIGINT NOT NULL REFERENCES assessment_methodology_versions(id),
+                indicator_code TEXT NOT NULL,
+                signal_priority TEXT NOT NULL DEFAULT 'supporting'
+                    CHECK (signal_priority IN ('leading', 'supporting')),
+                is_required BOOLEAN NOT NULL DEFAULT TRUE,
+                display_order INTEGER NOT NULL DEFAULT 1,
+                UNIQUE (cases_registry_id, methodology_version_id, indicator_code)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS session_case_indicators (
+                id BIGSERIAL PRIMARY KEY,
+                session_case_id INTEGER NOT NULL REFERENCES session_cases(id) ON DELETE CASCADE,
+                methodology_version_id BIGINT NOT NULL REFERENCES assessment_methodology_versions(id),
+                indicator_code TEXT NOT NULL,
+                signal_priority TEXT NOT NULL CHECK (signal_priority IN ('leading', 'supporting')),
+                is_required BOOLEAN NOT NULL,
+                display_order INTEGER NOT NULL,
+                UNIQUE (session_case_id, methodology_version_id, indicator_code)
+            )
+            """
+        )
+        connection.execute(
+            """
             CREATE TABLE IF NOT EXISTS case_texts (
                 id SERIAL PRIMARY KEY,
                 case_text_code TEXT NOT NULL UNIQUE,
@@ -3853,6 +3882,25 @@ def ensure_core_schema() -> None:
                 is_required BOOLEAN NOT NULL DEFAULT TRUE,
                 version INTEGER NOT NULL DEFAULT 1,
                 UNIQUE (case_type_passport_id, skill_id, related_response_block_code)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS case_type_indicator_evidence (
+                id BIGSERIAL PRIMARY KEY,
+                case_type_passport_id INTEGER NOT NULL REFERENCES case_type_passports(id) ON DELETE CASCADE,
+                methodology_version_id BIGINT NOT NULL REFERENCES assessment_methodology_versions(id),
+                indicator_code TEXT NOT NULL,
+                related_response_block_code TEXT,
+                evidence_description TEXT NOT NULL,
+                expected_signal TEXT,
+                is_required BOOLEAN NOT NULL DEFAULT TRUE,
+                display_order INTEGER NOT NULL DEFAULT 1,
+                UNIQUE (
+                    case_type_passport_id, methodology_version_id, indicator_code,
+                    related_response_block_code, display_order
+                )
             )
             """
         )
@@ -4241,6 +4289,61 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS session_indicator_assessments (
+                id BIGSERIAL PRIMARY KEY,
+                session_id INTEGER NOT NULL REFERENCES user_sessions(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                methodology_version_id BIGINT NOT NULL REFERENCES assessment_methodology_versions(id),
+                competency_code TEXT NOT NULL,
+                skill_code TEXT NOT NULL,
+                component_code TEXT NOT NULL,
+                indicator_code TEXT NOT NULL,
+                evidence_state TEXT NOT NULL CHECK (
+                    evidence_state IN ('observed', 'insufficient_evidence', 'not_assessed')
+                ),
+                assessed_level_code TEXT CHECK (assessed_level_code IN ('L0', 'L1', 'L2', 'L3')),
+                red_flag_codes JSONB NOT NULL DEFAULT '[]'::jsonb,
+                rationale TEXT NOT NULL,
+                confidence DOUBLE PRECISION CHECK (confidence >= 0 AND confidence <= 1),
+                source_session_case_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+                evaluated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (session_id, methodology_version_id, indicator_code),
+                CHECK (
+                    (evidence_state = 'observed' AND assessed_level_code IS NOT NULL)
+                    OR (evidence_state <> 'observed' AND assessed_level_code IS NULL)
+                )
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS session_case_indicator_evidence (
+                id BIGSERIAL PRIMARY KEY,
+                session_indicator_assessment_id BIGINT NOT NULL
+                    REFERENCES session_indicator_assessments(id) ON DELETE CASCADE,
+                session_case_id INTEGER NOT NULL REFERENCES session_cases(id) ON DELETE CASCADE,
+                observation TEXT NOT NULL,
+                evidence_excerpt TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (session_indicator_assessment_id, session_case_id, observation, evidence_excerpt)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_session_indicator_assessments_session
+            ON session_indicator_assessments(session_id)
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_session_case_indicator_evidence_case
+            ON session_case_indicator_evidence(session_case_id)
+            """
+        )
+        connection.execute(
+            """
             CREATE TABLE IF NOT EXISTS system_logs (
                 id BIGSERIAL PRIMARY KEY,
                 created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -4303,6 +4406,9 @@ def ensure_core_schema() -> None:
         connection.execute("CREATE INDEX IF NOT EXISTS idx_cases_registry_status ON cases_registry(status)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_case_registry_skills_case ON case_registry_skills(cases_registry_id)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_case_registry_skills_skill ON case_registry_skills(skill_id)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_case_registry_indicators_case ON case_registry_indicators(cases_registry_id)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_session_case_indicators_case ON session_case_indicators(session_case_id)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_case_type_indicator_evidence_passport ON case_type_indicator_evidence(case_type_passport_id)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_case_texts_registry ON case_texts(cases_registry_id)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_case_registry_roles_case ON case_registry_roles(cases_registry_id)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_case_registry_roles_role ON case_registry_roles(role_id)")

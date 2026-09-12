@@ -106,6 +106,7 @@ DEEPSEEK_MAX_CONCURRENCY=10
 DEEPSEEK_QUEUE_TIMEOUT_SECONDS=30
 ASSESSMENT_UNIVERSAL_LLM_ENABLED=false
 ASSESSMENT_UNIVERSAL_LLM_SHADOW_ENABLED=false
+ASSESSMENT_INDICATOR_SHADOW_ENABLED=false
 ASSESSMENT_PREPARATION_MAX_CONCURRENCY=2
 ASSESSMENT_PREPARATION_QUEUE_TIMEOUT_SECONDS=10
 ASSESSMENT_QUEUE_WORKER_THREADS=1
@@ -162,6 +163,9 @@ POSTMARK_SERVER_TOKEN=...
 `ASSESSMENT_UNIVERSAL_LLM_SHADOW_ENABLED` отдельно разрешает только shadow-запуск;
 он требует также включённый universal switch и frozen `shadow_evaluation` в
 методологии. Shadow никогда не заменяет официальный результат.
+`ASSESSMENT_INDICATOR_SHADOW_ENABLED` отдельно разрешает contract-v2 shadow для
+методологии с Indicators. По умолчанию он выключен и не меняет официальный
+skill-level результат или отчёт.
 `ASSESSMENT_PREPARATION_MAX_CONCURRENCY` отдельно ограничивает тяжелую
 персонализацию новых сессий, чтобы массовый старт не занял все LLM-слоты.
 Перед каждым сетевым запросом к DeepSeek активная транзакция фиксируется,

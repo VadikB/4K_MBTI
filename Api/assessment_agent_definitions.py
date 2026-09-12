@@ -1,8 +1,28 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 from Api.assessment_configuration import canonical_json, definition_checksum
+
+
+def load_agent_definition_file(path: Path) -> dict[str, Any]:
+    """Load a source-controlled definition and inline its shared instruction file."""
+
+    resolved_path = path.resolve()
+    definition = json.loads(resolved_path.read_text(encoding="utf-8"))
+    if not isinstance(definition, dict):
+        raise ValueError(f"Agent definition must be a JSON object: {path}.")
+    instruction_file = str(definition.pop("instruction_file", "")).strip()
+    if "instruction_markdown" in definition and instruction_file:
+        raise ValueError("Agent definition cannot declare both instruction_file and instruction_markdown.")
+    if instruction_file:
+        instruction_path = (resolved_path.parent / instruction_file).resolve()
+        if not instruction_path.is_relative_to(resolved_path.parent):
+            raise ValueError("Agent instruction_file must stay inside the definition directory.")
+        definition["instruction_markdown"] = instruction_path.read_text(encoding="utf-8")
+    return definition
 
 
 def ensure_legacy_agent_definitions(connection) -> int:

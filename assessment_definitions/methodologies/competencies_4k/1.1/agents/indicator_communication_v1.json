@@ -1,0 +1,11 @@
+{
+  "schema_version": 2,
+  "code": "indicator_communication",
+  "version": 1,
+  "competency_code": "K1",
+  "instruction_file": "indicator_evaluation_protocol_v1.md",
+  "input_contract": {"code": "competency_evaluation_input", "version": 2},
+  "output_contract": {"code": "competency_evaluation_output", "version": 2},
+  "executor": {"code": "evaluation.communication", "version": 2},
+  "runtime": {"mode": "universal_llm", "model_profile": "assessment_strict", "temperature": 0, "max_attempts": 2, "timeout_seconds": 60, "max_output_tokens": 4096, "fallback": "fail"}
+}

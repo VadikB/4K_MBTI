@@ -66,6 +66,49 @@ class AssessmentTurnReply:
     analysis_operation_id: str | None = None
 
 
+def freeze_session_case_indicators(
+    connection,
+    *,
+    session_case_id: int,
+    case_registry_id: int,
+    methodology_version_id: int,
+    indicator_codes: list[str],
+) -> int:
+    frozen_codes = sorted({str(code).strip() for code in indicator_codes if str(code).strip()})
+    if not frozen_codes:
+        raise ValueError("Indicator methodology requires a non-empty frozen indicator scope.")
+    connection.execute(
+        """
+        INSERT INTO session_case_indicators (
+            session_case_id, methodology_version_id, indicator_code,
+            signal_priority, is_required, display_order
+        )
+        SELECT %s, cri.methodology_version_id, cri.indicator_code,
+               cri.signal_priority, cri.is_required, cri.display_order
+        FROM case_registry_indicators cri
+        WHERE cri.cases_registry_id = %s
+          AND cri.methodology_version_id = %s
+          AND cri.indicator_code = ANY(%s)
+        ON CONFLICT (session_case_id, methodology_version_id, indicator_code) DO NOTHING
+        """,
+        (session_case_id, case_registry_id, methodology_version_id, frozen_codes),
+    )
+    row = connection.execute(
+        """
+        SELECT COUNT(*)::int AS count
+        FROM session_case_indicators
+        WHERE session_case_id = %s AND methodology_version_id = %s
+        """,
+        (session_case_id, methodology_version_id),
+    ).fetchone()
+    count = int(row["count"] if row else 0)
+    if count == 0:
+        raise ValueError(
+            f"Case {case_registry_id} has no Indicator mappings for methodology version {methodology_version_id}."
+        )
+    return count
+
+
 class AssessmentService:
     RECENT_CASE_DAYS = 30
     MIN_SESSION_DURATION_MIN = 55
@@ -634,6 +677,15 @@ class AssessmentService:
                 message="Создаем assessment-сессию и фиксируем выбранные кейсы в базе данных.",
             )
             prepared_session_cases: list[tuple[int, dict]] = []
+            methodology_definition = dict(execution_configuration["snapshot"]["methodology"].get("definition") or {})
+            indicator_methodology = int(methodology_definition.get("schema_version") or 1) >= 2
+            frozen_indicator_codes = [
+                str(indicator.get("id") or "")
+                for competency in methodology_definition.get("competencies") or []
+                for skill in competency.get("skills") or []
+                for component in skill.get("components") or []
+                for indicator in component.get("indicators") or []
+            ]
             for index, case_row in enumerate(selected_cases, start=1):
                 methodology_versions = get_case_methodology_versions(connection, int(case_row["id"]))
                 session_case = connection.execute(
@@ -720,6 +772,15 @@ class AssessmentService:
                         ON CONFLICT (user_id, skill_id, source_case_registry_id) DO NOTHING
                         """,
                         (user.id, user.role_id, skill_id, case_row["id"]),
+                    )
+
+                if indicator_methodology:
+                    freeze_session_case_indicators(
+                        connection,
+                        session_case_id=int(session_case_id),
+                        case_registry_id=int(case_row["id"]),
+                        methodology_version_id=int(execution_configuration["methodology_version_id"]),
+                        indicator_codes=frozen_indicator_codes,
                     )
 
                 prepared_session_cases.append((session_case_id, dict(case_row)))

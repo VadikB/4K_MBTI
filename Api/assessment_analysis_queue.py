@@ -10,6 +10,8 @@ from uuid import uuid4
 
 from Api.assessment_evaluation_repository import assessment_evaluation_result_repository
 from Api.assessment_evaluation_material_repository import UniversalEvaluationMaterialProvider
+from Api.assessment_indicator_material_repository import CompetencyIndicatorEvaluationInputBuilder
+from Api.assessment_indicator_repository import assessment_indicator_result_repository
 from Api.assessment_competency_executor import CompetencyEvaluatorExecutor
 from Api.assessment_evaluator_contracts import competency_evaluation_input_builder
 from Api.communication_agent import competency_assessment_agents
@@ -17,6 +19,8 @@ from Api.config import settings
 from Api.database import get_connection
 from Api.assessment_runtime import ScenarioExecutionContext, component_registry, scenario_runner
 from Api.assessment_shadow_repository import assessment_shadow_repository
+from Api.llm.deepseek_gateway import DeepSeekGateway
+from Api.universal_indicator_evaluator import UniversalIndicatorEvaluator
 
 logger = logging.getLogger("agent4k.analysis_queue")
 
@@ -261,7 +265,13 @@ class AssessmentAnalysisQueue:
                     user_id=job.user_id,
                     stage_id="aggregate",
                     snapshot=analysis_run["snapshot"],
-                    executor=lambda _context: {"mode": "legacy_evaluations_materialized"},
+                    executor=lambda _context: {
+                        "mode": "indicator_evaluations_materialized"
+                        if int(
+                            (analysis_run["snapshot"]["methodology"].get("definition") or {}).get("schema_version") or 1
+                        ) >= 2
+                        else "legacy_evaluations_materialized"
+                    },
                 )
                 scenario_runner.run_stage(
                     connection,
@@ -323,6 +333,8 @@ class AssessmentAnalysisQueue:
         job: AssessmentAnalysisJob,
     ) -> dict[str, object]:
         competency_definitions = list(context.methodology.get("competencies") or [])
+        if int(context.methodology.get("schema_version") or 1) >= 2:
+            return self._execute_indicator_evaluators(context, job, competency_definitions)
         executor = CompetencyEvaluatorExecutor(competency_assessment_agents)
         completed: list[str] = []
         step_progress = [15, 35, 55, 75]
@@ -374,6 +386,54 @@ class AssessmentAnalysisQueue:
             )
             completed.append(component_code)
         return {"evaluators_completed": completed}
+
+    def _execute_indicator_evaluators(
+        self,
+        context: ScenarioExecutionContext,
+        job: AssessmentAnalysisJob,
+        competency_definitions: list[dict],
+    ) -> dict[str, object]:
+        if not settings.assessment_universal_llm_enabled:
+            raise RuntimeError("Universal indicator evaluator is disabled by configuration.")
+        builder = CompetencyIndicatorEvaluationInputBuilder()
+        evaluator = UniversalIndicatorEvaluator(DeepSeekGateway())
+        completed: list[str] = []
+        step_progress = [15, 35, 55, 75]
+        for index, competency in enumerate(competency_definitions):
+            competency_code = str(competency.get("id") or "").strip()
+            component_code = str(competency.get("evaluator") or "").strip()
+            component_version = int(competency.get("evaluator_version") or 0)
+            component_registry.resolve(component_code, component_version)
+            agent_definition = builder.resolve_agent_definition(
+                snapshot=context.snapshot,
+                competency=competency,
+                component_code=component_code,
+                component_version=component_version,
+            )
+            input_data = builder.build(
+                connection=context.connection,
+                snapshot=context.snapshot,
+                session_id=int(context.session_id),
+                user_id=context.user_id,
+                competency_code=competency_code,
+                component_code=component_code,
+                component_version=component_version,
+                agent_definition=agent_definition,
+            )
+            self._update_progress(
+                context.connection,
+                job,
+                progress=step_progress[min(index, len(step_progress) - 1)],
+                current_step=component_code,
+            )
+            output = evaluator.evaluate(input_data=input_data)
+            assessment_indicator_result_repository.save(
+                connection=context.connection,
+                input_data=input_data,
+                output=output,
+            )
+            completed.append(component_code)
+        return {"evaluators_completed": completed, "result_contract_version": 2}
 
     def _execute_shadow_evaluation(
         self,

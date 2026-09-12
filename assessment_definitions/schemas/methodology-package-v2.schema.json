@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "methodology-package-v2.schema.json",
+  "title": "Пакет методологии оценки версии схемы 2",
+  "type": "object",
+  "required": ["schema_version", "kind", "code", "database_version", "methodology_version", "status", "levels", "competencies"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "kind": {"const": "methodology"},
+    "code": {"type": "string", "minLength": 1},
+    "database_version": {"type": "integer", "minimum": 1},
+    "methodology_version": {"type": "string", "minLength": 1},
+    "status": {"const": "draft"},
+    "levels": {
+      "type": "array",
+      "prefixItems": [
+        {"type": "object", "properties": {"code": {"const": "L0"}}, "required": ["code", "order", "meaning"]},
+        {"type": "object", "properties": {"code": {"const": "L1"}}, "required": ["code", "order", "meaning"]},
+        {"type": "object", "properties": {"code": {"const": "L2"}}, "required": ["code", "order", "meaning"]},
+        {"type": "object", "properties": {"code": {"const": "L3"}}, "required": ["code", "order", "meaning"]}
+      ],
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "competencies": {"type": "array", "minItems": 1}
+  },
+  "additionalProperties": false
+}
