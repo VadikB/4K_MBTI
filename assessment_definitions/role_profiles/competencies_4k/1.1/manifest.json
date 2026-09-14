@@ -1,0 +1,33 @@
+{
+  "artifact": {
+    "name": "base_roles.json",
+    "sha256": "a3dbd62940b3c79baa123c5c2b4fff960b20c71e558304ba41007c2a205571d7"
+  },
+  "methodology_version": "1.1",
+  "normative_artifacts": [
+    {
+      "name": "base_roles_source.md",
+      "sha256": "939b8e5bebdee2110d37d82f02ed5c54d6b809c18d696e3ce5c6b495abb8cf0c"
+    },
+    {
+      "name": "role_profile_contract.json",
+      "sha256": "ffb0ee4f8e900ae2a61d8daf650d06839489432bb4001e9df6f021f1fb8b442b"
+    },
+    {
+      "name": "role_profile_source.md",
+      "sha256": "d27a0f208b5f6f1dbb8c17987e9b9db9694e09472a68141314c2c71b1133c241"
+    }
+  ],
+  "schema_version": 1,
+  "sources": [
+    {
+      "name": "M3.BaseRoles_v1.0_FROZEN.docx",
+      "sha256": "ab04e175bb1bf4ad55c320554068041baf3cb4c1cc2316c16966451b91c465bc"
+    },
+    {
+      "name": "M3.RoleProfile_v1.0_FROZEN.docx",
+      "sha256": "a3c085e4182fe8bc5a82204a8d4679a09b85650ea79e2df24fb1ed8ab6604e06"
+    }
+  ],
+  "status": "draft"
+}

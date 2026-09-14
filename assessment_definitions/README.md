@@ -28,3 +28,25 @@ SHA-256.
 компенсироваться скрытыми defaults. Runtime v2 может исполнять только опубликованный
 неизменяемый снимок при включённом kill switch. До появления утверждённых правил
 агрегации и отчёта этот draft не может быть default configuration.
+
+## Базовые роли М3 для 4К 1.1
+
+Шесть BaseRoles находятся в `role_profiles/competencies_4k/1.1`. Это отдельный
+draft-пакет RoleProfile: каждая роль содержит четыре поля основного описания и
+17 полей карточки. `base_roles_source.md` и `role_profile_source.md` содержат
+полную текстовую транскрипцию двух нормативных DOCX; `role_profile_contract.json`
+фиксирует структуру карточки, проверки ролевой валидности, инварианты и способы
+формирования. Пакет не задаёт уровни 4К и не опубликован как действующая
+конфигурация оценки; локальный draft выбора ролей описан отдельно в документации М3.
+
+Локальная пересборка из нормативных документов:
+
+```bash
+python3 scripts/build_m3_base_roles.py \
+  --base-roles-docx /path/to/M3.BaseRoles_v1.0_FROZEN.docx \
+  --role-profile-docx /path/to/M3.RoleProfile_v1.0_FROZEN.docx \
+  --output-dir assessment_definitions/role_profiles/competencies_4k/1.1
+```
+
+Исходные DOCX не копируются в Git. Имена и SHA-256 обоих источников хранятся
+в manifest. Три роли методологии 1.0 не сопоставляются с шестью BaseRoles М3.

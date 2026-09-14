@@ -19,6 +19,12 @@ from Api.app_version import get_app_version
 from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_service, normalize_email
 from Api.config import settings
 from Api.assessment_service import assessment_service
+from Api.assessment_role_profiles import (
+    create_organization_role_profile_draft,
+    get_selected_role_profile,
+    list_available_role_profiles,
+    select_role_profile_for_user,
+)
 from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.assessment_authoring_service import assessment_authoring_service, ENTITY_CONFIG
@@ -126,6 +132,8 @@ from Api.schemas import (
     AgentMessageRequest,
     AgentProfileConfirmRequest,
     AgentReply,
+    RoleProfileSelectionRequest,
+    OrganizationRoleProfileDraftRequest,
     AssessmentClientEventRequest,
     AssessmentAnalysisStatusResponse,
     AssessmentMessageRequest,
@@ -5767,6 +5775,77 @@ def process_agent_message(payload: AgentMessageRequest, request: Request, respon
     except ValueError as exc:
         operation_progress_service.fail(operation_id, message=str(exc))
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+def _role_profile_option(role: dict) -> dict[str, object]:
+    description = role["definition"]["description"]
+    return {
+        "version_id": role["id"],
+        "code": role["code"],
+        "version": role["version"],
+        "name": description["name"],
+        "short_description": description["short_description"],
+        "scope": role["scope"],
+        "organization_id": role["organization_id"],
+    }
+
+
+@router.post("/admin/organizations/{organization_id}/role-profiles/drafts", status_code=201)
+def create_organization_role_profile(
+    organization_id: int,
+    payload: OrganizationRoleProfileDraftRequest,
+    request: Request,
+) -> dict[str, object]:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        scope = _get_admin_scope_or_403(connection, user)
+        if not scope.is_superadmin and organization_id not in scope.organization_ids:
+            raise HTTPException(status_code=403, detail="Organization admin access required")
+        organization = connection.execute(
+            "SELECT id FROM organizations WHERE id = %s AND is_active = TRUE",
+            (organization_id,),
+        ).fetchone()
+        if organization is None:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        try:
+            version_id = create_organization_role_profile_draft(
+                connection,
+                organization_id=organization_id,
+                definition=payload.definition,
+                provenance=payload.provenance,
+                base_role_version_id=payload.base_role_version_id,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        connection.commit()
+    return {"version_id": version_id, "organization_id": organization_id, "status": "draft"}
+
+
+@router.get("/role-profiles/available")
+def get_my_role_profiles(request: Request) -> dict[str, object]:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(status_code=401, detail="Требуется авторизация")
+    with get_connection() as connection:
+        roles = list_available_role_profiles(connection, user_id=user.id)
+        selected = get_selected_role_profile(connection, user_id=user.id)
+    return {
+        "roles": [_role_profile_option(role) for role in roles],
+        "selected_version_id": selected["id"] if selected else None,
+    }
+
+
+@router.put("/role-profiles/selection")
+def select_my_role_profile(payload: RoleProfileSelectionRequest, request: Request) -> dict[str, object]:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(status_code=401, detail="Требуется авторизация")
+    try:
+        with get_connection() as connection:
+            role = select_role_profile_for_user(connection, user_id=user.id, version_id=payload.version_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _role_profile_option(role)
 
 
 @router.post("/agent/profile/confirm", response_model=AgentReply)

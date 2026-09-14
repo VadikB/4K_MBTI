@@ -2848,6 +2848,99 @@ def close_connection_pool() -> None:
     _connection_pool.close()
 
 
+def ensure_role_profile_schema(connection) -> None:
+    """Create the M3 storage independently so isolated tests need no legacy schema."""
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_role_profiles (
+            id BIGSERIAL PRIMARY KEY,
+            code TEXT NOT NULL,
+            name TEXT NOT NULL,
+            scope TEXT NOT NULL DEFAULT 'base' CHECK (scope IN ('base', 'organization')),
+            organization_id BIGINT REFERENCES organizations(id) ON DELETE RESTRICT,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            CHECK ((scope = 'base' AND organization_id IS NULL)
+                OR (scope = 'organization' AND organization_id IS NOT NULL))
+        )
+        """
+    )
+    connection.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_base_role_profile_code "
+        "ON assessment_role_profiles(code) WHERE scope = 'base'"
+    )
+    connection.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_organization_role_profile_code "
+        "ON assessment_role_profiles(organization_id, code) WHERE scope = 'organization'"
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_role_profile_versions (
+            id BIGSERIAL PRIMARY KEY,
+            role_profile_id BIGINT NOT NULL REFERENCES assessment_role_profiles(id),
+            version INTEGER NOT NULL CHECK (version > 0),
+            status TEXT NOT NULL CHECK (status IN ('draft', 'ready_for_review', 'published', 'retired')),
+            methodology_version TEXT NOT NULL,
+            definition_json JSONB NOT NULL,
+            source_manifest_json JSONB NOT NULL,
+            checksum TEXT NOT NULL,
+            base_role_version_id BIGINT REFERENCES assessment_role_profile_versions(id),
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            published_at TIMESTAMP,
+            UNIQUE (role_profile_id, version)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE OR REPLACE FUNCTION prevent_published_role_profile_change()
+        RETURNS trigger AS $$
+        BEGIN
+            IF TG_OP = 'DELETE' THEN
+                IF OLD.status IN ('published', 'retired') THEN
+                    RAISE EXCEPTION 'Published role profiles are immutable';
+                END IF;
+                RETURN OLD;
+            END IF;
+            IF OLD.status IN ('published', 'retired') AND (
+                NEW.definition_json IS DISTINCT FROM OLD.definition_json
+                OR NEW.source_manifest_json IS DISTINCT FROM OLD.source_manifest_json
+                OR NEW.checksum IS DISTINCT FROM OLD.checksum
+                OR NEW.version IS DISTINCT FROM OLD.version
+                OR NEW.role_profile_id IS DISTINCT FROM OLD.role_profile_id
+                OR NEW.methodology_version IS DISTINCT FROM OLD.methodology_version
+                OR NEW.base_role_version_id IS DISTINCT FROM OLD.base_role_version_id
+                OR (OLD.status = 'published' AND NEW.status NOT IN ('published', 'retired'))
+                OR (OLD.status = 'retired' AND NEW.status <> 'retired')
+            ) THEN
+                RAISE EXCEPTION 'Published role profiles are immutable';
+            END IF;
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql
+        """
+    )
+    connection.execute("DROP TRIGGER IF EXISTS trg_role_profile_version_immutable ON assessment_role_profile_versions")
+    connection.execute(
+        """
+        CREATE TRIGGER trg_role_profile_version_immutable
+        BEFORE UPDATE OR DELETE ON assessment_role_profile_versions
+        FOR EACH ROW EXECUTE FUNCTION prevent_published_role_profile_change()
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE user_sessions
+        ADD COLUMN IF NOT EXISTS role_profile_version_id BIGINT REFERENCES assessment_role_profile_versions(id)
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS selected_role_profile_version_id BIGINT REFERENCES assessment_role_profile_versions(id)
+        """
+    )
+
+
 def ensure_core_schema() -> None:
     with get_connection() as connection:
         connection.execute(
@@ -3576,6 +3669,7 @@ def ensure_core_schema() -> None:
         connection.execute(
             "CREATE INDEX IF NOT EXISTS idx_organization_memberships_org_role ON organization_memberships(organization_id, role)"
         )
+        ensure_role_profile_schema(connection)
         connection.execute(
             """
             INSERT INTO consent_documents (
