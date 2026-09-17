@@ -585,7 +585,7 @@ export const verifyEmailMagicLinkToken = async (tokenValue = null) => {
       credentials: 'same-origin',
       body: JSON.stringify({ token }),
     });
-    const data = await readApiResponse(response, 'Не удалось подтвердить вход.');
+    const data = await readApiResponse(response, 'Не удалось подтвердить вход.', { recoverUnauthorized: false });
     setAuthStatus('Email подтвержден. Загружаем ваш профиль...');
     await applyAuthResponse(data);
   } catch (error) {
@@ -639,7 +639,9 @@ const submitEmailPassword = async () => {
         ),
       },
     );
-    const data = await readApiResponse(response, isReset ? 'Не удалось изменить пароль.' : 'Не удалось выполнить вход.');
+    const data = await readApiResponse(response, isReset ? 'Не удалось изменить пароль.' : 'Не удалось выполнить вход.', {
+      recoverUnauthorized: false,
+    });
     if (isReset) {
       authActionToken = '';
       authCredentialEmail = data.email || email;
