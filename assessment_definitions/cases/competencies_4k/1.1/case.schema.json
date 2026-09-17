@@ -1,0 +1,175 @@
+{
+  "$defs": {
+    "Applicability": {
+      "additionalProperties": false,
+      "properties": {
+        "component_id": {
+          "pattern": "^K[1-4]\\.C\\d{2}$",
+          "title": "Component Id",
+          "type": "string"
+        },
+        "required": {
+          "const": true,
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "skill_id": {
+          "pattern": "^K[1-4]\\.\\d+$",
+          "title": "Skill Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "skill_id",
+        "component_id"
+      ],
+      "title": "Applicability",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "actors": {
+      "minLength": 1,
+      "title": "Actors",
+      "type": "string"
+    },
+    "applicability": {
+      "items": {
+        "$ref": "#/$defs/Applicability"
+      },
+      "minItems": 1,
+      "title": "Applicability",
+      "type": "array"
+    },
+    "applicable_base_roles": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Applicable Base Roles",
+      "type": "array"
+    },
+    "case_id": {
+      "minLength": 1,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_type_ids": {
+      "items": {
+        "pattern": "^CT\\d{2}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Case Type Ids",
+      "type": "array"
+    },
+    "constraints": {
+      "minLength": 1,
+      "title": "Constraints",
+      "type": "string"
+    },
+    "ct_composition": {
+      "minLength": 1,
+      "title": "Ct Composition",
+      "type": "string"
+    },
+    "dialogue": {
+      "minLength": 1,
+      "title": "Dialogue",
+      "type": "string"
+    },
+    "difficulty_parameters": {
+      "minLength": 1,
+      "title": "Difficulty Parameters",
+      "type": "string"
+    },
+    "format": {
+      "minLength": 1,
+      "title": "Format",
+      "type": "string"
+    },
+    "functional_result": {
+      "minLength": 1,
+      "title": "Functional Result",
+      "type": "string"
+    },
+    "initial_situation": {
+      "minLength": 1,
+      "title": "Initial Situation",
+      "type": "string"
+    },
+    "invalidity_risks": {
+      "minLength": 1,
+      "title": "Invalidity Risks",
+      "type": "string"
+    },
+    "invariant": {
+      "minLength": 1,
+      "title": "Invariant",
+      "type": "string"
+    },
+    "participant_position": {
+      "minLength": 1,
+      "title": "Participant Position",
+      "type": "string"
+    },
+    "personalization_rules": {
+      "minLength": 1,
+      "title": "Personalization Rules",
+      "type": "string"
+    },
+    "planned_minutes": {
+      "exclusiveMinimum": 0,
+      "title": "Planned Minutes",
+      "type": "integer"
+    },
+    "task": {
+      "minLength": 1,
+      "title": "Task",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "trigger": {
+      "minLength": 1,
+      "title": "Trigger",
+      "type": "string"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "title",
+    "case_type_ids",
+    "ct_composition",
+    "format",
+    "applicable_base_roles",
+    "version",
+    "initial_situation",
+    "trigger",
+    "participant_position",
+    "actors",
+    "task",
+    "constraints",
+    "applicability",
+    "functional_result",
+    "invariant",
+    "dialogue",
+    "personalization_rules",
+    "difficulty_parameters",
+    "planned_minutes",
+    "invalidity_risks"
+  ],
+  "title": "CaseDefinition",
+  "type": "object"
+}

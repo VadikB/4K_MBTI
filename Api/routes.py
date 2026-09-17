@@ -7,7 +7,7 @@ import logging
 import re
 from urllib.parse import quote
 from datetime import datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, Request, Response as FastAPIResponse
 from fastapi.responses import Response
@@ -19,6 +19,7 @@ from Api.app_version import get_app_version
 from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_service, normalize_email
 from Api.config import settings
 from Api.assessment_service import assessment_service
+from Api import m5_generation_lab
 from Api.assessment_role_profiles import (
     create_organization_role_profile_draft,
     get_selected_role_profile,
@@ -4874,6 +4875,55 @@ def get_prompt_lab_dashboard(request: Request) -> PromptLabDashboard:
     with get_connection() as connection:
         _require_superadmin(connection, current_user)
         return _build_prompt_lab_dashboard(connection)
+
+
+@router.get("/admin/m5-lab")
+def get_m5_lab_catalog(request: Request) -> dict:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token) if token else None
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+    return m5_generation_lab.lab_catalog()
+
+
+@router.get("/admin/m5-lab/runs/{run_id}")
+def get_m5_lab_run(run_id: UUID, request: Request) -> dict:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token) if token else None
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        row = m5_generation_lab.get_run(connection, str(run_id))
+        if row is None:
+            raise HTTPException(status_code=404, detail="Прогон M5 не найден")
+        return row
+
+
+@router.post("/admin/m5-lab/runs")
+def create_m5_lab_run(payload: m5_generation_lab.GenerationRequest, request: Request) -> dict:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token) if token else None
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        try:
+            row, created = m5_generation_lab.begin_run(connection, request=payload, user_id=int(user.id))
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        connection.commit()
+    if not created:
+        return row
+    output, error_code = None, None
+    try:
+        output = m5_generation_lab.generate(row["input_json"])
+    except ValueError:
+        error_code = "INVALID_GENERATION_OUTPUT"
+    except RuntimeError:
+        error_code = "GENERATION_UNAVAILABLE"
+    except Exception:
+        error_code = "GENERATION_FAILED"
+    with get_connection() as connection:
+        m5_generation_lab.finish_run(connection, run_id=str(payload.run_id), output=output, error_code=error_code)
+        connection.commit()
+        return m5_generation_lab.get_run(connection, str(payload.run_id))
 
 
 @router.post("/admin/prompt-lab/prompts", response_model=PromptLabPromptVersion)

@@ -2941,6 +2941,147 @@ def ensure_role_profile_schema(connection) -> None:
     )
 
 
+def ensure_assessment_context_schema(connection) -> None:
+    """Create versioned M4 sources and immutable PersonalizedProfile snapshots."""
+    connection.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_organization_memberships_user "
+        "ON organization_memberships(user_id)"
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_organization_contexts (
+            id BIGSERIAL PRIMARY KEY,
+            organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+            code TEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (organization_id, code)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_organization_context_versions (
+            id BIGSERIAL PRIMARY KEY,
+            organization_context_id BIGINT NOT NULL REFERENCES assessment_organization_contexts(id) ON DELETE RESTRICT,
+            version INTEGER NOT NULL CHECK (version > 0),
+            status TEXT NOT NULL CHECK (status IN ('draft', 'ready_for_review', 'published', 'retired')),
+            definition_json JSONB NOT NULL,
+            source_manifest_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+            checksum TEXT NOT NULL,
+            confirmed_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+            confirmed_at TIMESTAMP,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (organization_context_id, version)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_user_contexts (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (user_id, organization_id)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_user_context_versions (
+            id BIGSERIAL PRIMARY KEY,
+            user_context_id BIGINT NOT NULL REFERENCES assessment_user_contexts(id) ON DELETE RESTRICT,
+            version INTEGER NOT NULL CHECK (version > 0),
+            status TEXT NOT NULL CHECK (status IN ('draft', 'needs_clarification', 'confirmed', 'archived')),
+            identity_json JSONB NOT NULL,
+            professional_context_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+            checksum TEXT NOT NULL,
+            confirmed_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+            confirmed_at TIMESTAMP,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (user_context_id, version)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_role_profile_assignments (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+            role_profile_version_id BIGINT NOT NULL REFERENCES assessment_role_profile_versions(id) ON DELETE RESTRICT,
+            determined_by TEXT NOT NULL CHECK (determined_by IN ('user', 'organization')),
+            determined_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            superseded_at TIMESTAMP
+        )
+        """
+    )
+    connection.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_role_profile_assignments_active_user "
+        "ON assessment_role_profile_assignments(user_id) WHERE superseded_at IS NULL"
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_personalized_profiles (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+            assessment_configuration_id BIGINT NOT NULL REFERENCES assessment_configurations(id) ON DELETE RESTRICT,
+            organization_context_version_id BIGINT NOT NULL REFERENCES assessment_organization_context_versions(id) ON DELETE RESTRICT,
+            role_profile_version_id BIGINT NOT NULL REFERENCES assessment_role_profile_versions(id) ON DELETE RESTRICT,
+            user_context_version_id BIGINT NOT NULL REFERENCES assessment_user_context_versions(id) ON DELETE RESTRICT,
+            status TEXT NOT NULL CHECK (status IN ('ready', 'blocked')),
+            content_json JSONB NOT NULL,
+            provenance_json JSONB NOT NULL,
+            conflicts_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+            checksum TEXT NOT NULL,
+            frozen_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (user_id, assessment_configuration_id, checksum)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE OR REPLACE FUNCTION prevent_frozen_m4_change()
+        RETURNS trigger AS $$
+        BEGIN
+            IF TG_OP = 'DELETE' THEN
+                RAISE EXCEPTION 'Frozen M4 data is immutable';
+            END IF;
+            IF NEW IS DISTINCT FROM OLD THEN
+                RAISE EXCEPTION 'Frozen M4 data is immutable';
+            END IF;
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql
+        """
+    )
+    for table in (
+        "assessment_personalized_profiles",
+        "assessment_organization_context_versions",
+        "assessment_user_context_versions",
+    ):
+        trigger = f"trg_{table}_immutable"
+        connection.execute(f"DROP TRIGGER IF EXISTS {trigger} ON {table}")
+        condition = "" if table == "assessment_personalized_profiles" else (
+            " WHEN (OLD.status IN ('published', 'retired'))" if table == "assessment_organization_context_versions"
+            else " WHEN (OLD.status IN ('confirmed', 'archived'))"
+        )
+        connection.execute(
+            f"CREATE TRIGGER {trigger} BEFORE UPDATE OR DELETE ON {table} "
+            f"FOR EACH ROW{condition} EXECUTE FUNCTION prevent_frozen_m4_change()"
+        )
+    connection.execute(
+        "ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS personalized_profile_id "
+        "BIGINT REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT"
+    )
+    connection.execute(
+        "ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS personalized_profile_id "
+        "BIGINT REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT"
+    )
+
+
 def ensure_core_schema() -> None:
     with get_connection() as connection:
         connection.execute(
@@ -3670,6 +3811,7 @@ def ensure_core_schema() -> None:
             "CREATE INDEX IF NOT EXISTS idx_organization_memberships_org_role ON organization_memberships(organization_id, role)"
         )
         ensure_role_profile_schema(connection)
+        ensure_assessment_context_schema(connection)
         connection.execute(
             """
             INSERT INTO consent_documents (

@@ -1,0 +1,114 @@
+{
+  "$defs": {
+    "VerificationCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "actual": {
+          "minLength": 1,
+          "title": "Actual",
+          "type": "string"
+        },
+        "artifact_refs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Artifact Refs",
+          "type": "array"
+        },
+        "code": {
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "expected": {
+          "minLength": 1,
+          "title": "Expected",
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_RUN"
+          ],
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "result",
+        "expected",
+        "actual",
+        "artifact_refs"
+      ],
+      "title": "VerificationCheck",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/VerificationCheck"
+      },
+      "minItems": 1,
+      "title": "Checks",
+      "type": "array"
+    },
+    "m6_execution": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "NOT_RUN"
+      ],
+      "title": "M6 Execution",
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "static_package",
+        "runtime_stub",
+        "runtime_llm"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "package_checksum": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Package Checksum",
+      "type": "string"
+    },
+    "runtime_execution": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "NOT_RUN"
+      ],
+      "title": "Runtime Execution",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "verification_run_id": {
+      "minLength": 1,
+      "title": "Verification Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "verification_run_id",
+    "mode",
+    "package_checksum",
+    "checks",
+    "runtime_execution",
+    "m6_execution"
+  ],
+  "title": "VerificationReport",
+  "type": "object"
+}

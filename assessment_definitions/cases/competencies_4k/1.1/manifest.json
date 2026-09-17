@@ -1,0 +1,70 @@
+{
+  "archive": {
+    "name": "M5_Исправления_QA_v0.4_WORKING_комплект.zip",
+    "sha256": "8103e257d3dca95163a8bdab0a40667b5cbcfe4853378325f631b0e272e5e260"
+  },
+  "artifacts": [
+    {
+      "name": "assessment-situation.schema.json",
+      "sha256": "9cede54ee2e774e98f7996c5108439d3c680ba47cc236e9d60517886eabec03f"
+    },
+    {
+      "name": "candidate-observability.schema.json",
+      "sha256": "fe0993be13d87284f6d116b0f3eb544fcb54ad745b260e86cd71e5b71807aa22"
+    },
+    {
+      "name": "case-package.json",
+      "sha256": "15d6d89dc1731b5bd8053b32153289dbe1e5a478b0322ad2e4a849c7e855ec03"
+    },
+    {
+      "name": "case.schema.json",
+      "sha256": "344d5bde1cc6305aab97f5773f81149bb738dd980a5adb4679f96915f71e716f"
+    },
+    {
+      "name": "source-texts.json",
+      "sha256": "ed638d54b27131a656ff7b0972cd951661e72ce6ec0872a502c9520b3e47f7da"
+    },
+    {
+      "name": "source-workbooks.json",
+      "sha256": "5998b7dfcbdc846a22f950dd0a1f6a8af1e8f3d31948c3ceefb7517746e2804e"
+    },
+    {
+      "name": "verification-report.json",
+      "sha256": "18a0ff773a7ba13527221dc15176edb82dbee0a68542bd49e7effbe63b31ed0f"
+    },
+    {
+      "name": "verification-report.md",
+      "sha256": "57adc8cb2e6877ef79e05afdb45293e0a936e91b9e5c6fa60af2935b194e1bba"
+    },
+    {
+      "name": "verification-report.schema.json",
+      "sha256": "18a8c15ad44f4c7ad796c4c3927bf44fdd7966de3c8e5d223e195af0dfbd57b4"
+    }
+  ],
+  "methodology_version": "1.1",
+  "schema_version": 1,
+  "source_status": "WORKING",
+  "sources": [
+    {
+      "name": "M5_CaseType_Catalog_CT01-CT20_v1.0_FROZEN.xlsx",
+      "sha256": "d748e390933a45eabca44f305027f757c7568a6c4ef343ee5bc7f104c210b7c0"
+    },
+    {
+      "name": "M5_QA_Report_v0.4_2026-09-17_WORKING.md",
+      "sha256": "f05d882ed6d99d0b49d36c05243a66ea3ce5bc8d4e3f5c9ca874d0bd265ba050"
+    },
+    {
+      "name": "M5_Screening_2roles_20cases_50min_v0.4_WORKING.xlsx",
+      "sha256": "f542c7e1d9ddaccd14ff5cba98e07e95f22ddcba05f6cd11354ec7bc6f2a55fe"
+    },
+    {
+      "name": "M5_Методология_Консолидированная_v0.4_WORKING.docx",
+      "sha256": "906f4dec62ca31a199722f4f26c4b229d4bc49437ca4a95dc4edc2dda27e9362"
+    },
+    {
+      "name": "M5_Паспорт_Case_v0.3_WORKING.docx",
+      "sha256": "133297b2d17649e9e1646894864d625f91b7ded6635c9d0de02f4da2b1c7e108"
+    }
+  ],
+  "status": "draft"
+}
