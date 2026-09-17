@@ -2848,6 +2848,240 @@ def close_connection_pool() -> None:
     _connection_pool.close()
 
 
+def ensure_role_profile_schema(connection) -> None:
+    """Create the M3 storage independently so isolated tests need no legacy schema."""
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_role_profiles (
+            id BIGSERIAL PRIMARY KEY,
+            code TEXT NOT NULL,
+            name TEXT NOT NULL,
+            scope TEXT NOT NULL DEFAULT 'base' CHECK (scope IN ('base', 'organization')),
+            organization_id BIGINT REFERENCES organizations(id) ON DELETE RESTRICT,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            CHECK ((scope = 'base' AND organization_id IS NULL)
+                OR (scope = 'organization' AND organization_id IS NOT NULL))
+        )
+        """
+    )
+    connection.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_base_role_profile_code "
+        "ON assessment_role_profiles(code) WHERE scope = 'base'"
+    )
+    connection.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_organization_role_profile_code "
+        "ON assessment_role_profiles(organization_id, code) WHERE scope = 'organization'"
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_role_profile_versions (
+            id BIGSERIAL PRIMARY KEY,
+            role_profile_id BIGINT NOT NULL REFERENCES assessment_role_profiles(id),
+            version INTEGER NOT NULL CHECK (version > 0),
+            status TEXT NOT NULL CHECK (status IN ('draft', 'ready_for_review', 'published', 'retired')),
+            methodology_version TEXT NOT NULL,
+            definition_json JSONB NOT NULL,
+            source_manifest_json JSONB NOT NULL,
+            checksum TEXT NOT NULL,
+            base_role_version_id BIGINT REFERENCES assessment_role_profile_versions(id),
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            published_at TIMESTAMP,
+            UNIQUE (role_profile_id, version)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE OR REPLACE FUNCTION prevent_published_role_profile_change()
+        RETURNS trigger AS $$
+        BEGIN
+            IF TG_OP = 'DELETE' THEN
+                IF OLD.status IN ('published', 'retired') THEN
+                    RAISE EXCEPTION 'Published role profiles are immutable';
+                END IF;
+                RETURN OLD;
+            END IF;
+            IF OLD.status IN ('published', 'retired') AND (
+                NEW.definition_json IS DISTINCT FROM OLD.definition_json
+                OR NEW.source_manifest_json IS DISTINCT FROM OLD.source_manifest_json
+                OR NEW.checksum IS DISTINCT FROM OLD.checksum
+                OR NEW.version IS DISTINCT FROM OLD.version
+                OR NEW.role_profile_id IS DISTINCT FROM OLD.role_profile_id
+                OR NEW.methodology_version IS DISTINCT FROM OLD.methodology_version
+                OR NEW.base_role_version_id IS DISTINCT FROM OLD.base_role_version_id
+                OR (OLD.status = 'published' AND NEW.status NOT IN ('published', 'retired'))
+                OR (OLD.status = 'retired' AND NEW.status <> 'retired')
+            ) THEN
+                RAISE EXCEPTION 'Published role profiles are immutable';
+            END IF;
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql
+        """
+    )
+    connection.execute("DROP TRIGGER IF EXISTS trg_role_profile_version_immutable ON assessment_role_profile_versions")
+    connection.execute(
+        """
+        CREATE TRIGGER trg_role_profile_version_immutable
+        BEFORE UPDATE OR DELETE ON assessment_role_profile_versions
+        FOR EACH ROW EXECUTE FUNCTION prevent_published_role_profile_change()
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE user_sessions
+        ADD COLUMN IF NOT EXISTS role_profile_version_id BIGINT REFERENCES assessment_role_profile_versions(id)
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS selected_role_profile_version_id BIGINT REFERENCES assessment_role_profile_versions(id)
+        """
+    )
+
+
+def ensure_assessment_context_schema(connection) -> None:
+    """Create versioned M4 sources and immutable PersonalizedProfile snapshots."""
+    connection.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_organization_memberships_user "
+        "ON organization_memberships(user_id)"
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_organization_contexts (
+            id BIGSERIAL PRIMARY KEY,
+            organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+            code TEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (organization_id, code)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_organization_context_versions (
+            id BIGSERIAL PRIMARY KEY,
+            organization_context_id BIGINT NOT NULL REFERENCES assessment_organization_contexts(id) ON DELETE RESTRICT,
+            version INTEGER NOT NULL CHECK (version > 0),
+            status TEXT NOT NULL CHECK (status IN ('draft', 'ready_for_review', 'published', 'retired')),
+            definition_json JSONB NOT NULL,
+            source_manifest_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+            checksum TEXT NOT NULL,
+            confirmed_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+            confirmed_at TIMESTAMP,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (organization_context_id, version)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_user_contexts (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (user_id, organization_id)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_user_context_versions (
+            id BIGSERIAL PRIMARY KEY,
+            user_context_id BIGINT NOT NULL REFERENCES assessment_user_contexts(id) ON DELETE RESTRICT,
+            version INTEGER NOT NULL CHECK (version > 0),
+            status TEXT NOT NULL CHECK (status IN ('draft', 'needs_clarification', 'confirmed', 'archived')),
+            identity_json JSONB NOT NULL,
+            professional_context_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+            checksum TEXT NOT NULL,
+            confirmed_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+            confirmed_at TIMESTAMP,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (user_context_id, version)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_role_profile_assignments (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+            role_profile_version_id BIGINT NOT NULL REFERENCES assessment_role_profile_versions(id) ON DELETE RESTRICT,
+            determined_by TEXT NOT NULL CHECK (determined_by IN ('user', 'organization')),
+            determined_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            superseded_at TIMESTAMP
+        )
+        """
+    )
+    connection.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_role_profile_assignments_active_user "
+        "ON assessment_role_profile_assignments(user_id) WHERE superseded_at IS NULL"
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assessment_personalized_profiles (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+            assessment_configuration_id BIGINT NOT NULL REFERENCES assessment_configurations(id) ON DELETE RESTRICT,
+            organization_context_version_id BIGINT NOT NULL REFERENCES assessment_organization_context_versions(id) ON DELETE RESTRICT,
+            role_profile_version_id BIGINT NOT NULL REFERENCES assessment_role_profile_versions(id) ON DELETE RESTRICT,
+            user_context_version_id BIGINT NOT NULL REFERENCES assessment_user_context_versions(id) ON DELETE RESTRICT,
+            status TEXT NOT NULL CHECK (status IN ('ready', 'blocked')),
+            content_json JSONB NOT NULL,
+            provenance_json JSONB NOT NULL,
+            conflicts_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+            checksum TEXT NOT NULL,
+            frozen_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (user_id, assessment_configuration_id, checksum)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE OR REPLACE FUNCTION prevent_frozen_m4_change()
+        RETURNS trigger AS $$
+        BEGIN
+            IF TG_OP = 'DELETE' THEN
+                RAISE EXCEPTION 'Frozen M4 data is immutable';
+            END IF;
+            IF NEW IS DISTINCT FROM OLD THEN
+                RAISE EXCEPTION 'Frozen M4 data is immutable';
+            END IF;
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql
+        """
+    )
+    for table in (
+        "assessment_personalized_profiles",
+        "assessment_organization_context_versions",
+        "assessment_user_context_versions",
+    ):
+        trigger = f"trg_{table}_immutable"
+        connection.execute(f"DROP TRIGGER IF EXISTS {trigger} ON {table}")
+        condition = "" if table == "assessment_personalized_profiles" else (
+            " WHEN (OLD.status IN ('published', 'retired'))" if table == "assessment_organization_context_versions"
+            else " WHEN (OLD.status IN ('confirmed', 'archived'))"
+        )
+        connection.execute(
+            f"CREATE TRIGGER {trigger} BEFORE UPDATE OR DELETE ON {table} "
+            f"FOR EACH ROW{condition} EXECUTE FUNCTION prevent_frozen_m4_change()"
+        )
+    connection.execute(
+        "ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS personalized_profile_id "
+        "BIGINT REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT"
+    )
+    connection.execute(
+        "ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS personalized_profile_id "
+        "BIGINT REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT"
+    )
+
+
 def ensure_core_schema() -> None:
     with get_connection() as connection:
         connection.execute(
@@ -3576,6 +3810,8 @@ def ensure_core_schema() -> None:
         connection.execute(
             "CREATE INDEX IF NOT EXISTS idx_organization_memberships_org_role ON organization_memberships(organization_id, role)"
         )
+        ensure_role_profile_schema(connection)
+        ensure_assessment_context_schema(connection)
         connection.execute(
             """
             INSERT INTO consent_documents (
@@ -3810,6 +4046,35 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS case_registry_indicators (
+                id BIGSERIAL PRIMARY KEY,
+                cases_registry_id INTEGER NOT NULL REFERENCES cases_registry(id) ON DELETE CASCADE,
+                methodology_version_id BIGINT NOT NULL REFERENCES assessment_methodology_versions(id),
+                indicator_code TEXT NOT NULL,
+                signal_priority TEXT NOT NULL DEFAULT 'supporting'
+                    CHECK (signal_priority IN ('leading', 'supporting')),
+                is_required BOOLEAN NOT NULL DEFAULT TRUE,
+                display_order INTEGER NOT NULL DEFAULT 1,
+                UNIQUE (cases_registry_id, methodology_version_id, indicator_code)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS session_case_indicators (
+                id BIGSERIAL PRIMARY KEY,
+                session_case_id INTEGER NOT NULL REFERENCES session_cases(id) ON DELETE CASCADE,
+                methodology_version_id BIGINT NOT NULL REFERENCES assessment_methodology_versions(id),
+                indicator_code TEXT NOT NULL,
+                signal_priority TEXT NOT NULL CHECK (signal_priority IN ('leading', 'supporting')),
+                is_required BOOLEAN NOT NULL,
+                display_order INTEGER NOT NULL,
+                UNIQUE (session_case_id, methodology_version_id, indicator_code)
+            )
+            """
+        )
+        connection.execute(
+            """
             CREATE TABLE IF NOT EXISTS case_texts (
                 id SERIAL PRIMARY KEY,
                 case_text_code TEXT NOT NULL UNIQUE,
@@ -3853,6 +4118,25 @@ def ensure_core_schema() -> None:
                 is_required BOOLEAN NOT NULL DEFAULT TRUE,
                 version INTEGER NOT NULL DEFAULT 1,
                 UNIQUE (case_type_passport_id, skill_id, related_response_block_code)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS case_type_indicator_evidence (
+                id BIGSERIAL PRIMARY KEY,
+                case_type_passport_id INTEGER NOT NULL REFERENCES case_type_passports(id) ON DELETE CASCADE,
+                methodology_version_id BIGINT NOT NULL REFERENCES assessment_methodology_versions(id),
+                indicator_code TEXT NOT NULL,
+                related_response_block_code TEXT,
+                evidence_description TEXT NOT NULL,
+                expected_signal TEXT,
+                is_required BOOLEAN NOT NULL DEFAULT TRUE,
+                display_order INTEGER NOT NULL DEFAULT 1,
+                UNIQUE (
+                    case_type_passport_id, methodology_version_id, indicator_code,
+                    related_response_block_code, display_order
+                )
             )
             """
         )
@@ -4241,6 +4525,61 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS session_indicator_assessments (
+                id BIGSERIAL PRIMARY KEY,
+                session_id INTEGER NOT NULL REFERENCES user_sessions(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                methodology_version_id BIGINT NOT NULL REFERENCES assessment_methodology_versions(id),
+                competency_code TEXT NOT NULL,
+                skill_code TEXT NOT NULL,
+                component_code TEXT NOT NULL,
+                indicator_code TEXT NOT NULL,
+                evidence_state TEXT NOT NULL CHECK (
+                    evidence_state IN ('observed', 'insufficient_evidence', 'not_assessed')
+                ),
+                assessed_level_code TEXT CHECK (assessed_level_code IN ('L0', 'L1', 'L2', 'L3')),
+                red_flag_codes JSONB NOT NULL DEFAULT '[]'::jsonb,
+                rationale TEXT NOT NULL,
+                confidence DOUBLE PRECISION CHECK (confidence >= 0 AND confidence <= 1),
+                source_session_case_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+                evaluated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (session_id, methodology_version_id, indicator_code),
+                CHECK (
+                    (evidence_state = 'observed' AND assessed_level_code IS NOT NULL)
+                    OR (evidence_state <> 'observed' AND assessed_level_code IS NULL)
+                )
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS session_case_indicator_evidence (
+                id BIGSERIAL PRIMARY KEY,
+                session_indicator_assessment_id BIGINT NOT NULL
+                    REFERENCES session_indicator_assessments(id) ON DELETE CASCADE,
+                session_case_id INTEGER NOT NULL REFERENCES session_cases(id) ON DELETE CASCADE,
+                observation TEXT NOT NULL,
+                evidence_excerpt TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (session_indicator_assessment_id, session_case_id, observation, evidence_excerpt)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_session_indicator_assessments_session
+            ON session_indicator_assessments(session_id)
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_session_case_indicator_evidence_case
+            ON session_case_indicator_evidence(session_case_id)
+            """
+        )
+        connection.execute(
+            """
             CREATE TABLE IF NOT EXISTS system_logs (
                 id BIGSERIAL PRIMARY KEY,
                 created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -4303,6 +4642,9 @@ def ensure_core_schema() -> None:
         connection.execute("CREATE INDEX IF NOT EXISTS idx_cases_registry_status ON cases_registry(status)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_case_registry_skills_case ON case_registry_skills(cases_registry_id)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_case_registry_skills_skill ON case_registry_skills(skill_id)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_case_registry_indicators_case ON case_registry_indicators(cases_registry_id)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_session_case_indicators_case ON session_case_indicators(session_case_id)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_case_type_indicator_evidence_passport ON case_type_indicator_evidence(case_type_passport_id)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_case_texts_registry ON case_texts(cases_registry_id)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_case_registry_roles_case ON case_registry_roles(cases_registry_id)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_case_registry_roles_role ON case_registry_roles(role_id)")

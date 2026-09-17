@@ -1,8 +1,11 @@
+import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from Api.assessment_authoring_service import assessment_authoring_service
+from Api.assessment_agent_definitions import load_agent_definition_file
 from Api.assessment_configuration import LEGACY_METHODOLOGY_DEFINITION, LEGACY_SCENARIO_DEFINITION
 from Api.platform_access import has_platform_permission
 
@@ -95,6 +98,30 @@ def test_agent_definition_validation_accepts_bounded_universal_runtime() -> None
     }
 
     assessment_authoring_service.validate_definition(entity_type="agent", definition=definition)
+
+
+@pytest.mark.unit
+def test_indicator_agent_files_resolve_shared_protocol_and_validate() -> None:
+    root = Path("assessment_definitions/methodologies/competencies_4k/1.1/agents")
+    definitions = {}
+    for path in sorted(root.glob("indicator_*_v1.json")):
+        definition = load_agent_definition_file(path)
+        assessment_authoring_service.validate_definition(entity_type="agent", definition=definition)
+        definitions[definition["code"]] = {"definition": definition}
+
+    methodology = json.loads(
+        Path("assessment_definitions/methodologies/competencies_4k/1.1/methodology.json").read_text(encoding="utf-8")
+    )
+    assessment_authoring_service.validate_definition(entity_type="methodology", definition=methodology)
+    assessment_authoring_service._validate_evaluator_prompt_bundle(
+        methodology_definition=methodology,
+        prompt_bundle={},
+        agent_definitions=definitions,
+    )
+    assert set(definitions) == {
+        "indicator_communication", "indicator_teamwork", "indicator_creativity", "indicator_critical_thinking"
+    }
+    assert all("Отсутствие Evidence" in item["definition"]["instruction_markdown"] for item in definitions.values())
 
 
 @pytest.mark.unit

@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from types import SimpleNamespace
 
 import pytest
 
@@ -218,6 +219,72 @@ def test_universal_queue_path_does_not_resolve_legacy_strategy(monkeypatch) -> N
     result = queue._execute_methodology_evaluators(context, analysis_job())
 
     assert result == {"evaluators_completed": ["evaluation.communication"]}
+
+
+@pytest.mark.unit
+def test_indicator_queue_path_uses_v2_builder_and_repository(monkeypatch) -> None:
+    queue = AssessmentAnalysisQueue()
+    connection = RecordingConnection()
+    competency = {
+        "id": "K1", "evaluator": "evaluation.communication", "evaluator_version": 2,
+        "agent_definition": {"code": "indicator_communication", "version": 1},
+    }
+    snapshot = {
+        "methodology": {
+            "id": 2, "code": "competencies_4k", "version": 2,
+            "definition": {"schema_version": 2, "methodology_version": "1.1", "competencies": [competency]},
+        },
+        "prompts": {"agent_definitions": {}},
+    }
+    calls = []
+
+    class Builder:
+        def resolve_agent_definition(self, **kwargs):
+            calls.append(("resolve", kwargs["component_version"]))
+            return {"runtime": {"mode": "universal_llm"}}
+
+        def build(self, **kwargs):
+            calls.append(("build", kwargs["competency_code"]))
+            return SimpleNamespace(session_id=42, competency_code="K1")
+
+    class Evaluator:
+        def __init__(self, _gateway):
+            pass
+
+        def evaluate(self, *, input_data):
+            calls.append(("evaluate", input_data.competency_code))
+            return object()
+
+    class Repository:
+        def save(self, **kwargs):
+            calls.append(("save", kwargs["input_data"].competency_code))
+
+    monkeypatch.setattr(queue_module.settings, "assessment_universal_llm_enabled", True)
+    monkeypatch.setattr(queue_module, "CompetencyIndicatorEvaluationInputBuilder", Builder)
+    monkeypatch.setattr(queue_module, "UniversalIndicatorEvaluator", Evaluator)
+    monkeypatch.setattr(queue_module, "DeepSeekGateway", lambda: object())
+    monkeypatch.setattr(queue_module, "assessment_indicator_result_repository", Repository())
+    context = ScenarioExecutionContext(
+        connection=connection, session_id=42, user_id=7, snapshot=snapshot, stage={},
+    )
+
+    result = queue._execute_methodology_evaluators(context, analysis_job())
+
+    assert result == {"evaluators_completed": ["evaluation.communication"], "result_contract_version": 2}
+    assert calls == [("resolve", 2), ("build", "K1"), ("evaluate", "K1"), ("save", "K1")]
+    assert connection.commits == 1
+
+
+@pytest.mark.unit
+def test_indicator_queue_path_honors_universal_kill_switch(monkeypatch) -> None:
+    queue = AssessmentAnalysisQueue()
+    monkeypatch.setattr(queue_module.settings, "assessment_universal_llm_enabled", False)
+    context = ScenarioExecutionContext(
+        connection=RecordingConnection(), session_id=42, user_id=7,
+        snapshot={"methodology": {"definition": {"schema_version": 2, "competencies": []}}}, stage={},
+    )
+    with pytest.raises(RuntimeError, match="disabled by configuration"):
+        queue._execute_methodology_evaluators(context, analysis_job())
 
 
 @pytest.mark.unit

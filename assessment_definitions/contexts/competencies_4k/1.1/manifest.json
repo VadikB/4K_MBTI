@@ -1,0 +1,26 @@
+{
+  "artifacts": [
+    {
+      "name": "context_contract.json",
+      "sha256": "27b3ba3682d5da98264bc2ca2f54230d5231bb0c336f71f26058020483799f3c"
+    },
+    {
+      "name": "m4_context_source.md",
+      "sha256": "9af86011c1ea1bef12058700bdd345c5cee335bbc6ec4d392fcfc4f3e5709fd1"
+    },
+    {
+      "name": "personalized_profile.schema.json",
+      "sha256": "8caef8c3f39a08ae4add2037ad1e6ab27d996ff26430dfb17746b24b92bd0276"
+    }
+  ],
+  "methodology_version": "1.1",
+  "schema_version": 1,
+  "source_status": "FROZEN",
+  "sources": [
+    {
+      "name": "M4.Context_v1.0_FROZEN.docx",
+      "sha256": "07875e93ae422668b1b30cd60bc1c6140cae91db12b0b80ba4abca441cfe9291"
+    }
+  ],
+  "status": "draft"
+}

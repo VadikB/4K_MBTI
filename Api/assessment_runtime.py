@@ -49,6 +49,14 @@ for _code, _kind in (
 ):
     component_registry.register(ComponentDescriptor(code=_code, version=1, kind=_kind))
 
+for _code in (
+    "evaluation.communication",
+    "evaluation.teamwork",
+    "evaluation.creativity",
+    "evaluation.critical_thinking",
+):
+    component_registry.register(ComponentDescriptor(code=_code, version=2, kind="indicator_evaluator"))
+
 
 def validate_scenario_definition(definition: dict[str, Any]) -> None:
     stages = definition.get("stages")

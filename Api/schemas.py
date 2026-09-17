@@ -203,6 +203,16 @@ class AgentReply(BaseModel):
     role_options: list[dict[str, str | int]] | None = None
 
 
+class RoleProfileSelectionRequest(BaseModel):
+    version_id: int
+
+
+class OrganizationRoleProfileDraftRequest(BaseModel):
+    definition: dict
+    provenance: dict
+    base_role_version_id: int | None = None
+
+
 class AssessmentCard(BaseModel):
     code: str
     title: str

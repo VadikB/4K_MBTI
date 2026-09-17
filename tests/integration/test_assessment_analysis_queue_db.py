@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from contextlib import contextmanager
+from types import SimpleNamespace
 
 import psycopg
 import pytest
@@ -339,6 +340,66 @@ def test_universal_queue_completes_without_legacy_agent(analysis_database, monke
     assert completed is not None
     assert completed["status"] == "completed"
     assert completed["session_status"] == "completed"
+
+
+@pytest.mark.integration
+def test_indicator_v2_queue_completes_and_uses_indicator_repository(analysis_database, monkeypatch) -> None:
+    queue = AssessmentAnalysisQueue()
+    competency = {
+        "id": "K1", "evaluator": "evaluation.communication", "evaluator_version": 2,
+        "agent_definition": {"code": "indicator_communication", "version": 1},
+    }
+    snapshot = {
+        "methodology": {
+            "id": 2, "code": "competencies_4k", "version": 2,
+            "definition": {"schema_version": 2, "methodology_version": "1.1", "competencies": [competency]},
+        },
+        "scenario": {"definition": LEGACY_SCENARIO_DEFINITION},
+        "prompts": {"agent_definitions": {}},
+    }
+    with analysis_database() as connection:
+        connection.execute(
+            "UPDATE user_sessions SET execution_snapshot_json = %s::jsonb WHERE id = 501",
+            (json.dumps(snapshot, ensure_ascii=False),),
+        )
+    stored: list[tuple[int, str]] = []
+
+    class Builder:
+        def resolve_agent_definition(self, **_kwargs):
+            return {"runtime": {"mode": "universal_llm"}}
+
+        def build(self, **kwargs):
+            return SimpleNamespace(session_id=kwargs["session_id"], competency_code=kwargs["competency_code"])
+
+    class Evaluator:
+        def __init__(self, _gateway):
+            pass
+
+        def evaluate(self, *, input_data):
+            return SimpleNamespace(competency_code=input_data.competency_code)
+
+    class Repository:
+        def save(self, **kwargs):
+            stored.append((kwargs["input_data"].session_id, kwargs["output"].competency_code))
+
+    monkeypatch.setattr(queue_module, "competency_assessment_agents", [])
+    monkeypatch.setattr(queue_module, "CompetencyIndicatorEvaluationInputBuilder", Builder)
+    monkeypatch.setattr(queue_module, "UniversalIndicatorEvaluator", Evaluator)
+    monkeypatch.setattr(queue_module, "DeepSeekGateway", lambda: object())
+    monkeypatch.setattr(queue_module, "assessment_indicator_result_repository", Repository())
+    monkeypatch.setattr(settings, "assessment_universal_llm_enabled", True)
+    monkeypatch.setattr(queue, "_run_job_heartbeat", lambda *_args: None)
+
+    enqueue_analysis(queue)
+    claimed = queue._claim_next("indicator-v2-worker")
+    assert claimed is not None
+    queue._process(claimed)
+
+    completed = queue.get_status(session_id=501, user_id=101)
+    assert completed is not None
+    assert completed["status"] == "completed"
+    assert completed["session_status"] == "completed"
+    assert stored == [(501, "K1")]
 
 
 @pytest.mark.integration

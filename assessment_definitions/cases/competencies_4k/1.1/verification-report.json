@@ -1,0 +1,44 @@
+{
+  "checks": [
+    {
+      "actual": "{\"case_types\": 20, \"cases\": 20, \"test_situations\": 40, \"candidate_observability\": 80, \"qa_specs\": 160}",
+      "artifact_refs": [
+        "case-package.json"
+      ],
+      "code": "source_counts",
+      "expected": "20 CT; 20 Case; 40 AS; 80 Observability; 160 QA specs",
+      "result": "PASS"
+    },
+    {
+      "actual": "Проверены CT, роли, Skill/Component и заполненные IndicatorID",
+      "artifact_refs": [
+        "case-package.json"
+      ],
+      "code": "m2_m3_references",
+      "expected": "Все заполненные ссылки согласованы с M2/M3",
+      "result": "PASS"
+    },
+    {
+      "actual": "Открыто строк: 14; кандидаты сохранены без автоматического назначения",
+      "artifact_refs": [
+        "case-package.json"
+      ],
+      "code": "k2_resolution",
+      "expected": "Методическая проверка всех целей K2",
+      "result": "NOT_RUN"
+    },
+    {
+      "actual": "Файловый этап; БД, персонализация и взаимодействие не запускались",
+      "artifact_refs": [],
+      "code": "runtime_artifacts",
+      "expected": "Сохранённые AS, Dialogue и вход M6",
+      "result": "NOT_RUN"
+    }
+  ],
+  "m6_execution": "NOT_RUN",
+  "mode": "static_package",
+  "package_checksum": "15d6d89dc1731b5bd8053b32153289dbe1e5a478b0322ad2e4a849c7e855ec03",
+  "runtime_execution": "NOT_RUN",
+  "schema_version": 1,
+  "verification_run_id": "m5-static-15d6d89dc1731b5b"
+}

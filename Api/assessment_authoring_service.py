@@ -269,6 +269,7 @@ class AssessmentAuthoringService:
 
         missing: list[str] = []
         invalid: list[str] = []
+        schema_version = int(methodology_definition.get("schema_version") or 1)
         for competency in methodology_definition.get("competencies") or []:
             evaluator_code = str((competency or {}).get("evaluator") or "").strip()
             agent_code = evaluator_code.removeprefix("evaluation.")
@@ -276,7 +277,23 @@ class AssessmentAuthoringService:
             reference = dict(reference) if isinstance(reference, dict) else {}
             definition_code = str(reference.get("code") or agent_code).strip()
             frozen_definition = dict((agent_definitions or {}).get(definition_code) or {})
-            runtime = dict((frozen_definition.get("definition") or {}).get("runtime") or {})
+            definition_payload = dict(frozen_definition.get("definition") or {})
+            runtime = dict(definition_payload.get("runtime") or {})
+            if schema_version >= 2:
+                input_contract = dict(definition_payload.get("input_contract") or {})
+                output_contract = dict(definition_payload.get("output_contract") or {})
+                executor = dict(definition_payload.get("executor") or {})
+                if runtime.get("mode") != "universal_llm":
+                    raise ValueError("Indicator methodology requires universal_llm agent definitions.")
+                if (input_contract.get("code"), int(input_contract.get("version") or 0)) != (
+                    "competency_evaluation_input", 2,
+                ) or (output_contract.get("code"), int(output_contract.get("version") or 0)) != (
+                    "competency_evaluation_output", 2,
+                ):
+                    raise ValueError("Indicator methodology requires evaluator contracts version 2.")
+                if (executor.get("code"), int(executor.get("version") or 0)) != (evaluator_code, 2):
+                    raise ValueError("Indicator methodology requires an evaluator executor version 2.")
+                continue
             shadow = (competency or {}).get("shadow_evaluation")
             if isinstance(shadow, dict):
                 shadow_reference = dict(shadow.get("agent_definition") or {})
@@ -488,13 +505,16 @@ class AssessmentAuthoringService:
         competencies = definition.get("competencies")
         if not isinstance(competencies, list) or not competencies:
             raise ValueError("Assessment methodology must define competencies.")
-        if int(definition.get("schema_version") or 1) >= 2 or "roles" in definition or "levels" in definition:
+        schema_version = int(definition.get("schema_version") or 1)
+        if schema_version >= 2 or "roles" in definition or "levels" in definition:
             self._validate_methodology_dimensions(definition)
+        if schema_version >= 2:
+            self._validate_indicator_hierarchy(definition)
         seen: set[str] = set()
         for competency in competencies:
             if not isinstance(competency, dict):
                 raise ValueError("Every competency must be an object.")
-            code = str(competency.get("code") or "").strip()
+            code = str(competency.get("code") or competency.get("id") or "").strip()
             evaluator = str(competency.get("evaluator") or "").strip()
             version = int(competency.get("evaluator_version") or 0)
             if not code or code in seen:
@@ -533,8 +553,48 @@ class AssessmentAuthoringService:
                     raise ValueError("Shadow evaluation must define skill_codes.")
             seen.add(code)
 
+    def _validate_indicator_hierarchy(self, definition: dict[str, Any]) -> None:
+        if [str(item.get("code") or "") for item in definition.get("levels") or []] != ["L0", "L1", "L2", "L3"]:
+            raise ValueError("Indicator methodology levels must be exactly L0-L3.")
+        seen: set[str] = set()
+        for competency in definition.get("competencies") or []:
+            competency_id = str(competency.get("id") or "").strip()
+            if not competency_id:
+                raise ValueError("Indicator methodology competency must define id.")
+            self._remember_methodology_id(competency_id, seen)
+            for skill in competency.get("skills") or []:
+                skill_id = str(skill.get("id") or "").strip()
+                if not skill_id.startswith(f"{competency_id}."):
+                    raise ValueError(f"Skill {skill_id} has an invalid competency parent.")
+                self._remember_methodology_id(skill_id, seen)
+                for component in skill.get("components") or []:
+                    component_id = str(component.get("id") or "").strip()
+                    if not component_id.startswith(f"{competency_id}.C"):
+                        raise ValueError(f"Component {component_id} has an invalid competency parent.")
+                    self._remember_methodology_id(component_id, seen)
+                    for indicator in component.get("indicators") or []:
+                        indicator_id = str(indicator.get("id") or "").strip()
+                        if not indicator_id.startswith(f"{competency_id}.I"):
+                            raise ValueError(f"Indicator {indicator_id} has an invalid competency parent.")
+                        self._remember_methodology_id(indicator_id, seen)
+                        rubric = indicator.get("levels")
+                        if not isinstance(rubric, dict) or set(rubric) != {"L0", "L1", "L2", "L3"} or not all(
+                            str(rubric[level] or "").strip() for level in ("L0", "L1", "L2", "L3")
+                        ):
+                            raise ValueError(f"Indicator {indicator_id} must define non-empty L0-L3.")
+                        if not str(indicator.get("evidence_pattern") or "").strip():
+                            raise ValueError(f"Indicator {indicator_id} must define evidence_pattern.")
+
+    @staticmethod
+    def _remember_methodology_id(value: str, seen: set[str]) -> None:
+        if not value or value in seen:
+            raise ValueError("Indicator methodology IDs must be present and globally unique.")
+        seen.add(value)
+
     def _validate_methodology_dimensions(self, definition: dict[str, Any]) -> None:
-        for field in ("roles", "levels"):
+        schema_version = int(definition.get("schema_version") or 1)
+        fields = ("levels",) if schema_version >= 2 else ("roles", "levels")
+        for field in fields:
             items = definition.get(field)
             if not isinstance(items, list) or not items:
                 raise ValueError(f"Assessment methodology must define {field}.")
@@ -544,12 +604,13 @@ class AssessmentAuthoringService:
                     raise ValueError(f"Every methodology {field} item must be an object.")
                 code = str(item.get("code") or "").strip()
                 name = str(item.get("name") or "").strip()
-                if not code or not name or code in seen:
+                label = name or (str(item.get("meaning") or "").strip() if schema_version >= 2 else "")
+                if not code or not label or code in seen:
                     raise ValueError(f"Methodology {field} codes must be present and unique; names are required.")
                 if field == "roles" and not str(item.get("description") or "").strip():
                     raise ValueError("Every methodology role must define description.")
-                if field == "levels" and int(item.get("order") or 0) < 1:
-                    raise ValueError("Every methodology level must define a positive order.")
+                if field == "levels" and int(item.get("order") if item.get("order") is not None else -1) < 0:
+                    raise ValueError("Every methodology level must define a non-negative order.")
                 seen.add(code)
 
     def _validate_agent_definition(self, definition: dict[str, Any]) -> None:

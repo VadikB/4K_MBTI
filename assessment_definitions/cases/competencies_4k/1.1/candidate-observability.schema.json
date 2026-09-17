@@ -1,0 +1,146 @@
+{
+  "$defs": {
+    "SourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "minLength": 1,
+          "title": "File",
+          "type": "string"
+        },
+        "row": {
+          "exclusiveMinimum": 0,
+          "title": "Row",
+          "type": "integer"
+        },
+        "sheet": {
+          "minLength": 1,
+          "title": "Sheet",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "sheet",
+        "row"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "base_role": {
+      "minLength": 1,
+      "title": "Base Role",
+      "type": "string"
+    },
+    "branch": {
+      "minLength": 1,
+      "title": "Branch",
+      "type": "string"
+    },
+    "candidate_indicator_ids": {
+      "items": {
+        "pattern": "^K[1-4]\\.I\\d{2}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Candidate Indicator Ids",
+      "type": "array"
+    },
+    "case_id": {
+      "minLength": 1,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "component_id": {
+      "minLength": 1,
+      "title": "Component Id",
+      "type": "string"
+    },
+    "conditions": {
+      "minLength": 1,
+      "title": "Conditions",
+      "type": "string"
+    },
+    "indicator_id": {
+      "anyOf": [
+        {
+          "pattern": "^K[1-4]\\.I\\d{2}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Indicator Id"
+    },
+    "loss_risk": {
+      "minLength": 1,
+      "title": "Loss Risk",
+      "type": "string"
+    },
+    "observable_action": {
+      "minLength": 1,
+      "title": "Observable Action",
+      "type": "string"
+    },
+    "required": {
+      "const": true,
+      "default": true,
+      "title": "Required",
+      "type": "boolean"
+    },
+    "resolution": {
+      "enum": [
+        "source_assigned",
+        "pending_methodological_review"
+      ],
+      "title": "Resolution",
+      "type": "string"
+    },
+    "skill_id": {
+      "minLength": 1,
+      "title": "Skill Id",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/SourceRef"
+    },
+    "source_indicator_value": {
+      "minLength": 1,
+      "title": "Source Indicator Value",
+      "type": "string"
+    },
+    "source_qa_status": {
+      "minLength": 1,
+      "title": "Source Qa Status",
+      "type": "string"
+    },
+    "test_as_id": {
+      "minLength": 1,
+      "title": "Test As Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "test_as_id",
+    "case_id",
+    "base_role",
+    "skill_id",
+    "component_id",
+    "indicator_id",
+    "candidate_indicator_ids",
+    "resolution",
+    "conditions",
+    "branch",
+    "observable_action",
+    "loss_risk",
+    "source_indicator_value",
+    "source_qa_status",
+    "source"
+  ],
+  "title": "CandidateObservability",
+  "type": "object"
+}

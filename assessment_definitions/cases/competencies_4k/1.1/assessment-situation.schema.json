@@ -1,0 +1,239 @@
+{
+  "$defs": {
+    "Observability": {
+      "additionalProperties": false,
+      "properties": {
+        "branches": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Branches",
+          "type": "array"
+        },
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "conditions": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Conditions",
+          "type": "array"
+        },
+        "indicator_id": {
+          "pattern": "^K[1-4]\\.I\\d{2}$",
+          "title": "Indicator Id",
+          "type": "string"
+        },
+        "loss_risk": {
+          "minLength": 1,
+          "title": "Loss Risk",
+          "type": "string"
+        },
+        "observable_action": {
+          "minLength": 1,
+          "title": "Observable Action",
+          "type": "string"
+        },
+        "qa_basis": {
+          "minLength": 1,
+          "title": "Qa Basis",
+          "type": "string"
+        },
+        "qa_result": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_RUN"
+          ],
+          "title": "Qa Result",
+          "type": "string"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "skill_id": {
+          "minLength": 1,
+          "title": "Skill Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "skill_id",
+        "component_id",
+        "indicator_id",
+        "required",
+        "conditions",
+        "branches",
+        "observable_action",
+        "loss_risk",
+        "qa_result",
+        "qa_basis"
+      ],
+      "title": "Observability",
+      "type": "object"
+    },
+    "Substitution": {
+      "additionalProperties": false,
+      "properties": {
+        "slot": {
+          "minLength": 1,
+          "title": "Slot",
+          "type": "string"
+        },
+        "source_checksum": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Source Checksum",
+          "type": "string"
+        },
+        "source_path": {
+          "minLength": 1,
+          "title": "Source Path",
+          "type": "string"
+        },
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slot",
+        "value",
+        "source_path",
+        "source_checksum"
+      ],
+      "title": "Substitution",
+      "type": "object"
+    },
+    "VersionRef": {
+      "additionalProperties": false,
+      "properties": {
+        "checksum": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Checksum",
+          "type": "string"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "checksum"
+      ],
+      "title": "VersionRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Контракт будущего снимка; наличие JSON не означает допуск или исполнение.",
+  "properties": {
+    "assessment_situation_id": {
+      "minLength": 1,
+      "title": "Assessment Situation Id",
+      "type": "string"
+    },
+    "base_role": {
+      "minLength": 1,
+      "title": "Base Role",
+      "type": "string"
+    },
+    "case_ref": {
+      "$ref": "#/$defs/VersionRef"
+    },
+    "conditions": {
+      "minLength": 1,
+      "title": "Conditions",
+      "type": "string"
+    },
+    "methodology_ref": {
+      "$ref": "#/$defs/VersionRef"
+    },
+    "observability": {
+      "items": {
+        "$ref": "#/$defs/Observability"
+      },
+      "minItems": 1,
+      "title": "Observability",
+      "type": "array"
+    },
+    "planned_minutes": {
+      "exclusiveMinimum": 0,
+      "title": "Planned Minutes",
+      "type": "integer"
+    },
+    "presentation": {
+      "minLength": 1,
+      "title": "Presentation",
+      "type": "string"
+    },
+    "profile_ref": {
+      "$ref": "#/$defs/VersionRef"
+    },
+    "qa_basis": {
+      "minLength": 1,
+      "title": "Qa Basis",
+      "type": "string"
+    },
+    "qa_result": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "NOT_RUN"
+      ],
+      "title": "Qa Result",
+      "type": "string"
+    },
+    "scenario": {
+      "minLength": 1,
+      "title": "Scenario",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "substitutions": {
+      "items": {
+        "$ref": "#/$defs/Substitution"
+      },
+      "title": "Substitutions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "assessment_situation_id",
+    "case_ref",
+    "profile_ref",
+    "methodology_ref",
+    "base_role",
+    "substitutions",
+    "presentation",
+    "conditions",
+    "scenario",
+    "planned_minutes",
+    "observability",
+    "qa_result",
+    "qa_basis"
+  ],
+  "title": "AssessmentSituation",
+  "type": "object"
+}

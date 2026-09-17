@@ -1,0 +1,66 @@
+{
+  "agent_artifacts": [
+    {
+      "name": "agents/indicator_communication_v1.json",
+      "sha256": "dede122a5c1b499a833eed5d1a050a22906c865f5030aa93755f3c3067c1c60d"
+    },
+    {
+      "name": "agents/indicator_creativity_v1.json",
+      "sha256": "5f095a090a4020cd2fee7e5e8acb285bf3c236dbff9e8564fbae29484c28e65f"
+    },
+    {
+      "name": "agents/indicator_critical_thinking_v1.json",
+      "sha256": "0aa91c379ca30446f52338b02c1d3703a9eb811a3c5a1ae1c65561845e447c1e"
+    },
+    {
+      "name": "agents/indicator_evaluation_protocol_v1.md",
+      "sha256": "95ddc834dea4371ac02ba6e0c5561ccec5b8fc5dc26bd76495afc89e235fc48c"
+    },
+    {
+      "name": "agents/indicator_teamwork_v1.json",
+      "sha256": "40692dc31db0ae374dd3d87bf132ec05dd4700d76cfc2bcf4a87cfe1f88d5ea4"
+    }
+  ],
+  "artifact": {
+    "name": "methodology.json",
+    "sha256": "558245c485e08752ac88b1eef31551696aeb8b1c7acdd154ea6b41f4f6bee8bd"
+  },
+  "methodology_code": "competencies_4k",
+  "methodology_version": "1.1",
+  "schema_version": 1,
+  "sources": [
+    {
+      "name": "M2.K1_Матрица_Коммуникация_v1.1_FROZEN.xlsx",
+      "sha256": "2b5bd322bf51d6e05cdf3506cd14b2854eb6528082d15a44a918cc233ed3c880"
+    },
+    {
+      "name": "M2.K1_Паспорт_Коммуникация_v1.1_FROZEN.docx",
+      "sha256": "14b6db3ee9eabd3ed7578fcd6b387cb353ad45e5c6fc5bb62c4cf29fbe017523"
+    },
+    {
+      "name": "M2.K2_Матрица_Командная_работа_v1.0_FROZEN.xlsx",
+      "sha256": "2d004a3acb53a10dbc75d63d5cdb16c3a36a5358e6c04c3a79be9327cd269890"
+    },
+    {
+      "name": "M2.K2_Паспорт_Командная_работа_v1.0_FROZEN.docx",
+      "sha256": "abcca5cf8a4af475a88b4004c389de4f8f8596c5fc85c816bbc784258e3703ab"
+    },
+    {
+      "name": "M2.K3_Матрица_Креативность_v1.1_FROZEN.xlsx",
+      "sha256": "7db056f104c21a8a19b7840dbe36795ac1a93245182a2432e3102f0f3c0e207c"
+    },
+    {
+      "name": "M2.K3_Паспорт_Креативность_v1.1_FROZEN.docx",
+      "sha256": "01a9f5b970d510e2535ce23ef3c822ca27525161c3cdd56e99e4e2a6ea8dae91"
+    },
+    {
+      "name": "M2.K4_Матрица_Критическое_мышление_v1.0_FROZEN.xlsx",
+      "sha256": "3fdcfc1ba40b4afa626842122067d216b8ecb3efeabcc7cb315002c97c204cf2"
+    },
+    {
+      "name": "M2.K4_Паспорт_Критическое_мышление_v1.0_FROZEN.docx",
+      "sha256": "b9ac20ecc5a65908d3a1dc2d6d1a5c69a415a9cd4788b9a5180667739e253ceb"
+    }
+  ],
+  "status": "draft"
+}

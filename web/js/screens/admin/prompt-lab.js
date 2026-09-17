@@ -53,6 +53,7 @@ import { escapeHtml, sanitizeDisplayRole, sanitizeDisplayMetaText, buildInitials
 import { readApiResponse, createOperationId } from '../../api.js';
 import { hideAllPanels, syncUrlState } from '../../router.js';
 import { setCurrentScreen } from '../../state.js';
+import { initializeM5Lab } from './m5-lab.js';
 export const stopAdminPromptLabPolling = () => {
   if (state.adminPromptLabPollId) {
     window.clearInterval(state.adminPromptLabPollId);
@@ -125,6 +126,7 @@ export const startAdminPromptLabPolling = (operationId) => {
 };
 
 export const loadAdminPromptLab = async () => {
+  await initializeM5Lab();
   const response = await fetch('/users/admin/prompt-lab', {
     credentials: 'same-origin',
   });

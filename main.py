@@ -19,6 +19,7 @@ from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.system_logging import configure_application_logging, configure_database_logging, write_system_log
 from Api.web_session_service import web_session_service
+from Api.m5_generation_lab import ensure_lab_schema
 
 app = FastAPI(title="Agent_4K API", docs_url=None)
 app.add_middleware(GZipMiddleware, minimum_size=500)
@@ -31,6 +32,9 @@ DEV_PREVIEWS_DIR = BASE_DIR / "dev_previews"
 SWAGGER_UI_DIR = WEB_DIR / "vendor" / "swagger-ui"
 
 ensure_core_schema()
+with get_connection() as connection:
+    ensure_lab_schema(connection)
+    connection.commit()
 web_session_service.ensure_schema()
 configure_application_logging()
 if settings.runtime_logs_to_db:
