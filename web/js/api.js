@@ -27,7 +27,7 @@ export class ApiResponseError extends Error {
   }
 }
 
-export const readApiResponse = async (response, fallbackMessage) => {
+export const readApiResponse = async (response, fallbackMessage, { recoverUnauthorized = true } = {}) => {
   const rawText = await response.text();
   let data = null;
 
@@ -40,7 +40,7 @@ export const readApiResponse = async (response, fallbackMessage) => {
   }
 
   if (!response.ok) {
-    if (response.status === 401) {
+    if (response.status === 401 && recoverUnauthorized) {
       notifyUnauthorizedResponse();
     }
     if (data && typeof data === 'object' && 'detail' in data && data.detail) {

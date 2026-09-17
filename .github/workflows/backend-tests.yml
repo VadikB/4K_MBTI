@@ -23,6 +23,9 @@ jobs:
       - name: Lint frontend
         run: npm run lint:js
 
+      - name: Frontend regression tests
+        run: node --test tests/frontend/*.test.mjs
+
       - name: Build frontend
         run: npm run build:web
 

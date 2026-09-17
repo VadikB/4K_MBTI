@@ -13,6 +13,21 @@ const unauthorizedResponse = (detail = 'Admin session not found') =>
     headers: { 'content-type': 'application/json' },
   });
 
+test('a rejected login preserves the server error without expired-session recovery', async () => {
+  let recoveries = 0;
+  registerUnauthorizedResponseHandler(() => {
+    recoveries += 1;
+  });
+
+  await assert.rejects(
+    readApiResponse(unauthorizedResponse('Неверный пароль.'), 'Fallback', { recoverUnauthorized: false }),
+    (error) => error instanceof ApiResponseError && error.status === 401 && error.message === 'Неверный пароль.',
+  );
+  await Promise.resolve();
+
+  assert.equal(recoveries, 0);
+});
+
 test('a protected API 401 starts expired-session recovery and preserves the status', async () => {
   let recoveries = 0;
   registerUnauthorizedResponseHandler(() => {
