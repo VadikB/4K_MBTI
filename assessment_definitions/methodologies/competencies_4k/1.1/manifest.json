@@ -23,8 +23,22 @@
   ],
   "artifact": {
     "name": "methodology.json",
-    "sha256": "558245c485e08752ac88b1eef31551696aeb8b1c7acdd154ea6b41f4f6bee8bd"
+    "sha256": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c"
   },
+  "control_artifacts": [
+    {
+      "name": "import-profile.json",
+      "sha256": "4bf0cc4e84696bff81ddaba9eb5814c50f12be07091c7e5d4a476d3d0653396c"
+    },
+    {
+      "name": "normative-control.json",
+      "sha256": "d23e30d96ce886c3b509e7e19acb6debe383718d491218ed0ae7825925315b08"
+    },
+    {
+      "name": "methodology-package-v2.schema.json",
+      "sha256": "4a85de4784334f5e5885930c194fbeb05f6a90b12e5655179ea1c0940ffb2844"
+    }
+  ],
   "methodology_code": "competencies_4k",
   "methodology_version": "1.1",
   "schema_version": 1,
@@ -62,5 +76,10 @@
       "sha256": "b9ac20ecc5a65908d3a1dc2d6d1a5c69a415a9cd4788b9a5180667739e253ceb"
     }
   ],
-  "status": "draft"
+  "status": "draft",
+  "transformation_validation": {
+    "name": "transformation-report.json",
+    "sha256": "5a8617d1ba335df03eb45468e3ae11cef399afc05f49ad0c69694dcb6a08e04b",
+    "status": "PASS"
+  }
 }

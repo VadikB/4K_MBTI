@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "expected_source_counts": {
+    "passports": 4,
+    "matrices": 4
+  },
+  "competencies": {
+    "K1": {
+      "red_flags": {"format": "none"},
+      "runtime_binding": {
+        "evaluator": "evaluation.communication",
+        "evaluator_version": 2,
+        "agent_definition": {"code": "indicator_communication", "version": 1}
+      }
+    },
+    "K2": {
+      "red_flags": {"format": "explicit_codes"},
+      "runtime_binding": {
+        "evaluator": "evaluation.teamwork",
+        "evaluator_version": 2,
+        "agent_definition": {"code": "indicator_teamwork", "version": 1}
+      }
+    },
+    "K3": {
+      "red_flags": {
+        "format": "numbered_list",
+        "generated_code_template": "RF-{indicator_id}-{number:02d}"
+      },
+      "indicator_red_flags": {
+        "K3.I06": {
+          "format": "single_text",
+          "generated_code_template": "RF-{indicator_id}-{number:02d}"
+        },
+        "K3.I09": {
+          "format": "single_text",
+          "generated_code_template": "RF-{indicator_id}-{number:02d}"
+        }
+      },
+      "runtime_binding": {
+        "evaluator": "evaluation.creativity",
+        "evaluator_version": 2,
+        "agent_definition": {"code": "indicator_creativity", "version": 1}
+      }
+    },
+    "K4": {
+      "red_flags": {
+        "format": "single_text",
+        "generated_code_template": "RF-{indicator_id}-{number:02d}"
+      },
+      "runtime_binding": {
+        "evaluator": "evaluation.critical_thinking",
+        "evaluator_version": 2,
+        "agent_definition": {"code": "indicator_critical_thinking", "version": 1}
+      }
+    }
+  }
+}
