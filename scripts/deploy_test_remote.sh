@@ -4,10 +4,19 @@ set -eu
 project_dir="/home/user1/projects/Agent4K-Test"
 service_name="agent4k-test.service"
 health_url="http://127.0.0.1:8002/users/version"
+frontend_asset_backup_dir="$(mktemp -d)"
 
 cd "$project_dir"
 
 previous_commit="$(git rev-parse HEAD)"
+
+if [ -d web/dist ]; then
+  cp -a web/dist/. "$frontend_asset_backup_dir/"
+fi
+
+cleanup_frontend_asset_backup() {
+  rm -rf "$frontend_asset_backup_dir"
+}
 
 rollback() {
   echo "Test deployment failed; rolling back to $previous_commit" >&2
@@ -17,6 +26,7 @@ rollback() {
   npm ci
   npm run build:web
   sudo -n systemctl restart "$service_name"
+  cleanup_frontend_asset_backup
   exit 1
 }
 
@@ -34,6 +44,14 @@ git pull --ff-only origin main || rollback
 npm ci || rollback
 npm run build:web || rollback
 
+# An already open browser tab can still execute the previous in-memory
+# entrypoint after a deployment. Keep its content-addressed chunks available
+# during the transition, but never replace files from the new build.
+sh scripts/retain_previous_frontend_assets.sh \
+  web/dist \
+  "$frontend_asset_backup_dir" \
+  14 || rollback
+
 sudo -n systemctl restart "$service_name" || rollback
 
 attempt=0
@@ -46,4 +64,5 @@ until curl -fsS "$health_url" >/dev/null; do
 done
 
 deployed_commit="$(git rev-parse HEAD)"
+cleanup_frontend_asset_backup
 echo "Test deployment completed: $deployed_commit"
