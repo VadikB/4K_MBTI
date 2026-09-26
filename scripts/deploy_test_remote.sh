@@ -23,7 +23,7 @@ rollback() {
   git restore --worktree web/dist
   git clean -fd web/dist
   git switch --detach "$previous_commit"
-  npm ci
+  npm ci --include=dev
   npm run build:web
   sudo -n systemctl restart "$service_name"
   cleanup_frontend_asset_backup
@@ -41,7 +41,7 @@ git pull --ff-only origin main || rollback
 # project requirements so pip does not resolve and download a new CUDA stack.
 .venv/bin/pip install --no-deps -r requirements.txt || rollback
 
-npm ci || rollback
+npm ci --include=dev || rollback
 npm run build:web || rollback
 
 # An already open browser tab can still execute the previous in-memory

@@ -7,6 +7,7 @@ import time
 
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "retain_previous_frontend_assets.sh"
+DEPLOY_SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "deploy_test_remote.sh"
 
 
 def _run_retention(current: Path, previous: Path, days: int = 14) -> None:
@@ -48,3 +49,9 @@ def test_expired_hashed_chunk_is_removed(tmp_path: Path) -> None:
     _run_retention(current, previous)
 
     assert not (current / expired.name).exists()
+
+
+def test_test_deploy_installs_frontend_build_dependencies() -> None:
+    deploy_script = DEPLOY_SCRIPT.read_text(encoding="utf-8")
+
+    assert deploy_script.count("npm ci --include=dev") == 2
