@@ -1,0 +1,38 @@
+{
+  "environment": "https://test.4k-assistant.ru",
+  "version": "2.1.28",
+  "date": "2026-09-17",
+  "case_id": "SCR.A01",
+  "mode": "template",
+  "created_via": "Prompt Lab UI",
+  "database_table": "m5_generation_lab_runs",
+  "database_verified": true,
+  "reopened_after_page_reload": true,
+  "both_presentations_and_checksums_match": true,
+  "methodological_qa": "NOT_RUN",
+  "llm": "NOT_RUN",
+  "runs": [
+    {
+      "run_id": "f8ce95dd-bae3-465e-8476-b0c23320c358",
+      "present": true,
+      "status": "completed",
+      "base_role": "team_lead",
+      "mode": "template",
+      "input_checksum": "c8d176fc4a7bebe3d986822735ce2ddd0496120707517027a32a0f60fba19e04",
+      "output_checksum": "12a4b7fc70ce88f3e817e50f9043e7760cf3f9285bd97a627965f18c0430ede8",
+      "input_integrity": true,
+      "output_integrity": true
+    },
+    {
+      "run_id": "2f9b47f4-6437-4fa4-a611-a30511142cab",
+      "present": true,
+      "status": "completed",
+      "base_role": "project_product_process_manager",
+      "mode": "template",
+      "input_checksum": "a9c9c21c5fdaf5fbe2ed34eab0cc6c76cc3cd14f8a0c41932a7861c2c74b1032",
+      "output_checksum": "793acf7653b4a07528603d3562fb759d2410af9c67c82dd2e3fb9926f6df6ddf",
+      "input_integrity": true,
+      "output_integrity": true
+    }
+  ]
+}
