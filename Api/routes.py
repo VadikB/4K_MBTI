@@ -4906,6 +4906,8 @@ def create_m5_lab_run(payload: m5_generation_lab.GenerationRequest, request: Req
         _require_superadmin(connection, user)
         try:
             row, created = m5_generation_lab.begin_run(connection, request=payload, user_id=int(user.id))
+        except m5_generation_lab.LabPromptUnavailable as exc:
+            raise HTTPException(status_code=503, detail="M5_PROMPT_PACKAGE_UNAVAILABLE") from exc
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         connection.commit()

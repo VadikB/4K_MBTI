@@ -83,3 +83,16 @@ def test_lab_catalog_exposes_only_two_supported_roles(client):
     assert {r["code"] for r in catalog["roles"]} == {"team_lead", "project_product_process_manager"}
     response = c.post("/users/admin/m5-lab/runs", json={"run_id": str(uuid4()), "case_id": "SCR.A01", "base_role": "student"})
     assert response.status_code == 422
+
+
+def test_missing_prompt_returns_503_without_inserting_run(client, tmp_path):
+    c, monkeypatch = client
+    c.cookies.set(routes.SESSION_COOKIE_NAME, "admin")
+    monkeypatch.setattr(routes.m5_generation_lab, "PROMPT_PACKAGE", tmp_path)
+    monkeypatch.setattr(routes.m5_generation_lab, "get_run", lambda *_: None)
+    # Реальный begin_run; у подставного connection нет execute: INSERT недопустим.
+    response = c.post("/users/admin/m5-lab/runs", json={
+        "run_id": str(uuid4()), "case_id": "SCR.A01", "base_role": "team_lead",
+    })
+    assert response.status_code == 503
+    assert response.json() == {"detail": "M5_PROMPT_PACKAGE_UNAVAILABLE"}

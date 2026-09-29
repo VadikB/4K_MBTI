@@ -5,10 +5,11 @@ import pytest
 from psycopg.rows import dict_row
 
 from Api.m5_generation_lab import GenerationRequest, begin_run, ensure_lab_schema, finish_run, generate, get_run
+import Api.m5_generation_lab as lab
 
 
 @pytest.mark.integration
-def test_m5_lab_persists_both_roles_and_idempotent_artifacts(test_database_url):
+def test_m5_lab_persists_both_roles_and_idempotent_artifacts(test_database_url, monkeypatch, tmp_path):
     schema = "m5_test_" + uuid4().hex
     with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
         connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
@@ -22,6 +23,7 @@ def test_m5_lab_persists_both_roles_and_idempotent_artifacts(test_database_url):
             row, created = begin_run(connection, request=request, user_id=7)
             assert created
             assert row["input_json"]["profile"]["base_role"] == role
+            assert row["input_json"]["prompt"]["artifact"]["id"] == "m5_generation_lab"
             output = generate(row["input_json"])
             finish_run(connection, run_id=str(request.run_id), output=output, error_code=None)
             saved = get_run(connection, str(request.run_id))
@@ -29,7 +31,15 @@ def test_m5_lab_persists_both_roles_and_idempotent_artifacts(test_database_url):
             assert saved["output_integrity"] is True
             assert saved["input_integrity"] is True
             assert len(saved["output_json"]["observability"]) == 2
-            duplicate, created = begin_run(connection, request=request, user_id=7)
+            with monkeypatch.context() as patch:
+                patch.setattr(lab, "PROMPT_PACKAGE", tmp_path)
+                duplicate, created = begin_run(connection, request=request, user_id=7)
+                assert duplicate["input_json"] == row["input_json"]
+                assert generate(duplicate["input_json"])["presentation"] == output["presentation"]
+                with pytest.raises(ValueError, match="другим запросом"):
+                    begin_run(connection, request=request, user_id=8)
+                with pytest.raises(lab.LabPromptUnavailable):
+                    begin_run(connection, request=request.model_copy(update={"run_id": uuid4()}), user_id=7)
             assert not created
             assert duplicate["output_json"] == output
             changed = request.model_copy(update={"case_id": "SCR.A02"})
