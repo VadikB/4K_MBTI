@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "m5_generation_lab",
+  "version": "m5-lab-v1",
+  "status": "draft",
+  "scope": "laboratory_only",
+  "owner": "M5 methodology owner",
+  "source": "Api/m5_generation_lab.py:SYSTEM_PROMPT@c035e833236bea4c3dbc572446a0aa7aad036571",
+  "artifacts": [
+    {
+      "name": "prompt.md",
+      "sha256": "2fdc4d51b1de715f601482d82d8f9d9986ae7240b45a1d1e3e6216df38ed9d44"
+    }
+  ]
+}
