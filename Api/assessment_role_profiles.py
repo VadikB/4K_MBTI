@@ -319,7 +319,7 @@ def bind_role_profile_to_session(connection, *, session_id: int, user_id: int, v
     role = load_published_role_profile(connection, version_id)
     session = connection.execute(
         """
-        SELECT user_id, role_profile_version_id, execution_snapshot_json
+        SELECT user_id, role_profile_version_id, execution_snapshot_json, execution_checksum
         FROM user_sessions WHERE id = %s FOR UPDATE
         """,
         (session_id,),
@@ -327,7 +327,13 @@ def bind_role_profile_to_session(connection, *, session_id: int, user_id: int, v
     if session is None or int(session["user_id"]) != user_id:
         raise ValueError("Assessment session does not belong to this user.")
     existing_version = session["role_profile_version_id"]
-    snapshot = session["execution_snapshot_json"]
+    from Api.snapshot_integrity import verify_snapshot
+
+    snapshot = verify_snapshot(
+        session["execution_snapshot_json"],
+        session["execution_checksum"],
+        expected_user_id=user_id,
+    )
     if not isinstance(snapshot, dict) or str((snapshot.get("methodology") or {}).get("definition", {}).get("methodology_version")) != "1.1":
         raise ValueError("RoleProfile can only be bound to a methodology 1.1 snapshot.")
     if existing_version is not None:

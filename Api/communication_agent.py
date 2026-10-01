@@ -156,15 +156,9 @@ class BaseCompetencyAgent:
         session_skills = self._load_session_skills(connection, session_id)
         if not session_skills:
             return []
-        snapshot_row = connection.execute(
-            "SELECT execution_snapshot_json FROM user_sessions WHERE id = %s",
-            (session_id,),
-        ).fetchone()
-        prompt_snapshot = (
-            snapshot_row["execution_snapshot_json"]
-            if snapshot_row is not None and isinstance(snapshot_row["execution_snapshot_json"], dict)
-            else None
-        )
+        from Api.assessment_runtime import scenario_runner
+
+        prompt_snapshot = scenario_runner.load_snapshot(connection, session_id=session_id)
         agent_prompt_config, skills = self.load_evaluation_materials(
             connection=connection,
             session_id=session_id,

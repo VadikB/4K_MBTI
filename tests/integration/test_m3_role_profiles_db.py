@@ -18,6 +18,7 @@ from Api.assessment_role_profiles import (
     select_role_profile_for_user,
 )
 from Api.database import ensure_role_profile_schema
+from Api.snapshot_integrity import bind_execution_snapshot, snapshot_checksum
 
 
 PACKAGE_DIR = Path(__file__).resolve().parents[2] / "assessment_definitions/role_profiles/competencies_4k/1.1"
@@ -127,9 +128,14 @@ def test_base_and_organization_roles_are_versioned_visible_and_immutable(test_da
                     (organization_role_id,),
                 )
         assert load_published_role_profile(connection, organization_role_id)["checksum"] != "changed"
+        session_snapshot = bind_execution_snapshot(
+            {"schema_version": 1, "methodology": {"definition": {"methodology_version": "1.1"}}},
+            user_id=7,
+        )
         connection.execute(
-            "INSERT INTO user_sessions (id, user_id, execution_snapshot_json) VALUES (42, 7, %s::jsonb)",
-            (json.dumps({"methodology": {"definition": {"methodology_version": "1.1"}}}),),
+            "INSERT INTO user_sessions (id, user_id, execution_snapshot_json, execution_checksum) "
+            "VALUES (42, 7, %s::jsonb, %s)",
+            (json.dumps(session_snapshot), snapshot_checksum(session_snapshot)),
         )
         frozen = bind_role_profile_to_session(connection, session_id=42, user_id=7, version_id=organization_role_id)
         assert frozen["role_profile"]["definition"]["description"]["name"] == "Координатор исследований"

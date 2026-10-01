@@ -19,6 +19,7 @@ from Api.communication_agent import (
 from Api.deepseek_client import deepseek_client
 from Api.config import settings
 from Api.universal_competency_evaluator import UniversalCompetencyEvaluationError
+from Api.snapshot_integrity import bind_execution_snapshot, snapshot_checksum
 
 
 def snapshot() -> dict:
@@ -44,14 +45,15 @@ def snapshot() -> dict:
             "checksum": definition_checksum(definition),
             "definition": definition,
         }
-    return {
+    return bind_execution_snapshot({
+        "schema_version": 1,
         "methodology": {
             "code": "competencies_4k",
             "version": 1,
             "definition": LEGACY_METHODOLOGY_DEFINITION,
         },
         "prompts": {"agent_definitions": agent_definitions},
-    }
+    }, user_id=7)
 
 
 def evaluation() -> SkillEvaluation:
@@ -550,7 +552,8 @@ def test_legacy_facade_delegates_persistence_to_repository(monkeypatch) -> None:
 
     class Cursor:
         def fetchone(self):
-            return {"execution_snapshot_json": snapshot()}
+            value = snapshot()
+            return {"user_id": 7, "execution_snapshot_json": value, "execution_checksum": snapshot_checksum(value)}
 
     class Connection:
         def execute(self, *_args, **_kwargs):

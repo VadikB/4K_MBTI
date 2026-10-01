@@ -11,6 +11,7 @@ from Api.case_context_builder import build_case_context
 from Api.case_reuse_service import case_reuse_service
 from Api.assessment_configuration import definition_checksum, load_default_execution_configuration
 from Api.assessment_runtime import complete_stage_run, fail_stage_run, scenario_runner, start_stage_run
+from Api.snapshot_integrity import bind_execution_snapshot, snapshot_checksum, verify_snapshot
 from Api.config import settings
 from Api.database import get_case_methodology_versions, get_connection
 from Api.deepseek_client import DeepSeekTurnResult, deepseek_client
@@ -484,6 +485,16 @@ class AssessmentService:
                 if execution_snapshot is not None
                 else load_default_execution_configuration(connection)
             )
+            if execution_snapshot is None:
+                frozen_snapshot = bind_execution_snapshot(execution_configuration["snapshot"], user_id=int(user.id))
+                execution_configuration["snapshot"] = frozen_snapshot
+                execution_configuration["checksum"] = snapshot_checksum(frozen_snapshot)
+            else:
+                verify_snapshot(
+                    execution_snapshot,
+                    execution_configuration["checksum"],
+                    expected_user_id=int(user.id),
+                )
             effective_snapshot = execution_configuration["snapshot"]
             operation_progress_service.advance(
                 progress_operation_id,
@@ -1221,15 +1232,7 @@ class AssessmentService:
         prompt_snapshot: dict | None = None,
     ) -> None:
         if prompt_snapshot is None:
-            snapshot_row = connection.execute(
-                "SELECT execution_snapshot_json FROM user_sessions WHERE id = %s",
-                (session_id,),
-            ).fetchone()
-            prompt_snapshot = (
-                snapshot_row["execution_snapshot_json"]
-                if snapshot_row is not None and isinstance(snapshot_row["execution_snapshot_json"], dict)
-                else None
-            )
+            prompt_snapshot = scenario_runner.load_snapshot(connection, session_id=session_id)
         methodical_context = self._get_case_methodical_context(connection, case_row)
         planned_total_duration_min = case_row["planned_duration_minutes"] or case_row["estimated_minutes"]
         existing_case_contexts = self._get_existing_session_case_contexts(
@@ -2458,7 +2461,8 @@ class AssessmentService:
             session_row = connection.execute(
                 """
                 SELECT us.id, us.session_code, us.user_id, us.role_id, u.full_name, u.job_description,
-                       u.company_industry, us.execution_snapshot_json, p.id AS active_profile_id,
+                       u.company_industry, us.execution_snapshot_json, us.execution_checksum,
+                       p.id AS active_profile_id,
                        p.raw_position, p.raw_duties, p.normalized_duties
                 FROM user_sessions us
                 JOIN users u ON u.id = us.user_id
@@ -2471,6 +2475,7 @@ class AssessmentService:
             ).fetchone()
             if session_row is None:
                 raise ValueError("Assessment session not found")
+            execution_snapshot = scenario_runner.load_snapshot(connection, session_id=int(session_row["id"]))
 
             role_row = connection.execute(
                 "SELECT name FROM roles WHERE id = %s",
@@ -2566,7 +2571,7 @@ class AssessmentService:
                     system_prompt=prompt_row["final_prompt_text"] if prompt_row else "",
                     dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                     case_title=case_meta["title"],
-                    prompt_snapshot=session_row.get("execution_snapshot_json"),
+                    prompt_snapshot=execution_snapshot,
                 )
                 connection.execute(
                     """
@@ -2626,7 +2631,7 @@ class AssessmentService:
                         dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                         case_title=case_meta["title"],
                         case_skills=self._get_case_skill_names(connection, plan.current_session_case_id),
-                        prompt_snapshot=session_row.get("execution_snapshot_json"),
+                        prompt_snapshot=execution_snapshot,
                     )
                 connection.execute(
                     """
@@ -2726,7 +2731,7 @@ class AssessmentService:
                     dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                     case_title=case_meta["title"],
                     case_skills=self._get_case_skill_names(connection, plan.current_session_case_id),
-                    prompt_snapshot=session_row.get("execution_snapshot_json"),
+                    prompt_snapshot=execution_snapshot,
                 )
                 connection.execute(
                     """
@@ -2777,7 +2782,7 @@ class AssessmentService:
                     dialogue=[{"role": row["role"], "content": row["message_text"]} for row in dialogue_rows],
                     case_title=case_meta["title"],
                     case_skills=self._get_case_skill_names(connection, plan.current_session_case_id),
-                    prompt_snapshot=session_row.get("execution_snapshot_json"),
+                    prompt_snapshot=execution_snapshot,
                 )
                 connection.execute(
                     """
@@ -3006,7 +3011,7 @@ class AssessmentService:
                 duties=session_row["normalized_duties"] or session_row["raw_duties"],
                 company_industry=session_row["company_industry"],
                 user_profile=user_profile,
-                prompt_snapshot=session_row.get("execution_snapshot_json"),
+                prompt_snapshot=execution_snapshot,
             )
 
             if self._needs_non_repeating_follow_up(turn.assistant_message, dialogue_rows):

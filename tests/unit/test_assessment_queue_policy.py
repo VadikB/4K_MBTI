@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import pytest
 
 from Api import assessment_preparation_queue as queue_module
 from Api.assessment_preparation_queue import AssessmentPreparationJob, AssessmentPreparationQueue
 from Api.schemas import AssessmentStartResponse
+from Api.snapshot_integrity import bind_execution_snapshot, snapshot_checksum
 
 
 def user_payload() -> dict:
@@ -24,7 +27,31 @@ def user_payload() -> dict:
     }
 
 
+@pytest.fixture(autouse=True)
+def verified_stage(monkeypatch):
+    @contextmanager
+    def fake_connection():
+        yield SimpleNamespace()
+
+    monkeypatch.setattr(queue_module, "get_connection", fake_connection)
+    monkeypatch.setattr(
+        queue_module.scenario_runner,
+        "run_stage",
+        lambda *_args, **kwargs: kwargs["executor"](SimpleNamespace()),
+    )
+
+
 def job(*, attempts: int = 1, max_attempts: int = 3) -> AssessmentPreparationJob:
+    snapshot = bind_execution_snapshot({
+        "schema_version": 1,
+        "scenario": {
+            "definition": {
+                "schema_version": 1,
+                "initial_stage": "prepare_profile",
+                "stages": [{"id": "prepare_profile", "component": "profile.prepare", "component_version": 1}],
+            }
+        },
+    }, user_id=1)
     return AssessmentPreparationJob(
         id=10,
         operation_id="operation",
@@ -33,6 +60,8 @@ def job(*, attempts: int = 1, max_attempts: int = 3) -> AssessmentPreparationJob
         attempts=attempts,
         max_attempts=max_attempts,
         worker_id="worker",
+        execution_snapshot=snapshot,
+        execution_checksum=snapshot_checksum(snapshot),
     )
 
 
@@ -93,3 +122,21 @@ def test_successful_job_is_completed(monkeypatch) -> None:
 
     queue._process(job())
     assert completed[0].session_code == "session"
+
+
+@pytest.mark.unit
+def test_corrupt_snapshot_is_terminal_machine_failure(monkeypatch) -> None:
+    queue = AssessmentPreparationQueue()
+    failures: list[tuple[str, bool, str]] = []
+    corrupted = job()
+    corrupted.execution_snapshot["tampered"] = True
+    monkeypatch.setattr(queue, "_run_job_heartbeat", lambda *_args: None)
+    monkeypatch.setattr(
+        queue,
+        "_fail",
+        lambda _job, message, retry, error_code="": failures.append((message, retry, error_code)),
+    )
+
+    queue._process(corrupted)
+
+    assert failures == [("SNAPSHOT_INTEGRITY_FAILED", False, "SNAPSHOT_INTEGRITY_FAILED")]

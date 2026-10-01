@@ -164,13 +164,19 @@ class ScenarioExecutionContext:
 
 class ScenarioRunner:
     def load_snapshot(self, connection, *, session_id: int) -> dict[str, Any]:
+        from Api.snapshot_integrity import verify_snapshot
+
         row = connection.execute(
-            "SELECT execution_snapshot_json FROM user_sessions WHERE id = %s",
+            "SELECT user_id, execution_snapshot_json, execution_checksum FROM user_sessions WHERE id = %s",
             (session_id,),
         ).fetchone()
-        if row is None or not isinstance(row["execution_snapshot_json"], dict):
-            raise ValueError("Assessment session does not contain an execution snapshot.")
-        return dict(row["execution_snapshot_json"])
+        if row is None:
+            return verify_snapshot(None, None)
+        return verify_snapshot(
+            row["execution_snapshot_json"],
+            row["execution_checksum"],
+            expected_user_id=int(row["user_id"]),
+        )
 
     def resolve_stage(self, snapshot: dict[str, Any], *, stage_id: str) -> dict[str, Any]:
         scenario = dict(snapshot.get("scenario", {}).get("definition") or {})
@@ -189,11 +195,17 @@ class ScenarioRunner:
         stage_id: str,
         executor: Callable[[ScenarioExecutionContext], dict[str, Any] | None],
         snapshot: dict[str, Any] | None = None,
+        snapshot_checksum: str | None = None,
         preparation_job_id: int | None = None,
     ) -> dict[str, Any]:
         if snapshot is None and session_id is None:
             raise ValueError("A bootstrap scenario stage requires an explicit execution snapshot.")
-        effective_snapshot = snapshot or self.load_snapshot(connection, session_id=int(session_id))
+        if snapshot is None:
+            effective_snapshot = self.load_snapshot(connection, session_id=int(session_id))
+        else:
+            from Api.snapshot_integrity import verify_snapshot
+
+            effective_snapshot = verify_snapshot(snapshot, snapshot_checksum, expected_user_id=user_id)
         stage = self.resolve_stage(effective_snapshot, stage_id=stage_id)
         component_code = str(stage["component"])
         component_version = int(stage["component_version"])

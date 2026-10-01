@@ -8,6 +8,7 @@ from Api.assessment_analysis_queue import AssessmentAnalysisJob, AssessmentAnaly
 from Api.assessment_configuration import LEGACY_METHODOLOGY_DEFINITION, LEGACY_SCENARIO_DEFINITION, definition_checksum
 from Api.assessment_evaluator_contracts import CompetencyEvaluationOutput
 from Api.assessment_runtime import ScenarioExecutionContext
+from Api.snapshot_integrity import bind_execution_snapshot
 
 
 def frozen_agent_definitions() -> dict:
@@ -40,8 +41,8 @@ class Cursor:
 
     def fetchone(self):
         if "execution_snapshot_json" in self.statement:
-            return {
-                "execution_snapshot_json": {
+            snapshot = bind_execution_snapshot({
+                    "schema_version": 1,
                     "methodology": {
                         "code": "competencies_4k",
                         "version": 1,
@@ -49,8 +50,8 @@ class Cursor:
                     },
                     "scenario": {"definition": LEGACY_SCENARIO_DEFINITION},
                     "prompts": {"agent_definitions": frozen_agent_definitions()},
-                }
-            }
+            }, user_id=7)
+            return {"user_id": 7, "execution_snapshot_json": snapshot, "execution_checksum": definition_checksum(snapshot)}
         return {"id": 77}
 
 

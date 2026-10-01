@@ -16,6 +16,13 @@ from Api.m5_rule_engine import (
     SemanticDecisionAdapter,
     evaluate_rule,
 )
+from Api.snapshot_integrity import (
+    SNAPSHOT_COMPOSITION_MISMATCH,
+    SNAPSHOT_DEPENDENCY_UNAVAILABLE,
+    SNAPSHOT_INTEGRITY_FAILED,
+    SNAPSHOT_OWNER_MISMATCH,
+    SnapshotIntegrityError,
+)
 
 
 def model_check_case03(scheme: dict, *, rules: dict, initiated_by: str, scheme_authored_by: str) -> dict:
@@ -82,6 +89,42 @@ def _as_row(connection, assessment_situation_id: str, *, lock: bool = False):
                              (UUID(assessment_situation_id),)).fetchone()
     if not row:
         raise ValueError("M5_AS_NOT_FOUND")
+    snapshot = row.get("snapshot_json")
+    if not isinstance(snapshot, dict) or checksum(snapshot) != row.get("snapshot_checksum"):
+        raise SnapshotIntegrityError(SNAPSHOT_INTEGRITY_FAILED, "M5 AS checksum does not match payload.")
+    if str(snapshot.get("assessment_situation_id")) != str(row["assessment_situation_id"]):
+        raise SnapshotIntegrityError(SNAPSHOT_OWNER_MISMATCH, "M5 AS snapshot belongs to another AS.")
+    execution_payload = row.get("execution_payload_json")
+    execution_ref = snapshot.get("execution_payload_ref") or {}
+    if not isinstance(execution_payload, dict) or checksum(execution_payload) != execution_ref.get("checksum"):
+        raise SnapshotIntegrityError(
+            SNAPSHOT_INTEGRITY_FAILED,
+            "M5 execution payload checksum does not match its frozen reference.",
+        )
+    dependencies = connection.execute(
+        """
+        SELECT cv.case_id, cv.case_version, cv.content_checksum, pp.checksum AS profile_checksum
+        FROM m5_case_versions cv
+        JOIN assessment_personalized_profiles pp ON pp.id = %s
+        WHERE cv.id = %s
+        """,
+        (row["personalized_profile_id"], row["case_version_id"]),
+    ).fetchone()
+    if not dependencies:
+        raise SnapshotIntegrityError(SNAPSHOT_DEPENDENCY_UNAVAILABLE, "M5 AS dependency is unavailable.")
+    case_ref = snapshot.get("case_ref") or {}
+    profile_ref = snapshot.get("profile_ref") or {}
+    if (
+        case_ref.get("id") != dependencies["case_id"]
+        or str(case_ref.get("version")) != str(dependencies["case_version"])
+        or case_ref.get("checksum") != dependencies["content_checksum"]
+        or profile_ref.get("checksum") != dependencies["profile_checksum"]
+        or profile_ref.get("id") != f"assessment_personalized_profiles:{row['personalized_profile_id']}"
+    ):
+        raise SnapshotIntegrityError(
+            SNAPSHOT_COMPOSITION_MISMATCH,
+            "M5 AS references do not match its frozen CaseVersion or PersonalizedProfile.",
+        )
     return row
 
 
@@ -96,7 +139,7 @@ def _next_sequence(connection, as_db_id: int) -> int:
 def build_execution_envelope(connection, row: dict) -> dict:
     snapshot = row["snapshot_json"]
     if checksum(snapshot) != row["snapshot_checksum"]:
-        raise ValueError("CHECKSUM_MISMATCH")
+        raise SnapshotIntegrityError(SNAPSHOT_INTEGRITY_FAILED, "M5 AS checksum does not match payload.")
     admitted = bool(snapshot["admission"]["admitted"])
     qa_override = connection.execute(
         "SELECT id, authorized_by, reason, admission_unchanged FROM m5_qa_overrides WHERE assessment_situation_db_id=%s",
@@ -468,6 +511,12 @@ def build_c45(connection, assessment_situation_id: str, *, mode: str = "final") 
         "runtime_state": saved["state"]["state_json"] if saved["state"] else None,
         "boundary_sequence": boundary, "sender_version": "m5-runtime/1",
         "receiver_mode": "technical_adapter", "evaluation_created": False,
+        "evaluation_request": {
+            "status": "not_created",
+            "evaluator_ref": None,
+            "rules_ref": None,
+            "reason": "PM-05 evaluator is outside the implemented M5 runtime",
+        },
     }
     digest = checksum(envelope)
     return dict(connection.execute("""

@@ -12,6 +12,7 @@ from Api import assessment_analysis_queue as queue_module
 from Api.assessment_analysis_queue import AssessmentAnalysisQueue
 from Api.assessment_configuration import LEGACY_METHODOLOGY_DEFINITION, LEGACY_SCENARIO_DEFINITION, definition_checksum
 from Api.config import settings
+from Api.snapshot_integrity import bind_execution_snapshot, snapshot_checksum
 
 
 def frozen_agent_definitions() -> dict:
@@ -57,6 +58,7 @@ def analysis_database(test_database_url, monkeypatch):
                 error_retryable BOOLEAN NOT NULL DEFAULT FALSE
                 ,current_stage_id TEXT
                 ,execution_snapshot_json JSONB
+                ,execution_checksum TEXT
             )
             """
         )
@@ -137,26 +139,26 @@ def analysis_database(test_database_url, monkeypatch):
             )
             """
         )
+        initial_snapshot = bind_execution_snapshot(
+            {
+                "schema_version": 1,
+                "methodology": {
+                    "code": "competencies_4k",
+                    "version": 1,
+                    "definition": LEGACY_METHODOLOGY_DEFINITION,
+                },
+                "scenario": {"definition": LEGACY_SCENARIO_DEFINITION},
+                "prompts": {"agent_definitions": frozen_agent_definitions()},
+            },
+            user_id=101,
+        )
         connection.execute(
             """
-            INSERT INTO user_sessions (id, session_code, user_id, status, execution_snapshot_json)
-            VALUES (501, 'analysis-integration-session', 101, 'active', %s::jsonb)
+            INSERT INTO user_sessions (id, session_code, user_id, status, execution_snapshot_json, execution_checksum)
+            VALUES (501, 'analysis-integration-session', 101, 'active', %s::jsonb, %s)
             """
             ,
-            (
-                json.dumps(
-                    {
-                        "methodology": {
-                            "code": "competencies_4k",
-                            "version": 1,
-                            "definition": LEGACY_METHODOLOGY_DEFINITION,
-                        },
-                        "scenario": {"definition": LEGACY_SCENARIO_DEFINITION},
-                        "prompts": {"agent_definitions": frozen_agent_definitions()},
-                    },
-                    ensure_ascii=False,
-                ),
-            ),
+            (json.dumps(initial_snapshot, ensure_ascii=False), snapshot_checksum(initial_snapshot)),
         )
 
     @contextmanager
@@ -292,7 +294,8 @@ def test_universal_queue_completes_without_legacy_agent(analysis_database, monke
     communication["checksum"] = definition_checksum(communication["definition"])
     competency = dict(LEGACY_METHODOLOGY_DEFINITION["competencies"][0])
     competency["skill_codes"] = ["active_listening"]
-    snapshot = {
+    snapshot = bind_execution_snapshot({
+        "schema_version": 1,
         "methodology": {
             "code": "universal_queue_test",
             "version": 1,
@@ -300,11 +303,11 @@ def test_universal_queue_completes_without_legacy_agent(analysis_database, monke
         },
         "scenario": {"definition": LEGACY_SCENARIO_DEFINITION},
         "prompts": {"agent_definitions": {"communication": communication}},
-    }
+    }, user_id=101)
     with analysis_database() as connection:
         connection.execute(
-            "UPDATE user_sessions SET execution_snapshot_json = %s::jsonb WHERE id = 501",
-            (json.dumps(snapshot, ensure_ascii=False),),
+            "UPDATE user_sessions SET execution_snapshot_json = %s::jsonb, execution_checksum = %s WHERE id = 501",
+            (json.dumps(snapshot, ensure_ascii=False), snapshot_checksum(snapshot)),
         )
 
     class Provider:
@@ -349,18 +352,19 @@ def test_indicator_v2_queue_completes_and_uses_indicator_repository(analysis_dat
         "id": "K1", "evaluator": "evaluation.communication", "evaluator_version": 2,
         "agent_definition": {"code": "indicator_communication", "version": 1},
     }
-    snapshot = {
+    snapshot = bind_execution_snapshot({
+        "schema_version": 1,
         "methodology": {
             "id": 2, "code": "competencies_4k", "version": 2,
             "definition": {"schema_version": 2, "methodology_version": "1.1", "competencies": [competency]},
         },
         "scenario": {"definition": LEGACY_SCENARIO_DEFINITION},
         "prompts": {"agent_definitions": {}},
-    }
+    }, user_id=101)
     with analysis_database() as connection:
         connection.execute(
-            "UPDATE user_sessions SET execution_snapshot_json = %s::jsonb WHERE id = 501",
-            (json.dumps(snapshot, ensure_ascii=False),),
+            "UPDATE user_sessions SET execution_snapshot_json = %s::jsonb, execution_checksum = %s WHERE id = 501",
+            (json.dumps(snapshot, ensure_ascii=False), snapshot_checksum(snapshot)),
         )
     stored: list[tuple[int, str]] = []
 
@@ -444,7 +448,8 @@ def test_shadow_result_is_separate_and_never_blocks_official_analysis(
         "agent_definition": {"code": "communication_shadow", "version": 1},
         "skill_codes": ["active_listening"],
     }
-    snapshot = {
+    snapshot = bind_execution_snapshot({
+        "schema_version": 1,
         "methodology": {
             "code": "shadow_queue_test",
             "version": 1,
@@ -452,11 +457,11 @@ def test_shadow_result_is_separate_and_never_blocks_official_analysis(
         },
         "scenario": {"definition": LEGACY_SCENARIO_DEFINITION},
         "prompts": {"agent_definitions": definitions},
-    }
+    }, user_id=101)
     with analysis_database() as connection:
         connection.execute(
-            "UPDATE user_sessions SET execution_snapshot_json = %s::jsonb WHERE id = 501",
-            (json.dumps(snapshot, ensure_ascii=False),),
+            "UPDATE user_sessions SET execution_snapshot_json = %s::jsonb, execution_checksum = %s WHERE id = 501",
+            (json.dumps(snapshot, ensure_ascii=False), snapshot_checksum(snapshot)),
         )
 
     class OfficialAgent:
