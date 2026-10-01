@@ -9,7 +9,7 @@ from urllib import error, request
 
 from Api.config import settings
 from Api.database import pause_thread_connections_for_external_io
-from Api.llm.contracts import LlmMessage
+from Api.llm.contracts import LlmGatewayError, LlmMessage, LlmResponse
 
 
 logger = logging.getLogger("agent4k.deepseek.gateway")
@@ -57,6 +57,20 @@ class DeepSeekGateway:
         max_tokens: int | None = None,
         routing_key: str | None = None,
     ) -> str:
+        return self.chat_with_trace(
+            messages, temperature=temperature, timeout_seconds=timeout_seconds,
+            max_tokens=max_tokens, routing_key=routing_key,
+        ).content
+
+    def chat_with_trace(
+        self,
+        messages: list[LlmMessage],
+        *,
+        temperature: float = 0.3,
+        timeout_seconds: int = 120,
+        max_tokens: int | None = None,
+        routing_key: str | None = None,
+    ) -> LlmResponse:
         if not self.enabled:
             raise RuntimeError("DeepSeek API key is not configured")
 
@@ -81,8 +95,17 @@ class DeepSeekGateway:
         }
         if max_tokens is not None:
             request_payload["max_tokens"] = int(max_tokens)
+        sent = {
+            "provider": "deepseek",
+            "endpoint": f"{self.base_url}/chat/completions",
+            "model": self.model,
+            "parameters": {"temperature": temperature, "timeout_seconds": timeout_seconds,
+                           "max_tokens": max_tokens},
+            "messages": messages,
+        }
         payload = json.dumps(request_payload).encode("utf-8")
         last_error: Exception | None = None
+        transport_attempts: list[dict[str, object]] = []
         request_started_at = time.perf_counter()
         try:
             for api_key in self.get_key_chain(routing_key, messages):
@@ -98,6 +121,7 @@ class DeepSeekGateway:
                 try:
                     with request.urlopen(req, timeout=timeout_seconds) as response:
                         body = json.loads(response.read().decode("utf-8"))
+                    transport_attempts.append({"attempt": len(transport_attempts) + 1, "outcome": "completed"})
                     logger.info(
                         "DeepSeek request completed duration_ms=%.2f queue_wait_ms=%.2f paused_db_connections=%s routing_key=%s",
                         (time.perf_counter() - request_started_at) * 1000,
@@ -105,16 +129,32 @@ class DeepSeekGateway:
                         paused_connection_count,
                         routing_key or "auto",
                     )
-                    return str(body["choices"][0]["message"]["content"])
+                    choice = body["choices"][0]
+                    return LlmResponse(
+                        content=str(choice["message"]["content"]),
+                        sent=sent,
+                        provider={
+                            "request_id": body.get("id"), "model": body.get("model"),
+                            "revision": body.get("system_fingerprint"),
+                            "finish_reason": choice.get("finish_reason"), "usage": body.get("usage"),
+                            "transport_attempts": transport_attempts,
+                        },
+                    )
                 except TimeoutError:
                     last_error = RuntimeError("DeepSeek request timed out")
+                    transport_attempts.append({"attempt": len(transport_attempts) + 1, "outcome": "timeout"})
                 except error.HTTPError as exc:
                     last_error = RuntimeError(f"DeepSeek request failed with HTTP {exc.code}")
+                    transport_attempts.append({"attempt": len(transport_attempts) + 1,
+                                               "outcome": "http_error", "status": exc.code})
                 except error.URLError as exc:
                     last_error = RuntimeError(f"DeepSeek request failed: {exc}")
+                    transport_attempts.append({"attempt": len(transport_attempts) + 1, "outcome": "network_error"})
 
             if last_error is not None:
-                raise last_error
-            raise RuntimeError("DeepSeek request failed: no available API keys")
+                raise LlmGatewayError(str(last_error), sent=sent,
+                                      provider={"transport_attempts": transport_attempts}) from last_error
+            raise LlmGatewayError("DeepSeek request failed: no available API keys", sent=sent,
+                                  provider={"transport_attempts": transport_attempts})
         finally:
             self.request_slots.release()

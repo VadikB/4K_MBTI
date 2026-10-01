@@ -3289,6 +3289,29 @@ def ensure_m5_runtime_schema(connection) -> None:
         )
     """)
     connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_ai_attempts (
+            id BIGSERIAL PRIMARY KEY,
+            assessment_situation_db_id BIGINT NOT NULL REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
+            action_key TEXT NOT NULL,
+            action_type TEXT NOT NULL,
+            request_id UUID NOT NULL UNIQUE,
+            attempt_id UUID NOT NULL UNIQUE,
+            boundary_sequence INTEGER NOT NULL CHECK (boundary_sequence >= 0),
+            input_checksum TEXT NOT NULL,
+            intended_json JSONB NOT NULL,
+            sent_json JSONB,
+            provider_json JSONB,
+            response_json JSONB,
+            outcome TEXT NOT NULL CHECK (outcome IN ('accepted','rejected','technical_failure')),
+            validation_json JSONB NOT NULL,
+            accepted_result_ref TEXT,
+            started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (assessment_situation_db_id, action_key)
+        )
+    """)
+    connection.execute("ALTER TABLE m5_ai_attempts ADD COLUMN IF NOT EXISTS response_json JSONB")
+    connection.execute("""
         CREATE TABLE IF NOT EXISTS m5_qa_overrides (
             id BIGSERIAL PRIMARY KEY,
             assessment_situation_db_id BIGINT NOT NULL UNIQUE REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
@@ -3311,6 +3334,24 @@ def ensure_m5_runtime_schema(connection) -> None:
             receiver_ref TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             UNIQUE (assessment_situation_db_id, mode, boundary_sequence)
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_c54_receipts (
+            id BIGSERIAL PRIMARY KEY,
+            assessment_situation_db_id BIGINT NOT NULL REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
+            handoff_id UUID NOT NULL REFERENCES m5_c45_handoffs(handoff_id) ON DELETE RESTRICT,
+            receipt_id UUID NOT NULL UNIQUE,
+            mode TEXT NOT NULL CHECK (mode IN ('interim','final')),
+            indicator_id TEXT NOT NULL,
+            m2_version TEXT NOT NULL,
+            boundary_sequence INTEGER NOT NULL CHECK (boundary_sequence >= 0),
+            status TEXT NOT NULL CHECK (status IN ('accepted','rejected','technical_failure')),
+            payload_json JSONB NOT NULL,
+            validation_json JSONB NOT NULL,
+            controlled_test BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (handoff_id, indicator_id)
         )
     """)
     connection.execute("""

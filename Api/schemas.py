@@ -444,6 +444,12 @@ class M5ModelCheckRequest(BaseModel):
     turn_id: UUID | None = None
 
 
+class M5TechnicalC45Request(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    indicator_id: str = Field(pattern=r"^K[1-4]\.I\d{2}$")
+    mode: Literal["interim", "final"] = "final"
+
+
 class M5QAEvidenceRequest(BaseModel):
     trajectory: str = Field(min_length=1, max_length=200)
     expected: dict

@@ -138,6 +138,7 @@ from Api.schemas import (
     M5TurnRequest,
     M5TransitionRequest,
     M5ModelCheckRequest,
+    M5TechnicalC45Request,
     M5QAEvidenceRequest,
     PromptLabSystemCasePreviewResponse,
     PromptLabCaseRunSummary,
@@ -5148,6 +5149,22 @@ def build_m5_runtime_c45(assessment_situation_id: UUID, request: Request, mode: 
     try:
         with get_connection() as connection:
             result = m5_scenario_runtime.build_c45(connection, str(assessment_situation_id), mode=mode)
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/admin/m5-runtime/situations/{assessment_situation_id}/technical-c45")
+def execute_m5_runtime_technical_c45(assessment_situation_id: UUID, payload: M5TechnicalC45Request,
+                                     request: Request) -> dict:
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result = m5_scenario_runtime.execute_technical_c45(
+                connection, assessment_situation_id=str(assessment_situation_id),
+                indicator_id=payload.indicator_id, mode=payload.mode,
+            )
             connection.commit()
             return result
     except ValueError as exc:

@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 from Api.m5_case_runtime import checksum
 from Api.m5_rule_engine import (
     CharacterResponseAdapter,
+    CharacterReply,
     ControlledCharacterAdapter,
     ControlledSemanticAdapter,
     DeepSeekCharacterAdapter,
@@ -15,6 +16,7 @@ from Api.m5_rule_engine import (
     RuleOutcome,
     SemanticDecisionAdapter,
     evaluate_rule,
+    execute_frozen_ai_json,
 )
 from Api.snapshot_integrity import (
     SNAPSHOT_COMPOSITION_MISMATCH,
@@ -212,12 +214,57 @@ def _record_decision(connection, *, row: dict, saved: dict, key: str, rule: dict
     ).fetchone()
     if existing:
         return dict(existing)
-    return dict(connection.execute("""
+    recorded = dict(connection.execute("""
         INSERT INTO m5_rule_decisions
             (assessment_situation_db_id,decision_id,decision_key,rule_id,rule_version,input_revision,outcome,decision_json)
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb) RETURNING *
     """, (row["id"], uuid4(), key, rule["rule_id"], rule.get("version", "1"), saved["revision"],
           decision.outcome.value, json.dumps(decision.as_dict(), ensure_ascii=False))).fetchone())
+    connection.execute("""
+        UPDATE m5_ai_attempts SET accepted_result_ref=%s
+        WHERE assessment_situation_db_id=%s AND action_key=%s AND outcome='accepted'
+    """, (f"m5_rule_decisions:{recorded['decision_id']}", row["id"], key))
+    return recorded
+
+
+def _record_ai_attempt(connection, *, row: dict, action_key: str, action_type: str,
+                       boundary_sequence: int, input_value: dict, result: object) -> dict | None:
+    ai_trace = getattr(result, "ai_trace", None)
+    if not isinstance(ai_trace, dict):
+        return None
+    outcome_value = getattr(getattr(result, "outcome", None), "value", None)
+    result_status = getattr(result, "status", None)
+    accepted = outcome_value in {"TRUE", "FALSE", "UNKNOWN"} or result_status == "COMPLETED"
+    identity_status = ai_trace.get("identity_status")
+    if identity_status == "technical_failure":
+        outcome = "technical_failure"
+        code = "PROVIDER_CALL_FAILED"
+    elif identity_status == "mismatch":
+        outcome = "rejected"
+        code = "AI_PROVIDER_IDENTITY_MISMATCH"
+    elif accepted:
+        outcome = "accepted"
+        code = "VALIDATED"
+    else:
+        outcome = "rejected"
+        code = getattr(result, "code", None) or "OUTPUT_REJECTED"
+    existing = connection.execute(
+        "SELECT * FROM m5_ai_attempts WHERE assessment_situation_db_id=%s AND action_key=%s",
+        (row["id"], action_key),
+    ).fetchone()
+    if existing:
+        return dict(existing)
+    return dict(connection.execute("""
+        INSERT INTO m5_ai_attempts
+            (assessment_situation_db_id,action_key,action_type,request_id,attempt_id,boundary_sequence,
+             input_checksum,intended_json,sent_json,provider_json,response_json,outcome,validation_json)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s::jsonb,%s,%s::jsonb) RETURNING *
+    """, (row["id"], action_key, action_type, uuid4(), uuid4(), boundary_sequence,
+          checksum(input_value), json.dumps(ai_trace.get("intended") or {}, ensure_ascii=False),
+          json.dumps(ai_trace.get("sent") or {}, ensure_ascii=False),
+          json.dumps(ai_trace.get("provider") or {}, ensure_ascii=False),
+          json.dumps(ai_trace.get("response") or {}, ensure_ascii=False), outcome,
+          json.dumps({"code": code, "identity_status": identity_status}, ensure_ascii=False))).fetchone())
 
 
 def _evaluate(connection, *, row: dict, saved: dict, operation_key: str, rule: dict, state: dict,
@@ -240,6 +287,9 @@ def _evaluate(connection, *, row: dict, saved: dict, operation_key: str, rule: d
                             value["handler_version"], value["adapter"], value.get("model"), value["controlled_test"],
                             value.get("prompt_ref"))
     decision = evaluate_rule(rule, state=state, data={}, text=text, turn_id=turn_id, semantic_adapter=adapter)
+    _record_ai_attempt(connection, row=row, action_key=operation_key, action_type="semantic_decision",
+                       boundary_sequence=_next_sequence(connection, int(row["id"])) - 1,
+                       input_value=request_value, result=decision)
     if operation:
         current = connection.execute("SELECT status FROM m5_assessment_situations WHERE id=%s", (row["id"],)).fetchone()
         current_state = connection.execute("SELECT revision FROM m5_scenario_states WHERE assessment_situation_db_id=%s", (row["id"],)).fetchone()
@@ -295,6 +345,13 @@ def _apply_character_response(connection, *, row: dict, saved: dict, state: dict
     reply = adapter.respond(material=material, character=character, text=trigger_turn["content_text"],
                             turn_id=str(trigger_turn["turn_id"]),
                             context={"disclosed_materials": state["disclosed_materials"], "stage": state["current_stage"]})
+    _record_ai_attempt(
+        connection, row=row, action_key=effect_key, action_type="character_response",
+        boundary_sequence=int(trigger_turn["sequence_no"]),
+        input_value={"material_id": material["material_id"], "character_id": character["character_id"],
+                     "turn_id": str(trigger_turn["turn_id"]), "state_revision": saved["revision"]},
+        result=reply,
+    )
     if reply.status != "COMPLETED" or not reply.content:
         return None
     character_turn = connection.execute("""
@@ -303,6 +360,10 @@ def _apply_character_response(connection, *, row: dict, saved: dict, state: dict
         VALUES (%s,%s,%s,'character',%s,%s,%s) RETURNING *
     """, (row["id"], uuid4(), _next_sequence(connection, int(row["id"])), character["character_id"], reply.content,
           f"character:{trigger_turn['request_id']}:{material['material_id']}")).fetchone()
+    connection.execute("""
+        UPDATE m5_ai_attempts SET accepted_result_ref=%s
+        WHERE assessment_situation_db_id=%s AND action_key=%s AND outcome='accepted'
+    """, (f"m5_dialogue_turns:{character_turn['turn_id']}", row["id"], effect_key))
     event = append_event(
         connection, as_db_id=int(row["id"]), event_type="character_response", event_key=effect_key,
         cause={"trigger_turn_id": str(trigger_turn["turn_id"]), "character_turn_id": str(character_turn["turn_id"]),
@@ -364,8 +425,13 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
     """, (row["id"], UUID(turn_id), _next_sequence(connection, int(row["id"])), content, request_id)).fetchone()
     events = []
     payload = row["execution_payload_json"]
-    adapter = semantic_adapter or DeepSeekSemanticAdapter()
-    responder = character_adapter or DeepSeekCharacterAdapter()
+    operations = row["execution_payload_json"].get("ai_operations") or {}
+    if semantic_adapter is None and not operations.get("semantic_decision"):
+        raise SnapshotIntegrityError(SNAPSHOT_DEPENDENCY_UNAVAILABLE, "Frozen semantic AI configuration is missing.")
+    if character_adapter is None and not operations.get("character_response"):
+        raise SnapshotIntegrityError(SNAPSHOT_DEPENDENCY_UNAVAILABLE, "Frozen character AI configuration is missing.")
+    adapter = semantic_adapter or DeepSeekSemanticAdapter(operation=operations["semantic_decision"])
+    responder = character_adapter or DeepSeekCharacterAdapter(operation=operations["character_response"])
     for material in payload["materials"]:
         condition = material["disclosure_condition"]
         event_condition = material["event_condition"]
@@ -474,14 +540,21 @@ def trace(connection, assessment_situation_id: str) -> dict:
     state = connection.execute("SELECT * FROM m5_scenario_states WHERE assessment_situation_db_id=%s", (row["id"],)).fetchone()
     decisions = [dict(x) for x in connection.execute(
         "SELECT * FROM m5_rule_decisions WHERE assessment_situation_db_id=%s ORDER BY id", (row["id"],)).fetchall()]
+    ai_attempts = [dict(x) for x in connection.execute(
+        "SELECT * FROM m5_ai_attempts WHERE assessment_situation_db_id=%s ORDER BY id", (row["id"],)).fetchall()]
+    c54_receipts = [dict(x) for x in connection.execute(
+        "SELECT * FROM m5_c54_receipts WHERE assessment_situation_db_id=%s ORDER BY id", (row["id"],)).fetchall()]
     return {"assessment_situation_id": assessment_situation_id, "status": row["status"], "turns": turns,
-            "events": events, "state": dict(state) if state else None, "decisions": decisions}
+            "events": events, "state": dict(state) if state else None, "decisions": decisions,
+            "ai_attempts": ai_attempts, "c54_receipts": c54_receipts}
 
 
 def build_c45(connection, assessment_situation_id: str, *, mode: str = "final") -> dict:
     row = _as_row(connection, assessment_situation_id, lock=True)
-    if mode == "final" and row["status"] not in {"scenario_ended", "terminated", "closed"}:
-        raise ValueError("C45_FINAL_REQUIRES_SCENARIO_END")
+    if mode == "interim" and row["status"] != "scenario_ended":
+        raise ValueError("C45_INTERIM_REQUIRES_SCENARIO_END_AND_OPEN_AS")
+    if mode == "final" and row["status"] != "closed":
+        raise ValueError("C45_FINAL_REQUIRES_CLOSED_AS")
     saved = trace(connection, assessment_situation_id)
     sequences = [int(x["sequence_no"]) for x in saved["turns"] + saved["events"]]
     boundary = max(sequences, default=0)
@@ -492,10 +565,25 @@ def build_c45(connection, assessment_situation_id: str, *, mode: str = "final") 
     if existing:
         return dict(existing)
     snapshot = row["snapshot_json"]
+    profile_row = connection.execute(
+        "SELECT content_json, checksum FROM assessment_personalized_profiles WHERE id=%s",
+        (row["personalized_profile_id"],),
+    ).fetchone()
+    if not profile_row or profile_row["checksum"] != snapshot["profile_ref"]["checksum"]:
+        raise SnapshotIntegrityError(SNAPSHOT_DEPENDENCY_UNAVAILABLE, "Frozen PersonalizedProfile is unavailable.")
+    presented_materials = [
+        {"material_id": x["material_id"], "event_id": str(x["event_id"]),
+         "sequence_no": x["sequence_no"], "available_at": x["created_at"].isoformat(),
+         "event_type": x["event_type"]}
+        for x in saved["events"]
+        if x["material_id"] and x["event_type"] in {"material_disclosed", "mandatory_update", "character_response"}
+    ]
     envelope = {
         "schema_version": 1, "contract": "C-45", "mode": mode,
         "assessment_situation_ref": {"id": assessment_situation_id, "checksum": row["snapshot_checksum"]},
         "case_ref": snapshot["case_ref"], "profile_ref": snapshot["profile_ref"],
+        "profile_snapshot": profile_row["content_json"], "base_role": snapshot["base_role"],
+        "cycle_ref": snapshot.get("cycle_ref"), "session_ref": snapshot.get("session_ref"),
         "methodology_refs": snapshot["methodology_refs"], "indicator_targets": snapshot["indicator_targets"],
         "dialogue": {
             "turns": [{"turn_id": str(x["turn_id"]), "sequence_no": x["sequence_no"],
@@ -506,10 +594,16 @@ def build_c45(connection, assessment_situation_id: str, *, mode: str = "final") 
                          "cause": x["cause_json"], "payload": x["payload_json"],
                          "created_at": x["created_at"].isoformat()} for x in saved["events"]],
         },
+        "presented_materials": presented_materials,
         "rule_decisions": [{"decision_id": str(x["decision_id"]), "rule_id": x["rule_id"],
                             "outcome": x["outcome"], "decision": x["decision_json"]} for x in saved["decisions"]],
         "runtime_state": saved["state"]["state_json"] if saved["state"] else None,
-        "boundary_sequence": boundary, "sender_version": "m5-runtime/1",
+        "boundary_sequence": boundary, "boundary": {"inclusive_sequence": boundary,
+            "turn_ids": [str(x["turn_id"]) for x in saved["turns"]],
+            "event_ids": [str(x["event_id"]) for x in saved["events"]]},
+        "assessment_situation_status": row["status"],
+        "execution_payload_ref": snapshot["execution_payload_ref"],
+        "sender_version": "m5-runtime/2",
         "receiver_mode": "technical_adapter", "evaluation_created": False,
         "evaluation_request": {
             "status": "not_created",
@@ -524,3 +618,89 @@ def build_c45(connection, assessment_situation_id: str, *, mode: str = "final") 
             (assessment_situation_db_id,handoff_id,mode,boundary_sequence,envelope_json,envelope_checksum,receiver_status,receiver_ref)
         VALUES (%s,%s,%s,%s,%s::jsonb,%s,'accepted','technical-pm05-adapter/1') RETURNING *
     """, (row["id"], uuid4(), mode, boundary, json.dumps(envelope, ensure_ascii=False), digest)).fetchone())
+
+
+def _validate_technical_c54(*, row: dict, handoff: dict, payload: dict, indicator_id: str) -> list[str]:
+    envelope = handoff["envelope_json"]
+    errors = []
+    expected = {
+        "contract": "C-54", "assessment_situation_id": str(row["assessment_situation_id"]),
+        "handoff_id": str(handoff["handoff_id"]), "mode": handoff["mode"],
+        "indicator_id": indicator_id, "boundary_sequence": handoff["boundary_sequence"],
+        "status": "technical_received",
+    }
+    for key, value in expected.items():
+        if payload.get(key) != value:
+            errors.append(f"{key}:mismatch")
+    target = next((x for x in envelope["indicator_targets"] if x["indicator_id"] == indicator_id), None)
+    if not target:
+        errors.append("indicator_id:unknown")
+    elif payload.get("m2_version") != target["m2_version"]:
+        errors.append("m2_version:mismatch")
+    if handoff["mode"] == "final" and row["status"] != "closed":
+        errors.append("assessment_situation:not_final")
+    return errors
+
+
+def execute_technical_c45(connection, *, assessment_situation_id: str, indicator_id: str,
+                          mode: str = "final", gateway=None) -> dict:
+    """QA-only transport proof. It never creates Evidence, IA or an assessment result."""
+    row = _as_row(connection, assessment_situation_id, lock=True)
+    if row["usage_scope"] != "qa":
+        raise ValueError("M5_TECHNICAL_C45_QA_ONLY")
+    handoff = build_c45(connection, assessment_situation_id, mode=mode)
+    existing = connection.execute(
+        "SELECT * FROM m5_c54_receipts WHERE handoff_id=%s AND indicator_id=%s",
+        (handoff["handoff_id"], indicator_id),
+    ).fetchone()
+    if existing:
+        return dict(existing)
+    target = next((x for x in handoff["envelope_json"]["indicator_targets"] if x["indicator_id"] == indicator_id), None)
+    if not target:
+        raise ValueError("C54_INDICATOR_OUTSIDE_C45")
+    operation = (row["execution_payload_json"].get("ai_operations") or {}).get("technical_c45")
+    if not operation:
+        raise ValueError("M5_TECHNICAL_C45_CONFIG_MISSING")
+    input_value = {"handoff_id": str(handoff["handoff_id"]), "indicator_id": indicator_id,
+                   "m2_version": target["m2_version"], "c45": handoff["envelope_json"]}
+    action_key = f"technical-c45:{handoff['handoff_id']}:{indicator_id}"
+    try:
+        payload, ai_trace = execute_frozen_ai_json(
+            operation=operation, prompt_bundle="m5_technical_c45", input_value=input_value, gateway=gateway,
+            routing_key=action_key,
+        )
+        errors = _validate_technical_c54(row=row, handoff=handoff, payload=payload, indicator_id=indicator_id)
+        if ai_trace.get("identity_status") == "mismatch":
+            errors.append("provider_identity:mismatch")
+        result = CharacterReply("COMPLETED" if not errors else "ERROR", None, "deepseek",
+                                operation["model"], prompt_ref=operation["prompt_ref"], ai_trace=ai_trace)
+        _record_ai_attempt(connection, row=row, action_key=action_key, action_type="technical_c45",
+                           boundary_sequence=int(handoff["boundary_sequence"]), input_value=input_value, result=result)
+        status = "accepted" if not errors else "rejected"
+    except Exception as exc:
+        payload = {"technical_error": type(exc).__name__}
+        errors = [str(exc)]
+        ai_trace = getattr(exc, "ai_trace", None) or {
+            "intended": {key: operation.get(key) for key in
+                         ("provider", "endpoint", "model", "parameters", "prompt_ref", "response_format")},
+            "sent": {}, "provider": {}, "response": {}, "identity_status": "technical_failure",
+        }
+        result = CharacterReply("ERROR", None, "deepseek", operation["model"],
+                                prompt_ref=operation["prompt_ref"], ai_trace=ai_trace)
+        _record_ai_attempt(connection, row=row, action_key=action_key, action_type="technical_c45",
+                           boundary_sequence=int(handoff["boundary_sequence"]), input_value=input_value, result=result)
+        status = "technical_failure"
+    receipt = connection.execute("""
+        INSERT INTO m5_c54_receipts
+            (assessment_situation_db_id,handoff_id,receipt_id,mode,indicator_id,m2_version,
+             boundary_sequence,status,payload_json,validation_json,controlled_test)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,TRUE) RETURNING *
+    """, (row["id"], handoff["handoff_id"], uuid4(), handoff["mode"], indicator_id,
+          target["m2_version"], handoff["boundary_sequence"], status,
+          json.dumps(payload, ensure_ascii=False), json.dumps({"errors": errors, "methodological_result": False}, ensure_ascii=False))).fetchone()
+    if status == "accepted":
+        connection.execute("""
+            UPDATE m5_ai_attempts SET accepted_result_ref=%s
+            WHERE assessment_situation_db_id=%s AND action_key=%s AND outcome='accepted'
+        """, (f"m5_c54_receipts:{receipt['receipt_id']}", row["id"], action_key))
+    return dict(receipt)

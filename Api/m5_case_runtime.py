@@ -59,6 +59,7 @@ def build_assessment_situation(
     substitutions: list[dict],
     qa_evidence: list[dict],
     policy: dict,
+    ai_operations: dict | None = None,
 ) -> tuple[dict, dict]:
     case = CaseVersionV2.model_validate(case_value)
     if profile_snapshot.get("base_role") != case.base_role:
@@ -84,6 +85,7 @@ def build_assessment_situation(
         "materials": [x.model_dump() for x in case.materials],
         "scenario": [x.model_dump() for x in case.scenario],
         "indicator_targets": [x.model_dump() for x in case.indicator_targets],
+        "ai_operations": deepcopy(ai_operations or {}),
     }
     case_dump = case.model_dump()
     execution_checksum = checksum(execution_payload)
