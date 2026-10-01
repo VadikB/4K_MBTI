@@ -94,7 +94,11 @@ def build_m5_ai_operations_snapshot() -> dict[str, dict[str, Any]]:
             "model": str(settings.deepseek_model), "parameters": parameters,
             "prompt_ref": prompt_ref, "response_format": "json_object",
             "limits": {"max_input_bytes": 200000},
-            "identity_policy": {"provider_model_must_match": True, "provider_revision": "observe_if_available"},
+            "identity_policy": {
+                "sent_model_must_match_snapshot": True,
+                "provider_reported_model": "observe",
+                "provider_revision": "observe_if_available",
+            },
         }
     return operations
 
@@ -128,12 +132,24 @@ def _call_with_trace(gateway: Any, messages: list[dict], *, operation: dict, rou
             sent = {"provider": operation["provider"], "endpoint": operation["endpoint"],
                     "model": operation["model"], "parameters": params, "messages": messages}
             provider = {"request_id": None, "model": None, "revision": None, "finish_reason": None, "usage": None}
-        mismatch = provider.get("model") not in (None, "", operation["model"])
+        sent_matches_snapshot = (
+            sent.get("provider") == operation["provider"]
+            and sent.get("endpoint") == operation["endpoint"]
+            and sent.get("model") == operation["model"]
+            and sent.get("parameters") == params
+        )
+        provider_model = provider.get("model")
+        provider_model_status = (
+            "unreported" if provider_model in (None, "") else
+            "same_as_requested" if provider_model == operation["model"] else
+            "provider_resolved_alias"
+        )
         content = str(content)
         return content, {"intended": intended, "sent": sent, "provider": provider,
                               "response": {"content": content,
                                            "checksum": hashlib.sha256(content.encode("utf-8")).hexdigest()},
-                              "identity_status": "mismatch" if mismatch else "matched_or_unreported"}
+                              "identity_status": "sent_matches_snapshot" if sent_matches_snapshot else "sent_mismatch",
+                              "provider_model_status": provider_model_status}
     except LlmGatewayError as exc:
         exc.ai_trace = {"intended": intended, "sent": exc.sent, "provider": exc.provider,
                         "identity_status": "technical_failure"}
@@ -199,7 +215,7 @@ class DeepSeekCharacterAdapter:
             content = str(json.loads(raw).get("response") or "").strip()
             if not content:
                 return CharacterReply("ERROR", None, "deepseek", self.operation["model"], prompt_ref=self.prompt_ref, ai_trace=ai_trace)
-            if ai_trace["identity_status"] == "mismatch":
+            if ai_trace["identity_status"] == "sent_mismatch":
                 return CharacterReply("ERROR", None, "deepseek", self.operation["model"], prompt_ref=self.prompt_ref, ai_trace=ai_trace)
             return CharacterReply("COMPLETED", content, "deepseek", self.operation["model"], prompt_ref=self.prompt_ref, ai_trace=ai_trace)
         except Exception as exc:
@@ -245,8 +261,8 @@ class DeepSeekSemanticAdapter:
                 operation=self.operation,
                 routing_key="m5-semantic:" + hashlib.sha256(json.dumps(prompt, sort_keys=True).encode()).hexdigest(),
             )
-            if ai_trace["identity_status"] == "mismatch":
-                return Decision(RuleOutcome.ERROR, "AI_PROVIDER_IDENTITY_MISMATCH", "provider model mismatch",
+            if ai_trace["identity_status"] == "sent_mismatch":
+                return Decision(RuleOutcome.ERROR, "M5_AI_SENT_CONFIG_MISMATCH", "sent config differs from snapshot",
                                 (turn_id,), adapter="deepseek", model=self.operation["model"],
                                 prompt_ref=self.prompt_ref, ai_trace=ai_trace)
             value = json.loads(raw)
