@@ -3452,6 +3452,24 @@ def ensure_core_schema() -> None:
         connection.execute("ALTER TABLE assessment_configurations ADD COLUMN IF NOT EXISTS prompt_bundle_checksum TEXT")
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS assessment_methodology_publications (
+                id BIGSERIAL PRIMARY KEY,
+                methodology_code TEXT NOT NULL,
+                methodology_version TEXT NOT NULL,
+                source_artifact_checksum TEXT NOT NULL,
+                source_manifest_json JSONB NOT NULL,
+                methodology_version_id BIGINT NOT NULL REFERENCES assessment_methodology_versions(id),
+                agent_version_ids_json JSONB NOT NULL,
+                configuration_id BIGINT NOT NULL REFERENCES assessment_configurations(id),
+                published_by_user_id BIGINT NOT NULL REFERENCES users(id),
+                decision_basis TEXT NOT NULL,
+                published_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (methodology_code, methodology_version, source_artifact_checksum)
+            )
+            """
+        )
+        connection.execute(
+            """
             CREATE OR REPLACE FUNCTION prevent_published_configuration_prompt_update()
             RETURNS trigger AS $$
             BEGIN

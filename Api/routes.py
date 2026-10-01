@@ -34,6 +34,7 @@ from Api.assessment_role_profiles import (
 from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.assessment_authoring_service import assessment_authoring_service, ENTITY_CONFIG
+from Api.assessment_methodology_publication import publish_m2_qa_configuration
 from Api.assessment_shadow_repository import assessment_shadow_repository
 from Api.assessment_shadow_batch_service import assessment_shadow_batch_service
 from Api.platform_access import require_platform_permission
@@ -4931,6 +4932,24 @@ def publish_m3_base_roles_for_m5_lab(request: Request) -> dict:
                 manifest=manifest,
                 published_by_user_id=int(user.id),
                 decision_basis="Владелец подтвердил human review и публикацию M3 v1.1 для test 2026-10-01",
+            )
+            connection.commit()
+            return result
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/admin/m5-lab/publish-m2-qa-configuration")
+def publish_m2_qa_configuration_for_m5_lab(request: Request) -> dict:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token) if token else None
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        try:
+            result = publish_m2_qa_configuration(
+                connection,
+                published_by_user_id=int(user.id),
+                decision_basis="Владелец подтвердил human review и публикацию M2 v1.1 для test 2026-10-01",
             )
             connection.commit()
             return result

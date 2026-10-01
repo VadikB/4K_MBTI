@@ -20,6 +20,18 @@ export const initializeM5Lab = async () => {
     roles.addEventListener('change', refreshCases);
     refreshCases();
     status.textContent = catalog.profiles.length ? 'Готово. Выберите совместимый профиль и Case.' : 'Нет готовых M4 PersonalizedProfile для QA.';
+    const publishMethodologyButton = document.createElement('button');
+    publishMethodologyButton.type = 'button';
+    publishMethodologyButton.className = 'ghost-button';
+    publishMethodologyButton.textContent = 'Опубликовать M2 v1.1 и QA-конфигурацию на test';
+    root.querySelector('[data-m5-migrate-profile]').before(publishMethodologyButton);
+    publishMethodologyButton.addEventListener('click', async () => {
+      try {
+        status.textContent = 'Проверяем M2, публикуем evaluator definitions и QA-конфигурацию…';
+        const result = await readApiResponse(await fetch('/users/admin/m5-lab/publish-m2-qa-configuration', { method: 'POST' }), 'Не удалось опубликовать M2 и QA-конфигурацию.');
+        status.textContent = `M2 publication ${result.publication_id}: версия ${result.methodology_version_id}, конфигурация ${result.configuration_id}. Default не изменён.`;
+      } catch (error) { status.textContent = error.message; }
+    });
     const publishRolesButton = document.createElement('button');
     publishRolesButton.type = 'button';
     publishRolesButton.className = 'ghost-button';

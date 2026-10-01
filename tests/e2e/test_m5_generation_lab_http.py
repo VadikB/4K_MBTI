@@ -127,3 +127,28 @@ def test_m3_publication_requires_superadmin_and_records_server_actor(client):
     assert captured["published_by_user_id"] == 7
     assert captured["package"]["methodology_version"] == "1.1"
     assert "human review" in captured["decision_basis"]
+
+
+def test_m2_publication_requires_superadmin_and_records_server_actor(client):
+    http, monkeypatch, _ = client
+    assert http.post("/users/admin/m5-lab/publish-m2-qa-configuration").status_code == 401
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "member")
+    assert http.post("/users/admin/m5-lab/publish-m2-qa-configuration").status_code == 403
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "admin")
+    captured = {}
+
+    def publish(_connection, **kwargs):
+        captured.update(kwargs)
+        return {
+            "methodology_version_id": 21,
+            "configuration_id": 22,
+            "configuration_code": "4k_m5_qa_v1_1",
+            "is_default": False,
+        }
+
+    monkeypatch.setattr(routes, "publish_m2_qa_configuration", publish)
+    response = http.post("/users/admin/m5-lab/publish-m2-qa-configuration")
+    assert response.status_code == 200
+    assert captured["published_by_user_id"] == 7
+    assert "human review" in captured["decision_basis"]
+    assert response.json()["is_default"] is False

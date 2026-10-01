@@ -7,6 +7,7 @@ from psycopg.rows import dict_row
 from Api.assessment_agent_definitions import ensure_legacy_agent_definitions
 from Api.assessment_competency_executor import CompetencyEvaluatorExecutor
 from Api.assessment_authoring_service import assessment_authoring_service
+from Api.assessment_methodology_publication import publish_m2_qa_configuration
 from Api.assessment_configuration import (
     LEGACY_METHODOLOGY_DEFINITION,
     LEGACY_SCENARIO_DEFINITION,
@@ -28,6 +29,7 @@ def authoring_connection(test_database_url):
             "assessment_agent_definition_versions",
             "assessment_agent_definitions",
             "assessment_definition_audit_log",
+            "assessment_methodology_publications",
             "assessment_configurations",
             "assessment_scenario_versions",
             "assessment_scenarios",
@@ -87,6 +89,21 @@ def authoring_connection(test_database_url):
                 scenario_version_id BIGINT NOT NULL REFERENCES assessment_scenario_versions(id),
                 prompt_bundle_json JSONB, prompt_bundle_checksum TEXT, status TEXT NOT NULL,
                 is_default BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT NOW(), published_at TIMESTAMP
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE assessment_methodology_publications (
+                id BIGSERIAL PRIMARY KEY, methodology_code TEXT NOT NULL,
+                methodology_version TEXT NOT NULL, source_artifact_checksum TEXT NOT NULL,
+                source_manifest_json JSONB NOT NULL,
+                methodology_version_id BIGINT NOT NULL REFERENCES assessment_methodology_versions(id),
+                agent_version_ids_json JSONB NOT NULL,
+                configuration_id BIGINT NOT NULL REFERENCES assessment_configurations(id),
+                published_by_user_id BIGINT NOT NULL,
+                decision_basis TEXT NOT NULL, published_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (methodology_code, methodology_version, source_artifact_checksum)
             )
             """
         )
@@ -307,6 +324,48 @@ def test_new_methodology_and_scenario_can_be_published_as_default_configuration(
         "configuration_created",
         "configuration_published",
     }.issubset(actions)
+
+
+@pytest.mark.integration
+def test_m2_1_1_publication_creates_idempotent_non_default_qa_configuration(authoring_connection) -> None:
+    connection = authoring_connection
+    ensure_legacy_assessment_configuration(connection)
+
+    first = publish_m2_qa_configuration(
+        connection,
+        published_by_user_id=101,
+        decision_basis="integration owner review",
+    )
+    second = publish_m2_qa_configuration(
+        connection,
+        published_by_user_id=101,
+        decision_basis="integration owner review",
+    )
+
+    assert first["idempotent"] is False
+    assert second["idempotent"] is True
+    assert second["publication_id"] == first["publication_id"]
+    assert second["configuration_id"] == first["configuration_id"]
+    assert second["methodology_version_id"] == first["methodology_version_id"]
+    assert first["is_default"] is False
+    configuration = connection.execute(
+        "SELECT status,is_default FROM assessment_configurations WHERE id=%s",
+        (first["configuration_id"],),
+    ).fetchone()
+    assert dict(configuration) == {"status": "published", "is_default": False}
+    methodology = connection.execute(
+        "SELECT status,definition_json FROM assessment_methodology_versions WHERE id=%s",
+        (first["methodology_version_id"],),
+    ).fetchone()
+    assert methodology["status"] == "published"
+    assert methodology["definition_json"]["methodology_version"] == "1.1"
+    assert len(first["agent_version_ids"]) == 4
+    audit = connection.execute(
+        "SELECT source_artifact_checksum,decision_basis FROM assessment_methodology_publications WHERE id=%s",
+        (first["publication_id"],),
+    ).fetchone()
+    assert audit["source_artifact_checksum"] == first["source_artifact_checksum"]
+    assert audit["decision_basis"] == "integration owner review"
 
 
 @pytest.mark.integration
