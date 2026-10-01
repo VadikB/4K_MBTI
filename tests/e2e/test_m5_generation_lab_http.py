@@ -91,3 +91,21 @@ def test_lab_creates_qa_as_through_common_storage_and_runtime(client):
 def test_client_cannot_supply_usage_scope(client):
     http, _, _ = client; http.cookies.set(routes.SESSION_COOKIE_NAME, "admin")
     assert http.post("/users/admin/m5-lab/runs", json=payload() | {"usage_scope": "assessment"}).status_code == 422
+
+
+def test_profile_migration_requires_superadmin_and_records_server_actor(client):
+    http, monkeypatch, _ = client
+    assert http.post("/users/admin/m5-lab/migrate-current-profile").status_code == 401
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "member")
+    assert http.post("/users/admin/m5-lab/migrate-current-profile").status_code == 403
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "admin")
+    captured = {}
+    def migrate(_connection, **kwargs):
+        captured.update(kwargs)
+        return {"personalized_profile_id": 27, "provenance": "legacy_test_profile_migration",
+                "idempotent": False}
+    monkeypatch.setattr(routes.m5_storage, "migrate_legacy_test_profile", migrate)
+    response = http.post("/users/admin/m5-lab/migrate-current-profile")
+    assert response.status_code == 200
+    assert captured == {"user_id": 7, "authorized_by": 7}
+    assert response.json()["provenance"] == "legacy_test_profile_migration"

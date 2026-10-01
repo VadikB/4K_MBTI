@@ -4897,6 +4897,21 @@ def get_m5_lab_catalog(request: Request) -> dict:
         return m5_storage.qa_lab_catalog(connection, package)
 
 
+@router.post("/admin/m5-lab/migrate-current-profile")
+def migrate_current_profile_to_m4(request: Request) -> dict:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token) if token else None
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        try:
+            result = m5_storage.migrate_legacy_test_profile(
+                connection, user_id=int(user.id), authorized_by=int(user.id))
+            connection.commit()
+            return result
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
 @router.get("/admin/m5-lab/runs/{run_id}")
 def get_m5_lab_run(run_id: UUID, request: Request) -> dict:
     token = request.cookies.get(SESSION_COOKIE_NAME)
