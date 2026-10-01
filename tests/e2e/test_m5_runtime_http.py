@@ -84,3 +84,48 @@ def test_product_turn_and_transition_use_runtime_without_exposing_execution_snap
     })
     assert transition.status_code == 200
     assert transition.json()["status"] == "pause"
+
+
+def test_admin_c45_and_technical_qa_evidence_use_common_runtime(client):
+    http, monkeypatch, _ = client
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "owner")
+    situation_id = str(uuid4())
+    monkeypatch.setattr(routes, "_require_superadmin", lambda _connection, _user: SimpleNamespace(is_superadmin=True))
+    monkeypatch.setattr(
+        routes.m5_scenario_runtime,
+        "build_c45",
+        lambda *_args, **kwargs: {
+            "assessment_situation_id": situation_id,
+            "mode": kwargs["mode"],
+            "envelope_json": {"boundary_sequence": 12, "contains_evidence": False},
+        },
+    )
+    c45 = http.post(f"/users/admin/m5-runtime/situations/{situation_id}/c45?mode=interim")
+    assert c45.status_code == 200
+    assert c45.json()["mode"] == "interim"
+    assert c45.json()["envelope_json"]["contains_evidence"] is False
+
+    monkeypatch.setattr(
+        routes.m5_storage,
+        "record_technical_qa_evidence",
+        lambda *_args, **kwargs: {
+            "assessment_situation_id": situation_id,
+            "evidence_json": {
+                "eligibility": "technical_qa",
+                "empirical_pilot": "NOT_RUN",
+                "trajectory": kwargs["trajectory"],
+            },
+        },
+    )
+    evidence = http.post(f"/users/admin/m5-runtime/situations/{situation_id}/qa-evidence", json={
+        "trajectory": "content_progress",
+        "expected": {"runtime": "trace_saved"},
+        "actual": {"events": 12},
+        "defects": [],
+    })
+    assert evidence.status_code == 200
+    assert evidence.json()["evidence_json"] == {
+        "eligibility": "technical_qa",
+        "empirical_pilot": "NOT_RUN",
+        "trajectory": "content_progress",
+    }

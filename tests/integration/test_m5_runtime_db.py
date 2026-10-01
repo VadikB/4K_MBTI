@@ -192,12 +192,17 @@ def test_all_five_cases_run_through_qa_runtime_and_case04_has_both_branch_outcom
                             semantic_adapter=ControlledSemanticAdapter(controlled),
                             character_adapter=ControlledCharacterAdapter({}))
                 action = "scenario_end" if trajectory == "premature_solution" else "terminate"
+                before_transition = trace(connection, extra["assessment_situation_id"])
+                last_sequence_before_transition = max(x["sequence_no"] for x in before_transition["events"])
                 transition(connection, assessment_situation_id=extra["assessment_situation_id"], action=action,
                            reason=trajectory, request_id="trajectory-finish")
                 extra_trace = trace(connection, extra["assessment_situation_id"])
                 if action == "terminate":
                     assert extra_trace["status"] == "terminated"
-                    assert not any(x["event_type"] == "mandatory_update" for x in extra_trace["events"])
+                    # Завершение не синтезирует предметные события: они могут появиться только при обработке Turn.
+                    after_transition = [x for x in extra_trace["events"]
+                                        if x["sequence_no"] > last_sequence_before_transition]
+                    assert [x["event_type"] for x in after_transition] == ["interaction_terminated"]
                 record_technical_qa_evidence(
                     connection, assessment_situation_id=extra["assessment_situation_id"], trajectory=trajectory,
                     expected={"action": action}, actual={"status": extra_trace["status"]}, defects=[], performed_by=99)
