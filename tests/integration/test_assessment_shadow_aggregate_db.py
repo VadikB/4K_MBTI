@@ -8,6 +8,7 @@ from psycopg.rows import dict_row
 
 from Api.assessment_shadow_repository import AssessmentShadowRepository
 from Api.assessment_shadow_batch_service import AssessmentShadowBatchService
+from Api.snapshot_integrity import bind_execution_snapshot, snapshot_checksum
 
 
 @pytest.mark.integration
@@ -70,7 +71,8 @@ def test_shadow_comparison_aggregate_uses_sanitized_counts(test_database_url) ->
 
 @pytest.mark.integration
 def test_shadow_batch_selection_skips_existing_agent_version(test_database_url) -> None:
-    snapshot = {
+    snapshot_payload = {
+        "schema_version": 1,
         "methodology": {"definition": {"competencies": [{
             "code": "communication",
             "shadow_evaluation": {
@@ -79,6 +81,8 @@ def test_shadow_batch_selection_skips_existing_agent_version(test_database_url) 
             },
         }]}},
     }
+    first_snapshot = bind_execution_snapshot(snapshot_payload, user_id=11)
+    second_snapshot = bind_execution_snapshot(snapshot_payload, user_id=22)
     with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
         connection.execute("DROP TABLE IF EXISTS assessment_shadow_evaluation_runs")
         connection.execute("DROP TABLE IF EXISTS user_sessions")
@@ -86,7 +90,7 @@ def test_shadow_batch_selection_skips_existing_agent_version(test_database_url) 
             """
             CREATE TABLE user_sessions (
                 id BIGINT PRIMARY KEY, user_id BIGINT NOT NULL, status TEXT NOT NULL,
-                analysis_completed_at TIMESTAMP, execution_snapshot_json JSONB
+                analysis_completed_at TIMESTAMP, execution_snapshot_json JSONB, execution_checksum TEXT
             )
             """
         )
@@ -100,11 +104,15 @@ def test_shadow_batch_selection_skips_existing_agent_version(test_database_url) 
         )
         connection.execute(
             """
-            INSERT INTO user_sessions (id, user_id, status, analysis_completed_at, execution_snapshot_json)
-            VALUES (1, 11, 'completed', NOW() - INTERVAL '1 minute', %s::jsonb),
-                   (2, 22, 'completed', NOW(), %s::jsonb)
+            INSERT INTO user_sessions
+                (id, user_id, status, analysis_completed_at, execution_snapshot_json, execution_checksum)
+            VALUES (1, 11, 'completed', NOW() - INTERVAL '1 minute', %s::jsonb, %s),
+                   (2, 22, 'completed', NOW(), %s::jsonb, %s)
             """,
-            (json.dumps(snapshot), json.dumps(snapshot)),
+            (
+                json.dumps(first_snapshot), snapshot_checksum(first_snapshot),
+                json.dumps(second_snapshot), snapshot_checksum(second_snapshot),
+            ),
         )
         connection.execute(
             """

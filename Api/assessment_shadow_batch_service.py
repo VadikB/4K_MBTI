@@ -61,7 +61,7 @@ class AssessmentShadowBatchService:
     def _select_targets(self, *, connection, limit: int) -> list[dict]:
         rows = connection.execute(
             """
-            SELECT id, user_id, execution_snapshot_json
+            SELECT id, user_id, execution_snapshot_json, execution_checksum
             FROM user_sessions
             WHERE status = 'completed' AND execution_snapshot_json IS NOT NULL
             ORDER BY analysis_completed_at DESC NULLS LAST, id DESC
@@ -70,7 +70,13 @@ class AssessmentShadowBatchService:
         ).fetchall()
         targets: list[dict] = []
         for row in rows:
-            snapshot = row["execution_snapshot_json"]
+            from Api.snapshot_integrity import verify_snapshot
+
+            snapshot = verify_snapshot(
+                row["execution_snapshot_json"],
+                row["execution_checksum"],
+                expected_user_id=int(row["user_id"]),
+            )
             methodology = dict((snapshot.get("methodology") or {}).get("definition") or {})
             for competency in methodology.get("competencies") or []:
                 shadow = competency.get("shadow_evaluation")

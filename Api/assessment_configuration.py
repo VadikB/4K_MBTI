@@ -6,6 +6,7 @@ from typing import Any
 
 from Api.assessment_runtime import validate_scenario_definition
 from Api.assessment_prompt_resolver import load_active_prompt_bundle
+from Api.snapshot_integrity import execution_snapshot_integrity
 
 
 LEGACY_METHODOLOGY_CODE = "competencies_4k"
@@ -272,6 +273,7 @@ def load_default_execution_configuration(connection) -> dict[str, Any]:
 
     snapshot = {
         "schema_version": 1,
+        "_integrity": execution_snapshot_integrity(),
         "configuration": {"id": int(row["configuration_id"]), "code": str(row["configuration_code"])},
         "methodology": {
             "id": int(row["methodology_version_id"]),
@@ -294,28 +296,3 @@ def load_default_execution_configuration(connection) -> dict[str, Any]:
         "snapshot": snapshot,
         "checksum": definition_checksum(snapshot),
     }
-
-
-def backfill_legacy_session_configuration(connection) -> int:
-    configuration = load_default_execution_configuration(connection)
-    cursor = connection.execute(
-        """
-        UPDATE user_sessions
-        SET assessment_configuration_id = %s,
-            methodology_version_id = %s,
-            scenario_version_id = %s,
-            execution_snapshot_json = %s::jsonb,
-            execution_checksum = %s
-        WHERE assessment_code = %s
-          AND assessment_configuration_id IS NULL
-        """,
-        (
-            configuration["configuration_id"],
-            configuration["methodology_version_id"],
-            configuration["scenario_version_id"],
-            canonical_json(configuration["snapshot"]),
-            configuration["checksum"],
-            LEGACY_METHODOLOGY_CODE,
-        ),
-    )
-    return int(cursor.rowcount or 0)

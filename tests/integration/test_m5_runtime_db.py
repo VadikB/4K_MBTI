@@ -13,6 +13,8 @@ from Api.m5_storage import (M5ImportConflict, import_package, package_readback,
                             prepare_assessment_situation, record_technical_qa_evidence)
 from Api.m5_rule_engine import ControlledCharacterAdapter, ControlledSemanticAdapter
 from Api.m5_scenario_runtime import build_c45, run_model_check_case03, start, submit_turn, trace, transition
+from Api.m5_case_runtime import checksum
+from Api.snapshot_integrity import SNAPSHOT_OWNER_MISMATCH, SnapshotIntegrityError
 from scripts.build_m5_case_package import OUTPUT
 
 
@@ -63,6 +65,38 @@ def test_m5_import_readback_and_rejected_as_are_transactional(test_database_url)
             "rejected", "1.1-draft.1", "CASE_NOT_ADMITTED", False,
         )
         assert connection.execute("SELECT count(*) AS n FROM m5_case_versions").fetchone()["n"] == 5
+        with pytest.raises(psycopg.Error, match="Referenced M5 CaseVersion content is immutable"):
+            with connection.transaction():
+                connection.execute(
+                    "UPDATE m5_case_targets SET target_json = '{}'::jsonb WHERE case_version_id = "
+                    "(SELECT id FROM m5_case_versions WHERE case_id='CASE-TDISC-01')"
+                )
+
+        foreign_id = uuid4()
+        foreign_snapshot = copy.deepcopy(prepared["snapshot"])
+        foreign_snapshot["assessment_situation_id"] = str(uuid4())
+        case_version_id = connection.execute(
+            "SELECT id FROM m5_case_versions WHERE case_id='CASE-TDISC-01'"
+        ).fetchone()["id"]
+        connection.execute(
+            """
+            INSERT INTO m5_assessment_situations
+                (assessment_situation_id, case_version_id, personalized_profile_id, usage_scope,
+                 status, snapshot_json, execution_payload_json, snapshot_checksum)
+            VALUES (%s,%s,7,'qa','rejected',%s::jsonb,%s::jsonb,%s)
+            """,
+            (
+                foreign_id,
+                case_version_id,
+                json.dumps(foreign_snapshot),
+                json.dumps(prepared["execution_payload"]),
+                checksum(foreign_snapshot),
+            ),
+        )
+        with pytest.raises(SnapshotIntegrityError) as wrong_owner:
+            trace(connection, str(foreign_id))
+        assert wrong_owner.value.code == SNAPSHOT_OWNER_MISMATCH
+
         started = start(connection, prepared["assessment_situation_id"])
         assert started["status"] == "active"
         request_id, turn_id = "request-1", str(uuid4())

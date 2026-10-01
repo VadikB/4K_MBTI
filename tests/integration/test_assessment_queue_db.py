@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import json
 from contextlib import contextmanager
 from datetime import UTC, datetime
+from uuid import uuid4
 
 import psycopg
 import pytest
 from psycopg.rows import dict_row
 
 from Api import assessment_preparation_queue as queue_module
+from Api.assessment_configuration import definition_checksum
+from Api.database import ensure_execution_snapshot_guards
+from Api.snapshot_integrity import bind_execution_snapshot, execution_snapshot_integrity, snapshot_checksum
 from Api.assessment_preparation_queue import AssessmentPreparationQueue
 from Api.schemas import AssessmentStartResponse, UserResponse
 
@@ -29,6 +34,7 @@ def queue_database(test_database_url, monkeypatch):
                 attempts INTEGER NOT NULL DEFAULT 0,
                 max_attempts INTEGER NOT NULL DEFAULT 3,
                 result_json JSONB,
+                error_code TEXT,
                 error_message TEXT,
                 worker_id TEXT,
                 locked_at TIMESTAMP,
@@ -46,6 +52,7 @@ def queue_database(test_database_url, monkeypatch):
             WHERE status IN ('queued', 'running')
             """
         )
+        ensure_execution_snapshot_guards(connection, tables=("assessment_preparation_jobs",))
 
     @contextmanager
     def test_connection():
@@ -53,6 +60,14 @@ def queue_database(test_database_url, monkeypatch):
             yield connection
 
     monkeypatch.setattr(queue_module, "get_connection", test_connection)
+    snapshot = {
+        "schema_version": 1,
+        "_integrity": execution_snapshot_integrity(),
+        "configuration": {"id": 1, "code": "queue_test"},
+        "methodology": {"id": 1, "code": "queue_test", "version": 1, "definition": {}},
+        "scenario": {"id": 1, "code": "queue_test", "version": 1, "definition": {}},
+        "prompts": {},
+    }
     monkeypatch.setattr(
         queue_module,
         "load_default_execution_configuration",
@@ -60,14 +75,8 @@ def queue_database(test_database_url, monkeypatch):
             "configuration_id": 1,
             "methodology_version_id": 1,
             "scenario_version_id": 1,
-            "snapshot": {
-                "schema_version": 1,
-                "configuration": {"id": 1, "code": "queue_test"},
-                "methodology": {"id": 1, "code": "queue_test", "version": 1, "definition": {}},
-                "scenario": {"id": 1, "code": "queue_test", "version": 1, "definition": {}},
-                "prompts": {},
-            },
-            "checksum": "queue-test-checksum",
+            "snapshot": snapshot,
+            "checksum": definition_checksum(snapshot),
         },
     )
     yield
@@ -103,6 +112,7 @@ def test_enqueue_claim_complete_and_read_result(queue_database, monkeypatch) -> 
     assert claimed is not None
     assert claimed.operation_id == "integration-operation"
     assert claimed.worker_id == "integration-worker"
+    assert claimed.execution_checksum == definition_checksum(claimed.execution_snapshot)
 
     queue._complete(
         claimed,
@@ -132,6 +142,42 @@ def test_active_job_is_deduplicated_per_user(queue_database) -> None:
 
     assert first["operation_id"] == "first-operation"
     assert second["operation_id"] == "first-operation"
+
+
+@pytest.mark.integration
+def test_queued_execution_snapshot_is_immutable(queue_database) -> None:
+    queue = AssessmentPreparationQueue()
+    queue.enqueue(operation_id="immutable-operation", user=make_test_user())
+
+    with pytest.raises(psycopg.Error, match="Execution snapshot is immutable"):
+        with queue_module.get_connection() as connection:
+            connection.execute(
+                "UPDATE assessment_preparation_jobs SET execution_snapshot_json = '{}'::jsonb "
+                "WHERE operation_id = 'immutable-operation'"
+            )
+
+
+@pytest.mark.integration
+def test_started_session_execution_snapshot_is_immutable(test_database_url) -> None:
+    with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
+        schema = "session_snapshot_pytest_" + uuid4().hex
+        connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
+        connection.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
+        connection.execute(
+            "CREATE TABLE user_sessions (id BIGINT PRIMARY KEY, user_id BIGINT NOT NULL, status TEXT NOT NULL, "
+            "execution_snapshot_json JSONB, execution_checksum TEXT)"
+        )
+        ensure_execution_snapshot_guards(connection, tables=("user_sessions",))
+        frozen = bind_execution_snapshot({"schema_version": 1}, user_id=101)
+        connection.execute(
+            "INSERT INTO user_sessions VALUES (1,101,'active',%s::jsonb,%s)",
+            (json.dumps(frozen), snapshot_checksum(frozen)),
+        )
+
+        with pytest.raises(psycopg.Error, match="Execution snapshot is immutable"):
+            with connection.transaction():
+                connection.execute("UPDATE user_sessions SET execution_snapshot_json='{}'::jsonb WHERE id=1")
+        connection.rollback()
 
 
 @pytest.mark.integration

@@ -12,10 +12,7 @@ from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
 from Api.assessment_agent_definitions import ensure_legacy_agent_definitions
-from Api.assessment_configuration import (
-    backfill_legacy_session_configuration,
-    ensure_legacy_assessment_configuration,
-)
+from Api.assessment_configuration import ensure_legacy_assessment_configuration
 from Api.config import settings
 
 DEFAULT_LEVEL_PERCENT_MAP = {
@@ -3343,6 +3340,69 @@ def ensure_m5_runtime_schema(connection) -> None:
     """)
     connection.execute("DROP TRIGGER IF EXISTS trg_m5_as_immutable ON m5_assessment_situations")
     connection.execute("CREATE TRIGGER trg_m5_as_immutable BEFORE UPDATE OR DELETE ON m5_assessment_situations FOR EACH ROW EXECUTE FUNCTION prevent_m5_snapshot_change()")
+    connection.execute("""
+        CREATE OR REPLACE FUNCTION prevent_m5_referenced_case_change() RETURNS trigger AS $$
+        DECLARE
+            referenced BOOLEAN;
+            affected_case_version_id BIGINT;
+        BEGIN
+            IF TG_TABLE_NAME = 'm5_case_versions' THEN
+                affected_case_version_id := OLD.id;
+            ELSE
+                affected_case_version_id := OLD.case_version_id;
+            END IF;
+            SELECT EXISTS(
+                SELECT 1 FROM m5_assessment_situations s
+                WHERE s.case_version_id = affected_case_version_id
+            ) INTO referenced;
+            IF referenced THEN
+                RAISE EXCEPTION 'Referenced M5 CaseVersion content is immutable';
+            END IF;
+            RETURN OLD;
+        END; $$ LANGUAGE plpgsql
+    """)
+    for table in ("m5_case_versions", "m5_case_targets", "m5_case_characters", "m5_case_materials", "m5_case_scenario_steps"):
+        trigger = f"trg_{table}_referenced_immutable"
+        connection.execute(f"DROP TRIGGER IF EXISTS {trigger} ON {table}")
+        connection.execute(
+            f"CREATE TRIGGER {trigger} BEFORE UPDATE OR DELETE ON {table} "
+            "FOR EACH ROW EXECUTE FUNCTION prevent_m5_referenced_case_change()"
+        )
+
+
+def ensure_execution_snapshot_guards(connection, *, tables: tuple[str, ...] = ("user_sessions", "assessment_preparation_jobs")) -> None:
+    allowed = {"user_sessions", "assessment_preparation_jobs"}
+    if not tables or any(table not in allowed for table in tables):
+        raise ValueError("Unsupported execution snapshot guard table.")
+    connection.execute(
+        """
+        CREATE OR REPLACE FUNCTION prevent_execution_snapshot_change() RETURNS trigger AS $$
+        BEGIN
+            IF TG_TABLE_NAME = 'user_sessions' AND OLD.status = 'created' THEN
+                RETURN NEW;
+            END IF;
+            IF NEW.execution_snapshot_json IS DISTINCT FROM OLD.execution_snapshot_json
+                OR NEW.execution_checksum IS DISTINCT FROM OLD.execution_checksum
+            THEN
+                RAISE EXCEPTION 'Execution snapshot is immutable';
+            END IF;
+            RETURN NEW;
+        END; $$ LANGUAGE plpgsql
+        """
+    )
+    for table in tables:
+        trigger = f"trg_{table}_execution_snapshot_immutable"
+        legacy_trigger = (
+            "trg_user_session_execution_snapshot_immutable"
+            if table == "user_sessions"
+            else "trg_preparation_job_execution_snapshot_immutable"
+        )
+        connection.execute(f"DROP TRIGGER IF EXISTS {legacy_trigger} ON {table}")
+        connection.execute(f"DROP TRIGGER IF EXISTS {trigger} ON {table}")
+        connection.execute(
+            f"CREATE TRIGGER {trigger} BEFORE UPDATE ON {table} "
+            "FOR EACH ROW EXECUTE FUNCTION prevent_execution_snapshot_change()"
+        )
 
 
 def ensure_core_schema() -> None:
@@ -3697,7 +3757,6 @@ def ensure_core_schema() -> None:
             """
         )
         ensure_legacy_assessment_configuration(connection)
-        backfill_legacy_session_configuration(connection)
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS assessment_stage_runs (
@@ -3767,6 +3826,7 @@ def ensure_core_schema() -> None:
                 attempts INTEGER NOT NULL DEFAULT 0,
                 max_attempts INTEGER NOT NULL DEFAULT 3,
                 result_json JSONB,
+                error_code TEXT,
                 error_message TEXT,
                 worker_id TEXT,
                 locked_at TIMESTAMP,
@@ -3779,6 +3839,8 @@ def ensure_core_schema() -> None:
         )
         connection.execute("ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS execution_snapshot_json JSONB")
         connection.execute("ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS execution_checksum TEXT")
+        connection.execute("ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS error_code TEXT")
+        ensure_execution_snapshot_guards(connection)
         connection.execute(
             """
             DO $$

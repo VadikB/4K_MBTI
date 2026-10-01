@@ -21,6 +21,7 @@ from Api.assessment_runtime import ScenarioExecutionContext, component_registry,
 from Api.assessment_shadow_repository import assessment_shadow_repository
 from Api.llm.deepseek_gateway import DeepSeekGateway
 from Api.universal_indicator_evaluator import UniversalIndicatorEvaluator
+from Api.snapshot_integrity import SnapshotIntegrityError
 
 logger = logging.getLogger("agent4k.analysis_queue")
 
@@ -264,7 +265,6 @@ class AssessmentAnalysisQueue:
                     session_id=job.session_id,
                     user_id=job.user_id,
                     stage_id="aggregate",
-                    snapshot=analysis_run["snapshot"],
                     executor=lambda _context: {
                         "mode": "indicator_evaluations_materialized"
                         if int(
@@ -278,7 +278,6 @@ class AssessmentAnalysisQueue:
                     session_id=job.session_id,
                     user_id=job.user_id,
                     stage_id="build_report",
-                    snapshot=analysis_run["snapshot"],
                     executor=lambda _context: {"mode": "report_materialized_on_read"},
                 )
                 cursor = connection.execute(
@@ -315,6 +314,9 @@ class AssessmentAnalysisQueue:
                     (job.session_id,),
                 )
             logger.info("Assessment analysis completed session_id=%s", job.session_id)
+        except SnapshotIntegrityError as exc:
+            logger.error("Assessment snapshot rejected session_id=%s code=%s", job.session_id, exc.code)
+            self._fail(job, exc.code, retry=False, error_code=exc.code)
         except Exception as exc:
             logger.exception(
                 "Assessment analysis failed session_id=%s attempt=%s/%s",
@@ -523,7 +525,14 @@ class AssessmentAnalysisQueue:
         )
         connection.commit()
 
-    def _fail(self, job: AssessmentAnalysisJob, message: str, *, retry: bool) -> None:
+    def _fail(
+        self,
+        job: AssessmentAnalysisJob,
+        message: str,
+        *,
+        retry: bool,
+        error_code: str = "analysis_failed",
+    ) -> None:
         if retry:
             delay_seconds = min(60, 5 * (2 ** max(0, job.attempts - 1)))
             with get_connection() as connection:
@@ -532,7 +541,7 @@ class AssessmentAnalysisQueue:
                     UPDATE assessment_analysis_jobs
                     SET status = 'queued',
                         current_step = 'retry_wait',
-                        error_code = 'analysis_failed',
+                        error_code = %s,
                         error_message = %s,
                         retryable = TRUE,
                         worker_id = NULL,
@@ -543,7 +552,7 @@ class AssessmentAnalysisQueue:
                       AND status = 'running'
                       AND worker_id = %s
                     """,
-                    (message[:2000], f"{delay_seconds} seconds", job.id, job.worker_id),
+                    (error_code, message[:2000], f"{delay_seconds} seconds", job.id, job.worker_id),
                 )
                 connection.execute(
                     """
@@ -561,14 +570,15 @@ class AssessmentAnalysisQueue:
             return
 
         with get_connection() as connection:
+            manually_retryable = error_code == "analysis_failed"
             connection.execute(
                 """
                 UPDATE assessment_analysis_jobs
                 SET status = 'failed',
                     current_step = 'failed',
-                    error_code = 'analysis_failed',
+                    error_code = %s,
                     error_message = %s,
-                    retryable = TRUE,
+                    retryable = %s,
                     worker_id = NULL,
                     locked_at = NULL,
                     completed_at = NOW(),
@@ -577,19 +587,19 @@ class AssessmentAnalysisQueue:
                   AND status = 'running'
                   AND worker_id = %s
                 """,
-                (message[:2000], job.id, job.worker_id),
+                (error_code, message[:2000], manually_retryable, job.id, job.worker_id),
             )
             connection.execute(
                 """
                 UPDATE user_sessions
                 SET status = 'failed',
                     error_stage = 'analysis',
-                    error_code = 'analysis_failed',
+                    error_code = %s,
                     error_message = %s,
-                    error_retryable = TRUE
+                    error_retryable = %s
                 WHERE id = %s
                 """,
-                (message[:2000], job.session_id),
+                (error_code, message[:2000], manually_retryable, job.session_id),
             )
 
     def _run_job_heartbeat(self, job: AssessmentAnalysisJob, stop_event: threading.Event) -> None:

@@ -15,6 +15,7 @@ from Api.assessment_configuration import canonical_json, load_default_execution_
 from Api.assessment_runtime import ScenarioExecutionContext, scenario_runner
 from Api.progress_service import operation_progress_service
 from Api.schemas import AssessmentStartResponse, UserResponse
+from Api.snapshot_integrity import SnapshotIntegrityError, bind_execution_snapshot, snapshot_checksum, verify_snapshot
 from Api.user_journey import evaluate_profile_state
 
 logger = logging.getLogger("agent4k.assessment_queue")
@@ -43,6 +44,7 @@ class AssessmentPreparationJob:
     worker_id: str
     prepare_only: bool = False
     execution_snapshot: dict | None = None
+    execution_checksum: str | None = None
 
 
 class AssessmentPreparationQueue:
@@ -88,6 +90,7 @@ class AssessmentPreparationQueue:
         payload["_prepare_only"] = prepare_only
         with get_connection() as connection:
             execution_configuration = load_default_execution_configuration(connection)
+            frozen_snapshot = bind_execution_snapshot(execution_configuration["snapshot"], user_id=int(user.id))
             connection.execute("SELECT pg_advisory_xact_lock(%s, %s)", (424242, int(user.id)))
             existing = connection.execute(
                 """
@@ -116,8 +119,8 @@ class AssessmentPreparationQueue:
                         operation_id,
                         user.id,
                         json.dumps(payload, ensure_ascii=False),
-                        canonical_json(execution_configuration["snapshot"]),
-                        execution_configuration["checksum"],
+                        canonical_json(frozen_snapshot),
+                        snapshot_checksum(frozen_snapshot),
                         max(1, settings.assessment_queue_max_attempts),
                     ),
                 ).fetchone()
@@ -130,7 +133,7 @@ class AssessmentPreparationQueue:
             row = connection.execute(
                 """
                 SELECT operation_id, user_id, status, attempts, max_attempts,
-                       result_json, error_message, created_at, updated_at, completed_at
+                       result_json, error_code, error_message, created_at, updated_at, completed_at
                 FROM assessment_preparation_jobs
                 WHERE operation_id = %s
                 """,
@@ -171,7 +174,7 @@ class AssessmentPreparationQueue:
         with get_connection() as connection:
             row = connection.execute(
                 """
-                SELECT id, operation_id, user_id, user_payload_json, execution_snapshot_json,
+                SELECT id, operation_id, user_id, user_payload_json, execution_snapshot_json, execution_checksum,
                        attempts, max_attempts
                 FROM assessment_preparation_jobs
                 WHERE status = 'queued'
@@ -193,7 +196,7 @@ class AssessmentPreparationQueue:
                     updated_at = NOW(),
                     error_message = NULL
                 WHERE id = %s
-                RETURNING id, operation_id, user_id, user_payload_json, execution_snapshot_json,
+                RETURNING id, operation_id, user_id, user_payload_json, execution_snapshot_json, execution_checksum,
                           attempts, max_attempts
                 """,
                 (worker_id, row["id"]),
@@ -215,6 +218,7 @@ class AssessmentPreparationQueue:
             worker_id=worker_id,
             prepare_only=prepare_only,
             execution_snapshot=dict(execution_snapshot) if isinstance(execution_snapshot, dict) else None,
+            execution_checksum=claimed["execution_checksum"],
         )
 
     def _run_maintenance_if_due(self) -> None:
@@ -262,6 +266,11 @@ class AssessmentPreparationQueue:
         )
         heartbeat.start()
         try:
+            job.execution_snapshot = verify_snapshot(
+                job.execution_snapshot,
+                job.execution_checksum,
+                expected_user_id=job.user_id,
+            )
             interviewer_agent = _get_interviewer_agent()
             user = UserResponse.model_validate(job.user_payload)
             if job.execution_snapshot is not None:
@@ -274,6 +283,7 @@ class AssessmentPreparationQueue:
                         user_id=job.user_id,
                         stage_id="prepare_profile",
                         snapshot=job.execution_snapshot,
+                        snapshot_checksum=job.execution_checksum,
                         executor=lambda context: self._execute_profile_preparation(
                             context,
                             interviewer_agent=interviewer_agent,
@@ -302,6 +312,8 @@ class AssessmentPreparationQueue:
                     preparation_job_id=job.id,
                 )
             self._complete(job, result)
+        except SnapshotIntegrityError as exc:
+            self._fail(job, exc.code, retry=False, error_code=exc.code)
         except ValueError as exc:
             message = str(exc)
             self._fail(
@@ -375,6 +387,7 @@ class AssessmentPreparationQueue:
                 logger.exception("Assessment queue heartbeat failed operation_id=%s", job.operation_id)
 
     def _complete(self, job: AssessmentPreparationJob, result: AssessmentStartResponse | None) -> None:
+        verify_snapshot(job.execution_snapshot, job.execution_checksum, expected_user_id=job.user_id)
         result_json = json.dumps(result.model_dump(mode="json"), ensure_ascii=False) if result is not None else None
         with get_connection() as connection:
             cursor = connection.execute(
@@ -408,7 +421,14 @@ class AssessmentPreparationQueue:
         )
         logger.info("Assessment preparation completed operation_id=%s user_id=%s", job.operation_id, job.user_id)
 
-    def _fail(self, job: AssessmentPreparationJob, message: str, *, retry: bool) -> None:
+    def _fail(
+        self,
+        job: AssessmentPreparationJob,
+        message: str,
+        *,
+        retry: bool,
+        error_code: str = "assessment_preparation_failed",
+    ) -> None:
         if retry:
             delay_seconds = min(60, 5 * (2 ** max(0, job.attempts - 1)))
             with get_connection() as connection:
@@ -426,6 +446,7 @@ class AssessmentPreparationQueue:
                     """
                     UPDATE assessment_preparation_jobs
                     SET status = 'queued',
+                        error_code = %s,
                         error_message = %s,
                         worker_id = NULL,
                         locked_at = NULL,
@@ -435,7 +456,7 @@ class AssessmentPreparationQueue:
                       AND status = 'running'
                       AND worker_id = %s
                     """,
-                    (message[:2000], f"{delay_seconds} seconds", job.id, job.worker_id),
+                    (error_code, message[:2000], f"{delay_seconds} seconds", job.id, job.worker_id),
                 )
                 updated = cursor.rowcount
             if updated != 1:
@@ -464,6 +485,7 @@ class AssessmentPreparationQueue:
                 """
                 UPDATE assessment_preparation_jobs
                 SET status = 'failed',
+                    error_code = %s,
                     error_message = %s,
                     worker_id = NULL,
                     locked_at = NULL,
@@ -473,7 +495,7 @@ class AssessmentPreparationQueue:
                   AND status = 'running'
                   AND worker_id = %s
                 """,
-                (message[:2000], job.id, job.worker_id),
+                (error_code, message[:2000], job.id, job.worker_id),
             )
             updated = cursor.rowcount
         if updated != 1:
