@@ -239,9 +239,9 @@ def _record_ai_attempt(connection, *, row: dict, action_key: str, action_type: s
     if identity_status == "technical_failure":
         outcome = "technical_failure"
         code = "PROVIDER_CALL_FAILED"
-    elif identity_status == "mismatch":
+    elif identity_status == "sent_mismatch":
         outcome = "rejected"
-        code = "AI_PROVIDER_IDENTITY_MISMATCH"
+        code = "M5_AI_SENT_CONFIG_MISMATCH"
     elif accepted:
         outcome = "accepted"
         code = "VALIDATED"
@@ -670,8 +670,8 @@ def execute_technical_c45(connection, *, assessment_situation_id: str, indicator
             routing_key=action_key,
         )
         errors = _validate_technical_c54(row=row, handoff=handoff, payload=payload, indicator_id=indicator_id)
-        if ai_trace.get("identity_status") == "mismatch":
-            errors.append("provider_identity:mismatch")
+        if ai_trace.get("identity_status") == "sent_mismatch":
+            errors.append("sent_config:mismatch")
         result = CharacterReply("COMPLETED" if not errors else "ERROR", None, "deepseek",
                                 operation["model"], prompt_ref=operation["prompt_ref"], ai_trace=ai_trace)
         _record_ai_attempt(connection, row=row, action_key=action_key, action_type="technical_c45",

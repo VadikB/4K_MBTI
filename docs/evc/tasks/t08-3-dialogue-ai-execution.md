@@ -29,20 +29,29 @@ endpoint из текущих settings. Фактический запрос, prov
 - [x] C-45 содержит происхождение, фактическую доступность материалов и точную границу.
 - [x] Разделены `interim` и `final` предусловия.
 - [x] QA-only технический C-45/C-54 проходит основной adapter и не создаёт оценку.
-- [x] Повтор действия идемпотентен; несовпадение identity и невалидный ответ отклоняются.
+- [x] Повтор действия идемпотентен; несовпадение отправленной конфигурации со snapshot
+  и невалидный ответ отклоняются; provider-reported model сохраняется наблюдаемым фактом.
 
 ## Проверки
 
-- `pytest -m 'not llm and not integration'` — 255 passed.
+- `pytest -m 'not llm and not integration'` — 256 passed после исправления политики
+  provider-reported model.
 - `TEST_DATABASE_URL=postgresql://pytest:***@127.0.0.1:55433/agent4k_pytest npm run test:backend:integration`
   во временном `postgres:16-alpine` — 32 passed; контейнер удалён.
 - `npm run lint:js` и `git diff --check` — PASS.
 - Frozen config на границе gateway, provider trace, неизвестная revision, несовпадение
-  model, prompt checksums, M5 runtime и HTTP покрыты тестами.
+  отправленной model со snapshot, наблюдаемый provider alias, prompt checksums, M5 runtime
+  и HTTP покрыты тестами.
 - Реальный локальный provider smoke: 3 passed; сетевой вызов выполнен через штатный
   `DeepSeekGateway`, методологическая корректность M6 не проверялась.
 - Управляемый test transport через продуктовый QA HTTP и чтение DB/trace: выполнить после deploy.
 - Реальный provider smoke на test: выполнить после deploy при доступной конфигурации.
+
+Первый прогон на test сохранил request ID и четыре provider attempts и выявил, что
+DeepSeek принял отправленный `deepseek-chat`, но сообщил `deepseek-flash` в поле model
+ответа. Это серверное разрешение алиаса. Политика уточнена: отправленная конфигурация
+обязана совпадать со snapshot, а сообщённая провайдером model сохраняется отдельно и
+не подменяет snapshot. Повторный стендовый прогон требуется после deploy исправления.
 
 ## Риски и откат
 

@@ -85,7 +85,7 @@ def test_semantic_adapter_sends_frozen_model_endpoint_parameters_and_keeps_provi
     assert result.ai_trace["provider"]["revision"] is None
 
 
-def test_semantic_adapter_rejects_provider_model_mismatch():
+def test_semantic_adapter_records_provider_resolved_model_alias():
     operation = build_m5_ai_operations_snapshot()["semantic_decision"]
 
     class Gateway:
@@ -96,7 +96,33 @@ def test_semantic_adapter_rejects_provider_model_mismatch():
         def chat_with_trace(self, messages, **kwargs):
             return LlmResponse(
                 '{"code":"MATCH","basis":"ok"}', {"model": "unexpected-model"},
-                {"endpoint": operation["endpoint"], "model": operation["model"], "messages": messages},
+                {"provider": operation["provider"], "endpoint": operation["endpoint"],
+                 "model": operation["model"], "parameters": operation["parameters"], "messages": messages},
+            )
+
+    result = DeepSeekSemanticAdapter(Gateway(), operation=operation).decide(
+        rule={"rule_id": "r", "condition": {}, "allowed_codes": ["MATCH", "NO_MATCH", "UNKNOWN"]},
+        text="text", turn_id="turn", context={},
+    )
+    assert result.outcome == RuleOutcome.TRUE
+    assert result.code == "MATCH"
+    assert result.ai_trace["provider_model_status"] == "provider_resolved_alias"
+    assert result.ai_trace["provider"]["model"] == "unexpected-model"
+
+
+def test_semantic_adapter_rejects_sent_model_different_from_snapshot():
+    operation = build_m5_ai_operations_snapshot()["semantic_decision"]
+
+    class Gateway:
+        enabled = True
+        model = operation["model"]
+        base_url = operation["endpoint"].removesuffix("/chat/completions")
+
+        def chat_with_trace(self, messages, **kwargs):
+            return LlmResponse(
+                '{"code":"MATCH","basis":"ok"}', {"model": "unexpected-model"},
+                {"provider": operation["provider"], "endpoint": operation["endpoint"],
+                 "model": "unexpected-model", "parameters": operation["parameters"], "messages": messages},
             )
 
     result = DeepSeekSemanticAdapter(Gateway(), operation=operation).decide(
@@ -104,4 +130,4 @@ def test_semantic_adapter_rejects_provider_model_mismatch():
         text="text", turn_id="turn", context={},
     )
     assert result.outcome == RuleOutcome.ERROR
-    assert result.code == "AI_PROVIDER_IDENTITY_MISMATCH"
+    assert result.code == "M5_AI_SENT_CONFIG_MISMATCH"
