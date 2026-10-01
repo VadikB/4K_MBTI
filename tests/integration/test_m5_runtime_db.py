@@ -9,8 +9,10 @@ import pytest
 from psycopg.rows import dict_row
 
 from Api.database import ensure_m5_runtime_schema
-from Api.m5_storage import M5ImportConflict, import_package, package_readback, prepare_assessment_situation
-from Api.m5_scenario_runtime import start, submit_turn, trace, transition
+from Api.m5_storage import (M5ImportConflict, import_package, package_readback,
+                            prepare_assessment_situation, record_technical_qa_evidence)
+from Api.m5_rule_engine import ControlledSemanticAdapter
+from Api.m5_scenario_runtime import build_c45, start, submit_turn, trace, transition
 from scripts.build_m5_case_package import OUTPUT
 
 
@@ -19,16 +21,19 @@ def test_m5_import_readback_and_rejected_as_are_transactional(test_database_url)
     package = json.loads((OUTPUT / "case-package.json").read_text())
     manifest = json.loads((OUTPUT / "manifest.json").read_text())
     policy = json.loads((OUTPUT / "admission-policy.json").read_text())
+    rules = json.loads((OUTPUT / "execution-rules.json").read_text())
     with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
         schema = "m5_runtime_test_" + uuid4().hex
         connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
         connection.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
+        connection.execute("CREATE TABLE users (id BIGINT PRIMARY KEY)")
+        connection.execute("INSERT INTO users VALUES (99)")
         connection.execute("CREATE TABLE assessment_personalized_profiles (id BIGINT PRIMARY KEY, status TEXT NOT NULL, content_json JSONB NOT NULL, provenance_json JSONB NOT NULL, checksum TEXT NOT NULL)")
         ensure_m5_runtime_schema(connection)
 
-        imported = import_package(connection, package=package, manifest=manifest)
+        imported = import_package(connection, package=package, manifest=manifest, execution_rules=rules)
         assert imported == {"package_db_id": imported["package_db_id"], "created": True, "case_count": 5}
-        repeated = import_package(connection, package=package, manifest=manifest)
+        repeated = import_package(connection, package=package, manifest=manifest, execution_rules=rules)
         assert repeated["created"] is False
         readback = package_readback(connection, imported["package_db_id"])
         assert [(x["target_count"], x["material_count"], x["scenario_step_count"]) for x in readback["cases"]] == [
@@ -39,14 +44,14 @@ def test_m5_import_readback_and_rejected_as_are_transactional(test_database_url)
         changed["cases"][0]["title"] += " changed"
         with pytest.raises(M5ImportConflict, match="PACKAGE_VERSION_CONTENT_CONFLICT"):
             with connection.transaction():
-                import_package(connection, package=changed, manifest=manifest)
+                import_package(connection, package=changed, manifest=manifest, execution_rules=rules)
 
         connection.execute("INSERT INTO assessment_personalized_profiles VALUES (7,'ready',%s::jsonb,'{}'::jsonb,%s)",
                            (json.dumps({"role_profile": {"code": "project_product_process_manager"}}), "c" * 64))
         prepared = prepare_assessment_situation(
             connection, assessment_situation_id=str(uuid4()), case_id="CASE-TDISC-01", case_version="v0.1",
             personalized_profile_id=7, substitutions=[], policy=policy,
-            usage_scope="qa",
+            usage_scope="qa", qa_authorized_by=99,
         )
         assert prepared["status"] == "rejected"
         assert prepared["snapshot"]["admission"]["code"] == "CASE_NOT_ADMITTED"
@@ -62,11 +67,13 @@ def test_m5_import_readback_and_rejected_as_are_transactional(test_database_url)
         assert started["status"] == "active"
         request_id, turn_id = "request-1", str(uuid4())
         first = submit_turn(connection, assessment_situation_id=prepared["assessment_situation_id"],
-                            request_id=request_id, turn_id=turn_id, content="Покажите готовность и выборку")
+                            request_id=request_id, turn_id=turn_id, content="Покажите готовность и выборку",
+                            semantic_adapter=ControlledSemanticAdapter({"CASE-TDISC-01-D1:disclosure": "TRUE"}))
         assert not first["idempotent"]
         assert {x["material_id"] for x in first["events"]} >= {"CASE-TDISC-01-D1", "CASE-TDISC-01-D3"}
         repeated_turn = submit_turn(connection, assessment_situation_id=prepared["assessment_situation_id"],
-                                    request_id=request_id, turn_id=turn_id, content="другая доставка")
+                                    request_id=request_id, turn_id=turn_id, content="другая доставка",
+                                    semantic_adapter=ControlledSemanticAdapter({}))
         assert repeated_turn["idempotent"]
         assert transition(connection, assessment_situation_id=prepared["assessment_situation_id"], action="pause", reason="test", request_id="pause-1")["status"] == "paused"
         assert transition(connection, assessment_situation_id=prepared["assessment_situation_id"], action="resume", reason="test", request_id="resume-1")["status"] == "active"
@@ -76,4 +83,80 @@ def test_m5_import_readback_and_rejected_as_are_transactional(test_database_url)
         assert saved_trace["status"] == "closed"
         assert len(saved_trace["turns"]) == 1
         assert len({x["event_key"] for x in saved_trace["events"]}) == len(saved_trace["events"])
+        handoff = build_c45(connection, prepared["assessment_situation_id"])
+        assert handoff["envelope_json"]["contract"] == "C-45"
+        assert handoff["envelope_json"]["evaluation_created"] is False
+        connection.rollback()
+
+
+@pytest.mark.integration
+def test_all_five_cases_run_through_qa_runtime_and_case04_has_both_branch_outcomes(test_database_url):
+    package = json.loads((OUTPUT / "case-package.json").read_text())
+    manifest = json.loads((OUTPUT / "manifest.json").read_text())
+    policy = json.loads((OUTPUT / "admission-policy.json").read_text())
+    rules = json.loads((OUTPUT / "execution-rules.json").read_text())
+    with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
+        schema = "m5_scenarios_pytest_" + uuid4().hex
+        connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
+        connection.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
+        connection.execute("CREATE TABLE users (id BIGINT PRIMARY KEY)")
+        connection.execute("INSERT INTO users VALUES (99)")
+        connection.execute("""CREATE TABLE assessment_personalized_profiles
+            (id BIGINT PRIMARY KEY, status TEXT NOT NULL, content_json JSONB NOT NULL,
+             provenance_json JSONB NOT NULL, checksum TEXT NOT NULL)""")
+        ensure_m5_runtime_schema(connection)
+        import_package(connection, package=package, manifest=manifest, execution_rules=rules)
+        profiles = {}
+        for index, role in enumerate(sorted({x["base_role"] for x in package["cases"]}), 1):
+            profiles[role] = index
+            connection.execute("INSERT INTO assessment_personalized_profiles VALUES (%s,'ready',%s::jsonb,'{}'::jsonb,%s)",
+                               (index, json.dumps({"role_profile": {"code": role}}), str(index) * 64))
+
+        for case in package["cases"]:
+            prepared = prepare_assessment_situation(
+                connection, assessment_situation_id=str(uuid4()), case_id=case["case_id"], case_version=case["version"],
+                personalized_profile_id=profiles[case["base_role"]], substitutions=[], policy=policy,
+                usage_scope="qa", qa_authorized_by=99,
+            )
+            start(connection, prepared["assessment_situation_id"])
+            outcomes = {}
+            for material in case["materials"]:
+                condition = material["disclosure_condition"]["type"]
+                if condition == "semantic_request": outcomes[f"{material['material_id']}:disclosure"] = "TRUE"
+                if condition == "method_owner_unresolved": outcomes[f"{material['material_id']}:qa_unresolved_branch"] = "TRUE"
+                if material["event_condition"]["type"].startswith("after_first_"):
+                    outcomes[f"{material['material_id']}:mandatory"] = "TRUE"
+            outcomes[f"{case['case_id']}:{case['scenario'][0]['step_id']}:completion"] = "TRUE"
+            submit_turn(connection, assessment_situation_id=prepared["assessment_situation_id"], request_id="progress-1",
+                        turn_id=str(uuid4()), content="Содержательное действие без обязательного ключевого слова",
+                        semantic_adapter=ControlledSemanticAdapter(outcomes))
+            transition(connection, assessment_situation_id=prepared["assessment_situation_id"], action="scenario_end",
+                       reason="controlled technical trajectory", request_id="end-1")
+            saved = trace(connection, prepared["assessment_situation_id"])
+            assert saved["turns"] and saved["events"] and saved["decisions"]
+            assert saved["state"]["state_json"]["current_stage"] == "scenario_end"
+            handoff = build_c45(connection, prepared["assessment_situation_id"])
+            assert handoff["envelope_json"]["boundary_sequence"] > 0
+            evidence = record_technical_qa_evidence(
+                connection, assessment_situation_id=prepared["assessment_situation_id"], trajectory="content_progress",
+                expected={"runtime": "trace_saved"}, actual={"events": len(saved["events"])}, defects=[], performed_by=99)
+            assert evidence["evidence_json"]["eligibility"] == "technical_qa"
+            assert evidence["evidence_json"]["empirical_pilot"] == "NOT_RUN"
+
+        case4 = next(x for x in package["cases"] if x["case_id"] == "CASE-TDISC-04")
+        negative = prepare_assessment_situation(
+            connection, assessment_situation_id=str(uuid4()), case_id=case4["case_id"], case_version=case4["version"],
+            personalized_profile_id=profiles[case4["base_role"]], substitutions=[], policy=policy,
+            usage_scope="qa", qa_authorized_by=99)
+        start(connection, negative["assessment_situation_id"])
+        submit_turn(connection, assessment_situation_id=negative["assessment_situation_id"], request_id="negative-1",
+                    turn_id=str(uuid4()), content="Технический отрицательный пример ветви",
+                    semantic_adapter=ControlledSemanticAdapter({"CASE-TDISC-04-D1.ASYA:qa_unresolved_branch": "FALSE"}))
+        transition(connection, assessment_situation_id=negative["assessment_situation_id"], action="scenario_end",
+                   reason="branch stayed closed", request_id="negative-end")
+        negative_trace = trace(connection, negative["assessment_situation_id"])
+        assert not any(x["material_id"] == "CASE-TDISC-04-D1.ASYA" and x["event_type"] == "material_disclosed"
+                       for x in negative_trace["events"])
+        assert any(x["material_id"] == "CASE-TDISC-04-D1.ASYA" and x["event_type"] == "conditional_branch_not_opened"
+                   for x in negative_trace["events"])
         connection.rollback()

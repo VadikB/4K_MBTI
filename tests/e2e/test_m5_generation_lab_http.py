@@ -11,90 +11,83 @@ import Api.routes as routes
 pytestmark = pytest.mark.e2e
 
 
+class Result:
+    def __init__(self, row=None): self.row = row
+    def fetchone(self): return self.row
+
+
 @pytest.fixture
 def client(monkeypatch):
     class Connection:
-        def commit(self):
-            pass
+        def __init__(self): self.run = None
+        def execute(self, sql, params=()):
+            if "FROM m5_runtime_lab_runs" in sql: return Result(self.run)
+            if "INSERT INTO m5_runtime_lab_runs" in sql:
+                self.run = {"run_id": str(params[0]), "created_by": params[1], "assessment_situation_db_id": params[2],
+                            "request_checksum": params[3], "status": "active"}
+                return Result(self.run)
+            return Result()
+        def commit(self): pass
 
+    connection = Connection()
     @contextmanager
-    def connection():
-        yield Connection()
-
+    def get_connection(): yield connection
     def authorize(_connection, user):
-        if user is None:
-            raise HTTPException(401)
-        if user.id != 7:
-            raise HTTPException(403)
-
-    monkeypatch.setattr(routes, "get_connection", connection)
+        if user is None: raise HTTPException(401)
+        if user.id != 7: raise HTTPException(403)
+    monkeypatch.setattr(routes, "get_connection", get_connection)
     monkeypatch.setattr(routes, "_require_superadmin", authorize)
     monkeypatch.setattr(routes.web_session_service, "get_user_by_token",
-                        lambda t: SimpleNamespace(id=7 if t == "admin" else 8))
-    app = FastAPI()
-    app.include_router(routes.router)
-    with TestClient(app) as c:
-        yield c, monkeypatch
-
-
-def test_lab_requires_superadmin_for_reads_and_generation(client):
-    c, _ = client
-    payload = {"run_id": str(uuid4()), "case_id": "CASE-TDISC-04", "base_role": "team_lead"}
-    for expected, token in ((401, None), (403, "member")):
-        if token:
-            c.cookies.set(routes.SESSION_COOKIE_NAME, token)
-        assert c.get("/users/admin/m5-lab").status_code == expected
-        assert c.post("/users/admin/m5-lab/runs", json=payload).status_code == expected
-        assert c.get("/users/admin/m5-lab/runs/" + payload["run_id"]).status_code == expected
-
-
-def test_lab_generates_and_returns_reread_artifacts(client):
-    c, monkeypatch = client
-    c.cookies.set(routes.SESSION_COOKIE_NAME, "admin")
-    payload = {"run_id": str(uuid4()), "case_id": "CASE-TDISC-04", "base_role": "team_lead"}
-    row = {}
-
-    def begin(_connection, *, request, user_id):
-        if row:
-            return row, False
-        row.update(run_id=str(request.run_id), input_json=routes.m5_generation_lab.build_generation_input(request), status="running")
-        return row, True
-
-    def finish(_connection, *, run_id, output, error_code):
-        row.update(status="failed" if error_code else "completed", output_json=output, error_code=error_code)
-
-    monkeypatch.setattr(routes.m5_generation_lab, "begin_run", begin)
-    monkeypatch.setattr(routes.m5_generation_lab, "finish_run", finish)
-    monkeypatch.setattr(routes.m5_generation_lab, "get_run", lambda *_: row)
-    response = c.post("/users/admin/m5-lab/runs", json=payload)
-    assert response.status_code == 200
-    assert response.json()["status"] == "completed"
-    assert len(response.json()["output_json"]["observability"]) > 1
-    assert c.get("/users/admin/m5-lab/runs/" + payload["run_id"]).json() == response.json()
-    monkeypatch.setattr(routes.m5_generation_lab, "generate", lambda *_: pytest.fail("Duplicate generation"))
-    assert c.post("/users/admin/m5-lab/runs", json=payload).json() == response.json()
-
-
-def test_lab_catalog_exposes_five_working_cases_for_qa(client):
-    c, monkeypatch = client
-    c.cookies.set(routes.SESSION_COOKIE_NAME, "admin")
-    catalog = c.get("/users/admin/m5-lab").json()
-    assert len(catalog["cases"]) == 5
-    assert {r["code"] for r in catalog["roles"]} == {"specialist_expert", "team_lead", "project_product_process_manager", "direction_system_leader"}
-    assert all(not case["admitted_for_assessment"] for case in catalog["cases"])
-    monkeypatch.setattr(routes.m5_generation_lab, "begin_run", lambda *args, **kwargs: (_ for _ in ()).throw(ValueError("Case недоступен для выбранной роли")))
-    response = c.post("/users/admin/m5-lab/runs", json={"run_id": str(uuid4()), "case_id": "CASE-TDISC-04", "base_role": "student"})
-    assert response.status_code == 409
-
-
-def test_missing_prompt_returns_503_without_inserting_run(client, tmp_path):
-    c, monkeypatch = client
-    c.cookies.set(routes.SESSION_COOKIE_NAME, "admin")
-    monkeypatch.setattr(routes.m5_generation_lab, "PROMPT_PACKAGE", tmp_path)
-    monkeypatch.setattr(routes.m5_generation_lab, "get_run", lambda *_: None)
-    # Реальный begin_run; у подставного connection нет execute: INSERT недопустим.
-    response = c.post("/users/admin/m5-lab/runs", json={
-        "run_id": str(uuid4()), "case_id": "CASE-TDISC-04", "base_role": "team_lead",
+                        lambda token: SimpleNamespace(id=7 if token == "admin" else 8) if token else None)
+    monkeypatch.setattr(routes.m5_storage, "qa_lab_catalog", lambda *_: {
+        "source_status": "WORKING", "qa_scope": True,
+        "profiles": [{"id": 17, "base_role": "team_lead", "full_name": "QA profile"}],
+        "cases": [{"case_id": "CASE-TDISC-04", "case_version": "v0.1", "title": "Case 4",
+                   "base_role": "team_lead", "indicator_ids": ["K1.I01"], "admitted_for_assessment": False}],
     })
-    assert response.status_code == 503
-    assert response.json() == {"detail": "M5_PROMPT_PACKAGE_UNAVAILABLE"}
+    app = FastAPI(); app.include_router(routes.router)
+    with TestClient(app) as value: yield value, monkeypatch, connection
+
+
+def payload():
+    return {"run_id": str(uuid4()), "case_id": "CASE-TDISC-04", "case_version": "v0.1",
+            "personalized_profile_id": 17}
+
+
+def test_lab_requires_superadmin_before_runtime_access(client):
+    http, _, _ = client
+    for expected, token in ((401, None), (403, "member")):
+        if token: http.cookies.set(routes.SESSION_COOKIE_NAME, token)
+        assert http.get("/users/admin/m5-lab").status_code == expected
+        assert http.post("/users/admin/m5-lab/runs", json=payload()).status_code == expected
+
+
+def test_lab_catalog_uses_real_profiles_and_marks_working_cases(client):
+    http, _, _ = client; http.cookies.set(routes.SESSION_COOKIE_NAME, "admin")
+    catalog = http.get("/users/admin/m5-lab").json()
+    assert catalog["qa_scope"] is True and catalog["profiles"][0]["id"] == 17
+    assert catalog["cases"][0]["admitted_for_assessment"] is False
+
+
+def test_lab_creates_qa_as_through_common_storage_and_runtime(client):
+    http, monkeypatch, _ = client; http.cookies.set(routes.SESSION_COOKIE_NAME, "admin")
+    calls = {}
+    monkeypatch.setattr(routes.m5_storage, "import_package_directory", lambda *_: {"created": False})
+    def prepare(_connection, **kwargs):
+        calls.update(kwargs)
+        return {"id": 51, "assessment_situation_id": "11111111-1111-4111-8111-111111111111",
+                "snapshot": {"case_ref": {"id": "CASE-TDISC-04"}, "base_role": "team_lead",
+                             "participant_payload": {}, "indicator_targets": [],
+                             "admission": {"code": "CASE_NOT_ADMITTED"}}}
+    monkeypatch.setattr(routes.m5_storage, "prepare_assessment_situation", prepare)
+    monkeypatch.setattr(routes.m5_scenario_runtime, "start", lambda *_: {"participant_payload": {"initial_situation": "QA"}})
+    monkeypatch.setattr(routes.m5_scenario_runtime, "trace", lambda *_: {"turns": [], "events": []})
+    response = http.post("/users/admin/m5-lab/runs", json=payload())
+    assert response.status_code == 200
+    assert calls["usage_scope"] == "qa" and calls["qa_authorized_by"] == 7
+    assert response.json()["snapshot_json"]["admission"]["code"] == "CASE_NOT_ADMITTED"
+
+
+def test_client_cannot_supply_usage_scope(client):
+    http, _, _ = client; http.cookies.set(routes.SESSION_COOKIE_NAME, "admin")
+    assert http.post("/users/admin/m5-lab/runs", json=payload() | {"usage_scope": "assessment"}).status_code == 422

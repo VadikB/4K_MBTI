@@ -1024,18 +1024,15 @@
         </section>
 
         <section id="m5-lab" class="card card--lg">
-          <h2>M5 · Проверка генерации по ролям</h2>
-          <p>Учебные профили двух ролей из WORKING-пула. Каждый прогон сохраняется отдельно. Результат требует методической проверки и не используется в оценке участников.</p>
+          <h2>M5 · Сценарный QA runtime</h2>
+          <p>WORKING-кейсы исполняются только в серверно разрешённом QA-контуре на сохранённом M4 PersonalizedProfile. Прогон не создаёт методический PASS и не используется в обычной оценке.</p>
           <div class="admin-prompt-lab-two">
-            <label class="admin-prompt-lab-field">Роль<select data-m5-role></select></label>
+            <label class="admin-prompt-lab-field">Сохранённый M4-профиль<select data-m5-role></select></label>
             <label class="admin-prompt-lab-field">Кейс<select data-m5-case></select></label>
           </div>
-          <label class="admin-prompt-lab-field">Способ формирования
-            <select data-m5-mode><option value="template">Сборка из шаблона без LLM</option><option value="llm">Генерация через LLM</option></select>
-          </label>
           <div class="admin-prompt-lab-actions">
-            <button type="button" class="primary-button" data-m5-run="single">Сформировать кейс</button>
-            <button type="button" class="ghost-button" data-m5-run="batch">Пройти 20 кейсов выбранной роли</button>
+            <button type="button" class="primary-button" data-m5-run="single">Создать и запустить QA AS</button>
+            <button type="button" class="ghost-button" data-m5-run="batch">Запустить совместимые кейсы</button>
           </div>
           <p data-m5-status role="status">Загрузка M5…</p>
           <label class="admin-prompt-lab-field">ID сохранённого прогона<input data-m5-run-id type="text"></label>

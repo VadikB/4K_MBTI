@@ -408,13 +408,25 @@ class M5PrepareSituationRequest(BaseModel):
     case_version: str
     personalized_profile_id: int
     substitutions: list[dict] = Field(default_factory=list)
-    usage_scope: Literal["assessment", "qa"] = "qa"
+
+
+class M5LabRuntimeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    run_id: UUID
+    case_id: str = Field(pattern=r"^CASE-TDISC-0[1-5]$")
+    case_version: str = "v0.1"
+    personalized_profile_id: int
+    substitutions: list[dict] = Field(default_factory=list)
 
 
 class M5TurnRequest(BaseModel):
     request_id: str
     turn_id: UUID
     content: str = Field(min_length=1, max_length=10000)
+
+
+class M5QATurnRequest(M5TurnRequest):
+    controlled_outcomes: dict[str, Literal["TRUE", "FALSE", "UNKNOWN", "ERROR"]] | None = None
 
 
 class M5TransitionRequest(BaseModel):
@@ -425,8 +437,16 @@ class M5TransitionRequest(BaseModel):
 
 class M5ModelCheckRequest(BaseModel):
     scheme: dict
-    initiated_by: str
-    scheme_authored_by: str
+    initiated_by: Literal["assessee", "sergey"]
+    scheme_authored_by: Literal["assessee", "sergey"]
+    turn_id: UUID | None = None
+
+
+class M5QAEvidenceRequest(BaseModel):
+    trajectory: str = Field(min_length=1, max_length=200)
+    expected: dict
+    actual: dict
+    defects: list[dict] = Field(default_factory=list)
 
 
 class AdminMethodologyBranchItem(BaseModel):

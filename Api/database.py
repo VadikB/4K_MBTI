@@ -3095,11 +3095,13 @@ def ensure_m5_runtime_schema(connection) -> None:
             package_checksum TEXT NOT NULL,
             manifest_json JSONB NOT NULL,
             package_json JSONB NOT NULL,
+            runtime_rules_json JSONB NOT NULL DEFAULT '{}'::jsonb,
             imported_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             UNIQUE (package_id, package_version),
             UNIQUE (package_checksum)
         )
     """)
+    connection.execute("ALTER TABLE m5_packages ADD COLUMN IF NOT EXISTS runtime_rules_json JSONB NOT NULL DEFAULT '{}'::jsonb")
     connection.execute("""
         CREATE TABLE IF NOT EXISTS m5_case_versions (
             id BIGSERIAL PRIMARY KEY,
@@ -3156,7 +3158,7 @@ def ensure_m5_runtime_schema(connection) -> None:
             case_version_id BIGINT NOT NULL REFERENCES m5_case_versions(id) ON DELETE RESTRICT,
             personalized_profile_id BIGINT NOT NULL REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT,
             usage_scope TEXT NOT NULL DEFAULT 'assessment' CHECK (usage_scope IN ('assessment','qa')),
-            status TEXT NOT NULL CHECK (status IN ('prepared', 'admitted', 'rejected', 'active', 'paused', 'scenario_ended', 'closed')),
+            status TEXT NOT NULL CHECK (status IN ('prepared', 'admitted', 'rejected', 'active', 'paused', 'scenario_ended', 'terminated', 'closed')),
             snapshot_json JSONB NOT NULL,
             execution_payload_json JSONB NOT NULL,
             snapshot_checksum TEXT NOT NULL UNIQUE,
@@ -3166,6 +3168,8 @@ def ensure_m5_runtime_schema(connection) -> None:
             closed_at TIMESTAMPTZ
         )
     """)
+    connection.execute("ALTER TABLE m5_assessment_situations DROP CONSTRAINT IF EXISTS m5_assessment_situations_status_check")
+    connection.execute("ALTER TABLE m5_assessment_situations ADD CONSTRAINT m5_assessment_situations_status_check CHECK (status IN ('prepared','admitted','rejected','active','paused','scenario_ended','terminated','closed'))")
     connection.execute("""
         DO $$ BEGIN
             ALTER TABLE m5_qa_evidence ADD CONSTRAINT fk_m5_qa_as
@@ -3217,6 +3221,95 @@ def ensure_m5_runtime_schema(connection) -> None:
             UNIQUE (assessment_situation_db_id, event_id),
             UNIQUE (assessment_situation_db_id, event_key),
             UNIQUE (assessment_situation_db_id, sequence_no)
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_scenario_states (
+            assessment_situation_db_id BIGINT PRIMARY KEY REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
+            revision INTEGER NOT NULL DEFAULT 0 CHECK (revision >= 0),
+            current_stage TEXT NOT NULL,
+            state_json JSONB NOT NULL,
+            rules_checksum TEXT NOT NULL,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_rule_decisions (
+            id BIGSERIAL PRIMARY KEY,
+            assessment_situation_db_id BIGINT NOT NULL REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
+            decision_id UUID NOT NULL UNIQUE,
+            decision_key TEXT NOT NULL,
+            rule_id TEXT NOT NULL,
+            rule_version TEXT NOT NULL,
+            input_revision INTEGER NOT NULL,
+            outcome TEXT NOT NULL CHECK (outcome IN ('TRUE','FALSE','UNKNOWN','ERROR')),
+            decision_json JSONB NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (assessment_situation_db_id, decision_key)
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_effect_applications (
+            id BIGSERIAL PRIMARY KEY,
+            assessment_situation_db_id BIGINT NOT NULL REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
+            effect_key TEXT NOT NULL,
+            effect_type TEXT NOT NULL,
+            rule_decision_id BIGINT REFERENCES m5_rule_decisions(id) ON DELETE RESTRICT,
+            event_id BIGINT REFERENCES m5_scenario_events(id) ON DELETE RESTRICT,
+            state_revision INTEGER NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (assessment_situation_db_id, effect_key)
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_semantic_operations (
+            id BIGSERIAL PRIMARY KEY,
+            assessment_situation_db_id BIGINT NOT NULL REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
+            operation_id UUID NOT NULL UNIQUE,
+            operation_key TEXT NOT NULL,
+            input_revision INTEGER NOT NULL,
+            input_checksum TEXT NOT NULL,
+            status TEXT NOT NULL CHECK (status IN ('pending','completed','rejected_late','failed')),
+            request_json JSONB NOT NULL,
+            result_json JSONB,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            completed_at TIMESTAMPTZ,
+            UNIQUE (assessment_situation_db_id, operation_key)
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_qa_overrides (
+            id BIGSERIAL PRIMARY KEY,
+            assessment_situation_db_id BIGINT NOT NULL UNIQUE REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
+            authorized_by BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            reason TEXT NOT NULL,
+            admission_unchanged BOOLEAN NOT NULL DEFAULT TRUE CHECK (admission_unchanged),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_c45_handoffs (
+            id BIGSERIAL PRIMARY KEY,
+            assessment_situation_db_id BIGINT NOT NULL REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
+            handoff_id UUID NOT NULL UNIQUE,
+            mode TEXT NOT NULL CHECK (mode IN ('interim','final')),
+            boundary_sequence INTEGER NOT NULL CHECK (boundary_sequence >= 0),
+            envelope_json JSONB NOT NULL,
+            envelope_checksum TEXT NOT NULL UNIQUE,
+            receiver_status TEXT NOT NULL CHECK (receiver_status IN ('pending','accepted','failed')),
+            receiver_ref TEXT,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (assessment_situation_db_id, mode, boundary_sequence)
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_runtime_lab_runs (
+            run_id UUID PRIMARY KEY,
+            created_by BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            assessment_situation_db_id BIGINT NOT NULL UNIQUE REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
+            request_checksum TEXT NOT NULL,
+            status TEXT NOT NULL CHECK (status IN ('prepared','active','scenario_ended','terminated','closed')),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     """)
     connection.execute("""
