@@ -1,70 +1,46 @@
 {
-  "archive": {
-    "name": "M5_Исправления_QA_v0.4_WORKING_комплект.zip",
-    "sha256": "8103e257d3dca95163a8bdab0a40667b5cbcfe4853378325f631b0e272e5e260"
-  },
   "artifacts": [
     {
-      "name": "assessment-situation.schema.json",
-      "sha256": "9cede54ee2e774e98f7996c5108439d3c680ba47cc236e9d60517886eabec03f"
+      "name": "admission-policy.json",
+      "sha256": "1049ed13ce5c6798c9fb79fa04347da43351d380732e347664c64a31312ab16a"
     },
     {
-      "name": "candidate-observability.schema.json",
-      "sha256": "fe0993be13d87284f6d116b0f3eb544fcb54ad745b260e86cd71e5b71807aa22"
+      "name": "assessment-situation.schema.json",
+      "sha256": "138e2c75de81a77ee3f378cf6ceacbeafc66cd63a29e0fe1a67d5bd44e817d73"
+    },
+    {
+      "name": "c34-execution-envelope.schema.json",
+      "sha256": "8ef62c5ed35646816c5be78113778223c7bbee65912d214dc724c8f3b090265d"
     },
     {
       "name": "case-package.json",
-      "sha256": "6fce5d65b17e932683e7f582e6520a717ce614cba33c071ed1ea275c94f732cb"
+      "sha256": "6f03b19640cf9dfc0bc6fc80ad7435ef47a1a13076a48e130be1bc6a6dde6527"
     },
     {
       "name": "case.schema.json",
-      "sha256": "344d5bde1cc6305aab97f5773f81149bb738dd980a5adb4679f96915f71e716f"
+      "sha256": "d83f7c8cc18b2813aa3625b6dc4f04c7084004712e45fed25863a3cbfabe2fb4"
     },
     {
-      "name": "source-texts.json",
-      "sha256": "ed638d54b27131a656ff7b0972cd951661e72ce6ec0872a502c9520b3e47f7da"
-    },
-    {
-      "name": "source-workbooks.json",
-      "sha256": "5998b7dfcbdc846a22f950dd0a1f6a8af1e8f3d31948c3ceefb7517746e2804e"
+      "name": "execution-rules.json",
+      "sha256": "2bb110753917dd4537a3a40b7bd90b644379cc4b9f1ba7886e31aa8c5c7e4f07"
     },
     {
       "name": "verification-report.json",
-      "sha256": "e286617e162e2e2697a92222dd24688f3fd8c6c49e46ef87c77e820743183170"
+      "sha256": "3102e46ff694d03b04e174258ebdc2f4411847b5e1952ed9f6151507b1474b23"
     },
     {
-      "name": "verification-report.md",
-      "sha256": "95e781f6fe6682d3fe886f094cf74c822a6397d4ad1ecbf6d7a58e28b35e257f"
-    },
-    {
-      "name": "verification-report.schema.json",
-      "sha256": "18a8c15ad44f4c7ad796c4c3927bf44fdd7966de3c8e5d223e195af0dfbd57b4"
+      "name": "sources/M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+      "sha256": "06f528d9c9e34c4748979e4d787ce0e069990e9f4051953e395ecb3f454e53fa"
     }
   ],
-  "methodology_version": "1.1",
-  "schema_version": 1,
+  "dependencies": {
+    "m2": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+    "m3": "a3dbd62940b3c79baa123c5c2b4fff960b20c71e558304ba41007c2a205571d7"
+  },
+  "id": "m5-complex-cases",
+  "runtime_enabled": false,
+  "schema_version": 2,
   "source_status": "WORKING",
-  "sources": [
-    {
-      "name": "M5_CaseType_Catalog_CT01-CT20_v1.0_FROZEN.xlsx",
-      "sha256": "d748e390933a45eabca44f305027f757c7568a6c4ef343ee5bc7f104c210b7c0"
-    },
-    {
-      "name": "M5_QA_Report_v0.4_2026-09-17_WORKING.md",
-      "sha256": "f05d882ed6d99d0b49d36c05243a66ea3ce5bc8d4e3f5c9ca874d0bd265ba050"
-    },
-    {
-      "name": "M5_Screening_2roles_20cases_50min_v0.4_WORKING.xlsx",
-      "sha256": "f542c7e1d9ddaccd14ff5cba98e07e95f22ddcba05f6cd11354ec7bc6f2a55fe"
-    },
-    {
-      "name": "M5_Методология_Консолидированная_v0.4_WORKING.docx",
-      "sha256": "906f4dec62ca31a199722f4f26c4b229d4bc49437ca4a95dc4edc2dda27e9362"
-    },
-    {
-      "name": "M5_Паспорт_Case_v0.3_WORKING.docx",
-      "sha256": "133297b2d17649e9e1646894864d625f91b7ded6635c9d0de02f4da2b1c7e108"
-    }
-  ],
-  "status": "draft"
+  "status": "draft",
+  "version": "0.1"
 }

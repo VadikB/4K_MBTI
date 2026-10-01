@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "m5_semantic_decision",
+  "version": "1.0.0",
+  "status": "draft",
+  "scope": "m5_scenario_runtime",
+  "artifacts": [
+    {
+      "name": "prompt.md",
+      "sha256": "4b160c89e18514d1753ea073de893c3cfec9a8218577c673593ee8ada0af79b1"
+    }
+  ]
+}

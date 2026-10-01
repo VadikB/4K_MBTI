@@ -1,0 +1,40 @@
+# Change 01: правило → контракт и данные → код → проверка
+
+Код аудита: `d7b8313fdc7e076bd8fc3ae4827920d1e692ceef`, 01.10.2026.
+Основания: [M1](../architecture/product-4k/m1/v1.4/README.md),
+[Change 01](../architecture/product-4k/1.0/updates/2026-10-01/README.md),
+[ADR-002](../adr/002-cycle-as-dialogue-contracts.md).
+
+Состояния не взаимозаменяемы: источник подключён → спроектировано → реализовано →
+проверено на точном commit. Для каждой строки текущий код — наблюдение, а критерий
+T — план проверки. У всех новых T01–T12 результат **NOT_RUN**. Наличие старого теста
+не доказывает новое требование. Документальный PR закрывает доступ к источнику и
+проект контрактов, но не «учёт M1 в продукте».
+
+| ID / правило | Контракт / данные | Фактический участок / состояние | Проверка готовности |
+| --- | --- | --- | --- |
+| T01 M1.4–5; И-2/3: фиксированный профиль | C-23/24/34, ProfileSnapshot и source refs | [assessment_service](../../Api/assessment_service.py), process_case_message читает active_profile_id; [context_builder](../../Api/assessment/interview/context_builder.py) использует профиль. Расхождение; новый путь спроектирован | После старта изменить активный профиль/роль: следующий Turn и новая AS того же Cycle используют исходный frozen profile; внешняя генерация не получает ФИО/контакты |
+| T02 M1.5; И-3: точные цели Case | C-34, CaseVersion.indicator_targets → AS targets | [CaseDefinition/AssessmentSituation](../../Api/assessment_case_contracts.py): 21 поле, нет exact targets Case; проверки AS локальные. Расхождение | 1..N CT и Indicators; unknown ID/version, дубликат, неверная роль, добавление/потеря цели блокируют admission; fixtures двух ролей |
+| T03 M1.5; И-3: сохранение полного состава | C-34, versioned mapping и атомарный freeze | [freeze_session_case_indicators](../../Api/assessment_service.py) проверяет count > 0; [старые тесты](../../tests/unit/test_assessment_indicator_snapshot.py) проверяют пустой scope/mapping, не exact equality. Частичная основа | Отсутствие одного mapping среди нескольких даёт TARGET_SET_MISMATCH и не сохраняет частично допущенную AS; rollback транзакции |
+| T04 M1.5–6; И-3/6: неизменность условий | C-34/45, AS snapshot/checksum | [assessment_service](../../Api/assessment_service.py), _get_case_for_session_case и _get_case_methodical_context читают текущие таблицы; _get_personalized_case_context имеет сохранённый prompt и fallback. Расхождение | После начала изменить passport/text/limits: предъявленные условия и дальнейший Dialogue неизменны; битый checksum блокируется во всех читателях нового пути |
+| T05 M1.6; И-2/4: конец сценария ≠ закрытие AS | C-45/54, scenario_completed, AS state, processing mode | [assessment_service](../../Api/assessment_service.py), turn.is_case_complete → _complete_case_and_continue → answered. Разделение не реализовано | Конец сценария оставляет AS открытой; interim не создаёт IA; final до закрытия отклоняется; после закрытия Turn отклоняется |
+| T06 M1.6–8; И-4/6: материал и повторы | C-45, Turn IDs/order, materials/events, material_revision | [assessment_service](../../Api/assessment_service.py), session_case_messages сохраняет role/order; повтор по тексту в _insert_user_case_message_once не доказывает request-idempotency. Частичная основа | Доставка одного request дважды и crash после commit дают один Turn; одинаковый текст с разными request IDs сохраняет два хода; гонка Turn/close сериализуется |
+| T07 M1.6–8; И-4: уточнение и отсутствие ответа | C-54 неопределённость → решение PM-04 → тот же Dialogue | [interview contracts](../../Api/assessment/interview/contracts.py) содержит is_case_complete; нового typed C-54 нет в рассмотренном пути. Спроектировано | Stale interim не применяется к новому материалу; уточнение не создаёт IA; отсутствие ответа — событие без синтетического user Turn; новое действие требует другой AS |
+| T08 M1.7–8; И-4: IA по AS, пустой EB | C-45/54, EB, логический IA IndicatorID × AS | [IndicatorAssessmentOutput](../../Api/assessment_evaluator_contracts.py) требует evidence для observed; [repository](../../Api/assessment_indicator_repository.py) ключует результат по session+methodology+indicator. Расхождение нового контракта с shadow, не доказанный дефект официального результата | Пустой EB с реальным обоснованием допустим; L0/insufficient/no IA раздельны; две AS дают два IA; повтор final не новое наблюдение |
+| T09 M1.1/8; И-6: версии AI и failure | C-45/54, trace и processing status | [runtime](../../Api/assessment_runtime.py) и [executor](../../Api/assessment_competency_executor.py) — точки интеграции; полнота проверки внешней конфигурации здесь не доказана | Подмена provider/model/prompt/schema обнаруживается; timeout/невалидный AI → технический failure, без L0/insufficient; replay сохраняет историю |
+| T10 M1.9–10; И-2/5: Cycle и два времени | C-24/46, membership, frozen time budget/deadline | [runtime](../../Api/assessment_runtime.py) работает с user_sessions; полного соответствия Cycle/Session не доказано. Проектирование начато, реализация полного M7 отдельная | Принадлежность до ответов; новая Session не сбрасывает бюджет; штатное завершение закрывает Cycle при любом покрытии; поздний расчёт не возобновляет сбор |
+| T11 M1.9–10; И-5: Results и покрытия | C-46/56, composition ref, calculation version | [legacy SkillEvaluationOutput](../../Api/assessment_evaluator_contracts.py) не равен новой модели. Новый стык спроектирован | Разный состав C-46/56 блокирует Results; пять покрытий; четыре исхода Skill; 0 ≠ null; пустой denominator ≠ 100%; закрытие без готового расчёта означает processing, не отсутствие результата |
+| T12 M1.9; И-5/6: представление и права | C-67, Results/Report refs и разрешённое содержание | [report_growth_logic](../../Api/report_growth_logic.py), [pdf_report_service](../../Api/pdf_report_service.py) — legacy потребители, новый C-67 не внедрён | Report ссылается на точную расчётную версию; повтор/пересчёт не изменяет историю; нет Level из округления; права проверяются сервером; Recommendations вне первого пути |
+
+## Как закрывать строку
+
+Указать версию контракта/схемы и данных, commit, конкретные функции/миграции и
+точные тесты с командой, результатом и CI-ссылкой. Обозначить legacy/новый путь,
+непроверенное и приёмку человеком. Успешный unit не заменяет integration/HTTP для
+сохранения, закрытия, очередей и прав. Технический PASS не означает пригодность
+Case или Reliability. Эти доказательства ведутся отдельно в содержательной приёмке.
+
+Статическая проба AS в предыдущем аудите: валидатор принимал неразрешённые refs,
+произвольную роль и несогласованные Skill/Component/Indicator при qa_result=PASS.
+Это свидетельство недостатка валидатора, не выполненный новый T02 и не доказательство
+допуска такой AS в production. Данные сред и полные пользовательские диалоги не читались.

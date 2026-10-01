@@ -1,4 +1,6 @@
 from datetime import datetime
+from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -399,6 +401,54 @@ class PromptLabDialogueTurnResponse(BaseModel):
     assistant_message: str
     case_completed: bool = False
     stop_reason: str | None = None
+
+
+class M5PrepareSituationRequest(BaseModel):
+    case_id: str
+    case_version: str
+    personalized_profile_id: int
+    substitutions: list[dict] = Field(default_factory=list)
+
+
+class M5LabRuntimeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    run_id: UUID
+    case_id: str = Field(pattern=r"^CASE-TDISC-0[1-5]$")
+    case_version: str = "v0.1"
+    personalized_profile_id: int
+    substitutions: list[dict] = Field(default_factory=list)
+
+
+class M5TurnRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    request_id: str
+    turn_id: UUID
+    content: str = Field(min_length=1, max_length=10000)
+
+
+class M5QATurnRequest(M5TurnRequest):
+    controlled_outcomes: dict[str, Literal["TRUE", "FALSE", "UNKNOWN", "ERROR"]] | None = None
+    controlled_character_responses: dict[str, str] | None = None
+
+
+class M5TransitionRequest(BaseModel):
+    request_id: str = Field(min_length=1, max_length=200)
+    action: Literal["pause", "resume", "scenario_end", "terminate", "close"]
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class M5ModelCheckRequest(BaseModel):
+    scheme: dict
+    initiated_by: Literal["assessee", "sergey"]
+    scheme_authored_by: Literal["assessee", "sergey"]
+    turn_id: UUID | None = None
+
+
+class M5QAEvidenceRequest(BaseModel):
+    trajectory: str = Field(min_length=1, max_length=200)
+    expected: dict
+    actual: dict
+    defects: list[dict] = Field(default_factory=list)
 
 
 class AdminMethodologyBranchItem(BaseModel):

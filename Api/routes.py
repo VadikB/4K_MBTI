@@ -7,6 +7,7 @@ import logging
 import re
 from urllib.parse import quote
 from datetime import datetime
+from typing import Literal
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, Request, Response as FastAPIResponse
@@ -20,6 +21,8 @@ from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_ser
 from Api.config import settings
 from Api.assessment_service import assessment_service
 from Api import m5_generation_lab
+from Api import m5_scenario_runtime, m5_storage
+from scripts.build_m5_case_package import OUTPUT as M5_PACKAGE_DIR
 from Api.assessment_role_profiles import (
     create_organization_role_profile_draft,
     get_selected_role_profile,
@@ -124,6 +127,13 @@ from Api.schemas import (
     PromptLabDialoguePreviewResponse,
     PromptLabDialogueTurnRequest,
     PromptLabDialogueTurnResponse,
+    M5PrepareSituationRequest,
+    M5LabRuntimeRequest,
+    M5QATurnRequest,
+    M5TurnRequest,
+    M5TransitionRequest,
+    M5ModelCheckRequest,
+    M5QAEvidenceRequest,
     PromptLabSystemCasePreviewResponse,
     PromptLabCaseRunSummary,
     PromptLabDashboard,
@@ -4883,7 +4893,8 @@ def get_m5_lab_catalog(request: Request) -> dict:
     user = web_session_service.get_user_by_token(token) if token else None
     with get_connection() as connection:
         _require_superadmin(connection, user)
-    return m5_generation_lab.lab_catalog()
+        package = json.loads((M5_PACKAGE_DIR / "case-package.json").read_text())
+        return m5_storage.qa_lab_catalog(connection, package)
 
 
 @router.get("/admin/m5-lab/runs/{run_id}")
@@ -4892,40 +4903,255 @@ def get_m5_lab_run(run_id: UUID, request: Request) -> dict:
     user = web_session_service.get_user_by_token(token) if token else None
     with get_connection() as connection:
         _require_superadmin(connection, user)
-        row = m5_generation_lab.get_run(connection, str(run_id))
-        if row is None:
+        runtime_row = connection.execute("""
+            SELECT r.*, s.assessment_situation_id, s.status AS as_status, s.snapshot_json
+            FROM m5_runtime_lab_runs r JOIN m5_assessment_situations s ON s.id=r.assessment_situation_db_id
+            WHERE r.run_id=%s
+        """, (run_id,)).fetchone()
+        if runtime_row is None:
             raise HTTPException(status_code=404, detail="Прогон M5 не найден")
-        return row
+        result = dict(runtime_row)
+        result["trace"] = m5_scenario_runtime.trace(connection, str(runtime_row["assessment_situation_id"]))
+        return result
 
 
 @router.post("/admin/m5-lab/runs")
-def create_m5_lab_run(payload: m5_generation_lab.GenerationRequest, request: Request) -> dict:
+def create_m5_lab_run(payload: M5LabRuntimeRequest, request: Request) -> dict:
     token = request.cookies.get(SESSION_COOKIE_NAME)
     user = web_session_service.get_user_by_token(token) if token else None
     with get_connection() as connection:
         _require_superadmin(connection, user)
         try:
-            row, created = m5_generation_lab.begin_run(connection, request=payload, user_id=int(user.id))
-        except m5_generation_lab.LabPromptUnavailable as exc:
-            raise HTTPException(status_code=503, detail="M5_PROMPT_PACKAGE_UNAVAILABLE") from exc
+            existing = connection.execute("""
+                SELECT r.*, s.assessment_situation_id, s.status AS as_status, s.snapshot_json
+                FROM m5_runtime_lab_runs r JOIN m5_assessment_situations s ON s.id=r.assessment_situation_db_id
+                WHERE r.run_id=%s
+            """, (payload.run_id,)).fetchone()
+            request_checksum = m5_generation_lab.digest(m5_generation_lab.json_bytes(payload.model_dump(mode="json")))
+            if existing:
+                if existing["created_by"] != int(user.id) or existing["request_checksum"] != request_checksum:
+                    raise ValueError("run_id уже использован с другим запросом")
+                result = dict(existing)
+                result["trace"] = m5_scenario_runtime.trace(connection, str(existing["assessment_situation_id"]))
+                return result
+            m5_storage.import_package_directory(connection, M5_PACKAGE_DIR)
+            policy = json.loads((M5_PACKAGE_DIR / "admission-policy.json").read_text())
+            prepared = m5_storage.prepare_assessment_situation(
+                connection, assessment_situation_id=str(uuid4()), case_id=payload.case_id,
+                case_version=payload.case_version, personalized_profile_id=payload.personalized_profile_id,
+                substitutions=payload.substitutions, policy=policy, usage_scope="qa", qa_authorized_by=int(user.id),
+            )
+            started = m5_scenario_runtime.start(connection, prepared["assessment_situation_id"])
+            lab_row = connection.execute("""
+                INSERT INTO m5_runtime_lab_runs
+                    (run_id,created_by,assessment_situation_db_id,request_checksum,status)
+                VALUES (%s,%s,%s,%s,'active') RETURNING *
+            """, (payload.run_id, int(user.id), prepared["id"], request_checksum)).fetchone()
+            connection.commit()
+            return {**dict(lab_row), "assessment_situation_id": prepared["assessment_situation_id"],
+                    "as_status": "active", "snapshot_json": prepared["snapshot"],
+                    "participant_payload": started["participant_payload"],
+                    "trace": m5_scenario_runtime.trace(connection, prepared["assessment_situation_id"])}
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
-        connection.commit()
-    if not created:
-        return row
-    output, error_code = None, None
-    try:
-        output = m5_generation_lab.generate(row["input_json"])
-    except ValueError:
-        error_code = "INVALID_GENERATION_OUTPUT"
-    except RuntimeError:
-        error_code = "GENERATION_UNAVAILABLE"
-    except Exception:
-        error_code = "GENERATION_FAILED"
+
+
+def _m5_superadmin(request: Request):
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token) if token else None
     with get_connection() as connection:
-        m5_generation_lab.finish_run(connection, run_id=str(payload.run_id), output=output, error_code=error_code)
+        _require_superadmin(connection, user)
+    return user
+
+
+def _m5_owned_situation(request: Request, assessment_situation_id: str) -> None:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token) if token else None
+    if user is None:
+        raise HTTPException(status_code=401, detail="Сессия не найдена. Войдите заново.")
+    with get_connection() as connection:
+        row = connection.execute("""
+            SELECT p.user_id, s.usage_scope
+            FROM m5_assessment_situations s
+            JOIN assessment_personalized_profiles p ON p.id=s.personalized_profile_id
+            WHERE s.assessment_situation_id=%s
+        """, (UUID(assessment_situation_id),)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="M5_AS_NOT_FOUND")
+    if int(row["user_id"]) != int(user.id):
+        raise HTTPException(status_code=403, detail="Нет доступа к чужой Assessment Situation.")
+    if row["usage_scope"] != "assessment":
+        raise HTTPException(status_code=403, detail="QA_AS_NOT_AVAILABLE_IN_PRODUCT_ROUTE")
+
+
+@router.post("/admin/m5-runtime/import")
+def import_m5_runtime_package(request: Request) -> dict:
+    _m5_superadmin(request)
+    with get_connection() as connection:
+        result = m5_storage.import_package_directory(connection, M5_PACKAGE_DIR)
+        readback = m5_storage.package_readback(connection, result["package_db_id"])
         connection.commit()
-        return m5_generation_lab.get_run(connection, str(payload.run_id))
+    return {"result": result, "readback": readback}
+
+
+@router.post("/admin/m5-runtime/situations")
+def prepare_m5_runtime_situation(payload: M5PrepareSituationRequest, request: Request) -> dict:
+    user = _m5_superadmin(request)
+    policy = json.loads((M5_PACKAGE_DIR / "admission-policy.json").read_text())
+    try:
+        with get_connection() as connection:
+            result = m5_storage.prepare_assessment_situation(
+                connection, assessment_situation_id=str(uuid4()), case_id=payload.case_id,
+                case_version=payload.case_version, personalized_profile_id=payload.personalized_profile_id,
+                substitutions=payload.substitutions, policy=policy, usage_scope="qa", qa_authorized_by=int(user.id),
+            )
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/admin/m5-runtime/situations/{assessment_situation_id}/start")
+def start_m5_runtime_situation(assessment_situation_id: UUID, request: Request) -> dict:
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result = m5_scenario_runtime.start(connection, str(assessment_situation_id))
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/admin/m5-runtime/situations/{assessment_situation_id}/turns")
+def submit_m5_runtime_turn(assessment_situation_id: UUID, payload: M5QATurnRequest, request: Request) -> dict:
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result = m5_scenario_runtime.submit_turn(
+                connection, assessment_situation_id=str(assessment_situation_id), request_id=payload.request_id,
+                turn_id=str(payload.turn_id), content=payload.content,
+                semantic_adapter=(m5_scenario_runtime.ControlledSemanticAdapter(payload.controlled_outcomes)
+                                  if payload.controlled_outcomes is not None else None),
+                character_adapter=(m5_scenario_runtime.ControlledCharacterAdapter(payload.controlled_character_responses)
+                                   if payload.controlled_character_responses is not None else None),
+            )
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/admin/m5-runtime/situations/{assessment_situation_id}/transitions")
+def transition_m5_runtime_situation(assessment_situation_id: UUID, payload: M5TransitionRequest, request: Request) -> dict:
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result = m5_scenario_runtime.transition(connection, assessment_situation_id=str(assessment_situation_id),
+                                                    action=payload.action, reason=payload.reason, request_id=payload.request_id)
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/admin/m5-runtime/situations/{assessment_situation_id}/model-check")
+def run_m5_runtime_model_check(assessment_situation_id: UUID, payload: M5ModelCheckRequest, request: Request) -> dict:
+    _m5_superadmin(request)
+    execution_rules = json.loads((M5_PACKAGE_DIR / "execution-rules.json").read_text())
+    with get_connection() as connection:
+        try:
+            result = m5_scenario_runtime.run_model_check_case03(
+                connection, assessment_situation_id=str(assessment_situation_id), scheme=payload.scheme,
+                rules=execution_rules["model_checks"]["CASE-TDISC-03"],
+                initiated_by=payload.initiated_by, scheme_authored_by=payload.scheme_authored_by,
+                turn_id=str(payload.turn_id) if payload.turn_id else None)
+            connection.commit()
+            return result
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/admin/m5-runtime/situations/{assessment_situation_id}/trace")
+def get_m5_runtime_trace(assessment_situation_id: UUID, request: Request) -> dict:
+    _m5_superadmin(request)
+    with get_connection() as connection:
+        try:
+            return m5_scenario_runtime.trace(connection, str(assessment_situation_id))
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/admin/m5-runtime/situations/{assessment_situation_id}/c45")
+def build_m5_runtime_c45(assessment_situation_id: UUID, request: Request, mode: Literal["interim", "final"] = "final") -> dict:
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result = m5_scenario_runtime.build_c45(connection, str(assessment_situation_id), mode=mode)
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/admin/m5-runtime/situations/{assessment_situation_id}/qa-evidence")
+def record_m5_runtime_qa_evidence(assessment_situation_id: UUID, payload: M5QAEvidenceRequest, request: Request) -> dict:
+    user = _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result = m5_storage.record_technical_qa_evidence(
+                connection, assessment_situation_id=str(assessment_situation_id), trajectory=payload.trajectory,
+                expected=payload.expected, actual=payload.actual, defects=payload.defects, performed_by=int(user.id))
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/assessment/m5/situations/{assessment_situation_id}/start")
+def start_owned_m5_situation(assessment_situation_id: UUID, request: Request) -> dict:
+    _m5_owned_situation(request, str(assessment_situation_id))
+    try:
+        with get_connection() as connection:
+            result = m5_scenario_runtime.start(connection, str(assessment_situation_id))
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/assessment/m5/situations/{assessment_situation_id}/turns")
+def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, request: Request) -> dict:
+    _m5_owned_situation(request, str(assessment_situation_id))
+    try:
+        with get_connection() as connection:
+            result = m5_scenario_runtime.submit_turn(connection, assessment_situation_id=str(assessment_situation_id),
+                                                     request_id=payload.request_id, turn_id=str(payload.turn_id),
+                                                     content=payload.content)
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/assessment/m5/situations/{assessment_situation_id}/transitions")
+def transition_owned_m5_situation(assessment_situation_id: UUID, payload: M5TransitionRequest, request: Request) -> dict:
+    _m5_owned_situation(request, str(assessment_situation_id))
+    try:
+        with get_connection() as connection:
+            result = m5_scenario_runtime.transition(connection, assessment_situation_id=str(assessment_situation_id),
+                                                    action=payload.action, reason=payload.reason, request_id=payload.request_id)
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/assessment/m5/situations/{assessment_situation_id}/trace")
+def get_owned_m5_trace(assessment_situation_id: UUID, request: Request) -> dict:
+    _m5_owned_situation(request, str(assessment_situation_id))
+    with get_connection() as connection:
+        return m5_scenario_runtime.trace(connection, str(assessment_situation_id))
 
 
 @router.post("/admin/prompt-lab/prompts", response_model=PromptLabPromptVersion)

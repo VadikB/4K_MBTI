@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "m5-case-admission",
+  "version": "1.1-draft.1",
+  "status": "draft",
+  "allowed_case_statuses": ["FROZEN"],
+  "required_evidence_scopes": ["case_format", "case_dialogue", "assessment_situation"],
+  "evidence_must_match": ["case_id", "case_version", "case_checksum", "base_role"],
+  "qa_override": {
+    "allowed_scope": "qa",
+    "does_not_change_admission": true
+  }
+}

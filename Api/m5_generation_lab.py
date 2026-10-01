@@ -18,8 +18,8 @@ from scripts.build_m5_case_package import M3, OUTPUT, digest, json_bytes, verify
 class GenerationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     run_id: UUID
-    case_id: Annotated[str, Field(pattern=r"^SCR\.[A-D]0[1-5]$")]
-    base_role: Literal["team_lead", "project_product_process_manager"]
+    case_id: Annotated[str, Field(pattern=r"^CASE-TDISC-0[1-5]$")]
+    base_role: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]*$")]
     mode: Literal["template", "llm"] = "template"
 
 
@@ -122,40 +122,39 @@ def ensure_lab_schema(connection) -> None:
 def lab_catalog() -> dict:
     package = load_lab_package()
     roles = json.loads(M3.read_text())["base_roles"]
-    codes = {r for c in package["cases"] for r in c["applicable_base_roles"]}
+    codes = {c["base_role"] for c in package["cases"]}
     return {
         "source_status": "WORKING", "synthetic": True, "llm_available": gateway.enabled,
         "roles": [{"code": r["code"], "name": r["description"]["name"]} for r in roles if r["code"] in codes],
-        "cases": [{"case_id": c["case_id"], "title": c["title"], "roles": c["applicable_base_roles"]} for c in package["cases"]],
+        "schema_version": package["schema_version"],
+        "cases": [{"case_id": c["case_id"], "title": c["title"], "roles": [c["base_role"]],
+                   "indicator_ids": [x["indicator_id"] for x in c["indicator_targets"]],
+                   "admitted_for_assessment": False} for c in package["cases"]],
     }
 
 
 def build_generation_input(request: GenerationRequest) -> dict:
     package = load_lab_package()
     case = next((c for c in package["cases"] if c["case_id"] == request.case_id), None)
-    if case is None or request.base_role not in case["applicable_base_roles"]:
+    if case is None or request.base_role != case["base_role"]:
         raise ValueError("Case недоступен для выбранной роли")
-    test_as = next(s for s in package["test_situations"]
-                   if s["case_id"] == request.case_id and s["base_role"] == request.base_role)
-    branch = next(b for b in package["role_branches"] if b["AS TEST ID"] == test_as["test_as_id"])
     role = next(r for r in json.loads(M3.read_text())["base_roles"] if r["code"] == request.base_role)
-    scenario = next(s for s in package["scenarios"] if s["CaseID"] == request.case_id)
     profile = {
-        "kind": "synthetic_profile_projection", "source": "M5 WORKING role branch and M3",
+        "kind": "synthetic_profile_projection", "source": "M3 BaseRole; not a PersonalizedProfile M4",
         "base_role": request.base_role, "role_name": role["description"]["name"],
-        "responsibility_object": branch["Объект ответственности"],
-        "authority": branch["Мандат / доступные решения"],
-        "restrictions": branch["Запреты"],
+        "responsibility_object": role["card"]["responsibility_object"],
+        "authority": role["card"]["independent_authority"],
+        "restrictions": role["card"]["role_constraints"],
     }
     # Это явно маркированная синтетическая проекция, не опубликованный профиль M4.
     return {
-        "schema_version": 1, "run_id": str(request.run_id), "mode": request.mode,
+        "schema_version": 2, "run_id": str(request.run_id), "mode": request.mode,
         "synthetic": True, "admitted_for_assessment": False,
         "case": case, "case_checksum": digest(json_bytes(case)),
         "package_checksum": digest(json_bytes(package)),
         "profile": profile, "profile_checksum": digest(json_bytes(profile)),
-        "scenario": scenario,
-        "observability": [o for o in package["candidate_observability"] if o["test_as_id"] == test_as["test_as_id"]],
+        "scenario": case["scenario"],
+        "observability": case["indicator_targets"],
         "prompt": load_lab_prompt(),
     }
 
@@ -163,7 +162,7 @@ def build_generation_input(request: GenerationRequest) -> dict:
 def generate(input_snapshot: dict, llm=None) -> dict:
     started = monotonic()
     profile = input_snapshot["profile"]
-    initial = input_snapshot["scenario"]["Предъявление человеку"]
+    initial = input_snapshot["case"]["passport"]["InitialSituation"] + "\n\n" + input_snapshot["case"]["passport"]["Trigger"]
     llm_input = {"initial_presentation": initial, "role": profile}
     if input_snapshot["mode"] == "llm":
         active_gateway = llm or gateway
@@ -184,6 +183,7 @@ def generate(input_snapshot: dict, llm=None) -> dict:
         "generation_seconds": round(monotonic() - started, 3),
         "observability": input_snapshot["observability"],
         "methodological_qa": "NOT_RUN", "admitted_for_assessment": False,
+        "admission_code": "CASE_NOT_ADMITTED",
         "checks": [
             {"code": "role_applicability", "result": "PASS"},
             {"code": "output_structure", "result": "PASS"},

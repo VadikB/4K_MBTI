@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "id": "m5_character_response",
+  "version": "1.0.0",
+  "status": "draft",
+  "scope": "m5_scenario_runtime",
+  "artifacts": [{"name":"prompt.md","sha256":"6e2f45efc1b76ec378ecbeaa9fe859c62bd9d0758b2268fac6b35b8a4c8937f4"}]
+}
