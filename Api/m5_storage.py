@@ -14,6 +14,35 @@ class M5ImportConflict(ValueError):
     pass
 
 
+def resolve_legacy_base_role(*values: object) -> str:
+    """Разрешает технические коды и отображаемые имена legacy-ролей в M3 base role."""
+    aliases = {
+        "leader": "direction_system_leader",
+        "лидер": "direction_system_leader",
+        "manager": "project_product_process_manager",
+        "менеджер": "project_product_process_manager",
+        "linear": "specialist_expert",
+        "linear_employee": "specialist_expert",
+        "specialist": "specialist_expert",
+        "линейный сотрудник": "specialist_expert",
+        "специалист": "specialist_expert",
+    }
+    base_roles = {
+        "direction_system_leader",
+        "project_product_process_manager",
+        "specialist_expert",
+    }
+    for value in values:
+        normalized = " ".join(str(value or "").strip().lower().split())
+        if not normalized:
+            continue
+        if normalized in base_roles:
+            return normalized
+        if normalized in aliases:
+            return aliases[normalized]
+    return ""
+
+
 def import_package(connection, *, package: dict, manifest: dict, execution_rules: dict | None = None) -> dict:
     if package.get("runtime_enabled") is not False or package.get("source_status") != "WORKING":
         raise ValueError("M5 candidate import expects WORKING/runtime_disabled package")
@@ -127,10 +156,14 @@ def migrate_legacy_test_profile(connection, *, user_id: int, authorized_by: int)
         return {"personalized_profile_id": int(existing["id"]), "checksum": existing["checksum"], "idempotent": True}
     user = connection.execute("""
         SELECT u.id,u.full_name,u.job_description,u.company_industry,
-               p.raw_position,p.raw_duties,p.normalized_duties,p.role_selected_code,p.company_context,
+               p.raw_position,p.raw_duties,p.normalized_duties,p.role_selected,p.role_selected_code,
+               r.code AS platform_role_code,r.name AS platform_role_name,p.company_context,
                p.user_domain,p.user_processes,p.user_tasks,p.user_stakeholders,p.user_constraints,
                p.user_artifacts,p.user_systems,p.user_success_metrics
-        FROM users u LEFT JOIN user_role_profiles p ON p.id=u.active_profile_id WHERE u.id=%s
+        FROM users u
+        LEFT JOIN user_role_profiles p ON p.id=u.active_profile_id
+        LEFT JOIN roles r ON r.id=u.role_id
+        WHERE u.id=%s
     """, (user_id,)).fetchone()
     if user is None:
         raise ValueError("LEGACY_TEST_USER_NOT_FOUND")
@@ -141,9 +174,12 @@ def migrate_legacy_test_profile(connection, *, user_id: int, authorized_by: int)
     if len(memberships) != 1:
         raise ValueError("M4_REQUIRES_SINGLE_ACTIVE_ORGANIZATION")
     organization = memberships[0]
-    legacy_role = str(user["role_selected_code"] or "").strip().lower()
-    role_code = {"leader": "direction_system_leader", "manager": "project_product_process_manager",
-                 "linear": "specialist_expert", "specialist": "specialist_expert"}.get(legacy_role, legacy_role)
+    role_code = resolve_legacy_base_role(
+        user["role_selected_code"],
+        user["platform_role_code"],
+        user["role_selected"],
+        user["platform_role_name"],
+    )
     role = connection.execute("""
         SELECT v.id,v.definition_json,v.checksum FROM assessment_role_profile_versions v
         JOIN assessment_role_profiles p ON p.id=v.role_profile_id
