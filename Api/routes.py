@@ -5,6 +5,7 @@ import io
 import json
 import logging
 import re
+from pathlib import Path
 from urllib.parse import quote
 from datetime import datetime
 from typing import Literal
@@ -27,6 +28,7 @@ from Api.assessment_role_profiles import (
     create_organization_role_profile_draft,
     get_selected_role_profile,
     list_available_role_profiles,
+    publish_base_roles,
     select_role_profile_for_user,
 )
 from Api.assessment_preparation_queue import assessment_preparation_queue
@@ -71,6 +73,8 @@ from Api.user_journey import (
     normalize_assessment_status,
     update_onboarding_state,
 )
+
+M3_ROLE_PACKAGE_DIR = Path(__file__).resolve().parents[1] / "assessment_definitions" / "role_profiles" / "competencies_4k" / "1.1"
 from Api.schemas import (
     AdminDashboard,
     AdminDetailedReportItem,
@@ -4906,6 +4910,28 @@ def migrate_current_profile_to_m4(request: Request) -> dict:
         try:
             result = m5_storage.migrate_legacy_test_profile(
                 connection, user_id=int(user.id), authorized_by=int(user.id))
+            connection.commit()
+            return result
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/admin/m5-lab/publish-m3-base-roles")
+def publish_m3_base_roles_for_m5_lab(request: Request) -> dict:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token) if token else None
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        try:
+            package = json.loads((M3_ROLE_PACKAGE_DIR / "base_roles.json").read_text(encoding="utf-8"))
+            manifest = json.loads((M3_ROLE_PACKAGE_DIR / "manifest.json").read_text(encoding="utf-8"))
+            result = publish_base_roles(
+                connection,
+                package=package,
+                manifest=manifest,
+                published_by_user_id=int(user.id),
+                decision_basis="Владелец подтвердил human review и публикацию M3 v1.1 для test 2026-10-01",
+            )
             connection.commit()
             return result
         except ValueError as exc:

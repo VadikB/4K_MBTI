@@ -166,6 +166,44 @@ def import_base_roles_draft(connection, package: dict[str, Any], manifest: dict[
     return version_ids
 
 
+def publish_base_roles(connection, *, package: dict[str, Any], manifest: dict[str, Any],
+                       published_by_user_id: int, decision_basis: str) -> dict[str, Any]:
+    """Publish the exact reviewed M3 package and persist an idempotent audit record."""
+    if not decision_basis.strip():
+        raise ValueError("M3 publication decision basis is required.")
+    package_checksum = hashlib.sha256(canonical_json(package).encode("utf-8")).hexdigest()
+    existing = connection.execute(
+        "SELECT id,version_ids_json FROM assessment_role_profile_publications "
+        "WHERE methodology_version='1.1' AND package_checksum=%s", (package_checksum,),
+    ).fetchone()
+    if existing is not None:
+        return {"publication_id": int(existing["id"]), "version_ids": list(existing["version_ids_json"]),
+                "package_checksum": package_checksum, "idempotent": True}
+    version_ids = import_base_roles_draft(connection, package, manifest)
+    rows = connection.execute(
+        "SELECT id,status,checksum FROM assessment_role_profile_versions "
+        "WHERE id=ANY(%s) ORDER BY id FOR UPDATE", (version_ids,),
+    ).fetchall()
+    expected = {role_checksum({"schema_version": 1, "kind": "base_role", "methodology_version": "1.1", **role})
+                for role in package["base_roles"]}
+    if len(rows) != len(version_ids) or {row["checksum"] for row in rows} != expected:
+        raise ValueError("M3 publication checksum set differs from the reviewed package.")
+    if any(row["status"] not in {"draft", "ready_for_review"} for row in rows):
+        raise ValueError("M3 publication requires draft or ready_for_review versions.")
+    connection.execute(
+        "UPDATE assessment_role_profile_versions SET status='published',published_at=NOW() WHERE id=ANY(%s)",
+        (version_ids,),
+    )
+    publication = connection.execute(
+        "INSERT INTO assessment_role_profile_publications "
+        "(methodology_version,package_checksum,version_ids_json,published_by_user_id,decision_basis) "
+        "VALUES ('1.1',%s,%s::jsonb,%s,%s) RETURNING id",
+        (package_checksum, json.dumps(version_ids), published_by_user_id, decision_basis.strip()),
+    ).fetchone()
+    return {"publication_id": int(publication["id"]), "version_ids": version_ids,
+            "package_checksum": package_checksum, "idempotent": False}
+
+
 def load_published_role_profile(connection, version_id: int) -> dict[str, Any]:
     row = connection.execute(
         """

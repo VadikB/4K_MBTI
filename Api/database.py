@@ -2892,6 +2892,20 @@ def ensure_role_profile_schema(connection) -> None:
     )
     connection.execute(
         """
+        CREATE TABLE IF NOT EXISTS assessment_role_profile_publications (
+            id BIGSERIAL PRIMARY KEY,
+            methodology_version TEXT NOT NULL,
+            package_checksum TEXT NOT NULL,
+            version_ids_json JSONB NOT NULL,
+            published_by_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            decision_basis TEXT NOT NULL,
+            published_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (methodology_version, package_checksum)
+        )
+        """
+    )
+    connection.execute(
+        """
         CREATE OR REPLACE FUNCTION prevent_published_role_profile_change()
         RETURNS trigger AS $$
         BEGIN
