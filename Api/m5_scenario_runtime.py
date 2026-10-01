@@ -7,7 +7,10 @@ from uuid import UUID, uuid4
 
 from Api.m5_case_runtime import checksum
 from Api.m5_rule_engine import (
+    CharacterResponseAdapter,
+    ControlledCharacterAdapter,
     ControlledSemanticAdapter,
+    DeepSeekCharacterAdapter,
     DeepSeekSemanticAdapter,
     RuleOutcome,
     SemanticDecisionAdapter,
@@ -237,6 +240,42 @@ def _apply_material(connection, *, row: dict, saved: dict, state: dict, material
     return event
 
 
+def _apply_character_response(connection, *, row: dict, saved: dict, state: dict, material: dict,
+                              decision_row: dict, trigger_turn: dict, adapter: CharacterResponseAdapter) -> dict | None:
+    effect_key = f"character-response:{material['material_id']}"
+    if effect_key in state["applied_effects"]:
+        return None
+    character = next((x for x in row["execution_payload_json"]["characters"]
+                      if x["character_id"] == material.get("speaker_id")), None)
+    if not character:
+        raise ValueError("CHARACTER_RESPONSE_SPEAKER_UNRESOLVED")
+    reply = adapter.respond(material=material, character=character, text=trigger_turn["content_text"],
+                            turn_id=str(trigger_turn["turn_id"]),
+                            context={"disclosed_materials": state["disclosed_materials"], "stage": state["current_stage"]})
+    if reply.status != "COMPLETED" or not reply.content:
+        return None
+    character_turn = connection.execute("""
+        INSERT INTO m5_dialogue_turns
+            (assessment_situation_db_id,turn_id,sequence_no,speaker_type,speaker_id,content_text,request_id)
+        VALUES (%s,%s,%s,'character',%s,%s,%s) RETURNING *
+    """, (row["id"], uuid4(), _next_sequence(connection, int(row["id"])), character["character_id"], reply.content,
+          f"character:{trigger_turn['request_id']}:{material['material_id']}")).fetchone()
+    event = append_event(
+        connection, as_db_id=int(row["id"]), event_type="character_response", event_key=effect_key,
+        cause={"trigger_turn_id": str(trigger_turn["turn_id"]), "character_turn_id": str(character_turn["turn_id"]),
+               "decision_id": str(decision_row["decision_id"]), "rule_id": decision_row["rule_id"]},
+        material_id=material["material_id"],
+        payload={"speaker_id": character["character_id"], "response": reply.content, "adapter": reply.adapter,
+                 "model": reply.model, "controlled_test": reply.controlled_test, "prompt_ref": reply.prompt_ref})
+    state["applied_effects"].append(effect_key)
+    connection.execute("""
+        INSERT INTO m5_effect_applications
+            (assessment_situation_db_id,effect_key,effect_type,rule_decision_id,event_id,state_revision)
+        VALUES (%s,%s,'character_response',%s,%s,%s) ON CONFLICT DO NOTHING
+    """, (row["id"], effect_key, decision_row["id"], event["id"], saved["revision"] + 1))
+    return event
+
+
 def start(connection, assessment_situation_id: str) -> dict:
     row = _as_row(connection, assessment_situation_id, lock=True)
     if row["status"] == "rejected" and row["usage_scope"] != "qa":
@@ -262,7 +301,8 @@ def start(connection, assessment_situation_id: str) -> dict:
 
 
 def submit_turn(connection, *, assessment_situation_id: str, request_id: str, turn_id: str, content: str,
-                semantic_adapter: SemanticDecisionAdapter | None = None) -> dict:
+                semantic_adapter: SemanticDecisionAdapter | None = None,
+                character_adapter: CharacterResponseAdapter | None = None) -> dict:
     row = _as_row(connection, assessment_situation_id, lock=True)
     if row["status"] != "active":
         raise ValueError("M5_AS_NOT_ACTIVE")
@@ -282,10 +322,12 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
     events = []
     payload = row["execution_payload_json"]
     adapter = semantic_adapter or DeepSeekSemanticAdapter()
+    responder = character_adapter or DeepSeekCharacterAdapter()
     for material in payload["materials"]:
         condition = material["disclosure_condition"]
         event_condition = material["event_condition"]
-        if material.get("participant_payload") is None or condition.get("type") == "never":
+        is_character_reaction = material.get("kind") == "character_reaction"
+        if not is_character_reaction and (material.get("participant_payload") is None or condition.get("type") == "never"):
             continue
         candidates = []
         if condition.get("type") == "semantic_request":
@@ -297,6 +339,8 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
             candidates.append(("mandatory", event_condition, "mandatory_update"))
         elif event_kind.startswith("after_first_"):
             candidates.append(("mandatory", event_condition, "mandatory_update"))
+        elif is_character_reaction and event_kind.startswith("on_"):
+            candidates.append(("character_reaction", event_condition, "character_response"))
         for purpose, specification, event_type in candidates:
             rule_id = f"{material['material_id']}:{purpose}"
             if event_kind == "after_first_substantive_turn" and purpose == "mandatory":
@@ -310,8 +354,11 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
             decision_row = _record_decision(connection, row=row, saved=saved,
                                             key=f"{request_id}:{rule_id}", rule=rule, decision=decision)
             if decision.outcome == RuleOutcome.TRUE:
-                event = _apply_material(connection, row=row, saved=saved, state=state, material=material,
-                                        decision_row=decision_row, turn_id=str(turn["turn_id"]), event_type=event_type)
+                event = (_apply_character_response(connection, row=row, saved=saved, state=state, material=material,
+                                                   decision_row=decision_row, trigger_turn=turn, adapter=responder)
+                         if purpose == "character_reaction" else
+                         _apply_material(connection, row=row, saved=saved, state=state, material=material,
+                                         decision_row=decision_row, turn_id=str(turn["turn_id"]), event_type=event_type))
                 if event:
                     events.append(event)
     stages = sorted(payload.get("scenario", []), key=lambda x: x["order"])

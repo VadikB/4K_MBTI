@@ -1,6 +1,7 @@
 import pytest
 
-from Api.m5_rule_engine import ControlledSemanticAdapter, DeepSeekSemanticAdapter, RuleOutcome, evaluate_rule
+from Api.m5_rule_engine import (ControlledSemanticAdapter, DeepSeekCharacterAdapter,
+                                DeepSeekSemanticAdapter, RuleOutcome, evaluate_rule)
 
 pytestmark = pytest.mark.unit
 
@@ -42,3 +43,13 @@ def test_real_adapter_keeps_versioned_prompt_ref_when_gateway_is_unavailable():
         text="text", turn_id="turn", context={})
     assert decision.outcome == RuleOutcome.UNKNOWN
     assert decision.prompt_ref["id"] == "m5_semantic_decision"
+
+
+def test_character_adapter_keeps_versioned_prompt_ref_when_gateway_is_unavailable():
+    gateway = type("Gateway", (), {"enabled": False, "model": "test-model"})()
+    reply = DeepSeekCharacterAdapter(gateway).respond(
+        material={"material_id": "m", "reaction_rule": "constraint"},
+        character={"character_id": "c", "public_position": "position"},
+        text="turn", turn_id="turn", context={})
+    assert reply.status == "UNKNOWN"
+    assert reply.prompt_ref["id"] == "m5_character_response"

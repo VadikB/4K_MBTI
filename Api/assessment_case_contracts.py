@@ -63,6 +63,7 @@ class CaseMaterialV2(Contract):
     kind: Literal["data", "mandatory_update", "conditional_material", "internal_check", "model_rules", "model_check", "character_reaction", "mixed_source"]
     classification_status: Literal["structured", "source_unresolved"]
     source: SourceRefV2
+    speaker_id: str | None = None
 
 class ScenarioStepV2(Contract):
     step_id: Text

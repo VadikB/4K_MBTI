@@ -65,14 +65,14 @@ export const initializeM5Lab = async () => {
         const selectedProfileId = Number(roles.value);
         const selectedRole = roles.selectedOptions[0]?.dataset.role;
         const selected = button.dataset.m5Run === 'batch'
-          ? catalog.cases.filter((c) => c.roles.includes(selectedRole)).map((c) => c.case_id)
+          ? catalog.cases.filter((c) => c.base_role === selectedRole).map((c) => c.case_id)
           : [cases.value];
         let failures = 0;
         try {
           for (let index = 0; index < selected.length; index += 1) {
             const runId = crypto.randomUUID();
             root.querySelector('[data-m5-run-id]').value = runId;
-            status.textContent = `Генерация ${index + 1} из ${selected.length}. ID: ${runId}`;
+            status.textContent = `Подготовка QA AS ${index + 1} из ${selected.length}. ID: ${runId}`;
             const response = await fetch('/users/admin/m5-lab/runs', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ run_id: runId, case_id: selected[index], case_version: 'v0.1', personalized_profile_id: selectedProfileId }),

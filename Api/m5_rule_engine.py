@@ -43,6 +43,58 @@ class SemanticDecisionAdapter(Protocol):
     def decide(self, *, rule: dict, text: str, turn_id: str, context: dict) -> Decision: ...
 
 
+@dataclass(frozen=True)
+class CharacterReply:
+    status: str
+    content: str | None
+    adapter: str
+    model: str | None = None
+    controlled_test: bool = False
+    prompt_ref: dict | None = None
+
+
+class CharacterResponseAdapter(Protocol):
+    def respond(self, *, material: dict, character: dict, text: str, turn_id: str, context: dict) -> CharacterReply: ...
+
+
+class ControlledCharacterAdapter:
+    def __init__(self, responses: dict[str, str]): self.responses = responses
+    def respond(self, *, material: dict, character: dict, text: str, turn_id: str, context: dict) -> CharacterReply:
+        value = self.responses.get(material["material_id"])
+        return CharacterReply("COMPLETED" if value else "UNKNOWN", value, "controlled", controlled_test=True)
+
+
+class DeepSeekCharacterAdapter:
+    def __init__(self, gateway: DeepSeekGateway | None = None):
+        self.gateway = gateway or DeepSeekGateway()
+        root = Path(__file__).resolve().parents[1] / "assessment_definitions/prompts/m5_character_response/v1"
+        manifest = json.loads((root / "manifest.json").read_text())
+        prompt_bytes = (root / "prompt.md").read_bytes()
+        prompt_checksum = hashlib.sha256(prompt_bytes).hexdigest()
+        if prompt_checksum != manifest["artifacts"][0]["sha256"]:
+            raise RuntimeError("M5_CHARACTER_PROMPT_CHECKSUM_MISMATCH")
+        self.prompt = prompt_bytes.decode()
+        self.prompt_ref = {"id": manifest["id"], "version": manifest["version"], "checksum": prompt_checksum}
+
+    def respond(self, *, material: dict, character: dict, text: str, turn_id: str, context: dict) -> CharacterReply:
+        if not self.gateway.enabled:
+            return CharacterReply("UNKNOWN", None, "deepseek", self.gateway.model, prompt_ref=self.prompt_ref)
+        request = {"character": {"id": character["character_id"], "public_position": character["public_position"]},
+                   "reaction_constraint": material["reaction_rule"], "assessee_turn": text, "context": context}
+        try:
+            raw = self.gateway.chat(
+                [{"role": "system", "content": self.prompt},
+                 {"role": "user", "content": json.dumps(request, ensure_ascii=False)}],
+                temperature=0.2, max_tokens=500, timeout_seconds=60,
+                routing_key="m5-character:" + hashlib.sha256(json.dumps(request, sort_keys=True).encode()).hexdigest())
+            content = str(json.loads(raw).get("response") or "").strip()
+            if not content:
+                return CharacterReply("ERROR", None, "deepseek", self.gateway.model, prompt_ref=self.prompt_ref)
+            return CharacterReply("COMPLETED", content, "deepseek", self.gateway.model, prompt_ref=self.prompt_ref)
+        except Exception:
+            return CharacterReply("ERROR", None, "deepseek", self.gateway.model, prompt_ref=self.prompt_ref)
+
+
 class ControlledSemanticAdapter:
     """Детерминированный адаптер только для проверок механизма."""
 

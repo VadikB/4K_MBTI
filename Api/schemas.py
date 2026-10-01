@@ -420,6 +420,7 @@ class M5LabRuntimeRequest(BaseModel):
 
 
 class M5TurnRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     request_id: str
     turn_id: UUID
     content: str = Field(min_length=1, max_length=10000)
@@ -427,6 +428,7 @@ class M5TurnRequest(BaseModel):
 
 class M5QATurnRequest(M5TurnRequest):
     controlled_outcomes: dict[str, Literal["TRUE", "FALSE", "UNKNOWN", "ERROR"]] | None = None
+    controlled_character_responses: dict[str, str] | None = None
 
 
 class M5TransitionRequest(BaseModel):

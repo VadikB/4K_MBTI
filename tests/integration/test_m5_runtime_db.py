@@ -11,8 +11,8 @@ from psycopg.rows import dict_row
 from Api.database import ensure_m5_runtime_schema
 from Api.m5_storage import (M5ImportConflict, import_package, package_readback,
                             prepare_assessment_situation, record_technical_qa_evidence)
-from Api.m5_rule_engine import ControlledSemanticAdapter
-from Api.m5_scenario_runtime import build_c45, start, submit_turn, trace, transition
+from Api.m5_rule_engine import ControlledCharacterAdapter, ControlledSemanticAdapter
+from Api.m5_scenario_runtime import build_c45, run_model_check_case03, start, submit_turn, trace, transition
 from scripts.build_m5_case_package import OUTPUT
 
 
@@ -126,15 +126,36 @@ def test_all_five_cases_run_through_qa_runtime_and_case04_has_both_branch_outcom
                 if condition == "method_owner_unresolved": outcomes[f"{material['material_id']}:qa_unresolved_branch"] = "TRUE"
                 if material["event_condition"]["type"].startswith("after_first_"):
                     outcomes[f"{material['material_id']}:mandatory"] = "TRUE"
+                if material["event_condition"]["type"].startswith("on_"):
+                    outcomes[f"{material['material_id']}:character_reaction"] = "TRUE"
             outcomes[f"{case['case_id']}:{case['scenario'][0]['step_id']}:completion"] = "TRUE"
+            progress_turn_id = str(uuid4())
             submit_turn(connection, assessment_situation_id=prepared["assessment_situation_id"], request_id="progress-1",
-                        turn_id=str(uuid4()), content="Содержательное действие без обязательного ключевого слова",
-                        semantic_adapter=ControlledSemanticAdapter(outcomes))
+                        turn_id=progress_turn_id, content="Содержательное действие без обязательного ключевого слова",
+                        semantic_adapter=ControlledSemanticAdapter(outcomes),
+                        character_adapter=ControlledCharacterAdapter({"CASE-TDISC-04-D3": "Нина описывает свой следующий шаг и границу ответственности."}))
+            if case["case_id"] == "CASE-TDISC-03":
+                scheme = {"routes": {"A": "catalog", "B": "defer", "C": "unique", "D": "defer",
+                                     "E": "reject_for_input", "F": "catalog"}}
+                assessee_check = run_model_check_case03(
+                    connection, assessment_situation_id=prepared["assessment_situation_id"], scheme=scheme,
+                    rules=rules["model_checks"]["CASE-TDISC-03"], initiated_by="assessee",
+                    scheme_authored_by="assessee", turn_id=progress_turn_id)
+                assert assessee_check["result"]["status"] == "COMPLETED"
+                sergey_check = run_model_check_case03(
+                    connection, assessment_situation_id=prepared["assessment_situation_id"],
+                    scheme={"routes": {"A": "catalog"}}, rules=rules["model_checks"]["CASE-TDISC-03"],
+                    initiated_by="sergey", scheme_authored_by="assessee")
+                assert sergey_check["result"]["status"] == "INDETERMINATE"
             transition(connection, assessment_situation_id=prepared["assessment_situation_id"], action="scenario_end",
                        reason="controlled technical trajectory", request_id="end-1")
             saved = trace(connection, prepared["assessment_situation_id"])
             assert saved["turns"] and saved["events"] and saved["decisions"]
             assert saved["state"]["state_json"]["current_stage"] == "scenario_end"
+            if case["case_id"] == "CASE-TDISC-04":
+                assert any(x["speaker_type"] == "character" and x["speaker_id"] == "CASE-TDISC-04-R02"
+                           for x in saved["turns"])
+                assert any(x["event_type"] == "character_response" for x in saved["events"])
             handoff = build_c45(connection, prepared["assessment_situation_id"])
             assert handoff["envelope_json"]["boundary_sequence"] > 0
             evidence = record_technical_qa_evidence(
@@ -142,6 +163,44 @@ def test_all_five_cases_run_through_qa_runtime_and_case04_has_both_branch_outcom
                 expected={"runtime": "trace_saved"}, actual={"events": len(saved["events"])}, defects=[], performed_by=99)
             assert evidence["evidence_json"]["eligibility"] == "technical_qa"
             assert evidence["evidence_json"]["empirical_pilot"] == "NOT_RUN"
+
+            for trajectory in ("premature_solution", "refusal_or_escalation", "pause_resume_termination"):
+                extra = prepare_assessment_situation(
+                    connection, assessment_situation_id=str(uuid4()), case_id=case["case_id"], case_version=case["version"],
+                    personalized_profile_id=profiles[case["base_role"]], substitutions=[], policy=policy,
+                    usage_scope="qa", qa_authorized_by=99)
+                start(connection, extra["assessment_situation_id"])
+                if trajectory == "pause_resume_termination":
+                    transition(connection, assessment_situation_id=extra["assessment_situation_id"], action="pause",
+                               reason="controlled pause", request_id="pause")
+                    transition(connection, assessment_situation_id=extra["assessment_situation_id"], action="resume",
+                               reason="controlled resume", request_id="resume")
+                controlled = {}
+                for material in case["materials"]:
+                    if material["disclosure_condition"]["type"] == "semantic_request":
+                        controlled[f"{material['material_id']}:disclosure"] = "FALSE"
+                    if material["disclosure_condition"]["type"] == "method_owner_unresolved":
+                        controlled[f"{material['material_id']}:qa_unresolved_branch"] = "FALSE"
+                    if material["event_condition"]["type"].startswith("after_first_"):
+                        controlled[f"{material['material_id']}:mandatory"] = "FALSE"
+                    if material["event_condition"]["type"].startswith("on_"):
+                        controlled[f"{material['material_id']}:character_reaction"] = "FALSE"
+                controlled[f"{case['case_id']}:{case['scenario'][0]['step_id']}:completion"] = (
+                    "FALSE" if trajectory == "premature_solution" else "UNKNOWN")
+                submit_turn(connection, assessment_situation_id=extra["assessment_situation_id"], request_id="trajectory-turn",
+                            turn_id=str(uuid4()), content=f"Controlled trajectory: {trajectory}",
+                            semantic_adapter=ControlledSemanticAdapter(controlled),
+                            character_adapter=ControlledCharacterAdapter({}))
+                action = "scenario_end" if trajectory == "premature_solution" else "terminate"
+                transition(connection, assessment_situation_id=extra["assessment_situation_id"], action=action,
+                           reason=trajectory, request_id="trajectory-finish")
+                extra_trace = trace(connection, extra["assessment_situation_id"])
+                if action == "terminate":
+                    assert extra_trace["status"] == "terminated"
+                    assert not any(x["event_type"] == "mandatory_update" for x in extra_trace["events"])
+                record_technical_qa_evidence(
+                    connection, assessment_situation_id=extra["assessment_situation_id"], trajectory=trajectory,
+                    expected={"action": action}, actual={"status": extra_trace["status"]}, defects=[], performed_by=99)
 
         case4 = next(x for x in package["cases"] if x["case_id"] == "CASE-TDISC-04")
         negative = prepare_assessment_situation(

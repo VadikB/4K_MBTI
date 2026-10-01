@@ -5033,6 +5033,8 @@ def submit_m5_runtime_turn(assessment_situation_id: UUID, payload: M5QATurnReque
                 turn_id=str(payload.turn_id), content=payload.content,
                 semantic_adapter=(m5_scenario_runtime.ControlledSemanticAdapter(payload.controlled_outcomes)
                                   if payload.controlled_outcomes is not None else None),
+                character_adapter=(m5_scenario_runtime.ControlledCharacterAdapter(payload.controlled_character_responses)
+                                   if payload.controlled_character_responses is not None else None),
             )
             connection.commit()
             return result

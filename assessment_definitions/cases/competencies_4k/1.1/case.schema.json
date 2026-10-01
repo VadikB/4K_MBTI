@@ -145,6 +145,18 @@
         "source": {
           "$ref": "#/$defs/SourceRefV2"
         },
+        "speaker_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speaker Id"
+        },
         "title": {
           "minLength": 1,
           "title": "Title",

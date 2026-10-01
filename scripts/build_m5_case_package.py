@@ -154,6 +154,7 @@ def build_package(source: Path) -> tuple[dict, dict]:
                 "participant_payload": rule["participant_payload"], "disclosure_condition": rule["disclosure_condition"],
                 "event_condition": rule["event_condition"], "reaction_rule": rule["reaction_rule"],
                 "result_check": rule["result_check"], "kind": rule["kind"], "classification_status": "structured",
+                "speaker_id": rule.get("speaker_id"),
                 "source": {"file": SOURCE_NAME, "sheet": "Данные", "row": int(source_material["source_row"]), "field": "DataAndDisclosureRules"},
             })
         case = CaseVersionV2(

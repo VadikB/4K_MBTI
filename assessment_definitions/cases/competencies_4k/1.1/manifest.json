@@ -14,19 +14,19 @@
     },
     {
       "name": "case-package.json",
-      "sha256": "6705cf0a8d053ea44663b3e56bc28b35a76edafc9898ee6bd9da9b28b4e7219f"
+      "sha256": "6f03b19640cf9dfc0bc6fc80ad7435ef47a1a13076a48e130be1bc6a6dde6527"
     },
     {
       "name": "case.schema.json",
-      "sha256": "9ab527373003585d9289348275f1c87927af6d262ad4dd136f9dac7f6332fe1f"
+      "sha256": "d83f7c8cc18b2813aa3625b6dc4f04c7084004712e45fed25863a3cbfabe2fb4"
     },
     {
       "name": "execution-rules.json",
-      "sha256": "62bc409833e4fa4bcf06ecd2210d06d65252ffcecaa08b00d007b3e2447b4433"
+      "sha256": "2bb110753917dd4537a3a40b7bd90b644379cc4b9f1ba7886e31aa8c5c7e4f07"
     },
     {
       "name": "verification-report.json",
-      "sha256": "ab89a3645a2fef240ad24d6f77b911fa5d064e1d8082dc8d895466a928ab72ab"
+      "sha256": "3102e46ff694d03b04e174258ebdc2f4411847b5e1952ed9f6151507b1474b23"
     },
     {
       "name": "sources/M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
