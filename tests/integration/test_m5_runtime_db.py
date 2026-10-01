@@ -143,8 +143,8 @@ def test_m5_import_readback_and_rejected_as_are_transactional(test_database_url)
                     "status": "technical_received", "boundary_sequence": handoff["boundary_sequence"],
                 }
                 return LlmResponse(json.dumps(payload), {"request_id": "provider-qa-1", "model": self.model},
-                                   {"provider": "test_transport", "endpoint": operation["endpoint"],
-                                    "model": self.model, "parameters": kwargs, "messages": messages})
+                                   {"provider": operation["provider"], "endpoint": operation["endpoint"],
+                                    "model": self.model, "parameters": operation["parameters"], "messages": messages})
 
         receipt = execute_technical_c45(
             connection, assessment_situation_id=prepared["assessment_situation_id"],
@@ -153,7 +153,7 @@ def test_m5_import_readback_and_rejected_as_are_transactional(test_database_url)
         assert receipt["status"] == "accepted"
         assert receipt["controlled_test"] is True
         runtime_trace = trace(connection, prepared["assessment_situation_id"])
-        assert runtime_trace["ai_attempts"][0]["sent_json"]["provider"] == "test_transport"
+        assert runtime_trace["ai_attempts"][0]["sent_json"]["provider"] == operation["provider"]
         assert runtime_trace["c54_receipts"][0]["validation_json"]["methodological_result"] is False
         connection.rollback()
 
