@@ -70,6 +70,7 @@ export const initializeM5Lab = async () => {
           <button type="button" class="ghost-button" data-m5-action="scenario_end">Конец сценария</button>
           <button type="button" class="ghost-button" data-m5-action="terminate">Прекратить</button>
           <button type="button" class="ghost-button" data-m5-action="close">Закрыть AS</button>
+          <button type="button" class="ghost-button" data-m5-technical-c54>Проверить C-45/C-54</button>
         </div>
         <details><summary>Сохранённые входные данные, результат и проверки</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">${escapeHtml(JSON.stringify(row, null, 2))}</pre></details>`;
       const asId = row.assessment_situation_id;
@@ -89,6 +90,21 @@ export const initializeM5Lab = async () => {
         }), 'Не удалось изменить состояние AS.');
         show(await readApiResponse(await fetch(`/users/admin/m5-lab/runs/${encodeURIComponent(row.run_id)}`), 'Не удалось перечитать trace.'));
       }));
+      card.querySelector('[data-m5-technical-c54]').addEventListener('click', async () => {
+        const indicatorId = snapshot.indicator_targets[0]?.indicator_id;
+        if (!indicatorId) {
+          status.textContent = 'В snapshot нет IndicatorID для технической проверки C-54.';
+          return;
+        }
+        try {
+          const receipt = await readApiResponse(await fetch(`/users/admin/m5-runtime/situations/${encodeURIComponent(asId)}/technical-c45`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ indicator_id: indicatorId, mode: 'final' }),
+          }), 'Не удалось выполнить техническую проверку C-45/C-54. Сначала завершите сценарий и закройте AS.');
+          status.textContent = `C-54 ${receipt.receipt_id}: ${receipt.status}. Результат технический и не является методологической оценкой.`;
+          show(await readApiResponse(await fetch(`/users/admin/m5-lab/runs/${encodeURIComponent(row.run_id)}`), 'Не удалось перечитать trace.'));
+        } catch (error) { status.textContent = error.message; }
+      });
       result.prepend(card);
     };
     for (const button of buttons) {
