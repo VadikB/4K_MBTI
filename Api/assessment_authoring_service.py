@@ -227,12 +227,11 @@ class AssessmentAuthoringService:
             connection,
             methodology_definition=dict(current["methodology_definition"] or {}),
         )
-        self._validate_evaluator_prompt_bundle(
+        prompt_bundle["agent_definitions"] = agent_definitions
+        self.validate_execution_bundle(
             methodology_definition=dict(current["methodology_definition"] or {}),
             prompt_bundle=prompt_bundle,
-            agent_definitions=agent_definitions,
         )
-        prompt_bundle["agent_definitions"] = agent_definitions
         if make_default:
             connection.execute("UPDATE assessment_configurations SET is_default = FALSE WHERE id <> %s", (configuration_id,))
         updated = connection.execute(
@@ -256,6 +255,58 @@ class AssessmentAuthoringService:
             comment=comment,
         )
         return dict(updated)
+
+    def validate_execution_methodology(self, definition: dict[str, Any]) -> None:
+        if not str(definition.get("methodology_version") or "").strip():
+            raise ValueError("Execution methodology requires methodology_version.")
+        self._validate_methodology_dimensions(definition)
+        self.validate_definition(entity_type="methodology", definition=definition)
+
+    def validate_execution_bundle(
+        self, *, methodology_definition: dict[str, Any], prompt_bundle: dict[str, Any],
+    ) -> None:
+        """Validate frozen inputs identically at publication and before new execution."""
+        self.validate_execution_methodology(methodology_definition)
+        if prompt_bundle.get("schema_version") != 1:
+            raise ValueError("Unsupported assessment prompt bundle schema_version.")
+        for field in ("interviewer", "assessment_agents", "agent_definitions"):
+            if not isinstance(prompt_bundle.get(field), dict):
+                raise ValueError(f"Assessment prompt bundle requires {field}.")
+        if not isinstance(prompt_bundle.get("case_generation_instructions"), list):
+            raise ValueError("Assessment prompt bundle requires case_generation_instructions.")
+        # Technical prompt IDs already requested by the current interviewer.
+        for code in ("case_follow_up", "manual_finish", "timeout_finish"):
+            prompt = prompt_bundle["interviewer"].get(code)
+            if (not isinstance(prompt, dict) or not str(prompt.get("text") or "").strip()
+                    or not isinstance(prompt.get("version"), int) or prompt["version"] < 1):
+                raise ValueError(f"Assessment prompt bundle requires versioned interviewer prompt: {code}.")
+        agents = prompt_bundle["agent_definitions"]
+        for competency in methodology_definition["competencies"]:
+            references = [competency.get("agent_definition") or {
+                "code": competency["evaluator"].removeprefix("evaluation."),
+            }]
+            if competency.get("shadow_evaluation"):
+                references.append(competency["shadow_evaluation"]["agent_definition"])
+            for reference in references:
+                frozen = agents.get(reference["code"])
+                if (not isinstance(frozen, dict) or not isinstance(frozen.get("version"), int)
+                        or frozen["version"] < 1
+                        or ("version" in reference and frozen["version"] != reference["version"])):
+                    raise ValueError("Assessment prompt bundle requires the referenced agent version.")
+                definition = frozen.get("definition")
+                if not isinstance(definition, dict) or frozen.get("checksum") != definition_checksum(definition):
+                    raise ValueError("Assessment agent definition checksum mismatch.")
+                if (definition.get("code") != reference["code"]
+                        or definition.get("version") != frozen["version"]
+                        or definition.get("executor") != {
+                            "code": competency["evaluator"], "version": competency["evaluator_version"],
+                        }):
+                    raise ValueError("Assessment agent definition does not match its reference/executor.")
+                self.validate_definition(entity_type="agent", definition=definition)
+        self._validate_evaluator_prompt_bundle(
+            methodology_definition=methodology_definition, prompt_bundle=prompt_bundle,
+            agent_definitions=agents,
+        )
 
     def _validate_evaluator_prompt_bundle(
         self,
