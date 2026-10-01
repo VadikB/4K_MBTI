@@ -54,6 +54,9 @@
           "minLength": 1,
           "title": "Public Position",
           "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/SourceRefV2"
         }
       },
       "required": [
@@ -61,7 +64,8 @@
         "order",
         "name_and_role",
         "public_position",
-        "closed_card"
+        "closed_card",
+        "source"
       ],
       "title": "CaseCharacterV2",
       "type": "object"
@@ -69,16 +73,43 @@
     "CaseMaterialV2": {
       "additionalProperties": false,
       "properties": {
+        "classification_status": {
+          "enum": [
+            "structured",
+            "source_unresolved"
+          ],
+          "title": "Classification Status",
+          "type": "string"
+        },
         "code": {
           "minLength": 1,
           "title": "Code",
           "type": "string"
         },
+        "disclosure_condition": {
+          "additionalProperties": true,
+          "title": "Disclosure Condition",
+          "type": "object"
+        },
+        "event_condition": {
+          "additionalProperties": true,
+          "title": "Event Condition",
+          "type": "object"
+        },
+        "internal_rule": {
+          "minLength": 1,
+          "title": "Internal Rule",
+          "type": "string"
+        },
         "kind": {
-          "default": "mixed_source",
           "enum": [
             "data",
             "mandatory_update",
+            "conditional_material",
+            "internal_check",
+            "model_rules",
+            "model_check",
+            "character_reaction",
             "mixed_source"
           ],
           "title": "Kind",
@@ -89,10 +120,30 @@
           "title": "Material Id",
           "type": "string"
         },
-        "rules": {
+        "participant_payload": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Participant Payload"
+        },
+        "reaction_rule": {
           "minLength": 1,
-          "title": "Rules",
+          "title": "Reaction Rule",
           "type": "string"
+        },
+        "result_check": {
+          "minLength": 1,
+          "title": "Result Check",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/SourceRefV2"
         },
         "title": {
           "minLength": 1,
@@ -104,7 +155,14 @@
         "material_id",
         "code",
         "title",
-        "rules"
+        "internal_rule",
+        "disclosure_condition",
+        "event_condition",
+        "reaction_rule",
+        "result_check",
+        "kind",
+        "classification_status",
+        "source"
       ],
       "title": "CaseMaterialV2",
       "type": "object"
@@ -112,9 +170,19 @@
     "IndicatorTargetV2": {
       "additionalProperties": false,
       "properties": {
+        "branch_condition": {
+          "minLength": 1,
+          "title": "Branch Condition",
+          "type": "string"
+        },
         "component_id": {
           "pattern": "^K[1-4]\\.C\\d{2}$",
           "title": "Component Id",
+          "type": "string"
+        },
+        "event_condition": {
+          "minLength": 1,
+          "title": "Event Condition",
           "type": "string"
         },
         "indicator_id": {
@@ -137,10 +205,22 @@
           "title": "Observation Condition",
           "type": "string"
         },
+        "scenario_locations": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Scenario Locations",
+          "type": "array"
+        },
         "skill_id": {
           "pattern": "^K[1-4]\\.\\d+$",
           "title": "Skill Id",
           "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/SourceRefV2"
         },
         "validity_risk": {
           "minLength": 1,
@@ -154,8 +234,12 @@
         "skill_id",
         "component_id",
         "observation_condition",
+        "scenario_locations",
+        "branch_condition",
+        "event_condition",
         "observable_action",
-        "validity_risk"
+        "validity_risk",
+        "source"
       ],
       "title": "IndicatorTargetV2",
       "type": "object"
@@ -178,6 +262,9 @@
           "title": "Rules",
           "type": "string"
         },
+        "source": {
+          "$ref": "#/$defs/SourceRefV2"
+        },
         "step_id": {
           "minLength": 1,
           "title": "Step Id",
@@ -194,9 +281,43 @@
         "code",
         "order",
         "title",
-        "rules"
+        "rules",
+        "source"
       ],
       "title": "ScenarioStepV2",
+      "type": "object"
+    },
+    "SourceRefV2": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "minLength": 1,
+          "title": "Field",
+          "type": "string"
+        },
+        "file": {
+          "minLength": 1,
+          "title": "File",
+          "type": "string"
+        },
+        "row": {
+          "exclusiveMinimum": 0,
+          "title": "Row",
+          "type": "integer"
+        },
+        "sheet": {
+          "minLength": 1,
+          "title": "Sheet",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "sheet",
+        "row",
+        "field"
+      ],
+      "title": "SourceRefV2",
       "type": "object"
     }
   },
@@ -263,6 +384,13 @@
       "title": "Passport",
       "type": "object"
     },
+    "passport_sources": {
+      "additionalProperties": {
+        "$ref": "#/$defs/SourceRefV2"
+      },
+      "title": "Passport Sources",
+      "type": "object"
+    },
     "planned_max_minutes": {
       "exclusiveMinimum": 0,
       "title": "Planned Max Minutes",
@@ -326,6 +454,7 @@
     "planned_min_minutes",
     "planned_max_minutes",
     "passport",
+    "passport_sources",
     "case_type_ids",
     "applicability",
     "indicator_targets",

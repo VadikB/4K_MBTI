@@ -2,11 +2,11 @@
   "artifacts": [
     {
       "name": "admission-policy.json",
-      "sha256": "30dff53e163342f56e3dc908f24404520dc5b29cd9a4cc250dae4f6a28d2523e"
+      "sha256": "1049ed13ce5c6798c9fb79fa04347da43351d380732e347664c64a31312ab16a"
     },
     {
       "name": "assessment-situation.schema.json",
-      "sha256": "88a10b1bf610b847a0aacf563e6528bfab698863a7baf205b776b24a2c782729"
+      "sha256": "138e2c75de81a77ee3f378cf6ceacbeafc66cd63a29e0fe1a67d5bd44e817d73"
     },
     {
       "name": "c34-execution-envelope.schema.json",
@@ -14,15 +14,19 @@
     },
     {
       "name": "case-package.json",
-      "sha256": "554a494f497b54c07ec74b34d53a246a39360d6e07ec5d2559c59f664844f8d9"
+      "sha256": "6705cf0a8d053ea44663b3e56bc28b35a76edafc9898ee6bd9da9b28b4e7219f"
     },
     {
       "name": "case.schema.json",
-      "sha256": "47b61908a5993c6f114e9d9ff75a82a8cbf61afca594548c1b11b7c5f854a6b3"
+      "sha256": "9ab527373003585d9289348275f1c87927af6d262ad4dd136f9dac7f6332fe1f"
+    },
+    {
+      "name": "execution-rules.json",
+      "sha256": "62bc409833e4fa4bcf06ecd2210d06d65252ffcecaa08b00d007b3e2447b4433"
     },
     {
       "name": "verification-report.json",
-      "sha256": "624ae856d0f3a1872979237ac1c56d775090a791517e427c1bf8c4954bcb19a4"
+      "sha256": "ab89a3645a2fef240ad24d6f77b911fa5d064e1d8082dc8d895466a928ab72ab"
     },
     {
       "name": "sources/M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",

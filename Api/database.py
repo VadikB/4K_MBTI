@@ -3082,6 +3082,162 @@ def ensure_assessment_context_schema(connection) -> None:
     )
 
 
+def ensure_m5_runtime_schema(connection) -> None:
+    """Хранилище неизменяемых M5 CaseVersion, AS, допуска и фактической трассы."""
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_packages (
+            id BIGSERIAL PRIMARY KEY,
+            package_id TEXT NOT NULL,
+            package_version TEXT NOT NULL,
+            schema_version INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            source_checksum TEXT NOT NULL,
+            package_checksum TEXT NOT NULL,
+            manifest_json JSONB NOT NULL,
+            package_json JSONB NOT NULL,
+            imported_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (package_id, package_version),
+            UNIQUE (package_checksum)
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_case_versions (
+            id BIGSERIAL PRIMARY KEY,
+            package_id BIGINT NOT NULL REFERENCES m5_packages(id) ON DELETE RESTRICT,
+            case_id TEXT NOT NULL,
+            case_version TEXT NOT NULL,
+            status TEXT NOT NULL,
+            base_role TEXT NOT NULL,
+            content_json JSONB NOT NULL,
+            content_checksum TEXT NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (case_id, case_version),
+            UNIQUE (content_checksum)
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_case_targets (
+            case_version_id BIGINT NOT NULL REFERENCES m5_case_versions(id) ON DELETE RESTRICT,
+            indicator_id TEXT NOT NULL,
+            m2_version TEXT NOT NULL,
+            skill_id TEXT NOT NULL,
+            component_id TEXT NOT NULL,
+            target_json JSONB NOT NULL,
+            display_order INTEGER NOT NULL CHECK (display_order > 0),
+            PRIMARY KEY (case_version_id, indicator_id)
+        )
+    """)
+    for table, key in (("m5_case_characters", "character_id"), ("m5_case_materials", "material_id"), ("m5_case_scenario_steps", "step_id")):
+        connection.execute(f"""
+            CREATE TABLE IF NOT EXISTS {table} (
+                case_version_id BIGINT NOT NULL REFERENCES m5_case_versions(id) ON DELETE RESTRICT,
+                {key} TEXT NOT NULL,
+                content_json JSONB NOT NULL,
+                display_order INTEGER NOT NULL CHECK (display_order > 0),
+                PRIMARY KEY (case_version_id, {key})
+            )
+        """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_qa_evidence (
+            id BIGSERIAL PRIMARY KEY,
+            case_version_id BIGINT REFERENCES m5_case_versions(id) ON DELETE RESTRICT,
+            assessment_situation_id BIGINT,
+            scope TEXT NOT NULL,
+            result TEXT NOT NULL CHECK (result IN ('PASS', 'FAIL', 'NOT_RUN')),
+            evidence_json JSONB NOT NULL,
+            evidence_checksum TEXT NOT NULL UNIQUE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_assessment_situations (
+            id BIGSERIAL PRIMARY KEY,
+            assessment_situation_id UUID NOT NULL UNIQUE,
+            case_version_id BIGINT NOT NULL REFERENCES m5_case_versions(id) ON DELETE RESTRICT,
+            personalized_profile_id BIGINT NOT NULL REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT,
+            usage_scope TEXT NOT NULL DEFAULT 'assessment' CHECK (usage_scope IN ('assessment','qa')),
+            status TEXT NOT NULL CHECK (status IN ('prepared', 'admitted', 'rejected', 'active', 'paused', 'scenario_ended', 'closed')),
+            snapshot_json JSONB NOT NULL,
+            execution_payload_json JSONB NOT NULL,
+            snapshot_checksum TEXT NOT NULL UNIQUE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            started_at TIMESTAMPTZ,
+            scenario_ended_at TIMESTAMPTZ,
+            closed_at TIMESTAMPTZ
+        )
+    """)
+    connection.execute("""
+        DO $$ BEGIN
+            ALTER TABLE m5_qa_evidence ADD CONSTRAINT fk_m5_qa_as
+                FOREIGN KEY (assessment_situation_id) REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT;
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_admission_decisions (
+            id BIGSERIAL PRIMARY KEY,
+            assessment_situation_db_id BIGINT NOT NULL REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
+            policy_id TEXT NOT NULL,
+            policy_version TEXT NOT NULL,
+            policy_checksum TEXT NOT NULL,
+            admitted BOOLEAN NOT NULL,
+            code TEXT NOT NULL,
+            reasons_json JSONB NOT NULL,
+            evidence_ids_json JSONB NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_dialogue_turns (
+            id BIGSERIAL PRIMARY KEY,
+            assessment_situation_db_id BIGINT NOT NULL REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
+            turn_id UUID NOT NULL,
+            sequence_no INTEGER NOT NULL CHECK (sequence_no > 0),
+            speaker_type TEXT NOT NULL CHECK (speaker_type IN ('assessee', 'character')),
+            speaker_id TEXT NOT NULL,
+            content_text TEXT NOT NULL,
+            request_id TEXT NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (assessment_situation_db_id, turn_id),
+            UNIQUE (assessment_situation_db_id, sequence_no),
+            UNIQUE (assessment_situation_db_id, request_id)
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_scenario_events (
+            id BIGSERIAL PRIMARY KEY,
+            assessment_situation_db_id BIGINT NOT NULL REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
+            event_id UUID NOT NULL,
+            event_type TEXT NOT NULL,
+            event_key TEXT NOT NULL,
+            cause_json JSONB NOT NULL,
+            material_id TEXT,
+            payload_json JSONB NOT NULL,
+            sequence_no INTEGER NOT NULL CHECK (sequence_no > 0),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (assessment_situation_db_id, event_id),
+            UNIQUE (assessment_situation_db_id, event_key),
+            UNIQUE (assessment_situation_db_id, sequence_no)
+        )
+    """)
+    connection.execute("""
+        CREATE OR REPLACE FUNCTION prevent_m5_snapshot_change() RETURNS trigger AS $$
+        BEGIN
+            IF TG_OP = 'DELETE' THEN RAISE EXCEPTION 'M5 snapshot is immutable'; END IF;
+            IF NEW.case_version_id IS DISTINCT FROM OLD.case_version_id
+               OR NEW.personalized_profile_id IS DISTINCT FROM OLD.personalized_profile_id
+               OR NEW.snapshot_json IS DISTINCT FROM OLD.snapshot_json
+               OR NEW.execution_payload_json IS DISTINCT FROM OLD.execution_payload_json
+               OR NEW.snapshot_checksum IS DISTINCT FROM OLD.snapshot_checksum
+               OR NEW.assessment_situation_id IS DISTINCT FROM OLD.assessment_situation_id THEN
+                RAISE EXCEPTION 'M5 snapshot is immutable';
+            END IF;
+            RETURN NEW;
+        END; $$ LANGUAGE plpgsql
+    """)
+    connection.execute("DROP TRIGGER IF EXISTS trg_m5_as_immutable ON m5_assessment_situations")
+    connection.execute("CREATE TRIGGER trg_m5_as_immutable BEFORE UPDATE OR DELETE ON m5_assessment_situations FOR EACH ROW EXECUTE FUNCTION prevent_m5_snapshot_change()")
+
+
 def ensure_core_schema() -> None:
     with get_connection() as connection:
         connection.execute(
@@ -3812,6 +3968,7 @@ def ensure_core_schema() -> None:
         )
         ensure_role_profile_schema(connection)
         ensure_assessment_context_schema(connection)
+        ensure_m5_runtime_schema(connection)
         connection.execute(
             """
             INSERT INTO consent_documents (

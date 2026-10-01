@@ -1,4 +1,6 @@
 from datetime import datetime
+from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -399,6 +401,32 @@ class PromptLabDialogueTurnResponse(BaseModel):
     assistant_message: str
     case_completed: bool = False
     stop_reason: str | None = None
+
+
+class M5PrepareSituationRequest(BaseModel):
+    case_id: str
+    case_version: str
+    personalized_profile_id: int
+    substitutions: list[dict] = Field(default_factory=list)
+    usage_scope: Literal["assessment", "qa"] = "qa"
+
+
+class M5TurnRequest(BaseModel):
+    request_id: str
+    turn_id: UUID
+    content: str = Field(min_length=1, max_length=10000)
+
+
+class M5TransitionRequest(BaseModel):
+    request_id: str = Field(min_length=1, max_length=200)
+    action: Literal["pause", "resume", "scenario_end", "terminate", "close"]
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class M5ModelCheckRequest(BaseModel):
+    scheme: dict
+    initiated_by: str
+    scheme_authored_by: str
 
 
 class AdminMethodologyBranchItem(BaseModel):

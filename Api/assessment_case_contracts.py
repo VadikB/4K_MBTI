@@ -31,21 +31,38 @@ class Substitution(Contract):
     source_path: Text
     source_checksum: Checksum
 
+class SourceRefV2(Contract):
+    file: Text
+    sheet: Text
+    row: Annotated[int, Field(gt=0)]
+    field: Text
+
 class IndicatorTargetV2(Contract):
     indicator_id: IndicatorID
     m2_version: Text
     skill_id: Annotated[str, Field(pattern=r"^K[1-4]\.\d+$")]
     component_id: Annotated[str, Field(pattern=r"^K[1-4]\.C\d{2}$")]
     observation_condition: Text
+    scenario_locations: Annotated[list[Text], Field(min_length=1)]
+    branch_condition: Text
+    event_condition: Text
     observable_action: Text
     validity_risk: Text
+    source: SourceRefV2
 
 class CaseMaterialV2(Contract):
     material_id: Text
     code: Text
     title: Text
-    rules: Text
-    kind: Literal["data", "mandatory_update", "mixed_source"] = "mixed_source"
+    internal_rule: Text
+    participant_payload: str | None = None
+    disclosure_condition: dict[str, Any]
+    event_condition: dict[str, Any]
+    reaction_rule: Text
+    result_check: Text
+    kind: Literal["data", "mandatory_update", "conditional_material", "internal_check", "model_rules", "model_check", "character_reaction", "mixed_source"]
+    classification_status: Literal["structured", "source_unresolved"]
+    source: SourceRefV2
 
 class ScenarioStepV2(Contract):
     step_id: Text
@@ -53,6 +70,7 @@ class ScenarioStepV2(Contract):
     order: Annotated[int, Field(gt=0)]
     title: Text
     rules: Text
+    source: SourceRefV2
 
 class CaseCharacterV2(Contract):
     character_id: Text
@@ -60,6 +78,7 @@ class CaseCharacterV2(Contract):
     name_and_role: Text
     public_position: Text
     closed_card: Text
+    source: SourceRefV2
 
 class CaseVersionV2(Contract):
     schema_version: Literal[2] = 2
@@ -72,6 +91,7 @@ class CaseVersionV2(Contract):
     planned_min_minutes: Annotated[int, Field(gt=0)]
     planned_max_minutes: Annotated[int, Field(gt=0)]
     passport: dict[str, Any]
+    passport_sources: dict[str, SourceRefV2]
     case_type_ids: Annotated[list[Annotated[str, Field(pattern=r"^CT\d{2}$")]], Field(min_length=1)]
     applicability: Annotated[list[Applicability], Field(min_length=1)]
     indicator_targets: Annotated[list[IndicatorTargetV2], Field(min_length=1)]

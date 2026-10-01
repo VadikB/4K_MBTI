@@ -36,9 +36,19 @@
     "IndicatorTargetV2": {
       "additionalProperties": false,
       "properties": {
+        "branch_condition": {
+          "minLength": 1,
+          "title": "Branch Condition",
+          "type": "string"
+        },
         "component_id": {
           "pattern": "^K[1-4]\\.C\\d{2}$",
           "title": "Component Id",
+          "type": "string"
+        },
+        "event_condition": {
+          "minLength": 1,
+          "title": "Event Condition",
           "type": "string"
         },
         "indicator_id": {
@@ -61,10 +71,22 @@
           "title": "Observation Condition",
           "type": "string"
         },
+        "scenario_locations": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Scenario Locations",
+          "type": "array"
+        },
         "skill_id": {
           "pattern": "^K[1-4]\\.\\d+$",
           "title": "Skill Id",
           "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/SourceRefV2"
         },
         "validity_risk": {
           "minLength": 1,
@@ -78,8 +100,12 @@
         "skill_id",
         "component_id",
         "observation_condition",
+        "scenario_locations",
+        "branch_condition",
+        "event_condition",
         "observable_action",
-        "validity_risk"
+        "validity_risk",
+        "source"
       ],
       "title": "IndicatorTargetV2",
       "type": "object"
@@ -123,6 +149,39 @@
         "checksum"
       ],
       "title": "QAEvidenceV2",
+      "type": "object"
+    },
+    "SourceRefV2": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "minLength": 1,
+          "title": "Field",
+          "type": "string"
+        },
+        "file": {
+          "minLength": 1,
+          "title": "File",
+          "type": "string"
+        },
+        "row": {
+          "exclusiveMinimum": 0,
+          "title": "Row",
+          "type": "integer"
+        },
+        "sheet": {
+          "minLength": 1,
+          "title": "Sheet",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "sheet",
+        "row",
+        "field"
+      ],
+      "title": "SourceRefV2",
       "type": "object"
     },
     "Substitution": {
