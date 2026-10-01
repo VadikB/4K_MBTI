@@ -13,7 +13,12 @@ export const initializeM5Lab = async () => {
     const cases = root.querySelector('[data-m5-case]');
     const mode = root.querySelector('[data-m5-mode]');
     roles.innerHTML = catalog.roles.map((r) => `<option value="${escapeHtml(r.code)}">${escapeHtml(r.name)}</option>`).join('');
-    cases.innerHTML = catalog.cases.map((c) => `<option value="${escapeHtml(c.case_id)}">${escapeHtml(c.case_id)} · ${escapeHtml(c.title)}</option>`).join('');
+    const refreshCases = () => {
+      const available = catalog.cases.filter((c) => c.roles.includes(roles.value));
+      cases.innerHTML = available.map((c) => `<option value="${escapeHtml(c.case_id)}">${escapeHtml(c.case_id)} · ${escapeHtml(c.title)} · ${c.indicator_ids.length} целей</option>`).join('');
+    };
+    roles.addEventListener('change', refreshCases);
+    refreshCases();
     mode.querySelector('[value="llm"]').disabled = !catalog.llm_available;
     status.textContent = catalog.llm_available ? 'Готово. Доступны шаблонная сборка и LLM-генерация.' : 'Готово. LLM не настроен; доступна шаблонная сборка.';
     const result = root.querySelector('[data-m5-result]');

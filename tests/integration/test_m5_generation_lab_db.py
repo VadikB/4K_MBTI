@@ -18,8 +18,8 @@ def test_m5_lab_persists_both_roles_and_idempotent_artifacts(test_database_url, 
         connection.execute("INSERT INTO users VALUES (7)")
         ensure_lab_schema(connection)
         ensure_lab_schema(connection)
-        for role in ("team_lead", "project_product_process_manager"):
-            request = GenerationRequest(run_id=uuid4(), case_id="SCR.A01", base_role=role)
+        for case_id, role in (("CASE-TDISC-04", "team_lead"), ("CASE-TDISC-01", "project_product_process_manager")):
+            request = GenerationRequest(run_id=uuid4(), case_id=case_id, base_role=role)
             row, created = begin_run(connection, request=request, user_id=7)
             assert created
             assert row["input_json"]["profile"]["base_role"] == role
@@ -30,7 +30,7 @@ def test_m5_lab_persists_both_roles_and_idempotent_artifacts(test_database_url, 
             assert saved["status"] == "completed"
             assert saved["output_integrity"] is True
             assert saved["input_integrity"] is True
-            assert len(saved["output_json"]["observability"]) == 2
+            assert len(saved["output_json"]["observability"]) > 1
             with monkeypatch.context() as patch:
                 patch.setattr(lab, "PROMPT_PACKAGE", tmp_path)
                 duplicate, created = begin_run(connection, request=request, user_id=7)
@@ -42,7 +42,7 @@ def test_m5_lab_persists_both_roles_and_idempotent_artifacts(test_database_url, 
                     begin_run(connection, request=request.model_copy(update={"run_id": uuid4()}), user_id=7)
             assert not created
             assert duplicate["output_json"] == output
-            changed = request.model_copy(update={"case_id": "SCR.A02"})
+            changed = request.model_copy(update={"case_id": "CASE-TDISC-05"})
             with pytest.raises(ValueError, match="другим запросом"):
                 begin_run(connection, request=changed, user_id=7)
             with pytest.raises(psycopg.Error, match="immutable"):

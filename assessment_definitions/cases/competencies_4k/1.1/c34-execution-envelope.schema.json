@@ -1,0 +1,74 @@
+{
+  "$defs": {
+    "VersionRef": {
+      "additionalProperties": false,
+      "properties": {
+        "checksum": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Checksum",
+          "type": "string"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "checksum"
+      ],
+      "title": "VersionRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "admitted": {
+      "const": true,
+      "title": "Admitted",
+      "type": "boolean"
+    },
+    "assessment_situation_ref": {
+      "$ref": "#/$defs/VersionRef"
+    },
+    "execution_payload_ref": {
+      "$ref": "#/$defs/VersionRef"
+    },
+    "indicator_ids": {
+      "items": {
+        "pattern": "^K[1-4]\\.I\\d{2}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Indicator Ids",
+      "type": "array"
+    },
+    "participant_payload_checksum": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Participant Payload Checksum",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "assessment_situation_ref",
+    "execution_payload_ref",
+    "participant_payload_checksum",
+    "indicator_ids",
+    "admitted"
+  ],
+  "title": "C34ExecutionEnvelope",
+  "type": "object"
+}

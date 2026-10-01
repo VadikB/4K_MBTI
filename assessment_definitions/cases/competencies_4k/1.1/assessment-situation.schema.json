@@ -1,39 +1,54 @@
 {
   "$defs": {
-    "Observability": {
+    "AdmissionDecisionV2": {
       "additionalProperties": false,
       "properties": {
-        "branches": {
-          "items": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "minItems": 1,
-          "title": "Branches",
-          "type": "array"
+        "admitted": {
+          "title": "Admitted",
+          "type": "boolean"
         },
-        "component_id": {
-          "minLength": 1,
-          "title": "Component Id",
+        "code": {
+          "enum": [
+            "ADMITTED",
+            "CASE_NOT_ADMITTED",
+            "AS_NOT_ADMITTED"
+          ],
+          "title": "Code",
           "type": "string"
         },
-        "conditions": {
+        "reasons": {
           "items": {
             "minLength": 1,
             "type": "string"
           },
-          "minItems": 1,
-          "title": "Conditions",
+          "title": "Reasons",
           "type": "array"
+        }
+      },
+      "required": [
+        "admitted",
+        "code",
+        "reasons"
+      ],
+      "title": "AdmissionDecisionV2",
+      "type": "object"
+    },
+    "IndicatorTargetV2": {
+      "additionalProperties": false,
+      "properties": {
+        "component_id": {
+          "pattern": "^K[1-4]\\.C\\d{2}$",
+          "title": "Component Id",
+          "type": "string"
         },
         "indicator_id": {
           "pattern": "^K[1-4]\\.I\\d{2}$",
           "title": "Indicator Id",
           "type": "string"
         },
-        "loss_risk": {
+        "m2_version": {
           "minLength": 1,
-          "title": "Loss Risk",
+          "title": "M2 Version",
           "type": "string"
         },
         "observable_action": {
@@ -41,43 +56,73 @@
           "title": "Observable Action",
           "type": "string"
         },
-        "qa_basis": {
+        "observation_condition": {
           "minLength": 1,
-          "title": "Qa Basis",
+          "title": "Observation Condition",
           "type": "string"
         },
-        "qa_result": {
+        "skill_id": {
+          "pattern": "^K[1-4]\\.\\d+$",
+          "title": "Skill Id",
+          "type": "string"
+        },
+        "validity_risk": {
+          "minLength": 1,
+          "title": "Validity Risk",
+          "type": "string"
+        }
+      },
+      "required": [
+        "indicator_id",
+        "m2_version",
+        "skill_id",
+        "component_id",
+        "observation_condition",
+        "observable_action",
+        "validity_risk"
+      ],
+      "title": "IndicatorTargetV2",
+      "type": "object"
+    },
+    "QAEvidenceV2": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_ref": {
+          "minLength": 1,
+          "title": "Artifact Ref",
+          "type": "string"
+        },
+        "checksum": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Checksum",
+          "type": "string"
+        },
+        "result": {
           "enum": [
             "PASS",
             "FAIL",
             "NOT_RUN"
           ],
-          "title": "Qa Result",
+          "title": "Result",
           "type": "string"
         },
-        "required": {
-          "title": "Required",
-          "type": "boolean"
-        },
-        "skill_id": {
-          "minLength": 1,
-          "title": "Skill Id",
+        "scope": {
+          "enum": [
+            "case_format",
+            "case_dialogue",
+            "assessment_situation"
+          ],
+          "title": "Scope",
           "type": "string"
         }
       },
       "required": [
-        "skill_id",
-        "component_id",
-        "indicator_id",
-        "required",
-        "conditions",
-        "branches",
-        "observable_action",
-        "loss_risk",
-        "qa_result",
-        "qa_basis"
+        "scope",
+        "result",
+        "artifact_ref",
+        "checksum"
       ],
-      "title": "Observability",
+      "title": "QAEvidenceV2",
       "type": "object"
     },
     "Substitution": {
@@ -142,8 +187,10 @@
     }
   },
   "additionalProperties": false,
-  "description": "Контракт будущего снимка; наличие JSON не означает допуск или исполнение.",
   "properties": {
+    "admission": {
+      "$ref": "#/$defs/AdmissionDecisionV2"
+    },
     "assessment_situation_id": {
       "minLength": 1,
       "title": "Assessment Situation Id",
@@ -157,57 +204,48 @@
     "case_ref": {
       "$ref": "#/$defs/VersionRef"
     },
-    "conditions": {
-      "minLength": 1,
-      "title": "Conditions",
-      "type": "string"
-    },
-    "methodology_ref": {
+    "execution_payload_ref": {
       "$ref": "#/$defs/VersionRef"
     },
-    "observability": {
+    "indicator_targets": {
       "items": {
-        "$ref": "#/$defs/Observability"
+        "$ref": "#/$defs/IndicatorTargetV2"
       },
       "minItems": 1,
-      "title": "Observability",
+      "title": "Indicator Targets",
       "type": "array"
+    },
+    "methodology_refs": {
+      "items": {
+        "$ref": "#/$defs/VersionRef"
+      },
+      "minItems": 1,
+      "title": "Methodology Refs",
+      "type": "array"
+    },
+    "participant_payload": {
+      "additionalProperties": true,
+      "title": "Participant Payload",
+      "type": "object"
     },
     "planned_minutes": {
       "exclusiveMinimum": 0,
       "title": "Planned Minutes",
       "type": "integer"
     },
-    "presentation": {
-      "minLength": 1,
-      "title": "Presentation",
-      "type": "string"
-    },
     "profile_ref": {
       "$ref": "#/$defs/VersionRef"
     },
-    "qa_basis": {
-      "minLength": 1,
-      "title": "Qa Basis",
-      "type": "string"
-    },
-    "qa_result": {
-      "enum": [
-        "PASS",
-        "FAIL",
-        "NOT_RUN"
-      ],
-      "title": "Qa Result",
-      "type": "string"
-    },
-    "scenario": {
-      "minLength": 1,
-      "title": "Scenario",
-      "type": "string"
+    "qa_evidence": {
+      "items": {
+        "$ref": "#/$defs/QAEvidenceV2"
+      },
+      "title": "Qa Evidence",
+      "type": "array"
     },
     "schema_version": {
-      "const": 1,
-      "default": 1,
+      "const": 2,
+      "default": 2,
       "title": "Schema Version",
       "type": "integer"
     },
@@ -223,17 +261,16 @@
     "assessment_situation_id",
     "case_ref",
     "profile_ref",
-    "methodology_ref",
+    "methodology_refs",
     "base_role",
     "substitutions",
-    "presentation",
-    "conditions",
-    "scenario",
+    "participant_payload",
+    "execution_payload_ref",
     "planned_minutes",
-    "observability",
-    "qa_result",
-    "qa_basis"
+    "indicator_targets",
+    "qa_evidence",
+    "admission"
   ],
-  "title": "AssessmentSituation",
+  "title": "AssessmentSituationV2",
   "type": "object"
 }
