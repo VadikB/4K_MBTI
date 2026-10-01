@@ -1,7 +1,9 @@
 import pytest
 
+from Api.llm.contracts import LlmResponse
 from Api.m5_rule_engine import (ControlledSemanticAdapter, DeepSeekCharacterAdapter,
-                                DeepSeekSemanticAdapter, RuleOutcome, evaluate_rule)
+                                DeepSeekSemanticAdapter, RuleOutcome,
+                                build_m5_ai_operations_snapshot, evaluate_rule)
 
 pytestmark = pytest.mark.unit
 
@@ -53,3 +55,53 @@ def test_character_adapter_keeps_versioned_prompt_ref_when_gateway_is_unavailabl
         text="turn", turn_id="turn", context={})
     assert reply.status == "UNKNOWN"
     assert reply.prompt_ref["id"] == "m5_character_response"
+
+
+def test_semantic_adapter_sends_frozen_model_endpoint_parameters_and_keeps_provider_trace():
+    operation = build_m5_ai_operations_snapshot()["semantic_decision"]
+
+    class Gateway:
+        enabled = True
+        model = operation["model"]
+        base_url = operation["endpoint"].removesuffix("/chat/completions")
+
+        def chat_with_trace(self, messages, **kwargs):
+            assert kwargs["temperature"] == operation["parameters"]["temperature"]
+            assert kwargs["max_tokens"] == operation["parameters"]["max_tokens"]
+            return LlmResponse(
+                '{"code":"MATCH","basis":"ok"}',
+                {"request_id": "provider-1", "model": operation["model"], "revision": None},
+                {"provider": "deepseek", "endpoint": operation["endpoint"], "model": operation["model"],
+                 "parameters": operation["parameters"], "messages": messages},
+            )
+
+    result = DeepSeekSemanticAdapter(Gateway(), operation=operation).decide(
+        rule={"rule_id": "r", "condition": {}, "allowed_codes": ["MATCH", "NO_MATCH", "UNKNOWN"]},
+        text="text", turn_id="turn", context={},
+    )
+    assert result.outcome == RuleOutcome.TRUE
+    assert result.ai_trace["sent"]["model"] == operation["model"]
+    assert result.ai_trace["provider"]["request_id"] == "provider-1"
+    assert result.ai_trace["provider"]["revision"] is None
+
+
+def test_semantic_adapter_rejects_provider_model_mismatch():
+    operation = build_m5_ai_operations_snapshot()["semantic_decision"]
+
+    class Gateway:
+        enabled = True
+        model = operation["model"]
+        base_url = operation["endpoint"].removesuffix("/chat/completions")
+
+        def chat_with_trace(self, messages, **kwargs):
+            return LlmResponse(
+                '{"code":"MATCH","basis":"ok"}', {"model": "unexpected-model"},
+                {"endpoint": operation["endpoint"], "model": operation["model"], "messages": messages},
+            )
+
+    result = DeepSeekSemanticAdapter(Gateway(), operation=operation).decide(
+        rule={"rule_id": "r", "condition": {}, "allowed_codes": ["MATCH", "NO_MATCH", "UNKNOWN"]},
+        text="text", turn_id="turn", context={},
+    )
+    assert result.outcome == RuleOutcome.ERROR
+    assert result.code == "AI_PROVIDER_IDENTITY_MISMATCH"

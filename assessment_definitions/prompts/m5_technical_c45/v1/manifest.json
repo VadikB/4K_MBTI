@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "m5_technical_c45",
+  "version": "1.0.0",
+  "status": "qa",
+  "scope": "m5_c45_transport_verification",
+  "artifacts": [
+    {
+      "name": "prompt.md",
+      "sha256": "444345c7d91e632f4fe3c1f5deb4e3e1c6c80204981c15b5c750085eeecadc4b"
+    }
+  ]
+}

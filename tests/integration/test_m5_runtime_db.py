@@ -12,7 +12,9 @@ from Api.database import ensure_m5_runtime_schema
 from Api.m5_storage import (M5ImportConflict, import_package, package_readback,
                             prepare_assessment_situation, record_technical_qa_evidence)
 from Api.m5_rule_engine import ControlledCharacterAdapter, ControlledSemanticAdapter
-from Api.m5_scenario_runtime import build_c45, run_model_check_case03, start, submit_turn, trace, transition
+from Api.llm.contracts import LlmResponse
+from Api.m5_scenario_runtime import (build_c45, execute_technical_c45, run_model_check_case03,
+                                     start, submit_turn, trace, transition)
 from Api.m5_case_runtime import checksum
 from Api.snapshot_integrity import SNAPSHOT_OWNER_MISMATCH, SnapshotIntegrityError
 from scripts.build_m5_case_package import OUTPUT
@@ -55,6 +57,7 @@ def test_m5_import_readback_and_rejected_as_are_transactional(test_database_url)
             personalized_profile_id=7, substitutions=[], policy=policy,
             usage_scope="qa", qa_authorized_by=99,
         )
+        assert prepared["execution_payload"]["ai_operations"]["semantic_decision"]["model"]
         assert prepared["status"] == "rejected"
         assert prepared["snapshot"]["admission"]["code"] == "CASE_NOT_ADMITTED"
         stored = connection.execute("""
@@ -120,6 +123,38 @@ def test_m5_import_readback_and_rejected_as_are_transactional(test_database_url)
         handoff = build_c45(connection, prepared["assessment_situation_id"])
         assert handoff["envelope_json"]["contract"] == "C-45"
         assert handoff["envelope_json"]["evaluation_created"] is False
+        assert handoff["envelope_json"]["boundary"]["turn_ids"] == [turn_id]
+        assert {item["material_id"] for item in handoff["envelope_json"]["presented_materials"]} >= {
+            "CASE-TDISC-01-D1", "CASE-TDISC-01-D3"
+        }
+
+        operation = prepared["execution_payload"]["ai_operations"]["technical_c45"]
+
+        class TechnicalGateway:
+            enabled = True
+            model = operation["model"]
+            base_url = operation["endpoint"].removesuffix("/chat/completions")
+
+            def chat_with_trace(self, messages, **kwargs):
+                payload = {
+                    "contract": "C-54", "assessment_situation_id": prepared["assessment_situation_id"],
+                    "handoff_id": str(handoff["handoff_id"]), "mode": "final",
+                    "indicator_id": "K1.I13", "m2_version": "v1.1",
+                    "status": "technical_received", "boundary_sequence": handoff["boundary_sequence"],
+                }
+                return LlmResponse(json.dumps(payload), {"request_id": "provider-qa-1", "model": self.model},
+                                   {"provider": "test_transport", "endpoint": operation["endpoint"],
+                                    "model": self.model, "parameters": kwargs, "messages": messages})
+
+        receipt = execute_technical_c45(
+            connection, assessment_situation_id=prepared["assessment_situation_id"],
+            indicator_id="K1.I13", gateway=TechnicalGateway(),
+        )
+        assert receipt["status"] == "accepted"
+        assert receipt["controlled_test"] is True
+        runtime_trace = trace(connection, prepared["assessment_situation_id"])
+        assert runtime_trace["ai_attempts"][0]["sent_json"]["provider"] == "test_transport"
+        assert runtime_trace["c54_receipts"][0]["validation_json"]["methodological_result"] is False
         connection.rollback()
 
 
@@ -190,7 +225,7 @@ def test_all_five_cases_run_through_qa_runtime_and_case04_has_both_branch_outcom
                 assert any(x["speaker_type"] == "character" and x["speaker_id"] == "CASE-TDISC-04-R02"
                            for x in saved["turns"])
                 assert any(x["event_type"] == "character_response" for x in saved["events"])
-            handoff = build_c45(connection, prepared["assessment_situation_id"])
+            handoff = build_c45(connection, prepared["assessment_situation_id"], mode="interim")
             assert handoff["envelope_json"]["boundary_sequence"] > 0
             evidence = record_technical_qa_evidence(
                 connection, assessment_situation_id=prepared["assessment_situation_id"], trajectory="content_progress",

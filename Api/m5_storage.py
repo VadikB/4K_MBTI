@@ -8,6 +8,7 @@ from uuid import UUID
 from Api.assessment_case_contracts import AssessmentSituationV2, CaseVersionV2
 from Api.assessment_contexts import build_personalized_profile, canonical_json, context_checksum
 from Api.m5_case_runtime import build_assessment_situation, checksum
+from Api.m5_rule_engine import build_m5_ai_operations_snapshot
 
 
 class M5ImportConflict(ValueError):
@@ -333,6 +334,7 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
                      "checksum": profile_row["checksum"]},
         profile_snapshot={**profile, "base_role": base_role}, methodology_refs=refs,
         substitutions=substitutions, qa_evidence=evidence, policy=policy,
+        ai_operations=build_m5_ai_operations_snapshot(),
     )
     execution["runtime_rules"] = case_row["runtime_rules_json"]
     situation["execution_payload_ref"]["checksum"] = checksum(execution)
