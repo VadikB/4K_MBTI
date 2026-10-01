@@ -20,6 +20,18 @@ export const initializeM5Lab = async () => {
     roles.addEventListener('change', refreshCases);
     refreshCases();
     status.textContent = catalog.profiles.length ? 'Готово. Выберите совместимый профиль и Case.' : 'Нет готовых M4 PersonalizedProfile для QA.';
+    const publishRolesButton = document.createElement('button');
+    publishRolesButton.type = 'button';
+    publishRolesButton.className = 'ghost-button';
+    publishRolesButton.textContent = 'Опубликовать проверенный M3 v1.1 на test';
+    root.querySelector('[data-m5-migrate-profile]').before(publishRolesButton);
+    publishRolesButton.addEventListener('click', async () => {
+      try {
+        status.textContent = 'Проверяем checksum и публикуем M3 BaseRoles…';
+        const result = await readApiResponse(await fetch('/users/admin/m5-lab/publish-m3-base-roles', { method: 'POST' }), 'Не удалось опубликовать M3 BaseRoles.');
+        status.textContent = `M3 publication ${result.publication_id}: опубликовано версий ${result.version_ids.length}.`;
+      } catch (error) { status.textContent = error.message; }
+    });
     root.querySelector('[data-m5-migrate-profile]').addEventListener('click', async () => {
       try {
         status.textContent = 'Фиксируем текущий test-профиль в M4…';

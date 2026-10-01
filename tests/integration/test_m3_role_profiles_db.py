@@ -11,6 +11,7 @@ from Api.assessment_role_profiles import (
     bind_role_profile_to_session,
     create_organization_role_profile_draft,
     import_base_roles_draft,
+    publish_base_roles,
     list_available_role_profiles,
     load_published_role_profile,
     get_selected_role_profile,
@@ -48,10 +49,21 @@ def test_base_and_organization_roles_are_versioned_visible_and_immutable(test_da
         with pytest.raises(ValueError, match="published"):
             select_role_profile_for_user(connection, user_id=7, version_id=base_ids[0])
 
-        connection.execute(
-            "UPDATE assessment_role_profile_versions SET status = 'published' WHERE id = ANY(%s)",
-            (base_ids,),
+        publication = publish_base_roles(
+            connection,
+            package=package,
+            manifest=manifest,
+            published_by_user_id=7,
+            decision_basis="integration human review",
         )
+        assert publication["version_ids"] == base_ids
+        assert publish_base_roles(
+            connection,
+            package=package,
+            manifest=manifest,
+            published_by_user_id=7,
+            decision_basis="integration human review",
+        )["idempotent"] is True
         assert len(list_available_role_profiles(connection, user_id=7)) == 6
 
         definition = {

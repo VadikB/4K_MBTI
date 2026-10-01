@@ -109,3 +109,21 @@ def test_profile_migration_requires_superadmin_and_records_server_actor(client):
     assert response.status_code == 200
     assert captured == {"user_id": 7, "authorized_by": 7}
     assert response.json()["provenance"] == "legacy_test_profile_migration"
+
+
+def test_m3_publication_requires_superadmin_and_records_server_actor(client):
+    http, monkeypatch, _ = client
+    assert http.post("/users/admin/m5-lab/publish-m3-base-roles").status_code == 401
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "member")
+    assert http.post("/users/admin/m5-lab/publish-m3-base-roles").status_code == 403
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "admin")
+    captured = {}
+    def publish(_connection, **kwargs):
+        captured.update(kwargs)
+        return {"publication_id": 31, "version_ids": [1, 2, 3, 4, 5, 6], "idempotent": False}
+    monkeypatch.setattr(routes, "publish_base_roles", publish)
+    response = http.post("/users/admin/m5-lab/publish-m3-base-roles")
+    assert response.status_code == 200
+    assert captured["published_by_user_id"] == 7
+    assert captured["package"]["methodology_version"] == "1.1"
+    assert "human review" in captured["decision_basis"]
