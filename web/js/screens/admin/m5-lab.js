@@ -20,6 +20,14 @@ export const initializeM5Lab = async () => {
     roles.addEventListener('change', refreshCases);
     refreshCases();
     status.textContent = catalog.profiles.length ? 'Готово. Выберите совместимый профиль и Case.' : 'Нет готовых M4 PersonalizedProfile для QA.';
+    root.querySelector('[data-m5-migrate-profile]').addEventListener('click', async () => {
+      try {
+        status.textContent = 'Фиксируем текущий test-профиль в M4…';
+        const migrated = await readApiResponse(await fetch('/users/admin/m5-lab/migrate-current-profile', { method: 'POST' }), 'Не удалось создать M4 QA-профиль.');
+        status.textContent = `M4 PersonalizedProfile ${migrated.personalized_profile_id} сохранён. Обновляем каталог…`;
+        window.location.reload();
+      } catch (error) { status.textContent = error.message; }
+    });
     const result = root.querySelector('[data-m5-result]');
     const buttons = [...root.querySelectorAll('[data-m5-run]')];
     const show = (row) => {

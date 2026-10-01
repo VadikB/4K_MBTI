@@ -6,6 +6,7 @@ from pathlib import Path
 from uuid import UUID
 
 from Api.assessment_case_contracts import AssessmentSituationV2, CaseVersionV2
+from Api.assessment_contexts import build_personalized_profile, canonical_json, context_checksum
 from Api.m5_case_runtime import build_assessment_situation, checksum
 
 
@@ -113,6 +114,111 @@ def qa_lab_catalog(connection, package: dict) -> dict:
                    "base_role": x["base_role"], "indicator_ids": [y["indicator_id"] for y in x["indicator_targets"]],
                    "admitted_for_assessment": False} for x in package["cases"]],
     }
+
+
+def migrate_legacy_test_profile(connection, *, user_id: int, authorized_by: int) -> dict:
+    """Фиксирует текущий test-профиль в M4 для серверного QA-контура."""
+    existing = connection.execute(
+        "SELECT id,checksum FROM assessment_personalized_profiles "
+        "WHERE user_id=%s AND provenance_json->>'migration'='legacy_test_profile_migration' "
+        "ORDER BY id DESC LIMIT 1", (user_id,),
+    ).fetchone()
+    if existing:
+        return {"personalized_profile_id": int(existing["id"]), "checksum": existing["checksum"], "idempotent": True}
+    user = connection.execute("""
+        SELECT u.id,u.full_name,u.job_description,u.company_industry,
+               p.raw_position,p.raw_duties,p.normalized_duties,p.role_selected_code,p.company_context,
+               p.user_domain,p.user_processes,p.user_tasks,p.user_stakeholders,p.user_constraints,
+               p.user_artifacts,p.user_systems,p.user_success_metrics
+        FROM users u LEFT JOIN user_role_profiles p ON p.id=u.active_profile_id WHERE u.id=%s
+    """, (user_id,)).fetchone()
+    if user is None:
+        raise ValueError("LEGACY_TEST_USER_NOT_FOUND")
+    memberships = connection.execute("""
+        SELECT o.id,o.name,o.industry,o.profile,o.notes FROM organization_memberships m
+        JOIN organizations o ON o.id=m.organization_id WHERE m.user_id=%s AND o.is_active=TRUE
+    """, (user_id,)).fetchall()
+    if len(memberships) != 1:
+        raise ValueError("M4_REQUIRES_SINGLE_ACTIVE_ORGANIZATION")
+    organization = memberships[0]
+    legacy_role = str(user["role_selected_code"] or "").strip().lower()
+    role_code = {"leader": "direction_system_leader", "manager": "project_product_process_manager",
+                 "linear": "specialist_expert", "specialist": "specialist_expert"}.get(legacy_role, legacy_role)
+    role = connection.execute("""
+        SELECT v.id,v.definition_json,v.checksum FROM assessment_role_profile_versions v
+        JOIN assessment_role_profiles p ON p.id=v.role_profile_id
+        WHERE p.code=%s AND p.scope='base' AND v.status='published' AND v.methodology_version='1.1'
+        ORDER BY v.version DESC LIMIT 1
+    """, (role_code,)).fetchone()
+    if role is None:
+        raise ValueError(f"M4_PUBLISHED_ROLE_PROFILE_NOT_FOUND:{role_code or 'unknown'}")
+    configuration = connection.execute("""
+        SELECT c.id FROM assessment_configurations c JOIN assessment_methodology_versions m ON m.id=c.methodology_version_id
+        WHERE c.status='published' AND m.status='published' AND m.definition_json->>'methodology_version'='1.1'
+        ORDER BY c.is_default DESC,c.id DESC LIMIT 1
+    """).fetchone()
+    if configuration is None:
+        raise ValueError("M4_PUBLISHED_CONFIGURATION_1_1_NOT_FOUND")
+    marker = {"migration": "legacy_test_profile_migration", "authorized_by": authorized_by,
+              "source_user_id": user_id, "scope": "qa"}
+    organization_definition = {
+        "name": organization["name"], "organization_type": "компания",
+        "industry": organization["industry"] or user["company_industry"] or "не указана",
+        "activity_description": organization["profile"] or organization["notes"] or user["company_context"] or "тестовый контекст организации",
+        "case_reality_level": "обобщённый",
+        "organization_name_usage_rules": "не использовать название без необходимости",
+    }
+    org_parent = connection.execute("""
+        INSERT INTO assessment_organization_contexts (organization_id,code) VALUES (%s,'legacy-test-migration')
+        ON CONFLICT (organization_id,code) DO UPDATE SET code=EXCLUDED.code RETURNING id
+    """, (organization["id"],)).fetchone()
+    org_checksum = context_checksum(organization_definition)
+    org_version = connection.execute("""
+        INSERT INTO assessment_organization_context_versions
+        (organization_context_id,version,status,definition_json,source_manifest_json,checksum,confirmed_by_user_id,confirmed_at)
+        VALUES (%s,1,'published',%s::jsonb,%s::jsonb,%s,%s,NOW()) RETURNING id
+    """, (org_parent["id"], canonical_json(organization_definition), canonical_json(marker),
+           org_checksum, authorized_by)).fetchone()
+    duties = user["user_tasks"] or ([user["normalized_duties"] or user["raw_duties"]]
+                                    if user["normalized_duties"] or user["raw_duties"] else [])
+    professional = {
+        "position_or_status": user["raw_position"] or user["job_description"], "regular_tasks": duties,
+        "work_materials": user["user_artifacts"] or [], "systems_and_tools": user["user_systems"] or [],
+        "additional_information": {"domain": user["user_domain"], "processes": user["user_processes"] or [],
+            "stakeholders": user["user_stakeholders"] or [], "constraints": user["user_constraints"] or [],
+            "success_metrics": user["user_success_metrics"] or []},
+    }
+    user_parent = connection.execute("""
+        INSERT INTO assessment_user_contexts (user_id,organization_id) VALUES (%s,%s)
+        ON CONFLICT (user_id,organization_id) DO UPDATE SET organization_id=EXCLUDED.organization_id RETURNING id
+    """, (user_id, organization["id"])).fetchone()
+    user_identity = {"full_name": user["full_name"]}
+    user_checksum = context_checksum({"identity": user_identity, "professional": professional})
+    user_version = connection.execute("""
+        INSERT INTO assessment_user_context_versions
+        (user_context_id,version,status,identity_json,professional_context_json,checksum,confirmed_by_user_id,confirmed_at)
+        VALUES (%s,1,'confirmed',%s::jsonb,%s::jsonb,%s,%s,NOW()) RETURNING id
+    """, (user_parent["id"], canonical_json(user_identity), canonical_json(professional),
+           user_checksum, user_id)).fetchone()
+    snapshot = build_personalized_profile(
+        organization_id=int(organization["id"]), organization_context=organization_definition,
+        organization_context_ref={"version_id": int(org_version["id"]), "checksum": org_checksum},
+        role_profile=dict(role["definition_json"]),
+        role_profile_ref={"version_id": int(role["id"]), "checksum": role["checksum"]},
+        user_identity=user_identity, user_context=professional,
+        user_context_ref={"version_id": int(user_version["id"]), "checksum": user_checksum}, conflicts=[])
+    snapshot["provenance"].update({"migration": marker["migration"], "authorized_by": authorized_by})
+    snapshot["checksum"] = context_checksum({k: v for k, v in snapshot.items() if k != "checksum"})
+    profile = connection.execute("""
+        INSERT INTO assessment_personalized_profiles
+        (user_id,organization_id,assessment_configuration_id,organization_context_version_id,role_profile_version_id,
+         user_context_version_id,status,content_json,provenance_json,conflicts_json,checksum)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,'[]'::jsonb,%s) RETURNING id
+    """, (user_id, organization["id"], configuration["id"], org_version["id"], role["id"], user_version["id"],
+           snapshot["status"], canonical_json(snapshot["content"]), canonical_json(snapshot["provenance"]),
+           snapshot["checksum"])).fetchone()
+    return {"personalized_profile_id": int(profile["id"]), "checksum": snapshot["checksum"],
+            "base_role": role_code, "idempotent": False, "provenance": marker["migration"]}
 
 
 def save_assessment_situation(connection, *, situation: dict, execution_payload: dict, personalized_profile_id: int,
