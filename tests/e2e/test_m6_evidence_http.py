@@ -34,6 +34,7 @@ def test_all_m6_endpoints_require_admin(client):
     monkeypatch.setattr(routes.m6_assessment_repository,'read_result',forbidden)
     monkeypatch.setattr(routes.m6_assessment_repository,'existing_key',forbidden)
     monkeypatch.setattr(routes.m7_cycle_planner,'read_plan',forbidden)
+    monkeypatch.setattr(routes.m7_clarification,'read',forbidden)
     payload={'handoff_id':str(uuid4()),'mechanism_ref':'m6_evidence/1.0.0','idempotency_key':'test','synthetic_material_confirmed':True}
     for token,expected in [(None,401),('member',403)]:
         if token:http.cookies.set(routes.SESSION_COOKIE_NAME,token)
@@ -51,6 +52,12 @@ def test_all_m6_endpoints_require_admin(client):
         assert http.get('/users/admin/m7-plans/'+cycle).status_code==expected
         assert http.post('/users/admin/m7-plans/'+cycle+'/next',json={'idempotency_key':'next','expected_plan_revision_id':str(uuid4()),'synthetic_material_confirmed':True}).status_code==expected
         assert http.post('/users/admin/m7-decisions/'+decision+'/present',json={'expected_decision_revision':1}).status_code==expected
+        clarification=str(uuid4());c54=str(uuid4())
+        assert http.post('/users/admin/m7-clarifications',json={'c54_revision_id':c54,'idempotency_key':'c','synthetic_material_confirmed':True}).status_code==expected
+        assert http.get('/users/admin/m7-clarifications/'+clarification).status_code==expected
+        assert http.post('/users/admin/m7-clarifications/'+clarification+'/present',json={'expected_c54_revision_id':c54}).status_code==expected
+        assert http.post('/users/admin/m7-clarifications/'+clarification+'/answers',json={'request_id':'a','turn_id':str(uuid4()),'content':'answer'}).status_code==expected
+        assert http.post('/users/admin/m7-clarifications/'+clarification+'/outcomes',json={'request_id':'o','outcome':'no_answer'}).status_code==expected
 
 
 def test_repeat_uses_saved_request_without_current_package(client):

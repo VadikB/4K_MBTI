@@ -3295,6 +3295,8 @@ def ensure_m5_runtime_schema(connection) -> None:
             UNIQUE (assessment_situation_db_id, request_id)
         )
     """)
+    connection.execute("ALTER TABLE m5_dialogue_turns DROP CONSTRAINT IF EXISTS m5_dialogue_turns_speaker_type_check")
+    connection.execute("ALTER TABLE m5_dialogue_turns ADD CONSTRAINT m5_dialogue_turns_speaker_type_check CHECK (speaker_type IN ('assessee','character','assessment'))")
     connection.execute("""
         CREATE TABLE IF NOT EXISTS m5_scenario_events (
             id BIGSERIAL PRIMARY KEY,

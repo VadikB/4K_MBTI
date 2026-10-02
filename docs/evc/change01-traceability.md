@@ -75,6 +75,14 @@ T05/T07: фиксированный план до старта, один про�
 [отчёт](tasks/m7-task05-implementation.md). Полное управление Additional Session,
 закрытием и C-46 остаётся задачей 7; M6 aggregation — задачей 8.
 
+## Рабочая реализация M7 Task 06
+
+M1.6, M6.6–6.9, M7.5–7 и Change 01 И-6 → semantic interim C-54 → неизменяемое
+решение PM-04 → assessment/assessee Turns того же Dialogue → новая interim C-45 →
+повторный M6. Реализация: `Api/m7_clarification*.py`, draft prompt
+`m7_assessment_clarification/1.0.0`, superadmin routes и PostgreSQL integration.
+Полный контракт: [M7 Assessment Clarification v1](../architecture/m7-clarification-contract.md).
+
 ## Рабочая реализация M6-A
 
 На ветке codex/m6-task01-contracts после базы dd3d2ca реализована часть PM-05:
