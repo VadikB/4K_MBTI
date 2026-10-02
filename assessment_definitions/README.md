@@ -157,3 +157,10 @@ Provider smoke и утверждённые GC не входят в эту про
 фиксирует SHA-256 prompt. Loader сохраняет prompt/schema/provider snapshot; пакет не
 является опубликованной нормой и не включён в основной пользовательский путь.
 Пакет используется только restricted QA-путём и не допускает WORKING Cases.
+
+## M8 Basic Report QA
+
+`reports/m8_basic_report/v1` — draft-шаблон детерминированного C-67 и PDF.
+Manifest связан с M8 v1.2 и фиксирует checksum шаблона. Инварианты запрещают
+Recommendations, вывод Skill Level и CompetencyScore и требуют сохранять точные
+дроби. Пакет не публикует методологию и не подтверждает Reliability.

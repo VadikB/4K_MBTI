@@ -101,6 +101,15 @@ superadmin QA endpoints и PostgreSQL integration. [Контракт](../archite
 [отчёт](tasks/m6-task08-implementation.md). Task 09, утверждённые GC/Reliability и
 product UI остаются открытыми зависимостями.
 
+## Рабочая реализация M8 Task 09
+
+M1 Results/Report, M8.1–5/M8.7.1–7.2/M8.7.5/M8.8–9 и Change 01 И-5 →
+composition-checked C-46/C-56 → один logical Results с immutable revisions →
+versioned C-67 → owner screen/PDF. Реализация: `Api/m8_results*.py`, draft package
+`m8_basic_report/1.0.0`, admin producer и owner consumer. [Контракт](../architecture/product-4k/m8-results-report-contract.md),
+[отчёт](tasks/m8-task09-implementation.md). Task 10 orchestration и реальный T9-18
+остаются открытыми.
+
 ## Рабочая реализация M6-A
 
 На ветке codex/m6-task01-contracts после базы dd3d2ca реализована часть PM-05:

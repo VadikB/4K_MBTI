@@ -3497,6 +3497,8 @@ def ensure_m5_runtime_schema(connection) -> None:
     ensure_m7_completion_schema(connection)
     from Api.m6_cycle_aggregation_repository import ensure_schema as ensure_m6_cycle_aggregation_schema
     ensure_m6_cycle_aggregation_schema(connection)
+    from Api.m8_results import ensure_schema as ensure_m8_results_schema
+    ensure_m8_results_schema(connection)
 
 
 def ensure_execution_snapshot_guards(connection, *, tables: tuple[str, ...] = ("user_sessions", "assessment_preparation_jobs")) -> None:

@@ -1784,7 +1784,25 @@
         </div>
       </div>
 
-      <div class="report-shell">
+      <div id="m8-report-shell" class="report-shell m8-report-shell hidden" aria-live="polite">
+        <section class="card report-details-card">
+          <p class="section-label accent-label">Результаты закрытого цикла</p>
+          <h2 id="m8-report-title">Базовый индивидуальный отчёт</h2>
+          <p id="m8-report-state">Загружаем состояние расчёта…</p>
+          <dl id="m8-report-metadata" class="report-metadata-list"></dl>
+        </section>
+        <section class="card report-details-card">
+          <div class="report-card-head"><div><p class="section-label">Профиль навыков</p><h3>Фактические результаты</h3></div></div>
+          <div id="m8-report-skills" class="m8-report-skills"></div>
+        </section>
+        <section class="card report-details-card">
+          <div class="report-card-head"><div><p class="section-label">Пять разрезов</p><h3>Покрытие и ограничения</h3></div></div>
+          <div id="m8-report-coverage"></div>
+          <ul id="m8-report-limitations" class="report-recommendations"></ul>
+        </section>
+      </div>
+
+      <div id="legacy-report-shell" class="report-shell">
         <section class="report-hero">
           <div class="report-hero-copy">
             <h2>Ваш профиль компетенций</h2>

@@ -31,6 +31,8 @@ from Api import m7_completion
 from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,AdditionalSessionRequest,BlockingWaitRequest,ReconcileC46Request
 from Api import m6_cycle_aggregation_repository
 from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest
+from Api import m8_results
+from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest
 from scripts.build_m5_case_package import OUTPUT as M5_PACKAGE_DIR
 from Api.assessment_role_profiles import (
     create_organization_role_profile_draft,
@@ -6911,6 +6913,99 @@ def get_latest_m6_cycle_calculation(cycle_id: UUID, request: Request):
             return m6_cycle_aggregation_repository.read_latest_for_cycle(connection, str(cycle_id))
     except ValueError as exc:
         raise HTTPException(404, detail=str(exc)) from exc
+
+
+# PM-06/PM-07 M8: versioned Results and C-67. Creation remains an explicit
+# authorized operation until the Task 10 orchestration path is accepted.
+@router.post('/admin/m8-cycles/{cycle_id}/results', status_code=201)
+def create_m8_results(cycle_id: UUID, payload: CreateResultsRequest, request: Request):
+    user = _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result = m8_results.create_results(connection, cycle_id=str(cycle_id), calculation_id=payload.calculation_id,
+                key=payload.idempotency_key, target_profile=None, created_by=int(user.id))
+            connection.commit(); return result
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(409, detail=str(exc)) from exc
+
+
+@router.post('/admin/m8-reports', status_code=201)
+def create_m8_report(payload: CreateReportRequest, request: Request):
+    user = _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result = m8_results.create_report(connection, results_revision_id=payload.results_revision_id,
+                audience=payload.audience, key=payload.idempotency_key,
+                target_profile=payload.target_profile.model_dump() if payload.target_profile else None, created_by=int(user.id))
+            connection.commit(); return result
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(409, detail=str(exc)) from exc
+
+
+@router.get('/admin/m8-reports/{report_id}')
+def read_admin_m8_report(report_id: UUID, request: Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection: return m8_results.read_report(connection, str(report_id))
+    except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
+
+
+@router.get('/admin/m8-reports/{report_id}/pdf')
+def download_admin_m8_report(report_id: UUID, request: Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection: report = m8_results.read_report(connection, str(report_id))
+    except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
+    pdf = m8_results.render_pdf(report)
+    return Response(content=pdf, media_type='application/pdf',
+                    headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
+
+
+@router.get('/assessment/m8/cycles/{cycle_id}/status')
+def read_owned_m8_status(cycle_id: UUID, request: Request):
+    _m7_owned_cycle(request, str(cycle_id))
+    with get_connection() as connection:
+        cycle = m7_completion.read_status(connection, str(cycle_id))
+        try:
+            report = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
+            return {**cycle, 'results_status': 'ready', 'report_status': report['status'], 'report_id': report['id']}
+        except ValueError:
+            try:
+                m8_results.read_latest_results(connection, str(cycle_id))
+                return {**cycle, 'results_status': 'ready', 'report_status': 'not_created', 'report_id': None}
+            except ValueError:
+                pass
+            result_status = 'processing' if cycle['collection_status'] in {'collection_closed','calculation_pending'} else cycle['collection_status']
+            return {**cycle, 'results_status': result_status, 'report_status': 'not_created', 'report_id': None}
+
+
+@router.get('/assessment/m8/cycles/{cycle_id}/results')
+def read_owned_m8_results(cycle_id: UUID, request: Request):
+    _m7_owned_cycle(request, str(cycle_id))
+    try:
+        with get_connection() as connection: return m8_results.read_latest_results(connection, str(cycle_id))
+    except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
+
+
+@router.get('/assessment/m8/cycles/{cycle_id}/reports/latest')
+def read_owned_m8_report(cycle_id: UUID, request: Request):
+    _m7_owned_cycle(request, str(cycle_id))
+    try:
+        with get_connection() as connection: return m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
+    except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
+
+
+@router.get('/assessment/m8/reports/{report_id}/pdf')
+def download_owned_m8_report(report_id: UUID, request: Request):
+    token=request.cookies.get(SESSION_COOKIE_NAME); user=web_session_service.get_user_by_token(token) if token else None
+    if user is None: raise HTTPException(status_code=401, detail='Сессия не найдена. Войдите заново.')
+    try:
+        with get_connection() as connection: report = m8_results.read_report(connection, str(report_id))
+    except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
+    if int(report['owner_user_id']) != int(user.id): raise HTTPException(status_code=403, detail='Нет доступа к чужому Report.')
+    if report['audience'] != 'assessee': raise HTTPException(status_code=403, detail='Недоступное представление Report.')
+    pdf = m8_results.render_pdf(report)
+    return Response(content=pdf, media_type='application/pdf', headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
 
 
 # PM-04 M7: restricted QA path for executable Cycle plan and next AS.

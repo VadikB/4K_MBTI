@@ -36,6 +36,7 @@ def test_all_m6_endpoints_require_admin(client):
     monkeypatch.setattr(routes.m7_cycle_planner,'read_plan',forbidden)
     monkeypatch.setattr(routes.m7_clarification,'read',forbidden)
     monkeypatch.setattr(routes.m6_cycle_aggregation_repository,'read_latest_for_cycle',forbidden)
+    monkeypatch.setattr(routes.m8_results,'read_report',forbidden)
     payload={'handoff_id':str(uuid4()),'mechanism_ref':'m6_evidence/1.0.0','idempotency_key':'test','synthetic_material_confirmed':True}
     for token,expected in [(None,401),('member',403)]:
         if token:http.cookies.set(routes.SESSION_COOKIE_NAME,token)
@@ -65,6 +66,10 @@ def test_all_m6_endpoints_require_admin(client):
             'synthetic_material_confirmed':True}
         assert http.post('/users/admin/m6-cycles/'+cycle+'/calculations',json=aggregation).status_code==expected
         assert http.get('/users/admin/m6-cycles/'+cycle+'/calculations/latest').status_code==expected
+        assert http.post('/users/admin/m8-cycles/'+cycle+'/results',json={'idempotency_key':'r','calculation_id':str(uuid4()),'synthetic_material_confirmed':True}).status_code==expected
+        assert http.post('/users/admin/m8-reports',json={'idempotency_key':'p','results_revision_id':str(uuid4()),'audience':'assessee'}).status_code==expected
+        assert http.get('/users/admin/m8-reports/'+str(uuid4())).status_code==expected
+        assert http.get('/users/admin/m8-reports/'+str(uuid4())+'/pdf').status_code==expected
         assert http.post('/users/admin/m7-cycles/'+cycle+'/blocking-waits',json={'operation_ref':'m6:test','reason':'blocked'}).status_code==expected
 
 
@@ -107,3 +112,14 @@ def test_m6_cycle_aggregation_admin_contract(client):
     response=http.post(f'/users/admin/m6-cycles/{cycle_id}/calculations',json=payload)
     assert response.status_code==201 and response.json()['c56']['contract']=='C-56'
     assert http.get(f'/users/admin/m6-cycles/{cycle_id}/calculations/latest').json()['id']==calculation_id
+
+
+def test_m8_results_c67_and_pdf_contract(client):
+    http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
+    cycle_id=str(uuid4());results_revision=str(uuid4());report_id=str(uuid4())
+    monkeypatch.setattr(routes.m8_results,'create_results',lambda *_args,**kwargs:{'revision_id':results_revision,'revision_no':1})
+    monkeypatch.setattr(routes.m8_results,'create_report',lambda *_args,**kwargs:{'id':report_id,'audience':'assessee','c67':{'contract':'C-67'}})
+    result=http.post(f'/users/admin/m8-cycles/{cycle_id}/results',json={'idempotency_key':'r','calculation_id':str(uuid4()),'synthetic_material_confirmed':True})
+    assert result.status_code==201 and result.json()['revision_no']==1
+    report=http.post('/users/admin/m8-reports',json={'idempotency_key':'p','results_revision_id':results_revision,'audience':'assessee'})
+    assert report.status_code==201 and report.json()['c67']['contract']=='C-67'

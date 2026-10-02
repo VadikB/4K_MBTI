@@ -1998,6 +1998,10 @@ if (reportsBackButton) {
 }
 
 reportDownloadButton.addEventListener('click', () => {
+  if (reportDownloadButton.dataset.m8ReportId) {
+    window.location.href = '/users/assessment/m8/reports/' + encodeURIComponent(reportDownloadButton.dataset.m8ReportId) + '/pdf';
+    return;
+  }
   if (!state.pendingUser?.id || !state.assessmentSessionId) {
     return;
   }

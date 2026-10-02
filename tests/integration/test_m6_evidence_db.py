@@ -408,6 +408,20 @@ def test_m6_cycle_calculation_persists_c56_and_reconciles_c46(database):
         reconciled=read_c46(c,cycle_id)
         assert reconciled['status']=='reconciled' and reconciled['calculation_ref_json']['id']==saved['id']
         assert c.execute('SELECT status FROM m5_cycles').fetchone()['status']=='calculated'
+        from Api.m8_results import create_results,create_report,read_latest_results,read_latest_report,render_pdf
+        results=create_results(c,cycle_id=cycle_id,calculation_id=saved['id'],key='results-v1',target_profile=None,created_by=99)
+        replay_results=create_results(c,cycle_id=cycle_id,calculation_id=saved['id'],key='results-v1',target_profile=None,created_by=99)
+        assert replay_results['revision_id']==results['revision_id'] and results['results']['reliability']['status']=='not_verified'
+        alias_results=create_results(c,cycle_id=cycle_id,calculation_id=saved['id'],key='results-redelivery',target_profile=None,created_by=99)
+        assert alias_results['revision_id']==results['revision_id']
+        reports=[create_report(c,results_revision_id=results['revision_id'],audience=audience,key='report-'+audience,target_profile=None,created_by=99)
+                 for audience in ('assessee','customer','methodology_qa')]
+        assert {x['c67']['contract'] for x in reports}=={'C-67'}
+        assert {x['c67']['provenance']['composition_checksum'] for x in reports}=={reconciled['composition_checksum']}
+        assert all(x['c67']['recommendations']==[] for x in reports)
+        assert read_latest_results(c,cycle_id)['revision_id']==results['revision_id']
+        assert read_latest_report(c,cycle_id,'assessee')['id']==reports[0]['id']
+        pdf=render_pdf(reports[0]);assert pdf.startswith(b'%PDF') and len(pdf)>1000
         c.commit()
 
 

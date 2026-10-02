@@ -115,3 +115,10 @@ CURRENT не изменён; техническая реализация не я
 QA-контур PM-05/LU-05.4: допуск final IA, Scores, четыре исхода, пять покрытий и
 composition-checked C-56. Results/C-67 задачи 9, утверждённые GC/Reliability и
 product UI остаются открытыми; CURRENT не изменён.
+
+## Дополнение задачи 9 M8 от 02.10.2026
+
+[M8 Results и базовый Report v1](m8-results-report-contract.md) реализует draft
+QA-контур PM-06/PM-07: immutable Results revisions, C-67 для трёх аудиторий,
+owner screen и PDF из одной версии. Автоматическая orchestration основного пути,
+полный T9-18, approved GC и Reliability остаются открытыми; CURRENT не изменён.
