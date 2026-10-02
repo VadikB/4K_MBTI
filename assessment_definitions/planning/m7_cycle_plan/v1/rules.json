@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "m7_cycle_plan",
+  "version": "1.0.0",
+  "status": "draft",
+  "scope": "m7_cycle_plan_qa",
+  "owner": "PM-04",
+  "algorithm_version": "m7-greedy-coverage/1",
+  "default_time_budget_seconds": 3600,
+  "default_calendar_window_seconds": 259200,
+  "duration_estimate": "planned_max_minutes",
+  "tie_break": ["uncovered_indicator_count_desc", "skill_spread_desc", "planned_max_minutes_asc", "case_id_asc", "case_version_asc"],
+  "required_case_statuses": ["FROZEN"],
+  "required_qa_scopes": ["case_format", "case_dialogue", "assessment_situation"],
+  "source": {"id": "M7", "version": "1.3", "sha256": "50a0d53a3aaf6258957ecc6d9e89f27d922bfbe4cd55668185d475c87f4e2f10"}
+}

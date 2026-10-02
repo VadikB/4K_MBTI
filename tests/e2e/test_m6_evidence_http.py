@@ -33,6 +33,7 @@ def test_all_m6_endpoints_require_admin(client):
     monkeypatch.setattr(routes.m6_assessment_repository,'read_request',forbidden)
     monkeypatch.setattr(routes.m6_assessment_repository,'read_result',forbidden)
     monkeypatch.setattr(routes.m6_assessment_repository,'existing_key',forbidden)
+    monkeypatch.setattr(routes.m7_cycle_planner,'read_plan',forbidden)
     payload={'handoff_id':str(uuid4()),'mechanism_ref':'m6_evidence/1.0.0','idempotency_key':'test','synthetic_material_confirmed':True}
     for token,expected in [(None,401),('member',403)]:
         if token:http.cookies.set(routes.SESSION_COOKIE_NAME,token)
@@ -44,6 +45,12 @@ def test_all_m6_endpoints_require_admin(client):
         assert http.post('/users/admin/m6-assessments/requests',json=assessment).status_code==expected
         assert http.get('/users/admin/m6-assessments/requests/'+str(uuid4())).status_code==expected
         assert http.get('/users/admin/m6-assessments/results/'+str(uuid4())).status_code==expected
+        plan={'personalized_profile_id':7,'selected_skills':['K1','K2','K3','K4'],'idempotency_key':'test','synthetic_material_confirmed':True}
+        cycle=str(uuid4());decision=str(uuid4())
+        assert http.post('/users/admin/m7-plans',json=plan).status_code==expected
+        assert http.get('/users/admin/m7-plans/'+cycle).status_code==expected
+        assert http.post('/users/admin/m7-plans/'+cycle+'/next',json={'idempotency_key':'next','expected_plan_revision_id':str(uuid4()),'synthetic_material_confirmed':True}).status_code==expected
+        assert http.post('/users/admin/m7-decisions/'+decision+'/present',json={'expected_decision_revision':1}).status_code==expected
 
 
 def test_repeat_uses_saved_request_without_current_package(client):

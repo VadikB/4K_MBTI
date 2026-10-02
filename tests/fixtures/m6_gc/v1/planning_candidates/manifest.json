@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "status": "CANDIDATES_READY_FOR_REVIEW",
+  "scope": "M7 Task 05 technical trajectories; not GC",
+  "approved_count": 0,
+  "records": [
+    {
+      "id": "EXT-04",
+      "status": "CANDIDATE",
+      "dimension": "time",
+      "project_expectation": "inherit_each_limit_independently",
+      "expert_approved": false
+    },
+    {
+      "id": "EXT-05",
+      "status": "CANDIDATE",
+      "dimension": "result_unit",
+      "project_expectation": "one_cycle_plan_and_versioned_decisions",
+      "expert_approved": false
+    },
+    {
+      "id": "EXT-07",
+      "status": "CANDIDATE",
+      "dimension": "coverage",
+      "project_expectation": "unique_ids_and_unknown_aggregates",
+      "expert_approved": false
+    },
+    {
+      "id": "SC-M6-M8-01",
+      "status": "CANDIDATE",
+      "dimension": "chain",
+      "project_expectation": "c54_revision_drives_next_decision",
+      "expert_approved": false
+    },
+    {
+      "id": "T5-03",
+      "status": "CANDIDATE",
+      "dimension": "route",
+      "project_expectation": "eligibility_then_coverage_skill_spread_time_stable_id",
+      "expert_approved": false
+    },
+    {
+      "id": "T5-08",
+      "status": "CANDIDATE",
+      "dimension": "current_as",
+      "project_expectation": "scenario_end_does_not_allow_next_as",
+      "expert_approved": false
+    },
+    {
+      "id": "T5-11",
+      "status": "CANDIDATE",
+      "dimension": "remaining_time",
+      "project_expectation": "use_planned_max_or_return_out_of_time",
+      "expert_approved": false
+    },
+    {
+      "id": "T5-14",
+      "status": "CANDIDATE",
+      "dimension": "recovery",
+      "project_expectation": "idempotent_decision_and_single_assignment",
+      "expert_approved": false
+    }
+  ]
+}

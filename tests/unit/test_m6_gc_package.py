@@ -138,3 +138,11 @@ def test_m6_b_assessment_candidates_cover_outcomes_without_claiming_approval():
         focus = record['focus_target']
         assert targets[focus['indicator_id']] == focus['m2_version']
         assert set(record['unreviewed_targets']) == set(targets) - {focus['indicator_id']}
+
+
+def test_m7_planning_candidates_extend_same_package_without_gc_claim():
+    package=read(PACKAGE/'manifest.json');manifest=read(PACKAGE/'planning_candidates/manifest.json')
+    assert package['planning_candidate_count']==len(manifest['records'])==8
+    assert package['approved_planning_gc_count']==manifest['approved_count']==0
+    assert {'EXT-04','EXT-05','EXT-07','SC-M6-M8-01','T5-03','T5-08','T5-11','T5-14'}=={x['id'] for x in manifest['records']}
+    assert all(x['status']=='CANDIDATE' and x['expert_approved'] is False for x in manifest['records'])

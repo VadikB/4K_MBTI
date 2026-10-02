@@ -3487,6 +3487,8 @@ def ensure_m5_runtime_schema(connection) -> None:
             f"CREATE TRIGGER {trigger} BEFORE UPDATE OR DELETE ON {table} "
             "FOR EACH ROW EXECUTE FUNCTION prevent_m5_referenced_case_change()"
         )
+    from Api.m7_planning_repository import ensure_schema as ensure_m7_planning_schema
+    ensure_m7_planning_schema(connection)
 
 
 def ensure_execution_snapshot_guards(connection, *, tables: tuple[str, ...] = ("user_sessions", "assessment_preparation_jobs")) -> None:
