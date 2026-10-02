@@ -54,6 +54,8 @@ def start_background_workers() -> None:
     assessment_analysis_queue.start()
     from Api import m6_worker
     m6_worker.start()
+    from Api import m7_completion_worker
+    m7_completion_worker.start()
 
 
 @app.on_event("shutdown")
@@ -62,6 +64,8 @@ def stop_background_workers() -> None:
     assessment_analysis_queue.stop()
     from Api import m6_worker
     m6_worker.stop()
+    from Api import m7_completion_worker
+    m7_completion_worker.stop()
 
 
 def _resolve_request_user(request: Request):

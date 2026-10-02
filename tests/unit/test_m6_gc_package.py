@@ -155,3 +155,11 @@ def test_m7_clarification_candidates_cover_task06_without_gc_claim():
     assert {f'T6-{number:02d}' for number in range(1,16)}=={x['id'] for x in manifest['records']}
     assert manifest['real_llm_runs']==0
     assert all(x['status']=='CANDIDATE' and x['expert_approved'] is False for x in manifest['records'])
+
+
+def test_m7_completion_candidates_cover_task07_without_gc_claim():
+    package=read(PACKAGE/'manifest.json');manifest=read(PACKAGE/'completion_candidates/manifest.json')
+    assert package['completion_candidate_count']==len(manifest['records'])==18
+    assert package['approved_completion_gc_count']==manifest['approved_count']==0
+    assert {f'T7-{number:02d}' for number in range(1,19)}=={x['id'] for x in manifest['records']}
+    assert manifest['real_llm_runs']==0 and all(x['status']=='CANDIDATE' for x in manifest['records'])

@@ -52,8 +52,8 @@ def create_cycle(
         "checksum": profile["checksum"],
     }
     sources = parameter_sources or {
-        "time_budget": "m7-default:60m",
-        "calendar_window": "m7-default:72h",
+        "time_budget": "m7-default:60m" if time_budget_seconds == DEFAULT_TIME_BUDGET_SECONDS else "explicit:create_cycle",
+        "calendar_window": "m7-default:72h" if calendar_window_seconds == DEFAULT_CALENDAR_WINDOW_SECONDS else "explicit:create_cycle",
     }
     value = {
         "cycle_id": str(cycle_id),
@@ -283,6 +283,31 @@ def assert_collecting(connection, *, cycle_db_id: int, session_db_id: int) -> di
         )
         raise ValueError("M7_TIME_LIMIT_REACHED")
     return dict(row)
+
+
+def begin_blocking_wait(connection, *, cycle_db_id: int, session_db_id: int, operation_ref: str, reason: str) -> dict[str, Any]:
+    row=assert_collecting(connection,cycle_db_id=cycle_db_id,session_db_id=session_db_id)
+    existing=connection.execute("SELECT * FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND operation_ref=%s",
+        (cycle_db_id,operation_ref)).fetchone()
+    if existing:return dict(existing)
+    connection.execute("UPDATE m5_cycle_time_intervals SET ended_at=NOW() WHERE cycle_db_id=%s AND ended_at IS NULL",(cycle_db_id,))
+    return dict(connection.execute("""INSERT INTO m5_cycle_time_intervals
+        (cycle_db_id,session_db_id,interval_type,started_at,reason,operation_ref)
+        VALUES(%s,%s,'blocking_system_wait',NOW(),%s,%s) RETURNING *""",(cycle_db_id,session_db_id,reason,operation_ref)).fetchone())
+
+
+def end_blocking_wait(connection, *, cycle_db_id: int, session_db_id: int, operation_ref: str, reason: str) -> dict[str, Any]:
+    interval=connection.execute("SELECT * FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND operation_ref=%s FOR UPDATE",
+        (cycle_db_id,operation_ref)).fetchone()
+    if not interval:raise ValueError('M7_BLOCKING_WAIT_NOT_FOUND')
+    if interval['ended_at']:return dict(interval)
+    connection.execute("UPDATE m5_cycle_time_intervals SET ended_at=NOW() WHERE id=%s",(interval['id'],))
+    state=connection.execute("SELECT c.status,s.status AS session_status FROM m5_cycles c JOIN m5_cycle_sessions s ON s.id=%s WHERE c.id=%s FOR UPDATE OF c,s",
+        (session_db_id,cycle_db_id)).fetchone()
+    if state and state['status']=='active' and state['session_status']=='active':
+        connection.execute("""INSERT INTO m5_cycle_time_intervals(cycle_db_id,session_db_id,interval_type,started_at,reason)
+            VALUES(%s,%s,'collecting',NOW(),%s)""",(cycle_db_id,session_db_id,reason))
+    return dict(connection.execute('SELECT * FROM m5_cycle_time_intervals WHERE id=%s',(interval['id'],)).fetchone())
 
 
 def read_cycle(connection, cycle_id: str) -> dict[str, Any]:

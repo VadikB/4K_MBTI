@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "status": "CANDIDATES_READY_FOR_REVIEW",
+  "approved_count": 0,
+  "real_llm_runs": 0,
+  "source": {"id":"M7","version":"1.3","sha256":"50a0d53a3aaf6258957ecc6d9e89f27d922bfbe4cd55668185d475c87f4e2f10"},
+  "records": [
+    {"id":"T7-01","expected":"SCENARIO_END_THEN_FINAL_CLOSE","status":"CANDIDATE"},
+    {"id":"T7-02","expected":"NORMAL_CLOSE_WITH_PARTIAL_COVERAGE","status":"CANDIDATE"},
+    {"id":"T7-03","expected":"PAUSE_RESUME_SAME_DIALOGUE","status":"CANDIDATE"},
+    {"id":"T7-04","expected":"INTERRUPT_THEN_NEW_SESSION","status":"CANDIDATE"},
+    {"id":"T7-05","expected":"CONTINUATION_CONDITIONS_ENFORCED","status":"CANDIDATE"},
+    {"id":"T7-06","expected":"FROZEN_BUDGET_AND_DEADLINE","status":"CANDIDATE"},
+    {"id":"T7-07","expected":"EXPLICIT_BLOCKING_WAIT_ONLY","status":"CANDIDATE"},
+    {"id":"T7-08","expected":"BACKGROUND_BUDGET_CLOSE","status":"CANDIDATE"},
+    {"id":"T7-09","expected":"BACKGROUND_DEADLINE_CLOSE","status":"CANDIDATE"},
+    {"id":"T7-10","expected":"TERMINATED_MATERIAL_FINAL_C45","status":"CANDIDATE"},
+    {"id":"T7-11","expected":"FINAL_REFUSAL_DISTINCT_FROM_QUESTION_REFUSAL","status":"CANDIDATE"},
+    {"id":"T7-12","expected":"SERIALIZED_IDEMPOTENT_TRANSITION","status":"CANDIDATE"},
+    {"id":"T7-13","expected":"COMMITTED_CLOSE_AND_RECOVERABLE_OUTBOX","status":"CANDIDATE"},
+    {"id":"T7-14","expected":"CLOSED_COLLECTION_PROCESSING_STATUS","status":"CANDIDATE"},
+    {"id":"T7-15","expected":"C46_READBACK_AND_COMPOSITION_CONFLICT","status":"CANDIDATE"},
+    {"id":"T7-16","expected":"SKILL_OUTCOMES_PASSTHROUGH","status":"CANDIDATE"},
+    {"id":"T7-17","expected":"NEW_ASSESSMENT_NEW_CYCLE","status":"CANDIDATE"},
+    {"id":"T7-18","expected":"PRODUCT_OWNER_ACCESS_AND_COMPATIBILITY","status":"CANDIDATE"}
+  ]
+}

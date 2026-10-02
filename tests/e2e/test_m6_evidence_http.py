@@ -58,6 +58,8 @@ def test_all_m6_endpoints_require_admin(client):
         assert http.post('/users/admin/m7-clarifications/'+clarification+'/present',json={'expected_c54_revision_id':c54}).status_code==expected
         assert http.post('/users/admin/m7-clarifications/'+clarification+'/answers',json={'request_id':'a','turn_id':str(uuid4()),'content':'answer'}).status_code==expected
         assert http.post('/users/admin/m7-clarifications/'+clarification+'/outcomes',json={'request_id':'o','outcome':'no_answer'}).status_code==expected
+        assert http.get('/users/admin/m7-cycles/'+cycle+'/c46').status_code==expected
+        assert http.post('/users/admin/m7-cycles/'+cycle+'/blocking-waits',json={'operation_ref':'m6:test','reason':'blocked'}).status_code==expected
 
 
 def test_repeat_uses_saved_request_without_current_package(client):

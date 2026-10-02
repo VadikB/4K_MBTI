@@ -296,6 +296,10 @@
     {
       "path": "clarification_candidates/manifest.json",
       "sha256": "effa1458934dd34f6735ca33b51c85fa1dd1a45aaa91bd71dd359b155709cbae"
+    },
+    {
+      "path": "completion_candidates/manifest.json",
+      "sha256": "aa4d99aafd63feb2e183453de6277f4082dfe9468178c15088b0ec4a16a683aa"
     }
   ],
   "task_source": {
@@ -311,5 +315,11 @@
   "clarification_task_source": {
     "filename": "Product_4K_M6_M8_Task_06_Assessment_Clarifications_2026_10_02.txt",
     "sha256": "d16290f806599fcb747c92386a072c6f10ecbef94402fdf6790293278c26b40d"
+  },
+  "completion_candidate_count": 18,
+  "approved_completion_gc_count": 0,
+  "completion_task_source": {
+    "filename": "Product_4K_M6_M8_Task_07_Completion_and_Continuation_2026_10_02.txt",
+    "sha256": "c628b782344db790433f6cda40e64718a6f6701de461331802631743260b0c60"
   }
 }
