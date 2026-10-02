@@ -3147,6 +3147,8 @@ def ensure_m5_runtime_schema(connection) -> None:
             CHECK (ended_at IS NULL OR ended_at >= started_at)
         )
     """)
+    connection.execute("ALTER TABLE m5_cycle_time_intervals ADD COLUMN IF NOT EXISTS operation_ref TEXT")
+    connection.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_m5_open_blocking_operation ON m5_cycle_time_intervals(cycle_db_id,operation_ref) WHERE interval_type='blocking_system_wait'")
     connection.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_m5_open_time_interval ON m5_cycle_time_intervals(cycle_db_id) WHERE ended_at IS NULL")
     connection.execute("""
         CREATE TABLE IF NOT EXISTS m5_packages (
@@ -3295,6 +3297,8 @@ def ensure_m5_runtime_schema(connection) -> None:
             UNIQUE (assessment_situation_db_id, request_id)
         )
     """)
+    connection.execute("ALTER TABLE m5_dialogue_turns DROP CONSTRAINT IF EXISTS m5_dialogue_turns_speaker_type_check")
+    connection.execute("ALTER TABLE m5_dialogue_turns ADD CONSTRAINT m5_dialogue_turns_speaker_type_check CHECK (speaker_type IN ('assessee','character','assessment'))")
     connection.execute("""
         CREATE TABLE IF NOT EXISTS m5_scenario_events (
             id BIGSERIAL PRIMARY KEY,
@@ -3487,6 +3491,16 @@ def ensure_m5_runtime_schema(connection) -> None:
             f"CREATE TRIGGER {trigger} BEFORE UPDATE OR DELETE ON {table} "
             "FOR EACH ROW EXECUTE FUNCTION prevent_m5_referenced_case_change()"
         )
+    from Api.m7_planning_repository import ensure_schema as ensure_m7_planning_schema
+    ensure_m7_planning_schema(connection)
+    from Api.m7_completion_repository import ensure_schema as ensure_m7_completion_schema
+    ensure_m7_completion_schema(connection)
+    from Api.m6_cycle_aggregation_repository import ensure_schema as ensure_m6_cycle_aggregation_schema
+    ensure_m6_cycle_aggregation_schema(connection)
+    from Api.m8_results import ensure_schema as ensure_m8_results_schema
+    ensure_m8_results_schema(connection)
+    from Api.m10_orchestration import ensure_schema as ensure_m10_orchestration_schema
+    ensure_m10_orchestration_schema(connection)
 
 
 def ensure_execution_snapshot_guards(connection, *, tables: tuple[str, ...] = ("user_sessions", "assessment_preparation_jobs")) -> None:
@@ -4275,6 +4289,10 @@ def ensure_core_schema() -> None:
         ensure_role_profile_schema(connection)
         ensure_assessment_context_schema(connection)
         ensure_m5_runtime_schema(connection)
+        from Api.m6_repository import ensure_schema as ensure_m6_schema
+        ensure_m6_schema(connection)
+        from Api.m10_orchestration import ensure_schema as ensure_m10_orchestration_schema
+        ensure_m10_orchestration_schema(connection)
         connection.execute(
             """
             INSERT INTO consent_documents (

@@ -516,6 +516,7 @@ def transition(connection, *, assessment_situation_id: str, action: str, reason:
         ("active", "pause"): "paused", ("paused", "resume"): "active",
         ("active", "scenario_end"): "scenario_ended", ("active", "terminate"): "terminated",
         ("scenario_ended", "close"): "closed", ("paused", "terminate"): "terminated",
+        ("terminated", "close"): "closed",
     }
     target = transitions.get((row["status"], action))
     if not target:

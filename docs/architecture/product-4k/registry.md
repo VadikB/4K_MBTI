@@ -74,3 +74,51 @@ M6–M8 теперь имеют [постановки первого эшело�
 [Google Docs v1.0](https://docs.google.com/document/d/1JMS6oCpj2f1SpRq_N-TQn5OhZK09OiJr4kBMLoP7kWM/edit?tab=t.0)
 прочитан 29.09.2026 как REVIEW; он оставлен только как происхождение старого контекста.
 Изменяемый Google Docs не используется как обязательный вход этой задачи.
+
+## Дополнение задачи 5 M7 от 02.10.2026
+
+[M7 Cycle Planning v1](../m7-cycle-planning-contract.md) реализует draft QA-план
+Cycle и выбор следующей AS поверх существующих Cycle/Session/AS. CURRENT не изменён;
+WORKING Cases не получили допуск, пилот времени и основной пользовательский путь не проверены.
+
+## Дополнение задачи 1 M6 от 02.10.2026
+
+M6 v1.8, M7 v1.3 и M8 v1.2 зарегистрированы в существующем task SourceSet:
+оригинальные байты и SHA-256 проверены, производные тексты доступны в derived.
+Исторические указания отсутствия этих трёх файлов выше относятся к состоянию
+01.10.2026. M0 остаётся unavailable. CURRENT не изменяется.
+[Технический контракт M6-A](../m6-a-contracts.md) задаёт самостоятельный PM-05,
+адаптацию C-45 и данные первого среза; [карточка PR](../../evc/tasks/m6-a-implementation.md).
+Это проектирование, не работающий механизм и не допуск к пользовательской оценке.
+
+## Дополнение задачи 6 M7 от 02.10.2026
+
+[M7 Assessment Clarification v1](../m7-clarification-contract.md) реализует
+draft QA-контур решения PM-04 по semantic interim C-54. Основной пользовательский
+путь, закрытие Task 07, утверждённые GC и provider/pilot остаются открытыми.
+
+## Дополнение задачи 7 M7 от 02.10.2026
+
+[M7 Completion and Continuation v1](../m7-completion-contract.md) реализует draft
+runtime завершения/продолжения и C-46. Агрегация Task 08, Results Task 09 и product
+consumer PM-05 остаются отдельными зависимостями; CURRENT не изменён.
+
+## Дополнение задачи 4 M6 от 02.10.2026
+
+[M6-B v1](../m6-b-contracts.md) реализует draft QA-продолжение сохранённой M6-A
+revision: interim analysis, IA и C-54. Пакет остаётся draft, approved GC отсутствуют,
+CURRENT не изменён; техническая реализация не является методологическим допуском.
+
+## Дополнение задачи 8 M6 от 02.10.2026
+
+[M6 Cycle Aggregation и C-56 v1](m6-cycle-aggregation-contract.md) реализует draft
+QA-контур PM-05/LU-05.4: допуск final IA, Scores, четыре исхода, пять покрытий и
+composition-checked C-56. Results/C-67 задачи 9, утверждённые GC/Reliability и
+product UI остаются открытыми; CURRENT не изменён.
+
+## Дополнение задачи 9 M8 от 02.10.2026
+
+[M8 Results и базовый Report v1](m8-results-report-contract.md) реализует draft
+QA-контур PM-06/PM-07: immutable Results revisions, C-67 для трёх аудиторий,
+owner screen и PDF из одной версии. Автоматическая orchestration основного пути,
+полный T9-18, approved GC и Reliability остаются открытыми; CURRENT не изменён.

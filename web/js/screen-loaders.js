@@ -72,9 +72,9 @@ export const openProcessingScreen = async () => {
   module.openProcessing();
 };
 
-export const openReportScreen = async () => {
+export const openReportScreen = async (options = {}) => {
   const module = await loadReport();
-  module.openReport();
+  return module.openReport(options);
 };
 
 export const loadSkillAssessmentsForReport = async () => {

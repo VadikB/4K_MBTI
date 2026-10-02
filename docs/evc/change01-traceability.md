@@ -38,3 +38,81 @@ Case или Reliability. Эти доказательства ведутся от
 произвольную роль и несогласованные Skill/Component/Indicator при qa_result=PASS.
 Это свидетельство недостатка валидатора, не выполненный новый T02 и не доказательство
 допуска такой AS в production. Данные сред и полные пользовательские диалоги не читались.
+
+## Адресное дополнение на dd3d2ca от 02.10.2026
+
+Исходная таблица выше — исторический аудит d7b8313, не состояние всего текущего main.
+На dd3d2cadd90a31e3b7b3141ed6a0984afbd11ef6 `m5_cycle_runtime.py` и
+`m5_storage.py` реализуют Cycle/Session refs, проверку membership и часть границ
+сбора; `m5_scenario_runtime.py` — snapshots, Dialogue и технический C-45.
+Это частичная новая основа T01/T04/T05/T06/T09/T10, не закрытие всех критериев.
+Основной assessment_service не объявляется переключённым на новый путь.
+Тесты `test_cycle_session_membership_freeze_and_collection_boundary` и
+`test_as_rejects_foreign_session_and_changed_profile` существуют в
+`tests/integration/test_m5_cycle_runtime_db.py`; в задаче 1 повторно NOT_RUN.
+Заявленные ранее PASS в cycle-session.md остаются результатом того отчёта.
+T07/T08/T11/T12 новым источником или наличием таблиц не закрываются.
+
+M6 источник зарегистрирован; [контракт M6-A](../architecture/m6-a-contracts.md)
+и [приёмка T-A1–A8](tasks/m6-a-implementation.md) спроектированы.
+Реализация/проверка M6 пока NOT_RUN. F01/F02 и общий runtime остаются у прежнего
+владельца; Evidence/EB получает одну реализацию M6-A, IA — её продолжение.
+
+## Рабочая реализация M6-B
+
+На ветке `codex/m6-task04-indicator-assessment`, поверх immutable commit M6-A
+`01411ebc77b0b8b154f7a83c576a91b3c231ee41`, реализовано продолжение T07–T09:
+interim без IA, final IA по AS × Indicator, отдельные IE/no-assessment/technical
+failure, C-54 и защищённый QA readback. [Контракт](../architecture/m6-b-contracts.md),
+[отчёт и проверки](tasks/m6-task04-implementation.md). Это техническое доказательство
+draft QA; GC, provider smoke, semantic acceptance и пользовательский выпуск не выполнены.
+
+## Рабочая реализация M7 Task 05
+
+На ветке `codex/m7-task05-cycle-plan` реализован ограниченный QA-путь T10 и части
+T05/T07: фиксированный план до старта, один профиль, два времени, исполняемый выбор
+и назначение следующей AS с историей решений. [Контракт](../architecture/m7-cycle-planning-contract.md),
+[отчёт](tasks/m7-task05-implementation.md). Полное управление Additional Session,
+закрытием и C-46 остаётся задачей 7; M6 aggregation — задачей 8.
+
+## Рабочая реализация M7 Task 06
+
+M1.6, M6.6–6.9, M7.5–7 и Change 01 И-6 → semantic interim C-54 → неизменяемое
+решение PM-04 → assessment/assessee Turns того же Dialogue → новая interim C-45 →
+повторный M6. Реализация: `Api/m7_clarification*.py`, draft prompt
+`m7_assessment_clarification/1.0.0`, superadmin routes и PostgreSQL integration.
+Полный контракт: [M7 Assessment Clarification v1](../architecture/m7-clarification-contract.md).
+
+## Рабочая реализация M7 Task 07
+
+M1.6, M7.5.3–5.6/M7.7–8 и Change 01 И-4/И-5 → единый terminal transition →
+final C-45/outbox → закрытый состав Cycle → versioned C-46. Реализация:
+`Api/m7_completion*.py`, product-owned routes, expiry worker и PostgreSQL integration.
+[Контракт](../architecture/m7-completion-contract.md) сохраняет Task 08/09 и
+разрешённый PM-05 product consumer открытыми зависимостями.
+
+## Рабочая реализация M6 Task 08
+
+M6.7.1–7.4/M6.8.2–8.3, M7.7.5 и Change 01 И-4/И-5 → final IA точного состава
+Cycle → явный допуск → Indicator/Component/Skill Scores → четыре исхода и пять
+покрытий → immutable C-56 → composition-checked reconciliation C-46. Реализация:
+`Api/m6_cycle_aggregation*.py`, draft package `m6_cycle_aggregation/1.0.0`,
+superadmin QA endpoints и PostgreSQL integration. [Контракт](../architecture/product-4k/m6-cycle-aggregation-contract.md),
+[отчёт](tasks/m6-task08-implementation.md). Task 09, утверждённые GC/Reliability и
+product UI остаются открытыми зависимостями.
+
+## Рабочая реализация M8 Task 09
+
+M1 Results/Report, M8.1–5/M8.7.1–7.2/M8.7.5/M8.8–9 и Change 01 И-5 →
+composition-checked C-46/C-56 → один logical Results с immutable revisions →
+versioned C-67 → owner screen/PDF. Реализация: `Api/m8_results*.py`, draft package
+`m8_basic_report/1.0.0`, admin producer и owner consumer. [Контракт](../architecture/product-4k/m8-results-report-contract.md),
+[отчёт](tasks/m8-task09-implementation.md). Task 10 orchestration и реальный T9-18
+остаются открытыми.
+
+## Рабочая реализация M6-A
+
+На ветке codex/m6-task01-contracts после базы dd3d2ca реализована часть PM-05:
+C-45 → Fragment/BS/Evidence/EB → immutable revisions и QA read-back.
+[Отчёт и команды](tasks/m6-a-implementation.md). Это частичное доказательство
+T08/T09, не закрытие требований итогового IA, C-54 и C-56. Provider/GC NOT_RUN.

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "m6_admission",
+  "version": "1.0.0",
+  "status": "draft",
+  "scope": "m6_product_technical_acceptance",
+  "owner": "PM-05",
+  "source": {
+    "id": "M6",
+    "version": "1.8",
+    "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4"
+  },
+  "numeric_outcomes": ["L0", "L1", "L2", "L3"],
+  "required_opportunity": "PRESENT",
+  "require_resolved_refs": true,
+  "require_same_m2_version": true,
+  "require_same_base_role": true,
+  "reject_on_reported_contradiction": true,
+  "minimum_distinct_as_source": "m7_plan_requirement",
+  "limitations": [
+    "Conservative deterministic admission rejects any reported contradiction.",
+    "Normative reliability remains unverified until approved GC runs exist."
+  ]
+}

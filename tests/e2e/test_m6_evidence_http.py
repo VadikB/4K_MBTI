@@ -1,0 +1,140 @@
+from contextlib import contextmanager
+from types import SimpleNamespace
+from uuid import uuid4
+import pytest
+from fastapi import FastAPI, HTTPException
+from fastapi.testclient import TestClient
+import Api.routes as routes
+
+pytestmark=pytest.mark.e2e
+
+
+@pytest.fixture
+def client(monkeypatch):
+    @contextmanager
+    def connection():
+        yield SimpleNamespace(commit=lambda:None)
+    def authorize(c,user):
+        if user is None:raise HTTPException(401)
+        if user.id!=7:raise HTTPException(403)
+    monkeypatch.setattr(routes,'get_connection',connection)
+    monkeypatch.setattr(routes,'_require_superadmin',authorize)
+    monkeypatch.setattr(routes.web_session_service,'get_user_by_token',lambda token:SimpleNamespace(id=7 if token=='admin' else 8))
+    app=FastAPI();app.include_router(routes.router)
+    with TestClient(app) as client:yield client,monkeypatch
+
+
+def test_all_m6_endpoints_require_admin(client):
+    http,monkeypatch=client
+    def forbidden(*a,**k):raise AssertionError('storage accessed before authorization')
+    monkeypatch.setattr(routes.m6_repository,'read_request',forbidden)
+    monkeypatch.setattr(routes.m6_repository,'read_analysis',forbidden)
+    monkeypatch.setattr(routes.m6_repository,'existing_key',forbidden)
+    monkeypatch.setattr(routes.m6_assessment_repository,'read_request',forbidden)
+    monkeypatch.setattr(routes.m6_assessment_repository,'read_result',forbidden)
+    monkeypatch.setattr(routes.m6_assessment_repository,'existing_key',forbidden)
+    monkeypatch.setattr(routes.m7_cycle_planner,'read_plan',forbidden)
+    monkeypatch.setattr(routes.m7_clarification,'read',forbidden)
+    monkeypatch.setattr(routes.m6_cycle_aggregation_repository,'read_latest_for_cycle',forbidden)
+    monkeypatch.setattr(routes.m8_results,'read_report',forbidden)
+    payload={'handoff_id':str(uuid4()),'mechanism_ref':'m6_evidence/1.0.0','idempotency_key':'test','synthetic_material_confirmed':True}
+    for token,expected in [(None,401),('member',403)]:
+        if token:http.cookies.set(routes.SESSION_COOKIE_NAME,token)
+        assert http.post('/users/admin/m6-evidence/requests',json=payload).status_code==expected
+        assert http.get('/users/admin/m6-evidence/requests/'+str(uuid4())).status_code==expected
+        assert http.get('/users/admin/m6-evidence/analyses/'+str(uuid4())).status_code==expected
+        assessment={'evidence_revision_id':str(uuid4()),'mechanism_ref':'m6_indicator_assessment/1.0.0',
+            'idempotency_key':'test','synthetic_material_confirmed':True}
+        assert http.post('/users/admin/m6-assessments/requests',json=assessment).status_code==expected
+        assert http.get('/users/admin/m6-assessments/requests/'+str(uuid4())).status_code==expected
+        assert http.get('/users/admin/m6-assessments/results/'+str(uuid4())).status_code==expected
+        plan={'personalized_profile_id':7,'selected_skills':['K1','K2','K3','K4'],'idempotency_key':'test','synthetic_material_confirmed':True}
+        cycle=str(uuid4());decision=str(uuid4())
+        assert http.post('/users/admin/m7-plans',json=plan).status_code==expected
+        assert http.get('/users/admin/m7-plans/'+cycle).status_code==expected
+        assert http.post('/users/admin/m7-plans/'+cycle+'/next',json={'idempotency_key':'next','expected_plan_revision_id':str(uuid4()),'synthetic_material_confirmed':True}).status_code==expected
+        assert http.post('/users/admin/m7-decisions/'+decision+'/present',json={'expected_decision_revision':1}).status_code==expected
+        clarification=str(uuid4());c54=str(uuid4())
+        assert http.post('/users/admin/m7-clarifications',json={'c54_revision_id':c54,'idempotency_key':'c','synthetic_material_confirmed':True}).status_code==expected
+        assert http.get('/users/admin/m7-clarifications/'+clarification).status_code==expected
+        assert http.post('/users/admin/m7-clarifications/'+clarification+'/present',json={'expected_c54_revision_id':c54}).status_code==expected
+        assert http.post('/users/admin/m7-clarifications/'+clarification+'/answers',json={'request_id':'a','turn_id':str(uuid4()),'content':'answer'}).status_code==expected
+        assert http.post('/users/admin/m7-clarifications/'+clarification+'/outcomes',json={'request_id':'o','outcome':'no_answer'}).status_code==expected
+        assert http.get('/users/admin/m7-cycles/'+cycle+'/c46').status_code==expected
+        aggregation={'idempotency_key':'aggregate','expected_composition_checksum':'a'*64,
+            'admission_mechanism_version':'m6-admission-manual/1.0','decisions':[],
+            'synthetic_material_confirmed':True}
+        assert http.post('/users/admin/m6-cycles/'+cycle+'/calculations',json=aggregation).status_code==expected
+        assert http.get('/users/admin/m6-cycles/'+cycle+'/calculations/latest').status_code==expected
+        assert http.post('/users/admin/m8-cycles/'+cycle+'/results',json={'idempotency_key':'r','calculation_id':str(uuid4()),'synthetic_material_confirmed':True}).status_code==expected
+        assert http.post('/users/admin/m8-reports',json={'idempotency_key':'p','results_revision_id':str(uuid4()),'audience':'assessee'}).status_code==expected
+        assert http.get('/users/admin/m8-reports/'+str(uuid4())).status_code==expected
+        assert http.get('/users/admin/m8-reports/'+str(uuid4())+'/pdf').status_code==expected
+        assert http.post('/users/admin/m7-cycles/'+cycle+'/blocking-waits',json={'operation_ref':'m6:test','reason':'blocked'}).status_code==expected
+
+
+def test_repeat_uses_saved_request_without_current_package(client):
+    http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
+    rid=str(uuid4())
+    monkeypatch.setattr(routes.m6_repository,'existing_key',lambda *a:{'id':rid})
+    monkeypatch.setattr(routes.m6_repository,'read_request',lambda *a:{'id':rid,'status':'succeeded','analysis_revision_id':'revision'})
+    monkeypatch.setattr(routes.m6_worker,'run_request',lambda *a:None)
+    def forbidden(*a):raise AssertionError('must not read current package on replay')
+    monkeypatch.setattr(routes.m6_package,'load_mechanism',forbidden)
+    payload={'handoff_id':str(uuid4()),'mechanism_ref':'m6_evidence/1.0.0','idempotency_key':'test','synthetic_material_confirmed':True}
+    r=http.post('/users/admin/m6-evidence/requests',json=payload)
+    assert r.status_code==202 and 'trace' not in r.text
+    payload['synthetic_material_confirmed']=False
+    assert http.post('/users/admin/m6-evidence/requests',json=payload).status_code==422
+
+
+def test_m6_assessment_repeat_uses_saved_request(client):
+    http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
+    rid=str(uuid4());revision=str(uuid4())
+    monkeypatch.setattr(routes.m6_assessment_repository,'existing_key',lambda *a:{'id':rid})
+    monkeypatch.setattr(routes.m6_assessment_repository,'read_request',lambda *a:{'id':rid,'status':'succeeded','assessment_revision_id':revision})
+    monkeypatch.setattr(routes.m6_assessment_worker,'run_request',lambda *a:None)
+    monkeypatch.setattr(routes.m6_assessment_package,'load_mechanism',lambda *a:(_ for _ in ()).throw(AssertionError('current package read')))
+    payload={'evidence_revision_id':str(uuid4()),'mechanism_ref':'m6_indicator_assessment/1.0.0',
+        'idempotency_key':'test','synthetic_material_confirmed':True}
+    response=http.post('/users/admin/m6-assessments/requests',json=payload)
+    assert response.status_code==202 and response.json()['assessment_revision_id']==revision
+
+
+def test_m6_cycle_aggregation_admin_contract(client):
+    http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
+    cycle_id=str(uuid4());calculation_id=str(uuid4())
+    monkeypatch.setattr(routes.m6_cycle_aggregation_repository,'create',lambda *_args,**kwargs:{'id':calculation_id,'c56':{'contract':'C-56'}})
+    monkeypatch.setattr(routes.m6_cycle_aggregation_repository,'read_latest_for_cycle',lambda *_args:{'id':calculation_id,'c56':{'contract':'C-56'}})
+    payload={'idempotency_key':'aggregate','expected_composition_checksum':'a'*64,
+        'admission_mechanism_version':'m6-admission-manual/1.0','decisions':[],
+        'synthetic_material_confirmed':True}
+    response=http.post(f'/users/admin/m6-cycles/{cycle_id}/calculations',json=payload)
+    assert response.status_code==201 and response.json()['c56']['contract']=='C-56'
+    assert http.get(f'/users/admin/m6-cycles/{cycle_id}/calculations/latest').json()['id']==calculation_id
+
+
+def test_m8_results_c67_and_pdf_contract(client):
+    http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
+    cycle_id=str(uuid4());results_revision=str(uuid4());report_id=str(uuid4())
+    monkeypatch.setattr(routes.m8_results,'create_results',lambda *_args,**kwargs:{'revision_id':results_revision,'revision_no':1})
+    monkeypatch.setattr(routes.m8_results,'create_report',lambda *_args,**kwargs:{'id':report_id,'audience':'assessee','c67':{'contract':'C-67'}})
+    result=http.post(f'/users/admin/m8-cycles/{cycle_id}/results',json={'idempotency_key':'r','calculation_id':str(uuid4()),'synthetic_material_confirmed':True})
+    assert result.status_code==201 and result.json()['revision_no']==1
+    report=http.post('/users/admin/m8-reports',json={'idempotency_key':'p','results_revision_id':results_revision,'audience':'assessee'})
+    assert report.status_code==201 and report.json()['c67']['contract']=='C-67'
+
+
+def test_t11_owner_regeneration_is_scoped_and_idempotency_is_forwarded(client):
+    http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
+    cycle_id=str(uuid4());results_revision=str(uuid4());report_id=str(uuid4());calls=[]
+    monkeypatch.setattr(routes,'_m7_owned_cycle',lambda request,cycle:SimpleNamespace(id=7))
+    monkeypatch.setattr(routes.m8_results,'read_latest_results',lambda *_args:{'revision_id':results_revision})
+    monkeypatch.setattr(routes.m8_results,'read_latest_report',lambda *_args:{'c67':{'target_profile':None}})
+    def create(*_args,**kwargs):
+        calls.append(kwargs);return {'id':report_id,'revision_no':2,'c67':{'recommendations':[]}}
+    monkeypatch.setattr(routes.m8_results,'create_report',create)
+    response=http.post(f'/users/assessment/m8/cycles/{cycle_id}/reports/regenerate',json={'idempotency_key':'regen-1'})
+    assert response.status_code==201 and response.json()['revision_no']==2
+    assert calls==[{'results_revision_id':results_revision,'audience':'assessee','key':'regen-1',
+                    'target_profile':None,'created_by':7}]

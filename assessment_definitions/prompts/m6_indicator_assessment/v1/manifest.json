@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "m6_indicator_assessment",
+  "version": "1.0.0",
+  "status": "draft",
+  "scope": "m6_indicator_assessment_qa",
+  "owner": "PM-05",
+  "source": {
+    "id": "M6",
+    "version": "1.8",
+    "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+    "sections": ["M6.6.1–6.6.9", "M6.8.1–8.3"],
+    "m2": "exact frozen criteria in M6-A input"
+  },
+  "input_contract": "M6.IndicatorAssessmentInput/1",
+  "output_contract": "M6.IndicatorAssessment/1",
+  "artifacts": [{"name": "prompt.md", "sha256": "e4e88efa1a61f47e5cf6eed0072db8fbea1454f2d7291c4c2f3fdbf71fa81c5d"}],
+  "execution": {"temperature": 0, "timeout_seconds": 120, "max_tokens": 12000, "max_input_bytes": 300000, "lease_seconds": 300}
+}

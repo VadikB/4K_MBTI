@@ -1305,14 +1305,90 @@ export const renderReport = () => {
 };
 
 export const openReport = (options = {}) => {
-  const { returnTarget = 'home' } = options;
+  const { returnTarget = 'home', m8CycleId = null } = options;
   state.reportReturnTarget = returnTarget === 'reports' ? 'reports' : 'home';
   setCurrentScreen('report');
   syncUrlState('report');
   hideAllPanels();
   reportPanel.classList.remove('hidden');
+  if (m8CycleId) {
+    const legacy = document.getElementById('legacy-report-shell');
+    const shell = document.getElementById('m8-report-shell');
+    legacy?.classList.add('hidden'); shell?.classList.remove('hidden');
+    const url = new URL(window.location.href); url.searchParams.set('screen', 'report'); url.searchParams.set('cycle_id', m8CycleId);
+    window.history.replaceState({}, '', url.pathname + '?' + url.searchParams.toString());
+    void loadM8Report(m8CycleId).catch((error) => {
+      const stateNode = document.getElementById('m8-report-state');
+      if (stateNode) stateNode.textContent = error?.message || 'Не удалось загрузить Report.';
+    });
+    return;
+  }
+  const downloadButton = document.getElementById('report-download-button');
+  if (downloadButton) delete downloadButton.dataset.m8ReportId;
+  document.getElementById('m8-report-shell')?.classList.add('hidden');
+  document.getElementById('legacy-report-shell')?.classList.remove('hidden');
   renderReport();
   clearAssessmentStorage();
+};
+
+const outcomeLabels = {
+  full_score: 'Полный результат со Score', partial_score: 'Частный результат со Score',
+  result_without_score: 'Результат без общего Score', no_result: 'Нет Skill Result',
+};
+
+const formatExactScore = (score) => {
+  if (!score || score.value == null) return 'Score отсутствует';
+  return `${score.value} · ${score.numerator}/${score.denominator}`;
+};
+
+const coverageLabel = (cut) => {
+  if (!cut || cut.denominator == null) return 'не передано';
+  if (cut.denominator === 0 || cut.ratio == null) return `${cut.numerator}/${cut.denominator} · доля не определена`;
+  return `${cut.numerator}/${cut.denominator} · ${(cut.ratio * 100).toFixed(1)}%`;
+};
+
+const loadM8Report = async (cycleId) => {
+  const stateNode = document.getElementById('m8-report-state');
+  const statusResponse = await fetch(`/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/status`);
+  const status = await readApiResponse(statusResponse, 'Не удалось загрузить состояние Results.');
+  if (status.results_status !== 'ready') {
+    stateNode.textContent = status.results_status === 'failed' ? 'Расчёт завершился технической ошибкой.' : 'Сбор закрыт, итоговый расчёт ещё выполняется.';
+    document.getElementById('m8-report-skills').replaceChildren();
+    return;
+  }
+  if (status.report_status !== 'ready') {
+    stateNode.textContent = 'Results готовы, базовый Report и экспорт ещё готовятся.';
+    document.getElementById('m8-report-skills').replaceChildren();
+    return;
+  }
+  const response = await fetch(`/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/reports/latest`);
+  const report = await readApiResponse(response, 'Не удалось загрузить базовый Report.');
+  const c67 = report.c67;
+  stateNode.textContent = `Report готов · расчётная редакция ${c67.results_revision_no} · версия представления ${report.revision_no}`;
+  const metadata = document.getElementById('m8-report-metadata');
+  metadata.innerHTML = `<div><dt>Cycle</dt><dd>${escapeHtml(c67.cycle_id)}</dd></div>` +
+    `<div><dt>Sessions</dt><dd>${c67.sessions.length}</dd></div>` +
+    `<div><dt>Причина закрытия</dt><dd>${escapeHtml(c67.collection?.reason || 'не передана')}</dd></div>` +
+    `<div><dt>Бюджет / окно</dt><dd>${c67.time?.budget_seconds ?? '—'} с / ${c67.time?.calendar_window_seconds ?? '—'} с</dd></div>` +
+    `<div><dt>Reliability</dt><dd>${escapeHtml(c67.reliability?.status || 'не передана')}</dd></div>`;
+  const skills = document.getElementById('m8-report-skills');
+  skills.innerHTML = c67.skills.map((skill) => `<article class="report-skill-item"><div><strong>${escapeHtml(skill.skill_name || skill.skill_id)}</strong>` +
+    `<p>${escapeHtml(outcomeLabels[skill.outcome] || skill.outcome)}</p></div><div><strong>${escapeHtml(formatExactScore(skill.score))}</strong>` +
+    `<p>${escapeHtml(skill.completeness || 'полнота не применима')}</p><p>${escapeHtml(skill.comparison?.status || '')}</p></div></article>`).join('');
+  const coverage = document.getElementById('m8-report-coverage');
+  coverage.innerHTML = Object.entries(c67.coverage).map(([scope, cuts]) => `<section><h4>${escapeHtml(scope === 'full_m2' ? 'Полный M2' : 'План Cycle')}</h4>` +
+    Object.entries(cuts).map(([name, cut]) => `<p><strong>${escapeHtml(name)}</strong>: ${escapeHtml(coverageLabel(cut))}</p>`).join('') + '</section>').join('');
+  document.getElementById('m8-report-limitations').innerHTML = c67.limitations.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+  const recommendations = document.getElementById('m8-report-recommendations');
+  recommendations.innerHTML = (c67.recommendations || []).map((item) => `<article class="report-skill-item m8-recommendation-item">` +
+    `<div><strong>${escapeHtml(item.skill_id)} · ${escapeHtml(item.type)}</strong><p>${escapeHtml(item.goal)}</p></div>` +
+    `<div><p><strong>Практика:</strong> ${escapeHtml(item.practice)}</p><p><strong>Контекст:</strong> ${escapeHtml(item.application_context)}</p>` +
+    `<p><strong>Признак прогресса:</strong> ${escapeHtml(item.progress_signal)}</p>` +
+    `<p>${item.limitations.map((value) => escapeHtml(value)).join(' · ')}</p></div></article>`).join('');
+  document.getElementById('m8-report-recommendation-notices').innerHTML = (c67.recommendation_notices || [])
+    .map((item) => `<li><strong>${escapeHtml(item.skill_id)}:</strong> ${escapeHtml(item.text)}</li>`).join('');
+  const download = document.getElementById('report-download-button');
+  download.dataset.m8ReportId = report.id;
 };
 
 export const resolveAssessmentSessionIdByCode = async () => {

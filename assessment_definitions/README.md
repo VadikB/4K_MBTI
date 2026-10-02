@@ -129,3 +129,44 @@ Applicability и точные цели. `admission-policy.json` отделяет
 `m5_generation_lab_runs`. Её результаты не меняют статусы файлового отчёта.
 Инструкция проверки лаборатории — `docs/evc/m5-generation-lab-test-runbook.md`;
 общий план — `docs/evc/tasks/t08.6-m5-case-as-admission.md`.
+
+## M6 Evidence QA
+
+`prompts/m6_evidence/v1` — draft-пакет построения Fragment/BS/Evidence/EB,
+не IA и не официальный evaluator. Manifest фиксирует исходный M6 и checksum prompt,
+параметры вызова/лимита/lease. `Api/m6_package.py` валидирует пакет при постановке
+явного синтетического QA request; дальнейшее исполнение читает сохранённый snapshot.
+Проверка: `.venv/bin/python -m pytest tests/unit/test_m6_evidence.py`.
+Provider smoke и утверждённые GC не входят в эту проверку.
+
+## M6 Indicator Assessment QA
+
+`prompts/m6_indicator_assessment/v1` — draft-пакет M6-B для промежуточного
+разбора, итогового IA и содержательного C-54 поверх сохранённой ревизии M6-A.
+Пакет не включён по умолчанию и не означает методологическую приёмку или выпуск.
+
+## M7 Cycle Planning QA
+
+`planning/m7_cycle_plan/v1` — draft-настройки детерминированного планирования Cycle:
+источник M7, defaults времени, версия алгоритма, источник длительности и tie-break.
+
+## M7 Assessment Clarification QA
+
+`prompts/m7_assessment_clarification/v1` — draft-пакет инструкции для одного
+оценочного вопроса PM-04 по semantic interim C-54. Manifest привязан к M7 v1.3 и
+фиксирует SHA-256 prompt. Loader сохраняет prompt/schema/provider snapshot; пакет не
+является опубликованной нормой и не включён в основной пользовательский путь.
+Пакет используется только restricted QA-путём и не допускает WORKING Cases.
+
+## M8 Basic Report QA
+
+`reports/m8_basic_report/v1` — draft-шаблон детерминированного C-67 и PDF.
+Manifest связан с M8 v1.2 и фиксирует checksum шаблона. Инварианты запрещают
+Recommendations, вывод Skill Level и CompetencyScore и требуют сохранять точные
+дроби. Пакет не публикует методологию и не подтверждает Reliability.
+
+`reports/m8_basic_report/v1_1` — новая draft-версия индивидуального C-67 с
+Recommendations. `recommendations/m8/v1` хранит детерминированные шаблоны по
+M8.6–M8.6.1. Runtime сохраняет минимизированный input из Results и snapshot
+PersonalizedProfile, точные ссылки на IA, текст и версию механизма. Пакеты не
+изменяют IA, Scores, Gap или Results и не используют ФИО/контакты.

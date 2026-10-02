@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "m7_cycle_plan",
+  "version": "1.0.0",
+  "status": "draft",
+  "scope": "m7_cycle_plan_qa",
+  "owner": "PM-04",
+  "artifacts": [
+    {
+      "name": "rules.json",
+      "sha256": "ada1deb83dba3a3c544f2fe87f64d902977e22c9f665ffdd302ecf1fd689fe85"
+    }
+  ],
+  "dependencies": {
+    "methodology": "assessment_definitions/methodologies/competencies_4k/1.1/methodology.json",
+    "case_package": "assessment_definitions/cases/competencies_4k/1.1/case-package.json"
+  }
+}

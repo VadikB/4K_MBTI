@@ -122,6 +122,8 @@ import {
   interviewSubmitButton,
   interviewSubmitLabel,
   interviewFinishButton,
+  interviewPauseButton,
+  interviewAdditionalButton,
   interviewError,
   interviewGoProcessingButton,
   interviewBackButton,
@@ -1602,15 +1604,6 @@ libraryStartButton.addEventListener('click', () => {
 
 prechatStartButton.addEventListener('click', () => {
   void (async () => {
-    const [assessmentModule, dashboardModule] = await Promise.all([loadAssessment(), loadDashboard()]);
-    if (state.assessmentPreparationStatus === 'failed') {
-      void assessmentModule.retryAssessmentPreparation();
-      return;
-    }
-    if (!assessmentModule.canReusePreparedAssessment() && !dashboardModule.hasIncompleteAssessment()) {
-      void assessmentModule.beginAssessmentPreparation({ force: true });
-      return;
-    }
     const interviewModule = await loadInterview();
     void interviewModule.startAssessmentInterview();
   })();
@@ -1636,7 +1629,7 @@ const setInterviewSubmitLabel = (label) => {
 };
 
 const logAssessmentClientEvent = (event, messageType = 'answer', errorType = null) => {
-  if (!state.assessmentSessionCode) {
+  if (!state.assessmentSessionCode && !state.productCycleId) {
     return;
   }
   void fetch('/users/assessment/client-event', {
@@ -1684,7 +1677,14 @@ const sendInterviewAnswer = async (text, existingMessageRow = null) => {
   interviewModule.clearInterviewTimer();
   try {
     logAssessmentClientEvent('request_started');
-    await interviewModule.submitAssessmentMessage(text);
+    if (interviewModule.isCycleAssessment()) {
+      messageRow.dataset.requestId ||= createOperationId();
+      messageRow.dataset.turnId ||= crypto.randomUUID();
+    }
+    await interviewModule.submitAssessmentMessage(text, {
+      requestId: messageRow.dataset.requestId,
+      turnId: messageRow.dataset.turnId,
+    });
     interviewModule.setInterviewMessageDeliveryState(messageRow, 'sent');
     logAssessmentClientEvent('request_succeeded');
     if (failedInterviewMessage?.row === messageRow) {
@@ -1725,7 +1725,7 @@ const submitCurrentInterviewAnswer = async () => {
     showError(interviewError, 'Введите ответ по текущему кейсу.');
     return;
   }
-  if (!state.assessmentSessionCode) {
+  if (!state.assessmentSessionCode && !state.productCycleId) {
     showError(interviewError, 'Сессия кейсового интервью не инициализирована.');
     return;
   }
@@ -1847,7 +1847,11 @@ interviewFinishButton.addEventListener('click', async () => {
     const interviewModule = await loadInterview();
     interviewModule.clearInterviewTimer();
     logAssessmentClientEvent('finish_clicked', 'finish');
-    await interviewModule.submitAssessmentMessage('__finish_case__');
+    if (interviewModule.isCycleAssessment()) {
+      await interviewModule.finishProductAssessment();
+    } else {
+      await interviewModule.submitAssessmentMessage('__finish_case__');
+    }
   } catch (error) {
     showError(interviewError, error.message);
     interviewTextarea.disabled = false;
@@ -1855,6 +1859,34 @@ interviewFinishButton.addEventListener('click', async () => {
     interviewFinishButton.disabled = false;
   }
 });
+
+if (interviewPauseButton) {
+  interviewPauseButton.addEventListener('click', async () => {
+    showError(interviewError, '');
+    try {
+      const interviewModule = await loadInterview();
+      await interviewModule.toggleProductPause();
+    } catch (error) {
+      showError(interviewError, error.message);
+    }
+  });
+}
+
+if (interviewAdditionalButton) {
+  interviewAdditionalButton.addEventListener('click', async () => {
+    showError(interviewError, '');
+    if (!window.confirm('Завершить текущую сессию и открыть допустимую дополнительную сессию?')) return;
+    interviewAdditionalButton.disabled = true;
+    try {
+      const interviewModule = await loadInterview();
+      await interviewModule.createProductAdditionalSession();
+    } catch (error) {
+      showError(interviewError, error.message);
+    } finally {
+      interviewAdditionalButton.disabled = false;
+    }
+  });
+}
 
 interviewGoProcessingButton.addEventListener('click', () => {
   safeStorage.setItem(STORAGE_KEYS.completionPending, '1');
@@ -1998,6 +2030,10 @@ if (reportsBackButton) {
 }
 
 reportDownloadButton.addEventListener('click', () => {
+  if (reportDownloadButton.dataset.m8ReportId) {
+    window.location.href = '/users/assessment/m8/reports/' + encodeURIComponent(reportDownloadButton.dataset.m8ReportId) + '/pdf';
+    return;
+  }
   if (!state.pendingUser?.id || !state.assessmentSessionId) {
     return;
   }

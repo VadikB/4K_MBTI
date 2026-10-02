@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "m8_basic_report",
+  "version": "1.0.0",
+  "title": "4K — базовый индивидуальный отчёт",
+  "audiences": ["assessee", "customer", "methodology_qa"],
+  "outcome_labels": {
+    "full_score": "Полный результат со Score",
+    "partial_score": "Частный результат со Score",
+    "result_without_score": "Результат без общего Score",
+    "no_result": "Нет Skill Result"
+  },
+  "coverage_labels": {
+    "opportunities": "Возможности наблюдения",
+    "indicator_assessments": "Итоговые IA",
+    "admissible_contributions": "Допустимые вклады",
+    "components_with_score": "Components со Score",
+    "complete_components": "Полные Components"
+  },
+  "invariants": {
+    "show_recommendations": false,
+    "derive_skill_level": false,
+    "derive_competency_score": false,
+    "preserve_exact_fraction": true
+  }
+}

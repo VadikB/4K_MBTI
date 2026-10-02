@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "status": "CANDIDATES_READY_FOR_REVIEW",
+  "approved_count": 0,
+  "real_llm_runs": 0,
+  "source": {"id": "M7", "version": "1.3", "sha256": "50a0d53a3aaf6258957ecc6d9e89f27d922bfbe4cd55668185d475c87f4e2f10"},
+  "records": [
+    {"id":"T6-01","mode":"routing","expected":"M4_M5_M7_DISTINCT","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-02","mode":"semantic_c54","expected":"ASK_OR_EXPLAINED_NO_QUESTION","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-03","mode":"no_request_technical_failure","expected":"NO_QUESTION_OR_WAIT_TECHNICAL","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-04","mode":"neutrality","expected":"HINT_REJECTED","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-05","mode":"scope","expected":"NEW_ACTION_REJECTED_OR_NEW_AS","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-06","mode":"multiple_indicators","expected":"SUPPORTED_TARGET_SUBSET","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-07","mode":"answer_reanalysis","expected":"SAME_DIALOGUE_NEW_C45_M6","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-08","mode":"no_answer_refusal_delivery_failure","expected":"DISTINCT_OUTCOMES_NO_FAKE_TURN","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-09","mode":"continuation_stop","expected":"EXPLAINED_CONTINUE_STOP_NEW_AS","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-10","mode":"low_level_no_answer","expected":"NO_AUTOMATIC_QUESTION_OR_LEVEL","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-11","mode":"lifecycle","expected":"ONLY_OPEN_SCENARIO_ENDED_AS","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-12","mode":"time_budget","expected":"SAME_CYCLE_BUDGET_NO_EXTENSION","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-13","mode":"stale_revision","expected":"STALE_OR_CLOSED_REJECTED","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-14","mode":"idempotency_concurrency","expected":"ONE_DECISION_ONE_TURN","status":"CANDIDATE","expert_approved":false},
+    {"id":"T6-15","mode":"rights_diagnostics_provider","expected":"AUTHORIZED_SAFE_READBACK","status":"CANDIDATE","expert_approved":false}
+  ]
+}
