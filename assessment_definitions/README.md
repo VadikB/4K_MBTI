@@ -138,3 +138,9 @@ Applicability и точные цели. `admission-policy.json` отделяет
 явного синтетического QA request; дальнейшее исполнение читает сохранённый snapshot.
 Проверка: `.venv/bin/python -m pytest tests/unit/test_m6_evidence.py`.
 Provider smoke и утверждённые GC не входят в эту проверку.
+
+## M6 Indicator Assessment QA
+
+`prompts/m6_indicator_assessment/v1` — draft-пакет M6-B для промежуточного
+разбора, итогового IA и содержательного C-54 поверх сохранённой ревизии M6-A.
+Пакет не включён по умолчанию и не означает методологическую приёмку или выпуск.

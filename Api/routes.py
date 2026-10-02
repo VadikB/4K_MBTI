@@ -6741,3 +6741,47 @@ def get_m6_evidence_analysis(revision_id: UUID, request: Request):
             return m6_repository.read_analysis(connection, revision_id)
     except ValueError as exc:
         raise HTTPException(404, detail='M6_ANALYSIS_UNAVAILABLE') from exc
+
+
+# PM-05 M6-B: restricted synthetic QA path for interim analysis, IA and C-54.
+from Api import m6_assessment_repository, m6_assessment_package, m6_assessment_worker
+from Api.m6_assessment_contracts import CreateAssessmentRequest
+
+
+@router.post('/admin/m6-assessments/requests', status_code=202)
+def create_m6_assessment_request(payload: CreateAssessmentRequest, request: Request, background_tasks: BackgroundTasks):
+    user = _m5_superadmin(request)
+    try:
+        revision_id = str(UUID(payload.evidence_revision_id))
+        with get_connection() as connection:
+            saved = m6_assessment_repository.existing_key(connection, revision_id, payload.idempotency_key, payload.mechanism_ref)
+            if not saved:
+                mechanism = m6_assessment_package.load_mechanism(payload.mechanism_ref)
+                saved = m6_assessment_repository.enqueue(connection, evidence_revision_id=revision_id,
+                    key=payload.idempotency_key, mechanism=mechanism, created_by=int(user.id))
+            connection.commit()
+            result = m6_assessment_repository.read_request(connection, saved['id'])
+        background_tasks.add_task(m6_assessment_worker.run_request, str(saved['id']))
+        return result
+    except (ValueError, KeyError, OSError) as exc:
+        raise HTTPException(409, detail='M6_ASSESSMENT_REQUEST_REJECTED') from exc
+
+
+@router.get('/admin/m6-assessments/requests/{request_id}')
+def get_m6_assessment_request(request_id: UUID, request: Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            return m6_assessment_repository.read_request(connection, request_id)
+    except ValueError as exc:
+        raise HTTPException(404, detail='M6_ASSESSMENT_REQUEST_NOT_FOUND') from exc
+
+
+@router.get('/admin/m6-assessments/results/{revision_id}')
+def get_m6_assessment_result(revision_id: UUID, request: Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            return m6_assessment_repository.read_result(connection, revision_id)
+    except ValueError as exc:
+        raise HTTPException(404, detail='M6_ASSESSMENT_UNAVAILABLE') from exc

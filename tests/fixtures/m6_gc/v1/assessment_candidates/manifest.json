@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "status": "CANDIDATES_READY_FOR_REVIEW",
+  "scope": "M6-B Indicator Assessment; project expectations are not GC",
+  "approved_count": 0,
+  "records": [
+    {
+      "id": "m6b-nonperformance-k4-i05",
+      "status": "CANDIDATE",
+      "source_input": {
+        "path": "candidates/nonperformance.json",
+        "sha256": "6db4f84029f3defc92ccf963510f4c5884fb411366a69e9f9fc1e48b404c088b",
+        "material_revision": "77afd56576680bd23d4329e89875964015cfeb894fa11793168b3bb0be154315"
+      },
+      "focus_target": {
+        "indicator_id": "K4.I05",
+        "m2_version": "v1.0"
+      },
+      "project_expected_outcome": "L0",
+      "project_basis": "Невыполнение при заявленной возможности; требуется независимое подтверждение границы L0.",
+      "unreviewed_targets": [
+        "K1.I13",
+        "K1.I16",
+        "K1.I17",
+        "K2.I07",
+        "K2.I08",
+        "K4.I10",
+        "K4.I17",
+        "K4.I18"
+      ],
+      "expert_approved": false
+    },
+    {
+      "id": "m6b-retain-k4-i05",
+      "status": "CANDIDATE",
+      "source_input": {
+        "path": "candidates/retain.json",
+        "sha256": "222946a4100df658abec6817dada1c0f85c37b37a3958ff162e8937a37569b31",
+        "material_revision": "d192be0e4ef83ec3047c1029a90d4eae3c3f27b4ff6a3e51ab786e4ed0491bd1"
+      },
+      "focus_target": {
+        "indicator_id": "K4.I05",
+        "m2_version": "v1.0"
+      },
+      "project_expected_outcome": "L1",
+      "project_basis": "Локальное сопоставление; проект ожидания до независимой проверки полного дескриптора.",
+      "unreviewed_targets": [
+        "K1.I13",
+        "K1.I16",
+        "K1.I17",
+        "K2.I07",
+        "K2.I08",
+        "K4.I10",
+        "K4.I17",
+        "K4.I18"
+      ],
+      "expert_approved": false
+    },
+    {
+      "id": "m6b-independent-k4-i05",
+      "status": "CANDIDATE",
+      "source_input": {
+        "path": "candidates/independent.json",
+        "sha256": "e230c4b9689b7a42013aa12685a2395cf75f21eed6b18963e182dbfb1d810d6a",
+        "material_revision": "1d317e7f48da1a450705ccc07641c6ac87bbabe27a72506348ae2b73ea7f45ee"
+      },
+      "focus_target": {
+        "indicator_id": "K4.I05",
+        "m2_version": "v1.0"
+      },
+      "project_expected_outcome": "L2",
+      "project_basis": "Самостоятельное сопоставление сравнимых сведений и существенных расхождений.",
+      "unreviewed_targets": [
+        "K1.I13",
+        "K1.I16",
+        "K1.I17",
+        "K2.I07",
+        "K2.I08",
+        "K4.I10",
+        "K4.I17",
+        "K4.I18"
+      ],
+      "expert_approved": false
+    },
+    {
+      "id": "m6b-composite-k4-i05",
+      "status": "CANDIDATE",
+      "source_input": {
+        "path": "candidates/composite.json",
+        "sha256": "fa5798a784c203f9dc68c4e3a12242e2446fc7eb05bd747884bf9593c61636e8",
+        "material_revision": "474686652aa71509448a29a2125bb505bfdeec1c0c7eabe418ba6a33f71dc26d"
+      },
+      "focus_target": {
+        "indicator_id": "K4.I05",
+        "m2_version": "v1.0"
+      },
+      "project_expected_outcome": "L3",
+      "project_basis": "Проект интеграции причин расхождения; требует отдельного экспертного подтверждения.",
+      "unreviewed_targets": [
+        "K1.I13",
+        "K1.I16",
+        "K1.I17",
+        "K2.I07",
+        "K2.I08",
+        "K4.I10",
+        "K4.I17",
+        "K4.I18"
+      ],
+      "expert_approved": false
+    },
+    {
+      "id": "m6b-insufficient-k4-i05",
+      "status": "CANDIDATE",
+      "source_input": {
+        "path": "candidates/insufficient.json",
+        "sha256": "96ca63ca17c031570720cc5e652b61e172b6dc208f0927e337deaa03afd6d8d8",
+        "material_revision": "f547886a9df01db04c09d1274abd423067afde29ca91652aac43f9ab3572c9d7"
+      },
+      "focus_target": {
+        "indicator_id": "K4.I05",
+        "m2_version": "v1.0"
+      },
+      "project_expected_outcome": "INSUFFICIENT_EVIDENCE",
+      "project_basis": "Возможность есть, но определяющий признак уровня не установлен.",
+      "unreviewed_targets": [
+        "K1.I13",
+        "K1.I16",
+        "K1.I17",
+        "K2.I07",
+        "K2.I08",
+        "K4.I10",
+        "K4.I17",
+        "K4.I18"
+      ],
+      "expert_approved": false
+    },
+    {
+      "id": "m6b-no_opportunity-k4-i05",
+      "status": "CANDIDATE",
+      "source_input": {
+        "path": "candidates/no_opportunity.json",
+        "sha256": "ca8b50d85d5884229f9f0b3237b351db4400eb17e7724ceadb034202f7b6463d",
+        "material_revision": "d3cfdcae3f90f0705fee62302662f2cf256f9d2de99af397a9b4c96a9e45d4c1"
+      },
+      "focus_target": {
+        "indicator_id": "K4.I05",
+        "m2_version": "v1.0"
+      },
+      "project_expected_outcome": "NO_ASSESSMENT",
+      "project_basis": "Возможность наблюдаемого действия не возникла.",
+      "unreviewed_targets": [
+        "K1.I13",
+        "K1.I16",
+        "K1.I17",
+        "K2.I07",
+        "K2.I08",
+        "K4.I10",
+        "K4.I17",
+        "K4.I18"
+      ],
+      "expert_approved": false
+    },
+    {
+      "id": "m6b-technical_loss-k4-i05",
+      "status": "CANDIDATE",
+      "source_input": {
+        "path": "candidates/technical_loss.json",
+        "sha256": "5c5869808f060dd470687cd32a1653c25c477e985f55493358f4bd73661b47e0",
+        "material_revision": "5b45329ed93b22bf84ea7587e28961a2a53150400733fa3970a51d345c6ed0b3"
+      },
+      "focus_target": {
+        "indicator_id": "K4.I05",
+        "m2_version": "v1.0"
+      },
+      "project_expected_outcome": "TECHNICAL_FAILURE",
+      "project_basis": "Техническая потеря материала не является результатом о человеке.",
+      "unreviewed_targets": [
+        "K1.I13",
+        "K1.I16",
+        "K1.I17",
+        "K2.I07",
+        "K2.I08",
+        "K4.I10",
+        "K4.I17",
+        "K4.I18"
+      ],
+      "expert_approved": false
+    }
+  ]
+}

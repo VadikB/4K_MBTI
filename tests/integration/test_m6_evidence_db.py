@@ -318,6 +318,88 @@ def test_restart_recovery_selects_queued_request(database,monkeypatch):
     assert received==[request['id']]
 
 
+def _assessment_output(value):
+    confidence={"confirmed_features":["synthetic technical fixture"],"alternatives_considered":[],
+        "limitations":["not a GC"],"reliability_protocol_ref":None}
+    return {"schema_version":1,"mode":value["mode"],"targets":[{
+        "indicator_id":target["indicator_id"],"m2_version":target["m2_version"],
+        "status":"ASSESSED" if value["mode"]=="final" else "INTERIM",
+        "outcome":"L1" if value["mode"]=="final" else None,
+        "descriptor_basis":"synthetic descriptor" if value["mode"]=="final" else None,
+        "rationale":"synthetic technical fixture","refs":[{"kind":"bundle","id":target["indicator_id"],"meaning":"whole EB"}],
+        "opportunity":"PRESENT","opportunity_basis":"synthetic opportunity",
+        "uncertainty":None if value["mode"]=="final" else {"missing_or_conflicting_feature":"feature",
+            "impact":"interim only","clarification_needed":"clarify existing material","resolution_information":[],
+            "requires_new_independent_action":False},
+        "contradictions":[],"clarification_history":[],"stop_reason":"closed" if value["mode"]=="final" else None,
+        "confidence":confidence} for target in value["material"]["indicator_targets"]]}
+
+
+def test_m6_b_final_ia_c54_transactional_readback_and_replay(database):
+    from Api import m6_assessment_repository as assessments
+    from Api.m6_assessment_package import load_mechanism as load_assessment_mechanism
+    from Api.m6_assessment_worker import run_request as run_assessment
+    factory,h=database
+    with factory() as c:evidence_request=enqueue(c,h);c.commit()
+    class EvidenceGateway:
+        enabled=True
+        def chat(self,messages,**kwargs):return json.dumps(empty_output(json.loads(messages[1]['content'])))
+    run_request(evidence_request['id'],connection_factory=factory,gateway=EvidenceGateway())
+    with factory() as c:
+        evidence_revision=repo.read_request(c,evidence_request['id'])['analysis_revision_id']
+        request=assessments.enqueue(c,evidence_revision_id=str(evidence_revision),key='m6-b-final',
+            mechanism=load_assessment_mechanism('m6_indicator_assessment/1.0.0'),created_by=99)
+        replay=assessments.enqueue(c,evidence_revision_id=str(evidence_revision),key='m6-b-alias',
+            mechanism=request['mechanism_json'],created_by=99)
+        assert replay['id']==request['id'];c.commit()
+    class AssessmentGateway:
+        enabled=True
+        def chat(self,messages,**kwargs):return json.dumps(_assessment_output(json.loads(messages[1]['content'])),ensure_ascii=False)
+    run_assessment(request['id'],connection_factory=factory,gateway=AssessmentGateway())
+    run_assessment(request['id'],connection_factory=factory,gateway=AssessmentGateway())
+    with factory() as c:
+        status=assessments.read_request(c,request['id']);assert status['status']=='succeeded'
+        result=assessments.read_result(c,status['assessment_revision_id'])
+        assert result['c54']['payload']['contract']=='C-54'
+        assert len(result['indicator_assessments'])==len(request['input_json']['material']['indicator_targets'])
+        assert result['no_assessments']==[]
+        receipts=c.execute('SELECT * FROM m5_c54_receipts WHERE handoff_id=%s',(request['input_json']['handoff_id'],)).fetchall()
+        assert len(receipts)==len(request['input_json']['material']['indicator_targets'])
+        assert all(x['validation_json']['semantic_contract'] for x in receipts)
+        assert c.execute('SELECT count(*) AS n FROM m6_assessment_attempts').fetchone()['n']==1
+
+
+def test_m6_b_failure_is_not_person_result_and_retry_succeeds(database):
+    from Api import m6_assessment_repository as assessments
+    from Api.m6_assessment_package import load_mechanism as load_assessment_mechanism
+    from Api.m6_assessment_worker import run_request as run_assessment
+    factory,h=database
+    with factory() as c:evidence_request=enqueue(c,h);c.commit()
+    class EvidenceGateway:
+        enabled=True
+        def chat(self,messages,**kwargs):return json.dumps(empty_output(json.loads(messages[1]['content'])))
+    run_request(evidence_request['id'],connection_factory=factory,gateway=EvidenceGateway())
+    with factory() as c:
+        revision=repo.read_request(c,evidence_request['id'])['analysis_revision_id']
+        request=assessments.enqueue(c,evidence_revision_id=str(revision),key='m6-b-retry',
+            mechanism=load_assessment_mechanism('m6_indicator_assessment/1.0.0'),created_by=99);c.commit()
+    class Broken:
+        enabled=True
+        def chat(self,*args,**kwargs):raise TimeoutError('synthetic')
+    run_assessment(request['id'],connection_factory=factory,gateway=Broken())
+    with factory() as c:
+        assert assessments.read_request(c,request['id'])['status']=='failed'
+        assert c.execute('SELECT count(*) AS n FROM m6_assessment_revisions').fetchone()['n']==0
+        assert c.execute('SELECT count(*) AS n FROM m6_indicator_assessments').fetchone()['n']==0
+    class Success:
+        enabled=True
+        def chat(self,messages,**kwargs):return json.dumps(_assessment_output(json.loads(messages[1]['content'])))
+    run_assessment(request['id'],connection_factory=factory,gateway=Success())
+    with factory() as c:
+        assert assessments.read_request(c,request['id'])['status']=='succeeded'
+        assert c.execute('SELECT count(*) AS n FROM m6_assessment_attempts').fetchone()['n']==2
+
+
 def test_real_fragment_readback(database):
     factory,h=database
     with factory() as c:request=enqueue(c,h);c.commit()

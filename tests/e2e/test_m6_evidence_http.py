@@ -30,12 +30,20 @@ def test_all_m6_endpoints_require_admin(client):
     monkeypatch.setattr(routes.m6_repository,'read_request',forbidden)
     monkeypatch.setattr(routes.m6_repository,'read_analysis',forbidden)
     monkeypatch.setattr(routes.m6_repository,'existing_key',forbidden)
+    monkeypatch.setattr(routes.m6_assessment_repository,'read_request',forbidden)
+    monkeypatch.setattr(routes.m6_assessment_repository,'read_result',forbidden)
+    monkeypatch.setattr(routes.m6_assessment_repository,'existing_key',forbidden)
     payload={'handoff_id':str(uuid4()),'mechanism_ref':'m6_evidence/1.0.0','idempotency_key':'test','synthetic_material_confirmed':True}
     for token,expected in [(None,401),('member',403)]:
         if token:http.cookies.set(routes.SESSION_COOKIE_NAME,token)
         assert http.post('/users/admin/m6-evidence/requests',json=payload).status_code==expected
         assert http.get('/users/admin/m6-evidence/requests/'+str(uuid4())).status_code==expected
         assert http.get('/users/admin/m6-evidence/analyses/'+str(uuid4())).status_code==expected
+        assessment={'evidence_revision_id':str(uuid4()),'mechanism_ref':'m6_indicator_assessment/1.0.0',
+            'idempotency_key':'test','synthetic_material_confirmed':True}
+        assert http.post('/users/admin/m6-assessments/requests',json=assessment).status_code==expected
+        assert http.get('/users/admin/m6-assessments/requests/'+str(uuid4())).status_code==expected
+        assert http.get('/users/admin/m6-assessments/results/'+str(uuid4())).status_code==expected
 
 
 def test_repeat_uses_saved_request_without_current_package(client):
@@ -51,3 +59,16 @@ def test_repeat_uses_saved_request_without_current_package(client):
     assert r.status_code==202 and 'trace' not in r.text
     payload['synthetic_material_confirmed']=False
     assert http.post('/users/admin/m6-evidence/requests',json=payload).status_code==422
+
+
+def test_m6_assessment_repeat_uses_saved_request(client):
+    http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
+    rid=str(uuid4());revision=str(uuid4())
+    monkeypatch.setattr(routes.m6_assessment_repository,'existing_key',lambda *a:{'id':rid})
+    monkeypatch.setattr(routes.m6_assessment_repository,'read_request',lambda *a:{'id':rid,'status':'succeeded','assessment_revision_id':revision})
+    monkeypatch.setattr(routes.m6_assessment_worker,'run_request',lambda *a:None)
+    monkeypatch.setattr(routes.m6_assessment_package,'load_mechanism',lambda *a:(_ for _ in ()).throw(AssertionError('current package read')))
+    payload={'evidence_revision_id':str(uuid4()),'mechanism_ref':'m6_indicator_assessment/1.0.0',
+        'idempotency_key':'test','synthetic_material_confirmed':True}
+    response=http.post('/users/admin/m6-assessments/requests',json=payload)
+    assert response.status_code==202 and response.json()['assessment_revision_id']==revision

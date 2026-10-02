@@ -118,7 +118,7 @@
     },
     {
       "path": "Api/m6_repository.py",
-      "sha256": "5ad4874d21c74ba43a599828feeb195549339a4f758cbef36b7dc7bdcdafff9f"
+      "sha256": "c4b212f3f7d340039a0a864083fe9c6e7e589acfbfb0f458daaaf953986e4d7d"
     },
     {
       "path": "Api/m6_evidence_service.py",
@@ -134,7 +134,7 @@
     },
     {
       "path": "Api/m6_worker.py",
-      "sha256": "d62dd5e772abb260e491c35b6d6dd39d5a60a217bcc5fd4755a785021375b2bf"
+      "sha256": "22dcf63122cfd0596b9696de77d8da7aad1507b40319e2e8781e2626fc59ea84"
     },
     {
       "path": "Api/m6_input_resolver.py",
@@ -284,10 +284,16 @@
     {
       "path": "technical/wrong_m2.json",
       "sha256": "fa1af98fd7826f6704fb844e2fbfdc8b2ca2cf99917b79c00158cace84439fb4"
+    },
+    {
+      "path": "assessment_candidates/manifest.json",
+      "sha256": "1c7a551be0ba8260951f46b180f96147ab42962c4af64b153fe5330c58f2645f"
     }
   ],
   "task_source": {
     "filename": "Product_4K_M6_M8_Task_02_Control_Scenarios_and_GC_2026-10-02.txt",
     "sha256": "8be2dc2066c8178493fd17a2aaa4845a2d3080c86437ac8a02f4a23a6461986b"
-  }
+  },
+  "assessment_candidate_count": 7,
+  "approved_assessment_gc_count": 0
 }
