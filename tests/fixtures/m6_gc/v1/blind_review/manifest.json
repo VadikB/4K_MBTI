@@ -1,0 +1,88 @@
+{
+  "kind": "m6_blind_independent_review_packet",
+  "version": "0.1",
+  "status": "READY_FOR_INDEPENDENT_REVIEW",
+  "generated_from": "tests/fixtures/m6_gc/v1/candidates",
+  "contains_draft_analysis": false,
+  "contains_personal_contacts": false,
+  "reviewer_assignments": "docs/evc/tasks/m6-task02/review-assignments.md",
+  "records": [
+    {
+      "candidate_id": "CAND-before_disclosure",
+      "source_path": "tests/fixtures/m6_gc/v1/candidates/before_disclosure.json",
+      "source_sha256": "15e7a9cf30bf8be88270600366da685201a932aa6e4a931a7a99673e07318452",
+      "review_path": "tests/fixtures/m6_gc/v1/blind_review/before_disclosure.json",
+      "review_sha256": "a1ade402014fb87c198ae943b5ff10e0a96dd714a067fb91e7737031ff7ca239"
+    },
+    {
+      "candidate_id": "CAND-character",
+      "source_path": "tests/fixtures/m6_gc/v1/candidates/character.json",
+      "source_sha256": "70323f2eb92e713dc3f1f28575206ec9f3baf4660ecf49265ab1ad92967d7015",
+      "review_path": "tests/fixtures/m6_gc/v1/blind_review/character.json",
+      "review_sha256": "6ec6f86d1c22f296a6367dfd7253f06d8c156f68174dcdb985e02323ece9b36d"
+    },
+    {
+      "candidate_id": "CAND-composite",
+      "source_path": "tests/fixtures/m6_gc/v1/candidates/composite.json",
+      "source_sha256": "fa5798a784c203f9dc68c4e3a12242e2446fc7eb05bd747884bf9593c61636e8",
+      "review_path": "tests/fixtures/m6_gc/v1/blind_review/composite.json",
+      "review_sha256": "b0e728b2431eca5d80018f956c6779198428a04f5d78e7431109a4761bafcf25"
+    },
+    {
+      "candidate_id": "CAND-contradiction",
+      "source_path": "tests/fixtures/m6_gc/v1/candidates/contradiction.json",
+      "source_sha256": "962c23f2c333a7576fc64ab8179308b7d00589f7e53c292e3a1f356ca66798e8",
+      "review_path": "tests/fixtures/m6_gc/v1/blind_review/contradiction.json",
+      "review_sha256": "658e6627f03e96eb7007cfda82bfc5c4a12559352e70d0ae467b0f51f42a2d14"
+    },
+    {
+      "candidate_id": "CAND-independent",
+      "source_path": "tests/fixtures/m6_gc/v1/candidates/independent.json",
+      "source_sha256": "e230c4b9689b7a42013aa12685a2395cf75f21eed6b18963e182dbfb1d810d6a",
+      "review_path": "tests/fixtures/m6_gc/v1/blind_review/independent.json",
+      "review_sha256": "5011dff2a42562bd21fb6cb22f7e87b891ffd4b03cca48b051ac34bf1722347d"
+    },
+    {
+      "candidate_id": "CAND-insufficient",
+      "source_path": "tests/fixtures/m6_gc/v1/candidates/insufficient.json",
+      "source_sha256": "96ca63ca17c031570720cc5e652b61e172b6dc208f0927e337deaa03afd6d8d8",
+      "review_path": "tests/fixtures/m6_gc/v1/blind_review/insufficient.json",
+      "review_sha256": "f0350b5071234e4dbdbf53a966d2fb5f446d2af9c20789cbc96aa197067a1fc5"
+    },
+    {
+      "candidate_id": "CAND-no_opportunity",
+      "source_path": "tests/fixtures/m6_gc/v1/candidates/no_opportunity.json",
+      "source_sha256": "ca8b50d85d5884229f9f0b3237b351db4400eb17e7724ceadb034202f7b6463d",
+      "review_path": "tests/fixtures/m6_gc/v1/blind_review/no_opportunity.json",
+      "review_sha256": "d19bbfd2f7ac1496de5206be7040236146e3d5d86c82bde44a25e1ecd99894f1"
+    },
+    {
+      "candidate_id": "CAND-nonperformance",
+      "source_path": "tests/fixtures/m6_gc/v1/candidates/nonperformance.json",
+      "source_sha256": "6db4f84029f3defc92ccf963510f4c5884fb411366a69e9f9fc1e48b404c088b",
+      "review_path": "tests/fixtures/m6_gc/v1/blind_review/nonperformance.json",
+      "review_sha256": "5aa37ff33d0ae480b55b8a10627cabd99b5ec0aa82dbdb3836c0998957dbced2"
+    },
+    {
+      "candidate_id": "CAND-paraphrase",
+      "source_path": "tests/fixtures/m6_gc/v1/candidates/paraphrase.json",
+      "source_sha256": "26bbea2f61572dbfc5598af75e9d4494baf67c0c1e0af813cebe074bcb90e34f",
+      "review_path": "tests/fixtures/m6_gc/v1/blind_review/paraphrase.json",
+      "review_sha256": "35ecd0b905a62f0da1fcb6c074e9dc4c322e4be86657b6f80714c4c76e2d1431"
+    },
+    {
+      "candidate_id": "CAND-retain",
+      "source_path": "tests/fixtures/m6_gc/v1/candidates/retain.json",
+      "source_sha256": "222946a4100df658abec6817dada1c0f85c37b37a3958ff162e8937a37569b31",
+      "review_path": "tests/fixtures/m6_gc/v1/blind_review/retain.json",
+      "review_sha256": "b2cdb494769dc8e086fb63e0d0305e50f3b2af702d966eace4f63dbca56e9d06"
+    },
+    {
+      "candidate_id": "CAND-technical_loss",
+      "source_path": "tests/fixtures/m6_gc/v1/candidates/technical_loss.json",
+      "source_sha256": "5c5869808f060dd470687cd32a1653c25c477e985f55493358f4bd73661b47e0",
+      "review_path": "tests/fixtures/m6_gc/v1/blind_review/technical_loss.json",
+      "review_sha256": "bec1cf24cb7b6dde4a01f59dd3edb9798af9e38c88c5c1bd8d92f56260f2a4b0"
+    }
+  ]
+}

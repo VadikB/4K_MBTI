@@ -4275,6 +4275,8 @@ def ensure_core_schema() -> None:
         ensure_role_profile_schema(connection)
         ensure_assessment_context_schema(connection)
         ensure_m5_runtime_schema(connection)
+        from Api.m6_repository import ensure_schema as ensure_m6_schema
+        ensure_m6_schema(connection)
         connection.execute(
             """
             INSERT INTO consent_documents (

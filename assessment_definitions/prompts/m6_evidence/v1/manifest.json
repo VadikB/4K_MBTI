@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "m6_evidence",
+  "version": "1.0.0",
+  "status": "draft",
+  "scope": "m6_evidence_qa",
+  "owner": "PM-05",
+  "source": {
+    "id": "M6",
+    "version": "1.8",
+    "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+    "sections": [
+      "M6.1.3–1.4",
+      "M6.2–6.5"
+    ],
+    "m2": "exact refs in input snapshot"
+  },
+  "input_contract": "M6.EvidenceInput/1",
+  "output_contract": "M6.EvidenceAnalysis/1",
+  "artifacts": [
+    {
+      "name": "prompt.md",
+      "sha256": "0ad21cfb880fed29dae832a238e7748a183a4abb0923ac8ec961640e45e87500"
+    }
+  ],
+  "execution": {
+    "temperature": 0,
+    "timeout_seconds": 120,
+    "max_tokens": 12000,
+    "max_input_bytes": 200000,
+    "lease_seconds": 300
+  }
+}

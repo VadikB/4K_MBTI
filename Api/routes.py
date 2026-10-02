@@ -6692,3 +6692,52 @@ def download_skill_assessment_pdf(user_id: int, session_id: int) -> Response:
             ),
         },
     )
+
+
+# PM-05: restricted QA evidence processing. Never produces IA or a user report.
+from Api import m6_repository, m6_input_resolver, m6_package, m6_worker
+from Api.m6_contracts import CreateEvidenceRequest
+from fastapi import BackgroundTasks
+
+
+@router.post('/admin/m6-evidence/requests', status_code=202)
+def create_m6_evidence_request(payload: CreateEvidenceRequest, request: Request, background_tasks: BackgroundTasks):
+    user = _m5_superadmin(request)
+    try:
+        handoff_id = str(UUID(payload.handoff_id))
+        with get_connection() as connection:
+            existing = m6_repository.existing_key(connection, handoff_id, payload.idempotency_key, payload.mechanism_ref)
+            if existing:
+                request_id = existing['id']
+            else:
+                as_db_id, material = m6_input_resolver.resolve(connection, handoff_id)
+                mechanism = m6_package.load_mechanism(payload.mechanism_ref)
+                saved = m6_repository.enqueue(connection, as_db_id=as_db_id, handoff_id=handoff_id,
+                    key=payload.idempotency_key, material=material, mechanism=mechanism, created_by=int(user.id))
+                request_id = saved['id']
+            connection.commit()
+            result = m6_repository.read_request(connection, request_id)
+        background_tasks.add_task(m6_worker.run_request, str(request_id))
+        return result
+    except (ValueError, KeyError, OSError) as exc:
+        raise HTTPException(409, detail='M6_REQUEST_REJECTED') from exc
+
+
+@router.get('/admin/m6-evidence/requests/{request_id}')
+def get_m6_evidence_request(request_id: UUID, request: Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            return m6_repository.read_request(connection, request_id)
+    except ValueError as exc:
+        raise HTTPException(404, detail='M6_REQUEST_NOT_FOUND') from exc
+
+
+@router.get('/admin/m6-evidence/analyses/{revision_id}')
+def get_m6_evidence_analysis(revision_id: UUID, request: Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            return m6_repository.read_analysis(connection, revision_id)
+    except ValueError as exc:
+        raise HTTPException(404, detail='M6_ANALYSIS_UNAVAILABLE') from exc

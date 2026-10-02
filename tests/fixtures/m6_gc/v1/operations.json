@@ -1,0 +1,74 @@
+{
+  "status": "TECHNICAL_SCENARIOS_NOT_GC",
+  "execution_note": "Это последовательности для существующих интеграционных/HTTP тестов; не отдельный runner. Новые файловые candidates через PostgreSQL не прогонялись.",
+  "base_input": "technical/final.json",
+  "scenarios": [
+    {
+      "id": "TECH-A05-replay",
+      "requests": [
+        {"idempotency_key": "task02-first", "input_ref": "technical/final.json"},
+        {"idempotency_key": "task02-first", "input_ref": "technical/final.json"},
+        {"idempotency_key": "task02-alias", "input_ref": "technical/final.json"}
+      ],
+      "expected": {"logical_requests": 1, "analysis_revisions_after_two_worker_calls": 1, "attempts_after_successful_replay": 1},
+      "test": "tests/integration/test_m6_evidence_db.py::test_real_c45_empty_bundle_readback_and_replay"
+    },
+    {
+      "id": "TECH-A05-conflict",
+      "first_key": "task02-first",
+      "second_key": "task02-first",
+      "second_input_patch": {"context": {"base_role": "changed"}},
+      "expected_error": "IDEMPOTENCY_CONFLICT",
+      "test": "tests/integration/test_m6_evidence_db.py::test_tamper_and_conflicting_key"
+    },
+    {
+      "id": "TECH-A05-history",
+      "mechanism_versions": ["saved-v1", "saved-v2"],
+      "expected": {"same_logical_eb": true, "immutable_revisions": 2},
+      "test": "tests/integration/test_m6_evidence_db.py::test_new_mechanism_keeps_bundle_identity_and_history"
+    },
+    {
+      "id": "TECH-A06-errors",
+      "attempts": [
+        {"number": 1, "provider_response": "invalid", "expected_revisions": 0},
+        {"number": 2, "injected_error": "TimeoutError", "expected_revisions": 0, "status": "NOT_RUN"},
+        {"number": 3, "stop_at": "claimed_before_finish", "lease_delta_seconds": -1},
+        {"number": 4, "action": "claim_after_expiry", "late_attempt_3_finish_accepted": false}
+      ],
+      "expected": {"technical_error_is_ia": false, "technical_error_is_l0_or_ie": false},
+      "test": "tests/integration/test_m6_evidence_db.py::test_failure_retry_expired_lease_and_late_attempt",
+      "limitation": "Тест моделирует lease expiry; настоящий kill процесса и provider timeout не выполнены."
+    },
+    {
+      "id": "TECH-A07-snapshot",
+      "after_enqueue_changes": [
+        {"object": "profile", "checksum": "changed"},
+        {"object": "current_prompt_loader", "behavior": "raise_if_called"},
+        {"object": "current_m2_loader", "behavior": "raise_if_called"},
+        {"object": "current_case", "title": "Изменённая текущая версия", "status": "NOT_RUN"}
+      ],
+      "expected": {"worker_uses_saved_input": true, "old_analysis_immutable": true},
+      "test": "tests/integration/test_m6_evidence_db.py::test_processing_snapshot_survives_source_change"
+    },
+    {
+      "id": "TECH-A08-readback",
+      "write": "Fragment -> Signal -> Evidence -> Bundle",
+      "read": "read_analysis(saved_revision_id)",
+      "expected": {"same_fragment_quote": true, "same_ids_and_links": true},
+      "test": "tests/integration/test_m6_evidence_db.py::test_real_fragment_readback"
+    },
+    {
+      "id": "TECH-A08-access",
+      "request_payload": {"handoff_id": "79c0f6a1-4f33-5a7c-9d01-a474fae66301", "mechanism_ref": "m6_evidence/1.0.0", "idempotency_key": "task02-auth", "synthetic_material_confirmed": true},
+      "requests": [
+        {"method": "POST", "path": "/users/admin/m6-evidence/requests"},
+        {"method": "GET", "path": "/users/admin/m6-evidence/requests/79c0f6a1-4f33-5a7c-9d01-a474fae66302"},
+        {"method": "GET", "path": "/users/admin/m6-evidence/analyses/79c0f6a1-4f33-5a7c-9d01-a474fae66303"}
+      ],
+      "identities": [{"kind": "anonymous", "expected_status": 401}, {"kind": "member", "expected_status": 403}],
+      "expected": {"storage_called": false, "raw_dialogue_disclosed": false, "hidden_material_disclosed": false, "trace_disclosed": false},
+      "test": "tests/e2e/test_m6_evidence_http.py::test_all_m6_endpoints_require_admin",
+      "limitation": "Авторизация в HTTP тесте подменена; реальная session/auth DB и будущие PM-06/07 не проверены."
+    }
+  ]
+}

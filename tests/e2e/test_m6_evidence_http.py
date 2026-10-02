@@ -1,0 +1,53 @@
+from contextlib import contextmanager
+from types import SimpleNamespace
+from uuid import uuid4
+import pytest
+from fastapi import FastAPI, HTTPException
+from fastapi.testclient import TestClient
+import Api.routes as routes
+
+pytestmark=pytest.mark.e2e
+
+
+@pytest.fixture
+def client(monkeypatch):
+    @contextmanager
+    def connection():
+        yield SimpleNamespace(commit=lambda:None)
+    def authorize(c,user):
+        if user is None:raise HTTPException(401)
+        if user.id!=7:raise HTTPException(403)
+    monkeypatch.setattr(routes,'get_connection',connection)
+    monkeypatch.setattr(routes,'_require_superadmin',authorize)
+    monkeypatch.setattr(routes.web_session_service,'get_user_by_token',lambda token:SimpleNamespace(id=7 if token=='admin' else 8))
+    app=FastAPI();app.include_router(routes.router)
+    with TestClient(app) as client:yield client,monkeypatch
+
+
+def test_all_m6_endpoints_require_admin(client):
+    http,monkeypatch=client
+    def forbidden(*a,**k):raise AssertionError('storage accessed before authorization')
+    monkeypatch.setattr(routes.m6_repository,'read_request',forbidden)
+    monkeypatch.setattr(routes.m6_repository,'read_analysis',forbidden)
+    monkeypatch.setattr(routes.m6_repository,'existing_key',forbidden)
+    payload={'handoff_id':str(uuid4()),'mechanism_ref':'m6_evidence/1.0.0','idempotency_key':'test','synthetic_material_confirmed':True}
+    for token,expected in [(None,401),('member',403)]:
+        if token:http.cookies.set(routes.SESSION_COOKIE_NAME,token)
+        assert http.post('/users/admin/m6-evidence/requests',json=payload).status_code==expected
+        assert http.get('/users/admin/m6-evidence/requests/'+str(uuid4())).status_code==expected
+        assert http.get('/users/admin/m6-evidence/analyses/'+str(uuid4())).status_code==expected
+
+
+def test_repeat_uses_saved_request_without_current_package(client):
+    http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
+    rid=str(uuid4())
+    monkeypatch.setattr(routes.m6_repository,'existing_key',lambda *a:{'id':rid})
+    monkeypatch.setattr(routes.m6_repository,'read_request',lambda *a:{'id':rid,'status':'succeeded','analysis_revision_id':'revision'})
+    monkeypatch.setattr(routes.m6_worker,'run_request',lambda *a:None)
+    def forbidden(*a):raise AssertionError('must not read current package on replay')
+    monkeypatch.setattr(routes.m6_package,'load_mechanism',forbidden)
+    payload={'handoff_id':str(uuid4()),'mechanism_ref':'m6_evidence/1.0.0','idempotency_key':'test','synthetic_material_confirmed':True}
+    r=http.post('/users/admin/m6-evidence/requests',json=payload)
+    assert r.status_code==202 and 'trace' not in r.text
+    payload['synthetic_material_confirmed']=False
+    assert http.post('/users/admin/m6-evidence/requests',json=payload).status_code==422

@@ -52,12 +52,16 @@ if os.getenv("AGENT4K_ENABLE_SCREEN_PREVIEWS") == "1":
 def start_background_workers() -> None:
     assessment_preparation_queue.start()
     assessment_analysis_queue.start()
+    from Api import m6_worker
+    m6_worker.start()
 
 
 @app.on_event("shutdown")
 def stop_background_workers() -> None:
     assessment_preparation_queue.stop()
     assessment_analysis_queue.stop()
+    from Api import m6_worker
+    m6_worker.stop()
 
 
 def _resolve_request_user(request: Request):

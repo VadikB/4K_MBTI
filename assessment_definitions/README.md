@@ -129,3 +129,12 @@ Applicability и точные цели. `admission-policy.json` отделяет
 `m5_generation_lab_runs`. Её результаты не меняют статусы файлового отчёта.
 Инструкция проверки лаборатории — `docs/evc/m5-generation-lab-test-runbook.md`;
 общий план — `docs/evc/tasks/t08.6-m5-case-as-admission.md`.
+
+## M6 Evidence QA
+
+`prompts/m6_evidence/v1` — draft-пакет построения Fragment/BS/Evidence/EB,
+не IA и не официальный evaluator. Manifest фиксирует исходный M6 и checksum prompt,
+параметры вызова/лимита/lease. `Api/m6_package.py` валидирует пакет при постановке
+явного синтетического QA request; дальнейшее исполнение читает сохранённый snapshot.
+Проверка: `.venv/bin/python -m pytest tests/unit/test_m6_evidence.py`.
+Provider smoke и утверждённые GC не входят в эту проверку.

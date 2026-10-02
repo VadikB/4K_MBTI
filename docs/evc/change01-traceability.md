@@ -38,3 +38,29 @@ Case или Reliability. Эти доказательства ведутся от
 произвольную роль и несогласованные Skill/Component/Indicator при qa_result=PASS.
 Это свидетельство недостатка валидатора, не выполненный новый T02 и не доказательство
 допуска такой AS в production. Данные сред и полные пользовательские диалоги не читались.
+
+## Адресное дополнение на dd3d2ca от 02.10.2026
+
+Исходная таблица выше — исторический аудит d7b8313, не состояние всего текущего main.
+На dd3d2cadd90a31e3b7b3141ed6a0984afbd11ef6 `m5_cycle_runtime.py` и
+`m5_storage.py` реализуют Cycle/Session refs, проверку membership и часть границ
+сбора; `m5_scenario_runtime.py` — snapshots, Dialogue и технический C-45.
+Это частичная новая основа T01/T04/T05/T06/T09/T10, не закрытие всех критериев.
+Основной assessment_service не объявляется переключённым на новый путь.
+Тесты `test_cycle_session_membership_freeze_and_collection_boundary` и
+`test_as_rejects_foreign_session_and_changed_profile` существуют в
+`tests/integration/test_m5_cycle_runtime_db.py`; в задаче 1 повторно NOT_RUN.
+Заявленные ранее PASS в cycle-session.md остаются результатом того отчёта.
+T07/T08/T11/T12 новым источником или наличием таблиц не закрываются.
+
+M6 источник зарегистрирован; [контракт M6-A](../architecture/m6-a-contracts.md)
+и [приёмка T-A1–A8](tasks/m6-a-implementation.md) спроектированы.
+Реализация/проверка M6 пока NOT_RUN. F01/F02 и общий runtime остаются у прежнего
+владельца; Evidence/EB получает одну реализацию M6-A, IA — её продолжение.
+
+## Рабочая реализация M6-A
+
+На ветке codex/m6-task01-contracts после базы dd3d2ca реализована часть PM-05:
+C-45 → Fragment/BS/Evidence/EB → immutable revisions и QA read-back.
+[Отчёт и команды](tasks/m6-a-implementation.md). Это частичное доказательство
+T08/T09, не закрытие требований итогового IA, C-54 и C-56. Provider/GC NOT_RUN.
