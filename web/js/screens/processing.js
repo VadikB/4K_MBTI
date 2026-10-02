@@ -9,7 +9,7 @@ import {
 } from '../dom.js';
 import { hideAllPanels, syncUrlState } from '../router.js';
 import { clearProcessingTimer, buildProcessingAgentsState } from './chat.js';
-import { tryOpenReportAfterProcessing, loadSkillAssessments } from './report.js';
+import { tryOpenReportAfterProcessing, loadSkillAssessments, openReport } from './report.js';
 import { readApiResponse } from '../api.js';
 
 const ANALYSIS_POLL_INTERVAL_MS = 1200;
@@ -221,6 +221,39 @@ const scheduleAnalysisPoll = () => {
 };
 
 export const pollAnalysisStatus = async () => {
+  if (state.assessmentRuntimeKind === 'cycle' && state.productCycleId) {
+    try {
+      const response = await fetch('/users/assessment/m8/cycles/' + encodeURIComponent(state.productCycleId) + '/status', {
+        credentials: 'same-origin',
+      });
+      const snapshot = await readApiResponse(response, 'Не удалось получить состояние Cycle runtime.');
+      const stageProgress = {
+        evidence_queued: 15, assessment_queued: 40, clarification_waiting: 50,
+        clarification_resolved: 60, results_ready: 85, report_ready: 100,
+      };
+      state.processingServerProgress = stageProgress[snapshot.pipeline_stage] || 10;
+      processingStatusText.textContent = snapshot.results_status === 'failed'
+        ? 'Обработка завершилась ошибкой: ' + (snapshot.processing_error || 'причина сохранена на сервере')
+        : snapshot.report_status === 'ready'
+          ? 'Итоговый Report готов.'
+          : 'Сервер обрабатывает закрытый материал: ' + (snapshot.pipeline_stage || 'ожидание очереди');
+      renderProcessingProgress();
+      if (snapshot.report_status === 'ready') {
+        clearProcessingTimer();
+        openReport({ m8CycleId: state.productCycleId });
+        return;
+      }
+      if (snapshot.results_status === 'failed') {
+        clearProcessingTimer();
+        return;
+      }
+      scheduleAnalysisPoll();
+    } catch (error) {
+      processingStatusText.textContent = error.message;
+      scheduleAnalysisPoll();
+    }
+    return;
+  }
   if (!state.pendingUser?.id || !state.assessmentSessionId) {
     processingStatusText.textContent = 'Не удалось определить сессию итогового анализа.';
     return;

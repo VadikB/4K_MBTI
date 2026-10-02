@@ -7,4 +7,8 @@ export {
   submitAssessmentMessage,
   updateInterviewTimer,
   handleAssessmentEntryClick,
+  isCycleAssessment,
+  finishProductAssessment,
+  toggleProductPause,
+  createProductAdditionalSession,
 } from '../screens/interview.js';

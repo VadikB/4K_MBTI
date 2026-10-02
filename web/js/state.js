@@ -78,6 +78,11 @@ export const state = {
   processingStepIndex: 0,
   processingAgents: [],
   assessmentSessionId: null,
+  assessmentRuntimeKind: null,
+  productCycleId: null,
+  productAssessmentSituationId: null,
+  productClarificationDecisionId: null,
+  productCycleStatus: null,
   skillAssessments: [],
   reportCompetencyTab: 'Коммуникация',
   reportReturnTarget: 'home',
@@ -129,6 +134,9 @@ export const STORAGE_KEYS = {
   resumeAssessmentAfterProfileCompletion: 'agent4k.resumeAssessmentAfterProfileCompletion',
   assessmentSessionId: 'agent4k.assessmentSessionId',
   assessmentSessionCode: 'agent4k.assessmentSessionCode',
+  assessmentRuntimeKind: 'agent4k.assessmentRuntimeKind',
+  productCycleId: 'agent4k.productCycleId',
+  productAssessmentSituationId: 'agent4k.productAssessmentSituationId',
   assessmentTotalCases: 'agent4k.assessmentTotalCases',
   assessmentCompletedOnce: 'agent4k.assessmentCompletedOnce',
   completionPending: 'agent4k.completionPending',
@@ -252,6 +260,15 @@ export const persistAssessmentContext = () => {
   if (state.assessmentSessionCode) {
     safeStorage.setItem(STORAGE_KEYS.assessmentSessionCode, state.assessmentSessionCode);
   }
+  if (state.assessmentRuntimeKind) {
+    safeStorage.setItem(STORAGE_KEYS.assessmentRuntimeKind, state.assessmentRuntimeKind);
+  }
+  if (state.productCycleId) {
+    safeStorage.setItem(STORAGE_KEYS.productCycleId, state.productCycleId);
+  }
+  if (state.productAssessmentSituationId) {
+    safeStorage.setItem(STORAGE_KEYS.productAssessmentSituationId, state.productAssessmentSituationId);
+  }
   if (state.assessmentTotalCases) {
     safeStorage.setItem(STORAGE_KEYS.assessmentTotalCases, String(state.assessmentTotalCases));
   }
@@ -283,6 +300,9 @@ export const restoreAssessmentContext = () => {
     const storedAdminReportsSearch = safeStorage.getItem(STORAGE_KEYS.adminReportsSearch);
     const storedAdminReportsPage = safeStorage.getItem(STORAGE_KEYS.adminReportsPage);
     const storedSessionCode = safeStorage.getItem(STORAGE_KEYS.assessmentSessionCode);
+    const storedRuntimeKind = safeStorage.getItem(STORAGE_KEYS.assessmentRuntimeKind);
+    const storedProductCycleId = safeStorage.getItem(STORAGE_KEYS.productCycleId);
+    const storedProductAssessmentSituationId = safeStorage.getItem(STORAGE_KEYS.productAssessmentSituationId);
     const storedTotalCases = safeStorage.getItem(STORAGE_KEYS.assessmentTotalCases);
     const storedConversationSessionId = safeStorage.getItem(STORAGE_KEYS.sessionId);
     const storedPendingAgentMessage = safeStorage.getItem(STORAGE_KEYS.pendingAgentMessage);
@@ -356,6 +376,15 @@ export const restoreAssessmentContext = () => {
     }
     if (storedSessionCode) {
       state.assessmentSessionCode = storedSessionCode;
+    }
+    if (storedRuntimeKind) {
+      state.assessmentRuntimeKind = storedRuntimeKind;
+    }
+    if (storedProductCycleId) {
+      state.productCycleId = storedProductCycleId;
+    }
+    if (storedProductAssessmentSituationId) {
+      state.productAssessmentSituationId = storedProductAssessmentSituationId;
     }
     if (storedTotalCases) {
       state.assessmentTotalCases = Number(storedTotalCases);

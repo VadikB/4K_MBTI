@@ -53,9 +53,13 @@ def _rank(candidates: list[dict], uncovered: set[str], target_meta: dict[str,dic
 
 
 def create_plan(connection, *, personalized_profile_id: int, selected_skills: list[str], created_by: int,
-                key: str, time_budget_seconds: int|None=None, calendar_window_seconds: int|None=None) -> dict:
+                key: str, time_budget_seconds: int|None=None, calendar_window_seconds: int|None=None,
+                usage_scope: str = "qa") -> dict:
+    if usage_scope not in {"qa", "assessment"}:
+        raise ValueError("M7_USAGE_SCOPE_INVALID")
     request={"personalized_profile_id":personalized_profile_id,"selected_skills":sorted(set(selected_skills)),
-             "time_budget_seconds":time_budget_seconds,"calendar_window_seconds":calendar_window_seconds}
+             "time_budget_seconds":time_budget_seconds,"calendar_window_seconds":calendar_window_seconds,
+             "usage_scope":usage_scope}
     request_hash=checksum(request)
     existing=connection.execute("SELECT plan_id,request_hash FROM m7_plan_request_keys WHERE created_by=%s AND key=%s",(created_by,key)).fetchone()
     if existing:
@@ -84,7 +88,7 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
         target_set=[{"indicator_id":x["indicator_id"],"m2_version":x["m2_version"]} for x in targets],created_by=created_by,
         time_budget_seconds=budget,calendar_window_seconds=calendar,
         parameter_sources={"time_budget":"m7_cycle_plan/1.0.0:"+("request" if time_budget_seconds else "method_default"),
-                           "calendar_window":"m7_cycle_plan/1.0.0:"+("request" if calendar_window_seconds else "method_default")},usage_scope="qa")
+                           "calendar_window":"m7_cycle_plan/1.0.0:"+("request" if calendar_window_seconds else "method_default")},usage_scope=usage_scope)
     session=create_session(connection,cycle_id=str(cycle["cycle_id"]),created_by=created_by)
     total=sum(x["planned_max_minutes"]*60 for x in route)
     status="READY" if not uncovered and total<=budget else ("LIMITED" if route else "NO_ROUTE")
@@ -154,9 +158,11 @@ def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:
     saved=repo.save_decision(connection,plan=plan,session_db_id=session["id"],key=key,request_hash=request_hash,decision=decision)
     if decision["status"]=="SELECTED":
         profile_id=connection.execute("SELECT personalized_profile_id FROM m5_cycles WHERE id=%s",(plan["cycle_db_id"],)).fetchone()["personalized_profile_id"]
+        usage_scope=connection.execute("SELECT usage_scope FROM m5_cycles WHERE id=%s",(plan["cycle_db_id"],)).fetchone()["usage_scope"]
         prepared=prepare_assessment_situation(connection,assessment_situation_id=str(uuid4()),case_id=decision["selected_case_id"],
             case_version=decision["selected_case_version"],personalized_profile_id=profile_id,
-            cycle_db_id=plan["cycle_db_id"],session_db_id=session["id"],substitutions=[],policy=policy,usage_scope="qa",qa_authorized_by=created_by)
+            cycle_db_id=plan["cycle_db_id"],session_db_id=session["id"],substitutions=[],policy=policy,
+            usage_scope=usage_scope,qa_authorized_by=created_by if usage_scope=="qa" else None)
         if prepared["snapshot"]["admission"]["admitted"] is not True:raise ValueError("AS_NOT_ADMITTED")
         repo.attach_prepared_as(connection,saved["id"],prepared["id"])
     return repo.read_decision(connection,saved["id"])
@@ -169,7 +175,8 @@ def present(connection, *, decision_id:str, expected_revision:int) -> dict:
     cycle=read_cycle(connection,str(connection.execute("SELECT cycle_id FROM m5_cycles WHERE id=%s",(decision["cycle_db_id"],)).fetchone()["cycle_id"]))
     if cycle["started_at"] and (cycle["remaining_seconds"]<=0 or datetime.now(timezone.utc)>=cycle["calendar_deadline"]):
         raise ValueError("M7_TIME_LIMIT_REACHED")
-    if cycle["status"]=="prepared":start_session(connection,session_id=str(cycle["sessions"][-1]["session_id"]))
+    if cycle["status"] in {"prepared","interrupted"}:
+        start_session(connection,session_id=str(cycle["sessions"][-1]["session_id"]))
     elif cycle["status"]!="active":raise ValueError("M7_COLLECTION_CLOSED")
     current=connection.execute("SELECT status,assessment_situation_id FROM m5_assessment_situations WHERE id=%s FOR UPDATE",(decision["assigned_as_db_id"],)).fetchone()
     if current["status"]=="active":return {"decision":decision,"presentation":{"assessment_situation_id":current["assessment_situation_id"],"status":"active","idempotent":True}}

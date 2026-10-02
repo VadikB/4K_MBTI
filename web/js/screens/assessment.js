@@ -237,22 +237,15 @@ export const enqueueAssessmentPreparation = async (userId, operationId = createO
 };
 
 export const shouldPrepareAssessmentInBackground = () => {
-  if (state.isAdmin || !state.pendingUser?.id) {
-    return false;
-  }
-  if (hasIncompleteAssessment()) {
-    return false;
-  }
-  if (state.currentScreen === 'interview' || state.currentScreen === 'processing' || state.currentScreen === 'report') {
-    return false;
-  }
-  return !state.preparedAssessmentStartResponse;
+  return false;
 };
 
 export const beginAssessmentPreparation = async ({ force = false } = {}) => {
   if (!state.pendingUser?.id || state.isAdmin) {
     return;
   }
+  renderAssessmentPreparationState();
+  return;
   if (!force && !shouldPrepareAssessmentInBackground()) {
     renderAssessmentPreparationState();
     return;

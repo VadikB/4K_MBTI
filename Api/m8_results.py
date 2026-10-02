@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
-from io import BytesIO
-from pathlib import Path
 from uuid import UUID, uuid4
 
 from Api.assessment_configuration import definition_checksum
@@ -11,6 +9,7 @@ from Api.m5_case_runtime import checksum
 from Api import m7_completion
 from Api import m6_cycle_aggregation_repository as calculations
 from Api.m8_report_package import load_package as load_report_package
+from Api.typst_pdf_renderer import render_typst_report
 
 RESULTS_VERSION = "m8-results/1.0.0"
 REPORT_TEMPLATE_VERSION = "m8-basic-report/1.0.0"
@@ -266,54 +265,33 @@ def read_latest_report(connection, cycle_id: str, audience: str) -> dict:
 
 def render_pdf(report: dict) -> bytes:
     package = load_report_package(); labels = package["template"]["outcome_labels"]
-    try:
-        from reportlab.lib import colors
-        from reportlab.lib.pagesizes import A4
-        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-        from reportlab.pdfbase import pdfmetrics
-        from reportlab.pdfbase.ttfonts import TTFont
-        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-    except ImportError as exc:
-        raise RuntimeError("PDF_RENDERER_UNAVAILABLE") from exc
-    font_candidates = (
-        Path(__file__).resolve().parent / "pdf_assets" / "fonts" / "NotoSans.ttf",
-        Path("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
-        Path("/Library/Fonts/Arial Unicode.ttf"),
-        Path("/System/Library/Fonts/Supplemental/Arial.ttf"),
-        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
-    )
-    font_path = next((path for path in font_candidates if path.exists()), None)
-    if font_path is None:
-        raise RuntimeError("PDF_UNICODE_FONT_UNAVAILABLE")
-    font_name = "Agent4KM8Unicode"
-    if font_name not in pdfmetrics.getRegisteredFontNames():
-        pdfmetrics.registerFont(TTFont(font_name, str(font_path)))
-    c67 = report["c67"]; buffer = BytesIO(); styles = getSampleStyleSheet()
-    title_style = ParagraphStyle("M8Title", parent=styles["Title"], fontName=font_name)
-    heading2_style = ParagraphStyle("M8Heading2", parent=styles["Heading2"], fontName=font_name)
-    heading3_style = ParagraphStyle("M8Heading3", parent=styles["Heading3"], fontName=font_name)
-    body_style = ParagraphStyle("M8Body", parent=styles["BodyText"], fontName=font_name)
-    doc = SimpleDocTemplate(buffer, pagesize=A4, title="4K Basic Report")
-    story = [Paragraph("4K — базовый индивидуальный отчёт", title_style),
-             Paragraph(f"Cycle: {c67['cycle_id']} · Results revision: {c67['results_revision_no']} · Report: {report['revision_no']}", body_style),
-             Spacer(1, 10), Paragraph("Результаты по навыкам", heading2_style)]
-    rows = [[Paragraph(value, body_style) for value in ("Навык", "Исход", "Score", "Полнота")]]
+    c67 = report["c67"]
+    skills = []
     for skill in c67["skills"]:
         score = skill.get("score")
-        score_text = "—" if score is None else f"{score['numerator']}/{score['denominator']} ({score['value']})"
-        rows.append([Paragraph(str(value), body_style) for value in (
-            skill.get("skill_name") or skill["skill_id"], labels.get(skill["outcome"], skill["outcome"]),
-            score_text, skill.get("completeness") or "—")])
-    table = Table(rows, repeatRows=1, colWidths=[210, 95, 95, 75])
-    table.setStyle(TableStyle([("GRID", (0,0), (-1,-1), .4, colors.grey), ("VALIGN", (0,0), (-1,-1), "TOP"),
-                               ("BACKGROUND", (0,0), (-1,0), colors.lightgrey), ("FONTSIZE", (0,0), (-1,-1), 8)]))
-    story.append(table); story.append(Spacer(1, 10)); story.append(Paragraph("Покрытие", heading2_style))
+        skills.append({
+            "name": skill.get("skill_name") or skill["skill_id"],
+            "outcome": labels.get(skill["outcome"], skill["outcome"]),
+            "score": "—" if score is None else f"{score['numerator']}/{score['denominator']} ({score['value']})",
+            "completeness": skill.get("completeness") or "—",
+        })
+    coverage = []
     for scope, cuts in c67["coverage"].items():
-        story.append(Paragraph(scope, heading3_style));
+        if not isinstance(cuts, dict):
+            continue
         for name, cut in cuts.items():
-            ratio = "не определено" if cut["ratio"] is None else f"{cut['numerator']}/{cut['denominator']} ({cut['ratio']:.1%})"
-            story.append(Paragraph(f"{name}: {ratio}", body_style))
-    story.append(Paragraph("Ограничения", heading2_style));
-    for item in c67["limitations"]: story.append(Paragraph(f"• {item}", body_style))
-    story.append(Paragraph(f"Reliability: {c67['reliability'].get('status', 'not_provided')}", body_style))
-    doc.build(story); return buffer.getvalue()
+            if not isinstance(cut, dict) or "ratio" not in cut:
+                continue
+            ratio = "не определено" if cut["ratio"] is None else f"{cut['numerator']}/{cut['denominator']} ({cut['ratio'] * 100:.1f}%)"
+            coverage.append({"scope": scope, "name": name, "ratio": ratio})
+    payload = {
+        "title": "4K — базовый индивидуальный отчёт",
+        "cycle_id": c67["cycle_id"],
+        "results_revision_no": c67["results_revision_no"],
+        "report_revision_no": report["revision_no"],
+        "skills": skills,
+        "coverage": coverage,
+        "limitations": c67["limitations"],
+        "reliability": c67["reliability"].get("status", "not_provided"),
+    }
+    return render_typst_report(payload, "m8_basic_report.typ")

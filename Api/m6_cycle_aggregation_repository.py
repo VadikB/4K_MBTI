@@ -76,7 +76,8 @@ def _inputs(connection, cycle_id: str, expected_composition_checksum: str):
 
 
 def create(connection, *, cycle_id: str, key: str, expected_composition_checksum: str,
-           admission_mechanism_version: str, decisions: list[dict], created_by: int):
+           admission_mechanism_version: str, decisions: list[dict], created_by: int,
+           limitations: list[str] | None = None):
     cycle, c46, value = _inputs(connection, cycle_id, expected_composition_checksum)
     request = {"expected_composition_checksum": expected_composition_checksum,
         "admission_mechanism_version": admission_mechanism_version, "decisions": decisions}
@@ -94,11 +95,13 @@ def create(connection, *, cycle_id: str, key: str, expected_composition_checksum
         "message_id": str(uuid4()), "correlation_id": str(cycle["cycle_id"]), "readiness": readiness,
         "cycle_id": str(cycle["cycle_id"]), "composition": value["composition"], "composition_checksum": expected_composition_checksum,
         "cycle_context": value["cycle_context"],
+        "full_target_set": value["full_target_set"], "planned_target_set": value["planned_target_set"],
         "calculation_ref": {"id": str(calculation_id), "revision_no": revision_no, "cycle_id": str(cycle["cycle_id"]),
             "composition_checksum": expected_composition_checksum}, "sources": value["source_versions"], "algorithm": value["algorithm"],
-        "admission_mechanism": admission_mechanism_version, "processing": value["processing"], "observations": value["observations"], **result,
+        "admission_mechanism": admission_mechanism_version, "processing": value["processing"], "observations": value["observations"],
+        "admissions": result["admission_decisions"], **result,
         "confidence": {"kind": "qualitative", "ia_bases_preserved": True},
-        "reliability": {"status": "not_verified", "protocol_ref": None}, "limitations": []}
+        "reliability": {"status": "not_verified", "protocol_ref": None}, "limitations": list(limitations or [])}
     connection.execute("""INSERT INTO m6_cycle_calculations
         (id,cycle_db_id,revision_no,request_key,request_hash,composition_checksum,input_json,input_hash,result_json,result_hash,c56_json,c56_hash,created_by)
         VALUES(%s,%s,%s,%s,%s,%s,%s::jsonb,%s,%s::jsonb,%s,%s::jsonb,%s,%s)""",

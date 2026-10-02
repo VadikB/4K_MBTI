@@ -53,9 +53,13 @@ def start_background_workers() -> None:
     assessment_preparation_queue.start()
     assessment_analysis_queue.start()
     from Api import m6_worker
-    m6_worker.start()
+    from Api.m10_test_gateway import enabled as browser_test_gateway_enabled
+    if not browser_test_gateway_enabled():
+        m6_worker.start()
     from Api import m7_completion_worker
     m7_completion_worker.start()
+    from Api import m10_orchestration
+    m10_orchestration.start()
 
 
 @app.on_event("shutdown")
@@ -66,6 +70,8 @@ def stop_background_workers() -> None:
     m6_worker.stop()
     from Api import m7_completion_worker
     m7_completion_worker.stop()
+    from Api import m10_orchestration
+    m10_orchestration.stop()
 
 
 def _resolve_request_user(request: Request):

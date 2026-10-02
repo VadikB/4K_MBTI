@@ -61,6 +61,21 @@ def test_e8_e_full_zero_is_a_real_score():
     assert result["skill_outcomes"][0]["score"]["value"]==0
 
 
+def test_e8_f_corrected_i5_admission_creates_new_four_thirds_result():
+    hierarchy=[{"skill_id":"TEST.S2","components":[{"component_id":"A","indicator_ids":["I1","I2"]},
+        {"component_id":"B","indicator_ids":["I3","I4"]},{"component_id":"C","indicator_ids":["I5"]}]}]
+    observations=[obs("I1","L1",1),obs("I1","L3",2),obs("I2","INSUFFICIENT_EVIDENCE",3),
+        obs("I3",None,4,"ABSENT"),obs("I4","L0",5),obs("I5","L1",6),obs("I5","L3",7)]
+    result=calculate(hierarchy=hierarchy,observations=observations,
+        decisions=[decision("I1","r1","r2"),decision("I4","r5"),decision("I5","r6","r7")],
+        planned_indicator_ids=["I1","I2","I3","I4","I5"],composition_version="e8-f")
+    skill=result["skill_outcomes"][0]
+    assert skill["outcome"]=="partial_score"
+    assert skill["score"]=={"value":4/3,"numerator":4,"denominator":3}
+    c=result["coverage"]["full_m2"]
+    assert [(c[x]["numerator"],c[x]["denominator"]) for x in c if x!="scope"]==[(4,5),(3,5),(3,5),(3,3),(1,3)]
+
+
 def test_rejects_convenient_subset_of_assessments():
     with pytest.raises(ValueError,match="M6_CONVENIENT_SUBSET_FORBIDDEN"):
         calculate(hierarchy=[{"skill_id":"S","components":[{"component_id":"C","indicator_ids":["I1"]}]}],

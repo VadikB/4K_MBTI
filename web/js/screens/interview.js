@@ -24,6 +24,8 @@ import {
   interviewTextarea,
   interviewSubmitButton,
   interviewFinishButton,
+  interviewPauseButton,
+  interviewAdditionalButton,
   interviewError,
   caseProgressList,
   interviewRouteLabel,
@@ -39,18 +41,179 @@ import { createOperationId } from '../api.js';
 import { showLoader, hideLoader, startLoaderProgressPolling } from '../utils/loader.js';
 import { loaderFlows } from '../config.js';
 import {
-  canReusePreparedAssessment,
   renderAssessmentPreparationState,
-  beginAssessmentPreparation,
-  enqueueAssessmentPreparation,
-  retryAssessmentPreparation,
-  resetAssessmentPreparationState,
 } from './assessment.js';
 import { openPrechat } from './ai-welcome.js';
 import { openProcessing } from './processing.js';
 import { recoverProfileCompletionForAssessment, shouldRecoverProfileOnAssessmentError } from './profile-recovery.js';
 
 const interviewCaseContextByKey = new Map();
+const PRODUCT_RUNTIME_POLL_MS = 1200;
+
+export const isCycleAssessment = () =>
+  state.assessmentRuntimeKind === 'cycle' && Boolean(state.productCycleId);
+
+const productPayloadText = (payload) => {
+  if (!payload) return 'Кейс подготовлен. Ознакомьтесь с ситуацией и дайте ответ.';
+  if (typeof payload === 'string') return payload;
+  const parts = [];
+  for (const key of ['title', 'situation', 'context', 'task', 'question', 'content']) {
+    if (typeof payload[key] === 'string' && payload[key].trim()) parts.push(payload[key].trim());
+  }
+  return parts.length ? parts.join('\n\n') : JSON.stringify(payload, null, 2);
+};
+
+const productEventText = (event) => {
+  const payload = event?.payload_json || {};
+  const content = payload.content || payload.message || payload.character_response;
+  return typeof content === 'string' ? content : null;
+};
+
+const renderProductRuntime = (snapshot) => {
+  const current = snapshot.current_situation;
+  state.assessmentRuntimeKind = 'cycle';
+  state.productCycleId = snapshot.cycle_id;
+  state.productAssessmentSituationId = current?.assessment_situation_id || null;
+  state.productClarificationDecisionId = snapshot.clarification?.id || null;
+  state.productCycleStatus = snapshot.status?.collection_status || null;
+  state.assessmentRemainingSeconds = snapshot.status?.remaining_seconds ?? null;
+  state.assessmentCaseNumber = Math.max(1, snapshot.situations?.length || 1);
+  state.assessmentTotalCases = Math.max(state.assessmentCaseNumber, snapshot.plan?.plan?.route?.length || 1);
+  state.assessmentCaseTitle = current?.participant_payload?.title || current?.participant_payload?.case_title || 'Оценочная ситуация';
+  state.activeInterviewCaseKey = current?.assessment_situation_id || null;
+  persistAssessmentContext();
+
+  interviewMessages.innerHTML = '';
+  if (current) addInterviewMessage('assistant', productPayloadText(current.participant_payload));
+  for (const item of snapshot.trace?.turns || []) {
+    addInterviewMessage(item.speaker_type === 'assessee' ? 'user' : 'assistant', item.content_text || '');
+  }
+  for (const event of snapshot.trace?.events || []) {
+    const text = productEventText(event);
+    if (text) addInterviewMessage('assistant', text);
+  }
+  const clarification = snapshot.clarification;
+  if (clarification?.status === 'ASK' && !clarification.response_outcome && clarification.question?.text) {
+    addInterviewMessage('assistant', clarification.question.text);
+  }
+  renderInterviewMeta();
+  renderCaseProgress(false);
+  interviewPanel.classList.remove('single-turn-mode', 'completed');
+  interviewCompleteActions.classList.add('hidden');
+
+  const cycleStatus = snapshot.status?.collection_status;
+  const waitingQuestion = clarification?.status === 'ASK' && !clarification.response_outcome;
+  const closed = ['collection_closed', 'calculation_pending', 'calculated', 'failed'].includes(cycleStatus);
+  interviewTextarea.disabled = closed;
+  interviewSubmitButton.disabled = closed;
+  interviewFinishButton.disabled = closed || waitingQuestion;
+  interviewPauseButton?.classList.toggle('hidden', closed);
+  interviewAdditionalButton?.classList.toggle('hidden', closed || !current);
+  if (interviewPauseButton) interviewPauseButton.textContent = state.productCycleStatus === 'paused' ? 'Продолжить' : 'Пауза';
+  interviewCaseStatus.textContent = closed
+    ? snapshot.pipeline?.status === 'failed'
+      ? 'Обработка завершилась ошибкой. Ответы сохранены.'
+      : 'Сбор завершён. Выполняется итоговая обработка.'
+    : waitingQuestion
+      ? 'Ответьте на уточняющий вопрос.'
+      : current?.status === 'scenario_ended'
+        ? 'Проверяем, требуется ли уточнение.'
+        : 'Ответы сохраняются в текущей Assessment Situation.';
+  updateInterviewTimer();
+  scheduleInterviewBottomAlignment();
+  return snapshot;
+};
+
+export const loadProductRuntime = async () => {
+  if (!state.productCycleId) throw new Error('Cycle runtime не инициализирован.');
+  const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(state.productCycleId) + '/runtime', {
+    credentials: 'same-origin',
+  });
+  return renderProductRuntime(await readApiResponse(response, 'Не удалось восстановить состояние оценки.'));
+};
+
+const waitForProductClarification = async (previousDecisionId = null) => {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const snapshot = await loadProductRuntime();
+    const decision = snapshot.clarification;
+    if (snapshot.pipeline?.status === 'failed') throw new Error(snapshot.pipeline.error_code || 'Ошибка анализа.');
+    if (decision && decision.id !== previousDecisionId) return snapshot;
+    await new Promise((resolve) => window.setTimeout(resolve, PRODUCT_RUNTIME_POLL_MS));
+  }
+  throw new Error('Анализ уточнения ещё не завершён. Состояние можно восстановить после обновления страницы.');
+};
+
+const completeProductCycle = async () => {
+  const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/completion', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'complete', reason: 'user_completed_scenario', idempotency_key: createOperationId() }),
+  });
+  await readApiResponse(response, 'Не удалось завершить сбор оценки.');
+  safeStorage.setItem(STORAGE_KEYS.completionPending, '1');
+  openProcessing();
+};
+
+export const finishProductAssessment = async () => {
+  let snapshot = await loadProductRuntime();
+  const current = snapshot.current_situation;
+  if (!current) throw new Error('Текущая Assessment Situation не найдена.');
+  if (!(snapshot.trace?.turns || []).some((turn) => turn.speaker_type === 'assessee')) {
+    throw new Error('Сначала отправьте хотя бы один ответ по текущей ситуации.');
+  }
+  if (current.status === 'active') {
+    const response = await fetch('/users/assessment/m5/situations/' + encodeURIComponent(current.assessment_situation_id) + '/transitions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'scenario_end', reason: 'user_finished_case', request_id: createOperationId() }),
+    });
+    await readApiResponse(response, 'Не удалось завершить основной сценарий.');
+    interviewCaseStatus.textContent = 'Анализируем, требуется ли уточнение…';
+    snapshot = await waitForProductClarification(snapshot.clarification?.id || null);
+  }
+  const clarification = snapshot.clarification;
+  if (clarification?.status === 'ASK' && !clarification.response_outcome) {
+    renderProductRuntime(snapshot);
+    return;
+  }
+  await completeProductCycle();
+};
+
+export const toggleProductPause = async () => {
+  const action = state.productCycleStatus === 'paused' ? 'resume' : 'pause';
+  const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/control', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, reason: 'user_' + action, idempotency_key: createOperationId() }),
+  });
+  await readApiResponse(response, 'Не удалось изменить состояние паузы.');
+  await loadProductRuntime();
+};
+
+export const createProductAdditionalSession = async () => {
+  let snapshot = await loadProductRuntime();
+  if (!(snapshot.trace?.turns || []).some((turn) => turn.speaker_type === 'assessee')) {
+    throw new Error('Перед Additional Session сохраните ответ по текущей ситуации.');
+  }
+  if (snapshot.status?.collection_status !== 'interrupted') {
+    const interruptedResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/completion', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'interrupt_for_continuation', reason: 'user_requested_additional_session', idempotency_key: createOperationId() }),
+    });
+    await readApiResponse(interruptedResponse, 'Не удалось прервать текущую сессию.');
+    snapshot = await loadProductRuntime();
+  }
+  if (snapshot.continuation?.status === 'pending') {
+    const sessionResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/additional-sessions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ intent_id: snapshot.continuation.intent_id, idempotency_key: createOperationId() }),
+    });
+    await readApiResponse(sessionResponse, 'Не удалось создать Additional Session.');
+  }
+  const nextResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/next', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idempotency_key: createOperationId() }),
+  });
+  await readApiResponse(nextResponse, 'Не удалось выбрать следующую Assessment Situation.');
+  await loadProductRuntime();
+};
 
 export const parseInterviewAssistantMessage = (text) => {
   const normalized = String(text || '').trim();
@@ -730,7 +893,33 @@ const handleAssessmentResponse = (data) => {
   }
 };
 
-const submitAssessmentMessage = async (text) => {
+const submitAssessmentMessage = async (text, requestIdentity = null) => {
+  if (isCycleAssessment()) {
+    if (text === '__timeout__') {
+      await loadProductRuntime();
+      return;
+    }
+    const snapshot = await loadProductRuntime();
+    const clarification = snapshot.clarification;
+    const isClarification = clarification?.status === 'ASK' && !clarification.response_outcome;
+    const endpoint = isClarification
+      ? '/users/assessment/m7/clarifications/' + encodeURIComponent(clarification.id) + '/answers'
+      : '/users/assessment/m5/situations/' + encodeURIComponent(state.productAssessmentSituationId) + '/turns';
+    const body = {
+      request_id: requestIdentity?.requestId || createOperationId(),
+      turn_id: requestIdentity?.turnId || crypto.randomUUID(),
+      content: text,
+    };
+    const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    await readApiResponse(response, 'Не удалось сохранить ответ в Cycle runtime.');
+    if (isClarification) {
+      interviewCaseStatus.textContent = 'Повторно анализируем ответ на уточнение…';
+      await waitForProductClarification(clarification.id);
+    } else {
+      await loadProductRuntime();
+    }
+    return;
+  }
   const operationId = createOperationId();
   scheduleAssessmentTransitionLoader(operationId);
   try {
@@ -763,6 +952,9 @@ export const openInterview = () => {
   interviewPanel.classList.remove('completed');
   interviewCompleteActions.classList.add('hidden');
   interviewPanel.classList.remove('hidden');
+  if (isCycleAssessment()) {
+    void loadProductRuntime().catch((error) => showError(interviewError, error.message));
+  }
 };
 
 const startAssessmentInterview = async () => {
@@ -786,18 +978,23 @@ const startAssessmentInterview = async () => {
   showError(interviewError, '');
 
   try {
-    const preparedData = state.preparedAssessmentStartResponse;
-    let data = preparedData;
-    if (!data) {
-      const prepared = await enqueueAssessmentPreparation(state.pendingUser.id);
-      data = await prepared.resultPromise;
-    }
-
+    const response = await fetch('/users/assessment/cycles/start', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idempotency_key: state.productCycleId || createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'] }),
+    });
+    const started = await readApiResponse(response, 'Не удалось запустить Cycle runtime.');
+    state.assessmentRuntimeKind = 'cycle';
+    state.productCycleId = started.plan.cycle_id;
+    state.assessmentSessionCode = null;
+    state.assessmentSessionId = null;
     state.preparedAssessmentStartResponse = null;
-    resetAssessmentPreparationState();
-    renderAssessmentPreparationState();
+    if (['collection_closed', 'calculation_pending'].includes(started.runtime?.status?.collection_status)) {
+      persistAssessmentContext();
+      openProcessing();
+      return;
+    }
     openInterview();
-    handleAssessmentResponse(data);
+    renderProductRuntime(started.runtime);
   } catch (error) {
     if (shouldRecoverProfileOnAssessmentError(error.message)) {
       await recoverProfileCompletionForAssessment();
@@ -813,15 +1010,7 @@ const startAssessmentInterview = async () => {
 };
 
 export const handleAssessmentEntryClick = () => {
-  if (canReusePreparedAssessment()) {
-    openPrechat();
-    return;
-  }
-  if (state.assessmentPreparationStatus === 'failed') {
-    void retryAssessmentPreparation();
-    return;
-  }
-  void beginAssessmentPreparation({ force: true });
+  openPrechat();
 };
 
 export const initInterview = () => {
@@ -857,6 +1046,12 @@ export const initInterview = () => {
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       setCaseSidebarOpen(false);
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && isCycleAssessment()) {
+      void loadProductRuntime().catch((error) => showError(interviewError, error.message));
     }
   });
 

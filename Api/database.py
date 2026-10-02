@@ -3499,6 +3499,8 @@ def ensure_m5_runtime_schema(connection) -> None:
     ensure_m6_cycle_aggregation_schema(connection)
     from Api.m8_results import ensure_schema as ensure_m8_results_schema
     ensure_m8_results_schema(connection)
+    from Api.m10_orchestration import ensure_schema as ensure_m10_orchestration_schema
+    ensure_m10_orchestration_schema(connection)
 
 
 def ensure_execution_snapshot_guards(connection, *, tables: tuple[str, ...] = ("user_sessions", "assessment_preparation_jobs")) -> None:
@@ -4289,6 +4291,8 @@ def ensure_core_schema() -> None:
         ensure_m5_runtime_schema(connection)
         from Api.m6_repository import ensure_schema as ensure_m6_schema
         ensure_m6_schema(connection)
+        from Api.m10_orchestration import ensure_schema as ensure_m10_orchestration_schema
+        ensure_m10_orchestration_schema(connection)
         connection.execute(
             """
             INSERT INTO consent_documents (

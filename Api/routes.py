@@ -33,6 +33,8 @@ from Api import m6_cycle_aggregation_repository
 from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest
 from Api import m8_results
 from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest
+from Api import m10_product_flow, m10_orchestration
+from Api.m10_contracts import ProductCycleStartRequest, ProductNextRequest
 from scripts.build_m5_case_package import OUTPUT as M5_PACKAGE_DIR
 from Api.assessment_role_profiles import (
     create_organization_role_profile_draft,
@@ -5060,6 +5062,7 @@ def _m5_owned_situation(request: Request, assessment_situation_id: str) -> None:
         raise HTTPException(status_code=403, detail="Нет доступа к чужой Assessment Situation.")
     if row["usage_scope"] != "assessment":
         raise HTTPException(status_code=403, detail="QA_AS_NOT_AVAILABLE_IN_PRODUCT_ROUTE")
+    return user
 
 
 def _m7_owned_cycle(request:Request,cycle_id:str):
@@ -5070,6 +5073,19 @@ def _m7_owned_cycle(request:Request,cycle_id:str):
     if not row:raise HTTPException(status_code=404,detail='M7_CYCLE_NOT_FOUND')
     if int(row['owner_user_id'])!=int(user.id):raise HTTPException(status_code=403,detail='Нет доступа к чужому Assessment Cycle.')
     if row['usage_scope']!='assessment':raise HTTPException(status_code=403,detail='QA_CYCLE_NOT_AVAILABLE_IN_PRODUCT_ROUTE')
+    return user
+
+
+def _m7_owned_clarification(request:Request,decision_id:str):
+    token=request.cookies.get(SESSION_COOKIE_NAME);user=web_session_service.get_user_by_token(token) if token else None
+    if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
+    with get_connection() as connection:
+        row=connection.execute("""SELECT c.owner_user_id,c.usage_scope FROM m7_clarification_decisions d
+            JOIN m5_assessment_situations s ON s.id=d.assessment_situation_db_id
+            JOIN m5_cycles c ON c.id=s.cycle_db_id WHERE d.id=%s""",(UUID(decision_id),)).fetchone()
+    if not row:raise HTTPException(status_code=404,detail='M7_CLARIFICATION_NOT_FOUND')
+    if int(row['owner_user_id'])!=int(user.id):raise HTTPException(status_code=403,detail='Нет доступа к чужому уточнению.')
+    if row['usage_scope']!='assessment':raise HTTPException(status_code=403,detail='QA_CLARIFICATION_NOT_AVAILABLE_IN_PRODUCT_ROUTE')
     return user
 
 
@@ -5246,9 +5262,15 @@ def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, 
     _m5_owned_situation(request, str(assessment_situation_id))
     try:
         with get_connection() as connection:
+            semantic_adapter=character_adapter=None
+            from Api.m10_test_gateway import enabled as browser_test_gateway_enabled
+            if browser_test_gateway_enabled():
+                from Api.m5_rule_engine import ControlledCharacterAdapter,ControlledSemanticAdapter
+                semantic_adapter=ControlledSemanticAdapter({});character_adapter=ControlledCharacterAdapter({})
             result = m5_scenario_runtime.submit_turn(connection, assessment_situation_id=str(assessment_situation_id),
                                                      request_id=payload.request_id, turn_id=str(payload.turn_id),
-                                                     content=payload.content)
+                                                     content=payload.content,semantic_adapter=semantic_adapter,
+                                                     character_adapter=character_adapter)
             connection.commit()
             return result
     except ValueError as exc:
@@ -5258,11 +5280,15 @@ def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, 
 
 @router.post("/assessment/m5/situations/{assessment_situation_id}/transitions")
 def transition_owned_m5_situation(assessment_situation_id: UUID, payload: M5TransitionRequest, request: Request) -> dict:
-    _m5_owned_situation(request, str(assessment_situation_id))
+    user=_m5_owned_situation(request, str(assessment_situation_id))
     try:
         with get_connection() as connection:
             result = m5_scenario_runtime.transition(connection, assessment_situation_id=str(assessment_situation_id),
                                                     action=payload.action, reason=payload.reason, request_id=payload.request_id)
+            if payload.action=='scenario_end':
+                handoff=m5_scenario_runtime.build_c45(connection,str(assessment_situation_id),mode='interim')
+                queued=m10_orchestration.enqueue_handoff(connection,handoff_id=str(handoff['handoff_id']),created_by=int(user.id))
+                result={**result,'interim_processing_request_id':str(queued['id'])}
             connection.commit()
             return result
     except ValueError as exc:
@@ -5274,6 +5300,60 @@ def get_owned_m5_trace(assessment_situation_id: UUID, request: Request) -> dict:
     _m5_owned_situation(request, str(assessment_situation_id))
     with get_connection() as connection:
         return m5_scenario_runtime.trace(connection, str(assessment_situation_id))
+
+
+@router.post('/assessment/cycles/start', status_code=201)
+def start_owned_assessment_cycle(payload: ProductCycleStartRequest, request: Request):
+    token=request.cookies.get(SESSION_COOKIE_NAME);user=web_session_service.get_user_by_token(token) if token else None
+    if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
+    try:
+        with get_connection() as connection:
+            result=m10_product_flow.start_or_resume(connection,user_id=int(user.id),key=payload.idempotency_key,
+                selected_skills=list(payload.selected_skills))
+            runtime=m10_product_flow.read_runtime(connection,cycle_id=str(result['plan']['cycle_id']))
+            connection.commit();return {**result,'runtime':runtime}
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.get('/assessment/cycles/{cycle_id}/runtime')
+def read_owned_assessment_runtime(cycle_id:UUID,request:Request):
+    _m7_owned_cycle(request,str(cycle_id))
+    try:
+        with get_connection() as connection:return m10_product_flow.read_runtime(connection,cycle_id=str(cycle_id))
+    except ValueError as exc:raise HTTPException(status_code=404,detail=str(exc)) from exc
+
+
+@router.post('/assessment/m7/cycles/{cycle_id}/next', status_code=201)
+def next_owned_assessment_situation(cycle_id:UUID,payload:ProductNextRequest,request:Request):
+    user=_m7_owned_cycle(request,str(cycle_id))
+    try:
+        with get_connection() as connection:
+            result=m10_product_flow.next_situation(connection,cycle_id=str(cycle_id),user_id=int(user.id),
+                key=payload.idempotency_key);connection.commit();return result
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.post('/assessment/m7/clarifications/{decision_id}/answers')
+def answer_owned_clarification(decision_id:UUID,payload:ClarificationAnswerRequest,request:Request):
+    user=_m7_owned_clarification(request,str(decision_id))
+    try:
+        with get_connection() as connection:
+            result=m7_clarification.answer(connection,decision_id=str(decision_id),request_id=payload.request_id,
+                turn_id=str(payload.turn_id),content=payload.content)
+            if result.get('handoff_id'):
+                m10_orchestration.enqueue_handoff(connection,handoff_id=str(result['handoff_id']),created_by=int(user.id))
+            connection.commit();return result
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.post('/assessment/m7/clarifications/{decision_id}/outcomes')
+def outcome_owned_clarification(decision_id:UUID,payload:ClarificationOutcomeRequest,request:Request):
+    _m7_owned_clarification(request,str(decision_id))
+    try:
+        with get_connection() as connection:
+            result=m7_clarification.record_outcome(connection,decision_id=str(decision_id),request_id=payload.request_id,
+                outcome=payload.outcome);connection.commit();return result
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 
 @router.get('/assessment/m7/cycles/{cycle_id}')
@@ -6368,6 +6448,7 @@ def confirm_agent_profile(payload: AgentProfileConfirmRequest, request: Request,
     status_code=202,
 )
 def start_assessment(user_id: int, request: Request) -> AssessmentPreparationEnqueueResponse:
+    _require_matching_session_user(request, user_id)
     operation_id = request.headers.get("X-Agent4K-Operation-Id") or uuid4().hex
     operation_progress_service.begin(
         operation_id,
@@ -6399,10 +6480,16 @@ def start_assessment(user_id: int, request: Request) -> AssessmentPreparationEnq
     "/assessment/preparation/{operation_id}",
     response_model=AssessmentPreparationStatusResponse,
 )
-def get_assessment_preparation(operation_id: str) -> AssessmentPreparationStatusResponse:
+def get_assessment_preparation(operation_id: str, request: Request) -> AssessmentPreparationStatusResponse:
     job = assessment_preparation_queue.get_status(operation_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Задание подготовки ассессмента не найдено.")
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token) if token else None
+    if user is None:
+        raise HTTPException(status_code=401, detail="Сессия не найдена. Войдите заново.")
+    if int(job["user_id"]) != int(user.id):
+        raise HTTPException(status_code=403, detail="Нет доступа к чужой подготовке ассессмента.")
     result_payload = job.pop("result_json", None)
     if isinstance(result_payload, str):
         result_payload = json.loads(result_payload)
@@ -6966,17 +7053,25 @@ def read_owned_m8_status(cycle_id: UUID, request: Request):
     _m7_owned_cycle(request, str(cycle_id))
     with get_connection() as connection:
         cycle = m7_completion.read_status(connection, str(cycle_id))
+        pipeline = connection.execute("""SELECT p.status,p.stage,p.error_code FROM m10_pipeline_runs p
+            JOIN m5_cycles c ON c.id=p.cycle_db_id WHERE c.cycle_id=%s""", (cycle_id,)).fetchone()
         try:
             report = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
-            return {**cycle, 'results_status': 'ready', 'report_status': report['status'], 'report_id': report['id']}
+            return {**cycle, 'results_status': 'ready', 'report_status': report['status'], 'report_id': report['id'],
+                    'pipeline_stage': pipeline['stage'] if pipeline else 'report_ready', 'processing_error': None}
         except ValueError:
+            if pipeline and pipeline['status']=='failed':
+                return {**cycle,'results_status':'failed','report_status':'not_created','report_id':None,
+                        'pipeline_stage':pipeline['stage'],'processing_error':pipeline['error_code']}
             try:
                 m8_results.read_latest_results(connection, str(cycle_id))
-                return {**cycle, 'results_status': 'ready', 'report_status': 'not_created', 'report_id': None}
+                return {**cycle, 'results_status': 'ready', 'report_status': 'not_created', 'report_id': None,
+                        'pipeline_stage':pipeline['stage'] if pipeline else 'results_ready','processing_error':None}
             except ValueError:
                 pass
             result_status = 'processing' if cycle['collection_status'] in {'collection_closed','calculation_pending'} else cycle['collection_status']
-            return {**cycle, 'results_status': result_status, 'report_status': 'not_created', 'report_id': None}
+            return {**cycle, 'results_status': result_status, 'report_status': 'not_created', 'report_id': None,
+                    'pipeline_stage':pipeline['stage'] if pipeline else None,'processing_error':None}
 
 
 @router.get('/assessment/m8/cycles/{cycle_id}/results')
