@@ -73,6 +73,13 @@ def test_lab_creates_qa_as_through_common_storage_and_runtime(client):
     http, monkeypatch, _ = client; http.cookies.set(routes.SESSION_COOKIE_NAME, "admin")
     calls = {}
     monkeypatch.setattr(routes.m5_storage, "import_package_directory", lambda *_: {"created": False})
+    monkeypatch.setattr(
+        routes.m5_cycle_runtime, "create_cycle_session_for_case",
+        lambda *_args, **_kwargs: (
+            {"id": 41, "cycle_id": "21111111-1111-4111-8111-111111111111"},
+            {"id": 42, "session_id": "31111111-1111-4111-8111-111111111111"},
+        ),
+    )
     def prepare(_connection, **kwargs):
         calls.update(kwargs)
         return {"id": 51, "assessment_situation_id": "11111111-1111-4111-8111-111111111111",

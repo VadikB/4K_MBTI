@@ -22,7 +22,7 @@ from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_ser
 from Api.config import settings
 from Api.assessment_service import assessment_service
 from Api import m5_generation_lab
-from Api import m5_scenario_runtime, m5_storage
+from Api import m5_cycle_runtime, m5_scenario_runtime, m5_storage
 from scripts.build_m5_case_package import OUTPUT as M5_PACKAGE_DIR
 from Api.assessment_role_profiles import (
     create_organization_role_profile_draft,
@@ -4997,9 +4997,15 @@ def create_m5_lab_run(payload: M5LabRuntimeRequest, request: Request) -> dict:
                 return result
             m5_storage.import_package_directory(connection, M5_PACKAGE_DIR)
             policy = json.loads((M5_PACKAGE_DIR / "admission-policy.json").read_text())
+            cycle, session = m5_cycle_runtime.create_cycle_session_for_case(
+                connection, personalized_profile_id=payload.personalized_profile_id,
+                case_id=payload.case_id, case_version=payload.case_version,
+                created_by=int(user.id), usage_scope="qa",
+            )
             prepared = m5_storage.prepare_assessment_situation(
                 connection, assessment_situation_id=str(uuid4()), case_id=payload.case_id,
                 case_version=payload.case_version, personalized_profile_id=payload.personalized_profile_id,
+                cycle_db_id=int(cycle["id"]), session_db_id=int(session["id"]),
                 substitutions=payload.substitutions, policy=policy, usage_scope="qa", qa_authorized_by=int(user.id),
             )
             started = m5_scenario_runtime.start(connection, prepared["assessment_situation_id"])
@@ -5010,6 +5016,7 @@ def create_m5_lab_run(payload: M5LabRuntimeRequest, request: Request) -> dict:
             """, (payload.run_id, int(user.id), prepared["id"], request_checksum)).fetchone()
             connection.commit()
             return {**dict(lab_row), "assessment_situation_id": prepared["assessment_situation_id"],
+                    "cycle_id": str(cycle["cycle_id"]), "session_id": str(session["session_id"]),
                     "as_status": "active", "snapshot_json": prepared["snapshot"],
                     "participant_payload": started["participant_payload"],
                     "trace": m5_scenario_runtime.trace(connection, prepared["assessment_situation_id"])}
@@ -5061,13 +5068,19 @@ def prepare_m5_runtime_situation(payload: M5PrepareSituationRequest, request: Re
     policy = json.loads((M5_PACKAGE_DIR / "admission-policy.json").read_text())
     try:
         with get_connection() as connection:
+            cycle, session = m5_cycle_runtime.create_cycle_session_for_case(
+                connection, personalized_profile_id=payload.personalized_profile_id,
+                case_id=payload.case_id, case_version=payload.case_version,
+                created_by=int(user.id), usage_scope="qa",
+            )
             result = m5_storage.prepare_assessment_situation(
                 connection, assessment_situation_id=str(uuid4()), case_id=payload.case_id,
                 case_version=payload.case_version, personalized_profile_id=payload.personalized_profile_id,
+                cycle_db_id=int(cycle["id"]), session_db_id=int(session["id"]),
                 substitutions=payload.substitutions, policy=policy, usage_scope="qa", qa_authorized_by=int(user.id),
             )
             connection.commit()
-            return result
+            return {**result, "cycle_id": str(cycle["cycle_id"]), "session_id": str(session["session_id"])}
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 

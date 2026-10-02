@@ -71,7 +71,7 @@ def test_working_case_is_visible_for_qa_but_not_admitted():
     case = package()["cases"][0]
     policy = json.loads((OUTPUT / "admission-policy.json").read_text())
     situation, execution = build_assessment_situation(
-        assessment_situation_id="AS.QA.001", case_value=case, profile_ref=refs(),
+        assessment_situation_id="AS.QA.001", cycle_ref=refs(), session_ref=refs(), case_value=case, profile_ref=refs(),
         profile_snapshot={"base_role": case["base_role"]}, methodology_refs=[refs()],
         substitutions=[], qa_evidence=evidence(), policy=policy,
     )
@@ -87,7 +87,7 @@ def test_c34_contains_same_exact_targets_after_admission():
     case["status"] = "FROZEN"
     policy = json.loads((OUTPUT / "admission-policy.json").read_text())
     situation, _ = build_assessment_situation(
-        assessment_situation_id="AS.FROZEN.001", case_value=case, profile_ref=refs(),
+        assessment_situation_id="AS.FROZEN.001", cycle_ref=refs(), session_ref=refs(), case_value=case, profile_ref=refs(),
         profile_snapshot={"base_role": case["base_role"]}, methodology_refs=[refs()],
         substitutions=[], qa_evidence=evidence(), policy=policy,
     )
@@ -101,7 +101,7 @@ def test_case04_unresolved_decision_blocks_even_a_frozen_case():
     case["status"] = "FROZEN"
     policy = json.loads((OUTPUT / "admission-policy.json").read_text())
     situation, _ = build_assessment_situation(
-        assessment_situation_id="AS.CASE04", case_value=case, profile_ref=refs(),
+        assessment_situation_id="AS.CASE04", cycle_ref=refs(), session_ref=refs(), case_value=case, profile_ref=refs(),
         profile_snapshot={"base_role": case["base_role"]}, methodology_refs=[refs()],
         substitutions=[], qa_evidence=evidence(), policy=policy,
     )

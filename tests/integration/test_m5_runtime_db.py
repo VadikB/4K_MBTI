@@ -10,7 +10,9 @@ from psycopg.rows import dict_row
 
 from Api.database import ensure_m5_runtime_schema
 from Api.m5_storage import (M5ImportConflict, import_package, package_readback,
-                            prepare_assessment_situation, record_technical_qa_evidence)
+                            prepare_assessment_situation as _prepare_assessment_situation,
+                            record_technical_qa_evidence)
+from Api.m5_cycle_runtime import create_cycle_session_for_case
 from Api.m5_rule_engine import ControlledCharacterAdapter, ControlledSemanticAdapter
 from Api.llm.contracts import LlmResponse
 from Api.m5_scenario_runtime import (build_c45, execute_technical_c45, run_model_check_case03,
@@ -18,6 +20,20 @@ from Api.m5_scenario_runtime import (build_c45, execute_technical_c45, run_model
 from Api.m5_case_runtime import checksum
 from Api.snapshot_integrity import SNAPSHOT_OWNER_MISMATCH, SnapshotIntegrityError
 from scripts.build_m5_case_package import OUTPUT
+
+
+def prepare_assessment_situation(connection, **kwargs):
+    cycle, session = create_cycle_session_for_case(
+        connection,
+        personalized_profile_id=kwargs["personalized_profile_id"],
+        case_id=kwargs["case_id"],
+        case_version=kwargs["case_version"],
+        created_by=kwargs.get("qa_authorized_by", 99),
+        usage_scope=kwargs.get("usage_scope", "assessment"),
+    )
+    return _prepare_assessment_situation(
+        connection, cycle_db_id=int(cycle["id"]), session_db_id=int(session["id"]), **kwargs,
+    )
 
 
 @pytest.mark.integration
@@ -81,16 +97,21 @@ def test_m5_import_readback_and_rejected_as_are_transactional(test_database_url)
         case_version_id = connection.execute(
             "SELECT id FROM m5_case_versions WHERE case_id='CASE-TDISC-01'"
         ).fetchone()["id"]
+        membership = connection.execute(
+            "SELECT cycle_db_id,session_db_id FROM m5_assessment_situations WHERE id=%s", (prepared["id"],)
+        ).fetchone()
         connection.execute(
             """
             INSERT INTO m5_assessment_situations
-                (assessment_situation_id, case_version_id, personalized_profile_id, usage_scope,
+                (assessment_situation_id, case_version_id, personalized_profile_id, cycle_db_id,session_db_id,usage_scope,
                  status, snapshot_json, execution_payload_json, snapshot_checksum)
-            VALUES (%s,%s,7,'qa','rejected',%s::jsonb,%s::jsonb,%s)
+            VALUES (%s,%s,7,%s,%s,'qa','rejected',%s::jsonb,%s::jsonb,%s)
             """,
             (
                 foreign_id,
                 case_version_id,
+                membership["cycle_db_id"],
+                membership["session_db_id"],
                 json.dumps(foreign_snapshot),
                 json.dumps(prepared["execution_payload"]),
                 checksum(foreign_snapshot),

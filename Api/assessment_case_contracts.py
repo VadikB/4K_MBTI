@@ -134,6 +134,8 @@ class AdmissionDecisionV2(Contract):
 class AssessmentSituationV2(Contract):
     schema_version: Literal[2] = 2
     assessment_situation_id: Text
+    cycle_ref: VersionRef
+    session_ref: VersionRef
     case_ref: VersionRef
     profile_ref: VersionRef
     methodology_refs: Annotated[list[VersionRef], Field(min_length=1)]
@@ -157,6 +159,8 @@ class AssessmentSituationV2(Contract):
 class C34ExecutionEnvelope(Contract):
     schema_version: Literal[1] = 1
     assessment_situation_ref: VersionRef
+    cycle_ref: VersionRef
+    session_ref: VersionRef
     execution_payload_ref: VersionRef
     participant_payload_checksum: Checksum
     indicator_ids: Annotated[list[IndicatorID], Field(min_length=1)]

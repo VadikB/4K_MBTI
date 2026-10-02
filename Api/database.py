@@ -3096,6 +3096,59 @@ def ensure_assessment_context_schema(connection) -> None:
 def ensure_m5_runtime_schema(connection) -> None:
     """Хранилище неизменяемых M5 CaseVersion, AS, допуска и фактической трассы."""
     connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_cycles (
+            id BIGSERIAL PRIMARY KEY,
+            cycle_id UUID NOT NULL UNIQUE,
+            owner_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            organization_id BIGINT,
+            personalized_profile_id BIGINT NOT NULL REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT,
+            profile_ref_json JSONB NOT NULL,
+            selected_role_ref_json JSONB NOT NULL,
+            target_set_json JSONB NOT NULL,
+            target_set_checksum TEXT NOT NULL,
+            time_budget_seconds INTEGER NOT NULL CHECK (time_budget_seconds > 0),
+            calendar_window_seconds INTEGER NOT NULL CHECK (calendar_window_seconds > 0),
+            parameter_sources_json JSONB NOT NULL,
+            usage_scope TEXT NOT NULL CHECK (usage_scope IN ('assessment','qa')),
+            status TEXT NOT NULL CHECK (status IN ('prepared','active','paused','interrupted','collection_closed','calculation_pending','calculated','failed')),
+            created_by BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            started_at TIMESTAMPTZ,
+            collection_closed_at TIMESTAMPTZ,
+            close_reason TEXT,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_cycle_sessions (
+            id BIGSERIAL PRIMARY KEY,
+            session_id UUID NOT NULL UNIQUE,
+            cycle_db_id BIGINT NOT NULL REFERENCES m5_cycles(id) ON DELETE RESTRICT,
+            ordinal INTEGER NOT NULL CHECK (ordinal > 0),
+            status TEXT NOT NULL CHECK (status IN ('prepared','active','paused','interrupted','completed')),
+            created_by BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            started_at TIMESTAMPTZ,
+            ended_at TIMESTAMPTZ,
+            close_reason TEXT,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (cycle_db_id, ordinal)
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_cycle_time_intervals (
+            id BIGSERIAL PRIMARY KEY,
+            cycle_db_id BIGINT NOT NULL REFERENCES m5_cycles(id) ON DELETE RESTRICT,
+            session_db_id BIGINT NOT NULL REFERENCES m5_cycle_sessions(id) ON DELETE RESTRICT,
+            interval_type TEXT NOT NULL CHECK (interval_type IN ('collecting','authorized_pause','blocking_system_wait')),
+            started_at TIMESTAMPTZ NOT NULL,
+            ended_at TIMESTAMPTZ,
+            reason TEXT,
+            CHECK (ended_at IS NULL OR ended_at >= started_at)
+        )
+    """)
+    connection.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_m5_open_time_interval ON m5_cycle_time_intervals(cycle_db_id) WHERE ended_at IS NULL")
+    connection.execute("""
         CREATE TABLE IF NOT EXISTS m5_packages (
             id BIGSERIAL PRIMARY KEY,
             package_id TEXT NOT NULL,
@@ -3168,6 +3221,8 @@ def ensure_m5_runtime_schema(connection) -> None:
             assessment_situation_id UUID NOT NULL UNIQUE,
             case_version_id BIGINT NOT NULL REFERENCES m5_case_versions(id) ON DELETE RESTRICT,
             personalized_profile_id BIGINT NOT NULL REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT,
+            cycle_db_id BIGINT NOT NULL REFERENCES m5_cycles(id) ON DELETE RESTRICT,
+            session_db_id BIGINT NOT NULL REFERENCES m5_cycle_sessions(id) ON DELETE RESTRICT,
             usage_scope TEXT NOT NULL DEFAULT 'assessment' CHECK (usage_scope IN ('assessment','qa')),
             status TEXT NOT NULL CHECK (status IN ('prepared', 'admitted', 'rejected', 'active', 'paused', 'scenario_ended', 'terminated', 'closed')),
             snapshot_json JSONB NOT NULL,
@@ -3179,6 +3234,29 @@ def ensure_m5_runtime_schema(connection) -> None:
             closed_at TIMESTAMPTZ
         )
     """)
+    # Несовместимый переход первого эшелона: старые автономные AS не имеют
+    # доказуемой принадлежности Cycle/Session и по решению владельца удаляются.
+    connection.execute("ALTER TABLE m5_assessment_situations ADD COLUMN IF NOT EXISTS cycle_db_id BIGINT")
+    connection.execute("ALTER TABLE m5_assessment_situations ADD COLUMN IF NOT EXISTS session_db_id BIGINT")
+    if connection.execute(
+        "SELECT EXISTS(SELECT 1 FROM m5_assessment_situations WHERE cycle_db_id IS NULL OR session_db_id IS NULL) AS value"
+    ).fetchone()["value"]:
+        connection.execute("TRUNCATE TABLE m5_assessment_situations CASCADE")
+    connection.execute("ALTER TABLE m5_assessment_situations ALTER COLUMN cycle_db_id SET NOT NULL")
+    connection.execute("ALTER TABLE m5_assessment_situations ALTER COLUMN session_db_id SET NOT NULL")
+    connection.execute("""
+        DO $$ BEGIN
+            ALTER TABLE m5_assessment_situations ADD CONSTRAINT fk_m5_as_cycle
+                FOREIGN KEY (cycle_db_id) REFERENCES m5_cycles(id) ON DELETE RESTRICT;
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$
+    """)
+    connection.execute("""
+        DO $$ BEGIN
+            ALTER TABLE m5_assessment_situations ADD CONSTRAINT fk_m5_as_session
+                FOREIGN KEY (session_db_id) REFERENCES m5_cycle_sessions(id) ON DELETE RESTRICT;
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$
+    """)
+    connection.execute("CREATE INDEX IF NOT EXISTS ix_m5_as_cycle_session ON m5_assessment_situations(cycle_db_id,session_db_id)")
     connection.execute("ALTER TABLE m5_assessment_situations DROP CONSTRAINT IF EXISTS m5_assessment_situations_status_check")
     connection.execute("ALTER TABLE m5_assessment_situations ADD CONSTRAINT m5_assessment_situations_status_check CHECK (status IN ('prepared','admitted','rejected','active','paused','scenario_ended','terminated','closed'))")
     connection.execute("""

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 
 from Api.m5_case_runtime import checksum
+from Api import m5_cycle_runtime
 from Api.m5_rule_engine import (
     CharacterResponseAdapter,
     CharacterReply,
@@ -96,6 +97,9 @@ def _as_row(connection, assessment_situation_id: str, *, lock: bool = False):
         raise SnapshotIntegrityError(SNAPSHOT_INTEGRITY_FAILED, "M5 AS checksum does not match payload.")
     if str(snapshot.get("assessment_situation_id")) != str(row["assessment_situation_id"]):
         raise SnapshotIntegrityError(SNAPSHOT_OWNER_MISMATCH, "M5 AS snapshot belongs to another AS.")
+    if (str((snapshot.get("cycle_ref") or {}).get("id")) != str(row.get("cycle_db_id"))
+            or str((snapshot.get("session_ref") or {}).get("id")) != str(row.get("session_db_id"))):
+        raise SnapshotIntegrityError(SNAPSHOT_OWNER_MISMATCH, "M5 AS Cycle/Session ownership mismatch.")
     execution_payload = row.get("execution_payload_json")
     execution_ref = snapshot.get("execution_payload_ref") or {}
     if not isinstance(execution_payload, dict) or checksum(execution_payload) != execution_ref.get("checksum"):
@@ -382,6 +386,9 @@ def _apply_character_response(connection, *, row: dict, saved: dict, state: dict
 
 def start(connection, assessment_situation_id: str) -> dict:
     row = _as_row(connection, assessment_situation_id, lock=True)
+    m5_cycle_runtime.assert_collecting(
+        connection, cycle_db_id=int(row["cycle_db_id"]), session_db_id=int(row["session_db_id"]),
+    )
     if row["status"] == "rejected" and row["usage_scope"] != "qa":
         raise ValueError("AS_NOT_ADMITTED")
     if row["status"] == "rejected" and row["usage_scope"] == "qa" and not connection.execute(
@@ -408,6 +415,9 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
                 semantic_adapter: SemanticDecisionAdapter | None = None,
                 character_adapter: CharacterResponseAdapter | None = None) -> dict:
     row = _as_row(connection, assessment_situation_id, lock=True)
+    m5_cycle_runtime.assert_collecting(
+        connection, cycle_db_id=int(row["cycle_db_id"]), session_db_id=int(row["session_db_id"]),
+    )
     if row["status"] != "active":
         raise ValueError("M5_AS_NOT_ACTIVE")
     existing = connection.execute("SELECT * FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s AND request_id=%s",

@@ -52,6 +52,8 @@ def evaluate_admission(case: CaseVersionV2, evidence: list[QAEvidenceV2], policy
 def build_assessment_situation(
     *,
     assessment_situation_id: str,
+    cycle_ref: dict,
+    session_ref: dict,
     case_value: dict,
     profile_ref: dict,
     profile_snapshot: dict,
@@ -91,6 +93,8 @@ def build_assessment_situation(
     execution_checksum = checksum(execution_payload)
     as_value = AssessmentSituationV2(
         assessment_situation_id=assessment_situation_id,
+        cycle_ref=cycle_ref,
+        session_ref=session_ref,
         case_ref={"id": case.case_id, "version": case.version, "checksum": checksum(case_dump)},
         profile_ref=profile_ref,
         methodology_refs=methodology_refs,
@@ -116,6 +120,8 @@ def build_c34_envelope(assessment_situation: dict) -> dict:
             version="1",
             checksum=checksum(situation.model_dump()),
         ),
+        cycle_ref=situation.cycle_ref,
+        session_ref=situation.session_ref,
         execution_payload_ref=situation.execution_payload_ref,
         participant_payload_checksum=checksum(situation.participant_payload),
         indicator_ids=[x.indicator_id for x in situation.indicator_targets],

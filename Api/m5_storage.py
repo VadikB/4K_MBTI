@@ -259,7 +259,7 @@ def migrate_legacy_test_profile(connection, *, user_id: int, authorized_by: int)
 
 
 def save_assessment_situation(connection, *, situation: dict, execution_payload: dict, personalized_profile_id: int,
-                              policy: dict, evidence_ids: list[int], usage_scope: str = "assessment",
+                              cycle_db_id: int, session_db_id: int, policy: dict, evidence_ids: list[int], usage_scope: str = "assessment",
                               qa_authorized_by: int | None = None) -> dict:
     if usage_scope == "qa" and qa_authorized_by is None:
         raise ValueError("QA_SERVER_AUTHORIZATION_REQUIRED")
@@ -271,12 +271,33 @@ def save_assessment_situation(connection, *, situation: dict, execution_payload:
     if not case_row:
         raise ValueError("M5_CASE_VERSION_NOT_IMPORTED")
     snapshot = value.model_dump()
+    membership = connection.execute("""
+        SELECT c.id AS cycle_id, s.id AS session_id, c.personalized_profile_id,
+               c.target_set_json, c.profile_ref_json, c.selected_role_ref_json
+        FROM m5_cycles c JOIN m5_cycle_sessions s ON s.cycle_db_id=c.id
+        WHERE c.id=%s AND s.id=%s
+    """, (cycle_db_id, session_db_id)).fetchone()
+    if not membership or int(membership["personalized_profile_id"]) != personalized_profile_id:
+        raise ValueError("M7_CYCLE_SESSION_OWNERSHIP_MISMATCH")
+    if dict(membership["profile_ref_json"]) != value.profile_ref.model_dump():
+        raise ValueError("M7_FROZEN_PROFILE_MISMATCH")
+    selected_role = dict(membership["selected_role_ref_json"])
+    # Numeric RoleProfileVersion refs are authoritative through the frozen profile;
+    # textual refs must equal the Case base role.
+    if not str(selected_role.get("id", "")).isdigit() and selected_role.get("id") != value.base_role:
+        raise ValueError("ROLE_NOT_ALLOWED")
+    if value.cycle_ref.id != str(cycle_db_id) or value.session_ref.id != str(session_db_id):
+        raise ValueError("M7_CYCLE_SESSION_REF_MISMATCH")
+    cycle_targets = {(x["indicator_id"], x["m2_version"]) for x in membership["target_set_json"]}
+    as_targets = {(x.indicator_id, x.m2_version) for x in value.indicator_targets}
+    if not as_targets.issubset(cycle_targets):
+        raise ValueError("TARGET_SET_MISMATCH")
     row = connection.execute("""
         INSERT INTO m5_assessment_situations (assessment_situation_id, case_version_id, personalized_profile_id,
-            usage_scope, status, snapshot_json, execution_payload_json, snapshot_checksum)
-        VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s) RETURNING id
+            cycle_db_id,session_db_id,usage_scope, status, snapshot_json, execution_payload_json, snapshot_checksum)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s) RETURNING id
     """, (UUID(value.assessment_situation_id), int(case_row["id"]), personalized_profile_id,
-          usage_scope, "admitted" if value.admission.admitted else "rejected", json.dumps(snapshot, ensure_ascii=False),
+          cycle_db_id, session_db_id, usage_scope, "admitted" if value.admission.admitted else "rejected", json.dumps(snapshot, ensure_ascii=False),
           json.dumps(execution_payload, ensure_ascii=False), checksum(snapshot))).fetchone()
     as_db_id = int(row["id"])
     connection.execute("""
@@ -295,7 +316,8 @@ def save_assessment_situation(connection, *, situation: dict, execution_payload:
 
 
 def prepare_assessment_situation(connection, *, assessment_situation_id: str, case_id: str, case_version: str,
-                                 personalized_profile_id: int, substitutions: list[dict], policy: dict,
+                                 personalized_profile_id: int, cycle_db_id: int, session_db_id: int,
+                                 substitutions: list[dict], policy: dict,
                                  usage_scope: str = "assessment", qa_authorized_by: int | None = None) -> dict:
     case_row = connection.execute(
         "SELECT cv.content_json, p.manifest_json, p.runtime_rules_json FROM m5_case_versions cv JOIN m5_packages p ON p.id=cv.package_id WHERE cv.case_id=%s AND cv.case_version=%s",
@@ -328,8 +350,14 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
                 for x in latest.values()]
     refs = [{"id": "m2-competencies-4k", "version": "1.1",
              "checksum": case_row["manifest_json"]["dependencies"]["m2"]}]
+    cycle = connection.execute("SELECT * FROM m5_cycles WHERE id=%s", (cycle_db_id,)).fetchone()
+    session = connection.execute("SELECT * FROM m5_cycle_sessions WHERE id=%s AND cycle_db_id=%s", (session_db_id, cycle_db_id)).fetchone()
+    if not cycle or not session:
+        raise ValueError("M7_CYCLE_SESSION_OWNERSHIP_MISMATCH")
     situation, execution = build_assessment_situation(
         assessment_situation_id=assessment_situation_id, case_value=case_row["content_json"],
+        cycle_ref={"id": str(cycle_db_id), "version": "1", "checksum": checksum({"cycle_id": str(cycle["cycle_id"]), "target_set_checksum": cycle["target_set_checksum"]})},
+        session_ref={"id": str(session_db_id), "version": "1", "checksum": checksum({"session_id": str(session["session_id"]), "cycle_id": str(cycle["cycle_id"]), "ordinal": session["ordinal"]})},
         profile_ref={"id": f"assessment_personalized_profiles:{profile_row['id']}", "version": "1",
                      "checksum": profile_row["checksum"]},
         profile_snapshot={**profile, "base_role": base_role}, methodology_refs=refs,
@@ -339,7 +367,8 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
     execution["runtime_rules"] = case_row["runtime_rules_json"]
     situation["execution_payload_ref"]["checksum"] = checksum(execution)
     saved = save_assessment_situation(connection, situation=situation, execution_payload=execution,
-                                      personalized_profile_id=personalized_profile_id, policy=policy,
+                                      personalized_profile_id=personalized_profile_id, cycle_db_id=cycle_db_id,
+                                      session_db_id=session_db_id, policy=policy,
                                       evidence_ids=[int(x["id"]) for x in latest.values()], usage_scope=usage_scope,
                                       qa_authorized_by=qa_authorized_by)
     return {**saved, "snapshot": situation, "execution_payload": execution}
