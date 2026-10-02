@@ -83,6 +83,14 @@ M1.6, M6.6–6.9, M7.5–7 и Change 01 И-6 → semantic interim C-54 → не�
 `m7_assessment_clarification/1.0.0`, superadmin routes и PostgreSQL integration.
 Полный контракт: [M7 Assessment Clarification v1](../architecture/m7-clarification-contract.md).
 
+## Рабочая реализация M7 Task 07
+
+M1.6, M7.5.3–5.6/M7.7–8 и Change 01 И-4/И-5 → единый terminal transition →
+final C-45/outbox → закрытый состав Cycle → versioned C-46. Реализация:
+`Api/m7_completion*.py`, product-owned routes, expiry worker и PostgreSQL integration.
+[Контракт](../architecture/m7-completion-contract.md) сохраняет Task 08/09 и
+разрешённый PM-05 product consumer открытыми зависимостями.
+
 ## Рабочая реализация M6-A
 
 На ветке codex/m6-task01-contracts после базы dd3d2ca реализована часть PM-05:

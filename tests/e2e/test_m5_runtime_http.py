@@ -24,7 +24,9 @@ class Connection:
         self.owner_id = owner_id
         self.scope = scope
 
-    def execute(self, *_args, **_kwargs):
+    def execute(self, *args, **_kwargs):
+        if args and 'owner_user_id' in args[0]:
+            return Result({'owner_user_id':self.owner_id,'usage_scope':self.scope})
         return Result({"user_id": self.owner_id, "usage_scope": self.scope})
 
     def commit(self):
@@ -129,3 +131,20 @@ def test_admin_c45_and_technical_qa_evidence_use_common_runtime(client):
         "empirical_pilot": "NOT_RUN",
         "trajectory": "content_progress",
     }
+
+
+def test_product_m7_completion_routes_enforce_owner_and_keep_processing_distinct(client):
+    http,monkeypatch,connection=client;cycle_id=str(uuid4())
+    monkeypatch.setattr(routes.m7_completion,'read_status',lambda *_args,**_kwargs:{'collection_status':'collection_closed','processing_status':'processing','remaining_seconds':0})
+    monkeypatch.setattr(routes.m7_completion,'complete',lambda *_args,**kwargs:{'action':kwargs['action'],'processing_status':'pending'})
+    assert http.get(f'/users/assessment/m7/cycles/{cycle_id}').status_code==401
+    http.cookies.set(routes.SESSION_COOKIE_NAME,'other')
+    assert http.get(f'/users/assessment/m7/cycles/{cycle_id}').status_code==403
+    http.cookies.set(routes.SESSION_COOKIE_NAME,'owner')
+    status=http.get(f'/users/assessment/m7/cycles/{cycle_id}')
+    assert status.status_code==200 and status.json()['processing_status']=='processing'
+    result=http.post(f'/users/assessment/m7/cycles/{cycle_id}/completion',json={
+        'action':'complete','reason':'plan_finished','idempotency_key':'finish-1'})
+    assert result.status_code==200 and result.json()['processing_status']=='pending'
+    connection.scope='qa'
+    assert http.get(f'/users/assessment/m7/cycles/{cycle_id}').status_code==403

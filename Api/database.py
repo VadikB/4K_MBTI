@@ -3147,6 +3147,8 @@ def ensure_m5_runtime_schema(connection) -> None:
             CHECK (ended_at IS NULL OR ended_at >= started_at)
         )
     """)
+    connection.execute("ALTER TABLE m5_cycle_time_intervals ADD COLUMN IF NOT EXISTS operation_ref TEXT")
+    connection.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_m5_open_blocking_operation ON m5_cycle_time_intervals(cycle_db_id,operation_ref) WHERE interval_type='blocking_system_wait'")
     connection.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_m5_open_time_interval ON m5_cycle_time_intervals(cycle_db_id) WHERE ended_at IS NULL")
     connection.execute("""
         CREATE TABLE IF NOT EXISTS m5_packages (
@@ -3491,6 +3493,8 @@ def ensure_m5_runtime_schema(connection) -> None:
         )
     from Api.m7_planning_repository import ensure_schema as ensure_m7_planning_schema
     ensure_m7_planning_schema(connection)
+    from Api.m7_completion_repository import ensure_schema as ensure_m7_completion_schema
+    ensure_m7_completion_schema(connection)
 
 
 def ensure_execution_snapshot_guards(connection, *, tables: tuple[str, ...] = ("user_sessions", "assessment_preparation_jobs")) -> None:

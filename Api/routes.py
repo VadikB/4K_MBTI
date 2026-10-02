@@ -27,6 +27,8 @@ from Api import m7_cycle_planner
 from Api.m7_planning_contracts import CreateCyclePlanRequest, NextSituationRequest, PresentSituationRequest
 from Api import m7_clarification
 from Api.m7_clarification_contracts import CreateClarificationRequest,PresentClarificationRequest,ClarificationAnswerRequest,ClarificationOutcomeRequest
+from Api import m7_completion
+from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,AdditionalSessionRequest,BlockingWaitRequest,ReconcileC46Request
 from scripts.build_m5_case_package import OUTPUT as M5_PACKAGE_DIR
 from Api.assessment_role_profiles import (
     create_organization_role_profile_draft,
@@ -5056,6 +5058,26 @@ def _m5_owned_situation(request: Request, assessment_situation_id: str) -> None:
         raise HTTPException(status_code=403, detail="QA_AS_NOT_AVAILABLE_IN_PRODUCT_ROUTE")
 
 
+def _m7_owned_cycle(request:Request,cycle_id:str):
+    token=request.cookies.get(SESSION_COOKIE_NAME);user=web_session_service.get_user_by_token(token) if token else None
+    if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
+    with get_connection() as connection:
+        row=connection.execute('SELECT owner_user_id,usage_scope FROM m5_cycles WHERE cycle_id=%s',(UUID(cycle_id),)).fetchone()
+    if not row:raise HTTPException(status_code=404,detail='M7_CYCLE_NOT_FOUND')
+    if int(row['owner_user_id'])!=int(user.id):raise HTTPException(status_code=403,detail='Нет доступа к чужому Assessment Cycle.')
+    if row['usage_scope']!='assessment':raise HTTPException(status_code=403,detail='QA_CYCLE_NOT_AVAILABLE_IN_PRODUCT_ROUTE')
+    return user
+
+
+def _persist_time_expiry_for_situation(assessment_situation_id:str):
+    with get_connection() as connection:
+        row=connection.execute('SELECT c.cycle_id,c.created_by FROM m5_assessment_situations s JOIN m5_cycles c ON c.id=s.cycle_db_id WHERE s.assessment_situation_id=%s',(UUID(assessment_situation_id),)).fetchone()
+        if row:
+            try:m7_completion.complete(connection,cycle_id=str(row['cycle_id']),key='automatic-expiry',action='time_limit',reason='automatic',initiated_by=row['created_by'])
+            except ValueError:connection.rollback();return
+            connection.commit()
+
+
 @router.post("/admin/m5-runtime/import")
 def import_m5_runtime_package(request: Request) -> dict:
     _m5_superadmin(request)
@@ -5211,6 +5233,7 @@ def start_owned_m5_situation(assessment_situation_id: UUID, request: Request) ->
             connection.commit()
             return result
     except ValueError as exc:
+        if str(exc)=='M7_TIME_LIMIT_REACHED':_persist_time_expiry_for_situation(str(assessment_situation_id))
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
@@ -5225,6 +5248,7 @@ def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, 
             connection.commit()
             return result
     except ValueError as exc:
+        if str(exc)=='M7_TIME_LIMIT_REACHED':_persist_time_expiry_for_situation(str(assessment_situation_id))
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
@@ -5246,6 +5270,77 @@ def get_owned_m5_trace(assessment_situation_id: UUID, request: Request) -> dict:
     _m5_owned_situation(request, str(assessment_situation_id))
     with get_connection() as connection:
         return m5_scenario_runtime.trace(connection, str(assessment_situation_id))
+
+
+@router.get('/assessment/m7/cycles/{cycle_id}')
+def get_owned_m7_cycle(cycle_id:UUID,request:Request):
+    _m7_owned_cycle(request,str(cycle_id))
+    with get_connection() as connection:return m7_completion.read_status(connection,str(cycle_id))
+
+
+@router.post('/assessment/m7/cycles/{cycle_id}/control')
+def control_owned_m7_cycle(cycle_id:UUID,payload:CycleControlRequest,request:Request):
+    user=_m7_owned_cycle(request,str(cycle_id))
+    try:
+        with get_connection() as connection:
+            result=m7_completion.control(connection,cycle_id=str(cycle_id),key=payload.idempotency_key,action=payload.action,reason=payload.reason,initiated_by=int(user.id));connection.commit();return result
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.post('/assessment/m7/cycles/{cycle_id}/completion')
+def complete_owned_m7_cycle(cycle_id:UUID,payload:CompletionRequest,request:Request):
+    user=_m7_owned_cycle(request,str(cycle_id))
+    try:
+        with get_connection() as connection:
+            result=m7_completion.complete(connection,cycle_id=str(cycle_id),key=payload.idempotency_key,action=payload.action,reason=payload.reason,initiated_by=int(user.id));connection.commit();return result
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.post('/assessment/m7/cycles/{cycle_id}/additional-sessions',status_code=201)
+def create_owned_additional_session(cycle_id:UUID,payload:AdditionalSessionRequest,request:Request):
+    user=_m7_owned_cycle(request,str(cycle_id))
+    try:
+        with get_connection() as connection:
+            result=m7_completion.create_additional_session(connection,cycle_id=str(cycle_id),intent_id=payload.intent_id,key=payload.idempotency_key,created_by=int(user.id));connection.commit();return result
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.get('/admin/m7-cycles/{cycle_id}/c46')
+def read_m7_c46(cycle_id:UUID,request:Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:return m7_completion.read_c46(connection,str(cycle_id))
+    except ValueError as exc:raise HTTPException(status_code=404,detail=str(exc)) from exc
+
+
+@router.post('/admin/m7-cycles/{cycle_id}/c46/reconcile')
+def reconcile_m7_c46(cycle_id:UUID,payload:ReconcileC46Request,request:Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result=m7_completion.reconcile_c46(connection,cycle_id=str(cycle_id),expected_composition_checksum=payload.expected_composition_checksum,
+                calculation_ref=payload.calculation_ref,coverage=payload.coverage,skill_outcomes=payload.skill_outcomes);connection.commit();return result
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.post('/admin/m7-cycles/{cycle_id}/blocking-waits')
+def begin_m7_blocking_wait(cycle_id:UUID,payload:BlockingWaitRequest,request:Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            cycle=m7_completion._cycle(connection,str(cycle_id));session=connection.execute('SELECT id FROM m5_cycle_sessions WHERE cycle_db_id=%s ORDER BY ordinal DESC LIMIT 1',(cycle['id'],)).fetchone()
+            result=m5_cycle_runtime.begin_blocking_wait(connection,cycle_db_id=cycle['id'],session_db_id=session['id'],operation_ref=payload.operation_ref,reason=payload.reason);connection.commit();return result
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.delete('/admin/m7-cycles/{cycle_id}/blocking-waits/{operation_ref}')
+def end_m7_blocking_wait(cycle_id:UUID,operation_ref:str,request:Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            cycle=m7_completion._cycle(connection,str(cycle_id));session=connection.execute('SELECT id FROM m5_cycle_sessions WHERE cycle_db_id=%s ORDER BY ordinal DESC LIMIT 1',(cycle['id'],)).fetchone()
+            result=m5_cycle_runtime.end_blocking_wait(connection,cycle_db_id=cycle['id'],session_db_id=session['id'],operation_ref=operation_ref,reason='blocking_operation_finished');connection.commit();return result
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 
 @router.post("/admin/prompt-lab/prompts", response_model=PromptLabPromptVersion)

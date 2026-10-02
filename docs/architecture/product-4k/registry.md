@@ -97,6 +97,12 @@ M6 v1.8, M7 v1.3 и M8 v1.2 зарегистрированы в существу
 draft QA-контур решения PM-04 по semantic interim C-54. Основной пользовательский
 путь, закрытие Task 07, утверждённые GC и provider/pilot остаются открытыми.
 
+## Дополнение задачи 7 M7 от 02.10.2026
+
+[M7 Completion and Continuation v1](../m7-completion-contract.md) реализует draft
+runtime завершения/продолжения и C-46. Агрегация Task 08, Results Task 09 и product
+consumer PM-05 остаются отдельными зависимостями; CURRENT не изменён.
+
 ## Дополнение задачи 4 M6 от 02.10.2026
 
 [M6-B v1](../m6-b-contracts.md) реализует draft QA-продолжение сохранённой M6-A
