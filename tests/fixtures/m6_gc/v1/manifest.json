@@ -1,0 +1,293 @@
+{
+  "package": "m6-gc-preparation",
+  "version": "0.1",
+  "status": "CANDIDATES_READY_FOR_REVIEW",
+  "base_commit": "dd3d2cadd90a31e3b7b3141ed6a0984afbd11ef6",
+  "branch": "codex/m6-task01-contracts",
+  "runtime_commit": null,
+  "runtime_binding": "local uncommitted M6-A, file hashes below; not approved baseline",
+  "sources": [
+    {
+      "id": "ProductArchitecture.Change01",
+      "version": "1.0/01",
+      "selected_status": "WORKING",
+      "path": "docs/architecture/product-4k/1.0/updates/2026-10-01/source.pdf",
+      "sha256": "dfc868fd8c2b306e2614e0971759850873da22b354dbe94823c8921460a95081",
+      "verification": "file_identity_verified; methodological consistency not re-audited"
+    },
+    {
+      "id": "M1",
+      "version": "1.4",
+      "selected_status": "FROZEN",
+      "path": "docs/architecture/product-4k/m1/v1.4/source.docx",
+      "sha256": "5fa5ab5735dfe57fac6ef3c93aca50d149fbd7abd365edf80d362c10e2d7a975",
+      "verification": "file_identity_verified; methodological consistency not re-audited"
+    },
+    {
+      "id": "M2.K1.matrix",
+      "version": "1.1",
+      "selected_status": "FROZEN",
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K1-matrix-v1.1.xlsx",
+      "sha256": "2b5bd322bf51d6e05cdf3506cd14b2854eb6528082d15a44a918cc233ed3c880",
+      "verification": "file_identity_verified; methodological consistency not re-audited"
+    },
+    {
+      "id": "M2.K2.matrix",
+      "version": "1.0",
+      "selected_status": "FROZEN",
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K2-matrix-v1.0.xlsx",
+      "sha256": "2d004a3acb53a10dbc75d63d5cdb16c3a36a5358e6c04c3a79be9327cd269890",
+      "verification": "file_identity_verified; methodological consistency not re-audited"
+    },
+    {
+      "id": "M2.K3.matrix",
+      "version": "1.1",
+      "selected_status": "FROZEN",
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K3-matrix-v1.1.xlsx",
+      "sha256": "7db056f104c21a8a19b7840dbe36795ac1a93245182a2432e3102f0f3c0e207c",
+      "verification": "file_identity_verified; methodological consistency not re-audited"
+    },
+    {
+      "id": "M2.K4.matrix",
+      "version": "1.0",
+      "selected_status": "FROZEN",
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K4-matrix-v1.0.xlsx",
+      "sha256": "3fdcfc1ba40b4afa626842122067d216b8ecb3efeabcc7cb315002c97c204cf2",
+      "verification": "file_identity_verified; methodological consistency not re-audited"
+    },
+    {
+      "id": "M6",
+      "version": "1.8",
+      "selected_status": "FROZEN",
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M6_Evidence_Assessment_v1.8_FROZEN.docx",
+      "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+      "verification": "file_identity_verified; selected sections reviewed; runtime not verified",
+      "derived_text": {
+        "path": "docs/methodology/source-sets/2026-10-01/derived/M6-v1.8.md",
+        "sha256": "f081bc9ca795257b6a4afbebbd4b56f32243a1a75f5c25d91a77c64d64fc86fa",
+        "limitations": "paragraphs and tables; embedded diagrams not reproduced"
+      }
+    },
+    {
+      "id": "M7",
+      "version": "1.3",
+      "selected_status": "FROZEN",
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M7_Assessment_Cycle_v1.3_FROZEN_2026-09-30.docx",
+      "sha256": "50a0d53a3aaf6258957ecc6d9e89f27d922bfbe4cd55668185d475c87f4e2f10",
+      "verification": "file_identity_verified; selected sections reviewed; runtime not verified",
+      "derived_text": {
+        "path": "docs/methodology/source-sets/2026-10-01/derived/M7-v1.3.md",
+        "sha256": "9b65a8eee1520fed57286b209a28ce73e33cd394ba8c9353c240673867483ec8",
+        "limitations": "paragraphs and tables; embedded diagrams not reproduced"
+      }
+    },
+    {
+      "id": "M8",
+      "version": "1.2",
+      "selected_status": "FROZEN",
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M8_Results_v1.2_FROZEN_2026-10-01.docx",
+      "sha256": "a61909c996f66e88668c4cf713fb91129f3ab778ed843d0e796c7d4e226b73fa",
+      "verification": "file_identity_verified; selected sections reviewed; runtime not verified",
+      "derived_text": {
+        "path": "docs/methodology/source-sets/2026-10-01/derived/M8-v1.2.md",
+        "sha256": "f0272e304f36dc2d58777080b753a5fcc55578d22947e3afbae308b8afb71e0e",
+        "limitations": "paragraphs and tables; embedded diagrams not reproduced"
+      }
+    }
+  ],
+  "local_dependencies": [
+    {
+      "path": "assessment_definitions/cases/competencies_4k/1.1/case-package.json",
+      "sha256": "6f03b19640cf9dfc0bc6fc80ad7435ef47a1a13076a48e130be1bc6a6dde6527"
+    },
+    {
+      "path": "assessment_definitions/cases/competencies_4k/1.1/sources/M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+      "sha256": "06f528d9c9e34c4748979e4d787ce0e069990e9f4051953e395ecb3f454e53fa"
+    },
+    {
+      "path": "assessment_definitions/methodologies/competencies_4k/1.1/methodology.json",
+      "sha256": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c"
+    },
+    {
+      "path": "docs/adr/002-cycle-as-dialogue-contracts.md",
+      "sha256": "4a4e0170bee7faf137301b342fec46b3e8e0209acd26dcb6b2dc7a788c58b25f"
+    },
+    {
+      "path": "docs/architecture/m6-a-contracts.md",
+      "sha256": "6237daa5e04baf5c3f5f449140f0d0c9be63fe521f5e7e75679d4508dc7a4937"
+    },
+    {
+      "path": "Api/m6_repository.py",
+      "sha256": "5ad4874d21c74ba43a599828feeb195549339a4f758cbef36b7dc7bdcdafff9f"
+    },
+    {
+      "path": "Api/m6_evidence_service.py",
+      "sha256": "3e55cde846f27d42f4ae3fc77a98bcb3227175d94d5c682e7fdeff5cb486c5ff"
+    },
+    {
+      "path": "Api/m6_package.py",
+      "sha256": "1f084986d8aa4fb79be6f792ad07421cafd1239b0e7b83481359a59555cbe193"
+    },
+    {
+      "path": "Api/m6_contracts.py",
+      "sha256": "3aeca36dff10b75a8f21f5b86964e5764fd84690e34eecb9e0c604972380d185"
+    },
+    {
+      "path": "Api/m6_worker.py",
+      "sha256": "d62dd5e772abb260e491c35b6d6dd39d5a60a217bcc5fd4755a785021375b2bf"
+    },
+    {
+      "path": "Api/m6_input_resolver.py",
+      "sha256": "491987452d5f7e60129f1adc7893e93a9667f319a6887a089a023dd554b12ad7"
+    },
+    {
+      "path": "assessment_definitions/prompts/m6_evidence/v1/prompt.md",
+      "sha256": "0ad21cfb880fed29dae832a238e7748a183a4abb0923ac8ec961640e45e87500"
+    },
+    {
+      "path": "assessment_definitions/prompts/m6_evidence/v1/manifest.json",
+      "sha256": "99291cd51e4f088d647e823a25497ac2de95bae2301dc6e1ae03805d7018c24d"
+    }
+  ],
+  "candidate_count": 11,
+  "approved_gc_count": 0,
+  "real_llm_runs": 0,
+  "files": [
+    {
+      "path": "candidates/before_disclosure.json",
+      "sha256": "15e7a9cf30bf8be88270600366da685201a932aa6e4a931a7a99673e07318452"
+    },
+    {
+      "path": "candidates/character.json",
+      "sha256": "70323f2eb92e713dc3f1f28575206ec9f3baf4660ecf49265ab1ad92967d7015"
+    },
+    {
+      "path": "candidates/composite.json",
+      "sha256": "fa5798a784c203f9dc68c4e3a12242e2446fc7eb05bd747884bf9593c61636e8"
+    },
+    {
+      "path": "candidates/contradiction.json",
+      "sha256": "962c23f2c333a7576fc64ab8179308b7d00589f7e53c292e3a1f356ca66798e8"
+    },
+    {
+      "path": "candidates/independent.json",
+      "sha256": "e230c4b9689b7a42013aa12685a2395cf75f21eed6b18963e182dbfb1d810d6a"
+    },
+    {
+      "path": "candidates/insufficient.json",
+      "sha256": "96ca63ca17c031570720cc5e652b61e172b6dc208f0927e337deaa03afd6d8d8"
+    },
+    {
+      "path": "candidates/no_opportunity.json",
+      "sha256": "ca8b50d85d5884229f9f0b3237b351db4400eb17e7724ceadb034202f7b6463d"
+    },
+    {
+      "path": "candidates/nonperformance.json",
+      "sha256": "6db4f84029f3defc92ccf963510f4c5884fb411366a69e9f9fc1e48b404c088b"
+    },
+    {
+      "path": "candidates/paraphrase.json",
+      "sha256": "26bbea2f61572dbfc5598af75e9d4494baf67c0c1e0af813cebe074bcb90e34f"
+    },
+    {
+      "path": "candidates/retain.json",
+      "sha256": "222946a4100df658abec6817dada1c0f85c37b37a3958ff162e8937a37569b31"
+    },
+    {
+      "path": "candidates/technical_loss.json",
+      "sha256": "5c5869808f060dd470687cd32a1653c25c477e985f55493358f4bd73661b47e0"
+    },
+    {
+      "path": "operations.json",
+      "sha256": "398e6b3c73ccd318db8aa765314bfcd39842b722d270f81b5e0a1247864c2052"
+    },
+    {
+      "path": "sources/case.json",
+      "sha256": "1932e50cd632687b89ea39e552509cca993fb7983383823e157959cc4943c42c"
+    },
+    {
+      "path": "sources/criteria.json",
+      "sha256": "d9a247354cd4f9fa7da0111709db22f196cd3b77f0b636119863940a8bfaa169"
+    },
+    {
+      "path": "sources/m2-cells.json",
+      "sha256": "26879436230e6e0454d7902150021d532a17d2cceb4c2561e5143900dde2e050"
+    },
+    {
+      "path": "technical/as.json",
+      "sha256": "818d22e128bb1db68db03d41b6b923e3b45e38283d923e65a5778105dd656a2c"
+    },
+    {
+      "path": "technical/author.json",
+      "sha256": "94df433dd496ecd3b2cab3f81f4e3c3edb9b51a01f64eab3d2543dec61a0d1df"
+    },
+    {
+      "path": "technical/checksum.json",
+      "sha256": "4007ebe903ba215e0ec1f03ad2a33a0946f4240617c08a1c0acb71d52e07c634"
+    },
+    {
+      "path": "technical/cross_as_fragment.json",
+      "sha256": "8d19783feaa59d6d460e1d1f47f4317080656f16a8445f46469a975849b8e70b"
+    },
+    {
+      "path": "technical/cycle.json",
+      "sha256": "7b86716d5591c7e98170e0db6a04ed264a841f684b2a5ec012cc5652b5f82e08"
+    },
+    {
+      "path": "technical/dummy_composite.json",
+      "sha256": "23829846127744d83b05574cb84bb6f9670d5fb7fee24335a3875c39f4b697b2"
+    },
+    {
+      "path": "technical/empty.json",
+      "sha256": "5af45ce01a8599b2275f22bb55e74b8b212fb90fc8661d08d75ff854a7a4ae03"
+    },
+    {
+      "path": "technical/empty_missing_ref.json",
+      "sha256": "c0672e86e3f74946b91eca60a5f5b188fc6b7c901b8b64b92a6d985040e3880f"
+    },
+    {
+      "path": "technical/final.json",
+      "sha256": "c7b43f355689b0aef2a79af1f8be1fafaf7ee3a18d111834ae007b40f50de446"
+    },
+    {
+      "path": "technical/future_turn.json",
+      "sha256": "dfdcf30f417e27e92682e6f566b0555dc35a9e4e452c4bdbd3b1a749ad39b4b1"
+    },
+    {
+      "path": "technical/interim.json",
+      "sha256": "005fa72fca08b4d46c686292811fc26685f9d7147471b8431535891746bf6bfb"
+    },
+    {
+      "path": "technical/numeric_ia.json",
+      "sha256": "babad846afe0af8291feb72931b09fd00bf6c130735922796ba035d9e79d193a"
+    },
+    {
+      "path": "technical/quote.json",
+      "sha256": "c3fc1fc0947479aa16c3ff2f654683fcc0388e0e24a8fde844f972346d2914c7"
+    },
+    {
+      "path": "technical/schema.json",
+      "sha256": "4fe2bb93cf0ec3a8a4a8903dc82a77ef2db41ff25c6b65d83218d553cec60346"
+    },
+    {
+      "path": "technical/session.json",
+      "sha256": "bec0801d8a9c0d057d51b295c7c7a1aae81f1588041ccb1ad0e380166da29bf5"
+    },
+    {
+      "path": "technical/unavailable_material.json",
+      "sha256": "b61f0a0511a2cdceb9ff2b76f187158b313ebe48eac2a37e91ef857df876d574"
+    },
+    {
+      "path": "technical/unknown_target.json",
+      "sha256": "cd2f905012347ed34b4823ab2645fea1ea37c5caadd5a393d656e64f23b9b8f9"
+    },
+    {
+      "path": "technical/wrong_m2.json",
+      "sha256": "fa1af98fd7826f6704fb844e2fbfdc8b2ca2cf99917b79c00158cace84439fb4"
+    }
+  ],
+  "task_source": {
+    "filename": "Product_4K_M6_M8_Task_02_Control_Scenarios_and_GC_2026-10-02.txt",
+    "sha256": "8be2dc2066c8178493fd17a2aaa4845a2d3080c86437ac8a02f4a23a6461986b"
+  }
+}
