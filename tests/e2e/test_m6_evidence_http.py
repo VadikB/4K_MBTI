@@ -35,6 +35,7 @@ def test_all_m6_endpoints_require_admin(client):
     monkeypatch.setattr(routes.m6_assessment_repository,'existing_key',forbidden)
     monkeypatch.setattr(routes.m7_cycle_planner,'read_plan',forbidden)
     monkeypatch.setattr(routes.m7_clarification,'read',forbidden)
+    monkeypatch.setattr(routes.m6_cycle_aggregation_repository,'read_latest_for_cycle',forbidden)
     payload={'handoff_id':str(uuid4()),'mechanism_ref':'m6_evidence/1.0.0','idempotency_key':'test','synthetic_material_confirmed':True}
     for token,expected in [(None,401),('member',403)]:
         if token:http.cookies.set(routes.SESSION_COOKIE_NAME,token)
@@ -59,6 +60,11 @@ def test_all_m6_endpoints_require_admin(client):
         assert http.post('/users/admin/m7-clarifications/'+clarification+'/answers',json={'request_id':'a','turn_id':str(uuid4()),'content':'answer'}).status_code==expected
         assert http.post('/users/admin/m7-clarifications/'+clarification+'/outcomes',json={'request_id':'o','outcome':'no_answer'}).status_code==expected
         assert http.get('/users/admin/m7-cycles/'+cycle+'/c46').status_code==expected
+        aggregation={'idempotency_key':'aggregate','expected_composition_checksum':'a'*64,
+            'admission_mechanism_version':'m6-admission-manual/1.0','decisions':[],
+            'synthetic_material_confirmed':True}
+        assert http.post('/users/admin/m6-cycles/'+cycle+'/calculations',json=aggregation).status_code==expected
+        assert http.get('/users/admin/m6-cycles/'+cycle+'/calculations/latest').status_code==expected
         assert http.post('/users/admin/m7-cycles/'+cycle+'/blocking-waits',json={'operation_ref':'m6:test','reason':'blocked'}).status_code==expected
 
 
@@ -88,3 +94,16 @@ def test_m6_assessment_repeat_uses_saved_request(client):
         'idempotency_key':'test','synthetic_material_confirmed':True}
     response=http.post('/users/admin/m6-assessments/requests',json=payload)
     assert response.status_code==202 and response.json()['assessment_revision_id']==revision
+
+
+def test_m6_cycle_aggregation_admin_contract(client):
+    http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
+    cycle_id=str(uuid4());calculation_id=str(uuid4())
+    monkeypatch.setattr(routes.m6_cycle_aggregation_repository,'create',lambda *_args,**kwargs:{'id':calculation_id,'c56':{'contract':'C-56'}})
+    monkeypatch.setattr(routes.m6_cycle_aggregation_repository,'read_latest_for_cycle',lambda *_args:{'id':calculation_id,'c56':{'contract':'C-56'}})
+    payload={'idempotency_key':'aggregate','expected_composition_checksum':'a'*64,
+        'admission_mechanism_version':'m6-admission-manual/1.0','decisions':[],
+        'synthetic_material_confirmed':True}
+    response=http.post(f'/users/admin/m6-cycles/{cycle_id}/calculations',json=payload)
+    assert response.status_code==201 and response.json()['c56']['contract']=='C-56'
+    assert http.get(f'/users/admin/m6-cycles/{cycle_id}/calculations/latest').json()['id']==calculation_id

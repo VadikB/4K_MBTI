@@ -108,3 +108,10 @@ consumer PM-05 остаются отдельными зависимостями;
 [M6-B v1](../m6-b-contracts.md) реализует draft QA-продолжение сохранённой M6-A
 revision: interim analysis, IA и C-54. Пакет остаётся draft, approved GC отсутствуют,
 CURRENT не изменён; техническая реализация не является методологическим допуском.
+
+## Дополнение задачи 8 M6 от 02.10.2026
+
+[M6 Cycle Aggregation и C-56 v1](m6-cycle-aggregation-contract.md) реализует draft
+QA-контур PM-05/LU-05.4: допуск final IA, Scores, четыре исхода, пять покрытий и
+composition-checked C-56. Results/C-67 задачи 9, утверждённые GC/Reliability и
+product UI остаются открытыми; CURRENT не изменён.

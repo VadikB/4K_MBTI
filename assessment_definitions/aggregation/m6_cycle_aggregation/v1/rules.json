@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "id": "m6_cycle_aggregation",
+  "version": "1.0.0",
+  "status": "draft",
+  "scope": "m6_cycle_aggregation_qa",
+  "owner": "PM-05",
+  "source": {
+    "id": "M6",
+    "version": "1.8",
+    "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4"
+  },
+  "source_versions": {
+    "source_set": "2026-10-01",
+    "M2": "competencies_4k/1.1",
+    "M6": "1.8",
+    "M7": "1.3"
+  },
+  "level_values": {
+    "L0": 0,
+    "L1": 1,
+    "L2": 2,
+    "L3": 3
+  },
+  "formulas": {
+    "indicator": "arithmetic_mean_of_all_admissible_final_ia",
+    "component": "arithmetic_mean_of_available_indicator_contributions",
+    "skill": "equal_weight_arithmetic_mean_of_available_component_scores"
+  },
+  "exclusions": [
+    "INSUFFICIENT_EVIDENCE",
+    "NO_ASSESSMENT",
+    "TECHNICAL_FAILURE",
+    "non_admissible_ia"
+  ],
+  "rounding": "none",
+  "confidence_weighting": false,
+  "skill_outcomes": [
+    "full_score",
+    "partial_score",
+    "result_without_score",
+    "no_result"
+  ],
+  "coverage": [
+    "opportunities",
+    "indicator_assessments",
+    "admissible_contributions",
+    "components_with_score",
+    "complete_components"
+  ]
+}
