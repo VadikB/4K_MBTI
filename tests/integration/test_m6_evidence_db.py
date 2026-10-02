@@ -418,7 +418,10 @@ def test_m6_cycle_calculation_persists_c56_and_reconciles_c46(database):
                  for audience in ('assessee','customer','methodology_qa')]
         assert {x['c67']['contract'] for x in reports}=={'C-67'}
         assert {x['c67']['provenance']['composition_checksum'] for x in reports}=={reconciled['composition_checksum']}
-        assert all(x['c67']['recommendations']==[] for x in reports)
+        expected_recommendation_types={'Development','Consolidation / Maintenance','Application / Transfer'}
+        assert all({item['type'] for item in x['c67']['recommendations']}==expected_recommendation_types for x in reports)
+        assert all(item['basis_refs'] and item['basis_refs'][0]['ia_revision_id']
+                   for x in reports for item in x['c67']['recommendations'])
         assert read_latest_results(c,cycle_id)['revision_id']==results['revision_id']
         assert read_latest_report(c,cycle_id,'assessee')['id']==reports[0]['id']
         pdf=render_pdf(reports[0]);assert pdf.startswith(b'%PDF') and len(pdf)>1000
