@@ -31,3 +31,7 @@ class CreateReportRequest(Record):
     results_revision_id: str
     audience: Literal["assessee", "customer", "methodology_qa"]
     target_profile: TargetProfile | None = None
+
+
+class RegenerateReportRequest(Record):
+    idempotency_key: str = Field(min_length=1, max_length=200)

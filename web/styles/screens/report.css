@@ -13,7 +13,13 @@
   gap: 12px;
 }
 
-.m8-report-skills .report-skill-item {
+.m8-report-recommendations {
+  display: grid;
+  gap: 12px;
+}
+
+.m8-report-skills .report-skill-item,
+.m8-report-recommendations .report-skill-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(180px, 0.45fr);
   gap: 20px;
@@ -23,12 +29,14 @@
 }
 
 .m8-report-skills p,
+.m8-report-recommendations p,
 #m8-report-coverage p {
   margin: 6px 0 0;
 }
 
 @media (max-width: 720px) {
-  .m8-report-skills .report-skill-item {
+  .m8-report-skills .report-skill-item,
+  .m8-report-recommendations .report-skill-item {
     grid-template-columns: 1fr;
   }
 }

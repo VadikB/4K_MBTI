@@ -32,7 +32,7 @@ from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,Ad
 from Api import m6_cycle_aggregation_repository
 from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest
 from Api import m8_results
-from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest
+from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest, RegenerateReportRequest
 from Api import m10_product_flow, m10_orchestration
 from Api.m10_contracts import ProductCycleStartRequest, ProductNextRequest
 from scripts.build_m5_case_package import OUTPUT as M5_PACKAGE_DIR
@@ -7088,6 +7088,19 @@ def read_owned_m8_report(cycle_id: UUID, request: Request):
     try:
         with get_connection() as connection: return m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
     except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
+
+
+@router.post('/assessment/m8/cycles/{cycle_id}/reports/regenerate', status_code=201)
+def regenerate_owned_m8_report(cycle_id: UUID, payload: RegenerateReportRequest, request: Request):
+    user = _m7_owned_cycle(request, str(cycle_id))
+    try:
+        with get_connection() as connection:
+            results = m8_results.read_latest_results(connection, str(cycle_id))
+            previous = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
+            result = m8_results.create_report(connection, results_revision_id=results['revision_id'], audience='assessee',
+                key=payload.idempotency_key, target_profile=previous['c67'].get('target_profile'), created_by=int(user.id))
+            connection.commit(); return result
+    except (ValueError, KeyError) as exc: raise HTTPException(409, detail=str(exc)) from exc
 
 
 @router.get('/assessment/m8/reports/{report_id}/pdf')

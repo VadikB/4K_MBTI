@@ -1379,6 +1379,14 @@ const loadM8Report = async (cycleId) => {
   coverage.innerHTML = Object.entries(c67.coverage).map(([scope, cuts]) => `<section><h4>${escapeHtml(scope === 'full_m2' ? 'Полный M2' : 'План Cycle')}</h4>` +
     Object.entries(cuts).map(([name, cut]) => `<p><strong>${escapeHtml(name)}</strong>: ${escapeHtml(coverageLabel(cut))}</p>`).join('') + '</section>').join('');
   document.getElementById('m8-report-limitations').innerHTML = c67.limitations.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+  const recommendations = document.getElementById('m8-report-recommendations');
+  recommendations.innerHTML = (c67.recommendations || []).map((item) => `<article class="report-skill-item m8-recommendation-item">` +
+    `<div><strong>${escapeHtml(item.skill_id)} · ${escapeHtml(item.type)}</strong><p>${escapeHtml(item.goal)}</p></div>` +
+    `<div><p><strong>Практика:</strong> ${escapeHtml(item.practice)}</p><p><strong>Контекст:</strong> ${escapeHtml(item.application_context)}</p>` +
+    `<p><strong>Признак прогресса:</strong> ${escapeHtml(item.progress_signal)}</p>` +
+    `<p>${item.limitations.map((value) => escapeHtml(value)).join(' · ')}</p></div></article>`).join('');
+  document.getElementById('m8-report-recommendation-notices').innerHTML = (c67.recommendation_notices || [])
+    .map((item) => `<li><strong>${escapeHtml(item.skill_id)}:</strong> ${escapeHtml(item.text)}</li>`).join('');
   const download = document.getElementById('report-download-button');
   download.dataset.m8ReportId = report.id;
 };

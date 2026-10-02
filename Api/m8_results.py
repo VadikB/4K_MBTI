@@ -9,10 +9,11 @@ from Api.m5_case_runtime import checksum
 from Api import m7_completion
 from Api import m6_cycle_aggregation_repository as calculations
 from Api.m8_report_package import load_package as load_report_package
+from Api.m8_recommendations import generate as generate_recommendations
 from Api.typst_pdf_renderer import render_typst_report
 
 RESULTS_VERSION = "m8-results/1.0.0"
-REPORT_TEMPLATE_VERSION = "m8-basic-report/1.0.0"
+REPORT_TEMPLATE_VERSION = "m8-basic-report/1.1.0"
 ALLOWED_AUDIENCES = {"assessee", "customer", "methodology_qa"}
 
 
@@ -74,7 +75,8 @@ def _comparison(skill: dict, target: dict | None) -> dict:
             "reason": "NORMATIVE_SKILL_LEVEL_NOT_AVAILABLE"}
 
 
-def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: dict | None) -> dict:
+def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: dict | None,
+                   profile_snapshot: dict | None) -> dict:
     c56 = calculation["c56"]
     if c56.get("contract") != "C-56" or c56.get("readiness") != "ready_for_pm06":
         raise ValueError("M8_INPUT_NOT_READY")
@@ -102,6 +104,7 @@ def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: di
     return {
         "schema_version": 1, "results_version": RESULTS_VERSION, "cycle_id": str(cycle["cycle_id"]),
         "subject_user_id": cycle["owner_user_id"], "profile_ref": cycle["profile_ref_json"],
+        "personalized_profile_snapshot": profile_snapshot,
         "role_ref": cycle["selected_role_ref_json"], "composition": c56["composition"],
         "composition_checksum": c56["composition_checksum"], "calculation_ref": c56["calculation_ref"],
         "c46_ref": {"id": str(c46["id"]), "revision_no": c46["revision_no"], "checksum": c46["payload_checksum"]},
@@ -135,7 +138,14 @@ def create_results(connection, *, cycle_id: str, calculation_id: str, key: str,
         if prior["request_hash"] != request_hash:
             raise ValueError("IDEMPOTENCY_CONFLICT")
         return read_results_revision(connection, prior["result_revision_id"])
-    payload = _build_payload(cycle, c46, calculation, target_profile)
+    profile_row = connection.execute(
+        "SELECT content_json,checksum FROM assessment_personalized_profiles WHERE id=%s",
+        (cycle["personalized_profile_id"],),
+    ).fetchone()
+    if not profile_row or profile_row["checksum"] != cycle["profile_ref_json"].get("checksum"):
+        raise ValueError("CHECKSUM_MISMATCH")
+    profile_snapshot = {"ref": cycle["profile_ref_json"], "content": profile_row["content_json"]}
+    payload = _build_payload(cycle, c46, calculation, target_profile, profile_snapshot)
     logical = connection.execute("SELECT * FROM m8_results WHERE cycle_db_id=%s FOR UPDATE", (cycle["id"],)).fetchone()
     if not logical:
         results_id = uuid4()
@@ -190,14 +200,35 @@ def _report_content(results: dict, audience: str, target_profile: dict | None) -
         raise ValueError("M8_AUDIENCE_INVALID")
     detail = "full" if audience == "methodology_qa" else ("summary_with_coverage" if audience == "customer" else "personal")
     skills = []
+    recommendation_skills = []
     targets = {x["skill_id"]: x for x in (target_profile or {}).get("requirements", [])}
     for source in payload["assessed_skill_profile"]:
         item = dict(source)
         item["comparison"] = _comparison(source, targets.get(source["skill_id"])) if target_profile else source["comparison"]
+        recommendation_skills.append(dict(item))
         if audience == "assessee":
             item.pop("components", None)
         skills.append(item)
-    return {"schema_version": 1, "contract": "C-67", "message_version": "1.0", "owner": "PM-06", "consumer": "PM-07",
+    recommendation_payload = {**payload, "assessed_skill_profile": recommendation_skills,
+                              "target_profile": target_profile or payload.get("target_profile")}
+    try:
+        recommendation_generation = generate_recommendations(
+            {**recommendation_payload, "results_revision_id": results["revision_id"]},
+            payload.get("personalized_profile_snapshot"),
+        )
+    except (ValueError, KeyError, OSError) as exc:
+        recommendation_generation = {
+            "contract_version": "m8-recommendations/1.0.0",
+            "mechanism": None,
+            "input": {"results_revision_id": results["revision_id"], "profile_ref": payload.get("profile_ref")},
+            "input_checksum": None,
+            "recommendations": [],
+            "notices": [{"kind": "GENERATION_FAILURE", "skill_id": None,
+                         "text": "Блок рекомендаций недоступен из-за ошибки генерации.",
+                         "limitations": ["Базовый Report и фактический Results сохранены."]}],
+            "status": "failed", "failure_reason": "RECOMMENDATION_GENERATION_FAILED",
+        }
+    return {"schema_version": 1, "contract": "C-67", "message_version": "1.1", "owner": "PM-06", "consumer": "PM-07",
             "results_id": results["id"], "results_revision_id": results["revision_id"],
             "results_revision_no": results["revision_no"], "cycle_id": results["cycle_id"], "audience": audience,
             "disclosure": detail, "profile_ref": payload["profile_ref"], "role_ref": payload["role_ref"],
@@ -209,7 +240,10 @@ def _report_content(results: dict, audience: str, target_profile: dict | None) -
             "provenance": {"composition_checksum": payload["composition_checksum"], "c46_ref": payload["c46_ref"],
                            "c56_ref": payload["c56_ref"], "sources": payload["sources"], "algorithm": payload["algorithm"]},
             "report_mechanism": {"id": package["manifest"]["id"], "version": package["manifest"]["version"],
-                                 "checksum": package["template_hash"]}, "recommendations": []}
+                                 "checksum": package["template_hash"]},
+            "recommendation_generation": recommendation_generation,
+            "recommendations": recommendation_generation["recommendations"],
+            "recommendation_notices": recommendation_generation["notices"]}
 
 
 def create_report(connection, *, results_revision_id: str, audience: str, key: str,
@@ -292,6 +326,8 @@ def render_pdf(report: dict) -> bytes:
         "skills": skills,
         "coverage": coverage,
         "limitations": c67["limitations"],
+        "recommendations": c67.get("recommendations", []),
+        "recommendation_notices": c67.get("recommendation_notices", []),
         "reliability": c67["reliability"].get("status", "not_provided"),
     }
     return render_typst_report(payload, "m8_basic_report.typ")

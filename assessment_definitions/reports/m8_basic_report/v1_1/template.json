@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "outcome_labels": {
+    "full_score": "Полный результат со Score",
+    "partial_score": "Частный результат со Score",
+    "result_without_score": "Результат без общего Score",
+    "no_result": "Нет Skill Result"
+  },
+  "coverage_labels": {
+    "opportunities": "Фактические возможности",
+    "indicator_assessments": "Обоснованные IA",
+    "admissible_contributions": "Допустимые вклады",
+    "components_with_score": "Components со Score",
+    "complete_components": "Полные Components"
+  },
+  "invariants": {
+    "show_recommendations": true,
+    "derive_skill_level": false,
+    "derive_competency_score": false,
+    "preserve_exact_fraction": true
+  }
+}

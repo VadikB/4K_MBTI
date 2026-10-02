@@ -160,7 +160,9 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
     with factory() as connection:
         report=read_latest_report(connection,cycle_id,"assessee")
         assert report["c67"]["contract"]=="C-67"
-        assert report["c67"]["recommendations"]==[]
+        assert report["c67"]["recommendations"]
+        assert {item["type"] for item in report["c67"]["recommendations"]} == {
+            "Development", "Consolidation / Maintenance", "Application / Transfer"}
         assert any(skill.get("score",{}).get("value")==0 for skill in report["c67"]["skills"]), report["c67"]["skills"]
         assert report["c67"]["reliability"]["status"]=="not_verified"
         assert render_pdf(report).startswith(b"%PDF")

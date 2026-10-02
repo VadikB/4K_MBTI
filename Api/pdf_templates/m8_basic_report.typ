@@ -41,3 +41,28 @@
 ]
 
 *Reliability:* #data.reliability
+
+#if data.recommendations.len() > 0 [
+  == Рекомендации
+  #for recommendation in data.recommendations [
+    === #recommendation.skill_id · #recommendation.type
+    *Цель:* #recommendation.goal
+
+    *Практика:* #recommendation.practice
+
+    *Контекст:* #recommendation.application_context
+
+    *Наблюдаемый признак:* #recommendation.progress_signal
+
+    #for limitation in recommendation.limitations [
+      - #limitation
+    ]
+  ]
+]
+
+#if data.recommendation_notices.len() > 0 [
+  == Недостаток оснований
+  #for notice in data.recommendation_notices [
+    - *#notice.skill_id:* #notice.text
+  ]
+]

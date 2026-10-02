@@ -164,3 +164,9 @@ Provider smoke и утверждённые GC не входят в эту про
 Manifest связан с M8 v1.2 и фиксирует checksum шаблона. Инварианты запрещают
 Recommendations, вывод Skill Level и CompetencyScore и требуют сохранять точные
 дроби. Пакет не публикует методологию и не подтверждает Reliability.
+
+`reports/m8_basic_report/v1_1` — новая draft-версия индивидуального C-67 с
+Recommendations. `recommendations/m8/v1` хранит детерминированные шаблоны по
+M8.6–M8.6.1. Runtime сохраняет минимизированный input из Results и snapshot
+PersonalizedProfile, точные ссылки на IA, текст и версию механизма. Пакеты не
+изменяют IA, Scores, Gap или Results и не используют ФИО/контакты.

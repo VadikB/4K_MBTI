@@ -1,3 +1,4 @@
+from Api import m8_results
 from Api.m8_results import _comparison, _report_content
 
 
@@ -42,3 +43,12 @@ def test_three_audiences_share_facts_and_differ_only_in_disclosure():
     assert {x["skills"][0]["score"]["value"] for x in values} == {1.0}
     assert {x["coverage"].__repr__() for x in values} == {values[0]["coverage"].__repr__()}
     assert [x["disclosure"] for x in values] == ["personal", "summary_with_coverage", "full"]
+
+
+def test_recommendation_failure_keeps_base_c67_available(monkeypatch):
+    monkeypatch.setattr(m8_results, "generate_recommendations", lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("broken")))
+    report = _report_content(results(), "assessee", None)
+    assert report["skills"]
+    assert report["recommendations"] == []
+    assert report["recommendation_generation"]["status"] == "failed"
+    assert report["recommendation_notices"][0]["kind"] == "GENERATION_FAILURE"
