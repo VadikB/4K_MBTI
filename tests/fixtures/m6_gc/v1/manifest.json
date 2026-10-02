@@ -288,6 +288,10 @@
     {
       "path": "assessment_candidates/manifest.json",
       "sha256": "1c7a551be0ba8260951f46b180f96147ab42962c4af64b153fe5330c58f2645f"
+    },
+    {
+      "path": "planning_candidates/manifest.json",
+      "sha256": "bb96311cdf0b83cd40847aada2589f94e30200aec5a0171a23e79c40fca1cd0f"
     }
   ],
   "task_source": {
@@ -295,5 +299,7 @@
     "sha256": "8be2dc2066c8178493fd17a2aaa4845a2d3080c86437ac8a02f4a23a6461986b"
   },
   "assessment_candidate_count": 7,
-  "approved_assessment_gc_count": 0
+  "approved_assessment_gc_count": 0,
+  "planning_candidate_count": 8,
+  "approved_planning_gc_count": 0
 }

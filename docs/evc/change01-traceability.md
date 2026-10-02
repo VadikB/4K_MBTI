@@ -67,6 +67,14 @@ failure, C-54 и защищённый QA readback. [Контракт](../archite
 [отчёт и проверки](tasks/m6-task04-implementation.md). Это техническое доказательство
 draft QA; GC, provider smoke, semantic acceptance и пользовательский выпуск не выполнены.
 
+## Рабочая реализация M7 Task 05
+
+На ветке `codex/m7-task05-cycle-plan` реализован ограниченный QA-путь T10 и части
+T05/T07: фиксированный план до старта, один профиль, два времени, исполняемый выбор
+и назначение следующей AS с историей решений. [Контракт](../architecture/m7-cycle-planning-contract.md),
+[отчёт](tasks/m7-task05-implementation.md). Полное управление Additional Session,
+закрытием и C-46 остаётся задачей 7; M6 aggregation — задачей 8.
+
 ## Рабочая реализация M6-A
 
 На ветке codex/m6-task01-contracts после базы dd3d2ca реализована часть PM-05:

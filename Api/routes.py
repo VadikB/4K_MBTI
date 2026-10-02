@@ -23,6 +23,8 @@ from Api.config import settings
 from Api.assessment_service import assessment_service
 from Api import m5_generation_lab
 from Api import m5_cycle_runtime, m5_scenario_runtime, m5_storage
+from Api import m7_cycle_planner
+from Api.m7_planning_contracts import CreateCyclePlanRequest, NextSituationRequest, PresentSituationRequest
 from scripts.build_m5_case_package import OUTPUT as M5_PACKAGE_DIR
 from Api.assessment_role_profiles import (
     create_organization_role_profile_draft,
@@ -6785,3 +6787,47 @@ def get_m6_assessment_result(revision_id: UUID, request: Request):
             return m6_assessment_repository.read_result(connection, revision_id)
     except ValueError as exc:
         raise HTTPException(404, detail='M6_ASSESSMENT_UNAVAILABLE') from exc
+
+
+# PM-04 M7: restricted QA path for executable Cycle plan and next AS.
+@router.post('/admin/m7-plans', status_code=201)
+def create_m7_plan(payload: CreateCyclePlanRequest, request: Request):
+    user=_m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result=m7_cycle_planner.create_plan(connection,personalized_profile_id=payload.personalized_profile_id,
+                selected_skills=payload.selected_skills,created_by=int(user.id),key=payload.idempotency_key,
+                time_budget_seconds=payload.time_budget_seconds,calendar_window_seconds=payload.calendar_window_seconds)
+            connection.commit();return result
+    except (ValueError,KeyError,OSError) as exc:
+        raise HTTPException(409,detail=str(exc)) from exc
+
+
+@router.get('/admin/m7-plans/{cycle_id}')
+def get_m7_plan(cycle_id: UUID, request: Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:return m7_cycle_planner.read_plan(connection,str(cycle_id))
+    except ValueError as exc:raise HTTPException(404,detail=str(exc)) from exc
+
+
+@router.post('/admin/m7-plans/{cycle_id}/next', status_code=202)
+def choose_m7_next(cycle_id: UUID, payload: NextSituationRequest, request: Request):
+    user=_m5_superadmin(request);policy=json.loads((M5_PACKAGE_DIR/'admission-policy.json').read_text())
+    try:
+        with get_connection() as connection:
+            result=m7_cycle_planner.choose_next(connection,cycle_id=str(cycle_id),
+                expected_plan_revision_id=payload.expected_plan_revision_id,key=payload.idempotency_key,
+                created_by=int(user.id),policy=policy)
+            connection.commit();return result
+    except (ValueError,KeyError,OSError) as exc:raise HTTPException(409,detail=str(exc)) from exc
+
+
+@router.post('/admin/m7-decisions/{decision_id}/present')
+def present_m7_decision(decision_id: UUID, payload: PresentSituationRequest, request: Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result=m7_cycle_planner.present(connection,decision_id=str(decision_id),expected_revision=payload.expected_decision_revision)
+            connection.commit();return result
+    except ValueError as exc:raise HTTPException(409,detail=str(exc)) from exc
