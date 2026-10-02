@@ -56,6 +56,8 @@ def ensure_schema(connection):
         END; $$ LANGUAGE plpgsql""")
     connection.execute('DROP TRIGGER IF EXISTS immutable_m6_input ON m6_processing_requests')
     connection.execute('CREATE TRIGGER immutable_m6_input BEFORE UPDATE ON m6_processing_requests FOR EACH ROW EXECUTE FUNCTION prevent_m6_request_input_change()')
+    from Api.m6_assessment_repository import ensure_schema as ensure_assessment_schema
+    ensure_assessment_schema(connection)
 
 
 def existing_key(connection, handoff_id, key, mechanism_ref):

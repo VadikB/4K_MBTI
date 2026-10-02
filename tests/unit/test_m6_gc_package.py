@@ -119,3 +119,22 @@ def test_blind_review_packet_has_no_draft_or_reviewer_data():
         assert 'access_history' not in value
         assert 'resolver_input' not in value
         assert value['review_instructions']['independent_first_opinion_required'] is True
+
+
+def test_m6_b_assessment_candidates_cover_outcomes_without_claiming_approval():
+    package = read(PACKAGE / 'manifest.json')
+    manifest = read(PACKAGE / 'assessment_candidates/manifest.json')
+    assert package['assessment_candidate_count'] == len(manifest['records']) == 7
+    assert package['approved_assessment_gc_count'] == manifest['approved_count'] == 0
+    outcomes = {x['project_expected_outcome'] for x in manifest['records']}
+    assert outcomes == {'L0','L1','L2','L3','INSUFFICIENT_EVIDENCE','NO_ASSESSMENT','TECHNICAL_FAILURE'}
+    for record in manifest['records']:
+        source = PACKAGE / record['source_input']['path']
+        assert hashlib.sha256(source.read_bytes()).hexdigest() == record['source_input']['sha256']
+        candidate = read(source)
+        assert record['status'] == 'CANDIDATE' and record['expert_approved'] is False
+        assert record['source_input']['material_revision'] == candidate['material']['material_revision']['material_sha256']
+        targets = {x['indicator_id']: x['m2_version'] for x in candidate['material']['indicator_targets']}
+        focus = record['focus_target']
+        assert targets[focus['indicator_id']] == focus['m2_version']
+        assert set(record['unreviewed_targets']) == set(targets) - {focus['indicator_id']}

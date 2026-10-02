@@ -58,6 +58,15 @@ M6 источник зарегистрирован; [контракт M6-A](../a
 Реализация/проверка M6 пока NOT_RUN. F01/F02 и общий runtime остаются у прежнего
 владельца; Evidence/EB получает одну реализацию M6-A, IA — её продолжение.
 
+## Рабочая реализация M6-B
+
+На ветке `codex/m6-task04-indicator-assessment`, поверх immutable commit M6-A
+`01411ebc77b0b8b154f7a83c576a91b3c231ee41`, реализовано продолжение T07–T09:
+interim без IA, final IA по AS × Indicator, отдельные IE/no-assessment/technical
+failure, C-54 и защищённый QA readback. [Контракт](../architecture/m6-b-contracts.md),
+[отчёт и проверки](tasks/m6-task04-implementation.md). Это техническое доказательство
+draft QA; GC, provider smoke, semantic acceptance и пользовательский выпуск не выполнены.
+
 ## Рабочая реализация M6-A
 
 На ветке codex/m6-task01-contracts после базы dd3d2ca реализована часть PM-05:

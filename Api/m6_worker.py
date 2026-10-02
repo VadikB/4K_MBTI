@@ -46,7 +46,15 @@ def recover_pending(connection_factory=None):
             ORDER BY created_at LIMIT 1""").fetchone()
     if row:
         run_request(row['id'],connection_factory=connection_factory)
-    return bool(row)
+        return True
+    with connection_factory() as connection:
+        assessment = connection.execute("""SELECT id FROM m6_assessment_requests
+            WHERE status='queued' OR (status='running' AND lease_expires_at<=NOW())
+            ORDER BY created_at LIMIT 1""").fetchone()
+    if assessment:
+        from Api.m6_assessment_worker import run_request as run_assessment_request
+        run_assessment_request(assessment['id'],connection_factory=connection_factory)
+    return bool(assessment)
 
 
 def _poll():
