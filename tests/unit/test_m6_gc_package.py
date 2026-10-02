@@ -146,3 +146,12 @@ def test_m7_planning_candidates_extend_same_package_without_gc_claim():
     assert package['approved_planning_gc_count']==manifest['approved_count']==0
     assert {'EXT-04','EXT-05','EXT-07','SC-M6-M8-01','T5-03','T5-08','T5-11','T5-14'}=={x['id'] for x in manifest['records']}
     assert all(x['status']=='CANDIDATE' and x['expert_approved'] is False for x in manifest['records'])
+
+
+def test_m7_clarification_candidates_cover_task06_without_gc_claim():
+    package=read(PACKAGE/'manifest.json');manifest=read(PACKAGE/'clarification_candidates/manifest.json')
+    assert package['clarification_candidate_count']==len(manifest['records'])==15
+    assert package['approved_clarification_gc_count']==manifest['approved_count']==0
+    assert {f'T6-{number:02d}' for number in range(1,16)}=={x['id'] for x in manifest['records']}
+    assert manifest['real_llm_runs']==0
+    assert all(x['status']=='CANDIDATE' and x['expert_approved'] is False for x in manifest['records'])

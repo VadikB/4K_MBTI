@@ -400,6 +400,67 @@ def test_m6_b_failure_is_not_person_result_and_retry_succeeds(database):
         assert c.execute('SELECT count(*) AS n FROM m6_assessment_attempts').fetchone()['n']==2
 
 
+def test_m7_clarification_reuses_dialogue_and_restarts_m6(database):
+    from Api import m6_assessment_repository as assessments
+    from Api.m6_assessment_package import load_mechanism as load_assessment_mechanism
+    from Api.m6_assessment_worker import run_request as run_assessment
+    from Api import m7_clarification
+    factory,_=database
+    with factory() as c:
+        situation=c.execute('SELECT id,assessment_situation_id FROM m5_assessment_situations').fetchone()
+        c.execute("UPDATE m5_assessment_situations SET status='scenario_ended',closed_at=NULL WHERE id=%s",(situation['id'],))
+        interim=build_c45(c,str(situation['assessment_situation_id']),mode='interim')
+        evidence_request=enqueue(c,str(interim['handoff_id']),'clarification-evidence-1');c.commit()
+    class EvidenceGateway:
+        enabled=True
+        def chat(self,messages,**kwargs):return json.dumps(empty_output(json.loads(messages[1]['content'])))
+    run_request(evidence_request['id'],connection_factory=factory,gateway=EvidenceGateway())
+    with factory() as c:
+        evidence_revision=repo.read_request(c,evidence_request['id'])['analysis_revision_id']
+        assessment_request=assessments.enqueue(c,evidence_revision_id=str(evidence_revision),key='clarification-assessment-1',
+            mechanism=load_assessment_mechanism('m6_indicator_assessment/1.0.0'),created_by=99);c.commit()
+    class AssessmentGateway:
+        enabled=True
+        def chat(self,messages,**kwargs):return json.dumps(_assessment_output(json.loads(messages[1]['content'])),ensure_ascii=False)
+    run_assessment(assessment_request['id'],connection_factory=factory,gateway=AssessmentGateway())
+    with factory() as c:
+        c54=assessments.read_request(c,assessment_request['id'])['c54_revision_id']
+        first_indicator=assessment_request['input_json']['material']['indicator_targets'][0]['indicator_id']
+        class QuestionGateway:
+            enabled=True
+            def chat(self,*args,**kwargs):
+                return json.dumps({'schema_version':1,'admissible':True,
+                    'text':'Что именно вы имели в виду, когда назвали этот довод основным?',
+                    'purpose':'clarify_meaning','indicator_ids':[first_indicator],
+                    'resolving_information':['уточнение смысла уже данного ответа'],'refusal_reason':None},ensure_ascii=False)
+        decision=m7_clarification.decide(c,c54_revision_id=str(c54),key='clarification-1',created_by=99,gateway=QuestionGateway())
+        assert decision['status']=='ASK'
+        assert m7_clarification.decide(c,c54_revision_id=str(c54),key='clarification-alias',created_by=99,gateway=QuestionGateway())['id']==decision['id']
+        shown=m7_clarification.present(c,decision_id=str(decision['id']),expected_c54_revision_id=str(c54))
+        answered=m7_clarification.answer(c,decision_id=str(decision['id']),request_id='clarification-answer-1',
+            turn_id=str(uuid4()),content='Я имел в виду, что этот довод связывает обе части моего решения.')
+        assert answered['question_turn_id']==shown['question_turn_id']
+        assert answered['response_outcome']=='answered' and answered['handoff_id']
+        turns=c.execute('SELECT speaker_type,speaker_id FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s ORDER BY sequence_no',(situation['id'],)).fetchall()
+        assert turns[-2:]==[{'speaker_type':'assessment','speaker_id':'m7-clarification'},{'speaker_type':'assessee','speaker_id':'assessee'}]
+        next_evidence=enqueue(c,str(answered['handoff_id']),'clarification-evidence-2');c.commit()
+    run_request(next_evidence['id'],connection_factory=factory,gateway=EvidenceGateway())
+    with factory() as c:
+        revision=repo.read_request(c,next_evidence['id'])['analysis_revision_id']
+        next_assessment=assessments.enqueue(c,evidence_revision_id=str(revision),key='clarification-assessment-2',
+            mechanism=load_assessment_mechanism('m6_indicator_assessment/1.0.0'),created_by=99);c.commit()
+    run_assessment(next_assessment['id'],connection_factory=factory,gateway=AssessmentGateway())
+    with factory() as c:
+        next_status=assessments.read_request(c,next_assessment['id']);assert next_status['status']=='succeeded'
+        second=m7_clarification.decide(c,c54_revision_id=str(next_status['c54_revision_id']),key='clarification-2',created_by=99,gateway=QuestionGateway())
+        m7_clarification.present(c,decision_id=str(second['id']),expected_c54_revision_id=str(next_status['c54_revision_id']))
+        before=c.execute("SELECT count(*) AS n FROM m5_dialogue_turns WHERE speaker_type='assessee'").fetchone()['n']
+        no_answer=m7_clarification.record_outcome(c,decision_id=str(second['id']),request_id='clarification-no-answer-1',outcome='no_answer')
+        assert no_answer['response_outcome']=='no_answer' and no_answer['answer_turn_id'] is None
+        assert c.execute("SELECT count(*) AS n FROM m5_dialogue_turns WHERE speaker_type='assessee'").fetchone()['n']==before
+        assert c.execute('SELECT count(*) AS n FROM m5_assessment_situations').fetchone()['n']==1
+
+
 def test_real_fragment_readback(database):
     factory,h=database
     with factory() as c:request=enqueue(c,h);c.commit()

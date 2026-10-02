@@ -25,6 +25,8 @@ from Api import m5_generation_lab
 from Api import m5_cycle_runtime, m5_scenario_runtime, m5_storage
 from Api import m7_cycle_planner
 from Api.m7_planning_contracts import CreateCyclePlanRequest, NextSituationRequest, PresentSituationRequest
+from Api import m7_clarification
+from Api.m7_clarification_contracts import CreateClarificationRequest,PresentClarificationRequest,ClarificationAnswerRequest,ClarificationOutcomeRequest
 from scripts.build_m5_case_package import OUTPUT as M5_PACKAGE_DIR
 from Api.assessment_role_profiles import (
     create_organization_role_profile_draft,
@@ -6829,5 +6831,53 @@ def present_m7_decision(decision_id: UUID, payload: PresentSituationRequest, req
     try:
         with get_connection() as connection:
             result=m7_cycle_planner.present(connection,decision_id=str(decision_id),expected_revision=payload.expected_decision_revision)
+            connection.commit();return result
+    except ValueError as exc:raise HTTPException(409,detail=str(exc)) from exc
+
+
+@router.post('/admin/m7-clarifications',status_code=201)
+def create_m7_clarification(payload:CreateClarificationRequest,request:Request):
+    user=_m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result=m7_clarification.decide(connection,c54_revision_id=payload.c54_revision_id,
+                key=payload.idempotency_key,created_by=int(user.id));connection.commit();return result
+    except (ValueError,KeyError,OSError) as exc:raise HTTPException(409,detail=str(exc)) from exc
+
+
+@router.post('/admin/m7-clarifications/{decision_id}/present')
+def present_m7_clarification(decision_id:UUID,payload:PresentClarificationRequest,request:Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result=m7_clarification.present(connection,decision_id=str(decision_id),expected_c54_revision_id=payload.expected_c54_revision_id)
+            connection.commit();return result
+    except ValueError as exc:raise HTTPException(409,detail=str(exc)) from exc
+
+
+@router.get('/admin/m7-clarifications/{decision_id}')
+def read_m7_clarification(decision_id:UUID,request:Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:return m7_clarification.read(connection,str(decision_id))
+    except ValueError as exc:raise HTTPException(404,detail=str(exc)) from exc
+
+
+@router.post('/admin/m7-clarifications/{decision_id}/answers')
+def answer_m7_clarification(decision_id:UUID,payload:ClarificationAnswerRequest,request:Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result=m7_clarification.answer(connection,decision_id=str(decision_id),request_id=payload.request_id,
+                turn_id=payload.turn_id,content=payload.content);connection.commit();return result
+    except ValueError as exc:raise HTTPException(409,detail=str(exc)) from exc
+
+
+@router.post('/admin/m7-clarifications/{decision_id}/outcomes')
+def record_m7_clarification_outcome(decision_id:UUID,payload:ClarificationOutcomeRequest,request:Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result=m7_clarification.record_outcome(connection,decision_id=str(decision_id),request_id=payload.request_id,outcome=payload.outcome)
             connection.commit();return result
     except ValueError as exc:raise HTTPException(409,detail=str(exc)) from exc

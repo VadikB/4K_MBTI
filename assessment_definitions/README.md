@@ -149,4 +149,11 @@ Provider smoke и утверждённые GC не входят в эту про
 
 `planning/m7_cycle_plan/v1` — draft-настройки детерминированного планирования Cycle:
 источник M7, defaults времени, версия алгоритма, источник длительности и tie-break.
+
+## M7 Assessment Clarification QA
+
+`prompts/m7_assessment_clarification/v1` — draft-пакет инструкции для одного
+оценочного вопроса PM-04 по semantic interim C-54. Manifest привязан к M7 v1.3 и
+фиксирует SHA-256 prompt. Loader сохраняет prompt/schema/provider snapshot; пакет не
+является опубликованной нормой и не включён в основной пользовательский путь.
 Пакет используется только restricted QA-путём и не допускает WORKING Cases.

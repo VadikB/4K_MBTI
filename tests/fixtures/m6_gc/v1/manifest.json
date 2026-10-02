@@ -118,7 +118,7 @@
     },
     {
       "path": "Api/m6_repository.py",
-      "sha256": "c4b212f3f7d340039a0a864083fe9c6e7e589acfbfb0f458daaaf953986e4d7d"
+      "sha256": "0875d1bbc6adee9dedd4c849610ba848cdc7642ee40f6e3ab39e55986618e729"
     },
     {
       "path": "Api/m6_evidence_service.py",
@@ -292,6 +292,10 @@
     {
       "path": "planning_candidates/manifest.json",
       "sha256": "bb96311cdf0b83cd40847aada2589f94e30200aec5a0171a23e79c40fca1cd0f"
+    },
+    {
+      "path": "clarification_candidates/manifest.json",
+      "sha256": "effa1458934dd34f6735ca33b51c85fa1dd1a45aaa91bd71dd359b155709cbae"
     }
   ],
   "task_source": {
@@ -301,5 +305,11 @@
   "assessment_candidate_count": 7,
   "approved_assessment_gc_count": 0,
   "planning_candidate_count": 8,
-  "approved_planning_gc_count": 0
+  "approved_planning_gc_count": 0,
+  "clarification_candidate_count": 15,
+  "approved_clarification_gc_count": 0,
+  "clarification_task_source": {
+    "filename": "Product_4K_M6_M8_Task_06_Assessment_Clarifications_2026_10_02.txt",
+    "sha256": "d16290f806599fcb747c92386a072c6f10ecbef94402fdf6790293278c26b40d"
+  }
 }
