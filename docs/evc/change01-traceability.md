@@ -91,6 +91,16 @@ final C-45/outbox → закрытый состав Cycle → versioned C-46. Р
 [Контракт](../architecture/m7-completion-contract.md) сохраняет Task 08/09 и
 разрешённый PM-05 product consumer открытыми зависимостями.
 
+## Рабочая реализация M6 Task 08
+
+M6.7.1–7.4/M6.8.2–8.3, M7.7.5 и Change 01 И-4/И-5 → final IA точного состава
+Cycle → явный допуск → Indicator/Component/Skill Scores → четыре исхода и пять
+покрытий → immutable C-56 → composition-checked reconciliation C-46. Реализация:
+`Api/m6_cycle_aggregation*.py`, draft package `m6_cycle_aggregation/1.0.0`,
+superadmin QA endpoints и PostgreSQL integration. [Контракт](../architecture/product-4k/m6-cycle-aggregation-contract.md),
+[отчёт](tasks/m6-task08-implementation.md). Task 09, утверждённые GC/Reliability и
+product UI остаются открытыми зависимостями.
+
 ## Рабочая реализация M6-A
 
 На ветке codex/m6-task01-contracts после базы dd3d2ca реализована часть PM-05:

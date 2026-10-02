@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "m6_cycle_aggregation",
+  "version": "1.0.0",
+  "status": "draft",
+  "scope": "m6_cycle_aggregation_qa",
+  "owner": "PM-05",
+  "artifacts": [
+    {
+      "name": "rules.json",
+      "sha256": "405ba4113a4cd2f0bd3e2757a6abd3afc55b96e9cacfbceb103a37ad401e7e62"
+    }
+  ],
+  "dependencies": {
+    "methodology": "assessment_definitions/methodologies/competencies_4k/1.1/methodology.json",
+    "cycle_contract": "Api/m7_completion.py"
+  }
+}

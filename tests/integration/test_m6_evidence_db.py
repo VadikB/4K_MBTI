@@ -369,6 +369,48 @@ def test_m6_b_final_ia_c54_transactional_readback_and_replay(database):
         assert c.execute('SELECT count(*) AS n FROM m6_assessment_attempts').fetchone()['n']==1
 
 
+def test_m6_cycle_calculation_persists_c56_and_reconciles_c46(database):
+    from Api import m6_assessment_repository as assessments
+    from Api.m6_assessment_package import load_mechanism as load_assessment_mechanism
+    from Api.m6_assessment_worker import run_request as run_assessment
+    from Api.m7_completion import complete, read_c46
+    from Api.m6_cycle_aggregation_repository import create, read_latest_for_cycle
+    factory,h=database
+    with factory() as c:evidence_request=enqueue(c,h,key='aggregate-evidence');c.commit()
+    class EvidenceGateway:
+        enabled=True
+        def chat(self,messages,**kwargs):return json.dumps(empty_output(json.loads(messages[1]['content'])))
+    run_request(evidence_request['id'],connection_factory=factory,gateway=EvidenceGateway())
+    with factory() as c:
+        evidence_revision=repo.read_request(c,evidence_request['id'])['analysis_revision_id']
+        request=assessments.enqueue(c,evidence_revision_id=str(evidence_revision),key='aggregate-ia',
+            mechanism=load_assessment_mechanism('m6_indicator_assessment/1.0.0'),created_by=99);c.commit()
+    class AssessmentGateway:
+        enabled=True
+        def chat(self,messages,**kwargs):return json.dumps(_assessment_output(json.loads(messages[1]['content'])),ensure_ascii=False)
+    run_assessment(request['id'],connection_factory=factory,gateway=AssessmentGateway())
+    with factory() as c:
+        cycle_id=str(c.execute('SELECT cycle_id FROM m5_cycles').fetchone()['cycle_id'])
+        complete(c,cycle_id=cycle_id,key='aggregate-close',action='complete',reason='synthetic_complete',initiated_by=99)
+        c46=read_c46(c,cycle_id)
+        rows=c.execute('''SELECT i.indicator_id,r.id FROM m6_indicator_assessment_revisions r
+            JOIN m6_indicator_assessments i ON i.id=r.indicator_assessment_id''').fetchall()
+        decisions=[{'indicator_id':x['indicator_id'],'included_revision_ids':[str(x['id'])],
+            'numeric_admissible':True,'interpretation_admissible':True,'reason_code':'COMPARABLE',
+            'rationale':'synthetic integration fixture','conditions_refs':['synthetic:as']} for x in rows]
+        saved=create(c,cycle_id=cycle_id,key='aggregate-v1',expected_composition_checksum=c46['composition_checksum'],
+            admission_mechanism_version='m6-admission-manual/1.0',decisions=decisions,created_by=99)
+        replay=create(c,cycle_id=cycle_id,key='aggregate-v1',expected_composition_checksum=c46['composition_checksum'],
+            admission_mechanism_version='m6-admission-manual/1.0',decisions=decisions,created_by=99)
+        assert replay['id']==saved['id'] and saved['c56']['readiness']=='ready_for_pm06'
+        assert saved['c56']['contract']=='C-56' and saved['c56']['reliability']['status']=='not_verified'
+        assert read_latest_for_cycle(c,cycle_id)['id']==saved['id']
+        reconciled=read_c46(c,cycle_id)
+        assert reconciled['status']=='reconciled' and reconciled['calculation_ref_json']['id']==saved['id']
+        assert c.execute('SELECT status FROM m5_cycles').fetchone()['status']=='calculated'
+        c.commit()
+
+
 def test_m6_b_failure_is_not_person_result_and_retry_succeeds(database):
     from Api import m6_assessment_repository as assessments
     from Api.m6_assessment_package import load_mechanism as load_assessment_mechanism

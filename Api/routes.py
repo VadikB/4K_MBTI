@@ -29,6 +29,8 @@ from Api import m7_clarification
 from Api.m7_clarification_contracts import CreateClarificationRequest,PresentClarificationRequest,ClarificationAnswerRequest,ClarificationOutcomeRequest
 from Api import m7_completion
 from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,AdditionalSessionRequest,BlockingWaitRequest,ReconcileC46Request
+from Api import m6_cycle_aggregation_repository
+from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest
 from scripts.build_m5_case_package import OUTPUT as M5_PACKAGE_DIR
 from Api.assessment_role_profiles import (
     create_organization_role_profile_draft,
@@ -6884,6 +6886,31 @@ def get_m6_assessment_result(revision_id: UUID, request: Request):
             return m6_assessment_repository.read_result(connection, revision_id)
     except ValueError as exc:
         raise HTTPException(404, detail='M6_ASSESSMENT_UNAVAILABLE') from exc
+
+
+@router.post('/admin/m6-cycles/{cycle_id}/calculations', status_code=201)
+def create_m6_cycle_calculation(cycle_id: UUID, payload: CreateAggregationRequest, request: Request):
+    user = _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result = m6_cycle_aggregation_repository.create(connection, cycle_id=str(cycle_id),
+                key=payload.idempotency_key, expected_composition_checksum=payload.expected_composition_checksum,
+                admission_mechanism_version=payload.admission_mechanism_version,
+                decisions=[x.model_dump() for x in payload.decisions], created_by=int(user.id))
+            connection.commit()
+            return result
+    except (ValueError, KeyError, OSError) as exc:
+        raise HTTPException(409, detail=str(exc)) from exc
+
+
+@router.get('/admin/m6-cycles/{cycle_id}/calculations/latest')
+def get_latest_m6_cycle_calculation(cycle_id: UUID, request: Request):
+    _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            return m6_cycle_aggregation_repository.read_latest_for_cycle(connection, str(cycle_id))
+    except ValueError as exc:
+        raise HTTPException(404, detail=str(exc)) from exc
 
 
 # PM-04 M7: restricted QA path for executable Cycle plan and next AS.
