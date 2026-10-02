@@ -24,6 +24,8 @@ from Api.config import settings
 def authoring_connection(test_database_url):
     with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
         for table in (
+            "interviewer_agent_prompts",
+            "case_text_build_instructions",
             "assessment_agent_prompt_rules",
             "assessment_agent_prompt_profiles",
             "assessment_agent_definition_versions",
@@ -177,6 +179,16 @@ def authoring_connection(test_database_url):
                 """,
                 (int(parent["id"]), canonical_json(definition), definition_checksum(definition)),
             )
+        connection.execute("""CREATE TABLE interviewer_agent_prompts (
+            prompt_code TEXT PRIMARY KEY, prompt_name TEXT, prompt_text TEXT,
+            prompt_version INTEGER, is_active BOOLEAN DEFAULT TRUE)""")
+        for code in ("case_follow_up", "manual_finish", "timeout_finish"):
+            connection.execute("INSERT INTO interviewer_agent_prompts VALUES (%s,%s,%s,1,TRUE)",
+                               (code, code, "Synthetic technical fixture"))
+        connection.execute("""CREATE TABLE case_text_build_instructions (
+            id BIGSERIAL PRIMARY KEY, instruction_code TEXT, instruction_name TEXT,
+            instruction_text TEXT, version INTEGER, applies_to_type_code TEXT,
+            priority INTEGER, is_active BOOLEAN DEFAULT TRUE)""")
         yield connection
 
 
@@ -185,6 +197,18 @@ def test_legacy_configuration_materializes_roles_and_freezes_dimensions(authorin
     connection = authoring_connection
 
     ensure_legacy_assessment_configuration(connection)
+    with pytest.raises(ValueError, match="requires a prompt bundle"):
+        load_default_execution_configuration(connection)
+    # Bootstrap remains separate; publication supplies the complete bundle.
+    legacy = connection.execute("SELECT * FROM assessment_configurations WHERE is_default").fetchone()
+    draft = assessment_authoring_service.create_configuration(
+        connection, code="complete_fixture", name="Complete fixture",
+        methodology_version_id=legacy["methodology_version_id"],
+        scenario_version_id=legacy["scenario_version_id"], actor_user_id=1, comment="fixture",
+    )
+    assessment_authoring_service.publish_configuration(
+        connection, configuration_id=draft["id"], make_default=True, actor_user_id=1, comment="fixture",
+    )
     configuration = load_default_execution_configuration(connection)
 
     role_rows = connection.execute("SELECT code FROM roles ORDER BY id").fetchall()
@@ -732,3 +756,69 @@ def test_configuration_freezes_distinct_shadow_agent_definition(authoring_connec
     assert bundle["communication_shadow"]["checksum"] == definition_checksum(
         bundle["communication_shadow"]["definition"]
     )
+
+
+@pytest.fixture
+def strict_published_configuration(authoring_connection):
+    connection = authoring_connection
+    ensure_legacy_assessment_configuration(connection)
+    legacy = connection.execute("SELECT * FROM assessment_configurations WHERE is_default").fetchone()
+    draft = assessment_authoring_service.create_configuration(
+        connection, code="strict_fixture", name="Strict fixture",
+        methodology_version_id=legacy["methodology_version_id"],
+        scenario_version_id=legacy["scenario_version_id"], actor_user_id=1, comment="fixture",
+    )
+    published = assessment_authoring_service.publish_configuration(
+        connection, configuration_id=draft["id"], make_default=True, actor_user_id=1, comment="fixture",
+    )
+    return connection, published
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("fault", ["missing", "checksum", "interviewer", "dimensions"])
+def test_start_rejects_incomplete_configuration_without_repair(strict_published_configuration, fault):
+    connection, published = strict_published_configuration
+    if fault == "missing":
+        connection.execute("UPDATE assessment_configurations SET prompt_bundle_json=NULL WHERE id=%s", (published["id"],))
+    elif fault == "checksum":
+        connection.execute("UPDATE assessment_configurations SET prompt_bundle_checksum='bad' WHERE id=%s", (published["id"],))
+    elif fault == "interviewer":
+        bundle = dict(published["prompt_bundle_json"])
+        bundle["interviewer"] = {}
+        connection.execute("UPDATE assessment_configurations SET prompt_bundle_json=%s::jsonb,prompt_bundle_checksum=%s WHERE id=%s",
+                           (canonical_json(bundle), definition_checksum(bundle), published["id"]))
+    else:
+        connection.execute("UPDATE assessment_methodology_versions SET definition_json=definition_json-'roles' WHERE id=%s",
+                           (published["methodology_version_id"],))
+    before = connection.execute("SELECT * FROM assessment_configurations ORDER BY id").fetchall()
+    definitions = connection.execute("SELECT * FROM assessment_methodology_versions ORDER BY id").fetchall()
+    with pytest.raises(ValueError):
+        load_default_execution_configuration(connection)
+    assert connection.execute("SELECT * FROM assessment_configurations ORDER BY id").fetchall() == before
+    assert connection.execute("SELECT * FROM assessment_methodology_versions ORDER BY id").fetchall() == definitions
+
+
+@pytest.mark.integration
+def test_execution_uses_published_bundle_after_active_prompts_change(strict_published_configuration):
+    connection, _ = strict_published_configuration
+    before = load_default_execution_configuration(connection)
+    connection.execute("UPDATE interviewer_agent_prompts SET prompt_text='Changed current text', prompt_version=2")
+    connection.execute("UPDATE assessment_agent_prompt_profiles SET purpose_prompt='Changed current profile'")
+    assert load_default_execution_configuration(connection) == before
+
+
+@pytest.mark.integration
+def test_publication_rejects_missing_interviewer_prompt_without_changing_default(strict_published_configuration):
+    connection, published = strict_published_configuration
+    draft = assessment_authoring_service.create_configuration(
+        connection, code="incomplete_fixture", name="Incomplete fixture",
+        methodology_version_id=published["methodology_version_id"],
+        scenario_version_id=published["scenario_version_id"], actor_user_id=1, comment="fixture",
+    )
+    connection.execute("DELETE FROM interviewer_agent_prompts WHERE prompt_code='manual_finish'")
+    with pytest.raises(ValueError, match="manual_finish"):
+        assessment_authoring_service.publish_configuration(
+            connection, configuration_id=draft["id"], make_default=True, actor_user_id=1, comment="fixture",
+        )
+    assert connection.execute("SELECT status FROM assessment_configurations WHERE id=%s", (draft["id"],)).fetchone()["status"] == "draft"
+    assert connection.execute("SELECT id FROM assessment_configurations WHERE is_default").fetchone()["id"] == published["id"]

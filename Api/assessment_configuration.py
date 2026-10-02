@@ -5,7 +5,6 @@ import json
 from typing import Any
 
 from Api.assessment_runtime import validate_scenario_definition
-from Api.assessment_prompt_resolver import load_active_prompt_bundle
 from Api.snapshot_integrity import execution_snapshot_integrity
 
 
@@ -54,15 +53,6 @@ LEGACY_METHODOLOGY_DEFINITION: dict[str, Any] = {
 }
 
 
-def complete_legacy_methodology_definition(definition: dict[str, Any]) -> dict[str, Any]:
-    """Add the frozen 1.0 contract to snapshots created from pre-baseline databases."""
-    completed = dict(definition)
-    completed.setdefault("methodology_version", "1.0")
-    completed.setdefault("roles", LEGACY_ROLES)
-    completed.setdefault("levels", LEGACY_LEVELS)
-    return completed
-
-
 def ensure_methodology_role_projection(connection, definition: dict[str, Any]) -> None:
     """Materialize versioned roles for legacy tables that still reference numeric role IDs."""
     for role in definition.get("roles") or []:
@@ -101,8 +91,9 @@ def load_default_methodology_roles(connection) -> list[dict[str, Any]]:
     if row is None:
         return []
     definition = dict(row["definition_json"] or {})
-    if str(row["code"]) == LEGACY_METHODOLOGY_CODE and int(row["version"]) == 1:
-        definition = complete_legacy_methodology_definition(definition)
+    from Api.assessment_authoring_service import assessment_authoring_service
+
+    assessment_authoring_service.validate_execution_methodology(definition)
     roles = definition.get("roles") or []
     return [dict(role) for role in roles if isinstance(role, dict)]
 
@@ -213,6 +204,7 @@ def load_default_execution_configuration(connection) -> dict[str, Any]:
             configuration.id AS configuration_id,
             configuration.code AS configuration_code,
             configuration.prompt_bundle_json,
+            configuration.prompt_bundle_checksum,
             methodology_version.id AS methodology_version_id,
             methodology.code AS methodology_code,
             methodology_version.version AS methodology_version,
@@ -242,34 +234,18 @@ def load_default_execution_configuration(connection) -> dict[str, Any]:
         raise RuntimeError("Published default assessment configuration is not available.")
 
     validate_scenario_definition(row["scenario_definition"])
-    prompt_bundle = row.get("prompt_bundle_json") if isinstance(row, dict) else None
+    prompt_bundle = row.get("prompt_bundle_json")
     if not isinstance(prompt_bundle, dict):
-        resolved_bundle = load_active_prompt_bundle(connection)
-        has_resolved_prompts = bool(
-            resolved_bundle.get("interviewer")
-            or resolved_bundle.get("assessment_agents")
-            or resolved_bundle.get("case_generation_instructions")
-        )
-        prompt_bundle = resolved_bundle
-        if has_resolved_prompts:
-            connection.execute(
-                """
-                UPDATE assessment_configurations
-                SET prompt_bundle_json = %s::jsonb,
-                    prompt_bundle_checksum = %s
-                WHERE id = %s
-                  AND prompt_bundle_json IS NULL
-                """,
-                (
-                    canonical_json(prompt_bundle),
-                    definition_checksum(prompt_bundle),
-                    row["configuration_id"],
-                ),
-            )
-
+        raise ValueError("Published assessment configuration requires a prompt bundle.")
+    if row.get("prompt_bundle_checksum") != definition_checksum(prompt_bundle):
+        raise ValueError("Published assessment prompt bundle checksum mismatch.")
     methodology_definition = dict(row["methodology_definition"] or {})
-    if str(row["methodology_code"]) == LEGACY_METHODOLOGY_CODE and int(row["methodology_version"]) == 1:
-        methodology_definition = complete_legacy_methodology_definition(methodology_definition)
+    # Import lazily: authoring uses the canonical checksum helpers in this module.
+    from Api.assessment_authoring_service import assessment_authoring_service
+
+    assessment_authoring_service.validate_execution_bundle(
+        methodology_definition=methodology_definition, prompt_bundle=prompt_bundle,
+    )
 
     snapshot = {
         "schema_version": 1,
