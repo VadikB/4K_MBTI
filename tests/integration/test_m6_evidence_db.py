@@ -130,7 +130,7 @@ os._exit(73)
 
 
 @pytest.fixture
-def database(test_database_url):
+def database(test_database_url, request):
     schema='m6_pytest_'+uuid4().hex
     @contextmanager
     def connect():
@@ -146,8 +146,17 @@ def database(test_database_url):
             c.execute('''CREATE TABLE assessment_personalized_profiles(id BIGINT PRIMARY KEY,status TEXT,
                 content_json JSONB,provenance_json JSONB,checksum TEXT)''')
             ensure_m5_runtime_schema(c);repo.ensure_schema(c)
-            package=json.loads((OUTPUT/'case-package.json').read_text());case=package['cases'][0]
-            import_package(c,package=package,manifest=json.loads((OUTPUT/'manifest.json').read_text()),
+            package=json.loads((OUTPUT/'case-package.json').read_text())
+            manifest=json.loads((OUTPUT/'manifest.json').read_text())
+            if getattr(request, 'param', None) == 'G107-numeric-v1':
+                import hashlib
+                raw=(Path(__file__).resolve().parents[1]/'fixtures/integrated_acceptance/numeric-case-v1.json').read_bytes()
+                package['cases']=[json.loads(raw)]
+                package['version']='synthetic-G107-v1'
+                manifest={**manifest,'id':'G107-numeric-fixture','version':'synthetic-v1',
+                    'artifacts':[{'name':'sources/numeric-case-v1.json','sha256':hashlib.sha256(raw).hexdigest()}]}
+            case=package['cases'][0]
+            import_package(c,package=package,manifest=manifest,
                            execution_rules=json.loads((OUTPUT/'execution-rules.json').read_text()))
             c.execute("INSERT INTO assessment_personalized_profiles VALUES(7,'ready',%s::jsonb,'{}',%s)",
                       (json.dumps({'role_profile':{'code':case['base_role']},'email':'synthetic@example.invalid'}),'c'*64))

@@ -37,7 +37,7 @@ const test=base.extend({context:async({browser},use,info)=>{
   try{
     cli('bootstrap');
     if(info.title.includes('character')){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_case='character';fs.writeFileSync(statePath,JSON.stringify(inputs));}
-    if((info.title.includes('REV-02') || info.title.includes('P10.5'))){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_profile='unprepared';fs.writeFileSync(statePath,JSON.stringify(inputs));}
+    if((info.title.includes('REV-02') || info.title.includes('P10.5') || info.title.includes('G10.7'))){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_profile='unprepared';fs.writeFileSync(statePath,JSON.stringify(inputs));}
     if(info.title.includes('no admitted catalog')){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_catalog='unavailable';fs.writeFileSync(statePath,JSON.stringify(inputs));}
     cli('seed');
     const variant=info.title.includes('C1')?'budget':info.title.includes('C2')?'deadline':'ordinary';
@@ -503,4 +503,73 @@ test('P10.5 ready profile with no admitted catalog',async({page,stand},info)=>{
  await expect(page.getByRole('button',{name:'Подтвердить профиль',exact:true})).toBeHidden();
  await info.attach('ready-no-catalog',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  await info.attach('no-empty-cycle',{body:JSON.stringify(ready,null,2),contentType:'application/json'});
+});
+
+
+// G10.7: independent integrated path, no legacy fixture or HTTP route replacement.
+test('G10.7 fresh participant, immutable M4, logout history and independent Cycle',async({page,stand},info)=>{
+ test.setTimeout(240000);
+ const before=profileReceipts(stand);
+ expect(before.user_context_count).toBe(0);expect(before.profiles).toEqual([]);expect(before.cycles).toEqual([]);
+ expect(Object.values(before.output_counts).every(n=>n===0)).toBe(true);
+ await info.attach('G01-empty-owner-inputs-and-all-outputs',{body:JSON.stringify(before,null,2),contentType:'application/json'});
+ await login(page,stand,'participant@example.test',true);
+ const ready=profileReceipts(stand);expect(ready.profiles).toHaveLength(1);
+ await start(page);await answer(page);
+ await page.locator('#interview-finish-button').click();
+ await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
+ await answer(page,fixture.clarification_answer);await page.locator('#interview-finish-button').click();
+ const first=await report(page,stand,info);
+ const resultUrl=`${stand.url}/users/assessment/m8/cycles/${first.cycle_id}/results`;
+ const results=await (await page.request.get(resultUrl)).json();
+ const after=profileReceipts(stand);
+ expect(after.cycles[0].owner_user_id).toBe(before.owner);
+ expect(after.cycles[0].personalized_profile_id).toBe(ready.profiles[0].id);
+ expect(after.cycles[0].organization_id).toBe(ready.profiles[0].organization_id);
+ expect(after.cycles[0].profile_ref_json.checksum).toBe(ready.profiles[0].checksum);
+ expect(results.results.personalized_profile_snapshot.content.user_context.position_or_status).toBe('Эксперт по программам');
+ const selection=first.c67.recommendation_generation.input.context_selection;
+ expect(selection.status).toBe('available');expect(first.c67.recommendations.length).toBeGreaterThan(0);
+ for(const rec of first.c67.recommendations){
+   expect(rec.application_context).toContain(selection.value);
+   await expect(page.locator('#report-panel')).toContainText(rec.application_context);
+ }
+ const projection=JSON.stringify(first.c67.recommendation_generation.input.profile_projection);
+ expect(projection).not.toContain('participant@example.test');expect(projection).not.toContain('full_name');
+ await page.locator('#report-back-button').click();
+ await page.locator('#dashboard-panel .user-chip').click();await page.locator('#dashboard-restart-button').click();
+ await expect(page.locator('#email-input')).toBeVisible();
+ await page.context().clearCookies();await page.evaluate(()=>{localStorage.clear();sessionStorage.clear();});
+ await login(page,stand);
+ await expect(page.locator('.reports-summary-count')).toHaveText('1');
+ await page.locator('.reports-summary-button').click();await expect(page.locator('.cycle-report')).toHaveCount(1);
+ await page.locator('.cycle-report-open').click();await expect(page.locator('#m8-report-state')).toContainText('Report готов');
+ expect(await (await page.request.get(`${stand.url}/users/assessment/m8/reports/${first.id}`)).json()).toEqual(first);
+ expect(await (await page.request.get(resultUrl)).json()).toEqual(results);
+ expect(profileReceipts(stand)).toEqual(after); // No hidden re-evaluation on login/read.
+ const download=page.waitForEvent('download');await page.locator('#report-download-button').click();
+ const pdf=path.join(stand.dir,'relogin.pdf');await (await download).saveAs(pdf);
+ const checked=spawnSync(python,['scripts/verify_browser_pdf.py',pdf,path.join(stand.dir,'report.json')],{encoding:'utf8'});
+ expect(checked.status,checked.stderr).toBe(0);
+ await info.attach('G02-relogin-pdf',{path:pdf,contentType:'application/pdf'});
+ await page.locator('#report-back-button').click();await page.locator('#reports-back-button').click();
+ await start(page);await answer(page);await page.locator('#interview-finish-button').click();
+ await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
+ await answer(page,fixture.clarification_answer);await page.locator('#interview-finish-button').click();
+ const secondDir=path.join(stand.dir,'G03-second');fs.mkdirSync(secondDir);
+ const second=await report(page,{...stand,dir:secondDir},info);
+ expect(second.cycle_id).not.toBe(first.cycle_id);expect(second.results_revision_id).not.toBe(first.results_revision_id);
+ for(const rec of second.c67.recommendations)for(const basis of rec.basis_refs)expect(basis.cycle_id).toBe(second.cycle_id);
+ const regenerateUrl=`${stand.url}/users/assessment/m8/cycles/${first.cycle_id}/reports/regenerate`;
+ const regenerated=await page.request.post(regenerateUrl,{data:{idempotency_key:'G03-representation'}});
+ expect(regenerated.status()).toBe(201);const revision=await regenerated.json();
+ expect(revision.id).not.toBe(first.id);expect(revision.results_revision_id).toBe(first.results_revision_id);
+ expect(await (await page.request.post(regenerateUrl,{data:{idempotency_key:'G03-representation'}})).json()).toEqual(revision);
+ expect(await (await page.request.get(resultUrl)).json()).toEqual(results);
+ expect(await (await page.request.get(`${stand.url}/users/assessment/m8/reports/${first.id}`)).json()).toEqual(first);
+ await page.locator('#report-back-button').click();await page.locator('.reports-summary-button').click();
+ await expect(page.locator('.cycle-report')).toHaveCount(2);
+ await expect(page.locator(`.cycle-report[data-cycle-id="${first.cycle_id}"] option`)).toHaveCount(2);
+ await info.attach('G03-two-independent-results',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+ await info.attach('G01-03-receipts',{body:JSON.stringify({before,ready,after,final:profileReceipts(stand),first,second,revision,results},null,2),contentType:'application/json'});
 });

@@ -1,0 +1,13 @@
+{
+  "output_counts": {
+    "m5_assessment_situations": 0,
+    "m5_dialogue_turns": 0,
+    "m6_indicator_assessment_revisions": 0,
+    "m8_results": 0,
+    "m8_reports": 0
+  },
+  "owner": 1,
+  "user_context_count": 0,
+  "profiles": [],
+  "cycles": []
+}
