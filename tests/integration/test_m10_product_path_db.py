@@ -48,7 +48,7 @@ def product_db(test_database_url, monkeypatch):
             connection.execute("INSERT INTO users VALUES(99)")
             connection.execute("""CREATE TABLE assessment_personalized_profiles(
                 id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL,organization_id BIGINT,status TEXT,
-                content_json JSONB,provenance_json JSONB,checksum TEXT,created_at TIMESTAMPTZ DEFAULT NOW())""")
+                content_json JSONB,provenance_json JSONB,checksum TEXT,frozen_at TIMESTAMPTZ DEFAULT NOW())""")
             ensure_m5_runtime_schema(connection)
             m6_repository.ensure_schema(connection)
             m10_orchestration.ensure_schema(connection)

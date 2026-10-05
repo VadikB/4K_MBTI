@@ -37,4 +37,11 @@ class BrowserAcceptanceGateway:
 
 def enabled() -> bool:
     import os
-    return os.getenv("AGENT4K_BROWSER_TEST_GATEWAY") == "1"
+    if os.getenv("AGENT4K_BROWSER_TEST_GATEWAY") != "1":
+        return False
+    if (os.getenv("AGENT4K_ISOLATED_STAND") != "1"
+            or not os.getenv("DB_NAME", "").startswith("product4k_pytest_")
+            or os.getenv("DB_HOST") not in ("127.0.0.1", "localhost")
+            or not os.getenv("AGENT4K_STAND_MARKER", "").startswith("stand-10.2:")):
+        raise ValueError("TEST_GATEWAY_REQUIRES_OWNED_ISOLATED_STAND")
+    return True

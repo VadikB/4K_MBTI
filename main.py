@@ -31,6 +31,10 @@ WEB_DIR = BASE_DIR / "web"
 DEV_PREVIEWS_DIR = BASE_DIR / "dev_previews"
 SWAGGER_UI_DIR = WEB_DIR / "vendor" / "swagger-ui"
 
+if os.getenv("AGENT4K_ISOLATED_STAND") == "1":
+    from Api.schema_bootstrap import check_schema
+    with get_connection() as connection:
+        check_schema(connection)
 ensure_core_schema()
 with get_connection() as connection:
     ensure_lab_schema(connection)
@@ -171,11 +175,18 @@ async def log_unhandled_exceptions(request: Request, call_next):
 def readiness() -> dict:
     with get_connection() as connection:
         connection.execute("SELECT 1").fetchone()
+        if os.getenv("AGENT4K_ISOLATED_STAND") == "1":
+            from Api.schema_bootstrap import check_schema
+            from Api.m8_recommendations import load_package
+            from Api.m8_report_package import load_package as load_report_package
+            check_schema(connection)
+            load_package(); load_report_package()
     return {
         "status": "ready",
         "database": "ready",
         "database_pool": get_connection_pool_stats(),
         "llm_enabled": bool(settings.deepseek_api_keys),
+        "gateway_mode": "synthetic" if os.getenv("AGENT4K_BROWSER_TEST_GATEWAY") == "1" else "provider",
         "llm_max_concurrency_per_worker": settings.deepseek_max_concurrency,
         "assessment_queue": assessment_preparation_queue.stats(),
         "analysis_queue": assessment_analysis_queue.stats(),

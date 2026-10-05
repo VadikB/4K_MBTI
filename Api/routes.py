@@ -601,127 +601,29 @@ def _compact_user_response(user: UserResponse | None) -> UserResponse | None:
 
 
 def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
-    progress_row = connection.execute(
-        """
-        SELECT
-            progress_percent,
-            completed_cases,
-            total_cases,
-            assessment_status
-        FROM user_assessment_progress
-        WHERE user_id = %s
-          AND assessment_code = 'competencies_4k'
-        """,
-        (user.id,),
-    ).fetchone()
-
-    reports_total_row = connection.execute(
-        """
-        SELECT COUNT(*)::int AS reports_total
-        FROM user_sessions us
-        WHERE us.user_id = %s
-          AND us.assessment_code = 'competencies_4k'
-          AND us.status = 'completed'
-        """,
-        (user.id,),
-    ).fetchone()
-
-    report_rows = connection.execute(
-        """
-        WITH ranked_sessions AS (
-            SELECT
-                us.id,
-                us.user_id,
-                us.status,
-                us.started_at,
-                us.finished_at,
-                us.expert_comment,
-                ROW_NUMBER() OVER (
-                    PARTITION BY us.user_id
-                    ORDER BY COALESCE(us.finished_at, us.started_at) ASC NULLS LAST, us.id ASC
-                )::int AS sequence_number
-            FROM user_sessions us
-            WHERE us.user_id = %s
-              AND us.assessment_code = 'competencies_4k'
-              AND us.status = 'completed'
-        )
-        SELECT
-            rs.id AS session_id,
-            rs.status,
-            rs.started_at,
-            rs.finished_at,
-            rs.expert_comment,
-            rs.sequence_number,
-            COALESCE(case_stats.total_cases, 0)::int AS total_cases,
-            COALESCE(case_stats.completed_cases, 0)::int AS completed_cases,
-            COALESCE(skill_stats.total_skills, 0)::int AS total_skills,
-            COALESCE(skill_stats.assessed_skills, 0)::int AS assessed_skills,
-            skill_stats.overall_score_percent
-        FROM ranked_sessions rs
-        LEFT JOIN (
-            SELECT
-                session_id,
-                COUNT(*)::int AS total_cases,
-                COUNT(*) FILTER (WHERE status IN ('answered', 'assessed'))::int AS completed_cases
-            FROM session_cases
-            GROUP BY session_id
-        ) AS case_stats ON case_stats.session_id = rs.id
-        LEFT JOIN (
-            SELECT
-                ssa.session_id,
-                COUNT(*)::int AS assessed_skills,
-                COUNT(DISTINCT ssa.skill_id)::int AS total_skills,
-                ROUND(AVG(COALESCE(alw.percent_value, 0)))::int AS overall_score_percent
-            FROM session_skill_assessments ssa
-            LEFT JOIN assessment_level_weights alw ON alw.level_code = ssa.assessed_level_code
-            GROUP BY ssa.session_id
-        ) AS skill_stats ON skill_stats.session_id = rs.id
-        ORDER BY COALESCE(rs.finished_at, rs.started_at) DESC NULLS LAST, rs.id DESC
-        LIMIT 5
-        """,
-        (user.id,),
-    ).fetchall()
-
-    progress_percent = int(progress_row["progress_percent"]) if progress_row else 0
-    completed_cases = int(progress_row["completed_cases"]) if progress_row else 0
-    total_cases = int(progress_row["total_cases"]) if progress_row else 5
-    assessment_status = progress_row["assessment_status"] if progress_row else "not_started"
-    is_complete = assessment_status == "completed" and progress_percent >= 100
-
-    reports = [
-        AssessmentReport(
-            title="4K Assessment",
-            summary=(
-                (
-                    "Оценка завершена. "
-                    f"Закрыто навыков: {int(row['assessed_skills'] or 0)} из {int(row['total_skills'] or 0)}. "
-                    f"Пройдено кейсов: {int(row['completed_cases'] or 0)} из {int(row['total_cases'] or 0)}."
-                )
-                if row["status"] == "completed"
-                else (
-                    "Оценка в процессе. "
-                    f"Закрыто навыков: {int(row['assessed_skills'] or 0)} из {int(row['total_skills'] or 0)}. "
-                    f"Пройдено кейсов: {int(row['completed_cases'] or 0)} из {int(row['total_cases'] or 0)}."
-                )
-            ),
-            badge=(
-                f"{int(row['overall_score_percent'])}%"
-                if row["status"] == "completed" and row["overall_score_percent"] is not None
-                else (
-                    f"{int(round((int(row['completed_cases'] or 0) / int(row['total_cases'] or 1)) * 100))}%"
-                    if int(row["total_cases"] or 0) > 0
-                    else "0%"
-                )
-            ),
-            format_label="PDF",
-            sequence_number=int(row["sequence_number"]) if row["sequence_number"] is not None else None,
-            report_at=row["finished_at"] or row["started_at"],
-            expert_comment=(str(row["expert_comment"]).strip() if row["status"] == "completed" and row["expert_comment"] else None),
-        )
-        for row in report_rows
-    ]
-
-    assessment_allowed = bool(user.role_id)
+    # Dashboard follows the current Cycle runtime; legacy aggregate views are not inputs.
+    cycle = connection.execute("""SELECT c.id,c.status,
+        COUNT(s.id)::int AS total_cases,
+        COUNT(s.id) FILTER (WHERE s.status='closed')::int AS completed_cases
+        FROM m5_cycles c LEFT JOIN m5_assessment_situations s ON s.cycle_db_id=c.id
+        WHERE c.owner_user_id=%s AND c.usage_scope='assessment'
+        GROUP BY c.id ORDER BY c.created_at DESC,c.id DESC LIMIT 1""", (user.id,)).fetchone()
+    report_rows = connection.execute("""SELECT p.created_at,p.revision_no
+        FROM m8_reports p JOIN m8_result_revisions rr ON rr.id=p.result_revision_id
+        JOIN m8_results r ON r.id=rr.results_id JOIN m5_cycles c ON c.id=r.cycle_db_id
+        WHERE c.owner_user_id=%s AND c.usage_scope='assessment' AND p.audience='assessee'
+        ORDER BY p.created_at DESC,p.id DESC""", (user.id,)).fetchall()
+    completed_cases = int(cycle['completed_cases']) if cycle else 0
+    total_cases = int(cycle['total_cases']) if cycle else 0
+    is_complete = bool(cycle and cycle['status']=='calculated')
+    # Compatibility field: no inferred percent for an adaptive, not-yet-finished plan.
+    progress_percent = 100 if is_complete else 0
+    reports = [AssessmentReport(title='4K — индивидуальный отчёт',summary='Сохранённый отчёт Cycle',
+        badge='Готов',format_label='PDF',sequence_number=row['revision_no'],report_at=row['created_at'])
+        for row in report_rows[:5]]
+    reports_total_row = {'reports_total':len(report_rows)}
+    assessment_allowed = bool(connection.execute(
+        "SELECT 1 FROM assessment_personalized_profiles WHERE user_id=%s AND status='ready' LIMIT 1",(user.id,)).fetchone())
     available_assessments: list[AvailableAssessment] = []
     if assessment_allowed and not is_complete:
         available_assessments.append(

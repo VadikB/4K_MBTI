@@ -28,3 +28,7 @@ dev_previews/*.png
 .env.before-*
 *.before-*
 data/faiss/
+
+# Versioned source DDL; disposable stand credentials stay local.
+!database/bootstrap/**/*.sql
+.test-stand/
