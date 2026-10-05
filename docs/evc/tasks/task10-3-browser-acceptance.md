@@ -60,6 +60,7 @@ Manifest фиксирует SHA-256 и прежние M2/M3 dependencies. Synthe
 | Вместо условий кейса показывался только заголовок | UI читает фактические поля participant_payload; A/B и character branch |
 | Ответ не отправлялся: createOperationId отсутствовал в imports | Исправлен импорт; lint расширен на корневые web/js/*.js, удалены 5 неиспользуемых imports |
 | Завершение проверяло только legacy session_code | Новый Cycle допускается в обработчик finish; legacy client-event не отправляется с пустым session_code |
+| Реплика персонажа подписывалась «4K Ассистент» | Имя берётся из сохранённого execution payload и выдаётся отдельным безопасным speaker_name; browser проверяет видимую CSS-подпись Нины, unit — проекцию |
 | Turns показывались до всех событий, уточнение дублировалось | Общая сортировка sequence_no; один показ question Turn |
 | Пользовательский start/trace раскрывал execution envelope | Projection только предъявленного материала; unit-регрессии и browser read-back; admin trace сохранён |
 | Reload нового интервью возвращал к подтверждению профиля | cycle_id в URL; восстановление после проверки owner API; B/C и две вкладки |
@@ -195,7 +196,7 @@ retry, expired lease, concurrent claim, поздние результаты, н�
 | `npm run build:web` | PASS, web/dist включён в изменение |
 | `STAND_ADMIN_URL=postgresql://vadim_bogachev@127.0.0.1:55491/postgres npm run test:browser` | PASS: 6, retries=0, без skips |
 | `git diff --check` | PASS |
-| GitHub CI `frontend`, `pytest` | Проверяется после публикации данного кандидата; локальный PASS не заменяет CI |
+| GitHub CI `frontend`, `pytest` | PASS для bd97dc2, включая browser; после поправки подписи — отдельный запуск, актуальный результат и SHA в Checks общего PR |
 
 Команды создания стенда/зависимости и Linux Xvfb:
 [tests/browser/README.md](../../../tests/browser/README.md).
@@ -203,7 +204,12 @@ retry, expired lease, concurrent claim, поздние результаты, н�
 во вложениях). Реальные пользовательские аккаунты не задействованы.
 
 **B10.3-01–10 и B10.3-12: PASS в явно указанной в матрице технической области.**
-У B10.3-11 локальная воспроизводимость PASS; удалённый CI до запуска NOT_RUN.
+У B10.3-11 локальная воспроизводимость PASS. Удалённый CI первого кандидата
+bd97dc2 — PASS ([run](https://github.com/VadikB/4K_MBTI/actions/runs/37297471559),
+[свидетельство](artifacts/task10-3/ci-bd97dc2.json)). Статус CI после последующей
+поправки подписи фиксируется отдельно для актуального HEAD в
+[Checks общего PR](https://github.com/VadikB/4K_MBTI/pull/32/checks);
+это проверка после публикации коммита, локальные результаты её не подменяют.
 Составные подпроверки не расширяют своё покрытие: новые Cycle, regenerate и запреты
 проверены owner HTTP; четыре исхода, leases и часть гонок — backend. Исходный
 CASE-TDISC-04, реальный provider, нормативная 8.1, GC и экспертное заключение
@@ -231,3 +237,7 @@ Session, восстановление после фонового закрыти
 
 При упаковке текстовых логов удалены только хвостовые пробелы; PDF/PNG сохранены
 побайтово. Локальный .gitattributes отмечает бинарные PDF/PNG для корректного Git diff.
+
+При визуальном ревью bd97dc2 дополнительно обнаружена общая подпись ассистента
+у реплики персонажа. Исправление авторства проверено на новом кандидате всем
+локальным набором, включая итоговые 6 browser PASS за 5.0 минут; результаты bd97dc2 не приписываются исправленному дереву.

@@ -1,9 +1,9 @@
 {
-  "id": "e511940a-13e2-47d2-a86c-615bdf503839",
-  "revision_id": "abf059e3-252f-4c53-9ce5-4add62ca2915",
+  "id": "d18eff6c-2bf5-4fdd-a0be-57fd2c23e68b",
+  "revision_id": "e607e16d-77d6-4851-a741-7f3dd3cb9724",
   "revision_no": 1,
-  "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
-  "created_at": "2026-10-05T13:11:36.356734+03:00",
+  "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
+  "created_at": "2026-10-05T13:40:44.169046+03:00",
   "results": {
     "goal": {
       "kind": "skills",
@@ -15,19 +15,19 @@
       ]
     },
     "time": {
-      "deadline": "2026-10-08T13:11:31.969145+03:00",
+      "deadline": "2026-10-08T13:40:38.031493+03:00",
       "intervals": [
         {
           "type": "collecting",
           "reason": "session_started",
-          "ended_at": "2026-10-05T13:11:35.076500+03:00",
-          "started_at": "2026-10-05T13:11:31.969145+03:00",
+          "ended_at": "2026-10-05T13:40:42.795735+03:00",
+          "started_at": "2026-10-05T13:40:38.031493+03:00",
           "session_db_id": 1
         }
       ],
-      "started_at": "2026-10-05T13:11:31.969145+03:00",
+      "started_at": "2026-10-05T13:40:38.031493+03:00",
       "budget_seconds": 3600,
-      "consumed_seconds": 3,
+      "consumed_seconds": 5,
       "parameter_sources": {
         "time_budget": "m7_cycle_plan/1.0.0:method_default",
         "calendar_window": "m7_cycle_plan/1.0.0:method_default"
@@ -35,13 +35,13 @@
       "calendar_window_seconds": 259200
     },
     "c46_ref": {
-      "id": "af734c06-7f05-4546-9302-0be8e939c3c5",
-      "checksum": "fd5142fa9593489b70dd725554183db88feb26ec1c0ac6b5fe4184d3ba018e83",
+      "id": "3dfbbd26-4468-4b21-99eb-229611cfa655",
+      "checksum": "b5fbfd2ce0527633e24d8f29039d8ec1652bdb87eb1d504c5e2a1e39515fdc3c",
       "revision_no": 2
     },
     "c56_ref": {
       "revision_no": 1,
-      "calculation_id": "bba8e221-bcac-43ce-a2bc-0a271419e911"
+      "calculation_id": "9a8d319c-648a-44e2-a343-681089703a86"
     },
     "sources": {
       "M2": "competencies_4k/1.1",
@@ -175,7 +175,7 @@
             "K4.I15": "NO_JUSTIFIED_FINAL_IA",
             "K4.I16": "NO_JUSTIFIED_FINAL_IA"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "complete_components": {
           "ratio": 0,
@@ -256,7 +256,7 @@
             "K4.C09": "NOT_AVAILABLE",
             "K4.C10": "NOT_AVAILABLE"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "components_with_score": {
           "ratio": 0.05714285714285714,
@@ -336,7 +336,7 @@
             "K4.C09": "NOT_AVAILABLE",
             "K4.C10": "NOT_AVAILABLE"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "indicator_assessments": {
           "ratio": 0.03278688524590164,
@@ -468,7 +468,7 @@
             "K4.I17": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
             "K4.I18": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "admissible_contributions": {
           "ratio": 0.03278688524590164,
@@ -600,7 +600,7 @@
             "K4.I17": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
             "K4.I18": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         }
       },
       "cycle_plan": {
@@ -728,7 +728,7 @@
             "K4.I15": "NO_JUSTIFIED_FINAL_IA",
             "K4.I16": "NO_JUSTIFIED_FINAL_IA"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "complete_components": {
           "ratio": 0,
@@ -809,7 +809,7 @@
             "K4.C09": "NOT_AVAILABLE",
             "K4.C10": "NOT_AVAILABLE"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "components_with_score": {
           "ratio": 0.05714285714285714,
@@ -889,7 +889,7 @@
             "K4.C09": "NOT_AVAILABLE",
             "K4.C10": "NOT_AVAILABLE"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "indicator_assessments": {
           "ratio": 0.03278688524590164,
@@ -1021,7 +1021,7 @@
             "K4.I17": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
             "K4.I18": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "admissible_contributions": {
           "ratio": 0.03278688524590164,
@@ -1153,11 +1153,11 @@
             "K4.I17": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
             "K4.I18": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         }
       }
     },
-    "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+    "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
     "role_ref": {
       "id": "project_product_process_manager",
       "version": "frozen-profile",
@@ -1167,9 +1167,9 @@
       {
         "status": "completed",
         "ordinal": 1,
-        "ended_at": "2026-10-05T13:11:35.076500+03:00",
-        "session_id": "2ebe8fa9-48ff-4d42-a3e5-e5d97ea6b048",
-        "started_at": "2026-10-05T13:11:31.969145+03:00",
+        "ended_at": "2026-10-05T13:40:42.795735+03:00",
+        "session_id": "ccfe8ddf-ee85-492b-8c0a-de12004525f7",
+        "started_at": "2026-10-05T13:40:38.031493+03:00",
         "close_reason": "user_completed_scenario"
       }
     ],
@@ -1196,7 +1196,7 @@
               "checksum": "93ac113caf116411879a5036b9816151dd49c68cd1cae2bb264fe7b28e14633d"
             },
             "base_role": "project_product_process_manager",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           }
         ],
         "mechanism": {
@@ -1208,11 +1208,11 @@
         "indicator_id": "K1.I13",
         "numeric_admissible": true,
         "included_revision_ids": [
-          "fd6bf5ce-be9b-4820-902b-384d19fef149"
+          "544c1d52-dd4e-4b1c-95ea-a67884dc3168"
         ],
         "interpretation_admissible": true,
         "interpretable_revision_ids": [
-          "fd6bf5ce-be9b-4820-902b-384d19fef149"
+          "544c1d52-dd4e-4b1c-95ea-a67884dc3168"
         ]
       },
       {
@@ -1256,7 +1256,7 @@
               "checksum": "93ac113caf116411879a5036b9816151dd49c68cd1cae2bb264fe7b28e14633d"
             },
             "base_role": "project_product_process_manager",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           }
         ],
         "mechanism": {
@@ -1268,11 +1268,11 @@
         "indicator_id": "K1.I17",
         "numeric_admissible": true,
         "included_revision_ids": [
-          "7e35086a-a514-4216-b587-15182b04c953"
+          "2c99942a-5460-4d1c-b933-51287c726682"
         ],
         "interpretation_admissible": true,
         "interpretable_revision_ids": [
-          "7e35086a-a514-4216-b587-15182b04c953"
+          "2c99942a-5460-4d1c-b933-51287c726682"
         ]
       },
       {
@@ -1417,26 +1417,26 @@
     "collection": {
       "reason": "user_completed_scenario",
       "status": "collection_closed",
-      "closed_at": "2026-10-05T13:11:35.076500+03:00"
+      "closed_at": "2026-10-05T13:40:42.795735+03:00"
     },
     "confidence": {
       "kind": "qualitative",
       "ia_bases_preserved": true
     },
     "composition": {
-      "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+      "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
       "sessions": [
         {
           "ordinal": 1,
-          "session_id": "2ebe8fa9-48ff-4d42-a3e5-e5d97ea6b048"
+          "session_id": "ccfe8ddf-ee85-492b-8c0a-de12004525f7"
         }
       ],
       "situations": [
         {
-          "handoff_id": "c348a70f-52b1-4bcb-8ecc-4ca2c657bcd0",
+          "handoff_id": "3bad2289-fe3e-4023-b3d6-cdfd003a5030",
           "session_db_id": 1,
-          "handoff_checksum": "4e64eff8c34b313bdffdc6ce08a5656bdc40c8ccf4ad34f19117d50cf6dc7a15",
-          "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+          "handoff_checksum": "0c8b1596dcd848472d79e39296930eec70dfa3e4ed13c92e724d604930e7d827",
+          "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
         }
       ],
       "target_set_checksum": "941c6dbf781d5672be08b42bc961de139151130938bcf34aa01c135f77c5e7bb"
@@ -1522,12 +1522,12 @@
         },
         "m2_version": "v1.1",
         "opportunity": "PRESENT",
-        "revision_id": "fd6bf5ce-be9b-4820-902b-384d19fef149",
+        "revision_id": "544c1d52-dd4e-4b1c-95ea-a67884dc3168",
         "indicator_id": "K1.I13",
         "contradictions": [],
-        "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-        "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-        "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+        "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+        "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+        "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
       },
       {
         "refs": [],
@@ -1543,12 +1543,12 @@
         },
         "m2_version": "v1.1",
         "opportunity": "PRESENT",
-        "revision_id": "6e578237-71d8-4564-97e8-56046385383b",
+        "revision_id": "97f6d92e-57c7-465a-abf3-06404a8f2b0e",
         "indicator_id": "K1.I16",
         "contradictions": [],
-        "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-        "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-        "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+        "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+        "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+        "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
       },
       {
         "refs": [
@@ -1572,12 +1572,12 @@
         },
         "m2_version": "v1.1",
         "opportunity": "PRESENT",
-        "revision_id": "7e35086a-a514-4216-b587-15182b04c953",
+        "revision_id": "2c99942a-5460-4d1c-b933-51287c726682",
         "indicator_id": "K1.I17",
         "contradictions": [],
-        "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-        "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-        "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+        "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+        "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+        "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
       },
       {
         "refs": [],
@@ -1593,12 +1593,12 @@
         },
         "m2_version": "v1.0",
         "opportunity": "PRESENT",
-        "revision_id": "d22d7edb-81d0-40b8-ba82-e1b45d8d74c5",
+        "revision_id": "d2bbf2bc-e8e8-48f2-b271-1d328dbb9988",
         "indicator_id": "K2.I07",
         "contradictions": [],
-        "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-        "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-        "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+        "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+        "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+        "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
       },
       {
         "refs": [],
@@ -1614,12 +1614,12 @@
         },
         "m2_version": "v1.0",
         "opportunity": "PRESENT",
-        "revision_id": "3dc7bdba-4ae8-4d20-9438-845f7b03c74b",
+        "revision_id": "df5dd414-9c6e-42bf-84f9-c17347a30c2c",
         "indicator_id": "K2.I08",
         "contradictions": [],
-        "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-        "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-        "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+        "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+        "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+        "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
       },
       {
         "refs": [],
@@ -1635,12 +1635,12 @@
         },
         "m2_version": "v1.0",
         "opportunity": "PRESENT",
-        "revision_id": "796a5188-d123-4a92-ad1c-a6f4e7280a12",
+        "revision_id": "8021595d-c50a-4f37-b00d-43f2818f4a7e",
         "indicator_id": "K4.I05",
         "contradictions": [],
-        "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-        "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-        "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+        "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+        "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+        "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
       },
       {
         "refs": [],
@@ -1656,12 +1656,12 @@
         },
         "m2_version": "v1.0",
         "opportunity": "PRESENT",
-        "revision_id": "198007ee-1868-4b88-8753-332e2fb189f7",
+        "revision_id": "700faa69-966c-49e3-a2af-024a31a229fc",
         "indicator_id": "K4.I10",
         "contradictions": [],
-        "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-        "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-        "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+        "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+        "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+        "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
       },
       {
         "refs": [],
@@ -1677,12 +1677,12 @@
         },
         "m2_version": "v1.0",
         "opportunity": "PRESENT",
-        "revision_id": "ba120940-080a-4163-a366-363562f07d01",
+        "revision_id": "60e55882-825c-43ea-9b16-de7a1f24a299",
         "indicator_id": "K4.I17",
         "contradictions": [],
-        "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-        "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-        "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+        "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+        "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+        "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
       },
       {
         "refs": [],
@@ -1698,21 +1698,21 @@
         },
         "m2_version": "v1.0",
         "opportunity": "PRESENT",
-        "revision_id": "cf13ba1d-3bd0-4542-89de-1de2fbaedf88",
+        "revision_id": "2c2e2da4-7317-4d85-b49b-e1169f1165d5",
         "indicator_id": "K4.I18",
         "contradictions": [],
-        "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-        "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-        "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+        "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+        "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+        "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
       }
     ],
     "schema_version": 1,
     "target_profile": null,
     "calculation_ref": {
-      "id": "bba8e221-bcac-43ce-a2bc-0a271419e911",
-      "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+      "id": "9a8d319c-648a-44e2-a343-681089703a86",
+      "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
       "revision_no": 1,
-      "composition_checksum": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+      "composition_checksum": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
     },
     "full_target_set": [
       {
@@ -2452,7 +2452,7 @@
         "indicator_id": "K4.I18"
       }
     ],
-    "composition_checksum": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8",
+    "composition_checksum": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475",
     "assessment_situations": [
       {
         "status": "closed",
@@ -2461,11 +2461,11 @@
           "version": "v0.1",
           "checksum": "93ac113caf116411879a5036b9816151dd49c68cd1cae2bb264fe7b28e14633d"
         },
-        "handoff_id": "c348a70f-52b1-4bcb-8ecc-4ca2c657bcd0",
+        "handoff_id": "3bad2289-fe3e-4023-b3d6-cdfd003a5030",
         "session_db_id": 1,
-        "handoff_checksum": "4e64eff8c34b313bdffdc6ce08a5656bdc40c8ccf4ad34f19117d50cf6dc7a15",
+        "handoff_checksum": "0c8b1596dcd848472d79e39296930eec70dfa3e4ed13c92e724d604930e7d827",
         "boundary_sequence": 9,
-        "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+        "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
       }
     ],
     "assessed_skill_profile": [

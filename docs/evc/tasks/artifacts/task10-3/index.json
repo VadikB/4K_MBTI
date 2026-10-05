@@ -1,7 +1,7 @@
 {
   "suite_stats": {
-    "startTime": "2026-10-05T10:11:18.613Z",
-    "duration": 266360.51,
+    "startTime": "2026-10-05T10:40:18.161Z",
+    "duration": 298172.745,
     "expected": 6,
     "skipped": 0,
     "unexpected": 0,
@@ -11,7 +11,7 @@
     {
       "scenario": "S10-A and T11-10 positive, clarification and saved Report/PDF",
       "status": "passed",
-      "duration_ms": 34237,
+      "duration_ms": 43455,
       "artifacts": [
         {
           "file": "scenario-1/01-browser-version.txt",
@@ -19,19 +19,19 @@
         },
         {
           "file": "scenario-1/02-interview-start.png",
-          "sha256": "d5a1035ce52092e2bb98124ed01e8f86fd70a28179c5487845b790dee7cc7b88"
+          "sha256": "8ec0651f8de504c3daf2f2d75def6c6ef9b3a24e544f262914c912f62a531e01"
         },
         {
           "file": "scenario-1/03-clarification-ui.png",
-          "sha256": "b08d946234bab529d9bc455e09fdc7ccc913ab9b99dda6f347427347fdc6849d"
+          "sha256": "af7b0be778364b1d4e8a0ca026bb8247498ad8ddb11c930024d450ae826780cb"
         },
         {
           "file": "scenario-1/04-report-pdf.pdf",
-          "sha256": "e3f6735449fcbe10a0839d4fd54a134511e8e5e1e7d870e826a6781901b25173"
+          "sha256": "d0434d6a268f293f4a5c6ff54c59747d84dd99580f62cb4e7d0e88978d49a21e"
         },
         {
           "file": "scenario-1/05-report.json",
-          "sha256": "bb872e8dfd681048d4ab91f0569362afcea41f64256b4fe4177ce4924dd15740"
+          "sha256": "699ce1bc870d07dbc609ba2ea1ca6a0f53e3b6e6d516d9c27f54424c689cd848"
         },
         {
           "file": "scenario-1/06-pdf-content-check.txt",
@@ -39,19 +39,19 @@
         },
         {
           "file": "scenario-1/07-report-ui.png",
-          "sha256": "cba9544659fc6a67211c18b6532826fce8bc8562cf9e8c67e329621afba0300f"
+          "sha256": "4c25cf16f509981fbc1c995f3fea57d1c8eb92db1d23b11b1ce1cc5f921a5d99"
         },
         {
           "file": "scenario-1/08-saved-results.json",
-          "sha256": "afd74620b46e4d0c1358bf40e2092412160dc68d4f54cc4deb3c17a018ac777e"
+          "sha256": "6aea45eac1447238f5e0fb3af09a37820953c8b9b24e6763f77116cb56ab62e0"
         },
         {
           "file": "scenario-1/09-report-pdf.pdf",
-          "sha256": "82a910261afa352a0a19057e248eaa111b904f2a0a4b706788b65daa2603971f"
+          "sha256": "c294f6ddc27e80be783cdd2730ea8f450f8c2c0a2c8a7235a6eee265d5f64e5b"
         },
         {
           "file": "scenario-1/10-report.json",
-          "sha256": "a5946c3eadfdbb2486d63164757d05f9d0c32633232b5c86dfbd1431616e8493"
+          "sha256": "7554171ca7c16e9bdf05548615d6b725a850d014cf2d8acab11cc6645d9f77b2"
         },
         {
           "file": "scenario-1/11-pdf-content-check.txt",
@@ -59,15 +59,15 @@
         },
         {
           "file": "scenario-1/12-report-ui.png",
-          "sha256": "283bb9f10605985c42c7eb18dd387a5a48d2f04efa95f945ac1a863120553c13"
+          "sha256": "c99ddc9a6ccce2c1f9e91ce492c874646dc0ea4697fc7852a10a42226b9f8201"
         },
         {
           "file": "scenario-1/13-report-pdf.pdf",
-          "sha256": "4f3eb5b5bcd61e9710646f8c1b93d885b387624cde746038cb45422a37416244"
+          "sha256": "8880354040722583f9a2bab776e9a40058c454a4beb1496bbb88b7d2aa6c822f"
         },
         {
           "file": "scenario-1/14-report.json",
-          "sha256": "00a97eb2b586ff6bec341345a708ba997fbc540fc56020a0bf1addce8729080d"
+          "sha256": "d64955964df9f9b287c2e10755699f1e3521235247e5790cabf193b931fe8d26"
         },
         {
           "file": "scenario-1/15-pdf-content-check.txt",
@@ -75,22 +75,22 @@
         },
         {
           "file": "scenario-1/16-report-ui.png",
-          "sha256": "613172fa761f117c3e5dbd2307de808959456e5575b668fa4f4ad02cb0da9ab6"
+          "sha256": "7a9b32511730ea0d81d0d1ed0f20efc0202b4b2197d1472c31f62250c09f1583"
         },
         {
           "file": "scenario-1/17-assessment-http.json",
-          "sha256": "692f4d508235fd7380f17373151ed78535762e1e2d71ae0a6426aece85b26d69"
+          "sha256": "75095818d5b0200cd85f9c9031a24b7fb1839c88cfa878e8462cd010f7d824e3"
         },
         {
           "file": "scenario-1/18-server-log.txt",
-          "sha256": "5cdb7ef02db3cdbd24f1cda4846e246ae866c179b42107d13640c614b5881765"
+          "sha256": "b7365cbf9c7b8d0f358481b84dac90a8a1a2cbd3bd81f150caa6d8181f38f8c4"
         }
       ]
     },
     {
       "scenario": "S10-B interruption and Additional Session preserve Cycle and deadline",
       "status": "passed",
-      "duration_ms": 24779,
+      "duration_ms": 26990,
       "artifacts": [
         {
           "file": "scenario-2/01-browser-version.txt",
@@ -98,15 +98,15 @@
         },
         {
           "file": "scenario-2/02-interview-start.png",
-          "sha256": "d5a1035ce52092e2bb98124ed01e8f86fd70a28179c5487845b790dee7cc7b88"
+          "sha256": "433ef3c0b14c581b03e83dc4f2b5aac286639f5c6a294cd488729f2b3c81a964"
         },
         {
           "file": "scenario-2/03-report-pdf.pdf",
-          "sha256": "ef141db463ca44307a6952a4b2c478455025f51c6fc7ece764aa3d628448f9fc"
+          "sha256": "356234ce1bf4ab55cc1c216d90144631f1d0a79d069301d92640ac52a0d85d9e"
         },
         {
           "file": "scenario-2/04-report.json",
-          "sha256": "d5d3ac2790a5773673c351f2e87d06bbe3a3de86d34fb162cd0877eed9cd7bb7"
+          "sha256": "10bfd8cdf34cbfcf5cd0c818ac26672d54e91cdf0534ccba28f131d683e9817d"
         },
         {
           "file": "scenario-2/05-pdf-content-check.txt",
@@ -114,22 +114,22 @@
         },
         {
           "file": "scenario-2/06-report-ui.png",
-          "sha256": "8891f34bdc853044d296fe79d0d6274eff5e459bdf047f963425b2341a293dd3"
+          "sha256": "737e936fd74afa727ca0cdbe9673486557df9d19c8db39ffd49174483492c27c"
         },
         {
           "file": "scenario-2/07-assessment-http.json",
-          "sha256": "53fbd807549627139476095cb717ac33238c3c458133663dc3424102b0beed78"
+          "sha256": "17eeb36c239b42919867e207f93425c6f9ceec916c6de070426c5dd6611fce5f"
         },
         {
           "file": "scenario-2/08-server-log.txt",
-          "sha256": "038f1d79edd9313018f72144f144fadf366a023aaba4bfec7c00124f4a268fc8"
+          "sha256": "95359ed2bfc5cb173690e29183797c0640d41433b09ff7bacf440b2ec733a430"
         }
       ]
     },
     {
       "scenario": "S10-C1 background time closure without another Turn",
       "status": "passed",
-      "duration_ms": 87126,
+      "duration_ms": 86803,
       "artifacts": [
         {
           "file": "scenario-3/01-browser-version.txt",
@@ -137,19 +137,19 @@
         },
         {
           "file": "scenario-3/02-interview-start.png",
-          "sha256": "cfd4644955158300be40e75d09b4768e97fee01cfdb7511236421546ad4b6d79"
+          "sha256": "f6c1416dc4242084c53c61bfc6052bd7d71ab3e23ebe8a33b14c97f3a7898440"
         },
         {
           "file": "scenario-3/03-runtime-before-expiry.json",
-          "sha256": "6fe6006a38f727fbd13bebe370601916cebf0ad9b1b8b8901d041b0479e6ab6c"
+          "sha256": "5cf308e430b079256d2d864f5aee12177a9bc5ccc134953b06e5b3ce3e42f132"
         },
         {
           "file": "scenario-3/04-background-visibility.json",
-          "sha256": "1ca88224e6c5e017563513bec19b0f677745a66958fdf0d31d84eb4bfdba90fa"
+          "sha256": "cbb65cc45e1f4c050cec4fa53494f124ed000391586df1bf366532fd89d5d941"
         },
         {
           "file": "scenario-3/05-runtime-after-expiry.json",
-          "sha256": "b7739120e52fa63b301998991c30015ca64350bca89f7cc18005138e57f09c58"
+          "sha256": "49d38cb811ce6f6f801caef8cbd407c254e916df8f92867aeaa1e162b0516290"
         },
         {
           "file": "scenario-3/06-late-turn.json",
@@ -157,11 +157,11 @@
         },
         {
           "file": "scenario-3/07-report-pdf.pdf",
-          "sha256": "ee2c556e622f66dadeb084b391bed2c03c3c5a393cb7873057a01db6b431d2c8"
+          "sha256": "6600b212086925653b0362015f6ce8ab0e95af0faae5ae82f0bc430f8e6de29f"
         },
         {
           "file": "scenario-3/08-report.json",
-          "sha256": "431dc761a05a979b5cab1888fbdc1f439aa4b9019fcc3e9bb05d3d0681c65614"
+          "sha256": "b797d94c99ac830d69839228ab78b680e493a0bf32c68f8330aa8023c7f66c23"
         },
         {
           "file": "scenario-3/09-pdf-content-check.txt",
@@ -169,22 +169,22 @@
         },
         {
           "file": "scenario-3/10-report-ui.png",
-          "sha256": "6d0cbae85c8b5c5249807b5db1d4f7af438d3209db301a7b10843f2c7942a22b"
+          "sha256": "70b229d1438bad38f387f92014d764b75837043f1ae938fa50d06a2738c5f974"
         },
         {
           "file": "scenario-3/11-assessment-http.json",
-          "sha256": "ab38287fedb4d21caada0ece6681c35f8305eaa776e5409fa8bd8c41b34c5627"
+          "sha256": "1db247efc16c6e561c52fe97c21e06539ce47e1ddfc3ab7b9cc76228ee153035"
         },
         {
           "file": "scenario-3/12-server-log.txt",
-          "sha256": "76813ebf6e0ebd7c1f84bfed10429653b10744ed36dfec94245ad04b6d198143"
+          "sha256": "0176709832517f48127a1317e4f839d10d4f6d22ea40bf25afb15ac74f09e882"
         }
       ]
     },
     {
       "scenario": "S10-C2 background time closure without another Turn",
       "status": "passed",
-      "duration_ms": 77866,
+      "duration_ms": 81735,
       "artifacts": [
         {
           "file": "scenario-4/01-browser-version.txt",
@@ -192,15 +192,15 @@
         },
         {
           "file": "scenario-4/02-interview-start.png",
-          "sha256": "e376c91352d03c7d14cfb17eeeb1397b5ed57d2b768cb35824380fef18a10762"
+          "sha256": "cfd9c5faa3849c91ea059089e36c7cd30b00f00a12493937e8165a7a37d7a480"
         },
         {
           "file": "scenario-4/03-runtime-before-expiry.json",
-          "sha256": "a654aed34a334c6ba33a269f74d728cd7b28be7eddc2ad2acf05bf763586454d"
+          "sha256": "a924aa275a9fed7d70c910f54e056cecb70e06a1499c0bc3fe699514c671a642"
         },
         {
           "file": "scenario-4/04-runtime-after-expiry.json",
-          "sha256": "2446d6b48834a1e83f88b90e177635cc5eac589a0557aea3505092c906042fc4"
+          "sha256": "43fc8dd853d26e941960c968c1dedf93cee32100a7ab07eb8cc1a56d9395079b"
         },
         {
           "file": "scenario-4/05-late-turn.json",
@@ -208,11 +208,11 @@
         },
         {
           "file": "scenario-4/06-report-pdf.pdf",
-          "sha256": "9f71f87c68ac2aba012b382ebc7bc34e880473610aad16d15cbed16db1937496"
+          "sha256": "10703718fe73bc99f405530dde8fcaeb728c4965163bd80b67d9e5479134d431"
         },
         {
           "file": "scenario-4/07-report.json",
-          "sha256": "ac688e5ac2cd57a92e624363512a5605fb01f458c16347f24c3ddae8ea5d57f7"
+          "sha256": "e8df21eab82e82797d5d79928f74b7a55fc436c73d9c378179759a33c56ec9fd"
         },
         {
           "file": "scenario-4/08-pdf-content-check.txt",
@@ -220,22 +220,22 @@
         },
         {
           "file": "scenario-4/09-report-ui.png",
-          "sha256": "c54a2e8ef186a53e1f4f8e3f39f19a2aefc6106143890756c5734b9b3227638f"
+          "sha256": "a8f95eef8994783f5ad6980e8587e57b75273a77c191bd5c3027e7b6f4863cd2"
         },
         {
           "file": "scenario-4/10-assessment-http.json",
-          "sha256": "92e517d4612217636afa14cfc8a5f1551b80fe33b3d8d731ac1949a7bcb23acb"
+          "sha256": "f4d48b58d4c0a6de7760e3b4d40c61b682da7ad75fd0fd59e261d78a081bc93d"
         },
         {
           "file": "scenario-4/11-server-log.txt",
-          "sha256": "1486239dd7f86f29a01fab6acdc06e9d519527337ef0246e402d2f65b824217b"
+          "sha256": "0704a9ed5a91dd999352f49c71c96060c68b44f1c2abf807990b6d07e2646e36"
         }
       ]
     },
     {
       "scenario": "Recovery: lost response, unaccepted request, two tabs and owner boundaries",
       "status": "passed",
-      "duration_ms": 18997,
+      "duration_ms": 26667,
       "artifacts": [
         {
           "file": "scenario-5/01-browser-version.txt",
@@ -243,22 +243,22 @@
         },
         {
           "file": "scenario-5/02-interview-start.png",
-          "sha256": "d08750290a2f54b63a94eb08875df430b104e71ddb8f6c616445336a9584f223"
+          "sha256": "c7e9f55cee3f65254c15454ad03ad3ea123aab7ec99fc1bd82c012348a1ce3aa"
         },
         {
           "file": "scenario-5/03-assessment-http.json",
-          "sha256": "d94b5253937a20da1d13a8aaf829224f88cd3a77224a6788b568a7932bef839a"
+          "sha256": "ce480fa1e57db54488c6f8f1970ad44df745a745f2c574db4bbac6d602115f31"
         },
         {
           "file": "scenario-5/04-server-log.txt",
-          "sha256": "f08794e15c3a070b9565c6e22f95d60d6c3a844821a6276174f0de818599fc31"
+          "sha256": "8384a5712003ca582b186bdfa44786a315c3d928a8a6a6a407f63df330c223f9"
         }
       ]
     },
     {
       "scenario": "S10-A character branch: actual character Turn, order and no invented recommendation",
       "status": "passed",
-      "duration_ms": 21429,
+      "duration_ms": 30019,
       "artifacts": [
         {
           "file": "scenario-6/01-browser-version.txt",
@@ -266,19 +266,19 @@
         },
         {
           "file": "scenario-6/02-interview-start.png",
-          "sha256": "89cc2abbc8827447daff66ed08c03face4ae427562ab1b1a59b57ccfe68d100a"
+          "sha256": "4e459c51d8a0735b56e811594835c6aa987f3e0ea34fd7a7a13407849c9a6e68"
         },
         {
           "file": "scenario-6/03-character-and-clarification-ui.png",
-          "sha256": "f158617264eaa57d18d427c48ea48b9190bbb15ef11855367db57ab200075a8c"
+          "sha256": "1578b0a07af57fc84e10905eb664dc82d64fe56798c6658a3c180ea73011b063"
         },
         {
           "file": "scenario-6/04-report-pdf.pdf",
-          "sha256": "38532cbcfe9a84d172ca66affd8c607549673b4e4e64728a9c433d7d833d1bea"
+          "sha256": "b4ead9172d7d0299ff061fb361bc4e2c7af33b9221da61379a6324336db27032"
         },
         {
           "file": "scenario-6/05-report.json",
-          "sha256": "4a876d034fe7cd8167b0dacb04524ec9ce555dbfca8f830abbc88f742a028061"
+          "sha256": "e0b02c003009c705926739294567d59385fc7e5e35fb816d6ee4fe1102a8735f"
         },
         {
           "file": "scenario-6/06-pdf-content-check.txt",
@@ -286,15 +286,15 @@
         },
         {
           "file": "scenario-6/07-report-ui.png",
-          "sha256": "643de82365d350cdef921e4d828186e6c9864bc72715d9c2a9baa35a0accd1ee"
+          "sha256": "0865fa2eefe01acf9792913a4695c64bacde72e29bb267a9cfb5d9378c523201"
         },
         {
           "file": "scenario-6/08-assessment-http.json",
-          "sha256": "0926a8521ef97aef260c64c6e64e2ad30de935d470b1b0094386a50ed8043ef1"
+          "sha256": "9f9188f7dfa416666cef87585045ea4b999118cf50f71e9270780951467efef0"
         },
         {
           "file": "scenario-6/09-server-log.txt",
-          "sha256": "c0e96c31e655015f397c596e2c7dc5390805125c7d1da8cc46a3c4de7a09fec6"
+          "sha256": "e9f98098b449b296c80f87d4a252fed67b32a508542698e0743ca0c03cf28dad"
         }
       ]
     }

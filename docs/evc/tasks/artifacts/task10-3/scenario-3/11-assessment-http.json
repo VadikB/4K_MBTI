@@ -1,15 +1,15 @@
 [
   {
-    "at": "2026-10-05T10:12:35.873Z",
+    "at": "2026-10-05T10:41:48.640Z",
     "path": "/users/assessment/cycles/start",
     "status": 201,
     "response": {
       "resumed": true,
       "plan": {
-        "cycle_id": "31b3e648-81ec-433d-9e4a-3f01a00d06f6",
+        "cycle_id": "88392d3f-e384-4808-8e1e-7e8acb30c02f",
         "cycle_status": "active",
-        "plan_id": "bf0c8800-076a-4cd7-8715-017645f9439b",
-        "revision_id": "d77822a8-4bfe-47b6-b76b-10dc0e4710b1",
+        "plan_id": "9d27adb9-3f63-4756-a6e7-d802535c5fc0",
+        "revision_id": "13731ca6-7f0a-45b1-96b3-e3207933256a",
         "revision_no": 1,
         "plan": {
           "goal": {
@@ -1081,10 +1081,10 @@
         },
         "decisions": [
           {
-            "id": "d72890e3-1ab9-4cca-8bfb-31a935a99022",
+            "id": "b881a4e3-994e-4a4e-b6e8-8d1ed6d77d8e",
             "cycle_db_id": 1,
             "session_db_id": 1,
-            "plan_revision_id": "d77822a8-4bfe-47b6-b76b-10dc0e4710b1",
+            "plan_revision_id": "13731ca6-7f0a-45b1-96b3-e3207933256a",
             "revision_no": 1,
             "status": "SELECTED",
             "trigger_json": {
@@ -1149,19 +1149,19 @@
               "code": "M7_NEXT_AS_SELECTED",
               "algorithm": "m7-greedy-coverage/1"
             },
-            "created_at": "2026-10-05T13:12:35.691393+03:00",
+            "created_at": "2026-10-05T13:41:48.419539+03:00",
             "assigned_as_db_id": 1,
-            "assignment_presented_at": "2026-10-05T13:12:35.691393+03:00",
-            "assessment_situation_id": "afb4cc66-15fb-4953-96ca-0ba1753bf41d",
+            "assignment_presented_at": "2026-10-05T13:41:48.419539+03:00",
+            "assessment_situation_id": "44feb776-6114-4381-9bf3-e20e58067465",
             "assessment_situation_status": "active"
           }
         ]
       },
       "decision": {
-        "id": "d72890e3-1ab9-4cca-8bfb-31a935a99022",
+        "id": "b881a4e3-994e-4a4e-b6e8-8d1ed6d77d8e",
         "cycle_db_id": 1,
         "session_db_id": 1,
-        "plan_revision_id": "d77822a8-4bfe-47b6-b76b-10dc0e4710b1",
+        "plan_revision_id": "13731ca6-7f0a-45b1-96b3-e3207933256a",
         "revision_no": 1,
         "status": "SELECTED",
         "trigger_json": {
@@ -1226,10 +1226,10 @@
           "code": "M7_NEXT_AS_SELECTED",
           "algorithm": "m7-greedy-coverage/1"
         },
-        "created_at": "2026-10-05T13:12:35.691393+03:00",
+        "created_at": "2026-10-05T13:41:48.419539+03:00",
         "assigned_as_db_id": 1,
         "assignment_presented_at": null,
-        "assessment_situation_id": "afb4cc66-15fb-4953-96ca-0ba1753bf41d",
+        "assessment_situation_id": "44feb776-6114-4381-9bf3-e20e58067465",
         "assessment_situation_status": "admitted"
       },
       "presentation": {
@@ -1249,12 +1249,12 @@
       },
       "runtime": {
         "runtime_kind": "cycle",
-        "cycle_id": "31b3e648-81ec-433d-9e4a-3f01a00d06f6",
+        "cycle_id": "88392d3f-e384-4808-8e1e-7e8acb30c02f",
         "plan": {
-          "cycle_id": "31b3e648-81ec-433d-9e4a-3f01a00d06f6",
+          "cycle_id": "88392d3f-e384-4808-8e1e-7e8acb30c02f",
           "cycle_status": "active",
-          "plan_id": "bf0c8800-076a-4cd7-8715-017645f9439b",
-          "revision_id": "d77822a8-4bfe-47b6-b76b-10dc0e4710b1",
+          "plan_id": "9d27adb9-3f63-4756-a6e7-d802535c5fc0",
+          "revision_id": "13731ca6-7f0a-45b1-96b3-e3207933256a",
           "revision_no": 1,
           "plan": {
             "goal": {
@@ -2326,10 +2326,10 @@
           },
           "decisions": [
             {
-              "id": "d72890e3-1ab9-4cca-8bfb-31a935a99022",
+              "id": "b881a4e3-994e-4a4e-b6e8-8d1ed6d77d8e",
               "cycle_db_id": 1,
               "session_db_id": 1,
-              "plan_revision_id": "d77822a8-4bfe-47b6-b76b-10dc0e4710b1",
+              "plan_revision_id": "13731ca6-7f0a-45b1-96b3-e3207933256a",
               "revision_no": 1,
               "status": "SELECTED",
               "trigger_json": {
@@ -2394,32 +2394,32 @@
                 "code": "M7_NEXT_AS_SELECTED",
                 "algorithm": "m7-greedy-coverage/1"
               },
-              "created_at": "2026-10-05T13:12:35.691393+03:00",
+              "created_at": "2026-10-05T13:41:48.419539+03:00",
               "assigned_as_db_id": 1,
-              "assignment_presented_at": "2026-10-05T13:12:35.691393+03:00",
-              "assessment_situation_id": "afb4cc66-15fb-4953-96ca-0ba1753bf41d",
+              "assignment_presented_at": "2026-10-05T13:41:48.419539+03:00",
+              "assessment_situation_id": "44feb776-6114-4381-9bf3-e20e58067465",
               "assessment_situation_status": "active"
             }
           ]
         },
         "status": {
-          "cycle_id": "31b3e648-81ec-433d-9e4a-3f01a00d06f6",
+          "cycle_id": "88392d3f-e384-4808-8e1e-7e8acb30c02f",
           "collection_status": "active",
           "processing_status": "active",
           "remaining_seconds": 30,
-          "calendar_deadline": "2026-10-08T13:12:35.691393+03:00",
+          "calendar_deadline": "2026-10-08T13:41:48.419539+03:00",
           "close_reason": null,
           "c46_status": null,
           "can_continue": true
         },
         "situations": [
           {
-            "assessment_situation_id": "afb4cc66-15fb-4953-96ca-0ba1753bf41d",
+            "assessment_situation_id": "44feb776-6114-4381-9bf3-e20e58067465",
             "status": "active"
           }
         ],
         "current_situation": {
-          "assessment_situation_id": "afb4cc66-15fb-4953-96ca-0ba1753bf41d",
+          "assessment_situation_id": "44feb776-6114-4381-9bf3-e20e58067465",
           "status": "active",
           "participant_payload": {
             "title": "Запуск в пятницу: что именно готово?",
@@ -2435,7 +2435,7 @@
           }
         },
         "trace": {
-          "assessment_situation_id": "afb4cc66-15fb-4953-96ca-0ba1753bf41d",
+          "assessment_situation_id": "44feb776-6114-4381-9bf3-e20e58067465",
           "status": "active",
           "turns": [],
           "events": []
@@ -2447,32 +2447,32 @@
     }
   },
   {
-    "at": "2026-10-05T10:12:36.312Z",
-    "path": "/users/assessment/m5/situations/afb4cc66-15fb-4953-96ca-0ba1753bf41d/turns",
+    "at": "2026-10-05T10:41:49.180Z",
+    "path": "/users/assessment/m5/situations/44feb776-6114-4381-9bf3-e20e58067465/turns",
     "status": 200,
     "response": {
       "turn": {
         "id": 1,
         "assessment_situation_db_id": 1,
-        "turn_id": "1cba7806-c7fc-469c-8df2-35ae2a9623ee",
+        "turn_id": "b60130dc-ff8f-4d2c-8aa1-c02f2cafd1bd",
         "sequence_no": 2,
         "speaker_type": "assessee",
         "speaker_id": "assessee",
         "content_text": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
-        "request_id": "96ce341e-4b0a-4aaa-a5fe-0edd49694937",
-        "created_at": "2026-10-05T13:12:36.274253+03:00"
+        "request_id": "4f289cc6-edd3-4522-87f8-67217cdb252a",
+        "created_at": "2026-10-05T13:41:49.120488+03:00"
       },
       "events": [
         {
           "id": 2,
           "assessment_situation_db_id": 1,
-          "event_id": "75af0e63-f207-415b-98b6-60f8bcc93841",
+          "event_id": "8adfb0af-e49f-495a-a20e-197b88704f58",
           "event_type": "mandatory_update",
           "event_key": "material:CASE-TDISC-01-D3",
           "cause_json": {
             "rule_id": "CASE-TDISC-01-D3:mandatory",
-            "turn_id": "1cba7806-c7fc-469c-8df2-35ae2a9623ee",
-            "decision_id": "261567ab-1cfe-4b71-8b5c-da8d8c022705",
+            "turn_id": "b60130dc-ff8f-4d2c-8aa1-c02f2cafd1bd",
+            "decision_id": "51f508f1-9a66-4a3b-9ac6-1576ab2c4ff3",
             "rule_version": "1"
           },
           "material_id": "CASE-TDISC-01-D3",
@@ -2481,7 +2481,7 @@
             "recipient": "assessee"
           },
           "sequence_no": 3,
-          "created_at": "2026-10-05T13:12:36.274253+03:00"
+          "created_at": "2026-10-05T13:41:49.120488+03:00"
         }
       ],
       "idempotent": false

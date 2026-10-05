@@ -35,4 +35,4 @@ tests/integration/test_removed_personality_schema_cleanup_db.py .        [100%]
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-=========== 78 passed, 375 deselected, 1 warning in 92.66s (0:01:32) ===========
+========== 78 passed, 375 deselected, 1 warning in 146.65s (0:02:26) ===========

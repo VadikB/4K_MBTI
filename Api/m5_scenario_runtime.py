@@ -553,6 +553,10 @@ def transition(connection, *, assessment_situation_id: str, action: str, reason:
 def trace(connection, assessment_situation_id: str) -> dict:
     row = _as_row(connection, assessment_situation_id)
     turns = [dict(x) for x in connection.execute("SELECT * FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s ORDER BY sequence_no", (row["id"],)).fetchall()]
+    character_names = {x['character_id']: x['name_and_role'] for x in row['execution_payload_json'].get('characters', [])}
+    for turn in turns:
+        if turn['speaker_type'] == 'character':
+            turn['speaker_name'] = character_names.get(turn['speaker_id'])
     events = [dict(x) for x in connection.execute("SELECT * FROM m5_scenario_events WHERE assessment_situation_db_id=%s ORDER BY sequence_no", (row["id"],)).fetchall()]
     state = connection.execute("SELECT * FROM m5_scenario_states WHERE assessment_situation_db_id=%s", (row["id"],)).fetchone()
     decisions = [dict(x) for x in connection.execute(

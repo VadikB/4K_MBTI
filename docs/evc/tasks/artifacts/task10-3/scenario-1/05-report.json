@@ -1,12 +1,12 @@
 {
-  "id": "6c450fef-1468-4ca2-8a8b-04df51a827ec",
+  "id": "e82a0562-403c-4057-b986-c91250d8e3a5",
   "revision_no": 1,
   "audience": "assessee",
   "status": "ready",
-  "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+  "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
   "owner_user_id": 1,
-  "results_revision_id": "abf059e3-252f-4c53-9ce5-4add62ca2915",
-  "created_at": "2026-10-05T13:11:36.356734+03:00",
+  "results_revision_id": "e607e16d-77d6-4851-a741-7f3dd3cb9724",
+  "created_at": "2026-10-05T13:40:44.169046+03:00",
   "c67": {
     "goal": {
       "kind": "skills",
@@ -18,19 +18,19 @@
       ]
     },
     "time": {
-      "deadline": "2026-10-08T13:11:31.969145+03:00",
+      "deadline": "2026-10-08T13:40:38.031493+03:00",
       "intervals": [
         {
           "type": "collecting",
           "reason": "session_started",
-          "ended_at": "2026-10-05T13:11:35.076500+03:00",
-          "started_at": "2026-10-05T13:11:31.969145+03:00",
+          "ended_at": "2026-10-05T13:40:42.795735+03:00",
+          "started_at": "2026-10-05T13:40:38.031493+03:00",
           "session_db_id": 1
         }
       ],
-      "started_at": "2026-10-05T13:11:31.969145+03:00",
+      "started_at": "2026-10-05T13:40:38.031493+03:00",
       "budget_seconds": 3600,
-      "consumed_seconds": 3,
+      "consumed_seconds": 5,
       "parameter_sources": {
         "time_budget": "m7_cycle_plan/1.0.0:method_default",
         "calendar_window": "m7_cycle_plan/1.0.0:method_default"
@@ -333,7 +333,7 @@
             "K4.I15": "NO_JUSTIFIED_FINAL_IA",
             "K4.I16": "NO_JUSTIFIED_FINAL_IA"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "complete_components": {
           "ratio": 0,
@@ -414,7 +414,7 @@
             "K4.C09": "NOT_AVAILABLE",
             "K4.C10": "NOT_AVAILABLE"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "components_with_score": {
           "ratio": 0.05714285714285714,
@@ -494,7 +494,7 @@
             "K4.C09": "NOT_AVAILABLE",
             "K4.C10": "NOT_AVAILABLE"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "indicator_assessments": {
           "ratio": 0.03278688524590164,
@@ -626,7 +626,7 @@
             "K4.I17": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
             "K4.I18": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "admissible_contributions": {
           "ratio": 0.03278688524590164,
@@ -758,7 +758,7 @@
             "K4.I17": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
             "K4.I18": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         }
       },
       "cycle_plan": {
@@ -886,7 +886,7 @@
             "K4.I15": "NO_JUSTIFIED_FINAL_IA",
             "K4.I16": "NO_JUSTIFIED_FINAL_IA"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "complete_components": {
           "ratio": 0,
@@ -967,7 +967,7 @@
             "K4.C09": "NOT_AVAILABLE",
             "K4.C10": "NOT_AVAILABLE"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "components_with_score": {
           "ratio": 0.05714285714285714,
@@ -1047,7 +1047,7 @@
             "K4.C09": "NOT_AVAILABLE",
             "K4.C10": "NOT_AVAILABLE"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "indicator_assessments": {
           "ratio": 0.03278688524590164,
@@ -1179,7 +1179,7 @@
             "K4.I17": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
             "K4.I18": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         },
         "admissible_contributions": {
           "ratio": 0.03278688524590164,
@@ -1311,11 +1311,11 @@
             "K4.I17": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
             "K4.I18": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present"
           },
-          "composition_version": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+          "composition_version": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
         }
       }
     },
-    "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+    "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
     "role_ref": {
       "id": "project_product_process_manager",
       "version": "frozen-profile",
@@ -1325,17 +1325,17 @@
       {
         "status": "completed",
         "ordinal": 1,
-        "ended_at": "2026-10-05T13:11:35.076500+03:00",
-        "session_id": "2ebe8fa9-48ff-4d42-a3e5-e5d97ea6b048",
-        "started_at": "2026-10-05T13:11:31.969145+03:00",
+        "ended_at": "2026-10-05T13:40:42.795735+03:00",
+        "session_id": "ccfe8ddf-ee85-492b-8c0a-de12004525f7",
+        "started_at": "2026-10-05T13:40:38.031493+03:00",
         "close_reason": "user_completed_scenario"
       }
     ],
-    "report_id": "6c450fef-1468-4ca2-8a8b-04df51a827ec",
+    "report_id": "e82a0562-403c-4057-b986-c91250d8e3a5",
     "collection": {
       "reason": "user_completed_scenario",
       "status": "collection_closed",
-      "closed_at": "2026-10-05T13:11:35.076500+03:00"
+      "closed_at": "2026-10-05T13:40:42.795735+03:00"
     },
     "confidence": {
       "kind": "qualitative",
@@ -1344,13 +1344,13 @@
     "disclosure": "personal",
     "provenance": {
       "c46_ref": {
-        "id": "af734c06-7f05-4546-9302-0be8e939c3c5",
-        "checksum": "fd5142fa9593489b70dd725554183db88feb26ec1c0ac6b5fe4184d3ba018e83",
+        "id": "3dfbbd26-4468-4b21-99eb-229611cfa655",
+        "checksum": "b5fbfd2ce0527633e24d8f29039d8ec1652bdb87eb1d504c5e2a1e39515fdc3c",
         "revision_no": 2
       },
       "c56_ref": {
         "revision_no": 1,
-        "calculation_id": "bba8e221-bcac-43ce-a2bc-0a271419e911"
+        "calculation_id": "9a8d319c-648a-44e2-a343-681089703a86"
       },
       "sources": {
         "M2": "competencies_4k/1.1",
@@ -1362,9 +1362,9 @@
         "version": "1.0.0",
         "rules_hash": "405ba4113a4cd2f0bd3e2757a6abd3afc55b96e9cacfbceb103a37ad401e7e62"
       },
-      "composition_checksum": "a98d1f8422180086de90c6fadc32300b9d226269fe2a9ce0b305a2c8a65202b8"
+      "composition_checksum": "9296c1ad0415153926d0171334489e5199305907800cdcaac23b704a364ee475"
     },
-    "results_id": "e511940a-13e2-47d2-a86c-615bdf503839",
+    "results_id": "d18eff6c-2bf5-4fdd-a0be-57fd2c23e68b",
     "limitations": [
       "Conservative deterministic admission rejects any reported contradiction.",
       "Normative reliability remains unverified until approved GC runs exist.",
@@ -1444,29 +1444,29 @@
               }
             ],
             "outcome": "L1",
-            "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+            "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
             "skill_id": "K1.3",
             "ia_checksum": "af93b7c935d040e176737ffa184b35e70a1f1477ba3ee2a1f9f80a0b7660797d",
             "indicator_id": "K1.I13",
             "material_ref": {
               "checksum_kind": "definition_json_v1",
-              "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+              "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
               "boundary_sequence": 9
             },
             "manifestation": "Восстанавливает основной прямо выраженный смысл и общую позицию другого",
-            "ia_revision_id": "fd6bf5ce-be9b-4820-902b-384d19fef149",
-            "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
+            "ia_revision_id": "544c1d52-dd4e-4b1c-95ea-a67884dc3168",
+            "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
             "material_excerpts": [
               {
                 "quote": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
-                "turn_id": "79d2a9e0-28c2-4e95-8228-cfed7fba8b35",
+                "turn_id": "6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084",
                 "fragment_id": "f-K1.I13"
               }
             ],
-            "results_revision_id": "abf059e3-252f-4c53-9ce5-4add62ca2915",
-            "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-            "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "results_revision_id": "e607e16d-77d6-4851-a741-7f3dd3cb9724",
+            "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+            "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           }
         ],
         "limitations": [
@@ -1485,7 +1485,7 @@
           "K1.I13"
         ],
         "progress_signal": "В записи о практике по «Реконструкция существенного смысла и позиции другого» описан полученный продукт «Реконструкция существенного содержания и позиции другого, сохраняющая значимые элементы его фактически выраженного сообщения.», конкретное действие и отличие от исходного результата.",
-        "recommendation_id": "K1.3:fd6bf5ce-be9b-4820-902b-384d19fef149:development",
+        "recommendation_id": "K1.3:544c1d52-dd4e-4b1c-95ea-a67884dc3168:development",
         "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
       },
       {
@@ -1505,29 +1505,29 @@
               }
             ],
             "outcome": "L1",
-            "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+            "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
             "skill_id": "K1.3",
             "ia_checksum": "af93b7c935d040e176737ffa184b35e70a1f1477ba3ee2a1f9f80a0b7660797d",
             "indicator_id": "K1.I13",
             "material_ref": {
               "checksum_kind": "definition_json_v1",
-              "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+              "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
               "boundary_sequence": 9
             },
             "manifestation": "Восстанавливает основной прямо выраженный смысл и общую позицию другого",
-            "ia_revision_id": "fd6bf5ce-be9b-4820-902b-384d19fef149",
-            "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
+            "ia_revision_id": "544c1d52-dd4e-4b1c-95ea-a67884dc3168",
+            "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
             "material_excerpts": [
               {
                 "quote": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
-                "turn_id": "79d2a9e0-28c2-4e95-8228-cfed7fba8b35",
+                "turn_id": "6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084",
                 "fragment_id": "f-K1.I13"
               }
             ],
-            "results_revision_id": "abf059e3-252f-4c53-9ce5-4add62ca2915",
-            "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-            "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "results_revision_id": "e607e16d-77d6-4851-a741-7f3dd3cb9724",
+            "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+            "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           }
         ],
         "limitations": [
@@ -1546,7 +1546,7 @@
           "K1.I13"
         ],
         "progress_signal": "Есть описание повторного действия «Восстанавливает основной прямо выраженный смысл и общую позицию другого», полученного продукта и его ограничений; устойчивость этим не устанавливается.",
-        "recommendation_id": "K1.3:fd6bf5ce-be9b-4820-902b-384d19fef149:consolidation",
+        "recommendation_id": "K1.3:544c1d52-dd4e-4b1c-95ea-a67884dc3168:consolidation",
         "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
       },
       {
@@ -1566,29 +1566,29 @@
               }
             ],
             "outcome": "L1",
-            "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+            "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
             "skill_id": "K1.3",
             "ia_checksum": "af93b7c935d040e176737ffa184b35e70a1f1477ba3ee2a1f9f80a0b7660797d",
             "indicator_id": "K1.I13",
             "material_ref": {
               "checksum_kind": "definition_json_v1",
-              "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+              "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
               "boundary_sequence": 9
             },
             "manifestation": "Восстанавливает основной прямо выраженный смысл и общую позицию другого",
-            "ia_revision_id": "fd6bf5ce-be9b-4820-902b-384d19fef149",
-            "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
+            "ia_revision_id": "544c1d52-dd4e-4b1c-95ea-a67884dc3168",
+            "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
             "material_excerpts": [
               {
                 "quote": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
-                "turn_id": "79d2a9e0-28c2-4e95-8228-cfed7fba8b35",
+                "turn_id": "6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084",
                 "fragment_id": "f-K1.I13"
               }
             ],
-            "results_revision_id": "abf059e3-252f-4c53-9ce5-4add62ca2915",
-            "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-            "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "results_revision_id": "e607e16d-77d6-4851-a741-7f3dd3cb9724",
+            "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+            "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           }
         ],
         "limitations": [
@@ -1607,7 +1607,7 @@
           "K1.I13"
         ],
         "progress_signal": "Описаны новое условие, выполненное действие «Восстанавливает основной прямо выраженный смысл и общую позицию другого» и необходимость адаптации; перенос заранее не считается доказанным.",
-        "recommendation_id": "K1.3:fd6bf5ce-be9b-4820-902b-384d19fef149:application",
+        "recommendation_id": "K1.3:544c1d52-dd4e-4b1c-95ea-a67884dc3168:application",
         "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
       },
       {
@@ -1627,29 +1627,29 @@
               }
             ],
             "outcome": "L1",
-            "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+            "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
             "skill_id": "K1.4",
             "ia_checksum": "e3afd270a3f6954a10eb485dafb84c3327c0cad13a60d736054b1560f9b6946c",
             "indicator_id": "K1.I17",
             "material_ref": {
               "checksum_kind": "definition_json_v1",
-              "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+              "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
               "boundary_sequence": 9
             },
             "manifestation": "Фиксирует итог и проверяет его понимание в данном ответе",
-            "ia_revision_id": "7e35086a-a514-4216-b587-15182b04c953",
-            "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
+            "ia_revision_id": "2c99942a-5460-4d1c-b933-51287c726682",
+            "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
             "material_excerpts": [
               {
                 "quote": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
-                "turn_id": "79d2a9e0-28c2-4e95-8228-cfed7fba8b35",
+                "turn_id": "6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084",
                 "fragment_id": "f-K1.I17"
               }
             ],
-            "results_revision_id": "abf059e3-252f-4c53-9ce5-4add62ca2915",
-            "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-            "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "results_revision_id": "e607e16d-77d6-4851-a741-7f3dd3cb9724",
+            "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+            "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           }
         ],
         "limitations": [
@@ -1668,7 +1668,7 @@
           "K1.I17"
         ],
         "progress_signal": "В записи о практике по «Доведение и фиксация коммуникативного результата» описан полученный продукт «Явно определённый коммуникативный результат взаимодействия, в котором зафиксировано достигнутое состояние договорённостей, различий и дальнейших действий в необходимом для ситуации объёме.», конкретное действие и отличие от исходного результата.",
-        "recommendation_id": "K1.4:7e35086a-a514-4216-b587-15182b04c953:development",
+        "recommendation_id": "K1.4:2c99942a-5460-4d1c-b933-51287c726682:development",
         "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
       }
     ],
@@ -1679,7 +1679,7 @@
     },
     "template_version": "m8-basic-report/1.2.0",
     "report_revision_no": 1,
-    "results_revision_id": "abf059e3-252f-4c53-9ce5-4add62ca2915",
+    "results_revision_id": "e607e16d-77d6-4851-a741-7f3dd3cb9724",
     "results_revision_no": 1,
     "assessment_situations": [
       {
@@ -1689,11 +1689,11 @@
           "version": "v0.1",
           "checksum": "93ac113caf116411879a5036b9816151dd49c68cd1cae2bb264fe7b28e14633d"
         },
-        "handoff_id": "c348a70f-52b1-4bcb-8ecc-4ca2c657bcd0",
+        "handoff_id": "3bad2289-fe3e-4023-b3d6-cdfd003a5030",
         "session_db_id": 1,
-        "handoff_checksum": "4e64eff8c34b313bdffdc6ce08a5656bdc40c8ccf4ad34f19117d50cf6dc7a15",
+        "handoff_checksum": "0c8b1596dcd848472d79e39296930eec70dfa3e4ed13c92e724d604930e7d827",
         "boundary_sequence": 9,
-        "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+        "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
       }
     ],
     "recommendation_notices": [
@@ -1796,9 +1796,9 @@
     ],
     "recommendation_generation": {
       "input": {
-        "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+        "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
         "resolved": {
-          "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+          "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
           "projections": [
             {
               "bundle": {
@@ -1857,7 +1857,7 @@
                       "end": 352,
                       "quote": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
                       "start": 0,
-                      "turn_id": "79d2a9e0-28c2-4e95-8228-cfed7fba8b35"
+                      "turn_id": "6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084"
                     }
                   ],
                   "evidence_id": "e-K1.I13",
@@ -1895,14 +1895,14 @@
                 "evidence_pattern": "В ответе или диалоге наблюдается воспроизведение, переформулирование, резюмирование или последующее использование содержания сообщения другого, позволяющее сопоставить реконструированный смысл с фактически выраженным сообщением. Материал позволяет увидеть сохранение, упрощение, искажение или обновление существенных элементов, условий, различий и позиции другого."
               },
               "ia_checksum": "af93b7c935d040e176737ffa184b35e70a1f1477ba3ee2a1f9f80a0b7660797d",
-              "revision_id": "fd6bf5ce-be9b-4820-902b-384d19fef149",
+              "revision_id": "544c1d52-dd4e-4b1c-95ea-a67884dc3168",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+                "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
                 "boundary_sequence": 9
               },
-              "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
-              "material_checksum": "4373992d762fe5f0a297c1d75a19290bfc3129972cdc30f62c44a274c5d0a4f7"
+              "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
+              "material_checksum": "406766aa428117c57df529684be45c109b140221a1c9da9c5856f054e30df009"
             },
             {
               "bundle": {
@@ -1973,14 +1973,14 @@
                 "evidence_pattern": "В диалоге существенное расхождение становится предметом коммуникации и наблюдаются действия в отношении него: обозначение различия, прояснение позиций или оснований, разведение разных вопросов, поиск области согласования, предложение способа обращения с различием либо фиксация его сохранения. Материал позволяет установить фактический способ работы с расхождением; результативность оценивается по L0–L3."
               },
               "ia_checksum": "b7622c39846d12bfde2aa062860279452127ccb10997edb8710893686da294be",
-              "revision_id": "6e578237-71d8-4564-97e8-56046385383b",
+              "revision_id": "97f6d92e-57c7-465a-abf3-06404a8f2b0e",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+                "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
                 "boundary_sequence": 9
               },
-              "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
-              "material_checksum": "4373992d762fe5f0a297c1d75a19290bfc3129972cdc30f62c44a274c5d0a4f7"
+              "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
+              "material_checksum": "406766aa428117c57df529684be45c109b140221a1c9da9c5856f054e30df009"
             },
             {
               "bundle": {
@@ -2039,7 +2039,7 @@
                       "end": 352,
                       "quote": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
                       "start": 0,
-                      "turn_id": "79d2a9e0-28c2-4e95-8228-cfed7fba8b35"
+                      "turn_id": "6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084"
                     }
                   ],
                   "evidence_id": "e-K1.I17",
@@ -2077,14 +2077,14 @@
                 "evidence_pattern": "В завершении взаимодействия или его значимого этапа наблюдается формулирование достигнутого результата: договорённостей, решений, сохраняющихся различий, открытых вопросов, условий или дальнейших действий. Материал позволяет установить, какие элементы результата фактически зафиксированы, какие упущены и проверялась ли итоговая формулировка с участниками."
               },
               "ia_checksum": "e3afd270a3f6954a10eb485dafb84c3327c0cad13a60d736054b1560f9b6946c",
-              "revision_id": "7e35086a-a514-4216-b587-15182b04c953",
+              "revision_id": "2c99942a-5460-4d1c-b933-51287c726682",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+                "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
                 "boundary_sequence": 9
               },
-              "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
-              "material_checksum": "4373992d762fe5f0a297c1d75a19290bfc3129972cdc30f62c44a274c5d0a4f7"
+              "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
+              "material_checksum": "406766aa428117c57df529684be45c109b140221a1c9da9c5856f054e30df009"
             },
             {
               "bundle": {
@@ -2160,14 +2160,14 @@
                 "evidence_pattern": "В наблюдаемом материале должны быть связаны действия нескольких участников, существенные зависимости между ними и способ их стыковки. Материал должен позволять установить, выявляет ли оцениваемый взаимозависимости и как согласует либо не согласует последовательность, параллельность, сроки, точки передачи результата или другие существенные условия совместного выполнения действий."
               },
               "ia_checksum": "223719e5f0985e57e0f975d10f397bdfe378f59959d11bc48a5f565cf23f4993",
-              "revision_id": "d22d7edb-81d0-40b8-ba82-e1b45d8d74c5",
+              "revision_id": "d2bbf2bc-e8e8-48f2-b271-1d328dbb9988",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+                "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
                 "boundary_sequence": 9
               },
-              "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
-              "material_checksum": "4373992d762fe5f0a297c1d75a19290bfc3129972cdc30f62c44a274c5d0a4f7"
+              "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
+              "material_checksum": "406766aa428117c57df529684be45c109b140221a1c9da9c5856f054e30df009"
             },
             {
               "bundle": {
@@ -2247,14 +2247,14 @@
                 "evidence_pattern": "В наблюдаемом материале должны быть связаны действие участника, информация, необходимая для его выполнения, и способ обеспечения её доступности к моменту использования. Материал должен позволять установить, выявляет ли оцениваемый существенные информационные потребности и как обеспечивает либо не обеспечивает актуальность, достаточность и своевременность информации для взаимозависимых действий."
               },
               "ia_checksum": "3869ccbfa00737d03e59a2aaffbab63061c02f4922f860f2d89f9b50b4b0638e",
-              "revision_id": "3dc7bdba-4ae8-4d20-9438-845f7b03c74b",
+              "revision_id": "df5dd414-9c6e-42bf-84f9-c17347a30c2c",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+                "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
                 "boundary_sequence": 9
               },
-              "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
-              "material_checksum": "4373992d762fe5f0a297c1d75a19290bfc3129972cdc30f62c44a274c5d0a4f7"
+              "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
+              "material_checksum": "406766aa428117c57df529684be45c109b140221a1c9da9c5856f054e30df009"
             },
             {
               "bundle": {
@@ -2325,14 +2325,14 @@
                 "evidence_pattern": "В наблюдаемом материале два или более конкретных сведения поставлены субъектом в отношение сопоставления; можно установить, считает ли он их согласующимися, противоречащими, дополняющими или несопоставимыми и на каком признаке строится сопоставление. Качество сравнения относится к L0–L3."
               },
               "ia_checksum": "0ede63f85ae1f0990154e7ec1882f814897c87768616dad3afb64c0afee6ec17",
-              "revision_id": "796a5188-d123-4a92-ad1c-a6f4e7280a12",
+              "revision_id": "8021595d-c50a-4f37-b00d-43f2818f4a7e",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+                "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
                 "boundary_sequence": 9
               },
-              "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
-              "material_checksum": "4373992d762fe5f0a297c1d75a19290bfc3129972cdc30f62c44a274c5d0a4f7"
+              "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
+              "material_checksum": "406766aa428117c57df529684be45c109b140221a1c9da9c5856f054e30df009"
             },
             {
               "bundle": {
@@ -2408,14 +2408,14 @@
                 "evidence_pattern": "В наблюдаемом материале субъект утверждает, отвергает или проверяет причинную связь между конкретными элементами; можно установить, что он рассматривает как причину и следствие и на какие основания или способ проверки опирается. Качество проверки причинности оценивается по L0–L3."
               },
               "ia_checksum": "a2519cd5cfa4c0d355144cf490e3be79b950528dfd37fd7104aac5bb637b53a9",
-              "revision_id": "198007ee-1868-4b88-8753-332e2fb189f7",
+              "revision_id": "700faa69-966c-49e3-a2af-024a31a229fc",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+                "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
                 "boundary_sequence": 9
               },
-              "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
-              "material_checksum": "4373992d762fe5f0a297c1d75a19290bfc3129972cdc30f62c44a274c5d0a4f7"
+              "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
+              "material_checksum": "406766aa428117c57df529684be45c109b140221a1c9da9c5856f054e30df009"
             },
             {
               "bundle": {
@@ -2491,14 +2491,14 @@
                 "evidence_pattern": "В наблюдаемом материале конкретный риск или последствие связано с конкретной альтернативой и присутствует его оценка. Для риска наблюдаемы основания для суждения об условиях или вероятности возникновения и значимости последствий; для последствия — его характер и значимость для выбора. Полнота и качество оценки относятся к L0–L3, а не к Evidence Pattern."
               },
               "ia_checksum": "26922025c6b6333d5311eaf12a83646b666e7544163b14484521dc8be941b844",
-              "revision_id": "ba120940-080a-4163-a366-363562f07d01",
+              "revision_id": "60e55882-825c-43ea-9b16-de7a1f24a299",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+                "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
                 "boundary_sequence": 9
               },
-              "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
-              "material_checksum": "4373992d762fe5f0a297c1d75a19290bfc3129972cdc30f62c44a274c5d0a4f7"
+              "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
+              "material_checksum": "406766aa428117c57df529684be45c109b140221a1c9da9c5856f054e30df009"
             },
             {
               "bundle": {
@@ -2574,19 +2574,19 @@
                 "evidence_pattern": "В наблюдаемом материале субъект явно выбирает конкретную альтернативу или формулирует решение и указывает основания, которыми объясняет выбор. Можно сопоставить выбор с ранее заявленными критериями, ограничениями, рисками или последствиями, если они представлены; согласованность и полнота основания оцениваются по L0–L3."
               },
               "ia_checksum": "5e32232e5d781d562d82c26f3ef8e7b97d7021649d551cc5579ffd52dffd1f82",
-              "revision_id": "cf13ba1d-3bd0-4542-89de-1de2fbaedf88",
+              "revision_id": "2c2e2da4-7317-4d85-b49b-e1169f1165d5",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+                "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
                 "boundary_sequence": 9
               },
-              "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
-              "material_checksum": "4373992d762fe5f0a297c1d75a19290bfc3129972cdc30f62c44a274c5d0a4f7"
+              "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
+              "material_checksum": "406766aa428117c57df529684be45c109b140221a1c9da9c5856f054e30df009"
             }
           ],
-          "c56_checksum": "852ed06606f52fd7e21d6a0a63b8e97814ff5843205cb9aff4b960f44b308c9a",
-          "results_checksum": "63285835e0278c2359d28a4471774b6c5d9bfd769f93f96c4028dc3f746da51d",
-          "results_revision_id": "abf059e3-252f-4c53-9ce5-4add62ca2915"
+          "c56_checksum": "d89fe88cbd5d8d61b18a801bc12adb2a7018e78ab541aa61e1605e9e832839d0",
+          "results_checksum": "121c91c6567096aaec84053cea5622de71f5397fdde88dad6c7fe329c0a0f14d",
+          "results_revision_id": "e607e16d-77d6-4851-a741-7f3dd3cb9724"
         },
         "admissions": [
           {
@@ -2607,7 +2607,7 @@
                   "checksum": "93ac113caf116411879a5036b9816151dd49c68cd1cae2bb264fe7b28e14633d"
                 },
                 "base_role": "project_product_process_manager",
-                "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+                "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
               }
             ],
             "mechanism": {
@@ -2619,11 +2619,11 @@
             "indicator_id": "K1.I13",
             "numeric_admissible": true,
             "included_revision_ids": [
-              "fd6bf5ce-be9b-4820-902b-384d19fef149"
+              "544c1d52-dd4e-4b1c-95ea-a67884dc3168"
             ],
             "interpretation_admissible": true,
             "interpretable_revision_ids": [
-              "fd6bf5ce-be9b-4820-902b-384d19fef149"
+              "544c1d52-dd4e-4b1c-95ea-a67884dc3168"
             ]
           },
           {
@@ -2667,7 +2667,7 @@
                   "checksum": "93ac113caf116411879a5036b9816151dd49c68cd1cae2bb264fe7b28e14633d"
                 },
                 "base_role": "project_product_process_manager",
-                "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+                "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
               }
             ],
             "mechanism": {
@@ -2679,11 +2679,11 @@
             "indicator_id": "K1.I17",
             "numeric_admissible": true,
             "included_revision_ids": [
-              "7e35086a-a514-4216-b587-15182b04c953"
+              "2c99942a-5460-4d1c-b933-51287c726682"
             ],
             "interpretation_admissible": true,
             "interpretable_revision_ids": [
-              "7e35086a-a514-4216-b587-15182b04c953"
+              "2c99942a-5460-4d1c-b933-51287c726682"
             ]
           },
           {
@@ -3465,12 +3465,12 @@
             },
             "m2_version": "v1.1",
             "opportunity": "PRESENT",
-            "revision_id": "fd6bf5ce-be9b-4820-902b-384d19fef149",
+            "revision_id": "544c1d52-dd4e-4b1c-95ea-a67884dc3168",
             "indicator_id": "K1.I13",
             "contradictions": [],
-            "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-            "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+            "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           },
           {
             "refs": [],
@@ -3486,12 +3486,12 @@
             },
             "m2_version": "v1.1",
             "opportunity": "PRESENT",
-            "revision_id": "6e578237-71d8-4564-97e8-56046385383b",
+            "revision_id": "97f6d92e-57c7-465a-abf3-06404a8f2b0e",
             "indicator_id": "K1.I16",
             "contradictions": [],
-            "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-            "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+            "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           },
           {
             "refs": [
@@ -3515,12 +3515,12 @@
             },
             "m2_version": "v1.1",
             "opportunity": "PRESENT",
-            "revision_id": "7e35086a-a514-4216-b587-15182b04c953",
+            "revision_id": "2c99942a-5460-4d1c-b933-51287c726682",
             "indicator_id": "K1.I17",
             "contradictions": [],
-            "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-            "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+            "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           },
           {
             "refs": [],
@@ -3536,12 +3536,12 @@
             },
             "m2_version": "v1.0",
             "opportunity": "PRESENT",
-            "revision_id": "d22d7edb-81d0-40b8-ba82-e1b45d8d74c5",
+            "revision_id": "d2bbf2bc-e8e8-48f2-b271-1d328dbb9988",
             "indicator_id": "K2.I07",
             "contradictions": [],
-            "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-            "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+            "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           },
           {
             "refs": [],
@@ -3557,12 +3557,12 @@
             },
             "m2_version": "v1.0",
             "opportunity": "PRESENT",
-            "revision_id": "3dc7bdba-4ae8-4d20-9438-845f7b03c74b",
+            "revision_id": "df5dd414-9c6e-42bf-84f9-c17347a30c2c",
             "indicator_id": "K2.I08",
             "contradictions": [],
-            "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-            "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+            "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           },
           {
             "refs": [],
@@ -3578,12 +3578,12 @@
             },
             "m2_version": "v1.0",
             "opportunity": "PRESENT",
-            "revision_id": "796a5188-d123-4a92-ad1c-a6f4e7280a12",
+            "revision_id": "8021595d-c50a-4f37-b00d-43f2818f4a7e",
             "indicator_id": "K4.I05",
             "contradictions": [],
-            "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-            "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+            "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           },
           {
             "refs": [],
@@ -3599,12 +3599,12 @@
             },
             "m2_version": "v1.0",
             "opportunity": "PRESENT",
-            "revision_id": "198007ee-1868-4b88-8753-332e2fb189f7",
+            "revision_id": "700faa69-966c-49e3-a2af-024a31a229fc",
             "indicator_id": "K4.I10",
             "contradictions": [],
-            "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-            "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+            "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           },
           {
             "refs": [],
@@ -3620,12 +3620,12 @@
             },
             "m2_version": "v1.0",
             "opportunity": "PRESENT",
-            "revision_id": "ba120940-080a-4163-a366-363562f07d01",
+            "revision_id": "60e55882-825c-43ea-9b16-de7a1f24a299",
             "indicator_id": "K4.I17",
             "contradictions": [],
-            "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-            "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+            "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           },
           {
             "refs": [],
@@ -3641,16 +3641,16 @@
             },
             "m2_version": "v1.0",
             "opportunity": "PRESENT",
-            "revision_id": "cf13ba1d-3bd0-4542-89de-1de2fbaedf88",
+            "revision_id": "2c2e2da4-7317-4d85-b49b-e1169f1165d5",
             "indicator_id": "K4.I18",
             "contradictions": [],
-            "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-            "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+            "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+            "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
           }
         ],
         "profile_projection": {},
-        "results_revision_id": "abf059e3-252f-4c53-9ce5-4add62ca2915"
+        "results_revision_id": "e607e16d-77d6-4851-a741-7f3dd3cb9724"
       },
       "status": "ready",
       "notices": [
@@ -3761,11 +3761,11 @@
         {
           "reason": "INTERPRETATION_NOT_ADMITTED",
           "skill_id": "K1.4",
-          "ia_revision_id": "6e578237-71d8-4564-97e8-56046385383b"
+          "ia_revision_id": "97f6d92e-57c7-465a-abf3-06404a8f2b0e"
         }
       ],
       "failure_reason": null,
-      "input_checksum": "d3a54420ba51a39e33fd0257d56d2fc080f24e290f5e66d5aeb74f3e77cef7b9",
+      "input_checksum": "8428126127cabeadd2e36d7dd42bcde66dda3ee71feeb7552b1e89b6b2758cce",
       "recommendations": [
         {
           "goal": "Рассмотреть практику по индикатору «Реконструкция существенного смысла и позиции другого» с учётом результата: Восстанавливает основной прямо выраженный смысл и общую позицию другого",
@@ -3784,29 +3784,29 @@
                 }
               ],
               "outcome": "L1",
-              "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+              "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
               "skill_id": "K1.3",
               "ia_checksum": "af93b7c935d040e176737ffa184b35e70a1f1477ba3ee2a1f9f80a0b7660797d",
               "indicator_id": "K1.I13",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+                "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
                 "boundary_sequence": 9
               },
               "manifestation": "Восстанавливает основной прямо выраженный смысл и общую позицию другого",
-              "ia_revision_id": "fd6bf5ce-be9b-4820-902b-384d19fef149",
-              "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
+              "ia_revision_id": "544c1d52-dd4e-4b1c-95ea-a67884dc3168",
+              "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
               "material_excerpts": [
                 {
                   "quote": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
-                  "turn_id": "79d2a9e0-28c2-4e95-8228-cfed7fba8b35",
+                  "turn_id": "6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084",
                   "fragment_id": "f-K1.I13"
                 }
               ],
-              "results_revision_id": "abf059e3-252f-4c53-9ce5-4add62ca2915",
-              "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-              "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-              "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+              "results_revision_id": "e607e16d-77d6-4851-a741-7f3dd3cb9724",
+              "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+              "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+              "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
             }
           ],
           "limitations": [
@@ -3825,7 +3825,7 @@
             "K1.I13"
           ],
           "progress_signal": "В записи о практике по «Реконструкция существенного смысла и позиции другого» описан полученный продукт «Реконструкция существенного содержания и позиции другого, сохраняющая значимые элементы его фактически выраженного сообщения.», конкретное действие и отличие от исходного результата.",
-          "recommendation_id": "K1.3:fd6bf5ce-be9b-4820-902b-384d19fef149:development",
+          "recommendation_id": "K1.3:544c1d52-dd4e-4b1c-95ea-a67884dc3168:development",
           "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
         },
         {
@@ -3845,29 +3845,29 @@
                 }
               ],
               "outcome": "L1",
-              "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+              "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
               "skill_id": "K1.3",
               "ia_checksum": "af93b7c935d040e176737ffa184b35e70a1f1477ba3ee2a1f9f80a0b7660797d",
               "indicator_id": "K1.I13",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+                "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
                 "boundary_sequence": 9
               },
               "manifestation": "Восстанавливает основной прямо выраженный смысл и общую позицию другого",
-              "ia_revision_id": "fd6bf5ce-be9b-4820-902b-384d19fef149",
-              "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
+              "ia_revision_id": "544c1d52-dd4e-4b1c-95ea-a67884dc3168",
+              "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
               "material_excerpts": [
                 {
                   "quote": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
-                  "turn_id": "79d2a9e0-28c2-4e95-8228-cfed7fba8b35",
+                  "turn_id": "6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084",
                   "fragment_id": "f-K1.I13"
                 }
               ],
-              "results_revision_id": "abf059e3-252f-4c53-9ce5-4add62ca2915",
-              "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-              "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-              "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+              "results_revision_id": "e607e16d-77d6-4851-a741-7f3dd3cb9724",
+              "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+              "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+              "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
             }
           ],
           "limitations": [
@@ -3886,7 +3886,7 @@
             "K1.I13"
           ],
           "progress_signal": "Есть описание повторного действия «Восстанавливает основной прямо выраженный смысл и общую позицию другого», полученного продукта и его ограничений; устойчивость этим не устанавливается.",
-          "recommendation_id": "K1.3:fd6bf5ce-be9b-4820-902b-384d19fef149:consolidation",
+          "recommendation_id": "K1.3:544c1d52-dd4e-4b1c-95ea-a67884dc3168:consolidation",
           "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
         },
         {
@@ -3906,29 +3906,29 @@
                 }
               ],
               "outcome": "L1",
-              "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+              "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
               "skill_id": "K1.3",
               "ia_checksum": "af93b7c935d040e176737ffa184b35e70a1f1477ba3ee2a1f9f80a0b7660797d",
               "indicator_id": "K1.I13",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+                "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
                 "boundary_sequence": 9
               },
               "manifestation": "Восстанавливает основной прямо выраженный смысл и общую позицию другого",
-              "ia_revision_id": "fd6bf5ce-be9b-4820-902b-384d19fef149",
-              "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
+              "ia_revision_id": "544c1d52-dd4e-4b1c-95ea-a67884dc3168",
+              "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
               "material_excerpts": [
                 {
                   "quote": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
-                  "turn_id": "79d2a9e0-28c2-4e95-8228-cfed7fba8b35",
+                  "turn_id": "6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084",
                   "fragment_id": "f-K1.I13"
                 }
               ],
-              "results_revision_id": "abf059e3-252f-4c53-9ce5-4add62ca2915",
-              "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-              "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-              "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+              "results_revision_id": "e607e16d-77d6-4851-a741-7f3dd3cb9724",
+              "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+              "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+              "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
             }
           ],
           "limitations": [
@@ -3947,7 +3947,7 @@
             "K1.I13"
           ],
           "progress_signal": "Описаны новое условие, выполненное действие «Восстанавливает основной прямо выраженный смысл и общую позицию другого» и необходимость адаптации; перенос заранее не считается доказанным.",
-          "recommendation_id": "K1.3:fd6bf5ce-be9b-4820-902b-384d19fef149:application",
+          "recommendation_id": "K1.3:544c1d52-dd4e-4b1c-95ea-a67884dc3168:application",
           "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
         },
         {
@@ -3967,29 +3967,29 @@
                 }
               ],
               "outcome": "L1",
-              "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+              "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
               "skill_id": "K1.4",
               "ia_checksum": "e3afd270a3f6954a10eb485dafb84c3327c0cad13a60d736054b1560f9b6946c",
               "indicator_id": "K1.I17",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "edd3693842eda3dbdebb7e01129a0f4a55ccb9604c6e8bbfc9d76d223ce6dbc6",
+                "material_sha256": "8ea8c9e956046b3edc0aa509eb8eca6b79f4695b5ebbc81c54e34c4639bdb536",
                 "boundary_sequence": 9
               },
               "manifestation": "Фиксирует итог и проверяет его понимание в данном ответе",
-              "ia_revision_id": "7e35086a-a514-4216-b587-15182b04c953",
-              "evidence_checksum": "36385f8162416c9201dbc7aef5cbbbcfeaad421204bc23b418a1d39ae2c51494",
+              "ia_revision_id": "2c99942a-5460-4d1c-b933-51287c726682",
+              "evidence_checksum": "9d5059c0dae3bed5b6918abc93729d439259f75e2e53ad779c799e0f62db0337",
               "material_excerpts": [
                 {
                   "quote": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
-                  "turn_id": "79d2a9e0-28c2-4e95-8228-cfed7fba8b35",
+                  "turn_id": "6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084",
                   "fragment_id": "f-K1.I17"
                 }
               ],
-              "results_revision_id": "abf059e3-252f-4c53-9ce5-4add62ca2915",
-              "evidence_revision_id": "7cbe364a-d202-413e-9c3e-5c18b8860fcc",
-              "assessment_revision_id": "4959eb66-d435-4409-8be7-b84d5d0e1e5c",
-              "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194"
+              "results_revision_id": "e607e16d-77d6-4851-a741-7f3dd3cb9724",
+              "evidence_revision_id": "bf01ba67-16c0-4070-b9a6-cc0704d4e289",
+              "assessment_revision_id": "1e3352f4-e8c8-423c-9d82-345898635093",
+              "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09"
             }
           ],
           "limitations": [
@@ -4008,7 +4008,7 @@
             "K1.I17"
           ],
           "progress_signal": "В записи о практике по «Доведение и фиксация коммуникативного результата» описан полученный продукт «Явно определённый коммуникативный результат взаимодействия, в котором зафиксировано достигнутое состояние договорённостей, различий и дальнейших действий в необходимом для ситуации объёме.», конкретное действие и отличие от исходного результата.",
-          "recommendation_id": "K1.4:7e35086a-a514-4216-b587-15182b04c953:development",
+          "recommendation_id": "K1.4:2c99942a-5460-4d1c-b933-51287c726682:development",
           "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
         }
       ],

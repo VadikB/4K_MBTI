@@ -741,6 +741,10 @@
     left: 0;
 }
 
+.interview-bubble.bot[data-speaker-label]::before {
+    content: attr(data-speaker-label);
+}
+
 .interview-bubble.user {
     padding: var(--space-2) var(--space-3);
     border: 0;

@@ -1,15 +1,15 @@
 [
   {
-    "at": "2026-10-05T10:11:32.151Z",
+    "at": "2026-10-05T10:40:38.343Z",
     "path": "/users/assessment/cycles/start",
     "status": 201,
     "response": {
       "resumed": false,
       "plan": {
-        "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+        "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
         "cycle_status": "active",
-        "plan_id": "bfa5536e-9f7d-47be-9450-1de152c66bbc",
-        "revision_id": "49c766a6-d943-4f48-9644-2c3b7964388b",
+        "plan_id": "c8dfd1b5-1bb5-4a9e-a23e-7bc8cb7cd7f5",
+        "revision_id": "4972be21-e5ab-42fe-ae64-ee2990936194",
         "revision_no": 1,
         "plan": {
           "goal": {
@@ -1081,10 +1081,10 @@
         },
         "decisions": [
           {
-            "id": "3fda312c-0316-46d3-8b04-375a7623ecb2",
+            "id": "caa71f04-a5ff-409b-b582-6c3156c57bb8",
             "cycle_db_id": 1,
             "session_db_id": 1,
-            "plan_revision_id": "49c766a6-d943-4f48-9644-2c3b7964388b",
+            "plan_revision_id": "4972be21-e5ab-42fe-ae64-ee2990936194",
             "revision_no": 1,
             "status": "SELECTED",
             "trigger_json": {
@@ -1149,19 +1149,19 @@
               "code": "M7_NEXT_AS_SELECTED",
               "algorithm": "m7-greedy-coverage/1"
             },
-            "created_at": "2026-10-05T13:11:31.969145+03:00",
+            "created_at": "2026-10-05T13:40:38.031493+03:00",
             "assigned_as_db_id": 1,
-            "assignment_presented_at": "2026-10-05T13:11:31.969145+03:00",
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194",
+            "assignment_presented_at": "2026-10-05T13:40:38.031493+03:00",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09",
             "assessment_situation_status": "active"
           }
         ]
       },
       "decision": {
-        "id": "3fda312c-0316-46d3-8b04-375a7623ecb2",
+        "id": "caa71f04-a5ff-409b-b582-6c3156c57bb8",
         "cycle_db_id": 1,
         "session_db_id": 1,
-        "plan_revision_id": "49c766a6-d943-4f48-9644-2c3b7964388b",
+        "plan_revision_id": "4972be21-e5ab-42fe-ae64-ee2990936194",
         "revision_no": 1,
         "status": "SELECTED",
         "trigger_json": {
@@ -1226,10 +1226,10 @@
           "code": "M7_NEXT_AS_SELECTED",
           "algorithm": "m7-greedy-coverage/1"
         },
-        "created_at": "2026-10-05T13:11:31.969145+03:00",
+        "created_at": "2026-10-05T13:40:38.031493+03:00",
         "assigned_as_db_id": 1,
         "assignment_presented_at": null,
-        "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194",
+        "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09",
         "assessment_situation_status": "admitted"
       },
       "presentation": {
@@ -1249,12 +1249,12 @@
       },
       "runtime": {
         "runtime_kind": "cycle",
-        "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+        "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
         "plan": {
-          "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+          "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
           "cycle_status": "active",
-          "plan_id": "bfa5536e-9f7d-47be-9450-1de152c66bbc",
-          "revision_id": "49c766a6-d943-4f48-9644-2c3b7964388b",
+          "plan_id": "c8dfd1b5-1bb5-4a9e-a23e-7bc8cb7cd7f5",
+          "revision_id": "4972be21-e5ab-42fe-ae64-ee2990936194",
           "revision_no": 1,
           "plan": {
             "goal": {
@@ -2326,10 +2326,10 @@
           },
           "decisions": [
             {
-              "id": "3fda312c-0316-46d3-8b04-375a7623ecb2",
+              "id": "caa71f04-a5ff-409b-b582-6c3156c57bb8",
               "cycle_db_id": 1,
               "session_db_id": 1,
-              "plan_revision_id": "49c766a6-d943-4f48-9644-2c3b7964388b",
+              "plan_revision_id": "4972be21-e5ab-42fe-ae64-ee2990936194",
               "revision_no": 1,
               "status": "SELECTED",
               "trigger_json": {
@@ -2394,32 +2394,32 @@
                 "code": "M7_NEXT_AS_SELECTED",
                 "algorithm": "m7-greedy-coverage/1"
               },
-              "created_at": "2026-10-05T13:11:31.969145+03:00",
+              "created_at": "2026-10-05T13:40:38.031493+03:00",
               "assigned_as_db_id": 1,
-              "assignment_presented_at": "2026-10-05T13:11:31.969145+03:00",
-              "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194",
+              "assignment_presented_at": "2026-10-05T13:40:38.031493+03:00",
+              "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09",
               "assessment_situation_status": "active"
             }
           ]
         },
         "status": {
-          "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
+          "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
           "collection_status": "active",
           "processing_status": "active",
           "remaining_seconds": 3600,
-          "calendar_deadline": "2026-10-08T13:11:31.969145+03:00",
+          "calendar_deadline": "2026-10-08T13:40:38.031493+03:00",
           "close_reason": null,
           "c46_status": null,
           "can_continue": true
         },
         "situations": [
           {
-            "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194",
+            "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09",
             "status": "active"
           }
         ],
         "current_situation": {
-          "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194",
+          "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09",
           "status": "active",
           "participant_payload": {
             "title": "Запуск в пятницу: что именно готово?",
@@ -2435,7 +2435,7 @@
           }
         },
         "trace": {
-          "assessment_situation_id": "877d2f47-f163-4fae-a88f-a74a5e829194",
+          "assessment_situation_id": "02a65079-6619-46ee-8fb2-3c494a73dd09",
           "status": "active",
           "turns": [],
           "events": []
@@ -2447,32 +2447,32 @@
     }
   },
   {
-    "at": "2026-10-05T10:11:32.434Z",
-    "path": "/users/assessment/m5/situations/877d2f47-f163-4fae-a88f-a74a5e829194/turns",
+    "at": "2026-10-05T10:40:39.106Z",
+    "path": "/users/assessment/m5/situations/02a65079-6619-46ee-8fb2-3c494a73dd09/turns",
     "status": 200,
     "response": {
       "turn": {
         "id": 1,
         "assessment_situation_db_id": 1,
-        "turn_id": "79d2a9e0-28c2-4e95-8228-cfed7fba8b35",
+        "turn_id": "6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084",
         "sequence_no": 2,
         "speaker_type": "assessee",
         "speaker_id": "assessee",
         "content_text": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
-        "request_id": "29672d5d-a569-4cf8-ba2a-e3988ed0ef2f",
-        "created_at": "2026-10-05T13:11:32.397040+03:00"
+        "request_id": "838b5a92-d13d-4f9b-a47d-75908db6ccde",
+        "created_at": "2026-10-05T13:40:39.058370+03:00"
       },
       "events": [
         {
           "id": 2,
           "assessment_situation_db_id": 1,
-          "event_id": "505898a6-dadb-4ad3-ac9c-c460adba136c",
+          "event_id": "341adc11-b740-44c1-b4e4-13eb7e5a24fd",
           "event_type": "mandatory_update",
           "event_key": "material:CASE-TDISC-01-D3",
           "cause_json": {
             "rule_id": "CASE-TDISC-01-D3:mandatory",
-            "turn_id": "79d2a9e0-28c2-4e95-8228-cfed7fba8b35",
-            "decision_id": "60027843-9a1c-44f3-b3f7-026128dff81b",
+            "turn_id": "6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084",
+            "decision_id": "50319948-d491-4285-919c-8af447ef7aba",
             "rule_version": "1"
           },
           "material_id": "CASE-TDISC-01-D3",
@@ -2481,24 +2481,24 @@
             "recipient": "assessee"
           },
           "sequence_no": 3,
-          "created_at": "2026-10-05T13:11:32.397040+03:00"
+          "created_at": "2026-10-05T13:40:39.058370+03:00"
         }
       ],
       "idempotent": false
     }
   },
   {
-    "at": "2026-10-05T10:11:32.780Z",
-    "path": "/users/assessment/m5/situations/877d2f47-f163-4fae-a88f-a74a5e829194/transitions",
+    "at": "2026-10-05T10:40:39.485Z",
+    "path": "/users/assessment/m5/situations/02a65079-6619-46ee-8fb2-3c494a73dd09/transitions",
     "status": 200,
     "response": {
       "status": "scenario_ended",
       "event": {
         "id": 5,
         "assessment_situation_db_id": 1,
-        "event_id": "bd9b4790-4449-4cae-8504-d6f71c1eeb6c",
+        "event_id": "1c67522b-78de-40ac-94bb-0f75d7111a42",
         "event_type": "scenario_completed",
-        "event_key": "transition:8ec2880c-ce06-4881-b39c-7342bb7a8427",
+        "event_key": "transition:44461579-dc05-4d6e-8f87-361c7f4a1a8c",
         "cause_json": {
           "to": "scenario_ended",
           "from": "active",
@@ -2509,28 +2509,28 @@
           "status": "scenario_ended"
         },
         "sequence_no": 6,
-        "created_at": "2026-10-05T13:11:32.696641+03:00"
+        "created_at": "2026-10-05T13:40:39.372688+03:00"
       },
       "idempotent": false,
-      "interim_processing_request_id": "ad3b33ff-aceb-404c-87dd-636a27d4ffe3"
+      "interim_processing_request_id": "c235738d-3006-412e-80fb-dc0022f442c4"
     }
   },
   {
-    "at": "2026-10-05T10:11:34.821Z",
-    "path": "/users/assessment/m7/clarifications/edae275f-c539-48e3-90db-7da210b60a61/answers",
+    "at": "2026-10-05T10:40:42.518Z",
+    "path": "/users/assessment/m7/clarifications/c9076079-1191-40e8-a215-5090cdaa1566/answers",
     "status": 200,
     "response": {
-      "id": "edae275f-c539-48e3-90db-7da210b60a61",
+      "id": "c9076079-1191-40e8-a215-5090cdaa1566",
       "assessment_situation_db_id": 1,
-      "c54_revision_id": "fd12ae04-c59a-42ca-8d47-bcbd775fa58f",
+      "c54_revision_id": "0332a664-886f-4ee8-a102-d55753ac3449",
       "status": "ASK",
       "input_json": {
-        "as_id": "877d2f47-f163-4fae-a88f-a74a5e829194",
+        "as_id": "02a65079-6619-46ee-8fb2-3c494a73dd09",
         "turns": [
           {
             "content": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
-            "turn_id": "79d2a9e0-28c2-4e95-8228-cfed7fba8b35",
-            "created_at": "2026-10-05T13:11:32.397040+03:00",
+            "turn_id": "6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084",
+            "created_at": "2026-10-05T13:40:39.058370+03:00",
             "speaker_id": "assessee",
             "sequence_no": 2,
             "speaker_type": "assessee"
@@ -2541,7 +2541,7 @@
           "version": "v0.1",
           "checksum": "93ac113caf116411879a5036b9816151dd49c68cd1cae2bb264fe7b28e14633d"
         },
-        "handoff_id": "8b895696-f15a-4cfb-9a4a-a4133d53ca13",
+        "handoff_id": "9d7cd6c2-e391-45a1-867f-69546d7c28de",
         "indicator_ids": [
           "K1.I13",
           "K1.I16",
@@ -2685,13 +2685,13 @@
           }
         ],
         "schema_version": 1,
-        "c54_revision_id": "fd12ae04-c59a-42ca-8d47-bcbd775fa58f",
+        "c54_revision_id": "0332a664-886f-4ee8-a102-d55753ac3449",
         "boundary_sequence": 6,
-        "calendar_deadline": "2026-10-08T13:11:31.969145+03:00",
-        "remaining_seconds": 3598,
+        "calendar_deadline": "2026-10-08T13:40:38.031493+03:00",
+        "remaining_seconds": 3597,
         "minimum_remaining_seconds": 120
       },
-      "input_checksum": "930472dd42d32e580546146e16f4a2b24b167f94d1f5dfbd5382b7903b5292d4",
+      "input_checksum": "600f399681b8296fc3ca1b683669b1d15194f56012af3cb83492b14e75b47b7a",
       "mechanism_json": {
         "ref": "m7_assessment_clarification/1.0.0",
         "prompt": "# M7 v1.3: нейтральный оценочный вопрос\n\nВерни JSON по схеме. Сформулируй один краткий нейтральный вопрос только для\nпрояснения указанного смысла, основания уже выраженного решения или отношения между\nуже состоявшимися репликами. Не предлагай новое действие, способ решения, критерий,\nправильный ответ, уровень, дескриптор или желаемый признак. Не меняй роль, Case,\nTrigger и цели AS. Не называй внутреннюю оценку, Evidence, EB, Confidence, M2/M6/M7.\n\nИспользуй только предоставленные реплики и конкретную неопределённость. Вопрос не\nможет просить выполнить новую самостоятельную операцию. Если безопасный вопрос\nсформулировать невозможно, верни admissible=false и конкретную причину.\n",
@@ -2851,7 +2851,7 @@
             },
             {
               "role": "user",
-              "content": "{\"schema_version\": 1, \"c54_revision_id\": \"fd12ae04-c59a-42ca-8d47-bcbd775fa58f\", \"handoff_id\": \"8b895696-f15a-4cfb-9a4a-a4133d53ca13\", \"boundary_sequence\": 6, \"as_id\": \"877d2f47-f163-4fae-a88f-a74a5e829194\", \"indicator_ids\": [\"K1.I13\", \"K1.I16\", \"K1.I17\", \"K2.I07\", \"K2.I08\", \"K4.I05\", \"K4.I10\", \"K4.I17\", \"K4.I18\"], \"uncertainties\": [{\"indicator_id\": \"K1.I13\", \"m2_version\": \"v1.1\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"Восстанавливает основной прямо выраженный смысл и общую позицию другого\", \"refs\": [{\"id\": \"e-K1.I13\", \"kind\": \"evidence\", \"meaning\": \"Восстанавливает основной прямо выраженный смысл и общую позицию другого\"}]}, {\"indicator_id\": \"K1.I16\", \"m2_version\": \"v1.1\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K1.I17\", \"m2_version\": \"v1.1\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"Фиксирует итог и проверяет его понимание в данном ответе\", \"refs\": [{\"id\": \"e-K1.I17\", \"kind\": \"evidence\", \"meaning\": \"Фиксирует итог и проверяет его понимание в данном ответе\"}]}, {\"indicator_id\": \"K2.I07\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K2.I08\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K4.I05\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K4.I10\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K4.I17\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K4.I18\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}], \"turns\": [{\"content\": \"Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.\", \"turn_id\": \"79d2a9e0-28c2-4e95-8228-cfed7fba8b35\", \"created_at\": \"2026-10-05T13:11:32.397040+03:00\", \"speaker_id\": \"assessee\", \"sequence_no\": 2, \"speaker_type\": \"assessee\"}], \"case_ref\": {\"id\": \"CASE-TDISC-01\", \"version\": \"v0.1\", \"checksum\": \"93ac113caf116411879a5036b9816151dd49c68cd1cae2bb264fe7b28e14633d\"}, \"remaining_seconds\": 3598, \"minimum_remaining_seconds\": 120, \"calendar_deadline\": \"2026-10-08T13:11:31.969145+03:00\"}"
+              "content": "{\"schema_version\": 1, \"c54_revision_id\": \"0332a664-886f-4ee8-a102-d55753ac3449\", \"handoff_id\": \"9d7cd6c2-e391-45a1-867f-69546d7c28de\", \"boundary_sequence\": 6, \"as_id\": \"02a65079-6619-46ee-8fb2-3c494a73dd09\", \"indicator_ids\": [\"K1.I13\", \"K1.I16\", \"K1.I17\", \"K2.I07\", \"K2.I08\", \"K4.I05\", \"K4.I10\", \"K4.I17\", \"K4.I18\"], \"uncertainties\": [{\"indicator_id\": \"K1.I13\", \"m2_version\": \"v1.1\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"Восстанавливает основной прямо выраженный смысл и общую позицию другого\", \"refs\": [{\"id\": \"e-K1.I13\", \"kind\": \"evidence\", \"meaning\": \"Восстанавливает основной прямо выраженный смысл и общую позицию другого\"}]}, {\"indicator_id\": \"K1.I16\", \"m2_version\": \"v1.1\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K1.I17\", \"m2_version\": \"v1.1\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"Фиксирует итог и проверяет его понимание в данном ответе\", \"refs\": [{\"id\": \"e-K1.I17\", \"kind\": \"evidence\", \"meaning\": \"Фиксирует итог и проверяет его понимание в данном ответе\"}]}, {\"indicator_id\": \"K2.I07\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K2.I08\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K4.I05\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K4.I10\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K4.I17\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K4.I18\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}], \"turns\": [{\"content\": \"Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.\", \"turn_id\": \"6c44ad2e-ffeb-4e5a-af6a-5d953d8f5084\", \"created_at\": \"2026-10-05T13:40:39.058370+03:00\", \"speaker_id\": \"assessee\", \"sequence_no\": 2, \"speaker_type\": \"assessee\"}], \"case_ref\": {\"id\": \"CASE-TDISC-01\", \"version\": \"v0.1\", \"checksum\": \"93ac113caf116411879a5036b9816151dd49c68cd1cae2bb264fe7b28e14633d\"}, \"remaining_seconds\": 3597, \"minimum_remaining_seconds\": 120, \"calendar_deadline\": \"2026-10-08T13:40:38.031493+03:00\"}"
             }
           ],
           "provider": "deepseek",
@@ -2892,23 +2892,23 @@
         "provider_model_status": "unreported"
       },
       "created_by": 1,
-      "created_at": "2026-10-05T13:11:33.771216+03:00",
-      "question_turn_id": "edae275f-c539-48e3-90db-7da210b60a61",
+      "created_at": "2026-10-05T13:40:41.261121+03:00",
+      "question_turn_id": "c9076079-1191-40e8-a215-5090cdaa1566",
       "question_sequence": 7,
       "response_outcome": "answered",
-      "response_request_id": "aaac5502-34fb-4887-80c0-0b3e77061749",
-      "answer_turn_id": "2946e8dd-a356-4021-8428-a87ca4dfc4b5",
+      "response_request_id": "aef74632-60d9-421f-aa27-f2547b057244",
+      "answer_turn_id": "a9737aa8-2902-434f-9f84-d8f92939338c",
       "answer_sequence": 8,
-      "handoff_id": "f71e0d60-0159-4811-8a30-73080a17f33b"
+      "handoff_id": "2ac5da58-69f8-488b-a728-599ecea2b030"
     }
   },
   {
-    "at": "2026-10-05T10:11:35.140Z",
-    "path": "/users/assessment/m7/cycles/73724c35-88b5-4449-9e21-d6049024844a/completion",
+    "at": "2026-10-05T10:40:42.883Z",
+    "path": "/users/assessment/m7/cycles/0a419283-b735-40e9-8c7c-00c3e79bd412/completion",
     "status": 200,
     "response": {
-      "cycle_id": "73724c35-88b5-4449-9e21-d6049024844a",
-      "event_id": "cf1c64ce-858f-4ee2-a1c0-4d5d4ebb50e4",
+      "cycle_id": "0a419283-b735-40e9-8c7c-00c3e79bd412",
+      "event_id": "734f0dc7-7e1c-4ee7-ad85-1076d577d7a0",
       "action": "complete",
       "reason": "user_completed_scenario",
       "states": {
@@ -2916,10 +2916,10 @@
         "session": "completed"
       },
       "final_handoff_ids": [
-        "c348a70f-52b1-4bcb-8ecc-4ca2c657bcd0"
+        "3bad2289-fe3e-4023-b3d6-cdfd003a5030"
       ],
       "continuation_intent_id": null,
-      "c46_revision_id": "3c234f3d-22be-43eb-a19b-190561d8fd88",
+      "c46_revision_id": "c6f9e772-3d8f-46df-9ec0-54f1d53dc7e4",
       "processing_status": "pending"
     }
   }

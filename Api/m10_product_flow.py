@@ -140,7 +140,8 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
 def participant_trace(trace: dict) -> dict:
     """Only delivered dialogue/material; no execution envelope, hidden cards or AI reasoning."""
     return {'assessment_situation_id':trace['assessment_situation_id'],'status':trace['status'],
-        'turns':[{k:x[k] for k in ('turn_id','sequence_no','speaker_type','speaker_id','content_text')} for x in trace['turns']],
+        'turns':[{**{k:x[k] for k in ('turn_id','sequence_no','speaker_type','speaker_id','content_text')},
+                  'speaker_name':x.get('speaker_name')} for x in trace['turns']],
         'events':[{k:x[k] for k in ('event_id','event_type','sequence_no','material_id','payload_json')}
                   for x in trace['events'] if x['event_type'] in ('material_disclosed','mandatory_update')]}
 

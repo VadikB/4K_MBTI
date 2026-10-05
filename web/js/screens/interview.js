@@ -94,7 +94,12 @@ const renderProductRuntime = (snapshot) => {
     ...(snapshot.trace?.events || []).map((event) => ({...event, text:productEventText(event), role:'assistant'})),
   ].sort((a, b) => a.sequence_no - b.sequence_no);
   for (const item of dialogue) {
-    if (item.text) addInterviewMessage(item.role, item.text);
+    if (item.text) {
+      const label = item.speaker_type === 'character' ? item.speaker_name || 'Персонаж'
+        : item.speaker_type === 'assessment' ? 'Уточняющий вопрос' : 'Материал кейса';
+      const row = addInterviewMessage(item.role, item.text, label);
+      if (item.turn_id) row.dataset.turnId = item.turn_id;
+    }
   }
   const clarification = snapshot.clarification;
   if (clarification?.status === 'ASK' && !clarification.response_outcome && clarification.question?.text &&
@@ -356,7 +361,7 @@ const renderInterviewStructuredBlock = ({ label, body = '', items = [], variant 
   return section;
 };
 
-export const addInterviewMessage = (role, text) => {
+export const addInterviewMessage = (role, text, speakerLabel = null) => {
   const row = document.createElement('div');
   row.className = 'interview-message' + (role === 'user' ? ' own' : '');
   row.dataset.messageText = role === 'user' ? String(text ?? '').trim() : '';
@@ -368,6 +373,7 @@ export const addInterviewMessage = (role, text) => {
   }
   const bubble = document.createElement('div');
   bubble.className = 'interview-bubble ' + (role === 'user' ? 'user' : 'bot');
+  if (speakerLabel && role !== 'user') bubble.dataset.speakerLabel = speakerLabel;
   if (role === 'user') {
     bubble.textContent = String(text ?? '').trim();
   } else {

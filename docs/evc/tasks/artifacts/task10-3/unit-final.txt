@@ -70,4 +70,4 @@ tests/unit/test_user_journey.py ....                                     [100%]
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-================ 342 passed, 111 deselected, 1 warning in 4.14s ================
+================ 342 passed, 111 deselected, 1 warning in 8.18s ================

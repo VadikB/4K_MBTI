@@ -1,12 +1,12 @@
 {
-  "id": "5d6d234d-e415-4982-9a34-12753b20a963",
+  "id": "ac3c6008-b0e6-49ea-96d2-abda89a7bdda",
   "revision_no": 1,
   "audience": "assessee",
   "status": "ready",
-  "cycle_id": "5f12e4a5-b605-466a-9dd4-ec7c5d097753",
+  "cycle_id": "1c4a0d54-3a88-44cc-b9e1-6aa7de2b5913",
   "owner_user_id": 1,
-  "results_revision_id": "68fd1f9d-6b75-4c7a-a176-76033cae29f2",
-  "created_at": "2026-10-05T13:15:39.883824+03:00",
+  "results_revision_id": "2b2d6410-ab76-4061-9f83-5db6590fef4f",
+  "created_at": "2026-10-05T13:45:10.282104+03:00",
   "c67": {
     "goal": {
       "kind": "skills",
@@ -18,19 +18,19 @@
       ]
     },
     "time": {
-      "deadline": "2026-10-08T13:15:35.451939+03:00",
+      "deadline": "2026-10-08T13:45:04.815472+03:00",
       "intervals": [
         {
           "type": "collecting",
           "reason": "session_started",
-          "ended_at": "2026-10-05T13:15:38.550158+03:00",
-          "started_at": "2026-10-05T13:15:35.451939+03:00",
+          "ended_at": "2026-10-05T13:45:09.218985+03:00",
+          "started_at": "2026-10-05T13:45:04.815472+03:00",
           "session_db_id": 1
         }
       ],
-      "started_at": "2026-10-05T13:15:35.451939+03:00",
+      "started_at": "2026-10-05T13:45:04.815472+03:00",
       "budget_seconds": 3600,
-      "consumed_seconds": 3,
+      "consumed_seconds": 4,
       "parameter_sources": {
         "time_budget": "m7_cycle_plan/1.0.0:method_default",
         "calendar_window": "m7_cycle_plan/1.0.0:method_default"
@@ -324,7 +324,7 @@
             "K4.I17": "NO_JUSTIFIED_FINAL_IA",
             "K4.I18": "NO_JUSTIFIED_FINAL_IA"
           },
-          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+          "composition_version": "437172bd21b801ba8b8732fa9870c1be37bde0f1062c8e22aeb150c200ec6094"
         },
         "complete_components": {
           "ratio": 0,
@@ -405,7 +405,7 @@
             "K4.C09": "NOT_AVAILABLE",
             "K4.C10": "NOT_AVAILABLE"
           },
-          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+          "composition_version": "437172bd21b801ba8b8732fa9870c1be37bde0f1062c8e22aeb150c200ec6094"
         },
         "components_with_score": {
           "ratio": 0,
@@ -486,7 +486,7 @@
             "K4.C09": "NOT_AVAILABLE",
             "K4.C10": "NOT_AVAILABLE"
           },
-          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+          "composition_version": "437172bd21b801ba8b8732fa9870c1be37bde0f1062c8e22aeb150c200ec6094"
         },
         "indicator_assessments": {
           "ratio": 0,
@@ -619,7 +619,7 @@
             "K4.I17": "NO_JUSTIFIED_FINAL_IA",
             "K4.I18": "NO_JUSTIFIED_FINAL_IA"
           },
-          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+          "composition_version": "437172bd21b801ba8b8732fa9870c1be37bde0f1062c8e22aeb150c200ec6094"
         },
         "admissible_contributions": {
           "ratio": 0,
@@ -752,7 +752,7 @@
             "K4.I17": "NO_JUSTIFIED_FINAL_IA",
             "K4.I18": "NO_JUSTIFIED_FINAL_IA"
           },
-          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+          "composition_version": "437172bd21b801ba8b8732fa9870c1be37bde0f1062c8e22aeb150c200ec6094"
         }
       },
       "cycle_plan": {
@@ -881,7 +881,7 @@
             "K4.I17": "NO_JUSTIFIED_FINAL_IA",
             "K4.I18": "NO_JUSTIFIED_FINAL_IA"
           },
-          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+          "composition_version": "437172bd21b801ba8b8732fa9870c1be37bde0f1062c8e22aeb150c200ec6094"
         },
         "complete_components": {
           "ratio": 0,
@@ -962,7 +962,7 @@
             "K4.C09": "NOT_AVAILABLE",
             "K4.C10": "NOT_AVAILABLE"
           },
-          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+          "composition_version": "437172bd21b801ba8b8732fa9870c1be37bde0f1062c8e22aeb150c200ec6094"
         },
         "components_with_score": {
           "ratio": 0,
@@ -1043,7 +1043,7 @@
             "K4.C09": "NOT_AVAILABLE",
             "K4.C10": "NOT_AVAILABLE"
           },
-          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+          "composition_version": "437172bd21b801ba8b8732fa9870c1be37bde0f1062c8e22aeb150c200ec6094"
         },
         "indicator_assessments": {
           "ratio": 0,
@@ -1176,7 +1176,7 @@
             "K4.I17": "NO_JUSTIFIED_FINAL_IA",
             "K4.I18": "NO_JUSTIFIED_FINAL_IA"
           },
-          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+          "composition_version": "437172bd21b801ba8b8732fa9870c1be37bde0f1062c8e22aeb150c200ec6094"
         },
         "admissible_contributions": {
           "ratio": 0,
@@ -1309,11 +1309,11 @@
             "K4.I17": "NO_JUSTIFIED_FINAL_IA",
             "K4.I18": "NO_JUSTIFIED_FINAL_IA"
           },
-          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+          "composition_version": "437172bd21b801ba8b8732fa9870c1be37bde0f1062c8e22aeb150c200ec6094"
         }
       }
     },
-    "cycle_id": "5f12e4a5-b605-466a-9dd4-ec7c5d097753",
+    "cycle_id": "1c4a0d54-3a88-44cc-b9e1-6aa7de2b5913",
     "role_ref": {
       "id": "team_lead",
       "version": "frozen-profile",
@@ -1323,17 +1323,17 @@
       {
         "status": "completed",
         "ordinal": 1,
-        "ended_at": "2026-10-05T13:15:38.550158+03:00",
-        "session_id": "2c4de080-3b28-40af-8508-ec3fefb04b75",
-        "started_at": "2026-10-05T13:15:35.451939+03:00",
+        "ended_at": "2026-10-05T13:45:09.218985+03:00",
+        "session_id": "69d6a1d3-1fb6-4f46-b1cb-478125910360",
+        "started_at": "2026-10-05T13:45:04.815472+03:00",
         "close_reason": "user_completed_scenario"
       }
     ],
-    "report_id": "5d6d234d-e415-4982-9a34-12753b20a963",
+    "report_id": "ac3c6008-b0e6-49ea-96d2-abda89a7bdda",
     "collection": {
       "reason": "user_completed_scenario",
       "status": "collection_closed",
-      "closed_at": "2026-10-05T13:15:38.550158+03:00"
+      "closed_at": "2026-10-05T13:45:09.218985+03:00"
     },
     "confidence": {
       "kind": "qualitative",
@@ -1342,13 +1342,13 @@
     "disclosure": "personal",
     "provenance": {
       "c46_ref": {
-        "id": "051f6e5e-fffb-4a90-b86b-885dc6fa9096",
-        "checksum": "c5c0c0c1c658d3e2488d6f4fccafaaff30573ddd17f2dcf31c4352268769fe09",
+        "id": "356fcc78-6b56-462a-9db2-e594ee7a4d8a",
+        "checksum": "5e9eb167d9becfd37b297fd434c72568b8921355115549d5b4d540db5ae741e5",
         "revision_no": 2
       },
       "c56_ref": {
         "revision_no": 1,
-        "calculation_id": "f6450ccf-90fd-4e6d-9a3f-7e66418d7099"
+        "calculation_id": "a9cc0bd3-cc7b-44cc-83a3-0069f5d492de"
       },
       "sources": {
         "M2": "competencies_4k/1.1",
@@ -1360,9 +1360,9 @@
         "version": "1.0.0",
         "rules_hash": "405ba4113a4cd2f0bd3e2757a6abd3afc55b96e9cacfbceb103a37ad401e7e62"
       },
-      "composition_checksum": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+      "composition_checksum": "437172bd21b801ba8b8732fa9870c1be37bde0f1062c8e22aeb150c200ec6094"
     },
-    "results_id": "3f82f509-c3f1-4242-926c-e8d3f5fc7c91",
+    "results_id": "dfe91455-25cb-43b1-9a2b-5f03908993b2",
     "limitations": [
       "Conservative deterministic admission rejects any reported contradiction.",
       "Normative reliability remains unverified until approved GC runs exist.",
@@ -1432,7 +1432,7 @@
     },
     "template_version": "m8-basic-report/1.2.0",
     "report_revision_no": 1,
-    "results_revision_id": "68fd1f9d-6b75-4c7a-a176-76033cae29f2",
+    "results_revision_id": "2b2d6410-ab76-4061-9f83-5db6590fef4f",
     "results_revision_no": 1,
     "assessment_situations": [
       {
@@ -1442,11 +1442,11 @@
           "version": "synthetic-v1",
           "checksum": "50cd20d56b144564ab6bebbd261ff4b3a513a75eb021c1beaac061f79163bbbc"
         },
-        "handoff_id": "87a6ddde-88a9-42bf-b8a0-d104b9aba521",
+        "handoff_id": "19f282d6-5247-4493-a0de-5d9b23e94913",
         "session_db_id": 1,
-        "handoff_checksum": "9abb3e0bb4225d7a65f22ad0121ee7c5b8fc6a2759bbfcb3b8692dafcda0cfb3",
+        "handoff_checksum": "7711b242ce45c3c7a2e39376bc44182955cc6e08731f8e269b65e75611690754",
         "boundary_sequence": 8,
-        "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+        "assessment_situation_id": "4ddc59c8-8ded-4e09-894f-034ffd8f8893"
       }
     ],
     "recommendation_notices": [
@@ -1565,9 +1565,9 @@
     ],
     "recommendation_generation": {
       "input": {
-        "cycle_id": "5f12e4a5-b605-466a-9dd4-ec7c5d097753",
+        "cycle_id": "1c4a0d54-3a88-44cc-b9e1-6aa7de2b5913",
         "resolved": {
-          "cycle_id": "5f12e4a5-b605-466a-9dd4-ec7c5d097753",
+          "cycle_id": "1c4a0d54-3a88-44cc-b9e1-6aa7de2b5913",
           "projections": [
             {
               "bundle": {
@@ -1638,14 +1638,14 @@
                 "evidence_pattern": "В ответе или диалоге наблюдается воспроизведение, переформулирование, резюмирование или последующее использование содержания сообщения другого, позволяющее сопоставить реконструированный смысл с фактически выраженным сообщением. Материал позволяет увидеть сохранение, упрощение, искажение или обновление существенных элементов, условий, различий и позиции другого."
               },
               "ia_checksum": "ba738e0abd8933d3d0ab1d770c8519b1639d5c8dec49332e898bc01295690802",
-              "revision_id": "bb2324b5-35b1-4861-b3d1-ea98b0d14a55",
+              "revision_id": "3aa568d2-6461-445b-92fe-5f2458ac30fb",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "material_sha256": "d09ac64e0a0bce39b7e05888ef81f70dc49c90fff2a77c2e1d805f1f7c34749b",
                 "boundary_sequence": 8
               },
               "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
-              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+              "material_checksum": "aed5e7aca632b1cc41ccf3d8fdc85896e46e8ee00889fcf6e1f15b9232eb53c9"
             },
             {
               "bundle": {
@@ -1716,14 +1716,14 @@
                 "evidence_pattern": "В диалоге наблюдается действие, направленное на прояснение или проверку конкретного элемента собственного понимания: проясняющий вопрос, проверочное переформулирование, запрос подтверждения или иной способ верификации. Если доступна последующая реакция собеседника, материал позволяет увидеть, была ли реконструкция подтверждена, изменена или неопределённость сохранилась. Полнота цикла определяется по L0–L3."
               },
               "ia_checksum": "03b2b7d1ad1f6c5cea07d4421d7847b57653559f3bc3dc61e0c43c9492d035b3",
-              "revision_id": "8e291ce6-c4bd-4c75-b514-59d7356d4178",
+              "revision_id": "10e0f1bd-bb8e-4579-a79e-091a073974f2",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "material_sha256": "d09ac64e0a0bce39b7e05888ef81f70dc49c90fff2a77c2e1d805f1f7c34749b",
                 "boundary_sequence": 8
               },
               "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
-              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+              "material_checksum": "aed5e7aca632b1cc41ccf3d8fdc85896e46e8ee00889fcf6e1f15b9232eb53c9"
             },
             {
               "bundle": {
@@ -1799,14 +1799,14 @@
                 "evidence_pattern": "В наблюдаемом материале должны быть связаны необходимость вклада определённых участников, степень их фактического участия и действия оцениваемого по их включению в совместную работу. Материал должен позволять установить, кого и на каком основании оцениваемый вовлекает, создаёт ли реальную возможность необходимого вклада либо ограничивается формальным участием."
               },
               "ia_checksum": "1c44285dcb3582e00609c113c597c95ec51dc514551bd9a67ed8b4a39f3c7f32",
-              "revision_id": "b35c5588-64bc-4a02-b746-920955668c07",
+              "revision_id": "7266a169-e038-4c29-bbae-e54b54c69392",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "material_sha256": "d09ac64e0a0bce39b7e05888ef81f70dc49c90fff2a77c2e1d805f1f7c34749b",
                 "boundary_sequence": 8
               },
               "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
-              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+              "material_checksum": "aed5e7aca632b1cc41ccf3d8fdc85896e46e8ee00889fcf6e1f15b9232eb53c9"
             },
             {
               "bundle": {
@@ -1882,14 +1882,14 @@
                 "evidence_pattern": "В наблюдаемом материале должны быть связаны конкретный вклад, знание, опыт или возможность участника и его дальнейшее использование в совместной работе. Материал должен позволять установить, как оцениваемый обращается с доступным вкладом участников: содержательно использует, преобразует, комбинирует, обоснованно отклоняет либо фактически игнорирует его, и как это связано с общим результатом."
               },
               "ia_checksum": "68d615590ddefa7f52f3934f807470659653c76f4812d1dd9c8f2ee71cb89285",
-              "revision_id": "cc3c90a4-b1ed-403c-8adf-cfc4e7e0c119",
+              "revision_id": "d398a5df-7cc5-4306-807d-b1e2db1ad51d",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "material_sha256": "d09ac64e0a0bce39b7e05888ef81f70dc49c90fff2a77c2e1d805f1f7c34749b",
                 "boundary_sequence": 8
               },
               "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
-              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+              "material_checksum": "aed5e7aca632b1cc41ccf3d8fdc85896e46e8ee00889fcf6e1f15b9232eb53c9"
             },
             {
               "bundle": {
@@ -1965,14 +1965,14 @@
                 "evidence_pattern": "В наблюдаемом материале должны быть связаны необходимый вклад участника, существенное затруднение, препятствующее этому вкладу, и реакция оцениваемого на возникшее затруднение. Материал должен позволять установить, распознаёт ли оцениваемый характер препятствия, какую поддержку организует и приводит ли она к восстановлению возможности вклада либо подменяет вклад и ответственность участника, не соответствует затруднению или отсутствует."
               },
               "ia_checksum": "654d8de923ce3544a4e376ca1fbc4e169f3037b28eba73208e2bc3ef6ded35a9",
-              "revision_id": "f91ffdfc-cceb-40a0-b0dd-afb24289d81d",
+              "revision_id": "eed83d86-8933-4a51-ab2f-7bc5106fc487",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "material_sha256": "d09ac64e0a0bce39b7e05888ef81f70dc49c90fff2a77c2e1d805f1f7c34749b",
                 "boundary_sequence": 8
               },
               "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
-              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+              "material_checksum": "aed5e7aca632b1cc41ccf3d8fdc85896e46e8ee00889fcf6e1f15b9232eb53c9"
             },
             {
               "bundle": {
@@ -2052,14 +2052,14 @@
                 "evidence_pattern": "В наблюдаемом материале должны быть связаны роли, зоны их ответственности и существенные ожидания к их вкладу в совместную работу. Материал должен позволять установить, насколько явно оцениваемый определяет индивидуальную и совместную ответственность и как обращается с пробелами, пересечениями или противоречиями между ролями."
               },
               "ia_checksum": "ce66597607e5e7c6bbc167a072943b2561124e4986622424919c169fb19f275b",
-              "revision_id": "ba029c71-b950-45b2-b824-b89769366d75",
+              "revision_id": "4776ce34-8250-4c76-8776-cac44c13571b",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "material_sha256": "d09ac64e0a0bce39b7e05888ef81f70dc49c90fff2a77c2e1d805f1f7c34749b",
                 "boundary_sequence": 8
               },
               "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
-              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+              "material_checksum": "aed5e7aca632b1cc41ccf3d8fdc85896e46e8ee00889fcf6e1f15b9232eb53c9"
             },
             {
               "bundle": {
@@ -2135,14 +2135,14 @@
                 "evidence_pattern": "В наблюдаемом материале должны быть связаны действия нескольких участников, существенные зависимости между ними и способ их стыковки. Материал должен позволять установить, выявляет ли оцениваемый взаимозависимости и как согласует либо не согласует последовательность, параллельность, сроки, точки передачи результата или другие существенные условия совместного выполнения действий."
               },
               "ia_checksum": "223719e5f0985e57e0f975d10f397bdfe378f59959d11bc48a5f565cf23f4993",
-              "revision_id": "dce26e22-aefc-43ae-a943-8683ef35b790",
+              "revision_id": "99295aaa-1d81-448a-b401-185507dae678",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "material_sha256": "d09ac64e0a0bce39b7e05888ef81f70dc49c90fff2a77c2e1d805f1f7c34749b",
                 "boundary_sequence": 8
               },
               "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
-              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+              "material_checksum": "aed5e7aca632b1cc41ccf3d8fdc85896e46e8ee00889fcf6e1f15b9232eb53c9"
             },
             {
               "bundle": {
@@ -2218,19 +2218,19 @@
                 "evidence_pattern": "В наблюдаемом материале субъект утверждает, отвергает или проверяет причинную связь между конкретными элементами; можно установить, что он рассматривает как причину и следствие и на какие основания или способ проверки опирается. Качество проверки причинности оценивается по L0–L3."
               },
               "ia_checksum": "a2519cd5cfa4c0d355144cf490e3be79b950528dfd37fd7104aac5bb637b53a9",
-              "revision_id": "97046716-f007-4489-955f-83db39b90087",
+              "revision_id": "ed3eb0fb-86ad-46b3-90ed-5e007c2a58e0",
               "material_ref": {
                 "checksum_kind": "definition_json_v1",
-                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "material_sha256": "d09ac64e0a0bce39b7e05888ef81f70dc49c90fff2a77c2e1d805f1f7c34749b",
                 "boundary_sequence": 8
               },
               "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
-              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+              "material_checksum": "aed5e7aca632b1cc41ccf3d8fdc85896e46e8ee00889fcf6e1f15b9232eb53c9"
             }
           ],
-          "c56_checksum": "eda61b5c4c2e3f2acf26cf8c1d0ab39b5384d0cc8da7cb9ec2bdedea91df233f",
-          "results_checksum": "56d4541b660ab2c918c616b112eeed080bbb9d9c079528e24d5e5450bf3d9290",
-          "results_revision_id": "68fd1f9d-6b75-4c7a-a176-76033cae29f2"
+          "c56_checksum": "ff3e225ec2e7538164d9c84d6d50e6357f25a26597ce3a7da5ee419210420f4f",
+          "results_checksum": "c5eaee09853ec18877c70881c82f80dd98161c56729390f8a8d632d5e535f8dd",
+          "results_revision_id": "2b2d6410-ab76-4061-9f83-5db6590fef4f"
         },
         "admissions": [
           {
@@ -3026,12 +3026,12 @@
             },
             "m2_version": "v1.1",
             "opportunity": "PRESENT",
-            "revision_id": "bb2324b5-35b1-4861-b3d1-ea98b0d14a55",
+            "revision_id": "3aa568d2-6461-445b-92fe-5f2458ac30fb",
             "indicator_id": "K1.I13",
             "contradictions": [],
-            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
-            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
-            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+            "evidence_revision_id": "c707458d-b108-4e23-a751-ae8a97f4947e",
+            "assessment_revision_id": "183db70e-5b5f-4ab6-a561-328be3adde2e",
+            "assessment_situation_id": "4ddc59c8-8ded-4e09-894f-034ffd8f8893"
           },
           {
             "refs": [],
@@ -3047,12 +3047,12 @@
             },
             "m2_version": "v1.1",
             "opportunity": "PRESENT",
-            "revision_id": "8e291ce6-c4bd-4c75-b514-59d7356d4178",
+            "revision_id": "10e0f1bd-bb8e-4579-a79e-091a073974f2",
             "indicator_id": "K1.I14",
             "contradictions": [],
-            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
-            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
-            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+            "evidence_revision_id": "c707458d-b108-4e23-a751-ae8a97f4947e",
+            "assessment_revision_id": "183db70e-5b5f-4ab6-a561-328be3adde2e",
+            "assessment_situation_id": "4ddc59c8-8ded-4e09-894f-034ffd8f8893"
           },
           {
             "refs": [],
@@ -3068,12 +3068,12 @@
             },
             "m2_version": "v1.0",
             "opportunity": "PRESENT",
-            "revision_id": "b35c5588-64bc-4a02-b746-920955668c07",
+            "revision_id": "7266a169-e038-4c29-bbae-e54b54c69392",
             "indicator_id": "K2.I10",
             "contradictions": [],
-            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
-            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
-            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+            "evidence_revision_id": "c707458d-b108-4e23-a751-ae8a97f4947e",
+            "assessment_revision_id": "183db70e-5b5f-4ab6-a561-328be3adde2e",
+            "assessment_situation_id": "4ddc59c8-8ded-4e09-894f-034ffd8f8893"
           },
           {
             "refs": [],
@@ -3089,12 +3089,12 @@
             },
             "m2_version": "v1.0",
             "opportunity": "PRESENT",
-            "revision_id": "cc3c90a4-b1ed-403c-8adf-cfc4e7e0c119",
+            "revision_id": "d398a5df-7cc5-4306-807d-b1e2db1ad51d",
             "indicator_id": "K2.I11",
             "contradictions": [],
-            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
-            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
-            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+            "evidence_revision_id": "c707458d-b108-4e23-a751-ae8a97f4947e",
+            "assessment_revision_id": "183db70e-5b5f-4ab6-a561-328be3adde2e",
+            "assessment_situation_id": "4ddc59c8-8ded-4e09-894f-034ffd8f8893"
           },
           {
             "refs": [],
@@ -3110,12 +3110,12 @@
             },
             "m2_version": "v1.0",
             "opportunity": "PRESENT",
-            "revision_id": "f91ffdfc-cceb-40a0-b0dd-afb24289d81d",
+            "revision_id": "eed83d86-8933-4a51-ab2f-7bc5106fc487",
             "indicator_id": "K2.I12",
             "contradictions": [],
-            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
-            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
-            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+            "evidence_revision_id": "c707458d-b108-4e23-a751-ae8a97f4947e",
+            "assessment_revision_id": "183db70e-5b5f-4ab6-a561-328be3adde2e",
+            "assessment_situation_id": "4ddc59c8-8ded-4e09-894f-034ffd8f8893"
           },
           {
             "refs": [],
@@ -3131,12 +3131,12 @@
             },
             "m2_version": "v1.0",
             "opportunity": "PRESENT",
-            "revision_id": "ba029c71-b950-45b2-b824-b89769366d75",
+            "revision_id": "4776ce34-8250-4c76-8776-cac44c13571b",
             "indicator_id": "K2.I06",
             "contradictions": [],
-            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
-            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
-            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+            "evidence_revision_id": "c707458d-b108-4e23-a751-ae8a97f4947e",
+            "assessment_revision_id": "183db70e-5b5f-4ab6-a561-328be3adde2e",
+            "assessment_situation_id": "4ddc59c8-8ded-4e09-894f-034ffd8f8893"
           },
           {
             "refs": [],
@@ -3152,12 +3152,12 @@
             },
             "m2_version": "v1.0",
             "opportunity": "PRESENT",
-            "revision_id": "dce26e22-aefc-43ae-a943-8683ef35b790",
+            "revision_id": "99295aaa-1d81-448a-b401-185507dae678",
             "indicator_id": "K2.I07",
             "contradictions": [],
-            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
-            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
-            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+            "evidence_revision_id": "c707458d-b108-4e23-a751-ae8a97f4947e",
+            "assessment_revision_id": "183db70e-5b5f-4ab6-a561-328be3adde2e",
+            "assessment_situation_id": "4ddc59c8-8ded-4e09-894f-034ffd8f8893"
           },
           {
             "refs": [],
@@ -3173,16 +3173,16 @@
             },
             "m2_version": "v1.0",
             "opportunity": "PRESENT",
-            "revision_id": "97046716-f007-4489-955f-83db39b90087",
+            "revision_id": "ed3eb0fb-86ad-46b3-90ed-5e007c2a58e0",
             "indicator_id": "K4.I10",
             "contradictions": [],
-            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
-            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
-            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+            "evidence_revision_id": "c707458d-b108-4e23-a751-ae8a97f4947e",
+            "assessment_revision_id": "183db70e-5b5f-4ab6-a561-328be3adde2e",
+            "assessment_situation_id": "4ddc59c8-8ded-4e09-894f-034ffd8f8893"
           }
         ],
         "profile_projection": {},
-        "results_revision_id": "68fd1f9d-6b75-4c7a-a176-76033cae29f2"
+        "results_revision_id": "2b2d6410-ab76-4061-9f83-5db6590fef4f"
       },
       "status": "unavailable",
       "notices": [
@@ -3307,7 +3307,7 @@
       },
       "diagnostics": [],
       "failure_reason": null,
-      "input_checksum": "465b7370999c4824038faee7c1e7d58e54a439e8b223dcd6dd695257ff69bb88",
+      "input_checksum": "04f7b24cce79f4ade91d5193eeec46d21a80f198ca04c9216d2941d50f9ea8d6",
       "recommendations": [],
       "contract_version": "m8-recommendations/1.1.0"
     }

@@ -263,6 +263,10 @@ test('S10-A character branch: actual character Turn, order and no invented recom
  await expect(page.locator('#interview-messages')).toContainText(fixture.character_response);
  const after=await runtime(page,stand);
  const own=after.trace.turns.find(x=>x.speaker_type==='assessee'),character=after.trace.turns.find(x=>x.speaker_type==='character');
+ expect(character.speaker_name).toBe('Нина, новый сотрудник');
+ const characterBubble=page.locator(`[data-turn-id="${character.turn_id}"] .interview-bubble`);
+ await expect(characterBubble).toHaveAttribute('data-speaker-label',character.speaker_name);
+ expect(await characterBubble.evaluate(el=>getComputedStyle(el,'::before').content)).toContain(character.speaker_name);
  expect(character.content_text).toBe(fixture.character_response);expect(character.sequence_no).toBeGreaterThan(own.sequence_no);
  await page.locator('#interview-finish-button').click();
  await expect(page.locator('#interview-messages')).toContainText(fixture.character_question,{timeout:30000});
