@@ -31,6 +31,7 @@ from Api import m7_completion
 from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,AdditionalSessionRequest,BlockingWaitRequest,ReconcileC46Request
 from Api import m6_cycle_aggregation_repository
 from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest
+from Api.profile_access import require_unchanged_email
 from Api import participant_profile
 from Api import m8_results
 from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest, RegenerateReportRequest
@@ -6162,7 +6163,12 @@ def get_user_profile_summary(user_id: int, request: Request) -> UserProfileSumma
 
 @router.patch("/{user_id}/profile", response_model=UserResponse)
 def update_user_profile(user_id: int, payload: UserProfileUpdateRequest, request: Request) -> UserResponse:
-    _require_matching_session_user(request, user_id)
+    user = _require_matching_session_user(request, user_id)
+    if 'email' in payload.model_fields_set:
+        try:
+            require_unchanged_email(user.email, payload.email)
+        except ValueError as exc:
+            raise HTTPException(409, detail=str(exc)) from exc
     with get_connection() as connection:
         existing = connection.execute(
             USER_SELECT_SQL
@@ -6179,22 +6185,13 @@ def update_user_profile(user_id: int, payload: UserProfileUpdateRequest, request
         if avatar_data_url is not None and not avatar_data_url.startswith("data:image/"):
             raise HTTPException(status_code=400, detail="Некорректный формат изображения")
 
-        connection.execute(
-            """
-            UPDATE users
-            SET email = %s,
-                telegram = %s,
-                avatar_data_url = %s
-            WHERE id = %s
-            """,
-            (
-                payload.email,
-                payload.telegram,
-                avatar_data_url,
-                user_id,
-            ),
-        )
-        connection.commit()
+        fields = [name for name in ('telegram', 'avatar_data_url') if name in payload.model_fields_set]
+        if fields:
+            connection.execute(
+                'UPDATE users SET ' + ', '.join(name + ' = %s' for name in fields) + ' WHERE id = %s',
+                tuple(getattr(payload, name) for name in fields) + (user_id,),
+            )
+            connection.commit()
 
         updated = connection.execute(
             USER_SELECT_SQL
@@ -6207,8 +6204,23 @@ def update_user_profile(user_id: int, payload: UserProfileUpdateRequest, request
     return UserResponse(**dict(updated))
 
 
+def _require_profile_dialogue_owner(request: Request, session_id: str) -> UserResponse:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail="Сессия не найдена. Войдите заново.")
+    with get_connection() as connection:
+        owned = connection.execute(
+            "SELECT 1 FROM agent_conversation_sessions WHERE session_id=%s AND user_id=%s",
+            (session_id, user.id),
+        ).fetchone()
+    if owned is None:
+        raise HTTPException(403, detail="Нет доступа к диалогу профиля.")
+    return user
+
+
 @router.post("/agent/message", response_model=AgentReply)
 def process_agent_message(payload: AgentMessageRequest, request: Request, response: FastAPIResponse) -> AgentReply:
+    user = _require_profile_dialogue_owner(request, payload.session_id)
     operation_id = request.headers.get("X-Agent4K-Operation-Id")
     try:
         operation_progress_service.begin(
@@ -6220,6 +6232,7 @@ def process_agent_message(payload: AgentMessageRequest, request: Request, respon
         reply = interviewer_agent.reply(
             session_id=payload.session_id,
             message=payload.message,
+            authenticated_user_id=user.id,
             progress_operation_id=operation_id,
         )
         if reply.user is not None:
@@ -6230,6 +6243,8 @@ def process_agent_message(payload: AgentMessageRequest, request: Request, respon
             message="Профиль пользователя подготовлен. Можно переходить к следующему шагу.",
         )
         return reply
+    except PermissionError as exc:
+        raise HTTPException(403, detail="Нет доступа к диалогу профиля.") from exc
     except KeyError as exc:
         operation_progress_service.fail(operation_id, message=str(exc))
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -6325,9 +6340,11 @@ def get_participant_profile_options(request: Request):
 def confirm_agent_profile(payload: AgentProfileConfirmRequest, request: Request, response: FastAPIResponse) -> AgentReply:
     operation_id = request.headers.get("X-Agent4K-Operation-Id")
     try:
-        authenticated_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
-        if authenticated_user is None:
-            raise HTTPException(status_code=401, detail="Требуется авторизация")
+        authenticated_user = _require_profile_dialogue_owner(request, payload.session_id)
+        try:
+            require_unchanged_email(authenticated_user.email, payload.email)
+        except ValueError as exc:
+            raise HTTPException(409, detail=str(exc)) from exc
         operation_progress_service.begin(
             operation_id,
             title="Подтверждаем профиль",

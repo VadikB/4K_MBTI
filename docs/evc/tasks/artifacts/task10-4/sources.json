@@ -1,0 +1,20 @@
+{
+  "main": "8654b97ed6605d560111c37cd291f98f82c41457",
+  "parent_commit": "c48e331b69fd2b2cfeca188109feab267c05cc3d",
+  "branch": "codex/task10-4-profile-access",
+  "source_sha256": {
+    "README.md": "ba5e34c31b450cea5424bc7d8b04a0f442b7a45c4d2f9e5b136aeef6c9bfe33f",
+    "CONTRIBUTING.md": "762c989d7e8ccba3bea669a241df5395fd5a2c82ff370510d2afbbeddee53aa2",
+    "docs/evc/agent-workflow.md": "0effe865cd4ec69d79845d8b3c043f28505e2e958969bba9b74b50e56f694ec6",
+    "docs/evc/verification-matrix.md": "3f652c3fc12d8f756c69d7f594d3ceeb430e6483d6ed57aee1c3fe2c78a5b262",
+    "docs/evc/artifact-recipe.md": "db11e0034498e666ab50249beea17a7797383b6380004b1f345c2c9a3cafc2c5",
+    "docs/evc/review-checklist.md": "2c0f8c76a200aacbc4bb3a83023f33441104cc4e7575900bb9d2975f383ecb42",
+    "docs/architecture/product-4k/1.0/context.md": "effebfc639a572593b6171a7a57cfe60db09bba200909d8a4edafb0e7ac98ebb",
+    "docs/architecture/product-4k/registry.md": "b663db7f557fc3de3abd2d9e86b596926274ba4c5e2170047d4a6e5e60c54001",
+    "docs/architecture/product-4k/m1/v1.4/README.md": "f772f8d244c46f6a52924e18ac58dcbea3b603163b3b1da806e574e4cc077795",
+    "docs/architecture/product-4k/1.0/updates/2026-10-01/README.md": "ac082bb94aac1b86c61d7e39589d76c886c6703ef3afc07bc8fecf1676a0a26d",
+    "docs/methodology/source-sets/2026-10-01/manifest.json": "f95a390f1257f4adbccf61be59bdcb0b99396501ca34cf117eb0efc10b237db8",
+    "docs/adr/002-cycle-as-dialogue-contracts.md": "4a4e0170bee7faf137301b342fec46b3e8e0209acd26dcb6b2dc7a788c58b25f",
+    "docs/evc/tasks/artifacts/task10-4/request.txt": "a1cebb4bd6dcae7331323e32e55c66e77926304d796c9b5c372837075abd4bd2"
+  }
+}

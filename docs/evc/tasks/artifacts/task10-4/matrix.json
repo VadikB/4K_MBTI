@@ -1,0 +1,398 @@
+{
+  "status": "PASS",
+  "boundary": "real FastAPI router, real sessions, owned 10.2 PostgreSQL, new transaction verification",
+  "cases": [
+    {
+      "actor": "anonymous",
+      "method": "GET",
+      "route": "/users/{owner}/profile-summary",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "anonymous",
+      "method": "GET",
+      "route": "/users/{owner}",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "anonymous",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "anonymous",
+      "method": "POST",
+      "route": "/users/agent/message",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "anonymous",
+      "method": "POST",
+      "route": "/users/agent/profile/confirm",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "forged",
+      "method": "GET",
+      "route": "/users/{owner}/profile-summary",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "forged",
+      "method": "GET",
+      "route": "/users/{owner}",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "forged",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "forged",
+      "method": "POST",
+      "route": "/users/agent/message",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "forged",
+      "method": "POST",
+      "route": "/users/agent/profile/confirm",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "expired",
+      "method": "GET",
+      "route": "/users/{owner}/profile-summary",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "expired",
+      "method": "GET",
+      "route": "/users/{owner}",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "expired",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "expired",
+      "method": "POST",
+      "route": "/users/agent/message",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "expired",
+      "method": "POST",
+      "route": "/users/agent/profile/confirm",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "same_org",
+      "method": "GET",
+      "route": "/users/{owner}/profile-summary",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "same_org",
+      "method": "GET",
+      "route": "/users/{owner}",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "same_org",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "same_org",
+      "method": "POST",
+      "route": "/users/agent/message",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "same_org",
+      "method": "POST",
+      "route": "/users/agent/profile/confirm",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "other_tenant",
+      "method": "GET",
+      "route": "/users/{owner}/profile-summary",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "other_tenant",
+      "method": "GET",
+      "route": "/users/{owner}",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "other_tenant",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "other_tenant",
+      "method": "POST",
+      "route": "/users/agent/message",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "other_tenant",
+      "method": "POST",
+      "route": "/users/agent/profile/confirm",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "org_admin",
+      "method": "GET",
+      "route": "/users/{owner}/profile-summary",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "org_admin",
+      "method": "GET",
+      "route": "/users/{owner}",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "org_admin",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "org_admin",
+      "method": "POST",
+      "route": "/users/agent/message",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "org_admin",
+      "method": "POST",
+      "route": "/users/agent/profile/confirm",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "route": "/users/{owner}/profile-summary",
+      "expected": 200,
+      "actual": 200,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 200,
+      "actual": 200,
+      "no_profile_identity_membership_history_write": false
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 200,
+      "actual": 200,
+      "no_profile_identity_membership_history_write": false
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 200,
+      "actual": 200,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 400,
+      "actual": 400,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 409,
+      "actual": 409,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 409,
+      "actual": 409,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 409,
+      "actual": 409,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 422,
+      "actual": 422,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "route": "/users/agent/profile/confirm",
+      "expected": 409,
+      "actual": 409,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "route": "/users/agent/message",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "route": "/users",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "org_admin",
+      "method": "GET",
+      "route": "/users",
+      "expected": 200,
+      "actual": 200,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "org_admin",
+      "method": "GET",
+      "route": "/users/3/profile-summary",
+      "expected": 403,
+      "actual": 403,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "route": "/users/agent/profile/confirm",
+      "expected": 200,
+      "actual": 200,
+      "no_profile_identity_membership_history_write": false
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "route": "/users/agent/message",
+      "expected": 200,
+      "actual": 200,
+      "no_profile_identity_membership_history_write": false
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "route": "/users/{owner}/profile-summary",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "route": "/users/{owner}/profile",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "route": "/users/agent/message",
+      "expected": 401,
+      "actual": 401,
+      "no_profile_identity_membership_history_write": true
+    }
+  ]
+}

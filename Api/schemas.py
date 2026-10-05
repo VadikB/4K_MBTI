@@ -1291,6 +1291,7 @@ class UserProfileSummaryResponse(BaseModel):
 
 
 class UserProfileUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     email: str | None = None
     telegram: str | None = None
     avatar_data_url: str | None = None

@@ -5,6 +5,23 @@ import { resetChatScreen } from './screen-loaders.js';
 import { returnToStart } from './router.js';
 import { applyLogoutButtonPendingState, resetLogoutButtonsState } from './logout-ui.js';
 
+const clearProfileDisplay = () => {
+  document.getElementById('profile-avatar-image')?.removeAttribute('src');
+  document.getElementById('profile-avatar-image')?.classList.add('hidden');
+  document.getElementById('profile-avatar')?.replaceChildren();
+  for (const id of ['profile-full-name', 'profile-email', 'profile-phone', 'profile-telegram', 'profile-job-description', 'profile-company-industry']) {
+    const field = document.getElementById(id);
+    if (field) field.value = '';
+  }
+  for (const id of ['profile-name', 'profile-role', 'profile-history-list', 'profile-save-status', 'chat-profile-confirmation', 'm8-report-skills', 'm8-report-recommendations', 'm8-report-metadata']) {
+    document.getElementById(id)?.replaceChildren();
+  }
+  const total = document.getElementById('profile-total-assessments');
+  const average = document.getElementById('profile-average-score');
+  if (total) total.textContent = '0';
+  if (average) average.textContent = '0%';
+};
+
 const wait = (ms) =>
   new Promise((resolve) => {
     window.setTimeout(resolve, ms);
@@ -34,6 +51,7 @@ export const isMissingUserError = (error) => {
 
 export const resetStaleUserState = async () => {
   clearAssessmentContext();
+  clearProfileDisplay();
   state.sessionId = null;
   state.pendingUser = null;
   state.dashboard = null;
@@ -69,6 +87,7 @@ export const restoreServerSession = async () => {
   if (!data.authenticated || !data.user) {
     return false;
   }
+  if (state.pendingUser?.id !== data.user.id) { clearAssessmentContext(); clearProfileDisplay(); }
   state.pendingUser = data.user;
   state.dashboard = data.dashboard || null;
   state.isAdmin = isAdminUserPayload(data.user, Boolean(data.is_admin));
@@ -96,6 +115,7 @@ export const restoreLocalUserSession = async () => {
       credentials: 'same-origin',
     });
     const data = await readApiResponse(response, 'Не удалось восстановить локальную пользовательскую сессию.');
+    if (state.pendingUser?.id !== data.user.id) { clearAssessmentContext(); clearProfileDisplay(); }
     state.pendingUser = data.user;
     state.dashboard = data.dashboard;
     state.isAdmin = isAdminUserPayload(data.user, Boolean(data.is_admin));
@@ -134,6 +154,8 @@ export const logoutAndReturnToStart = async (trigger = null) => {
   const restoreButton = applyLogoutButtonPendingState(trigger);
   const startedAt = Date.now();
   try {
+    clearAssessmentContext();
+    clearProfileDisplay();
     await postLogoutWithTimeout();
     const elapsed = Date.now() - startedAt;
     if (elapsed < 250) {
