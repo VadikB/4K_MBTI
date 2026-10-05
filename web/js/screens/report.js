@@ -1384,6 +1384,10 @@ const loadM8Report = async (cycleId) => {
     `<div><strong>${escapeHtml(item.skill_id)} · ${escapeHtml(item.type)}</strong><p>${escapeHtml(item.goal)}</p></div>` +
     `<div><p><strong>Практика:</strong> ${escapeHtml(item.practice)}</p><p><strong>Контекст:</strong> ${escapeHtml(item.application_context)}</p>` +
     `<p><strong>Признак прогресса:</strong> ${escapeHtml(item.progress_signal)}</p>` +
+    (item.basis_refs || []).map((basis) => `<details><summary>Основание</summary><p>${escapeHtml(basis.manifestation)}</p>` +
+      `<p>Indicator: ${escapeHtml(basis.indicator_id)} · IA: ${escapeHtml(basis.ia_revision_id)}</p>` +
+      (basis.material_excerpts || []).map((fragment) => `<blockquote>${escapeHtml(fragment.quote)}</blockquote><p>Turn: ${escapeHtml(fragment.turn_id)} · Fragment: ${escapeHtml(fragment.fragment_id)}</p>`).join('') +
+      (basis.refs || []).map((ref) => `<p>${escapeHtml(ref.kind)}: ${escapeHtml(ref.id)} — ${escapeHtml(ref.meaning)}</p>`).join('') + '</details>').join('') +
     `<p>${item.limitations.map((value) => escapeHtml(value)).join(' · ')}</p></div></article>`).join('');
   document.getElementById('m8-report-recommendation-notices').innerHTML = (c67.recommendation_notices || [])
     .map((item) => `<li><strong>${escapeHtml(item.skill_id)}:</strong> ${escapeHtml(item.text)}</li>`).join('');

@@ -54,6 +54,22 @@
 
     *Наблюдаемый признак:* #recommendation.progress_signal
 
+    #for basis in recommendation.at("basis_refs", default: ()) [
+      *Основание:* #basis.manifestation
+
+      Indicator: #basis.indicator_id · IA: #basis.ia_revision_id
+
+      #for fragment in basis.at("material_excerpts", default: ()) [
+        #fragment.quote
+
+        Turn: #fragment.turn_id · Fragment: #fragment.fragment_id
+
+      ]
+      #for ref in basis.at("refs", default: ()) [
+        #ref.kind: #ref.id — #ref.meaning
+
+      ]
+    ]
     #for limitation in recommendation.limitations [
       - #limitation
     ]
