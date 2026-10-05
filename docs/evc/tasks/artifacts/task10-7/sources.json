@@ -130,5 +130,32 @@
     "sha256": "dc96f9b48e0711326c0c4239d63f50a2fa1e63176a728f3e9eb4420f9efb77c1",
     "verification": "file_identity_verified; methodological consistency not re-audited",
     "verified_for": "10.7 integrated candidate; no normative status change"
+  },
+  {
+    "id": "M3.RoleProfile",
+    "version": "1.0",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M3.RoleProfile-v1.0.docx",
+    "sha256": "a3c085e4182fe8bc5a82204a8d4679a09b85650ea79e2df24fb1ed8ab6604e06",
+    "verification": "file_identity_verified; source selection reused from profile tasks, not new methodological acceptance",
+    "verified_for": "10.7 integrated candidate; no normative status change"
+  },
+  {
+    "id": "M3.BaseRoles",
+    "version": "1.0",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M3.BaseRoles-v1.0.docx",
+    "sha256": "ab04e175bb1bf4ad55c320554068041baf3cb4c1cc2316c16966451b91c465bc",
+    "verification": "file_identity_verified; source selection reused from profile tasks, not new methodological acceptance",
+    "verified_for": "10.7 integrated candidate; no normative status change"
+  },
+  {
+    "id": "M4.Context",
+    "version": "1.0",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M4.Context-v1.0.docx",
+    "sha256": "07875e93ae422668b1b30cd60bc1c6140cae91db12b0b80ba4abca441cfe9291",
+    "verification": "file_identity_verified; source selection reused from profile tasks, not new methodological acceptance",
+    "verified_for": "10.7 integrated candidate; no normative status change"
   }
 ]
