@@ -81,8 +81,8 @@ fixtures дополнены новым tenant/pipeline контрактом; bro
 регистрируется один раз, ожидание готовности проверяет видимость Report panel.
 Assertions доступа/неизменности не ослаблялись.
 
-- `npm run test:backend`: 354 passed, 123 deselected, exit 0 (`unit.log`).
-- `npm run test:backend:http`: 37 passed, exit 0 (`http.log`).
+- `npm run test:backend`: 354 passed, 125 deselected, exit 0 (`unit-final.log`).
+- `npm run test:backend:http`: 39 passed, exit 0 (`http-final.log`).
 - `node --test tests/frontend/*.test.mjs`: 4 passed, exit 0 (`frontend.log`).
 - `npm run lint:js`, `npm run build:web`: PASS; dist пересобран.
 - Owned DB/HTTP адресно: 1 passed (`owned-http.log`); полный integration:
@@ -141,8 +141,15 @@ CI финального head фиксируется в PR после завер�
 
 Код и локальные доказательства: `0de7a26ac7df47e1f6d08dca33be78cd10036c74`.
 Diff реализации: `git diff 010c2b39dc462a1245e1d4ba376c163111ccb6db..0de7a26ac7df47e1f6d08dca33be78cd10036c74`.
-Следующий коммит меняет только эту запись передачи. Обязательные CI `frontend`
-и `pytest` проверяются для его окончательного SHA и base ветки 11.2 в PR #36.
+Коммит передачи `b66d421ddf0739fb38440a9967c6123d0d0cf986` прошёл frontend,
+но CI #166 выявил UTC-расхождение сериализации в одном из 82 integration-тестов.
+Оно воспроизведено локально: `utc-before.log`, 1 FAIL / 1 PASS для UTC/+03.
+Новый `M8HistoryResponse` использует тот же Pydantic serializer, что profile-summary;
+строгое сравнение сохранено. После исправления: 354 unit, **39 HTTP**, адресный
+owned DB/HTTP **1 PASS** (`unit-final.log`, `http-final.log`, `owned-http-final.log`).
+Контракты дат согласованы без изменений данных/схемы/прав. Frontend не менялся.
+Окончательный SHA и новые CI `frontend`/`pytest` фиксируются в PR #36; прежний
+красный запуск не выдаётся за успешный.
 
 `history-receipt.json`: 18 IA revisions, 2 Results revisions, 6 Reports (включая
 синтетические скрытые аудитории); полные строки и hashes неизменны после GET/PDF.

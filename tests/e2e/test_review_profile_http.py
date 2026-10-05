@@ -107,3 +107,19 @@ def test_t104_anonymous_dialogue_message_never_reaches_agent(profile_client,monk
     def forbidden(**_): raise AssertionError('Unauthenticated request reached profile agent')
     monkeypatch.setattr(routes.interviewer_agent,'reply',forbidden)
     assert client.post('/users/agent/message',json={'session_id':'synthetic-session','message':'synthetic'}).status_code==401
+
+
+@pytest.mark.parametrize('offset_hours', [0, 3])
+def test_history_and_profile_summary_share_datetime_encoding(profile_client, monkeypatch, offset_hours):
+    from datetime import timedelta
+    client, _ = profile_client
+    stamp = datetime(2026, 10, 5, 12, 34, 56, tzinfo=timezone(timedelta(hours=offset_hours)))
+    cycle = {'cycle_id':str(uuid4()), 'report_id':str(uuid4()),
+             'cycle_created_at':stamp, 'collection_closed_at':stamp,
+             'versions':[{'created_at':stamp}]}
+    monkeypatch.setattr(routes.m8_results, 'list_owned_cycles', lambda *_: [cycle])
+    client.cookies.set(routes.SESSION_COOKIE_NAME, 'owner')
+    history = client.get('/users/assessment/m8/history')
+    summary = client.get('/users/91/profile-summary')
+    assert history.status_code == summary.status_code == 200
+    assert history.json()['cycles'] == summary.json()['cycle_history']

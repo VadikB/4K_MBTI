@@ -191,6 +191,7 @@ from Api.schemas import (
     SessionCaseStructuredAnalysisResponse,
     UserProfileUpdateRequest,
     UserProfileSummaryResponse,
+    M8HistoryResponse,
     UserSessionBootstrapResponse,
     UserSessionRestoreResponse,
     JourneyAssessmentState,
@@ -6993,7 +6994,7 @@ def _m8_owned_cycle(request: Request, cycle_id: str):
     return user
 
 
-@router.get('/assessment/m8/history')
+@router.get('/assessment/m8/history', response_model=M8HistoryResponse)
 def read_owned_m8_history(request: Request):
     user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     if user is None:
