@@ -31,7 +31,13 @@ else:
         cycles = connection.execute('''SELECT c.cycle_id,c.owner_user_id,c.organization_id,c.personalized_profile_id,
             c.profile_ref_json,c.selected_role_ref_json,count(s.id) AS situations FROM m5_cycles c
             LEFT JOIN m5_assessment_situations s ON s.cycle_db_id=c.id WHERE c.owner_user_id=%s GROUP BY c.id ORDER BY c.id''', (owner,)).fetchall()
-        print(json.dumps({'owner':owner,'user_context_count':contexts,'profiles':[
+        output_counts = {}
+        for table in ('m5_assessment_situations', 'm5_dialogue_turns',
+                      'm6_indicator_assessment_revisions', 'm8_results', 'm8_reports'):
+            # Owned stand only; counts contain no participant material. At seed time
+            # all assessment outputs (including those for other synthetic users) must be absent.
+            output_counts[table] = connection.execute(f'SELECT count(*) AS n FROM {table}').fetchone()['n']
+        print(json.dumps({'output_counts':output_counts,'owner':owner,'user_context_count':contexts,'profiles':[
             {key:p[key] for key in ('id','user_id','organization_id','assessment_configuration_id','role_profile_version_id',
              'organization_context_version_id','user_context_version_id','status','checksum','provenance_json')} for p in profiles],
              'cycles':[dict(c) for c in cycles]},default=str))

@@ -54,3 +54,13 @@ C1 запускает отдельный обычный Chromium через CDP 
 `AGENT4K_BROWSER_SCENARIO=acceptance-v1` устанавливает только helper из owned state.
 Это технический профиль fixture; в production .env он не добавляется, без guard
 изолированного стенда gateway не активируется.
+
+## Интегрированная приёмка 10.7
+
+`G10.7` создаёт тот же owned stand с `browser_profile=unprepared`. До UI read-only
+SQL проверяет отсутствие UserContext/M4 у участника и всех AS/Turns/IA/Results/Report.
+Новый сценарий проходит подтверждение роли/контекста, Cycle, уточнение, завершение,
+Report/PDF; затем реальный logout, очистку cookies/storage, login, историю,
+второй Cycle и идемпотентную регенерацию только представления первого.
+HTTP/auth/worker/admission/Results/PDF не подменяются. Шесть прежних сценариев
+10.3 остаются в полном наборе. Платных real-provider вызовов нет.
