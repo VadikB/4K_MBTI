@@ -9,6 +9,10 @@ test('ending an account context clears profile caches even before lazy UI cleanu
   state.profileSkillsBySession = {11: ['private old result']};
   state.profileSkillAssessments = ['private old result'];
   safeStorage.setItem(STORAGE_KEYS.pendingUser, JSON.stringify(state.pendingUser));
+  state.skillAssessments = ['old report'];
+  state.assessmentSessionId = 11;
+  state.reportReturnTarget = 'reports';
+  const priorRequest = state.reportRequestEpoch;
   const prior = state.identityEpoch;
   clearAssessmentContext();
   assert.equal(state.pendingUser, null);
@@ -18,4 +22,8 @@ test('ending an account context clears profile caches even before lazy UI cleanu
   assert.deepEqual(state.profileSkillAssessments, []);
   assert.equal(safeStorage.getItem(STORAGE_KEYS.pendingUser), null);
   assert.ok(state.identityEpoch > prior);
+  assert.ok(state.reportRequestEpoch > priorRequest);
+  assert.deepEqual(state.skillAssessments, []);
+  assert.equal(state.assessmentSessionId, null);
+  assert.equal(state.reportReturnTarget, 'home');
 });

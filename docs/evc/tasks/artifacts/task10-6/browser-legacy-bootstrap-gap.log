@@ -1,0 +1,103 @@
+
+> test:browser
+> playwright test --grep REV-02
+
+
+Running 1 test using 1 worker
+
+(node:49416) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/runtime.spec.mjs:294:1 › REV-02 fresh M4 confirmation, canonical context and saved history after login (4.0m)
+
+
+  1) tests/browser/runtime.spec.mjs:294:1 › REV-02 fresh M4 confirmation, canonical context and saved history after login
+
+    Test timeout of 240000ms exceeded.
+
+    Error: locator.click: Target page, context or browser has been closed
+    Call log:
+      - waiting for locator('.profile-history-report-button')
+        - locator resolved to <button type="button" data-session-id="1" class="ghost-button compact-ghost profile-history-report-button">Открыть отчет</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is not visible
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is not visible
+        - retrying click action
+          - waiting 100ms
+        322 × waiting for element to be visible, enabled and stable
+            - element is not visible
+          - retrying click action
+            - waiting 500ms
+
+
+      376 |  await expect(page.locator('.cycle-report')).toHaveCount(2);
+      377 |  await page.locator('.profile-history-item').click();
+    > 378 |  await page.locator('.profile-history-report-button').click();
+          |                                                       ^
+      379 |  await expect(page.locator('#legacy-report-shell')).toBeVisible();
+      380 |  expect(new URL(page.url()).searchParams.has('cycle_id')).toBe(false);
+      381 |  expect(new URL(page.url()).searchParams.has('report_id')).toBe(false);
+        at /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation/tests/browser/runtime.spec.mjs:378:55
+
+    attachment #1: browser-version (text/plain) ────────────────────────────────────────────────────
+    153.0.8010.12
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #4: report-pdf (application/pdf) ────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-REV-02-fresh-M4-co-53907-d-saved-history-after-login/attachments/report-pdf-203baff296e92f440e5fea889b5194a3e7bed692.pdf
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #5: report (application/json) ───────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-REV-02-fresh-M4-co-53907-d-saved-history-after-login/attachments/report-b25919c50237ba7d6e591352aef7dd788c1b73de.json
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #6: pdf-content-check (text/plain) ──────────────────────────────────────────────────
+    PDF content matches saved C-67; pages: 6
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #7: report-ui (image/png) ───────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-REV-02-fresh-M4-co-53907-d-saved-history-after-login/attachments/report-ui-2211746cdc21ca0303f3a89579efcad15e97a52d.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #10: history-pdf-check (text/plain) ─────────────────────────────────────────────────
+    PDF content matches saved C-67; pages: 6
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #11: history-pdf (application/pdf) ──────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-REV-02-fresh-M4-co-53907-d-saved-history-after-login/attachments/history-pdf-4a1204e740adbe92e7dc0d2a17d3c649f1dbdc19.pdf
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #14: report-pdf (application/pdf) ───────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-REV-02-fresh-M4-co-53907-d-saved-history-after-login/attachments/report-pdf-4b8f52f85d64801c8a9a94a33b2b11fa0cf4658b.pdf
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #15: report (application/json) ──────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-REV-02-fresh-M4-co-53907-d-saved-history-after-login/attachments/report-63a056691464eabb3fbe86fba6203eea4ba10062.json
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #16: pdf-content-check (text/plain) ─────────────────────────────────────────────────
+    PDF content matches saved C-67; pages: 6
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #17: report-ui (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-REV-02-fresh-M4-co-53907-d-saved-history-after-login/attachments/report-ui-806fc89290e39ea84cb47e96f63f48b096d11668.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #18: screenshot (image/png) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-REV-02-fresh-M4-co-53907-d-saved-history-after-login/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #20: server-log (text/plain) ────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-REV-02-fresh-M4-co-53907-d-saved-history-after-login/attachments/server-log-4744a511ee10f49fda8dddf7a01ab0db774667e8.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-REV-02-fresh-M4-co-53907-d-saved-history-after-login/error-context.md
+
+  1 failed
+    tests/browser/runtime.spec.mjs:294:1 › REV-02 fresh M4 confirmation, canonical context and saved history after login

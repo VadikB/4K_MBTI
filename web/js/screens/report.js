@@ -1306,6 +1306,10 @@ export const renderReport = () => {
 
 export const openReport = (options = {}) => {
   const { returnTarget = 'home', m8CycleId = null, m8ReportId = null } = options;
+  const requestEpoch = ++state.reportRequestEpoch;
+  const identityEpoch = state.identityEpoch;
+  const ownerId = state.pendingUser?.id;
+  const isCurrent = () => state.reportRequestEpoch === requestEpoch && state.identityEpoch === identityEpoch && state.pendingUser?.id === ownerId && state.currentScreen === 'report';
   state.reportReturnTarget = returnTarget === 'reports' ? 'reports' : 'home';
   setCurrentScreen('report');
   syncUrlState('report');
@@ -1326,14 +1330,22 @@ export const openReport = (options = {}) => {
     if (m8ReportId) url.searchParams.set('report_id', m8ReportId);
     else url.searchParams.delete('report_id');
     window.history.replaceState({}, '', url.pathname + '?' + url.searchParams.toString());
-    void loadM8Report(m8CycleId, m8ReportId).catch((error) => {
+    void loadM8Report(m8CycleId, m8ReportId, isCurrent, ownerId).catch((error) => {
+      if (!isCurrent()) return;
       const stateNode = document.getElementById('m8-report-state');
       if (stateNode) stateNode.textContent = error?.message || 'Не удалось загрузить Report.';
     });
     return;
   }
+  const legacyUrl = new URL(window.location.href);
+  legacyUrl.searchParams.delete('cycle_id');
+  legacyUrl.searchParams.delete('report_id');
+  window.history.replaceState({}, '', legacyUrl.pathname + '?' + legacyUrl.searchParams.toString());
   const downloadButton = document.getElementById('report-download-button');
-  if (downloadButton) delete downloadButton.dataset.m8ReportId;
+  if (downloadButton) {
+    delete downloadButton.dataset.m8ReportId;
+    downloadButton.disabled = !state.pendingUser?.id || !state.assessmentSessionId;
+  }
   document.getElementById('m8-report-shell')?.classList.add('hidden');
   document.getElementById('legacy-report-shell')?.classList.remove('hidden');
   renderReport();
@@ -1356,11 +1368,12 @@ const coverageLabel = (cut) => {
   return `${cut.numerator}/${cut.denominator} · ${(cut.ratio * 100).toFixed(1)}%`;
 };
 
-const loadM8Report = async (cycleId, reportId = null) => {
+const loadM8Report = async (cycleId, reportId, isCurrent, ownerId) => {
   const stateNode = document.getElementById('m8-report-state');
   if (!reportId) {
   const statusResponse = await fetch(`/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/status`);
   const status = await readApiResponse(statusResponse, 'Не удалось загрузить состояние Results.');
+  if (!isCurrent()) return;
   if (status.results_status !== 'ready') {
     stateNode.textContent = status.results_status === 'failed' ? 'Расчёт завершился технической ошибкой.' : 'Сбор закрыт, итоговый расчёт ещё выполняется.';
     document.getElementById('m8-report-skills').replaceChildren();
@@ -1374,6 +1387,8 @@ const loadM8Report = async (cycleId, reportId = null) => {
   }
   const response = await fetch(reportId ? `/users/assessment/m8/reports/${encodeURIComponent(reportId)}` : `/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/reports/latest`);
   const report = await readApiResponse(response, 'Не удалось загрузить базовый Report.');
+  if (!isCurrent()) return;
+  if (report.owner_user_id !== ownerId || report.cycle_id !== cycleId || (reportId && report.id !== reportId)) throw new Error('Сессия или выбранный отчёт изменились.');
   const c67 = report.c67;
   stateNode.textContent = `Report готов · расчётная редакция ${c67.results_revision_no} · версия представления ${report.revision_no}`;
   const metadata = document.getElementById('m8-report-metadata');
@@ -1408,6 +1423,7 @@ const loadM8Report = async (cycleId, reportId = null) => {
 };
 
 export const resolveAssessmentSessionIdByCode = async () => {
+  const ownerId = state.pendingUser?.id; const epoch = state.identityEpoch;
   if (!state.pendingUser?.id || !state.assessmentSessionCode) {
     return null;
   }
@@ -1416,6 +1432,7 @@ export const resolveAssessmentSessionIdByCode = async () => {
     '/users/' + state.pendingUser.id + '/assessment/by-code/' + encodeURIComponent(state.assessmentSessionCode),
   );
   const data = await readApiResponse(response, 'Не удалось восстановить assessment-сессию.');
+  if (state.identityEpoch !== epoch || state.pendingUser?.id !== ownerId) return null;
   const resolvedSessionId = Number(data?.session_id);
   if (!resolvedSessionId) {
     return null;
@@ -1439,6 +1456,8 @@ export const handleReportBack = () => {
 };
 
 export const loadSkillAssessments = async () => {
+  const ownerId = state.pendingUser?.id; const epoch = state.identityEpoch;
+  const isCurrent = () => state.identityEpoch === epoch && state.pendingUser?.id === ownerId;
   if (!state.pendingUser?.id) {
     state.reportInterpretation = null;
     return;
@@ -1446,6 +1465,7 @@ export const loadSkillAssessments = async () => {
 
   if (!state.assessmentSessionId && state.assessmentSessionCode) {
     await resolveAssessmentSessionIdByCode();
+    if (!isCurrent()) return;
   }
 
   if (!state.assessmentSessionId) {
@@ -1465,6 +1485,7 @@ export const loadSkillAssessments = async () => {
     fetch('/users/' + state.pendingUser.id + '/assessment/' + state.assessmentSessionId + '/report-interpretation'),
     profileSummaryPromise,
   ]);
+  if (!isCurrent()) return;
   if (profileSummary) {
     state.profileSummary = profileSummary;
   }
@@ -1472,12 +1493,14 @@ export const loadSkillAssessments = async () => {
   if ((skillsResponse.status === 404 || interpretationResponse.status === 404) && state.assessmentSessionCode) {
     const previousSessionId = state.assessmentSessionId;
     const resolvedSessionId = await resolveAssessmentSessionIdByCode();
+    if (!isCurrent()) return;
     if (resolvedSessionId && resolvedSessionId !== previousSessionId) {
       [skillsResponse, interpretationResponse, profileSummary] = await Promise.all([
         fetch('/users/' + state.pendingUser.id + '/assessment/' + state.assessmentSessionId + '/skill-assessments'),
         fetch('/users/' + state.pendingUser.id + '/assessment/' + state.assessmentSessionId + '/report-interpretation'),
         profileSummaryPromise,
       ]);
+      if (!isCurrent()) return;
       if (profileSummary) {
         state.profileSummary = profileSummary;
       }
@@ -1489,6 +1512,7 @@ export const loadSkillAssessments = async () => {
     interpretationResponse,
     'Не удалось загрузить интерпретацию результатов.',
   );
+  if (!isCurrent()) return;
   state.skillAssessments = data;
   state.reportInterpretation = interpretation;
   persistAssessmentContext();

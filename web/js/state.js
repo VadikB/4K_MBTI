@@ -104,6 +104,7 @@ export const state = {
   adminPromptLabPollId: null,
   preparedAssessmentStartResponse: null,
   identityEpoch: 0,
+  reportRequestEpoch: 0,
   profileSummary: null,
   profileAvatarDraft: null,
   profileSelectedSessionId: null,
@@ -431,6 +432,7 @@ export const clearAssessmentStorage = () => {
 export const clearAssessmentContext = () => {
   clearAssessmentStorage();
   state.identityEpoch += 1;
+  state.reportRequestEpoch += 1;
   state.pendingUser = null;
   state.dashboard = null;
   state.profileSummary = null;
@@ -438,6 +440,9 @@ export const clearAssessmentContext = () => {
   state.profileSelectedSessionId = null;
   state.profileSkillAssessments = [];
   state.profileSkillsBySession = {};
+  state.skillAssessments = [];
+  state.assessmentSessionId = null;
+  state.reportReturnTarget = 'home';
   state.reportInterpretation = null;
 };
 

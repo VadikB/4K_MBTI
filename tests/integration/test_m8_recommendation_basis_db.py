@@ -25,6 +25,13 @@ pytestmark=pytest.mark.integration
 def saved_chain(database, *, mode='positive'):
     factory,handoff=database
     with factory() as c:
+        c.execute('CREATE TABLE organizations(id BIGINT PRIMARY KEY,is_active BOOLEAN)')
+        c.execute('CREATE TABLE organization_memberships(user_id BIGINT,organization_id BIGINT)')
+        c.execute('INSERT INTO organizations VALUES(1,TRUE)')
+        c.execute('INSERT INTO organization_memberships VALUES(99,1)')
+        c.execute('UPDATE m5_cycles SET organization_id=1')
+        from Api.m10_orchestration import ensure_schema
+        ensure_schema(c)
         request=enqueue(c,handoff,key='r11-evidence');c.commit()
     action=load_package()['templates']['supported_actions'][1]['confirmed_action']
     class Evidence:

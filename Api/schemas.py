@@ -1292,6 +1292,7 @@ class UserProfileSummaryResponse(BaseModel):
     latest_session_id: int | None = None
     history: list[UserAssessmentHistoryItem]
     cycle_reports: list[dict[str, Any]] = Field(default_factory=list)
+    cycle_history: list[dict[str, Any]] = Field(default_factory=list)
     legacy_assessments_total: int = 0
 
 

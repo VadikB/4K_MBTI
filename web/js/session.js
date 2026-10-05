@@ -13,9 +13,11 @@ const clearProfileDisplay = () => {
     const field = document.getElementById(id);
     if (field) field.value = '';
   }
-  for (const id of ['profile-name', 'profile-role', 'profile-history-list', 'profile-save-status', 'chat-profile-confirmation', 'm8-report-skills', 'm8-report-recommendations', 'm8-report-metadata']) {
+  for (const id of ['profile-name', 'profile-role', 'profile-history-list', 'profile-save-status', 'chat-profile-confirmation', 'm8-report-skills', 'm8-report-recommendations', 'm8-report-metadata', 'm8-report-state', 'm8-report-coverage', 'm8-report-limitations', 'm8-report-recommendation-notices']) {
     document.getElementById(id)?.replaceChildren();
   }
+  const download = document.getElementById('report-download-button');
+  if (download) { delete download.dataset.m8ReportId; download.disabled = true; }
   const total = document.getElementById('profile-total-assessments');
   const average = document.getElementById('profile-average-score');
   if (total) total.textContent = '0';
@@ -178,3 +180,24 @@ export const logoutAndReturnToStart = async (trigger = null) => {
     resetLogoutButtonsState();
   }
 };
+
+// Another tab can replace the shared session cookie without changing this tab's memory.
+let checkingVisibleOwner = false;
+const reconcileVisibleOwner = async () => {
+  if (checkingVisibleOwner || !state.pendingUser?.id || !['reports','report','profile'].includes(state.currentScreen)) return;
+  checkingVisibleOwner = true;
+  const ownerId = state.pendingUser.id; const epoch = state.identityEpoch;
+  try {
+    const response = await fetch('/users/session/restore', {credentials:'same-origin', cache:'no-store'});
+    const data = await response.json();
+    if (state.identityEpoch !== epoch) return;
+    if (!response.ok || !data.authenticated || data.user?.id !== ownerId) {
+      clearAssessmentContext(); clearProfileDisplay(); returnToStart();
+    }
+  } catch (_) {
+    // Fail closed locally; never log out a different tab's current server session.
+    if (state.identityEpoch === epoch) { clearAssessmentContext(); clearProfileDisplay(); returnToStart(); }
+  } finally { checkingVisibleOwner = false; }
+};
+window.addEventListener('focus', () => { void reconcileVisibleOwner(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) void reconcileVisibleOwner(); });

@@ -1,0 +1,14 @@
+{
+  "stats": {
+    "startTime": "2026-10-05T17:34:23.653Z",
+    "duration": 79337.359,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "title": "REV-02 fresh M4 confirmation, canonical context and saved history after login",
+  "status": "passed",
+  "duration": 75661,
+  "retry": 0
+}

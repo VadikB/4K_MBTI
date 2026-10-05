@@ -11,7 +11,7 @@ from scripts.test_stand import owned,environment
 p=argparse.ArgumentParser()
 p.add_argument('--state',type=Path,required=True)
 p.add_argument('--cycle',required=True)
-p.add_argument('--kind',choices=['legacy','failure'],required=True)
+p.add_argument('--kind',choices=['legacy','failure','archive-session'],required=True)
 p.add_argument('--internal',action='store_true')
 a=p.parse_args();state=json.loads(a.state.read_text())
 with owned(state):pass
@@ -25,7 +25,10 @@ else:
     with get_connection() as c:
         report=m8_results.read_latest_report(c,a.cycle,'assessee')
         before=c.execute('SELECT payload_checksum FROM m8_result_revisions WHERE id=%s',(report['results_revision_id'],)).fetchone()
-        if a.kind=='legacy':
+        if a.kind=='archive-session':
+            c.execute("""INSERT INTO user_sessions(user_id,session_code,assessment_code,status)
+                VALUES(%s,'synthetic-browser-h106-archive','competencies_4k','completed')""", (report['owner_user_id'],))
+        elif a.kind=='legacy':
             old=json.loads(json.dumps(report['c67']));old['recommendation_generation']['contract_version']='m8-recommendations/1.0.0'
             old['recommendations'][0]['goal']='Недопустимое историческое проявление — synthetic fixture'
             old_id=str(uuid4());revision=report['revision_no']+1;old['report_id']=old_id;old['report_revision_no']=revision

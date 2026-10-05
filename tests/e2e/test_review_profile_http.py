@@ -23,6 +23,7 @@ def profile_client(monkeypatch):
                 self.updates += 1
                 self.row = None
             elif 'FROM users u' in sql: self.row = USER
+            elif 'FROM m8_reports p' in sql and hasattr(self, 'report_scope'): self.row = self.report_scope
             else: self.row = None
             return self
         def fetchone(self): return self.row
@@ -58,16 +59,20 @@ def test_owner_can_read_and_update_profile(profile_client):
 
 
 def test_saved_report_owner_and_audience(profile_client, monkeypatch):
-    client, _ = profile_client
+    client, db = profile_client
     report = {'owner_user_id':91, 'audience':'assessee', 'id':str(uuid4())}
+    db.report_scope = {'cycle_id':str(uuid4()),'audience':'assessee'}
+    monkeypatch.setattr(routes.m8_results,'owner_can_read_cycle',lambda connection,cycle,user:user==91)
     monkeypatch.setattr(routes.m8_results, 'read_report', lambda *_: report)
     url = '/users/assessment/m8/reports/' + report['id']
     assert client.get(url).status_code == 401
     client.cookies.set(routes.SESSION_COOKIE_NAME, 'owner')
     assert client.get(url).json() == report
     report['audience'] = 'organization'
+    db.report_scope['audience'] = 'organization'
     assert client.get(url).status_code == 403
     report['audience'] = 'assessee'
+    db.report_scope['audience'] = 'assessee'
     for token in ('same-org','other-org'):
         client.cookies.set(routes.SESSION_COOKIE_NAME, token)
         assert client.get(url).status_code == 403
