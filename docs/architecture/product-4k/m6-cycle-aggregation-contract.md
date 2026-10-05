@@ -27,3 +27,48 @@ checksum. Одинаковый idempotency key с иным запросом от
 Контур доступен superadmin для синтетической QA. Пакет правил
 `m6_cycle_aggregation/1.0.0` имеет статус draft. Он не присваивает CURRENT, не
 утверждает GC/Reliability и не создаёт Results, Skill Level, Gap или Report M8.
+
+## Дополнение 8.1 — содержательный допуск v2 (05.10.2026)
+
+Новый producer `m6_substantive_admission/2.0.0` заменяет формальный admission v1
+для новых автоматических расчётов. Это draft технический механизм по M6 v1.8;
+CURRENT и Reliability не присваиваются. Механизм использует существующий gateway,
+внешние manifest/prompt, snapshot модели/параметров/schema и checksum.
+
+`AdmissionDecision.schema_version=2` совместимо расширяет C-56:
+
+| Поле | Смысл |
+| --- | --- |
+| cycle_id / indicator_id | Единственный Cycle и нормативный Indicator |
+| considered_revision_ids | Все адресованные финальные наблюдения, включая нечисловые |
+| individual | Решение каждой конкретной revision; признак, исходные scoped refs, разбор и последствия по M2, возможности, самостоятельности, уточнениям, противоречиям |
+| interpretable_revision_ids | Только revisions с индивидуальным ADMITTED |
+| included_revision_ids / excluded_revision_ids | Фактический числовой состав и исключения; уровень сам по себе не основание отбора |
+| joint | Содержательная сопоставимость всех интерпретируемых revisions; отдельное решение |
+| sufficiency | Исходное требование плана, число различных AS после исключений, результат проверки; отсутствующий план не заменяется минимумом по умолчанию |
+| contexts | Проверенные снимки IA/EB/Dialogue, реально предъявленные материалы и временные границы, Case/AS refs, исходные checksum |
+| source / mechanism | Применённый источник и полный snapshot исполнимого механизма |
+| processing_status | completed / failed; ошибка обработки не является несопоставимостью, IE или L0 |
+
+`PROCESSING_FAILED`, `MATERIAL_INVALID`, `INSUFFICIENT_MATERIAL` различаются.
+Подтверждённые индивидуальные основания сохраняются при сбое joint. При отсутствии
+числового допуска вклад не выпускается; причины доступны даже без Skill Result.
+Дубликаты AS/Indicator и неоднозначные последние revisions не считаются наблюдениями.
+Поддерживается текущий проверяемый M2 snapshot; межверсионного утверждённого mapping
+нет, поэтому неизвестное соответствие блокируется, а не угадывается.
+
+Новая superadmin-команда
+`POST /users/admin/m6-cycles/{cycle_id}/substantive-calculations` принимает только
+`idempotency_key` и `expected_composition_checksum`. Условия/decisions от клиента
+не принимаются. Тот же ключ возвращает сохранённую попытку без нового LLM-вызова;
+новый ключ создаёт новую calculation revision. Выпуск следующих Results/Report —
+по существующим явным командам M8. GET не запускает перерасчёт. Автоматическая
+orchestration использует этот же серверный producer. Старый manual endpoint
+ограничен QA Cycles и не является источником substantive допуска.
+
+M8 сохраняет admission v2 в Results, передаёт `admission_summary` в новые C-67,
+причины/ограничения — в экран и PDF. Recommendation basis разрешает только конкретные
+`interpretable_revision_ids`; исключённая повреждённая revision не блокирует чтение
+других разрешённых оснований. Исторические C-56/Results/C-67 не обновляются.
+Формулы и веса aggregation v1 сохраняются; версия нового admission фиксируется
+отдельно. Изменение схемы БД и перенос истории не требуются.

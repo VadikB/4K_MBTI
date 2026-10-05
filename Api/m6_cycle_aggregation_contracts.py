@@ -24,3 +24,8 @@ class CreateAggregationRequest(Record):
     admission_mechanism_version: Literal["m6-admission-manual/1.0"]
     decisions: list[AdmissionDecision]
     synthetic_material_confirmed: Literal[True]
+
+
+class CreateSubstantiveAggregationRequest(Record):
+    idempotency_key: str = Field(min_length=1, max_length=200)
+    expected_composition_checksum: str = Field(min_length=64, max_length=64)

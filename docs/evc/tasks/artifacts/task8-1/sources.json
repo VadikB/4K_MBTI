@@ -1,0 +1,121 @@
+[
+  {
+    "id": "M1",
+    "version": "1.4",
+    "selected_status": "FROZEN",
+    "path": "docs/architecture/product-4k/m1/v1.4/source.docx",
+    "sha256": "5fa5ab5735dfe57fac6ef3c93aca50d149fbd7abd365edf80d362c10e2d7a975",
+    "verification": "file_identity_verified; methodological consistency not re-audited"
+  },
+  {
+    "id": "M2.K1.matrix",
+    "version": "1.1",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K1-matrix-v1.1.xlsx",
+    "sha256": "2b5bd322bf51d6e05cdf3506cd14b2854eb6528082d15a44a918cc233ed3c880",
+    "verification": "file_identity_verified; methodological consistency not re-audited"
+  },
+  {
+    "id": "M2.K1.passport",
+    "version": "1.1",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K1-passport-v1.1.docx",
+    "sha256": "14b6db3ee9eabd3ed7578fcd6b387cb353ad45e5c6fc5bb62c4cf29fbe017523",
+    "verification": "file_identity_verified; methodological consistency not re-audited"
+  },
+  {
+    "id": "M2.K2.matrix",
+    "version": "1.0",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K2-matrix-v1.0.xlsx",
+    "sha256": "2d004a3acb53a10dbc75d63d5cdb16c3a36a5358e6c04c3a79be9327cd269890",
+    "verification": "file_identity_verified; methodological consistency not re-audited"
+  },
+  {
+    "id": "M2.K2.passport",
+    "version": "1.0",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K2-passport-v1.0.docx",
+    "sha256": "abcca5cf8a4af475a88b4004c389de4f8f8596c5fc85c816bbc784258e3703ab",
+    "verification": "file_identity_verified; methodological consistency not re-audited"
+  },
+  {
+    "id": "M2.K3.matrix",
+    "version": "1.1",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K3-matrix-v1.1.xlsx",
+    "sha256": "7db056f104c21a8a19b7840dbe36795ac1a93245182a2432e3102f0f3c0e207c",
+    "verification": "file_identity_verified; methodological consistency not re-audited"
+  },
+  {
+    "id": "M2.K3.passport",
+    "version": "1.1",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K3-passport-v1.1.docx",
+    "sha256": "01a9f5b970d510e2535ce23ef3c822ca27525161c3cdd56e99e4e2a6ea8dae91",
+    "verification": "file_identity_verified; methodological consistency not re-audited"
+  },
+  {
+    "id": "M2.K4.matrix",
+    "version": "1.0",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K4-matrix-v1.0.xlsx",
+    "sha256": "3fdcfc1ba40b4afa626842122067d216b8ecb3efeabcc7cb315002c97c204cf2",
+    "verification": "file_identity_verified; methodological consistency not re-audited"
+  },
+  {
+    "id": "M2.K4.passport",
+    "version": "1.0",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K4-passport-v1.0.docx",
+    "sha256": "b9ac20ecc5a65908d3a1dc2d6d1a5c69a415a9cd4788b9a5180667739e253ceb",
+    "verification": "file_identity_verified; methodological consistency not re-audited"
+  },
+  {
+    "id": "M6",
+    "version": "1.8",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M6_Evidence_Assessment_v1.8_FROZEN.docx",
+    "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+    "verification": "file_identity_verified; selected sections reviewed; runtime not verified",
+    "derived_text": {
+      "path": "docs/methodology/source-sets/2026-10-01/derived/M6-v1.8.md",
+      "sha256": "f081bc9ca795257b6a4afbebbd4b56f32243a1a75f5c25d91a77c64d64fc86fa",
+      "limitations": "paragraphs and tables; embedded diagrams not reproduced"
+    }
+  },
+  {
+    "id": "M7",
+    "version": "1.3",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M7_Assessment_Cycle_v1.3_FROZEN_2026-09-30.docx",
+    "sha256": "50a0d53a3aaf6258957ecc6d9e89f27d922bfbe4cd55668185d475c87f4e2f10",
+    "verification": "file_identity_verified; selected sections reviewed; runtime not verified",
+    "derived_text": {
+      "path": "docs/methodology/source-sets/2026-10-01/derived/M7-v1.3.md",
+      "sha256": "9b65a8eee1520fed57286b209a28ce73e33cd394ba8c9353c240673867483ec8",
+      "limitations": "paragraphs and tables; embedded diagrams not reproduced"
+    }
+  },
+  {
+    "id": "M8",
+    "version": "1.2",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M8_Results_v1.2_FROZEN_2026-10-01.docx",
+    "sha256": "a61909c996f66e88668c4cf713fb91129f3ab778ed843d0e796c7d4e226b73fa",
+    "verification": "file_identity_verified; selected sections reviewed; runtime not verified",
+    "derived_text": {
+      "path": "docs/methodology/source-sets/2026-10-01/derived/M8-v1.2.md",
+      "sha256": "f0272e304f36dc2d58777080b753a5fcc55578d22947e3afbae308b8afb71e0e",
+      "limitations": "paragraphs and tables; embedded diagrams not reproduced"
+    }
+  },
+  {
+    "id": "M5.Methodology",
+    "version": "1.1",
+    "selected_status": "FROZEN",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M5.Methodology-v1.1.docx",
+    "sha256": "dc96f9b48e0711326c0c4239d63f50a2fa1e63176a728f3e9eb4420f9efb77c1",
+    "verification": "file_identity_verified; methodological consistency not re-audited"
+  }
+]

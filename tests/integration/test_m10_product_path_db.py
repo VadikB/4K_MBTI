@@ -20,6 +20,7 @@ from Api.m5_cycle_runtime import read_cycle
 from Api.m10_product_flow import start_or_resume, read_runtime
 from Api.m10_product_flow import next_situation
 from Api.m7_cycle_planner import create_plan
+from tests.m6_admission_fixture import RecordedAdmissionGateway
 from Api import m10_orchestration
 from Api import m6_repository
 from Api.m6_worker import run_request as run_evidence
@@ -136,7 +137,7 @@ def _add_turn(connection, as_id, text, key):
 
 def _drain_product_pipeline(factory):
     for _ in range(30):
-        changed=m10_orchestration.advance_once(connection_factory=factory)
+        changed=m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
         with factory() as connection:
             evidence=connection.execute("SELECT id FROM m6_processing_requests WHERE status='queued' ORDER BY created_at LIMIT 1").fetchone()
             assessment=connection.execute("SELECT id FROM m6_assessment_requests WHERE status='queued' ORDER BY created_at LIMIT 1").fetchone()
@@ -172,17 +173,17 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
         complete(connection,cycle_id=cycle_id,key="s10-a-close",action="complete",reason="plan_finished",initiated_by=99)
         connection.commit()
 
-    assert m10_orchestration.advance_once(connection_factory=factory)
+    assert m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
     with factory() as connection:
         evidence=connection.execute("SELECT id,synthetic_confirmed FROM m6_processing_requests").fetchone()
         assert evidence["synthetic_confirmed"] is False
     run_evidence(evidence["id"],connection_factory=factory,gateway=EvidenceGateway())
-    assert m10_orchestration.advance_once(connection_factory=factory)
+    assert m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
     with factory() as connection:
         assessment=connection.execute("SELECT id,synthetic_confirmed FROM m6_assessment_requests").fetchone()
         assert assessment["synthetic_confirmed"] is False
     run_assessment(assessment["id"],connection_factory=factory,gateway=AssessmentGateway())
-    assert m10_orchestration.advance_once(connection_factory=factory)
+    assert m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
 
     with factory() as connection:
         report=read_latest_report(connection,cycle_id,"assessee")
@@ -244,7 +245,7 @@ def test_s10_d_closed_cycle_without_presented_material_has_no_result_report(prod
         assert result["final_handoff_ids"] == []
         connection.commit()
 
-    assert m10_orchestration.advance_once(connection_factory=factory)
+    assert m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
     with factory() as connection:
         report=read_latest_report(connection,cycle_id,"assessee")
         assert report["c67"]["contract"] == "C-67"
@@ -262,7 +263,7 @@ def test_s10_e_recalculation_preserves_old_results_and_report(product_db):
         complete(connection,cycle_id=cycle_id,key="s10-e-close",action="complete",
             reason="history_fixture",initiated_by=99)
         connection.commit()
-    assert m10_orchestration.advance_once(connection_factory=factory)
+    assert m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
 
     with factory() as connection:
         old_report=read_latest_report(connection,cycle_id,"assessee")

@@ -1,0 +1,9 @@
+{
+  "status": "synthetic_transport_fixture_not_gc",
+  "individual_status": "ADMITTED",
+  "joint_status": "COMPARABLE",
+  "feature": "Synthetic browser fixture: saved action and closed material",
+  "analysis": "Recorded admission for the isolated browser acceptance fixture; no semantic validity claim.",
+  "consequence": "Exercise admission revision propagation through the product pipeline.",
+  "limitations": ["Synthetic browser admission; not normative GC or methodology acceptance"]
+}

@@ -30,7 +30,7 @@ from Api.m7_clarification_contracts import CreateClarificationRequest,PresentCla
 from Api import m7_completion
 from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,AdditionalSessionRequest,BlockingWaitRequest,ReconcileC46Request
 from Api import m6_cycle_aggregation_repository
-from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest
+from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest, CreateSubstantiveAggregationRequest
 from Api.profile_access import require_unchanged_email
 from Api import participant_profile
 from Api import m8_results
@@ -6920,6 +6920,9 @@ def create_m6_cycle_calculation(cycle_id: UUID, payload: CreateAggregationReques
     user = _m5_superadmin(request)
     try:
         with get_connection() as connection:
+            cycle = connection.execute("SELECT usage_scope FROM m5_cycles WHERE cycle_id=%s", (cycle_id,)).fetchone()
+            if not cycle or cycle['usage_scope'] != 'qa':
+                raise ValueError('M6_MANUAL_ADMISSION_QA_ONLY')
             result = m6_cycle_aggregation_repository.create(connection, cycle_id=str(cycle_id),
                 key=payload.idempotency_key, expected_composition_checksum=payload.expected_composition_checksum,
                 admission_mechanism_version=payload.admission_mechanism_version,
@@ -6928,6 +6931,21 @@ def create_m6_cycle_calculation(cycle_id: UUID, payload: CreateAggregationReques
             return result
     except (ValueError, KeyError, OSError) as exc:
         raise HTTPException(409, detail=str(exc)) from exc
+
+
+
+@router.post('/admin/m6-cycles/{cycle_id}/substantive-calculations', status_code=201)
+def create_m6_substantive_calculation(cycle_id: UUID, payload: CreateSubstantiveAggregationRequest, request: Request):
+    user = _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result = m6_cycle_aggregation_repository.create_substantive(
+                connection, cycle_id=str(cycle_id), key=payload.idempotency_key,
+                expected_composition_checksum=payload.expected_composition_checksum, created_by=int(user.id))
+            connection.commit()
+            return result
+    except (ValueError, KeyError, OSError) as exc:
+        raise HTTPException(409, detail='M6_SUBSTANTIVE_CALCULATION_UNAVAILABLE') from exc
 
 
 @router.get('/admin/m6-cycles/{cycle_id}/calculations/latest')
