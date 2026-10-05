@@ -66,14 +66,8 @@ export const resetStaleUserState = async () => {
   state.assessmentSessionCode = null;
   state.assessmentTotalCases = 0;
   returnToStart();
-  try {
-    await fetch('/users/session/logout', {
-      method: 'POST',
-      credentials: 'same-origin',
-    });
-  } catch (_error) {
-    // ignore cleanup network issues
-  }
+  // A late 401 can belong to another tab's old session. Never revoke the
+  // current shared-cookie session here; explicit logout owns that operation.
   try {
     await resetChatScreen();
   } catch (_error) {

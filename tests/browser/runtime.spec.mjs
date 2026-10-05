@@ -266,6 +266,40 @@ test('Recovery: lost response, unaccepted request, two tabs and owner boundaries
  for(const endpoint of [`/users/assessment/cycles/${initial.cycle_id}/runtime`,`/users/assessment/m5/situations/${initial.current_situation.assessment_situation_id}/trace`])expect((await page.request.get(stand.url+endpoint)).status()).toBe(403);
  await expect(page.locator('#interview-messages')).not.toBeVisible();
 });
+test('Late 401 in another tab must not revoke a newly authenticated owner',async({page,context,stand})=>{
+ await login(page,stand);await start(page);
+ const tab=await context.newPage();await tab.goto(page.url());
+ await expect(tab.locator('#interview-textarea')).toBeEnabled();
+ let captured,fetchExpired,releaseExpired;
+ const capturedRequest=new Promise(resolve=>{captured=resolve;});
+ const fetchGate=new Promise(resolve=>{fetchExpired=resolve;});
+ const deliveryGate=new Promise(resolve=>{releaseExpired=resolve;});
+ let expired;
+ const expiredResponse=new Promise(resolve=>{expired=resolve;});
+ await tab.route('**/users/assessment/cycles/*/runtime',async route=>{
+   captured();await fetchGate;
+   const response=await route.fetch();
+   expired(response.status());await deliveryGate;
+   await route.fulfill({response});
+ });
+ try{
+   await capturedRequest;
+   await page.getByRole('button',{name:'Выйти',exact:true}).click();
+   await expect(page.locator('#email-input')).toBeVisible();
+   fetchExpired();expect(await expiredResponse).toBe(401);
+   await login(page,stand,'other@example.test');
+   let backgroundLogouts=0;
+   tab.on('request',request=>{if(new URL(request.url()).pathname==='/users/session/logout')backgroundLogouts++;});
+   releaseExpired();
+   await expect(tab.locator('#email-input')).toBeVisible();
+   // Synchronize with completion of the stale response recovery, including any logout.
+   await tab.waitForLoadState('networkidle');
+   expect(backgroundLogouts).toBe(0);
+   const restored=await (await page.request.get(stand.url+'/users/session/restore')).json();
+   expect(restored.authenticated).toBe(true);
+   expect(restored.user.email).toBe('other@example.test');
+ }finally{fetchExpired();releaseExpired();await tab.close();}
+});
 test('S10-A character branch: actual character Turn, order and no invented recommendation',async({page,stand},info)=>{
  await login(page,stand);await start(page,'Нина');
  const before=await runtime(page,stand);
