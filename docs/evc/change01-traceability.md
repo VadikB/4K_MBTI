@@ -116,3 +116,12 @@ versioned C-67 → owner screen/PDF. Реализация: `Api/m8_results*.py`,
 C-45 → Fragment/BS/Evidence/EB → immutable revisions и QA read-back.
 [Отчёт и команды](tasks/m6-a-implementation.md). Это частичное доказательство
 T08/T09, не закрытие требований итогового IA, C-54 и C-56. Provider/GC NOT_RUN.
+
+## 11.2 — контекст рекомендаций, 05.10.2026
+
+M8 v1.2 §6.1 + M4 v1.0 §3–6 → исторический PersonalizedProfile в Results →
+`Api/m8_recommendations.py`, draft `m8_recommendations/1.2.0` → C-67/UI/PDF.
+Трасса выбранного поля и ограничений сохраняется в generation input; IA/type
+eligibility 11.1 неизменны. [Отчёт и карта полей/61 Indicators](tasks/task11-2-m4-recommendation-context.md).
+Локальные unit/owned DB/HTTP/browser PASS; экспертное утверждение и объединённая
+приёмка после 10.6 отдельны, baseline не присвоен.
