@@ -1,12 +1,16 @@
 from contextlib import contextmanager
 import json
+from pathlib import Path
 from uuid import uuid4
 
 import psycopg
 import pytest
 from psycopg.rows import dict_row
 
-from Api.database import ensure_m5_runtime_schema
+from Api.database import ensure_m5_runtime_schema, ensure_role_profile_schema, ensure_assessment_context_schema
+from Api.assessment_role_profiles import publish_base_roles
+from Api import assessment_contexts as contexts, participant_profile
+from Api.schemas import PersonalizedProfileSelection
 from Api.m5_case_runtime import checksum
 from Api.m5_scenario_runtime import transition
 from Api.m5_storage import import_package
@@ -46,9 +50,23 @@ def product_db(test_database_url, monkeypatch):
         with factory() as connection:
             connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY)")
             connection.execute("INSERT INTO users VALUES(99)")
-            connection.execute("""CREATE TABLE assessment_personalized_profiles(
-                id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL,organization_id BIGINT,status TEXT,
-                content_json JSONB,provenance_json JSONB,checksum TEXT,frozen_at TIMESTAMPTZ DEFAULT NOW())""")
+            connection.execute('CREATE TABLE organizations(id BIGINT PRIMARY KEY,is_active BOOLEAN NOT NULL)')
+            connection.execute('CREATE TABLE organization_memberships(organization_id BIGINT REFERENCES organizations(id),user_id BIGINT REFERENCES users(id),UNIQUE(organization_id,user_id))')
+            connection.execute('CREATE TABLE user_sessions(id BIGINT PRIMARY KEY,user_id BIGINT REFERENCES users(id),execution_snapshot_json JSONB,execution_checksum TEXT)')
+            connection.execute('CREATE TABLE assessment_methodologies(id BIGINT PRIMARY KEY)')
+            connection.execute('CREATE TABLE assessment_methodology_versions(id BIGINT PRIMARY KEY,methodology_id BIGINT REFERENCES assessment_methodologies(id),status TEXT,definition_json JSONB)')
+            connection.execute('CREATE TABLE assessment_configurations(id BIGINT PRIMARY KEY,methodology_version_id BIGINT REFERENCES assessment_methodology_versions(id),status TEXT,code TEXT,name TEXT)')
+            connection.execute('CREATE TABLE assessment_preparation_jobs(id BIGINT PRIMARY KEY)')
+            connection.execute('INSERT INTO organizations VALUES(10,TRUE),(20,TRUE)')
+            ensure_role_profile_schema(connection); ensure_assessment_context_schema(connection)
+            connection.execute('INSERT INTO organization_memberships VALUES(10,99)')
+            connection.execute('INSERT INTO assessment_methodologies VALUES(1)')
+            connection.execute("INSERT INTO assessment_methodology_versions VALUES(1,1,'published','{\"methodology_version\":\"1.1\"}')")
+            connection.execute("INSERT INTO assessment_configurations VALUES(1,1,'published','synthetic','Synthetic configuration')")
+            root = Path(__file__).resolve().parents[2]
+            package = root/'assessment_definitions/role_profiles/competencies_4k/1.1'
+            roles = publish_base_roles(connection, package=json.loads((package/'base_roles.json').read_text()),
+                manifest=json.loads((package/'manifest.json').read_text()),published_by_user_id=99,decision_basis='synthetic isolated regression')
             ensure_m5_runtime_schema(connection)
             m6_repository.ensure_schema(connection)
             m10_orchestration.ensure_schema(connection)
@@ -59,8 +77,17 @@ def product_db(test_database_url, monkeypatch):
                 admitted_case["status"]="FROZEN"  # isolated S10 fixture; repository package remains WORKING
             import_package(connection,package=package,manifest=json.loads((OUTPUT/"manifest.json").read_text()),
                 execution_rules=json.loads((OUTPUT/"execution-rules.json").read_text()))
-            connection.execute("INSERT INTO assessment_personalized_profiles VALUES(7,99,NULL,'ready',%s::jsonb,'{}',%s,NOW())",
-                (json.dumps({"role_profile":{"code":case["base_role"]}}),"c"*64))
+            organization = {'name':'Synthetic','organization_type':'компания','industry':'образование',
+                'activity_description':'Разработка программ','case_reality_level':'обобщённый','organization_name_usage_rules':'не использовать'}
+            org = contexts.create_organization_context_draft(connection,organization_id=10,definition=organization)
+            contexts.publish_organization_context(connection,version_id=org,confirmed_by_user_id=99)
+            role = connection.execute("""SELECT v.id FROM assessment_role_profile_versions v
+                JOIN assessment_role_profiles r ON r.id=v.role_profile_id WHERE r.code=%s""",(case['base_role'],)).fetchone()['id']
+            profile = participant_profile.confirm(connection,user_id=99,
+                selection=PersonalizedProfileSelection(organization_context_version_id=org,
+                    role_profile_version_id=role,assessment_configuration_id=1),
+                full_name='Synthetic participant',position='',duties='')
+            factory.profile_id = profile['id']
             for admitted_case in admitted_cases:
                 case_row=connection.execute("SELECT id FROM m5_case_versions WHERE case_id=%s",(admitted_case["case_id"],)).fetchone()
                 assert connection.execute("SELECT status FROM m5_case_versions WHERE id=%s",(case_row["id"],)).fetchone()["status"]=="FROZEN"
@@ -209,7 +236,7 @@ def test_s10_b_additional_session_preserves_boundary_and_reaches_report(product_
 def test_s10_d_closed_cycle_without_presented_material_has_no_result_report(product_db):
     factory=product_db
     with factory() as connection:
-        plan=create_plan(connection,personalized_profile_id=7,selected_skills=["K1","K2","K3","K4"],
+        plan=create_plan(connection,personalized_profile_id=factory.profile_id,selected_skills=["K1","K2","K3","K4"],
             created_by=99,key="s10-d-plan",usage_scope="assessment")
         cycle_id=str(plan["cycle_id"])
         result=complete(connection,cycle_id=cycle_id,key="s10-d-close",action="complete",
@@ -229,7 +256,7 @@ def test_s10_d_closed_cycle_without_presented_material_has_no_result_report(prod
 def test_s10_e_recalculation_preserves_old_results_and_report(product_db):
     factory=product_db
     with factory() as connection:
-        plan=create_plan(connection,personalized_profile_id=7,selected_skills=["K1","K2","K3","K4"],
+        plan=create_plan(connection,personalized_profile_id=factory.profile_id,selected_skills=["K1","K2","K3","K4"],
             created_by=99,key="s10-e-plan",usage_scope="assessment")
         cycle_id=str(plan["cycle_id"])
         complete(connection,cycle_id=cycle_id,key="s10-e-close",action="complete",

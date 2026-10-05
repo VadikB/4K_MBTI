@@ -1020,7 +1020,7 @@ const startAssessmentInterview = async () => {
   try {
     const response = await fetch('/users/assessment/cycles/start', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idempotency_key: state.productCycleId || createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'] }),
+      body: JSON.stringify({ personalized_profile_id: state.dashboard?.personalized_profile_id || null, idempotency_key: state.productCycleId || createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'] }),
     });
     const started = await readApiResponse(response, 'Не удалось запустить Cycle runtime.');
     state.assessmentRuntimeKind = 'cycle';
