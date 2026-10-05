@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from Api.profile_access import require_unchanged_email
+
 import json
 import re
 from dataclasses import dataclass, field
@@ -2935,11 +2937,15 @@ class InterviewerAgent:
         role_match = selected_role_match or detected_role_match
         normalized_telegram = self.normalize_telegram(telegram)
         with get_connection() as connection:
+            if email is not None:
+                current = connection.execute('SELECT email FROM users WHERE id=%s FOR UPDATE', (user_id,)).fetchone()
+                if current is None:
+                    raise ValueError('User not found')
+                require_unchanged_email(current['email'], email)
             row = connection.execute(
                 """
                 UPDATE users
                 SET full_name = COALESCE(%s, full_name),
-                    email = COALESCE(%s, email),
                     job_description = %s,
                     role_id = %s,
                     telegram = COALESCE(%s, telegram),
@@ -2949,7 +2955,6 @@ class InterviewerAgent:
                 """,
                 (
                     full_name,
-                    email,
                     clean_position,
                     selected_role_match.role_id if selected_role_match else None,
                     normalized_telegram,
@@ -3039,7 +3044,7 @@ class InterviewerAgent:
             role_options=self._build_role_options() if user is not None or state.stage == ConversationStage.ASK_ROLE else None,
         )
 
-    def reply(self, session_id: str, message: str, progress_operation_id: str | None = None) -> AgentReply:
+    def reply(self, session_id: str, message: str, progress_operation_id: str | None = None, *, authenticated_user_id: int) -> AgentReply:
         text = _trimmed(message)
         if not text:
             raise ValueError("Message is required")
@@ -3054,6 +3059,8 @@ class InterviewerAgent:
             with self._lock:
                 self._sessions[session_id] = state
 
+        if state.user_id != authenticated_user_id:
+            raise PermissionError("Profile session does not belong to the authenticated user")
         state.history.append({"role": "user", "content": text})
 
         if state.mode == ConversationMode.EXISTING_USER:

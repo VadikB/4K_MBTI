@@ -42,6 +42,8 @@ export const saveProfile = async (options = {}) => {
     return;
   }
 
+  const ownerId = state.pendingUser.id;
+  const epoch = state.identityEpoch;
   profileEmail.disabled = true;
   profileTelegram.disabled = true;
   if (!silent) {
@@ -61,6 +63,7 @@ export const saveProfile = async (options = {}) => {
       }),
     });
     const data = await readApiResponse(response, 'Не удалось сохранить изменения профиля.');
+    if (state.pendingUser?.id !== ownerId || state.identityEpoch !== epoch) return;
     state.pendingUser = data;
     if (state.profileSummary?.user) {
       state.profileSummary.user = data;
@@ -71,6 +74,7 @@ export const saveProfile = async (options = {}) => {
       setProfileStatus(successMessage, 'success');
     }
   } catch (error) {
+    if (state.pendingUser?.id !== ownerId || state.identityEpoch !== epoch) return;
     setProfileStatus(error.message, 'error');
   } finally {
     profileEmail.disabled = false;
@@ -82,18 +86,31 @@ export const loadProfileSummary = async () => {
   if (!state.pendingUser?.id) {
     throw new Error('Не удалось определить пользователя для загрузки профиля.');
   }
-  const response = await fetch('/users/' + state.pendingUser.id + '/profile-summary');
+  const ownerId = state.pendingUser.id;
+  const epoch = state.identityEpoch;
+  const response = await fetch('/users/' + ownerId + '/profile-summary');
   const data = await readApiResponse(response, 'Не удалось загрузить профиль пользователя.');
+  if (state.pendingUser?.id !== ownerId || state.identityEpoch !== epoch) throw new Error('Сессия профиля изменилась.');
   state.profileSummary = data;
   state.profileHistoryPage = 1;
 };
 
 export const openProfile = async () => {
+  const epoch = state.identityEpoch;
   setCurrentScreen('profile');
   persistAssessmentContext();
   syncUrlState('profile');
   hideAllPanels();
   profilePanel.classList.remove('hidden');
+  state.profileSummary = null;
+  state.profileAvatarDraft = null;
+  for (const field of [profileFullName, profileEmail, profilePhone, profileTelegram, profileJobDescription, profileCompanyIndustry]) field.value = '';
+  profileName.textContent = '';
+  profileRole.textContent = 'Загружаем профиль…';
+  profileTotalAssessments.textContent = '0';
+  profileAverageScore.textContent = '0%';
+  setProfileStatus('', '');
+  renderProfileAvatar(null);
   try {
     await loadProfileSummary();
     state.profileAvatarDraft =
@@ -101,6 +118,7 @@ export const openProfile = async () => {
     setProfileStatus('', '');
     renderProfile();
   } catch (error) {
+    if (state.identityEpoch !== epoch) return;
     profileRole.textContent = error.message;
   }
 };

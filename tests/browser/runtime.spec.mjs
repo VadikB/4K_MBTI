@@ -67,10 +67,10 @@ test.beforeEach(async({page,stand,browser},info)=>{
 test.afterEach(async({page},info)=>{
  await info.attach('assessment-http',{body:JSON.stringify(page.acceptanceNetwork||[],null,2),contentType:'application/json'});
 });
-async function login(page,stand,email='participant@example.test',prepare=false){
+async function login(page,stand,email='participant@example.test',prepare=false,navigate=true){
  page.on('dialog',dialog=>dialog.accept());
  page.on('response',async response=>{try{if(response.url().endsWith('/runtime') && response.ok()){page.acceptanceCycle=(await response.json()).cycle_id;}}catch{/* Navigation may discard diagnostic response bodies. */}});
- await page.goto(stand.url);
+ if(navigate) await page.goto(stand.url);
  await page.locator('#email-input').fill(email);
  await page.locator('#request-magic-link-button').click();
  await page.locator('#magic-token-input').fill(stand.state.password);
@@ -328,4 +328,48 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  await info.attach('history-pdf-check',{body:historyCheck.stdout,contentType:'text/plain'});
  await info.attach('history-pdf',{path:pdf,contentType:'application/pdf'});
  await info.attach('history-report',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+});
+
+
+test('S10.4 owner profile, 403, logout, late response and account switch',async({page,stand},info)=>{
+ await login(page,stand);
+ const settings=async()=>{await page.locator('#dashboard-panel .user-chip').click();await page.locator('#dashboard-profile-button').click();};
+ await settings();
+ await expect(page.locator('#profile-email')).toHaveValue('participant@example.test');
+ await expect(page.locator('#profile-email')).toHaveAttribute('readonly','');
+ await page.locator('#profile-telegram').fill('@owner_changed');await page.locator('#profile-telegram').press('Tab');
+ await expect(page.locator('#profile-save-status')).toContainText('Telegram обновлен');
+ await info.attach('owner-profile',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+ await page.reload();await expect(page.locator('#profile-telegram')).toHaveValue('@owner_changed');
+ // Controlled 403 only checks UI handling; the same refusal is independently tested on real DB/router.
+ await page.route('**/users/*/profile',async route=>route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({detail:'Нет доступа к профилю.'})}));
+ await page.locator('#profile-telegram').fill('@denied');await page.locator('#profile-telegram').press('Tab');
+ await expect(page.locator('#profile-save-status')).toContainText('Нет доступа');
+ await page.unroute('**/users/*/profile');
+ await page.locator('#profile-back-button').click();
+ let release;const gate=new Promise(resolve=>{release=resolve;});let captured;
+ const capture=new Promise(resolve=>{captured=resolve;});
+ await page.route('**/users/*/profile-summary',async route=>{
+   const result=await route.fetch();captured();await gate;await route.fulfill({response:result});
+ });
+ await settings();await capture;
+ await page.locator('#profile-back-button').click();
+ await page.locator('#dashboard-panel .user-chip').click();await page.locator('#dashboard-restart-button').click();
+ await expect(page.locator('#email-input')).toBeVisible();
+ await expect(page.locator('#profile-email')).toHaveValue('');
+ await expect(page.locator('#profile-name')).toHaveText('');
+ await expect(page.locator('#profile-total-assessments')).toHaveText('0');
+ await expect(page.locator('#profile-average-score')).toHaveText('0%');
+ await login(page,stand,'other@example.test',false,false);
+ release();await page.unrouteAll({behavior:'wait'});
+ await settings();
+ await expect(page.locator('#profile-email')).toHaveValue('other@example.test');
+ await expect(page.locator('#profile-telegram')).toHaveValue('@synthetic_e102');
+ await expect(page.locator('#profile-panel')).not.toContainText('Синтетический участник 1');
+ await info.attach('other-profile',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+ // Missing/expired authentication uses the common 401 recovery and clears the profile.
+ await page.context().clearCookies();
+ await page.locator('#profile-telegram').fill('@expired');await page.locator('#profile-telegram').press('Tab');
+ await expect(page.locator('#email-input')).toBeVisible();
+ await expect(page.locator('#profile-email')).toHaveValue('');
 });

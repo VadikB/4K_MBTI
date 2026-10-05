@@ -79,7 +79,7 @@ const renderProfileConfirmation = () => {
     <header><h3>Проверьте профиль</h3><p>Подтвердите сохранённые данные или исправьте их перед продолжением.</p></header>
     <div class="chat-profile-grid">
       <label>ФИО<input name="full_name" required value="${escapeHtml(user.full_name || '')}"></label>
-      <label>Email<input name="email" type="email" required value="${escapeHtml(user.email || '')}"></label>
+      <label>Email<input name="email" type="email" readonly required value="${escapeHtml(user.email || '')}"></label>
       <label>Telegram<input name="telegram" placeholder="@username" value="${escapeHtml(user.telegram || '')}"></label>
       <label>Должность<input name="position" required value="${escapeHtml(user.raw_position || user.job_description || '')}"></label>
       <label class="chat-profile-wide">Должностные обязанности<textarea name="duties" required rows="3" aria-describedby="duties-detail-example" placeholder="${escapeHtml(DUTIES_DETAIL_EXAMPLE)}">${escapeHtml(user.raw_duties || user.normalized_duties || '')}</textarea><span id="duties-detail-example" class="chat-profile-field-hint">Опишите конкретные действия, зоны ответственности и взаимодействие с коллегами. ${escapeHtml(DUTIES_DETAIL_EXAMPLE)}</span></label>

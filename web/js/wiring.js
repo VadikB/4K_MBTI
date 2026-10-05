@@ -445,6 +445,7 @@ if (authPasswordGenerateButton) {
 }
 
 const applyAuthResponse = async (data) => {
+  if (state.pendingUser?.id !== data.user?.id) clearAssessmentContext();
   const agent = data.agent || null;
 
   state.sessionId = agent?.session_id || null;

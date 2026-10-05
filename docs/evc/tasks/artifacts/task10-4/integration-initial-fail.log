@@ -1,0 +1,708 @@
+Created empty owned stand: product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 application_tables=0
+bootstrap ready
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-7.1.0, anyio-4.13.0
+collected 462 items / 384 deselected / 78 selected
+
+tests/integration/test_assessment_analysis_queue_db.py EEEEEEEE          [ 10%]
+tests/integration/test_assessment_authoring_workflow_db.py .......       [ 19%]
+tests/integration/test_assessment_evaluation_material_repository_db.py . [ 20%]
+                                                                         [ 20%]
+tests/integration/test_assessment_indicator_repository_db.py ..          [ 23%]
+tests/integration/test_assessment_queue_db.py EEE.EE                     [ 30%]
+tests/integration/test_assessment_shadow_aggregate_db.py ..              [ 33%]
+tests/integration/test_m10_product_path_db.py .....                      [ 39%]
+tests/integration/test_m3_role_profiles_db.py F                          [ 41%]
+tests/integration/test_m4_contexts_db.py .                               [ 42%]
+tests/integration/test_m5_cycle_runtime_db.py ..                         [ 44%]
+tests/integration/test_m5_generation_lab_db.py .                         [ 46%]
+tests/integration/test_m5_runtime_db.py ..                               [ 48%]
+tests/integration/test_m6_evidence_db.py ........................        [ 79%]
+tests/integration/test_m7_cycle_planner_db.py ......                     [ 87%]
+tests/integration/test_m8_recommendation_basis_db.py ......              [ 94%]
+tests/integration/test_profile_access_owned_stand.py .                   [ 96%]
+tests/integration/test_removed_personality_schema_cleanup_db.py .        [ 97%]
+tests/integration/test_review_m4_confirmation_db.py .                    [ 98%]
+tests/integration/test_review_report_history_db.py .                     [100%]
+
+==================================== ERRORS ====================================
+____ ERROR at setup of test_analysis_enqueue_is_deduplicated_and_persistent ____
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113b370b0>
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_assessment_analysis_queue_db.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x11375c740>
+query = 'DROP TABLE IF EXISTS user_sessions', params = None, prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DependentObjectsStillExist: cannot drop table user_sessions because other objects depend on it
+E           DETAIL:  constraint session_cases_session_id_fkey on table session_cases depends on table user_sessions
+E           constraint session_skills_session_id_fkey on table session_skills depends on table user_sessions
+E           constraint session_skill_assessments_session_id_fkey on table session_skill_assessments depends on table user_sessions
+E           constraint case_set_reuse_audits_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint case_set_reuse_audits_source_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint session_case_skill_analysis_session_id_fkey on table session_case_skill_analysis depends on table user_sessions
+E           constraint session_indicator_assessments_session_id_fkey on table session_indicator_assessments depends on table user_sessions
+E           HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DependentObjectsStillExist
+__ ERROR at setup of test_analysis_claim_process_and_report_ready_transition ___
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1100c4da0>
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_assessment_analysis_queue_db.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x113a16420>
+query = 'DROP TABLE IF EXISTS user_sessions', params = None, prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DependentObjectsStillExist: cannot drop table user_sessions because other objects depend on it
+E           DETAIL:  constraint session_cases_session_id_fkey on table session_cases depends on table user_sessions
+E           constraint session_skills_session_id_fkey on table session_skills depends on table user_sessions
+E           constraint session_skill_assessments_session_id_fkey on table session_skill_assessments depends on table user_sessions
+E           constraint case_set_reuse_audits_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint case_set_reuse_audits_source_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint session_case_skill_analysis_session_id_fkey on table session_case_skill_analysis depends on table user_sessions
+E           constraint session_indicator_assessments_session_id_fkey on table session_indicator_assessments depends on table user_sessions
+E           HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DependentObjectsStillExist
+_ ERROR at setup of test_terminal_failure_can_be_retried_without_duplicate_active_job _
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113d2f020>
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_assessment_analysis_queue_db.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x113d2dca0>
+query = 'DROP TABLE IF EXISTS user_sessions', params = None, prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DependentObjectsStillExist: cannot drop table user_sessions because other objects depend on it
+E           DETAIL:  constraint session_cases_session_id_fkey on table session_cases depends on table user_sessions
+E           constraint session_skills_session_id_fkey on table session_skills depends on table user_sessions
+E           constraint session_skill_assessments_session_id_fkey on table session_skill_assessments depends on table user_sessions
+E           constraint case_set_reuse_audits_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint case_set_reuse_audits_source_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint session_case_skill_analysis_session_id_fkey on table session_case_skill_analysis depends on table user_sessions
+E           constraint session_indicator_assessments_session_id_fkey on table session_indicator_assessments depends on table user_sessions
+E           HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DependentObjectsStillExist
+____ ERROR at setup of test_universal_queue_completes_without_legacy_agent _____
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113d2fda0>
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_assessment_analysis_queue_db.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x113d2e900>
+query = 'DROP TABLE IF EXISTS user_sessions', params = None, prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DependentObjectsStillExist: cannot drop table user_sessions because other objects depend on it
+E           DETAIL:  constraint session_cases_session_id_fkey on table session_cases depends on table user_sessions
+E           constraint session_skills_session_id_fkey on table session_skills depends on table user_sessions
+E           constraint session_skill_assessments_session_id_fkey on table session_skill_assessments depends on table user_sessions
+E           constraint case_set_reuse_audits_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint case_set_reuse_audits_source_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint session_case_skill_analysis_session_id_fkey on table session_case_skill_analysis depends on table user_sessions
+E           constraint session_indicator_assessments_session_id_fkey on table session_indicator_assessments depends on table user_sessions
+E           HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DependentObjectsStillExist
+_ ERROR at setup of test_indicator_v2_queue_completes_and_uses_indicator_repository _
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113d2f6b0>
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_assessment_analysis_queue_db.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x113d2f770>
+query = 'DROP TABLE IF EXISTS user_sessions', params = None, prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DependentObjectsStillExist: cannot drop table user_sessions because other objects depend on it
+E           DETAIL:  constraint session_cases_session_id_fkey on table session_cases depends on table user_sessions
+E           constraint session_skills_session_id_fkey on table session_skills depends on table user_sessions
+E           constraint session_skill_assessments_session_id_fkey on table session_skill_assessments depends on table user_sessions
+E           constraint case_set_reuse_audits_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint case_set_reuse_audits_source_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint session_case_skill_analysis_session_id_fkey on table session_case_skill_analysis depends on table user_sessions
+E           constraint session_indicator_assessments_session_id_fkey on table session_indicator_assessments depends on table user_sessions
+E           HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DependentObjectsStillExist
+_ ERROR at setup of test_shadow_result_is_separate_and_never_blocks_official_analysis[False] _
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113db17f0>
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_assessment_analysis_queue_db.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x113db0410>
+query = 'DROP TABLE IF EXISTS user_sessions', params = None, prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DependentObjectsStillExist: cannot drop table user_sessions because other objects depend on it
+E           DETAIL:  constraint session_cases_session_id_fkey on table session_cases depends on table user_sessions
+E           constraint session_skills_session_id_fkey on table session_skills depends on table user_sessions
+E           constraint session_skill_assessments_session_id_fkey on table session_skill_assessments depends on table user_sessions
+E           constraint case_set_reuse_audits_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint case_set_reuse_audits_source_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint session_case_skill_analysis_session_id_fkey on table session_case_skill_analysis depends on table user_sessions
+E           constraint session_indicator_assessments_session_id_fkey on table session_indicator_assessments depends on table user_sessions
+E           HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DependentObjectsStillExist
+_ ERROR at setup of test_shadow_result_is_separate_and_never_blocks_official_analysis[True] _
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113db2510>
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_assessment_analysis_queue_db.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x113db10d0>
+query = 'DROP TABLE IF EXISTS user_sessions', params = None, prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DependentObjectsStillExist: cannot drop table user_sessions because other objects depend on it
+E           DETAIL:  constraint session_cases_session_id_fkey on table session_cases depends on table user_sessions
+E           constraint session_skills_session_id_fkey on table session_skills depends on table user_sessions
+E           constraint session_skill_assessments_session_id_fkey on table session_skill_assessments depends on table user_sessions
+E           constraint case_set_reuse_audits_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint case_set_reuse_audits_source_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint session_case_skill_analysis_session_id_fkey on table session_case_skill_analysis depends on table user_sessions
+E           constraint session_indicator_assessments_session_id_fkey on table session_indicator_assessments depends on table user_sessions
+E           HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DependentObjectsStillExist
+__________ ERROR at setup of test_expired_analysis_lease_is_recovered __________
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113db3230>
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_assessment_analysis_queue_db.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x113db1d90>
+query = 'DROP TABLE IF EXISTS user_sessions', params = None, prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DependentObjectsStillExist: cannot drop table user_sessions because other objects depend on it
+E           DETAIL:  constraint session_cases_session_id_fkey on table session_cases depends on table user_sessions
+E           constraint session_skills_session_id_fkey on table session_skills depends on table user_sessions
+E           constraint session_skill_assessments_session_id_fkey on table session_skill_assessments depends on table user_sessions
+E           constraint case_set_reuse_audits_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint case_set_reuse_audits_source_session_id_fkey on table case_set_reuse_audits depends on table user_sessions
+E           constraint session_case_skill_analysis_session_id_fkey on table session_case_skill_analysis depends on table user_sessions
+E           constraint session_indicator_assessments_session_id_fkey on table session_indicator_assessments depends on table user_sessions
+E           HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DependentObjectsStillExist
+________ ERROR at setup of test_enqueue_claim_complete_and_read_result _________
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113df7740>
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_assessment_queue_db.py:23:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x113df65d0>
+query = 'DROP TABLE IF EXISTS assessment_preparation_jobs', params = None
+prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DependentObjectsStillExist: cannot drop table assessment_preparation_jobs because other objects depend on it
+E           DETAIL:  constraint assessment_stage_runs_preparation_job_fk on table assessment_stage_runs depends on table assessment_preparation_jobs
+E           constraint assessment_preparation_batch_items_operation_id_fkey on table assessment_preparation_batch_items depends on table assessment_preparation_jobs
+E           HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DependentObjectsStillExist
+__________ ERROR at setup of test_active_job_is_deduplicated_per_user __________
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113db0440>
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_assessment_queue_db.py:23:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x113db3320>
+query = 'DROP TABLE IF EXISTS assessment_preparation_jobs', params = None
+prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DependentObjectsStillExist: cannot drop table assessment_preparation_jobs because other objects depend on it
+E           DETAIL:  constraint assessment_stage_runs_preparation_job_fk on table assessment_stage_runs depends on table assessment_preparation_jobs
+E           constraint assessment_preparation_batch_items_operation_id_fkey on table assessment_preparation_batch_items depends on table assessment_preparation_jobs
+E           HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DependentObjectsStillExist
+________ ERROR at setup of test_queued_execution_snapshot_is_immutable _________
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113db2540>
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_assessment_queue_db.py:23:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x113db1160>
+query = 'DROP TABLE IF EXISTS assessment_preparation_jobs', params = None
+prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DependentObjectsStillExist: cannot drop table assessment_preparation_jobs because other objects depend on it
+E           DETAIL:  constraint assessment_stage_runs_preparation_job_fk on table assessment_stage_runs depends on table assessment_preparation_jobs
+E           constraint assessment_preparation_batch_items_operation_id_fkey on table assessment_preparation_batch_items depends on table assessment_preparation_jobs
+E           HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DependentObjectsStillExist
+__________ ERROR at setup of test_expired_lease_is_returned_to_queue ___________
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113d2ec60>
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_assessment_queue_db.py:23:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x113d2eab0>
+query = 'DROP TABLE IF EXISTS assessment_preparation_jobs', params = None
+prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DependentObjectsStillExist: cannot drop table assessment_preparation_jobs because other objects depend on it
+E           DETAIL:  constraint assessment_stage_runs_preparation_job_fk on table assessment_stage_runs depends on table assessment_preparation_jobs
+E           constraint assessment_preparation_batch_items_operation_id_fkey on table assessment_preparation_batch_items depends on table assessment_preparation_jobs
+E           HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DependentObjectsStillExist
+___ ERROR at setup of test_worker_with_expired_lease_cannot_overwrite_result ___
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113d2fc80>
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_assessment_queue_db.py:23:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x113d2ffe0>
+query = 'DROP TABLE IF EXISTS assessment_preparation_jobs', params = None
+prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DependentObjectsStillExist: cannot drop table assessment_preparation_jobs because other objects depend on it
+E           DETAIL:  constraint assessment_stage_runs_preparation_job_fk on table assessment_stage_runs depends on table assessment_preparation_jobs
+E           constraint assessment_preparation_batch_items_operation_id_fkey on table assessment_preparation_batch_items depends on table assessment_preparation_jobs
+E           HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DependentObjectsStillExist
+=================================== FAILURES ===================================
+_____ test_base_and_organization_roles_are_versioned_visible_and_immutable _____
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_13078620ba2144a9ae8dc1b11068ecf2 host=127.0.0.1 port=55491 connect_timeout=5'
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_m3_role_profiles_db.py:38:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x113b51d00>
+query = 'CREATE TABLE organizations (id BIGINT PRIMARY KEY, is_active BOOLEAN NOT NULL)'
+params = None, prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.DuplicateTable: relation "organizations" already exists
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: DuplicateTable
+=============================== warnings summary ===============================
+../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/integration/test_assessment_analysis_queue_db.py::test_analysis_enqueue_is_deduplicated_and_persistent
+ERROR tests/integration/test_assessment_analysis_queue_db.py::test_analysis_claim_process_and_report_ready_transition
+ERROR tests/integration/test_assessment_analysis_queue_db.py::test_terminal_failure_can_be_retried_without_duplicate_active_job
+ERROR tests/integration/test_assessment_analysis_queue_db.py::test_universal_queue_completes_without_legacy_agent
+ERROR tests/integration/test_assessment_analysis_queue_db.py::test_indicator_v2_queue_completes_and_uses_indicator_repository
+ERROR tests/integration/test_assessment_analysis_queue_db.py::test_shadow_result_is_separate_and_never_blocks_official_analysis[False]
+ERROR tests/integration/test_assessment_analysis_queue_db.py::test_shadow_result_is_separate_and_never_blocks_official_analysis[True]
+ERROR tests/integration/test_assessment_analysis_queue_db.py::test_expired_analysis_lease_is_recovered
+ERROR tests/integration/test_assessment_queue_db.py::test_enqueue_claim_complete_and_read_result
+ERROR tests/integration/test_assessment_queue_db.py::test_active_job_is_deduplicated_per_user
+ERROR tests/integration/test_assessment_queue_db.py::test_queued_execution_snapshot_is_immutable
+ERROR tests/integration/test_assessment_queue_db.py::test_expired_lease_is_returned_to_queue
+ERROR tests/integration/test_assessment_queue_db.py::test_worker_with_expired_lease_cannot_overwrite_result
+FAILED tests/integration/test_m3_role_profiles_db.py::test_base_and_organization_roles_are_versioned_visible_and_immutable
+= 1 failed, 64 passed, 384 deselected, 1 warning, 13 errors in 202.12s (0:03:22) =
+Owned stand removed

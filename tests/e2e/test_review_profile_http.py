@@ -33,7 +33,7 @@ def profile_client(monkeypatch):
     def factory(): yield db
     monkeypatch.setattr(routes, 'get_connection', factory)
     monkeypatch.setattr(routes.web_session_service, 'get_user_by_token',
-        lambda token: SimpleNamespace(id={'owner':91, 'same-org':92, 'other-org':93}[token]) if token in {'owner','same-org','other-org'} else None)
+        lambda token: SimpleNamespace(id={'owner':91, 'same-org':92, 'other-org':93}[token],email='participant@example.test') if token in {'owner','same-org','other-org'} else None)
     app = FastAPI(); app.include_router(routes.router)
     with TestClient(app) as client: yield client, db
 
@@ -53,7 +53,7 @@ def test_owner_can_read_and_update_profile(profile_client):
     client.cookies.set(routes.SESSION_COOKIE_NAME, 'owner')
     assert client.get('/users/91').status_code == 200
     assert client.get('/users/91/profile-summary').status_code == 200
-    assert client.patch('/users/91/profile', json={'email':'new@example.test'}).status_code == 200
+    assert client.patch('/users/91/profile', json={'telegram':'@updated'}).status_code == 200
     assert db.updates == 1
 
 
@@ -87,3 +87,18 @@ def test_user_listing_requires_scoped_admin(profile_client, monkeypatch):
     monkeypatch.setattr(routes, '_get_admin_scope_or_403', lambda *_: AdminScope(organization_ids=(10,)))
     assert client.get('/users').status_code == 200
     assert 'organization_id' in db.queries[-1] and 'ANY' in db.queries[-1]
+
+
+def test_t104_profile_email_change_is_not_an_identity_change(profile_client):
+    client, db = profile_client
+    client.cookies.set(routes.SESSION_COOKIE_NAME, 'owner')
+    response=client.patch('/users/91/profile',json={'email':'another@example.test','telegram':'changed'})
+    assert response.status_code==409
+    assert db.updates==0
+
+
+def test_t104_anonymous_dialogue_message_never_reaches_agent(profile_client,monkeypatch):
+    client,_=profile_client
+    def forbidden(**_): raise AssertionError('Unauthenticated request reached profile agent')
+    monkeypatch.setattr(routes.interviewer_agent,'reply',forbidden)
+    assert client.post('/users/agent/message',json={'session_id':'synthetic-session','message':'synthetic'}).status_code==401
