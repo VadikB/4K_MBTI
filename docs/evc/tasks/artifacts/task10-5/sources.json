@@ -1,0 +1,117 @@
+{
+  "note": "Прочитанные применимые разделы и проверенные файлы пакетов; DOCX — проверка происхождения по hash, понятийное чтение Markdown-проекций. M1 v1.4 CURRENT=NO.",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "37225b495d82a6950cde65d43786abb2a9e446cad6781f9fb2add968f3d1bde3"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "sha256": "762c989d7e8ccba3bea669a241df5395fd5a2c82ff370510d2afbbeddee53aa2"
+    },
+    {
+      "path": "README.md",
+      "sha256": "ba5e34c31b450cea5424bc7d8b04a0f442b7a45c4d2f9e5b136aeef6c9bfe33f"
+    },
+    {
+      "path": "assessment_definitions/cases/competencies_4k/1.1/admission-policy.json",
+      "sha256": "1049ed13ce5c6798c9fb79fa04347da43351d380732e347664c64a31312ab16a"
+    },
+    {
+      "path": "assessment_definitions/cases/competencies_4k/1.1/case-package.json",
+      "sha256": "6f03b19640cf9dfc0bc6fc80ad7435ef47a1a13076a48e130be1bc6a6dde6527"
+    },
+    {
+      "path": "assessment_definitions/contexts/competencies_4k/1.1/context_contract.json",
+      "sha256": "27b3ba3682d5da98264bc2ca2f54230d5231bb0c336f71f26058020483799f3c"
+    },
+    {
+      "path": "assessment_definitions/contexts/competencies_4k/1.1/m4_context_source.md",
+      "sha256": "9af86011c1ea1bef12058700bdd345c5cee335bbc6ec4d392fcfc4f3e5709fd1"
+    },
+    {
+      "path": "assessment_definitions/contexts/competencies_4k/1.1/manifest.json",
+      "sha256": "33fc27d60b64521ba43dfb3fb6aad9933e1030eaa7c658f7232fbc1526148330"
+    },
+    {
+      "path": "assessment_definitions/contexts/competencies_4k/1.1/personalized_profile.schema.json",
+      "sha256": "8caef8c3f39a08ae4add2037ad1e6ab27d996ff26430dfb17746b24b92bd0276"
+    },
+    {
+      "path": "assessment_definitions/role_profiles/competencies_4k/1.1/base_roles.json",
+      "sha256": "a3dbd62940b3c79baa123c5c2b4fff960b20c71e558304ba41007c2a205571d7"
+    },
+    {
+      "path": "assessment_definitions/role_profiles/competencies_4k/1.1/base_roles_source.md",
+      "sha256": "939b8e5bebdee2110d37d82f02ed5c54d6b809c18d696e3ce5c6b495abb8cf0c"
+    },
+    {
+      "path": "assessment_definitions/role_profiles/competencies_4k/1.1/manifest.json",
+      "sha256": "e08bb0f350025ccb062832fa2907104f2a470a71a586c21ef5fb28acc28e9499"
+    },
+    {
+      "path": "assessment_definitions/role_profiles/competencies_4k/1.1/role_profile_contract.json",
+      "sha256": "ffb0ee4f8e900ae2a61d8daf650d06839489432bb4001e9df6f021f1fb8b442b"
+    },
+    {
+      "path": "assessment_definitions/role_profiles/competencies_4k/1.1/role_profile_source.md",
+      "sha256": "d27a0f208b5f6f1dbb8c17987e9b9db9694e09472a68141314c2c71b1133c241"
+    },
+    {
+      "path": "docs/adr/002-cycle-as-dialogue-contracts.md",
+      "sha256": "4a4e0170bee7faf137301b342fec46b3e8e0209acd26dcb6b2dc7a788c58b25f"
+    },
+    {
+      "path": "docs/architecture/product-4k/1.0/context.md",
+      "sha256": "effebfc639a572593b6171a7a57cfe60db09bba200909d8a4edafb0e7ac98ebb"
+    },
+    {
+      "path": "docs/architecture/product-4k/1.0/updates/2026-10-01/README.md",
+      "sha256": "ac082bb94aac1b86c61d7e39589d76c886c6703ef3afc07bc8fecf1676a0a26d"
+    },
+    {
+      "path": "docs/architecture/product-4k/m1/v1.4/README.md",
+      "sha256": "f772f8d244c46f6a52924e18ac58dcbea3b603163b3b1da806e574e4cc077795"
+    },
+    {
+      "path": "docs/architecture/product-4k/registry.md",
+      "sha256": "b663db7f557fc3de3abd2d9e86b596926274ba4c5e2170047d4a6e5e60c54001"
+    },
+    {
+      "path": "docs/evc/agent-workflow.md",
+      "sha256": "0effe865cd4ec69d79845d8b3c043f28505e2e958969bba9b74b50e56f694ec6"
+    },
+    {
+      "path": "docs/evc/artifact-recipe.md",
+      "sha256": "db11e0034498e666ab50249beea17a7797383b6380004b1f345c2c9a3cafc2c5"
+    },
+    {
+      "path": "docs/evc/review-checklist.md",
+      "sha256": "2c0f8c76a200aacbc4bb3a83023f33441104cc4e7575900bb9d2975f383ecb42"
+    },
+    {
+      "path": "docs/evc/tasks/artifacts/task10-5/request.txt",
+      "sha256": "db0daeb80c66a8a410dca56d9743739febf2b4d907cb55b6ee6a5877dc51a7ab"
+    },
+    {
+      "path": "docs/evc/verification-matrix.md",
+      "sha256": "3f652c3fc12d8f756c69d7f594d3ceeb430e6483d6ed57aee1c3fe2c78a5b262"
+    },
+    {
+      "path": "docs/methodology/source-sets/2026-10-01/manifest.json",
+      "sha256": "f95a390f1257f4adbccf61be59bdcb0b99396501ca34cf117eb0efc10b237db8"
+    },
+    {
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M3.BaseRoles-v1.0.docx",
+      "sha256": "ab04e175bb1bf4ad55c320554068041baf3cb4c1cc2316c16966451b91c465bc"
+    },
+    {
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M3.RoleProfile-v1.0.docx",
+      "sha256": "a3c085e4182fe8bc5a82204a8d4679a09b85650ea79e2df24fb1ed8ab6604e06"
+    },
+    {
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M4.Context-v1.0.docx",
+      "sha256": "07875e93ae422668b1b30cd60bc1c6140cae91db12b0b80ba4abca441cfe9291"
+    }
+  ]
+}

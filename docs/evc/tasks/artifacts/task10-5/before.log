@@ -1,0 +1,44 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________________ test_profile_to_m4_on_owned_stand _______________________
+
+tmp_path = PosixPath('/private/var/folders/vm/bfnwy91x1fs7355w2cc86bl80000gn/T/pytest-of-vadim_bogachev/pytest-165/test_profile_to_m4_on_owned_st0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1042c3830>
+
+    def test_profile_to_m4_on_owned_stand(tmp_path, monkeypatch):
+        from scripts.test_stand import environment
+        env = {**os.environ, 'STAND_ADMIN_URL': os.getenv('STAND_ADMIN_URL') or os.getenv('TEST_DATABASE_URL', '')}
+        state_path = tmp_path / 'state.json'
+        def cli(action):
+            result = subprocess.run([sys.executable, 'scripts/test_stand.py', action, '--state', str(state_path), '--gateway', '1'],
+                env=env, capture_output=True, text=True, timeout=150)
+            assert result.returncode == 0, action + ' failed in disposable test environment'
+        cli('create')
+        try:
+            state = json.loads(state_path.read_text()); state['browser_profile'] = 'unprepared'
+            state_path.write_text(json.dumps(state))
+            cli('bootstrap'); cli('seed')
+            monkeypatch.setenv('STAND_ADMIN_URL', env['STAND_ADMIN_URL'])
+            isolated = environment(state)
+            destination = Path(os.getenv('PROFILE_M4_ARTIFACT_DIR', tmp_path)) / 'acceptance.json'
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            result = subprocess.run([sys.executable, __file__, '--internal', str(destination)], env=isolated,
+                capture_output=True, text=True, timeout=180)
+>           assert result.returncode == 0, result.stdout + result.stderr
+E           AssertionError: /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+E               from starlette.testclient import TestClient as TestClient  # noqa
+E             Traceback (most recent call last):
+E               File "/Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation/tests/integration/test_profile_to_m4_owned_stand.py", line 77, in <module>
+E                 internal(Path(sys.argv[2]))
+E               File "/Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation/tests/integration/test_profile_to_m4_owned_stand.py", line 71, in internal
+E                 assert unchanged, 'Rejected M4 confirmation must not partially commit the participant profile'
+E                        ^^^^^^^^^
+E             AssertionError: Rejected M4 confirmation must not partially commit the participant profile
+E
+E           assert 1 == 0
+E            +  where 1 = CompletedProcess(args=['/Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.venv/bin/python', '/Users/vadim_bogachev/Desktop/m...'\n           ^^^^^^^^^\nAssertionError: Rejected M4 confirmation must not partially commit the participant profile\n').returncode
+
+tests/integration/test_profile_to_m4_owned_stand.py:31: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_profile_to_m4_owned_stand.py::test_profile_to_m4_on_owned_stand
+1 failed in 9.81s
