@@ -147,3 +147,32 @@ S10-A/B/C, T11-10 и реальный provider — NOT_RUN. Следующий �
 state без предварительного smoke, общая сборка 11.1+10.2 и полная browser-трасса.
 Методологические GC/Reliability этой задачей не утверждаются. Открытых вопросов,
 блокирующих техническую реализацию стенда, нет.
+
+## Чистый checkout — итоговая проверка
+
+Проверен commit ed5d80b (код реализации). `git clone --no-hardlinks --single-branch
+--branch codex/task11-1-recommendation-basis` из локального Git в
+/tmp/e102-clean-checkout; git status --short пуст до/после запуска. .env и
+незакоммиченные файлы не переносились. Python interpreter с уже установленными
+зависимостями использован из исходной .venv; код и ресурсы загружались из checkout.
+
+С явным STAND_ADMIN_URL локального synthetic кластера выполнены:
+
+```sh
+python scripts/test_stand_check.py --directory /tmp/e102-checkout-a --port 18524
+python scripts/test_stand_check.py --directory /tmp/e102-checkout-b --port 18525
+```
+
+Оба exit 0: пустая новая БД → bootstrap/seed → HTTP Report/PDF → повтор
+bootstrap/seed/restart/readback → остановка → удаление собственной БД.
+E10.2-01/02/03/07/10 подтверждены также чистым checkout. Последнее адресное
+integration после проверки source_hash и отказа main без схемы: 2 passed, exit 0,
+70.80 s. Дальнейшая фиксация добавляет только отчёт и доказательства, код
+проверенного commit не меняется.
+
+Переносимые synthetic доказательства: [run a](artifacts/task10-2/a/smoke.json),
+[run b](artifacts/task10-2/b/smoke.json), app/create/smoke/destroy.txt и report.pdf
+в тех же каталогах. Пароли, state, cookies и DSN не включены. AS IDs и последовательность
+HTTP/workers видны в app.txt; оба run подтверждают foreign 403 и тот же Report после
+перезапуска. Временные browser-серверы остановлены; локальный state для ручного run d
+сохранён вне Git. Для 10.3 рекомендуется новый чистый state.
