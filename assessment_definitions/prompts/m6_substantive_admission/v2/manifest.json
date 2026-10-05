@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "m6_substantive_admission",
+  "version": "2.0.0",
+  "status": "draft",
+  "scope": "m6_substantive_admission_technical_acceptance",
+  "owner": "PM-05",
+  "source": {
+    "id": "M6",
+    "version": "1.8",
+    "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+    "sections": [
+      "M6.2",
+      "M6.5",
+      "M6.6.4",
+      "M6.6.8",
+      "M6.7.1-6.7.4",
+      "M6.8.1-6.8.3"
+    ],
+    "m2": "exact frozen criteria in M6-A input"
+  },
+  "input_contract": "M6.AdmissionInput/2",
+  "output_contract": "M6.AdmissionDecision/2",
+  "artifacts": [
+    {
+      "name": "prompt.md",
+      "sha256": "ed9118124a9e5955b775395698ed9e5f5832d99de777431e4026c1c0b233478e"
+    }
+  ],
+  "execution": {
+    "temperature": 0,
+    "timeout_seconds": 120,
+    "max_tokens": 12000,
+    "max_input_bytes": 300000,
+    "lease_seconds": 300
+  }
+}

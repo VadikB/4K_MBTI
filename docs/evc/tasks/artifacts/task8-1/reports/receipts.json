@@ -1,0 +1,30 @@
+[
+  {
+    "scenario": "admitted",
+    "report_id": "12994000-a4de-47c1-a38a-144d3bd9aeb4",
+    "pages": 3,
+    "limitations_matched": 11,
+    "pdf_sha256": "a856f6b65e4edd4d47358b7c8ddae2c88710b28879f752def0ee5ca92bfa8dca"
+  },
+  {
+    "scenario": "joint_failure",
+    "report_id": "e130a46b-6b93-487b-806b-5714b280fd1a",
+    "pages": 3,
+    "limitations_matched": 11,
+    "pdf_sha256": "1fd9e946e2661ff37cf352806ef96fb17c5346a83b2ed4e3d24f0783af7b24fc"
+  },
+  {
+    "scenario": "not_comparable",
+    "report_id": "3539db8f-0647-485a-9322-d39a1e685220",
+    "pages": 3,
+    "limitations_matched": 12,
+    "pdf_sha256": "46d25f91422882cdc34c5a32f190996e765896adac0861df1470496ca88adcd7"
+  },
+  {
+    "scenario": "no_ia",
+    "report_id": "f4383143-2cb6-45d2-8609-41d10e13e33a",
+    "pages": 2,
+    "limitations_matched": 11,
+    "pdf_sha256": "121a8a7446ec708b82fb27b450fd8ffbfdf0bcfcd5261b377c59d01b395aee40"
+  }
+]

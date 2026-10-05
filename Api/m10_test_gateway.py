@@ -60,11 +60,28 @@ def _acceptance_output(value, fixture):
     return {'schema_version':1,'mode':value['mode'],'targets':targets}
 
 
+def _admission_output(value):
+    if not enabled():
+        raise ValueError('TEST_GATEWAY_REQUIRES_OWNED_ISOLATED_STAND')
+    fixture=json.loads((Path(__file__).resolve().parents[1] / 'tests/browser/fixtures/admission-v2.json').read_text())
+    contexts=value['contexts']
+    finding={k:fixture[k] for k in ('feature','analysis','consequence')}
+    finding['refs']=[{'revision_id':c['revision_id'],'kind':'as_snapshot','id':c['material']['as_id']} for c in contexts]
+    common={'rationale':fixture['analysis'],'limitations':fixture['limitations']}
+    if value['stage']=='individual':
+        return {**common,'revision_id':contexts[0]['revision_id'],'status':fixture['individual_status'],
+            **{k:finding for k in ('normative_basis','opportunity','independence','clarification','contradictions')}}
+    return {**common,'considered_revision_ids':[c['revision_id'] for c in contexts],'status':fixture['joint_status'],
+        **{k:finding for k in ('normative_meaning','conditions','contradictions')}}
+
+
 class BrowserAcceptanceGateway:
     enabled = True
 
     def chat(self, messages, **_kwargs):
         value = json.loads(messages[1]["content"])
+        if value.get('stage') in ('individual','joint'):
+            return json.dumps(_admission_output(value),ensure_ascii=False)
         fixture=acceptance_fixture()
         if fixture:
             return json.dumps(_acceptance_output(value,fixture),ensure_ascii=False)

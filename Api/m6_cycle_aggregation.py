@@ -24,6 +24,11 @@ def calculate(*, hierarchy: list[dict], observations: list[dict], decisions: lis
     for item in observations:
         by_indicator.setdefault(item["indicator_id"], []).append(item)
     decision_map = {x["indicator_id"]: x for x in decisions}
+    if len(decision_map) != len(decisions):
+        raise ValueError("M6_ADMISSION_DUPLICATE_DECISION")
+    identities = [(x["indicator_id"], x["assessment_situation_id"]) for x in observations]
+    if len(identities) != len(set(identities)):
+        raise ValueError("M6_ADMISSION_AMBIGUOUS_REVISION")
     all_indicators = {i for skill in hierarchy for component in skill["components"] for i in component["indicator_ids"]}
     if len(all_indicators) != sum(len(c["indicator_ids"]) for s in hierarchy for c in s["components"]):
         raise ValueError("M6_HIERARCHY_DUPLICATE_INDICATOR")
@@ -47,17 +52,37 @@ def calculate(*, hierarchy: list[dict], observations: list[dict], decisions: lis
             if selected - actual:
                 raise ValueError("M6_ADMISSION_REFERENCE_INVALID")
             numeric = bool(decision.get("numeric_admissible"))
-            if numeric and (not selected or selected != actual):
-                raise ValueError("M6_CONVENIENT_SUBSET_FORBIDDEN")
-            admission = {**decision, "interpretable_revision_ids": sorted(actual)}
+            if decision.get("schema_version") == 2:
+                interpreted_ids = set(decision["interpretable_revision_ids"])
+                individual = decision["individual"]
+                considered = {x["revision_id"] for x in rows}
+                if (set(decision["considered_revision_ids"]) != considered
+                        or len(individual) != len(considered)
+                        or {x["revision_id"] for x in individual} != considered
+                        or interpreted_ids != {x["revision_id"] for x in individual if x["status"] == "ADMITTED"}
+                        or interpreted_ids - actual
+                        or bool(interpreted_ids) != decision["interpretation_admissible"]):
+                    raise ValueError("M6_ADMISSION_REFERENCE_INVALID")
+                if numeric and (not selected or selected != interpreted_ids
+                        or decision["joint"]["status"] != "COMPARABLE"
+                        or decision["sufficiency"]["met"] is not True):
+                    raise ValueError("M6_CONVENIENT_SUBSET_FORBIDDEN")
+                if not numeric and selected:
+                    raise ValueError("M6_ADMISSION_REFERENCE_INVALID")
+            else:
+                # Compatibility for explicit historical/manual v1 decisions.
+                interpreted_ids = actual if decision.get("interpretation_admissible") else set()
+                if numeric and (not selected or selected != actual):
+                    raise ValueError("M6_CONVENIENT_SUBSET_FORBIDDEN")
+            admission = {**decision, "interpretable_revision_ids": sorted(interpreted_ids)}
             admissions.append(admission)
-            if decision.get("interpretation_admissible") and actual:
+            if interpreted_ids:
                 interpreted.add(indicator)
             if numeric:
-                values = [LEVELS[x["outcome"]] for x in assessed]
+                values = [LEVELS[x["outcome"]] for x in assessed if x["revision_id"] in selected]
                 value = Fraction(sum(values), len(values))
                 contributions[indicator] = {"indicator_id": indicator, "score": _score(value),
-                    "included_revision_ids": sorted(actual), "as_count": len({x["assessment_situation_id"] for x in assessed}),
+                    "included_revision_ids": sorted(selected), "as_count": len({x["assessment_situation_id"] for x in assessed if x["revision_id"] in selected}),
                     "minimum": min(values), "maximum": max(values), "spread": max(values)-min(values)}
             else:
                 reasons[indicator] = decision.get("reason_code", "NOT_ADMISSIBLE")

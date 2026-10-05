@@ -1,73 +1,130 @@
+"""PM-05: substantive admission over saved final revisions, never client flags."""
 from __future__ import annotations
 
-import hashlib
 import json
 from collections import defaultdict
-from pathlib import Path
 
-from Api.m5_case_runtime import checksum
+from Api.assessment_configuration import definition_checksum
+from Api.m5_rule_engine import _call_with_trace, _gateway_for
+from Api.m6_admission_contracts import Individual, Joint, validate_refs
+from Api.m6_admission_material import resolve
+from Api.m6_admission_package import load_mechanism, verify_mechanism
 
-ROOT = Path(__file__).resolve().parents[1]
-RULES = ROOT / "assessment_definitions/aggregation/m6_admission/v1/rules.json"
-
-
-def load_rules() -> dict:
-    rules = json.loads(RULES.read_bytes())
-    expected = (1, "m6_admission", "1.0.0", "draft", "m6_product_technical_acceptance", "PM-05")
-    if tuple(rules.get(k) for k in ("schema_version", "id", "version", "status", "scope", "owner")) != expected:
-        raise ValueError("M6_ADMISSION_PACKAGE_INVALID")
-    entries = json.loads((ROOT / "docs/methodology/source-sets/2026-10-01/manifest.json").read_bytes())["entries"]
-    source = next((x for x in entries if x["id"] == rules["source"]["id"] and x["version"] == rules["source"]["version"]), None)
-    if not source or source["sha256"] != rules["source"]["sha256"]:
-        raise ValueError("SOURCE_UNRESOLVED")
-    if hashlib.sha256((ROOT / source["path"]).read_bytes()).hexdigest() != source["sha256"]:
-        raise ValueError("SOURCE_UNRESOLVED")
-    return rules
+VERSION = 'm6_substantive_admission/2.0.0'
 
 
-def decide(connection, *, cycle_id: str, observations: list[dict]) -> tuple[str, list[dict], list[str]]:
-    rules = load_rules()
-    by_indicator: dict[str, list[dict]] = defaultdict(list)
+def evaluate(stage, contexts, mechanism, *, gateway=None):
+    verify_mechanism(mechanism, definition_checksum(mechanism))
+    value = {'stage': stage, 'contexts': contexts}
+    encoded = json.dumps(value, ensure_ascii=False, allow_nan=False)
+    if len(encoded.encode()) > mechanism['max_input_bytes']:
+        raise ValueError('M6_ADMISSION_CONTEXT_LIMIT')
+    resolved = _gateway_for(mechanism['operation'], gateway)
+    if not resolved.enabled:
+        raise ValueError('M6_ADMISSION_GATEWAY_UNAVAILABLE')
+    messages = [
+        {'role': 'system', 'content': mechanism['prompt'] + '\nJSON Schema:\n' + json.dumps(mechanism['schema'][stage])},
+        {'role': 'user', 'content': encoded},
+    ]
+    raw, trace = _call_with_trace(resolved, messages, operation=mechanism['operation'],
+                                routing_key='m6-admission:' + definition_checksum(value))
+    if trace['identity_status'] != 'sent_matches_snapshot':
+        raise ValueError('M6_ADMISSION_AI_IDENTITY_MISMATCH')
+    schema = Individual if stage == 'individual' else Joint
+    output = validate_refs(schema.model_validate_json(raw).model_dump(), contexts)
+    ids = [x['revision_id'] for x in contexts]
+    actual = [output['revision_id']] if stage == 'individual' else output['considered_revision_ids']
+    if sorted(actual) != sorted(ids):
+        raise ValueError('M6_ADMISSION_COMPOSITION_MISMATCH')
+    return {**output, 'ai_trace': trace, 'input_checksum': definition_checksum(value)}
+
+
+def _failure(exc):
+    # Do not persist provider messages, material or credentials in exception text.
+    code = str(exc)
+    return code if (code.startswith('M6_') or code in {'CHECKSUM_MISMATCH', 'SOURCE_UNRESOLVED', 'TARGET_SET_MISMATCH'}) and code.replace('_', '').isalnum() else type(exc).__name__
+
+
+def decide(connection, *, cycle_id: str, observations: list[dict], gateway=None) -> tuple[str, list[dict], list[str]]:
+    mechanism = load_mechanism(VERSION)
+    by_indicator = defaultdict(list)
+    seen = set()
     for item in observations:
-        by_indicator[item["indicator_id"]].append(item)
+        identity = (item['indicator_id'], item['assessment_situation_id'])
+        if identity in seen:
+            raise ValueError('M6_ADMISSION_AMBIGUOUS_REVISION')
+        seen.add(identity)
+        by_indicator[item['indicator_id']].append(item)
     requirements = connection.execute(
-        """SELECT p.observation_requirements_json FROM m7_cycle_plans p
-           JOIN m5_cycles c ON c.id=p.cycle_db_id WHERE c.cycle_id=%s""", (cycle_id,),
+        '''SELECT p.observation_requirements_json FROM m7_cycle_plans p
+           JOIN m5_cycles c ON c.id=p.cycle_db_id WHERE c.cycle_id=%s''', (cycle_id,),
     ).fetchone()
-    requirement_map = {x["indicator_id"]: x for x in (requirements["observation_requirements_json"] if requirements else [])}
-    decisions, limitations = [], list(rules["limitations"])
-    for indicator_id, rows in sorted(by_indicator.items()):
-        numeric = [x for x in rows if x.get("outcome") in rules["numeric_outcomes"]]
-        revision_ids = sorted(x["revision_id"] for x in numeric)
-        as_ids = {x["assessment_situation_id"] for x in numeric}
-        contexts = []
-        for as_id in sorted(as_ids):
-            row = connection.execute(
-                "SELECT snapshot_json FROM m5_assessment_situations WHERE assessment_situation_id=%s", (as_id,),
-            ).fetchone()
-            if row:
-                contexts.append({"assessment_situation_id": as_id, "base_role": row["snapshot_json"].get("base_role"),
-                                 "case_ref": row["snapshot_json"].get("case_ref")})
-        required = int(requirement_map.get(indicator_id, {}).get("distinct_as_required", 1))
-        checks = {
-            "numeric_ia_present": bool(numeric),
-            "all_opportunities_present": bool(numeric) and all(x.get("opportunity") == rules["required_opportunity"] for x in numeric),
-            "all_refs_resolved": bool(numeric) and all(x.get("refs") for x in numeric),
-            "same_m2_version": len({x.get("m2_version") for x in numeric}) <= 1,
-            "same_base_role": len({x.get("base_role") for x in contexts}) <= 1 and len(contexts) == len(as_ids),
-            "no_reported_contradiction": all(not x.get("contradictions") for x in numeric),
-            "distinct_as_sufficient": len(as_ids) >= required,
+    requirement_map = {x['indicator_id']: x for x in (requirements['observation_requirements_json'] if requirements else [])}
+    decisions, limitations = [], []
+    for indicator, rows in sorted(by_indicator.items()):
+        individual, contexts, admitted = [], [], []
+        for observation in sorted(rows, key=lambda x: x['revision_id']):
+            rid = observation['revision_id']
+            if observation.get('outcome') not in {'L0', 'L1', 'L2', 'L3'}:
+                individual.append({'revision_id': rid, 'status': 'PROCESSING_FAILED' if observation.get('status') == 'TECHNICAL_FAILURE' else 'NOT_NUMERIC_IA',
+                                   'reason_code': observation.get('status', 'NO_NUMERIC_OUTCOME')})
+                continue
+            try:
+                context = resolve(connection, cycle_id=cycle_id, observations=[observation])[0]
+            except (ValueError, KeyError, IndexError) as exc:
+                individual.append({'revision_id': rid, 'status': 'MATERIAL_INVALID', 'reason_code': _failure(exc)})
+                continue
+            contexts.append(context)
+            try:
+                result = evaluate('individual', [context], mechanism, gateway=gateway)
+            except Exception as exc:
+                result = {'revision_id': rid, 'status': 'PROCESSING_FAILED', 'reason_code': _failure(exc)}
+            individual.append(result)
+            if result['status'] == 'ADMITTED':
+                admitted.append(context)
+        interpreted = sorted(x['revision_id'] for x in admitted)
+        unresolved = any(x['status'] in {'PROCESSING_FAILED', 'MATERIAL_INVALID', 'INSUFFICIENT_MATERIAL'} for x in individual)
+        if unresolved:
+            joint = {'status': 'INPUT_NOT_READY', 'reason_code': 'M6_ADMISSION_INDIVIDUAL_UNRESOLVED'}
+        elif admitted:
+            # Different normative packages require an explicitly approved mapping; none is installed.
+            identities = {(x['criterion']['m2_version'], x['criterion']['package_sha256']) for x in admitted}
+            if len(identities) != 1:
+                joint = {'status': 'MATERIAL_INVALID', 'reason_code': 'M6_ADMISSION_M2_MAPPING_UNVERIFIED'}
+            else:
+                try:
+                    joint = evaluate('joint', admitted, mechanism, gateway=gateway)
+                except Exception as exc:
+                    joint = {'status': 'PROCESSING_FAILED', 'reason_code': _failure(exc)}
+        else:
+            joint = {'status': 'NO_INTERPRETABLE_IA'}
+        requirement = requirement_map.get(indicator)
+        required = requirement.get('distinct_as_required') if requirement else None
+        count = len({x['material']['as_id'] for x in admitted})
+        sufficient = type(required) is int and required > 0 and count >= required
+        numeric = joint['status'] == 'COMPARABLE' and sufficient
+        reason = ('ADMITTED' if numeric else 'SUFFICIENCY_NOT_ESTABLISHED'
+                  if joint['status'] == 'COMPARABLE' else joint['status'])
+        decision = {
+            'schema_version': 2, 'cycle_id': cycle_id, 'indicator_id': indicator,
+            'considered_revision_ids': sorted(x['revision_id'] for x in rows),
+            'interpretable_revision_ids': interpreted,
+            'included_revision_ids': interpreted if numeric else [],
+            'excluded_revision_ids': sorted(x['revision_id'] for x in rows if not numeric or x['revision_id'] not in interpreted),
+            'interpretation_admissible': bool(interpreted), 'numeric_admissible': numeric,
+            'reason_code': reason, 'individual': individual, 'joint': joint,
+            'processing_status': 'failed' if joint['status'] == 'PROCESSING_FAILED' or
+                any(x['status'] == 'PROCESSING_FAILED' for x in individual) else 'completed',
+            'sufficiency': {'requirement': requirement, 'distinct_as_count': count, 'met': sufficient},
+            'source': mechanism['manifest']['source'],
+            'mechanism_ref': {'ref': VERSION, 'checksum': definition_checksum(mechanism)},
+            'mechanism': {'ref': VERSION, 'checksum': definition_checksum(mechanism), 'snapshot': mechanism},
+            'contexts': contexts,
         }
-        admissible = all(checks.values())
-        failed = sorted(key for key, value in checks.items() if not value)
-        decisions.append({
-            "indicator_id": indicator_id,
-            "included_revision_ids": revision_ids,
-            "interpretation_admissible": bool(numeric),
-            "numeric_admissible": admissible,
-            "reason_code": "ADMITTED_ALL_CHECKS" if admissible else "ADMISSION_CHECK_FAILED:" + ",".join(failed),
-            "mechanism": {"id": rules["id"], "version": rules["version"], "rules_checksum": checksum(rules)},
-            "checks": checks,
-            "contexts": contexts,
-        })
-    return f"{rules['id']}/{rules['version']}", decisions, limitations
+        decisions.append(decision)
+        for item in individual:
+            limitations.extend(f'{indicator}: {text}' for text in item.get('limitations', []))
+        limitations.extend(f'{indicator}: {text}' for text in joint.get('limitations', []))
+        if not numeric:
+            limitations.append(f'{indicator}: {reason}; ' + joint.get('rationale', joint.get('reason_code', reason)))
+    return VERSION, decisions, limitations

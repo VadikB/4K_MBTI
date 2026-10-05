@@ -193,6 +193,19 @@ def read_latest_results(connection, cycle_id: str) -> dict:
     return read_results_revision(connection, row["id"])
 
 
+def _admission_summary(decision: dict) -> dict:
+    fields = ("schema_version", "cycle_id", "indicator_id", "considered_revision_ids",
+              "interpretable_revision_ids", "included_revision_ids", "excluded_revision_ids",
+              "interpretation_admissible", "numeric_admissible", "reason_code", "sufficiency",
+              "source", "processing_status", "mechanism_ref")
+    result = {k: decision[k] for k in fields if k in decision}
+    # Provider trace contains full sent messages. C-67 receives findings, never raw prompts/material.
+    result["individual"] = [{k: v for k, v in item.items() if k != "ai_trace"}
+                            for item in decision.get("individual", [])]
+    result["joint"] = {k: v for k, v in decision.get("joint", {}).items() if k != "ai_trace"}
+    return result
+
+
 def _report_content(results: dict, audience: str, target_profile: dict | None, *, connection=None) -> dict:
     package = load_report_package()
     payload = results["results"]
@@ -209,7 +222,10 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
         if audience == "assessee":
             item.pop("components", None)
         skills.append(item)
+    admission_summary = [_admission_summary(d) for d in payload.get("admissions", []) if d.get("schema_version") == 2]
     recommendation_payload = {**payload, "assessed_skill_profile": recommendation_skills,
+                              "admissions": [_admission_summary(d) if d.get("schema_version") == 2 else d
+                                             for d in payload.get("admissions", [])],
                               "target_profile": target_profile or payload.get("target_profile")}
     try:
         from Api.m8_recommendation_basis import resolve
@@ -241,6 +257,7 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
             "limitations": payload["limitations"], "target_profile": target_profile or payload.get("target_profile"),
             "provenance": {"composition_checksum": payload["composition_checksum"], "c46_ref": payload["c46_ref"],
                            "c56_ref": payload["c56_ref"], "sources": payload["sources"], "algorithm": payload["algorithm"]},
+            "admission_summary": admission_summary,
             "report_mechanism": {"id": package["manifest"]["id"], "version": package["manifest"]["version"],
                                  "checksum": package["template_hash"]},
             "recommendation_generation": recommendation_generation,
