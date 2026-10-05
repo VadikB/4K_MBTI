@@ -301,7 +301,11 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  const results=await (await page.request.get(`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/results`)).json();
  expect(results.results.personalized_profile_snapshot.content.user_context.position_or_status).toBe('Эксперт по программам');
  expect(saved.c67.recommendations.length).toBeGreaterThan(0);
- expect(JSON.stringify(saved.c67.recommendations)).toContain('Техническая проверка');
+ const selection=saved.c67.recommendation_generation.input.context_selection;
+ expect(selection.status).toBe('available');
+ expect(selection.selected_path).toBe('user_context.regular_tasks');
+ for(const item of saved.c67.recommendations)expect(item.application_context).toContain(selection.value);
+ expect(saved.c67.recommendation_generation.input.profile_projection.organization_context.activity_description).toBe('Техническая проверка');
  await info.attach('canonical-results',{body:JSON.stringify(results,null,2),contentType:'application/json'});
  const regenerated=await page.request.post(`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/reports/regenerate`,{data:{idempotency_key:'review-history-revision'}});
  expect(regenerated.status()).toBe(201);const latest=await regenerated.json();expect(latest.id).not.toBe(saved.id);

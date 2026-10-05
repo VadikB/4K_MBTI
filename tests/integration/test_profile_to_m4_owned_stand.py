@@ -25,6 +25,8 @@ def test_profile_to_m4_on_owned_stand(tmp_path, monkeypatch):
         cli('bootstrap'); cli('seed')
         monkeypatch.setenv('STAND_ADMIN_URL', env['STAND_ADMIN_URL'])
         isolated = environment(state)
+        if os.getenv('R112_ARTIFACT_DIR'):
+            isolated['R112_ARTIFACT_DIR'] = os.environ['R112_ARTIFACT_DIR']
         destination = Path(os.getenv('PROFILE_M4_ARTIFACT_DIR', tmp_path)) / 'acceptance.json'
         destination.parent.mkdir(parents=True, exist_ok=True)
         result = subprocess.run([sys.executable, __file__, '--internal', str(destination)], env=isolated,
@@ -171,6 +173,32 @@ def internal(destination):
         with get_connection() as c:
             assert c.execute('SELECT to_jsonb(r) AS value FROM m8_reports r ORDER BY id').fetchall() == historical_reports
             assert c.execute('SELECT profile_ref_json FROM m5_cycles WHERE cycle_id=%s',(cycle_id,)).fetchone() == frozen_cycle
+        # R11.2: the real 10.5 confirmation builder feeds saved Results, never the live profile.
+        results = http.get(f'/users/assessment/m8/cycles/{cycle_id}/results').json()
+        saved_report = http.get(f'/users/assessment/m8/cycles/{cycle_id}/reports/latest').json()
+        generation = saved_report['c67']['recommendation_generation']
+        assert generation['input']['profile_projection']['user_context']['regular_tasks'] == payload['duties']
+        assert generation['input']['context_selection']['selected_path'] == 'user_context.regular_tasks'
+        assert results['results']['personalized_profile_snapshot']['content'] == original['content_json']
+        regenerated = http.post(f'/users/assessment/m8/cycles/{cycle_id}/reports/regenerate',
+            json={'idempotency_key':'task112-historical-context'})
+        assert regenerated.status_code == 201, regenerated.text
+        assert regenerated.json()['c67']['recommendation_generation']['input'] == generation['input']
+        assert http.get(f"/users/assessment/m8/reports/{saved_report['id']}").json() == saved_report
+        assert 'Synthetic after completion' not in json.dumps(generation)
+        assert payload['full_name'] not in json.dumps(generation)
+        assert user.email not in json.dumps(generation)
+        if os.getenv('R112_ARTIFACT_DIR'):
+            evidence = Path(os.environ['R112_ARTIFACT_DIR']); evidence.mkdir(parents=True, exist_ok=True)
+            (evidence/'saved-context.json').write_text(json.dumps({
+                'm4_content_excerpt':{'user_context':original['content_json']['user_context'],
+                    'role_profile':{'card':{k:v for k,v in original['content_json']['role_profile']['card'].items()
+                        if k in generation['input']['profile_projection'].get('role_profile', {})}},
+                    'organization_context':{k:v for k,v in original['content_json']['organization_context'].items()
+                        if k in generation['input']['profile_projection'].get('organization_context', {})}},
+                'projection':generation['input']['profile_projection'],
+                'selection':generation['input']['context_selection'], 'recommendations':saved_report['c67']['recommendations'],
+                'same_historical_input_after_live_change':True},ensure_ascii=False,indent=2)+'\n')
         new_id = final_id
         next_cycle = http.post('/users/assessment/cycles/start',json={'idempotency_key':'new-cycle','personalized_profile_id':new_id})
         assert next_cycle.status_code == 201, next_cycle.text

@@ -1,0 +1,82 @@
+FFFFF.                                                                   [100%]
+=================================== FAILURES ===================================
+___________ test_task112_task_priority_and_auditable_role_boundaries ___________
+
+    def test_task112_task_priority_and_auditable_role_boundaries():
+        profile = {'content': {'organization_context': {'activity_description':'Обучение'},
+            'role_profile': {'card': {'typical_tasks':['Согласовать план'],
+                'approval_required':'Изменение бюджета согласовать', 'role_constraints':'Не менять бюджет самостоятельно'}},
+            'user_context': {'regular_tasks':['Анализ запросов'], 'full_name':'PRIVATE', 'contacts':'PRIVATE'}}}
+        result = generate_for(profile)
+>       assert result['input']['context_selection']['selected_path'] == 'user_context.regular_tasks'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'context_selection'
+
+tests/unit/test_m8_context_selection.py:21: KeyError
+_ test_task112_partial_context[role_profile-fields0-role_profile.typical_tasks] _
+
+section = 'role_profile', fields = {'card': {'typical_tasks': ['Планирование']}}
+path = 'role_profile.typical_tasks'
+
+    @pytest.mark.parametrize('section,fields,path', [
+        ('role_profile', {'card':{'typical_tasks':['Планирование']}}, 'role_profile.typical_tasks'),
+        ('organization_context', {'activity_description':'Обучение'}, 'organization_context.activity_description'),
+        ('user_context', {'position_or_status':'Эксперт'}, 'user_context.position_or_status'),
+    ])
+    def test_task112_partial_context(section, fields, path):
+        result = generate_for({'content':{section:fields}})
+>       assert result['input']['context_selection']['selected_path'] == path
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'context_selection'
+
+tests/unit/test_m8_context_selection.py:36: KeyError
+_ test_task112_partial_context[organization_context-fields1-organization_context.activity_description] _
+
+section = 'organization_context', fields = {'activity_description': 'Обучение'}
+path = 'organization_context.activity_description'
+
+    @pytest.mark.parametrize('section,fields,path', [
+        ('role_profile', {'card':{'typical_tasks':['Планирование']}}, 'role_profile.typical_tasks'),
+        ('organization_context', {'activity_description':'Обучение'}, 'organization_context.activity_description'),
+        ('user_context', {'position_or_status':'Эксперт'}, 'user_context.position_or_status'),
+    ])
+    def test_task112_partial_context(section, fields, path):
+        result = generate_for({'content':{section:fields}})
+>       assert result['input']['context_selection']['selected_path'] == path
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'context_selection'
+
+tests/unit/test_m8_context_selection.py:36: KeyError
+_ test_task112_partial_context[user_context-fields2-user_context.position_or_status] _
+
+section = 'user_context', fields = {'position_or_status': 'Эксперт'}
+path = 'user_context.position_or_status'
+
+    @pytest.mark.parametrize('section,fields,path', [
+        ('role_profile', {'card':{'typical_tasks':['Планирование']}}, 'role_profile.typical_tasks'),
+        ('organization_context', {'activity_description':'Обучение'}, 'organization_context.activity_description'),
+        ('user_context', {'position_or_status':'Эксперт'}, 'user_context.position_or_status'),
+    ])
+    def test_task112_partial_context(section, fields, path):
+        result = generate_for({'content':{section:fields}})
+>       assert result['input']['context_selection']['selected_path'] == path
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'context_selection'
+
+tests/unit/test_m8_context_selection.py:36: KeyError
+_________________ test_task112_empty_and_invalid_are_different _________________
+
+    def test_task112_empty_and_invalid_are_different():
+        empty = generate_for({'content':{'user_context':{'full_name':'PRIVATE'}}})
+>       assert empty['input']['context_selection']['status'] == 'missing'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'context_selection'
+
+tests/unit/test_m8_context_selection.py:42: KeyError
+=========================== short test summary info ============================
+FAILED tests/unit/test_m8_context_selection.py::test_task112_task_priority_and_auditable_role_boundaries
+FAILED tests/unit/test_m8_context_selection.py::test_task112_partial_context[role_profile-fields0-role_profile.typical_tasks]
+FAILED tests/unit/test_m8_context_selection.py::test_task112_partial_context[organization_context-fields1-organization_context.activity_description]
+FAILED tests/unit/test_m8_context_selection.py::test_task112_partial_context[user_context-fields2-user_context.position_or_status]
+FAILED tests/unit/test_m8_context_selection.py::test_task112_empty_and_invalid_are_different
+5 failed, 1 passed in 1.27s

@@ -1,0 +1,52 @@
+[
+  {
+    "title": "S10-A and T11-10 positive, clarification and saved Report/PDF",
+    "status": "passed",
+    "duration_ms": 40963
+  },
+  {
+    "title": "S10-B interruption and Additional Session preserve Cycle and deadline",
+    "status": "passed",
+    "duration_ms": 28884
+  },
+  {
+    "title": "S10-C1 background time closure without another Turn",
+    "status": "passed",
+    "duration_ms": 92301
+  },
+  {
+    "title": "S10-C2 background time closure without another Turn",
+    "status": "passed",
+    "duration_ms": 83554
+  },
+  {
+    "title": "Recovery: lost response, unaccepted request, two tabs and owner boundaries",
+    "status": "passed",
+    "duration_ms": 29024
+  },
+  {
+    "title": "S10-A character branch: actual character Turn, order and no invented recommendation",
+    "status": "passed",
+    "duration_ms": 32725
+  },
+  {
+    "title": "REV-02 fresh M4 confirmation, canonical context and saved history after login",
+    "status": "passed",
+    "duration_ms": 48793
+  },
+  {
+    "title": "S10.4 owner profile, 403, logout, late response and account switch",
+    "status": "passed",
+    "duration_ms": 28298
+  },
+  {
+    "title": "P10.5 fresh profile, lost confirmation response, reload and first AS",
+    "status": "passed",
+    "duration_ms": 33238
+  },
+  {
+    "title": "P10.5 ready profile with no admitted catalog",
+    "status": "passed",
+    "duration_ms": 26399
+  }
+]

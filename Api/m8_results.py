@@ -222,7 +222,7 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
         )
     except (ValueError, KeyError, OSError) as exc:
         recommendation_generation = {
-            "contract_version": "m8-recommendations/1.1.0",
+            "contract_version": "m8-recommendations/1.2.0",
             "mechanism": None,
             "input": {"results_revision_id": results["revision_id"], "profile_ref": payload.get("profile_ref")},
             "input_checksum": None,
@@ -322,10 +322,10 @@ def read_report(connection, report_id) -> dict:
 def _present_report(saved: dict) -> dict:
     """Pure projection: immutable historical C-67 remains untouched; no generation on GET."""
     from copy import deepcopy
-    from Api.m8_recommendations import CONTRACT_VERSION
+    from Api.m8_recommendations import CONTRACT_VERSION, VERIFIED_CONTRACT_VERSIONS
     c67 = deepcopy(saved)
     generation = c67.get("recommendation_generation") or {}
-    if generation.get("contract_version") != CONTRACT_VERSION and c67.get("recommendations"):
+    if generation.get("contract_version") not in VERIFIED_CONTRACT_VERSIONS and c67.get("recommendations"):
         c67["recommendations"] = []
         c67["recommendation_notices"] = [load_report_package()["template"]["legacy_recommendation_notice"]]
         c67["recommendation_generation"] = {"contract_version":generation.get("contract_version"),

@@ -1,0 +1,555 @@
+{
+  "methodology_checksum": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+  "condition": "Requires admissible material-grounded IA; no result / IE / denied interpretation => no types; L0 never confirms successful action",
+  "rows": [
+    {
+      "competency": "K1",
+      "skill": "K1.1",
+      "component": "K1.C01",
+      "indicator": "K1.I01",
+      "name": "Выявление и различение целей, интересов и позиций участников",
+      "development": true,
+      "consolidation_transfer": true
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.1",
+      "component": "K1.C01",
+      "indicator": "K1.I02",
+      "name": "Учёт ролей, статуса, полномочий и границ влияния",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.1",
+      "component": "K1.C01",
+      "indicator": "K1.I03",
+      "name": "Учёт характера отношений и межличностного контекста",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.1",
+      "component": "K1.C02",
+      "indicator": "K1.I04",
+      "name": "Выбор коммуникационной стратегии",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.1",
+      "component": "K1.C02",
+      "indicator": "K1.I05",
+      "name": "Выбор коммуникативного акта в соответствии с целью и стратегией",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.2",
+      "component": "K1.C03",
+      "indicator": "K1.I06",
+      "name": "Отбор релевантной и достаточной информации",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.2",
+      "component": "K1.C03",
+      "indicator": "K1.I07",
+      "name": "Проектирование представления информации",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.2",
+      "component": "K1.C04",
+      "indicator": "K1.I08",
+      "name": "Адаптация способа выражения к адресату",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.2",
+      "component": "K1.C04",
+      "indicator": "K1.I09",
+      "name": "Точность и однозначность выражения смысла",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.2",
+      "component": "K1.C05",
+      "indicator": "K1.I10",
+      "name": "Выбор и использование канала передачи",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.2",
+      "component": "K1.C05",
+      "indicator": "K1.I11",
+      "name": "Управление рисками и искажениями передачи смысла",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.3",
+      "component": "K1.C06",
+      "indicator": "K1.I12",
+      "name": "Выбор и переключение режима слушания",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.3",
+      "component": "K1.C07",
+      "indicator": "K1.I13",
+      "name": "Реконструкция существенного смысла и позиции другого",
+      "development": true,
+      "consolidation_transfer": true
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.3",
+      "component": "K1.C07",
+      "indicator": "K1.I14",
+      "name": "Прояснение и проверка понимания",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.4",
+      "component": "K1.C08",
+      "indicator": "K1.I15",
+      "name": "Формирование и проверка общего смыслового основания",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.4",
+      "component": "K1.C09",
+      "indicator": "K1.I16",
+      "name": "Работа с существенными расхождениями",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K1",
+      "skill": "K1.4",
+      "component": "K1.C09",
+      "indicator": "K1.I17",
+      "name": "Доведение и фиксация коммуникативного результата",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.1",
+      "component": "K2.C01",
+      "indicator": "K2.I01",
+      "name": "Выделение общего результата совместной работы",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.1",
+      "component": "K2.C01",
+      "indicator": "K2.I02",
+      "name": "Согласование общего понимания результата",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.1",
+      "component": "K2.C02",
+      "indicator": "K2.I03",
+      "name": "Определение необходимых функций",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.1",
+      "component": "K2.C02",
+      "indicator": "K2.I04",
+      "name": "Проверка полноты функциональной структуры",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.1",
+      "component": "K2.C03",
+      "indicator": "K2.I05",
+      "name": "Соотнесение ролей с необходимыми функциями",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.1",
+      "component": "K2.C03",
+      "indicator": "K2.I06",
+      "name": "Согласование ответственности и взаимных ожиданий по ролям",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.2",
+      "component": "K2.C04",
+      "indicator": "K2.I07",
+      "name": "Согласование взаимосвязанных действий участников",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.2",
+      "component": "K2.C05",
+      "indicator": "K2.I08",
+      "name": "Информационное обеспечение взаимосвязанных действий",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.2",
+      "component": "K2.C06",
+      "indicator": "K2.I09",
+      "name": "Поддержание согласованности совместной работы",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.3",
+      "component": "K2.C07",
+      "indicator": "K2.I10",
+      "name": "Включение участников в совместную работу",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.3",
+      "component": "K2.C07",
+      "indicator": "K2.I11",
+      "name": "Использование вкладов и возможностей участников",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.3",
+      "component": "K2.C08",
+      "indicator": "K2.I12",
+      "name": "Поддержка при затруднениях в выполнении работы",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.3",
+      "component": "K2.C09",
+      "indicator": "K2.I13",
+      "name": "Выявление предмета конфликта и позиций участников",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K2",
+      "skill": "K2.3",
+      "component": "K2.C09",
+      "indicator": "K2.I14",
+      "name": "Достижение рабочей договорённости в конфликте",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K3",
+      "skill": "K3.1",
+      "component": "K3.C01",
+      "indicator": "K3.I01",
+      "name": "Удержание открытости при неопределённости",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K3",
+      "skill": "K3.1",
+      "component": "K3.C01",
+      "indicator": "K3.I02",
+      "name": "Удержание нескольких возможных трактовок и направлений",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K3",
+      "skill": "K3.1",
+      "component": "K3.C02",
+      "indicator": "K3.I03",
+      "name": "Изменение рамки рассмотрения задачи (рефрейминг)",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K3",
+      "skill": "K3.2",
+      "component": "K3.C03",
+      "indicator": "K3.I04",
+      "name": "Развитие нетипичных вариантов до их оценки",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K3",
+      "skill": "K3.2",
+      "component": "K3.C03",
+      "indicator": "K3.I05",
+      "name": "Варьирование элементов и параметров решения",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K3",
+      "skill": "K3.2",
+      "component": "K3.C03",
+      "indicator": "K3.I06",
+      "name": "Генерация содержательно различных вариантов решения",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K3",
+      "skill": "K3.2",
+      "component": "K3.C05",
+      "indicator": "K3.I07",
+      "name": "Комбинирование разнородных элементов и знаний",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K3",
+      "skill": "K3.2",
+      "component": "K3.C05",
+      "indicator": "K3.I08",
+      "name": "Перенос и адаптация решений между контекстами",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K3",
+      "skill": "K3.3",
+      "component": "K3.C06",
+      "indicator": "K3.I09",
+      "name": "Перевод идеи в конкретную проверяемую форму",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K3",
+      "skill": "K3.3",
+      "component": "K3.C07",
+      "indicator": "K3.I10",
+      "name": "Проверка решения и интерпретация обратной связи",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K3",
+      "skill": "K3.3",
+      "component": "K3.C08",
+      "indicator": "K3.I11",
+      "name": "Изменение решения на основе полученных данных",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K3",
+      "skill": "K3.3",
+      "component": "K3.C08",
+      "indicator": "K3.I12",
+      "name": "Доведение решения до целостной применимой формы",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.1",
+      "component": "K4.C01",
+      "indicator": "K4.I01",
+      "name": "Выделение и структурирование существенной информации",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.1",
+      "component": "K4.C01",
+      "indicator": "K4.I02",
+      "name": "Разделение фактов, интерпретаций и предположений",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.1",
+      "component": "K4.C02",
+      "indicator": "K4.I03",
+      "name": "Оценка достоверности информации",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.1",
+      "component": "K4.C02",
+      "indicator": "K4.I04",
+      "name": "Оценка актуальности информации",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.1",
+      "component": "K4.C03",
+      "indicator": "K4.I05",
+      "name": "Сопоставление и проверка согласованности информации",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.1",
+      "component": "K4.C03",
+      "indicator": "K4.I06",
+      "name": "Выявление информационных пробелов и потребности в дополнительной информации",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.2",
+      "component": "K4.C04",
+      "indicator": "K4.I07",
+      "name": "Выявление и формулирование проблемы",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.2",
+      "component": "K4.C04",
+      "indicator": "K4.I08",
+      "name": "Определение границ и условий проблемы",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.2",
+      "component": "K4.C05",
+      "indicator": "K4.I09",
+      "name": "Выявление существенных факторов проблемы",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.2",
+      "component": "K4.C05",
+      "indicator": "K4.I10",
+      "name": "Установление и проверка причинных связей",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.2",
+      "component": "K4.C06",
+      "indicator": "K4.I11",
+      "name": "Выявление взаимосвязей, зависимостей и обратных связей",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.3",
+      "component": "K4.C07",
+      "indicator": "K4.I12",
+      "name": "Выявление существенных предпосылок и допущений",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.3",
+      "component": "K4.C07",
+      "indicator": "K4.I13",
+      "name": "Проверка связности и непротиворечивости рассуждения",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.3",
+      "component": "K4.C08",
+      "indicator": "K4.I14",
+      "name": "Обоснование вывода релевантными и достаточными основаниями",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.4",
+      "component": "K4.C09",
+      "indicator": "K4.I15",
+      "name": "Определение критериев, ограничений и существенной неопределённости",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.4",
+      "component": "K4.C10",
+      "indicator": "K4.I16",
+      "name": "Сравнение альтернатив по критериям",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.4",
+      "component": "K4.C10",
+      "indicator": "K4.I17",
+      "name": "Оценка рисков и последствий альтернатив",
+      "development": true,
+      "consolidation_transfer": false
+    },
+    {
+      "competency": "K4",
+      "skill": "K4.4",
+      "component": "K4.C10",
+      "indicator": "K4.I18",
+      "name": "Выбор решения",
+      "development": true,
+      "consolidation_transfer": false
+    }
+  ]
+}

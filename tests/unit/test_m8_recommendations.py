@@ -113,7 +113,7 @@ def test_r11_09_legacy_presentation_preserves_history():
 def test_r11_determinism_and_package_version():
     data,resolved=fixture()
     assert run(data,resolved)==run(data,resolved)
-    assert run(data,resolved)['contract_version']=='m8-recommendations/1.1.0'
+    assert run(data,resolved)['contract_version']=='m8-recommendations/1.2.0'
     assert profile_projection({'user_context':{'email':'secret','regular_tasks':['задача']}})=={'user_context':{'regular_tasks':['задача']}}
 
 
@@ -137,6 +137,7 @@ def test_canonical_m4_builder_projection_and_recommendation_context():
     resolved['results_checksum']=checksum({k:v for k,v in data.items() if k!='results_revision_id'})
     result=generate(data,snapshot,resolved=resolved)
     assert result['recommendations']
-    assert 'Разработка программ' in str(result['recommendations'])
+    assert all('Анализ' in item['application_context'] for item in result['recommendations'])
+    assert result['input']['profile_projection']['organization_context']['activity_description'] == 'Разработка программ'
     assert 'PRIVATE' not in str(result)
     assert snapshot == original
