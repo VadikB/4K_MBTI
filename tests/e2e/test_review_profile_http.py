@@ -23,6 +23,7 @@ def profile_client(monkeypatch):
                 self.updates += 1
                 self.row = None
             elif 'FROM users u' in sql: self.row = USER
+            elif 'FROM m8_reports p' in sql and hasattr(self, 'report_scope'): self.row = self.report_scope
             else: self.row = None
             return self
         def fetchone(self): return self.row
@@ -58,16 +59,20 @@ def test_owner_can_read_and_update_profile(profile_client):
 
 
 def test_saved_report_owner_and_audience(profile_client, monkeypatch):
-    client, _ = profile_client
+    client, db = profile_client
     report = {'owner_user_id':91, 'audience':'assessee', 'id':str(uuid4())}
+    db.report_scope = {'cycle_id':str(uuid4()),'audience':'assessee'}
+    monkeypatch.setattr(routes.m8_results,'owner_can_read_cycle',lambda connection,cycle,user:user==91)
     monkeypatch.setattr(routes.m8_results, 'read_report', lambda *_: report)
     url = '/users/assessment/m8/reports/' + report['id']
     assert client.get(url).status_code == 401
     client.cookies.set(routes.SESSION_COOKIE_NAME, 'owner')
     assert client.get(url).json() == report
     report['audience'] = 'organization'
+    db.report_scope['audience'] = 'organization'
     assert client.get(url).status_code == 403
     report['audience'] = 'assessee'
+    db.report_scope['audience'] = 'assessee'
     for token in ('same-org','other-org'):
         client.cookies.set(routes.SESSION_COOKIE_NAME, token)
         assert client.get(url).status_code == 403
@@ -102,3 +107,19 @@ def test_t104_anonymous_dialogue_message_never_reaches_agent(profile_client,monk
     def forbidden(**_): raise AssertionError('Unauthenticated request reached profile agent')
     monkeypatch.setattr(routes.interviewer_agent,'reply',forbidden)
     assert client.post('/users/agent/message',json={'session_id':'synthetic-session','message':'synthetic'}).status_code==401
+
+
+@pytest.mark.parametrize('offset_hours', [0, 3])
+def test_history_and_profile_summary_share_datetime_encoding(profile_client, monkeypatch, offset_hours):
+    from datetime import timedelta
+    client, _ = profile_client
+    stamp = datetime(2026, 10, 5, 12, 34, 56, tzinfo=timezone(timedelta(hours=offset_hours)))
+    cycle = {'cycle_id':str(uuid4()), 'report_id':str(uuid4()),
+             'cycle_created_at':stamp, 'collection_closed_at':stamp,
+             'versions':[{'created_at':stamp}]}
+    monkeypatch.setattr(routes.m8_results, 'list_owned_cycles', lambda *_: [cycle])
+    client.cookies.set(routes.SESSION_COOKIE_NAME, 'owner')
+    history = client.get('/users/assessment/m8/history')
+    summary = client.get('/users/91/profile-summary')
+    assert history.status_code == summary.status_code == 200
+    assert history.json()['cycles'] == summary.json()['cycle_history']

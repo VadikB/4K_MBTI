@@ -27,6 +27,8 @@ def test_profile_to_m4_on_owned_stand(tmp_path, monkeypatch):
         isolated = environment(state)
         if os.getenv('R112_ARTIFACT_DIR'):
             isolated['R112_ARTIFACT_DIR'] = os.environ['R112_ARTIFACT_DIR']
+        if os.getenv('H106_ARTIFACT_DIR'):
+            isolated['H106_ARTIFACT_DIR'] = os.environ['H106_ARTIFACT_DIR']
         destination = Path(os.getenv('PROFILE_M4_ARTIFACT_DIR', tmp_path)) / 'acceptance.json'
         destination.parent.mkdir(parents=True, exist_ok=True)
         result = subprocess.run([sys.executable, __file__, '--internal', str(destination)], env=isolated,
@@ -141,6 +143,11 @@ def internal(destination):
         started = http.post('/users/assessment/cycles/start',json={'idempotency_key':'start','personalized_profile_id':profile_id})
         assert started.status_code == 201, started.text
         cycle_id = started.json()['plan']['cycle_id']
+        history = http.get('/users/assessment/m8/history')
+        assert history.status_code == 200, history.text
+        assert history.json()['assessments_total'] == 1
+        assert history.json()['reports_total'] == 0
+        assert history.json()['cycles'][0]['status'] == 'collecting'
         as_id = started.json()['runtime']['current_situation']['assessment_situation_id']
         turn = http.post(f'/users/assessment/m5/situations/{as_id}/turns',json={'request_id':'technical-answer','turn_id':str(uuid4()),'content':'Synthetic participant answer'})
         assert turn.status_code == 200, turn.text
@@ -165,6 +172,15 @@ def internal(destination):
             assert c.execute('SELECT profile_ref_json FROM m5_cycles WHERE cycle_id=%s',(cycle_id,)).fetchone() == frozen_cycle
             # Finish collection through the existing domain operation; no output material is fabricated.
             complete(c,cycle_id=cycle_id,key='close-fixture',action='complete',reason='synthetic acceptance',initiated_by=owner)
+            c.commit()
+        assert http.get('/users/assessment/m8/history').json()['cycles'][0]['status'] == 'processing'
+        with get_connection() as c:
+            db_cycle = c.execute('SELECT id FROM m5_cycles WHERE cycle_id=%s',(cycle_id,)).fetchone()['id']
+            m10_orchestration._set_state(c,db_cycle,status='failed',stage='synthetic_failure',error='SYNTHETIC')
+            c.commit()
+        assert http.get('/users/assessment/m8/history').json()['cycles'][0]['status'] == 'failed'
+        with get_connection() as c:
+            m10_orchestration._set_state(c,db_cycle,status='processing',stage='synthetic_recovery')
             c.commit()
         finish_pipeline(cycle_id)
         with get_connection() as c:
@@ -212,6 +228,81 @@ def internal(destination):
             complete(c,cycle_id=next_id,key='close-next',action='complete',reason='synthetic acceptance',initiated_by=owner)
             c.commit()
         finish_pipeline(next_id)
+        history = http.get('/users/assessment/m8/history').json()
+        assert history['assessments_total'] == history['reports_total'] == history['completed_assessments'] == 2
+        assert {row['cycle_id'] for row in history['cycles']} == {cycle_id,next_id}
+        first = next(row for row in history['cycles'] if row['cycle_id'] == cycle_id)
+        assert len(first['versions']) == 2
+        summary = http.get(f'/users/{owner}/profile-summary').json()
+        assert summary['cycle_history'] == history['cycles']
+        assert summary['legacy_assessments_total'] == 0
+        assert http.get('/users/session/restore').json()['dashboard']['reports_total'] == 2
+        from Api import m8_results
+        with get_connection() as c:
+            customer = m8_results.create_report(c,results_revision_id=results['revision_id'],audience='customer',
+                key='h106-customer',target_profile=None,created_by=owner)
+            qa_report = m8_results.create_report(c,results_revision_id=results['revision_id'],audience='methodology_qa',
+                key='h106-qa',target_profile=None,created_by=owner)
+            with patch.object(m8_results,'generate_recommendations',side_effect=ValueError('synthetic generator failure')):
+                base_report = m8_results.create_report(c,results_revision_id=results['revision_id'],audience='assessee',
+                    key='h106-failed-recommendations',target_profile=None,created_by=owner)
+            c.commit()
+        assert base_report['c67']['skills'] and base_report['c67']['recommendation_generation']['status'] == 'failed'
+        history = http.get('/users/assessment/m8/history').json()
+        assert history['reports_total'] == 2
+        first = next(row for row in history['cycles'] if row['cycle_id'] == cycle_id)
+        assert first['status'] == 'report_ready' and first['report_id'] == base_report['id']
+        assert len(first['versions']) == 3
+        for hidden in (customer, qa_report):
+            assert hidden['id'] not in json.dumps(history)
+            for suffix in ('','/pdf'):
+                assert http.get(f"/users/assessment/m8/reports/{hidden['id']}"+suffix).status_code == 403
+        def history_fingerprints():
+            with get_connection() as c:
+                return {table:c.execute('SELECT to_jsonb(t) AS value FROM '+table+' t ORDER BY id').fetchall()
+                    for table in ('m6_indicator_assessment_revisions','m8_result_revisions','m8_reports')}
+        unchanged = history_fingerprints()
+        for _ in range(2):
+            assert http.get('/users/assessment/m8/history').json() == history
+            for row in history['cycles']:
+                for version in row['versions']:
+                    report = http.get(f"/users/assessment/m8/reports/{version['report_id']}")
+                    assert report.status_code == 200 and report.json()['cycle_id'] == row['cycle_id']
+                    assert report.json()['results_revision_id'] == version['results_revision_id']
+                    assert http.get(f"/users/assessment/m8/reports/{version['report_id']}/pdf").status_code == 200
+        assert history_fingerprints() == unchanged
+        with get_connection() as c:
+            legacy_id = c.execute("""INSERT INTO user_sessions(user_id,session_code,assessment_code,status)
+                VALUES(%s,'synthetic-h106-archive','competencies_4k','completed') RETURNING id""", (owner,)).fetchone()['id']
+            c.commit()
+        mixed = http.get(f'/users/{owner}/profile-summary').json()
+        assert mixed['legacy_assessments_total'] == 1 and mixed['history'][0]['session_id'] == legacy_id
+        assert mixed['cycle_history'] == history['cycles']
+        assert http.get('/users/session/restore').json()['dashboard']['reports_total'] == 2
+        if os.getenv('H106_ARTIFACT_DIR'):
+            import hashlib
+            evidence = Path(os.environ['H106_ARTIFACT_DIR']); evidence.mkdir(parents=True,exist_ok=True)
+            (evidence/'history-receipt.json').write_text(json.dumps({'history':history,
+                'legacy_assessments_total':mixed['legacy_assessments_total'],
+                'read_fingerprints':{table:{'count':len(rows),'sha256':hashlib.sha256(json.dumps(rows,sort_keys=True,default=str).encode()).hexdigest()}
+                    for table,rows in unchanged.items()},'unchanged_after_get_and_pdf':history_fingerprints()==unchanged},
+                ensure_ascii=False,indent=2,default=str)+'\n')
+        http.cookies.clear()
+        assert http.get('/users/assessment/m8/history').status_code == 401
+        assert http.get(f"/users/assessment/m8/reports/{saved_report['id']}").status_code == 401
+        with get_connection() as c:
+            other = c.execute('SELECT id FROM users WHERE id<>%s ORDER BY id LIMIT 1',(owner,)).fetchone()['id']
+        http.cookies.set(routes.SESSION_COOKIE_NAME, web_session_service.create_session(other))
+        assert http.get('/users/assessment/m8/history').json()['cycles'] == []
+        for suffix in ('','/pdf'):
+            assert http.get(f"/users/assessment/m8/reports/{saved_report['id']}"+suffix).status_code == 403
+        http.cookies.set(routes.SESSION_COOKIE_NAME, token)
+        with get_connection() as c:
+            c.execute("UPDATE m5_cycles SET usage_scope='qa' WHERE cycle_id=%s",(cycle_id,));c.commit()
+        assert http.get('/users/assessment/m8/history').json()['reports_total'] == 1
+        assert http.get(f"/users/assessment/m8/reports/{saved_report['id']}").status_code == 403
+        with get_connection() as c:
+            c.execute("UPDATE m5_cycles SET usage_scope='assessment' WHERE cycle_id=%s",(cycle_id,));c.commit()
         with get_connection() as c:
             # A second published configuration is an admin input, not an SQL-prepared user M4.
             config = c.execute('SELECT * FROM assessment_configurations WHERE id=%s',(selection['assessment_configuration_id'],)).fetchone()
@@ -244,6 +335,10 @@ def internal(destination):
             c.commit()
         wrong_org = http.post('/users/assessment/cycles/start',json={'idempotency_key':'wrong-org','personalized_profile_id':new_id})
         assert wrong_org.status_code == 409 and 'SCOPE_MISMATCH' in wrong_org.text
+        assert http.get('/users/assessment/m8/history').json()['cycles'] == []
+        assert http.get(f'/users/assessment/m8/cycles/{cycle_id}/results').status_code == 403
+        for suffix in ('','/pdf'):
+            assert http.get(f"/users/assessment/m8/reports/{saved_report['id']}"+suffix).status_code == 403
     destination.write_text(json.dumps({'status':'PASS','zero_M4_before_confirmation':True,
         'unconfirmed_and_bad_checksum_rejected':True,'missing_sources_rejected':True,
         'atomic_rejection':True,'rollback_after_M4_write':True,'concurrent_repeat':True,

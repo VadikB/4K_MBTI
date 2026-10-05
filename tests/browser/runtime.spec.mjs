@@ -69,7 +69,7 @@ test.afterEach(async({page},info)=>{
  await info.attach('assessment-http',{body:JSON.stringify(page.acceptanceNetwork||[],null,2),contentType:'application/json'});
 });
 async function login(page,stand,email='participant@example.test',prepare=false,navigate=true){
- page.on('dialog',dialog=>dialog.accept());
+ if(!page.acceptanceDialogHandler){page.on('dialog',dialog=>dialog.accept());page.acceptanceDialogHandler=true;}
  page.on('response',async response=>{try{if(response.url().endsWith('/runtime') && response.ok()){page.acceptanceCycle=(await response.json()).cycle_id;}}catch{/* Navigation may discard diagnostic response bodies. */}});
  if(navigate) await page.goto(stand.url);
  await page.locator('#email-input').fill(email);
@@ -99,6 +99,7 @@ async function start(page,expected='готовности'){
 }
 async function answer(page,text=fixture.answer){await page.locator('#interview-textarea').fill(text);await page.locator('#interview-submit-button').click();await expect(page.locator('#interview-submit-button')).toBeEnabled({timeout:30000});await expect(page.locator('#interview-error')).toBeHidden();await expect(page.locator('#interview-messages .own')).toContainText([text]);}
 async function report(page,stand,info){
+ await expect(page.locator('#report-panel')).toBeVisible({timeout:70000});
  await expect(page.locator('#m8-report-state')).toContainText('Report готов',{timeout:70000});
  const cycle=new URL(page.url()).searchParams.get('cycle_id');expect(cycle).toBeTruthy();
  const response=await page.request.get(`${stand.url}/users/assessment/m8/cycles/${cycle}/reports/latest`);expect(response.ok()).toBeTruthy();const saved=await response.json();
@@ -291,6 +292,7 @@ test('S10-A character branch: actual character Turn, order and no invented recom
 
 
 test('REV-02 fresh M4 confirmation, canonical context and saved history after login', async({page,stand},info)=>{
+ test.setTimeout(240000);
  await login(page,stand,'participant@example.test',true);
  await start(page);await answer(page);
  await page.locator('#interview-finish-button').click();
@@ -333,6 +335,76 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  await info.attach('history-pdf-check',{body:historyCheck.stdout,contentType:'text/plain'});
  await info.attach('history-pdf',{path:pdf,contentType:'application/pdf'});
  await info.attach('history-report',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+ // H10.6: a new independent Cycle remains a separate card, revisions stay inside the first.
+ await page.locator('#report-back-button').click();
+ await page.locator('#reports-back-button').click();
+ await start(page); await answer(page);
+ await page.locator('#interview-finish-button').click();
+ await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
+ await answer(page,fixture.clarification_answer);
+ await page.locator('#interview-finish-button').click();
+ const secondDir=path.join(stand.dir,'second-cycle'); fs.mkdirSync(secondDir);
+ const second=await report(page,{...stand,dir:secondDir},info);
+ expect(second.cycle_id).not.toBe(saved.cycle_id); expect(second.results_revision_id).not.toBe(saved.results_revision_id);
+ await page.locator('#report-back-button').click();
+ await page.locator('.reports-summary-button').click();
+ await expect(page.locator('.cycle-report')).toHaveCount(2);
+ const firstCard=page.locator(`.cycle-report[data-cycle-id="${saved.cycle_id}"]`);
+ await expect(firstCard.locator('option')).toHaveCount(2);
+ // Delay a real saved response, select a newer revision, then release the older response.
+ let releaseOld; const oldGate=new Promise(resolve=>{releaseOld=resolve;});
+ let capturedOld; const oldCaptured=new Promise(resolve=>{capturedOld=resolve;});
+ await page.route(`**/users/assessment/m8/reports/${saved.id}`,async route=>{
+   const response=await route.fetch(); capturedOld(); await oldGate; await route.fulfill({response});
+ });
+ await firstCard.locator('select').selectOption(saved.id); await firstCard.locator('.cycle-report-open').click();
+ await oldCaptured;
+ await page.locator('#report-back-button').click();
+ await firstCard.locator('select').selectOption(latest.id); await firstCard.locator('.cycle-report-open').click();
+ await expect(page.locator('#report-download-button')).toHaveAttribute('data-m8-report-id',latest.id);
+ const oldDelivered=page.waitForResponse(response=>response.url().endsWith('/reports/'+saved.id));
+ releaseOld(); await (await oldDelivered).finished(); await page.unrouteAll({behavior:'wait'});
+ await expect(page.locator('#report-download-button')).toHaveAttribute('data-m8-report-id',latest.id);
+ await page.locator('#report-back-button').click();
+ await firstCard.locator('select').selectOption(saved.id);
+ await firstCard.locator('.cycle-report-open').click();
+ await expect(page.locator('#m8-report-state')).toContainText('версия представления 1');
+ // A real synthetic legacy session coexists with both Cycles; its URL never retains Cycle IDs.
+ const archive=spawnSync(python,['scripts/browser_report_fixture.py','--state',path.join(stand.dir,'state.json'),'--cycle',saved.cycle_id,'--kind','archive-session'],{encoding:'utf8'});
+ expect(archive.status,archive.stderr).toBe(0);
+ await page.locator('#report-back-button').click();
+ await expect(page.locator('.cycle-report')).toHaveCount(2);
+ // Bootstrap 10.2 does not claim a complete historical DDL. Only legacy screen
+ // routing is simulated here; the mixed history above is read from the real DB.
+ await page.route('**/users/*/assessment/*/skill-assessments',route=>route.fulfill({status:200,contentType:'application/json',body:'[]'}));
+ await page.route('**/users/*/assessment/*/report-interpretation',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({insight_title:'Синтетический архив',insight_text:'Проверка маршрутизации',basis_items:[],growth_areas:[],has_interpretation_signal:false,has_confident_strongest:false,response_pattern:'synthetic'})}));
+ await page.locator('.profile-history-item').click();
+ await page.locator('.profile-history-report-button').click();
+ await expect(page.locator('#legacy-report-shell')).toBeVisible();
+ expect(new URL(page.url()).searchParams.has('cycle_id')).toBe(false);
+ expect(new URL(page.url()).searchParams.has('report_id')).toBe(false);
+ await expect(page.locator('#report-download-button')).toBeEnabled();
+ await page.reload(); await expect(page.locator('#legacy-report-shell')).toBeVisible();
+ await expect(page.locator('#m8-report-shell')).toBeHidden();
+ await page.unrouteAll({behavior:'wait'});
+ // Reload defaults legacy returnTarget to home; enter history through the dashboard again.
+ await page.locator('#report-back-button').click(); await page.locator('.reports-summary-button').click();
+ await expect(page.locator('.cycle-report')).toHaveCount(2);
+ await info.attach('two-cycles-and-legacy',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+ await firstCard.locator('select').selectOption(saved.id); await firstCard.locator('.cycle-report-open').click();
+ await expect(page.locator('#m8-report-state')).toContainText('версия представления 1');
+ const otherTab=await page.context().newPage();
+ await otherTab.goto(page.url());
+ await expect(otherTab.locator('#m8-report-state')).toContainText('Report готов');
+ await page.locator('#report-back-button').click(); await page.locator('#reports-back-button').click();
+ await page.locator('#dashboard-panel .user-chip').click(); await page.locator('#dashboard-restart-button').click();
+ await login(page,stand,'other@example.test');
+ await otherTab.bringToFront(); await otherTab.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await expect(otherTab.locator('#auth-panel')).toBeVisible();
+ await expect(otherTab.locator('#m8-report-metadata')).toBeEmpty();
+ await expect(otherTab.locator('#profile-history-list')).toBeEmpty();
+ expect(await (await page.request.get(`${stand.url}/users/assessment/m8/history`)).json()).toMatchObject({cycles:[],reports_total:0});
+ await otherTab.close();
 });
 
 

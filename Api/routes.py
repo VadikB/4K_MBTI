@@ -191,6 +191,7 @@ from Api.schemas import (
     SessionCaseStructuredAnalysisResponse,
     UserProfileUpdateRequest,
     UserProfileSummaryResponse,
+    M8HistoryResponse,
     UserSessionBootstrapResponse,
     UserSessionRestoreResponse,
     JourneyAssessmentState,
@@ -6132,16 +6133,18 @@ def get_user_profile_summary(user_id: int, request: Request) -> UserProfileSumma
                 )
             )
 
-        cycle_reports = m8_results.list_owned_reports(connection, user_id)
+        cycle_history = m8_results.list_owned_cycles(connection, user_id)
+        cycle_reports = [item for item in cycle_history if item["report_id"]]
 
     return UserProfileSummaryResponse(
         user=user,
-        total_assessments=len(cycle_reports),
-        completed_assessments=len(cycle_reports),
+        total_assessments=len(cycle_history),
+        completed_assessments=sum(bool(item["collection_closed_at"]) for item in cycle_history),
         average_score_percent=round(sum(score_values) / len(score_values)) if score_values else None,
         latest_session_id=history[0].session_id if history else None,
         history=history,
         cycle_reports=cycle_reports,
+        cycle_history=cycle_history,
         legacy_assessments_total=len(history),
     )
 
@@ -6983,9 +6986,29 @@ def download_admin_m8_report(report_id: UUID, request: Request):
                     headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
 
 
+def _m8_owned_cycle(request: Request, cycle_id: str):
+    user = _m7_owned_cycle(request, cycle_id)
+    with get_connection() as connection:
+        if not m8_results.owner_can_read_cycle(connection, cycle_id, user.id):
+            raise HTTPException(403, detail='Нет доступа к Cycle этой организации.')
+    return user
+
+
+@router.get('/assessment/m8/history', response_model=M8HistoryResponse)
+def read_owned_m8_history(request: Request):
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail='Требуется авторизация')
+    with get_connection() as connection:
+        cycles = m8_results.list_owned_cycles(connection, user.id)
+    return {'owner_user_id':user.id, 'cycles':cycles, 'assessments_total':len(cycles),
+            'reports_total':sum(bool(c['report_id']) for c in cycles),
+            'completed_assessments':sum(bool(c['collection_closed_at']) for c in cycles)}
+
+
 @router.get('/assessment/m8/cycles/{cycle_id}/status')
 def read_owned_m8_status(cycle_id: UUID, request: Request):
-    _m7_owned_cycle(request, str(cycle_id))
+    _m8_owned_cycle(request, str(cycle_id))
     with get_connection() as connection:
         cycle = m7_completion.read_status(connection, str(cycle_id))
         pipeline = connection.execute("""SELECT p.status,p.stage,p.error_code FROM m10_pipeline_runs p
@@ -7011,7 +7034,7 @@ def read_owned_m8_status(cycle_id: UUID, request: Request):
 
 @router.get('/assessment/m8/cycles/{cycle_id}/results')
 def read_owned_m8_results(cycle_id: UUID, request: Request):
-    _m7_owned_cycle(request, str(cycle_id))
+    _m8_owned_cycle(request, str(cycle_id))
     try:
         with get_connection() as connection: return m8_results.read_latest_results(connection, str(cycle_id))
     except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
@@ -7019,7 +7042,7 @@ def read_owned_m8_results(cycle_id: UUID, request: Request):
 
 @router.get('/assessment/m8/cycles/{cycle_id}/reports/latest')
 def read_owned_m8_report(cycle_id: UUID, request: Request):
-    _m7_owned_cycle(request, str(cycle_id))
+    _m8_owned_cycle(request, str(cycle_id))
     try:
         with get_connection() as connection: return m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
     except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
@@ -7027,7 +7050,7 @@ def read_owned_m8_report(cycle_id: UUID, request: Request):
 
 @router.post('/assessment/m8/cycles/{cycle_id}/reports/regenerate', status_code=201)
 def regenerate_owned_m8_report(cycle_id: UUID, payload: RegenerateReportRequest, request: Request):
-    user = _m7_owned_cycle(request, str(cycle_id))
+    user = _m8_owned_cycle(request, str(cycle_id))
     try:
         with get_connection() as connection:
             results = m8_results.read_latest_results(connection, str(cycle_id))
@@ -7038,30 +7061,33 @@ def regenerate_owned_m8_report(cycle_id: UUID, payload: RegenerateReportRequest,
     except (ValueError, KeyError) as exc: raise HTTPException(409, detail=str(exc)) from exc
 
 
-@router.get('/assessment/m8/reports/{report_id}')
-def read_owned_saved_m8_report(report_id: UUID, request: Request):
+def _owned_saved_report(request: Request, report_id: UUID):
     user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     if user is None:
         raise HTTPException(401, detail='Требуется авторизация')
-    try:
-        with get_connection() as connection:
-            report = m8_results.read_report(connection, str(report_id))
-    except ValueError as exc:
-        raise HTTPException(404, detail=str(exc)) from exc
-    if int(report['owner_user_id']) != int(user.id) or report['audience'] != 'assessee':
-        raise HTTPException(403, detail='Нет доступа к этому Report.')
-    return report
+    with get_connection() as connection:
+        scope = connection.execute("""SELECT c.cycle_id,p.audience FROM m8_reports p
+            JOIN m8_result_revisions rr ON rr.id=p.result_revision_id
+            JOIN m8_results r ON r.id=rr.results_id JOIN m5_cycles c ON c.id=r.cycle_db_id
+            WHERE p.id=%s""", (report_id,)).fetchone()
+        if not scope:
+            raise HTTPException(404, detail='M8_REPORT_NOT_FOUND')
+        if scope['audience'] != 'assessee' or not m8_results.owner_can_read_cycle(connection, str(scope['cycle_id']), user.id):
+            raise HTTPException(403, detail='Нет доступа к этому Report.')
+        try:
+            return m8_results.read_report(connection, str(report_id))
+        except ValueError as exc:
+            raise HTTPException(409, detail='Сохранённый Report временно недоступен.') from exc
+
+
+@router.get('/assessment/m8/reports/{report_id}')
+def read_owned_saved_m8_report(report_id: UUID, request: Request):
+    return _owned_saved_report(request, report_id)
 
 
 @router.get('/assessment/m8/reports/{report_id}/pdf')
 def download_owned_m8_report(report_id: UUID, request: Request):
-    token=request.cookies.get(SESSION_COOKIE_NAME); user=web_session_service.get_user_by_token(token) if token else None
-    if user is None: raise HTTPException(status_code=401, detail='Сессия не найдена. Войдите заново.')
-    try:
-        with get_connection() as connection: report = m8_results.read_report(connection, str(report_id))
-    except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
-    if int(report['owner_user_id']) != int(user.id): raise HTTPException(status_code=403, detail='Нет доступа к чужому Report.')
-    if report['audience'] != 'assessee': raise HTTPException(status_code=403, detail='Недоступное представление Report.')
+    report = _owned_saved_report(request, report_id)
     pdf = m8_results.render_pdf(report)
     return Response(content=pdf, media_type='application/pdf', headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
 

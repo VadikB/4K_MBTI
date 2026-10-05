@@ -128,7 +128,7 @@ def test_m8_results_c67_and_pdf_contract(client):
 def test_t11_owner_regeneration_is_scoped_and_idempotency_is_forwarded(client):
     http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
     cycle_id=str(uuid4());results_revision=str(uuid4());report_id=str(uuid4());calls=[]
-    monkeypatch.setattr(routes,'_m7_owned_cycle',lambda request,cycle:SimpleNamespace(id=7))
+    monkeypatch.setattr(routes,'_m8_owned_cycle',lambda request,cycle:SimpleNamespace(id=7))
     monkeypatch.setattr(routes.m8_results,'read_latest_results',lambda *_args:{'revision_id':results_revision})
     monkeypatch.setattr(routes.m8_results,'read_latest_report',lambda *_args:{'c67':{'target_profile':None}})
     def create(*_args,**kwargs):

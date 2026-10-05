@@ -1284,6 +1284,14 @@ class AdminExpertGroupExportRequest(BaseModel):
     session_ids: list[int] = Field(default_factory=list)
 
 
+class M8HistoryResponse(BaseModel):
+    owner_user_id: int
+    cycles: list[dict[str, Any]]
+    assessments_total: int
+    reports_total: int
+    completed_assessments: int
+
+
 class UserProfileSummaryResponse(BaseModel):
     user: UserResponse
     total_assessments: int
@@ -1292,6 +1300,7 @@ class UserProfileSummaryResponse(BaseModel):
     latest_session_id: int | None = None
     history: list[UserAssessmentHistoryItem]
     cycle_reports: list[dict[str, Any]] = Field(default_factory=list)
+    cycle_history: list[dict[str, Any]] = Field(default_factory=list)
     legacy_assessments_total: int = 0
 
 

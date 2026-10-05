@@ -12,6 +12,7 @@ export const openProfileHistoryReport = async (sessionId, triggerButton = null) 
     return;
   }
 
+  const ownerId = state.pendingUser.id; const epoch = state.identityEpoch;
   const previousSessionId = state.assessmentSessionId;
   const previousSkillAssessments = state.skillAssessments;
   const previousReportInterpretation = state.reportInterpretation;
@@ -27,8 +28,10 @@ export const openProfileHistoryReport = async (sessionId, triggerButton = null) 
     state.reportCompetencyTab = 'Коммуникация';
     persistAssessmentContext();
     await loadSkillAssessments();
+    if (state.identityEpoch !== epoch || state.pendingUser?.id !== ownerId) return;
     openReport({ returnTarget: 'reports' });
   } catch (error) {
+    if (state.identityEpoch !== epoch || state.pendingUser?.id !== ownerId) return;
     state.assessmentSessionId = previousSessionId;
     state.skillAssessments = previousSkillAssessments;
     state.reportInterpretation = previousReportInterpretation;
@@ -50,8 +53,10 @@ export const loadProfileSessionSkills = async (sessionId) => {
     renderProfile();
     return;
   }
-  const response = await fetch('/users/' + state.pendingUser.id + '/assessment/' + sessionId + '/skill-assessments');
+  const ownerId = state.pendingUser.id; const epoch = state.identityEpoch;
+  const response = await fetch('/users/' + ownerId + '/assessment/' + sessionId + '/skill-assessments');
   const data = await readApiResponse(response, 'Не удалось загрузить навыки по выбранной попытке.');
+  if (state.pendingUser?.id !== ownerId || state.identityEpoch !== epoch) return;
   state.profileSkillAssessments = data;
   state.profileSkillsBySession[sessionId] = data;
   renderReportsPage();
@@ -60,11 +65,18 @@ export const loadProfileSessionSkills = async (sessionId) => {
 export const renderReportsPage = () => {
   const summary = state.profileSummary;
   profileHistoryList.innerHTML = '';
-  for (const item of summary?.cycle_reports || []) {
+  const cycles = summary?.cycle_history || summary?.cycle_reports || [];
+  for (const item of cycles) {
     const card = document.createElement('article');
     card.className = 'profile-history-accordion cycle-report';
     card.dataset.cycleId = item.cycle_id;
-    card.innerHTML = `<h3>Оценка от ${escapeHtml(formatProfileDate(item.created_at))}</h3>` +
+    const labels = {collecting:'Оценка ещё не завершена', processing:'Результат готовится', results_ready:'Результат готов, отчёт готовится', failed:'Техническая ошибка. Обработка требует восстановления.', report_ready:'Отчёт доступен'};
+    if (!item.report_id) {
+      card.innerHTML = `<h3>Оценка от ${escapeHtml(formatProfileDate(item.cycle_created_at || item.created_at))}</h3><p>${escapeHtml(labels[item.status] || 'Результат пока недоступен')}</p>`;
+      const refresh = document.createElement('button'); refresh.type = 'button'; refresh.className = 'ghost-button'; refresh.textContent = 'Обновить состояние';
+      refresh.addEventListener('click', () => { void openReports(); }); card.appendChild(refresh); profileHistoryList.appendChild(card); continue;
+    }
+    card.innerHTML = `<h3>Оценка от ${escapeHtml(formatProfileDate(item.cycle_created_at || item.created_at))}</h3><p>Отчёт доступен</p>` +
       `<label>Сохранённая версия<select aria-label="Версия отчёта">${item.versions.map((v) => `<option value="${escapeHtml(v.report_id)}">Результат ${v.results_revision_no} · отчёт ${v.revision_no}</option>`).join('')}</select></label>` +
       '<button type="button" class="ghost-button cycle-report-open">Открыть отчёт</button>' +
       '<a class="primary-button cycle-report-pdf">Скачать PDF</a>';
@@ -77,7 +89,7 @@ export const renderReportsPage = () => {
     });
     profileHistoryList.appendChild(card);
   }
-  if (!summary?.history?.length && !summary?.cycle_reports?.length) {
+  if (!summary?.history?.length && !cycles.length) {
     profileHistoryList.innerHTML = '<p class="report-empty-state">Пользователь еще не проходил оценку компетенций.</p>';
   } else if (summary?.history?.length) {
     const heading = document.createElement('h3');
@@ -220,6 +232,8 @@ export const renderReportsPage = () => {
 };
 
 export const openReports = async () => {
+  const ownerId = state.pendingUser?.id;
+  const epoch = state.identityEpoch;
   setCurrentScreen('reports');
   persistAssessmentContext();
   syncUrlState('reports');
@@ -229,6 +243,7 @@ export const openReports = async () => {
 
   try {
     await loadProfileSummary();
+    if (state.identityEpoch !== epoch || state.pendingUser?.id !== ownerId || state.currentScreen !== 'reports') return;
     if (state.profileSelectedSessionId) {
       await loadProfileSessionSkills(state.profileSelectedSessionId);
       return;
@@ -236,6 +251,7 @@ export const openReports = async () => {
     state.profileSkillAssessments = [];
     renderReportsPage();
   } catch (error) {
-    profileHistoryList.innerHTML = '<p class="report-empty-state">' + error.message + '</p>';
+    if (state.identityEpoch !== epoch || state.pendingUser?.id !== ownerId || state.currentScreen !== 'reports') return;
+    profileHistoryList.innerHTML = '<p class="report-empty-state">' + escapeHtml(error.message) + '</p>';
   }
 };

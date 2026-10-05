@@ -274,21 +274,63 @@ def create_report(connection, *, results_revision_id: str, audience: str, key: s
     return read_report(connection, report_id)
 
 
-def list_owned_reports(connection, user_id: int) -> list[dict]:
-    """One history item per Cycle, with immutable presentation revisions explicitly listed."""
-    rows = connection.execute("""SELECT c.cycle_id,p.id AS report_id,p.revision_no,p.created_at,
-        rr.id AS results_revision_id,rr.revision_no AS results_revision_no
-        FROM m8_reports p JOIN m8_result_revisions rr ON rr.id=p.result_revision_id
-        JOIN m8_results r ON r.id=rr.results_id JOIN m5_cycles c ON c.id=r.cycle_db_id
-        WHERE c.owner_user_id=%s AND c.usage_scope='assessment' AND p.audience='assessee'
-        ORDER BY c.created_at DESC,c.id DESC,rr.revision_no DESC,p.revision_no DESC""", (user_id,)).fetchall()
+OWNER_CYCLE_SCOPE = """c.owner_user_id=%s AND c.usage_scope='assessment'
+    AND EXISTS (SELECT 1 FROM organization_memberships member
+        JOIN organizations org ON org.id=member.organization_id
+        WHERE member.user_id=c.owner_user_id AND member.organization_id=c.organization_id
+          AND org.is_active=TRUE)"""
+
+
+def owner_can_read_cycle(connection, cycle_id: str, user_id: int) -> bool:
+    return connection.execute("SELECT c.id FROM m5_cycles c WHERE c.cycle_id=%s AND " + OWNER_CYCLE_SCOPE,
+                              (UUID(str(cycle_id)), user_id)).fetchone() is not None
+
+
+def list_owned_cycles(connection, user_id: int) -> list[dict]:
+    """Read-only owner history; one card per Cycle, revisions never count as Cycles."""
+    rows = connection.execute("""SELECT c.cycle_id,c.status AS cycle_status,
+        c.created_at AS cycle_created_at,c.started_at,c.collection_closed_at,
+        pipeline.status AS processing_status,pipeline.stage AS processing_stage,
+        rr.id AS results_revision_id,rr.revision_no AS results_revision_no,
+        p.id AS report_id,p.revision_no,p.created_at
+        FROM m5_cycles c
+        LEFT JOIN m10_pipeline_runs pipeline ON pipeline.cycle_db_id=c.id
+        LEFT JOIN m8_results r ON r.cycle_db_id=c.id
+        LEFT JOIN m8_result_revisions rr ON rr.results_id=r.id
+        LEFT JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
+        WHERE """ + OWNER_CYCLE_SCOPE + """
+        ORDER BY c.created_at DESC,c.id DESC,rr.revision_no DESC NULLS LAST,
+                 p.revision_no DESC NULLS LAST""", (user_id,)).fetchall()
     cycles = {}
     for row in rows:
-        version = {**dict(row), 'cycle_id': str(row['cycle_id']), 'report_id': str(row['report_id']),
-                   'results_revision_id': str(row['results_revision_id'])}
-        item = cycles.setdefault(version['cycle_id'], {**version, 'versions': []})
-        item['versions'].append(version)
+        cid = str(row['cycle_id'])
+        item = cycles.setdefault(cid, {
+            'cycle_id':cid, 'cycle_status':row['cycle_status'],
+            'cycle_created_at':row['cycle_created_at'], 'started_at':row['started_at'],
+            'collection_closed_at':row['collection_closed_at'],
+            'processing_status':row['processing_status'], 'processing_stage':row['processing_stage'],
+            'results_revision_id':str(row['results_revision_id']) if row['results_revision_id'] else None,
+            'results_revision_no':row['results_revision_no'],
+            'latest_results_revision_id':str(row['results_revision_id']) if row['results_revision_id'] else None,
+            'latest_results_revision_no':row['results_revision_no'],
+            'report_id':None, 'revision_no':None, 'created_at':row['cycle_created_at'], 'versions':[]})
+        if row['report_id']:
+            version = {'cycle_id':cid,'report_id':str(row['report_id']), 'revision_no':row['revision_no'],
+                'created_at':row['created_at'],'results_revision_id':str(row['results_revision_id']),
+                'results_revision_no':row['results_revision_no']}
+            item['versions'].append(version)
+            if item['report_id'] is None:
+                item.update({k:version[k] for k in ('report_id','revision_no','created_at','results_revision_id','results_revision_no')})
+    for item in cycles.values():
+        item['status'] = ('report_ready' if item['report_id'] else
+            'failed' if item['processing_status']=='failed' or item['cycle_status']=='failed' else
+            'results_ready' if item['results_revision_id'] else
+            'processing' if item['cycle_status'] in {'collection_closed','calculation_pending','calculated'} else 'collecting')
     return list(cycles.values())
+
+
+def list_owned_reports(connection, user_id: int) -> list[dict]:
+    return [item for item in list_owned_cycles(connection, user_id) if item['report_id']]
 
 
 def read_report(connection, report_id) -> dict:
