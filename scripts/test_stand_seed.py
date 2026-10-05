@@ -52,6 +52,8 @@ def seed(state):
         org_version=create_organization_context_draft(c,organization_id=org,definition=definition,source_manifest={'fixture':'E10.2'})
         publish_organization_context(c,version_id=org_version,confirmed_by_user_id=users[0])
         for uid in users:
+            if state.get('browser_profile') == 'unprepared' and uid == users[0]:
+                continue
             select_role_profile_for_user(c,user_id=uid,version_id=role)
             version=create_user_context_draft(c,user_id=uid,identity={'full_name':'Синтетический участник'},professional={'position_or_status':'Технический участник'})
             confirm_user_context(c,version_id=version,user_id=uid)

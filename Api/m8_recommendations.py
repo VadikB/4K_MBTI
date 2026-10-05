@@ -11,10 +11,11 @@ from Api.m5_case_runtime import checksum
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "assessment_definitions/recommendations/m8/v1_1"
 CONTRACT_VERSION = "m8-recommendations/1.1.0"
+# Canonical M4 content only: identity and arbitrary nested metadata never cross this boundary.
 PROFILE_ALLOWLIST = {
-    "organization_context": ("description", "activities", "products", "employee_context"),
-    "role_profile": ("name", "short_description", "mission", "typical_tasks", "objects_of_work"),
-    "user_context": ("position", "department", "specialization", "regular_tasks", "systems", "tools"),
+    "organization_context": ("activity_description", "activities", "products", "employee_context"),
+    "role_profile": ("mission", "typical_tasks", "objects_of_work"),
+    "user_context": ("position_or_status", "unit_or_program", "specialization", "regular_tasks", "systems_and_tools"),
 }
 FORBIDDEN_PROFILE_KEYS = {"full_name", "contacts", "email", "phone", "name"}
 
@@ -49,7 +50,20 @@ def profile_projection(snapshot: dict[str, Any] | None) -> dict[str, Any]:
         source = content.get(section)
         if not isinstance(source, dict):
             continue
-        selected = {key: source[key] for key in allowed if key in source and source[key] not in (None, "", [], {})}
+        if section == "role_profile":
+            source = source.get("card") or {}
+        if not isinstance(source, dict):
+            continue
+        # Professional text or lists of text, never unbounded dictionaries containing contacts.
+        selected = {}
+        for key in allowed:
+            value = source.get(key)
+            if isinstance(value, str) and value.strip():
+                selected[key] = value
+            elif isinstance(value, list):
+                texts = [item for item in value if isinstance(item, str) and item.strip()]
+                if texts:
+                    selected[key] = texts
         if selected:
             projection[section] = selected
     return projection

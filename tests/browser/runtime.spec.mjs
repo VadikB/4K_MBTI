@@ -37,6 +37,7 @@ const test=base.extend({context:async({browser},use,info)=>{
   try{
     cli('bootstrap');
     if(info.title.includes('character')){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_case='character';fs.writeFileSync(statePath,JSON.stringify(inputs));}
+    if(info.title.includes('REV-02')){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_profile='unprepared';fs.writeFileSync(statePath,JSON.stringify(inputs));}
     cli('seed');
     const variant=info.title.includes('C1')?'budget':info.title.includes('C2')?'deadline':'ordinary';
     const prep=spawnSync(python,['scripts/browser_stand.py','--state',statePath,'--variant',variant],{encoding:'utf8'});
@@ -66,7 +67,7 @@ test.beforeEach(async({page,stand,browser},info)=>{
 test.afterEach(async({page},info)=>{
  await info.attach('assessment-http',{body:JSON.stringify(page.acceptanceNetwork||[],null,2),contentType:'application/json'});
 });
-async function login(page,stand,email='participant@example.test'){
+async function login(page,stand,email='participant@example.test',prepare=false){
  page.on('dialog',dialog=>dialog.accept());
  page.on('response',async response=>{try{if(response.url().endsWith('/runtime') && response.ok()){page.acceptanceCycle=(await response.json()).cycle_id;}}catch{/* Navigation may discard diagnostic response bodies. */}});
  await page.goto(stand.url);
@@ -75,7 +76,17 @@ async function login(page,stand,email='participant@example.test'){
  await page.locator('#magic-token-input').fill(stand.state.password);
  await page.locator('#verify-magic-link-button').click();
  const confirm=page.getByRole('button',{name:'Подтвердить профиль',exact:true});
- await expect(confirm).toBeVisible();await confirm.click();
+ await expect(confirm).toBeVisible();
+ await expect(confirm).toBeEnabled();
+ if(prepare){
+   const options=await (await page.request.get(stand.url+'/users/assessment/profile/options')).json();
+   expect(options.current_profile).toBeNull();
+   await page.locator('[name="role_profile_version_id"]').selectOption({label:'Менеджер проекта, продукта или процесса · версия 1'});
+   await page.locator('[name="position"]').fill('Эксперт по программам');
+   await page.locator('[name="duties"]').fill('Согласовать план разработки программ');
+   await test.info().attach('profile-confirmation',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+ }
+ await confirm.click();
  await expect(page.locator('#assessment-action-button')).toBeVisible();
 }
 async function start(page,expected='готовности'){
@@ -275,4 +286,46 @@ test('S10-A character branch: actual character Turn, order and no invented recom
  await expect(page.locator('#interview-finish-button')).toBeEnabled();await page.locator('#interview-finish-button').click();
  const saved=await report(page,stand,info);expect(saved.c67.recommendations).toHaveLength(0);
  expect(saved.c67.recommendation_generation.status).toBe('unavailable');
+});
+
+
+test('REV-02 fresh M4 confirmation, canonical context and saved history after login', async({page,stand},info)=>{
+ await login(page,stand,'participant@example.test',true);
+ await start(page);await answer(page);
+ await page.locator('#interview-finish-button').click();
+ await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
+ await answer(page,fixture.clarification_answer);
+ await page.locator('#interview-finish-button').click();
+ const saved=await report(page,stand,info);
+ const results=await (await page.request.get(`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/results`)).json();
+ expect(results.results.personalized_profile_snapshot.content.user_context.position_or_status).toBe('Эксперт по программам');
+ expect(saved.c67.recommendations.length).toBeGreaterThan(0);
+ expect(JSON.stringify(saved.c67.recommendations)).toContain('Техническая проверка');
+ await info.attach('canonical-results',{body:JSON.stringify(results,null,2),contentType:'application/json'});
+ const regenerated=await page.request.post(`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/reports/regenerate`,{data:{idempotency_key:'review-history-revision'}});
+ expect(regenerated.status()).toBe(201);const latest=await regenerated.json();expect(latest.id).not.toBe(saved.id);
+ // Ordinary logout, then a new login and the dashboard history entry.
+ await page.locator('#report-back-button').click();
+ await page.locator('#dashboard-panel .user-chip').click();
+ await page.locator('#dashboard-restart-button').click();
+ await login(page,stand);
+ await expect(page.locator('.reports-summary-count')).toHaveText('1');
+ await page.locator('.reports-summary-button').click();
+ const card=page.locator('.cycle-report');await expect(card).toHaveCount(1);
+ await info.attach('history-list',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+ await expect(card.locator('option')).toHaveCount(2);
+ await card.locator('select').selectOption(saved.id);
+ await card.locator('.cycle-report-open').click();
+ await expect(page.locator('#m8-report-state')).toContainText('Report готов');
+ expect(new URL(page.url()).searchParams.get('report_id')).toBe(saved.id);
+ const exact=await (await page.request.get(`${stand.url}/users/assessment/m8/reports/${saved.id}`)).json();expect(exact).toEqual(saved);
+ await page.reload();await expect(page.locator('#m8-report-state')).toContainText('Report готов');
+ expect(new URL(page.url()).searchParams.get('report_id')).toBe(saved.id);
+ const downloaded=page.waitForEvent('download');await page.locator('#report-download-button').click();
+ const pdf=path.join(stand.dir,'history.pdf');await (await downloaded).saveAs(pdf);
+ const historyCheck=spawnSync(python,['scripts/verify_browser_pdf.py',pdf,path.join(stand.dir,'report.json')],{encoding:'utf8'});
+ expect(historyCheck.status,historyCheck.stderr).toBe(0);
+ await info.attach('history-pdf-check',{body:historyCheck.stdout,contentType:'text/plain'});
+ await info.attach('history-pdf',{path:pdf,contentType:'application/pdf'});
+ await info.attach('history-report',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
 });

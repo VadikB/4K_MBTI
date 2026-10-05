@@ -1305,7 +1305,7 @@ export const renderReport = () => {
 };
 
 export const openReport = (options = {}) => {
-  const { returnTarget = 'home', m8CycleId = null } = options;
+  const { returnTarget = 'home', m8CycleId = null, m8ReportId = null } = options;
   state.reportReturnTarget = returnTarget === 'reports' ? 'reports' : 'home';
   setCurrentScreen('report');
   syncUrlState('report');
@@ -1315,9 +1315,18 @@ export const openReport = (options = {}) => {
     const legacy = document.getElementById('legacy-report-shell');
     const shell = document.getElementById('m8-report-shell');
     legacy?.classList.add('hidden'); shell?.classList.remove('hidden');
+    for (const id of ['m8-report-metadata', 'm8-report-skills', 'm8-report-coverage', 'm8-report-limitations', 'm8-report-recommendations', 'm8-report-recommendation-notices']) {
+      document.getElementById(id)?.replaceChildren();
+    }
+    document.getElementById('m8-report-state').textContent = 'Загружаем сохранённый отчёт…';
+    const download = document.getElementById('report-download-button');
+    delete download.dataset.m8ReportId;
+    download.disabled = true;
     const url = new URL(window.location.href); url.searchParams.set('screen', 'report'); url.searchParams.set('cycle_id', m8CycleId);
+    if (m8ReportId) url.searchParams.set('report_id', m8ReportId);
+    else url.searchParams.delete('report_id');
     window.history.replaceState({}, '', url.pathname + '?' + url.searchParams.toString());
-    void loadM8Report(m8CycleId).catch((error) => {
+    void loadM8Report(m8CycleId, m8ReportId).catch((error) => {
       const stateNode = document.getElementById('m8-report-state');
       if (stateNode) stateNode.textContent = error?.message || 'Не удалось загрузить Report.';
     });
@@ -1347,8 +1356,9 @@ const coverageLabel = (cut) => {
   return `${cut.numerator}/${cut.denominator} · ${(cut.ratio * 100).toFixed(1)}%`;
 };
 
-const loadM8Report = async (cycleId) => {
+const loadM8Report = async (cycleId, reportId = null) => {
   const stateNode = document.getElementById('m8-report-state');
+  if (!reportId) {
   const statusResponse = await fetch(`/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/status`);
   const status = await readApiResponse(statusResponse, 'Не удалось загрузить состояние Results.');
   if (status.results_status !== 'ready') {
@@ -1361,7 +1371,8 @@ const loadM8Report = async (cycleId) => {
     document.getElementById('m8-report-skills').replaceChildren();
     return;
   }
-  const response = await fetch(`/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/reports/latest`);
+  }
+  const response = await fetch(reportId ? `/users/assessment/m8/reports/${encodeURIComponent(reportId)}` : `/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/reports/latest`);
   const report = await readApiResponse(response, 'Не удалось загрузить базовый Report.');
   const c67 = report.c67;
   stateNode.textContent = `Report готов · расчётная редакция ${c67.results_revision_no} · версия представления ${report.revision_no}`;
@@ -1393,6 +1404,7 @@ const loadM8Report = async (cycleId) => {
     .map((item) => `<li><strong>${escapeHtml(item.skill_id)}:</strong> ${escapeHtml(item.text)}</li>`).join('');
   const download = document.getElementById('report-download-button');
   download.dataset.m8ReportId = report.id;
+  download.disabled = false;
 };
 
 export const resolveAssessmentSessionIdByCode = async () => {

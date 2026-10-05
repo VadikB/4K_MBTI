@@ -88,6 +88,22 @@ const renderProfileConfirmation = () => {
     </div>
     <label class="chat-profile-consent"><input name="consent_accepted" type="checkbox" ${consentRecorded ? 'checked disabled' : 'required'}><span>${consentRecorded ? 'Согласие на обработку персональных данных уже принято' : 'Согласен на обработку персональных данных'} · <a href="${PERSONAL_DATA_CONSENT_URL}" target="_blank" rel="noopener noreferrer">Открыть документ</a></span></label>
     <button class="primary-button" type="submit">Подтвердить профиль</button>`;
+  const preparation = document.createElement('fieldset');
+  preparation.className = 'chat-profile-context';
+  preparation.innerHTML = '<legend>Контекст оценки</legend><p>Загружаем опубликованные настройки…</p>';
+  form.querySelector('button[type="submit"]').before(preparation);
+  const submit = form.querySelector('button[type="submit"]');
+  submit.disabled = true;
+  void fetch('/users/assessment/profile/options').then((response) => readApiResponse(response, 'Не удалось загрузить контекст оценки.')).then((data) => {
+    if (!data.roles.length || !data.organization_contexts.length || !data.configurations.length) {
+      throw new Error('Контекст оценки ещё не подготовлен. Ответственный специалист должен опубликовать контекст организации, роль и конфигурацию оценки.');
+    }
+    const options = (items, key, label, selected) => items.map((item) => `<option value="${item[key]}" ${Number(item[key]) === Number(selected) ? 'selected' : ''}>${escapeHtml(label(item))}</option>`).join('');
+    preparation.innerHTML = `<legend>Контекст оценки</legend><label>Роль для оценки<select name="role_profile_version_id" required><option value="">Выберите роль</option>${options(data.roles, 'version_id', (r) => `${r.name} · версия ${r.version}`, data.selected_role_version_id)}</select></label>` +
+      `<label>Контекст организации<select name="organization_context_version_id" required>${options(data.organization_contexts, 'version_id', (r) => `${r.name} · версия ${r.version}`)}</select></label>` +
+      `<label>Конфигурация оценки<select name="assessment_configuration_id" required>${options(data.configurations, 'id', (r) => r.name)}</select></label>`;
+    submit.disabled = false;
+  }).catch((error) => { preparation.textContent = error.message; });
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const submitButton = form.querySelector('button[type="submit"]');
@@ -110,6 +126,11 @@ const renderProfileConfirmation = () => {
           'X-Agent4K-Operation-Id': operationId,
         },
         body: JSON.stringify({
+          personalized_profile: {
+            role_profile_version_id: Number(values.role_profile_version_id),
+            organization_context_version_id: Number(values.organization_context_version_id),
+            assessment_configuration_id: Number(values.assessment_configuration_id),
+          },
           session_id: state.sessionId,
           full_name: values.full_name,
           email: values.email,

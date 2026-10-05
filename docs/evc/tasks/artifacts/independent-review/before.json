@@ -1,0 +1,37 @@
+{
+  "anonymous_profile_access": {
+    "expected": "401/403, no UPDATE",
+    "observed_read": 200,
+    "observed_patch": 200,
+    "fake_updates": 1,
+    "auth_checks": 0,
+    "synthetic_email_returned": true,
+    "boundary": "real FastAPI router; SQL mocked, no main startup or live DB"
+  },
+  "report_history_split": {
+    "dashboard_m8_reports": 1,
+    "profile_summary_reports": 0,
+    "history_query_uses_legacy": true
+  },
+  "start_without_ready_m4": {
+    "observed": "M4_PROFILE_NOT_READY",
+    "boundary": "real function, empty synthetic M4 query"
+  },
+  "m4_creation_api_calls": [],
+  "saved_m4_projection": {
+    "projection": {},
+    "role_card_mission_present": true,
+    "role_card_tasks_present": true,
+    "organization_activity_present": true,
+    "user_position_present": true
+  },
+  "admission_context_projection": {
+    "numeric_admissible": true,
+    "saved_context_keys": [
+      "assessment_situation_id",
+      "base_role",
+      "case_ref"
+    ],
+    "limitation": "Does not prove these observations must be rejected; proves authority/material differences are not examined."
+  }
+}

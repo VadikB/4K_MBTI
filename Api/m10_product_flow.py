@@ -15,11 +15,11 @@ def _policy() -> dict:
 
 def _owned_profile(connection, user_id: int) -> int:
     row = connection.execute(
-        """SELECT id FROM assessment_personalized_profiles
-           WHERE user_id=%s AND status='ready' ORDER BY frozen_at DESC,id DESC LIMIT 1""",
+        """SELECT id,status FROM assessment_personalized_profiles
+           WHERE user_id=%s ORDER BY frozen_at DESC,id DESC LIMIT 1""",
         (user_id,),
     ).fetchone()
-    if not row:
+    if not row or row["status"] != "ready":
         raise ValueError("M4_PROFILE_NOT_READY")
     return int(row["id"])
 

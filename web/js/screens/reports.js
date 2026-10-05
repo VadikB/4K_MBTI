@@ -60,9 +60,29 @@ export const loadProfileSessionSkills = async (sessionId) => {
 export const renderReportsPage = () => {
   const summary = state.profileSummary;
   profileHistoryList.innerHTML = '';
-  if (!summary?.history?.length) {
+  for (const item of summary?.cycle_reports || []) {
+    const card = document.createElement('article');
+    card.className = 'profile-history-accordion cycle-report';
+    card.dataset.cycleId = item.cycle_id;
+    card.innerHTML = `<h3>Оценка от ${escapeHtml(formatProfileDate(item.created_at))}</h3>` +
+      `<label>Сохранённая версия<select aria-label="Версия отчёта">${item.versions.map((v) => `<option value="${escapeHtml(v.report_id)}">Результат ${v.results_revision_no} · отчёт ${v.revision_no}</option>`).join('')}</select></label>` +
+      '<button type="button" class="ghost-button cycle-report-open">Открыть отчёт</button>' +
+      '<a class="primary-button cycle-report-pdf">Скачать PDF</a>';
+    const select = card.querySelector('select');
+    const pdf = card.querySelector('.cycle-report-pdf');
+    const updateDownload = () => { pdf.href = `/users/assessment/m8/reports/${encodeURIComponent(select.value)}/pdf`; };
+    updateDownload(); select.addEventListener('change', updateDownload);
+    card.querySelector('.cycle-report-open').addEventListener('click', () => {
+      openReport({returnTarget: 'reports', m8CycleId: item.cycle_id, m8ReportId: select.value});
+    });
+    profileHistoryList.appendChild(card);
+  }
+  if (!summary?.history?.length && !summary?.cycle_reports?.length) {
     profileHistoryList.innerHTML = '<p class="report-empty-state">Пользователь еще не проходил оценку компетенций.</p>';
-  } else {
+  } else if (summary?.history?.length) {
+    const heading = document.createElement('h3');
+    heading.textContent = 'Архив прежних оценок';
+    profileHistoryList.appendChild(heading);
     const history = Array.isArray(summary.history) ? summary.history : [];
     const selectedIndex = state.profileSelectedSessionId
       ? history.findIndex((item) => item.session_id === state.profileSelectedSessionId)
@@ -208,9 +228,7 @@ export const openReports = async () => {
   profileHistoryList.innerHTML = '<p class="report-empty-state">Загружаем историю прохождений...</p>';
 
   try {
-    if (!state.profileSummary) {
-      await loadProfileSummary();
-    }
+    await loadProfileSummary();
     if (state.profileSelectedSessionId) {
       await loadProfileSessionSkills(state.profileSelectedSessionId);
       return;

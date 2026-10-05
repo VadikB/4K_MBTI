@@ -873,3 +873,12 @@
         align-items: stretch;
     }
 }
+
+.chat-profile-context {
+    display: grid;
+    gap: var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    min-width: 0;
+}

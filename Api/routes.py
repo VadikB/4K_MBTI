@@ -31,6 +31,7 @@ from Api import m7_completion
 from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,AdditionalSessionRequest,BlockingWaitRequest,ReconcileC46Request
 from Api import m6_cycle_aggregation_repository
 from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest
+from Api import participant_profile
 from Api import m8_results
 from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest, RegenerateReportRequest
 from Api import m10_product_flow, m10_orchestration
@@ -608,11 +609,7 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
         FROM m5_cycles c LEFT JOIN m5_assessment_situations s ON s.cycle_db_id=c.id
         WHERE c.owner_user_id=%s AND c.usage_scope='assessment'
         GROUP BY c.id ORDER BY c.created_at DESC,c.id DESC LIMIT 1""", (user.id,)).fetchone()
-    report_rows = connection.execute("""SELECT p.created_at,p.revision_no
-        FROM m8_reports p JOIN m8_result_revisions rr ON rr.id=p.result_revision_id
-        JOIN m8_results r ON r.id=rr.results_id JOIN m5_cycles c ON c.id=r.cycle_db_id
-        WHERE c.owner_user_id=%s AND c.usage_scope='assessment' AND p.audience='assessee'
-        ORDER BY p.created_at DESC,p.id DESC""", (user.id,)).fetchall()
+    report_rows = m8_results.list_owned_reports(connection, user.id)
     completed_cases = int(cycle['completed_cases']) if cycle else 0
     total_cases = int(cycle['total_cases']) if cycle else 0
     is_complete = bool(cycle and cycle['status']=='calculated')
@@ -622,8 +619,9 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
         badge='Готов',format_label='PDF',sequence_number=row['revision_no'],report_at=row['created_at'])
         for row in report_rows[:5]]
     reports_total_row = {'reports_total':len(report_rows)}
-    assessment_allowed = bool(connection.execute(
-        "SELECT 1 FROM assessment_personalized_profiles WHERE user_id=%s AND status='ready' LIMIT 1",(user.id,)).fetchone())
+    current_profile = connection.execute(
+        "SELECT status FROM assessment_personalized_profiles WHERE user_id=%s ORDER BY frozen_at DESC,id DESC LIMIT 1", (user.id,)).fetchone()
+    assessment_allowed = bool(current_profile and current_profile['status'] == 'ready')
     available_assessments: list[AvailableAssessment] = []
     if assessment_allowed and not is_complete:
         available_assessments.append(
@@ -6040,20 +6038,20 @@ def logout_user_session(request: Request, response: FastAPIResponse) -> dict[str
     return {"ok": True}
 
 @router.get("", response_model=list[UserResponse])
-def get_users() -> list[UserResponse]:
+def get_users(request: Request) -> list[UserResponse]:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail="Требуется авторизация")
     with get_connection() as connection:
-        rows = connection.execute(
-            USER_SELECT_SQL
-            + """
-            ORDER BY u.id ASC
-            """
-        ).fetchall()
-
+        scope = _get_admin_scope_or_403(connection, user)
+        scope_sql, scope_params = admin_scope_sql(scope)
+        rows = connection.execute(USER_SELECT_SQL + " WHERE TRUE " + scope_sql + " ORDER BY u.id ASC", scope_params).fetchall()
     return [UserResponse(**dict(row)) for row in rows]
 
 
 @router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: int) -> UserResponse:
+def get_user(user_id: int, request: Request) -> UserResponse:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         row = connection.execute(
             USER_SELECT_SQL
@@ -6070,7 +6068,8 @@ def get_user(user_id: int) -> UserResponse:
 
 
 @router.get("/{user_id}/profile-summary", response_model=UserProfileSummaryResponse)
-def get_user_profile_summary(user_id: int) -> UserProfileSummaryResponse:
+def get_user_profile_summary(user_id: int, request: Request) -> UserProfileSummaryResponse:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         user_row = connection.execute(
             USER_SELECT_SQL
@@ -6147,18 +6146,23 @@ def get_user_profile_summary(user_id: int) -> UserProfileSummaryResponse:
                 )
             )
 
+        cycle_reports = m8_results.list_owned_reports(connection, user_id)
+
     return UserProfileSummaryResponse(
         user=user,
-        total_assessments=len(history),
-        completed_assessments=sum(1 for item in history if item.status == "completed"),
+        total_assessments=len(cycle_reports),
+        completed_assessments=len(cycle_reports),
         average_score_percent=round(sum(score_values) / len(score_values)) if score_values else None,
         latest_session_id=history[0].session_id if history else None,
         history=history,
+        cycle_reports=cycle_reports,
+        legacy_assessments_total=len(history),
     )
 
 
 @router.patch("/{user_id}/profile", response_model=UserResponse)
-def update_user_profile(user_id: int, payload: UserProfileUpdateRequest) -> UserResponse:
+def update_user_profile(user_id: int, payload: UserProfileUpdateRequest, request: Request) -> UserResponse:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         existing = connection.execute(
             USER_SELECT_SQL
@@ -6305,6 +6309,18 @@ def select_my_role_profile(payload: RoleProfileSelectionRequest, request: Reques
     return _role_profile_option(role)
 
 
+@router.get("/assessment/profile/options")
+def get_participant_profile_options(request: Request):
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail="Требуется авторизация")
+    try:
+        with get_connection() as connection:
+            return participant_profile.options(connection, user_id=user.id)
+    except ValueError as exc:
+        raise HTTPException(409, detail=str(exc)) from exc
+
+
 @router.post("/agent/profile/confirm", response_model=AgentReply)
 def confirm_agent_profile(payload: AgentProfileConfirmRequest, request: Request, response: FastAPIResponse) -> AgentReply:
     operation_id = request.headers.get("X-Agent4K-Operation-Id")
@@ -6333,6 +6349,11 @@ def confirm_agent_profile(payload: AgentProfileConfirmRequest, request: Request,
         )
         if reply.user is not None:
             with get_connection() as connection:
+                if payload.personalized_profile is not None:
+                    participant_profile.confirm(connection, user_id=authenticated_user.id,
+                        selection=payload.personalized_profile, full_name=payload.full_name,
+                        position=payload.position, duties=payload.duties)
+                    connection.commit()
                 reply = reply.model_copy(update={"dashboard": _build_dashboard(connection, reply.user)})
             _set_user_session_cookie(response, web_session_service.create_session(reply.user.id))
         operation_progress_service.complete(operation_id, title="Профиль готов", message="Данные подтверждены.")
@@ -7007,6 +7028,21 @@ def regenerate_owned_m8_report(cycle_id: UUID, payload: RegenerateReportRequest,
                 key=payload.idempotency_key, target_profile=previous['c67'].get('target_profile'), created_by=int(user.id))
             connection.commit(); return result
     except (ValueError, KeyError) as exc: raise HTTPException(409, detail=str(exc)) from exc
+
+
+@router.get('/assessment/m8/reports/{report_id}')
+def read_owned_saved_m8_report(report_id: UUID, request: Request):
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail='Требуется авторизация')
+    try:
+        with get_connection() as connection:
+            report = m8_results.read_report(connection, str(report_id))
+    except ValueError as exc:
+        raise HTTPException(404, detail=str(exc)) from exc
+    if int(report['owner_user_id']) != int(user.id) or report['audience'] != 'assessee':
+        raise HTTPException(403, detail='Нет доступа к этому Report.')
+    return report
 
 
 @router.get('/assessment/m8/reports/{report_id}/pdf')

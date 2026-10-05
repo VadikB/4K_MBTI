@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -1031,7 +1031,14 @@ class AgentMessageRequest(BaseModel):
     message: str
 
 
+class PersonalizedProfileSelection(BaseModel):
+    organization_context_version_id: int = Field(gt=0)
+    role_profile_version_id: int = Field(gt=0)
+    assessment_configuration_id: int = Field(gt=0)
+
+
 class AgentProfileConfirmRequest(BaseModel):
+    personalized_profile: PersonalizedProfileSelection | None = None
     session_id: str
     full_name: str
     email: str
@@ -1279,6 +1286,8 @@ class UserProfileSummaryResponse(BaseModel):
     average_score_percent: int | None = None
     latest_session_id: int | None = None
     history: list[UserAssessmentHistoryItem]
+    cycle_reports: list[dict[str, Any]] = Field(default_factory=list)
+    legacy_assessments_total: int = 0
 
 
 class UserProfileUpdateRequest(BaseModel):

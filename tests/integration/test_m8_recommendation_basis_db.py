@@ -145,6 +145,17 @@ def test_r11_history_regeneration_failure_and_real_http(database,monkeypatch,tmp
         url=f"/users/assessment/m8/cycles/{results['cycle_id']}/reports/latest"
         response=http.get(url);assert response.status_code==200
         assert response.json()['c67']['recommendations']==fresh['c67']['recommendations']
+        # REV-03: selecting a historical report must not silently open the latest revision.
+        saved_response=http.get(f"/users/assessment/m8/reports/{report['id']}")
+        assert saved_response.status_code==200
+        assert saved_response.json()['id']==report['id']
+        assert saved_response.json()['revision_no']==1
+        assert saved_response.json()['c67']==report['c67']
+        with factory() as history_connection:
+            history=m8_results.list_owned_reports(history_connection,99)
+        assert len(history)==1 and len(history[0]['versions'])==3
+        assert history[0]['report_id']==fresh['id']
+
         pdf=http.get(f"/users/assessment/m8/reports/{fresh['id']}/pdf")
         assert pdf.status_code==200 and pdf.content.startswith(b'%PDF')
         (tmp_path/'report.pdf').write_bytes(pdf.content)

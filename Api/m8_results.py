@@ -274,6 +274,23 @@ def create_report(connection, *, results_revision_id: str, audience: str, key: s
     return read_report(connection, report_id)
 
 
+def list_owned_reports(connection, user_id: int) -> list[dict]:
+    """One history item per Cycle, with immutable presentation revisions explicitly listed."""
+    rows = connection.execute("""SELECT c.cycle_id,p.id AS report_id,p.revision_no,p.created_at,
+        rr.id AS results_revision_id,rr.revision_no AS results_revision_no
+        FROM m8_reports p JOIN m8_result_revisions rr ON rr.id=p.result_revision_id
+        JOIN m8_results r ON r.id=rr.results_id JOIN m5_cycles c ON c.id=r.cycle_db_id
+        WHERE c.owner_user_id=%s AND c.usage_scope='assessment' AND p.audience='assessee'
+        ORDER BY c.created_at DESC,c.id DESC,rr.revision_no DESC,p.revision_no DESC""", (user_id,)).fetchall()
+    cycles = {}
+    for row in rows:
+        version = {**dict(row), 'cycle_id': str(row['cycle_id']), 'report_id': str(row['report_id']),
+                   'results_revision_id': str(row['results_revision_id'])}
+        item = cycles.setdefault(version['cycle_id'], {**version, 'versions': []})
+        item['versions'].append(version)
+    return list(cycles.values())
+
+
 def read_report(connection, report_id) -> dict:
     row = connection.execute("""SELECT p.*,r.payload_json AS results_payload,x.cycle_db_id,c.cycle_id,c.owner_user_id
         FROM m8_reports p JOIN m8_result_revisions r ON r.id=p.result_revision_id
