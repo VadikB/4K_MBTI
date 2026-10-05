@@ -5840,6 +5840,9 @@ def ensure_core_schema() -> None:
             is_active,
             version,
         ) in DEFAULT_CASE_USER_TEXT_TEMPLATES:
+            # Optional legacy templates require an imported passport; do not invent one.
+            if type_code not in passport_map:
+                continue
             connection.execute(
                 """
                 INSERT INTO case_user_text_templates (
@@ -5987,6 +5990,8 @@ def ensure_core_schema() -> None:
                 )
 
         for type_code, rules in DEFAULT_CASE_TYPE_DOMAIN_SITUATIONS.items():
+            if type_code not in passport_map:
+                continue
             for domain_family, situation_code in rules:
                 existing_row = connection.execute(
                     """

@@ -37,7 +37,7 @@ jobs:
 
   pytest:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     services:
       postgres:
@@ -77,9 +77,11 @@ jobs:
             "psycopg_pool>=3.2.0" \
             "python-dotenv>=1.0.1" \
             "typst>=0.14.8" \
+            "pypdf>=6.0.0" \
             "pytest>=8.3.0" \
             "pytest-cov>=6.0.0" \
-            "httpx2"
+            "httpx2" \
+            "uvicorn>=0.30.0"
 
       - name: Unit tests
         run: python -m pytest -m "not integration and not e2e and not llm"
@@ -102,6 +104,32 @@ jobs:
             echo "::error title=Integration tests failed::$details"
             exit "$status"
           fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Browser dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Browser acceptance (isolated bootstrap 10.2)
+        env:
+          STAND_ADMIN_URL: postgresql://pytest:pytest@127.0.0.1:5432/postgres
+          BROWSER_PYTHON: python
+        run: xvfb-run -a npm run test:browser
+
+      - name: Browser evidence (no credentials or auth traces)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-acceptance
+          path: |
+            .test-stand/browser-output/
+            .test-stand/browser-results.json
+          if-no-files-found: error
 
   deploy-test:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

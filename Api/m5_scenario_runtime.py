@@ -87,6 +87,12 @@ def run_model_check_case03(connection, *, assessment_situation_id: str, scheme: 
 
 
 def _as_row(connection, assessment_situation_id: str, *, lock: bool = False):
+    # The completion worker locks Cycle before AS. Use the same order for turns,
+    # transitions and handoffs so concurrent close cannot deadlock against a turn.
+    if lock:
+        connection.execute("""SELECT id FROM m5_cycles WHERE id=(
+            SELECT cycle_db_id FROM m5_assessment_situations WHERE assessment_situation_id=%s
+        ) FOR UPDATE""", (UUID(assessment_situation_id),)).fetchone()
     suffix = " FOR UPDATE" if lock else ""
     row = connection.execute("SELECT * FROM m5_assessment_situations WHERE assessment_situation_id=%s" + suffix,
                              (UUID(assessment_situation_id),)).fetchone()
@@ -547,6 +553,10 @@ def transition(connection, *, assessment_situation_id: str, action: str, reason:
 def trace(connection, assessment_situation_id: str) -> dict:
     row = _as_row(connection, assessment_situation_id)
     turns = [dict(x) for x in connection.execute("SELECT * FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s ORDER BY sequence_no", (row["id"],)).fetchall()]
+    character_names = {x['character_id']: x['name_and_role'] for x in row['execution_payload_json'].get('characters', [])}
+    for turn in turns:
+        if turn['speaker_type'] == 'character':
+            turn['speaker_name'] = character_names.get(turn['speaker_id'])
     events = [dict(x) for x in connection.execute("SELECT * FROM m5_scenario_events WHERE assessment_situation_db_id=%s ORDER BY sequence_no", (row["id"],)).fetchall()]
     state = connection.execute("SELECT * FROM m5_scenario_states WHERE assessment_situation_db_id=%s", (row["id"],)).fetchone()
     decisions = [dict(x) for x in connection.execute(

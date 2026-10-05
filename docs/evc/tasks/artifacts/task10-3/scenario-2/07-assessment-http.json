@@ -1,0 +1,4284 @@
+[
+  {
+    "at": "2026-10-05T10:41:17.268Z",
+    "path": "/users/assessment/cycles/start",
+    "status": 201,
+    "response": {
+      "resumed": false,
+      "plan": {
+        "cycle_id": "f885cbfc-6c13-4e33-bb1e-eafad6f53d9f",
+        "cycle_status": "active",
+        "plan_id": "a3be116a-9b60-4fd6-9e36-3f88b6ec0421",
+        "revision_id": "be1799a9-c198-493e-a663-145a1aa1a5c2",
+        "revision_no": 1,
+        "plan": {
+          "goal": {
+            "kind": "skills",
+            "selected_skills": [
+              "K1",
+              "K2",
+              "K3",
+              "K4"
+            ]
+          },
+          "route": [
+            {
+              "case_id": "CASE-TDISC-01",
+              "reasons": [],
+              "eligible": true,
+              "base_role": "project_product_process_manager",
+              "target_ids": [
+                "K1.I13",
+                "K1.I16",
+                "K1.I17",
+                "K2.I07",
+                "K2.I08",
+                "K4.I05",
+                "K4.I10",
+                "K4.I17",
+                "K4.I18"
+              ],
+              "conditional": true,
+              "reserve_for": [],
+              "case_version": "v0.1",
+              "duration_source": "M5 CaseVersion planned range",
+              "purpose_target_ids": [
+                "K1.I13",
+                "K1.I16",
+                "K1.I17",
+                "K2.I07",
+                "K2.I08",
+                "K4.I05",
+                "K4.I10",
+                "K4.I17",
+                "K4.I18"
+              ],
+              "planned_max_minutes": 35,
+              "planned_min_minutes": 25,
+              "contribution_target_ids": [
+                "K1.I13",
+                "K1.I16",
+                "K1.I17",
+                "K2.I07",
+                "K2.I08",
+                "K4.I05",
+                "K4.I10",
+                "K4.I17",
+                "K4.I18"
+              ]
+            },
+            {
+              "case_id": "CASE-TDISC-03",
+              "reasons": [],
+              "eligible": true,
+              "base_role": "project_product_process_manager",
+              "target_ids": [
+                "K1.I15",
+                "K2.I11",
+                "K3.I03",
+                "K3.I06",
+                "K3.I09",
+                "K3.I10",
+                "K3.I11",
+                "K4.I12"
+              ],
+              "conditional": true,
+              "reserve_for": [],
+              "case_version": "v0.1",
+              "duration_source": "M5 CaseVersion planned range",
+              "purpose_target_ids": [
+                "K1.I15",
+                "K2.I11",
+                "K3.I03",
+                "K3.I06",
+                "K3.I09",
+                "K3.I10",
+                "K3.I11",
+                "K4.I12"
+              ],
+              "planned_max_minutes": 40,
+              "planned_min_minutes": 30,
+              "contribution_target_ids": [
+                "K1.I15",
+                "K2.I11",
+                "K3.I03",
+                "K3.I06",
+                "K3.I09",
+                "K3.I10",
+                "K3.I11",
+                "K4.I12"
+              ]
+            }
+          ],
+          "status": "LIMITED",
+          "catalog": [
+            {
+              "case_id": "CASE-TDISC-01",
+              "reasons": [],
+              "eligible": true,
+              "base_role": "project_product_process_manager",
+              "target_ids": [
+                "K1.I13",
+                "K1.I16",
+                "K1.I17",
+                "K2.I07",
+                "K2.I08",
+                "K4.I05",
+                "K4.I10",
+                "K4.I17",
+                "K4.I18"
+              ],
+              "case_version": "v0.1",
+              "planned_max_minutes": 35,
+              "planned_min_minutes": 25,
+              "contribution_target_ids": [
+                "K1.I13",
+                "K1.I16",
+                "K1.I17",
+                "K2.I07",
+                "K2.I08",
+                "K4.I05",
+                "K4.I10",
+                "K4.I17",
+                "K4.I18"
+              ]
+            },
+            {
+              "case_id": "CASE-TDISC-02",
+              "reasons": [
+                "CASE_STATUS_NOT_ADMITTED",
+                "ROLE_NOT_ALLOWED",
+                "QA_EVIDENCE_MISSING:assessment_situation,case_dialogue,case_format"
+              ],
+              "eligible": false,
+              "base_role": "specialist_expert",
+              "target_ids": [
+                "K1.I02",
+                "K1.I14",
+                "K1.I17",
+                "K2.I13",
+                "K2.I14",
+                "K2.I07",
+                "K4.I15",
+                "K4.I16",
+                "K4.I18"
+              ],
+              "case_version": "v0.1",
+              "planned_max_minutes": 35,
+              "planned_min_minutes": 25,
+              "contribution_target_ids": [
+                "K1.I02",
+                "K1.I14",
+                "K1.I17",
+                "K2.I07",
+                "K2.I13",
+                "K2.I14",
+                "K4.I15",
+                "K4.I16",
+                "K4.I18"
+              ]
+            },
+            {
+              "case_id": "CASE-TDISC-03",
+              "reasons": [],
+              "eligible": true,
+              "base_role": "project_product_process_manager",
+              "target_ids": [
+                "K1.I15",
+                "K2.I11",
+                "K3.I03",
+                "K3.I06",
+                "K3.I09",
+                "K3.I10",
+                "K3.I11",
+                "K4.I12"
+              ],
+              "case_version": "v0.1",
+              "planned_max_minutes": 40,
+              "planned_min_minutes": 30,
+              "contribution_target_ids": [
+                "K1.I15",
+                "K2.I11",
+                "K3.I03",
+                "K3.I06",
+                "K3.I09",
+                "K3.I10",
+                "K3.I11",
+                "K4.I12"
+              ]
+            },
+            {
+              "case_id": "CASE-TDISC-04",
+              "reasons": [
+                "CASE_STATUS_NOT_ADMITTED",
+                "ROLE_NOT_ALLOWED",
+                "CASE_UNRESOLVED_DECISIONS",
+                "QA_EVIDENCE_MISSING:assessment_situation,case_dialogue,case_format"
+              ],
+              "eligible": false,
+              "base_role": "team_lead",
+              "target_ids": [
+                "K1.I13",
+                "K1.I14",
+                "K2.I10",
+                "K2.I11",
+                "K2.I12",
+                "K2.I06",
+                "K2.I07",
+                "K4.I10"
+              ],
+              "case_version": "v0.1",
+              "planned_max_minutes": 35,
+              "planned_min_minutes": 25,
+              "contribution_target_ids": [
+                "K1.I13",
+                "K1.I14",
+                "K2.I06",
+                "K2.I07",
+                "K2.I10",
+                "K2.I11",
+                "K2.I12",
+                "K4.I10"
+              ]
+            },
+            {
+              "case_id": "CASE-TDISC-05",
+              "reasons": [
+                "CASE_STATUS_NOT_ADMITTED",
+                "ROLE_NOT_ALLOWED",
+                "QA_EVIDENCE_MISSING:assessment_situation,case_dialogue,case_format"
+              ],
+              "eligible": false,
+              "base_role": "direction_system_leader",
+              "target_ids": [
+                "K1.I01",
+                "K1.I17",
+                "K2.I02",
+                "K2.I03",
+                "K2.I06",
+                "K4.I07",
+                "K4.I11",
+                "K4.I15",
+                "K4.I17"
+              ],
+              "case_version": "v0.1",
+              "planned_max_minutes": 40,
+              "planned_min_minutes": 30,
+              "contribution_target_ids": [
+                "K1.I01",
+                "K1.I17",
+                "K2.I02",
+                "K2.I03",
+                "K2.I06",
+                "K4.I07",
+                "K4.I11",
+                "K4.I15",
+                "K4.I17"
+              ]
+            }
+          ],
+          "reserves": [],
+          "schema_version": 1,
+          "full_target_set": [
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C01",
+              "indicator_id": "K1.I01"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C01",
+              "indicator_id": "K1.I02"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C01",
+              "indicator_id": "K1.I03"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C02",
+              "indicator_id": "K1.I04"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C02",
+              "indicator_id": "K1.I05"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C03",
+              "indicator_id": "K1.I06"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C03",
+              "indicator_id": "K1.I07"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C04",
+              "indicator_id": "K1.I08"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C04",
+              "indicator_id": "K1.I09"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C05",
+              "indicator_id": "K1.I10"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C05",
+              "indicator_id": "K1.I11"
+            },
+            {
+              "skill_id": "K1.3",
+              "m2_version": "v1.1",
+              "component_id": "K1.C06",
+              "indicator_id": "K1.I12"
+            },
+            {
+              "skill_id": "K1.3",
+              "m2_version": "v1.1",
+              "component_id": "K1.C07",
+              "indicator_id": "K1.I13"
+            },
+            {
+              "skill_id": "K1.3",
+              "m2_version": "v1.1",
+              "component_id": "K1.C07",
+              "indicator_id": "K1.I14"
+            },
+            {
+              "skill_id": "K1.4",
+              "m2_version": "v1.1",
+              "component_id": "K1.C08",
+              "indicator_id": "K1.I15"
+            },
+            {
+              "skill_id": "K1.4",
+              "m2_version": "v1.1",
+              "component_id": "K1.C09",
+              "indicator_id": "K1.I16"
+            },
+            {
+              "skill_id": "K1.4",
+              "m2_version": "v1.1",
+              "component_id": "K1.C09",
+              "indicator_id": "K1.I17"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C01",
+              "indicator_id": "K2.I01"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C01",
+              "indicator_id": "K2.I02"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C02",
+              "indicator_id": "K2.I03"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C02",
+              "indicator_id": "K2.I04"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C03",
+              "indicator_id": "K2.I05"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C03",
+              "indicator_id": "K2.I06"
+            },
+            {
+              "skill_id": "K2.2",
+              "m2_version": "v1.0",
+              "component_id": "K2.C04",
+              "indicator_id": "K2.I07"
+            },
+            {
+              "skill_id": "K2.2",
+              "m2_version": "v1.0",
+              "component_id": "K2.C05",
+              "indicator_id": "K2.I08"
+            },
+            {
+              "skill_id": "K2.2",
+              "m2_version": "v1.0",
+              "component_id": "K2.C06",
+              "indicator_id": "K2.I09"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C07",
+              "indicator_id": "K2.I10"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C07",
+              "indicator_id": "K2.I11"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C08",
+              "indicator_id": "K2.I12"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C09",
+              "indicator_id": "K2.I13"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C09",
+              "indicator_id": "K2.I14"
+            },
+            {
+              "skill_id": "K3.1",
+              "m2_version": "v1.1",
+              "component_id": "K3.C01",
+              "indicator_id": "K3.I01"
+            },
+            {
+              "skill_id": "K3.1",
+              "m2_version": "v1.1",
+              "component_id": "K3.C01",
+              "indicator_id": "K3.I02"
+            },
+            {
+              "skill_id": "K3.1",
+              "m2_version": "v1.1",
+              "component_id": "K3.C02",
+              "indicator_id": "K3.I03"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C03",
+              "indicator_id": "K3.I04"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C03",
+              "indicator_id": "K3.I05"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C03",
+              "indicator_id": "K3.I06"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C05",
+              "indicator_id": "K3.I07"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C05",
+              "indicator_id": "K3.I08"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C06",
+              "indicator_id": "K3.I09"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C07",
+              "indicator_id": "K3.I10"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C08",
+              "indicator_id": "K3.I11"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C08",
+              "indicator_id": "K3.I12"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C01",
+              "indicator_id": "K4.I01"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C01",
+              "indicator_id": "K4.I02"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C02",
+              "indicator_id": "K4.I03"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C02",
+              "indicator_id": "K4.I04"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C03",
+              "indicator_id": "K4.I05"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C03",
+              "indicator_id": "K4.I06"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C04",
+              "indicator_id": "K4.I07"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C04",
+              "indicator_id": "K4.I08"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C05",
+              "indicator_id": "K4.I09"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C05",
+              "indicator_id": "K4.I10"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C06",
+              "indicator_id": "K4.I11"
+            },
+            {
+              "skill_id": "K4.3",
+              "m2_version": "v1.0",
+              "component_id": "K4.C07",
+              "indicator_id": "K4.I12"
+            },
+            {
+              "skill_id": "K4.3",
+              "m2_version": "v1.0",
+              "component_id": "K4.C07",
+              "indicator_id": "K4.I13"
+            },
+            {
+              "skill_id": "K4.3",
+              "m2_version": "v1.0",
+              "component_id": "K4.C08",
+              "indicator_id": "K4.I14"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C09",
+              "indicator_id": "K4.I15"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C10",
+              "indicator_id": "K4.I16"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C10",
+              "indicator_id": "K4.I17"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C10",
+              "indicator_id": "K4.I18"
+            }
+          ],
+          "algorithm_version": "m7-greedy-coverage/1",
+          "known_limitations": [
+            "Cases are conditional opportunities; not guaranteed Evidence",
+            "Route exceeds time budget"
+          ],
+          "planned_target_set": [
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C01",
+              "indicator_id": "K1.I01"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C01",
+              "indicator_id": "K1.I02"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C01",
+              "indicator_id": "K1.I03"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C02",
+              "indicator_id": "K1.I04"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C02",
+              "indicator_id": "K1.I05"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C03",
+              "indicator_id": "K1.I06"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C03",
+              "indicator_id": "K1.I07"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C04",
+              "indicator_id": "K1.I08"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C04",
+              "indicator_id": "K1.I09"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C05",
+              "indicator_id": "K1.I10"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C05",
+              "indicator_id": "K1.I11"
+            },
+            {
+              "skill_id": "K1.3",
+              "m2_version": "v1.1",
+              "component_id": "K1.C06",
+              "indicator_id": "K1.I12"
+            },
+            {
+              "skill_id": "K1.3",
+              "m2_version": "v1.1",
+              "component_id": "K1.C07",
+              "indicator_id": "K1.I13"
+            },
+            {
+              "skill_id": "K1.3",
+              "m2_version": "v1.1",
+              "component_id": "K1.C07",
+              "indicator_id": "K1.I14"
+            },
+            {
+              "skill_id": "K1.4",
+              "m2_version": "v1.1",
+              "component_id": "K1.C08",
+              "indicator_id": "K1.I15"
+            },
+            {
+              "skill_id": "K1.4",
+              "m2_version": "v1.1",
+              "component_id": "K1.C09",
+              "indicator_id": "K1.I16"
+            },
+            {
+              "skill_id": "K1.4",
+              "m2_version": "v1.1",
+              "component_id": "K1.C09",
+              "indicator_id": "K1.I17"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C01",
+              "indicator_id": "K2.I01"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C01",
+              "indicator_id": "K2.I02"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C02",
+              "indicator_id": "K2.I03"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C02",
+              "indicator_id": "K2.I04"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C03",
+              "indicator_id": "K2.I05"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C03",
+              "indicator_id": "K2.I06"
+            },
+            {
+              "skill_id": "K2.2",
+              "m2_version": "v1.0",
+              "component_id": "K2.C04",
+              "indicator_id": "K2.I07"
+            },
+            {
+              "skill_id": "K2.2",
+              "m2_version": "v1.0",
+              "component_id": "K2.C05",
+              "indicator_id": "K2.I08"
+            },
+            {
+              "skill_id": "K2.2",
+              "m2_version": "v1.0",
+              "component_id": "K2.C06",
+              "indicator_id": "K2.I09"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C07",
+              "indicator_id": "K2.I10"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C07",
+              "indicator_id": "K2.I11"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C08",
+              "indicator_id": "K2.I12"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C09",
+              "indicator_id": "K2.I13"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C09",
+              "indicator_id": "K2.I14"
+            },
+            {
+              "skill_id": "K3.1",
+              "m2_version": "v1.1",
+              "component_id": "K3.C01",
+              "indicator_id": "K3.I01"
+            },
+            {
+              "skill_id": "K3.1",
+              "m2_version": "v1.1",
+              "component_id": "K3.C01",
+              "indicator_id": "K3.I02"
+            },
+            {
+              "skill_id": "K3.1",
+              "m2_version": "v1.1",
+              "component_id": "K3.C02",
+              "indicator_id": "K3.I03"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C03",
+              "indicator_id": "K3.I04"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C03",
+              "indicator_id": "K3.I05"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C03",
+              "indicator_id": "K3.I06"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C05",
+              "indicator_id": "K3.I07"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C05",
+              "indicator_id": "K3.I08"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C06",
+              "indicator_id": "K3.I09"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C07",
+              "indicator_id": "K3.I10"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C08",
+              "indicator_id": "K3.I11"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C08",
+              "indicator_id": "K3.I12"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C01",
+              "indicator_id": "K4.I01"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C01",
+              "indicator_id": "K4.I02"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C02",
+              "indicator_id": "K4.I03"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C02",
+              "indicator_id": "K4.I04"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C03",
+              "indicator_id": "K4.I05"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C03",
+              "indicator_id": "K4.I06"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C04",
+              "indicator_id": "K4.I07"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C04",
+              "indicator_id": "K4.I08"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C05",
+              "indicator_id": "K4.I09"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C05",
+              "indicator_id": "K4.I10"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C06",
+              "indicator_id": "K4.I11"
+            },
+            {
+              "skill_id": "K4.3",
+              "m2_version": "v1.0",
+              "component_id": "K4.C07",
+              "indicator_id": "K4.I12"
+            },
+            {
+              "skill_id": "K4.3",
+              "m2_version": "v1.0",
+              "component_id": "K4.C07",
+              "indicator_id": "K4.I13"
+            },
+            {
+              "skill_id": "K4.3",
+              "m2_version": "v1.0",
+              "component_id": "K4.C08",
+              "indicator_id": "K4.I14"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C09",
+              "indicator_id": "K4.I15"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C10",
+              "indicator_id": "K4.I16"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C10",
+              "indicator_id": "K4.I17"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C10",
+              "indicator_id": "K4.I18"
+            }
+          ],
+          "planned_max_seconds": 4500,
+          "time_budget_seconds": 3600,
+          "uncovered_target_ids": [
+            "K1.I01",
+            "K1.I02",
+            "K1.I03",
+            "K1.I04",
+            "K1.I05",
+            "K1.I06",
+            "K1.I07",
+            "K1.I08",
+            "K1.I09",
+            "K1.I10",
+            "K1.I11",
+            "K1.I12",
+            "K1.I14",
+            "K2.I01",
+            "K2.I02",
+            "K2.I03",
+            "K2.I04",
+            "K2.I05",
+            "K2.I06",
+            "K2.I09",
+            "K2.I10",
+            "K2.I12",
+            "K2.I13",
+            "K2.I14",
+            "K3.I01",
+            "K3.I02",
+            "K3.I04",
+            "K3.I05",
+            "K3.I07",
+            "K3.I08",
+            "K3.I12",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I11",
+            "K4.I13",
+            "K4.I14",
+            "K4.I15",
+            "K4.I16"
+          ],
+          "calendar_window_seconds": 259200
+        },
+        "profile_ref": {
+          "id": "assessment_personalized_profiles:1",
+          "version": "1",
+          "checksum": "96babbf82ee43f454bd0e6827e144c4df3fe8ba4a0af74d9fee9784c240ffaa2"
+        },
+        "rules_ref": {
+          "checksum": "9e4f5a3c0b6838407bbb16174f7f37b10f1022242b3d1088c51df31f014bd0ef",
+          "algorithm_version": "m7-greedy-coverage/1"
+        },
+        "decisions": [
+          {
+            "id": "dd67f8e5-fa05-401b-a02a-a5bb5b0ea93d",
+            "cycle_db_id": 1,
+            "session_db_id": 1,
+            "plan_revision_id": "be1799a9-c198-493e-a663-145a1aa1a5c2",
+            "revision_no": 1,
+            "status": "SELECTED",
+            "trigger_json": {
+              "kind": "next_as_request",
+              "created_by": 1
+            },
+            "facts_json": {
+              "pending_target_ids": [],
+              "final_ia_target_ids": [],
+              "opportunity_target_ids": [],
+              "component_score_coverage": "NOT_CALCULATED",
+              "technical_failure_target_ids": [],
+              "aggregate_contribution_coverage": "NOT_CALCULATED"
+            },
+            "considered_json": [
+              {
+                "case_id": "CASE-TDISC-01",
+                "reasons": [],
+                "case_version": "v0.1",
+                "contribution": [
+                  "K1.I13",
+                  "K1.I16",
+                  "K1.I17",
+                  "K2.I07",
+                  "K2.I08",
+                  "K4.I05",
+                  "K4.I10",
+                  "K4.I17",
+                  "K4.I18"
+                ]
+              },
+              {
+                "case_id": "CASE-TDISC-03",
+                "reasons": [],
+                "case_version": "v0.1",
+                "contribution": [
+                  "K1.I15",
+                  "K2.I11",
+                  "K3.I03",
+                  "K3.I06",
+                  "K3.I09",
+                  "K3.I10",
+                  "K3.I11",
+                  "K4.I12"
+                ]
+              }
+            ],
+            "selected_case_id": "CASE-TDISC-01",
+            "selected_case_version": "v0.1",
+            "expected_targets_json": [
+              "K1.I13",
+              "K1.I16",
+              "K1.I17",
+              "K2.I07",
+              "K2.I08",
+              "K4.I05",
+              "K4.I10",
+              "K4.I17",
+              "K4.I18"
+            ],
+            "explanation_json": {
+              "code": "M7_NEXT_AS_SELECTED",
+              "algorithm": "m7-greedy-coverage/1"
+            },
+            "created_at": "2026-10-05T13:41:17.085468+03:00",
+            "assigned_as_db_id": 1,
+            "assignment_presented_at": "2026-10-05T13:41:17.085468+03:00",
+            "assessment_situation_id": "4b801785-732d-4c82-bdef-bc0e270793ff",
+            "assessment_situation_status": "active"
+          }
+        ]
+      },
+      "decision": {
+        "id": "dd67f8e5-fa05-401b-a02a-a5bb5b0ea93d",
+        "cycle_db_id": 1,
+        "session_db_id": 1,
+        "plan_revision_id": "be1799a9-c198-493e-a663-145a1aa1a5c2",
+        "revision_no": 1,
+        "status": "SELECTED",
+        "trigger_json": {
+          "kind": "next_as_request",
+          "created_by": 1
+        },
+        "facts_json": {
+          "pending_target_ids": [],
+          "final_ia_target_ids": [],
+          "opportunity_target_ids": [],
+          "component_score_coverage": "NOT_CALCULATED",
+          "technical_failure_target_ids": [],
+          "aggregate_contribution_coverage": "NOT_CALCULATED"
+        },
+        "considered_json": [
+          {
+            "case_id": "CASE-TDISC-01",
+            "reasons": [],
+            "case_version": "v0.1",
+            "contribution": [
+              "K1.I13",
+              "K1.I16",
+              "K1.I17",
+              "K2.I07",
+              "K2.I08",
+              "K4.I05",
+              "K4.I10",
+              "K4.I17",
+              "K4.I18"
+            ]
+          },
+          {
+            "case_id": "CASE-TDISC-03",
+            "reasons": [],
+            "case_version": "v0.1",
+            "contribution": [
+              "K1.I15",
+              "K2.I11",
+              "K3.I03",
+              "K3.I06",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K4.I12"
+            ]
+          }
+        ],
+        "selected_case_id": "CASE-TDISC-01",
+        "selected_case_version": "v0.1",
+        "expected_targets_json": [
+          "K1.I13",
+          "K1.I16",
+          "K1.I17",
+          "K2.I07",
+          "K2.I08",
+          "K4.I05",
+          "K4.I10",
+          "K4.I17",
+          "K4.I18"
+        ],
+        "explanation_json": {
+          "code": "M7_NEXT_AS_SELECTED",
+          "algorithm": "m7-greedy-coverage/1"
+        },
+        "created_at": "2026-10-05T13:41:17.085468+03:00",
+        "assigned_as_db_id": 1,
+        "assignment_presented_at": null,
+        "assessment_situation_id": "4b801785-732d-4c82-bdef-bc0e270793ff",
+        "assessment_situation_status": "admitted"
+      },
+      "presentation": {
+        "status": "active",
+        "participant_payload": {
+          "title": "Запуск в пятницу: что именно готово?",
+          "case_id": "CASE-TDISC-01",
+          "trigger": "На встрече коммерческий руководитель говорит: «Мы обещали пятницу. Остались мелочи». Руководитель тестирования отвечает: «Это нельзя выпускать; вы назвали готовым то, что мы не принимали». Через час нужно передать спонсору согласованную рекомендацию.",
+          "case_version": "v0.1",
+          "assessee_task": "Проведите обсуждение и определите, что команда рекомендует делать с запуском и как продолжит работу. Итог должен быть пригоден для передачи спонсору и исполнения командами.",
+          "substitutions": [],
+          "assessee_position": "Вы ведёте проект и координируете выпуск. Можете остановить неподготовленный этап, менять последовательность работ в согласованных границах и организовать ограниченный запуск после проверки готовности. Изменение внешнего обещания и принятие остаточного бизнес-риска утверждает спонсор. Сотрудники смежных команд вам не подчиняются.",
+          "initial_situation": "Команда готовит запуск сервиса для 40 клиентских организаций в пятницу. В среду на общем статусе стоит «готово 90%». Коммерческий блок уже сообщил клиентам дату. В четверг вечером тестирование обнаружило, что часть организаций не может завершить подключение. У команд разные представления о готовности и о том, когда изменения стали обязательными.",
+          "conditions_and_constraints": "До решения спонсора — один рабочий час, не лимит ответа участника. На сегодня осталось 8 часов разработки и 4 часа тестирования. Полное исправление требует 12 часов разработки, затем 6 часов тестирования; параллельное выполнение этого пути невозможно. Ограниченный контур требует 2 и затем 2 часа соответственно. Поддержка может вести не более 6 нестандартных подключений за день. Новых ресурсов сегодня нет.",
+          "participants_and_positions": "На встрече присутствуют:\nМарина, коммерческий руководитель — Защищает обещанную дату и отношения с клиентами; предлагает выпускать доступное.\nИлья, руководитель разработки — Считает основную функцию завершённой; возражает против полной переработки за ночь.\nВера, руководитель тестирования — Не подписывает полный запуск; требует ясной границы готовности.\nПавел, руководитель поддержки — Должен обеспечить подключения; не получил окончательную инструкцию."
+        }
+      },
+      "runtime": {
+        "runtime_kind": "cycle",
+        "cycle_id": "f885cbfc-6c13-4e33-bb1e-eafad6f53d9f",
+        "plan": {
+          "cycle_id": "f885cbfc-6c13-4e33-bb1e-eafad6f53d9f",
+          "cycle_status": "active",
+          "plan_id": "a3be116a-9b60-4fd6-9e36-3f88b6ec0421",
+          "revision_id": "be1799a9-c198-493e-a663-145a1aa1a5c2",
+          "revision_no": 1,
+          "plan": {
+            "goal": {
+              "kind": "skills",
+              "selected_skills": [
+                "K1",
+                "K2",
+                "K3",
+                "K4"
+              ]
+            },
+            "route": [
+              {
+                "case_id": "CASE-TDISC-01",
+                "reasons": [],
+                "eligible": true,
+                "base_role": "project_product_process_manager",
+                "target_ids": [
+                  "K1.I13",
+                  "K1.I16",
+                  "K1.I17",
+                  "K2.I07",
+                  "K2.I08",
+                  "K4.I05",
+                  "K4.I10",
+                  "K4.I17",
+                  "K4.I18"
+                ],
+                "conditional": true,
+                "reserve_for": [],
+                "case_version": "v0.1",
+                "duration_source": "M5 CaseVersion planned range",
+                "purpose_target_ids": [
+                  "K1.I13",
+                  "K1.I16",
+                  "K1.I17",
+                  "K2.I07",
+                  "K2.I08",
+                  "K4.I05",
+                  "K4.I10",
+                  "K4.I17",
+                  "K4.I18"
+                ],
+                "planned_max_minutes": 35,
+                "planned_min_minutes": 25,
+                "contribution_target_ids": [
+                  "K1.I13",
+                  "K1.I16",
+                  "K1.I17",
+                  "K2.I07",
+                  "K2.I08",
+                  "K4.I05",
+                  "K4.I10",
+                  "K4.I17",
+                  "K4.I18"
+                ]
+              },
+              {
+                "case_id": "CASE-TDISC-03",
+                "reasons": [],
+                "eligible": true,
+                "base_role": "project_product_process_manager",
+                "target_ids": [
+                  "K1.I15",
+                  "K2.I11",
+                  "K3.I03",
+                  "K3.I06",
+                  "K3.I09",
+                  "K3.I10",
+                  "K3.I11",
+                  "K4.I12"
+                ],
+                "conditional": true,
+                "reserve_for": [],
+                "case_version": "v0.1",
+                "duration_source": "M5 CaseVersion planned range",
+                "purpose_target_ids": [
+                  "K1.I15",
+                  "K2.I11",
+                  "K3.I03",
+                  "K3.I06",
+                  "K3.I09",
+                  "K3.I10",
+                  "K3.I11",
+                  "K4.I12"
+                ],
+                "planned_max_minutes": 40,
+                "planned_min_minutes": 30,
+                "contribution_target_ids": [
+                  "K1.I15",
+                  "K2.I11",
+                  "K3.I03",
+                  "K3.I06",
+                  "K3.I09",
+                  "K3.I10",
+                  "K3.I11",
+                  "K4.I12"
+                ]
+              }
+            ],
+            "status": "LIMITED",
+            "catalog": [
+              {
+                "case_id": "CASE-TDISC-01",
+                "reasons": [],
+                "eligible": true,
+                "base_role": "project_product_process_manager",
+                "target_ids": [
+                  "K1.I13",
+                  "K1.I16",
+                  "K1.I17",
+                  "K2.I07",
+                  "K2.I08",
+                  "K4.I05",
+                  "K4.I10",
+                  "K4.I17",
+                  "K4.I18"
+                ],
+                "case_version": "v0.1",
+                "planned_max_minutes": 35,
+                "planned_min_minutes": 25,
+                "contribution_target_ids": [
+                  "K1.I13",
+                  "K1.I16",
+                  "K1.I17",
+                  "K2.I07",
+                  "K2.I08",
+                  "K4.I05",
+                  "K4.I10",
+                  "K4.I17",
+                  "K4.I18"
+                ]
+              },
+              {
+                "case_id": "CASE-TDISC-02",
+                "reasons": [
+                  "CASE_STATUS_NOT_ADMITTED",
+                  "ROLE_NOT_ALLOWED",
+                  "QA_EVIDENCE_MISSING:assessment_situation,case_dialogue,case_format"
+                ],
+                "eligible": false,
+                "base_role": "specialist_expert",
+                "target_ids": [
+                  "K1.I02",
+                  "K1.I14",
+                  "K1.I17",
+                  "K2.I13",
+                  "K2.I14",
+                  "K2.I07",
+                  "K4.I15",
+                  "K4.I16",
+                  "K4.I18"
+                ],
+                "case_version": "v0.1",
+                "planned_max_minutes": 35,
+                "planned_min_minutes": 25,
+                "contribution_target_ids": [
+                  "K1.I02",
+                  "K1.I14",
+                  "K1.I17",
+                  "K2.I07",
+                  "K2.I13",
+                  "K2.I14",
+                  "K4.I15",
+                  "K4.I16",
+                  "K4.I18"
+                ]
+              },
+              {
+                "case_id": "CASE-TDISC-03",
+                "reasons": [],
+                "eligible": true,
+                "base_role": "project_product_process_manager",
+                "target_ids": [
+                  "K1.I15",
+                  "K2.I11",
+                  "K3.I03",
+                  "K3.I06",
+                  "K3.I09",
+                  "K3.I10",
+                  "K3.I11",
+                  "K4.I12"
+                ],
+                "case_version": "v0.1",
+                "planned_max_minutes": 40,
+                "planned_min_minutes": 30,
+                "contribution_target_ids": [
+                  "K1.I15",
+                  "K2.I11",
+                  "K3.I03",
+                  "K3.I06",
+                  "K3.I09",
+                  "K3.I10",
+                  "K3.I11",
+                  "K4.I12"
+                ]
+              },
+              {
+                "case_id": "CASE-TDISC-04",
+                "reasons": [
+                  "CASE_STATUS_NOT_ADMITTED",
+                  "ROLE_NOT_ALLOWED",
+                  "CASE_UNRESOLVED_DECISIONS",
+                  "QA_EVIDENCE_MISSING:assessment_situation,case_dialogue,case_format"
+                ],
+                "eligible": false,
+                "base_role": "team_lead",
+                "target_ids": [
+                  "K1.I13",
+                  "K1.I14",
+                  "K2.I10",
+                  "K2.I11",
+                  "K2.I12",
+                  "K2.I06",
+                  "K2.I07",
+                  "K4.I10"
+                ],
+                "case_version": "v0.1",
+                "planned_max_minutes": 35,
+                "planned_min_minutes": 25,
+                "contribution_target_ids": [
+                  "K1.I13",
+                  "K1.I14",
+                  "K2.I06",
+                  "K2.I07",
+                  "K2.I10",
+                  "K2.I11",
+                  "K2.I12",
+                  "K4.I10"
+                ]
+              },
+              {
+                "case_id": "CASE-TDISC-05",
+                "reasons": [
+                  "CASE_STATUS_NOT_ADMITTED",
+                  "ROLE_NOT_ALLOWED",
+                  "QA_EVIDENCE_MISSING:assessment_situation,case_dialogue,case_format"
+                ],
+                "eligible": false,
+                "base_role": "direction_system_leader",
+                "target_ids": [
+                  "K1.I01",
+                  "K1.I17",
+                  "K2.I02",
+                  "K2.I03",
+                  "K2.I06",
+                  "K4.I07",
+                  "K4.I11",
+                  "K4.I15",
+                  "K4.I17"
+                ],
+                "case_version": "v0.1",
+                "planned_max_minutes": 40,
+                "planned_min_minutes": 30,
+                "contribution_target_ids": [
+                  "K1.I01",
+                  "K1.I17",
+                  "K2.I02",
+                  "K2.I03",
+                  "K2.I06",
+                  "K4.I07",
+                  "K4.I11",
+                  "K4.I15",
+                  "K4.I17"
+                ]
+              }
+            ],
+            "reserves": [],
+            "schema_version": 1,
+            "full_target_set": [
+              {
+                "skill_id": "K1.1",
+                "m2_version": "v1.1",
+                "component_id": "K1.C01",
+                "indicator_id": "K1.I01"
+              },
+              {
+                "skill_id": "K1.1",
+                "m2_version": "v1.1",
+                "component_id": "K1.C01",
+                "indicator_id": "K1.I02"
+              },
+              {
+                "skill_id": "K1.1",
+                "m2_version": "v1.1",
+                "component_id": "K1.C01",
+                "indicator_id": "K1.I03"
+              },
+              {
+                "skill_id": "K1.1",
+                "m2_version": "v1.1",
+                "component_id": "K1.C02",
+                "indicator_id": "K1.I04"
+              },
+              {
+                "skill_id": "K1.1",
+                "m2_version": "v1.1",
+                "component_id": "K1.C02",
+                "indicator_id": "K1.I05"
+              },
+              {
+                "skill_id": "K1.2",
+                "m2_version": "v1.1",
+                "component_id": "K1.C03",
+                "indicator_id": "K1.I06"
+              },
+              {
+                "skill_id": "K1.2",
+                "m2_version": "v1.1",
+                "component_id": "K1.C03",
+                "indicator_id": "K1.I07"
+              },
+              {
+                "skill_id": "K1.2",
+                "m2_version": "v1.1",
+                "component_id": "K1.C04",
+                "indicator_id": "K1.I08"
+              },
+              {
+                "skill_id": "K1.2",
+                "m2_version": "v1.1",
+                "component_id": "K1.C04",
+                "indicator_id": "K1.I09"
+              },
+              {
+                "skill_id": "K1.2",
+                "m2_version": "v1.1",
+                "component_id": "K1.C05",
+                "indicator_id": "K1.I10"
+              },
+              {
+                "skill_id": "K1.2",
+                "m2_version": "v1.1",
+                "component_id": "K1.C05",
+                "indicator_id": "K1.I11"
+              },
+              {
+                "skill_id": "K1.3",
+                "m2_version": "v1.1",
+                "component_id": "K1.C06",
+                "indicator_id": "K1.I12"
+              },
+              {
+                "skill_id": "K1.3",
+                "m2_version": "v1.1",
+                "component_id": "K1.C07",
+                "indicator_id": "K1.I13"
+              },
+              {
+                "skill_id": "K1.3",
+                "m2_version": "v1.1",
+                "component_id": "K1.C07",
+                "indicator_id": "K1.I14"
+              },
+              {
+                "skill_id": "K1.4",
+                "m2_version": "v1.1",
+                "component_id": "K1.C08",
+                "indicator_id": "K1.I15"
+              },
+              {
+                "skill_id": "K1.4",
+                "m2_version": "v1.1",
+                "component_id": "K1.C09",
+                "indicator_id": "K1.I16"
+              },
+              {
+                "skill_id": "K1.4",
+                "m2_version": "v1.1",
+                "component_id": "K1.C09",
+                "indicator_id": "K1.I17"
+              },
+              {
+                "skill_id": "K2.1",
+                "m2_version": "v1.0",
+                "component_id": "K2.C01",
+                "indicator_id": "K2.I01"
+              },
+              {
+                "skill_id": "K2.1",
+                "m2_version": "v1.0",
+                "component_id": "K2.C01",
+                "indicator_id": "K2.I02"
+              },
+              {
+                "skill_id": "K2.1",
+                "m2_version": "v1.0",
+                "component_id": "K2.C02",
+                "indicator_id": "K2.I03"
+              },
+              {
+                "skill_id": "K2.1",
+                "m2_version": "v1.0",
+                "component_id": "K2.C02",
+                "indicator_id": "K2.I04"
+              },
+              {
+                "skill_id": "K2.1",
+                "m2_version": "v1.0",
+                "component_id": "K2.C03",
+                "indicator_id": "K2.I05"
+              },
+              {
+                "skill_id": "K2.1",
+                "m2_version": "v1.0",
+                "component_id": "K2.C03",
+                "indicator_id": "K2.I06"
+              },
+              {
+                "skill_id": "K2.2",
+                "m2_version": "v1.0",
+                "component_id": "K2.C04",
+                "indicator_id": "K2.I07"
+              },
+              {
+                "skill_id": "K2.2",
+                "m2_version": "v1.0",
+                "component_id": "K2.C05",
+                "indicator_id": "K2.I08"
+              },
+              {
+                "skill_id": "K2.2",
+                "m2_version": "v1.0",
+                "component_id": "K2.C06",
+                "indicator_id": "K2.I09"
+              },
+              {
+                "skill_id": "K2.3",
+                "m2_version": "v1.0",
+                "component_id": "K2.C07",
+                "indicator_id": "K2.I10"
+              },
+              {
+                "skill_id": "K2.3",
+                "m2_version": "v1.0",
+                "component_id": "K2.C07",
+                "indicator_id": "K2.I11"
+              },
+              {
+                "skill_id": "K2.3",
+                "m2_version": "v1.0",
+                "component_id": "K2.C08",
+                "indicator_id": "K2.I12"
+              },
+              {
+                "skill_id": "K2.3",
+                "m2_version": "v1.0",
+                "component_id": "K2.C09",
+                "indicator_id": "K2.I13"
+              },
+              {
+                "skill_id": "K2.3",
+                "m2_version": "v1.0",
+                "component_id": "K2.C09",
+                "indicator_id": "K2.I14"
+              },
+              {
+                "skill_id": "K3.1",
+                "m2_version": "v1.1",
+                "component_id": "K3.C01",
+                "indicator_id": "K3.I01"
+              },
+              {
+                "skill_id": "K3.1",
+                "m2_version": "v1.1",
+                "component_id": "K3.C01",
+                "indicator_id": "K3.I02"
+              },
+              {
+                "skill_id": "K3.1",
+                "m2_version": "v1.1",
+                "component_id": "K3.C02",
+                "indicator_id": "K3.I03"
+              },
+              {
+                "skill_id": "K3.2",
+                "m2_version": "v1.1",
+                "component_id": "K3.C03",
+                "indicator_id": "K3.I04"
+              },
+              {
+                "skill_id": "K3.2",
+                "m2_version": "v1.1",
+                "component_id": "K3.C03",
+                "indicator_id": "K3.I05"
+              },
+              {
+                "skill_id": "K3.2",
+                "m2_version": "v1.1",
+                "component_id": "K3.C03",
+                "indicator_id": "K3.I06"
+              },
+              {
+                "skill_id": "K3.2",
+                "m2_version": "v1.1",
+                "component_id": "K3.C05",
+                "indicator_id": "K3.I07"
+              },
+              {
+                "skill_id": "K3.2",
+                "m2_version": "v1.1",
+                "component_id": "K3.C05",
+                "indicator_id": "K3.I08"
+              },
+              {
+                "skill_id": "K3.3",
+                "m2_version": "v1.1",
+                "component_id": "K3.C06",
+                "indicator_id": "K3.I09"
+              },
+              {
+                "skill_id": "K3.3",
+                "m2_version": "v1.1",
+                "component_id": "K3.C07",
+                "indicator_id": "K3.I10"
+              },
+              {
+                "skill_id": "K3.3",
+                "m2_version": "v1.1",
+                "component_id": "K3.C08",
+                "indicator_id": "K3.I11"
+              },
+              {
+                "skill_id": "K3.3",
+                "m2_version": "v1.1",
+                "component_id": "K3.C08",
+                "indicator_id": "K3.I12"
+              },
+              {
+                "skill_id": "K4.1",
+                "m2_version": "v1.0",
+                "component_id": "K4.C01",
+                "indicator_id": "K4.I01"
+              },
+              {
+                "skill_id": "K4.1",
+                "m2_version": "v1.0",
+                "component_id": "K4.C01",
+                "indicator_id": "K4.I02"
+              },
+              {
+                "skill_id": "K4.1",
+                "m2_version": "v1.0",
+                "component_id": "K4.C02",
+                "indicator_id": "K4.I03"
+              },
+              {
+                "skill_id": "K4.1",
+                "m2_version": "v1.0",
+                "component_id": "K4.C02",
+                "indicator_id": "K4.I04"
+              },
+              {
+                "skill_id": "K4.1",
+                "m2_version": "v1.0",
+                "component_id": "K4.C03",
+                "indicator_id": "K4.I05"
+              },
+              {
+                "skill_id": "K4.1",
+                "m2_version": "v1.0",
+                "component_id": "K4.C03",
+                "indicator_id": "K4.I06"
+              },
+              {
+                "skill_id": "K4.2",
+                "m2_version": "v1.0",
+                "component_id": "K4.C04",
+                "indicator_id": "K4.I07"
+              },
+              {
+                "skill_id": "K4.2",
+                "m2_version": "v1.0",
+                "component_id": "K4.C04",
+                "indicator_id": "K4.I08"
+              },
+              {
+                "skill_id": "K4.2",
+                "m2_version": "v1.0",
+                "component_id": "K4.C05",
+                "indicator_id": "K4.I09"
+              },
+              {
+                "skill_id": "K4.2",
+                "m2_version": "v1.0",
+                "component_id": "K4.C05",
+                "indicator_id": "K4.I10"
+              },
+              {
+                "skill_id": "K4.2",
+                "m2_version": "v1.0",
+                "component_id": "K4.C06",
+                "indicator_id": "K4.I11"
+              },
+              {
+                "skill_id": "K4.3",
+                "m2_version": "v1.0",
+                "component_id": "K4.C07",
+                "indicator_id": "K4.I12"
+              },
+              {
+                "skill_id": "K4.3",
+                "m2_version": "v1.0",
+                "component_id": "K4.C07",
+                "indicator_id": "K4.I13"
+              },
+              {
+                "skill_id": "K4.3",
+                "m2_version": "v1.0",
+                "component_id": "K4.C08",
+                "indicator_id": "K4.I14"
+              },
+              {
+                "skill_id": "K4.4",
+                "m2_version": "v1.0",
+                "component_id": "K4.C09",
+                "indicator_id": "K4.I15"
+              },
+              {
+                "skill_id": "K4.4",
+                "m2_version": "v1.0",
+                "component_id": "K4.C10",
+                "indicator_id": "K4.I16"
+              },
+              {
+                "skill_id": "K4.4",
+                "m2_version": "v1.0",
+                "component_id": "K4.C10",
+                "indicator_id": "K4.I17"
+              },
+              {
+                "skill_id": "K4.4",
+                "m2_version": "v1.0",
+                "component_id": "K4.C10",
+                "indicator_id": "K4.I18"
+              }
+            ],
+            "algorithm_version": "m7-greedy-coverage/1",
+            "known_limitations": [
+              "Cases are conditional opportunities; not guaranteed Evidence",
+              "Route exceeds time budget"
+            ],
+            "planned_target_set": [
+              {
+                "skill_id": "K1.1",
+                "m2_version": "v1.1",
+                "component_id": "K1.C01",
+                "indicator_id": "K1.I01"
+              },
+              {
+                "skill_id": "K1.1",
+                "m2_version": "v1.1",
+                "component_id": "K1.C01",
+                "indicator_id": "K1.I02"
+              },
+              {
+                "skill_id": "K1.1",
+                "m2_version": "v1.1",
+                "component_id": "K1.C01",
+                "indicator_id": "K1.I03"
+              },
+              {
+                "skill_id": "K1.1",
+                "m2_version": "v1.1",
+                "component_id": "K1.C02",
+                "indicator_id": "K1.I04"
+              },
+              {
+                "skill_id": "K1.1",
+                "m2_version": "v1.1",
+                "component_id": "K1.C02",
+                "indicator_id": "K1.I05"
+              },
+              {
+                "skill_id": "K1.2",
+                "m2_version": "v1.1",
+                "component_id": "K1.C03",
+                "indicator_id": "K1.I06"
+              },
+              {
+                "skill_id": "K1.2",
+                "m2_version": "v1.1",
+                "component_id": "K1.C03",
+                "indicator_id": "K1.I07"
+              },
+              {
+                "skill_id": "K1.2",
+                "m2_version": "v1.1",
+                "component_id": "K1.C04",
+                "indicator_id": "K1.I08"
+              },
+              {
+                "skill_id": "K1.2",
+                "m2_version": "v1.1",
+                "component_id": "K1.C04",
+                "indicator_id": "K1.I09"
+              },
+              {
+                "skill_id": "K1.2",
+                "m2_version": "v1.1",
+                "component_id": "K1.C05",
+                "indicator_id": "K1.I10"
+              },
+              {
+                "skill_id": "K1.2",
+                "m2_version": "v1.1",
+                "component_id": "K1.C05",
+                "indicator_id": "K1.I11"
+              },
+              {
+                "skill_id": "K1.3",
+                "m2_version": "v1.1",
+                "component_id": "K1.C06",
+                "indicator_id": "K1.I12"
+              },
+              {
+                "skill_id": "K1.3",
+                "m2_version": "v1.1",
+                "component_id": "K1.C07",
+                "indicator_id": "K1.I13"
+              },
+              {
+                "skill_id": "K1.3",
+                "m2_version": "v1.1",
+                "component_id": "K1.C07",
+                "indicator_id": "K1.I14"
+              },
+              {
+                "skill_id": "K1.4",
+                "m2_version": "v1.1",
+                "component_id": "K1.C08",
+                "indicator_id": "K1.I15"
+              },
+              {
+                "skill_id": "K1.4",
+                "m2_version": "v1.1",
+                "component_id": "K1.C09",
+                "indicator_id": "K1.I16"
+              },
+              {
+                "skill_id": "K1.4",
+                "m2_version": "v1.1",
+                "component_id": "K1.C09",
+                "indicator_id": "K1.I17"
+              },
+              {
+                "skill_id": "K2.1",
+                "m2_version": "v1.0",
+                "component_id": "K2.C01",
+                "indicator_id": "K2.I01"
+              },
+              {
+                "skill_id": "K2.1",
+                "m2_version": "v1.0",
+                "component_id": "K2.C01",
+                "indicator_id": "K2.I02"
+              },
+              {
+                "skill_id": "K2.1",
+                "m2_version": "v1.0",
+                "component_id": "K2.C02",
+                "indicator_id": "K2.I03"
+              },
+              {
+                "skill_id": "K2.1",
+                "m2_version": "v1.0",
+                "component_id": "K2.C02",
+                "indicator_id": "K2.I04"
+              },
+              {
+                "skill_id": "K2.1",
+                "m2_version": "v1.0",
+                "component_id": "K2.C03",
+                "indicator_id": "K2.I05"
+              },
+              {
+                "skill_id": "K2.1",
+                "m2_version": "v1.0",
+                "component_id": "K2.C03",
+                "indicator_id": "K2.I06"
+              },
+              {
+                "skill_id": "K2.2",
+                "m2_version": "v1.0",
+                "component_id": "K2.C04",
+                "indicator_id": "K2.I07"
+              },
+              {
+                "skill_id": "K2.2",
+                "m2_version": "v1.0",
+                "component_id": "K2.C05",
+                "indicator_id": "K2.I08"
+              },
+              {
+                "skill_id": "K2.2",
+                "m2_version": "v1.0",
+                "component_id": "K2.C06",
+                "indicator_id": "K2.I09"
+              },
+              {
+                "skill_id": "K2.3",
+                "m2_version": "v1.0",
+                "component_id": "K2.C07",
+                "indicator_id": "K2.I10"
+              },
+              {
+                "skill_id": "K2.3",
+                "m2_version": "v1.0",
+                "component_id": "K2.C07",
+                "indicator_id": "K2.I11"
+              },
+              {
+                "skill_id": "K2.3",
+                "m2_version": "v1.0",
+                "component_id": "K2.C08",
+                "indicator_id": "K2.I12"
+              },
+              {
+                "skill_id": "K2.3",
+                "m2_version": "v1.0",
+                "component_id": "K2.C09",
+                "indicator_id": "K2.I13"
+              },
+              {
+                "skill_id": "K2.3",
+                "m2_version": "v1.0",
+                "component_id": "K2.C09",
+                "indicator_id": "K2.I14"
+              },
+              {
+                "skill_id": "K3.1",
+                "m2_version": "v1.1",
+                "component_id": "K3.C01",
+                "indicator_id": "K3.I01"
+              },
+              {
+                "skill_id": "K3.1",
+                "m2_version": "v1.1",
+                "component_id": "K3.C01",
+                "indicator_id": "K3.I02"
+              },
+              {
+                "skill_id": "K3.1",
+                "m2_version": "v1.1",
+                "component_id": "K3.C02",
+                "indicator_id": "K3.I03"
+              },
+              {
+                "skill_id": "K3.2",
+                "m2_version": "v1.1",
+                "component_id": "K3.C03",
+                "indicator_id": "K3.I04"
+              },
+              {
+                "skill_id": "K3.2",
+                "m2_version": "v1.1",
+                "component_id": "K3.C03",
+                "indicator_id": "K3.I05"
+              },
+              {
+                "skill_id": "K3.2",
+                "m2_version": "v1.1",
+                "component_id": "K3.C03",
+                "indicator_id": "K3.I06"
+              },
+              {
+                "skill_id": "K3.2",
+                "m2_version": "v1.1",
+                "component_id": "K3.C05",
+                "indicator_id": "K3.I07"
+              },
+              {
+                "skill_id": "K3.2",
+                "m2_version": "v1.1",
+                "component_id": "K3.C05",
+                "indicator_id": "K3.I08"
+              },
+              {
+                "skill_id": "K3.3",
+                "m2_version": "v1.1",
+                "component_id": "K3.C06",
+                "indicator_id": "K3.I09"
+              },
+              {
+                "skill_id": "K3.3",
+                "m2_version": "v1.1",
+                "component_id": "K3.C07",
+                "indicator_id": "K3.I10"
+              },
+              {
+                "skill_id": "K3.3",
+                "m2_version": "v1.1",
+                "component_id": "K3.C08",
+                "indicator_id": "K3.I11"
+              },
+              {
+                "skill_id": "K3.3",
+                "m2_version": "v1.1",
+                "component_id": "K3.C08",
+                "indicator_id": "K3.I12"
+              },
+              {
+                "skill_id": "K4.1",
+                "m2_version": "v1.0",
+                "component_id": "K4.C01",
+                "indicator_id": "K4.I01"
+              },
+              {
+                "skill_id": "K4.1",
+                "m2_version": "v1.0",
+                "component_id": "K4.C01",
+                "indicator_id": "K4.I02"
+              },
+              {
+                "skill_id": "K4.1",
+                "m2_version": "v1.0",
+                "component_id": "K4.C02",
+                "indicator_id": "K4.I03"
+              },
+              {
+                "skill_id": "K4.1",
+                "m2_version": "v1.0",
+                "component_id": "K4.C02",
+                "indicator_id": "K4.I04"
+              },
+              {
+                "skill_id": "K4.1",
+                "m2_version": "v1.0",
+                "component_id": "K4.C03",
+                "indicator_id": "K4.I05"
+              },
+              {
+                "skill_id": "K4.1",
+                "m2_version": "v1.0",
+                "component_id": "K4.C03",
+                "indicator_id": "K4.I06"
+              },
+              {
+                "skill_id": "K4.2",
+                "m2_version": "v1.0",
+                "component_id": "K4.C04",
+                "indicator_id": "K4.I07"
+              },
+              {
+                "skill_id": "K4.2",
+                "m2_version": "v1.0",
+                "component_id": "K4.C04",
+                "indicator_id": "K4.I08"
+              },
+              {
+                "skill_id": "K4.2",
+                "m2_version": "v1.0",
+                "component_id": "K4.C05",
+                "indicator_id": "K4.I09"
+              },
+              {
+                "skill_id": "K4.2",
+                "m2_version": "v1.0",
+                "component_id": "K4.C05",
+                "indicator_id": "K4.I10"
+              },
+              {
+                "skill_id": "K4.2",
+                "m2_version": "v1.0",
+                "component_id": "K4.C06",
+                "indicator_id": "K4.I11"
+              },
+              {
+                "skill_id": "K4.3",
+                "m2_version": "v1.0",
+                "component_id": "K4.C07",
+                "indicator_id": "K4.I12"
+              },
+              {
+                "skill_id": "K4.3",
+                "m2_version": "v1.0",
+                "component_id": "K4.C07",
+                "indicator_id": "K4.I13"
+              },
+              {
+                "skill_id": "K4.3",
+                "m2_version": "v1.0",
+                "component_id": "K4.C08",
+                "indicator_id": "K4.I14"
+              },
+              {
+                "skill_id": "K4.4",
+                "m2_version": "v1.0",
+                "component_id": "K4.C09",
+                "indicator_id": "K4.I15"
+              },
+              {
+                "skill_id": "K4.4",
+                "m2_version": "v1.0",
+                "component_id": "K4.C10",
+                "indicator_id": "K4.I16"
+              },
+              {
+                "skill_id": "K4.4",
+                "m2_version": "v1.0",
+                "component_id": "K4.C10",
+                "indicator_id": "K4.I17"
+              },
+              {
+                "skill_id": "K4.4",
+                "m2_version": "v1.0",
+                "component_id": "K4.C10",
+                "indicator_id": "K4.I18"
+              }
+            ],
+            "planned_max_seconds": 4500,
+            "time_budget_seconds": 3600,
+            "uncovered_target_ids": [
+              "K1.I01",
+              "K1.I02",
+              "K1.I03",
+              "K1.I04",
+              "K1.I05",
+              "K1.I06",
+              "K1.I07",
+              "K1.I08",
+              "K1.I09",
+              "K1.I10",
+              "K1.I11",
+              "K1.I12",
+              "K1.I14",
+              "K2.I01",
+              "K2.I02",
+              "K2.I03",
+              "K2.I04",
+              "K2.I05",
+              "K2.I06",
+              "K2.I09",
+              "K2.I10",
+              "K2.I12",
+              "K2.I13",
+              "K2.I14",
+              "K3.I01",
+              "K3.I02",
+              "K3.I04",
+              "K3.I05",
+              "K3.I07",
+              "K3.I08",
+              "K3.I12",
+              "K4.I01",
+              "K4.I02",
+              "K4.I03",
+              "K4.I04",
+              "K4.I06",
+              "K4.I07",
+              "K4.I08",
+              "K4.I09",
+              "K4.I11",
+              "K4.I13",
+              "K4.I14",
+              "K4.I15",
+              "K4.I16"
+            ],
+            "calendar_window_seconds": 259200
+          },
+          "profile_ref": {
+            "id": "assessment_personalized_profiles:1",
+            "version": "1",
+            "checksum": "96babbf82ee43f454bd0e6827e144c4df3fe8ba4a0af74d9fee9784c240ffaa2"
+          },
+          "rules_ref": {
+            "checksum": "9e4f5a3c0b6838407bbb16174f7f37b10f1022242b3d1088c51df31f014bd0ef",
+            "algorithm_version": "m7-greedy-coverage/1"
+          },
+          "decisions": [
+            {
+              "id": "dd67f8e5-fa05-401b-a02a-a5bb5b0ea93d",
+              "cycle_db_id": 1,
+              "session_db_id": 1,
+              "plan_revision_id": "be1799a9-c198-493e-a663-145a1aa1a5c2",
+              "revision_no": 1,
+              "status": "SELECTED",
+              "trigger_json": {
+                "kind": "next_as_request",
+                "created_by": 1
+              },
+              "facts_json": {
+                "pending_target_ids": [],
+                "final_ia_target_ids": [],
+                "opportunity_target_ids": [],
+                "component_score_coverage": "NOT_CALCULATED",
+                "technical_failure_target_ids": [],
+                "aggregate_contribution_coverage": "NOT_CALCULATED"
+              },
+              "considered_json": [
+                {
+                  "case_id": "CASE-TDISC-01",
+                  "reasons": [],
+                  "case_version": "v0.1",
+                  "contribution": [
+                    "K1.I13",
+                    "K1.I16",
+                    "K1.I17",
+                    "K2.I07",
+                    "K2.I08",
+                    "K4.I05",
+                    "K4.I10",
+                    "K4.I17",
+                    "K4.I18"
+                  ]
+                },
+                {
+                  "case_id": "CASE-TDISC-03",
+                  "reasons": [],
+                  "case_version": "v0.1",
+                  "contribution": [
+                    "K1.I15",
+                    "K2.I11",
+                    "K3.I03",
+                    "K3.I06",
+                    "K3.I09",
+                    "K3.I10",
+                    "K3.I11",
+                    "K4.I12"
+                  ]
+                }
+              ],
+              "selected_case_id": "CASE-TDISC-01",
+              "selected_case_version": "v0.1",
+              "expected_targets_json": [
+                "K1.I13",
+                "K1.I16",
+                "K1.I17",
+                "K2.I07",
+                "K2.I08",
+                "K4.I05",
+                "K4.I10",
+                "K4.I17",
+                "K4.I18"
+              ],
+              "explanation_json": {
+                "code": "M7_NEXT_AS_SELECTED",
+                "algorithm": "m7-greedy-coverage/1"
+              },
+              "created_at": "2026-10-05T13:41:17.085468+03:00",
+              "assigned_as_db_id": 1,
+              "assignment_presented_at": "2026-10-05T13:41:17.085468+03:00",
+              "assessment_situation_id": "4b801785-732d-4c82-bdef-bc0e270793ff",
+              "assessment_situation_status": "active"
+            }
+          ]
+        },
+        "status": {
+          "cycle_id": "f885cbfc-6c13-4e33-bb1e-eafad6f53d9f",
+          "collection_status": "active",
+          "processing_status": "active",
+          "remaining_seconds": 3600,
+          "calendar_deadline": "2026-10-08T13:41:17.085468+03:00",
+          "close_reason": null,
+          "c46_status": null,
+          "can_continue": true
+        },
+        "situations": [
+          {
+            "assessment_situation_id": "4b801785-732d-4c82-bdef-bc0e270793ff",
+            "status": "active"
+          }
+        ],
+        "current_situation": {
+          "assessment_situation_id": "4b801785-732d-4c82-bdef-bc0e270793ff",
+          "status": "active",
+          "participant_payload": {
+            "title": "Запуск в пятницу: что именно готово?",
+            "case_id": "CASE-TDISC-01",
+            "trigger": "На встрече коммерческий руководитель говорит: «Мы обещали пятницу. Остались мелочи». Руководитель тестирования отвечает: «Это нельзя выпускать; вы назвали готовым то, что мы не принимали». Через час нужно передать спонсору согласованную рекомендацию.",
+            "case_version": "v0.1",
+            "assessee_task": "Проведите обсуждение и определите, что команда рекомендует делать с запуском и как продолжит работу. Итог должен быть пригоден для передачи спонсору и исполнения командами.",
+            "substitutions": [],
+            "assessee_position": "Вы ведёте проект и координируете выпуск. Можете остановить неподготовленный этап, менять последовательность работ в согласованных границах и организовать ограниченный запуск после проверки готовности. Изменение внешнего обещания и принятие остаточного бизнес-риска утверждает спонсор. Сотрудники смежных команд вам не подчиняются.",
+            "initial_situation": "Команда готовит запуск сервиса для 40 клиентских организаций в пятницу. В среду на общем статусе стоит «готово 90%». Коммерческий блок уже сообщил клиентам дату. В четверг вечером тестирование обнаружило, что часть организаций не может завершить подключение. У команд разные представления о готовности и о том, когда изменения стали обязательными.",
+            "conditions_and_constraints": "До решения спонсора — один рабочий час, не лимит ответа участника. На сегодня осталось 8 часов разработки и 4 часа тестирования. Полное исправление требует 12 часов разработки, затем 6 часов тестирования; параллельное выполнение этого пути невозможно. Ограниченный контур требует 2 и затем 2 часа соответственно. Поддержка может вести не более 6 нестандартных подключений за день. Новых ресурсов сегодня нет.",
+            "participants_and_positions": "На встрече присутствуют:\nМарина, коммерческий руководитель — Защищает обещанную дату и отношения с клиентами; предлагает выпускать доступное.\nИлья, руководитель разработки — Считает основную функцию завершённой; возражает против полной переработки за ночь.\nВера, руководитель тестирования — Не подписывает полный запуск; требует ясной границы готовности.\nПавел, руководитель поддержки — Должен обеспечить подключения; не получил окончательную инструкцию."
+          }
+        },
+        "trace": {
+          "assessment_situation_id": "4b801785-732d-4c82-bdef-bc0e270793ff",
+          "status": "active",
+          "turns": [],
+          "events": []
+        },
+        "clarification": null,
+        "continuation": null,
+        "pipeline": null
+      }
+    }
+  },
+  {
+    "at": "2026-10-05T10:41:17.631Z",
+    "path": "/users/assessment/m5/situations/4b801785-732d-4c82-bdef-bc0e270793ff/turns",
+    "status": 200,
+    "response": {
+      "turn": {
+        "id": 1,
+        "assessment_situation_db_id": 1,
+        "turn_id": "233d30ca-210b-43bd-8fd1-9855e3b37c4e",
+        "sequence_no": 2,
+        "speaker_type": "assessee",
+        "speaker_id": "assessee",
+        "content_text": "Илья считает основную функцию завершённой, Вера не подписывает полный запуск и требует ясной границы готовности, а Марина защищает обещанную клиентам дату. Это разные основания решения. Предлагаю зафиксировать согласие о выполненной части и спор о готовности полного запуска; проверить понимание обеих сторон и передать спонсору границы договорённости.",
+        "request_id": "a6683943-1cee-4aea-9387-000589a2a9e2",
+        "created_at": "2026-10-05T13:41:17.598860+03:00"
+      },
+      "events": [
+        {
+          "id": 2,
+          "assessment_situation_db_id": 1,
+          "event_id": "93cb3e88-6cff-43a3-a0f3-dfd71c236e18",
+          "event_type": "mandatory_update",
+          "event_key": "material:CASE-TDISC-01-D3",
+          "cause_json": {
+            "rule_id": "CASE-TDISC-01-D3:mandatory",
+            "turn_id": "233d30ca-210b-43bd-8fd1-9855e3b37c4e",
+            "decision_id": "5ae23438-d809-4fd2-9bb7-1f34da669287",
+            "rule_version": "1"
+          },
+          "material_id": "CASE-TDISC-01-D3",
+          "payload_json": {
+            "content": "5 из 12 подтверждённых клиентов используют старый импорт; их готовность ещё не проверяли.",
+            "recipient": "assessee"
+          },
+          "sequence_no": 3,
+          "created_at": "2026-10-05T13:41:17.598860+03:00"
+        }
+      ],
+      "idempotent": false
+    }
+  },
+  {
+    "at": "2026-10-05T10:41:17.927Z",
+    "path": "/users/assessment/m7/cycles/f885cbfc-6c13-4e33-bb1e-eafad6f53d9f/completion",
+    "status": 200,
+    "response": {
+      "cycle_id": "f885cbfc-6c13-4e33-bb1e-eafad6f53d9f",
+      "event_id": "ef73abc5-eebc-4a6b-8e25-bbaf789929b1",
+      "action": "interrupt_for_continuation",
+      "reason": "user_requested_additional_session",
+      "states": {
+        "cycle": "interrupted",
+        "session": "interrupted"
+      },
+      "final_handoff_ids": [
+        "d7678fd9-5e59-405e-80b2-bc8d7d136131"
+      ],
+      "continuation_intent_id": "f9ffdddd-eaf8-4323-b05a-ab60261759be",
+      "c46_revision_id": null,
+      "processing_status": "pending"
+    }
+  },
+  {
+    "at": "2026-10-05T10:41:18.744Z",
+    "path": "/users/assessment/m7/cycles/f885cbfc-6c13-4e33-bb1e-eafad6f53d9f/additional-sessions",
+    "status": 201,
+    "response": {
+      "id": 2,
+      "session_id": "8fee1a1b-4fcd-4137-9f6d-c734df4099c2",
+      "cycle_db_id": 1,
+      "ordinal": 2,
+      "status": "prepared",
+      "created_by": 1,
+      "created_at": "2026-10-05T13:41:18.733108+03:00",
+      "started_at": null,
+      "ended_at": null,
+      "close_reason": null,
+      "updated_at": "2026-10-05T13:41:18.733108+03:00"
+    }
+  },
+  {
+    "at": "2026-10-05T10:41:18.804Z",
+    "path": "/users/assessment/m7/cycles/f885cbfc-6c13-4e33-bb1e-eafad6f53d9f/next",
+    "status": 201,
+    "response": {
+      "plan": {
+        "cycle_id": "f885cbfc-6c13-4e33-bb1e-eafad6f53d9f",
+        "cycle_status": "active",
+        "plan_id": "a3be116a-9b60-4fd6-9e36-3f88b6ec0421",
+        "revision_id": "be1799a9-c198-493e-a663-145a1aa1a5c2",
+        "revision_no": 1,
+        "plan": {
+          "goal": {
+            "kind": "skills",
+            "selected_skills": [
+              "K1",
+              "K2",
+              "K3",
+              "K4"
+            ]
+          },
+          "route": [
+            {
+              "case_id": "CASE-TDISC-01",
+              "reasons": [],
+              "eligible": true,
+              "base_role": "project_product_process_manager",
+              "target_ids": [
+                "K1.I13",
+                "K1.I16",
+                "K1.I17",
+                "K2.I07",
+                "K2.I08",
+                "K4.I05",
+                "K4.I10",
+                "K4.I17",
+                "K4.I18"
+              ],
+              "conditional": true,
+              "reserve_for": [],
+              "case_version": "v0.1",
+              "duration_source": "M5 CaseVersion planned range",
+              "purpose_target_ids": [
+                "K1.I13",
+                "K1.I16",
+                "K1.I17",
+                "K2.I07",
+                "K2.I08",
+                "K4.I05",
+                "K4.I10",
+                "K4.I17",
+                "K4.I18"
+              ],
+              "planned_max_minutes": 35,
+              "planned_min_minutes": 25,
+              "contribution_target_ids": [
+                "K1.I13",
+                "K1.I16",
+                "K1.I17",
+                "K2.I07",
+                "K2.I08",
+                "K4.I05",
+                "K4.I10",
+                "K4.I17",
+                "K4.I18"
+              ]
+            },
+            {
+              "case_id": "CASE-TDISC-03",
+              "reasons": [],
+              "eligible": true,
+              "base_role": "project_product_process_manager",
+              "target_ids": [
+                "K1.I15",
+                "K2.I11",
+                "K3.I03",
+                "K3.I06",
+                "K3.I09",
+                "K3.I10",
+                "K3.I11",
+                "K4.I12"
+              ],
+              "conditional": true,
+              "reserve_for": [],
+              "case_version": "v0.1",
+              "duration_source": "M5 CaseVersion planned range",
+              "purpose_target_ids": [
+                "K1.I15",
+                "K2.I11",
+                "K3.I03",
+                "K3.I06",
+                "K3.I09",
+                "K3.I10",
+                "K3.I11",
+                "K4.I12"
+              ],
+              "planned_max_minutes": 40,
+              "planned_min_minutes": 30,
+              "contribution_target_ids": [
+                "K1.I15",
+                "K2.I11",
+                "K3.I03",
+                "K3.I06",
+                "K3.I09",
+                "K3.I10",
+                "K3.I11",
+                "K4.I12"
+              ]
+            }
+          ],
+          "status": "LIMITED",
+          "catalog": [
+            {
+              "case_id": "CASE-TDISC-01",
+              "reasons": [],
+              "eligible": true,
+              "base_role": "project_product_process_manager",
+              "target_ids": [
+                "K1.I13",
+                "K1.I16",
+                "K1.I17",
+                "K2.I07",
+                "K2.I08",
+                "K4.I05",
+                "K4.I10",
+                "K4.I17",
+                "K4.I18"
+              ],
+              "case_version": "v0.1",
+              "planned_max_minutes": 35,
+              "planned_min_minutes": 25,
+              "contribution_target_ids": [
+                "K1.I13",
+                "K1.I16",
+                "K1.I17",
+                "K2.I07",
+                "K2.I08",
+                "K4.I05",
+                "K4.I10",
+                "K4.I17",
+                "K4.I18"
+              ]
+            },
+            {
+              "case_id": "CASE-TDISC-02",
+              "reasons": [
+                "CASE_STATUS_NOT_ADMITTED",
+                "ROLE_NOT_ALLOWED",
+                "QA_EVIDENCE_MISSING:assessment_situation,case_dialogue,case_format"
+              ],
+              "eligible": false,
+              "base_role": "specialist_expert",
+              "target_ids": [
+                "K1.I02",
+                "K1.I14",
+                "K1.I17",
+                "K2.I13",
+                "K2.I14",
+                "K2.I07",
+                "K4.I15",
+                "K4.I16",
+                "K4.I18"
+              ],
+              "case_version": "v0.1",
+              "planned_max_minutes": 35,
+              "planned_min_minutes": 25,
+              "contribution_target_ids": [
+                "K1.I02",
+                "K1.I14",
+                "K1.I17",
+                "K2.I07",
+                "K2.I13",
+                "K2.I14",
+                "K4.I15",
+                "K4.I16",
+                "K4.I18"
+              ]
+            },
+            {
+              "case_id": "CASE-TDISC-03",
+              "reasons": [],
+              "eligible": true,
+              "base_role": "project_product_process_manager",
+              "target_ids": [
+                "K1.I15",
+                "K2.I11",
+                "K3.I03",
+                "K3.I06",
+                "K3.I09",
+                "K3.I10",
+                "K3.I11",
+                "K4.I12"
+              ],
+              "case_version": "v0.1",
+              "planned_max_minutes": 40,
+              "planned_min_minutes": 30,
+              "contribution_target_ids": [
+                "K1.I15",
+                "K2.I11",
+                "K3.I03",
+                "K3.I06",
+                "K3.I09",
+                "K3.I10",
+                "K3.I11",
+                "K4.I12"
+              ]
+            },
+            {
+              "case_id": "CASE-TDISC-04",
+              "reasons": [
+                "CASE_STATUS_NOT_ADMITTED",
+                "ROLE_NOT_ALLOWED",
+                "CASE_UNRESOLVED_DECISIONS",
+                "QA_EVIDENCE_MISSING:assessment_situation,case_dialogue,case_format"
+              ],
+              "eligible": false,
+              "base_role": "team_lead",
+              "target_ids": [
+                "K1.I13",
+                "K1.I14",
+                "K2.I10",
+                "K2.I11",
+                "K2.I12",
+                "K2.I06",
+                "K2.I07",
+                "K4.I10"
+              ],
+              "case_version": "v0.1",
+              "planned_max_minutes": 35,
+              "planned_min_minutes": 25,
+              "contribution_target_ids": [
+                "K1.I13",
+                "K1.I14",
+                "K2.I06",
+                "K2.I07",
+                "K2.I10",
+                "K2.I11",
+                "K2.I12",
+                "K4.I10"
+              ]
+            },
+            {
+              "case_id": "CASE-TDISC-05",
+              "reasons": [
+                "CASE_STATUS_NOT_ADMITTED",
+                "ROLE_NOT_ALLOWED",
+                "QA_EVIDENCE_MISSING:assessment_situation,case_dialogue,case_format"
+              ],
+              "eligible": false,
+              "base_role": "direction_system_leader",
+              "target_ids": [
+                "K1.I01",
+                "K1.I17",
+                "K2.I02",
+                "K2.I03",
+                "K2.I06",
+                "K4.I07",
+                "K4.I11",
+                "K4.I15",
+                "K4.I17"
+              ],
+              "case_version": "v0.1",
+              "planned_max_minutes": 40,
+              "planned_min_minutes": 30,
+              "contribution_target_ids": [
+                "K1.I01",
+                "K1.I17",
+                "K2.I02",
+                "K2.I03",
+                "K2.I06",
+                "K4.I07",
+                "K4.I11",
+                "K4.I15",
+                "K4.I17"
+              ]
+            }
+          ],
+          "reserves": [],
+          "schema_version": 1,
+          "full_target_set": [
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C01",
+              "indicator_id": "K1.I01"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C01",
+              "indicator_id": "K1.I02"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C01",
+              "indicator_id": "K1.I03"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C02",
+              "indicator_id": "K1.I04"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C02",
+              "indicator_id": "K1.I05"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C03",
+              "indicator_id": "K1.I06"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C03",
+              "indicator_id": "K1.I07"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C04",
+              "indicator_id": "K1.I08"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C04",
+              "indicator_id": "K1.I09"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C05",
+              "indicator_id": "K1.I10"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C05",
+              "indicator_id": "K1.I11"
+            },
+            {
+              "skill_id": "K1.3",
+              "m2_version": "v1.1",
+              "component_id": "K1.C06",
+              "indicator_id": "K1.I12"
+            },
+            {
+              "skill_id": "K1.3",
+              "m2_version": "v1.1",
+              "component_id": "K1.C07",
+              "indicator_id": "K1.I13"
+            },
+            {
+              "skill_id": "K1.3",
+              "m2_version": "v1.1",
+              "component_id": "K1.C07",
+              "indicator_id": "K1.I14"
+            },
+            {
+              "skill_id": "K1.4",
+              "m2_version": "v1.1",
+              "component_id": "K1.C08",
+              "indicator_id": "K1.I15"
+            },
+            {
+              "skill_id": "K1.4",
+              "m2_version": "v1.1",
+              "component_id": "K1.C09",
+              "indicator_id": "K1.I16"
+            },
+            {
+              "skill_id": "K1.4",
+              "m2_version": "v1.1",
+              "component_id": "K1.C09",
+              "indicator_id": "K1.I17"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C01",
+              "indicator_id": "K2.I01"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C01",
+              "indicator_id": "K2.I02"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C02",
+              "indicator_id": "K2.I03"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C02",
+              "indicator_id": "K2.I04"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C03",
+              "indicator_id": "K2.I05"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C03",
+              "indicator_id": "K2.I06"
+            },
+            {
+              "skill_id": "K2.2",
+              "m2_version": "v1.0",
+              "component_id": "K2.C04",
+              "indicator_id": "K2.I07"
+            },
+            {
+              "skill_id": "K2.2",
+              "m2_version": "v1.0",
+              "component_id": "K2.C05",
+              "indicator_id": "K2.I08"
+            },
+            {
+              "skill_id": "K2.2",
+              "m2_version": "v1.0",
+              "component_id": "K2.C06",
+              "indicator_id": "K2.I09"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C07",
+              "indicator_id": "K2.I10"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C07",
+              "indicator_id": "K2.I11"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C08",
+              "indicator_id": "K2.I12"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C09",
+              "indicator_id": "K2.I13"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C09",
+              "indicator_id": "K2.I14"
+            },
+            {
+              "skill_id": "K3.1",
+              "m2_version": "v1.1",
+              "component_id": "K3.C01",
+              "indicator_id": "K3.I01"
+            },
+            {
+              "skill_id": "K3.1",
+              "m2_version": "v1.1",
+              "component_id": "K3.C01",
+              "indicator_id": "K3.I02"
+            },
+            {
+              "skill_id": "K3.1",
+              "m2_version": "v1.1",
+              "component_id": "K3.C02",
+              "indicator_id": "K3.I03"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C03",
+              "indicator_id": "K3.I04"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C03",
+              "indicator_id": "K3.I05"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C03",
+              "indicator_id": "K3.I06"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C05",
+              "indicator_id": "K3.I07"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C05",
+              "indicator_id": "K3.I08"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C06",
+              "indicator_id": "K3.I09"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C07",
+              "indicator_id": "K3.I10"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C08",
+              "indicator_id": "K3.I11"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C08",
+              "indicator_id": "K3.I12"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C01",
+              "indicator_id": "K4.I01"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C01",
+              "indicator_id": "K4.I02"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C02",
+              "indicator_id": "K4.I03"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C02",
+              "indicator_id": "K4.I04"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C03",
+              "indicator_id": "K4.I05"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C03",
+              "indicator_id": "K4.I06"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C04",
+              "indicator_id": "K4.I07"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C04",
+              "indicator_id": "K4.I08"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C05",
+              "indicator_id": "K4.I09"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C05",
+              "indicator_id": "K4.I10"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C06",
+              "indicator_id": "K4.I11"
+            },
+            {
+              "skill_id": "K4.3",
+              "m2_version": "v1.0",
+              "component_id": "K4.C07",
+              "indicator_id": "K4.I12"
+            },
+            {
+              "skill_id": "K4.3",
+              "m2_version": "v1.0",
+              "component_id": "K4.C07",
+              "indicator_id": "K4.I13"
+            },
+            {
+              "skill_id": "K4.3",
+              "m2_version": "v1.0",
+              "component_id": "K4.C08",
+              "indicator_id": "K4.I14"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C09",
+              "indicator_id": "K4.I15"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C10",
+              "indicator_id": "K4.I16"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C10",
+              "indicator_id": "K4.I17"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C10",
+              "indicator_id": "K4.I18"
+            }
+          ],
+          "algorithm_version": "m7-greedy-coverage/1",
+          "known_limitations": [
+            "Cases are conditional opportunities; not guaranteed Evidence",
+            "Route exceeds time budget"
+          ],
+          "planned_target_set": [
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C01",
+              "indicator_id": "K1.I01"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C01",
+              "indicator_id": "K1.I02"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C01",
+              "indicator_id": "K1.I03"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C02",
+              "indicator_id": "K1.I04"
+            },
+            {
+              "skill_id": "K1.1",
+              "m2_version": "v1.1",
+              "component_id": "K1.C02",
+              "indicator_id": "K1.I05"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C03",
+              "indicator_id": "K1.I06"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C03",
+              "indicator_id": "K1.I07"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C04",
+              "indicator_id": "K1.I08"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C04",
+              "indicator_id": "K1.I09"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C05",
+              "indicator_id": "K1.I10"
+            },
+            {
+              "skill_id": "K1.2",
+              "m2_version": "v1.1",
+              "component_id": "K1.C05",
+              "indicator_id": "K1.I11"
+            },
+            {
+              "skill_id": "K1.3",
+              "m2_version": "v1.1",
+              "component_id": "K1.C06",
+              "indicator_id": "K1.I12"
+            },
+            {
+              "skill_id": "K1.3",
+              "m2_version": "v1.1",
+              "component_id": "K1.C07",
+              "indicator_id": "K1.I13"
+            },
+            {
+              "skill_id": "K1.3",
+              "m2_version": "v1.1",
+              "component_id": "K1.C07",
+              "indicator_id": "K1.I14"
+            },
+            {
+              "skill_id": "K1.4",
+              "m2_version": "v1.1",
+              "component_id": "K1.C08",
+              "indicator_id": "K1.I15"
+            },
+            {
+              "skill_id": "K1.4",
+              "m2_version": "v1.1",
+              "component_id": "K1.C09",
+              "indicator_id": "K1.I16"
+            },
+            {
+              "skill_id": "K1.4",
+              "m2_version": "v1.1",
+              "component_id": "K1.C09",
+              "indicator_id": "K1.I17"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C01",
+              "indicator_id": "K2.I01"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C01",
+              "indicator_id": "K2.I02"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C02",
+              "indicator_id": "K2.I03"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C02",
+              "indicator_id": "K2.I04"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C03",
+              "indicator_id": "K2.I05"
+            },
+            {
+              "skill_id": "K2.1",
+              "m2_version": "v1.0",
+              "component_id": "K2.C03",
+              "indicator_id": "K2.I06"
+            },
+            {
+              "skill_id": "K2.2",
+              "m2_version": "v1.0",
+              "component_id": "K2.C04",
+              "indicator_id": "K2.I07"
+            },
+            {
+              "skill_id": "K2.2",
+              "m2_version": "v1.0",
+              "component_id": "K2.C05",
+              "indicator_id": "K2.I08"
+            },
+            {
+              "skill_id": "K2.2",
+              "m2_version": "v1.0",
+              "component_id": "K2.C06",
+              "indicator_id": "K2.I09"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C07",
+              "indicator_id": "K2.I10"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C07",
+              "indicator_id": "K2.I11"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C08",
+              "indicator_id": "K2.I12"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C09",
+              "indicator_id": "K2.I13"
+            },
+            {
+              "skill_id": "K2.3",
+              "m2_version": "v1.0",
+              "component_id": "K2.C09",
+              "indicator_id": "K2.I14"
+            },
+            {
+              "skill_id": "K3.1",
+              "m2_version": "v1.1",
+              "component_id": "K3.C01",
+              "indicator_id": "K3.I01"
+            },
+            {
+              "skill_id": "K3.1",
+              "m2_version": "v1.1",
+              "component_id": "K3.C01",
+              "indicator_id": "K3.I02"
+            },
+            {
+              "skill_id": "K3.1",
+              "m2_version": "v1.1",
+              "component_id": "K3.C02",
+              "indicator_id": "K3.I03"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C03",
+              "indicator_id": "K3.I04"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C03",
+              "indicator_id": "K3.I05"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C03",
+              "indicator_id": "K3.I06"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C05",
+              "indicator_id": "K3.I07"
+            },
+            {
+              "skill_id": "K3.2",
+              "m2_version": "v1.1",
+              "component_id": "K3.C05",
+              "indicator_id": "K3.I08"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C06",
+              "indicator_id": "K3.I09"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C07",
+              "indicator_id": "K3.I10"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C08",
+              "indicator_id": "K3.I11"
+            },
+            {
+              "skill_id": "K3.3",
+              "m2_version": "v1.1",
+              "component_id": "K3.C08",
+              "indicator_id": "K3.I12"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C01",
+              "indicator_id": "K4.I01"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C01",
+              "indicator_id": "K4.I02"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C02",
+              "indicator_id": "K4.I03"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C02",
+              "indicator_id": "K4.I04"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C03",
+              "indicator_id": "K4.I05"
+            },
+            {
+              "skill_id": "K4.1",
+              "m2_version": "v1.0",
+              "component_id": "K4.C03",
+              "indicator_id": "K4.I06"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C04",
+              "indicator_id": "K4.I07"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C04",
+              "indicator_id": "K4.I08"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C05",
+              "indicator_id": "K4.I09"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C05",
+              "indicator_id": "K4.I10"
+            },
+            {
+              "skill_id": "K4.2",
+              "m2_version": "v1.0",
+              "component_id": "K4.C06",
+              "indicator_id": "K4.I11"
+            },
+            {
+              "skill_id": "K4.3",
+              "m2_version": "v1.0",
+              "component_id": "K4.C07",
+              "indicator_id": "K4.I12"
+            },
+            {
+              "skill_id": "K4.3",
+              "m2_version": "v1.0",
+              "component_id": "K4.C07",
+              "indicator_id": "K4.I13"
+            },
+            {
+              "skill_id": "K4.3",
+              "m2_version": "v1.0",
+              "component_id": "K4.C08",
+              "indicator_id": "K4.I14"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C09",
+              "indicator_id": "K4.I15"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C10",
+              "indicator_id": "K4.I16"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C10",
+              "indicator_id": "K4.I17"
+            },
+            {
+              "skill_id": "K4.4",
+              "m2_version": "v1.0",
+              "component_id": "K4.C10",
+              "indicator_id": "K4.I18"
+            }
+          ],
+          "planned_max_seconds": 4500,
+          "time_budget_seconds": 3600,
+          "uncovered_target_ids": [
+            "K1.I01",
+            "K1.I02",
+            "K1.I03",
+            "K1.I04",
+            "K1.I05",
+            "K1.I06",
+            "K1.I07",
+            "K1.I08",
+            "K1.I09",
+            "K1.I10",
+            "K1.I11",
+            "K1.I12",
+            "K1.I14",
+            "K2.I01",
+            "K2.I02",
+            "K2.I03",
+            "K2.I04",
+            "K2.I05",
+            "K2.I06",
+            "K2.I09",
+            "K2.I10",
+            "K2.I12",
+            "K2.I13",
+            "K2.I14",
+            "K3.I01",
+            "K3.I02",
+            "K3.I04",
+            "K3.I05",
+            "K3.I07",
+            "K3.I08",
+            "K3.I12",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I11",
+            "K4.I13",
+            "K4.I14",
+            "K4.I15",
+            "K4.I16"
+          ],
+          "calendar_window_seconds": 259200
+        },
+        "profile_ref": {
+          "id": "assessment_personalized_profiles:1",
+          "version": "1",
+          "checksum": "96babbf82ee43f454bd0e6827e144c4df3fe8ba4a0af74d9fee9784c240ffaa2"
+        },
+        "rules_ref": {
+          "checksum": "9e4f5a3c0b6838407bbb16174f7f37b10f1022242b3d1088c51df31f014bd0ef",
+          "algorithm_version": "m7-greedy-coverage/1"
+        },
+        "decisions": [
+          {
+            "id": "dd67f8e5-fa05-401b-a02a-a5bb5b0ea93d",
+            "cycle_db_id": 1,
+            "session_db_id": 1,
+            "plan_revision_id": "be1799a9-c198-493e-a663-145a1aa1a5c2",
+            "revision_no": 1,
+            "status": "SELECTED",
+            "trigger_json": {
+              "kind": "next_as_request",
+              "created_by": 1
+            },
+            "facts_json": {
+              "pending_target_ids": [],
+              "final_ia_target_ids": [],
+              "opportunity_target_ids": [],
+              "component_score_coverage": "NOT_CALCULATED",
+              "technical_failure_target_ids": [],
+              "aggregate_contribution_coverage": "NOT_CALCULATED"
+            },
+            "considered_json": [
+              {
+                "case_id": "CASE-TDISC-01",
+                "reasons": [],
+                "case_version": "v0.1",
+                "contribution": [
+                  "K1.I13",
+                  "K1.I16",
+                  "K1.I17",
+                  "K2.I07",
+                  "K2.I08",
+                  "K4.I05",
+                  "K4.I10",
+                  "K4.I17",
+                  "K4.I18"
+                ]
+              },
+              {
+                "case_id": "CASE-TDISC-03",
+                "reasons": [],
+                "case_version": "v0.1",
+                "contribution": [
+                  "K1.I15",
+                  "K2.I11",
+                  "K3.I03",
+                  "K3.I06",
+                  "K3.I09",
+                  "K3.I10",
+                  "K3.I11",
+                  "K4.I12"
+                ]
+              }
+            ],
+            "selected_case_id": "CASE-TDISC-01",
+            "selected_case_version": "v0.1",
+            "expected_targets_json": [
+              "K1.I13",
+              "K1.I16",
+              "K1.I17",
+              "K2.I07",
+              "K2.I08",
+              "K4.I05",
+              "K4.I10",
+              "K4.I17",
+              "K4.I18"
+            ],
+            "explanation_json": {
+              "code": "M7_NEXT_AS_SELECTED",
+              "algorithm": "m7-greedy-coverage/1"
+            },
+            "created_at": "2026-10-05T13:41:17.085468+03:00",
+            "assigned_as_db_id": 1,
+            "assignment_presented_at": "2026-10-05T13:41:17.085468+03:00",
+            "assessment_situation_id": "4b801785-732d-4c82-bdef-bc0e270793ff",
+            "assessment_situation_status": "closed"
+          },
+          {
+            "id": "97e105b3-08df-431d-9451-9ad94fa4202d",
+            "cycle_db_id": 1,
+            "session_db_id": 2,
+            "plan_revision_id": "be1799a9-c198-493e-a663-145a1aa1a5c2",
+            "revision_no": 1,
+            "status": "SELECTED",
+            "trigger_json": {
+              "kind": "next_as_request",
+              "created_by": 1
+            },
+            "facts_json": {
+              "pending_target_ids": [],
+              "final_ia_target_ids": [],
+              "opportunity_target_ids": [],
+              "component_score_coverage": "NOT_CALCULATED",
+              "technical_failure_target_ids": [],
+              "aggregate_contribution_coverage": "NOT_CALCULATED"
+            },
+            "considered_json": [
+              {
+                "case_id": "CASE-TDISC-01",
+                "reasons": [
+                  "CASE_ALREADY_USED_IN_CYCLE"
+                ],
+                "case_version": "v0.1",
+                "contribution": [
+                  "K1.I13",
+                  "K1.I16",
+                  "K1.I17",
+                  "K2.I07",
+                  "K2.I08",
+                  "K4.I05",
+                  "K4.I10",
+                  "K4.I17",
+                  "K4.I18"
+                ]
+              },
+              {
+                "case_id": "CASE-TDISC-03",
+                "reasons": [],
+                "case_version": "v0.1",
+                "contribution": [
+                  "K1.I15",
+                  "K2.I11",
+                  "K3.I03",
+                  "K3.I06",
+                  "K3.I09",
+                  "K3.I10",
+                  "K3.I11",
+                  "K4.I12"
+                ]
+              }
+            ],
+            "selected_case_id": "CASE-TDISC-03",
+            "selected_case_version": "v0.1",
+            "expected_targets_json": [
+              "K1.I15",
+              "K2.I11",
+              "K3.I03",
+              "K3.I06",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K4.I12"
+            ],
+            "explanation_json": {
+              "code": "M7_NEXT_AS_SELECTED",
+              "algorithm": "m7-greedy-coverage/1"
+            },
+            "created_at": "2026-10-05T13:41:18.752232+03:00",
+            "assigned_as_db_id": 2,
+            "assignment_presented_at": "2026-10-05T13:41:18.752232+03:00",
+            "assessment_situation_id": "69b4dbb2-bac5-4803-aafc-6187b118c50b",
+            "assessment_situation_status": "active"
+          }
+        ]
+      },
+      "decision": {
+        "id": "97e105b3-08df-431d-9451-9ad94fa4202d",
+        "cycle_db_id": 1,
+        "session_db_id": 2,
+        "plan_revision_id": "be1799a9-c198-493e-a663-145a1aa1a5c2",
+        "revision_no": 1,
+        "status": "SELECTED",
+        "trigger_json": {
+          "kind": "next_as_request",
+          "created_by": 1
+        },
+        "facts_json": {
+          "pending_target_ids": [],
+          "final_ia_target_ids": [],
+          "opportunity_target_ids": [],
+          "component_score_coverage": "NOT_CALCULATED",
+          "technical_failure_target_ids": [],
+          "aggregate_contribution_coverage": "NOT_CALCULATED"
+        },
+        "considered_json": [
+          {
+            "case_id": "CASE-TDISC-01",
+            "reasons": [
+              "CASE_ALREADY_USED_IN_CYCLE"
+            ],
+            "case_version": "v0.1",
+            "contribution": [
+              "K1.I13",
+              "K1.I16",
+              "K1.I17",
+              "K2.I07",
+              "K2.I08",
+              "K4.I05",
+              "K4.I10",
+              "K4.I17",
+              "K4.I18"
+            ]
+          },
+          {
+            "case_id": "CASE-TDISC-03",
+            "reasons": [],
+            "case_version": "v0.1",
+            "contribution": [
+              "K1.I15",
+              "K2.I11",
+              "K3.I03",
+              "K3.I06",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K4.I12"
+            ]
+          }
+        ],
+        "selected_case_id": "CASE-TDISC-03",
+        "selected_case_version": "v0.1",
+        "expected_targets_json": [
+          "K1.I15",
+          "K2.I11",
+          "K3.I03",
+          "K3.I06",
+          "K3.I09",
+          "K3.I10",
+          "K3.I11",
+          "K4.I12"
+        ],
+        "explanation_json": {
+          "code": "M7_NEXT_AS_SELECTED",
+          "algorithm": "m7-greedy-coverage/1"
+        },
+        "created_at": "2026-10-05T13:41:18.752232+03:00",
+        "assigned_as_db_id": 2,
+        "assignment_presented_at": null,
+        "assessment_situation_id": "69b4dbb2-bac5-4803-aafc-6187b118c50b",
+        "assessment_situation_status": "admitted"
+      },
+      "presentation": {
+        "status": "active",
+        "participant_payload": {
+          "title": "Согласовывать быстрее — или изменить сам процесс?",
+          "case_id": "CASE-TDISC-03",
+          "trigger": "Руководитель операций предлагает просто перенести слот на 12:00. Представитель контроля возражает: «Убирать проверки нельзя». Пользователь процесса отвечает: «Тогда мы получим тот же круг возвратов, только утром». Команде нужно выбрать ограниченный пилот новой схемы.",
+          "case_version": "v0.1",
+          "assessee_task": "Проведите обсуждение, выберите форму ограниченного пилота и используйте доступную модельную проверку, чтобы понять, что в решении следует сохранить или изменить. Итог должен позволять команде продолжить пилотирование.",
+          "substitutions": [],
+          "assessee_position": "Вы владелец улучшения процесса. Можете организовать модельную проверку и предложить пятидневный пилот без новых ресурсов. Изменение обязательной проверки уникальных закупок требует согласия контроля. Постоянную смену процесса утверждает руководитель направления; вы её не объявляете уже принятой.",
+          "initial_situation": "Внутренние заявки на стандартные закупки обрабатываются в среднем 3 рабочих дня при целевом сроке 1 день. За месяц команда ускорила ответы согласующих, но срок почти не изменился: заявки возвращаются за недостающими данными. На предыдущей встрече предложили общий ежедневный слот согласования в 16:00. Прототип ещё не проверяли.",
+          "conditions_and_constraints": "Уникальные закупки должны пройти содержательную проверку до исполнения. Стандартные закупки по действующему каталогу можно выполнять без индивидуального согласования, если подтверждены категория и полнота входа. Новый штат и новая ИТ-система недоступны. Пилот — 5 рабочих дней и до 20 заявок. Модельные прогоны — часть основной встречи, не фактические результаты внедрения.",
+          "participants_and_positions": "На встрече присутствуют:\nОксана, руководитель операций — Защищает предсказуемый поток и загрузку команды; предлагает общий слот.\nРоман, представитель контроля — Требует проверки уникальных закупок; не хочет неопределённой ответственности.\nДина, внутренний пользователь — Хочет получать пригодный к использованию результат в срок; готова помогать с входной формой.\nСергей, аналитик процесса — Имеет шесть обезличенных карточек для модельной проверки; не выбирает решение за команду."
+        }
+      }
+    }
+  },
+  {
+    "at": "2026-10-05T10:41:19.062Z",
+    "path": "/users/assessment/m5/situations/69b4dbb2-bac5-4803-aafc-6187b118c50b/turns",
+    "status": 200,
+    "response": {
+      "turn": {
+        "id": 2,
+        "assessment_situation_db_id": 2,
+        "turn_id": "0305face-626c-495c-88cd-5e9ad45f5fde",
+        "sequence_no": 2,
+        "speaker_type": "assessee",
+        "speaker_id": "assessee",
+        "content_text": "Синтетический ответ второй ситуации: уточняю условия и предлагаю согласовать следующий шаг.",
+        "request_id": "508f8f1b-e72e-4e6b-9e42-38ea3af7315d",
+        "created_at": "2026-10-05T13:41:19.036571+03:00"
+      },
+      "events": [],
+      "idempotent": false
+    }
+  },
+  {
+    "at": "2026-10-05T10:41:19.325Z",
+    "path": "/users/assessment/m5/situations/69b4dbb2-bac5-4803-aafc-6187b118c50b/transitions",
+    "status": 200,
+    "response": {
+      "status": "scenario_ended",
+      "event": {
+        "id": 8,
+        "assessment_situation_db_id": 2,
+        "event_id": "df381c54-82bd-4858-b398-4bfa4fab303b",
+        "event_type": "scenario_completed",
+        "event_key": "transition:4f11a968-db1f-483f-a645-ad0907d9c2e4",
+        "cause_json": {
+          "to": "scenario_ended",
+          "from": "active",
+          "reason": "user_finished_case"
+        },
+        "material_id": null,
+        "payload_json": {
+          "status": "scenario_ended"
+        },
+        "sequence_no": 5,
+        "created_at": "2026-10-05T13:41:19.260700+03:00"
+      },
+      "idempotent": false,
+      "interim_processing_request_id": "b394001b-3e5e-4bc2-b8cb-1b4317367c45"
+    }
+  },
+  {
+    "at": "2026-10-05T10:41:22.210Z",
+    "path": "/users/assessment/m7/clarifications/691f3fbf-42db-4a06-af38-b77eb5342a37/answers",
+    "status": 200,
+    "response": {
+      "id": "691f3fbf-42db-4a06-af38-b77eb5342a37",
+      "assessment_situation_db_id": 2,
+      "c54_revision_id": "3dba68ba-7e49-4c4e-b14f-7a090324396c",
+      "status": "ASK",
+      "input_json": {
+        "as_id": "69b4dbb2-bac5-4803-aafc-6187b118c50b",
+        "turns": [
+          {
+            "content": "Синтетический ответ второй ситуации: уточняю условия и предлагаю согласовать следующий шаг.",
+            "turn_id": "0305face-626c-495c-88cd-5e9ad45f5fde",
+            "created_at": "2026-10-05T13:41:19.036571+03:00",
+            "speaker_id": "assessee",
+            "sequence_no": 2,
+            "speaker_type": "assessee"
+          }
+        ],
+        "case_ref": {
+          "id": "CASE-TDISC-03",
+          "version": "v0.1",
+          "checksum": "ab551010e161e89a9b96174fbfbb35af50903efddb19f97f6fef80f25af03f3d"
+        },
+        "handoff_id": "ee7fca72-68b1-4a88-8705-17b26765e41a",
+        "indicator_ids": [
+          "K1.I15",
+          "K2.I11",
+          "K3.I03",
+          "K3.I06",
+          "K3.I09",
+          "K3.I10",
+          "K3.I11",
+          "K4.I12"
+        ],
+        "uncertainties": [
+          {
+            "refs": [],
+            "rationale": "No supported action in this synthetic material",
+            "m2_version": "v1.1",
+            "uncertainty": {
+              "impact": "Limited material",
+              "clarification_needed": "Clarify existing statement",
+              "resolution_information": [],
+              "missing_or_conflicting_feature": "Meaning needs confirmation",
+              "requires_new_independent_action": false
+            },
+            "indicator_id": "K1.I15"
+          },
+          {
+            "refs": [],
+            "rationale": "No supported action in this synthetic material",
+            "m2_version": "v1.0",
+            "uncertainty": {
+              "impact": "Limited material",
+              "clarification_needed": "Clarify existing statement",
+              "resolution_information": [],
+              "missing_or_conflicting_feature": "Meaning needs confirmation",
+              "requires_new_independent_action": false
+            },
+            "indicator_id": "K2.I11"
+          },
+          {
+            "refs": [],
+            "rationale": "No supported action in this synthetic material",
+            "m2_version": "v1.1",
+            "uncertainty": {
+              "impact": "Limited material",
+              "clarification_needed": "Clarify existing statement",
+              "resolution_information": [],
+              "missing_or_conflicting_feature": "Meaning needs confirmation",
+              "requires_new_independent_action": false
+            },
+            "indicator_id": "K3.I03"
+          },
+          {
+            "refs": [],
+            "rationale": "No supported action in this synthetic material",
+            "m2_version": "v1.1",
+            "uncertainty": {
+              "impact": "Limited material",
+              "clarification_needed": "Clarify existing statement",
+              "resolution_information": [],
+              "missing_or_conflicting_feature": "Meaning needs confirmation",
+              "requires_new_independent_action": false
+            },
+            "indicator_id": "K3.I06"
+          },
+          {
+            "refs": [],
+            "rationale": "No supported action in this synthetic material",
+            "m2_version": "v1.1",
+            "uncertainty": {
+              "impact": "Limited material",
+              "clarification_needed": "Clarify existing statement",
+              "resolution_information": [],
+              "missing_or_conflicting_feature": "Meaning needs confirmation",
+              "requires_new_independent_action": false
+            },
+            "indicator_id": "K3.I09"
+          },
+          {
+            "refs": [],
+            "rationale": "No supported action in this synthetic material",
+            "m2_version": "v1.1",
+            "uncertainty": {
+              "impact": "Limited material",
+              "clarification_needed": "Clarify existing statement",
+              "resolution_information": [],
+              "missing_or_conflicting_feature": "Meaning needs confirmation",
+              "requires_new_independent_action": false
+            },
+            "indicator_id": "K3.I10"
+          },
+          {
+            "refs": [],
+            "rationale": "No supported action in this synthetic material",
+            "m2_version": "v1.1",
+            "uncertainty": {
+              "impact": "Limited material",
+              "clarification_needed": "Clarify existing statement",
+              "resolution_information": [],
+              "missing_or_conflicting_feature": "Meaning needs confirmation",
+              "requires_new_independent_action": false
+            },
+            "indicator_id": "K3.I11"
+          },
+          {
+            "refs": [],
+            "rationale": "No supported action in this synthetic material",
+            "m2_version": "v1.0",
+            "uncertainty": {
+              "impact": "Limited material",
+              "clarification_needed": "Clarify existing statement",
+              "resolution_information": [],
+              "missing_or_conflicting_feature": "Meaning needs confirmation",
+              "requires_new_independent_action": false
+            },
+            "indicator_id": "K4.I12"
+          }
+        ],
+        "schema_version": 1,
+        "c54_revision_id": "3dba68ba-7e49-4c4e-b14f-7a090324396c",
+        "boundary_sequence": 5,
+        "calendar_deadline": "2026-10-08T13:41:17.085468+03:00",
+        "remaining_seconds": 3597,
+        "minimum_remaining_seconds": 120
+      },
+      "input_checksum": "437dea1f609560a81cb0262819e442166f069ec0c94f8bfb3ca7b4da1185765a",
+      "mechanism_json": {
+        "ref": "m7_assessment_clarification/1.0.0",
+        "prompt": "# M7 v1.3: нейтральный оценочный вопрос\n\nВерни JSON по схеме. Сформулируй один краткий нейтральный вопрос только для\nпрояснения указанного смысла, основания уже выраженного решения или отношения между\nуже состоявшимися репликами. Не предлагай новое действие, способ решения, критерий,\nправильный ответ, уровень, дескриптор или желаемый признак. Не меняй роль, Case,\nTrigger и цели AS. Не называй внутреннюю оценку, Evidence, EB, Confidence, M2/M6/M7.\n\nИспользуй только предоставленные реплики и конкретную неопределённость. Вопрос не\nможет просить выполнить новую самостоятельную операцию. Если безопасный вопрос\nсформулировать невозможно, верни admissible=false и конкретную причину.\n",
+        "schema": {
+          "type": "object",
+          "title": "ClarificationQuestion",
+          "required": [
+            "schema_version",
+            "admissible",
+            "indicator_ids",
+            "resolving_information"
+          ],
+          "properties": {
+            "text": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Text",
+              "default": null
+            },
+            "purpose": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "clarify_meaning",
+                    "clarify_basis",
+                    "clarify_contradiction"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Purpose",
+              "default": null
+            },
+            "admissible": {
+              "type": "boolean",
+              "title": "Admissible"
+            },
+            "indicator_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "title": "Indicator Ids"
+            },
+            "refusal_reason": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Refusal Reason",
+              "default": null
+            },
+            "schema_version": {
+              "type": "integer",
+              "const": 1,
+              "title": "Schema Version"
+            },
+            "resolving_information": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "title": "Resolving Information"
+            }
+          },
+          "additionalProperties": false
+        },
+        "decision": {
+          "minimum_remaining_seconds": 120
+        },
+        "operation": {
+          "model": "deepseek-chat",
+          "endpoint": "https://api.deepseek.com/chat/completions",
+          "provider": "deepseek",
+          "parameters": {
+            "max_tokens": 1200,
+            "temperature": 0,
+            "timeout_seconds": 60
+          },
+          "prompt_ref": {
+            "id": "m7_assessment_clarification",
+            "version": "1.0.0",
+            "checksum": "3f84232e2abc6426b9c215569f920d3d2aa8f3b43694d5fa42695056c0b6c55f"
+          },
+          "response_format": "json_object"
+        },
+        "validation": {
+          "forbidden_patterns": [
+            "L[0-3]",
+            "M2",
+            "M6",
+            "M7",
+            "Evidence",
+            "Confidence",
+            "дескриптор",
+            "уровень оценки",
+            "правильный",
+            "правильное",
+            "следует сделать",
+            "выполните",
+            "выполнить",
+            "новое действие",
+            "новую операцию"
+          ],
+          "max_question_chars": 500
+        },
+        "max_input_bytes": 100000,
+        "snapshot_checksum": "d1b209adf75917710ed27784acca50a039d5049c9bb9637095a3eaaccdb117ad"
+      },
+      "mechanism_checksum": "d1b209adf75917710ed27784acca50a039d5049c9bb9637095a3eaaccdb117ad",
+      "question_json": {
+        "text": "Что вы имели в виду под разными основаниями готовности в своём ответе?",
+        "purpose": "clarify_meaning",
+        "admissible": true,
+        "indicator_ids": [
+          "K1.I15",
+          "K2.I11",
+          "K3.I03",
+          "K3.I06",
+          "K3.I09",
+          "K3.I10",
+          "K3.I11",
+          "K4.I12"
+        ],
+        "refusal_reason": null,
+        "schema_version": 1,
+        "resolving_information": [
+          "Meaning of the already submitted answer"
+        ]
+      },
+      "explanation_json": {
+        "code": "M7_CLARIFICATION_ADMISSIBLE",
+        "purpose": "clarify_meaning"
+      },
+      "trace_json": {
+        "sent": {
+          "model": "deepseek-chat",
+          "endpoint": "https://api.deepseek.com/chat/completions",
+          "messages": [
+            {
+              "role": "system",
+              "content": "# M7 v1.3: нейтральный оценочный вопрос\n\nВерни JSON по схеме. Сформулируй один краткий нейтральный вопрос только для\nпрояснения указанного смысла, основания уже выраженного решения или отношения между\nуже состоявшимися репликами. Не предлагай новое действие, способ решения, критерий,\nправильный ответ, уровень, дескриптор или желаемый признак. Не меняй роль, Case,\nTrigger и цели AS. Не называй внутреннюю оценку, Evidence, EB, Confidence, M2/M6/M7.\n\nИспользуй только предоставленные реплики и конкретную неопределённость. Вопрос не\nможет просить выполнить новую самостоятельную операцию. Если безопасный вопрос\nсформулировать невозможно, верни admissible=false и конкретную причину.\n\nJSON Schema:\n{\"additionalProperties\": false, \"properties\": {\"schema_version\": {\"const\": 1, \"title\": \"Schema Version\", \"type\": \"integer\"}, \"admissible\": {\"title\": \"Admissible\", \"type\": \"boolean\"}, \"text\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"default\": null, \"title\": \"Text\"}, \"purpose\": {\"anyOf\": [{\"enum\": [\"clarify_meaning\", \"clarify_basis\", \"clarify_contradiction\"], \"type\": \"string\"}, {\"type\": \"null\"}], \"default\": null, \"title\": \"Purpose\"}, \"indicator_ids\": {\"items\": {\"type\": \"string\"}, \"title\": \"Indicator Ids\", \"type\": \"array\"}, \"resolving_information\": {\"items\": {\"type\": \"string\"}, \"title\": \"Resolving Information\", \"type\": \"array\"}, \"refusal_reason\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"default\": null, \"title\": \"Refusal Reason\"}}, \"required\": [\"schema_version\", \"admissible\", \"indicator_ids\", \"resolving_information\"], \"title\": \"ClarificationQuestion\", \"type\": \"object\"}"
+            },
+            {
+              "role": "user",
+              "content": "{\"schema_version\": 1, \"c54_revision_id\": \"3dba68ba-7e49-4c4e-b14f-7a090324396c\", \"handoff_id\": \"ee7fca72-68b1-4a88-8705-17b26765e41a\", \"boundary_sequence\": 5, \"as_id\": \"69b4dbb2-bac5-4803-aafc-6187b118c50b\", \"indicator_ids\": [\"K1.I15\", \"K2.I11\", \"K3.I03\", \"K3.I06\", \"K3.I09\", \"K3.I10\", \"K3.I11\", \"K4.I12\"], \"uncertainties\": [{\"indicator_id\": \"K1.I15\", \"m2_version\": \"v1.1\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K2.I11\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K3.I03\", \"m2_version\": \"v1.1\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K3.I06\", \"m2_version\": \"v1.1\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K3.I09\", \"m2_version\": \"v1.1\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K3.I10\", \"m2_version\": \"v1.1\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K3.I11\", \"m2_version\": \"v1.1\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}, {\"indicator_id\": \"K4.I12\", \"m2_version\": \"v1.0\", \"uncertainty\": {\"impact\": \"Limited material\", \"clarification_needed\": \"Clarify existing statement\", \"resolution_information\": [], \"missing_or_conflicting_feature\": \"Meaning needs confirmation\", \"requires_new_independent_action\": false}, \"rationale\": \"No supported action in this synthetic material\", \"refs\": []}], \"turns\": [{\"content\": \"Синтетический ответ второй ситуации: уточняю условия и предлагаю согласовать следующий шаг.\", \"turn_id\": \"0305face-626c-495c-88cd-5e9ad45f5fde\", \"created_at\": \"2026-10-05T13:41:19.036571+03:00\", \"speaker_id\": \"assessee\", \"sequence_no\": 2, \"speaker_type\": \"assessee\"}], \"case_ref\": {\"id\": \"CASE-TDISC-03\", \"version\": \"v0.1\", \"checksum\": \"ab551010e161e89a9b96174fbfbb35af50903efddb19f97f6fef80f25af03f3d\"}, \"remaining_seconds\": 3597, \"minimum_remaining_seconds\": 120, \"calendar_deadline\": \"2026-10-08T13:41:17.085468+03:00\"}"
+            }
+          ],
+          "provider": "deepseek",
+          "parameters": {
+            "max_tokens": 1200,
+            "temperature": 0,
+            "timeout_seconds": 60
+          }
+        },
+        "intended": {
+          "model": "deepseek-chat",
+          "endpoint": "https://api.deepseek.com/chat/completions",
+          "provider": "deepseek",
+          "parameters": {
+            "max_tokens": 1200,
+            "temperature": 0,
+            "timeout_seconds": 60
+          },
+          "prompt_ref": {
+            "id": "m7_assessment_clarification",
+            "version": "1.0.0",
+            "checksum": "3f84232e2abc6426b9c215569f920d3d2aa8f3b43694d5fa42695056c0b6c55f"
+          },
+          "response_format": "json_object"
+        },
+        "provider": {
+          "model": null,
+          "usage": null,
+          "revision": null,
+          "request_id": null,
+          "finish_reason": null
+        },
+        "response": {
+          "content": "{\"schema_version\": 1, \"admissible\": true, \"text\": \"Что вы имели в виду под разными основаниями готовности в своём ответе?\", \"purpose\": \"clarify_meaning\", \"indicator_ids\": [\"K1.I15\", \"K2.I11\", \"K3.I03\", \"K3.I06\", \"K3.I09\", \"K3.I10\", \"K3.I11\", \"K4.I12\"], \"resolving_information\": [\"Meaning of the already submitted answer\"], \"refusal_reason\": null}",
+          "checksum": "970e26bddd2af7c48b53d96e5a2a471eb35c409d13b47c57a31f4954b4ae93e5"
+        },
+        "identity_status": "sent_matches_snapshot",
+        "provider_model_status": "unreported"
+      },
+      "created_by": 1,
+      "created_at": "2026-10-05T13:41:21.364239+03:00",
+      "question_turn_id": "691f3fbf-42db-4a06-af38-b77eb5342a37",
+      "question_sequence": 6,
+      "response_outcome": "answered",
+      "response_request_id": "3c0e5343-4f1a-4658-a54a-5564fb3762f9",
+      "answer_turn_id": "0c4978f7-4fe4-4f80-9390-3e16efd54221",
+      "answer_sequence": 7,
+      "handoff_id": "141a4432-6e3e-4257-973e-4d0d44fa08e7"
+    }
+  },
+  {
+    "at": "2026-10-05T10:41:22.450Z",
+    "path": "/users/assessment/m7/cycles/f885cbfc-6c13-4e33-bb1e-eafad6f53d9f/completion",
+    "status": 200,
+    "response": {
+      "cycle_id": "f885cbfc-6c13-4e33-bb1e-eafad6f53d9f",
+      "event_id": "76258f0d-15ab-49f5-be28-7ccb32ce70f6",
+      "action": "complete",
+      "reason": "user_completed_scenario",
+      "states": {
+        "cycle": "collection_closed",
+        "session": "completed"
+      },
+      "final_handoff_ids": [
+        "63468866-04b4-4960-a358-e8c18526af64"
+      ],
+      "continuation_intent_id": null,
+      "c46_revision_id": "777815b0-ccae-4b98-a0b7-9c19a18e8fc8",
+      "processing_status": "pending"
+    }
+  }
+]

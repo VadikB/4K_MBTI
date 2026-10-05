@@ -93,6 +93,10 @@ def _queue_assessment(connection) -> bool:
 
 
 def _clarify_interim(connection, gateway=None) -> bool:
+    if gateway is None:
+        from Api.m10_test_gateway import acceptance_fixture, BrowserAcceptanceGateway
+        if acceptance_fixture():
+            gateway=BrowserAcceptanceGateway()
     row = connection.execute("""SELECT c.id,c.as_db_id,s.cycle_db_id,cy.created_by FROM m6_c54_revisions c
         JOIN m5_assessment_situations s ON s.id=c.as_db_id JOIN m5_cycles cy ON cy.id=s.cycle_db_id
         WHERE c.mode='interim' AND cy.usage_scope='assessment' AND NOT EXISTS(

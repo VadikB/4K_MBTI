@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "outcome_labels": {
+    "full_score": "Полный результат со Score",
+    "partial_score": "Частный результат со Score",
+    "result_without_score": "Результат без общего Score",
+    "no_result": "Нет Skill Result"
+  },
+  "coverage_labels": {
+    "opportunities": "Фактические возможности",
+    "indicator_assessments": "Обоснованные IA",
+    "admissible_contributions": "Допустимые вклады",
+    "components_with_score": "Components со Score",
+    "complete_components": "Полные Components"
+  },
+  "invariants": {
+    "show_recommendations": true,
+    "derive_skill_level": false,
+    "derive_competency_score": false,
+    "preserve_exact_fraction": true
+  },
+  "recommendation_contract_version": "m8-recommendations/1.1.0",
+  "legacy_recommendation_notice": {
+    "kind": "LEGACY_BASIS_UNVERIFIED",
+    "skill_id": null,
+    "text": "Ранее сохранённые рекомендации скрыты: их основания не прошли текущую проверку. Фактический результат сохранён; новая редакция рекомендаций доступна через явную регенерацию.",
+    "limitations": [
+      "Историческая редакция отчёта сохранена без изменений."
+    ]
+  },
+  "recommendation_failure_notice": {
+    "kind": "GENERATION_FAILURE",
+    "skill_id": null,
+    "text": "Рекомендации временно недоступны из-за ошибки проверки или генерации. Основной отчёт сохранён.",
+    "limitations": []
+  }
+}

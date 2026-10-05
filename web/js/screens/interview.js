@@ -49,6 +49,7 @@ import { recoverProfileCompletionForAssessment, shouldRecoverProfileOnAssessment
 
 const interviewCaseContextByKey = new Map();
 const PRODUCT_RUNTIME_POLL_MS = 1200;
+let productRuntimePollGeneration = 0;
 
 export const isCycleAssessment = () =>
   state.assessmentRuntimeKind === 'cycle' && Boolean(state.productCycleId);
@@ -57,7 +58,9 @@ const productPayloadText = (payload) => {
   if (!payload) return 'Кейс подготовлен. Ознакомьтесь с ситуацией и дайте ответ.';
   if (typeof payload === 'string') return payload;
   const parts = [];
-  for (const key of ['title', 'situation', 'context', 'task', 'question', 'content']) {
+  for (const key of ['title', 'initial_situation', 'trigger', 'assessee_position',
+    'participants_and_positions', 'assessee_task', 'conditions_and_constraints',
+    'situation', 'context', 'task', 'question', 'content']) {
     if (typeof payload[key] === 'string' && payload[key].trim()) parts.push(payload[key].trim());
   }
   return parts.length ? parts.join('\n\n') : JSON.stringify(payload, null, 2);
@@ -85,15 +88,22 @@ const renderProductRuntime = (snapshot) => {
 
   interviewMessages.innerHTML = '';
   if (current) addInterviewMessage('assistant', productPayloadText(current.participant_payload));
-  for (const item of snapshot.trace?.turns || []) {
-    addInterviewMessage(item.speaker_type === 'assessee' ? 'user' : 'assistant', item.content_text || '');
-  }
-  for (const event of snapshot.trace?.events || []) {
-    const text = productEventText(event);
-    if (text) addInterviewMessage('assistant', text);
+  const dialogue = [
+    ...(snapshot.trace?.turns || []).map((item) => ({...item, text:item.content_text,
+      role:item.speaker_type === 'assessee' ? 'user' : 'assistant'})),
+    ...(snapshot.trace?.events || []).map((event) => ({...event, text:productEventText(event), role:'assistant'})),
+  ].sort((a, b) => a.sequence_no - b.sequence_no);
+  for (const item of dialogue) {
+    if (item.text) {
+      const label = item.speaker_type === 'character' ? item.speaker_name || 'Персонаж'
+        : item.speaker_type === 'assessment' ? 'Уточняющий вопрос' : 'Материал кейса';
+      const row = addInterviewMessage(item.role, item.text, label);
+      if (item.turn_id) row.dataset.turnId = item.turn_id;
+    }
   }
   const clarification = snapshot.clarification;
-  if (clarification?.status === 'ASK' && !clarification.response_outcome && clarification.question?.text) {
+  if (clarification?.status === 'ASK' && !clarification.response_outcome && clarification.question?.text &&
+      !(snapshot.trace?.turns || []).some((turn) => turn.turn_id === clarification.question_turn_id)) {
     addInterviewMessage('assistant', clarification.question.text);
   }
   renderInterviewMeta();
@@ -104,16 +114,23 @@ const renderProductRuntime = (snapshot) => {
   const cycleStatus = snapshot.status?.collection_status;
   const waitingQuestion = clarification?.status === 'ASK' && !clarification.response_outcome;
   const closed = ['collection_closed', 'calculation_pending', 'calculated', 'failed'].includes(cycleStatus);
-  interviewTextarea.disabled = closed;
-  interviewSubmitButton.disabled = closed;
-  interviewFinishButton.disabled = closed || waitingQuestion;
-  interviewPauseButton?.classList.toggle('hidden', closed);
+  const suspended = ['paused', 'interrupted'].includes(cycleStatus);
+  interviewTextarea.disabled = closed || suspended || !current;
+  interviewSubmitButton.disabled = closed || suspended || !current;
+  interviewFinishButton.disabled = closed || suspended || !current || waitingQuestion;
+  interviewPauseButton?.classList.toggle('hidden', closed || !current || cycleStatus === 'interrupted');
   interviewAdditionalButton?.classList.toggle('hidden', closed || !current);
   if (interviewPauseButton) interviewPauseButton.textContent = state.productCycleStatus === 'paused' ? 'Продолжить' : 'Пауза';
-  interviewCaseStatus.textContent = closed
+  if (interviewAdditionalButton) interviewAdditionalButton.textContent = cycleStatus === 'interrupted'
+    ? 'Продолжить в дополнительной сессии' : 'Прервать и продолжить позже';
+  interviewCaseStatus.textContent = !current
+    ? 'Нет доступной оценочной ситуации. Для продолжения требуется подготовка назначения.'
+    : closed
     ? snapshot.pipeline?.status === 'failed'
       ? 'Обработка завершилась ошибкой. Ответы сохранены.'
       : 'Сбор завершён. Выполняется итоговая обработка.'
+    : cycleStatus === 'interrupted'
+      ? 'Сессия прервана. Ответы сохранены; можно продолжить в дополнительной сессии в пределах оставшегося времени.'
     : waitingQuestion
       ? 'Ответьте на уточняющий вопрос.'
       : current?.status === 'scenario_ended'
@@ -124,12 +141,19 @@ const renderProductRuntime = (snapshot) => {
   return snapshot;
 };
 
-export const loadProductRuntime = async () => {
+export const loadProductRuntime = async ({ generation = null } = {}) => {
   if (!state.productCycleId) throw new Error('Cycle runtime не инициализирован.');
   const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(state.productCycleId) + '/runtime', {
     credentials: 'same-origin',
   });
-  return renderProductRuntime(await readApiResponse(response, 'Не удалось восстановить состояние оценки.'));
+  const saved = await readApiResponse(response, 'Не удалось восстановить состояние оценки.');
+  if (generation !== null && generation !== productRuntimePollGeneration) return saved;
+  const snapshot = renderProductRuntime(saved);
+  if (['collection_closed', 'calculation_pending', 'calculated'].includes(snapshot.status?.collection_status) &&
+      !interviewPanel.classList.contains('hidden')) {
+    openProcessing();
+  }
+  return snapshot;
 };
 
 const waitForProductClarification = async (previousDecisionId = null) => {
@@ -198,7 +222,8 @@ export const createProductAdditionalSession = async () => {
       body: JSON.stringify({ action: 'interrupt_for_continuation', reason: 'user_requested_additional_session', idempotency_key: createOperationId() }),
     });
     await readApiResponse(interruptedResponse, 'Не удалось прервать текущую сессию.');
-    snapshot = await loadProductRuntime();
+    await loadProductRuntime();
+    return;
   }
   if (snapshot.continuation?.status === 'pending') {
     const sessionResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/additional-sessions', {
@@ -336,7 +361,7 @@ const renderInterviewStructuredBlock = ({ label, body = '', items = [], variant 
   return section;
 };
 
-export const addInterviewMessage = (role, text) => {
+export const addInterviewMessage = (role, text, speakerLabel = null) => {
   const row = document.createElement('div');
   row.className = 'interview-message' + (role === 'user' ? ' own' : '');
   row.dataset.messageText = role === 'user' ? String(text ?? '').trim() : '';
@@ -348,6 +373,7 @@ export const addInterviewMessage = (role, text) => {
   }
   const bubble = document.createElement('div');
   bubble.className = 'interview-bubble ' + (role === 'user' ? 'user' : 'bot');
+  if (speakerLabel && role !== 'user') bubble.dataset.speakerLabel = speakerLabel;
   if (role === 'user') {
     bubble.textContent = String(text ?? '').trim();
   } else {
@@ -646,6 +672,7 @@ const renderCaseProgress = (assessmentCompleted = false) => {
 };
 
 export const clearInterviewTimer = () => {
+  productRuntimePollGeneration += 1;
   if (state.assessmentTimerId) {
     window.clearInterval(state.assessmentTimerId);
     state.assessmentTimerId = null;
@@ -899,12 +926,15 @@ const submitAssessmentMessage = async (text, requestIdentity = null) => {
       await loadProductRuntime();
       return;
     }
-    const snapshot = await loadProductRuntime();
+    // Read without rebuilding the transcript: preserve the pending row and retry identity.
+    const runtimeResponse = await fetch('/users/assessment/cycles/' + encodeURIComponent(state.productCycleId) + '/runtime', { credentials: 'same-origin' });
+    const snapshot = await readApiResponse(runtimeResponse, 'Не удалось восстановить состояние оценки.');
     const clarification = snapshot.clarification;
     const isClarification = clarification?.status === 'ASK' && !clarification.response_outcome;
-    const endpoint = isClarification
+    const endpoint = requestIdentity?.endpoint || (isClarification
       ? '/users/assessment/m7/clarifications/' + encodeURIComponent(clarification.id) + '/answers'
-      : '/users/assessment/m5/situations/' + encodeURIComponent(state.productAssessmentSituationId) + '/turns';
+      : '/users/assessment/m5/situations/' + encodeURIComponent(state.productAssessmentSituationId) + '/turns');
+    if (requestIdentity) requestIdentity.endpoint = endpoint;
     const body = {
       request_id: requestIdentity?.requestId || createOperationId(),
       turn_id: requestIdentity?.turnId || crypto.randomUUID(),
@@ -943,6 +973,15 @@ const submitAssessmentMessage = async (text, requestIdentity = null) => {
   }
 };
 
+export const resumeProductRuntimePolling = () => {
+  clearInterviewTimer();
+  state.assessmentTimerId = window.setInterval(() => {
+    if (!document.hidden && !interviewPanel.classList.contains('hidden')) {
+      void loadProductRuntime({ generation: productRuntimePollGeneration }).catch((error) => showError(interviewError, error.message));
+    }
+  }, PRODUCT_RUNTIME_POLL_MS);
+};
+
 export const openInterview = () => {
   state.newUserSequenceStep = 'interview';
   setCurrentScreen('interview');
@@ -954,6 +993,7 @@ export const openInterview = () => {
   interviewPanel.classList.remove('hidden');
   if (isCycleAssessment()) {
     void loadProductRuntime().catch((error) => showError(interviewError, error.message));
+    resumeProductRuntimePolling();
   }
 };
 

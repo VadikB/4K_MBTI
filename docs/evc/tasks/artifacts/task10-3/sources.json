@@ -1,0 +1,12 @@
+{
+  "docs/methodology/source-sets/2026-10-01/manifest.json": "f95a390f1257f4adbccf61be59bdcb0b99396501ca34cf117eb0efc10b237db8",
+  "docs/architecture/product-4k/m1/v1.4/README.md": "f772f8d244c46f6a52924e18ac58dcbea3b603163b3b1da806e574e4cc077795",
+  "assessment_definitions/cases/competencies_4k/1.1/manifest.json": "8b014976e649bc9d01a04eb12189c8a86cff85010ecb98507f0103cb513dbd2b",
+  "tests/browser/fixtures/character-manifest.json": "c70ac5ded7aa9e69696620283a75dedaef6331c091f287a890f1dae18303a3c4",
+  "tests/browser/fixtures/v1.json": "471a47c6eee338e2f2b450675d462f02b061934cc03f02abfee71d093d378b42",
+  "docs/adr/002-cycle-as-dialogue-contracts.md": "4a4e0170bee7faf137301b342fec46b3e8e0209acd26dcb6b2dc7a788c58b25f",
+  "docs/methodology/source-sets/2026-10-01/derived/M6-v1.8.md": "f081bc9ca795257b6a4afbebbd4b56f32243a1a75f5c25d91a77c64d64fc86fa",
+  "docs/methodology/source-sets/2026-10-01/derived/M7-v1.3.md": "9b65a8eee1520fed57286b209a28ce73e33cd394ba8c9353c240673867483ec8",
+  "docs/methodology/source-sets/2026-10-01/derived/M8-v1.2.md": "f0272e304f36dc2d58777080b753a5fcc55578d22947e3afbae308b8afb71e0e",
+  "tests/browser/fixtures/sources/character-case-v1.json": "754870d8ef1ef550cc40f65a7a4886f5755361d709f10600f4fb7938c082ec47"
+}

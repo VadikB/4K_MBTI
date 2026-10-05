@@ -1,0 +1,73 @@
+
+> test:backend
+> .venv/bin/python -m pytest -m "not integration and not e2e and not llm"
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/vadim_bogachev/Desktop/mbti/4K_MBTI
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-7.1.0, anyio-4.13.0
+collected 453 items / 111 deselected / 342 selected
+
+tests/test_domain_resolution.py ..                                       [  0%]
+tests/unit/test_assessment_analysis_queue.py .......                     [  2%]
+tests/unit/test_assessment_api_boundaries.py ....                        [  3%]
+tests/unit/test_assessment_authoring.py .................                [  8%]
+tests/unit/test_assessment_configuration.py .....                        [ 10%]
+tests/unit/test_assessment_evaluation_material_repository.py ..          [ 10%]
+tests/unit/test_assessment_evaluation_repository.py ..                   [ 11%]
+tests/unit/test_assessment_evaluator_contracts.py ..................     [ 16%]
+tests/unit/test_assessment_indicator_material_repository.py ....         [ 17%]
+tests/unit/test_assessment_indicator_repository.py ......                [ 19%]
+tests/unit/test_assessment_indicator_snapshot.py ...                     [ 20%]
+tests/unit/test_assessment_methodology_publication.py ..                 [ 21%]
+tests/unit/test_assessment_prompt_resolver.py ........                   [ 23%]
+tests/unit/test_assessment_queue_policy.py ....                          [ 24%]
+tests/unit/test_assessment_shadow_batch_service.py ......                [ 26%]
+tests/unit/test_assessment_shadow_repository.py ..                       [ 26%]
+tests/unit/test_auth_policy.py .........                                 [ 29%]
+tests/unit/test_case_reuse_similarity.py ...                             [ 30%]
+tests/unit/test_config_security_defaults.py ..                           [ 30%]
+tests/unit/test_deepseek_capacity.py .....                               [ 32%]
+tests/unit/test_dialog_context_builder.py ....                           [ 33%]
+tests/unit/test_dialog_fallback_engine.py ......                         [ 35%]
+tests/unit/test_dialog_policy.py ....                                    [ 36%]
+tests/unit/test_dialog_state_machine.py .......                          [ 38%]
+tests/unit/test_frontend_asset_retention.py ...                          [ 39%]
+tests/unit/test_frozen_agent_bundle_repair.py ..                         [ 40%]
+tests/unit/test_interviewer_prompt_builder.py ...                        [ 40%]
+tests/unit/test_interviewer_service.py ......                            [ 42%]
+tests/unit/test_m10_participant_projection.py ..                         [ 43%]
+tests/unit/test_m3_base_roles.py .....                                   [ 44%]
+tests/unit/test_m4_context_package.py .....                              [ 46%]
+tests/unit/test_m4_personalized_profile.py .....                         [ 47%]
+tests/unit/test_m5_case_package.py .......                               [ 49%]
+tests/unit/test_m5_generation_lab.py .................                   [ 54%]
+tests/unit/test_m5_rule_engine.py ..........                             [ 57%]
+tests/unit/test_m5_scenario_runtime.py ..                                [ 58%]
+tests/unit/test_m5_storage.py .....                                      [ 59%]
+tests/unit/test_m6_admission.py ..                                       [ 60%]
+tests/unit/test_m6_cycle_aggregation.py .......                          [ 62%]
+tests/unit/test_m6_evidence.py .....................                     [ 68%]
+tests/unit/test_m6_gc_package.py .....................................   [ 79%]
+tests/unit/test_m6_indicator_assessment.py ......                        [ 80%]
+tests/unit/test_m7_clarification.py .....                                [ 82%]
+tests/unit/test_m7_cycle_planner.py .                                    [ 82%]
+tests/unit/test_m8_recommendations.py ................                   [ 87%]
+tests/unit/test_m8_results.py ....                                       [ 88%]
+tests/unit/test_methodology_1_1_package.py .............                 [ 92%]
+tests/unit/test_methodology_bundle.py ..                                 [ 92%]
+tests/unit/test_resumable_connection.py ..                               [ 93%]
+tests/unit/test_snapshot_integrity.py .......                            [ 95%]
+tests/unit/test_test_stand.py .......                                    [ 97%]
+tests/unit/test_universal_indicator_evaluator.py ....                    [ 98%]
+tests/unit/test_user_journey.py ....                                     [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================ 342 passed, 111 deselected, 1 warning in 8.18s ================

@@ -7,7 +7,16 @@ from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+if os.getenv("AGENT4K_BROWSER_TEST_GATEWAY") == "1" and os.getenv("AGENT4K_ISOLATED_STAND") != "1":
+    raise ValueError("TEST_GATEWAY_REQUIRES_OWNED_ISOLATED_STAND")
+if os.getenv("AGENT4K_ISOLATED_STAND") == "1":
+    if (os.getenv("DB_HOST") not in ("127.0.0.1", "localhost")
+            or not os.getenv("DB_NAME", "").startswith("product4k_pytest_")
+            or not os.getenv("AGENT4K_STAND_MARKER", "").startswith("stand-10.2:")
+            or not os.getenv("DB_USER")):
+        raise ValueError("ISOLATED_STAND_CONFIGURATION_REQUIRED")
+else:
+    load_dotenv(BASE_DIR / ".env")
 
 
 class Settings:

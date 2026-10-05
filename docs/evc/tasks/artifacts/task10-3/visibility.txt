@@ -1,0 +1,47 @@
+
+Running 1 test using 1 worker
+
+(node:974) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/runtime.spec.mjs:162:35 › S10-C1 background time closure without another Turn (20.7s)
+
+
+  1) tests/browser/runtime.spec.mjs:162:35 › S10-C1 background time closure without another Turn ───
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "hidden"
+    Received: "visible"
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      168 |  }else{
+      169 |    const other=await context.newPage();await other.goto('about:blank');await other.bringToFront();
+    > 170 |    await expect.poll(()=>page.evaluate(()=>document.visibilityState)).toBe('hidden');
+          |                                                                       ^
+      171 |  }
+      172 |  const statusUrl=`${stand.url}/users/assessment/m7/cycles/${before.cycle_id}`;
+      173 |  await expect.poll(async()=>{const r=await context.request.get(statusUrl);return (await r.json()).collection_status;},{timeout:60000,intervals:[500,1000]}).toBe('calculated');
+        at /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:170:71
+
+    attachment #1: browser-version (text/plain) ────────────────────────────────────────────────────
+    153.0.8010.12
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #5: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/attachments/server-log-1926a16f750e5bfa7d15bf85da45584ffdb7e3a9.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/error-context.md
+
+  1 failed
+    tests/browser/runtime.spec.mjs:162:35 › S10-C1 background time closure without another Turn ────

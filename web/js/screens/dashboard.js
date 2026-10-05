@@ -32,10 +32,7 @@ export const renderDashboard = () => {
 
   const user = state.pendingUser;
   const position = sanitizeDisplayRole(user && user.job_description ? user.job_description : '');
-  const progressText =
-    dashboard.active_assessment.progress_percent >= 100
-      ? 'Завершено ' + dashboard.active_assessment.progress_percent + '%'
-      : 'Завершено ' + dashboard.active_assessment.progress_percent + '%';
+  const progressText = dashboard.active_assessment.status_label;
 
   dashboardGreeting.textContent = 'Добро пожаловать, ' + (user?.full_name || dashboard.greeting_name);
   dashboardUserName.textContent = user
@@ -49,7 +46,7 @@ export const renderDashboard = () => {
   assessmentDescription.textContent = dashboard.active_assessment.description;
   assessmentStatusLabel.textContent = progressText;
   assessmentCasesLabel.textContent =
-    dashboard.active_assessment.completed_cases + ' из ' + dashboard.active_assessment.total_cases + ' кейсов';
+    'Завершено ситуаций: ' + dashboard.active_assessment.completed_cases;
   assessmentProgressBar.style.width = dashboard.active_assessment.progress_percent + '%';
   assessmentActionButton.textContent = canReusePreparedAssessment()
     ? 'Перейти к кейсам'

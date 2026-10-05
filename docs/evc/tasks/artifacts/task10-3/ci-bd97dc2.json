@@ -1,0 +1,9 @@
+{
+  "commit": "bd97dc29d2fd137988747e5370b148956104dfb6",
+  "event": "pull_request",
+  "run": "https://github.com/VadikB/4K_MBTI/actions/runs/37297471559",
+  "frontend": "PASS",
+  "pytest_including_browser": "PASS",
+  "scope": "Первый кандидат; после визуального ревью исправлена подпись персонажа. Этот CI не приписывается последующему коммиту.",
+  "observed_via": "GitHub authenticated UI"
+}

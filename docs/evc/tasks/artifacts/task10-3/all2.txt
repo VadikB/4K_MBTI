@@ -1,0 +1,95 @@
+
+Running 5 tests using 1 worker
+
+(node:96739) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/runtime.spec.mjs:67:1 › S10-A and T11-10 positive, clarification and saved Report/PDF (27.7s)
+  ✘  2 tests/browser/runtime.spec.mjs:85:1 › S10-B interruption and Additional Session preserve Cycle and deadline (22.5s)
+(node:97070) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 tests/browser/runtime.spec.mjs:110:35 › S10-C1 background time closure without another Turn (2.4m)
+(node:97694) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  4 tests/browser/runtime.spec.mjs:110:35 › S10-C2 background time closure without another Turn (1.5m)
+  ✓  5 tests/browser/runtime.spec.mjs:128:1 › Recovery: lost response, unaccepted request, two tabs and owner boundaries (25.5s)
+
+
+  1) tests/browser/runtime.spec.mjs:85:1 › S10-B interruption and Additional Session preserve Cycle and deadline
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  locator('#interview-additional-button')
+    Expected: "Продолжить в дополнительной сессии"
+    Received: "Дополнительная сессия"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveText" locator('#interview-additional-button') with timeout 5000ms
+      - waiting for locator('#interview-additional-button')
+        14 × locator resolved to <button type="button" id="interview-additional-button" class="ghost-button interview-finish-button hidden">Дополнительная сессия</button>
+           - unexpected value "Дополнительная сессия"
+
+
+      89 |  await expect(page.locator('#interview-case-status')).toContainText('Сессия прервана');
+      90 |  await page.reload();
+    > 91 |  await expect(page.locator('#interview-additional-button')).toHaveText('Продолжить в дополнительной сессии');
+         |                                                             ^
+      92 |  await page.locator('#interview-additional-button').click();
+      93 |  await expect(page.locator('#interview-textarea')).toBeEnabled();
+      94 |  const second=await runtime(page,stand);
+        at /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:91:61
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-B-interruption-a7422-preserve-Cycle-and-deadline/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-B-interruption-a7422-preserve-Cycle-and-deadline/attachments/server-log-5edb87c827602a64494b77ed3d00ffb3e3b5b504.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-S10-B-interruption-a7422-preserve-Cycle-and-deadline/error-context.md
+
+  2) tests/browser/runtime.spec.mjs:110:35 › S10-C1 background time closure without another Turn ───
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('#m8-report-state')
+    Expected substring: "Report готов"
+    Received string:    "Загружаем состояние расчёта…"
+    Timeout: 70000ms
+
+    Call log:
+      - Expect "toContainText" locator('#m8-report-state') with timeout 70000ms
+      - waiting for locator('#m8-report-state')
+        142 × locator resolved to <p id="m8-report-state">Загружаем состояние расчёта…</p>
+            - unexpected value "Загружаем состояние расчёта…"
+
+
+      50 |  await expect(page.locator('#interview-messages')).toContainText(expected);
+      51 | }
+    > 52 | async function answer(page,text=fixture.answer){await page.locator('#interview-textarea').fill(text);await page.locator('#interview-submit-button').click();await expect(page.locator('#interview-submit-button')).toBeEnabled({timeout:30000});await expect(page.locator('#interview-error')).toBeHidden();await expect(page.locator('#interview-messages .own')).toContainText([text]);}
+         |                                                 ^
+      53 | async function report(page,stand,info){
+      54 |  await expect(page.locator('#m8-report-state')).toContainText('Report готов',{timeout:70000});
+      55 |  const cycle=new URL(page.url()).searchParams.get('cycle_id');expect(cycle).toBeTruthy();
+        at report (/Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:52:49)
+        at /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:123:20
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/attachments/server-log-1f461a45d8fbe569c31977168c17251f02888b17.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/error-context.md
+
+  2 failed
+    tests/browser/runtime.spec.mjs:85:1 › S10-B interruption and Additional Session preserve Cycle and deadline
+    tests/browser/runtime.spec.mjs:110:35 › S10-C1 background time closure without another Turn ────
+  3 passed (5.3m)

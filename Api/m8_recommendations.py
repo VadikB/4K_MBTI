@@ -9,8 +9,8 @@ from Api.m5_case_runtime import checksum
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "assessment_definitions/recommendations/m8/v1"
-CONTRACT_VERSION = "m8-recommendations/1.0.0"
+PACKAGE = ROOT / "assessment_definitions/recommendations/m8/v1_1"
+CONTRACT_VERSION = "m8-recommendations/1.1.0"
 PROFILE_ALLOWLIST = {
     "organization_context": ("description", "activities", "products", "employee_context"),
     "role_profile": ("name", "short_description", "mission", "typical_tasks", "objects_of_work"),
@@ -22,7 +22,7 @@ FORBIDDEN_PROFILE_KEYS = {"full_name", "contacts", "email", "phone", "name"}
 def load_package() -> dict[str, Any]:
     manifest = json.loads((PACKAGE / "manifest.json").read_bytes())
     raw = (PACKAGE / "templates.json").read_bytes()
-    expected = (1, "m8_recommendations", "1.0.0", "draft", "individual_report", "PM-06")
+    expected = (1, "m8_recommendations", "1.1.0", "draft", "individual_report", "PM-06")
     if tuple(manifest.get(key) for key in ("schema_version", "id", "version", "status", "scope", "owner")) != expected:
         raise ValueError("M8_RECOMMENDATION_PACKAGE_INVALID")
     if manifest.get("artifacts") != [{"name": "templates.json", "sha256": hashlib.sha256(raw).hexdigest()}]:
@@ -76,101 +76,110 @@ def _skill_indicators(skill: dict[str, Any]) -> set[str]:
     return {indicator for component in skill.get("components", []) for indicator in component.get("required_indicator_ids", [])}
 
 
-def _basis_for(skill: dict[str, Any], observations: list[dict[str, Any]]) -> dict[str, Any] | None:
-    indicators = _skill_indicators(skill)
-    candidates = [item for item in observations if item.get("indicator_id") in indicators and item.get("revision_id")]
-    if not candidates:
-        return None
-    item = sorted(candidates, key=lambda value: (value.get("indicator_id", ""), value.get("revision_id", "")))[0]
-    confirmed = list((item.get("confidence") or {}).get("confirmed_features") or [])
-    refs = list(item.get("refs") or [])
-    manifestation = confirmed[0] if confirmed else (refs[0].get("meaning") if refs else None)
-    return {
-        "kind": "indicator_assessment",
-        "skill_id": skill["skill_id"],
-        "indicator_id": item["indicator_id"],
-        "ia_revision_id": item["revision_id"],
-        "assessment_revision_id": item.get("assessment_revision_id"),
-        "evidence_revision_id": item.get("evidence_revision_id"),
-        "assessment_situation_id": item.get("assessment_situation_id"),
-        "outcome": item.get("outcome"),
-        "manifestation": manifestation or "зафиксированное проявление в завершённой Assessment Situation",
-    }
-
-
-def _validate_basis(skill: dict[str, Any], basis: dict[str, Any], observations: list[dict[str, Any]]) -> None:
+def _validate_basis(skill: dict, basis: dict, observations: list[dict]) -> None:
     if basis.get("skill_id") != skill.get("skill_id") or basis.get("indicator_id") not in _skill_indicators(skill):
         raise ValueError("RECOMMENDATION_BASIS_SCOPE_MISMATCH")
-    matches = [item for item in observations if item.get("indicator_id") == basis["indicator_id"]
-               and str(item.get("revision_id")) == str(basis["ia_revision_id"])]
+    matches = [x for x in observations if x.get("indicator_id") == basis["indicator_id"]
+               and x.get("revision_id") == basis.get("ia_revision_id")]
     if len(matches) != 1:
         raise ValueError("RECOMMENDATION_BASIS_UNRESOLVED")
 
 
-def generate(results: dict[str, Any], profile_snapshot: dict[str, Any] | None) -> dict[str, Any]:
+def _candidate(skill, observation, projection, admissions, rules):
+    target = projection["target"]
+    decisions = [x for x in admissions if x.get("indicator_id") == observation["indicator_id"]]
+    if len(decisions) != 1 or decisions[0].get("interpretation_admissible") is not True:
+        return None, "INTERPRETATION_NOT_ADMITTED"
+    admission = decisions[0]
+    if observation["revision_id"] not in admission.get("interpretable_revision_ids", []):
+        return None, "INTERPRETATION_REVISION_NOT_ADMITTED"
+    if target.get("status") != rules["status"] or target.get("outcome") not in rules["outcomes"]:
+        return None, "NO_JUSTIFIED_RESULT"
+    if target.get("opportunity") != rules["opportunity"] or not target.get("opportunity_basis", "").strip():
+        return None, "OPPORTUNITY_NOT_CONFIRMED"
+    if target.get("uncertainty") or target.get("contradictions") or projection["bundle"].get("contradictions"):
+        return None, "UNRESOLVED_LIMITATION"
+    if not target.get("refs") or not projection.get("traces") or not target.get("rationale", "").strip():
+        return None, "MATERIAL_BASIS_MISSING"
+    criterion = projection["criterion"]
+    if criterion.get("skill_id") != skill["skill_id"] or criterion.get("id") != observation["indicator_id"]:
+        raise ValueError("RECOMMENDATION_BASIS_SCOPE_MISMATCH")
+    if not any(c["component_id"] == criterion["component_id"] and criterion["id"] in c.get("required_indicator_ids", [])
+               for c in skill.get("components", [])):
+        raise ValueError("RECOMMENDATION_COMPONENT_MISMATCH")
+    if not all(criterion.get(k) for k in ("function", "product", "name")):
+        return None, "CONTENT_NOT_AVAILABLE"
+    return {"kind":"indicator_assessment", "skill_id":skill["skill_id"], "indicator_id":observation["indicator_id"],
+        "ia_revision_id":observation["revision_id"], **{k:observation[k] for k in
+        ("assessment_revision_id","evidence_revision_id","assessment_situation_id")},
+        "outcome":target["outcome"], "manifestation":target["rationale"],
+        "refs":target["refs"], "material_ref":projection["material_ref"],
+        "material_excerpts":[{"turn_id":fragment["turn_id"], "fragment_id":fragment["id"], "quote":fragment["quote"]}
+            for trace in projection["traces"] for fragment in trace.get("fragments", [])],
+        "ia_checksum":projection["ia_checksum"], "evidence_checksum":projection["evidence_checksum"]}, None
+
+
+def generate(results: dict, profile_snapshot: dict | None, *, resolved: dict | None = None) -> dict:
     package = load_package()
     content = package["templates"]
-    templates = content["types"]
     profile = profile_projection(profile_snapshot)
-    context = _action_context(profile, content["fallback_context"])
-    observations = list(results.get("observations") or [])
-    recommendations, notices = [], []
+    observations = results.get("observations", [])
+    if resolved is not None and (resolved.get("cycle_id") != results.get("cycle_id")
+            or resolved.get("results_revision_id") != results.get("results_revision_id")
+            or resolved.get("results_checksum") != checksum({k:v for k,v in results.items() if k != "results_revision_id"})):
+        raise ValueError("RECOMMENDATION_RESULTS_MISMATCH")
+    projections = {x["revision_id"]: x for x in (resolved or {}).get("projections", [])}
+    if len(projections) != len((resolved or {}).get("projections", [])):
+        raise ValueError("RECOMMENDATION_AMBIGUOUS_IA")
+    recommendations, notices, diagnostics = [], [], []
     for skill in results.get("assessed_skill_profile", []):
         if skill.get("outcome") == "no_result":
-            notice = content["no_result_notice"]
-            notices.append({
-                "skill_id": skill["skill_id"],
-                "kind": "INSUFFICIENT_BASIS",
-                "text": notice["text"], "limitations": list(notice["limitations"]),
-            })
+            notices.append({"skill_id":skill["skill_id"], "kind":"INSUFFICIENT_BASIS", **content["no_result_notice"]})
             continue
-        basis = _basis_for(skill, observations)
-        if basis is None:
-            notice = content["unresolved_basis_notice"]
-            notices.append({"skill_id": skill["skill_id"], "kind": "BASIS_UNRESOLVED",
-                            "text": notice["text"], "limitations": list(notice["limitations"])})
-            continue
-        _validate_basis(skill, basis, observations)
-        for recommendation_type in ("Development", "Consolidation / Maintenance", "Application / Transfer"):
-            template = templates[recommendation_type]
-            recommendation = {
-                "recommendation_id": f"{skill['skill_id']}:{recommendation_type.split()[0].lower()}",
-                "skill_id": skill["skill_id"],
-                "type": recommendation_type,
-                "basis_refs": [basis],
-                "goal": template["goal"].format(manifestation=basis["manifestation"]),
-                "practice": template["practice"].format(manifestation=basis["manifestation"]),
-                "application_context": context,
-                "progress_signal": template["progress_signal"],
-                "limitations": list(content["common_limitations"]),
-                "component_ids": [component["component_id"] for component in skill.get("components", [])
-                                  if basis["indicator_id"] in component.get("required_indicator_ids", [])],
-                "indicator_ids": [basis["indicator_id"]],
-                "gap_ref": None,
-            }
-            recommendations.append(recommendation)
-    generation_input = {
-        "results_revision_id": results.get("results_revision_id"),
-        "results_version": results.get("results_version"),
-        "profile_ref": results.get("profile_ref"),
-        "profile_projection": profile,
-        "target_profile": results.get("target_profile"),
-        "skill_inputs": [{"skill_id": skill.get("skill_id"), "outcome": skill.get("outcome"),
-                          "score": skill.get("score"), "components": skill.get("components"),
-                          "comparison": skill.get("comparison")} for skill in results.get("assessed_skill_profile", [])],
-        "observation_refs": [{**{key: item.get(key) for key in ("indicator_id", "revision_id", "assessment_revision_id",
-                              "evidence_revision_id", "assessment_situation_id", "outcome")},
-                              "confirmed_features": list((item.get("confidence") or {}).get("confirmed_features") or []),
-                              "refs": list(item.get("refs") or [])} for item in observations],
-    }
-    return {
-        "contract_version": CONTRACT_VERSION,
-        "mechanism": {"kind": "deterministic_template", "id": package["manifest"]["id"],
-                      "version": package["manifest"]["version"], "template_checksum": package["template_hash"]},
-        "input": generation_input,
-        "input_checksum": checksum(generation_input),
-        "recommendations": recommendations,
-        "notices": notices,
-        "status": "ready" if recommendations else "unavailable",
-        "failure_reason": None if recommendations else "NO_RESOLVABLE_SKILL_BASIS",
-    }
+        before = len(recommendations)
+        for obs in sorted(observations, key=lambda x:(x.get("indicator_id", ""), x.get("revision_id", ""))):
+            if obs.get("indicator_id") not in _skill_indicators(skill):
+                continue
+            projection = projections.get(obs.get("revision_id"))
+            basis, reason = (None, "SOURCE_NOT_VERIFIED") if projection is None else _candidate(
+                skill, obs, projection, results.get("admissions", []), content["admissibility"])
+            if reason:
+                diagnostics.append({"skill_id":skill["skill_id"], "ia_revision_id":obs.get("revision_id"), "reason":reason})
+                continue
+            _validate_basis(skill, basis, observations)
+            criterion, target = projection["criterion"], projection["target"]
+            basis.update({"cycle_id":results["cycle_id"], "results_revision_id":results["results_revision_id"]})
+            types = {"Development":None}
+            for action in content["supported_actions"]:
+                phrase = action["confirmed_action"]
+                # Exact supported action + accepted evidence, never a score/level lookup.
+                if (action["indicator_id"] == obs["indicator_id"] and action["m2_version"] == target["m2_version"]
+                    and phrase in target["confidence"]["confirmed_features"]
+                    and phrase in (target.get("descriptor_basis") or "")
+                    and phrase in criterion.get("levels", {}).get(target["outcome"], "")
+                    and any(t["ref"]["meaning"] == phrase and t.get("fragments") for t in projection["traces"])):
+                    types.update({kind:phrase for kind in action["types"]})
+            for kind, action in types.items():
+                template = content["types"][kind]
+                values = {"manifestation":basis["manifestation"], "indicator_name":criterion["name"],
+                          "function":criterion["function"], "product":criterion["product"], "action":action}
+                limitations = list(content["common_limitations"]) + list(results.get("limitations", []))
+                limitations += target["confidence"].get("limitations", []) + projection["bundle"].get("limitations", [])
+                for trace in projection["traces"]:
+                    limitations += trace.get("limitations", [])
+                recommendations.append({"recommendation_id":f"{skill['skill_id']}:{obs['revision_id']}:{kind.split()[0].lower()}",
+                    "skill_id":skill["skill_id"], "type":kind, "basis_refs":[basis],
+                    **{key:template[key].format(**values) for key in ("goal","practice","progress_signal")},
+                    "application_context":_action_context(profile, content["fallback_context"]),
+                    "limitations":list(dict.fromkeys(limitations)), "component_ids":[criterion["component_id"]],
+                    "indicator_ids":[obs["indicator_id"]], "gap_ref":None})
+        if len(recommendations) == before:
+            notices.append({"skill_id":skill["skill_id"], "kind":"BASIS_UNAVAILABLE", **content["unresolved_basis_notice"]})
+    generation_input = {"results_revision_id":results.get("results_revision_id"), "results_version":results.get("results_version"),
+        "cycle_id":results.get("cycle_id"), "profile_ref":results.get("profile_ref"), "profile_projection":profile,
+        "target_profile":results.get("target_profile"), "skill_inputs":results.get("assessed_skill_profile", []),
+        "observation_refs":observations, "admissions":results.get("admissions", []), "resolved":resolved}
+    return {"contract_version":CONTRACT_VERSION, "mechanism":{"kind":"deterministic_template", "id":package["manifest"]["id"],
+        "version":package["manifest"]["version"], "template_checksum":package["template_hash"]},
+        "input":generation_input, "input_checksum":checksum(generation_input), "recommendations":recommendations,
+        "notices":notices, "diagnostics":diagnostics, "status":"ready" if recommendations else "unavailable", "failure_reason":None}

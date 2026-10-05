@@ -1,0 +1,62 @@
+2026-10-05 11:19:35 | INFO | agent4k | Agent_4K API startup complete
+2026-10-05 11:19:35 | INFO | uvicorn.error | Started server process [91249]
+2026-10-05 11:19:35 | INFO | uvicorn.error | Waiting for application startup.
+2026-10-05 11:19:35 | INFO | agent4k.assessment_queue | Assessment preparation queue started workers=1
+2026-10-05 11:19:35 | INFO | agent4k.analysis_queue | Assessment analysis queue started workers=1
+2026-10-05 11:19:35 | INFO | uvicorn.error | Application startup complete.
+2026-10-05 11:19:35 | INFO | uvicorn.error | Uvicorn running on http://127.0.0.1:18524 (Press CTRL+C to quit)
+2026-10-05 11:19:35 | INFO | uvicorn.access | 127.0.0.1:65082 - "GET /health/ready HTTP/1.1" 200
+2026-10-05 11:19:36 | INFO | uvicorn.access | 127.0.0.1:65084 - "GET /health/ready HTTP/1.1" 200
+2026-10-05 11:19:36 | INFO | uvicorn.access | 127.0.0.1:65085 - "GET / HTTP/1.1" 200
+2026-10-05 11:19:37 | INFO | agent4k.auth | Password login verified for participant@example.test
+2026-10-05 11:19:37 | INFO | uvicorn.access | 127.0.0.1:65086 - "POST /users/auth/email/password-login HTTP/1.1" 200
+2026-10-05 11:19:37 | INFO | uvicorn.access | 127.0.0.1:65089 - "POST /users/assessment/cycles/start HTTP/1.1" 201
+2026-10-05 11:19:37 | INFO | uvicorn.access | 127.0.0.1:65090 - "POST /users/assessment/cycles/start HTTP/1.1" 201
+2026-10-05 11:19:37 | INFO | uvicorn.access | 127.0.0.1:65091 - "POST /users/assessment/m5/situations/97d77468-cfe5-4f12-8b20-0450a566c8ec/turns HTTP/1.1" 200
+2026-10-05 11:19:37 | INFO | uvicorn.access | 127.0.0.1:65092 - "POST /users/assessment/m5/situations/97d77468-cfe5-4f12-8b20-0450a566c8ec/turns HTTP/1.1" 200
+2026-10-05 11:19:37 | INFO | uvicorn.access | 127.0.0.1:65093 - "POST /users/assessment/m7/cycles/50436195-7140-4118-b4ce-6509538dfa1b/completion HTTP/1.1" 200
+2026-10-05 11:19:37 | INFO | uvicorn.access | 127.0.0.1:65094 - "GET /users/assessment/m8/cycles/50436195-7140-4118-b4ce-6509538dfa1b/status HTTP/1.1" 200
+2026-10-05 11:19:38 | INFO | uvicorn.access | 127.0.0.1:65096 - "GET /users/assessment/m8/cycles/50436195-7140-4118-b4ce-6509538dfa1b/status HTTP/1.1" 200
+2026-10-05 11:19:39 | INFO | uvicorn.access | 127.0.0.1:65099 - "GET /users/assessment/m8/cycles/50436195-7140-4118-b4ce-6509538dfa1b/status HTTP/1.1" 200
+2026-10-05 11:19:39 | INFO | uvicorn.access | 127.0.0.1:65101 - "GET /users/assessment/m8/cycles/50436195-7140-4118-b4ce-6509538dfa1b/reports/latest HTTP/1.1" 200
+2026-10-05 11:19:39 | INFO | agent4k.auth | Password login verified for participant@example.test
+2026-10-05 11:19:39 | INFO | uvicorn.access | 127.0.0.1:65102 - "POST /users/auth/email/password-login HTTP/1.1" 200
+2026-10-05 11:19:39 | INFO | uvicorn.access | 127.0.0.1:65105 - "GET /users/assessment/m8/cycles/50436195-7140-4118-b4ce-6509538dfa1b/reports/latest HTTP/1.1" 200
+2026-10-05 11:19:40 | INFO | uvicorn.access | 127.0.0.1:65106 - "GET /users/assessment/m8/reports/8d8b5bba-efba-4ff4-afc1-7db62763403e/pdf HTTP/1.1" 200
+2026-10-05 11:19:40 | INFO | agent4k.auth | Password login verified for other@example.test
+2026-10-05 11:19:40 | INFO | uvicorn.access | 127.0.0.1:65107 - "POST /users/auth/email/password-login HTTP/1.1" 200
+2026-10-05 11:19:40 | INFO | uvicorn.access | 127.0.0.1:65109 - "GET /users/assessment/m8/cycles/50436195-7140-4118-b4ce-6509538dfa1b/reports/latest HTTP/1.1" 403
+2026-10-05 11:19:40 | INFO | uvicorn.access | 127.0.0.1:65110 - "GET /users/assessment/m8/reports/8d8b5bba-efba-4ff4-afc1-7db62763403e/pdf HTTP/1.1" 403
+2026-10-05 11:19:40 | INFO | uvicorn.error | Shutting down
+2026-10-05 11:19:40 | INFO | uvicorn.error | Waiting for application shutdown.
+2026-10-05 11:19:40 | INFO | agent4k.assessment_queue | Assessment preparation queue stopped
+2026-10-05 11:19:40 | INFO | agent4k.analysis_queue | Assessment analysis queue stopped
+2026-10-05 11:19:40 | INFO | uvicorn.error | Application shutdown complete.
+2026-10-05 11:19:40 | INFO | uvicorn.error | Finished server process [91249]
+2026-10-05 11:19:48 | INFO | agent4k | Agent_4K API startup complete
+2026-10-05 11:19:48 | INFO | uvicorn.error | Started server process [91304]
+2026-10-05 11:19:48 | INFO | uvicorn.error | Waiting for application startup.
+2026-10-05 11:19:48 | INFO | agent4k.assessment_queue | Assessment preparation queue started workers=1
+2026-10-05 11:19:48 | INFO | agent4k.analysis_queue | Assessment analysis queue started workers=1
+2026-10-05 11:19:48 | INFO | uvicorn.error | Application startup complete.
+2026-10-05 11:19:48 | INFO | uvicorn.error | Uvicorn running on http://127.0.0.1:18524 (Press CTRL+C to quit)
+2026-10-05 11:19:49 | INFO | uvicorn.access | 127.0.0.1:65141 - "GET /health/ready HTTP/1.1" 200
+2026-10-05 11:19:49 | INFO | uvicorn.access | 127.0.0.1:65143 - "GET /health/ready HTTP/1.1" 200
+2026-10-05 11:19:49 | INFO | uvicorn.access | 127.0.0.1:65144 - "GET / HTTP/1.1" 200
+2026-10-05 11:19:50 | INFO | agent4k.auth | Password login verified for participant@example.test
+2026-10-05 11:19:50 | INFO | uvicorn.access | 127.0.0.1:65145 - "POST /users/auth/email/password-login HTTP/1.1" 200
+2026-10-05 11:19:50 | INFO | uvicorn.access | 127.0.0.1:65148 - "GET /users/assessment/m8/cycles/50436195-7140-4118-b4ce-6509538dfa1b/reports/latest HTTP/1.1" 200
+2026-10-05 11:19:50 | INFO | agent4k.auth | Password login verified for participant@example.test
+2026-10-05 11:19:50 | INFO | uvicorn.access | 127.0.0.1:65149 - "POST /users/auth/email/password-login HTTP/1.1" 200
+2026-10-05 11:19:51 | INFO | uvicorn.access | 127.0.0.1:65151 - "GET /users/assessment/m8/cycles/50436195-7140-4118-b4ce-6509538dfa1b/reports/latest HTTP/1.1" 200
+2026-10-05 11:19:51 | INFO | uvicorn.access | 127.0.0.1:65152 - "GET /users/assessment/m8/reports/8d8b5bba-efba-4ff4-afc1-7db62763403e/pdf HTTP/1.1" 200
+2026-10-05 11:19:51 | INFO | agent4k.auth | Password login verified for other@example.test
+2026-10-05 11:19:52 | INFO | uvicorn.access | 127.0.0.1:65153 - "POST /users/auth/email/password-login HTTP/1.1" 200
+2026-10-05 11:19:52 | INFO | uvicorn.access | 127.0.0.1:65155 - "GET /users/assessment/m8/cycles/50436195-7140-4118-b4ce-6509538dfa1b/reports/latest HTTP/1.1" 403
+2026-10-05 11:19:52 | INFO | uvicorn.access | 127.0.0.1:65156 - "GET /users/assessment/m8/reports/8d8b5bba-efba-4ff4-afc1-7db62763403e/pdf HTTP/1.1" 403
+2026-10-05 11:19:52 | INFO | uvicorn.error | Shutting down
+2026-10-05 11:19:52 | INFO | uvicorn.error | Waiting for application shutdown.
+2026-10-05 11:19:52 | INFO | agent4k.assessment_queue | Assessment preparation queue stopped
+2026-10-05 11:19:52 | INFO | agent4k.analysis_queue | Assessment analysis queue stopped
+2026-10-05 11:19:52 | INFO | uvicorn.error | Application shutdown complete.
+2026-10-05 11:19:52 | INFO | uvicorn.error | Finished server process [91304]

@@ -86,6 +86,7 @@ export const syncUrlState = (screen, options = {}) => {
   const params = new URLSearchParams();
   params.set('screen', screen);
   params.set('ui', String(Date.now()));
+  if (state.assessmentRuntimeKind === 'cycle' && state.productCycleId) params.set('cycle_id', state.productCycleId);
 
   if (state.pendingUser?.id) {
     params.set('user_id', String(state.pendingUser.id));

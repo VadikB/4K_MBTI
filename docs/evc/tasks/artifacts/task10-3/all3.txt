@@ -1,0 +1,105 @@
+
+Running 6 tests using 1 worker
+
+(node:98497) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/runtime.spec.mjs:82:1 › S10-A and T11-10 positive, clarification and saved Report/PDF (39.8s)
+(node:98767) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  2 tests/browser/runtime.spec.mjs:109:1 › S10-B interruption and Additional Session preserve Cycle and deadline (26.2s)
+  ✓  3 tests/browser/runtime.spec.mjs:137:35 › S10-C1 background time closure without another Turn (1.3m)
+  ✓  4 tests/browser/runtime.spec.mjs:137:35 › S10-C2 background time closure without another Turn (1.3m)
+  ✓  5 tests/browser/runtime.spec.mjs:155:1 › Recovery: lost response, unaccepted request, two tabs and owner boundaries (14.7s)
+  ✘  6 tests/browser/runtime.spec.mjs:186:1 › S10-A character branch: actual character Turn, order and no invented recommendation (17.9s)
+
+
+  1) tests/browser/runtime.spec.mjs:82:1 › S10-A and T11-10 positive, clarification and saved Report/PDF
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 403
+    Received: 404
+
+       97 |  }
+       98 |  const other=await page.context().browser().newContext();const second=await other.newPage();await login(second,stand,'other@example.test');
+    >  99 |  for(const endpoint of [`/users/assessment/m8/cycles/${saved.cycle_id}/results/latest`,`/users/assessment/m8/cycles/${saved.cycle_id}/reports/latest`,`/users/assessment/m8/reports/${saved.id}/pdf`])expect((await second.request.get(stand.url+endpoint)).status()).toBe(403);
+          |                                                                                                                                                                                                                                                                       ^
+      100 |  await other.close();
+      101 | });
+      102 | async function runtime(page,stand){
+        at /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:99:263
+
+    attachment #1: browser-version (text/plain) ────────────────────────────────────────────────────
+    153.0.8010.12
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: report-pdf (application/pdf) ────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-A-and-T11-10-p-75f89-cation-and-saved-Report-PDF/attachments/report-pdf-4a184a176c8ebbbf1bf67d0102e3af09ea98aee5.pdf
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: report (application/json) ───────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-A-and-T11-10-p-75f89-cation-and-saved-Report-PDF/attachments/report-6b3265a805ed7d9bacf4c8e4fadccd3ae0bd2476.json
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #4: report-ui (image/png) ───────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-A-and-T11-10-p-75f89-cation-and-saved-Report-PDF/attachments/report-ui-e667f6c74d074d56a686493618e58f01622aa231.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #5: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-A-and-T11-10-p-75f89-cation-and-saved-Report-PDF/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #6: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-A-and-T11-10-p-75f89-cation-and-saved-Report-PDF/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #8: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-A-and-T11-10-p-75f89-cation-and-saved-Report-PDF/attachments/server-log-66eb37f3c66846128db28f3c22d805c320145397.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-S10-A-and-T11-10-p-75f89-cation-and-saved-Report-PDF/error-context.md
+
+  2) tests/browser/runtime.spec.mjs:186:1 › S10-A character branch: actual character Turn, order and no invented recommendation
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('#interview-messages')
+    Expected substring: "Нина"
+    Received string:    ""
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('#interview-messages') with timeout 5000ms
+      - waiting for locator('#interview-messages')
+        14 × locator resolved to <div id="interview-messages" class="interview-messages external-transfer-disabled"></div>
+           - unexpected value ""
+
+
+      60 |  await page.locator('#prechat-start-button').click();
+      61 |  await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
+    > 62 |  await expect(page.locator('#interview-messages')).toContainText(expected);
+         |                                                    ^
+      63 |  await page.screenshot({path:path.join(page.acceptanceDir,'interview.png'),fullPage:true});
+      64 | }
+      65 | async function answer(page,text=fixture.answer){await page.locator('#interview-textarea').fill(text);await page.locator('#interview-submit-button').click();await expect(page.locator('#interview-submit-button')).toBeEnabled({timeout:30000});await expect(page.locator('#interview-error')).toBeHidden();await expect(page.locator('#interview-messages .own')).toContainText([text]);}
+        at start (/Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:62:52)
+        at /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:187:26
+
+    attachment #1: browser-version (text/plain) ────────────────────────────────────────────────────
+    153.0.8010.12
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-A-character-br-04429--no-invented-recommendation/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #4: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-A-character-br-04429--no-invented-recommendation/attachments/server-log-5d080e154a50fe79c41259b72b11365f3226c6cd.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-S10-A-character-br-04429--no-invented-recommendation/error-context.md
+
+  2 failed
+    tests/browser/runtime.spec.mjs:82:1 › S10-A and T11-10 positive, clarification and saved Report/PDF
+    tests/browser/runtime.spec.mjs:186:1 › S10-A character branch: actual character Turn, order and no invented recommendation
+  4 passed (4.3m)

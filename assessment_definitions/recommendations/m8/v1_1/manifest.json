@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "m8_recommendations",
+  "version": "1.1.0",
+  "status": "draft",
+  "scope": "individual_report",
+  "owner": "PM-06",
+  "source": {
+    "id": "M8",
+    "version": "1.2",
+    "sha256": "a61909c996f66e88668c4cf713fb91129f3ab778ed843d0e796c7d4e226b73fa",
+    "sections": [
+      "M8.6",
+      "M8.6.1",
+      "M8.7.5",
+      "M8.8",
+      "M8.9"
+    ]
+  },
+  "artifacts": [
+    {
+      "name": "templates.json",
+      "sha256": "60a5a6bb9aca152f9a8e1efe31efe8a1afc7ecc9f6860f9264f6b9e1ab34d9da"
+    }
+  ]
+}
