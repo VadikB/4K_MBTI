@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
@@ -184,6 +186,7 @@ class AuthActionResponse(BaseModel):
 
 
 class AgentReply(BaseModel):
+    dashboard: UserDashboard | None = None
     session_id: str
     message: str
     stage: str
@@ -973,6 +976,8 @@ class AdminReportDetailResponse(BaseModel):
 
 
 class UserDashboard(BaseModel):
+    personalized_profile_id: int | None = None
+    profile_readiness: str = "not_ready"
     greeting_name: str
     active_assessment: AssessmentCard
     available_assessments: list[AvailableAssessment]
@@ -1043,13 +1048,13 @@ class AgentProfileConfirmRequest(BaseModel):
     full_name: str
     email: str
     telegram: str | None = None
-    position: str
-    duties: str
-    role_id: int
-    company_industry: str
+    position: str = ""
+    duties: str = ""
+    role_id: int | None = None
+    company_industry: str = ""
     consent_accepted: bool = False
 
-    @field_validator("session_id", "full_name", "email", "position", "duties", "company_industry", mode="before")
+    @field_validator("session_id", "full_name", "email", mode="before")
     @classmethod
     def normalize_required_text(cls, value: object) -> str:
         normalized = str(value or "").strip()
@@ -1463,3 +1468,6 @@ class PlatformRoleAssignmentRequest(BaseModel):
     user_id: int
     role_code: str
     organization_id: int | None = None
+
+# Resolve the reply/dashboard forward reference after both models are defined.
+AgentReply.model_rebuild()

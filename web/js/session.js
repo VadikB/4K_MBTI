@@ -79,8 +79,11 @@ export const resetStaleUserState = async () => {
   }
 };
 
+const selectedProfileQuery = () => state.dashboard?.personalized_profile_id
+  ? '?personalized_profile_id=' + encodeURIComponent(state.dashboard.personalized_profile_id) : '';
+
 export const restoreServerSession = async () => {
-  const response = await fetch('/users/session/restore', {
+  const response = await fetch('/users/session/restore' + selectedProfileQuery(), {
     credentials: 'same-origin',
   });
   const data = await readApiResponse(response, 'Не удалось восстановить пользовательскую сессию.');
@@ -111,7 +114,7 @@ export const restoreLocalUserSession = async () => {
   }
 
   try {
-    const response = await fetch('/users/' + state.pendingUser.id + '/session-bootstrap', {
+    const response = await fetch('/users/' + state.pendingUser.id + '/session-bootstrap' + selectedProfileQuery(), {
       credentials: 'same-origin',
     });
     const data = await readApiResponse(response, 'Не удалось восстановить локальную пользовательскую сессию.');
@@ -144,7 +147,7 @@ export const loadUserJourneyState = async () => {
   if (!state.pendingUser?.id || state.isAdmin) {
     return null;
   }
-  const response = await fetch('/users/' + state.pendingUser.id + '/journey-state', {
+  const response = await fetch('/users/' + state.pendingUser.id + '/journey-state' + selectedProfileQuery(), {
     credentials: 'same-origin',
   });
   return readApiResponse(response, 'Не удалось определить следующий шаг пользователя.');

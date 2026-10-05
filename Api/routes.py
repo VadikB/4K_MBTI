@@ -602,14 +602,18 @@ def _compact_user_response(user: UserResponse | None) -> UserResponse | None:
     )
 
 
-def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
+def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> UserDashboard:
     # Dashboard follows the current Cycle runtime; legacy aggregate views are not inputs.
+    readiness = participant_profile.readiness(connection, user_id=user.id, profile_id=profile_id)
     cycle = connection.execute("""SELECT c.id,c.status,
         COUNT(s.id)::int AS total_cases,
         COUNT(s.id) FILTER (WHERE s.status='closed')::int AS completed_cases
         FROM m5_cycles c LEFT JOIN m5_assessment_situations s ON s.cycle_db_id=c.id
+        JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
         WHERE c.owner_user_id=%s AND c.usage_scope='assessment'
-        GROUP BY c.id ORDER BY c.created_at DESC,c.id DESC LIMIT 1""", (user.id,)).fetchone()
+          AND p.organization_id=%s AND p.assessment_configuration_id=%s
+        GROUP BY c.id ORDER BY c.created_at DESC,c.id DESC LIMIT 1""",
+        (user.id, readiness.get('organization_id'), readiness.get('assessment_configuration_id'))).fetchone()
     report_rows = m8_results.list_owned_reports(connection, user.id)
     completed_cases = int(cycle['completed_cases']) if cycle else 0
     total_cases = int(cycle['total_cases']) if cycle else 0
@@ -620,9 +624,7 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
         badge='Готов',format_label='PDF',sequence_number=row['revision_no'],report_at=row['created_at'])
         for row in report_rows[:5]]
     reports_total_row = {'reports_total':len(report_rows)}
-    current_profile = connection.execute(
-        "SELECT status FROM assessment_personalized_profiles WHERE user_id=%s ORDER BY frozen_at DESC,id DESC LIMIT 1", (user.id,)).fetchone()
-    assessment_allowed = bool(current_profile and current_profile['status'] == 'ready')
+    assessment_allowed = readiness['status'] == 'ready'
     available_assessments: list[AvailableAssessment] = []
     if assessment_allowed and not is_complete:
         available_assessments.append(
@@ -641,7 +643,7 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
         description=(
             "Комплексная оценка критического мышления, креативности, коммуникации и кооперации."
             if assessment_allowed
-            else "Перед прохождением ассессмента нужно завершить настройку профиля."
+            else readiness["message"]
         ),
         progress_percent=progress_percent if assessment_allowed else 0,
         completed_cases=completed_cases if assessment_allowed else 0,
@@ -654,6 +656,7 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
 
     greeting_name = user.full_name.split()[0] if user.full_name else "коллега"
     return UserDashboard(
+        personalized_profile_id=readiness["id"], profile_readiness=readiness["status"],
         greeting_name=greeting_name,
         active_assessment=active_assessment,
         available_assessments=available_assessments,
@@ -3049,7 +3052,7 @@ def get_operation_progress(operation_id: str) -> OperationProgressResponse:
 
 
 @router.get("/session/restore", response_model=UserSessionRestoreResponse)
-def restore_user_session(request: Request) -> UserSessionRestoreResponse:
+def restore_user_session(request: Request, personalized_profile_id: int | None = None) -> UserSessionRestoreResponse:
     token = request.cookies.get(SESSION_COOKIE_NAME)
     user = web_session_service.get_user_by_token(token)
     if user is None:
@@ -3069,7 +3072,7 @@ def restore_user_session(request: Request) -> UserSessionRestoreResponse:
         return UserSessionRestoreResponse(
             authenticated=True,
             user=compact_user,
-            dashboard=_build_dashboard(connection, full_user),
+            dashboard=_build_dashboard(connection, full_user, profile_id=personalized_profile_id),
         )
 
 
@@ -3111,7 +3114,7 @@ def reopen_profile_session(request: Request, response: FastAPIResponse) -> Check
 
 
 @router.get("/{user_id}/session-bootstrap", response_model=UserSessionBootstrapResponse)
-def bootstrap_user_session(user_id: int) -> UserSessionBootstrapResponse:
+def bootstrap_user_session(user_id: int, personalized_profile_id: int | None = None) -> UserSessionBootstrapResponse:
     with get_connection() as connection:
         row = connection.execute(
             USER_SELECT_SQL
@@ -3130,13 +3133,13 @@ def bootstrap_user_session(user_id: int) -> UserSessionBootstrapResponse:
         if admin_scope.can_admin:
             return UserSessionBootstrapResponse(
                 user=_compact_user_response(user),
-                dashboard=_build_dashboard(connection, user),
+                dashboard=_build_dashboard(connection, user, profile_id=personalized_profile_id),
                 is_admin=True,
                 admin_dashboard=_build_admin_dashboard(connection, admin_scope),
             )
         return UserSessionBootstrapResponse(
             user=_compact_user_response(user),
-            dashboard=_build_dashboard(connection, user),
+            dashboard=_build_dashboard(connection, user, profile_id=personalized_profile_id),
         )
 
 
@@ -3162,48 +3165,30 @@ def _onboarding_response(payload: dict) -> OnboardingStateResponse:
 
 
 @router.get("/{user_id}/journey-state", response_model=UserJourneyStateResponse)
-def get_user_journey_state(user_id: int, request: Request) -> UserJourneyStateResponse:
+def get_user_journey_state(user_id: int, request: Request, personalized_profile_id: int | None = None) -> UserJourneyStateResponse:
     user = _require_matching_session_user(request, user_id)
-    profile_state = evaluate_profile_state(user)
     with get_connection() as connection:
+        profile = participant_profile.readiness(connection, user_id=user.id, profile_id=personalized_profile_id)
         onboarding = get_or_create_onboarding_state(connection, user_id)
-        session_row = connection.execute(
-            """
-            SELECT id, session_code, status
-            FROM user_sessions
-            WHERE user_id = %s
-              AND assessment_code = 'competencies_4k'
-            ORDER BY
-                CASE WHEN status IN ('created', 'active', 'cases_completed', 'analyzing') THEN 0 ELSE 1 END,
-                COALESCE(started_at, created_at) DESC,
-                id DESC
-            LIMIT 1
-            """,
-            (user_id,),
-        ).fetchone()
+        cycle = connection.execute("""SELECT c.status FROM m5_cycles c
+            JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
+            WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.usage_scope='assessment'
+              AND p.assessment_configuration_id=%s ORDER BY c.created_at DESC,c.id DESC LIMIT 1""",
+            (user.id, profile.get('organization_id'), profile.get('assessment_configuration_id'))).fetchone()
         connection.commit()
-
-    assessment_status = normalize_assessment_status(str(session_row["status"]) if session_row else None)
-    report_status = "ready" if assessment_status == "report_ready" else "not_ready"
-    next_action = determine_next_action(
-        profile_status=profile_state.status,
-        onboarding_status=str(onboarding["status"]),
-        assessment_status=assessment_status,
-    )
-
+    ready = profile['status'] == 'ready'
+    assessment_status = ({'prepared':'preparing','active':'in_progress','paused':'in_progress',
+        'interrupted':'in_progress','collection_closed':'analyzing','calculation_pending':'analyzing',
+        'calculated':'report_ready','failed':'failed'}.get(cycle['status'], 'not_started') if cycle else 'not_started')
+    # Cycle navigation is restored through its owned runtime and dashboard. Legacy
+    # profile completeness/onboarding must not reopen an already confirmed M4 form.
     return UserJourneyStateResponse(
-        profile=ProfileStateResponse(
-            status=profile_state.status,
-            missing_fields=list(profile_state.missing_fields),
-        ),
+        profile=ProfileStateResponse(status='complete' if ready else 'incomplete',
+            missing_fields=[] if ready else ['personalized_profile']),
         onboarding=_onboarding_response(onboarding),
-        assessment=JourneyAssessmentState(
-            status=assessment_status,
-            session_id=int(session_row["id"]) if session_row else None,
-            session_code=str(session_row["session_code"]) if session_row and session_row["session_code"] else None,
-        ),
-        report_status=report_status,
-        next_action=next_action,
+        assessment=JourneyAssessmentState(status=assessment_status),
+        report_status='ready' if assessment_status == 'report_ready' else 'not_ready',
+        next_action='show_dashboard' if ready else 'complete_profile',
     )
 
 
@@ -5214,7 +5199,7 @@ def start_owned_assessment_cycle(payload: ProductCycleStartRequest, request: Req
     try:
         with get_connection() as connection:
             result=m10_product_flow.start_or_resume(connection,user_id=int(user.id),key=payload.idempotency_key,
-                selected_skills=list(payload.selected_skills))
+                selected_skills=list(payload.selected_skills), profile_id=payload.personalized_profile_id)
             runtime=m10_product_flow.read_runtime(connection,cycle_id=str(result['plan']['cycle_id']))
             connection.commit();return {**m10_product_flow.participant_presentation(result),'runtime':runtime}
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
@@ -6351,27 +6336,33 @@ def confirm_agent_profile(payload: AgentProfileConfirmRequest, request: Request,
             message="Сохраняем актуальные данные профиля.",
             steps=PROFILE_SAVE_STEPS,
         )
-        reply = interviewer_agent.confirm_existing_profile(
-            session_id=payload.session_id,
-            full_name=payload.full_name,
-            email=payload.email,
-            telegram=payload.telegram,
-            position=payload.position,
-            duties=payload.duties,
-            selected_role_id=payload.role_id,
-            company_industry=payload.company_industry,
-            consent_accepted=payload.consent_accepted,
-            authenticated_user_id=authenticated_user.id,
-            progress_operation_id=operation_id,
-        )
-        if reply.user is not None:
+        if payload.personalized_profile is not None:
             with get_connection() as connection:
-                if payload.personalized_profile is not None:
-                    participant_profile.confirm(connection, user_id=authenticated_user.id,
-                        selection=payload.personalized_profile, full_name=payload.full_name,
-                        position=payload.position, duties=payload.duties)
-                    connection.commit()
-                reply = reply.model_copy(update={"dashboard": _build_dashboard(connection, reply.user)})
+                reply, profile_id = interviewer_agent.confirm_personalized_profile(connection,
+                    payload=payload, authenticated_user_id=authenticated_user.id)
+                reply = reply.model_copy(update={"dashboard": _build_dashboard(connection, reply.user, profile_id=profile_id)})
+                connection.commit()
+            interviewer_agent.invalidate_session(payload.session_id)
+        else:
+            if not payload.role_id or not all((payload.position.strip(), payload.duties.strip(), payload.company_industry.strip())):
+                raise ValueError('Заполните обязательные поля профиля.')
+            reply = interviewer_agent.confirm_existing_profile(
+                session_id=payload.session_id,
+                full_name=payload.full_name,
+                email=payload.email,
+                telegram=payload.telegram,
+                position=payload.position,
+                duties=payload.duties,
+                selected_role_id=payload.role_id,
+                company_industry=payload.company_industry,
+                consent_accepted=payload.consent_accepted,
+                authenticated_user_id=authenticated_user.id,
+                progress_operation_id=operation_id,
+            )
+            if reply.user is not None:
+                with get_connection() as connection:
+                    reply = reply.model_copy(update={"dashboard": _build_dashboard(connection, reply.user)})
+        if reply.user is not None:
             _set_user_session_cookie(response, web_session_service.create_session(reply.user.id))
         operation_progress_service.complete(operation_id, title="Профиль готов", message="Данные подтверждены.")
         return reply

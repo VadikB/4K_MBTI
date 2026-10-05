@@ -1,0 +1,37 @@
+[
+  {
+    "path": "assessment_definitions/contexts/competencies_4k/1.1/context_contract.json",
+    "sha256": "27b3ba3682d5da98264bc2ca2f54230d5231bb0c336f71f26058020483799f3c",
+    "status": "PASS"
+  },
+  {
+    "path": "assessment_definitions/contexts/competencies_4k/1.1/m4_context_source.md",
+    "sha256": "9af86011c1ea1bef12058700bdd345c5cee335bbc6ec4d392fcfc4f3e5709fd1",
+    "status": "PASS"
+  },
+  {
+    "path": "assessment_definitions/contexts/competencies_4k/1.1/personalized_profile.schema.json",
+    "sha256": "8caef8c3f39a08ae4add2037ad1e6ab27d996ff26430dfb17746b24b92bd0276",
+    "status": "PASS"
+  },
+  {
+    "path": "assessment_definitions/role_profiles/competencies_4k/1.1/base_roles.json",
+    "sha256": "a3dbd62940b3c79baa123c5c2b4fff960b20c71e558304ba41007c2a205571d7",
+    "status": "PASS"
+  },
+  {
+    "path": "assessment_definitions/role_profiles/competencies_4k/1.1/base_roles_source.md",
+    "sha256": "939b8e5bebdee2110d37d82f02ed5c54d6b809c18d696e3ce5c6b495abb8cf0c",
+    "status": "PASS"
+  },
+  {
+    "path": "assessment_definitions/role_profiles/competencies_4k/1.1/role_profile_contract.json",
+    "sha256": "ffb0ee4f8e900ae2a61d8daf650d06839489432bb4001e9df6f021f1fb8b442b",
+    "status": "PASS"
+  },
+  {
+    "path": "assessment_definitions/role_profiles/competencies_4k/1.1/role_profile_source.md",
+    "sha256": "d27a0f208b5f6f1dbb8c17987e9b9db9694e09472a68141314c2c71b1133c241",
+    "status": "PASS"
+  }
+]

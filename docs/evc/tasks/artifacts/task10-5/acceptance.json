@@ -1,0 +1,30 @@
+{
+  "status": "PASS",
+  "zero_M4_before_confirmation": true,
+  "unconfirmed_and_bad_checksum_rejected": true,
+  "missing_sources_rejected": true,
+  "atomic_rejection": true,
+  "rollback_after_M4_write": true,
+  "concurrent_repeat": true,
+  "ready_profile_id": 3,
+  "new_profile_id": 5,
+  "source_checksums": {
+    "organization_context": {
+      "version_id": 1,
+      "checksum": "069d49f163ff76a4da5ca4956d5167a5bd2cab14318930cd391c3e7a452609cf"
+    },
+    "role_profile": {
+      "version_id": 4,
+      "checksum": "00629d66145b99a369b4a2d6999716740c12112caf9c9e2fc24b7d359f1b5e4b"
+    },
+    "user_context": {
+      "version_id": 4,
+      "checksum": "18033f8cad1d9c79a10ad848694082cec2c0334041d91b1b75748788195adaf5"
+    }
+  },
+  "old_cycle_snapshot_unchanged": true,
+  "optional_professional_fields": true,
+  "configuration_ambiguity": true,
+  "foreign_profile_and_organization_rejected": true,
+  "no_catalog_no_empty_cycle": true
+}

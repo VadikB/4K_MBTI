@@ -61,6 +61,8 @@ def seed(state):
                 organization_context_version_id=org_version,role_profile_version_id=role,user_context_version_id=version)
         # Same isolated fixture lifecycle as test_m10_product_path_db; repository package stays WORKING.
         admitted=([read('tests/browser/fixtures/sources/character-case-v1.json')] if state.get('browser_case')=='character' else [cases['cases'][0],cases['cases'][2]])
+        if state.get('browser_catalog') == 'unavailable':
+            admitted = []  # Preserve WORKING status and absent admission; no runtime outputs are seeded.
         for case in admitted:case['status']='FROZEN'
         manifest=read('assessment_definitions/cases/competencies_4k/1.1/manifest.json')
         import_package(c,package=cases,manifest=manifest,execution_rules=read('assessment_definitions/cases/competencies_4k/1.1/execution-rules.json'))

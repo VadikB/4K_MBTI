@@ -37,7 +37,8 @@ const test=base.extend({context:async({browser},use,info)=>{
   try{
     cli('bootstrap');
     if(info.title.includes('character')){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_case='character';fs.writeFileSync(statePath,JSON.stringify(inputs));}
-    if(info.title.includes('REV-02')){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_profile='unprepared';fs.writeFileSync(statePath,JSON.stringify(inputs));}
+    if((info.title.includes('REV-02') || info.title.includes('P10.5'))){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_profile='unprepared';fs.writeFileSync(statePath,JSON.stringify(inputs));}
+    if(info.title.includes('no admitted catalog')){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_catalog='unavailable';fs.writeFileSync(statePath,JSON.stringify(inputs));}
     cli('seed');
     const variant=info.title.includes('C1')?'budget':info.title.includes('C2')?'deadline':'ordinary';
     const prep=spawnSync(python,['scripts/browser_stand.py','--state',statePath,'--variant',variant],{encoding:'utf8'});
@@ -372,4 +373,58 @@ test('S10.4 owner profile, 403, logout, late response and account switch',async(
  await page.locator('#profile-telegram').fill('@expired');await page.locator('#profile-telegram').press('Tab');
  await expect(page.locator('#email-input')).toBeVisible();
  await expect(page.locator('#profile-email')).toHaveValue('');
+});
+
+function profileReceipts(stand) {
+ const result=spawnSync(python,['scripts/inspect_profile_browser.py','--state',path.join(stand.dir,'state.json')],{encoding:'utf8'});
+ expect(result.status,result.stderr).toBe(0);
+ return JSON.parse(result.stdout);
+}
+test('P10.5 fresh profile, lost confirmation response, reload and first AS',async({page,stand},info)=>{
+ const before=profileReceipts(stand);
+ expect(before.profiles).toEqual([]);expect(before.user_context_count).toBe(0);expect(before.cycles).toEqual([]);
+ let lost=true;
+ await page.route('**/users/agent/profile/confirm',async route=>{
+   if(!lost){await route.continue();return;}
+   lost=false;
+   const response=await route.fetch();expect(response.status()).toBe(200);
+   await route.abort('failed');
+ });
+ // Keep the real first submit: the server commits but the browser loses its response.
+ await page.goto(stand.url);
+ await page.locator('#email-input').fill('participant@example.test');await page.locator('#request-magic-link-button').click();
+ await page.locator('#magic-token-input').fill(stand.state.password);await page.locator('#verify-magic-link-button').click();
+ await expect(page.getByRole('button',{name:'Подтвердить профиль',exact:true})).toBeEnabled();
+ await page.locator('[name="full_name"]').fill('Синтетический участник приёмки');
+ await page.locator('[name="position"]').fill('Эксперт по программам');
+ await page.locator('[name="duties"]').fill('Согласовать план разработки программ');
+ await page.locator('[name="role_profile_version_id"]').selectOption({label:'Менеджер проекта, продукта или процесса · версия 1'});
+ await page.getByRole('button',{name:'Подтвердить профиль',exact:true}).click();
+ await expect(page.locator('#chat-error')).toBeVisible();
+ const committed=profileReceipts(stand);expect(committed.profiles).toHaveLength(1);
+ await info.attach('lost-confirmation-response',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+ await page.getByRole('button',{name:'Подтвердить профиль',exact:true}).click();
+ await expect(page.locator('#assessment-action-button')).toBeVisible();
+ expect(profileReceipts(stand)).toEqual(committed);
+ await page.reload();await expect(page.locator('#assessment-action-button')).toBeVisible();
+ await start(page);
+ const after=profileReceipts(stand);
+ expect(after.profiles).toEqual(committed.profiles);expect(after.cycles).toHaveLength(1);
+ expect(after.cycles[0].personalized_profile_id).toBe(after.profiles[0].id);
+ expect(after.cycles[0].organization_id).toBe(after.profiles[0].organization_id);
+ expect(after.cycles[0].owner_user_id).toBe(before.owner);
+ expect(after.cycles[0].profile_ref_json.checksum).toBe(after.profiles[0].checksum);
+ expect(after.cycles[0].situations).toBe(1);
+ await info.attach('profile-cycle-receipts',{body:JSON.stringify({before,committed,after},null,2),contentType:'application/json'});
+});
+test('P10.5 ready profile with no admitted catalog',async({page,stand},info)=>{
+ await login(page,stand,'participant@example.test',true);
+ const ready=profileReceipts(stand);expect(ready.profiles[0].status).toBe('ready');
+ await page.locator('#assessment-action-button').click();await page.locator('#prechat-start-button').click();
+ await expect(page.locator('#prechat-error')).toContainText('Профиль готов');
+ await expect(page.locator('#prechat-error')).toContainText('допустимые кейсы');
+ expect(profileReceipts(stand)).toEqual(ready);
+ await expect(page.getByRole('button',{name:'Подтвердить профиль',exact:true})).toBeHidden();
+ await info.attach('ready-no-catalog',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+ await info.attach('no-empty-cycle',{body:JSON.stringify(ready,null,2),contentType:'application/json'});
 });

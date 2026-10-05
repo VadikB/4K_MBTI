@@ -62,7 +62,7 @@ const getChatSubmitButton = () => chatForm.querySelector('button[type="submit"]'
 const renderProfileConfirmation = () => {
   if (!chatProfileConfirmation) return;
   const user = state.pendingUser;
-  const shouldShow = Boolean(user && state.sessionId && !state.isNewUserFlow && !state.completed);
+  const shouldShow = Boolean(user && state.sessionId && !state.completed);
   chatProfileConfirmation.replaceChildren();
   chatProfileConfirmation.classList.toggle('hidden', !shouldShow);
   if (!shouldShow) return;
@@ -73,7 +73,7 @@ const renderProfileConfirmation = () => {
 
   const form = document.createElement('form');
   const consentRecorded = Boolean(user.personal_data_consent_accepted_at);
-  const roles = Array.isArray(state.pendingRoleOptions) ? state.pendingRoleOptions : [];
+  const identityEpoch = state.identityEpoch;
   form.className = 'chat-profile-form';
   form.innerHTML = `
     <header><h3>Проверьте профиль</h3><p>Подтвердите сохранённые данные или исправьте их перед продолжением.</p></header>
@@ -81,10 +81,9 @@ const renderProfileConfirmation = () => {
       <label>ФИО<input name="full_name" required value="${escapeHtml(user.full_name || '')}"></label>
       <label>Email<input name="email" type="email" readonly required value="${escapeHtml(user.email || '')}"></label>
       <label>Telegram<input name="telegram" placeholder="@username" value="${escapeHtml(user.telegram || '')}"></label>
-      <label>Должность<input name="position" required value="${escapeHtml(user.raw_position || user.job_description || '')}"></label>
-      <label class="chat-profile-wide">Должностные обязанности<textarea name="duties" required rows="3" aria-describedby="duties-detail-example" placeholder="${escapeHtml(DUTIES_DETAIL_EXAMPLE)}">${escapeHtml(user.raw_duties || user.normalized_duties || '')}</textarea><span id="duties-detail-example" class="chat-profile-field-hint">Опишите конкретные действия, зоны ответственности и взаимодействие с коллегами. ${escapeHtml(DUTIES_DETAIL_EXAMPLE)}</span></label>
-      <label>Роль<select name="role_id" required>${roles.map((role) => `<option value="${role.id}" ${Number(role.id) === Number(user.role_id) ? 'selected' : ''}>${escapeHtml(role.name)}</option>`).join('')}</select></label>
-      <label>Сфера деятельности<input name="company_industry" required value="${escapeHtml(user.company_industry || '')}"></label>
+      <label>Должность<input name="position" value="${escapeHtml(user.raw_position || user.job_description || '')}"></label>
+      <label class="chat-profile-wide">Должностные обязанности<textarea name="duties" rows="3" aria-describedby="duties-detail-example" placeholder="${escapeHtml(DUTIES_DETAIL_EXAMPLE)}">${escapeHtml(user.raw_duties || user.normalized_duties || '')}</textarea><span id="duties-detail-example" class="chat-profile-field-hint">Опишите конкретные действия, зоны ответственности и взаимодействие с коллегами. ${escapeHtml(DUTIES_DETAIL_EXAMPLE)}</span></label>
+      <label>Сфера деятельности<input name="company_industry" value="${escapeHtml(user.company_industry || '')}"></label>
     </div>
     <label class="chat-profile-consent"><input name="consent_accepted" type="checkbox" ${consentRecorded ? 'checked disabled' : 'required'}><span>${consentRecorded ? 'Согласие на обработку персональных данных уже принято' : 'Согласен на обработку персональных данных'} · <a href="${PERSONAL_DATA_CONSENT_URL}" target="_blank" rel="noopener noreferrer">Открыть документ</a></span></label>
     <button class="primary-button" type="submit">Подтвердить профиль</button>`;
@@ -95,13 +94,18 @@ const renderProfileConfirmation = () => {
   const submit = form.querySelector('button[type="submit"]');
   submit.disabled = true;
   void fetch('/users/assessment/profile/options').then((response) => readApiResponse(response, 'Не удалось загрузить контекст оценки.')).then((data) => {
+    if (identityEpoch !== state.identityEpoch || !form.isConnected) return;
+    if (data.user_context) {
+      form.elements.position.value = data.user_context.position_or_status || '';
+      form.elements.duties.value = data.user_context.regular_tasks || '';
+    }
     if (!data.roles.length || !data.organization_contexts.length || !data.configurations.length) {
       throw new Error('Контекст оценки ещё не подготовлен. Ответственный специалист должен опубликовать контекст организации, роль и конфигурацию оценки.');
     }
     const options = (items, key, label, selected) => items.map((item) => `<option value="${item[key]}" ${Number(item[key]) === Number(selected) ? 'selected' : ''}>${escapeHtml(label(item))}</option>`).join('');
     preparation.innerHTML = `<legend>Контекст оценки</legend><label>Роль для оценки<select name="role_profile_version_id" required><option value="">Выберите роль</option>${options(data.roles, 'version_id', (r) => `${r.name} · версия ${r.version}`, data.selected_role_version_id)}</select></label>` +
-      `<label>Контекст организации<select name="organization_context_version_id" required>${options(data.organization_contexts, 'version_id', (r) => `${r.name} · версия ${r.version}`)}</select></label>` +
-      `<label>Конфигурация оценки<select name="assessment_configuration_id" required>${options(data.configurations, 'id', (r) => r.name)}</select></label>`;
+      `<label>Контекст организации<select name="organization_context_version_id" required><option value="">Выберите контекст</option>${options(data.organization_contexts, 'version_id', (r) => `${r.name} · версия ${r.version}`, data.organization_contexts.length === 1 ? data.organization_contexts[0].version_id : null)}</select></label>` +
+      `<label>Конфигурация оценки<select name="assessment_configuration_id" required><option value="">Выберите конфигурацию</option>${options(data.configurations, 'id', (r) => r.name, data.current_profile?.assessment_configuration_id || (data.configurations.length === 1 ? data.configurations[0].id : null))}</select></label>`;
     submit.disabled = false;
   }).catch((error) => { preparation.textContent = error.message; });
   form.addEventListener('submit', async (event) => {
@@ -137,12 +141,12 @@ const renderProfileConfirmation = () => {
           telegram: values.telegram || null,
           position: values.position,
           duties: values.duties,
-          role_id: Number(values.role_id),
           company_industry: values.company_industry,
           consent_accepted: consentRecorded || values.consent_accepted === 'on',
         }),
       });
       const data = await readApiResponse(response, 'Не удалось сохранить профиль.');
+      if (identityEpoch !== state.identityEpoch || !form.isConnected) return;
       state.pendingUser = data.user || state.pendingUser;
       state.dashboard = data.dashboard || state.dashboard;
       state.completed = Boolean(data.completed);

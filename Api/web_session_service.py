@@ -34,7 +34,10 @@ USER_SELECT_SQL = """
         p.profile_quality,
         u.active_profile_id,
         u.phone,
-        u.company_industry
+        u.company_industry,
+        u.telegram,
+        u.personal_data_consent_accepted_at,
+        u.personal_data_consent_version
     FROM users u
     LEFT JOIN user_role_profiles p ON p.id = u.active_profile_id
 """
