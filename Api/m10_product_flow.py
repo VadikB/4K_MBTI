@@ -61,6 +61,11 @@ def start_or_resume(connection, *, user_id: int, key: str,
                  AND status NOT IN('closed','terminated','rejected') ORDER BY id DESC LIMIT 1""",
             (current["cycle_id"],),
         ).fetchone()
+        if not open_as and not connection.execute(
+            'SELECT 1 FROM m5_assessment_situations WHERE cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s)',
+            (current['cycle_id'],),
+        ).fetchone():
+            return {'resumed':True,**_present_next(connection,plan=current,user_id=user_id,key=f'product-prepared:{key}')}
         return {"resumed": True, "plan": current, "decision": None,
                 "presentation": dict(open_as) if open_as else None}
     profile_id = _owned_profile(connection, user_id)
@@ -88,7 +93,7 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
            FROM m5_assessment_situations WHERE cycle_db_id=%s ORDER BY id""", (cycle["id"],)
     ).fetchall()
     current = dict(situations[-1]) if situations else None
-    trace = m5_scenario_runtime.trace(connection, str(current["assessment_situation_id"])) if current else None
+    trace = participant_trace(m5_scenario_runtime.trace(connection, str(current["assessment_situation_id"]))) if current else None
     clarification = None
     if current:
         row = connection.execute(
@@ -130,3 +135,20 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
                          if continuation else None),
         "pipeline": dict(pipeline) if pipeline else None,
     }
+
+
+def participant_trace(trace: dict) -> dict:
+    """Only delivered dialogue/material; no execution envelope, hidden cards or AI reasoning."""
+    return {'assessment_situation_id':trace['assessment_situation_id'],'status':trace['status'],
+        'turns':[{k:x[k] for k in ('turn_id','sequence_no','speaker_type','speaker_id','content_text')} for x in trace['turns']],
+        'events':[{k:x[k] for k in ('event_id','event_type','sequence_no','material_id','payload_json')}
+                  for x in trace['events'] if x['event_type'] in ('material_disclosed','mandatory_update')]}
+
+
+def participant_presentation(result: dict) -> dict:
+    """Projection of a start/next response; internal execution stays server-side."""
+    presentation = result.get('presentation')
+    if not presentation:
+        return result
+    return {**result, 'presentation': {k: v for k, v in presentation.items()
+        if k in ('assessment_situation_id', 'status', 'participant_payload', 'idempotent')}}

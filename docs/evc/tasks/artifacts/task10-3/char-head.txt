@@ -1,0 +1,83 @@
+
+Running 2 tests using 1 worker
+
+(node:1914) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/runtime.spec.mjs:171:35 › S10-C1 background time closure without another Turn (27.4s)
+(node:2085) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 tests/browser/runtime.spec.mjs:224:1 › S10-A character branch: actual character Turn, order and no invented recommendation (29.7s)
+
+
+  1) tests/browser/runtime.spec.mjs:171:35 › S10-C1 background time closure without another Turn ───
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "hidden"
+    Received: "visible"
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      179 |    ({windowId}=await windowSession.send('Browser.getWindowForTarget'));
+      180 |    await windowSession.send('Browser.setWindowBounds',{windowId,bounds:{windowState:'minimized'}});
+    > 181 |    await expect.poll(()=>page.evaluate(()=>document.visibilityState)).toBe('hidden');
+          |                                                                       ^
+      182 |  }
+      183 |  const statusUrl=`${stand.url}/users/assessment/m7/cycles/${before.cycle_id}`;
+      184 |  await expect.poll(async()=>{const r=await context.request.get(statusUrl);return (await r.json()).collection_status;},{timeout:60000,intervals:[500,1000]}).toBe('calculated');
+        at /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:181:71
+
+    attachment #1: browser-version (text/plain) ────────────────────────────────────────────────────
+    153.0.8010.12
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/attachments/server-log-0da34b991cb5c841d4df0dcf740771332c71fc54.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/error-context.md
+
+  2) tests/browser/runtime.spec.mjs:224:1 › S10-A character branch: actual character Turn, order and no invented recommendation
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  locator('#interview-textarea')
+    Expected: enabled
+    Received: disabled
+    Timeout:  15000ms
+
+    Call log:
+      - Expect "toBeEnabled" locator('#interview-textarea') with timeout 15000ms
+      - waiting for locator('#interview-textarea')
+        34 × locator resolved to <textarea disabled autocorrect="off" autocomplete="off" spellcheck="false" autocapitalize="off" data-form-type="other" id="interview-textarea" placeholder="Опишите ваше решение..."></textarea>
+           - unexpected value "disabled"
+
+
+      59 |  await page.locator('#assessment-action-button').click();
+      60 |  await page.locator('#prechat-start-button').click();
+    > 61 |  await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
+         |                                                    ^
+      62 |  await expect(page.locator('#interview-messages')).toContainText(expected);
+      63 |  await page.screenshot({path:path.join(page.acceptanceDir,'interview.png'),fullPage:true});
+      64 | }
+        at start (/Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:61:52)
+        at /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:225:26
+
+    attachment #1: browser-version (text/plain) ────────────────────────────────────────────────────
+    153.0.8010.12
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-A-character-br-04429--no-invented-recommendation/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #4: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-A-character-br-04429--no-invented-recommendation/attachments/server-log-02e936bf6818b931ced122c13fa1f7a0596f304b.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-S10-A-character-br-04429--no-invented-recommendation/error-context.md
+
+  2 failed
+    tests/browser/runtime.spec.mjs:171:35 › S10-C1 background time closure without another Turn ────
+    tests/browser/runtime.spec.mjs:224:1 › S10-A character branch: actual character Turn, order and no invented recommendation

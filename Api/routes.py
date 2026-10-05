@@ -5168,7 +5168,11 @@ def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, 
             from Api.m10_test_gateway import enabled as browser_test_gateway_enabled
             if browser_test_gateway_enabled():
                 from Api.m5_rule_engine import ControlledCharacterAdapter,ControlledSemanticAdapter
-                semantic_adapter=ControlledSemanticAdapter({});character_adapter=ControlledCharacterAdapter({})
+                from Api.m10_test_gateway import acceptance_fixture
+                fixture=acceptance_fixture()
+                matched=bool(fixture and payload.content==fixture['character_answer'])
+                semantic_adapter=ControlledSemanticAdapter({fixture['character_material_id']+':character_reaction':'TRUE'} if matched else {})
+                character_adapter=ControlledCharacterAdapter({fixture['character_material_id']:fixture['character_response']} if matched else {})
             result = m5_scenario_runtime.submit_turn(connection, assessment_situation_id=str(assessment_situation_id),
                                                      request_id=payload.request_id, turn_id=str(payload.turn_id),
                                                      content=payload.content,semantic_adapter=semantic_adapter,
@@ -5201,7 +5205,7 @@ def transition_owned_m5_situation(assessment_situation_id: UUID, payload: M5Tran
 def get_owned_m5_trace(assessment_situation_id: UUID, request: Request) -> dict:
     _m5_owned_situation(request, str(assessment_situation_id))
     with get_connection() as connection:
-        return m5_scenario_runtime.trace(connection, str(assessment_situation_id))
+        return m10_product_flow.participant_trace(m5_scenario_runtime.trace(connection, str(assessment_situation_id)))
 
 
 @router.post('/assessment/cycles/start', status_code=201)
@@ -5213,7 +5217,7 @@ def start_owned_assessment_cycle(payload: ProductCycleStartRequest, request: Req
             result=m10_product_flow.start_or_resume(connection,user_id=int(user.id),key=payload.idempotency_key,
                 selected_skills=list(payload.selected_skills))
             runtime=m10_product_flow.read_runtime(connection,cycle_id=str(result['plan']['cycle_id']))
-            connection.commit();return {**result,'runtime':runtime}
+            connection.commit();return {**m10_product_flow.participant_presentation(result),'runtime':runtime}
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 
@@ -5231,7 +5235,7 @@ def next_owned_assessment_situation(cycle_id:UUID,payload:ProductNextRequest,req
     try:
         with get_connection() as connection:
             result=m10_product_flow.next_situation(connection,cycle_id=str(cycle_id),user_id=int(user.id),
-                key=payload.idempotency_key);connection.commit();return result
+                key=payload.idempotency_key);connection.commit();return m10_product_flow.participant_presentation(result)
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 

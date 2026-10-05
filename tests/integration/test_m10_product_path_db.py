@@ -255,3 +255,42 @@ def test_s10_e_recalculation_preserves_old_results_and_report(product_db):
         assert read_latest_report(connection,cycle_id,"assessee")["id"] == new_report["id"]
         assert connection.execute("SELECT count(*) AS n FROM m6_analysis_revisions").fetchone()["n"] == 0
         connection.commit()
+
+
+def test_browser_turn_close_lock_order_and_late_turn(product_db):
+    """Real competing connections: expiry owns Cycle while the turn waits for it."""
+    from concurrent.futures import ThreadPoolExecutor
+    from queue import Queue
+    import time
+    from Api.m5_scenario_runtime import submit_turn
+    from Api.m5_rule_engine import ControlledSemanticAdapter, ControlledCharacterAdapter
+    factory=product_db
+    with factory() as c:
+        started=start_or_resume(c,user_id=99,key='race-start')
+        cycle=str(started['plan']['cycle_id']);as_id=str(started['decision']['assessment_situation_id']);c.commit()
+    pids=Queue()
+    def submit():
+        with factory() as c:
+            pids.put(c.execute('SELECT pg_backend_pid() AS pid').fetchone()['pid'])
+            try:
+                submit_turn(c,assessment_situation_id=as_id,request_id='racing-turn',turn_id=str(uuid4()),content='synthetic',
+                            semantic_adapter=ControlledSemanticAdapter({}),character_adapter=ControlledCharacterAdapter({}))
+                c.commit();return 'accepted'
+            except ValueError as exc:
+                c.rollback();return str(exc)
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        with factory() as closer:
+            closer.execute('SELECT id FROM m5_cycles WHERE cycle_id=%s FOR UPDATE',(cycle,))
+            future=pool.submit(submit);pid=pids.get(timeout=5)
+            deadline=time.monotonic()+5
+            while time.monotonic()<deadline:
+                waiting=closer.execute('SELECT cardinality(pg_blocking_pids(%s)) AS n',(pid,)).fetchone()['n']
+                if waiting:break
+                time.sleep(.01)
+            assert waiting, 'Turn did not reach the held Cycle lock'
+            complete(closer,cycle_id=cycle,key='race-close',action='complete',reason='synthetic race',initiated_by=99)
+            closer.commit()
+        assert future.result(timeout=5)=='M7_COLLECTION_CLOSED'
+    with factory() as c:
+        assert c.execute('SELECT count(*) AS n FROM m5_dialogue_turns').fetchone()['n']==0
+        assert c.execute("SELECT count(*) AS n FROM m5_c45_handoffs WHERE mode='final'").fetchone()['n']==1

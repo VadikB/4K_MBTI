@@ -1,0 +1,15 @@
+(node:6439) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Desktop/mbti/4K_MBTI/web/js/api.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a rejected login preserves the server error without expired-session recovery (113.775079ms)
+✔ a protected API 401 starts expired-session recovery and preserves the status (1.164467ms)
+✔ concurrent 401 responses trigger only one recovery flow (1.283796ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 431.074195

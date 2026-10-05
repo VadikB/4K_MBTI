@@ -1,0 +1,116 @@
+
+Running 3 tests using 1 worker
+
+(node:95675) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/runtime.spec.mjs:84:1 › S10-B interruption and Additional Session preserve Cycle and deadline (2.5m)
+(node:96196) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 tests/browser/runtime.spec.mjs:109:35 › S10-C1 background time closure without another Turn (19.8s)
+(node:96270) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 tests/browser/runtime.spec.mjs:109:35 › S10-C2 background time closure without another Turn (25.9s)
+
+
+  1) tests/browser/runtime.spec.mjs:84:1 › S10-B interruption and Additional Session preserve Cycle and deadline
+
+    Test timeout of 150000ms exceeded.
+
+    Error: page.waitForResponse: Test timeout of 150000ms exceeded.
+
+      79 |  const cycle=new URL(page.url()).searchParams.get('cycle_id') || page.acceptanceCycle;
+      80 |  // cycle_id is also published by the start response; read-only lookup is not progression.
+    > 81 |  if(cycle)return (await page.request.get(`${stand.url}/users/assessment/cycles/${cycle}/runtime`)).json();
+         |                            ^
+      82 |  const response=await page.waitForResponse(r=>r.url().endsWith('/runtime'));
+      83 |  return response.json();
+      84 | }
+        at runtime (/Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:81:28)
+        at /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:86:20
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-B-interruption-a7422-preserve-Cycle-and-deadline/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-B-interruption-a7422-preserve-Cycle-and-deadline/attachments/server-log-1c097ca38e199629a1ebdc55e0ec574cd3591d8f.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-S10-B-interruption-a7422-preserve-Cycle-and-deadline/error-context.md
+
+  2) tests/browser/runtime.spec.mjs:109:35 › S10-C1 background time closure without another Turn ───
+
+    Error: expect(locator).toBeHidden() failed
+
+    Locator:  locator('#interview-error')
+    Expected: hidden
+    Received: visible
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeHidden" locator('#interview-error') with timeout 5000ms
+      - waiting for locator('#interview-error')
+        14 × locator resolved to <p class="error" id="interview-error">s.resumeProductRuntimePolling is not a function</p>
+           - unexpected value "visible"
+
+
+      47 |  await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
+      48 |  await expect(page.locator('#interview-messages')).toContainText('готовности');
+    > 49 | }
+         |  ^
+      50 | async function answer(page,text=fixture.answer){await page.locator('#interview-textarea').fill(text);await page.locator('#interview-submit-button').click();await expect(page.locator('#interview-submit-button')).toBeEnabled({timeout:30000});await expect(page.locator('#interview-error')).toBeHidden();await expect(page.locator('#interview-messages .own')).toContainText([text]);}
+      51 | async function report(page,stand,info){
+      52 |  await expect(page.locator('#m8-report-state')).toContainText('Report готов',{timeout:70000});
+        at answer (/Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:49:288)
+        at /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:110:44
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/attachments/server-log-f73b1c9c752689c3c4fd3f3dcc07e16e8e92f006.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/error-context.md
+
+  3) tests/browser/runtime.spec.mjs:109:35 › S10-C2 background time closure without another Turn ───
+
+    Error: expect(locator).toBeHidden() failed
+
+    Locator:  locator('#interview-error')
+    Expected: hidden
+    Received: visible
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeHidden" locator('#interview-error') with timeout 5000ms
+      - waiting for locator('#interview-error')
+        14 × locator resolved to <p class="error" id="interview-error">s.resumeProductRuntimePolling is not a function</p>
+           - unexpected value "visible"
+
+
+      47 |  await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
+      48 |  await expect(page.locator('#interview-messages')).toContainText('готовности');
+    > 49 | }
+         |  ^
+      50 | async function answer(page,text=fixture.answer){await page.locator('#interview-textarea').fill(text);await page.locator('#interview-submit-button').click();await expect(page.locator('#interview-submit-button')).toBeEnabled({timeout:30000});await expect(page.locator('#interview-error')).toBeHidden();await expect(page.locator('#interview-messages .own')).toContainText([text]);}
+      51 | async function report(page,stand,info){
+      52 |  await expect(page.locator('#m8-report-state')).toContainText('Report готов',{timeout:70000});
+        at answer (/Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:49:288)
+        at /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/tests/browser/runtime.spec.mjs:110:44
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C2-background-time-closure-without-another-Turn/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C2-background-time-closure-without-another-Turn/attachments/server-log-5cc5fb1b81527dc32e85d62feb5cd46ae25ecbf3.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-S10-C2-background-time-closure-without-another-Turn/error-context.md
+
+  3 failed
+    tests/browser/runtime.spec.mjs:84:1 › S10-B interruption and Additional Session preserve Cycle and deadline
+    tests/browser/runtime.spec.mjs:109:35 › S10-C1 background time closure without another Turn ────
+    tests/browser/runtime.spec.mjs:109:35 › S10-C2 background time closure without another Turn ────

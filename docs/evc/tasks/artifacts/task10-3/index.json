@@ -1,0 +1,302 @@
+{
+  "suite_stats": {
+    "startTime": "2026-10-05T10:11:18.613Z",
+    "duration": 266360.51,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "scenarios": [
+    {
+      "scenario": "S10-A and T11-10 positive, clarification and saved Report/PDF",
+      "status": "passed",
+      "duration_ms": 34237,
+      "artifacts": [
+        {
+          "file": "scenario-1/01-browser-version.txt",
+          "sha256": "71c53e77891767ed1d27dfc763f60bec6c72c9c906d940b3421b1780d3dbd81f"
+        },
+        {
+          "file": "scenario-1/02-interview-start.png",
+          "sha256": "d5a1035ce52092e2bb98124ed01e8f86fd70a28179c5487845b790dee7cc7b88"
+        },
+        {
+          "file": "scenario-1/03-clarification-ui.png",
+          "sha256": "b08d946234bab529d9bc455e09fdc7ccc913ab9b99dda6f347427347fdc6849d"
+        },
+        {
+          "file": "scenario-1/04-report-pdf.pdf",
+          "sha256": "e3f6735449fcbe10a0839d4fd54a134511e8e5e1e7d870e826a6781901b25173"
+        },
+        {
+          "file": "scenario-1/05-report.json",
+          "sha256": "bb872e8dfd681048d4ab91f0569362afcea41f64256b4fe4177ce4924dd15740"
+        },
+        {
+          "file": "scenario-1/06-pdf-content-check.txt",
+          "sha256": "939e21f619130721e6e0cc4775b0bb76eda7a3f97734213553b52672828ecdd1"
+        },
+        {
+          "file": "scenario-1/07-report-ui.png",
+          "sha256": "cba9544659fc6a67211c18b6532826fce8bc8562cf9e8c67e329621afba0300f"
+        },
+        {
+          "file": "scenario-1/08-saved-results.json",
+          "sha256": "afd74620b46e4d0c1358bf40e2092412160dc68d4f54cc4deb3c17a018ac777e"
+        },
+        {
+          "file": "scenario-1/09-report-pdf.pdf",
+          "sha256": "82a910261afa352a0a19057e248eaa111b904f2a0a4b706788b65daa2603971f"
+        },
+        {
+          "file": "scenario-1/10-report.json",
+          "sha256": "a5946c3eadfdbb2486d63164757d05f9d0c32633232b5c86dfbd1431616e8493"
+        },
+        {
+          "file": "scenario-1/11-pdf-content-check.txt",
+          "sha256": "22e142b914a7ebc30246809e192060e116ff906cc53325ccdc948899ff531223"
+        },
+        {
+          "file": "scenario-1/12-report-ui.png",
+          "sha256": "283bb9f10605985c42c7eb18dd387a5a48d2f04efa95f945ac1a863120553c13"
+        },
+        {
+          "file": "scenario-1/13-report-pdf.pdf",
+          "sha256": "4f3eb5b5bcd61e9710646f8c1b93d885b387624cde746038cb45422a37416244"
+        },
+        {
+          "file": "scenario-1/14-report.json",
+          "sha256": "00a97eb2b586ff6bec341345a708ba997fbc540fc56020a0bf1addce8729080d"
+        },
+        {
+          "file": "scenario-1/15-pdf-content-check.txt",
+          "sha256": "22e142b914a7ebc30246809e192060e116ff906cc53325ccdc948899ff531223"
+        },
+        {
+          "file": "scenario-1/16-report-ui.png",
+          "sha256": "613172fa761f117c3e5dbd2307de808959456e5575b668fa4f4ad02cb0da9ab6"
+        },
+        {
+          "file": "scenario-1/17-assessment-http.json",
+          "sha256": "692f4d508235fd7380f17373151ed78535762e1e2d71ae0a6426aece85b26d69"
+        },
+        {
+          "file": "scenario-1/18-server-log.txt",
+          "sha256": "5cdb7ef02db3cdbd24f1cda4846e246ae866c179b42107d13640c614b5881765"
+        }
+      ]
+    },
+    {
+      "scenario": "S10-B interruption and Additional Session preserve Cycle and deadline",
+      "status": "passed",
+      "duration_ms": 24779,
+      "artifacts": [
+        {
+          "file": "scenario-2/01-browser-version.txt",
+          "sha256": "71c53e77891767ed1d27dfc763f60bec6c72c9c906d940b3421b1780d3dbd81f"
+        },
+        {
+          "file": "scenario-2/02-interview-start.png",
+          "sha256": "d5a1035ce52092e2bb98124ed01e8f86fd70a28179c5487845b790dee7cc7b88"
+        },
+        {
+          "file": "scenario-2/03-report-pdf.pdf",
+          "sha256": "ef141db463ca44307a6952a4b2c478455025f51c6fc7ece764aa3d628448f9fc"
+        },
+        {
+          "file": "scenario-2/04-report.json",
+          "sha256": "d5d3ac2790a5773673c351f2e87d06bbe3a3de86d34fb162cd0877eed9cd7bb7"
+        },
+        {
+          "file": "scenario-2/05-pdf-content-check.txt",
+          "sha256": "939e21f619130721e6e0cc4775b0bb76eda7a3f97734213553b52672828ecdd1"
+        },
+        {
+          "file": "scenario-2/06-report-ui.png",
+          "sha256": "8891f34bdc853044d296fe79d0d6274eff5e459bdf047f963425b2341a293dd3"
+        },
+        {
+          "file": "scenario-2/07-assessment-http.json",
+          "sha256": "53fbd807549627139476095cb717ac33238c3c458133663dc3424102b0beed78"
+        },
+        {
+          "file": "scenario-2/08-server-log.txt",
+          "sha256": "038f1d79edd9313018f72144f144fadf366a023aaba4bfec7c00124f4a268fc8"
+        }
+      ]
+    },
+    {
+      "scenario": "S10-C1 background time closure without another Turn",
+      "status": "passed",
+      "duration_ms": 87126,
+      "artifacts": [
+        {
+          "file": "scenario-3/01-browser-version.txt",
+          "sha256": "71c53e77891767ed1d27dfc763f60bec6c72c9c906d940b3421b1780d3dbd81f"
+        },
+        {
+          "file": "scenario-3/02-interview-start.png",
+          "sha256": "cfd4644955158300be40e75d09b4768e97fee01cfdb7511236421546ad4b6d79"
+        },
+        {
+          "file": "scenario-3/03-runtime-before-expiry.json",
+          "sha256": "6fe6006a38f727fbd13bebe370601916cebf0ad9b1b8b8901d041b0479e6ab6c"
+        },
+        {
+          "file": "scenario-3/04-background-visibility.json",
+          "sha256": "1ca88224e6c5e017563513bec19b0f677745a66958fdf0d31d84eb4bfdba90fa"
+        },
+        {
+          "file": "scenario-3/05-runtime-after-expiry.json",
+          "sha256": "b7739120e52fa63b301998991c30015ca64350bca89f7cc18005138e57f09c58"
+        },
+        {
+          "file": "scenario-3/06-late-turn.json",
+          "sha256": "1b83337e6de78c0a80a2cb47a740b7b7465f66c5c49604adc553546ba93d6c15"
+        },
+        {
+          "file": "scenario-3/07-report-pdf.pdf",
+          "sha256": "ee2c556e622f66dadeb084b391bed2c03c3c5a393cb7873057a01db6b431d2c8"
+        },
+        {
+          "file": "scenario-3/08-report.json",
+          "sha256": "431dc761a05a979b5cab1888fbdc1f439aa4b9019fcc3e9bb05d3d0681c65614"
+        },
+        {
+          "file": "scenario-3/09-pdf-content-check.txt",
+          "sha256": "939e21f619130721e6e0cc4775b0bb76eda7a3f97734213553b52672828ecdd1"
+        },
+        {
+          "file": "scenario-3/10-report-ui.png",
+          "sha256": "6d0cbae85c8b5c5249807b5db1d4f7af438d3209db301a7b10843f2c7942a22b"
+        },
+        {
+          "file": "scenario-3/11-assessment-http.json",
+          "sha256": "ab38287fedb4d21caada0ece6681c35f8305eaa776e5409fa8bd8c41b34c5627"
+        },
+        {
+          "file": "scenario-3/12-server-log.txt",
+          "sha256": "76813ebf6e0ebd7c1f84bfed10429653b10744ed36dfec94245ad04b6d198143"
+        }
+      ]
+    },
+    {
+      "scenario": "S10-C2 background time closure without another Turn",
+      "status": "passed",
+      "duration_ms": 77866,
+      "artifacts": [
+        {
+          "file": "scenario-4/01-browser-version.txt",
+          "sha256": "71c53e77891767ed1d27dfc763f60bec6c72c9c906d940b3421b1780d3dbd81f"
+        },
+        {
+          "file": "scenario-4/02-interview-start.png",
+          "sha256": "e376c91352d03c7d14cfb17eeeb1397b5ed57d2b768cb35824380fef18a10762"
+        },
+        {
+          "file": "scenario-4/03-runtime-before-expiry.json",
+          "sha256": "a654aed34a334c6ba33a269f74d728cd7b28be7eddc2ad2acf05bf763586454d"
+        },
+        {
+          "file": "scenario-4/04-runtime-after-expiry.json",
+          "sha256": "2446d6b48834a1e83f88b90e177635cc5eac589a0557aea3505092c906042fc4"
+        },
+        {
+          "file": "scenario-4/05-late-turn.json",
+          "sha256": "1b83337e6de78c0a80a2cb47a740b7b7465f66c5c49604adc553546ba93d6c15"
+        },
+        {
+          "file": "scenario-4/06-report-pdf.pdf",
+          "sha256": "9f71f87c68ac2aba012b382ebc7bc34e880473610aad16d15cbed16db1937496"
+        },
+        {
+          "file": "scenario-4/07-report.json",
+          "sha256": "ac688e5ac2cd57a92e624363512a5605fb01f458c16347f24c3ddae8ea5d57f7"
+        },
+        {
+          "file": "scenario-4/08-pdf-content-check.txt",
+          "sha256": "939e21f619130721e6e0cc4775b0bb76eda7a3f97734213553b52672828ecdd1"
+        },
+        {
+          "file": "scenario-4/09-report-ui.png",
+          "sha256": "c54a2e8ef186a53e1f4f8e3f39f19a2aefc6106143890756c5734b9b3227638f"
+        },
+        {
+          "file": "scenario-4/10-assessment-http.json",
+          "sha256": "92e517d4612217636afa14cfc8a5f1551b80fe33b3d8d731ac1949a7bcb23acb"
+        },
+        {
+          "file": "scenario-4/11-server-log.txt",
+          "sha256": "1486239dd7f86f29a01fab6acdc06e9d519527337ef0246e402d2f65b824217b"
+        }
+      ]
+    },
+    {
+      "scenario": "Recovery: lost response, unaccepted request, two tabs and owner boundaries",
+      "status": "passed",
+      "duration_ms": 18997,
+      "artifacts": [
+        {
+          "file": "scenario-5/01-browser-version.txt",
+          "sha256": "71c53e77891767ed1d27dfc763f60bec6c72c9c906d940b3421b1780d3dbd81f"
+        },
+        {
+          "file": "scenario-5/02-interview-start.png",
+          "sha256": "d08750290a2f54b63a94eb08875df430b104e71ddb8f6c616445336a9584f223"
+        },
+        {
+          "file": "scenario-5/03-assessment-http.json",
+          "sha256": "d94b5253937a20da1d13a8aaf829224f88cd3a77224a6788b568a7932bef839a"
+        },
+        {
+          "file": "scenario-5/04-server-log.txt",
+          "sha256": "f08794e15c3a070b9565c6e22f95d60d6c3a844821a6276174f0de818599fc31"
+        }
+      ]
+    },
+    {
+      "scenario": "S10-A character branch: actual character Turn, order and no invented recommendation",
+      "status": "passed",
+      "duration_ms": 21429,
+      "artifacts": [
+        {
+          "file": "scenario-6/01-browser-version.txt",
+          "sha256": "71c53e77891767ed1d27dfc763f60bec6c72c9c906d940b3421b1780d3dbd81f"
+        },
+        {
+          "file": "scenario-6/02-interview-start.png",
+          "sha256": "89cc2abbc8827447daff66ed08c03face4ae427562ab1b1a59b57ccfe68d100a"
+        },
+        {
+          "file": "scenario-6/03-character-and-clarification-ui.png",
+          "sha256": "f158617264eaa57d18d427c48ea48b9190bbb15ef11855367db57ab200075a8c"
+        },
+        {
+          "file": "scenario-6/04-report-pdf.pdf",
+          "sha256": "38532cbcfe9a84d172ca66affd8c607549673b4e4e64728a9c433d7d833d1bea"
+        },
+        {
+          "file": "scenario-6/05-report.json",
+          "sha256": "4a876d034fe7cd8167b0dacb04524ec9ce555dbfca8f830abbc88f742a028061"
+        },
+        {
+          "file": "scenario-6/06-pdf-content-check.txt",
+          "sha256": "0b2ff9dc2cff46e77a1852f96674096057a62c66288b0bbef9ee5b73edcd3f62"
+        },
+        {
+          "file": "scenario-6/07-report-ui.png",
+          "sha256": "643de82365d350cdef921e4d828186e6c9864bc72715d9c2a9baa35a0accd1ee"
+        },
+        {
+          "file": "scenario-6/08-assessment-http.json",
+          "sha256": "0926a8521ef97aef260c64c6e64e2ad30de935d470b1b0094386a50ed8043ef1"
+        },
+        {
+          "file": "scenario-6/09-server-log.txt",
+          "sha256": "c0e96c31e655015f397c596e2c7dc5390805125c7d1da8cc46a3c4de7a09fec6"
+        }
+      ]
+    }
+  ]
+}

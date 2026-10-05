@@ -1,0 +1,17 @@
+
+> test:browser
+> playwright test
+
+
+Running 6 tests using 1 worker
+
+(node:8137) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/runtime.spec.mjs:108:1 › S10-A and T11-10 positive, clarification and saved Report/PDF (34.2s)
+  ✓  2 tests/browser/runtime.spec.mjs:167:1 › S10-B interruption and Additional Session preserve Cycle and deadline (24.8s)
+  ✓  3 tests/browser/runtime.spec.mjs:195:35 › S10-C1 background time closure without another Turn (1.5m)
+  ✓  4 tests/browser/runtime.spec.mjs:195:35 › S10-C2 background time closure without another Turn (1.3m)
+  ✓  5 tests/browser/runtime.spec.mjs:224:1 › Recovery: lost response, unaccepted request, two tabs and owner boundaries (19.0s)
+  ✓  6 tests/browser/runtime.spec.mjs:256:1 › S10-A character branch: actual character Turn, order and no invented recommendation (21.4s)
+
+  6 passed (4.4m)

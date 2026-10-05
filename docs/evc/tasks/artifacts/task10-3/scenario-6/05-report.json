@@ -1,0 +1,3315 @@
+{
+  "id": "5d6d234d-e415-4982-9a34-12753b20a963",
+  "revision_no": 1,
+  "audience": "assessee",
+  "status": "ready",
+  "cycle_id": "5f12e4a5-b605-466a-9dd4-ec7c5d097753",
+  "owner_user_id": 1,
+  "results_revision_id": "68fd1f9d-6b75-4c7a-a176-76033cae29f2",
+  "created_at": "2026-10-05T13:15:39.883824+03:00",
+  "c67": {
+    "goal": {
+      "kind": "skills",
+      "selected_skills": [
+        "K1",
+        "K2",
+        "K3",
+        "K4"
+      ]
+    },
+    "time": {
+      "deadline": "2026-10-08T13:15:35.451939+03:00",
+      "intervals": [
+        {
+          "type": "collecting",
+          "reason": "session_started",
+          "ended_at": "2026-10-05T13:15:38.550158+03:00",
+          "started_at": "2026-10-05T13:15:35.451939+03:00",
+          "session_db_id": 1
+        }
+      ],
+      "started_at": "2026-10-05T13:15:35.451939+03:00",
+      "budget_seconds": 3600,
+      "consumed_seconds": 3,
+      "parameter_sources": {
+        "time_budget": "m7_cycle_plan/1.0.0:method_default",
+        "calendar_window": "m7_cycle_plan/1.0.0:method_default"
+      },
+      "calendar_window_seconds": 259200
+    },
+    "owner": "PM-06",
+    "skills": [
+      {
+        "outcome": "no_result",
+        "skill_id": "K1.1",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Ориентация и проектирование коммуникации",
+        "competency_id": "K1",
+        "competency_name": "Коммуникация",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K1.2",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Передача смысла",
+        "competency_id": "K1",
+        "competency_name": "Коммуникация",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K1.3",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Слушание, реконструкция и верификация смысла другого",
+        "competency_id": "K1",
+        "competency_name": "Коммуникация",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K1.4",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Согласование смыслов и позиций",
+        "competency_id": "K1",
+        "competency_name": "Коммуникация",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K2.1",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Организация совместной работы",
+        "competency_id": "K2",
+        "competency_name": "Командная работа",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K2.2",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Координация совместных действий",
+        "competency_id": "K2",
+        "competency_name": "Командная работа",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K2.3",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Поддержание продуктивного командного взаимодействия",
+        "competency_id": "K2",
+        "competency_name": "Командная работа",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K3.1",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Исследование пространства возможностей",
+        "competency_id": "K3",
+        "competency_name": "Креативность",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K3.2",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Создание новых идей и решений",
+        "competency_id": "K3",
+        "competency_name": "Креативность",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K3.3",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Развитие и доведение нового решения",
+        "competency_id": "K3",
+        "competency_name": "Креативность",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K4.1",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Анализ и оценка информации",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K4.2",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Постановка и анализ проблемы",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K4.3",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Рассуждение, аргументация и проверка выводов",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K4.4",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Принятие решений",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "skill_result_exists": false
+      }
+    ],
+    "audience": "assessee",
+    "consumer": "PM-07",
+    "contract": "C-67",
+    "coverage": {
+      "full_m2": {
+        "scope": "full_m2",
+        "opportunities": {
+          "ratio": 0.13114754098360656,
+          "numerator": 8,
+          "denominator": 61,
+          "missing_ids": [
+            "K1.I01",
+            "K1.I02",
+            "K1.I03",
+            "K1.I04",
+            "K1.I05",
+            "K1.I06",
+            "K1.I07",
+            "K1.I08",
+            "K1.I09",
+            "K1.I10",
+            "K1.I11",
+            "K1.I12",
+            "K1.I15",
+            "K1.I16",
+            "K1.I17",
+            "K2.I01",
+            "K2.I02",
+            "K2.I03",
+            "K2.I04",
+            "K2.I05",
+            "K2.I08",
+            "K2.I09",
+            "K2.I13",
+            "K2.I14",
+            "K3.I01",
+            "K3.I02",
+            "K3.I03",
+            "K3.I04",
+            "K3.I05",
+            "K3.I06",
+            "K3.I07",
+            "K3.I08",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K3.I12",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I05",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I11",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I15",
+            "K4.I16",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [
+            "K1.I13",
+            "K1.I14",
+            "K2.I06",
+            "K2.I07",
+            "K2.I10",
+            "K2.I11",
+            "K2.I12",
+            "K4.I10"
+          ],
+          "missing_reasons": {
+            "K1.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I10": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I17": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I13": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I10": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I13": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I17": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I18": "NO_JUSTIFIED_FINAL_IA"
+          },
+          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+        },
+        "complete_components": {
+          "ratio": 0,
+          "numerator": 0,
+          "denominator": 35,
+          "missing_ids": [
+            "K1.C01",
+            "K1.C02",
+            "K1.C03",
+            "K1.C04",
+            "K1.C05",
+            "K1.C06",
+            "K1.C07",
+            "K1.C08",
+            "K1.C09",
+            "K2.C01",
+            "K2.C02",
+            "K2.C03",
+            "K2.C04",
+            "K2.C05",
+            "K2.C06",
+            "K2.C07",
+            "K2.C08",
+            "K2.C09",
+            "K3.C01",
+            "K3.C02",
+            "K3.C03",
+            "K3.C05",
+            "K3.C06",
+            "K3.C07",
+            "K3.C08",
+            "K4.C01",
+            "K4.C02",
+            "K4.C03",
+            "K4.C04",
+            "K4.C05",
+            "K4.C06",
+            "K4.C07",
+            "K4.C08",
+            "K4.C09",
+            "K4.C10"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.C01": "NOT_AVAILABLE",
+            "K1.C02": "NOT_AVAILABLE",
+            "K1.C03": "NOT_AVAILABLE",
+            "K1.C04": "NOT_AVAILABLE",
+            "K1.C05": "NOT_AVAILABLE",
+            "K1.C06": "NOT_AVAILABLE",
+            "K1.C07": "NOT_AVAILABLE",
+            "K1.C08": "NOT_AVAILABLE",
+            "K1.C09": "NOT_AVAILABLE",
+            "K2.C01": "NOT_AVAILABLE",
+            "K2.C02": "NOT_AVAILABLE",
+            "K2.C03": "NOT_AVAILABLE",
+            "K2.C04": "NOT_AVAILABLE",
+            "K2.C05": "NOT_AVAILABLE",
+            "K2.C06": "NOT_AVAILABLE",
+            "K2.C07": "NOT_AVAILABLE",
+            "K2.C08": "NOT_AVAILABLE",
+            "K2.C09": "NOT_AVAILABLE",
+            "K3.C01": "NOT_AVAILABLE",
+            "K3.C02": "NOT_AVAILABLE",
+            "K3.C03": "NOT_AVAILABLE",
+            "K3.C05": "NOT_AVAILABLE",
+            "K3.C06": "NOT_AVAILABLE",
+            "K3.C07": "NOT_AVAILABLE",
+            "K3.C08": "NOT_AVAILABLE",
+            "K4.C01": "NOT_AVAILABLE",
+            "K4.C02": "NOT_AVAILABLE",
+            "K4.C03": "NOT_AVAILABLE",
+            "K4.C04": "NOT_AVAILABLE",
+            "K4.C05": "NOT_AVAILABLE",
+            "K4.C06": "NOT_AVAILABLE",
+            "K4.C07": "NOT_AVAILABLE",
+            "K4.C08": "NOT_AVAILABLE",
+            "K4.C09": "NOT_AVAILABLE",
+            "K4.C10": "NOT_AVAILABLE"
+          },
+          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+        },
+        "components_with_score": {
+          "ratio": 0,
+          "numerator": 0,
+          "denominator": 35,
+          "missing_ids": [
+            "K1.C01",
+            "K1.C02",
+            "K1.C03",
+            "K1.C04",
+            "K1.C05",
+            "K1.C06",
+            "K1.C07",
+            "K1.C08",
+            "K1.C09",
+            "K2.C01",
+            "K2.C02",
+            "K2.C03",
+            "K2.C04",
+            "K2.C05",
+            "K2.C06",
+            "K2.C07",
+            "K2.C08",
+            "K2.C09",
+            "K3.C01",
+            "K3.C02",
+            "K3.C03",
+            "K3.C05",
+            "K3.C06",
+            "K3.C07",
+            "K3.C08",
+            "K4.C01",
+            "K4.C02",
+            "K4.C03",
+            "K4.C04",
+            "K4.C05",
+            "K4.C06",
+            "K4.C07",
+            "K4.C08",
+            "K4.C09",
+            "K4.C10"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.C01": "NOT_AVAILABLE",
+            "K1.C02": "NOT_AVAILABLE",
+            "K1.C03": "NOT_AVAILABLE",
+            "K1.C04": "NOT_AVAILABLE",
+            "K1.C05": "NOT_AVAILABLE",
+            "K1.C06": "NOT_AVAILABLE",
+            "K1.C07": "NOT_AVAILABLE",
+            "K1.C08": "NOT_AVAILABLE",
+            "K1.C09": "NOT_AVAILABLE",
+            "K2.C01": "NOT_AVAILABLE",
+            "K2.C02": "NOT_AVAILABLE",
+            "K2.C03": "NOT_AVAILABLE",
+            "K2.C04": "NOT_AVAILABLE",
+            "K2.C05": "NOT_AVAILABLE",
+            "K2.C06": "NOT_AVAILABLE",
+            "K2.C07": "NOT_AVAILABLE",
+            "K2.C08": "NOT_AVAILABLE",
+            "K2.C09": "NOT_AVAILABLE",
+            "K3.C01": "NOT_AVAILABLE",
+            "K3.C02": "NOT_AVAILABLE",
+            "K3.C03": "NOT_AVAILABLE",
+            "K3.C05": "NOT_AVAILABLE",
+            "K3.C06": "NOT_AVAILABLE",
+            "K3.C07": "NOT_AVAILABLE",
+            "K3.C08": "NOT_AVAILABLE",
+            "K4.C01": "NOT_AVAILABLE",
+            "K4.C02": "NOT_AVAILABLE",
+            "K4.C03": "NOT_AVAILABLE",
+            "K4.C04": "NOT_AVAILABLE",
+            "K4.C05": "NOT_AVAILABLE",
+            "K4.C06": "NOT_AVAILABLE",
+            "K4.C07": "NOT_AVAILABLE",
+            "K4.C08": "NOT_AVAILABLE",
+            "K4.C09": "NOT_AVAILABLE",
+            "K4.C10": "NOT_AVAILABLE"
+          },
+          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+        },
+        "indicator_assessments": {
+          "ratio": 0,
+          "numerator": 0,
+          "denominator": 61,
+          "missing_ids": [
+            "K1.I01",
+            "K1.I02",
+            "K1.I03",
+            "K1.I04",
+            "K1.I05",
+            "K1.I06",
+            "K1.I07",
+            "K1.I08",
+            "K1.I09",
+            "K1.I10",
+            "K1.I11",
+            "K1.I12",
+            "K1.I13",
+            "K1.I14",
+            "K1.I15",
+            "K1.I16",
+            "K1.I17",
+            "K2.I01",
+            "K2.I02",
+            "K2.I03",
+            "K2.I04",
+            "K2.I05",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I09",
+            "K2.I10",
+            "K2.I11",
+            "K2.I12",
+            "K2.I13",
+            "K2.I14",
+            "K3.I01",
+            "K3.I02",
+            "K3.I03",
+            "K3.I04",
+            "K3.I05",
+            "K3.I06",
+            "K3.I07",
+            "K3.I08",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K3.I12",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I05",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I10",
+            "K4.I11",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I15",
+            "K4.I16",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I10": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I13": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K1.I14": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I17": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I06": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I07": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I10": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I11": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I12": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I13": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I10": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I10": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I13": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I17": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I18": "NO_JUSTIFIED_FINAL_IA"
+          },
+          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+        },
+        "admissible_contributions": {
+          "ratio": 0,
+          "numerator": 0,
+          "denominator": 61,
+          "missing_ids": [
+            "K1.I01",
+            "K1.I02",
+            "K1.I03",
+            "K1.I04",
+            "K1.I05",
+            "K1.I06",
+            "K1.I07",
+            "K1.I08",
+            "K1.I09",
+            "K1.I10",
+            "K1.I11",
+            "K1.I12",
+            "K1.I13",
+            "K1.I14",
+            "K1.I15",
+            "K1.I16",
+            "K1.I17",
+            "K2.I01",
+            "K2.I02",
+            "K2.I03",
+            "K2.I04",
+            "K2.I05",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I09",
+            "K2.I10",
+            "K2.I11",
+            "K2.I12",
+            "K2.I13",
+            "K2.I14",
+            "K3.I01",
+            "K3.I02",
+            "K3.I03",
+            "K3.I04",
+            "K3.I05",
+            "K3.I06",
+            "K3.I07",
+            "K3.I08",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K3.I12",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I05",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I10",
+            "K4.I11",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I15",
+            "K4.I16",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I10": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I13": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K1.I14": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I17": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I06": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I07": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I10": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I11": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I12": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I13": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I10": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I10": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I13": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I17": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I18": "NO_JUSTIFIED_FINAL_IA"
+          },
+          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+        }
+      },
+      "cycle_plan": {
+        "scope": "cycle_plan",
+        "opportunities": {
+          "ratio": 0.13114754098360656,
+          "numerator": 8,
+          "denominator": 61,
+          "missing_ids": [
+            "K1.I01",
+            "K1.I02",
+            "K1.I03",
+            "K1.I04",
+            "K1.I05",
+            "K1.I06",
+            "K1.I07",
+            "K1.I08",
+            "K1.I09",
+            "K1.I10",
+            "K1.I11",
+            "K1.I12",
+            "K1.I15",
+            "K1.I16",
+            "K1.I17",
+            "K2.I01",
+            "K2.I02",
+            "K2.I03",
+            "K2.I04",
+            "K2.I05",
+            "K2.I08",
+            "K2.I09",
+            "K2.I13",
+            "K2.I14",
+            "K3.I01",
+            "K3.I02",
+            "K3.I03",
+            "K3.I04",
+            "K3.I05",
+            "K3.I06",
+            "K3.I07",
+            "K3.I08",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K3.I12",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I05",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I11",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I15",
+            "K4.I16",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [
+            "K1.I13",
+            "K1.I14",
+            "K2.I06",
+            "K2.I07",
+            "K2.I10",
+            "K2.I11",
+            "K2.I12",
+            "K4.I10"
+          ],
+          "missing_reasons": {
+            "K1.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I10": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I17": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I13": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I10": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I13": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I17": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I18": "NO_JUSTIFIED_FINAL_IA"
+          },
+          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+        },
+        "complete_components": {
+          "ratio": 0,
+          "numerator": 0,
+          "denominator": 35,
+          "missing_ids": [
+            "K1.C01",
+            "K1.C02",
+            "K1.C03",
+            "K1.C04",
+            "K1.C05",
+            "K1.C06",
+            "K1.C07",
+            "K1.C08",
+            "K1.C09",
+            "K2.C01",
+            "K2.C02",
+            "K2.C03",
+            "K2.C04",
+            "K2.C05",
+            "K2.C06",
+            "K2.C07",
+            "K2.C08",
+            "K2.C09",
+            "K3.C01",
+            "K3.C02",
+            "K3.C03",
+            "K3.C05",
+            "K3.C06",
+            "K3.C07",
+            "K3.C08",
+            "K4.C01",
+            "K4.C02",
+            "K4.C03",
+            "K4.C04",
+            "K4.C05",
+            "K4.C06",
+            "K4.C07",
+            "K4.C08",
+            "K4.C09",
+            "K4.C10"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.C01": "NOT_AVAILABLE",
+            "K1.C02": "NOT_AVAILABLE",
+            "K1.C03": "NOT_AVAILABLE",
+            "K1.C04": "NOT_AVAILABLE",
+            "K1.C05": "NOT_AVAILABLE",
+            "K1.C06": "NOT_AVAILABLE",
+            "K1.C07": "NOT_AVAILABLE",
+            "K1.C08": "NOT_AVAILABLE",
+            "K1.C09": "NOT_AVAILABLE",
+            "K2.C01": "NOT_AVAILABLE",
+            "K2.C02": "NOT_AVAILABLE",
+            "K2.C03": "NOT_AVAILABLE",
+            "K2.C04": "NOT_AVAILABLE",
+            "K2.C05": "NOT_AVAILABLE",
+            "K2.C06": "NOT_AVAILABLE",
+            "K2.C07": "NOT_AVAILABLE",
+            "K2.C08": "NOT_AVAILABLE",
+            "K2.C09": "NOT_AVAILABLE",
+            "K3.C01": "NOT_AVAILABLE",
+            "K3.C02": "NOT_AVAILABLE",
+            "K3.C03": "NOT_AVAILABLE",
+            "K3.C05": "NOT_AVAILABLE",
+            "K3.C06": "NOT_AVAILABLE",
+            "K3.C07": "NOT_AVAILABLE",
+            "K3.C08": "NOT_AVAILABLE",
+            "K4.C01": "NOT_AVAILABLE",
+            "K4.C02": "NOT_AVAILABLE",
+            "K4.C03": "NOT_AVAILABLE",
+            "K4.C04": "NOT_AVAILABLE",
+            "K4.C05": "NOT_AVAILABLE",
+            "K4.C06": "NOT_AVAILABLE",
+            "K4.C07": "NOT_AVAILABLE",
+            "K4.C08": "NOT_AVAILABLE",
+            "K4.C09": "NOT_AVAILABLE",
+            "K4.C10": "NOT_AVAILABLE"
+          },
+          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+        },
+        "components_with_score": {
+          "ratio": 0,
+          "numerator": 0,
+          "denominator": 35,
+          "missing_ids": [
+            "K1.C01",
+            "K1.C02",
+            "K1.C03",
+            "K1.C04",
+            "K1.C05",
+            "K1.C06",
+            "K1.C07",
+            "K1.C08",
+            "K1.C09",
+            "K2.C01",
+            "K2.C02",
+            "K2.C03",
+            "K2.C04",
+            "K2.C05",
+            "K2.C06",
+            "K2.C07",
+            "K2.C08",
+            "K2.C09",
+            "K3.C01",
+            "K3.C02",
+            "K3.C03",
+            "K3.C05",
+            "K3.C06",
+            "K3.C07",
+            "K3.C08",
+            "K4.C01",
+            "K4.C02",
+            "K4.C03",
+            "K4.C04",
+            "K4.C05",
+            "K4.C06",
+            "K4.C07",
+            "K4.C08",
+            "K4.C09",
+            "K4.C10"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.C01": "NOT_AVAILABLE",
+            "K1.C02": "NOT_AVAILABLE",
+            "K1.C03": "NOT_AVAILABLE",
+            "K1.C04": "NOT_AVAILABLE",
+            "K1.C05": "NOT_AVAILABLE",
+            "K1.C06": "NOT_AVAILABLE",
+            "K1.C07": "NOT_AVAILABLE",
+            "K1.C08": "NOT_AVAILABLE",
+            "K1.C09": "NOT_AVAILABLE",
+            "K2.C01": "NOT_AVAILABLE",
+            "K2.C02": "NOT_AVAILABLE",
+            "K2.C03": "NOT_AVAILABLE",
+            "K2.C04": "NOT_AVAILABLE",
+            "K2.C05": "NOT_AVAILABLE",
+            "K2.C06": "NOT_AVAILABLE",
+            "K2.C07": "NOT_AVAILABLE",
+            "K2.C08": "NOT_AVAILABLE",
+            "K2.C09": "NOT_AVAILABLE",
+            "K3.C01": "NOT_AVAILABLE",
+            "K3.C02": "NOT_AVAILABLE",
+            "K3.C03": "NOT_AVAILABLE",
+            "K3.C05": "NOT_AVAILABLE",
+            "K3.C06": "NOT_AVAILABLE",
+            "K3.C07": "NOT_AVAILABLE",
+            "K3.C08": "NOT_AVAILABLE",
+            "K4.C01": "NOT_AVAILABLE",
+            "K4.C02": "NOT_AVAILABLE",
+            "K4.C03": "NOT_AVAILABLE",
+            "K4.C04": "NOT_AVAILABLE",
+            "K4.C05": "NOT_AVAILABLE",
+            "K4.C06": "NOT_AVAILABLE",
+            "K4.C07": "NOT_AVAILABLE",
+            "K4.C08": "NOT_AVAILABLE",
+            "K4.C09": "NOT_AVAILABLE",
+            "K4.C10": "NOT_AVAILABLE"
+          },
+          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+        },
+        "indicator_assessments": {
+          "ratio": 0,
+          "numerator": 0,
+          "denominator": 61,
+          "missing_ids": [
+            "K1.I01",
+            "K1.I02",
+            "K1.I03",
+            "K1.I04",
+            "K1.I05",
+            "K1.I06",
+            "K1.I07",
+            "K1.I08",
+            "K1.I09",
+            "K1.I10",
+            "K1.I11",
+            "K1.I12",
+            "K1.I13",
+            "K1.I14",
+            "K1.I15",
+            "K1.I16",
+            "K1.I17",
+            "K2.I01",
+            "K2.I02",
+            "K2.I03",
+            "K2.I04",
+            "K2.I05",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I09",
+            "K2.I10",
+            "K2.I11",
+            "K2.I12",
+            "K2.I13",
+            "K2.I14",
+            "K3.I01",
+            "K3.I02",
+            "K3.I03",
+            "K3.I04",
+            "K3.I05",
+            "K3.I06",
+            "K3.I07",
+            "K3.I08",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K3.I12",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I05",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I10",
+            "K4.I11",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I15",
+            "K4.I16",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I10": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I13": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K1.I14": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I17": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I06": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I07": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I10": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I11": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I12": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I13": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I10": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I10": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I13": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I17": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I18": "NO_JUSTIFIED_FINAL_IA"
+          },
+          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+        },
+        "admissible_contributions": {
+          "ratio": 0,
+          "numerator": 0,
+          "denominator": 61,
+          "missing_ids": [
+            "K1.I01",
+            "K1.I02",
+            "K1.I03",
+            "K1.I04",
+            "K1.I05",
+            "K1.I06",
+            "K1.I07",
+            "K1.I08",
+            "K1.I09",
+            "K1.I10",
+            "K1.I11",
+            "K1.I12",
+            "K1.I13",
+            "K1.I14",
+            "K1.I15",
+            "K1.I16",
+            "K1.I17",
+            "K2.I01",
+            "K2.I02",
+            "K2.I03",
+            "K2.I04",
+            "K2.I05",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I09",
+            "K2.I10",
+            "K2.I11",
+            "K2.I12",
+            "K2.I13",
+            "K2.I14",
+            "K3.I01",
+            "K3.I02",
+            "K3.I03",
+            "K3.I04",
+            "K3.I05",
+            "K3.I06",
+            "K3.I07",
+            "K3.I08",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K3.I12",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I05",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I10",
+            "K4.I11",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I15",
+            "K4.I16",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I10": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I13": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K1.I14": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I17": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I06": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I07": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I10": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I11": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I12": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K2.I13": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I10": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K3.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I05": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I10": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I13": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I17": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I18": "NO_JUSTIFIED_FINAL_IA"
+          },
+          "composition_version": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+        }
+      }
+    },
+    "cycle_id": "5f12e4a5-b605-466a-9dd4-ec7c5d097753",
+    "role_ref": {
+      "id": "team_lead",
+      "version": "frozen-profile",
+      "checksum": "75b335695fc32e2d3d61baf21b5be383956ddec89e4d314ef4dd118ecb20646c"
+    },
+    "sessions": [
+      {
+        "status": "completed",
+        "ordinal": 1,
+        "ended_at": "2026-10-05T13:15:38.550158+03:00",
+        "session_id": "2c4de080-3b28-40af-8508-ec3fefb04b75",
+        "started_at": "2026-10-05T13:15:35.451939+03:00",
+        "close_reason": "user_completed_scenario"
+      }
+    ],
+    "report_id": "5d6d234d-e415-4982-9a34-12753b20a963",
+    "collection": {
+      "reason": "user_completed_scenario",
+      "status": "collection_closed",
+      "closed_at": "2026-10-05T13:15:38.550158+03:00"
+    },
+    "confidence": {
+      "kind": "qualitative",
+      "ia_bases_preserved": true
+    },
+    "disclosure": "personal",
+    "provenance": {
+      "c46_ref": {
+        "id": "051f6e5e-fffb-4a90-b86b-885dc6fa9096",
+        "checksum": "c5c0c0c1c658d3e2488d6f4fccafaaff30573ddd17f2dcf31c4352268769fe09",
+        "revision_no": 2
+      },
+      "c56_ref": {
+        "revision_no": 1,
+        "calculation_id": "f6450ccf-90fd-4e6d-9a3f-7e66418d7099"
+      },
+      "sources": {
+        "M2": "competencies_4k/1.1",
+        "M6": "1.8",
+        "M7": "1.3",
+        "source_set": "2026-10-01"
+      },
+      "algorithm": {
+        "version": "1.0.0",
+        "rules_hash": "405ba4113a4cd2f0bd3e2757a6abd3afc55b96e9cacfbceb103a37ad401e7e62"
+      },
+      "composition_checksum": "583d9adfc7c49a73058cfba38e8b4ad373ca55ee66e6852810abcd24297342d3"
+    },
+    "results_id": "3f82f509-c3f1-4242-926c-e8d3f5fc7c91",
+    "limitations": [
+      "Conservative deterministic admission rejects any reported contradiction.",
+      "Normative reliability remains unverified until approved GC runs exist.",
+      "Skill Level is not derived from numeric Score"
+    ],
+    "profile_ref": {
+      "id": "assessment_personalized_profiles:1",
+      "version": "1",
+      "checksum": "75b335695fc32e2d3d61baf21b5be383956ddec89e4d314ef4dd118ecb20646c"
+    },
+    "reliability": {
+      "status": "not_verified",
+      "protocol_ref": null
+    },
+    "competencies": [
+      {
+        "score": null,
+        "skill_ids": [
+          "K1.1",
+          "K1.2",
+          "K1.3",
+          "K1.4"
+        ],
+        "competency_id": "K1",
+        "competency_name": "Коммуникация"
+      },
+      {
+        "score": null,
+        "skill_ids": [
+          "K2.1",
+          "K2.2",
+          "K2.3"
+        ],
+        "competency_id": "K2",
+        "competency_name": "Командная работа"
+      },
+      {
+        "score": null,
+        "skill_ids": [
+          "K3.1",
+          "K3.2",
+          "K3.3"
+        ],
+        "competency_id": "K3",
+        "competency_name": "Креативность"
+      },
+      {
+        "score": null,
+        "skill_ids": [
+          "K4.1",
+          "K4.2",
+          "K4.3",
+          "K4.4"
+        ],
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление"
+      }
+    ],
+    "schema_version": 1,
+    "target_profile": null,
+    "message_version": "1.1",
+    "recommendations": [],
+    "report_mechanism": {
+      "id": "m8_basic_report",
+      "version": "1.2.0",
+      "checksum": "3242ad6a95ce5b8d6457b2732a6b71b650b377e190aa7dddd737f8f1b66f4e54"
+    },
+    "template_version": "m8-basic-report/1.2.0",
+    "report_revision_no": 1,
+    "results_revision_id": "68fd1f9d-6b75-4c7a-a176-76033cae29f2",
+    "results_revision_no": 1,
+    "assessment_situations": [
+      {
+        "status": "closed",
+        "case_ref": {
+          "id": "CASE-BROWSER-CHARACTER-01",
+          "version": "synthetic-v1",
+          "checksum": "50cd20d56b144564ab6bebbd261ff4b3a513a75eb021c1beaac061f79163bbbc"
+        },
+        "handoff_id": "87a6ddde-88a9-42bf-b8a0-d104b9aba521",
+        "session_db_id": 1,
+        "handoff_checksum": "9abb3e0bb4225d7a65f22ad0121ee7c5b8fc6a2759bbfcb3b8692dafcda0cfb3",
+        "boundary_sequence": 8,
+        "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+      }
+    ],
+    "recommendation_notices": [
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K1.1",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K1.2",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K1.3",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K1.4",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K2.1",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K2.2",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K2.3",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K3.1",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K3.2",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K3.3",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K4.1",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K4.2",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K4.3",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K4.4",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      }
+    ],
+    "recommendation_generation": {
+      "input": {
+        "cycle_id": "5f12e4a5-b605-466a-9dd4-ec7c5d097753",
+        "resolved": {
+          "cycle_id": "5f12e4a5-b605-466a-9dd4-ec7c5d097753",
+          "projections": [
+            {
+              "bundle": {
+                "limitations": [
+                  "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                ],
+                "context_refs": [],
+                "evidence_ids": [],
+                "indicator_id": "K1.I13",
+                "contradictions": [],
+                "opportunity_basis": "Synthetic case and actual submitted material"
+              },
+              "target": {
+                "refs": [],
+                "status": "ASSESSED",
+                "outcome": "INSUFFICIENT_EVIDENCE",
+                "rationale": "No supported action in this synthetic material",
+                "confidence": {
+                  "limitations": [
+                    "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                  ],
+                  "confirmed_features": [],
+                  "alternatives_considered": [],
+                  "reliability_protocol_ref": null
+                },
+                "m2_version": "v1.1",
+                "opportunity": "PRESENT",
+                "stop_reason": null,
+                "uncertainty": {
+                  "impact": "Limited material",
+                  "clarification_needed": "Clarify existing statement",
+                  "resolution_information": [],
+                  "missing_or_conflicting_feature": "No supported action",
+                  "requires_new_independent_action": true
+                },
+                "indicator_id": "K1.I13",
+                "contradictions": [],
+                "descriptor_basis": null,
+                "opportunity_basis": "Synthetic case presented",
+                "clarification_history": []
+              },
+              "traces": [],
+              "criterion": {
+                "id": "K1.I13",
+                "name": "Реконструкция существенного смысла и позиции другого",
+                "levels": {
+                  "L0": "Существенно искажает или упускает выраженный другим смысл либо приписывает ему содержание или позицию, не имеющие достаточного основания в сообщении.",
+                  "L1": "Восстанавливает основной прямо выраженный смысл и общую позицию другого, но упрощает сообщение, ограниченно удерживает существенные условия, оговорки или различия между его элементами.",
+                  "L2": "Самостоятельно реконструирует существенное содержание и позицию другого, связывает распределённые по сообщению элементы, сохраняет значимые условия и различия и отделяет фактически выраженное от собственной интерпретации.",
+                  "L3": "Интегрирует существенные элементы из нескольких реплик, условия, уточнения и явно выраженные изменения позиции, обновляет реконструкцию при появлении новой информации и не стирает значимые противоречия или неопределённость в сообщении другого."
+                },
+                "product": "Реконструкция существенного содержания и позиции другого, сохраняющая значимые элементы его фактически выраженного сообщения.",
+                "boundary": "K1.I13 ↔ K1.I12: I12 — как организован процесс слушания; I13 — какой смысл и позиция другого реконструированы. K1.I13 ↔ K1.I14: I13 — построение реконструкции; I14 — её целенаправленная проверка и уточнение. K1.I13 ↔ K1.I01: I13 реконструирует смысл и позицию конкретного сообщения; I01 использует сведения о целях, интересах и позициях для общей карты коммуникативной ситуации. K1.I13 ↔ K4: I13 оценивает корректность понимания выраженного другим; истинность и обоснованность содержания относятся к K4.",
+                "function": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                "skill_id": "K1.3",
+                "red_flags": [],
+                "m2_version": "v1.1",
+                "source_ref": {
+                  "id": "M2.K1.matrix",
+                  "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K1-matrix-v1.1.xlsx",
+                  "sha256": "2b5bd322bf51d6e05cdf3506cd14b2854eb6528082d15a44a918cc233ed3c880",
+                  "version": "1.1",
+                  "verification": "file_identity_verified; methodological consistency not re-audited",
+                  "selected_status": "FROZEN"
+                },
+                "component_id": "K1.C07",
+                "package_sha256": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+                "evidence_pattern": "В ответе или диалоге наблюдается воспроизведение, переформулирование, резюмирование или последующее использование содержания сообщения другого, позволяющее сопоставить реконструированный смысл с фактически выраженным сообщением. Материал позволяет увидеть сохранение, упрощение, искажение или обновление существенных элементов, условий, различий и позиции другого."
+              },
+              "ia_checksum": "ba738e0abd8933d3d0ab1d770c8519b1639d5c8dec49332e898bc01295690802",
+              "revision_id": "bb2324b5-35b1-4861-b3d1-ea98b0d14a55",
+              "material_ref": {
+                "checksum_kind": "definition_json_v1",
+                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "boundary_sequence": 8
+              },
+              "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
+              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+            },
+            {
+              "bundle": {
+                "limitations": [
+                  "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                ],
+                "context_refs": [],
+                "evidence_ids": [],
+                "indicator_id": "K1.I14",
+                "contradictions": [],
+                "opportunity_basis": "Synthetic case and actual submitted material"
+              },
+              "target": {
+                "refs": [],
+                "status": "ASSESSED",
+                "outcome": "INSUFFICIENT_EVIDENCE",
+                "rationale": "No supported action in this synthetic material",
+                "confidence": {
+                  "limitations": [
+                    "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                  ],
+                  "confirmed_features": [],
+                  "alternatives_considered": [],
+                  "reliability_protocol_ref": null
+                },
+                "m2_version": "v1.1",
+                "opportunity": "PRESENT",
+                "stop_reason": null,
+                "uncertainty": {
+                  "impact": "Limited material",
+                  "clarification_needed": "Clarify existing statement",
+                  "resolution_information": [],
+                  "missing_or_conflicting_feature": "No supported action",
+                  "requires_new_independent_action": true
+                },
+                "indicator_id": "K1.I14",
+                "contradictions": [],
+                "descriptor_basis": null,
+                "opportunity_basis": "Synthetic case presented",
+                "clarification_history": []
+              },
+              "traces": [],
+              "criterion": {
+                "id": "K1.I14",
+                "name": "Прояснение и проверка понимания",
+                "levels": {
+                  "L0": "Не проясняет существенную неопределённость или противоречие в собственном понимании и продолжает взаимодействие, опираясь на неподтверждённую интерпретацию; либо формально проверяет понимание так, что существенная неоднозначность сохраняется.",
+                  "L1": "Проясняет очевидную неясность или проверяет основное понимание с помощью прямого вопроса, уточнения или переформулирования, но преимущественно реагирует на явно выраженную неопределённость.",
+                  "L2": "Самостоятельно выявляет существенные пробелы, неоднозначности или противоречия в своём понимании, целенаправленно проясняет их и использует полученный ответ для подтверждения или корректировки реконструированного смысла.",
+                  "L3": "Локализует критичные зоны неопределённости в собственном понимании, различает установленное и непроверенное, последовательно проверяет значимые интерпретации и обновляет понимание по обратной связи, явно сохраняя ту неопределённость, которую надёжно разрешить не удалось."
+                },
+                "product": "Уточнённое и проверенное понимание существенного содержания сообщения другого, в котором критичная неопределённость устранена либо явно сохранена как неразрешённая.",
+                "boundary": "K1.I14 ↔ K1.I12: I12 — организация способа слушания; I14 — конкретная работа с неопределённостью собственного понимания. K1.I14 ↔ K1.I13: I13 — реконструкция смысла; I14 — проверка и корректировка реконструкции. K1.I14 ↔ K1.I05: вопрос или перефразирование может быть актом I05; I14 требует функциональной связи с прояснением или проверкой понимания. K1.I14 ↔ K1.I15: I14 устанавливает, правильно ли субъект понял другого; I15 — сформировали ли участники общее смысловое основание. K1.I14 ↔ K1.I11: I11 — общий контур управления рисками искажений; I14 — специальный механизм проверки понимания входящего сообщения.",
+                "function": "Выявлять существенную неопределённость в собственном понимании сообщения другого, целенаправленно прояснять её и проверять корректность реконструированного смысла во взаимодействии с собеседником.",
+                "skill_id": "K1.3",
+                "red_flags": [],
+                "m2_version": "v1.1",
+                "source_ref": {
+                  "id": "M2.K1.matrix",
+                  "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K1-matrix-v1.1.xlsx",
+                  "sha256": "2b5bd322bf51d6e05cdf3506cd14b2854eb6528082d15a44a918cc233ed3c880",
+                  "version": "1.1",
+                  "verification": "file_identity_verified; methodological consistency not re-audited",
+                  "selected_status": "FROZEN"
+                },
+                "component_id": "K1.C07",
+                "package_sha256": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+                "evidence_pattern": "В диалоге наблюдается действие, направленное на прояснение или проверку конкретного элемента собственного понимания: проясняющий вопрос, проверочное переформулирование, запрос подтверждения или иной способ верификации. Если доступна последующая реакция собеседника, материал позволяет увидеть, была ли реконструкция подтверждена, изменена или неопределённость сохранилась. Полнота цикла определяется по L0–L3."
+              },
+              "ia_checksum": "03b2b7d1ad1f6c5cea07d4421d7847b57653559f3bc3dc61e0c43c9492d035b3",
+              "revision_id": "8e291ce6-c4bd-4c75-b514-59d7356d4178",
+              "material_ref": {
+                "checksum_kind": "definition_json_v1",
+                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "boundary_sequence": 8
+              },
+              "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
+              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+            },
+            {
+              "bundle": {
+                "limitations": [
+                  "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                ],
+                "context_refs": [],
+                "evidence_ids": [],
+                "indicator_id": "K2.I10",
+                "contradictions": [],
+                "opportunity_basis": "Synthetic case and actual submitted material"
+              },
+              "target": {
+                "refs": [],
+                "status": "ASSESSED",
+                "outcome": "INSUFFICIENT_EVIDENCE",
+                "rationale": "No supported action in this synthetic material",
+                "confidence": {
+                  "limitations": [
+                    "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                  ],
+                  "confirmed_features": [],
+                  "alternatives_considered": [],
+                  "reliability_protocol_ref": null
+                },
+                "m2_version": "v1.0",
+                "opportunity": "PRESENT",
+                "stop_reason": null,
+                "uncertainty": {
+                  "impact": "Limited material",
+                  "clarification_needed": "Clarify existing statement",
+                  "resolution_information": [],
+                  "missing_or_conflicting_feature": "No supported action",
+                  "requires_new_independent_action": true
+                },
+                "indicator_id": "K2.I10",
+                "contradictions": [],
+                "descriptor_basis": null,
+                "opportunity_basis": "Synthetic case presented",
+                "clarification_history": []
+              },
+              "traces": [],
+              "criterion": {
+                "id": "K2.I10",
+                "name": "Включение участников в совместную работу",
+                "levels": {
+                  "L0": "Не обеспечивает включение участников. Игнорирует выпадение необходимых участников, допускает доминирование отдельных членов команды или фактически ведёт работу самостоятельно, хотя нужен вклад других.",
+                  "L1": "Создаёт базовую возможность участия и реагирует на очевидную пассивность. Обращается к участникам и предлагает подключиться, но делает это преимущественно одинаково для всех и без явной связи с требуемым вкладом.",
+                  "L2": "Целенаправленно включает необходимых участников исходя из их роли и требуемого вклада. Замечает неравномерность участия, создаёт условия для менее активных и ограничивает вытеснение вклада остальных.",
+                  "L3": "Управляет включённостью в сложном групповом взаимодействии с различием позиций, статуса, экспертизы или динамики группы. Делает необходимые разные голоса и виды вклада доступными совместной работе без формального «дать слово каждому»."
+                },
+                "product": "Участники, чей вклад необходим для общего результата, получили возможность и основание включиться в обсуждение и совместное действие.",
+                "boundary": "K2.I10 — обеспечить реальное включение необходимого участника и возможность его вклада; K2.I11 — содержательно использовать возникший вклад.",
+                "function": "Обеспечить реальное участие необходимых членов команды в совместной деятельности, чтобы работа не сводилась к активности одного или нескольких наиболее инициативных участников.",
+                "skill_id": "K2.3",
+                "red_flags": [
+                  {
+                    "code": "RF-K2.I10-01",
+                    "description": "Фактическое исключение необходимого участника или необходимого вида вклада из совместной работы, включая замещение совместной работы собственным решением там, где вклад других явно необходим."
+                  }
+                ],
+                "m2_version": "v1.0",
+                "source_ref": {
+                  "id": "M2.K2.matrix",
+                  "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K2-matrix-v1.0.xlsx",
+                  "sha256": "2d004a3acb53a10dbc75d63d5cdb16c3a36a5358e6c04c3a79be9327cd269890",
+                  "version": "1.0",
+                  "verification": "file_identity_verified; methodological consistency not re-audited",
+                  "selected_status": "FROZEN"
+                },
+                "component_id": "K2.C07",
+                "package_sha256": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+                "evidence_pattern": "В наблюдаемом материале должны быть связаны необходимость вклада определённых участников, степень их фактического участия и действия оцениваемого по их включению в совместную работу. Материал должен позволять установить, кого и на каком основании оцениваемый вовлекает, создаёт ли реальную возможность необходимого вклада либо ограничивается формальным участием."
+              },
+              "ia_checksum": "1c44285dcb3582e00609c113c597c95ec51dc514551bd9a67ed8b4a39f3c7f32",
+              "revision_id": "b35c5588-64bc-4a02-b746-920955668c07",
+              "material_ref": {
+                "checksum_kind": "definition_json_v1",
+                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "boundary_sequence": 8
+              },
+              "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
+              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+            },
+            {
+              "bundle": {
+                "limitations": [
+                  "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                ],
+                "context_refs": [],
+                "evidence_ids": [],
+                "indicator_id": "K2.I11",
+                "contradictions": [],
+                "opportunity_basis": "Synthetic case and actual submitted material"
+              },
+              "target": {
+                "refs": [],
+                "status": "ASSESSED",
+                "outcome": "INSUFFICIENT_EVIDENCE",
+                "rationale": "No supported action in this synthetic material",
+                "confidence": {
+                  "limitations": [
+                    "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                  ],
+                  "confirmed_features": [],
+                  "alternatives_considered": [],
+                  "reliability_protocol_ref": null
+                },
+                "m2_version": "v1.0",
+                "opportunity": "PRESENT",
+                "stop_reason": null,
+                "uncertainty": {
+                  "impact": "Limited material",
+                  "clarification_needed": "Clarify existing statement",
+                  "resolution_information": [],
+                  "missing_or_conflicting_feature": "No supported action",
+                  "requires_new_independent_action": true
+                },
+                "indicator_id": "K2.I11",
+                "contradictions": [],
+                "descriptor_basis": null,
+                "opportunity_basis": "Synthetic case presented",
+                "clarification_history": []
+              },
+              "traces": [],
+              "criterion": {
+                "id": "K2.I11",
+                "name": "Использование вкладов и возможностей участников",
+                "levels": {
+                  "L0": "Не использует существенные возможности и вклад других; действует преимущественно исходя из собственного решения или формального распределения, игнорируя релевантную экспертизу и ограничения участников.",
+                  "L1": "Использует отдельные очевидные возможности и полезные предложения участников преимущественно ситуативно. Связь между вкладом/возможностями и изменением общего решения выражена частично.",
+                  "L2": "Целенаправленно соотносит требуемый вклад с возможностями участников и интегрирует релевантные знания, предложения и позиции в совместную работу; корректирует ожидаемый вклад с учётом существенных ограничений.",
+                  "L3": "Интегрирует разнородные возможности и частично противоречивые вклады, находя конфигурацию вкладов, которая усиливает общий результат; содержательно показывает, что принимается, трансформируется или отклоняется."
+                },
+                "product": "Совместная работа использует релевантные возможности и вклад участников, а их различия превращаются в ресурс общего результата.",
+                "boundary": "K2.I10 — получить доступ к вкладу участника; K2.I11 — использовать вклад, знания, опыт или возможности в совместной работе; K2.I12 — восстановить возможность необходимого вклада при затруднении.",
+                "function": "Использовать различающиеся знания, опыт, возможности и содержательный вклад участников для получения общего результата.",
+                "skill_id": "K2.3",
+                "red_flags": [
+                  {
+                    "code": "RF-K2.I11-01",
+                    "description": "Селективное использование только подтверждающих вкладов при исключении релевантных альтернативных вкладов участников, существенных для общего результата."
+                  }
+                ],
+                "m2_version": "v1.0",
+                "source_ref": {
+                  "id": "M2.K2.matrix",
+                  "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K2-matrix-v1.0.xlsx",
+                  "sha256": "2d004a3acb53a10dbc75d63d5cdb16c3a36a5358e6c04c3a79be9327cd269890",
+                  "version": "1.0",
+                  "verification": "file_identity_verified; methodological consistency not re-audited",
+                  "selected_status": "FROZEN"
+                },
+                "component_id": "K2.C07",
+                "package_sha256": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+                "evidence_pattern": "В наблюдаемом материале должны быть связаны конкретный вклад, знание, опыт или возможность участника и его дальнейшее использование в совместной работе. Материал должен позволять установить, как оцениваемый обращается с доступным вкладом участников: содержательно использует, преобразует, комбинирует, обоснованно отклоняет либо фактически игнорирует его, и как это связано с общим результатом."
+              },
+              "ia_checksum": "68d615590ddefa7f52f3934f807470659653c76f4812d1dd9c8f2ee71cb89285",
+              "revision_id": "cc3c90a4-b1ed-403c-8adf-cfc4e7e0c119",
+              "material_ref": {
+                "checksum_kind": "definition_json_v1",
+                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "boundary_sequence": 8
+              },
+              "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
+              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+            },
+            {
+              "bundle": {
+                "limitations": [
+                  "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                ],
+                "context_refs": [],
+                "evidence_ids": [],
+                "indicator_id": "K2.I12",
+                "contradictions": [],
+                "opportunity_basis": "Synthetic case and actual submitted material"
+              },
+              "target": {
+                "refs": [],
+                "status": "ASSESSED",
+                "outcome": "INSUFFICIENT_EVIDENCE",
+                "rationale": "No supported action in this synthetic material",
+                "confidence": {
+                  "limitations": [
+                    "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                  ],
+                  "confirmed_features": [],
+                  "alternatives_considered": [],
+                  "reliability_protocol_ref": null
+                },
+                "m2_version": "v1.0",
+                "opportunity": "PRESENT",
+                "stop_reason": null,
+                "uncertainty": {
+                  "impact": "Limited material",
+                  "clarification_needed": "Clarify existing statement",
+                  "resolution_information": [],
+                  "missing_or_conflicting_feature": "No supported action",
+                  "requires_new_independent_action": true
+                },
+                "indicator_id": "K2.I12",
+                "contradictions": [],
+                "descriptor_basis": null,
+                "opportunity_basis": "Synthetic case presented",
+                "clarification_history": []
+              },
+              "traces": [],
+              "criterion": {
+                "id": "K2.I12",
+                "name": "Поддержка при затруднениях в выполнении работы",
+                "levels": {
+                  "L0": "Не поддерживает участника при существенном затруднении. Игнорирует проблему, оставляет участника справляться самостоятельно либо обвиняет его в невыполнении, несмотря на явную угрозу необходимому вкладу.",
+                  "L1": "Оказывает или подключает очевидную помощь после явного затруднения или прямого запроса. Поддержка локальна и преимущественно реактивна.",
+                  "L2": "Организует поддержку, соответствующую характеру затруднения. Определяет, какая помощь необходима и кто может её предоставить, подключает подходящий вклад других участников так, чтобы участник смог выполнить свою часть совместной работы.",
+                  "L3": "Организует поддержку при сложном или составном затруднении, когда простой помощи одного участника недостаточно: соединяет дополняющие возможности нескольких участников, выбирает форму поддержки, снимающую существенный блокер и сохраняющую содержательный вклад и ответственность."
+                },
+                "product": "Необходимый вклад восстанавливается или становится возможным благодаря подходящей помощи других участников.",
+                "boundary": "K2.I11 — использование доступного вклада и возможностей; K2.I12 — поддержка при существенном затруднении, препятствующем необходимому вкладу; K2.I13 начинается при содержательном противоречии между участниками.",
+                "function": "Помогать участникам преодолевать существенные затруднения, мешающие внести необходимый вклад в совместную работу.",
+                "skill_id": "K2.3",
+                "red_flags": [
+                  {
+                    "code": "RF-K2.I12-01",
+                    "description": "Поддержка, которая фактически полностью забирает у участника его содержательный вклад и ответственность вместо восстановления возможности выполнить свою часть совместной работы."
+                  }
+                ],
+                "m2_version": "v1.0",
+                "source_ref": {
+                  "id": "M2.K2.matrix",
+                  "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K2-matrix-v1.0.xlsx",
+                  "sha256": "2d004a3acb53a10dbc75d63d5cdb16c3a36a5358e6c04c3a79be9327cd269890",
+                  "version": "1.0",
+                  "verification": "file_identity_verified; methodological consistency not re-audited",
+                  "selected_status": "FROZEN"
+                },
+                "component_id": "K2.C08",
+                "package_sha256": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+                "evidence_pattern": "В наблюдаемом материале должны быть связаны необходимый вклад участника, существенное затруднение, препятствующее этому вкладу, и реакция оцениваемого на возникшее затруднение. Материал должен позволять установить, распознаёт ли оцениваемый характер препятствия, какую поддержку организует и приводит ли она к восстановлению возможности вклада либо подменяет вклад и ответственность участника, не соответствует затруднению или отсутствует."
+              },
+              "ia_checksum": "654d8de923ce3544a4e376ca1fbc4e169f3037b28eba73208e2bc3ef6ded35a9",
+              "revision_id": "f91ffdfc-cceb-40a0-b0dd-afb24289d81d",
+              "material_ref": {
+                "checksum_kind": "definition_json_v1",
+                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "boundary_sequence": 8
+              },
+              "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
+              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+            },
+            {
+              "bundle": {
+                "limitations": [
+                  "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                ],
+                "context_refs": [],
+                "evidence_ids": [],
+                "indicator_id": "K2.I06",
+                "contradictions": [],
+                "opportunity_basis": "Synthetic case and actual submitted material"
+              },
+              "target": {
+                "refs": [],
+                "status": "ASSESSED",
+                "outcome": "INSUFFICIENT_EVIDENCE",
+                "rationale": "No supported action in this synthetic material",
+                "confidence": {
+                  "limitations": [
+                    "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                  ],
+                  "confirmed_features": [],
+                  "alternatives_considered": [],
+                  "reliability_protocol_ref": null
+                },
+                "m2_version": "v1.0",
+                "opportunity": "PRESENT",
+                "stop_reason": null,
+                "uncertainty": {
+                  "impact": "Limited material",
+                  "clarification_needed": "Clarify existing statement",
+                  "resolution_information": [],
+                  "missing_or_conflicting_feature": "No supported action",
+                  "requires_new_independent_action": true
+                },
+                "indicator_id": "K2.I06",
+                "contradictions": [],
+                "descriptor_basis": null,
+                "opportunity_basis": "Synthetic case presented",
+                "clarification_history": []
+              },
+              "traces": [],
+              "criterion": {
+                "id": "K2.I06",
+                "name": "Согласование ответственности и взаимных ожиданий по ролям",
+                "levels": {
+                  "L0": "Не создаёт работоспособной определённости ответственности и существенных ожиданий между ролями. Ответственность остаётся неразграниченной, противоречивой или номинальной; существенные пробелы, пересечения и несовместимые ожидания сохраняются без прояснения.",
+                  "L1": "Определяет основную ответственность ролей и отдельные ожидания к их вкладу, но делает это частично или преимущественно односторонне. Взаимность ожиданий и пограничные зоны ответственности прояснены не полностью.",
+                  "L2": "Явно согласовывает ответственность и ключевые взаимные ожидания по ролям: кто отвечает за что, какой вклад/результат ожидается, что одна роль должна получить от другой. Устраняет существенные пробелы, пересечения и противоречия.",
+                  "L3": "Согласовывает ответственность в сложной системе взаимозависимых ролей, где ответственность частично разделена или пересекается. Разводит индивидуальную и совместную ответственность и определяет границы в спорных и пограничных ситуациях."
+                },
+                "product": "Согласованный контур ответственности и взаимных ожиданий участников по ролям.",
+                "boundary": "K2.I05 — функциональное назначение роли; K2.I06 — зоны ответственности и ожидания к вкладу роли; K2.I07 — процессная стыковка взаимозависимых действий. Сроки, последовательность и точки передачи относятся к K2.I07.",
+                "function": "Сделать ролевое устройство практически определённым: установить, за какой результат или область отвечает каждая роль и какие взаимные обязательства существуют между ролями.",
+                "skill_id": "K2.1",
+                "red_flags": [
+                  {
+                    "code": "RF-K2.I06-01",
+                    "description": "Размывание ответственности за существенный результат через конструкцию, при которой ответственность формально принадлежит всем и фактически не определена для конкретных ролей."
+                  },
+                  {
+                    "code": "RF-K2.I06-02",
+                    "description": "Сохранение явно противоречащих друг другу существенных ожиданий к ролям без их прояснения или согласования."
+                  }
+                ],
+                "m2_version": "v1.0",
+                "source_ref": {
+                  "id": "M2.K2.matrix",
+                  "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K2-matrix-v1.0.xlsx",
+                  "sha256": "2d004a3acb53a10dbc75d63d5cdb16c3a36a5358e6c04c3a79be9327cd269890",
+                  "version": "1.0",
+                  "verification": "file_identity_verified; methodological consistency not re-audited",
+                  "selected_status": "FROZEN"
+                },
+                "component_id": "K2.C03",
+                "package_sha256": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+                "evidence_pattern": "В наблюдаемом материале должны быть связаны роли, зоны их ответственности и существенные ожидания к их вкладу в совместную работу. Материал должен позволять установить, насколько явно оцениваемый определяет индивидуальную и совместную ответственность и как обращается с пробелами, пересечениями или противоречиями между ролями."
+              },
+              "ia_checksum": "ce66597607e5e7c6bbc167a072943b2561124e4986622424919c169fb19f275b",
+              "revision_id": "ba029c71-b950-45b2-b824-b89769366d75",
+              "material_ref": {
+                "checksum_kind": "definition_json_v1",
+                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "boundary_sequence": 8
+              },
+              "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
+              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+            },
+            {
+              "bundle": {
+                "limitations": [
+                  "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                ],
+                "context_refs": [],
+                "evidence_ids": [],
+                "indicator_id": "K2.I07",
+                "contradictions": [],
+                "opportunity_basis": "Synthetic case and actual submitted material"
+              },
+              "target": {
+                "refs": [],
+                "status": "ASSESSED",
+                "outcome": "INSUFFICIENT_EVIDENCE",
+                "rationale": "No supported action in this synthetic material",
+                "confidence": {
+                  "limitations": [
+                    "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                  ],
+                  "confirmed_features": [],
+                  "alternatives_considered": [],
+                  "reliability_protocol_ref": null
+                },
+                "m2_version": "v1.0",
+                "opportunity": "PRESENT",
+                "stop_reason": null,
+                "uncertainty": {
+                  "impact": "Limited material",
+                  "clarification_needed": "Clarify existing statement",
+                  "resolution_information": [],
+                  "missing_or_conflicting_feature": "No supported action",
+                  "requires_new_independent_action": true
+                },
+                "indicator_id": "K2.I07",
+                "contradictions": [],
+                "descriptor_basis": null,
+                "opportunity_basis": "Synthetic case presented",
+                "clarification_history": []
+              },
+              "traces": [],
+              "criterion": {
+                "id": "K2.I07",
+                "name": "Согласование взаимосвязанных действий участников",
+                "levels": {
+                  "L0": "Рассматривает действия участников изолированно. Распределяет или выполняет задачи без учёта зависимостей между ними; не определяет, что и когда один участник должен передать другому.",
+                  "L1": "Согласовывает наиболее очевидные зависимости: порядок выполнения, основные сроки или передачу результата между отдельными участниками. Координация линейная и фрагментарная.",
+                  "L2": "Системно согласовывает взаимосвязанные действия: выявляет основные зависимости, определяет последовательность и допустимую параллельность, точки передачи, сроки и условия стыковки. Проверяет связность рабочего процесса.",
+                  "L3": "Проектирует координацию сложной системы взаимозависимых действий с несколькими потоками работ, встречными зависимостями, конкуренцией за ресурсы или разными темпами. Определяет критические зависимости и точки синхронизации, снижая взаимные блокировки."
+                },
+                "product": "Согласованная схема взаимозависимых действий: понятны последовательность, точки передачи результата, сроки и условия стыковки.",
+                "boundary": "K2.I06 — кто за что отвечает; K2.I07 — как стыкуются взаимозависимые действия участников; K2.I09 — как согласованность сохраняется или восстанавливается после отклонений.",
+                "function": "Обеспечить согласованность действий участников там, где результат одного становится условием, входом или ограничением для действий другого.",
+                "skill_id": "K2.2",
+                "red_flags": [
+                  {
+                    "code": "RF-K2.I07-01",
+                    "description": "Организация или сохранение способа выполнения работы, который нарушает явно заданную критическую зависимость между действиями участников."
+                  }
+                ],
+                "m2_version": "v1.0",
+                "source_ref": {
+                  "id": "M2.K2.matrix",
+                  "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K2-matrix-v1.0.xlsx",
+                  "sha256": "2d004a3acb53a10dbc75d63d5cdb16c3a36a5358e6c04c3a79be9327cd269890",
+                  "version": "1.0",
+                  "verification": "file_identity_verified; methodological consistency not re-audited",
+                  "selected_status": "FROZEN"
+                },
+                "component_id": "K2.C04",
+                "package_sha256": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+                "evidence_pattern": "В наблюдаемом материале должны быть связаны действия нескольких участников, существенные зависимости между ними и способ их стыковки. Материал должен позволять установить, выявляет ли оцениваемый взаимозависимости и как согласует либо не согласует последовательность, параллельность, сроки, точки передачи результата или другие существенные условия совместного выполнения действий."
+              },
+              "ia_checksum": "223719e5f0985e57e0f975d10f397bdfe378f59959d11bc48a5f565cf23f4993",
+              "revision_id": "dce26e22-aefc-43ae-a943-8683ef35b790",
+              "material_ref": {
+                "checksum_kind": "definition_json_v1",
+                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "boundary_sequence": 8
+              },
+              "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
+              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+            },
+            {
+              "bundle": {
+                "limitations": [
+                  "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                ],
+                "context_refs": [],
+                "evidence_ids": [],
+                "indicator_id": "K4.I10",
+                "contradictions": [],
+                "opportunity_basis": "Synthetic case and actual submitted material"
+              },
+              "target": {
+                "refs": [],
+                "status": "ASSESSED",
+                "outcome": "INSUFFICIENT_EVIDENCE",
+                "rationale": "No supported action in this synthetic material",
+                "confidence": {
+                  "limitations": [
+                    "Синтетический технический пример; не GC и не подтверждение устойчивости."
+                  ],
+                  "confirmed_features": [],
+                  "alternatives_considered": [],
+                  "reliability_protocol_ref": null
+                },
+                "m2_version": "v1.0",
+                "opportunity": "PRESENT",
+                "stop_reason": null,
+                "uncertainty": {
+                  "impact": "Limited material",
+                  "clarification_needed": "Clarify existing statement",
+                  "resolution_information": [],
+                  "missing_or_conflicting_feature": "No supported action",
+                  "requires_new_independent_action": true
+                },
+                "indicator_id": "K4.I10",
+                "contradictions": [],
+                "descriptor_basis": null,
+                "opportunity_basis": "Synthetic case presented",
+                "clarification_history": []
+              },
+              "traces": [],
+              "criterion": {
+                "id": "K4.I10",
+                "name": "Установление и проверка причинных связей",
+                "levels": {
+                  "L0": "Принимает совпадение, последовательность событий или корреляцию за доказанную причинность либо утверждает причину без проверяемого основания.",
+                  "L1": "Предлагает правдоподобную причинную связь и опирается на очевидные подтверждения, но ограниченно проверяет механизм или альтернативные объяснения.",
+                  "L2": "Самостоятельно формулирует причинную гипотезу, связывает её с наблюдаемым механизмом и данными и проверяет существенные альтернативные объяснения или противоречащие свидетельства.",
+                  "L3": "Сопоставляет конкурирующие причинные модели, использует временные, механистические и контрфактические ограничения для проверки связей и перестраивает причинную модель при появлении данных, которые её не поддерживают."
+                },
+                "product": "Обоснованная причинная модель, в которой подтверждённые, опровергнутые и сохраняющиеся как гипотезы причинные связи различены.",
+                "boundary": "K4.I09 — факторы, потенциально влияющие на проблему; K4.I10 — причинная связь и её проверка; K4.I11 — взаимозависимости, обратные связи и динамика системы.",
+                "function": "Формулировать причинные гипотезы и проверять, поддерживается ли связь между предполагаемой причиной и следствием доступными данными и логикой механизма.",
+                "skill_id": "K4.2",
+                "red_flags": [
+                  {
+                    "code": "RF-K4.I10-01",
+                    "description": "Причинное объяснение устроено так, что любой возможный результат трактуется как его подтверждение и отсутствует наблюдаемый результат, который мог бы его опровергнуть."
+                  }
+                ],
+                "m2_version": "v1.0",
+                "source_ref": {
+                  "id": "M2.K4.matrix",
+                  "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K4-matrix-v1.0.xlsx",
+                  "sha256": "3fdcfc1ba40b4afa626842122067d216b8ecb3efeabcc7cb315002c97c204cf2",
+                  "version": "1.0",
+                  "verification": "file_identity_verified; methodological consistency not re-audited",
+                  "selected_status": "FROZEN"
+                },
+                "component_id": "K4.C05",
+                "package_sha256": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+                "evidence_pattern": "В наблюдаемом материале субъект утверждает, отвергает или проверяет причинную связь между конкретными элементами; можно установить, что он рассматривает как причину и следствие и на какие основания или способ проверки опирается. Качество проверки причинности оценивается по L0–L3."
+              },
+              "ia_checksum": "a2519cd5cfa4c0d355144cf490e3be79b950528dfd37fd7104aac5bb637b53a9",
+              "revision_id": "97046716-f007-4489-955f-83db39b90087",
+              "material_ref": {
+                "checksum_kind": "definition_json_v1",
+                "material_sha256": "217e7436bb749a792a48c294f4b3574cacfaa82205c3ac8851b36a226b179ead",
+                "boundary_sequence": 8
+              },
+              "evidence_checksum": "d95806c3d3a17ef94011a5dd5d24cd2e03cec46727ea2855ef8116c33aeb08a9",
+              "material_checksum": "ba6e794a5aaac95779e2305cb06820c9b368e32c5cc4599c0613d243c3c19a3c"
+            }
+          ],
+          "c56_checksum": "eda61b5c4c2e3f2acf26cf8c1d0ab39b5384d0cc8da7cb9ec2bdedea91df233f",
+          "results_checksum": "56d4541b660ab2c918c616b112eeed080bbb9d9c079528e24d5e5450bf3d9290",
+          "results_revision_id": "68fd1f9d-6b75-4c7a-a176-76033cae29f2"
+        },
+        "admissions": [
+          {
+            "checks": {
+              "same_base_role": true,
+              "same_m2_version": true,
+              "all_refs_resolved": false,
+              "numeric_ia_present": false,
+              "distinct_as_sufficient": false,
+              "all_opportunities_present": false,
+              "no_reported_contradiction": true
+            },
+            "contexts": [],
+            "mechanism": {
+              "id": "m6_admission",
+              "version": "1.0.0",
+              "rules_checksum": "c17a802d770adfa6f2641e103281c0a78f369ad5966029b9f150dc3a60a5122a"
+            },
+            "reason_code": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "indicator_id": "K1.I13",
+            "numeric_admissible": false,
+            "included_revision_ids": [],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "checks": {
+              "same_base_role": true,
+              "same_m2_version": true,
+              "all_refs_resolved": false,
+              "numeric_ia_present": false,
+              "distinct_as_sufficient": false,
+              "all_opportunities_present": false,
+              "no_reported_contradiction": true
+            },
+            "contexts": [],
+            "mechanism": {
+              "id": "m6_admission",
+              "version": "1.0.0",
+              "rules_checksum": "c17a802d770adfa6f2641e103281c0a78f369ad5966029b9f150dc3a60a5122a"
+            },
+            "reason_code": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "indicator_id": "K1.I14",
+            "numeric_admissible": false,
+            "included_revision_ids": [],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "checks": {
+              "same_base_role": true,
+              "same_m2_version": true,
+              "all_refs_resolved": false,
+              "numeric_ia_present": false,
+              "distinct_as_sufficient": false,
+              "all_opportunities_present": false,
+              "no_reported_contradiction": true
+            },
+            "contexts": [],
+            "mechanism": {
+              "id": "m6_admission",
+              "version": "1.0.0",
+              "rules_checksum": "c17a802d770adfa6f2641e103281c0a78f369ad5966029b9f150dc3a60a5122a"
+            },
+            "reason_code": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "indicator_id": "K2.I06",
+            "numeric_admissible": false,
+            "included_revision_ids": [],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "checks": {
+              "same_base_role": true,
+              "same_m2_version": true,
+              "all_refs_resolved": false,
+              "numeric_ia_present": false,
+              "distinct_as_sufficient": false,
+              "all_opportunities_present": false,
+              "no_reported_contradiction": true
+            },
+            "contexts": [],
+            "mechanism": {
+              "id": "m6_admission",
+              "version": "1.0.0",
+              "rules_checksum": "c17a802d770adfa6f2641e103281c0a78f369ad5966029b9f150dc3a60a5122a"
+            },
+            "reason_code": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "indicator_id": "K2.I07",
+            "numeric_admissible": false,
+            "included_revision_ids": [],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "checks": {
+              "same_base_role": true,
+              "same_m2_version": true,
+              "all_refs_resolved": false,
+              "numeric_ia_present": false,
+              "distinct_as_sufficient": false,
+              "all_opportunities_present": false,
+              "no_reported_contradiction": true
+            },
+            "contexts": [],
+            "mechanism": {
+              "id": "m6_admission",
+              "version": "1.0.0",
+              "rules_checksum": "c17a802d770adfa6f2641e103281c0a78f369ad5966029b9f150dc3a60a5122a"
+            },
+            "reason_code": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "indicator_id": "K2.I10",
+            "numeric_admissible": false,
+            "included_revision_ids": [],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "checks": {
+              "same_base_role": true,
+              "same_m2_version": true,
+              "all_refs_resolved": false,
+              "numeric_ia_present": false,
+              "distinct_as_sufficient": false,
+              "all_opportunities_present": false,
+              "no_reported_contradiction": true
+            },
+            "contexts": [],
+            "mechanism": {
+              "id": "m6_admission",
+              "version": "1.0.0",
+              "rules_checksum": "c17a802d770adfa6f2641e103281c0a78f369ad5966029b9f150dc3a60a5122a"
+            },
+            "reason_code": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "indicator_id": "K2.I11",
+            "numeric_admissible": false,
+            "included_revision_ids": [],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "checks": {
+              "same_base_role": true,
+              "same_m2_version": true,
+              "all_refs_resolved": false,
+              "numeric_ia_present": false,
+              "distinct_as_sufficient": false,
+              "all_opportunities_present": false,
+              "no_reported_contradiction": true
+            },
+            "contexts": [],
+            "mechanism": {
+              "id": "m6_admission",
+              "version": "1.0.0",
+              "rules_checksum": "c17a802d770adfa6f2641e103281c0a78f369ad5966029b9f150dc3a60a5122a"
+            },
+            "reason_code": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "indicator_id": "K2.I12",
+            "numeric_admissible": false,
+            "included_revision_ids": [],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "checks": {
+              "same_base_role": true,
+              "same_m2_version": true,
+              "all_refs_resolved": false,
+              "numeric_ia_present": false,
+              "distinct_as_sufficient": false,
+              "all_opportunities_present": false,
+              "no_reported_contradiction": true
+            },
+            "contexts": [],
+            "mechanism": {
+              "id": "m6_admission",
+              "version": "1.0.0",
+              "rules_checksum": "c17a802d770adfa6f2641e103281c0a78f369ad5966029b9f150dc3a60a5122a"
+            },
+            "reason_code": "ADMISSION_CHECK_FAILED:all_opportunities_present,all_refs_resolved,distinct_as_sufficient,numeric_ia_present",
+            "indicator_id": "K4.I10",
+            "numeric_admissible": false,
+            "included_revision_ids": [],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          }
+        ],
+        "profile_ref": {
+          "id": "assessment_personalized_profiles:1",
+          "version": "1",
+          "checksum": "75b335695fc32e2d3d61baf21b5be383956ddec89e4d314ef4dd118ecb20646c"
+        },
+        "skill_inputs": [
+          {
+            "outcome": "no_result",
+            "skill_id": "K1.1",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K1.C01",
+                "missing_indicator_ids": [
+                  "K1.I01",
+                  "K1.I02",
+                  "K1.I03"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I01",
+                  "K1.I02",
+                  "K1.I03"
+                ]
+              },
+              {
+                "component_id": "K1.C02",
+                "missing_indicator_ids": [
+                  "K1.I04",
+                  "K1.I05"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I04",
+                  "K1.I05"
+                ]
+              }
+            ],
+            "skill_name": "Ориентация и проектирование коммуникации",
+            "competency_id": "K1",
+            "competency_name": "Коммуникация",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K1.2",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K1.C03",
+                "missing_indicator_ids": [
+                  "K1.I06",
+                  "K1.I07"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I06",
+                  "K1.I07"
+                ]
+              },
+              {
+                "component_id": "K1.C04",
+                "missing_indicator_ids": [
+                  "K1.I08",
+                  "K1.I09"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I08",
+                  "K1.I09"
+                ]
+              },
+              {
+                "component_id": "K1.C05",
+                "missing_indicator_ids": [
+                  "K1.I10",
+                  "K1.I11"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I10",
+                  "K1.I11"
+                ]
+              }
+            ],
+            "skill_name": "Передача смысла",
+            "competency_id": "K1",
+            "competency_name": "Коммуникация",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K1.3",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K1.C06",
+                "missing_indicator_ids": [
+                  "K1.I12"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I12"
+                ]
+              },
+              {
+                "component_id": "K1.C07",
+                "missing_indicator_ids": [
+                  "K1.I13",
+                  "K1.I14"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I13",
+                  "K1.I14"
+                ]
+              }
+            ],
+            "skill_name": "Слушание, реконструкция и верификация смысла другого",
+            "competency_id": "K1",
+            "competency_name": "Коммуникация",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K1.4",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K1.C08",
+                "missing_indicator_ids": [
+                  "K1.I15"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I15"
+                ]
+              },
+              {
+                "component_id": "K1.C09",
+                "missing_indicator_ids": [
+                  "K1.I16",
+                  "K1.I17"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I16",
+                  "K1.I17"
+                ]
+              }
+            ],
+            "skill_name": "Согласование смыслов и позиций",
+            "competency_id": "K1",
+            "competency_name": "Коммуникация",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K2.1",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K2.C01",
+                "missing_indicator_ids": [
+                  "K2.I01",
+                  "K2.I02"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I01",
+                  "K2.I02"
+                ]
+              },
+              {
+                "component_id": "K2.C02",
+                "missing_indicator_ids": [
+                  "K2.I03",
+                  "K2.I04"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I03",
+                  "K2.I04"
+                ]
+              },
+              {
+                "component_id": "K2.C03",
+                "missing_indicator_ids": [
+                  "K2.I05",
+                  "K2.I06"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I05",
+                  "K2.I06"
+                ]
+              }
+            ],
+            "skill_name": "Организация совместной работы",
+            "competency_id": "K2",
+            "competency_name": "Командная работа",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K2.2",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K2.C04",
+                "missing_indicator_ids": [
+                  "K2.I07"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I07"
+                ]
+              },
+              {
+                "component_id": "K2.C05",
+                "missing_indicator_ids": [
+                  "K2.I08"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I08"
+                ]
+              },
+              {
+                "component_id": "K2.C06",
+                "missing_indicator_ids": [
+                  "K2.I09"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I09"
+                ]
+              }
+            ],
+            "skill_name": "Координация совместных действий",
+            "competency_id": "K2",
+            "competency_name": "Командная работа",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K2.3",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K2.C07",
+                "missing_indicator_ids": [
+                  "K2.I10",
+                  "K2.I11"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I10",
+                  "K2.I11"
+                ]
+              },
+              {
+                "component_id": "K2.C08",
+                "missing_indicator_ids": [
+                  "K2.I12"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I12"
+                ]
+              },
+              {
+                "component_id": "K2.C09",
+                "missing_indicator_ids": [
+                  "K2.I13",
+                  "K2.I14"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I13",
+                  "K2.I14"
+                ]
+              }
+            ],
+            "skill_name": "Поддержание продуктивного командного взаимодействия",
+            "competency_id": "K2",
+            "competency_name": "Командная работа",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K3.1",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K3.C01",
+                "missing_indicator_ids": [
+                  "K3.I01",
+                  "K3.I02"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K3.I01",
+                  "K3.I02"
+                ]
+              },
+              {
+                "component_id": "K3.C02",
+                "missing_indicator_ids": [
+                  "K3.I03"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K3.I03"
+                ]
+              }
+            ],
+            "skill_name": "Исследование пространства возможностей",
+            "competency_id": "K3",
+            "competency_name": "Креативность",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K3.2",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K3.C03",
+                "missing_indicator_ids": [
+                  "K3.I04",
+                  "K3.I05",
+                  "K3.I06"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K3.I04",
+                  "K3.I05",
+                  "K3.I06"
+                ]
+              },
+              {
+                "component_id": "K3.C05",
+                "missing_indicator_ids": [
+                  "K3.I07",
+                  "K3.I08"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K3.I07",
+                  "K3.I08"
+                ]
+              }
+            ],
+            "skill_name": "Создание новых идей и решений",
+            "competency_id": "K3",
+            "competency_name": "Креативность",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K3.3",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K3.C06",
+                "missing_indicator_ids": [
+                  "K3.I09"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K3.I09"
+                ]
+              },
+              {
+                "component_id": "K3.C07",
+                "missing_indicator_ids": [
+                  "K3.I10"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K3.I10"
+                ]
+              },
+              {
+                "component_id": "K3.C08",
+                "missing_indicator_ids": [
+                  "K3.I11",
+                  "K3.I12"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K3.I11",
+                  "K3.I12"
+                ]
+              }
+            ],
+            "skill_name": "Развитие и доведение нового решения",
+            "competency_id": "K3",
+            "competency_name": "Креативность",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K4.1",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K4.C01",
+                "missing_indicator_ids": [
+                  "K4.I01",
+                  "K4.I02"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I01",
+                  "K4.I02"
+                ]
+              },
+              {
+                "component_id": "K4.C02",
+                "missing_indicator_ids": [
+                  "K4.I03",
+                  "K4.I04"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I03",
+                  "K4.I04"
+                ]
+              },
+              {
+                "component_id": "K4.C03",
+                "missing_indicator_ids": [
+                  "K4.I05",
+                  "K4.I06"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I05",
+                  "K4.I06"
+                ]
+              }
+            ],
+            "skill_name": "Анализ и оценка информации",
+            "competency_id": "K4",
+            "competency_name": "Критическое мышление",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K4.2",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K4.C04",
+                "missing_indicator_ids": [
+                  "K4.I07",
+                  "K4.I08"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I07",
+                  "K4.I08"
+                ]
+              },
+              {
+                "component_id": "K4.C05",
+                "missing_indicator_ids": [
+                  "K4.I09",
+                  "K4.I10"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I09",
+                  "K4.I10"
+                ]
+              },
+              {
+                "component_id": "K4.C06",
+                "missing_indicator_ids": [
+                  "K4.I11"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I11"
+                ]
+              }
+            ],
+            "skill_name": "Постановка и анализ проблемы",
+            "competency_id": "K4",
+            "competency_name": "Критическое мышление",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K4.3",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K4.C07",
+                "missing_indicator_ids": [
+                  "K4.I12",
+                  "K4.I13"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I12",
+                  "K4.I13"
+                ]
+              },
+              {
+                "component_id": "K4.C08",
+                "missing_indicator_ids": [
+                  "K4.I14"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I14"
+                ]
+              }
+            ],
+            "skill_name": "Рассуждение, аргументация и проверка выводов",
+            "competency_id": "K4",
+            "competency_name": "Критическое мышление",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K4.4",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K4.C09",
+                "missing_indicator_ids": [
+                  "K4.I15"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I15"
+                ]
+              },
+              {
+                "component_id": "K4.C10",
+                "missing_indicator_ids": [
+                  "K4.I16",
+                  "K4.I17",
+                  "K4.I18"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I16",
+                  "K4.I17",
+                  "K4.I18"
+                ]
+              }
+            ],
+            "skill_name": "Принятие решений",
+            "competency_id": "K4",
+            "competency_name": "Критическое мышление",
+            "skill_result_exists": false
+          }
+        ],
+        "target_profile": null,
+        "results_version": "m8-results/1.0.0",
+        "observation_refs": [
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "Синтетический технический пример; не GC и не подтверждение устойчивости."
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.1",
+            "opportunity": "PRESENT",
+            "revision_id": "bb2324b5-35b1-4861-b3d1-ea98b0d14a55",
+            "indicator_id": "K1.I13",
+            "contradictions": [],
+            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
+            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
+            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "Синтетический технический пример; не GC и не подтверждение устойчивости."
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.1",
+            "opportunity": "PRESENT",
+            "revision_id": "8e291ce6-c4bd-4c75-b514-59d7356d4178",
+            "indicator_id": "K1.I14",
+            "contradictions": [],
+            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
+            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
+            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "Синтетический технический пример; не GC и не подтверждение устойчивости."
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "b35c5588-64bc-4a02-b746-920955668c07",
+            "indicator_id": "K2.I10",
+            "contradictions": [],
+            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
+            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
+            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "Синтетический технический пример; не GC и не подтверждение устойчивости."
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "cc3c90a4-b1ed-403c-8adf-cfc4e7e0c119",
+            "indicator_id": "K2.I11",
+            "contradictions": [],
+            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
+            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
+            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "Синтетический технический пример; не GC и не подтверждение устойчивости."
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "f91ffdfc-cceb-40a0-b0dd-afb24289d81d",
+            "indicator_id": "K2.I12",
+            "contradictions": [],
+            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
+            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
+            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "Синтетический технический пример; не GC и не подтверждение устойчивости."
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "ba029c71-b950-45b2-b824-b89769366d75",
+            "indicator_id": "K2.I06",
+            "contradictions": [],
+            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
+            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
+            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "Синтетический технический пример; не GC и не подтверждение устойчивости."
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "dce26e22-aefc-43ae-a943-8683ef35b790",
+            "indicator_id": "K2.I07",
+            "contradictions": [],
+            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
+            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
+            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "Синтетический технический пример; не GC и не подтверждение устойчивости."
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "97046716-f007-4489-955f-83db39b90087",
+            "indicator_id": "K4.I10",
+            "contradictions": [],
+            "evidence_revision_id": "420b3232-0f03-40a0-97c0-21d3ef94ff2c",
+            "assessment_revision_id": "c065adbe-a9a3-4c80-8fdd-c072fa1bcecc",
+            "assessment_situation_id": "032da65e-cb54-400b-8ec9-7b5bbd6ca7b0"
+          }
+        ],
+        "profile_projection": {},
+        "results_revision_id": "68fd1f9d-6b75-4c7a-a176-76033cae29f2"
+      },
+      "status": "unavailable",
+      "notices": [
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K1.1",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K1.2",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K1.3",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K1.4",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K2.1",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K2.2",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K2.3",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K3.1",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K3.2",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K3.3",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K4.1",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K4.2",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K4.3",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K4.4",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        }
+      ],
+      "mechanism": {
+        "id": "m8_recommendations",
+        "kind": "deterministic_template",
+        "version": "1.1.0",
+        "template_checksum": "60a5a6bb9aca152f9a8e1efe31efe8a1afc7ecc9f6860f9264f6b9e1ab34d9da"
+      },
+      "diagnostics": [],
+      "failure_reason": null,
+      "input_checksum": "465b7370999c4824038faee7c1e7d58e54a439e8b223dcd6dd695257ff69bb88",
+      "recommendations": [],
+      "contract_version": "m8-recommendations/1.1.0"
+    }
+  }
+}

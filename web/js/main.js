@@ -1,3 +1,4 @@
+import { loadInterview } from './screen-loaders.js';
 import { APP_RELEASE } from './config.js';
 import { appReleaseNumber, authPanel, emailInput, authTokenForm, magicTokenInput, authStatus } from './dom.js';
 import {
@@ -195,6 +196,18 @@ const bootApp = async () => {
   }
 
   if (state.pendingUser?.id) {
+    const cycleId = params.get('cycle_id') || state.productCycleId;
+    if (screen === 'interview' && cycleId) {
+      const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(cycleId) + '/runtime', { credentials: 'same-origin' });
+      if (!response.ok) {
+        returnToStart();
+        return;
+      }
+      state.assessmentRuntimeKind = 'cycle';
+      state.productCycleId = cycleId;
+      (await loadInterview()).openInterview();
+      return;
+    }
     if (state.currentScreen === 'onboarding') {
       await openOnboardingScreen();
       return;

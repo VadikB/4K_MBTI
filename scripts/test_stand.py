@@ -45,6 +45,8 @@ def environment(state):
         AUTH_SESSION_SECURE_COOKIE='false',LOG_TO_STDOUT='true',LOG_TO_FILE='false',
         PYTHONPATH=str(ROOT),STAND_STATE=str(state['state_path']),
         AGENT4K_STAND_MARKER=state['owner_marker'],STAND_ADMIN_URL=os.environ['STAND_ADMIN_URL'])
+    if state.get('browser_scenario') == 'acceptance-v1':
+        env['AGENT4K_BROWSER_SCENARIO']='acceptance-v1'
     return env
 
 

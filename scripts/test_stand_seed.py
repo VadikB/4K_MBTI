@@ -45,7 +45,7 @@ def seed(state):
         roles=publish_base_roles(c,package=read('assessment_definitions/role_profiles/competencies_4k/1.1/base_roles.json'),
             manifest=read('assessment_definitions/role_profiles/competencies_4k/1.1/manifest.json'),published_by_user_id=users[0],decision_basis=basis)
         cases=read('assessment_definitions/cases/competencies_4k/1.1/case-package.json')
-        role_code=cases['cases'][0]['base_role']
+        role_code=cases['cases'][3 if state.get('browser_case')=='character' else 0]['base_role']
         role=c.execute('SELECT v.id FROM assessment_role_profile_versions v JOIN assessment_role_profiles r ON r.id=v.role_profile_id WHERE r.code=%s',(role_code,)).fetchone()['id']
         definition={'name':'Синтетическая организация','organization_type':'компания','industry':'образование',
             'activity_description':'Техническая проверка','case_reality_level':'обобщённый','organization_name_usage_rules':'не использовать название'}
@@ -58,10 +58,13 @@ def seed(state):
             create_personalized_profile(c,user_id=uid,assessment_configuration_id=publication['configuration_id'],
                 organization_context_version_id=org_version,role_profile_version_id=role,user_context_version_id=version)
         # Same isolated fixture lifecycle as test_m10_product_path_db; repository package stays WORKING.
-        admitted=[cases['cases'][0],cases['cases'][2]]
+        admitted=([read('tests/browser/fixtures/sources/character-case-v1.json')] if state.get('browser_case')=='character' else [cases['cases'][0],cases['cases'][2]])
         for case in admitted:case['status']='FROZEN'
         manifest=read('assessment_definitions/cases/competencies_4k/1.1/manifest.json')
         import_package(c,package=cases,manifest=manifest,execution_rules=read('assessment_definitions/cases/competencies_4k/1.1/execution-rules.json'))
+        if state.get('browser_case')=='character':
+            import_package(c,package={**cases,'cases':admitted},manifest=read('tests/browser/fixtures/character-manifest.json'),
+                           execution_rules=read('assessment_definitions/cases/competencies_4k/1.1/execution-rules.json'))
         for case in admitted:
             cid=c.execute('SELECT id FROM m5_case_versions WHERE case_id=%s',(case['case_id'],)).fetchone()['id']
             for scope in ('case_format','case_dialogue','assessment_situation'):

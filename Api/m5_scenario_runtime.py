@@ -87,6 +87,12 @@ def run_model_check_case03(connection, *, assessment_situation_id: str, scheme: 
 
 
 def _as_row(connection, assessment_situation_id: str, *, lock: bool = False):
+    # The completion worker locks Cycle before AS. Use the same order for turns,
+    # transitions and handoffs so concurrent close cannot deadlock against a turn.
+    if lock:
+        connection.execute("""SELECT id FROM m5_cycles WHERE id=(
+            SELECT cycle_db_id FROM m5_assessment_situations WHERE assessment_situation_id=%s
+        ) FOR UPDATE""", (UUID(assessment_situation_id),)).fetchone()
     suffix = " FOR UPDATE" if lock else ""
     row = connection.execute("SELECT * FROM m5_assessment_situations WHERE assessment_situation_id=%s" + suffix,
                              (UUID(assessment_situation_id),)).fetchone()

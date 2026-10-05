@@ -1,0 +1,10 @@
+{
+  "cycle_id": "31b3e648-81ec-433d-9e4a-3f01a00d06f6",
+  "collection_status": "calculated",
+  "processing_status": "calculated",
+  "remaining_seconds": 0,
+  "calendar_deadline": "2026-10-08T13:12:35.691393+03:00",
+  "close_reason": "time_budget",
+  "c46_status": "reconciled",
+  "can_continue": false
+}

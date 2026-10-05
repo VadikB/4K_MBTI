@@ -1,0 +1,18 @@
+{
+  "id": "browser-character-acceptance",
+  "version": "1.0.0",
+  "artifacts": [
+    {
+      "name": "sources/character-case-v1.json",
+      "sha256": "754870d8ef1ef550cc40f65a7a4886f5755361d709f10600f4fb7938c082ec47"
+    }
+  ],
+  "dependencies": {
+    "m2": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+    "m3": "a3dbd62940b3c79baa123c5c2b4fff960b20c71e558304ba41007c2a205571d7"
+  },
+  "schema_version": 2,
+  "runtime_enabled": false,
+  "source_status": "WORKING",
+  "status": "draft"
+}

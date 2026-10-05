@@ -56,7 +56,6 @@ import {
   adminReportsExpertGroupButton,
   adminReportsGroupDialog,
   adminReportsGroupDialogList,
-  adminReportsGroupDialogClose,
   adminReportsGroupDialogExport,
   adminReportDetailBackButton,
   adminReportDetailPdfButton,
@@ -86,7 +85,6 @@ import {
   adminPromptLabCaseSelect,
   adminPromptLabCasePickerButton,
   adminPromptLabCaseDialog,
-  adminPromptLabCaseDialogClose,
   adminPromptLabCaseDialogList,
   adminPromptLabRunButton,
   adminPromptLabDialogPrepareButton,
@@ -148,7 +146,7 @@ import {
   libraryStartButton,
   welcomeProfileButton,
 } from './dom.js';
-import { readApiResponse } from './api.js';
+import { readApiResponse, createOperationId } from './api.js';
 import {
   buildExistingUserAgentMessage,
   shouldOfferNoChangesQuickReply,
@@ -164,9 +162,6 @@ import {
   loadChat,
   loadProfile,
   loadAiWelcome,
-  loadDashboard,
-  loadReports,
-  loadAssessment,
   loadInterview,
   loadProcessing,
   loadReport,
@@ -1629,7 +1624,7 @@ const setInterviewSubmitLabel = (label) => {
 };
 
 const logAssessmentClientEvent = (event, messageType = 'answer', errorType = null) => {
-  if (!state.assessmentSessionCode && !state.productCycleId) {
+  if (!state.assessmentSessionCode) {
     return;
   }
   void fetch('/users/assessment/client-event', {
@@ -1647,6 +1642,8 @@ const logAssessmentClientEvent = (event, messageType = 'answer', errorType = nul
 };
 
 const resumeInterviewTimerAfterSendError = (interviewModule) => {
+  // Keep the failed row and its request identity until retry/reload; Cycle time is server-owned.
+  if (interviewModule.isCycleAssessment()) return;
   if (!interviewModule.updateInterviewTimer()) {
     state.assessmentTimerId = window.setInterval(() => {
       if (typeof state.assessmentRemainingSeconds === 'number' && state.assessmentRemainingSeconds > 0) {
@@ -1681,11 +1678,13 @@ const sendInterviewAnswer = async (text, existingMessageRow = null) => {
       messageRow.dataset.requestId ||= createOperationId();
       messageRow.dataset.turnId ||= crypto.randomUUID();
     }
-    await interviewModule.submitAssessmentMessage(text, {
+    messageRow.productRequestIdentity ||= {
       requestId: messageRow.dataset.requestId,
       turnId: messageRow.dataset.turnId,
-    });
+    };
+    await interviewModule.submitAssessmentMessage(text, messageRow.productRequestIdentity);
     interviewModule.setInterviewMessageDeliveryState(messageRow, 'sent');
+    if (interviewModule.isCycleAssessment()) interviewModule.resumeProductRuntimePolling();
     logAssessmentClientEvent('request_succeeded');
     if (failedInterviewMessage?.row === messageRow) {
       failedInterviewMessage = null;
@@ -1830,12 +1829,12 @@ interviewFinishButton.addEventListener('click', async () => {
     return;
   }
 
-  if (!state.assessmentSessionCode) {
+  if (!state.assessmentSessionCode && !state.productCycleId) {
     showError(interviewError, 'Сессия кейсового интервью не инициализирована.');
     return;
   }
 
-  if (!window.confirm('Завершить текущий кейс? Ответы будут зафиксированы, после чего откроется следующий кейс.')) {
+  if (!window.confirm('Завершить прохождение? Ответы будут зафиксированы. При необходимости сначала появится уточняющий вопрос.')) {
     return;
   }
 
