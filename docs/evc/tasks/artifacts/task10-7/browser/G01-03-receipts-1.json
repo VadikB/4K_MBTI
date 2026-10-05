@@ -1,0 +1,195 @@
+{
+  "before": {
+    "output_counts": {
+      "m5_assessment_situations": 0,
+      "m5_dialogue_turns": 0,
+      "m6_indicator_assessment_revisions": 0,
+      "m8_results": 0,
+      "m8_reports": 0
+    },
+    "owner": 1,
+    "user_context_count": 0,
+    "profiles": [],
+    "cycles": []
+  },
+  "ready": {
+    "output_counts": {
+      "m5_assessment_situations": 0,
+      "m5_dialogue_turns": 0,
+      "m6_indicator_assessment_revisions": 0,
+      "m8_results": 0,
+      "m8_reports": 0
+    },
+    "owner": 1,
+    "user_context_count": 1,
+    "profiles": [
+      {
+        "id": 2,
+        "user_id": 1,
+        "organization_id": 1,
+        "assessment_configuration_id": 2,
+        "role_profile_version_id": 4,
+        "organization_context_version_id": 1,
+        "user_context_version_id": 2,
+        "status": "ready",
+        "checksum": "1114c2649485f60192626e90f239c5b4b57773e67067d05717d4ef5dd1e78611",
+        "provenance_json": {
+          "role_profile": "role_profile",
+          "user_context": "user",
+          "organization_context": "organization"
+        }
+      }
+    ],
+    "cycles": []
+  },
+  "after": {
+    "output_counts": {
+      "m5_assessment_situations": 1,
+      "m5_dialogue_turns": 3,
+      "m6_indicator_assessment_revisions": 9,
+      "m8_results": 1,
+      "m8_reports": 1
+    },
+    "owner": 1,
+    "user_context_count": 1,
+    "profiles": [
+      {
+        "id": 2,
+        "user_id": 1,
+        "organization_id": 1,
+        "assessment_configuration_id": 2,
+        "role_profile_version_id": 4,
+        "organization_context_version_id": 1,
+        "user_context_version_id": 2,
+        "status": "ready",
+        "checksum": "1114c2649485f60192626e90f239c5b4b57773e67067d05717d4ef5dd1e78611",
+        "provenance_json": {
+          "role_profile": "role_profile",
+          "user_context": "user",
+          "organization_context": "organization"
+        }
+      }
+    ],
+    "cycles": [
+      {
+        "cycle_id": "51ccc285-d37e-4d59-980a-fcc21699b38b",
+        "owner_user_id": 1,
+        "organization_id": 1,
+        "personalized_profile_id": 2,
+        "profile_ref_json": {
+          "id": "assessment_personalized_profiles:2",
+          "version": "1",
+          "checksum": "1114c2649485f60192626e90f239c5b4b57773e67067d05717d4ef5dd1e78611"
+        },
+        "selected_role_ref_json": {
+          "id": "project_product_process_manager",
+          "version": "frozen-profile",
+          "checksum": "1114c2649485f60192626e90f239c5b4b57773e67067d05717d4ef5dd1e78611"
+        },
+        "situations": 1
+      }
+    ]
+  },
+  "final": {
+    "output_counts": {
+      "m5_assessment_situations": 2,
+      "m5_dialogue_turns": 6,
+      "m6_indicator_assessment_revisions": 18,
+      "m8_results": 2,
+      "m8_reports": 3
+    },
+    "owner": 1,
+    "user_context_count": 1,
+    "profiles": [
+      {
+        "id": 2,
+        "user_id": 1,
+        "organization_id": 1,
+        "assessment_configuration_id": 2,
+        "role_profile_version_id": 4,
+        "organization_context_version_id": 1,
+        "user_context_version_id": 2,
+        "status": "ready",
+        "checksum": "1114c2649485f60192626e90f239c5b4b57773e67067d05717d4ef5dd1e78611",
+        "provenance_json": {
+          "role_profile": "role_profile",
+          "user_context": "user",
+          "organization_context": "organization"
+        }
+      }
+    ],
+    "cycles": [
+      {
+        "cycle_id": "51ccc285-d37e-4d59-980a-fcc21699b38b",
+        "owner_user_id": 1,
+        "organization_id": 1,
+        "personalized_profile_id": 2,
+        "profile_ref_json": {
+          "id": "assessment_personalized_profiles:2",
+          "version": "1",
+          "checksum": "1114c2649485f60192626e90f239c5b4b57773e67067d05717d4ef5dd1e78611"
+        },
+        "selected_role_ref_json": {
+          "id": "project_product_process_manager",
+          "version": "frozen-profile",
+          "checksum": "1114c2649485f60192626e90f239c5b4b57773e67067d05717d4ef5dd1e78611"
+        },
+        "situations": 1
+      },
+      {
+        "cycle_id": "8f484600-8c8d-4bc6-babe-cffb0e6569e2",
+        "owner_user_id": 1,
+        "organization_id": 1,
+        "personalized_profile_id": 2,
+        "profile_ref_json": {
+          "id": "assessment_personalized_profiles:2",
+          "version": "1",
+          "checksum": "1114c2649485f60192626e90f239c5b4b57773e67067d05717d4ef5dd1e78611"
+        },
+        "selected_role_ref_json": {
+          "id": "project_product_process_manager",
+          "version": "frozen-profile",
+          "checksum": "1114c2649485f60192626e90f239c5b4b57773e67067d05717d4ef5dd1e78611"
+        },
+        "situations": 1
+      }
+    ]
+  },
+  "first": {
+    "id": "b91cdefd-c2b0-4355-bd62-f581dd58981e",
+    "revision_no": 1,
+    "audience": "assessee",
+    "status": "ready",
+    "cycle_id": "51ccc285-d37e-4d59-980a-fcc21699b38b",
+    "owner_user_id": 1,
+    "results_revision_id": "c670ccc8-d54c-44f7-8874-97b8d93a6816",
+    "created_at": "2026-10-05T22:33:36.945418+03:00"
+  },
+  "second": {
+    "id": "a02492df-29cd-4b54-bf19-ab6844991fc3",
+    "revision_no": 1,
+    "audience": "assessee",
+    "status": "ready",
+    "cycle_id": "8f484600-8c8d-4bc6-babe-cffb0e6569e2",
+    "owner_user_id": 1,
+    "results_revision_id": "0a06dcfe-c87f-4c09-bb07-ec42ca7cfb07",
+    "created_at": "2026-10-05T22:33:57.109482+03:00"
+  },
+  "revision": {
+    "id": "a8b4dc0a-2ccf-443e-b8af-1423fb285afa",
+    "revision_no": 2,
+    "audience": "assessee",
+    "status": "ready",
+    "cycle_id": "51ccc285-d37e-4d59-980a-fcc21699b38b",
+    "owner_user_id": 1,
+    "results_revision_id": "c670ccc8-d54c-44f7-8874-97b8d93a6816",
+    "created_at": "2026-10-05T22:34:04.467935+03:00"
+  },
+  "results": {
+    "id": "5ca7b1f2-181b-4502-a14c-07a230476920",
+    "revision_id": "c670ccc8-d54c-44f7-8874-97b8d93a6816",
+    "revision_no": 1,
+    "cycle_id": "51ccc285-d37e-4d59-980a-fcc21699b38b",
+    "created_at": "2026-10-05T22:33:36.945418+03:00"
+  }
+}

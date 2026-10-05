@@ -1,0 +1,135 @@
+{
+  "stats": {
+    "startTime": "2026-10-05T19:23:02.881Z",
+    "duration": 665668.196,
+    "expected": 11,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "browsers": [
+    "153.0.8010.12"
+  ],
+  "tests": [
+    {
+      "title": "S10-A and T11-10 positive, clarification and saved Report/PDF",
+      "status": "passed",
+      "duration_ms": 114841,
+      "retry": 0
+    },
+    {
+      "title": "S10-B interruption and Additional Session preserve Cycle and deadline",
+      "status": "passed",
+      "duration_ms": 83796,
+      "retry": 0
+    },
+    {
+      "title": "S10-C1 background time closure without another Turn",
+      "status": "passed",
+      "duration_ms": 120668,
+      "retry": 0
+    },
+    {
+      "title": "S10-C2 background time closure without another Turn",
+      "status": "passed",
+      "duration_ms": 97919,
+      "retry": 0
+    },
+    {
+      "title": "Recovery: lost response, unaccepted request, two tabs and owner boundaries",
+      "status": "passed",
+      "duration_ms": 44857,
+      "retry": 0
+    },
+    {
+      "title": "S10-A character branch: actual character Turn, order and no invented recommendation",
+      "status": "passed",
+      "duration_ms": 27200,
+      "retry": 0
+    },
+    {
+      "title": "REV-02 fresh M4 confirmation, canonical context and saved history after login",
+      "status": "passed",
+      "duration_ms": 60350,
+      "retry": 0
+    },
+    {
+      "title": "S10.4 owner profile, 403, logout, late response and account switch",
+      "status": "passed",
+      "duration_ms": 19234,
+      "retry": 0
+    },
+    {
+      "title": "P10.5 fresh profile, lost confirmation response, reload and first AS",
+      "status": "passed",
+      "duration_ms": 21237,
+      "retry": 0
+    },
+    {
+      "title": "P10.5 ready profile with no admitted catalog",
+      "status": "passed",
+      "duration_ms": 16449,
+      "retry": 0
+    },
+    {
+      "title": "G10.7 fresh participant, immutable M4, logout history and independent Cycle",
+      "status": "passed",
+      "duration_ms": 52752,
+      "retry": 0
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "browser/G01-empty-owner-inputs-and-all-outputs-1.json",
+      "sha256": "941238959b7558bf2cb81a613c81bb737b81caad145b827eec351fe30615a118"
+    },
+    {
+      "path": "browser/profile-confirmation-1.png",
+      "sha256": "fa32a7017f59880c98986bb278c5c3a8c08b0ba40699966881bd82bc3c48b0fd"
+    },
+    {
+      "path": "browser/report-pdf-1.pdf",
+      "sha256": "c75b1ee0f4bebd0fdcc97fb6a264c856e4e8374cce90b2ef25dfb0ec719445f7"
+    },
+    {
+      "path": "browser/report-1.json",
+      "sha256": "bcc73ab6254b4c1b24a09ec1d27433aaedf8b14c8198f44611d8b9f121a8bcef"
+    },
+    {
+      "path": "browser/pdf-content-check-1.txt",
+      "sha256": "d5b82287be2d0a3cecbfab2b18c248122b23715932b059f3db0c7c2a579ea40e"
+    },
+    {
+      "path": "browser/report-ui-1.png",
+      "sha256": "b4a754d4037813251bf01b3903fc6a3da471628a98bb3110040fe41bb2b0f799"
+    },
+    {
+      "path": "browser/G02-relogin-pdf-1.pdf",
+      "sha256": "253c99fa0637c97174e7f29faab0fa5d8d29a286418dd4031323973be17dd82d"
+    },
+    {
+      "path": "browser/report-pdf-2.pdf",
+      "sha256": "2605d3c62a7afed159235192ea9c2d5f06d82a134059ab5a857b62e5d3a76c84"
+    },
+    {
+      "path": "browser/report-2.json",
+      "sha256": "1047f4da220d7852b1ae594c7fcdcb0b927e26015672ad5b90136f8ab30379e3"
+    },
+    {
+      "path": "browser/pdf-content-check-2.txt",
+      "sha256": "d5b82287be2d0a3cecbfab2b18c248122b23715932b059f3db0c7c2a579ea40e"
+    },
+    {
+      "path": "browser/report-ui-2.png",
+      "sha256": "feac317dfc988d0a49075b8fc476946951ffd645483b7497eb0782486f3aa05f"
+    },
+    {
+      "path": "browser/G03-two-independent-results-1.png",
+      "sha256": "d8c47514e5f23d7e5d77b07b59c907c4cc7d0f01b2e643243106d12bca88e465"
+    },
+    {
+      "path": "browser/G01-03-receipts-1.json",
+      "sha256": "79384ef51efe11feb7faea41024ed687b40b7ecb5d201f92ca0af53b824f9c9a"
+    }
+  ]
+}
