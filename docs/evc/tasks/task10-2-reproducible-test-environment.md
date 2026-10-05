@@ -176,3 +176,19 @@ integration после проверки source_hash и отказа main без 
 HTTP/workers видны в app.txt; оба run подтверждают foreign 403 и тот же Report после
 перезапуска. Временные browser-серверы остановлены; локальный state для ручного run d
 сохранён вне Git. Для 10.3 рекомендуется новый чистый state.
+
+## Поправка после Linux CI
+
+Первый CI на ae8b1fc выявил Linux-specific ошибку второго serve: port probe
+отклонял TCP TIME_WAIT как занятый порт (Errno 98), хотя сервер был остановлен.
+Первый HTTP Report/PDF и 75 остальных integration прошли. Исправлено:
+probe использует SO_REUSEADDR, как uvicorn, и listen для проверки живого listener.
+Добавлена регрессия: живой listener отклоняется, закрытое соединение не блокирует
+рестарт. Схема, seed и продуктовый путь не меняются. Повтор CI обязателен.
+
+Локальная проверка поправки: `pytest --run-integration -m integration
+tests/integration/test_clean_bootstrap_db.py -q` — PASS, exit 0, 3 passed,
+70.92 s. Предыдущий CI FAIL сохранён как факт; актуальный CI проверяется в
+[Draft PR #32](https://github.com/VadikB/4K_MBTI/pull/32).
+Bootstrap base.sql SHA256:
+`8b8dd6e62912b48ba55746d52619684b65318aeee504e9ad39799414cae534d2`.

@@ -14,6 +14,14 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 
 
+def check_port(port):
+    with socket.socket() as probe:
+        # Match uvicorn's restart semantics: TIME_WAIT is not a live server.
+        probe.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+        probe.bind(('127.0.0.1',port))
+        probe.listen(1)
+
+
 def admin_params(url):
     from psycopg.conninfo import conninfo_to_dict
     if not url:
@@ -124,8 +132,7 @@ def main():
     if args.action in ('bootstrap','seed'):
         subprocess.run([sys.executable,__file__,'_'+args.action,'--state',str(path)],env=env,cwd=ROOT,check=True)
     elif args.action=='serve':
-        with socket.socket() as probe:
-            probe.bind(('127.0.0.1',state['port']))
+        check_port(state['port'])
         os.execve(sys.executable,[sys.executable,'-m','uvicorn','main:app','--host','127.0.0.1','--port',str(state['port']),'--no-access-log'],env)
     elif args.action=='smoke':
         subprocess.run([sys.executable,str(ROOT/'scripts/test_stand_smoke.py'),'--state',str(path)],env=env,cwd=ROOT,check=True)

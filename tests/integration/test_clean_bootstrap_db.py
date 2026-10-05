@@ -8,6 +8,22 @@ import pytest
 pytestmark=pytest.mark.integration
 
 
+def test_port_probe_rejects_live_listener_and_allows_closed_connection():
+    import socket
+    from scripts.test_stand import check_port
+    with socket.socket() as listener:
+        listener.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+        listener.bind(('127.0.0.1',0));listener.listen(1)
+        port=listener.getsockname()[1]
+        with pytest.raises(OSError):
+            check_port(port)
+        with socket.create_connection(('127.0.0.1',port)) as client:
+            connection,_=listener.accept()
+            connection.close()
+            assert client.recv(1)==b''
+    check_port(port)
+
+
 def test_two_empty_database_application_starts_and_owner_http_reports(tmp_path):
     # This is deliberately FAIL, not skip, when explicitly running integration without its DB.
     url=os.getenv('TEST_DATABASE_URL')
