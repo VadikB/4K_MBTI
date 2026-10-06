@@ -109,7 +109,7 @@ NOT_RUN:
 ## Передача
 
 - base SHA: `0f4902b95957c55500cd9ce41f6b2750f243e71c`;
-- result SHA: implementation commit указывается после локальной фиксации в handoff;
+- result SHA реализации: `398d68f010791c2c1bf51dd57d800d064c208ce5`;
 - UX-02 получает публичный organization context, состояния 404/410/403/network,
   правило one-user-one-org и отсутствие auto-start оценки;
 - M4 не менялся; единственная membership остаётся источником organization identity;
