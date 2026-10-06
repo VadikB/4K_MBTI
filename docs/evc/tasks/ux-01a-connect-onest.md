@@ -80,6 +80,28 @@ Revert UX-01A commit возвращает fallback без миграций и и
   implementation commit выполнен с `--no-verify` только для сохранения исходных
   лицензионных байтов.
 
+### Аудит pre-commit перед исключением
+
+Активный `core.hooksPath` — `.githooks`; hook и общие правила не изменялись и не
+отключались. `.githooks/pre-commit` выполняет:
+
+1. `git diff --cached --check` для всего staged diff;
+2. guard сборки: если staged файлы есть в `web/js/**`, staged файлы обязаны быть
+   и в `web/dist/**`.
+
+Перед `--no-verify` отдельно выполнены оставшиеся проверки:
+
+- `git diff --check --cached -- . ':(exclude)web/assets/fonts/onest/OFL.txt'` — PASS;
+- guard `web/js` → `web/dist` — NOT_APPLICABLE: implementation commit не содержит
+  изменений `web/js/**`; сборка `npm run build:web` при этом выполнена отдельно и PASS;
+- `npm run lint:js` — PASS;
+- SHA-256 оригинального `OFL.txt` повторно подтверждён:
+  `071195d8806e226faeee60259c28ca67b458227af5195a73f5cfcab06e3003bc`.
+
+Исключение относится только к trailing space на строке 21 byte-identical
+`OFL.txt`. Постоянное отключение hook, изменение `.githooks/pre-commit`,
+`scripts/setup_git_hooks.sh` или общих правил проверки не выполнялось.
+
 Browser проверялся локально командой `python3 -m http.server 18103` из корня и
 Playwright Chromium по `http://127.0.0.1:18103/web/index.html`. Для воспроизведения
 архитектором достаточно `npm run build:web`, локального HTTP server из корня и
