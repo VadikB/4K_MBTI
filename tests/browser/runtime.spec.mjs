@@ -87,6 +87,20 @@ test('Same-domain email outside the exact allowlist is denied',async({page,stand
  await expect(page.locator('#auth-error')).toBeVisible();
  await expect(page.locator('#auth-token-form')).toBeHidden();
 });
+test('Organization invitation keeps context and cannot admit a member of another organization',async({page,stand})=>{
+ const invitation=`browser-invitation-${stand.state.run_id}`;
+ await page.goto(`${stand.url}/?invite=${encodeURIComponent(invitation)}`);
+ await expect(page.locator('#organization-invitation-context')).toContainText('Синтетическая организация E10.2');
+ await expect(page.locator('#organization-invitation-context')).toContainText('Техническое приглашение');
+ await page.reload();
+ await expect(page.locator('#organization-invitation-context')).toContainText('Синтетическая организация E10.2');
+ await page.locator('#email-input').fill('member-b@example.test');
+ const denied=page.waitForResponse(response=>new URL(response.url()).pathname==='/users/auth/email/request-link');
+ await page.locator('#request-magic-link-button').click();
+ expect((await denied).status()).toBe(403);
+ await expect(page.locator('#auth-error')).toContainText('выбранной организации');
+ await expect(page.locator('#auth-token-form')).toBeHidden();
+});
 async function start(page,expected='готовности'){
  await page.locator('#assessment-action-button').click();
  await page.locator('#prechat-start-button').click();

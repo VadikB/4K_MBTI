@@ -5,9 +5,10 @@ import io
 import json
 import logging
 import re
+import secrets
 from pathlib import Path
 from urllib.parse import quote
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Literal
 from uuid import UUID, uuid4
 
@@ -62,6 +63,13 @@ from Api.org_access import (
     ensure_configured_organizations,
     get_admin_scope,
     normalize_org_code,
+)
+from Api.organization_invitation_service import (
+    OrganizationInvitationError,
+    hash_invitation_token,
+    public_context as invitation_public_context,
+    resolve_invitation,
+    resolve_invitation_by_id,
 )
 from Api.report_growth_logic import (
     WEAK_SIGNAL_RECOMMENDATIONS,
@@ -137,6 +145,9 @@ from Api.schemas import (
     AuthPasswordLoginRequest,
     AuthPasswordRegisterRequest,
     AuthPasswordResetRequest,
+    OrganizationInvitationAdminResponse,
+    OrganizationInvitationCreateRequest,
+    OrganizationInvitationPublicResponse,
     PromptLabCaseOption,
     PromptLabCaseRunRequest,
     PromptLabCaseRunResponse,
@@ -819,7 +830,7 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
     org_rows = connection.execute(
         """
         SELECT id, code, name, is_active, profile, founded_year, employee_count,
-               industry, website, headquarters, notes, created_at, updated_at
+               industry, website, headquarters, notes, invitation_intro, created_at, updated_at
         FROM organizations
         ORDER BY is_active DESC, name ASC, code ASC
         """
@@ -985,6 +996,7 @@ def _build_admin_organizations(connection) -> AdminOrganizationsResponse:
                 website=row["website"],
                 headquarters=row["headquarters"],
                 notes=row["notes"],
+                invitation_intro=row["invitation_intro"],
                 domains=domains_by_org.get(int(row["id"]), []),
                 admins=admins_by_org.get(int(row["id"]), []),
                 members=members_by_org_list.get(int(row["id"]), []),
@@ -2752,6 +2764,51 @@ def _clear_user_session_cookie(response: FastAPIResponse) -> None:
     response.delete_cookie(key=SESSION_COOKIE_NAME, path="/")
 
 
+def _public_invitation_by_token(token: str | None) -> OrganizationInvitationPublicResponse | None:
+    if not token:
+        return None
+    with get_connection() as connection:
+        invitation = resolve_invitation(connection, token=token)
+    return OrganizationInvitationPublicResponse(**invitation_public_context(invitation))
+
+
+def _public_invitation_by_id(invitation_id: int | None) -> OrganizationInvitationPublicResponse | None:
+    if invitation_id is None:
+        return None
+    try:
+        with get_connection() as connection:
+            invitation = resolve_invitation_by_id(connection, invitation_id=invitation_id)
+    except OrganizationInvitationError:
+        return None
+    return OrganizationInvitationPublicResponse(**invitation_public_context(invitation))
+
+
+def _organization_context_for_user(connection, user_id: int) -> OrganizationInvitationPublicResponse | None:
+    row = connection.execute(
+        """
+        SELECT organization.id, organization.name, organization.invitation_intro
+        FROM organization_memberships membership
+        JOIN organizations organization ON organization.id = membership.organization_id
+        WHERE membership.user_id = %s
+          AND organization.is_active = TRUE
+          AND (
+            membership.role = 'admin'
+            OR membership.admission_source IN ('admin_add', 'csv_import')
+          )
+        LIMIT 2
+        """,
+        (user_id,),
+    ).fetchall()
+    if len(row) != 1:
+        return None
+    return OrganizationInvitationPublicResponse(
+        organization_id=int(row[0]["id"]),
+        organization_name=str(row[0]["name"]),
+        invitation_intro=str(row[0]["invitation_intro"] or "").strip() or None,
+        expires_at=None,
+    )
+
+
 def _build_authenticated_user_response(
     *,
     connection,
@@ -2759,11 +2816,17 @@ def _build_authenticated_user_response(
     response: FastAPIResponse,
     login_identifier: str,
     is_new_user: bool,
+    organization_invitation_id: int | None = None,
 ) -> CheckOrCreateUserResponse:
     compact_user = _compact_user_response(user)
     _set_user_session_cookie(response, web_session_service.create_session(user.id))
     assign_user_organization_from_email(connection, user_id=user.id, email=user.email)
     admin_scope = _get_admin_scope_or_403(connection, user) if _is_admin_user(connection, user) else AdminScope()
+    organization = (
+        _public_invitation_by_id(organization_invitation_id)
+        if organization_invitation_id is not None
+        else _organization_context_for_user(connection, user.id)
+    )
 
     if admin_scope.can_admin:
         return CheckOrCreateUserResponse(
@@ -2780,6 +2843,7 @@ def _build_authenticated_user_response(
             ),
             is_admin=True,
             admin_dashboard=_build_admin_dashboard(connection, admin_scope),
+            organization=organization,
         )
 
     agent = interviewer_agent.start(
@@ -2795,6 +2859,7 @@ def _build_authenticated_user_response(
         requires_user_data=is_new_user,
         agent=agent,
         dashboard=None if is_new_user else _build_dashboard(connection, user),
+        organization=organization,
     )
 
 
@@ -2813,7 +2878,10 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
     if not settings.auth_magic_link_dev_mode:
         try:
             email = normalize_email(payload.email)
-            auth_mode = auth_service.get_password_auth_mode(email=email)
+            auth_mode = auth_service.get_password_auth_mode(
+                email=email,
+                organization_invitation_token=payload.organization_invitation_token,
+            )
         except AuthAccessDeniedError as exc:
             raise HTTPException(status_code=403, detail=str(exc)) from exc
         except ValueError as exc:
@@ -2824,6 +2892,7 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
                 action_result = auth_service.create_auth_action_request(
                     email=email,
                     purpose="email_verification",
+                    organization_invitation_token=payload.organization_invitation_token,
                     client_ip=client_ip,
                     user_agent=user_agent,
                 )
@@ -2839,6 +2908,7 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
                 delivery_method=settings.email_provider or "email",
                 auth_mode="verification_pending",
                 dev_magic_token=action_result.dev_token,
+                organization=_public_invitation_by_id(action_result.organization_invitation_id),
             )
         return AuthEmailRequestResponse(
             message="Задайте пароль для первичного входа." if is_registration else "Введите пароль для входа.",
@@ -2848,10 +2918,12 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
             delivery_method=auth_mode,
             auth_mode=auth_mode,
             dev_magic_token=None,
+            organization=_public_invitation_by_token(payload.organization_invitation_token),
         )
     try:
         result = auth_service.create_magic_link_request(
             email=payload.email,
+            organization_invitation_token=payload.organization_invitation_token,
             client_ip=client_ip,
             user_agent=user_agent,
         )
@@ -2873,6 +2945,7 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
         delivery_method="dev-token" if settings.auth_magic_link_dev_mode else settings.email_provider or "email",
         auth_mode="dev_token" if settings.auth_magic_link_dev_mode else "magic_link",
         dev_magic_token=result.dev_magic_token,
+        organization=_public_invitation_by_id(result.organization_invitation_id),
     )
 
 
@@ -2893,6 +2966,7 @@ def _build_password_auth_response(
             response=response,
             login_identifier=verification.email,
             is_new_user=verification.is_new_user,
+            organization_invitation_id=verification.organization_invitation_id,
         )
 
 
@@ -2909,6 +2983,7 @@ def register_email_password(
             password=payload.password,
             password_confirm=payload.password_confirm,
             verification_token=payload.verification_token,
+            organization_invitation_token=payload.organization_invitation_token,
         )
     except AuthAccessDeniedError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
@@ -2920,7 +2995,7 @@ def register_email_password(
 @router.post("/auth/email/confirm", response_model=AuthActionResponse)
 def confirm_registration_email(payload: AuthEmailVerifyRequest) -> AuthActionResponse:
     try:
-        email = auth_service.verify_auth_action_token(
+        email, invitation_id = auth_service.verify_auth_action_token_details(
             token=payload.token,
             purpose="email_verification",
             consume=False,
@@ -2931,6 +3006,7 @@ def confirm_registration_email(payload: AuthEmailVerifyRequest) -> AuthActionRes
         message="Email подтвержден. Задайте пароль.",
         email=email,
         auth_mode="password_registration",
+        organization=_public_invitation_by_id(invitation_id),
     )
 
 
@@ -2991,6 +3067,7 @@ def login_with_email_password(
         verification = auth_service.verify_password_login(
             email=payload.email,
             password=payload.password,
+            organization_invitation_token=payload.organization_invitation_token,
         )
     except AuthAccessDeniedError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
@@ -3025,6 +3102,7 @@ def verify_email_magic_link(payload: AuthEmailVerifyRequest, response: FastAPIRe
             response=response,
             login_identifier=verification.email,
             is_new_user=verification.is_new_user,
+            organization_invitation_id=verification.organization_invitation_id,
         )
 
 
@@ -3067,11 +3145,13 @@ def restore_user_session(request: Request) -> UserSessionRestoreResponse:
                 user=compact_user,
                 is_admin=True,
                 admin_dashboard=_build_admin_dashboard(connection, admin_scope),
+                organization=_organization_context_for_user(connection, full_user.id),
             )
         return UserSessionRestoreResponse(
             authenticated=True,
             user=compact_user,
             dashboard=_build_dashboard(connection, full_user),
+            organization=_organization_context_for_user(connection, full_user.id),
         )
 
 
@@ -3323,6 +3403,88 @@ def get_admin_organizations(request: Request) -> AdminOrganizationsResponse:
         return _build_admin_organizations(connection)
 
 
+@router.get(
+    "/organization-invitations/{token}",
+    response_model=OrganizationInvitationPublicResponse,
+)
+def get_organization_invitation(token: str) -> OrganizationInvitationPublicResponse:
+    try:
+        context = _public_invitation_by_token(token)
+    except OrganizationInvitationError as exc:
+        detail = str(exc)
+        status_code = 410 if "отозвано" in detail or "истёк" in detail else 404
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+    if context is None:
+        raise HTTPException(status_code=404, detail="Приглашение недействительно.")
+    return context
+
+
+@router.post(
+    "/admin/organizations/{organization_id}/invitation",
+    response_model=OrganizationInvitationAdminResponse,
+)
+def create_organization_invitation(
+    organization_id: int,
+    payload: OrganizationInvitationCreateRequest,
+    request: Request,
+) -> OrganizationInvitationAdminResponse:
+    current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    raw_token = secrets.token_urlsafe(32)
+    expires_at = datetime.now() + timedelta(days=payload.expires_in_days)
+    with get_connection() as connection:
+        _require_superadmin(connection, current_user)
+        organization = connection.execute(
+            "SELECT id, name, invitation_intro FROM organizations WHERE id = %s AND is_active = TRUE LIMIT 1",
+            (organization_id,),
+        ).fetchone()
+        if organization is None:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        invitation = connection.execute(
+            """
+            INSERT INTO organization_invitations (
+                organization_id, token_hash, expires_at, created_by_user_id
+            )
+            VALUES (%s, %s, %s, %s)
+            RETURNING id
+            """,
+            (organization_id, hash_invitation_token(raw_token), expires_at, int(current_user.id)),
+        ).fetchone()
+        connection.commit()
+    return OrganizationInvitationAdminResponse(
+        invitation_id=int(invitation["id"]),
+        organization_id=organization_id,
+        organization_name=str(organization["name"]),
+        invitation_intro=str(organization["invitation_intro"] or "").strip() or None,
+        expires_at=expires_at,
+        token=raw_token,
+        invitation_url=settings.app_base_url.rstrip("/") + "/?invite=" + quote(raw_token, safe=""),
+    )
+
+
+@router.delete("/admin/organizations/{organization_id}/invitation/{invitation_id}")
+def revoke_organization_invitation(
+    organization_id: int,
+    invitation_id: int,
+    request: Request,
+) -> dict[str, bool]:
+    current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_superadmin(connection, current_user)
+        row = connection.execute(
+            """
+            UPDATE organization_invitations
+            SET revoked_at = COALESCE(revoked_at, NOW())
+            WHERE id = %s AND organization_id = %s
+            RETURNING id
+            """,
+            (invitation_id, organization_id),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Invitation not found")
+        connection.commit()
+    return {"ok": True}
+
+
 @router.post("/admin/organizations", response_model=AdminOrganizationsResponse)
 def create_admin_organization(payload: AdminOrganizationCreateRequest, request: Request) -> AdminOrganizationsResponse:
     token = request.cookies.get(SESSION_COOKIE_NAME)
@@ -3354,7 +3516,10 @@ def update_admin_organization(organization_id: int, payload: AdminOrganizationUp
     normalized_name = _normalize_admin_org_name(payload.name) if payload.name is not None else None
     profile_fields_supplied = any(
         field in payload.model_fields_set
-        for field in ("profile", "founded_year", "employee_count", "industry", "website", "headquarters", "notes")
+        for field in (
+            "profile", "founded_year", "employee_count", "industry", "website", "headquarters", "notes",
+            "invitation_intro",
+        )
     )
     if normalized_code is None and normalized_name is None and not profile_fields_supplied:
         raise HTTPException(status_code=400, detail="No organization changes provided")
@@ -3381,6 +3546,7 @@ def update_admin_organization(organization_id: int, payload: AdminOrganizationUp
                     website = CASE WHEN %s THEN %s ELSE website END,
                     headquarters = CASE WHEN %s THEN %s ELSE headquarters END,
                     notes = CASE WHEN %s THEN %s ELSE notes END,
+                    invitation_intro = CASE WHEN %s THEN %s ELSE invitation_intro END,
                     updated_at = NOW()
                 WHERE id = %s
                 """,
@@ -3401,6 +3567,8 @@ def update_admin_organization(organization_id: int, payload: AdminOrganizationUp
                     _normalize_optional_admin_text(payload.headquarters, max_length=255),
                     "notes" in payload.model_fields_set,
                     _normalize_optional_admin_text(payload.notes),
+                    "invitation_intro" in payload.model_fields_set,
+                    _normalize_optional_admin_text(payload.invitation_intro, max_length=1000),
                     organization_id,
                 ),
             )

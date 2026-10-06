@@ -82,8 +82,16 @@ class CheckOrCreateUserRequest(BaseModel):
         return value
 
 
+class OrganizationInvitationPublicResponse(BaseModel):
+    organization_id: int
+    organization_name: str
+    invitation_intro: str | None = None
+    expires_at: datetime | None = None
+
+
 class AuthEmailRequest(BaseModel):
     email: str
+    organization_invitation_token: str | None = None
 
     @field_validator("email")
     @classmethod
@@ -106,6 +114,7 @@ class AuthEmailRequestResponse(BaseModel):
     delivery_method: str = "email"
     auth_mode: str = "magic_link"
     dev_magic_token: str | None = None
+    organization: OrganizationInvitationPublicResponse | None = None
 
 
 class AuthEmailVerifyRequest(BaseModel):
@@ -123,6 +132,7 @@ class AuthEmailVerifyRequest(BaseModel):
 class AuthPasswordLoginRequest(BaseModel):
     email: str
     password: str
+    organization_invitation_token: str | None = None
 
     @field_validator("email")
     @classmethod
@@ -181,6 +191,17 @@ class AuthActionResponse(BaseModel):
     email: str | None = None
     auth_mode: str | None = None
     dev_action_token: str | None = None
+    organization: OrganizationInvitationPublicResponse | None = None
+
+
+class OrganizationInvitationCreateRequest(BaseModel):
+    expires_in_days: int = Field(default=30, ge=1, le=365)
+
+
+class OrganizationInvitationAdminResponse(OrganizationInvitationPublicResponse):
+    invitation_id: int
+    invitation_url: str
+    token: str
 
 
 class AgentReply(BaseModel):
@@ -842,6 +863,7 @@ class AdminOrganizationItem(BaseModel):
     website: str | None = None
     headquarters: str | None = None
     notes: str | None = None
+    invitation_intro: str | None = None
     domains: list[str] = Field(default_factory=list)
     admins: list[AdminOrganizationAdminItem] = Field(default_factory=list)
     members: list[AdminOrganizationMemberItem] = Field(default_factory=list)
@@ -873,6 +895,7 @@ class AdminOrganizationUpdateRequest(BaseModel):
     website: str | None = None
     headquarters: str | None = None
     notes: str | None = None
+    invitation_intro: str | None = None
 
 
 class AdminOrganizationDomainRequest(BaseModel):
@@ -989,6 +1012,7 @@ class CheckOrCreateUserResponse(BaseModel):
     dashboard: UserDashboard | None = None
     is_admin: bool = False
     admin_dashboard: AdminDashboard | None = None
+    organization: OrganizationInvitationPublicResponse | None = None
 
 
 class SessionCaseStructuredAnalysisResponse(BaseModel):
@@ -1326,6 +1350,7 @@ class UserSessionRestoreResponse(BaseModel):
     dashboard: UserDashboard | None = None
     is_admin: bool = False
     admin_dashboard: AdminDashboard | None = None
+    organization: OrganizationInvitationPublicResponse | None = None
 
 
 class UserSessionBootstrapResponse(BaseModel):

@@ -22,6 +22,9 @@ import {
   verifyMagicLinkButton,
   authStatus,
   authError,
+  organizationInvitationContext,
+  organizationInvitationName,
+  organizationInvitationIntro,
   chatForm,
   chatInput,
   restartButton,
@@ -146,6 +149,32 @@ import {
   libraryStartButton,
   welcomeProfileButton,
 } from './dom.js';
+
+let organizationInvitationToken = '';
+
+const renderOrganizationInvitation = (organization) => {
+  const available = Boolean(organization?.organization_name);
+  organizationInvitationContext?.classList.toggle('hidden', !available);
+  if (organizationInvitationName) organizationInvitationName.textContent = available ? organization.organization_name : '';
+  if (organizationInvitationIntro) organizationInvitationIntro.textContent = available ? organization.invitation_intro || '' : '';
+};
+
+export const activateOrganizationInvitation = async (tokenValue) => {
+  const token = String(tokenValue || '').trim();
+  if (!token) {
+    organizationInvitationToken = '';
+    renderOrganizationInvitation(null);
+    return null;
+  }
+  const response = await fetch('/users/organization-invitations/' + encodeURIComponent(token));
+  const organization = await readApiResponse(response, 'Приглашение недействительно или устарело.', {
+    recoverUnauthorized: false,
+  });
+  organizationInvitationToken = token;
+  try { window.sessionStorage.setItem('agent4k.organizationInvitationToken', token); } catch (_error) { /* optional */ }
+  renderOrganizationInvitation(organization);
+  return organization;
+};
 import { advanceSessionGeneration, readApiResponse, createOperationId } from './api.js';
 import {
   buildExistingUserAgentMessage,
@@ -446,6 +475,7 @@ if (authPasswordGenerateButton) {
 
 const applyAuthResponse = async (data) => {
   const agent = data.agent || null;
+  renderOrganizationInvitation(data.organization || null);
 
   advanceSessionGeneration();
 
@@ -521,9 +551,13 @@ const handleEmailMagicLinkRequest = async () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({
+        email,
+        organization_invitation_token: organizationInvitationToken || null,
+      }),
     });
     const data = await readApiResponse(response, 'Не удалось отправить ссылку для входа.');
+    renderOrganizationInvitation(data.organization || null);
     const isDevMode = Boolean(data.dev_mode);
     const nextMode = isDevMode ? 'dev_token' : data.auth_mode || data.delivery_method || 'password';
     authCredentialEmail = data.email || email;
@@ -633,8 +667,14 @@ const submitEmailPassword = async () => {
           isReset
             ? { token: authActionToken, password, password_confirm: passwordConfirm }
             : isRegistration
-            ? { email, password, password_confirm: passwordConfirm, verification_token: authActionToken || null }
-            : { email, password },
+            ? {
+                email,
+                password,
+                password_confirm: passwordConfirm,
+                verification_token: authActionToken || null,
+                organization_invitation_token: organizationInvitationToken || null,
+              }
+            : { email, password, organization_invitation_token: organizationInvitationToken || null },
         ),
       },
     );
@@ -673,6 +713,7 @@ export const handleAuthActionToken = async (action, tokenValue) => {
       body: JSON.stringify({ token }),
     });
     const data = await readApiResponse(response, 'Ссылка недействительна или устарела.');
+    renderOrganizationInvitation(data.organization || null);
     authActionToken = token;
     authCredentialEmail = data.email || '';
     if (emailInput) emailInput.value = authCredentialEmail;

@@ -1,5 +1,6 @@
 """Synthetic inputs only. No turns, Evidence, IA, Cycle, Results or Report."""
 import json
+from datetime import datetime, timedelta
 from pathlib import Path
 from Api.database import get_connection
 from Api.auth_service import _hash_password
@@ -9,6 +10,7 @@ from Api.assessment_contexts import (create_organization_context_draft,publish_o
     create_user_context_draft,confirm_user_context,create_personalized_profile)
 from Api.m5_storage import import_package
 from Api.m5_case_runtime import checksum
+from Api.organization_invitation_service import hash_invitation_token
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -21,7 +23,17 @@ def seed(state):
     with get_connection() as c:
         if c.execute("SELECT id FROM organizations WHERE code='e102_synthetic'").fetchone():
             print('synthetic seed already present; no data changed');return
-        org=c.execute("INSERT INTO organizations(code,name) VALUES('e102_synthetic','Синтетическая организация E10.2') RETURNING id").fetchone()['id']
+        org=c.execute("""INSERT INTO organizations(code,name,invitation_intro)
+            VALUES('e102_synthetic','Синтетическая организация E10.2','Техническое приглашение из изолированного стенда')
+            RETURNING id""").fetchone()['id']
+        invitation_token='browser-invitation-'+state['run_id']
+        c.execute("""INSERT INTO organization_invitations(organization_id,token_hash,expires_at)
+            VALUES(%s,%s,%s)""",(org,hash_invitation_token(invitation_token),datetime.now()+timedelta(days=30)))
+        other_org=c.execute("INSERT INTO organizations(code,name) VALUES('e102_other','Другая синтетическая организация') RETURNING id").fetchone()['id']
+        other_user=c.execute("INSERT INTO users(full_name,email) VALUES('Участник другой организации','member-b@example.test') RETURNING id").fetchone()['id']
+        c.execute("""INSERT INTO organization_memberships(
+            organization_id,user_id,role,admission_source,admitted_at
+        ) VALUES(%s,%s,'member','admin_add',NOW())""",(other_org,other_user))
         from Api.assessment_configuration import load_default_methodology_roles,ensure_methodology_role_projection
         legacy_roles=load_default_methodology_roles(c)
         ensure_methodology_role_projection(c,{'roles':legacy_roles})

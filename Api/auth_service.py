@@ -11,6 +11,13 @@ from Api.config import settings
 from Api.database import get_connection
 from Api.email_service import send_auth_action_email, send_magic_link_email
 from Api.org_access import assign_user_organization_from_email, email_has_organization_access, ensure_configured_organizations
+from Api.organization_invitation_service import (
+    OrganizationInvitationContext,
+    OrganizationInvitationError,
+    ensure_email_admitted_to_invitation,
+    resolve_invitation,
+    resolve_invitation_by_id,
+)
 from Api.schemas import UserResponse
 from Api.web_session_service import USER_SELECT_SQL
 
@@ -34,6 +41,7 @@ class MagicLinkRequestResult:
     email: str
     expires_at: datetime
     dev_magic_token: str | None = None
+    organization_invitation_id: int | None = None
 
 
 @dataclass(slots=True)
@@ -41,6 +49,7 @@ class MagicLinkVerificationResult:
     user: UserResponse
     is_new_user: bool
     email: str
+    organization_invitation_id: int | None = None
 
 
 @dataclass(slots=True)
@@ -48,6 +57,7 @@ class PasswordLoginResult:
     user: UserResponse
     is_new_user: bool
     email: str
+    organization_invitation_id: int | None = None
 
 
 @dataclass(slots=True)
@@ -55,6 +65,7 @@ class AuthActionTokenResult:
     email: str
     expires_at: datetime
     dev_token: str | None = None
+    organization_invitation_id: int | None = None
 
 
 def _utc_now() -> datetime:
@@ -148,7 +159,8 @@ class AuthService:
                     used_at TIMESTAMP,
                     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                     client_ip TEXT,
-                    user_agent TEXT
+                    user_agent TEXT,
+                    organization_invitation_id BIGINT REFERENCES organization_invitations(id) ON DELETE SET NULL
                 )
                 """
             )
@@ -177,9 +189,18 @@ class AuthService:
                     used_at TIMESTAMP,
                     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                     client_ip TEXT,
-                    user_agent TEXT
+                    user_agent TEXT,
+                    organization_invitation_id BIGINT REFERENCES organization_invitations(id) ON DELETE SET NULL
                 )
                 """
+            )
+            connection.execute(
+                "ALTER TABLE auth_magic_links ADD COLUMN IF NOT EXISTS organization_invitation_id "
+                "BIGINT REFERENCES organization_invitations(id) ON DELETE SET NULL"
+            )
+            connection.execute(
+                "ALTER TABLE auth_action_tokens ADD COLUMN IF NOT EXISTS organization_invitation_id "
+                "BIGINT REFERENCES organization_invitations(id) ON DELETE SET NULL"
             )
             connection.execute(
                 "CREATE INDEX IF NOT EXISTS idx_user_identities_user_id ON user_identities(user_id)"
@@ -229,6 +250,7 @@ class AuthService:
         *,
         email: str,
         purpose: str,
+        organization_invitation_token: str | None = None,
         client_ip: str | None = None,
         user_agent: str | None = None,
     ) -> AuthActionTokenResult:
@@ -239,7 +261,11 @@ class AuthService:
         raw_token = secrets.token_urlsafe(32)
         expires_at = _utc_now() + timedelta(minutes=max(settings.auth_action_token_ttl_minutes, 5))
         with get_connection() as connection:
-            self._ensure_email_can_authenticate(connection, email=normalized_email)
+            invitation = self._ensure_email_can_authenticate(
+                connection,
+                email=normalized_email,
+                organization_invitation_token=organization_invitation_token,
+            )
             recent = connection.execute(
                 """
                 SELECT created_at FROM auth_action_tokens
@@ -273,10 +299,20 @@ class AuthService:
             )
             connection.execute(
                 """
-                INSERT INTO auth_action_tokens (email, purpose, token_hash, expires_at, client_ip, user_agent)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO auth_action_tokens (
+                    email, purpose, token_hash, expires_at, client_ip, user_agent, organization_invitation_id
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
-                (normalized_email, purpose, _hash_magic_token(raw_token), expires_at, client_ip, user_agent),
+                (
+                    normalized_email,
+                    purpose,
+                    _hash_magic_token(raw_token),
+                    expires_at,
+                    client_ip,
+                    user_agent,
+                    invitation.invitation_id if invitation else None,
+                ),
             )
             connection.commit()
         action_url = settings.app_base_url.rstrip("/") + "/?auth_action=" + purpose + "&token=" + quote(raw_token, safe="")
@@ -286,9 +322,24 @@ class AuthService:
             normalized_email,
             expires_at,
             raw_token if settings.auth_magic_link_dev_mode or settings.email_provider == "console" else None,
+            invitation.invitation_id if invitation else None,
         )
 
     def verify_auth_action_token(self, *, token: str, purpose: str, consume: bool = False) -> str:
+        email, _invitation_id = self.verify_auth_action_token_details(
+            token=token,
+            purpose=purpose,
+            consume=consume,
+        )
+        return email
+
+    def verify_auth_action_token_details(
+        self,
+        *,
+        token: str,
+        purpose: str,
+        consume: bool = False,
+    ) -> tuple[str, int | None]:
         self.ensure_schema()
         cleaned_token = str(token or "").strip()
         if not cleaned_token:
@@ -296,7 +347,7 @@ class AuthService:
         with get_connection() as connection:
             row = connection.execute(
                 """
-                SELECT id, email, expires_at, used_at FROM auth_action_tokens
+                SELECT id, email, expires_at, used_at, organization_invitation_id FROM auth_action_tokens
                 WHERE token_hash = %s AND purpose = %s LIMIT 1
                 """,
                 (_hash_magic_token(cleaned_token), purpose),
@@ -306,17 +357,43 @@ class AuthService:
             if row["expires_at"] is None or row["expires_at"] < datetime.now():
                 raise ValueError("Срок действия ссылки истек.")
             email = normalize_email(row["email"])
-            self._ensure_email_can_authenticate(connection, email=email)
+            invitation_id = int(row["organization_invitation_id"]) if row["organization_invitation_id"] else None
+            self._ensure_email_can_authenticate(
+                connection,
+                email=email,
+                organization_invitation_id=invitation_id,
+            )
             if consume:
                 connection.execute("UPDATE auth_action_tokens SET used_at = NOW() WHERE id = %s", (row["id"],))
                 connection.commit()
-            return email
+            return email, invitation_id
 
-    def _ensure_email_can_authenticate(self, connection, *, email: str) -> None:
+    def _ensure_email_can_authenticate(
+        self,
+        connection,
+        *,
+        email: str,
+        organization_invitation_token: str | None = None,
+        organization_invitation_id: int | None = None,
+    ) -> OrganizationInvitationContext | None:
+        try:
+            invitation = (
+                resolve_invitation(connection, token=organization_invitation_token)
+                if organization_invitation_token
+                else resolve_invitation_by_id(connection, invitation_id=organization_invitation_id)
+                if organization_invitation_id is not None
+                else None
+            )
+            if invitation is not None:
+                ensure_email_admitted_to_invitation(connection, email=email, invitation=invitation)
+                return invitation
+        except OrganizationInvitationError as exc:
+            raise AuthAccessDeniedError(str(exc)) from exc
         if not email_has_organization_access(connection, email=email):
             raise AuthAccessDeniedError(
                 "Пользователь с таким email не найден в активных организациях. Обратитесь к администратору организации."
             )
+        return None
 
     def _enforce_magic_link_rate_limit(
         self,
@@ -380,6 +457,7 @@ class AuthService:
         self,
         *,
         email: str,
+        organization_invitation_token: str | None = None,
         client_ip: str | None = None,
         user_agent: str | None = None,
     ) -> MagicLinkRequestResult:
@@ -390,7 +468,11 @@ class AuthService:
         expires_at = _utc_now() + timedelta(minutes=max(settings.auth_magic_link_ttl_minutes, 5))
 
         with get_connection() as connection:
-            self._ensure_email_can_authenticate(connection, email=normalized_email)
+            invitation = self._ensure_email_can_authenticate(
+                connection,
+                email=normalized_email,
+                organization_invitation_token=organization_invitation_token,
+            )
             self._enforce_magic_link_rate_limit(
                 connection,
                 email=normalized_email,
@@ -407,10 +489,19 @@ class AuthService:
             )
             connection.execute(
                 """
-                INSERT INTO auth_magic_links (email, token_hash, expires_at, client_ip, user_agent)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO auth_magic_links (
+                    email, token_hash, expires_at, client_ip, user_agent, organization_invitation_id
+                )
+                VALUES (%s, %s, %s, %s, %s, %s)
                 """,
-                (normalized_email, token_hash, expires_at, client_ip, user_agent),
+                (
+                    normalized_email,
+                    token_hash,
+                    expires_at,
+                    client_ip,
+                    user_agent,
+                    invitation.invitation_id if invitation else None,
+                ),
             )
             connection.commit()
 
@@ -427,6 +518,7 @@ class AuthService:
             email=normalized_email,
             expires_at=expires_at,
             dev_magic_token=raw_token if settings.auth_magic_link_dev_mode else None,
+            organization_invitation_id=invitation.invitation_id if invitation else None,
         )
 
     def verify_magic_link(self, *, token: str) -> MagicLinkVerificationResult:
@@ -439,7 +531,7 @@ class AuthService:
         with get_connection() as connection:
             link_row = connection.execute(
                 """
-                SELECT id, email, expires_at, used_at
+                SELECT id, email, expires_at, used_at, organization_invitation_id
                 FROM auth_magic_links
                 WHERE token_hash = %s
                 LIMIT 1
@@ -455,7 +547,12 @@ class AuthService:
                 raise ValueError("Срок действия ссылки истек. Запросите новую ссылку.")
 
             normalized_email = normalize_email(link_row["email"])
-            self._ensure_email_can_authenticate(connection, email=normalized_email)
+            invitation_id = int(link_row["organization_invitation_id"]) if link_row["organization_invitation_id"] else None
+            self._ensure_email_can_authenticate(
+                connection,
+                email=normalized_email,
+                organization_invitation_id=invitation_id,
+            )
             identity_row = connection.execute(
                 """
                 SELECT user_id
@@ -555,6 +652,7 @@ class AuthService:
             user=UserResponse(**dict(user_row)),
             is_new_user=is_new_user,
             email=normalized_email,
+            organization_invitation_id=invitation_id,
         )
 
     def _ensure_user_identity(
@@ -648,11 +746,15 @@ class AuthService:
         ).fetchone()
         return int(created_user["id"]), True
 
-    def get_password_auth_mode(self, *, email: str) -> str:
+    def get_password_auth_mode(self, *, email: str, organization_invitation_token: str | None = None) -> str:
         self.ensure_schema()
         normalized_email = normalize_email(email)
         with get_connection() as connection:
-            self._ensure_email_can_authenticate(connection, email=normalized_email)
+            self._ensure_email_can_authenticate(
+                connection,
+                email=normalized_email,
+                organization_invitation_token=organization_invitation_token,
+            )
             credential_row = connection.execute(
                 """
                 SELECT id
@@ -685,26 +787,37 @@ class AuthService:
         password: str,
         password_confirm: str,
         verification_token: str | None = None,
+        organization_invitation_token: str | None = None,
     ) -> PasswordLoginResult:
         self.ensure_schema()
         normalized_email = normalize_email(email)
         validate_password_strength(password, password_confirm=password_confirm)
         if settings.auth_email_verification_required and not settings.auth_magic_link_dev_mode:
-            verified_email = self.verify_auth_action_token(
+            verified_email, invitation_id = self.verify_auth_action_token_details(
                 token=str(verification_token or ""),
                 purpose="email_verification",
                 consume=False,
             )
             if verified_email != normalized_email:
                 raise ValueError("Ссылка подтверждения выпущена для другого email.")
-            self.verify_auth_action_token(
+            self.verify_auth_action_token_details(
                 token=str(verification_token or ""),
                 purpose="email_verification",
                 consume=True,
             )
+        else:
+            invitation_id = None
 
         with get_connection() as connection:
-            self._ensure_email_can_authenticate(connection, email=normalized_email)
+            invitation = self._ensure_email_can_authenticate(
+                connection,
+                email=normalized_email,
+                organization_invitation_token=organization_invitation_token,
+                organization_invitation_id=invitation_id,
+            )
+            if invitation_id is not None and invitation is not None and invitation.invitation_id != invitation_id:
+                raise AuthAccessDeniedError("Организационный контекст входа не совпадает с приглашением.")
+            resolved_invitation_id = invitation.invitation_id if invitation is not None else invitation_id
             credential_row = connection.execute(
                 """
                 SELECT id
@@ -768,6 +881,7 @@ class AuthService:
             user=UserResponse(**dict(user_row)),
             is_new_user=is_new_user,
             email=normalized_email,
+            organization_invitation_id=resolved_invitation_id,
         )
 
     def reset_password(self, *, token: str, password: str, password_confirm: str) -> str:
@@ -797,7 +911,13 @@ class AuthService:
         logger.info("Password reset completed for %s", email)
         return email
 
-    def verify_password_login(self, *, email: str, password: str) -> PasswordLoginResult:
+    def verify_password_login(
+        self,
+        *,
+        email: str,
+        password: str,
+        organization_invitation_token: str | None = None,
+    ) -> PasswordLoginResult:
         self.ensure_schema()
         normalized_email = normalize_email(email)
         cleaned_password = str(password or "")
@@ -805,7 +925,11 @@ class AuthService:
             raise ValueError("Введите пароль.")
 
         with get_connection() as connection:
-            self._ensure_email_can_authenticate(connection, email=normalized_email)
+            invitation = self._ensure_email_can_authenticate(
+                connection,
+                email=normalized_email,
+                organization_invitation_token=organization_invitation_token,
+            )
             credential_row = connection.execute(
                 """
                 SELECT user_id, email, password_hash, password_salt
@@ -877,6 +1001,7 @@ class AuthService:
             user=UserResponse(**dict(user_row)),
             is_new_user=is_new_user,
             email=normalized_email,
+            organization_invitation_id=invitation.invitation_id if invitation else None,
         )
 
 

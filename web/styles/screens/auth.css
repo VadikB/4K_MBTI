@@ -496,6 +496,21 @@
     color: var(--entry-graphite);
 }
 
+.organization-invitation-context {
+    display: grid;
+    gap: 6px;
+    padding: 14px 16px;
+    border: 1px solid rgba(19, 95, 102, 0.2);
+    border-radius: 12px;
+    background: var(--entry-cyan-soft);
+    color: var(--entry-graphite);
+}
+
+.organization-invitation-context p {
+    margin: 0;
+    color: var(--entry-graphite-muted);
+}
+
 @keyframes auth-button-spin {
     to {
         transform: rotate(360deg);

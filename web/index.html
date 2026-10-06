@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/web/styles/tokens.css?v=20260701-no-font-import">
   <link rel="stylesheet" href="/web/styles/base.css?v=20260517-scrollbar">
   <link rel="stylesheet" href="/web/styles/components.css?v=20260516-merged">
-  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=20261006-ux01">
+  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=20261006-uxf03">
   <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=20260521-onboarding-progress-transition">
   <link rel="stylesheet" href="/web/styles/screens/processing.css?v=20260516-merged">
   <link rel="stylesheet" href="/web/styles/screens/profile.css?v=20260517-redesign-3">
@@ -64,6 +64,10 @@
       <div class="auth-panel-copy">
         <h1>Добро пожаловать</h1>
         <p class="subtitle">Введите рабочий email, чтобы продолжить вход.</p>
+      </div>
+      <div id="organization-invitation-context" class="organization-invitation-context hidden" aria-live="polite">
+        <strong id="organization-invitation-name"></strong>
+        <p id="organization-invitation-intro"></p>
       </div>
       <form id="auth-email-form" class="stack" autocomplete="on">
         <label class="field">

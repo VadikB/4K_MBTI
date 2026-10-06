@@ -4250,6 +4250,7 @@ def ensure_core_schema() -> None:
         connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS website TEXT")
         connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS headquarters TEXT")
         connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS notes TEXT")
+        connection.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS invitation_intro TEXT")
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS organization_email_domains (
@@ -4329,6 +4330,23 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             "CREATE INDEX IF NOT EXISTS idx_organization_memberships_org_role ON organization_memberships(organization_id, role)"
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS organization_invitations (
+                id BIGSERIAL PRIMARY KEY,
+                organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+                token_hash TEXT NOT NULL UNIQUE,
+                expires_at TIMESTAMP NOT NULL,
+                revoked_at TIMESTAMP,
+                created_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_organization_invitations_org_active "
+            "ON organization_invitations(organization_id, expires_at) WHERE revoked_at IS NULL"
         )
         ensure_role_profile_schema(connection)
         ensure_assessment_context_schema(connection)

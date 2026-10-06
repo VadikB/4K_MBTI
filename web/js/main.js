@@ -1,6 +1,6 @@
 import { loadInterview } from './screen-loaders.js';
 import { APP_RELEASE } from './config.js';
-import { appReleaseNumber, authPanel, emailInput, authTokenForm, magicTokenInput, authStatus } from './dom.js';
+import { appReleaseNumber, authPanel, emailInput, authTokenForm, magicTokenInput, authStatus, authError } from './dom.js';
 import {
   state,
   safeStorage,
@@ -21,7 +21,7 @@ import {
   registerUnauthorizedResponseHandler,
 } from './api.js';
 import { hideAllPanels, returnToStart } from './router.js';
-import { handleAuthActionToken, initWiring, verifyEmailMagicLinkToken } from './wiring.js';
+import { activateOrganizationInvitation, handleAuthActionToken, initWiring, verifyEmailMagicLinkToken } from './wiring.js';
 import {
   openProcessingScreen,
   openReportScreen,
@@ -118,6 +118,23 @@ const bootApp = async () => {
   const params = new URLSearchParams(window.location.search);
   const authTokenFromLink = String(params.get('token') || '').trim();
   const authAction = String(params.get('auth_action') || '').trim();
+  let invitationToken = String(params.get('invite') || '').trim();
+  if (authAction === 'password_reset') {
+    try { window.sessionStorage.removeItem('agent4k.organizationInvitationToken'); } catch (_error) { /* optional */ }
+    invitationToken = '';
+  } else if (!invitationToken) {
+    try { invitationToken = String(window.sessionStorage.getItem('agent4k.organizationInvitationToken') || '').trim(); } catch (_error) { /* optional */ }
+  }
+  if (invitationToken && !authTokenFromLink) {
+    try {
+      await activateOrganizationInvitation(invitationToken);
+    } catch (error) {
+      if (authError) {
+        authError.textContent = error.message;
+        authError.hidden = false;
+      }
+    }
+  }
   if (params.get('reset') === '1') {
     clearAssessmentContext();
     try {
