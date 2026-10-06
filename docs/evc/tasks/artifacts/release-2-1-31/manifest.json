@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "head": "55a0276cd9546973b83608605237ccc449ace66b",
-  "runtime_tree_sha256": "a493e3501aa8e4f2b1195d4d30382a856eb5d803ea1f22f0439f69c8cdcbb995",
+  "head": "2cced07714291860a71aec9d27c211c65444b76e",
+  "runtime_tree_sha256": "4f86f2810a7b92c97e30d92e4a887e41f1e9a7ac34768ffbf6b856e5b9dff5aa",
   "missing_tracked_files_excluded": [],
   "files": {
     ".github/workflows/backend-tests.yml": "ddae0386212f0430d5c7e97f752463887077485a9177063423e66714275cc33d",
@@ -248,7 +248,7 @@
     "tests/browser/fixtures/character-manifest.json": "c70ac5ded7aa9e69696620283a75dedaef6331c091f287a890f1dae18303a3c4",
     "tests/browser/fixtures/sources/character-case-v1.json": "754870d8ef1ef550cc40f65a7a4886f5755361d709f10600f4fb7938c082ec47",
     "tests/browser/fixtures/v1.json": "471a47c6eee338e2f2b450675d462f02b061934cc03f02abfee71d093d378b42",
-    "tests/browser/runtime.spec.mjs": "b91b3e5ee6fd00d8e45b3eae00bbbb263e4aa08c723ffbfdf3463ca22d979f84",
+    "tests/browser/runtime.spec.mjs": "03451853962a3b079cc197c8de9eb1d73bb603b10f1bd9b7c1cb71891f89ee81",
     "tests/conftest.py": "3f75e5ca03af10c71650325afbaa29ded2e6a18524881a8db5ed08c02259e9bf",
     "tests/e2e/test_assessment_authoring_http.py": "71d47477c8972c43df590fd8a7a58ed1c7ac432029a067ff3933d8fdb5ff5edd",
     "tests/e2e/test_assessment_shadow_admin_http.py": "030466d583d8eec83314bd8518be1250ca5a0a65469cf0b87b98fd0662684856",
@@ -559,5 +559,5 @@
     "real_provider": "NOT_RUN; no authorized provider/cost limit"
   },
   "release_version": "2.1.31",
-  "head_meaning": "parent commit before session-race fix; files contain staged release tree; exact CI head recorded in PR #39"
+  "head_meaning": "Parent commit before the S10-C1/C2 timeout adjustment; final CI head is recorded in PR #39."
 }

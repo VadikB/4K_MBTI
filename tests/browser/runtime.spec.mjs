@@ -206,6 +206,7 @@ test('S10-B interruption and Additional Session preserve Cycle and deadline',asy
  expect((await (await page.request.get(`${stand.url}/users/assessment/m8/cycles/${first.cycle_id}/reports/latest`)).json()).id).toBe(saved.id);
 });
 for(const variant of ['C1','C2']) test(`S10-${variant} background time closure without another Turn`,async({page,context,stand},info)=>{
+ test.setTimeout(240000);
  await login(page,stand);await start(page);await answer(page);
  const before=await runtime(page,stand);
  await info.attach('runtime-before-expiry',{body:JSON.stringify(before,null,2),contentType:'application/json'});
@@ -218,7 +219,8 @@ for(const variant of ['C1','C2']) test(`S10-${variant} background time closure w
    await info.attach('background-visibility',{body:JSON.stringify({at:new Date().toISOString(),visibility:await page.evaluate(()=>document.visibilityState)}),contentType:'application/json'});
  }
  const statusUrl=`${stand.url}/users/assessment/m7/cycles/${before.cycle_id}`;
- await expect.poll(async()=>{const r=await context.request.get(statusUrl);return (await r.json()).collection_status;},{timeout:60000,intervals:[500,1000]}).toBe('calculated');
+ // Allow the 30s fixture budget, the 30s worker sweep and result calculation on CI.
+ await expect.poll(async()=>{const r=await context.request.get(statusUrl);return (await r.json()).collection_status;},{timeout:120000,intervals:[500,1000]}).toBe('calculated');
  await info.attach('runtime-after-expiry',{body:JSON.stringify(await (await context.request.get(statusUrl)).json(),null,2),contentType:'application/json'});
  const late=await context.request.post(`${stand.url}/users/assessment/m5/situations/${before.current_situation.assessment_situation_id}/turns`,{data:{request_id:'late',turn_id:randomUUID(),content:'Late synthetic answer'}});expect(late.status()).toBe(409);
  await info.attach('late-turn',{body:JSON.stringify({status:late.status(),response:await late.json()}),contentType:'application/json'});

@@ -83,3 +83,40 @@ frontend/backend/HTTP минимум и повторить CI. Предметн�
 PR CI 37368938883 на предыдущем head не получил hosted runner и завершился
 Internal server error; это инфраструктурный сбой, не PASS. Новый head должен
 пройти полный CI (включая теперь 12 browser tests) перед слиянием.
+
+## Запас ожидания S10-C1/C2 — 2026-10-06
+
+Основание: пользователь принял предложение увеличить ожидание calculated
+с 60 до 120 секунд и общий timeout только этих двух сценариев до 240 секунд.
+На 2cced077 PR CI 37371498658, attempt 2: frontend и backend этапы прошли;
+browser 11 PASS / 1 FAIL — S10-C1, ожидание calculated на строке 221.
+GitHub Actions восстановлен; этот FAIL уже не относится к выдаче runner.
+
+Прочитаны tests/browser/runtime.spec.mjs, playwright.config.mjs,
+scripts/browser_stand.py и Api/m7_completion_worker.py: синтетический бюджет
+30 секунд, период worker 30 секунд, затем расчёт. Источники архитектуры и
+Change 01 переиспользованы из отчёта 10.7; нормы и runtime не меняются.
+README, CONTRIBUTING, EVC workflow/matrix/artifact recipe прочитаны повторно.
+Пробел: таймаут сам по себе не доказывает конкретную причину задержки;
+проверяется согласованная гипотеза недостаточного запаса, а не снятие проверки.
+
+Изменение ограничено tests/browser/runtime.spec.mjs. Все утверждения о
+calculated, причине закрытия, запрете позднего Turn и сохранении единственного
+ответа сохранены; retries=0. Общий timeout остальных тестов остаётся 150 секунд.
+План проверок: S10-C1/C2 по три повтора в owned test БД, node --check,
+lint/build, diff и manifest, затем полный CI точного head. Первичный запуск
+в sandbox остановлен запретом запуска Chromium до выполнения сценариев;
+повтор выполняется вне sandbox. Данные/схема/права/PM-контракты не меняются.
+Откат: revert тестовой правки; при повторном FAIL дальнейший рост ожидания
+не применяется без диагностики. Новых предметных стоп-условий нет.
+
+Результат: `npm run test:browser -- --grep 'S10-C[12]' --repeat-each=3`
+на изолированном локальном PostgreSQL — 6 PASS / 0 FAIL, 8.4 минуты,
+retries=0. Полные сценарии C1 занимали 1.4–1.5 минуты, C2 — 1.3 минуты.
+`node --check tests/browser/runtime.spec.mjs`, `npm run lint:js`,
+`npm run build:web`, frontend tests (4 PASS), `git diff --check` — PASS.
+Сборка не изменила web/dist; manifest обновлён (531 файл, пропущенных нет).
+Review: правка только ожидания в тестах и отчётных метаданных, все assertions
+сохранены; production таймеры, БД, конфигурации и версия не изменены.
+Полный backend/HTTP/integration/browser повторяется штатным CI нового head;
+локально повторно выбран затронутый браузерный путь. До зелёного CI слияния нет.
