@@ -8,7 +8,7 @@ from uuid import UUID
 from Api import m6_cycle_aggregation_repository
 from Api import m7_clarification, m7_completion, m8_results
 from Api.database import get_connection
-from Api.m6_admission import decide as decide_admission
+from Api.m6_admission import VERSION as ADMISSION_VERSION
 from Api.m6_assessment_package import load_mechanism as load_assessment_mechanism
 from Api.m10_input_resolver import resolve
 from Api.m10_product_queue import enqueue_assessment, enqueue_evidence
@@ -115,7 +115,11 @@ def _clarify_interim(connection, gateway=None) -> bool:
     return True
 
 
-def _finalize_cycle(connection) -> bool:
+def _finalize_cycle(connection, gateway=None) -> bool:
+    if gateway is None:
+        from Api.m10_test_gateway import enabled, BrowserAcceptanceGateway
+        if enabled():
+            gateway = BrowserAcceptanceGateway()
     row = connection.execute("""SELECT c.id,c.cycle_id,c.created_by FROM m5_cycles c
         WHERE c.usage_scope='assessment' AND c.status IN('collection_closed','calculation_pending')
           AND NOT EXISTS(SELECT 1 FROM m7_finalization_outbox o JOIN m5_assessment_situations s ON s.id=o.assessment_situation_db_id
@@ -128,12 +132,11 @@ def _finalize_cycle(connection) -> bool:
         return False
     cycle_id = str(row["cycle_id"])
     c46 = m7_completion.read_c46(connection, cycle_id)
-    _, _, manifest = m6_cycle_aggregation_repository._inputs(connection, cycle_id, c46["composition_checksum"])
-    mechanism, decisions, limitations = decide_admission(connection, cycle_id=cycle_id, observations=manifest["observations"])
-    calculation = m6_cycle_aggregation_repository.create(
-        connection, cycle_id=cycle_id, key=f"product-calculation:{c46['composition_checksum']}:{mechanism}",
-        expected_composition_checksum=c46["composition_checksum"], admission_mechanism_version=mechanism,
-        decisions=decisions, created_by=int(row["created_by"]), limitations=limitations,
+    calculation = m6_cycle_aggregation_repository.create_substantive(
+        connection, cycle_id=cycle_id,
+        key=f"product-calculation:{c46['composition_checksum']}:{ADMISSION_VERSION}",
+        expected_composition_checksum=c46["composition_checksum"],
+        created_by=int(row["created_by"]), gateway=gateway,
     )
     results = m8_results.create_results(connection, cycle_id=cycle_id, calculation_id=calculation["id"],
         key=f"product-results:{calculation['id']}", target_profile=None, created_by=int(row["created_by"]))
@@ -165,7 +168,7 @@ def advance_once(*, gateway=None, connection_factory=None) -> bool:
     with factory() as connection:
         try:
             changed = (_propagate_failure(connection) or _queue_outbox(connection) or _queue_assessment(connection)
-                       or _clarify_interim(connection, gateway=gateway) or _finalize_cycle(connection))
+                       or _clarify_interim(connection, gateway=gateway) or _finalize_cycle(connection, gateway=gateway))
             connection.commit()
             return changed
         except Exception:

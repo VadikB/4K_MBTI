@@ -1,0 +1,10 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation
+configfile: pyproject.toml
+plugins: cov-7.1.0, anyio-4.13.0
+collected 1 item
+
+tests/integration/test_profile_to_m4_owned_stand.py .                    [100%]
+
+============================== 1 passed in 25.61s ==============================

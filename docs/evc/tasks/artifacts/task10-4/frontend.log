@@ -1,0 +1,20 @@
+(node:26347) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation/web/js/api.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a rejected login preserves the server error without expired-session recovery (195.695494ms)
+✔ a protected API 401 starts expired-session recovery and preserves the status (5.470222ms)
+✔ concurrent 401 responses trigger only one recovery flow (2.433894ms)
+(node:26348) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation/web/js/state.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ ending an account context clears profile caches even before lazy UI cleanup (12.157222ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 916.321853

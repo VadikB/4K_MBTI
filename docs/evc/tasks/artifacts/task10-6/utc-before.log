@@ -1,0 +1,45 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation
+configfile: pyproject.toml
+plugins: cov-7.1.0, anyio-4.13.0
+collected 10 items / 8 deselected / 2 selected
+
+tests/e2e/test_review_profile_http.py F.                                 [100%]
+
+=================================== FAILURES ===================================
+_________ test_history_and_profile_summary_share_datetime_encoding[0] __________
+
+profile_client = (<starlette.testclient.TestClient object at 0x110faaf00>, <test_review_profile_http.profile_client.<locals>.Connection object at 0x110d9fb30>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11087dca0>
+offset_hours = 0
+
+    @pytest.mark.parametrize('offset_hours', [0, 3])
+    def test_history_and_profile_summary_share_datetime_encoding(profile_client, monkeypatch, offset_hours):
+        from datetime import timedelta
+        client, _ = profile_client
+        stamp = datetime(2026, 10, 5, 12, 34, 56, tzinfo=timezone(timedelta(hours=offset_hours)))
+        cycle = {'cycle_id':str(uuid4()), 'report_id':str(uuid4()),
+                 'cycle_created_at':stamp, 'collection_closed_at':stamp,
+                 'versions':[{'created_at':stamp}]}
+        monkeypatch.setattr(routes.m8_results, 'list_owned_cycles', lambda *_: [cycle])
+        client.cookies.set(routes.SESSION_COOKIE_NAME, 'owner')
+        history = client.get('/users/assessment/m8/history')
+        summary = client.get('/users/91/profile-summary')
+        assert history.status_code == summary.status_code == 200
+>       assert history.json()['cycles'] == summary.json()['cycle_history']
+E       AssertionError: assert [{'cycle_id':...+00:00', ...}] == [{'cycle_id':...34:56Z', ...}]
+E
+E         At index 0 diff: {'cycle_id': '29c7f00e-8a87-4bd7-ae4b-23647ab5553f', 'report_id': 'd98302a0-f4b9-41e3-9941-f339be4d45ee', 'cycle_created_at': '2026-10-05T12:34:56+00:00', 'collection_closed_at': '2026-10-05T12:34:56+00:00', 'versions': [{'created_at': '2026-10-05T12:34:56+00:00'}]} != {'cycle_id': '29c7f00e-8a87-4bd7-ae4b-23647ab5553f', 'report_id': 'd98302a0-f4b9-41e3-9941-f339be4d45ee', 'cycle_created_at': '2026-10-05T12:34:56Z', 'collection_closed_at': '2026-10-05T12:34:56Z', 'versions': [{'created_at': '2026-10-05T12:34:56Z'}]}
+E         Use -v to get more diff
+
+tests/e2e/test_review_profile_http.py:125: AssertionError
+=============================== warnings summary ===============================
+../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/e2e/test_review_profile_http.py::test_history_and_profile_summary_share_datetime_encoding[0]
+============= 1 failed, 1 passed, 8 deselected, 1 warning in 3.06s =============

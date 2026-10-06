@@ -1,0 +1,1001 @@
+{
+  "scope": "read-only Git catalog; deployed database NOT_VERIFIED",
+  "package_path": "assessment_definitions/cases/competencies_4k/1.1/case-package.json",
+  "package_sha256": "6f03b19640cf9dfc0bc6fc80ad7435ef47a1a13076a48e130be1bc6a6dde6527",
+  "runtime_enabled": false,
+  "status": "draft",
+  "cases": [
+    {
+      "case_id": "CASE-TDISC-01",
+      "version": "v0.1",
+      "status": "WORKING",
+      "base_role": "project_product_process_manager",
+      "unresolved_decisions": [],
+      "indicator_targets": [
+        {
+          "branch_condition": "S1: разные значения готовности и риска у Веры/Марины.",
+          "component_id": "K1.C07",
+          "event_condition": "S1: разные значения готовности и риска у Веры/Марины.",
+          "indicator_id": "K1.I13",
+          "m2_version": "v1.1",
+          "observable_action": "Реконструирует существенный смысл позиции и её основания.",
+          "observation_condition": "S1: разные значения готовности и риска у Веры/Марины.",
+          "scenario_locations": [
+            "S1"
+          ],
+          "skill_id": "K1.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 2,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Ведущий сам пересказывает позиции за участника."
+        },
+        {
+          "branch_condition": "S1–S3: явное расхождение «выпускаем / нельзя выпускать».",
+          "component_id": "K1.C09",
+          "event_condition": "S1–S3: явное расхождение «выпускаем / нельзя выпускать».",
+          "indicator_id": "K1.I16",
+          "m2_version": "v1.1",
+          "observable_action": "Работает с содержательным расхождением, уточняет согласованное и спорное.",
+          "observation_condition": "S1–S3: явное расхождение «выпускаем / нельзя выпускать».",
+          "scenario_locations": [
+            "S1",
+            "S3"
+          ],
+          "skill_id": "K1.4",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 3,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Стороны снимают спор после общей успокаивающей фразы."
+        },
+        {
+          "branch_condition": "S4: результат нужно передать спонсору.",
+          "component_id": "K1.C09",
+          "event_condition": "S4: результат нужно передать спонсору.",
+          "indicator_id": "K1.I17",
+          "m2_version": "v1.1",
+          "observable_action": "Формулирует итог, проверяет его понимание и фиксирует границы договорённости.",
+          "observation_condition": "S4: результат нужно передать спонсору.",
+          "scenario_locations": [
+            "S4"
+          ],
+          "skill_id": "K1.4",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 4,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Автоматический итог сформирован ведущим."
+        },
+        {
+          "branch_condition": "S3: разработка → тестирование → подключение.",
+          "component_id": "K2.C04",
+          "event_condition": "S3: разработка → тестирование → подключение.",
+          "indicator_id": "K2.I07",
+          "m2_version": "v1.0",
+          "observable_action": "Согласует последовательность, входы, сроки и точки передачи.",
+          "observation_condition": "S3: разработка → тестирование → подключение.",
+          "scenario_locations": [
+            "S3"
+          ],
+          "skill_id": "K2.2",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 5,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Достаточно назначить владельцев без зависимостей."
+        },
+        {
+          "branch_condition": "S3: поддержке не хватает списка и инструкции.",
+          "component_id": "K2.C05",
+          "event_condition": "S3: поддержке не хватает списка и инструкции.",
+          "indicator_id": "K2.I08",
+          "m2_version": "v1.0",
+          "observable_action": "Организует передачу актуальных материалов тем, кому они нужны.",
+          "observation_condition": "S3: поддержке не хватает списка и инструкции.",
+          "scenario_locations": [
+            "S3"
+          ],
+          "skill_id": "K2.2",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 6,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Все документы доступны поддержке с самого начала."
+        },
+        {
+          "branch_condition": "S1/S2: D1 и D2 доступны по запросу.",
+          "component_id": "K4.C03",
+          "event_condition": "S1/S2: D1 и D2 доступны по запросу.",
+          "indicator_id": "K4.I05",
+          "m2_version": "v1.0",
+          "observable_action": "Сопоставляет источники и разную базу показателей, сохраняет нерешённые расхождения.",
+          "observation_condition": "S1/S2: D1 и D2 доступны по запросу.",
+          "scenario_locations": [
+            "S1",
+            "S2"
+          ],
+          "skill_id": "K4.1",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 7,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Ведущий заранее объясняет ошибку знаменателей."
+        },
+        {
+          "branch_condition": "S2: причины сбоя спорны, журнал можно запросить.",
+          "component_id": "K4.C05",
+          "event_condition": "S2: причины сбоя спорны, журнал можно запросить.",
+          "indicator_id": "K4.I10",
+          "m2_version": "v1.0",
+          "observable_action": "Формулирует и проверяет причинные связи, различает гипотезу и установленное.",
+          "observation_condition": "S2: причины сбоя спорны, журнал можно запросить.",
+          "scenario_locations": [
+            "S2"
+          ],
+          "skill_id": "K4.2",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 8,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Корреляция автоматически объявляется причиной."
+        },
+        {
+          "branch_condition": "S3 после D3: минимум два пути с разными последствиями.",
+          "component_id": "K4.C10",
+          "event_condition": "S3 после D3: минимум два пути с разными последствиями.",
+          "indicator_id": "K4.I17",
+          "m2_version": "v1.0",
+          "observable_action": "Связывает риски с вариантами, условиями их возникновения и последствиями.",
+          "observation_condition": "S3 после D3: минимум два пути с разными последствиями.",
+          "scenario_locations": [
+            "S3"
+          ],
+          "skill_id": "K4.4",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 9,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Любой риск снимается вымышленным ресурсом."
+        },
+        {
+          "branch_condition": "S3/S4: нужна рекомендация спонсору.",
+          "component_id": "K4.C10",
+          "event_condition": "S3/S4: нужна рекомендация спонсору.",
+          "indicator_id": "K4.I18",
+          "m2_version": "v1.0",
+          "observable_action": "Выбирает допустимый вариант с основаниями и признанными компромиссами.",
+          "observation_condition": "S3/S4: нужна рекомендация спонсору.",
+          "scenario_locations": [
+            "S3",
+            "S4"
+          ],
+          "skill_id": "K4.4",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 10,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Оценивают право утверждать вместо качества выбора."
+        }
+      ]
+    },
+    {
+      "case_id": "CASE-TDISC-02",
+      "version": "v0.1",
+      "status": "WORKING",
+      "base_role": "specialist_expert",
+      "unresolved_decisions": [],
+      "indicator_targets": [
+        {
+          "branch_condition": "S1–S3: эксперт, два владельца результата, владелец ресурса.",
+          "component_id": "K1.C01",
+          "event_condition": "S1–S3: эксперт, два владельца результата, владелец ресурса.",
+          "indicator_id": "K1.I02",
+          "m2_version": "v1.1",
+          "observable_action": "Учитывает полномочия и выбирает способ влияния/обращения.",
+          "observation_condition": "S1–S3: эксперт, два владельца результата, владелец ресурса.",
+          "scenario_locations": [
+            "S1",
+            "S3"
+          ],
+          "skill_id": "K1.1",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 11,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Эксперту незаметно дают право приказа."
+        },
+        {
+          "branch_condition": "S1: слова «готово» и «первый пакет» допускают разные трактовки.",
+          "component_id": "K1.C07",
+          "event_condition": "S1: слова «готово» и «первый пакет» допускают разные трактовки.",
+          "indicator_id": "K1.I14",
+          "m2_version": "v1.1",
+          "observable_action": "Проясняет смысл и проверяет понимание собеседника.",
+          "observation_condition": "S1: слова «готово» и «первый пакет» допускают разные трактовки.",
+          "scenario_locations": [
+            "S1"
+          ],
+          "skill_id": "K1.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 12,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Декомпозиция заранее разъяснена ведущим."
+        },
+        {
+          "branch_condition": "S4: условное решение надо зафиксировать.",
+          "component_id": "K1.C09",
+          "event_condition": "S4: условное решение надо зафиксировать.",
+          "indicator_id": "K1.I17",
+          "m2_version": "v1.1",
+          "observable_action": "Уточняет, что принято, кем, а что ожидает согласования.",
+          "observation_condition": "S4: условное решение надо зафиксировать.",
+          "scenario_locations": [
+            "S4"
+          ],
+          "skill_id": "K1.4",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 13,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Условие превращается в финальное согласие."
+        },
+        {
+          "branch_condition": "S1: два явных требования на один ресурс.",
+          "component_id": "K2.C09",
+          "event_condition": "S1: два явных требования на один ресурс.",
+          "indicator_id": "K2.I13",
+          "m2_version": "v1.0",
+          "observable_action": "Выявляет предмет конфликта и реальные позиции сторон.",
+          "observation_condition": "S1: два явных требования на один ресурс.",
+          "scenario_locations": [
+            "S1"
+          ],
+          "skill_id": "K2.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 14,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Разговор сводится к личной неприязни."
+        },
+        {
+          "branch_condition": "S3: частичное согласие возможно, полной удовлетворённости нет.",
+          "component_id": "K2.C09",
+          "event_condition": "S3: частичное согласие возможно, полной удовлетворённости нет.",
+          "indicator_id": "K2.I14",
+          "m2_version": "v1.0",
+          "observable_action": "Согласует рабочий способ продолжения и обращения с разногласием.",
+          "observation_condition": "S3: частичное согласие возможно, полной удовлетворённости нет.",
+          "scenario_locations": [
+            "S3"
+          ],
+          "skill_id": "K2.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 15,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Любой вариант немедленно отвергается обеими сторонами."
+        },
+        {
+          "branch_condition": "S2/S3 после D2: подготовка и проверка связаны.",
+          "component_id": "K2.C04",
+          "event_condition": "S2/S3 после D2: подготовка и проверка связаны.",
+          "indicator_id": "K2.I07",
+          "m2_version": "v1.0",
+          "observable_action": "Пересогласует передачу, вход, последовательность и срок.",
+          "observation_condition": "S2/S3 после D2: подготовка и проверка связаны.",
+          "scenario_locations": [
+            "S2",
+            "S3"
+          ],
+          "skill_id": "K2.2",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 16,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Считают только сумму часов, убирая передачу."
+        },
+        {
+          "branch_condition": "S1/S2: цена сокращения, мандат, 10 часов и доступ.",
+          "component_id": "K4.C09",
+          "event_condition": "S1/S2: цена сокращения, мандат, 10 часов и доступ.",
+          "indicator_id": "K4.I15",
+          "m2_version": "v1.0",
+          "observable_action": "Задаёт критерии, обязательные ограничения и неопределённость.",
+          "observation_condition": "S1/S2: цена сокращения, мандат, 10 часов и доступ.",
+          "scenario_locations": [
+            "S1",
+            "S2"
+          ],
+          "skill_id": "K4.4",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 17,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Ведущий заранее ранжирует проекты."
+        },
+        {
+          "branch_condition": "S2/S3: несколько выполнимых схем D1/D2.",
+          "component_id": "K4.C10",
+          "event_condition": "S2/S3: несколько выполнимых схем D1/D2.",
+          "indicator_id": "K4.I16",
+          "m2_version": "v1.0",
+          "observable_action": "Сравнивает варианты по единым существенным основаниям.",
+          "observation_condition": "S2/S3: несколько выполнимых схем D1/D2.",
+          "scenario_locations": [
+            "S2",
+            "S3"
+          ],
+          "skill_id": "K4.4",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 18,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Предлагают один допустимый путь."
+        },
+        {
+          "branch_condition": "S3/S4: нужна рекомендация владельцу ресурса.",
+          "component_id": "K4.C10",
+          "event_condition": "S3/S4: нужна рекомендация владельцу ресурса.",
+          "indicator_id": "K4.I18",
+          "m2_version": "v1.0",
+          "observable_action": "Выбирает схему и обосновывает принятые потери.",
+          "observation_condition": "S3/S4: нужна рекомендация владельцу ресурса.",
+          "scenario_locations": [
+            "S3",
+            "S4"
+          ],
+          "skill_id": "K4.4",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 19,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Успех приравнивают к окончательному одобрению отсутствующего заказчика."
+        }
+      ]
+    },
+    {
+      "case_id": "CASE-TDISC-03",
+      "version": "v0.1",
+      "status": "WORKING",
+      "base_role": "project_product_process_manager",
+      "unresolved_decisions": [],
+      "indicator_targets": [
+        {
+          "branch_condition": "S1/S2: скорость, проверка и готовность имеют разные смыслы.",
+          "component_id": "K1.C08",
+          "event_condition": "S1/S2: скорость, проверка и готовность имеют разные смыслы.",
+          "indicator_id": "K1.I15",
+          "m2_version": "v1.1",
+          "observable_action": "Формирует и проверяет общие существенные понятия разговора.",
+          "observation_condition": "S1/S2: скорость, проверка и готовность имеют разные смыслы.",
+          "scenario_locations": [
+            "S1",
+            "S2"
+          ],
+          "skill_id": "K1.4",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 20,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Общее основание выдано готовым ведущим."
+        },
+        {
+          "branch_condition": "S1–S3: участники имеют разные знания о входе, контроле и потоке.",
+          "component_id": "K2.C07",
+          "event_condition": "S1–S3: участники имеют разные знания о входе, контроле и потоке.",
+          "indicator_id": "K2.I11",
+          "m2_version": "v1.0",
+          "observable_action": "Использует эти вклады в устройстве общего решения.",
+          "observation_condition": "S1–S3: участники имеют разные знания о входе, контроле и потоке.",
+          "scenario_locations": [
+            "S1",
+            "S3"
+          ],
+          "skill_id": "K2.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 21,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Все предложения произносит один аналитик."
+        },
+        {
+          "branch_condition": "S1/S2: ускорение единого пути не снимает возвраты.",
+          "component_id": "K3.C02",
+          "event_condition": "S1/S2: ускорение единого пути не снимает возвраты.",
+          "indicator_id": "K3.I03",
+          "m2_version": "v1.1",
+          "observable_action": "Меняет основание рассмотрения задачи и открывает новый способ поиска.",
+          "observation_condition": "S1/S2: ускорение единого пути не снимает возвраты.",
+          "scenario_locations": [
+            "S1",
+            "S2"
+          ],
+          "skill_id": "K3.1",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 22,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Персонаж прямо предлагает требуемую новую рамку."
+        },
+        {
+          "branch_condition": "S2: привычный способ недостаточен, ограничения оставляют несколько путей.",
+          "component_id": "K3.C03",
+          "event_condition": "S2: привычный способ недостаточен, ограничения оставляют несколько путей.",
+          "indicator_id": "K3.I06",
+          "m2_version": "v1.1",
+          "observable_action": "Создаёт содержательно разные способы достижения результата.",
+          "observation_condition": "S2: привычный способ недостаточен, ограничения оставляют несколько путей.",
+          "scenario_locations": [
+            "S2"
+          ],
+          "skill_id": "K3.2",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 23,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Перестановки времени одного слота считаются разными механизмами."
+        },
+        {
+          "branch_condition": "S2/S3: идея должна стать исполнимой на A–F.",
+          "component_id": "K3.C06",
+          "event_condition": "S2/S3: идея должна стать исполнимой на A–F.",
+          "indicator_id": "K3.I09",
+          "m2_version": "v1.1",
+          "observable_action": "Задаёт маршрут, условия и форму, допускающую проверку.",
+          "observation_condition": "S2/S3: идея должна стать исполнимой на A–F.",
+          "scenario_locations": [
+            "S2",
+            "S3"
+          ],
+          "skill_id": "K3.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 24,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Сергей достраивает схему за участника."
+        },
+        {
+          "branch_condition": "S2/S3: доступна самостоятельная инициатива прогона и его результаты.",
+          "component_id": "K3.C07",
+          "event_condition": "S2/S3: доступна самостоятельная инициатива прогона и его результаты.",
+          "indicator_id": "K3.I10",
+          "m2_version": "v1.1",
+          "observable_action": "Организует содержательную проверку и интерпретирует её результат.",
+          "observation_condition": "S2/S3: доступна самостоятельная инициатива прогона и его результаты.",
+          "scenario_locations": [
+            "S2",
+            "S3"
+          ],
+          "skill_id": "K3.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 25,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Автоматический прогон приписывают участнику."
+        },
+        {
+          "branch_condition": "S3: после прогона и G есть основания проверить/изменить элементы.",
+          "component_id": "K3.C08",
+          "event_condition": "S3: после прогона и G есть основания проверить/изменить элементы.",
+          "indicator_id": "K3.I11",
+          "m2_version": "v1.1",
+          "observable_action": "Изменяет ограничивающие части на основе конкретных данных, сохраняет работающие.",
+          "observation_condition": "S3: после прогона и G есть основания проверить/изменить элементы.",
+          "scenario_locations": [
+            "S3"
+          ],
+          "skill_id": "K3.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 26,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Вместо данных вводят произвольное новое требование."
+        },
+        {
+          "branch_condition": "S2–S4: прототип зависит от полноты, классификации и нагрузки.",
+          "component_id": "K4.C07",
+          "event_condition": "S2–S4: прототип зависит от полноты, классификации и нагрузки.",
+          "indicator_id": "K4.I12",
+          "m2_version": "v1.0",
+          "observable_action": "Выявляет существенные допущения и пределы модельного вывода.",
+          "observation_condition": "S2–S4: прототип зависит от полноты, классификации и нагрузки.",
+          "scenario_locations": [
+            "S2",
+            "S4"
+          ],
+          "skill_id": "K4.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 27,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Шесть карточек объявляют доказательством пропускной способности."
+        }
+      ]
+    },
+    {
+      "case_id": "CASE-TDISC-04",
+      "version": "v0.1",
+      "status": "WORKING",
+      "base_role": "team_lead",
+      "unresolved_decisions": [
+        "CASE04_ASYA_BRANCH_CONDITION_REQUIRES_METHOD_OWNER_DECISION"
+      ],
+      "indicator_targets": [
+        {
+          "branch_condition": "S1/S2: за фразами Виктора и Нины стоят разные основания.",
+          "component_id": "K1.C07",
+          "event_condition": "S1/S2: за фразами Виктора и Нины стоят разные основания.",
+          "indicator_id": "K1.I13",
+          "m2_version": "v1.1",
+          "observable_action": "Восстанавливает существенный смысл позиции другого.",
+          "observation_condition": "S1/S2: за фразами Виктора и Нины стоят разные основания.",
+          "scenario_locations": [
+            "S1",
+            "S2"
+          ],
+          "skill_id": "K1.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 28,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Ведущий заранее объясняет мотивы."
+        },
+        {
+          "branch_condition": "S1/S3: «существенное изменение» и «подтверждение» неоднозначны.",
+          "component_id": "K1.C07",
+          "event_condition": "S1/S3: «существенное изменение» и «подтверждение» неоднозначны.",
+          "indicator_id": "K1.I14",
+          "m2_version": "v1.1",
+          "observable_action": "Проясняет и проверяет конкретное понимание.",
+          "observation_condition": "S1/S3: «существенное изменение» и «подтверждение» неоднозначны.",
+          "scenario_locations": [
+            "S1",
+            "S3"
+          ],
+          "skill_id": "K1.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 29,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Персонаж сразу получает готовую инструкцию."
+        },
+        {
+          "branch_condition": "S1/S2: тихая Ася и зависимая от помощи Нина имеют полезный вклад.",
+          "component_id": "K2.C07",
+          "event_condition": "S1/S2: тихая Ася и зависимая от помощи Нина имеют полезный вклад.",
+          "indicator_id": "K2.I10",
+          "m2_version": "v1.0",
+          "observable_action": "Создаёт реальную возможность их участия.",
+          "observation_condition": "S1/S2: тихая Ася и зависимая от помощи Нина имеют полезный вклад.",
+          "scenario_locations": [
+            "S1",
+            "S2"
+          ],
+          "skill_id": "K2.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 30,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Ася автоматически высказывает всё без взаимодействия."
+        },
+        {
+          "branch_condition": "S2/S3: доступны опыт Виктора, материалы Аси и черновик Нины.",
+          "component_id": "K2.C07",
+          "event_condition": "S2/S3: доступны опыт Виктора, материалы Аси и черновик Нины.",
+          "indicator_id": "K2.I11",
+          "m2_version": "v1.0",
+          "observable_action": "Соединяет разные возможности в общем результате.",
+          "observation_condition": "S2/S3: доступны опыт Виктора, материалы Аси и черновик Нины.",
+          "scenario_locations": [
+            "S2",
+            "S3"
+          ],
+          "skill_id": "K2.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 31,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Все знания и работа переданы Виктору сценарием."
+        },
+        {
+          "branch_condition": "S1/S3: конкретное препятствие Нины мешает следующему действию.",
+          "component_id": "K2.C08",
+          "event_condition": "S1/S3: конкретное препятствие Нины мешает следующему действию.",
+          "indicator_id": "K2.I12",
+          "m2_version": "v1.0",
+          "observable_action": "Организует подходящую помощь, позволяющую продолжить вклад.",
+          "observation_condition": "S1/S3: конкретное препятствие Нины мешает следующему действию.",
+          "scenario_locations": [
+            "S1",
+            "S3"
+          ],
+          "skill_id": "K2.3",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 32,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Поддержка сведена к ободряющей реплике без реакции на работу."
+        },
+        {
+          "branch_condition": "S3: неформальная ответственность Виктора конфликтует с самостоятельностью.",
+          "component_id": "K2.C03",
+          "event_condition": "S3: неформальная ответственность Виктора конфликтует с самостоятельностью.",
+          "indicator_id": "K2.I06",
+          "m2_version": "v1.0",
+          "observable_action": "Согласует границы ответственности и взаимные ожидания.",
+          "observation_condition": "S3: неформальная ответственность Виктора конфликтует с самостоятельностью.",
+          "scenario_locations": [
+            "S3"
+          ],
+          "skill_id": "K2.1",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 33,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Полномочия и ответственность ведущий устанавливает сам."
+        },
+        {
+          "branch_condition": "S3 после D2: частичный пакет, внешний ответ, доработка и приёмка.",
+          "component_id": "K2.C04",
+          "event_condition": "S3 после D2: частичный пакет, внешний ответ, доработка и приёмка.",
+          "indicator_id": "K2.I07",
+          "m2_version": "v1.0",
+          "observable_action": "Согласует последовательность и передачи между участниками.",
+          "observation_condition": "S3 после D2: частичный пакет, внешний ответ, доработка и приёмка.",
+          "scenario_locations": [
+            "S3"
+          ],
+          "skill_id": "K2.2",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 34,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Денису заранее подходит любой срок."
+        },
+        {
+          "branch_condition": "S1–S3: задержки объясняют разными причинами; D1/D2 доступны.",
+          "component_id": "K4.C05",
+          "event_condition": "S1–S3: задержки объясняют разными причинами; D1/D2 доступны.",
+          "indicator_id": "K4.I10",
+          "m2_version": "v1.0",
+          "observable_action": "Проверяет причинные версии, не сводит всё к человеку.",
+          "observation_condition": "S1–S3: задержки объясняют разными причинами; D1/D2 доступны.",
+          "scenario_locations": [
+            "S1",
+            "S3"
+          ],
+          "skill_id": "K4.2",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 35,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "История двух случаев подана как доказанная общая причина."
+        }
+      ]
+    },
+    {
+      "case_id": "CASE-TDISC-05",
+      "version": "v0.1",
+      "status": "WORKING",
+      "base_role": "direction_system_leader",
+      "unresolved_decisions": [],
+      "indicator_targets": [
+        {
+          "branch_condition": "S1: три разные локальные цели и интересы.",
+          "component_id": "K1.C01",
+          "event_condition": "S1: три разные локальные цели и интересы.",
+          "indicator_id": "K1.I01",
+          "m2_version": "v1.1",
+          "observable_action": "Выявляет и различает цели, интересы и предъявляемые позиции.",
+          "observation_condition": "S1: три разные локальные цели и интересы.",
+          "scenario_locations": [
+            "S1"
+          ],
+          "skill_id": "K1.1",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 36,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Ведущий заранее сводит интересы к общей формуле."
+        },
+        {
+          "branch_condition": "S4: итог нужно использовать трем отделам.",
+          "component_id": "K1.C09",
+          "event_condition": "S4: итог нужно использовать трем отделам.",
+          "indicator_id": "K1.I17",
+          "m2_version": "v1.1",
+          "observable_action": "Проверяет и фиксирует коммуникативный результат и открытые вопросы.",
+          "observation_condition": "S4: итог нужно использовать трем отделам.",
+          "scenario_locations": [
+            "S4"
+          ],
+          "skill_id": "K1.4",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 37,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Согласие имитируется общим «всё понятно»."
+        },
+        {
+          "branch_condition": "S1/S2: разное понимание готового клиентского результата.",
+          "component_id": "K2.C01",
+          "event_condition": "S1/S2: разное понимание готового клиентского результата.",
+          "indicator_id": "K2.I02",
+          "m2_version": "v1.0",
+          "observable_action": "Согласует и проверяет понимание общего результата пилота.",
+          "observation_condition": "S1/S2: разное понимание готового клиентского результата.",
+          "scenario_locations": [
+            "S1",
+            "S2"
+          ],
+          "skill_id": "K2.1",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 38,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Общую цель сообщают как обязательный ответ."
+        },
+        {
+          "branch_condition": "S2/S3: прежние функции не обеспечивают сквозной результат.",
+          "component_id": "K2.C02",
+          "event_condition": "S2/S3: прежние функции не обеспечивают сквозной результат.",
+          "indicator_id": "K2.I03",
+          "m2_version": "v1.0",
+          "observable_action": "Определяет необходимые взаимосвязанные функции.",
+          "observation_condition": "S2/S3: прежние функции не обеспечивают сквозной результат.",
+          "scenario_locations": [
+            "S2",
+            "S3"
+          ],
+          "skill_id": "K2.1",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 39,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Разговор ограничен списком должностей."
+        },
+        {
+          "branch_condition": "S2/S3: переходы и исключения не имеют единой ответственности.",
+          "component_id": "K2.C03",
+          "event_condition": "S2/S3: переходы и исключения не имеют единой ответственности.",
+          "indicator_id": "K2.I06",
+          "m2_version": "v1.0",
+          "observable_action": "Согласует ответственность и взаимные обязательства ролей.",
+          "observation_condition": "S2/S3: переходы и исключения не имеют единой ответственности.",
+          "scenario_locations": [
+            "S2",
+            "S3"
+          ],
+          "skill_id": "K2.1",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 40,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Координатор автоматически отвечает за всё."
+        },
+        {
+          "branch_condition": "S1: предъявлена преждевременная формула «плохая поддержка».",
+          "component_id": "K4.C04",
+          "event_condition": "S1: предъявлена преждевременная формула «плохая поддержка».",
+          "indicator_id": "K4.I07",
+          "m2_version": "v1.0",
+          "observable_action": "Формулирует проблемное расхождение, отделяя его от причины и решения.",
+          "observation_condition": "S1: предъявлена преждевременная формула «плохая поддержка».",
+          "scenario_locations": [
+            "S1"
+          ],
+          "skill_id": "K4.2",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 41,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Постановка проблемы уже дана ведущим."
+        },
+        {
+          "branch_condition": "S1–S3: локальные метрики, передачи, повторные обращения и последствия.",
+          "component_id": "K4.C06",
+          "event_condition": "S1–S3: локальные метрики, передачи, повторные обращения и последствия.",
+          "indicator_id": "K4.I11",
+          "m2_version": "v1.0",
+          "observable_action": "Прослеживает зависимости, обратные связи и распространение последствий.",
+          "observation_condition": "S1–S3: локальные метрики, передачи, повторные обращения и последствия.",
+          "scenario_locations": [
+            "S1",
+            "S3"
+          ],
+          "skill_id": "K4.2",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 42,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Список факторов принят за модель связей."
+        },
+        {
+          "branch_condition": "S2/S3: выбор пилота при 0,5 ставки и неопределённом эффекте.",
+          "component_id": "K4.C09",
+          "event_condition": "S2/S3: выбор пилота при 0,5 ставки и неопределённом эффекте.",
+          "indicator_id": "K4.I15",
+          "m2_version": "v1.0",
+          "observable_action": "Определяет критерии, ограничения и существенную неопределённость.",
+          "observation_condition": "S2/S3: выбор пилота при 0,5 ставки и неопределённом эффекте.",
+          "scenario_locations": [
+            "S2",
+            "S3"
+          ],
+          "skill_id": "K4.4",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 43,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Придумывают недоступные ресурсы или уверенность в эффекте."
+        },
+        {
+          "branch_condition": "S3/S4: варианты меняют скорость, качество и нагрузку по-разному.",
+          "component_id": "K4.C10",
+          "event_condition": "S3/S4: варианты меняют скорость, качество и нагрузку по-разному.",
+          "indicator_id": "K4.I17",
+          "m2_version": "v1.0",
+          "observable_action": "Оценивает риски и последствия конкретных альтернатив.",
+          "observation_condition": "S3/S4: варианты меняют скорость, качество и нагрузку по-разному.",
+          "scenario_locations": [
+            "S3",
+            "S4"
+          ],
+          "skill_id": "K4.4",
+          "source": {
+            "field": "IndicatorID..ValidityRisk",
+            "file": "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx",
+            "row": 44,
+            "sheet": "Индикаторы"
+          },
+          "validity_risk": "Риски перечисляются вне связи с выбранным устройством."
+        }
+      ]
+    }
+  ],
+  "deployed_test": {
+    "status": "NOT_VERIFIED",
+    "reason": "No configured read-only access to catalog/QA tables supplied; no personal rows queried"
+  },
+  "fixture_warning": "10.2 FROZEN copies and synthetic character/numeric fixtures are not working admission or GC",
+  "candidate_role_target_union": {
+    "project_product_process_manager": [
+      "K1.I13",
+      "K1.I15",
+      "K1.I16",
+      "K1.I17",
+      "K2.I07",
+      "K2.I08",
+      "K2.I11",
+      "K3.I03",
+      "K3.I06",
+      "K3.I09",
+      "K3.I10",
+      "K3.I11",
+      "K4.I05",
+      "K4.I10",
+      "K4.I12",
+      "K4.I17",
+      "K4.I18"
+    ],
+    "specialist_expert": [
+      "K1.I02",
+      "K1.I14",
+      "K1.I17",
+      "K2.I07",
+      "K2.I13",
+      "K2.I14",
+      "K4.I15",
+      "K4.I16",
+      "K4.I18"
+    ],
+    "team_lead": [
+      "K1.I13",
+      "K1.I14",
+      "K2.I06",
+      "K2.I07",
+      "K2.I10",
+      "K2.I11",
+      "K2.I12",
+      "K4.I10"
+    ],
+    "direction_system_leader": [
+      "K1.I01",
+      "K1.I17",
+      "K2.I02",
+      "K2.I03",
+      "K2.I06",
+      "K4.I07",
+      "K4.I11",
+      "K4.I15",
+      "K4.I17"
+    ]
+  },
+  "route_coverage_note": "Union of declared targets only; does not prove admissible runnable route or sufficient repetitions."
+}

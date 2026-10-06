@@ -1,0 +1,10 @@
+{
+  "commit": "b66d421ddf0739fb38440a9967c6123d0d0cf986",
+  "run": "https://github.com/VadikB/4K_MBTI/actions/runs/37350941792",
+  "status": "FAIL",
+  "integration_passed": 81,
+  "integration_failed": 1,
+  "test": "test_profile_to_m4_on_owned_stand",
+  "assertion": "summary['cycle_history'] == history['cycles']",
+  "cause": "UTC datetime encoding: profile-summary uses Z, untyped history used +00:00. Reproduced locally by utc-before.log; response_model now unifies serializers."
+}

@@ -4,7 +4,7 @@ import { hasRequiredProfileFields, shouldOfferNoChangesQuickReply } from '../uti
 
 export const shouldRecoverProfileOnAssessmentError = (message) => {
   const normalized = String(message || '').toLowerCase();
-  return normalized.includes('для пользователя не определена роль') || normalized.includes('завершите настройку профиля');
+  return ['m4_profile_not_ready', 'm4_profile_scope_mismatch', 'm4_profile_selection_required'].some((code) => normalized.includes(code)) || normalized.includes('для пользователя не определена роль') || normalized.includes('завершите настройку профиля');
 };
 
 export const recoverProfileCompletionForAssessment = async ({ resumeAssessment = true } = {}) => {

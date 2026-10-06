@@ -104,6 +104,11 @@ def test_m6_assessment_repeat_uses_saved_request(client):
 def test_m6_cycle_aggregation_admin_contract(client):
     http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
     cycle_id=str(uuid4());calculation_id=str(uuid4())
+    scope = {'usage_scope':'qa'}
+    @contextmanager
+    def connection():
+        yield SimpleNamespace(commit=lambda:None, execute=lambda *a:SimpleNamespace(fetchone=lambda:scope))
+    monkeypatch.setattr(routes,'get_connection',connection)
     monkeypatch.setattr(routes.m6_cycle_aggregation_repository,'create',lambda *_args,**kwargs:{'id':calculation_id,'c56':{'contract':'C-56'}})
     monkeypatch.setattr(routes.m6_cycle_aggregation_repository,'read_latest_for_cycle',lambda *_args:{'id':calculation_id,'c56':{'contract':'C-56'}})
     payload={'idempotency_key':'aggregate','expected_composition_checksum':'a'*64,
@@ -112,6 +117,8 @@ def test_m6_cycle_aggregation_admin_contract(client):
     response=http.post(f'/users/admin/m6-cycles/{cycle_id}/calculations',json=payload)
     assert response.status_code==201 and response.json()['c56']['contract']=='C-56'
     assert http.get(f'/users/admin/m6-cycles/{cycle_id}/calculations/latest').json()['id']==calculation_id
+    scope['usage_scope']='assessment'
+    assert http.post(f'/users/admin/m6-cycles/{cycle_id}/calculations',json=payload).status_code==409
 
 
 def test_m8_results_c67_and_pdf_contract(client):
@@ -128,7 +135,7 @@ def test_m8_results_c67_and_pdf_contract(client):
 def test_t11_owner_regeneration_is_scoped_and_idempotency_is_forwarded(client):
     http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
     cycle_id=str(uuid4());results_revision=str(uuid4());report_id=str(uuid4());calls=[]
-    monkeypatch.setattr(routes,'_m7_owned_cycle',lambda request,cycle:SimpleNamespace(id=7))
+    monkeypatch.setattr(routes,'_m8_owned_cycle',lambda request,cycle:SimpleNamespace(id=7))
     monkeypatch.setattr(routes.m8_results,'read_latest_results',lambda *_args:{'revision_id':results_revision})
     monkeypatch.setattr(routes.m8_results,'read_latest_report',lambda *_args:{'c67':{'target_profile':None}})
     def create(*_args,**kwargs):
@@ -138,3 +145,22 @@ def test_t11_owner_regeneration_is_scoped_and_idempotency_is_forwarded(client):
     assert response.status_code==201 and response.json()['revision_no']==2
     assert calls==[{'results_revision_id':results_revision,'audience':'assessee','key':'regen-1',
                     'target_profile':None,'created_by':7}]
+
+
+def test_substantive_admission_endpoint_rejects_client_decisions_and_requires_admin(client):
+    http,monkeypatch=client
+    cycle=str(uuid4());calls=[]
+    def calculate(*args,**kwargs):
+        calls.append(kwargs)
+        return {'id':'saved','c56':{'admission_mechanism':'m6_substantive_admission/2.0.0'}}
+    monkeypatch.setattr(routes.m6_cycle_aggregation_repository,'create_substantive',calculate)
+    url=f'/users/admin/m6-cycles/{cycle}/substantive-calculations'
+    payload={'idempotency_key':'attempt-1','expected_composition_checksum':'a'*64}
+    assert http.post(url,json=payload).status_code==401
+    http.cookies.set(routes.SESSION_COOKIE_NAME,'member')
+    assert http.post(url,json=payload).status_code==403
+    assert not calls
+    http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
+    assert http.post(url,json={**payload,'decisions':[{'numeric_admissible':True}]}).status_code==422
+    assert http.post(url,json=payload).status_code==201
+    assert calls[0]['key']=='attempt-1' and calls[0]['created_by']==7

@@ -1,0 +1,2912 @@
+{
+  "id": "12994000-a4de-47c1-a38a-144d3bd9aeb4",
+  "revision_no": 1,
+  "audience": "assessee",
+  "status": "ready",
+  "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+  "owner_user_id": 99,
+  "results_revision_id": "d3418edb-d1fd-40d3-a10e-f0934d9579de",
+  "created_at": "2026-10-05T21:56:33.271007+03:00",
+  "c67": {
+    "goal": "synthetic admission regression",
+    "time": {
+      "deadline": "2026-10-08T21:56:31.619667+03:00",
+      "intervals": [
+        {
+          "type": "collecting",
+          "reason": "session_started",
+          "ended_at": "2026-10-05T21:56:32.689184+03:00",
+          "started_at": "2026-10-05T21:56:31.619667+03:00",
+          "session_db_id": 1
+        }
+      ],
+      "started_at": "2026-10-05T21:56:31.619667+03:00",
+      "budget_seconds": 3600,
+      "consumed_seconds": 1,
+      "parameter_sources": {
+        "time_budget": "m7-default:60m",
+        "calendar_window": "m7-default:72h"
+      },
+      "calendar_window_seconds": 259200
+    },
+    "owner": "PM-06",
+    "skills": [
+      {
+        "score": {
+          "value": 1.0,
+          "numerator": 1,
+          "denominator": 1
+        },
+        "outcome": "partial_score",
+        "skill_id": "K1.3",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Слушание, реконструкция и верификация смысла другого",
+        "competency_id": "K1",
+        "competency_name": "Коммуникация",
+        "skill_result_exists": true
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K1.4",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Согласование смыслов и позиций",
+        "competency_id": "K1",
+        "competency_name": "Коммуникация",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K2.2",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Координация совместных действий",
+        "competency_id": "K2",
+        "competency_name": "Командная работа",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K4.1",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Анализ и оценка информации",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K4.2",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Постановка и анализ проблемы",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K4.4",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Принятие решений",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "skill_result_exists": false
+      }
+    ],
+    "audience": "assessee",
+    "consumer": "PM-07",
+    "contract": "C-67",
+    "coverage": {
+      "full_m2": {
+        "scope": "full_m2",
+        "opportunities": {
+          "ratio": 0.375,
+          "numerator": 9,
+          "denominator": 24,
+          "missing_ids": [
+            "K1.I12",
+            "K1.I14",
+            "K1.I15",
+            "K2.I09",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I11",
+            "K4.I15",
+            "K4.I16"
+          ],
+          "included_ids": [
+            "K1.I13",
+            "K1.I16",
+            "K1.I17",
+            "K2.I07",
+            "K2.I08",
+            "K4.I05",
+            "K4.I10",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "missing_reasons": {
+            "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I16": "NO_JUSTIFIED_FINAL_IA"
+          },
+          "composition_version": "7d0bec647a3db8b7833f9ab4608b3355f003121b65a8ff9a60ba87d144416a90"
+        },
+        "complete_components": {
+          "ratio": 0.0,
+          "numerator": 0,
+          "denominator": 15,
+          "missing_ids": [
+            "K1.C06",
+            "K1.C07",
+            "K1.C08",
+            "K1.C09",
+            "K2.C04",
+            "K2.C05",
+            "K2.C06",
+            "K4.C01",
+            "K4.C02",
+            "K4.C03",
+            "K4.C04",
+            "K4.C05",
+            "K4.C06",
+            "K4.C09",
+            "K4.C10"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.C06": "NOT_AVAILABLE",
+            "K1.C07": "NOT_AVAILABLE",
+            "K1.C08": "NOT_AVAILABLE",
+            "K1.C09": "NOT_AVAILABLE",
+            "K2.C04": "NOT_AVAILABLE",
+            "K2.C05": "NOT_AVAILABLE",
+            "K2.C06": "NOT_AVAILABLE",
+            "K4.C01": "NOT_AVAILABLE",
+            "K4.C02": "NOT_AVAILABLE",
+            "K4.C03": "NOT_AVAILABLE",
+            "K4.C04": "NOT_AVAILABLE",
+            "K4.C05": "NOT_AVAILABLE",
+            "K4.C06": "NOT_AVAILABLE",
+            "K4.C09": "NOT_AVAILABLE",
+            "K4.C10": "NOT_AVAILABLE"
+          },
+          "composition_version": "7d0bec647a3db8b7833f9ab4608b3355f003121b65a8ff9a60ba87d144416a90"
+        },
+        "components_with_score": {
+          "ratio": 0.06666666666666667,
+          "numerator": 1,
+          "denominator": 15,
+          "missing_ids": [
+            "K1.C06",
+            "K1.C08",
+            "K1.C09",
+            "K2.C04",
+            "K2.C05",
+            "K2.C06",
+            "K4.C01",
+            "K4.C02",
+            "K4.C03",
+            "K4.C04",
+            "K4.C05",
+            "K4.C06",
+            "K4.C09",
+            "K4.C10"
+          ],
+          "included_ids": [
+            "K1.C07"
+          ],
+          "missing_reasons": {
+            "K1.C06": "NOT_AVAILABLE",
+            "K1.C08": "NOT_AVAILABLE",
+            "K1.C09": "NOT_AVAILABLE",
+            "K2.C04": "NOT_AVAILABLE",
+            "K2.C05": "NOT_AVAILABLE",
+            "K2.C06": "NOT_AVAILABLE",
+            "K4.C01": "NOT_AVAILABLE",
+            "K4.C02": "NOT_AVAILABLE",
+            "K4.C03": "NOT_AVAILABLE",
+            "K4.C04": "NOT_AVAILABLE",
+            "K4.C05": "NOT_AVAILABLE",
+            "K4.C06": "NOT_AVAILABLE",
+            "K4.C09": "NOT_AVAILABLE",
+            "K4.C10": "NOT_AVAILABLE"
+          },
+          "composition_version": "7d0bec647a3db8b7833f9ab4608b3355f003121b65a8ff9a60ba87d144416a90"
+        },
+        "indicator_assessments": {
+          "ratio": 0.041666666666666664,
+          "numerator": 1,
+          "denominator": 24,
+          "missing_ids": [
+            "K1.I12",
+            "K1.I14",
+            "K1.I15",
+            "K1.I16",
+            "K1.I17",
+            "K2.I07",
+            "K2.I08",
+            "K2.I09",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I05",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I10",
+            "K4.I11",
+            "K4.I15",
+            "K4.I16",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [
+            "K1.I13"
+          ],
+          "missing_reasons": {
+            "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I16": "NO_INTERPRETABLE_IA",
+            "K1.I17": "NO_INTERPRETABLE_IA",
+            "K2.I07": "NO_INTERPRETABLE_IA",
+            "K2.I08": "NO_INTERPRETABLE_IA",
+            "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I05": "NO_INTERPRETABLE_IA",
+            "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I10": "NO_INTERPRETABLE_IA",
+            "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I17": "NO_INTERPRETABLE_IA",
+            "K4.I18": "NO_INTERPRETABLE_IA"
+          },
+          "composition_version": "7d0bec647a3db8b7833f9ab4608b3355f003121b65a8ff9a60ba87d144416a90"
+        },
+        "admissible_contributions": {
+          "ratio": 0.041666666666666664,
+          "numerator": 1,
+          "denominator": 24,
+          "missing_ids": [
+            "K1.I12",
+            "K1.I14",
+            "K1.I15",
+            "K1.I16",
+            "K1.I17",
+            "K2.I07",
+            "K2.I08",
+            "K2.I09",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I05",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I10",
+            "K4.I11",
+            "K4.I15",
+            "K4.I16",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [
+            "K1.I13"
+          ],
+          "missing_reasons": {
+            "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I16": "NO_INTERPRETABLE_IA",
+            "K1.I17": "NO_INTERPRETABLE_IA",
+            "K2.I07": "NO_INTERPRETABLE_IA",
+            "K2.I08": "NO_INTERPRETABLE_IA",
+            "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I05": "NO_INTERPRETABLE_IA",
+            "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I10": "NO_INTERPRETABLE_IA",
+            "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I17": "NO_INTERPRETABLE_IA",
+            "K4.I18": "NO_INTERPRETABLE_IA"
+          },
+          "composition_version": "7d0bec647a3db8b7833f9ab4608b3355f003121b65a8ff9a60ba87d144416a90"
+        }
+      },
+      "cycle_plan": {
+        "scope": "cycle_plan",
+        "opportunities": {
+          "ratio": 1.0,
+          "numerator": 9,
+          "denominator": 9,
+          "missing_ids": [],
+          "included_ids": [
+            "K1.I13",
+            "K1.I16",
+            "K1.I17",
+            "K2.I07",
+            "K2.I08",
+            "K4.I05",
+            "K4.I10",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "missing_reasons": {},
+          "composition_version": "7d0bec647a3db8b7833f9ab4608b3355f003121b65a8ff9a60ba87d144416a90"
+        },
+        "complete_components": {
+          "ratio": 0.0,
+          "numerator": 0,
+          "denominator": 7,
+          "missing_ids": [
+            "K1.C07",
+            "K1.C09",
+            "K2.C04",
+            "K2.C05",
+            "K4.C03",
+            "K4.C05",
+            "K4.C10"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.C07": "NOT_AVAILABLE",
+            "K1.C09": "NOT_AVAILABLE",
+            "K2.C04": "NOT_AVAILABLE",
+            "K2.C05": "NOT_AVAILABLE",
+            "K4.C03": "NOT_AVAILABLE",
+            "K4.C05": "NOT_AVAILABLE",
+            "K4.C10": "NOT_AVAILABLE"
+          },
+          "composition_version": "7d0bec647a3db8b7833f9ab4608b3355f003121b65a8ff9a60ba87d144416a90"
+        },
+        "components_with_score": {
+          "ratio": 0.14285714285714285,
+          "numerator": 1,
+          "denominator": 7,
+          "missing_ids": [
+            "K1.C09",
+            "K2.C04",
+            "K2.C05",
+            "K4.C03",
+            "K4.C05",
+            "K4.C10"
+          ],
+          "included_ids": [
+            "K1.C07"
+          ],
+          "missing_reasons": {
+            "K1.C09": "NOT_AVAILABLE",
+            "K2.C04": "NOT_AVAILABLE",
+            "K2.C05": "NOT_AVAILABLE",
+            "K4.C03": "NOT_AVAILABLE",
+            "K4.C05": "NOT_AVAILABLE",
+            "K4.C10": "NOT_AVAILABLE"
+          },
+          "composition_version": "7d0bec647a3db8b7833f9ab4608b3355f003121b65a8ff9a60ba87d144416a90"
+        },
+        "indicator_assessments": {
+          "ratio": 0.1111111111111111,
+          "numerator": 1,
+          "denominator": 9,
+          "missing_ids": [
+            "K1.I16",
+            "K1.I17",
+            "K2.I07",
+            "K2.I08",
+            "K4.I05",
+            "K4.I10",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [
+            "K1.I13"
+          ],
+          "missing_reasons": {
+            "K1.I16": "NO_INTERPRETABLE_IA",
+            "K1.I17": "NO_INTERPRETABLE_IA",
+            "K2.I07": "NO_INTERPRETABLE_IA",
+            "K2.I08": "NO_INTERPRETABLE_IA",
+            "K4.I05": "NO_INTERPRETABLE_IA",
+            "K4.I10": "NO_INTERPRETABLE_IA",
+            "K4.I17": "NO_INTERPRETABLE_IA",
+            "K4.I18": "NO_INTERPRETABLE_IA"
+          },
+          "composition_version": "7d0bec647a3db8b7833f9ab4608b3355f003121b65a8ff9a60ba87d144416a90"
+        },
+        "admissible_contributions": {
+          "ratio": 0.1111111111111111,
+          "numerator": 1,
+          "denominator": 9,
+          "missing_ids": [
+            "K1.I16",
+            "K1.I17",
+            "K2.I07",
+            "K2.I08",
+            "K4.I05",
+            "K4.I10",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [
+            "K1.I13"
+          ],
+          "missing_reasons": {
+            "K1.I16": "NO_INTERPRETABLE_IA",
+            "K1.I17": "NO_INTERPRETABLE_IA",
+            "K2.I07": "NO_INTERPRETABLE_IA",
+            "K2.I08": "NO_INTERPRETABLE_IA",
+            "K4.I05": "NO_INTERPRETABLE_IA",
+            "K4.I10": "NO_INTERPRETABLE_IA",
+            "K4.I17": "NO_INTERPRETABLE_IA",
+            "K4.I18": "NO_INTERPRETABLE_IA"
+          },
+          "composition_version": "7d0bec647a3db8b7833f9ab4608b3355f003121b65a8ff9a60ba87d144416a90"
+        }
+      }
+    },
+    "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+    "role_ref": {
+      "id": "project_product_process_manager",
+      "version": "1",
+      "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    "sessions": [
+      {
+        "status": "completed",
+        "ordinal": 1,
+        "ended_at": "2026-10-05T21:56:32.689184+03:00",
+        "session_id": "667a333c-f95a-4d67-bdd6-7db159bf951c",
+        "started_at": "2026-10-05T21:56:31.619667+03:00",
+        "close_reason": "synthetic"
+      }
+    ],
+    "report_id": "12994000-a4de-47c1-a38a-144d3bd9aeb4",
+    "collection": {
+      "reason": "synthetic",
+      "status": "collection_closed",
+      "closed_at": "2026-10-05T21:56:32.689184+03:00"
+    },
+    "confidence": {
+      "kind": "qualitative",
+      "ia_bases_preserved": true
+    },
+    "disclosure": "personal",
+    "provenance": {
+      "c46_ref": {
+        "id": "77903827-2736-4d53-934f-5147cdddbf93",
+        "checksum": "f4c6bb00f5db36c3c15a32345eb405f464106ba05ff4a4a921a9210838b25105",
+        "revision_no": 3
+      },
+      "c56_ref": {
+        "revision_no": 2,
+        "calculation_id": "d70e470f-0b0f-4325-8a7c-b7f4a5f36e6d"
+      },
+      "sources": {
+        "M2": "competencies_4k/1.1",
+        "M6": "1.8",
+        "M7": "1.3",
+        "source_set": "2026-10-01"
+      },
+      "algorithm": {
+        "version": "1.0.0",
+        "rules_hash": "405ba4113a4cd2f0bd3e2757a6abd3afc55b96e9cacfbceb103a37ad401e7e62"
+      },
+      "composition_checksum": "7d0bec647a3db8b7833f9ab4608b3355f003121b65a8ff9a60ba87d144416a90"
+    },
+    "results_id": "204667c6-9126-4ce3-b658-f5b370f6316e",
+    "limitations": [
+      "K1.I13: Synthetic transport fixture, not GC",
+      "K1.I13: Synthetic transport fixture, not GC",
+      "K1.I16: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K1.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K2.I07: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K2.I08: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K4.I05: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K4.I10: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K4.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K4.I18: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "Skill Level is not derived from numeric Score"
+    ],
+    "profile_ref": {
+      "id": "assessment_personalized_profiles:7",
+      "version": "1",
+      "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    "reliability": {
+      "status": "not_verified",
+      "protocol_ref": null
+    },
+    "competencies": [
+      {
+        "score": null,
+        "skill_ids": [
+          "K1.3",
+          "K1.4"
+        ],
+        "competency_id": "K1",
+        "competency_name": "Коммуникация"
+      },
+      {
+        "score": null,
+        "skill_ids": [
+          "K2.2"
+        ],
+        "competency_id": "K2",
+        "competency_name": "Командная работа"
+      },
+      {
+        "score": null,
+        "skill_ids": [
+          "K4.1",
+          "K4.2",
+          "K4.4"
+        ],
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление"
+      }
+    ],
+    "schema_version": 1,
+    "target_profile": null,
+    "message_version": "1.1",
+    "recommendations": [
+      {
+        "goal": "Рассмотреть практику по индикатору «Реконструкция существенного смысла и позиции другого» с учётом результата: В данном ответе восстановлен основной прямо выраженный смысл позиции другого.",
+        "type": "Development",
+        "gap_ref": null,
+        "practice": "Практика предлагается только в пределах сохранённых полномочий и ограничений; если действие запрещено или требует согласования, не выполняйте его самостоятельно. В подходящей задаче предложено отдельно отработать действие: Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией. Сопоставьте полученный продукт «Реконструкция существенного содержания и позиции другого, сохраняющая значимые элементы его фактически выраженного сообщения.» с сохранённым основанием и ограничениями.",
+        "skill_id": "K1.3",
+        "basis_refs": [
+          {
+            "kind": "indicator_assessment",
+            "refs": [
+              {
+                "id": "e1",
+                "kind": "evidence",
+                "meaning": "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+              }
+            ],
+            "outcome": "L1",
+            "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+            "skill_id": "K1.3",
+            "ia_checksum": "90991e2d975a11191047c5419fba19ae48e795e6943bcbfc3798d331a9ac9e61",
+            "indicator_id": "K1.I13",
+            "material_ref": {
+              "checksum_kind": "definition_json_v1",
+              "material_sha256": "30090786ebd04a416be4283e01a4b9251e1ec50b4a6f3106df7e2847e6d0ba83",
+              "boundary_sequence": 6
+            },
+            "manifestation": "В данном ответе восстановлен основной прямо выраженный смысл позиции другого.",
+            "ia_revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8",
+            "evidence_checksum": "154a2cb44938bca8624b9621b062940453711fad7b75bb5078a4b6e6a67e3d28",
+            "material_excerpts": [
+              {
+                "quote": "Синтетический ответ",
+                "turn_id": "794510e3-c049-4768-9378-3371d7e51fd9",
+                "fragment_id": "f1"
+              }
+            ],
+            "results_revision_id": "d3418edb-d1fd-40d3-a10e-f0934d9579de",
+            "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+            "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+            "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+          }
+        ],
+        "limitations": [
+          "Предложение относится к условиям этого Cycle и не гарантирует развитие.",
+          "Одно проявление не доказывает устойчивость навыка.",
+          "Изменения условий после фиксации PersonalizedProfile не проверялись.",
+          "Контекст не подтверждает проявление и не расширяет полномочия; применимость практики требует проверки по сохранённым ограничениям.",
+          "K1.I13: Synthetic transport fixture, not GC",
+          "K1.I16: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K1.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K2.I07: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K2.I08: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K4.I05: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K4.I10: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K4.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K4.I18: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "Skill Level is not derived from numeric Score",
+          "not a GC",
+          "Синтетический пример, не GC"
+        ],
+        "component_ids": [
+          "K1.C07"
+        ],
+        "indicator_ids": [
+          "K1.I13"
+        ],
+        "progress_signal": "В записи о практике по «Реконструкция существенного смысла и позиции другого» описан полученный продукт «Реконструкция существенного содержания и позиции другого, сохраняющая значимые элементы его фактически выраженного сообщения.», конкретное действие и отличие от исходного результата.",
+        "recommendation_id": "K1.3:28cb069b-50db-4ed5-88d4-c1e7ffbee3d8:development",
+        "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
+      },
+      {
+        "goal": "Закрепить конкретный проявленный способ: Восстанавливает основной прямо выраженный смысл и общую позицию другого",
+        "type": "Consolidation / Maintenance",
+        "gap_ref": null,
+        "practice": "Практика предлагается только в пределах сохранённых полномочий и ограничений; если действие запрещено или требует согласования, не выполняйте его самостоятельно. В сопоставимой задаче повторите только подтверждённое действие «Восстанавливает основной прямо выраженный смысл и общую позицию другого» по индикатору «Реконструкция существенного смысла и позиции другого». Зафиксируйте полученный продукт «Реконструкция существенного содержания и позиции другого, сохраняющая значимые элементы его фактически выраженного сообщения.» и условия.",
+        "skill_id": "K1.3",
+        "basis_refs": [
+          {
+            "kind": "indicator_assessment",
+            "refs": [
+              {
+                "id": "e1",
+                "kind": "evidence",
+                "meaning": "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+              }
+            ],
+            "outcome": "L1",
+            "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+            "skill_id": "K1.3",
+            "ia_checksum": "90991e2d975a11191047c5419fba19ae48e795e6943bcbfc3798d331a9ac9e61",
+            "indicator_id": "K1.I13",
+            "material_ref": {
+              "checksum_kind": "definition_json_v1",
+              "material_sha256": "30090786ebd04a416be4283e01a4b9251e1ec50b4a6f3106df7e2847e6d0ba83",
+              "boundary_sequence": 6
+            },
+            "manifestation": "В данном ответе восстановлен основной прямо выраженный смысл позиции другого.",
+            "ia_revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8",
+            "evidence_checksum": "154a2cb44938bca8624b9621b062940453711fad7b75bb5078a4b6e6a67e3d28",
+            "material_excerpts": [
+              {
+                "quote": "Синтетический ответ",
+                "turn_id": "794510e3-c049-4768-9378-3371d7e51fd9",
+                "fragment_id": "f1"
+              }
+            ],
+            "results_revision_id": "d3418edb-d1fd-40d3-a10e-f0934d9579de",
+            "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+            "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+            "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+          }
+        ],
+        "limitations": [
+          "Предложение относится к условиям этого Cycle и не гарантирует развитие.",
+          "Одно проявление не доказывает устойчивость навыка.",
+          "Изменения условий после фиксации PersonalizedProfile не проверялись.",
+          "Контекст не подтверждает проявление и не расширяет полномочия; применимость практики требует проверки по сохранённым ограничениям.",
+          "K1.I13: Synthetic transport fixture, not GC",
+          "K1.I16: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K1.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K2.I07: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K2.I08: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K4.I05: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K4.I10: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K4.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K4.I18: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "Skill Level is not derived from numeric Score",
+          "not a GC",
+          "Синтетический пример, не GC"
+        ],
+        "component_ids": [
+          "K1.C07"
+        ],
+        "indicator_ids": [
+          "K1.I13"
+        ],
+        "progress_signal": "Есть описание повторного действия «Восстанавливает основной прямо выраженный смысл и общую позицию другого», полученного продукта и его ограничений; устойчивость этим не устанавливается.",
+        "recommendation_id": "K1.3:28cb069b-50db-4ed5-88d4-c1e7ffbee3d8:consolidation",
+        "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
+      },
+      {
+        "goal": "Попробовать применение конкретного способа «Восстанавливает основной прямо выраженный смысл и общую позицию другого» в других подходящих условиях.",
+        "type": "Application / Transfer",
+        "gap_ref": null,
+        "practice": "Практика предлагается только в пределах сохранённых полномочий и ограничений; если действие запрещено или требует согласования, не выполняйте его самостоятельно. Выберите другую задачу, где требуется «Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.», и попробуйте применить действие «Восстанавливает основной прямо выраженный смысл и общую позицию другого». Зафиксируйте, как новые условия изменили продукт «Реконструкция существенного содержания и позиции другого, сохраняющая значимые элементы его фактически выраженного сообщения.».",
+        "skill_id": "K1.3",
+        "basis_refs": [
+          {
+            "kind": "indicator_assessment",
+            "refs": [
+              {
+                "id": "e1",
+                "kind": "evidence",
+                "meaning": "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+              }
+            ],
+            "outcome": "L1",
+            "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+            "skill_id": "K1.3",
+            "ia_checksum": "90991e2d975a11191047c5419fba19ae48e795e6943bcbfc3798d331a9ac9e61",
+            "indicator_id": "K1.I13",
+            "material_ref": {
+              "checksum_kind": "definition_json_v1",
+              "material_sha256": "30090786ebd04a416be4283e01a4b9251e1ec50b4a6f3106df7e2847e6d0ba83",
+              "boundary_sequence": 6
+            },
+            "manifestation": "В данном ответе восстановлен основной прямо выраженный смысл позиции другого.",
+            "ia_revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8",
+            "evidence_checksum": "154a2cb44938bca8624b9621b062940453711fad7b75bb5078a4b6e6a67e3d28",
+            "material_excerpts": [
+              {
+                "quote": "Синтетический ответ",
+                "turn_id": "794510e3-c049-4768-9378-3371d7e51fd9",
+                "fragment_id": "f1"
+              }
+            ],
+            "results_revision_id": "d3418edb-d1fd-40d3-a10e-f0934d9579de",
+            "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+            "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+            "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+          }
+        ],
+        "limitations": [
+          "Предложение относится к условиям этого Cycle и не гарантирует развитие.",
+          "Одно проявление не доказывает устойчивость навыка.",
+          "Изменения условий после фиксации PersonalizedProfile не проверялись.",
+          "Контекст не подтверждает проявление и не расширяет полномочия; применимость практики требует проверки по сохранённым ограничениям.",
+          "K1.I13: Synthetic transport fixture, not GC",
+          "K1.I16: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K1.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K2.I07: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K2.I08: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K4.I05: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K4.I10: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K4.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "K4.I18: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+          "Skill Level is not derived from numeric Score",
+          "not a GC",
+          "Синтетический пример, не GC"
+        ],
+        "component_ids": [
+          "K1.C07"
+        ],
+        "indicator_ids": [
+          "K1.I13"
+        ],
+        "progress_signal": "Описаны новое условие, выполненное действие «Восстанавливает основной прямо выраженный смысл и общую позицию другого» и необходимость адаптации; перенос заранее не считается доказанным.",
+        "recommendation_id": "K1.3:28cb069b-50db-4ed5-88d4-c1e7ffbee3d8:application",
+        "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
+      }
+    ],
+    "report_mechanism": {
+      "id": "m8_basic_report",
+      "version": "1.2.0",
+      "checksum": "3242ad6a95ce5b8d6457b2732a6b71b650b377e190aa7dddd737f8f1b66f4e54"
+    },
+    "template_version": "m8-basic-report/1.2.0",
+    "admission_summary": [
+      {
+        "joint": {
+          "status": "COMPARABLE",
+          "rationale": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+          "conditions": {
+            "refs": [
+              {
+                "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                "kind": "as_snapshot",
+                "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+              }
+            ],
+            "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+            "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+            "consequence": "Test the exact decision propagation without changing the saved IA."
+          },
+          "limitations": [
+            "Synthetic transport fixture, not GC"
+          ],
+          "contradictions": {
+            "refs": [
+              {
+                "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                "kind": "as_snapshot",
+                "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+              }
+            ],
+            "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+            "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+            "consequence": "Test the exact decision propagation without changing the saved IA."
+          },
+          "input_checksum": "26efa3ca6095d2834392680c2cc762d7cb1cb2348ebe5cbe13333758da139ac1",
+          "normative_meaning": {
+            "refs": [
+              {
+                "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                "kind": "as_snapshot",
+                "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+              }
+            ],
+            "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+            "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+            "consequence": "Test the exact decision propagation without changing the saved IA."
+          },
+          "considered_revision_ids": [
+            "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+          ]
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+        "individual": [
+          {
+            "status": "ADMITTED",
+            "rationale": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+            "limitations": [
+              "Synthetic transport fixture, not GC"
+            ],
+            "opportunity": {
+              "refs": [
+                {
+                  "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                  "kind": "as_snapshot",
+                  "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+                }
+              ],
+              "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+              "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+              "consequence": "Test the exact decision propagation without changing the saved IA."
+            },
+            "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8",
+            "independence": {
+              "refs": [
+                {
+                  "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                  "kind": "as_snapshot",
+                  "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+                }
+              ],
+              "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+              "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+              "consequence": "Test the exact decision propagation without changing the saved IA."
+            },
+            "clarification": {
+              "refs": [
+                {
+                  "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                  "kind": "as_snapshot",
+                  "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+                }
+              ],
+              "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+              "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+              "consequence": "Test the exact decision propagation without changing the saved IA."
+            },
+            "contradictions": {
+              "refs": [
+                {
+                  "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                  "kind": "as_snapshot",
+                  "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+                }
+              ],
+              "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+              "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+              "consequence": "Test the exact decision propagation without changing the saved IA."
+            },
+            "input_checksum": "a8b1d380b5158ebed683956b35924014a6e315f1b56bcddb7ca3bc0b21a01494",
+            "normative_basis": {
+              "refs": [
+                {
+                  "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                  "kind": "as_snapshot",
+                  "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+                }
+              ],
+              "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+              "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+              "consequence": "Test the exact decision propagation without changing the saved IA."
+            }
+          }
+        ],
+        "reason_code": "ADMITTED",
+        "sufficiency": {
+          "met": true,
+          "requirement": {
+            "indicator_id": "K1.I13",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 1
+        },
+        "indicator_id": "K1.I13",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": true,
+        "excluded_revision_ids": [],
+        "included_revision_ids": [
+          "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+        ],
+        "considered_revision_ids": [
+          "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+        ],
+        "interpretation_admissible": true,
+        "interpretable_revision_ids": [
+          "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+        ]
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "f33bdc74-b824-41a8-a88e-a11a7e6d3cee"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K1.I16",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K1.I16",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "f33bdc74-b824-41a8-a88e-a11a7e6d3cee"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "f33bdc74-b824-41a8-a88e-a11a7e6d3cee"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "0360ab24-19de-410a-a9f5-39f59855e4f6"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K1.I17",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K1.I17",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "0360ab24-19de-410a-a9f5-39f59855e4f6"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "0360ab24-19de-410a-a9f5-39f59855e4f6"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "13ef589e-5939-4a6e-b8a9-db6137bee848"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K2.I07",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K2.I07",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "13ef589e-5939-4a6e-b8a9-db6137bee848"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "13ef589e-5939-4a6e-b8a9-db6137bee848"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "15a2bb09-e47f-4939-9ae1-fd4607e0460e"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K2.I08",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K2.I08",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "15a2bb09-e47f-4939-9ae1-fd4607e0460e"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "15a2bb09-e47f-4939-9ae1-fd4607e0460e"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "e2e4dcb6-6961-42d4-9ae2-ed742ce33aac"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K4.I05",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K4.I05",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "e2e4dcb6-6961-42d4-9ae2-ed742ce33aac"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "e2e4dcb6-6961-42d4-9ae2-ed742ce33aac"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "8cb51c31-67f3-4096-9668-71c8be9193a7"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K4.I10",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K4.I10",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "8cb51c31-67f3-4096-9668-71c8be9193a7"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "8cb51c31-67f3-4096-9668-71c8be9193a7"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "d700cb0a-a5f4-4484-93c6-3eb73d5dc808"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K4.I17",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K4.I17",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "d700cb0a-a5f4-4484-93c6-3eb73d5dc808"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "d700cb0a-a5f4-4484-93c6-3eb73d5dc808"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "b472311b-a5f7-4907-91a0-58004fa59d08"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K4.I18",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K4.I18",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "b472311b-a5f7-4907-91a0-58004fa59d08"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "b472311b-a5f7-4907-91a0-58004fa59d08"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      }
+    ],
+    "report_revision_no": 1,
+    "results_revision_id": "d3418edb-d1fd-40d3-a10e-f0934d9579de",
+    "results_revision_no": 2,
+    "assessment_situations": [
+      {
+        "status": "closed",
+        "case_ref": {
+          "id": "CASE-TDISC-01",
+          "version": "v0.1",
+          "checksum": "f40395398893db3465ae1cc4b80a1f154cedb60d98738efb7405da31db4ae01d"
+        },
+        "handoff_id": "45b9a17c-a71b-4e3e-aa5d-e795fbc9d37b",
+        "session_db_id": 1,
+        "handoff_checksum": "3baff09a548f9ccff26ff36b6a75df3bf1a63c0deb1c113134e5ab647865e2bf",
+        "boundary_sequence": 6,
+        "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+      }
+    ],
+    "recommendation_notices": [
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K1.4",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K2.2",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K4.1",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K4.2",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K4.4",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      }
+    ],
+    "recommendation_generation": {
+      "input": {
+        "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+        "resolved": {
+          "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+          "projections": [
+            {
+              "bundle": {
+                "limitations": [],
+                "context_refs": [],
+                "evidence_ids": [
+                  "e1"
+                ],
+                "indicator_id": "K1.I13",
+                "contradictions": [],
+                "opportunity_basis": "synthetic test; not GC"
+              },
+              "target": {
+                "refs": [
+                  {
+                    "id": "e1",
+                    "kind": "evidence",
+                    "meaning": "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+                  }
+                ],
+                "status": "ASSESSED",
+                "outcome": "L1",
+                "rationale": "В данном ответе восстановлен основной прямо выраженный смысл позиции другого.",
+                "confidence": {
+                  "limitations": [
+                    "not a GC"
+                  ],
+                  "confirmed_features": [
+                    "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+                  ],
+                  "alternatives_considered": [],
+                  "reliability_protocol_ref": null
+                },
+                "m2_version": "v1.1",
+                "opportunity": "PRESENT",
+                "stop_reason": "closed",
+                "uncertainty": null,
+                "indicator_id": "K1.I13",
+                "contradictions": [],
+                "descriptor_basis": "Восстанавливает основной прямо выраженный смысл и общую позицию другого, но упрощает сообщение, ограниченно удерживает существенные условия, оговорки или различия между его элементами.",
+                "opportunity_basis": "synthetic opportunity",
+                "clarification_history": []
+              },
+              "traces": [
+                {
+                  "ref": {
+                    "id": "e1",
+                    "kind": "evidence",
+                    "meaning": "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+                  },
+                  "fragments": [
+                    {
+                      "id": "f1",
+                      "end": 19,
+                      "quote": "Синтетический ответ",
+                      "start": 0,
+                      "turn_id": "794510e3-c049-4768-9378-3371d7e51fd9"
+                    }
+                  ],
+                  "evidence_id": "e1",
+                  "limitations": [
+                    "Синтетический пример, не GC"
+                  ],
+                  "interpretation": "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+                }
+              ],
+              "criterion": {
+                "id": "K1.I13",
+                "name": "Реконструкция существенного смысла и позиции другого",
+                "levels": {
+                  "L0": "Существенно искажает или упускает выраженный другим смысл либо приписывает ему содержание или позицию, не имеющие достаточного основания в сообщении.",
+                  "L1": "Восстанавливает основной прямо выраженный смысл и общую позицию другого, но упрощает сообщение, ограниченно удерживает существенные условия, оговорки или различия между его элементами.",
+                  "L2": "Самостоятельно реконструирует существенное содержание и позицию другого, связывает распределённые по сообщению элементы, сохраняет значимые условия и различия и отделяет фактически выраженное от собственной интерпретации.",
+                  "L3": "Интегрирует существенные элементы из нескольких реплик, условия, уточнения и явно выраженные изменения позиции, обновляет реконструкцию при появлении новой информации и не стирает значимые противоречия или неопределённость в сообщении другого."
+                },
+                "product": "Реконструкция существенного содержания и позиции другого, сохраняющая значимые элементы его фактически выраженного сообщения.",
+                "boundary": "K1.I13 ↔ K1.I12: I12 — как организован процесс слушания; I13 — какой смысл и позиция другого реконструированы. K1.I13 ↔ K1.I14: I13 — построение реконструкции; I14 — её целенаправленная проверка и уточнение. K1.I13 ↔ K1.I01: I13 реконструирует смысл и позицию конкретного сообщения; I01 использует сведения о целях, интересах и позициях для общей карты коммуникативной ситуации. K1.I13 ↔ K4: I13 оценивает корректность понимания выраженного другим; истинность и обоснованность содержания относятся к K4.",
+                "function": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                "skill_id": "K1.3",
+                "red_flags": [],
+                "m2_version": "v1.1",
+                "source_ref": {
+                  "id": "M2.K1.matrix",
+                  "path": "docs/methodology/source-sets/2026-10-01/originals/M2.K1-matrix-v1.1.xlsx",
+                  "sha256": "2b5bd322bf51d6e05cdf3506cd14b2854eb6528082d15a44a918cc233ed3c880",
+                  "version": "1.1",
+                  "verification": "file_identity_verified; methodological consistency not re-audited",
+                  "selected_status": "FROZEN"
+                },
+                "component_id": "K1.C07",
+                "package_sha256": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+                "evidence_pattern": "В ответе или диалоге наблюдается воспроизведение, переформулирование, резюмирование или последующее использование содержания сообщения другого, позволяющее сопоставить реконструированный смысл с фактически выраженным сообщением. Материал позволяет увидеть сохранение, упрощение, искажение или обновление существенных элементов, условий, различий и позиции другого."
+              },
+              "ia_checksum": "90991e2d975a11191047c5419fba19ae48e795e6943bcbfc3798d331a9ac9e61",
+              "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8",
+              "material_ref": {
+                "checksum_kind": "definition_json_v1",
+                "material_sha256": "30090786ebd04a416be4283e01a4b9251e1ec50b4a6f3106df7e2847e6d0ba83",
+                "boundary_sequence": 6
+              },
+              "evidence_checksum": "154a2cb44938bca8624b9621b062940453711fad7b75bb5078a4b6e6a67e3d28",
+              "material_checksum": "fae27020793027d0cec1ec707463c051de50e51501fe49cc903becc929ca2a6d"
+            }
+          ],
+          "c56_checksum": "05d4dd30eac454c1568024c227450245435f0af060138f98c6d0a5f8a3f10ec8",
+          "results_checksum": "e40cd7102ba1d1cfda1564bc5f7306fa24e50d5c556edc75750437c598370aa4",
+          "results_revision_id": "d3418edb-d1fd-40d3-a10e-f0934d9579de"
+        },
+        "admissions": [
+          {
+            "joint": {
+              "status": "COMPARABLE",
+              "rationale": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+              "conditions": {
+                "refs": [
+                  {
+                    "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                    "kind": "as_snapshot",
+                    "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+                  }
+                ],
+                "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                "consequence": "Test the exact decision propagation without changing the saved IA."
+              },
+              "limitations": [
+                "Synthetic transport fixture, not GC"
+              ],
+              "contradictions": {
+                "refs": [
+                  {
+                    "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                    "kind": "as_snapshot",
+                    "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+                  }
+                ],
+                "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                "consequence": "Test the exact decision propagation without changing the saved IA."
+              },
+              "input_checksum": "26efa3ca6095d2834392680c2cc762d7cb1cb2348ebe5cbe13333758da139ac1",
+              "normative_meaning": {
+                "refs": [
+                  {
+                    "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                    "kind": "as_snapshot",
+                    "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+                  }
+                ],
+                "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                "consequence": "Test the exact decision propagation without changing the saved IA."
+              },
+              "considered_revision_ids": [
+                "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+              ]
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+            "individual": [
+              {
+                "status": "ADMITTED",
+                "rationale": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                "limitations": [
+                  "Synthetic transport fixture, not GC"
+                ],
+                "opportunity": {
+                  "refs": [
+                    {
+                      "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                      "kind": "as_snapshot",
+                      "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+                    }
+                  ],
+                  "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                  "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                  "consequence": "Test the exact decision propagation without changing the saved IA."
+                },
+                "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8",
+                "independence": {
+                  "refs": [
+                    {
+                      "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                      "kind": "as_snapshot",
+                      "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+                    }
+                  ],
+                  "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                  "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                  "consequence": "Test the exact decision propagation without changing the saved IA."
+                },
+                "clarification": {
+                  "refs": [
+                    {
+                      "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                      "kind": "as_snapshot",
+                      "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+                    }
+                  ],
+                  "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                  "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                  "consequence": "Test the exact decision propagation without changing the saved IA."
+                },
+                "contradictions": {
+                  "refs": [
+                    {
+                      "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                      "kind": "as_snapshot",
+                      "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+                    }
+                  ],
+                  "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                  "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                  "consequence": "Test the exact decision propagation without changing the saved IA."
+                },
+                "input_checksum": "a8b1d380b5158ebed683956b35924014a6e315f1b56bcddb7ca3bc0b21a01494",
+                "normative_basis": {
+                  "refs": [
+                    {
+                      "id": "fa114259-9fb4-42be-b5a2-db65c929c036",
+                      "kind": "as_snapshot",
+                      "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+                    }
+                  ],
+                  "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                  "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                  "consequence": "Test the exact decision propagation without changing the saved IA."
+                }
+              }
+            ],
+            "reason_code": "ADMITTED",
+            "sufficiency": {
+              "met": true,
+              "requirement": {
+                "indicator_id": "K1.I13",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 1
+            },
+            "indicator_id": "K1.I13",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": true,
+            "excluded_revision_ids": [],
+            "included_revision_ids": [
+              "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+            ],
+            "considered_revision_ids": [
+              "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+            ],
+            "interpretation_admissible": true,
+            "interpretable_revision_ids": [
+              "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8"
+            ]
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "f33bdc74-b824-41a8-a88e-a11a7e6d3cee"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K1.I16",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K1.I16",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "f33bdc74-b824-41a8-a88e-a11a7e6d3cee"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "f33bdc74-b824-41a8-a88e-a11a7e6d3cee"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "0360ab24-19de-410a-a9f5-39f59855e4f6"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K1.I17",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K1.I17",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "0360ab24-19de-410a-a9f5-39f59855e4f6"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "0360ab24-19de-410a-a9f5-39f59855e4f6"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "13ef589e-5939-4a6e-b8a9-db6137bee848"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K2.I07",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K2.I07",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "13ef589e-5939-4a6e-b8a9-db6137bee848"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "13ef589e-5939-4a6e-b8a9-db6137bee848"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "15a2bb09-e47f-4939-9ae1-fd4607e0460e"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K2.I08",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K2.I08",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "15a2bb09-e47f-4939-9ae1-fd4607e0460e"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "15a2bb09-e47f-4939-9ae1-fd4607e0460e"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "e2e4dcb6-6961-42d4-9ae2-ed742ce33aac"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K4.I05",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K4.I05",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "e2e4dcb6-6961-42d4-9ae2-ed742ce33aac"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "e2e4dcb6-6961-42d4-9ae2-ed742ce33aac"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "8cb51c31-67f3-4096-9668-71c8be9193a7"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K4.I10",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K4.I10",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "8cb51c31-67f3-4096-9668-71c8be9193a7"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "8cb51c31-67f3-4096-9668-71c8be9193a7"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "d700cb0a-a5f4-4484-93c6-3eb73d5dc808"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K4.I17",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K4.I17",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "d700cb0a-a5f4-4484-93c6-3eb73d5dc808"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "d700cb0a-a5f4-4484-93c6-3eb73d5dc808"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "b472311b-a5f7-4907-91a0-58004fa59d08"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K4.I18",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K4.I18",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "b472311b-a5f7-4907-91a0-58004fa59d08"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "b472311b-a5f7-4907-91a0-58004fa59d08"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          }
+        ],
+        "profile_ref": {
+          "id": "assessment_personalized_profiles:7",
+          "version": "1",
+          "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "skill_inputs": [
+          {
+            "score": {
+              "value": 1.0,
+              "numerator": 1,
+              "denominator": 1
+            },
+            "outcome": "partial_score",
+            "skill_id": "K1.3",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K1.C06",
+                "missing_indicator_ids": [
+                  "K1.I12"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I12"
+                ]
+              },
+              {
+                "score": {
+                  "value": 1.0,
+                  "numerator": 1,
+                  "denominator": 1
+                },
+                "completeness": "partial",
+                "component_id": "K1.C07",
+                "missing_indicator_ids": [
+                  "K1.I14"
+                ],
+                "included_indicator_ids": [
+                  "K1.I13"
+                ],
+                "required_indicator_ids": [
+                  "K1.I13",
+                  "K1.I14"
+                ]
+              }
+            ],
+            "skill_name": "Слушание, реконструкция и верификация смысла другого",
+            "competency_id": "K1",
+            "competency_name": "Коммуникация",
+            "skill_result_exists": true
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K1.4",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K1.C08",
+                "missing_indicator_ids": [
+                  "K1.I15"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I15"
+                ]
+              },
+              {
+                "component_id": "K1.C09",
+                "missing_indicator_ids": [
+                  "K1.I16",
+                  "K1.I17"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I16",
+                  "K1.I17"
+                ]
+              }
+            ],
+            "skill_name": "Согласование смыслов и позиций",
+            "competency_id": "K1",
+            "competency_name": "Коммуникация",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K2.2",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K2.C04",
+                "missing_indicator_ids": [
+                  "K2.I07"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I07"
+                ]
+              },
+              {
+                "component_id": "K2.C05",
+                "missing_indicator_ids": [
+                  "K2.I08"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I08"
+                ]
+              },
+              {
+                "component_id": "K2.C06",
+                "missing_indicator_ids": [
+                  "K2.I09"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I09"
+                ]
+              }
+            ],
+            "skill_name": "Координация совместных действий",
+            "competency_id": "K2",
+            "competency_name": "Командная работа",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K4.1",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K4.C01",
+                "missing_indicator_ids": [
+                  "K4.I01",
+                  "K4.I02"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I01",
+                  "K4.I02"
+                ]
+              },
+              {
+                "component_id": "K4.C02",
+                "missing_indicator_ids": [
+                  "K4.I03",
+                  "K4.I04"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I03",
+                  "K4.I04"
+                ]
+              },
+              {
+                "component_id": "K4.C03",
+                "missing_indicator_ids": [
+                  "K4.I05",
+                  "K4.I06"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I05",
+                  "K4.I06"
+                ]
+              }
+            ],
+            "skill_name": "Анализ и оценка информации",
+            "competency_id": "K4",
+            "competency_name": "Критическое мышление",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K4.2",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K4.C04",
+                "missing_indicator_ids": [
+                  "K4.I07",
+                  "K4.I08"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I07",
+                  "K4.I08"
+                ]
+              },
+              {
+                "component_id": "K4.C05",
+                "missing_indicator_ids": [
+                  "K4.I09",
+                  "K4.I10"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I09",
+                  "K4.I10"
+                ]
+              },
+              {
+                "component_id": "K4.C06",
+                "missing_indicator_ids": [
+                  "K4.I11"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I11"
+                ]
+              }
+            ],
+            "skill_name": "Постановка и анализ проблемы",
+            "competency_id": "K4",
+            "competency_name": "Критическое мышление",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K4.4",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K4.C09",
+                "missing_indicator_ids": [
+                  "K4.I15"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I15"
+                ]
+              },
+              {
+                "component_id": "K4.C10",
+                "missing_indicator_ids": [
+                  "K4.I16",
+                  "K4.I17",
+                  "K4.I18"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I16",
+                  "K4.I17",
+                  "K4.I18"
+                ]
+              }
+            ],
+            "skill_name": "Принятие решений",
+            "competency_id": "K4",
+            "competency_name": "Критическое мышление",
+            "skill_result_exists": false
+          }
+        ],
+        "target_profile": null,
+        "results_version": "m8-results/1.0.0",
+        "observation_refs": [
+          {
+            "refs": [
+              {
+                "id": "e1",
+                "kind": "evidence",
+                "meaning": "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+              }
+            ],
+            "status": "ASSESSED",
+            "outcome": "L1",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [
+                "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+              ],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.1",
+            "opportunity": "PRESENT",
+            "revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8",
+            "indicator_id": "K1.I13",
+            "contradictions": [],
+            "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+            "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+            "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.1",
+            "opportunity": "PRESENT",
+            "revision_id": "f33bdc74-b824-41a8-a88e-a11a7e6d3cee",
+            "indicator_id": "K1.I16",
+            "contradictions": [],
+            "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+            "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+            "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.1",
+            "opportunity": "PRESENT",
+            "revision_id": "0360ab24-19de-410a-a9f5-39f59855e4f6",
+            "indicator_id": "K1.I17",
+            "contradictions": [],
+            "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+            "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+            "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "13ef589e-5939-4a6e-b8a9-db6137bee848",
+            "indicator_id": "K2.I07",
+            "contradictions": [],
+            "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+            "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+            "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "15a2bb09-e47f-4939-9ae1-fd4607e0460e",
+            "indicator_id": "K2.I08",
+            "contradictions": [],
+            "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+            "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+            "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "e2e4dcb6-6961-42d4-9ae2-ed742ce33aac",
+            "indicator_id": "K4.I05",
+            "contradictions": [],
+            "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+            "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+            "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "8cb51c31-67f3-4096-9668-71c8be9193a7",
+            "indicator_id": "K4.I10",
+            "contradictions": [],
+            "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+            "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+            "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "d700cb0a-a5f4-4484-93c6-3eb73d5dc808",
+            "indicator_id": "K4.I17",
+            "contradictions": [],
+            "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+            "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+            "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "b472311b-a5f7-4907-91a0-58004fa59d08",
+            "indicator_id": "K4.I18",
+            "contradictions": [],
+            "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+            "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+            "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+          }
+        ],
+        "context_selection": {
+          "value": null,
+          "status": "missing",
+          "boundaries": [],
+          "selected_path": null,
+          "policy_version": "m4-action-context/1.0",
+          "selected_index": null
+        },
+        "profile_projection": {},
+        "results_revision_id": "d3418edb-d1fd-40d3-a10e-f0934d9579de"
+      },
+      "status": "ready",
+      "notices": [
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K1.4",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K2.2",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K4.1",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K4.2",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K4.4",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        }
+      ],
+      "mechanism": {
+        "id": "m8_recommendations",
+        "kind": "deterministic_template",
+        "version": "1.2.0",
+        "template_checksum": "3d3c3ad1cec3d3fb46ef4cd33cf78bc433f24e1088782f5cbaee04edccf58d6b"
+      },
+      "diagnostics": [],
+      "failure_reason": null,
+      "input_checksum": "0a099fc131bf055da2c48610342d5e6389f364a767fa5668f6c9ee30a568a816",
+      "recommendations": [
+        {
+          "goal": "Рассмотреть практику по индикатору «Реконструкция существенного смысла и позиции другого» с учётом результата: В данном ответе восстановлен основной прямо выраженный смысл позиции другого.",
+          "type": "Development",
+          "gap_ref": null,
+          "practice": "Практика предлагается только в пределах сохранённых полномочий и ограничений; если действие запрещено или требует согласования, не выполняйте его самостоятельно. В подходящей задаче предложено отдельно отработать действие: Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией. Сопоставьте полученный продукт «Реконструкция существенного содержания и позиции другого, сохраняющая значимые элементы его фактически выраженного сообщения.» с сохранённым основанием и ограничениями.",
+          "skill_id": "K1.3",
+          "basis_refs": [
+            {
+              "kind": "indicator_assessment",
+              "refs": [
+                {
+                  "id": "e1",
+                  "kind": "evidence",
+                  "meaning": "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+                }
+              ],
+              "outcome": "L1",
+              "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+              "skill_id": "K1.3",
+              "ia_checksum": "90991e2d975a11191047c5419fba19ae48e795e6943bcbfc3798d331a9ac9e61",
+              "indicator_id": "K1.I13",
+              "material_ref": {
+                "checksum_kind": "definition_json_v1",
+                "material_sha256": "30090786ebd04a416be4283e01a4b9251e1ec50b4a6f3106df7e2847e6d0ba83",
+                "boundary_sequence": 6
+              },
+              "manifestation": "В данном ответе восстановлен основной прямо выраженный смысл позиции другого.",
+              "ia_revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8",
+              "evidence_checksum": "154a2cb44938bca8624b9621b062940453711fad7b75bb5078a4b6e6a67e3d28",
+              "material_excerpts": [
+                {
+                  "quote": "Синтетический ответ",
+                  "turn_id": "794510e3-c049-4768-9378-3371d7e51fd9",
+                  "fragment_id": "f1"
+                }
+              ],
+              "results_revision_id": "d3418edb-d1fd-40d3-a10e-f0934d9579de",
+              "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+              "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+              "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+            }
+          ],
+          "limitations": [
+            "Предложение относится к условиям этого Cycle и не гарантирует развитие.",
+            "Одно проявление не доказывает устойчивость навыка.",
+            "Изменения условий после фиксации PersonalizedProfile не проверялись.",
+            "Контекст не подтверждает проявление и не расширяет полномочия; применимость практики требует проверки по сохранённым ограничениям.",
+            "K1.I13: Synthetic transport fixture, not GC",
+            "K1.I16: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K1.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K2.I07: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K2.I08: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K4.I05: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K4.I10: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K4.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K4.I18: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "Skill Level is not derived from numeric Score",
+            "not a GC",
+            "Синтетический пример, не GC"
+          ],
+          "component_ids": [
+            "K1.C07"
+          ],
+          "indicator_ids": [
+            "K1.I13"
+          ],
+          "progress_signal": "В записи о практике по «Реконструкция существенного смысла и позиции другого» описан полученный продукт «Реконструкция существенного содержания и позиции другого, сохраняющая значимые элементы его фактически выраженного сообщения.», конкретное действие и отличие от исходного результата.",
+          "recommendation_id": "K1.3:28cb069b-50db-4ed5-88d4-c1e7ffbee3d8:development",
+          "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
+        },
+        {
+          "goal": "Закрепить конкретный проявленный способ: Восстанавливает основной прямо выраженный смысл и общую позицию другого",
+          "type": "Consolidation / Maintenance",
+          "gap_ref": null,
+          "practice": "Практика предлагается только в пределах сохранённых полномочий и ограничений; если действие запрещено или требует согласования, не выполняйте его самостоятельно. В сопоставимой задаче повторите только подтверждённое действие «Восстанавливает основной прямо выраженный смысл и общую позицию другого» по индикатору «Реконструкция существенного смысла и позиции другого». Зафиксируйте полученный продукт «Реконструкция существенного содержания и позиции другого, сохраняющая значимые элементы его фактически выраженного сообщения.» и условия.",
+          "skill_id": "K1.3",
+          "basis_refs": [
+            {
+              "kind": "indicator_assessment",
+              "refs": [
+                {
+                  "id": "e1",
+                  "kind": "evidence",
+                  "meaning": "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+                }
+              ],
+              "outcome": "L1",
+              "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+              "skill_id": "K1.3",
+              "ia_checksum": "90991e2d975a11191047c5419fba19ae48e795e6943bcbfc3798d331a9ac9e61",
+              "indicator_id": "K1.I13",
+              "material_ref": {
+                "checksum_kind": "definition_json_v1",
+                "material_sha256": "30090786ebd04a416be4283e01a4b9251e1ec50b4a6f3106df7e2847e6d0ba83",
+                "boundary_sequence": 6
+              },
+              "manifestation": "В данном ответе восстановлен основной прямо выраженный смысл позиции другого.",
+              "ia_revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8",
+              "evidence_checksum": "154a2cb44938bca8624b9621b062940453711fad7b75bb5078a4b6e6a67e3d28",
+              "material_excerpts": [
+                {
+                  "quote": "Синтетический ответ",
+                  "turn_id": "794510e3-c049-4768-9378-3371d7e51fd9",
+                  "fragment_id": "f1"
+                }
+              ],
+              "results_revision_id": "d3418edb-d1fd-40d3-a10e-f0934d9579de",
+              "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+              "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+              "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+            }
+          ],
+          "limitations": [
+            "Предложение относится к условиям этого Cycle и не гарантирует развитие.",
+            "Одно проявление не доказывает устойчивость навыка.",
+            "Изменения условий после фиксации PersonalizedProfile не проверялись.",
+            "Контекст не подтверждает проявление и не расширяет полномочия; применимость практики требует проверки по сохранённым ограничениям.",
+            "K1.I13: Synthetic transport fixture, not GC",
+            "K1.I16: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K1.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K2.I07: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K2.I08: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K4.I05: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K4.I10: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K4.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K4.I18: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "Skill Level is not derived from numeric Score",
+            "not a GC",
+            "Синтетический пример, не GC"
+          ],
+          "component_ids": [
+            "K1.C07"
+          ],
+          "indicator_ids": [
+            "K1.I13"
+          ],
+          "progress_signal": "Есть описание повторного действия «Восстанавливает основной прямо выраженный смысл и общую позицию другого», полученного продукта и его ограничений; устойчивость этим не устанавливается.",
+          "recommendation_id": "K1.3:28cb069b-50db-4ed5-88d4-c1e7ffbee3d8:consolidation",
+          "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
+        },
+        {
+          "goal": "Попробовать применение конкретного способа «Восстанавливает основной прямо выраженный смысл и общую позицию другого» в других подходящих условиях.",
+          "type": "Application / Transfer",
+          "gap_ref": null,
+          "practice": "Практика предлагается только в пределах сохранённых полномочий и ограничений; если действие запрещено или требует согласования, не выполняйте его самостоятельно. Выберите другую задачу, где требуется «Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.», и попробуйте применить действие «Восстанавливает основной прямо выраженный смысл и общую позицию другого». Зафиксируйте, как новые условия изменили продукт «Реконструкция существенного содержания и позиции другого, сохраняющая значимые элементы его фактически выраженного сообщения.».",
+          "skill_id": "K1.3",
+          "basis_refs": [
+            {
+              "kind": "indicator_assessment",
+              "refs": [
+                {
+                  "id": "e1",
+                  "kind": "evidence",
+                  "meaning": "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+                }
+              ],
+              "outcome": "L1",
+              "cycle_id": "8f672ff6-e5ce-461a-9955-174eb7bd819e",
+              "skill_id": "K1.3",
+              "ia_checksum": "90991e2d975a11191047c5419fba19ae48e795e6943bcbfc3798d331a9ac9e61",
+              "indicator_id": "K1.I13",
+              "material_ref": {
+                "checksum_kind": "definition_json_v1",
+                "material_sha256": "30090786ebd04a416be4283e01a4b9251e1ec50b4a6f3106df7e2847e6d0ba83",
+                "boundary_sequence": 6
+              },
+              "manifestation": "В данном ответе восстановлен основной прямо выраженный смысл позиции другого.",
+              "ia_revision_id": "28cb069b-50db-4ed5-88d4-c1e7ffbee3d8",
+              "evidence_checksum": "154a2cb44938bca8624b9621b062940453711fad7b75bb5078a4b6e6a67e3d28",
+              "material_excerpts": [
+                {
+                  "quote": "Синтетический ответ",
+                  "turn_id": "794510e3-c049-4768-9378-3371d7e51fd9",
+                  "fragment_id": "f1"
+                }
+              ],
+              "results_revision_id": "d3418edb-d1fd-40d3-a10e-f0934d9579de",
+              "evidence_revision_id": "f07850e8-5b77-4da3-b4bb-3fbead883bf5",
+              "assessment_revision_id": "c9010e1a-55ad-4fe7-842c-86f0425b1292",
+              "assessment_situation_id": "fa114259-9fb4-42be-b5a2-db65c929c036"
+            }
+          ],
+          "limitations": [
+            "Предложение относится к условиям этого Cycle и не гарантирует развитие.",
+            "Одно проявление не доказывает устойчивость навыка.",
+            "Изменения условий после фиксации PersonalizedProfile не проверялись.",
+            "Контекст не подтверждает проявление и не расширяет полномочия; применимость практики требует проверки по сохранённым ограничениям.",
+            "K1.I13: Synthetic transport fixture, not GC",
+            "K1.I16: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K1.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K2.I07: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K2.I08: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K4.I05: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K4.I10: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K4.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "K4.I18: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+            "Skill Level is not derived from numeric Score",
+            "not a GC",
+            "Синтетический пример, не GC"
+          ],
+          "component_ids": [
+            "K1.C07"
+          ],
+          "indicator_ids": [
+            "K1.I13"
+          ],
+          "progress_signal": "Описаны новое условие, выполненное действие «Восстанавливает основной прямо выраженный смысл и общую позицию другого» и необходимость адаптации; перенос заранее не считается доказанным.",
+          "recommendation_id": "K1.3:28cb069b-50db-4ed5-88d4-c1e7ffbee3d8:application",
+          "application_context": "Контекст применения не указан в сохранённом профиле; перед практикой необходимо выбрать подходящие условия."
+        }
+      ],
+      "contract_version": "m8-recommendations/1.2.0"
+    }
+  }
+}

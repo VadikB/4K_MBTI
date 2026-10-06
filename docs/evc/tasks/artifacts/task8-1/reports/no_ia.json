@@ -1,0 +1,2294 @@
+{
+  "id": "f4383143-2cb6-45d2-8609-41d10e13e33a",
+  "revision_no": 1,
+  "audience": "assessee",
+  "status": "ready",
+  "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+  "owner_user_id": 99,
+  "results_revision_id": "3d84446a-2d40-416c-be69-9ee61c4d1bd3",
+  "created_at": "2026-10-05T21:56:46.504716+03:00",
+  "c67": {
+    "goal": "synthetic admission regression",
+    "time": {
+      "deadline": "2026-10-08T21:56:44.906649+03:00",
+      "intervals": [
+        {
+          "type": "collecting",
+          "reason": "session_started",
+          "ended_at": "2026-10-05T21:56:45.866589+03:00",
+          "started_at": "2026-10-05T21:56:44.906649+03:00",
+          "session_db_id": 1
+        }
+      ],
+      "started_at": "2026-10-05T21:56:44.906649+03:00",
+      "budget_seconds": 3600,
+      "consumed_seconds": 1,
+      "parameter_sources": {
+        "time_budget": "m7-default:60m",
+        "calendar_window": "m7-default:72h"
+      },
+      "calendar_window_seconds": 259200
+    },
+    "owner": "PM-06",
+    "skills": [
+      {
+        "outcome": "no_result",
+        "skill_id": "K1.3",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Слушание, реконструкция и верификация смысла другого",
+        "competency_id": "K1",
+        "competency_name": "Коммуникация",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K1.4",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Согласование смыслов и позиций",
+        "competency_id": "K1",
+        "competency_name": "Коммуникация",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K2.2",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Координация совместных действий",
+        "competency_id": "K2",
+        "competency_name": "Командная работа",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K4.1",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Анализ и оценка информации",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K4.2",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Постановка и анализ проблемы",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "skill_result_exists": false
+      },
+      {
+        "outcome": "no_result",
+        "skill_id": "K4.4",
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "skill_name": "Принятие решений",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "skill_result_exists": false
+      }
+    ],
+    "audience": "assessee",
+    "consumer": "PM-07",
+    "contract": "C-67",
+    "coverage": {
+      "full_m2": {
+        "scope": "full_m2",
+        "opportunities": {
+          "ratio": 0.375,
+          "numerator": 9,
+          "denominator": 24,
+          "missing_ids": [
+            "K1.I12",
+            "K1.I14",
+            "K1.I15",
+            "K2.I09",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I11",
+            "K4.I15",
+            "K4.I16"
+          ],
+          "included_ids": [
+            "K1.I13",
+            "K1.I16",
+            "K1.I17",
+            "K2.I07",
+            "K2.I08",
+            "K4.I05",
+            "K4.I10",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "missing_reasons": {
+            "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I16": "NO_JUSTIFIED_FINAL_IA"
+          },
+          "composition_version": "e8e5b38f2b5399682a49d48c32a64392680abe524413ebeabcea9ee221f2d572"
+        },
+        "complete_components": {
+          "ratio": 0.0,
+          "numerator": 0,
+          "denominator": 15,
+          "missing_ids": [
+            "K1.C06",
+            "K1.C07",
+            "K1.C08",
+            "K1.C09",
+            "K2.C04",
+            "K2.C05",
+            "K2.C06",
+            "K4.C01",
+            "K4.C02",
+            "K4.C03",
+            "K4.C04",
+            "K4.C05",
+            "K4.C06",
+            "K4.C09",
+            "K4.C10"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.C06": "NOT_AVAILABLE",
+            "K1.C07": "NOT_AVAILABLE",
+            "K1.C08": "NOT_AVAILABLE",
+            "K1.C09": "NOT_AVAILABLE",
+            "K2.C04": "NOT_AVAILABLE",
+            "K2.C05": "NOT_AVAILABLE",
+            "K2.C06": "NOT_AVAILABLE",
+            "K4.C01": "NOT_AVAILABLE",
+            "K4.C02": "NOT_AVAILABLE",
+            "K4.C03": "NOT_AVAILABLE",
+            "K4.C04": "NOT_AVAILABLE",
+            "K4.C05": "NOT_AVAILABLE",
+            "K4.C06": "NOT_AVAILABLE",
+            "K4.C09": "NOT_AVAILABLE",
+            "K4.C10": "NOT_AVAILABLE"
+          },
+          "composition_version": "e8e5b38f2b5399682a49d48c32a64392680abe524413ebeabcea9ee221f2d572"
+        },
+        "components_with_score": {
+          "ratio": 0.0,
+          "numerator": 0,
+          "denominator": 15,
+          "missing_ids": [
+            "K1.C06",
+            "K1.C07",
+            "K1.C08",
+            "K1.C09",
+            "K2.C04",
+            "K2.C05",
+            "K2.C06",
+            "K4.C01",
+            "K4.C02",
+            "K4.C03",
+            "K4.C04",
+            "K4.C05",
+            "K4.C06",
+            "K4.C09",
+            "K4.C10"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.C06": "NOT_AVAILABLE",
+            "K1.C07": "NOT_AVAILABLE",
+            "K1.C08": "NOT_AVAILABLE",
+            "K1.C09": "NOT_AVAILABLE",
+            "K2.C04": "NOT_AVAILABLE",
+            "K2.C05": "NOT_AVAILABLE",
+            "K2.C06": "NOT_AVAILABLE",
+            "K4.C01": "NOT_AVAILABLE",
+            "K4.C02": "NOT_AVAILABLE",
+            "K4.C03": "NOT_AVAILABLE",
+            "K4.C04": "NOT_AVAILABLE",
+            "K4.C05": "NOT_AVAILABLE",
+            "K4.C06": "NOT_AVAILABLE",
+            "K4.C09": "NOT_AVAILABLE",
+            "K4.C10": "NOT_AVAILABLE"
+          },
+          "composition_version": "e8e5b38f2b5399682a49d48c32a64392680abe524413ebeabcea9ee221f2d572"
+        },
+        "indicator_assessments": {
+          "ratio": 0.0,
+          "numerator": 0,
+          "denominator": 24,
+          "missing_ids": [
+            "K1.I12",
+            "K1.I13",
+            "K1.I14",
+            "K1.I15",
+            "K1.I16",
+            "K1.I17",
+            "K2.I07",
+            "K2.I08",
+            "K2.I09",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I05",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I10",
+            "K4.I11",
+            "K4.I15",
+            "K4.I16",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I13": "NO_INTERPRETABLE_IA",
+            "K1.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I16": "NO_INTERPRETABLE_IA",
+            "K1.I17": "NO_INTERPRETABLE_IA",
+            "K2.I07": "NO_INTERPRETABLE_IA",
+            "K2.I08": "NO_INTERPRETABLE_IA",
+            "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I05": "NO_INTERPRETABLE_IA",
+            "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I10": "NO_INTERPRETABLE_IA",
+            "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I17": "NO_INTERPRETABLE_IA",
+            "K4.I18": "NO_INTERPRETABLE_IA"
+          },
+          "composition_version": "e8e5b38f2b5399682a49d48c32a64392680abe524413ebeabcea9ee221f2d572"
+        },
+        "admissible_contributions": {
+          "ratio": 0.0,
+          "numerator": 0,
+          "denominator": 24,
+          "missing_ids": [
+            "K1.I12",
+            "K1.I13",
+            "K1.I14",
+            "K1.I15",
+            "K1.I16",
+            "K1.I17",
+            "K2.I07",
+            "K2.I08",
+            "K2.I09",
+            "K4.I01",
+            "K4.I02",
+            "K4.I03",
+            "K4.I04",
+            "K4.I05",
+            "K4.I06",
+            "K4.I07",
+            "K4.I08",
+            "K4.I09",
+            "K4.I10",
+            "K4.I11",
+            "K4.I15",
+            "K4.I16",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I13": "NO_INTERPRETABLE_IA",
+            "K1.I14": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K1.I16": "NO_INTERPRETABLE_IA",
+            "K1.I17": "NO_INTERPRETABLE_IA",
+            "K2.I07": "NO_INTERPRETABLE_IA",
+            "K2.I08": "NO_INTERPRETABLE_IA",
+            "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I05": "NO_INTERPRETABLE_IA",
+            "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I10": "NO_INTERPRETABLE_IA",
+            "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I16": "NO_JUSTIFIED_FINAL_IA",
+            "K4.I17": "NO_INTERPRETABLE_IA",
+            "K4.I18": "NO_INTERPRETABLE_IA"
+          },
+          "composition_version": "e8e5b38f2b5399682a49d48c32a64392680abe524413ebeabcea9ee221f2d572"
+        }
+      },
+      "cycle_plan": {
+        "scope": "cycle_plan",
+        "opportunities": {
+          "ratio": 1.0,
+          "numerator": 9,
+          "denominator": 9,
+          "missing_ids": [],
+          "included_ids": [
+            "K1.I13",
+            "K1.I16",
+            "K1.I17",
+            "K2.I07",
+            "K2.I08",
+            "K4.I05",
+            "K4.I10",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "missing_reasons": {},
+          "composition_version": "e8e5b38f2b5399682a49d48c32a64392680abe524413ebeabcea9ee221f2d572"
+        },
+        "complete_components": {
+          "ratio": 0.0,
+          "numerator": 0,
+          "denominator": 7,
+          "missing_ids": [
+            "K1.C07",
+            "K1.C09",
+            "K2.C04",
+            "K2.C05",
+            "K4.C03",
+            "K4.C05",
+            "K4.C10"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.C07": "NOT_AVAILABLE",
+            "K1.C09": "NOT_AVAILABLE",
+            "K2.C04": "NOT_AVAILABLE",
+            "K2.C05": "NOT_AVAILABLE",
+            "K4.C03": "NOT_AVAILABLE",
+            "K4.C05": "NOT_AVAILABLE",
+            "K4.C10": "NOT_AVAILABLE"
+          },
+          "composition_version": "e8e5b38f2b5399682a49d48c32a64392680abe524413ebeabcea9ee221f2d572"
+        },
+        "components_with_score": {
+          "ratio": 0.0,
+          "numerator": 0,
+          "denominator": 7,
+          "missing_ids": [
+            "K1.C07",
+            "K1.C09",
+            "K2.C04",
+            "K2.C05",
+            "K4.C03",
+            "K4.C05",
+            "K4.C10"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.C07": "NOT_AVAILABLE",
+            "K1.C09": "NOT_AVAILABLE",
+            "K2.C04": "NOT_AVAILABLE",
+            "K2.C05": "NOT_AVAILABLE",
+            "K4.C03": "NOT_AVAILABLE",
+            "K4.C05": "NOT_AVAILABLE",
+            "K4.C10": "NOT_AVAILABLE"
+          },
+          "composition_version": "e8e5b38f2b5399682a49d48c32a64392680abe524413ebeabcea9ee221f2d572"
+        },
+        "indicator_assessments": {
+          "ratio": 0.0,
+          "numerator": 0,
+          "denominator": 9,
+          "missing_ids": [
+            "K1.I13",
+            "K1.I16",
+            "K1.I17",
+            "K2.I07",
+            "K2.I08",
+            "K4.I05",
+            "K4.I10",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.I13": "NO_INTERPRETABLE_IA",
+            "K1.I16": "NO_INTERPRETABLE_IA",
+            "K1.I17": "NO_INTERPRETABLE_IA",
+            "K2.I07": "NO_INTERPRETABLE_IA",
+            "K2.I08": "NO_INTERPRETABLE_IA",
+            "K4.I05": "NO_INTERPRETABLE_IA",
+            "K4.I10": "NO_INTERPRETABLE_IA",
+            "K4.I17": "NO_INTERPRETABLE_IA",
+            "K4.I18": "NO_INTERPRETABLE_IA"
+          },
+          "composition_version": "e8e5b38f2b5399682a49d48c32a64392680abe524413ebeabcea9ee221f2d572"
+        },
+        "admissible_contributions": {
+          "ratio": 0.0,
+          "numerator": 0,
+          "denominator": 9,
+          "missing_ids": [
+            "K1.I13",
+            "K1.I16",
+            "K1.I17",
+            "K2.I07",
+            "K2.I08",
+            "K4.I05",
+            "K4.I10",
+            "K4.I17",
+            "K4.I18"
+          ],
+          "included_ids": [],
+          "missing_reasons": {
+            "K1.I13": "NO_INTERPRETABLE_IA",
+            "K1.I16": "NO_INTERPRETABLE_IA",
+            "K1.I17": "NO_INTERPRETABLE_IA",
+            "K2.I07": "NO_INTERPRETABLE_IA",
+            "K2.I08": "NO_INTERPRETABLE_IA",
+            "K4.I05": "NO_INTERPRETABLE_IA",
+            "K4.I10": "NO_INTERPRETABLE_IA",
+            "K4.I17": "NO_INTERPRETABLE_IA",
+            "K4.I18": "NO_INTERPRETABLE_IA"
+          },
+          "composition_version": "e8e5b38f2b5399682a49d48c32a64392680abe524413ebeabcea9ee221f2d572"
+        }
+      }
+    },
+    "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+    "role_ref": {
+      "id": "project_product_process_manager",
+      "version": "1",
+      "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    "sessions": [
+      {
+        "status": "completed",
+        "ordinal": 1,
+        "ended_at": "2026-10-05T21:56:45.866589+03:00",
+        "session_id": "a9ad158b-0c41-4e88-b2e1-aaf2c50c4ab9",
+        "started_at": "2026-10-05T21:56:44.906649+03:00",
+        "close_reason": "synthetic"
+      }
+    ],
+    "report_id": "f4383143-2cb6-45d2-8609-41d10e13e33a",
+    "collection": {
+      "reason": "synthetic",
+      "status": "collection_closed",
+      "closed_at": "2026-10-05T21:56:45.866589+03:00"
+    },
+    "confidence": {
+      "kind": "qualitative",
+      "ia_bases_preserved": true
+    },
+    "disclosure": "personal",
+    "provenance": {
+      "c46_ref": {
+        "id": "d6c1c58b-a1fb-4645-bd6a-a9c26e2282a1",
+        "checksum": "c077cb9eb888af120c9b220c4e43fccf1d49c73fff8ab31818decbfde0382508",
+        "revision_no": 3
+      },
+      "c56_ref": {
+        "revision_no": 2,
+        "calculation_id": "b282707a-8c94-40fa-bf33-33e7d35307fa"
+      },
+      "sources": {
+        "M2": "competencies_4k/1.1",
+        "M6": "1.8",
+        "M7": "1.3",
+        "source_set": "2026-10-01"
+      },
+      "algorithm": {
+        "version": "1.0.0",
+        "rules_hash": "405ba4113a4cd2f0bd3e2757a6abd3afc55b96e9cacfbceb103a37ad401e7e62"
+      },
+      "composition_checksum": "e8e5b38f2b5399682a49d48c32a64392680abe524413ebeabcea9ee221f2d572"
+    },
+    "results_id": "e1f744d3-a728-438c-b1ce-93abc86b5568",
+    "limitations": [
+      "K1.I13: Synthetic transport fixture, not GC",
+      "K1.I13: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K1.I16: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K1.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K2.I07: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K2.I08: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K4.I05: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K4.I10: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K4.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "K4.I18: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA",
+      "Skill Level is not derived from numeric Score"
+    ],
+    "profile_ref": {
+      "id": "assessment_personalized_profiles:7",
+      "version": "1",
+      "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    "reliability": {
+      "status": "not_verified",
+      "protocol_ref": null
+    },
+    "competencies": [
+      {
+        "score": null,
+        "skill_ids": [
+          "K1.3",
+          "K1.4"
+        ],
+        "competency_id": "K1",
+        "competency_name": "Коммуникация"
+      },
+      {
+        "score": null,
+        "skill_ids": [
+          "K2.2"
+        ],
+        "competency_id": "K2",
+        "competency_name": "Командная работа"
+      },
+      {
+        "score": null,
+        "skill_ids": [
+          "K4.1",
+          "K4.2",
+          "K4.4"
+        ],
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление"
+      }
+    ],
+    "schema_version": 1,
+    "target_profile": null,
+    "message_version": "1.1",
+    "recommendations": [],
+    "report_mechanism": {
+      "id": "m8_basic_report",
+      "version": "1.2.0",
+      "checksum": "3242ad6a95ce5b8d6457b2732a6b71b650b377e190aa7dddd737f8f1b66f4e54"
+    },
+    "template_version": "m8-basic-report/1.2.0",
+    "admission_summary": [
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+        "individual": [
+          {
+            "status": "NOT_ADMITTED",
+            "rationale": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+            "limitations": [
+              "Synthetic transport fixture, not GC"
+            ],
+            "opportunity": {
+              "refs": [
+                {
+                  "id": "9121817c-9831-4041-8333-2068694ab383",
+                  "kind": "as_snapshot",
+                  "revision_id": "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+                }
+              ],
+              "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+              "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+              "consequence": "Test the exact decision propagation without changing the saved IA."
+            },
+            "revision_id": "788b0def-d658-4f1a-b4d2-5c1d71f469fd",
+            "independence": {
+              "refs": [
+                {
+                  "id": "9121817c-9831-4041-8333-2068694ab383",
+                  "kind": "as_snapshot",
+                  "revision_id": "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+                }
+              ],
+              "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+              "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+              "consequence": "Test the exact decision propagation without changing the saved IA."
+            },
+            "clarification": {
+              "refs": [
+                {
+                  "id": "9121817c-9831-4041-8333-2068694ab383",
+                  "kind": "as_snapshot",
+                  "revision_id": "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+                }
+              ],
+              "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+              "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+              "consequence": "Test the exact decision propagation without changing the saved IA."
+            },
+            "contradictions": {
+              "refs": [
+                {
+                  "id": "9121817c-9831-4041-8333-2068694ab383",
+                  "kind": "as_snapshot",
+                  "revision_id": "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+                }
+              ],
+              "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+              "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+              "consequence": "Test the exact decision propagation without changing the saved IA."
+            },
+            "input_checksum": "c2e0e781acd9b06dcbd373559b977015c6ea15c3bc799341effe537084173dff",
+            "normative_basis": {
+              "refs": [
+                {
+                  "id": "9121817c-9831-4041-8333-2068694ab383",
+                  "kind": "as_snapshot",
+                  "revision_id": "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+                }
+              ],
+              "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+              "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+              "consequence": "Test the exact decision propagation without changing the saved IA."
+            }
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K1.I13",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K1.I13",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "1019dc8a-272b-44b4-a543-4b7c093332b8"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K1.I16",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K1.I16",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "1019dc8a-272b-44b4-a543-4b7c093332b8"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "1019dc8a-272b-44b4-a543-4b7c093332b8"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "d55c1df2-869f-4674-befc-b1d48ddfe3a6"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K1.I17",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K1.I17",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "d55c1df2-869f-4674-befc-b1d48ddfe3a6"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "d55c1df2-869f-4674-befc-b1d48ddfe3a6"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "92a08047-4a68-49f3-89e6-2450e70d2ab4"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K2.I07",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K2.I07",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "92a08047-4a68-49f3-89e6-2450e70d2ab4"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "92a08047-4a68-49f3-89e6-2450e70d2ab4"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "22d1ba80-2251-4934-93ee-5335c9a9754c"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K2.I08",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K2.I08",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "22d1ba80-2251-4934-93ee-5335c9a9754c"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "22d1ba80-2251-4934-93ee-5335c9a9754c"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "6203f673-2e7d-4fe5-af03-81069adab1d8"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K4.I05",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K4.I05",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "6203f673-2e7d-4fe5-af03-81069adab1d8"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "6203f673-2e7d-4fe5-af03-81069adab1d8"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "c65b887c-9500-403e-a224-1d39feb16854"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K4.I10",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K4.I10",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "c65b887c-9500-403e-a224-1d39feb16854"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "c65b887c-9500-403e-a224-1d39feb16854"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "87089d99-29d8-4d64-af3e-a91c4e772ba6"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K4.I17",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K4.I17",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "87089d99-29d8-4d64-af3e-a91c4e772ba6"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "87089d99-29d8-4d64-af3e-a91c4e772ba6"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      },
+      {
+        "joint": {
+          "status": "NO_INTERPRETABLE_IA"
+        },
+        "source": {
+          "id": "M6",
+          "m2": "exact frozen criteria in M6-A input",
+          "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+          "version": "1.8",
+          "sections": [
+            "M6.2",
+            "M6.5",
+            "M6.6.4",
+            "M6.6.8",
+            "M6.7.1-6.7.4",
+            "M6.8.1-6.8.3"
+          ]
+        },
+        "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+        "individual": [
+          {
+            "status": "NOT_NUMERIC_IA",
+            "reason_code": "ASSESSED",
+            "revision_id": "8d58b368-ae2e-4ce2-bb46-cfe59e723e84"
+          }
+        ],
+        "reason_code": "NO_INTERPRETABLE_IA",
+        "sufficiency": {
+          "met": false,
+          "requirement": {
+            "indicator_id": "K4.I18",
+            "distinct_as_required": 1
+          },
+          "distinct_as_count": 0
+        },
+        "indicator_id": "K4.I18",
+        "mechanism_ref": {
+          "ref": "m6_substantive_admission/2.0.0",
+          "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+        },
+        "schema_version": 2,
+        "processing_status": "completed",
+        "numeric_admissible": false,
+        "excluded_revision_ids": [
+          "8d58b368-ae2e-4ce2-bb46-cfe59e723e84"
+        ],
+        "included_revision_ids": [],
+        "considered_revision_ids": [
+          "8d58b368-ae2e-4ce2-bb46-cfe59e723e84"
+        ],
+        "interpretation_admissible": false,
+        "interpretable_revision_ids": []
+      }
+    ],
+    "report_revision_no": 1,
+    "results_revision_id": "3d84446a-2d40-416c-be69-9ee61c4d1bd3",
+    "results_revision_no": 2,
+    "assessment_situations": [
+      {
+        "status": "closed",
+        "case_ref": {
+          "id": "CASE-TDISC-01",
+          "version": "v0.1",
+          "checksum": "f40395398893db3465ae1cc4b80a1f154cedb60d98738efb7405da31db4ae01d"
+        },
+        "handoff_id": "927ed9fd-69af-4803-832a-10d5d10ca2dd",
+        "session_db_id": 1,
+        "handoff_checksum": "3265fcc0a5ff23825ec06f08fb06f74818551a22ad5adce0393f3252e4c46e1d",
+        "boundary_sequence": 6,
+        "assessment_situation_id": "9121817c-9831-4041-8333-2068694ab383"
+      }
+    ],
+    "recommendation_notices": [
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K1.3",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K1.4",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K2.2",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K4.1",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K4.2",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_BASIS",
+        "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+        "skill_id": "K4.4",
+        "limitations": [
+          "Закрытый Cycle не открывается для дополнительной Session."
+        ]
+      }
+    ],
+    "recommendation_generation": {
+      "input": {
+        "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+        "resolved": {
+          "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+          "projections": [],
+          "c56_checksum": "42bd604f6132e1e9ca7e02b88b2e935d6f035583ed849c7a3f2cace46d1f875d",
+          "results_checksum": "22d30eda667fd096a6c97982fa64be54d1b5a79a9137f2922bf95c16546536df",
+          "results_revision_id": "3d84446a-2d40-416c-be69-9ee61c4d1bd3"
+        },
+        "admissions": [
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+            "individual": [
+              {
+                "status": "NOT_ADMITTED",
+                "rationale": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                "limitations": [
+                  "Synthetic transport fixture, not GC"
+                ],
+                "opportunity": {
+                  "refs": [
+                    {
+                      "id": "9121817c-9831-4041-8333-2068694ab383",
+                      "kind": "as_snapshot",
+                      "revision_id": "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+                    }
+                  ],
+                  "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                  "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                  "consequence": "Test the exact decision propagation without changing the saved IA."
+                },
+                "revision_id": "788b0def-d658-4f1a-b4d2-5c1d71f469fd",
+                "independence": {
+                  "refs": [
+                    {
+                      "id": "9121817c-9831-4041-8333-2068694ab383",
+                      "kind": "as_snapshot",
+                      "revision_id": "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+                    }
+                  ],
+                  "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                  "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                  "consequence": "Test the exact decision propagation without changing the saved IA."
+                },
+                "clarification": {
+                  "refs": [
+                    {
+                      "id": "9121817c-9831-4041-8333-2068694ab383",
+                      "kind": "as_snapshot",
+                      "revision_id": "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+                    }
+                  ],
+                  "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                  "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                  "consequence": "Test the exact decision propagation without changing the saved IA."
+                },
+                "contradictions": {
+                  "refs": [
+                    {
+                      "id": "9121817c-9831-4041-8333-2068694ab383",
+                      "kind": "as_snapshot",
+                      "revision_id": "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+                    }
+                  ],
+                  "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                  "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                  "consequence": "Test the exact decision propagation without changing the saved IA."
+                },
+                "input_checksum": "c2e0e781acd9b06dcbd373559b977015c6ea15c3bc799341effe537084173dff",
+                "normative_basis": {
+                  "refs": [
+                    {
+                      "id": "9121817c-9831-4041-8333-2068694ab383",
+                      "kind": "as_snapshot",
+                      "revision_id": "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+                    }
+                  ],
+                  "feature": "Восстанавливать по фактически выраженному сообщению существенное содержание и позицию другого, сохраняя значимые смысловые различия и не подменяя их собственной интерпретацией.",
+                  "analysis": "Recorded synthetic analysis of the saved conditions; not expert acceptance.",
+                  "consequence": "Test the exact decision propagation without changing the saved IA."
+                }
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K1.I13",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K1.I13",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "788b0def-d658-4f1a-b4d2-5c1d71f469fd"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "1019dc8a-272b-44b4-a543-4b7c093332b8"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K1.I16",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K1.I16",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "1019dc8a-272b-44b4-a543-4b7c093332b8"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "1019dc8a-272b-44b4-a543-4b7c093332b8"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "d55c1df2-869f-4674-befc-b1d48ddfe3a6"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K1.I17",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K1.I17",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "d55c1df2-869f-4674-befc-b1d48ddfe3a6"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "d55c1df2-869f-4674-befc-b1d48ddfe3a6"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "92a08047-4a68-49f3-89e6-2450e70d2ab4"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K2.I07",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K2.I07",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "92a08047-4a68-49f3-89e6-2450e70d2ab4"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "92a08047-4a68-49f3-89e6-2450e70d2ab4"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "22d1ba80-2251-4934-93ee-5335c9a9754c"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K2.I08",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K2.I08",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "22d1ba80-2251-4934-93ee-5335c9a9754c"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "22d1ba80-2251-4934-93ee-5335c9a9754c"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "6203f673-2e7d-4fe5-af03-81069adab1d8"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K4.I05",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K4.I05",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "6203f673-2e7d-4fe5-af03-81069adab1d8"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "6203f673-2e7d-4fe5-af03-81069adab1d8"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "c65b887c-9500-403e-a224-1d39feb16854"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K4.I10",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K4.I10",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "c65b887c-9500-403e-a224-1d39feb16854"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "c65b887c-9500-403e-a224-1d39feb16854"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "87089d99-29d8-4d64-af3e-a91c4e772ba6"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K4.I17",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K4.I17",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "87089d99-29d8-4d64-af3e-a91c4e772ba6"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "87089d99-29d8-4d64-af3e-a91c4e772ba6"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          },
+          {
+            "joint": {
+              "status": "NO_INTERPRETABLE_IA"
+            },
+            "source": {
+              "id": "M6",
+              "m2": "exact frozen criteria in M6-A input",
+              "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+              "version": "1.8",
+              "sections": [
+                "M6.2",
+                "M6.5",
+                "M6.6.4",
+                "M6.6.8",
+                "M6.7.1-6.7.4",
+                "M6.8.1-6.8.3"
+              ]
+            },
+            "cycle_id": "a037b3d8-ceba-4a0e-8479-71f8afcb0c41",
+            "individual": [
+              {
+                "status": "NOT_NUMERIC_IA",
+                "reason_code": "ASSESSED",
+                "revision_id": "8d58b368-ae2e-4ce2-bb46-cfe59e723e84"
+              }
+            ],
+            "reason_code": "NO_INTERPRETABLE_IA",
+            "sufficiency": {
+              "met": false,
+              "requirement": {
+                "indicator_id": "K4.I18",
+                "distinct_as_required": 1
+              },
+              "distinct_as_count": 0
+            },
+            "indicator_id": "K4.I18",
+            "mechanism_ref": {
+              "ref": "m6_substantive_admission/2.0.0",
+              "checksum": "2949477158d2601a5960b87035c519af7899faa881f86c0496a214ac76273c5c"
+            },
+            "schema_version": 2,
+            "processing_status": "completed",
+            "numeric_admissible": false,
+            "excluded_revision_ids": [
+              "8d58b368-ae2e-4ce2-bb46-cfe59e723e84"
+            ],
+            "included_revision_ids": [],
+            "considered_revision_ids": [
+              "8d58b368-ae2e-4ce2-bb46-cfe59e723e84"
+            ],
+            "interpretation_admissible": false,
+            "interpretable_revision_ids": []
+          }
+        ],
+        "profile_ref": {
+          "id": "assessment_personalized_profiles:7",
+          "version": "1",
+          "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "skill_inputs": [
+          {
+            "outcome": "no_result",
+            "skill_id": "K1.3",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K1.C06",
+                "missing_indicator_ids": [
+                  "K1.I12"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I12"
+                ]
+              },
+              {
+                "component_id": "K1.C07",
+                "missing_indicator_ids": [
+                  "K1.I13",
+                  "K1.I14"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I13",
+                  "K1.I14"
+                ]
+              }
+            ],
+            "skill_name": "Слушание, реконструкция и верификация смысла другого",
+            "competency_id": "K1",
+            "competency_name": "Коммуникация",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K1.4",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K1.C08",
+                "missing_indicator_ids": [
+                  "K1.I15"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I15"
+                ]
+              },
+              {
+                "component_id": "K1.C09",
+                "missing_indicator_ids": [
+                  "K1.I16",
+                  "K1.I17"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K1.I16",
+                  "K1.I17"
+                ]
+              }
+            ],
+            "skill_name": "Согласование смыслов и позиций",
+            "competency_id": "K1",
+            "competency_name": "Коммуникация",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K2.2",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K2.C04",
+                "missing_indicator_ids": [
+                  "K2.I07"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I07"
+                ]
+              },
+              {
+                "component_id": "K2.C05",
+                "missing_indicator_ids": [
+                  "K2.I08"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I08"
+                ]
+              },
+              {
+                "component_id": "K2.C06",
+                "missing_indicator_ids": [
+                  "K2.I09"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K2.I09"
+                ]
+              }
+            ],
+            "skill_name": "Координация совместных действий",
+            "competency_id": "K2",
+            "competency_name": "Командная работа",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K4.1",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K4.C01",
+                "missing_indicator_ids": [
+                  "K4.I01",
+                  "K4.I02"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I01",
+                  "K4.I02"
+                ]
+              },
+              {
+                "component_id": "K4.C02",
+                "missing_indicator_ids": [
+                  "K4.I03",
+                  "K4.I04"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I03",
+                  "K4.I04"
+                ]
+              },
+              {
+                "component_id": "K4.C03",
+                "missing_indicator_ids": [
+                  "K4.I05",
+                  "K4.I06"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I05",
+                  "K4.I06"
+                ]
+              }
+            ],
+            "skill_name": "Анализ и оценка информации",
+            "competency_id": "K4",
+            "competency_name": "Критическое мышление",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K4.2",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K4.C04",
+                "missing_indicator_ids": [
+                  "K4.I07",
+                  "K4.I08"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I07",
+                  "K4.I08"
+                ]
+              },
+              {
+                "component_id": "K4.C05",
+                "missing_indicator_ids": [
+                  "K4.I09",
+                  "K4.I10"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I09",
+                  "K4.I10"
+                ]
+              },
+              {
+                "component_id": "K4.C06",
+                "missing_indicator_ids": [
+                  "K4.I11"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I11"
+                ]
+              }
+            ],
+            "skill_name": "Постановка и анализ проблемы",
+            "competency_id": "K4",
+            "competency_name": "Критическое мышление",
+            "skill_result_exists": false
+          },
+          {
+            "outcome": "no_result",
+            "skill_id": "K4.4",
+            "comparison": {
+              "status": "NO_TARGET_REQUIREMENT"
+            },
+            "components": [
+              {
+                "component_id": "K4.C09",
+                "missing_indicator_ids": [
+                  "K4.I15"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I15"
+                ]
+              },
+              {
+                "component_id": "K4.C10",
+                "missing_indicator_ids": [
+                  "K4.I16",
+                  "K4.I17",
+                  "K4.I18"
+                ],
+                "included_indicator_ids": [],
+                "required_indicator_ids": [
+                  "K4.I16",
+                  "K4.I17",
+                  "K4.I18"
+                ]
+              }
+            ],
+            "skill_name": "Принятие решений",
+            "competency_id": "K4",
+            "competency_name": "Критическое мышление",
+            "skill_result_exists": false
+          }
+        ],
+        "target_profile": null,
+        "results_version": "m8-results/1.0.0",
+        "observation_refs": [
+          {
+            "refs": [
+              {
+                "id": "e1",
+                "kind": "evidence",
+                "meaning": "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+              }
+            ],
+            "status": "ASSESSED",
+            "outcome": "L1",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [
+                "Восстанавливает основной прямо выраженный смысл и общую позицию другого"
+              ],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.1",
+            "opportunity": "PRESENT",
+            "revision_id": "788b0def-d658-4f1a-b4d2-5c1d71f469fd",
+            "indicator_id": "K1.I13",
+            "contradictions": [],
+            "evidence_revision_id": "718929ec-14f8-40a4-afb7-83b3d9aa6d92",
+            "assessment_revision_id": "9f0e70b0-78bf-4107-8c56-fb4eb46b46dd",
+            "assessment_situation_id": "9121817c-9831-4041-8333-2068694ab383"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.1",
+            "opportunity": "PRESENT",
+            "revision_id": "1019dc8a-272b-44b4-a543-4b7c093332b8",
+            "indicator_id": "K1.I16",
+            "contradictions": [],
+            "evidence_revision_id": "718929ec-14f8-40a4-afb7-83b3d9aa6d92",
+            "assessment_revision_id": "9f0e70b0-78bf-4107-8c56-fb4eb46b46dd",
+            "assessment_situation_id": "9121817c-9831-4041-8333-2068694ab383"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.1",
+            "opportunity": "PRESENT",
+            "revision_id": "d55c1df2-869f-4674-befc-b1d48ddfe3a6",
+            "indicator_id": "K1.I17",
+            "contradictions": [],
+            "evidence_revision_id": "718929ec-14f8-40a4-afb7-83b3d9aa6d92",
+            "assessment_revision_id": "9f0e70b0-78bf-4107-8c56-fb4eb46b46dd",
+            "assessment_situation_id": "9121817c-9831-4041-8333-2068694ab383"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "92a08047-4a68-49f3-89e6-2450e70d2ab4",
+            "indicator_id": "K2.I07",
+            "contradictions": [],
+            "evidence_revision_id": "718929ec-14f8-40a4-afb7-83b3d9aa6d92",
+            "assessment_revision_id": "9f0e70b0-78bf-4107-8c56-fb4eb46b46dd",
+            "assessment_situation_id": "9121817c-9831-4041-8333-2068694ab383"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "22d1ba80-2251-4934-93ee-5335c9a9754c",
+            "indicator_id": "K2.I08",
+            "contradictions": [],
+            "evidence_revision_id": "718929ec-14f8-40a4-afb7-83b3d9aa6d92",
+            "assessment_revision_id": "9f0e70b0-78bf-4107-8c56-fb4eb46b46dd",
+            "assessment_situation_id": "9121817c-9831-4041-8333-2068694ab383"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "6203f673-2e7d-4fe5-af03-81069adab1d8",
+            "indicator_id": "K4.I05",
+            "contradictions": [],
+            "evidence_revision_id": "718929ec-14f8-40a4-afb7-83b3d9aa6d92",
+            "assessment_revision_id": "9f0e70b0-78bf-4107-8c56-fb4eb46b46dd",
+            "assessment_situation_id": "9121817c-9831-4041-8333-2068694ab383"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "c65b887c-9500-403e-a224-1d39feb16854",
+            "indicator_id": "K4.I10",
+            "contradictions": [],
+            "evidence_revision_id": "718929ec-14f8-40a4-afb7-83b3d9aa6d92",
+            "assessment_revision_id": "9f0e70b0-78bf-4107-8c56-fb4eb46b46dd",
+            "assessment_situation_id": "9121817c-9831-4041-8333-2068694ab383"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "87089d99-29d8-4d64-af3e-a91c4e772ba6",
+            "indicator_id": "K4.I17",
+            "contradictions": [],
+            "evidence_revision_id": "718929ec-14f8-40a4-afb7-83b3d9aa6d92",
+            "assessment_revision_id": "9f0e70b0-78bf-4107-8c56-fb4eb46b46dd",
+            "assessment_situation_id": "9121817c-9831-4041-8333-2068694ab383"
+          },
+          {
+            "refs": [],
+            "status": "ASSESSED",
+            "outcome": "INSUFFICIENT_EVIDENCE",
+            "confidence": {
+              "limitations": [
+                "not a GC"
+              ],
+              "confirmed_features": [],
+              "alternatives_considered": [],
+              "reliability_protocol_ref": null
+            },
+            "m2_version": "v1.0",
+            "opportunity": "PRESENT",
+            "revision_id": "8d58b368-ae2e-4ce2-bb46-cfe59e723e84",
+            "indicator_id": "K4.I18",
+            "contradictions": [],
+            "evidence_revision_id": "718929ec-14f8-40a4-afb7-83b3d9aa6d92",
+            "assessment_revision_id": "9f0e70b0-78bf-4107-8c56-fb4eb46b46dd",
+            "assessment_situation_id": "9121817c-9831-4041-8333-2068694ab383"
+          }
+        ],
+        "context_selection": {
+          "value": null,
+          "status": "missing",
+          "boundaries": [],
+          "selected_path": null,
+          "policy_version": "m4-action-context/1.0",
+          "selected_index": null
+        },
+        "profile_projection": {},
+        "results_revision_id": "3d84446a-2d40-416c-be69-9ee61c4d1bd3"
+      },
+      "status": "unavailable",
+      "notices": [
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K1.3",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K1.4",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K2.2",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K4.1",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K4.2",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        },
+        {
+          "kind": "INSUFFICIENT_BASIS",
+          "text": "По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются. При необходимости возможен новый самостоятельный Cycle.",
+          "skill_id": "K4.4",
+          "limitations": [
+            "Закрытый Cycle не открывается для дополнительной Session."
+          ]
+        }
+      ],
+      "mechanism": {
+        "id": "m8_recommendations",
+        "kind": "deterministic_template",
+        "version": "1.2.0",
+        "template_checksum": "3d3c3ad1cec3d3fb46ef4cd33cf78bc433f24e1088782f5cbaee04edccf58d6b"
+      },
+      "diagnostics": [],
+      "failure_reason": null,
+      "input_checksum": "2542b40cace99b85ecdf157e64adb9062572f2422ea52ba6987e94514af0fac0",
+      "recommendations": [],
+      "contract_version": "m8-recommendations/1.2.0"
+    }
+  }
+}

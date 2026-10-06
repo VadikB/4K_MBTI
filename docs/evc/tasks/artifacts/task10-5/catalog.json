@@ -1,0 +1,26 @@
+{
+  "scope": "repository package, not production/test database",
+  "cases": [
+    {
+      "case_id": "CASE-TDISC-01",
+      "status": "WORKING"
+    },
+    {
+      "case_id": "CASE-TDISC-02",
+      "status": "WORKING"
+    },
+    {
+      "case_id": "CASE-TDISC-03",
+      "status": "WORKING"
+    },
+    {
+      "case_id": "CASE-TDISC-04",
+      "status": "WORKING"
+    },
+    {
+      "case_id": "CASE-TDISC-05",
+      "status": "WORKING"
+    }
+  ],
+  "synthetic_admission": "Only owned test_stand; not GC or normative admission"
+}

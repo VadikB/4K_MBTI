@@ -1,0 +1,12 @@
+> test:browser
+> playwright test --grep S10-C1|S10.4
+
+
+Running 2 tests using 1 worker
+
+(node:27533) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/runtime.spec.mjs:206:35 › S10-C1 background time closure without another Turn (1.7m)
+  ✓  2 tests/browser/runtime.spec.mjs:334:1 › S10.4 owner profile, 403, logout, late response and account switch (22.6s)
+
+  2 passed (2.1m)

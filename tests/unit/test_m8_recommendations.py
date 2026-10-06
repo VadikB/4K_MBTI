@@ -34,7 +34,7 @@ def fixture(outcome='partial_score'):
 def run(data, resolved):
     resolved=deepcopy(resolved)
     resolved['results_checksum']=checksum({k:v for k,v in data.items() if k!='results_revision_id'})
-    return generate(data, {'content':{'role_profile':{'typical_tasks':['согласование срока']},
+    return generate(data, {'content':{'role_profile':{'card':{'typical_tasks':['согласование срока']}},
                                      'user_context':{'email':'private@example.invalid'}}}, resolved=resolved)
 
 
@@ -113,5 +113,31 @@ def test_r11_09_legacy_presentation_preserves_history():
 def test_r11_determinism_and_package_version():
     data,resolved=fixture()
     assert run(data,resolved)==run(data,resolved)
-    assert run(data,resolved)['contract_version']=='m8-recommendations/1.1.0'
+    assert run(data,resolved)['contract_version']=='m8-recommendations/1.2.0'
     assert profile_projection({'user_context':{'email':'secret','regular_tasks':['задача']}})=={'user_context':{'regular_tasks':['задача']}}
+
+
+def test_canonical_m4_builder_projection_and_recommendation_context():
+    from Api.assessment_contexts import build_personalized_profile
+    snapshot = build_personalized_profile(organization_id=1,
+        organization_context={'name':'PRIVATE NAME','organization_type':'компания','industry':'образование',
+            'activity_description':'Разработка программ','case_reality_level':'обобщённый','organization_name_usage_rules':'не использовать'},
+        organization_context_ref={'version_id':1},
+        role_profile={'methodology_version':'1.1','card':{'mission':'Анализировать запросы', 'typical_tasks':['Согласовать план'],
+                      'contacts':'PRIVATE CONTACT'}}, role_profile_ref={'version_id':2},
+        user_identity={'full_name':'PRIVATE PERSON','contacts':'PRIVATE EMAIL'},
+        user_context={'position_or_status':'Эксперт','regular_tasks':['Анализ'], 'email':'PRIVATE EMAIL'},
+        user_context_ref={'version_id':3})
+    original=deepcopy(snapshot)
+    projected=profile_projection(snapshot)
+    assert projected == {'organization_context':{'activity_description':'Разработка программ'},
+        'role_profile':{'mission':'Анализировать запросы','typical_tasks':['Согласовать план']},
+        'user_context':{'position_or_status':'Эксперт','regular_tasks':['Анализ']}}
+    data,resolved=fixture()
+    resolved['results_checksum']=checksum({k:v for k,v in data.items() if k!='results_revision_id'})
+    result=generate(data,snapshot,resolved=resolved)
+    assert result['recommendations']
+    assert all('Анализ' in item['application_context'] for item in result['recommendations'])
+    assert result['input']['profile_projection']['organization_context']['activity_description'] == 'Разработка программ'
+    assert 'PRIVATE' not in str(result)
+    assert snapshot == original

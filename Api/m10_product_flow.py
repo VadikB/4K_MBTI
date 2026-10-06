@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from Api import m7_cycle_planner
+from Api import m7_cycle_planner, participant_profile
 from Api import m5_scenario_runtime, m7_completion
 
 CASE_PACKAGE = Path(__file__).resolve().parents[1] / "assessment_definitions/cases/competencies_4k/1.1"
@@ -13,26 +13,23 @@ def _policy() -> dict:
     return json.loads((CASE_PACKAGE / "admission-policy.json").read_bytes())
 
 
-def _owned_profile(connection, user_id: int) -> int:
-    row = connection.execute(
-        """SELECT id FROM assessment_personalized_profiles
-           WHERE user_id=%s AND status='ready' ORDER BY frozen_at DESC,id DESC LIMIT 1""",
-        (user_id,),
-    ).fetchone()
-    if not row:
-        raise ValueError("M4_PROFILE_NOT_READY")
-    return int(row["id"])
+def _owned_profile(connection, user_id: int, profile_id=None) -> int:
+    return int(participant_profile.profile_for_start(connection, user_id=user_id, profile_id=profile_id)['id'])
 
 
-def _current_cycle(connection, user_id: int) -> dict | None:
-    row = connection.execute(
-        """SELECT cycle_id FROM m5_cycles
-           WHERE owner_user_id=%s AND usage_scope='assessment'
-             AND status IN('prepared','active','paused','interrupted','collection_closed','calculation_pending')
-           ORDER BY created_at DESC LIMIT 1""",
-        (user_id,),
-    ).fetchone()
-    return m7_cycle_planner.read_plan(connection, str(row["cycle_id"])) if row else None
+def _current_cycle(connection, user_id: int, organization_id: int, configuration_id=None) -> dict | None:
+    rows = connection.execute(
+        """SELECT c.cycle_id FROM m5_cycles c
+           JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
+           WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.usage_scope='assessment'
+             AND (%s::bigint IS NULL OR p.assessment_configuration_id=%s)
+             AND c.status IN('prepared','active','paused','interrupted','collection_closed','calculation_pending')
+           ORDER BY c.created_at DESC""",
+        (user_id, organization_id, configuration_id, configuration_id),
+    ).fetchall()
+    if len(rows) > 1:
+        raise ValueError('M4_PROFILE_SELECTION_REQUIRED: Выберите конфигурацию оценки в профиле.')
+    return m7_cycle_planner.read_plan(connection, str(rows[0]['cycle_id'])) if rows else None
 
 
 def _present_next(connection, *, plan: dict, user_id: int, key: str) -> dict:
@@ -50,10 +47,19 @@ def _present_next(connection, *, plan: dict, user_id: int, key: str) -> dict:
 
 
 def start_or_resume(connection, *, user_id: int, key: str,
-                    selected_skills: list[str] | None = None) -> dict:
+                    selected_skills: list[str] | None = None, profile_id: int | None = None) -> dict:
     # Serialize owner start across reloads/tabs before checking for an active Cycle.
     connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(user_id),))
-    current = _current_cycle(connection, user_id)
+    organization_id = participant_profile.active_organization(connection, user_id)
+    configuration_id = None
+    if profile_id is not None:
+        # An existing Cycle keeps its frozen snapshot even after a new confirmation.
+        scope = connection.execute("""SELECT assessment_configuration_id FROM assessment_personalized_profiles
+            WHERE id=%s AND user_id=%s AND organization_id=%s""", (profile_id, user_id, organization_id)).fetchone()
+        if not scope:
+            raise ValueError('M4_PROFILE_SCOPE_MISMATCH: Подтвердите профиль для текущей организации.')
+        configuration_id = scope['assessment_configuration_id']
+    current = _current_cycle(connection, user_id, organization_id, configuration_id)
     if current:
         open_as = connection.execute(
             """SELECT assessment_situation_id,status FROM m5_assessment_situations
@@ -68,14 +74,17 @@ def start_or_resume(connection, *, user_id: int, key: str,
             return {'resumed':True,**_present_next(connection,plan=current,user_id=user_id,key=f'product-prepared:{key}')}
         return {"resumed": True, "plan": current, "decision": None,
                 "presentation": dict(open_as) if open_as else None}
-    profile_id = _owned_profile(connection, user_id)
-    plan = m7_cycle_planner.create_plan(
-        connection, personalized_profile_id=profile_id,
-        selected_skills=selected_skills or ["K1", "K2", "K3", "K4"],
-        created_by=user_id, key=f"product-start:{key}", usage_scope="assessment",
-    )
-    result = _present_next(connection, plan=plan, user_id=user_id, key=f"product-next:{key}:1")
-    return {"resumed": False, **result}
+    profile_id = _owned_profile(connection, user_id, profile_id)
+    with connection.transaction():
+        plan = m7_cycle_planner.create_plan(
+            connection, personalized_profile_id=profile_id,
+            selected_skills=selected_skills or ["K1", "K2", "K3", "K4"],
+            created_by=user_id, key=f"product-start:{key}", usage_scope="assessment",
+        )
+        if plan['plan']['status'] == 'NO_ROUTE':
+            raise ValueError('M7_NO_ADMISSIBLE_CASE: Профиль готов. Ответственный специалист должен подготовить допустимые кейсы для выбранной роли и конфигурации.')
+        result = _present_next(connection, plan=plan, user_id=user_id, key=f"product-next:{key}:1")
+        return {"resumed": False, **result}
 
 
 def next_situation(connection, *, cycle_id: str, user_id: int, key: str) -> dict:

@@ -30,7 +30,9 @@ from Api.m7_clarification_contracts import CreateClarificationRequest,PresentCla
 from Api import m7_completion
 from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,AdditionalSessionRequest,BlockingWaitRequest,ReconcileC46Request
 from Api import m6_cycle_aggregation_repository
-from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest
+from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest, CreateSubstantiveAggregationRequest
+from Api.profile_access import require_unchanged_email
+from Api import participant_profile
 from Api import m8_results
 from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest, RegenerateReportRequest
 from Api import m10_product_flow, m10_orchestration
@@ -189,6 +191,7 @@ from Api.schemas import (
     SessionCaseStructuredAnalysisResponse,
     UserProfileUpdateRequest,
     UserProfileSummaryResponse,
+    M8HistoryResponse,
     UserSessionBootstrapResponse,
     UserSessionRestoreResponse,
     JourneyAssessmentState,
@@ -600,19 +603,19 @@ def _compact_user_response(user: UserResponse | None) -> UserResponse | None:
     )
 
 
-def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
+def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> UserDashboard:
     # Dashboard follows the current Cycle runtime; legacy aggregate views are not inputs.
+    readiness = participant_profile.readiness(connection, user_id=user.id, profile_id=profile_id)
     cycle = connection.execute("""SELECT c.id,c.status,
         COUNT(s.id)::int AS total_cases,
         COUNT(s.id) FILTER (WHERE s.status='closed')::int AS completed_cases
         FROM m5_cycles c LEFT JOIN m5_assessment_situations s ON s.cycle_db_id=c.id
+        JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
         WHERE c.owner_user_id=%s AND c.usage_scope='assessment'
-        GROUP BY c.id ORDER BY c.created_at DESC,c.id DESC LIMIT 1""", (user.id,)).fetchone()
-    report_rows = connection.execute("""SELECT p.created_at,p.revision_no
-        FROM m8_reports p JOIN m8_result_revisions rr ON rr.id=p.result_revision_id
-        JOIN m8_results r ON r.id=rr.results_id JOIN m5_cycles c ON c.id=r.cycle_db_id
-        WHERE c.owner_user_id=%s AND c.usage_scope='assessment' AND p.audience='assessee'
-        ORDER BY p.created_at DESC,p.id DESC""", (user.id,)).fetchall()
+          AND p.organization_id=%s AND p.assessment_configuration_id=%s
+        GROUP BY c.id ORDER BY c.created_at DESC,c.id DESC LIMIT 1""",
+        (user.id, readiness.get('organization_id'), readiness.get('assessment_configuration_id'))).fetchone()
+    report_rows = m8_results.list_owned_reports(connection, user.id)
     completed_cases = int(cycle['completed_cases']) if cycle else 0
     total_cases = int(cycle['total_cases']) if cycle else 0
     is_complete = bool(cycle and cycle['status']=='calculated')
@@ -622,8 +625,7 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
         badge='Готов',format_label='PDF',sequence_number=row['revision_no'],report_at=row['created_at'])
         for row in report_rows[:5]]
     reports_total_row = {'reports_total':len(report_rows)}
-    assessment_allowed = bool(connection.execute(
-        "SELECT 1 FROM assessment_personalized_profiles WHERE user_id=%s AND status='ready' LIMIT 1",(user.id,)).fetchone())
+    assessment_allowed = readiness['status'] == 'ready'
     available_assessments: list[AvailableAssessment] = []
     if assessment_allowed and not is_complete:
         available_assessments.append(
@@ -642,7 +644,7 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
         description=(
             "Комплексная оценка критического мышления, креативности, коммуникации и кооперации."
             if assessment_allowed
-            else "Перед прохождением ассессмента нужно завершить настройку профиля."
+            else readiness["message"]
         ),
         progress_percent=progress_percent if assessment_allowed else 0,
         completed_cases=completed_cases if assessment_allowed else 0,
@@ -655,6 +657,7 @@ def _build_dashboard(connection, user: UserResponse) -> UserDashboard:
 
     greeting_name = user.full_name.split()[0] if user.full_name else "коллега"
     return UserDashboard(
+        personalized_profile_id=readiness["id"], profile_readiness=readiness["status"],
         greeting_name=greeting_name,
         active_assessment=active_assessment,
         available_assessments=available_assessments,
@@ -3050,7 +3053,7 @@ def get_operation_progress(operation_id: str) -> OperationProgressResponse:
 
 
 @router.get("/session/restore", response_model=UserSessionRestoreResponse)
-def restore_user_session(request: Request) -> UserSessionRestoreResponse:
+def restore_user_session(request: Request, personalized_profile_id: int | None = None) -> UserSessionRestoreResponse:
     token = request.cookies.get(SESSION_COOKIE_NAME)
     user = web_session_service.get_user_by_token(token)
     if user is None:
@@ -3070,7 +3073,7 @@ def restore_user_session(request: Request) -> UserSessionRestoreResponse:
         return UserSessionRestoreResponse(
             authenticated=True,
             user=compact_user,
-            dashboard=_build_dashboard(connection, full_user),
+            dashboard=_build_dashboard(connection, full_user, profile_id=personalized_profile_id),
         )
 
 
@@ -3112,7 +3115,7 @@ def reopen_profile_session(request: Request, response: FastAPIResponse) -> Check
 
 
 @router.get("/{user_id}/session-bootstrap", response_model=UserSessionBootstrapResponse)
-def bootstrap_user_session(user_id: int) -> UserSessionBootstrapResponse:
+def bootstrap_user_session(user_id: int, personalized_profile_id: int | None = None) -> UserSessionBootstrapResponse:
     with get_connection() as connection:
         row = connection.execute(
             USER_SELECT_SQL
@@ -3131,13 +3134,13 @@ def bootstrap_user_session(user_id: int) -> UserSessionBootstrapResponse:
         if admin_scope.can_admin:
             return UserSessionBootstrapResponse(
                 user=_compact_user_response(user),
-                dashboard=_build_dashboard(connection, user),
+                dashboard=_build_dashboard(connection, user, profile_id=personalized_profile_id),
                 is_admin=True,
                 admin_dashboard=_build_admin_dashboard(connection, admin_scope),
             )
         return UserSessionBootstrapResponse(
             user=_compact_user_response(user),
-            dashboard=_build_dashboard(connection, user),
+            dashboard=_build_dashboard(connection, user, profile_id=personalized_profile_id),
         )
 
 
@@ -3163,48 +3166,30 @@ def _onboarding_response(payload: dict) -> OnboardingStateResponse:
 
 
 @router.get("/{user_id}/journey-state", response_model=UserJourneyStateResponse)
-def get_user_journey_state(user_id: int, request: Request) -> UserJourneyStateResponse:
+def get_user_journey_state(user_id: int, request: Request, personalized_profile_id: int | None = None) -> UserJourneyStateResponse:
     user = _require_matching_session_user(request, user_id)
-    profile_state = evaluate_profile_state(user)
     with get_connection() as connection:
+        profile = participant_profile.readiness(connection, user_id=user.id, profile_id=personalized_profile_id)
         onboarding = get_or_create_onboarding_state(connection, user_id)
-        session_row = connection.execute(
-            """
-            SELECT id, session_code, status
-            FROM user_sessions
-            WHERE user_id = %s
-              AND assessment_code = 'competencies_4k'
-            ORDER BY
-                CASE WHEN status IN ('created', 'active', 'cases_completed', 'analyzing') THEN 0 ELSE 1 END,
-                COALESCE(started_at, created_at) DESC,
-                id DESC
-            LIMIT 1
-            """,
-            (user_id,),
-        ).fetchone()
+        cycle = connection.execute("""SELECT c.status FROM m5_cycles c
+            JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
+            WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.usage_scope='assessment'
+              AND p.assessment_configuration_id=%s ORDER BY c.created_at DESC,c.id DESC LIMIT 1""",
+            (user.id, profile.get('organization_id'), profile.get('assessment_configuration_id'))).fetchone()
         connection.commit()
-
-    assessment_status = normalize_assessment_status(str(session_row["status"]) if session_row else None)
-    report_status = "ready" if assessment_status == "report_ready" else "not_ready"
-    next_action = determine_next_action(
-        profile_status=profile_state.status,
-        onboarding_status=str(onboarding["status"]),
-        assessment_status=assessment_status,
-    )
-
+    ready = profile['status'] == 'ready'
+    assessment_status = ({'prepared':'preparing','active':'in_progress','paused':'in_progress',
+        'interrupted':'in_progress','collection_closed':'analyzing','calculation_pending':'analyzing',
+        'calculated':'report_ready','failed':'failed'}.get(cycle['status'], 'not_started') if cycle else 'not_started')
+    # Cycle navigation is restored through its owned runtime and dashboard. Legacy
+    # profile completeness/onboarding must not reopen an already confirmed M4 form.
     return UserJourneyStateResponse(
-        profile=ProfileStateResponse(
-            status=profile_state.status,
-            missing_fields=list(profile_state.missing_fields),
-        ),
+        profile=ProfileStateResponse(status='complete' if ready else 'incomplete',
+            missing_fields=[] if ready else ['personalized_profile']),
         onboarding=_onboarding_response(onboarding),
-        assessment=JourneyAssessmentState(
-            status=assessment_status,
-            session_id=int(session_row["id"]) if session_row else None,
-            session_code=str(session_row["session_code"]) if session_row and session_row["session_code"] else None,
-        ),
-        report_status=report_status,
-        next_action=next_action,
+        assessment=JourneyAssessmentState(status=assessment_status),
+        report_status='ready' if assessment_status == 'report_ready' else 'not_ready',
+        next_action='show_dashboard' if ready else 'complete_profile',
     )
 
 
@@ -5215,7 +5200,7 @@ def start_owned_assessment_cycle(payload: ProductCycleStartRequest, request: Req
     try:
         with get_connection() as connection:
             result=m10_product_flow.start_or_resume(connection,user_id=int(user.id),key=payload.idempotency_key,
-                selected_skills=list(payload.selected_skills))
+                selected_skills=list(payload.selected_skills), profile_id=payload.personalized_profile_id)
             runtime=m10_product_flow.read_runtime(connection,cycle_id=str(result['plan']['cycle_id']))
             connection.commit();return {**m10_product_flow.participant_presentation(result),'runtime':runtime}
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
@@ -6040,20 +6025,20 @@ def logout_user_session(request: Request, response: FastAPIResponse) -> dict[str
     return {"ok": True}
 
 @router.get("", response_model=list[UserResponse])
-def get_users() -> list[UserResponse]:
+def get_users(request: Request) -> list[UserResponse]:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail="Требуется авторизация")
     with get_connection() as connection:
-        rows = connection.execute(
-            USER_SELECT_SQL
-            + """
-            ORDER BY u.id ASC
-            """
-        ).fetchall()
-
+        scope = _get_admin_scope_or_403(connection, user)
+        scope_sql, scope_params = admin_scope_sql(scope)
+        rows = connection.execute(USER_SELECT_SQL + " WHERE TRUE " + scope_sql + " ORDER BY u.id ASC", scope_params).fetchall()
     return [UserResponse(**dict(row)) for row in rows]
 
 
 @router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: int) -> UserResponse:
+def get_user(user_id: int, request: Request) -> UserResponse:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         row = connection.execute(
             USER_SELECT_SQL
@@ -6070,7 +6055,8 @@ def get_user(user_id: int) -> UserResponse:
 
 
 @router.get("/{user_id}/profile-summary", response_model=UserProfileSummaryResponse)
-def get_user_profile_summary(user_id: int) -> UserProfileSummaryResponse:
+def get_user_profile_summary(user_id: int, request: Request) -> UserProfileSummaryResponse:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         user_row = connection.execute(
             USER_SELECT_SQL
@@ -6147,18 +6133,30 @@ def get_user_profile_summary(user_id: int) -> UserProfileSummaryResponse:
                 )
             )
 
+        cycle_history = m8_results.list_owned_cycles(connection, user_id)
+        cycle_reports = [item for item in cycle_history if item["report_id"]]
+
     return UserProfileSummaryResponse(
         user=user,
-        total_assessments=len(history),
-        completed_assessments=sum(1 for item in history if item.status == "completed"),
+        total_assessments=len(cycle_history),
+        completed_assessments=sum(bool(item["collection_closed_at"]) for item in cycle_history),
         average_score_percent=round(sum(score_values) / len(score_values)) if score_values else None,
         latest_session_id=history[0].session_id if history else None,
         history=history,
+        cycle_reports=cycle_reports,
+        cycle_history=cycle_history,
+        legacy_assessments_total=len(history),
     )
 
 
 @router.patch("/{user_id}/profile", response_model=UserResponse)
-def update_user_profile(user_id: int, payload: UserProfileUpdateRequest) -> UserResponse:
+def update_user_profile(user_id: int, payload: UserProfileUpdateRequest, request: Request) -> UserResponse:
+    user = _require_matching_session_user(request, user_id)
+    if 'email' in payload.model_fields_set:
+        try:
+            require_unchanged_email(user.email, payload.email)
+        except ValueError as exc:
+            raise HTTPException(409, detail=str(exc)) from exc
     with get_connection() as connection:
         existing = connection.execute(
             USER_SELECT_SQL
@@ -6175,22 +6173,13 @@ def update_user_profile(user_id: int, payload: UserProfileUpdateRequest) -> User
         if avatar_data_url is not None and not avatar_data_url.startswith("data:image/"):
             raise HTTPException(status_code=400, detail="Некорректный формат изображения")
 
-        connection.execute(
-            """
-            UPDATE users
-            SET email = %s,
-                telegram = %s,
-                avatar_data_url = %s
-            WHERE id = %s
-            """,
-            (
-                payload.email,
-                payload.telegram,
-                avatar_data_url,
-                user_id,
-            ),
-        )
-        connection.commit()
+        fields = [name for name in ('telegram', 'avatar_data_url') if name in payload.model_fields_set]
+        if fields:
+            connection.execute(
+                'UPDATE users SET ' + ', '.join(name + ' = %s' for name in fields) + ' WHERE id = %s',
+                tuple(getattr(payload, name) for name in fields) + (user_id,),
+            )
+            connection.commit()
 
         updated = connection.execute(
             USER_SELECT_SQL
@@ -6203,8 +6192,23 @@ def update_user_profile(user_id: int, payload: UserProfileUpdateRequest) -> User
     return UserResponse(**dict(updated))
 
 
+def _require_profile_dialogue_owner(request: Request, session_id: str) -> UserResponse:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail="Сессия не найдена. Войдите заново.")
+    with get_connection() as connection:
+        owned = connection.execute(
+            "SELECT 1 FROM agent_conversation_sessions WHERE session_id=%s AND user_id=%s",
+            (session_id, user.id),
+        ).fetchone()
+    if owned is None:
+        raise HTTPException(403, detail="Нет доступа к диалогу профиля.")
+    return user
+
+
 @router.post("/agent/message", response_model=AgentReply)
 def process_agent_message(payload: AgentMessageRequest, request: Request, response: FastAPIResponse) -> AgentReply:
+    user = _require_profile_dialogue_owner(request, payload.session_id)
     operation_id = request.headers.get("X-Agent4K-Operation-Id")
     try:
         operation_progress_service.begin(
@@ -6216,6 +6220,7 @@ def process_agent_message(payload: AgentMessageRequest, request: Request, respon
         reply = interviewer_agent.reply(
             session_id=payload.session_id,
             message=payload.message,
+            authenticated_user_id=user.id,
             progress_operation_id=operation_id,
         )
         if reply.user is not None:
@@ -6226,6 +6231,8 @@ def process_agent_message(payload: AgentMessageRequest, request: Request, respon
             message="Профиль пользователя подготовлен. Можно переходить к следующему шагу.",
         )
         return reply
+    except PermissionError as exc:
+        raise HTTPException(403, detail="Нет доступа к диалогу профиля.") from exc
     except KeyError as exc:
         operation_progress_service.fail(operation_id, message=str(exc))
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -6305,35 +6312,60 @@ def select_my_role_profile(payload: RoleProfileSelectionRequest, request: Reques
     return _role_profile_option(role)
 
 
+@router.get("/assessment/profile/options")
+def get_participant_profile_options(request: Request):
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail="Требуется авторизация")
+    try:
+        with get_connection() as connection:
+            return participant_profile.options(connection, user_id=user.id)
+    except ValueError as exc:
+        raise HTTPException(409, detail=str(exc)) from exc
+
+
 @router.post("/agent/profile/confirm", response_model=AgentReply)
 def confirm_agent_profile(payload: AgentProfileConfirmRequest, request: Request, response: FastAPIResponse) -> AgentReply:
     operation_id = request.headers.get("X-Agent4K-Operation-Id")
     try:
-        authenticated_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
-        if authenticated_user is None:
-            raise HTTPException(status_code=401, detail="Требуется авторизация")
+        authenticated_user = _require_profile_dialogue_owner(request, payload.session_id)
+        try:
+            require_unchanged_email(authenticated_user.email, payload.email)
+        except ValueError as exc:
+            raise HTTPException(409, detail=str(exc)) from exc
         operation_progress_service.begin(
             operation_id,
             title="Подтверждаем профиль",
             message="Сохраняем актуальные данные профиля.",
             steps=PROFILE_SAVE_STEPS,
         )
-        reply = interviewer_agent.confirm_existing_profile(
-            session_id=payload.session_id,
-            full_name=payload.full_name,
-            email=payload.email,
-            telegram=payload.telegram,
-            position=payload.position,
-            duties=payload.duties,
-            selected_role_id=payload.role_id,
-            company_industry=payload.company_industry,
-            consent_accepted=payload.consent_accepted,
-            authenticated_user_id=authenticated_user.id,
-            progress_operation_id=operation_id,
-        )
-        if reply.user is not None:
+        if payload.personalized_profile is not None:
             with get_connection() as connection:
-                reply = reply.model_copy(update={"dashboard": _build_dashboard(connection, reply.user)})
+                reply, profile_id = interviewer_agent.confirm_personalized_profile(connection,
+                    payload=payload, authenticated_user_id=authenticated_user.id)
+                reply = reply.model_copy(update={"dashboard": _build_dashboard(connection, reply.user, profile_id=profile_id)})
+                connection.commit()
+            interviewer_agent.invalidate_session(payload.session_id)
+        else:
+            if not payload.role_id or not all((payload.position.strip(), payload.duties.strip(), payload.company_industry.strip())):
+                raise ValueError('Заполните обязательные поля профиля.')
+            reply = interviewer_agent.confirm_existing_profile(
+                session_id=payload.session_id,
+                full_name=payload.full_name,
+                email=payload.email,
+                telegram=payload.telegram,
+                position=payload.position,
+                duties=payload.duties,
+                selected_role_id=payload.role_id,
+                company_industry=payload.company_industry,
+                consent_accepted=payload.consent_accepted,
+                authenticated_user_id=authenticated_user.id,
+                progress_operation_id=operation_id,
+            )
+            if reply.user is not None:
+                with get_connection() as connection:
+                    reply = reply.model_copy(update={"dashboard": _build_dashboard(connection, reply.user)})
+        if reply.user is not None:
             _set_user_session_cookie(response, web_session_service.create_session(reply.user.id))
         operation_progress_service.complete(operation_id, title="Профиль готов", message="Данные подтверждены.")
         return reply
@@ -6888,6 +6920,9 @@ def create_m6_cycle_calculation(cycle_id: UUID, payload: CreateAggregationReques
     user = _m5_superadmin(request)
     try:
         with get_connection() as connection:
+            cycle = connection.execute("SELECT usage_scope FROM m5_cycles WHERE cycle_id=%s", (cycle_id,)).fetchone()
+            if not cycle or cycle['usage_scope'] != 'qa':
+                raise ValueError('M6_MANUAL_ADMISSION_QA_ONLY')
             result = m6_cycle_aggregation_repository.create(connection, cycle_id=str(cycle_id),
                 key=payload.idempotency_key, expected_composition_checksum=payload.expected_composition_checksum,
                 admission_mechanism_version=payload.admission_mechanism_version,
@@ -6896,6 +6931,21 @@ def create_m6_cycle_calculation(cycle_id: UUID, payload: CreateAggregationReques
             return result
     except (ValueError, KeyError, OSError) as exc:
         raise HTTPException(409, detail=str(exc)) from exc
+
+
+
+@router.post('/admin/m6-cycles/{cycle_id}/substantive-calculations', status_code=201)
+def create_m6_substantive_calculation(cycle_id: UUID, payload: CreateSubstantiveAggregationRequest, request: Request):
+    user = _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            result = m6_cycle_aggregation_repository.create_substantive(
+                connection, cycle_id=str(cycle_id), key=payload.idempotency_key,
+                expected_composition_checksum=payload.expected_composition_checksum, created_by=int(user.id))
+            connection.commit()
+            return result
+    except (ValueError, KeyError, OSError) as exc:
+        raise HTTPException(409, detail='M6_SUBSTANTIVE_CALCULATION_UNAVAILABLE') from exc
 
 
 @router.get('/admin/m6-cycles/{cycle_id}/calculations/latest')
@@ -6954,9 +7004,29 @@ def download_admin_m8_report(report_id: UUID, request: Request):
                     headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
 
 
+def _m8_owned_cycle(request: Request, cycle_id: str):
+    user = _m7_owned_cycle(request, cycle_id)
+    with get_connection() as connection:
+        if not m8_results.owner_can_read_cycle(connection, cycle_id, user.id):
+            raise HTTPException(403, detail='Нет доступа к Cycle этой организации.')
+    return user
+
+
+@router.get('/assessment/m8/history', response_model=M8HistoryResponse)
+def read_owned_m8_history(request: Request):
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail='Требуется авторизация')
+    with get_connection() as connection:
+        cycles = m8_results.list_owned_cycles(connection, user.id)
+    return {'owner_user_id':user.id, 'cycles':cycles, 'assessments_total':len(cycles),
+            'reports_total':sum(bool(c['report_id']) for c in cycles),
+            'completed_assessments':sum(bool(c['collection_closed_at']) for c in cycles)}
+
+
 @router.get('/assessment/m8/cycles/{cycle_id}/status')
 def read_owned_m8_status(cycle_id: UUID, request: Request):
-    _m7_owned_cycle(request, str(cycle_id))
+    _m8_owned_cycle(request, str(cycle_id))
     with get_connection() as connection:
         cycle = m7_completion.read_status(connection, str(cycle_id))
         pipeline = connection.execute("""SELECT p.status,p.stage,p.error_code FROM m10_pipeline_runs p
@@ -6982,7 +7052,7 @@ def read_owned_m8_status(cycle_id: UUID, request: Request):
 
 @router.get('/assessment/m8/cycles/{cycle_id}/results')
 def read_owned_m8_results(cycle_id: UUID, request: Request):
-    _m7_owned_cycle(request, str(cycle_id))
+    _m8_owned_cycle(request, str(cycle_id))
     try:
         with get_connection() as connection: return m8_results.read_latest_results(connection, str(cycle_id))
     except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
@@ -6990,7 +7060,7 @@ def read_owned_m8_results(cycle_id: UUID, request: Request):
 
 @router.get('/assessment/m8/cycles/{cycle_id}/reports/latest')
 def read_owned_m8_report(cycle_id: UUID, request: Request):
-    _m7_owned_cycle(request, str(cycle_id))
+    _m8_owned_cycle(request, str(cycle_id))
     try:
         with get_connection() as connection: return m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
     except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
@@ -6998,7 +7068,7 @@ def read_owned_m8_report(cycle_id: UUID, request: Request):
 
 @router.post('/assessment/m8/cycles/{cycle_id}/reports/regenerate', status_code=201)
 def regenerate_owned_m8_report(cycle_id: UUID, payload: RegenerateReportRequest, request: Request):
-    user = _m7_owned_cycle(request, str(cycle_id))
+    user = _m8_owned_cycle(request, str(cycle_id))
     try:
         with get_connection() as connection:
             results = m8_results.read_latest_results(connection, str(cycle_id))
@@ -7009,15 +7079,33 @@ def regenerate_owned_m8_report(cycle_id: UUID, payload: RegenerateReportRequest,
     except (ValueError, KeyError) as exc: raise HTTPException(409, detail=str(exc)) from exc
 
 
+def _owned_saved_report(request: Request, report_id: UUID):
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail='Требуется авторизация')
+    with get_connection() as connection:
+        scope = connection.execute("""SELECT c.cycle_id,p.audience FROM m8_reports p
+            JOIN m8_result_revisions rr ON rr.id=p.result_revision_id
+            JOIN m8_results r ON r.id=rr.results_id JOIN m5_cycles c ON c.id=r.cycle_db_id
+            WHERE p.id=%s""", (report_id,)).fetchone()
+        if not scope:
+            raise HTTPException(404, detail='M8_REPORT_NOT_FOUND')
+        if scope['audience'] != 'assessee' or not m8_results.owner_can_read_cycle(connection, str(scope['cycle_id']), user.id):
+            raise HTTPException(403, detail='Нет доступа к этому Report.')
+        try:
+            return m8_results.read_report(connection, str(report_id))
+        except ValueError as exc:
+            raise HTTPException(409, detail='Сохранённый Report временно недоступен.') from exc
+
+
+@router.get('/assessment/m8/reports/{report_id}')
+def read_owned_saved_m8_report(report_id: UUID, request: Request):
+    return _owned_saved_report(request, report_id)
+
+
 @router.get('/assessment/m8/reports/{report_id}/pdf')
 def download_owned_m8_report(report_id: UUID, request: Request):
-    token=request.cookies.get(SESSION_COOKIE_NAME); user=web_session_service.get_user_by_token(token) if token else None
-    if user is None: raise HTTPException(status_code=401, detail='Сессия не найдена. Войдите заново.')
-    try:
-        with get_connection() as connection: report = m8_results.read_report(connection, str(report_id))
-    except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
-    if int(report['owner_user_id']) != int(user.id): raise HTTPException(status_code=403, detail='Нет доступа к чужому Report.')
-    if report['audience'] != 'assessee': raise HTTPException(status_code=403, detail='Недоступное представление Report.')
+    report = _owned_saved_report(request, report_id)
     pdf = m8_results.render_pdf(report)
     return Response(content=pdf, media_type='application/pdf', headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
 

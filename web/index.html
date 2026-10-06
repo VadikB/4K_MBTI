@@ -1648,7 +1648,7 @@
             <header class="profile-section-head">
               <div>
                 <h3>Контактные данные</h3>
-                <p>Email и Telegram сохраняются автоматически. Имя и телефон управляются учетной записью.</p>
+                  <p>Telegram сохраняется автоматически. Остальные контактные данные доступны только для просмотра.</p>
               </div>
             </header>
             <div class="profile-fields">
@@ -1660,12 +1660,10 @@
                 <span class="profile-field-label">Телефон</span>
                 <input id="profile-phone" type="text" readonly>
               </label>
-              <label class="profile-field is-editable">
-                <span class="profile-field-label">Email</span>
-                <div class="profile-input-wrap">
-                  <input id="profile-email" type="email" placeholder="name@example.com">
-                  <span class="profile-field-edit-icon" aria-hidden="true"><img src="/web/assets/icons/pencil-icon-white.svg" alt=""></span>
-                </div>
+              <label class="profile-field">
+                <span class="profile-field-label">Email для входа</span>
+                <input id="profile-email" type="email" readonly aria-describedby="profile-email-help">
+                <small id="profile-email-help">Подтверждённый адрес входа. Изменение через профиль недоступно.</small>
               </label>
               <label class="profile-field is-editable">
                 <span class="profile-field-label">Telegram</span>
@@ -1715,7 +1713,7 @@
       <div class="profile-shell reports-shell">
         <aside class="reports-howto-hint" role="note" aria-label="Как смотреть результаты">
           <span class="reports-howto-hint-label">Как смотреть результаты</span>
-          <p>Нажмите на нужную сессию, чтобы развернуть разбор по навыкам и комментарий эксперта. Внутри откроются кнопки <strong>«Открыть отчет»</strong> для полного экрана и <strong>«Скачать PDF»</strong> для сохранения копии.</p>
+          <p>Выберите оценку и сохранённую версию, затем нажмите <strong>«Открыть отчёт»</strong> или <strong>«Скачать PDF»</strong>. Прежние оценки доступны в архиве ниже.</p>
         </aside>
         <section class="card profile-history-card reports-history-card">
           <div class="profile-card-head">

@@ -1,0 +1,2 @@
+> lint:js
+> eslint web/js/*.js web/js/**/*.js

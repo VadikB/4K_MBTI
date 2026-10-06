@@ -1,0 +1,30 @@
+{
+  "files_sha256": {
+    "docs/evc/tasks/artifacts/independent-review/.gitattributes": "9618185d97a7b73972851bc179ac276080c298f79adbc1847951e647f4254c27",
+    "docs/evc/tasks/artifacts/independent-review/before.json": "090aefac62aeb73e760e4b925b303646a599c36cab4a2524178e0046cd9f360e",
+    "docs/evc/tasks/artifacts/independent-review/browser-c1-repeat.json": "cce464970aa5d102ecd1dd71422ae609e7b13e3d296110e61143a7382f995730",
+    "docs/evc/tasks/artifacts/independent-review/browser-fresh-final.json": "84ffc20a177b365311e058c1f8e50aa07b52ccbcb3ad1459fe0b484593649fb7",
+    "docs/evc/tasks/artifacts/independent-review/browser-full-initial.json": "e27f47d36f4cee6d3b4ab86ee95a9355b7b36ae3dd40d5684485be8a60165395",
+    "docs/evc/tasks/artifacts/independent-review/build.log": "5c44337c7e1db9c6e4b9fb7d6fb20e7a14ea75d2635791d4c0c87025f8e023f4",
+    "docs/evc/tasks/artifacts/independent-review/candidate.json": "de3fd605d35cf5a5e666c26e745a891918730b8a4a2a48fd0bd972d11c0b4c3c",
+    "docs/evc/tasks/artifacts/independent-review/fresh-profile/canonical-results.json": "583372f3320fff77fa8df0c1a4e4d78efda1b1a4e620b069955c84df8ac3dca6",
+    "docs/evc/tasks/artifacts/independent-review/fresh-profile/history-list.png": "31da5350be9e9d8f7c868e66c0953888c4cd47d932beb8410c95fb5b0255662f",
+    "docs/evc/tasks/artifacts/independent-review/fresh-profile/history-pdf-check.txt": "939e21f619130721e6e0cc4775b0bb76eda7a3f97734213553b52672828ecdd1",
+    "docs/evc/tasks/artifacts/independent-review/fresh-profile/history-pdf.pdf": "f134d47f9b5bbf4274315e0bc72a79c8ccb18fc1834eab8c6e9bf5acc73eed29",
+    "docs/evc/tasks/artifacts/independent-review/fresh-profile/history-report.png": "300876d8d206c52512161e5cff21a41d034930fd1deb5777b75562584fa3af62",
+    "docs/evc/tasks/artifacts/independent-review/fresh-profile/pdf-content-check.txt": "939e21f619130721e6e0cc4775b0bb76eda7a3f97734213553b52672828ecdd1",
+    "docs/evc/tasks/artifacts/independent-review/fresh-profile/profile-confirmation.png": "95f44b2d6fffea5be4426a60b12505ff82f25c9adb2aceaf35634a4eed264f29",
+    "docs/evc/tasks/artifacts/independent-review/fresh-profile/report-pdf.pdf": "55c17c6d2de3a58f1f88a9e345fd994b92adb0c46362c5266797dc565295d396",
+    "docs/evc/tasks/artifacts/independent-review/fresh-profile/report-ui.png": "300876d8d206c52512161e5cff21a41d034930fd1deb5777b75562584fa3af62",
+    "docs/evc/tasks/artifacts/independent-review/fresh-profile/report.json": "d7f41d1e72ac4fd8314b7190061ee1aa0db8a67edacf6e81740eda061086262c",
+    "docs/evc/tasks/artifacts/independent-review/frontend.log": "2b212066b8c46e67553ea5a5ab4991281f24e90be2327ad3ffe25ecef00c5c89",
+    "docs/evc/tasks/artifacts/independent-review/http.log": "724166e14b0f0147dd07277b9304f3d316f4ed10ae2166b95e75fa62f8f4687d",
+    "docs/evc/tasks/artifacts/independent-review/inputs/audit-checks.py": "0822c1cb4f01aac09c872567603b8633d3b277f803ee1682bad1cf358eb98037",
+    "docs/evc/tasks/artifacts/independent-review/inputs/audit-observed-results.json": "090aefac62aeb73e760e4b925b303646a599c36cab4a2524178e0046cd9f360e",
+    "docs/evc/tasks/artifacts/independent-review/inputs/independent-review.md": "1326fae99cafcf84072cea1f7f8a9f74c11e2d6494b4418eb4dedc4e50c16e68",
+    "docs/evc/tasks/artifacts/independent-review/integration.log": "53f8b37cd85c5fbd2cf2d5e5c47a420d414cdc37ba584cfe477da4b5b57a021f",
+    "docs/evc/tasks/artifacts/independent-review/lint.log": "9fb74435fb2a2a219ee50577da7f4b96553d05fd6e24c57c01e6ff0a8a6858ba",
+    "docs/evc/tasks/artifacts/independent-review/m4-final.log": "781d8adb85d573445f0a3aa93007fd37217a9bd16cb36bbbb550e5b91756898b",
+    "docs/evc/tasks/artifacts/independent-review/unit.log": "2471c1bb595040b46acbf4562c9afcaa16c2081ee8d04d2ce7cf963961c47ca7"
+  }
+}

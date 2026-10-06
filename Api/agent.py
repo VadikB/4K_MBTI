@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from Api.profile_access import require_unchanged_email
+
 import json
+from contextlib import nullcontext
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -306,9 +309,11 @@ class InterviewerAgent:
             )
             connection.commit()
 
-    def _persist_session(self, state: ConversationState) -> None:
-        self._ensure_session_schema()
-        with get_connection() as connection:
+    def _persist_session(self, state: ConversationState, connection=None) -> None:
+        shared = connection is not None
+        if not shared:
+            self._ensure_session_schema()
+        with nullcontext(connection) if shared else get_connection() as connection:
             connection.execute(
                 """
                 INSERT INTO agent_conversation_sessions (
@@ -365,11 +370,14 @@ class InterviewerAgent:
                     json.dumps(state.history, ensure_ascii=False),
                 ),
             )
-            connection.commit()
+            if not shared:
+                connection.commit()
 
-    def _restore_session(self, session_id: str) -> ConversationState | None:
-        self._ensure_session_schema()
-        with get_connection() as connection:
+    def _restore_session(self, session_id: str, connection=None) -> ConversationState | None:
+        shared = connection is not None
+        if not shared:
+            self._ensure_session_schema()
+        with nullcontext(connection) if shared else get_connection() as connection:
             row = connection.execute(
                 """
                 SELECT
@@ -2935,11 +2943,15 @@ class InterviewerAgent:
         role_match = selected_role_match or detected_role_match
         normalized_telegram = self.normalize_telegram(telegram)
         with get_connection() as connection:
+            if email is not None:
+                current = connection.execute('SELECT email FROM users WHERE id=%s FOR UPDATE', (user_id,)).fetchone()
+                if current is None:
+                    raise ValueError('User not found')
+                require_unchanged_email(current['email'], email)
             row = connection.execute(
                 """
                 UPDATE users
                 SET full_name = COALESCE(%s, full_name),
-                    email = COALESCE(%s, email),
                     job_description = %s,
                     role_id = %s,
                     telegram = COALESCE(%s, telegram),
@@ -2949,7 +2961,6 @@ class InterviewerAgent:
                 """,
                 (
                     full_name,
-                    email,
                     clean_position,
                     selected_role_match.role_id if selected_role_match else None,
                     normalized_telegram,
@@ -3039,7 +3050,7 @@ class InterviewerAgent:
             role_options=self._build_role_options() if user is not None or state.stage == ConversationStage.ASK_ROLE else None,
         )
 
-    def reply(self, session_id: str, message: str, progress_operation_id: str | None = None) -> AgentReply:
+    def reply(self, session_id: str, message: str, progress_operation_id: str | None = None, *, authenticated_user_id: int) -> AgentReply:
         text = _trimmed(message)
         if not text:
             raise ValueError("Message is required")
@@ -3054,6 +3065,8 @@ class InterviewerAgent:
             with self._lock:
                 self._sessions[session_id] = state
 
+        if state.user_id != authenticated_user_id:
+            raise PermissionError("Profile session does not belong to the authenticated user")
         state.history.append({"role": "user", "content": text})
 
         if state.mode == ConversationMode.EXISTING_USER:
@@ -3063,6 +3076,48 @@ class InterviewerAgent:
 
         self._persist_session(state)
         return reply
+
+    def confirm_personalized_profile(self, connection, *, payload, authenticated_user_id):
+        """Canonical participant path; caller owns the single transaction, no LLM/legacy role mapping."""
+        from Api import participant_profile
+        connection.execute('SELECT id FROM users WHERE id=%s FOR UPDATE', (authenticated_user_id,))
+        state = self._restore_session(payload.session_id, connection)
+        if state is None or not state.user:
+            raise KeyError('Session not found')
+        if state.user_id != authenticated_user_id:
+            raise PermissionError('Profile session does not belong to the authenticated user')
+        require_unchanged_email(state.user.email, payload.email)
+        if state.user.personal_data_consent_accepted_at is None and not payload.consent_accepted:
+            raise ValueError('Необходимо подтвердить согласие на обработку персональных данных.')
+        snapshot = participant_profile.confirm(connection, user_id=authenticated_user_id,
+            selection=payload.personalized_profile, full_name=payload.full_name,
+            position=payload.position, duties=payload.duties)
+        connection.execute("""UPDATE users SET full_name=%s, job_description=%s,
+            company_industry=%s, telegram=%s WHERE id=%s""",
+            (payload.full_name, payload.position, payload.company_industry,
+             self.normalize_telegram(payload.telegram), authenticated_user_id))
+        if state.user.personal_data_consent_accepted_at is None:
+            connection.execute("""UPDATE users SET personal_data_consent_accepted_at=CURRENT_TIMESTAMP,
+                personal_data_consent_version=%s,personal_data_consent_text=%s WHERE id=%s""",
+                (state.consent_version, state.consent_text, authenticated_user_id))
+        changed = state.stage != ConversationStage.COMPLETE or any(
+            getattr(state, field) != getattr(payload, field)
+            for field in ('full_name', 'position', 'duties', 'telegram', 'company_industry'))
+        for field in ('full_name', 'position', 'duties', 'telegram', 'company_industry'):
+            setattr(state, field, getattr(payload, field))
+        state.stage = ConversationStage.COMPLETE
+        state.user = self._load_user_by_id(connection, authenticated_user_id)
+        reply_text = 'Профиль подтверждён. Контекст оценки готов.'
+        if changed:
+            state.history.extend([{'role': 'user', 'content': 'Подтверждение профиля через форму'},
+                                  {'role': 'assistant', 'content': reply_text}])
+        self._persist_session(state, connection)
+        return AgentReply(session_id=state.session_id, message=reply_text, stage=state.stage,
+                          completed=True, user=state.user), snapshot['id']
+
+    def invalidate_session(self, session_id):
+        with self._lock:
+            self._sessions.pop(session_id, None)
 
     def confirm_existing_profile(
         self,

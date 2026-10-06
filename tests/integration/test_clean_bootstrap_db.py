@@ -28,7 +28,7 @@ def test_two_empty_database_application_starts_and_owner_http_reports(tmp_path):
     # This is deliberately FAIL, not skip, when explicitly running integration without its DB.
     url=os.getenv('TEST_DATABASE_URL')
     assert url,'TEST_DATABASE_URL required for clean bootstrap regression'
-    env={**os.environ,'STAND_ADMIN_URL':url}
+    env={**os.environ,'STAND_ADMIN_URL':os.getenv('STAND_ADMIN_URL') or url}
     for index in range(2):
         result=subprocess.run([sys.executable,'scripts/test_stand_check.py','--directory',str(tmp_path/str(index)),
             '--port',str(18730+index)],env=env,capture_output=True,text=True,timeout=240)
@@ -43,7 +43,7 @@ def test_bootstrap_rejects_unknown_state_and_detects_structural_drift(tmp_path):
     import psycopg
     url=os.getenv('TEST_DATABASE_URL')
     assert url,'TEST_DATABASE_URL required'
-    env={**os.environ,'STAND_ADMIN_URL':url}
+    env={**os.environ,'STAND_ADMIN_URL':os.getenv('STAND_ADMIN_URL') or url}
     state_path=tmp_path/'negative.json'
     def run(action,ok=True):
         result=subprocess.run([sys.executable,'scripts/test_stand.py',action,'--state',str(state_path)],env=env,capture_output=True,text=True,timeout=60)

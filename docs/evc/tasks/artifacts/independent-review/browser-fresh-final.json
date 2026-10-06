@@ -1,0 +1,5 @@
+{
+  "scenario": "REV-02 fresh M4 confirmation, canonical context and saved history after login",
+  "status": "passed",
+  "duration_ms": 23130
+}

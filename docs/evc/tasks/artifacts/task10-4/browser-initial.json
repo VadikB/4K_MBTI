@@ -1,0 +1,102 @@
+{
+  "stats": {
+    "startTime": "2026-10-05T13:40:49.194Z",
+    "duration": 666470.767,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "title": "S10-A and T11-10 positive, clarification and saved Report/PDF",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration_ms": 146100,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "S10-B interruption and Additional Session preserve Cycle and deadline",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration_ms": 50898,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "S10-C1 background time closure without another Turn",
+      "status": "unexpected",
+      "results": [
+        {
+          "status": "failed",
+          "duration_ms": 65076,
+          "errors": [
+            "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#assessment-action-button')\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('#assessment-action-button') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#assessment-action-button')\u001b[22m\n\u001b[2m    6 × locator resolved to <button type=\"button\" class=\"primary-button\" id=\"assessment-action-button\">Продолжить</button>\u001b[22m\n\u001b[2m      - unexpected value \"hidden\"\u001b[22m\n\n\n  88 |  }\n  89 |  await confirm.click();\n> 90 |  await expect(page.locator('#assessment-action-button')).toBeVisible();\n     |                                                          ^\n  91 | }\n  92 | async function start(page,expected='готовности'){\n  93 |  await page.locator('#assessment-action-button').click();\n    at login (/Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation/tests/browser/runtime.spec.mjs:90:58)\n    at /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation/tests/browser/runtime.spec.mjs:207:2"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "S10-C2 background time closure without another Turn",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration_ms": 113364,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "Recovery: lost response, unaccepted request, two tabs and owner boundaries",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration_ms": 75602,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "S10-A character branch: actual character Turn, order and no invented recommendation",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration_ms": 69988,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "REV-02 fresh M4 confirmation, canonical context and saved history after login",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration_ms": 84171,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "S10.4 owner profile, 403, logout, late response and account switch",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration_ms": 48270,
+          "errors": []
+        }
+      ]
+    }
+  ]
+}
