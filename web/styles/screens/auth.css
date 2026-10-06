@@ -1,3 +1,11 @@
+@font-face {
+    font-family: "Onest";
+    src: url("/web/assets/fonts/onest/Onest-Variable.woff") format("woff");
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+}
+
 .auth-panel .brand {
     margin-bottom: var(--space-4);
     color: var(--text-main);
@@ -313,6 +321,8 @@
         0 24px 64px -42px rgba(34, 44, 48, 0.46),
         0 10px 24px -20px rgba(34, 44, 48, 0.18);
     color: var(--entry-graphite);
+    font-family: "Onest", var(--font-body);
+    font-synthesis: none;
 }
 
 .auth-panel::before {
