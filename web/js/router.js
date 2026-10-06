@@ -1,6 +1,7 @@
 import { state, persistAssessmentContext, clearAssessmentContext } from './state.js';
 import {
   authPanel,
+  authCompletePanel,
   emailInput,
   authTokenForm,
   authCredentialLabel,
@@ -29,6 +30,7 @@ import {
 
 export const hideAllPanels = () => {
   authPanel.classList.add('hidden');
+  authCompletePanel?.classList.add('hidden');
   onboardingPanel.classList.add('hidden');
   dashboardPanel.classList.add('hidden');
   adminPanel.classList.add('hidden');
@@ -52,6 +54,14 @@ export const hideAllPanels = () => {
   processingPanel.classList.add('hidden');
   reportPanel.classList.add('hidden');
   chatPanel.classList.add('hidden');
+};
+
+export const openAuthComplete = () => {
+  hideAllPanels();
+  state.currentScreen = 'auth-complete';
+  persistAssessmentContext();
+  authCompletePanel?.classList.remove('hidden');
+  window.history.replaceState({ screen: 'auth-complete' }, '', '/?screen=auth-complete');
 };
 
 export const navigateToScreen = (screen) => {

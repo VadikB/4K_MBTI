@@ -62,8 +62,8 @@
         <div id="app-release-badge" class="release-badge">Релиз <span id="app-release-number">1</span></div>
       </div>
       <div class="auth-panel-copy">
-        <h1>Добро пожаловать</h1>
-        <p class="subtitle">Введите рабочий email, чтобы продолжить вход.</p>
+        <h1 id="auth-title">Добро пожаловать</h1>
+        <p id="auth-subtitle" class="subtitle">Введите рабочий email, чтобы продолжить вход.</p>
       </div>
       <div id="organization-invitation-context" class="organization-invitation-context hidden" aria-live="polite">
         <strong id="organization-invitation-name"></strong>
@@ -108,9 +108,20 @@
           </span>
         </label>
         <button id="verify-magic-link-button" type="submit" class="primary-button">Войти</button>
+        <button id="auth-change-credential-email-button" type="button" class="ghost-button auth-secondary-action">Указать другой email</button>
       </form>
       <p id="auth-status" class="subtitle auth-status hidden"></p>
       <p id="auth-error" class="error" hidden></p>
+    </section>
+
+    <section class="panel auth-complete-panel hidden" id="auth-complete-panel">
+      <div class="auth-complete-mark" aria-hidden="true">✓</div>
+      <div class="auth-complete-copy">
+        <p class="auth-complete-eyebrow">Вход выполнен</p>
+        <h1>Следующий этап готовится</h1>
+        <p>Доступ к организации подтверждён. Здесь появится следующий шаг, когда он будет готов.</p>
+      </div>
+      <button id="auth-complete-logout-button" type="button" class="ghost-button">Выйти</button>
     </section>
 
     <section class="panel onboarding-panel hidden" id="onboarding-panel">

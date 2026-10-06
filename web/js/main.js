@@ -20,7 +20,7 @@ import {
   installSessionRequestTracking,
   registerUnauthorizedResponseHandler,
 } from './api.js';
-import { hideAllPanels, returnToStart } from './router.js';
+import { hideAllPanels, openAuthComplete, returnToStart } from './router.js';
 import { activateOrganizationInvitation, handleAuthActionToken, initWiring, verifyEmailMagicLinkToken } from './wiring.js';
 import {
   openProcessingScreen,
@@ -219,6 +219,10 @@ const bootApp = async () => {
   }
 
   if (state.pendingUser?.id) {
+    if (state.currentScreen === 'auth-complete' && !state.isAdmin) {
+      openAuthComplete();
+      return;
+    }
     const cycleId = params.get('cycle_id') || state.productCycleId;
     if (screen === 'interview' && cycleId) {
       const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(cycleId) + '/runtime', { credentials: 'same-origin' });

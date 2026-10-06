@@ -220,6 +220,77 @@
     }
 }
 
+.auth-complete-panel {
+    display: flex;
+    flex-direction: column;
+    align-self: center;
+    width: min(calc(100% - 40px), 520px);
+    max-width: 520px;
+    min-height: auto;
+    padding: 44px;
+    gap: 24px;
+    border: 1px solid rgba(34, 44, 48, 0.08);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 24px 64px -42px rgba(34, 44, 48, 0.46);
+    color: #222c30;
+    text-align: left;
+}
+
+.auth-complete-mark {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    border-radius: 50%;
+    background: #d8f5f7;
+    color: #108d99;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.auth-complete-copy {
+    display: grid;
+    gap: 10px;
+}
+
+.auth-complete-copy h1,
+.auth-complete-copy p {
+    margin: 0;
+}
+
+.auth-complete-copy h1 {
+    font-family: "Onest", var(--font-heading);
+    font-size: clamp(1.8rem, 1.6rem + 0.8vw, 2.25rem);
+    line-height: 1.15;
+}
+
+.auth-complete-copy p {
+    color: #718084;
+    line-height: 1.55;
+}
+
+.auth-complete-copy .auth-complete-eyebrow {
+    color: #108d99;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.auth-complete-panel .ghost-button {
+    width: 100%;
+    min-height: 52px;
+}
+
+@media (max-width: 520px) {
+    .auth-complete-panel {
+        width: min(calc(100% - 24px), 520px);
+        padding: 30px 22px;
+        border-radius: 16px;
+    }
+}
+
 /* UX-01: the Lidum visual system is intentionally scoped to entry screens. */
 .auth-panel {
     --entry-graphite: #222c30;

@@ -15,6 +15,8 @@ import {
   authPasswordConfirmToggleButton,
   requestMagicLinkButton,
   forgotPasswordButton,
+  authTitle,
+  authSubtitle,
   authEmailSent,
   authEmailSentAddress,
   authResendEmailButton,
@@ -25,6 +27,8 @@ import {
   organizationInvitationContext,
   organizationInvitationName,
   organizationInvitationIntro,
+  authChangeCredentialEmailButton,
+  authCompleteLogoutButton,
   chatForm,
   chatInput,
   restartButton,
@@ -183,7 +187,7 @@ import {
   isAdminUserPayload,
 } from './utils/format.js';
 import { showError } from './components/errors.js';
-import { navigateBackOrFallback } from './router.js';
+import { navigateBackOrFallback, openAuthComplete } from './router.js';
 import { hideLoader } from './utils/loader.js';
 import { logoutAndReturnToStart } from './session.js';
 import { setProfileStatus } from './components/profile-avatar.js';
@@ -244,6 +248,9 @@ let authPasswordVisible = false;
 let authPasswordConfirmVisible = false;
 let authActionToken = '';
 let authResendTimer = null;
+let authRequestInFlight = false;
+let authCredentialInFlight = false;
+let authResetRequestInFlight = false;
 const AUTH_RESEND_COOLDOWN_SECONDS = 60;
 
 const stopAuthResendCountdown = () => {
@@ -286,6 +293,8 @@ const showEmailEntry = () => {
   authEmailSent?.classList.add('hidden');
   authTokenForm?.classList.add('hidden');
   authEmailForm?.classList.remove('hidden');
+  if (authTitle) authTitle.textContent = 'Добро пожаловать';
+  if (authSubtitle) authSubtitle.textContent = 'Введите рабочий email, чтобы продолжить вход.';
   setAuthStatus('');
   showError(authError, '');
   emailInput?.focus();
@@ -401,6 +410,14 @@ const configureAuthCredentialForm = (mode) => {
   const isReset = authCredentialMode === 'password_reset';
   const isNewPassword = isRegistration || isReset;
   const isPasswordMode = authCredentialMode === 'password' || isNewPassword;
+  authEmailForm?.classList.add('hidden');
+  authEmailSent?.classList.add('hidden');
+  if (authTitle) authTitle.textContent = isReset ? 'Новый пароль' : isRegistration ? 'Завершите регистрацию' : 'Вход';
+  if (authSubtitle) authSubtitle.textContent = isReset
+    ? 'Задайте новый пароль для рабочего аккаунта.'
+    : isRegistration
+      ? 'Email подтверждён. Теперь задайте пароль.'
+      : `Введите пароль для ${authCredentialEmail || 'рабочего аккаунта'}.`;
   if (authCredentialLabel) {
     authCredentialLabel.textContent = isPasswordMode ? 'Пароль' : 'Код или ссылка для входа';
   }
@@ -507,12 +524,21 @@ const applyAuthResponse = async (data) => {
     return;
   }
 
+  state.sessionId = null;
+  state.pendingAgentMessage = null;
+  state.pendingRoleOptions = [];
+  state.pendingActionOptions = [];
+  state.pendingConsentTitle = null;
+  state.pendingConsentText = null;
+  state.pendingNoChangesQuickReply = false;
   hideLoader();
-  const chatModule = await loadChat();
-  chatModule.openChat();
+  setCurrentScreen('auth-complete');
+  persistAssessmentContext();
+  openAuthComplete();
 };
 
 const handleEmailMagicLinkRequest = async () => {
+  if (authRequestInFlight) return;
   showError(authError, '');
   setAuthStatus('');
 
@@ -524,8 +550,10 @@ const handleEmailMagicLinkRequest = async () => {
   }
 
   try {
+    authRequestInFlight = true;
     if (requestMagicLinkButton) {
       requestMagicLinkButton.disabled = true;
+      requestMagicLinkButton.setAttribute('aria-busy', 'true');
       requestMagicLinkButton.textContent = 'Проверяем...';
     }
     if (emailInput) {
@@ -592,11 +620,13 @@ const handleEmailMagicLinkRequest = async () => {
   } finally {
     if (requestMagicLinkButton) {
       requestMagicLinkButton.disabled = false;
+      requestMagicLinkButton.removeAttribute('aria-busy');
       requestMagicLinkButton.textContent = 'Продолжить';
     }
     if (emailInput) {
       emailInput.disabled = false;
     }
+    authRequestInFlight = false;
   }
 };
 
@@ -627,6 +657,7 @@ export const verifyEmailMagicLinkToken = async (tokenValue = null) => {
 };
 
 const submitEmailPassword = async () => {
+  if (authCredentialInFlight) return;
   showError(authError, '');
   const email = String(authCredentialEmail || emailInput?.value || '').trim();
   const password = String(magicTokenInput?.value || '');
@@ -651,8 +682,10 @@ const submitEmailPassword = async () => {
   }
 
   try {
+    authCredentialInFlight = true;
     if (verifyMagicLinkButton) {
       verifyMagicLinkButton.disabled = true;
+      verifyMagicLinkButton.setAttribute('aria-busy', 'true');
       verifyMagicLinkButton.textContent = isReset ? 'Сохраняем...' : isRegistration ? 'Регистрируем...' : 'Входим...';
     }
     const response = await fetch(
@@ -697,8 +730,10 @@ const submitEmailPassword = async () => {
   } finally {
     if (verifyMagicLinkButton) {
       verifyMagicLinkButton.disabled = false;
+      verifyMagicLinkButton.removeAttribute('aria-busy');
       verifyMagicLinkButton.textContent = isReset ? 'Сохранить новый пароль' : isRegistration ? 'Задать пароль и войти' : 'Войти';
     }
+    authCredentialInFlight = false;
   }
 };
 
@@ -728,6 +763,7 @@ export const handleAuthActionToken = async (action, tokenValue) => {
 };
 
 const requestPasswordReset = async () => {
+  if (authResetRequestInFlight) return;
   showError(authError, '');
   const email = String(emailInput?.value || '').trim();
   if (!email) {
@@ -736,6 +772,9 @@ const requestPasswordReset = async () => {
     return;
   }
   try {
+    authResetRequestInFlight = true;
+    forgotPasswordButton?.setAttribute('aria-busy', 'true');
+    if (forgotPasswordButton) forgotPasswordButton.disabled = true;
     const response = await fetch('/users/auth/password/forgot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -748,6 +787,10 @@ const requestPasswordReset = async () => {
     }
   } catch (error) {
     showError(authError, error.message);
+  } finally {
+    authResetRequestInFlight = false;
+    forgotPasswordButton?.removeAttribute('aria-busy');
+    if (forgotPasswordButton) forgotPasswordButton.disabled = false;
   }
 };
 
@@ -776,6 +819,14 @@ if (forgotPasswordButton) {
 
 if (authChangeEmailButton) {
   authChangeEmailButton.addEventListener('click', showEmailEntry);
+}
+
+if (authChangeCredentialEmailButton) {
+  authChangeCredentialEmailButton.addEventListener('click', showEmailEntry);
+}
+
+if (authCompleteLogoutButton) {
+  authCompleteLogoutButton.addEventListener('click', () => void logoutAndReturnToStart(authCompleteLogoutButton));
 }
 
 if (authResendEmailButton) {

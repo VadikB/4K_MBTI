@@ -76,7 +76,7 @@ export const restoreServerSession = async () => {
     state.pendingNoChangesQuickReply = false;
     state.currentScreen = 'admin';
   } else if (!state.currentScreen || state.currentScreen === 'auth') {
-    state.currentScreen = state.dashboard ? 'dashboard' : 'chat';
+    state.currentScreen = 'auth-complete';
   }
   persistAssessmentContext();
   return true;
@@ -104,7 +104,7 @@ export const restoreLocalUserSession = async () => {
       state.pendingNoChangesQuickReply = false;
       state.currentScreen = 'admin';
     } else if (!state.currentScreen || state.currentScreen === 'auth') {
-      state.currentScreen = 'dashboard';
+      state.currentScreen = 'auth-complete';
     }
     persistAssessmentContext();
     return true;
