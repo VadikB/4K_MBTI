@@ -78,6 +78,15 @@ async function login(page,stand,email='participant@example.test'){
  await expect(confirm).toBeVisible();await confirm.click();
  await expect(page.locator('#assessment-action-button')).toBeVisible();
 }
+test('Same-domain email outside the exact allowlist is denied',async({page,stand})=>{
+ await page.goto(stand.url);
+ await page.locator('#email-input').fill('outside@example.test');
+ const denied=page.waitForResponse(response=>new URL(response.url()).pathname==='/users/auth/email/request-link');
+ await page.locator('#request-magic-link-button').click();
+ expect((await denied).status()).toBe(403);
+ await expect(page.locator('#auth-error')).toBeVisible();
+ await expect(page.locator('#auth-token-form')).toBeHidden();
+});
 async function start(page,expected='готовности'){
  await page.locator('#assessment-action-button').click();
  await page.locator('#prechat-start-button').click();

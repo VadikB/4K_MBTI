@@ -4274,10 +4274,54 @@ def ensure_core_schema() -> None:
                 organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
                 user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('member', 'admin')),
+                admission_source TEXT NOT NULL DEFAULT 'legacy_unclassified',
+                admitted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+                admitted_at TIMESTAMP,
                 created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
                 UNIQUE (organization_id, user_id)
             )
+            """
+        )
+        connection.execute(
+            "ALTER TABLE organization_memberships ADD COLUMN IF NOT EXISTS admission_source "
+            "TEXT NOT NULL DEFAULT 'legacy_unclassified'"
+        )
+        connection.execute(
+            "ALTER TABLE organization_memberships ADD COLUMN IF NOT EXISTS admitted_by_user_id "
+            "BIGINT REFERENCES users(id) ON DELETE SET NULL"
+        )
+        connection.execute("ALTER TABLE organization_memberships ADD COLUMN IF NOT EXISTS admitted_at TIMESTAMP")
+        connection.execute(
+            """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = 'organization_memberships_admission_source_check'
+                      AND conrelid = 'organization_memberships'::regclass
+                ) THEN
+                    ALTER TABLE organization_memberships
+                    ADD CONSTRAINT organization_memberships_admission_source_check
+                    CHECK (admission_source IN (
+                        'legacy_unclassified', 'admin_add', 'csv_import', 'configured_admin'
+                    ));
+                END IF;
+            END $$
+            """
+        )
+        connection.execute(
+            """
+            DO $$
+            BEGIN
+                IF to_regclass('web_user_sessions') IS NOT NULL THEN
+                    DELETE FROM web_user_sessions session
+                    USING organization_memberships membership
+                    WHERE session.user_id = membership.user_id
+                      AND membership.role = 'member'
+                      AND membership.admission_source = 'legacy_unclassified';
+                END IF;
+            END $$
             """
         )
         connection.execute(

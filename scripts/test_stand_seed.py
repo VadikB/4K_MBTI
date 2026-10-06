@@ -36,7 +36,9 @@ def seed(state):
                 company_industry='Техническая проверка',personal_data_consent_accepted_at=NOW(),
                 personal_data_consent_version=1,personal_data_consent_text='Synthetic fixture; not a real consent',
                 telegram='@synthetic_e102' WHERE id=%s""",(legacy_role,profile,uid))
-            c.execute("INSERT INTO organization_memberships(organization_id,user_id,role) VALUES(%s,%s,'member')",(org,uid))
+            c.execute("""INSERT INTO organization_memberships(
+                organization_id,user_id,role,admission_source,admitted_at
+            ) VALUES(%s,%s,'member','csv_import',NOW())""",(org,uid))
             salt,digest=_hash_password(state['password'])
             c.execute('INSERT INTO auth_password_credentials(user_id,email,password_hash,password_salt) VALUES(%s,%s,%s,%s)',(uid,email,digest,salt))
             c.execute("INSERT INTO user_identities(user_id,provider,email,is_primary,is_verified,verified_at) VALUES(%s,'email_magic_link',%s,TRUE,TRUE,NOW())",(uid,email))

@@ -1039,12 +1039,10 @@ def _ensure_org_admin_user(connection, *, email: str, full_name: str | None = No
         connection.execute(
             """
             INSERT INTO user_identities (user_id, provider, provider_subject, email, is_primary, is_verified, verified_at, updated_at)
-            VALUES (%s, %s, %s, %s, TRUE, TRUE, NOW(), NOW())
+            VALUES (%s, %s, %s, %s, TRUE, FALSE, NULL, NOW())
             ON CONFLICT (provider, provider_subject) WHERE provider_subject IS NOT NULL DO UPDATE
             SET user_id = EXCLUDED.user_id,
                 email = EXCLUDED.email,
-                is_verified = TRUE,
-                verified_at = NOW(),
                 updated_at = NOW()
             """,
             (user_id, "email_magic_link", normalized_email, normalized_email),
@@ -1057,8 +1055,6 @@ def _ensure_org_admin_user(connection, *, email: str, full_name: str | None = No
                 provider = %s,
                 provider_subject = %s,
                 is_primary = TRUE,
-                is_verified = TRUE,
-                verified_at = NOW(),
                 updated_at = NOW()
             WHERE id = %s
             """,
@@ -1114,12 +1110,10 @@ def _ensure_org_member_user(
     connection.execute(
         """
         INSERT INTO user_identities (user_id, provider, provider_subject, email, is_primary, is_verified, verified_at, updated_at)
-        VALUES (%s, %s, %s, %s, TRUE, TRUE, NOW(), NOW())
+        VALUES (%s, %s, %s, %s, TRUE, FALSE, NULL, NOW())
         ON CONFLICT (provider, provider_subject) WHERE provider_subject IS NOT NULL DO UPDATE
         SET user_id = EXCLUDED.user_id,
             email = EXCLUDED.email,
-            is_verified = TRUE,
-            verified_at = NOW(),
             updated_at = NOW()
         """,
         (user_id, "email_magic_link", normalized_email, normalized_email),
@@ -1201,6 +1195,8 @@ def _attach_user_to_organization(
     full_name: str | None = None,
     role_description: str | None = None,
     job_instructions: str | None = None,
+    admission_source: str,
+    admitted_by_user_id: int,
 ) -> int:
     org_row = connection.execute(
         "SELECT id FROM organizations WHERE id = %s AND is_active = TRUE LIMIT 1",
@@ -1216,12 +1212,17 @@ def _attach_user_to_organization(
     )
     connection.execute(
         """
-        INSERT INTO organization_memberships (organization_id, user_id, role)
-        VALUES (%s, %s, 'member')
+        INSERT INTO organization_memberships (
+            organization_id, user_id, role, admission_source, admitted_by_user_id, admitted_at
+        )
+        VALUES (%s, %s, 'member', %s, %s, NOW())
         ON CONFLICT (organization_id, user_id) DO UPDATE
-        SET updated_at = NOW()
+        SET admission_source = EXCLUDED.admission_source,
+            admitted_by_user_id = EXCLUDED.admitted_by_user_id,
+            admitted_at = EXCLUDED.admitted_at,
+            updated_at = NOW()
         """,
-        (organization_id, user_id),
+        (organization_id, user_id, admission_source, admitted_by_user_id),
     )
     connection.execute("SAVEPOINT org_member_profile")
     try:
@@ -3112,7 +3113,8 @@ def reopen_profile_session(request: Request, response: FastAPIResponse) -> Check
 
 
 @router.get("/{user_id}/session-bootstrap", response_model=UserSessionBootstrapResponse)
-def bootstrap_user_session(user_id: int) -> UserSessionBootstrapResponse:
+def bootstrap_user_session(user_id: int, request: Request) -> UserSessionBootstrapResponse:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         row = connection.execute(
             USER_SELECT_SQL
@@ -3147,6 +3149,23 @@ def _require_matching_session_user(request: Request, user_id: int) -> UserRespon
     if user is None:
         raise HTTPException(status_code=401, detail="Сессия не найдена. Войдите заново.")
     if user.id != user_id:
+        raise HTTPException(status_code=403, detail="Нет доступа к состоянию другого пользователя.")
+    return user
+
+
+def _require_assessment_session_owner(request: Request, session_code: str) -> UserResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Сессия не найдена. Войдите заново.")
+    with get_connection() as connection:
+        session_row = connection.execute(
+            "SELECT user_id FROM user_sessions WHERE session_code = %s LIMIT 1",
+            (session_code,),
+        ).fetchone()
+    if session_row is None:
+        raise HTTPException(status_code=404, detail="Assessment session not found")
+    if int(session_row["user_id"]) != int(user.id):
         raise HTTPException(status_code=403, detail="Нет доступа к состоянию другого пользователя.")
     return user
 
@@ -3484,13 +3503,18 @@ def add_admin_organization_admin(organization_id: int, payload: AdminOrganizatio
         user_id = _ensure_org_admin_user(connection, email=normalized_email, full_name=payload.full_name)
         connection.execute(
             """
-            INSERT INTO organization_memberships (organization_id, user_id, role)
-            VALUES (%s, %s, 'admin')
+            INSERT INTO organization_memberships (
+                organization_id, user_id, role, admission_source, admitted_by_user_id, admitted_at
+            )
+            VALUES (%s, %s, 'admin', 'admin_add', %s, NOW())
             ON CONFLICT (organization_id, user_id) DO UPDATE
             SET role = 'admin',
+                admission_source = EXCLUDED.admission_source,
+                admitted_by_user_id = EXCLUDED.admitted_by_user_id,
+                admitted_at = EXCLUDED.admitted_at,
                 updated_at = NOW()
             """,
-            (organization_id, user_id),
+            (organization_id, user_id, int(user.id)),
         )
         connection.commit()
         return _build_admin_organizations(connection)
@@ -3544,6 +3568,8 @@ def add_admin_organization_member(organization_id: int, payload: AdminOrganizati
             full_name=payload.full_name,
             role_description=payload.role_description,
             job_instructions=payload.job_instructions,
+            admission_source="admin_add",
+            admitted_by_user_id=int(user.id),
         )
         connection.commit()
         return _build_admin_organizations(connection)
@@ -3905,6 +3931,8 @@ def import_admin_organization_members(
                     full_name=_csv_value(row, "full_name", "name", "fio", "фио"),
                     role_description=_csv_value(row, "role_description", "position", "job_title", "role", "должность", "роль"),
                     job_instructions=_csv_value(row, "job_instructions", "duties", "instructions", "job_description", "обязанности", "инструкции"),
+                    admission_source="csv_import",
+                    admitted_by_user_id=int(user.id),
                 )
                 imported_count += 1
             except Exception as exc:
@@ -6040,8 +6068,10 @@ def logout_user_session(request: Request, response: FastAPIResponse) -> dict[str
     return {"ok": True}
 
 @router.get("", response_model=list[UserResponse])
-def get_users() -> list[UserResponse]:
+def get_users(request: Request) -> list[UserResponse]:
     with get_connection() as connection:
+        current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+        _require_superadmin(connection, current_user)
         rows = connection.execute(
             USER_SELECT_SQL
             + """
@@ -6053,7 +6083,8 @@ def get_users() -> list[UserResponse]:
 
 
 @router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: int) -> UserResponse:
+def get_user(user_id: int, request: Request) -> UserResponse:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         row = connection.execute(
             USER_SELECT_SQL
@@ -6070,7 +6101,8 @@ def get_user(user_id: int) -> UserResponse:
 
 
 @router.get("/{user_id}/profile-summary", response_model=UserProfileSummaryResponse)
-def get_user_profile_summary(user_id: int) -> UserProfileSummaryResponse:
+def get_user_profile_summary(user_id: int, request: Request) -> UserProfileSummaryResponse:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         user_row = connection.execute(
             USER_SELECT_SQL
@@ -6158,7 +6190,8 @@ def get_user_profile_summary(user_id: int) -> UserProfileSummaryResponse:
 
 
 @router.patch("/{user_id}/profile", response_model=UserResponse)
-def update_user_profile(user_id: int, payload: UserProfileUpdateRequest) -> UserResponse:
+def update_user_profile(user_id: int, payload: UserProfileUpdateRequest, request: Request) -> UserResponse:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         existing = connection.execute(
             USER_SELECT_SQL
@@ -6205,6 +6238,8 @@ def update_user_profile(user_id: int, payload: UserProfileUpdateRequest) -> User
 
 @router.post("/agent/message", response_model=AgentReply)
 def process_agent_message(payload: AgentMessageRequest, request: Request, response: FastAPIResponse) -> AgentReply:
+    if web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME)) is None:
+        raise HTTPException(status_code=401, detail="Сессия не найдена. Войдите заново.")
     operation_id = request.headers.get("X-Agent4K-Operation-Id")
     try:
         operation_progress_service.begin(
@@ -6407,6 +6442,7 @@ def get_assessment_preparation(operation_id: str, request: Request) -> Assessmen
 
 @router.post("/assessment/message", response_model=AssessmentMessageResponse)
 def process_assessment_message(payload: AssessmentMessageRequest, request: Request) -> AssessmentMessageResponse:
+    _require_assessment_session_owner(request, payload.session_code)
     operation_id = request.headers.get("X-Agent4K-Operation-Id")
     try:
         operation_progress_service.begin(
@@ -6489,6 +6525,7 @@ def retry_assessment_analysis(
 
 @router.post("/assessment/client-event")
 def log_assessment_client_event(payload: AssessmentClientEventRequest, request: Request) -> dict:
+    _require_assessment_session_owner(request, payload.session_code)
     assessment_logger.info(
         "Assessment client event event=%s message_type=%s session_code=%s case_number=%s error_type=%s user_agent=%s",
         payload.event[:64],
@@ -6502,7 +6539,8 @@ def log_assessment_client_event(payload: AssessmentClientEventRequest, request: 
 
 
 @router.post("/assessment/pause")
-def pause_assessment_timer(payload: AssessmentTimerControlRequest) -> dict:
+def pause_assessment_timer(payload: AssessmentTimerControlRequest, request: Request) -> dict:
+    _require_assessment_session_owner(request, payload.session_code)
     try:
         assessment_service.pause_assessment_dialogue(payload.session_code)
         return {"ok": True}
@@ -6511,7 +6549,8 @@ def pause_assessment_timer(payload: AssessmentTimerControlRequest) -> dict:
 
 
 @router.get("/{user_id}/assessment/{session_id}/skill-assessments", response_model=list[SkillAssessmentResponse])
-def get_skill_assessments(user_id: int, session_id: int) -> list[SkillAssessmentResponse]:
+def get_skill_assessments(user_id: int, session_id: int, request: Request) -> list[SkillAssessmentResponse]:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         user_row = connection.execute(
             "SELECT id FROM users WHERE id = %s",
@@ -6572,7 +6611,8 @@ def get_skill_assessments(user_id: int, session_id: int) -> list[SkillAssessment
     "/{user_id}/assessment/by-code/{session_code}",
     response_model=AssessmentSessionLookupResponse,
 )
-def get_assessment_session_by_code(user_id: int, session_code: str) -> AssessmentSessionLookupResponse:
+def get_assessment_session_by_code(user_id: int, session_code: str, request: Request) -> AssessmentSessionLookupResponse:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         user_row = connection.execute(
             "SELECT id FROM users WHERE id = %s",
@@ -6604,7 +6644,12 @@ def get_assessment_session_by_code(user_id: int, session_code: str) -> Assessmen
     "/{user_id}/assessment/{session_id}/report-interpretation",
     response_model=AssessmentReportInterpretationResponse,
 )
-def get_report_interpretation(user_id: int, session_id: int) -> AssessmentReportInterpretationResponse:
+def get_report_interpretation(
+    user_id: int,
+    session_id: int,
+    request: Request,
+) -> AssessmentReportInterpretationResponse:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         user_row = connection.execute(
             "SELECT id FROM users WHERE id = %s",
@@ -6684,7 +6729,12 @@ def get_report_interpretation(user_id: int, session_id: int) -> AssessmentReport
     "/{user_id}/assessment/{session_id}/structured-analysis",
     response_model=list[SessionCaseStructuredAnalysisResponse],
 )
-def get_session_case_structured_analysis(user_id: int, session_id: int) -> list[SessionCaseStructuredAnalysisResponse]:
+def get_session_case_structured_analysis(
+    user_id: int,
+    session_id: int,
+    request: Request,
+) -> list[SessionCaseStructuredAnalysisResponse]:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         user_row = connection.execute(
             "SELECT id FROM users WHERE id = %s",
@@ -6749,7 +6799,8 @@ def get_session_case_structured_analysis(user_id: int, session_id: int) -> list[
 
 
 @router.get("/{user_id}/assessment/{session_id}/report.pdf")
-def download_skill_assessment_pdf(user_id: int, session_id: int) -> Response:
+def download_skill_assessment_pdf(user_id: int, session_id: int, request: Request) -> Response:
+    _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         user_row = connection.execute(
             "SELECT id FROM users WHERE id = %s",

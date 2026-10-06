@@ -351,7 +351,12 @@ def _create_autotest_users(connection) -> tuple[int, list[int], dict[int, str]]:
             (user_id, email, email),
         )
         connection.execute(
-            "INSERT INTO organization_memberships (organization_id, user_id, role) VALUES (%s, %s, 'member')",
+            """
+            INSERT INTO organization_memberships (
+                organization_id, user_id, role, admission_source, admitted_at
+            )
+            VALUES (%s, %s, 'member', 'csv_import', NOW())
+            """,
             (organization_id, user_id),
         )
     return organization_id, user_ids, role_by_user_id
