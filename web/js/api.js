@@ -1,22 +1,78 @@
 let unauthorizedResponseHandler = null;
+let sessionGeneration = 0;
 let unauthorizedRecovery = null;
+let sessionChannel = null;
+let requestTrackingInstalled = false;
+const responseGenerations = new WeakMap();
+
+const isCurrentGeneration = (generation) => generation === sessionGeneration;
+
+export const getSessionGeneration = () => sessionGeneration;
+
+export const advanceSessionGeneration = ({ broadcast = true } = {}) => {
+  sessionGeneration += 1;
+  if (broadcast) {
+    sessionChannel?.postMessage({ type: 'session-generation-changed' });
+  }
+  return sessionGeneration;
+};
+
+export const createSessionAwareFetch = (fetchImplementation) => async (...args) => {
+  const requestGeneration = sessionGeneration;
+  const response = await fetchImplementation(...args);
+  responseGenerations.set(response, requestGeneration);
+  return response;
+};
+
+export const installSessionRequestTracking = () => {
+  if (requestTrackingInstalled || typeof globalThis.fetch !== 'function') {
+    return;
+  }
+  globalThis.fetch = createSessionAwareFetch(globalThis.fetch.bind(globalThis));
+  requestTrackingInstalled = true;
+
+  if (typeof window !== 'undefined' && typeof window.BroadcastChannel === 'function') {
+    sessionChannel = new window.BroadcastChannel('agent4k-session-generation');
+    sessionChannel.addEventListener('message', (event) => {
+      if (event.data?.type === 'session-generation-changed') {
+        advanceSessionGeneration({ broadcast: false });
+        Promise.resolve(unauthorizedResponseHandler?.({ advance: false, broadcast: false })).catch((error) => {
+          console.error('Failed to reconcile a session change from another tab', error);
+        });
+      }
+    });
+  }
+};
 
 export const registerUnauthorizedResponseHandler = (handler) => {
   unauthorizedResponseHandler = typeof handler === 'function' ? handler : null;
 };
 
-const notifyUnauthorizedResponse = () => {
-  if (!unauthorizedResponseHandler || unauthorizedRecovery) {
+const notifyUnauthorizedResponse = (requestGeneration) => {
+  if (!unauthorizedResponseHandler || !isCurrentGeneration(requestGeneration)) {
     return;
   }
-  unauthorizedRecovery = Promise.resolve()
-    .then(() => unauthorizedResponseHandler())
+  if (unauthorizedRecovery?.generation === requestGeneration) {
+    return;
+  }
+  const recovery = {
+    generation: requestGeneration,
+    promise: Promise.resolve()
+    .then(() => {
+      if (isCurrentGeneration(requestGeneration)) {
+        return unauthorizedResponseHandler();
+      }
+    })
     .catch((error) => {
       console.error('Failed to recover from an expired server session', error);
     })
     .finally(() => {
-      unauthorizedRecovery = null;
-    });
+      if (unauthorizedRecovery === recovery) {
+        unauthorizedRecovery = null;
+      }
+    }),
+  };
+  unauthorizedRecovery = recovery;
 };
 
 export class ApiResponseError extends Error {
@@ -27,7 +83,15 @@ export class ApiResponseError extends Error {
   }
 }
 
+export class StaleApiResponseError extends Error {
+  constructor() {
+    super('Ответ относится к устаревшей пользовательской сессии.');
+    this.name = 'StaleApiResponseError';
+  }
+}
+
 export const readApiResponse = async (response, fallbackMessage, { recoverUnauthorized = true } = {}) => {
+  const requestGeneration = responseGenerations.get(response) ?? sessionGeneration;
   const rawText = await response.text();
   let data = null;
 
@@ -39,9 +103,13 @@ export const readApiResponse = async (response, fallbackMessage, { recoverUnauth
     }
   }
 
+  if (!isCurrentGeneration(requestGeneration)) {
+    throw new StaleApiResponseError();
+  }
+
   if (!response.ok) {
     if (response.status === 401 && recoverUnauthorized) {
-      notifyUnauthorizedResponse();
+      notifyUnauthorizedResponse(requestGeneration);
     }
     if (data && typeof data === 'object' && 'detail' in data && data.detail) {
       throw new ApiResponseError(data.detail, response.status);

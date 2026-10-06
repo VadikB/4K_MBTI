@@ -62,9 +62,11 @@ export const loadAdminMethodology = async () => {
 export const loadAdminReportDetail = () =>
   loadModule('admin-report-detail', () => import('./entries/admin-report-detail.js'));
 
-export const resetChatScreen = async () => {
+export const resetChatScreen = async ({ shouldReset = () => true } = {}) => {
   const module = await loadChat();
-  module.resetChat();
+  if (shouldReset()) {
+    module.resetChat();
+  }
 };
 
 export const openProcessingScreen = async () => {

@@ -146,7 +146,7 @@ import {
   libraryStartButton,
   welcomeProfileButton,
 } from './dom.js';
-import { readApiResponse, createOperationId } from './api.js';
+import { advanceSessionGeneration, readApiResponse, createOperationId } from './api.js';
 import {
   buildExistingUserAgentMessage,
   shouldOfferNoChangesQuickReply,
@@ -446,6 +446,8 @@ if (authPasswordGenerateButton) {
 
 const applyAuthResponse = async (data) => {
   const agent = data.agent || null;
+
+  advanceSessionGeneration();
 
   state.sessionId = agent?.session_id || null;
   state.pendingUser = data.user || null;

@@ -253,6 +253,39 @@ test('Recovery: lost response, unaccepted request, two tabs and owner boundaries
  for(const endpoint of [`/users/assessment/cycles/${initial.cycle_id}/runtime`,`/users/assessment/m5/situations/${initial.current_situation.assessment_situation_id}/trace`])expect((await page.request.get(stand.url+endpoint)).status()).toBe(403);
  await expect(page.locator('#interview-messages')).not.toBeVisible();
 });
+test('Late 401 in another tab does not revoke a newly authenticated owner',async({page,context,stand})=>{
+ await login(page,stand);await start(page);
+ const staleTab=await context.newPage();await staleTab.goto(page.url());
+ await expect(staleTab.locator('#interview-textarea')).toBeEnabled();
+ let captureRequest,releaseFetch,releaseResponse;
+ const requestCaptured=new Promise(resolve=>{captureRequest=resolve;});
+ const fetchGate=new Promise(resolve=>{releaseFetch=resolve;});
+ const responseGate=new Promise(resolve=>{releaseResponse=resolve;});
+ let reportStatus;
+ const statusReported=new Promise(resolve=>{reportStatus=resolve;});
+ await staleTab.route('**/users/assessment/cycles/*/runtime',async route=>{
+   captureRequest();await fetchGate;
+   const response=await route.fetch();
+   reportStatus(response.status());await responseGate;
+   await route.fulfill({response});
+ });
+ try{
+   await requestCaptured;
+   await page.getByRole('button',{name:'Выйти',exact:true}).click();
+   await expect(page.locator('#email-input')).toBeVisible();
+   releaseFetch();expect(await statusReported).toBe(401);
+   await login(page,stand,'other@example.test');
+   let backgroundLogouts=0;
+   staleTab.on('request',request=>{if(new URL(request.url()).pathname==='/users/session/logout')backgroundLogouts++;});
+   releaseResponse();
+   await expect(staleTab.locator('#email-input')).toBeVisible();
+   await staleTab.waitForLoadState('networkidle');
+   expect(backgroundLogouts).toBe(0);
+   const restored=await (await page.request.get(stand.url+'/users/session/restore')).json();
+   expect(restored.authenticated).toBe(true);
+   expect(restored.user.email).toBe('other@example.test');
+ }finally{releaseFetch();releaseResponse();await staleTab.close();}
+});
 test('S10-A character branch: actual character Turn, order and no invented recommendation',async({page,stand},info)=>{
  await login(page,stand);await start(page,'Нина');
  const before=await runtime(page,stand);

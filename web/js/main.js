@@ -15,7 +15,11 @@ import {
   loadUserJourneyState,
   resetStaleUserState,
 } from './session.js';
-import { registerUnauthorizedResponseHandler } from './api.js';
+import {
+  advanceSessionGeneration,
+  installSessionRequestTracking,
+  registerUnauthorizedResponseHandler,
+} from './api.js';
 import { hideAllPanels, returnToStart } from './router.js';
 import { handleAuthActionToken, initWiring, verifyEmailMagicLinkToken } from './wiring.js';
 import {
@@ -66,10 +70,12 @@ const syncRuntimeReleaseNumber = async () => {
   }
 };
 
+installSessionRequestTracking();
 initWiring();
 void syncRuntimeReleaseNumber();
 
 const resetInitialState = () => {
+  advanceSessionGeneration({ broadcast: false });
   state.sessionId = null;
   state.completed = false;
   state.isChatSubmitting = false;
