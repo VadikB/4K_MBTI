@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "runtime_candidate": "01aee3b19e7d3e385a64fc764222b863553219b0",
+  "test_correction_commit": "52c778c",
+  "runs": [
+    {"suite":"prior_failures","exit_code":0,"summary":"2 passed in 44.20s"},
+    {"suite":"integration","exit_code":0,"summary":"94 passed, 430 deselected, 1 warning in 688.50s"},
+    {"suite":"backend","exit_code":0,"summary":"380 passed, 144 deselected, 1 warning in 11.04s"},
+    {"suite":"http","exit_code":0,"summary":"46 passed, 1 warning in 22.71s"},
+    {"suite":"h8_pre_10_11_bootstrap","exit_code":0,"source_commit":"15f41a229c6cc2b33e8a0b99306433ebb3df8b5d","summary":"PASS clean bootstrap, owner Report/PDF, repeat bootstrap/seed/restart"},
+    {"suite":"h8_current_migration","exit_code":0,"summary":"bootstrap ready; history 200; Report 200; PDF 200/%PDF; catalog_ref unchanged NULL"},
+    {"suite":"c1_c2_x3_reused","exit_code":0,"summary":"6 passed in 8.8m on exact unchanged runtime"}
+  ],
+  "preserved_first_failures": [
+    "10.15 maintenance DB name rejected by allowlist",
+    "10.15.1 sandbox TCP Operation not permitted",
+    "10.15.1 full integration 92 passed / 2 failed",
+    "10.15.2 direct import-main migration left stale bootstrap fingerprint and repeat startup failed closed"
+  ]
+}
