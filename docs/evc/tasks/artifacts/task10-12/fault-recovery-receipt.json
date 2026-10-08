@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "task": "Task-10-12",
+  "scope": "controlled-owned-postgresql-test",
+  "production_data_used": false,
+  "external_ai_calls": false,
+  "faults": ["timeout", "invalid_json", "schema", "foreign_ref"],
+  "stages": ["individual", "joint"],
+  "observed": {
+    "pipeline_status": "failed",
+    "pipeline_stage": "admission_processing_failed",
+    "report_status": "limited",
+    "retry_calculation_revisions": 2,
+    "retry_results_revisions": 2,
+    "old_report_immutable": true,
+    "dialogue_preserved": true,
+    "cycle_reopened": false
+  },
+  "evidence": [
+    "tests/unit/test_m6_admission.py::test_processing_fault_matrix_is_technical_not_substantive",
+    "tests/integration/test_m10_product_path_db.py::test_admission_processing_failure_is_limited_and_recovery_is_new_revision",
+    "tests/e2e/test_m10_processing_recovery_http.py"
+  ]
+}

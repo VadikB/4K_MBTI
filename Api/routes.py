@@ -211,6 +211,7 @@ from Api.schemas import (
     AssessmentConfigurationResponse,
     M5CatalogPlanRequest,
     M5CatalogPublishRequest,
+    M10ProcessingRecoveryRequest,
     PlatformRoleAssignmentRequest,
 )
 
@@ -7092,23 +7093,66 @@ def read_owned_m8_status(cycle_id: UUID, request: Request):
         cycle = m7_completion.read_status(connection, str(cycle_id))
         pipeline = connection.execute("""SELECT p.status,p.stage,p.error_code FROM m10_pipeline_runs p
             JOIN m5_cycles c ON c.id=p.cycle_db_id WHERE c.cycle_id=%s""", (cycle_id,)).fetchone()
+        if pipeline and pipeline['status']=='failed':
+            try:
+                report = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
+            except ValueError:
+                report = None
+            return {**cycle,'results_status':'failed',
+                    'report_status':'limited' if report else 'not_created',
+                    'report_id':report['id'] if report else None,
+                    'pipeline_stage':pipeline['stage'],
+                    'processing_error':pipeline['error_code'],
+                    'processing':{'contract_version':'m10-processing-recovery/1.0.0','status':'failed',
+                        'message':'Не удалось завершить техническую обработку. Сохранённые ответы не потеряны.',
+                        'allowed_actions':[]}}
         try:
             report = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
             return {**cycle, 'results_status': 'ready', 'report_status': report['status'], 'report_id': report['id'],
-                    'pipeline_stage': pipeline['stage'] if pipeline else 'report_ready', 'processing_error': None}
+                    'pipeline_stage': pipeline['stage'] if pipeline else 'report_ready', 'processing_error': None,
+                    'processing':{'contract_version':'m10-processing-recovery/1.0.0',
+                        'status':'recovered' if pipeline and pipeline['stage']=='recovered_report_ready' else 'completed',
+                        'message':'Обработка восстановлена.' if pipeline and pipeline['stage']=='recovered_report_ready' else 'Обработка завершена.',
+                        'allowed_actions':[]}}
         except ValueError:
-            if pipeline and pipeline['status']=='failed':
-                return {**cycle,'results_status':'failed','report_status':'not_created','report_id':None,
-                        'pipeline_stage':pipeline['stage'],'processing_error':pipeline['error_code']}
             try:
                 m8_results.read_latest_results(connection, str(cycle_id))
                 return {**cycle, 'results_status': 'ready', 'report_status': 'not_created', 'report_id': None,
-                        'pipeline_stage':pipeline['stage'] if pipeline else 'results_ready','processing_error':None}
+                        'pipeline_stage':pipeline['stage'] if pipeline else 'results_ready','processing_error':None,
+                        'processing':{'contract_version':'m10-processing-recovery/1.0.0','status':'processing',
+                                      'message':'Готовится представление результата.','allowed_actions':[]}}
             except ValueError:
                 pass
             result_status = 'processing' if cycle['collection_status'] in {'collection_closed','calculation_pending'} else cycle['collection_status']
             return {**cycle, 'results_status': result_status, 'report_status': 'not_created', 'report_id': None,
-                    'pipeline_stage':pipeline['stage'] if pipeline else None,'processing_error':None}
+                    'pipeline_stage':pipeline['stage'] if pipeline else None,'processing_error':None,
+                    'processing':{'contract_version':'m10-processing-recovery/1.0.0','status':'processing',
+                                  'message':'Результат обрабатывается.','allowed_actions':[]}}
+
+
+@router.post('/admin/assessment/m8/cycles/{cycle_id}/processing-recovery', status_code=202)
+def request_m8_processing_recovery(cycle_id: UUID, payload: M10ProcessingRecoveryRequest, request: Request):
+    user = _assessment_definition_user(request)
+    try:
+        with get_connection() as connection:
+            require_platform_permission(connection, user, "configuration.publish")
+            cycle = connection.execute("SELECT organization_id FROM m5_cycles WHERE cycle_id=%s", (cycle_id,)).fetchone()
+            if cycle is None:
+                raise ValueError("M5_CYCLE_NOT_FOUND")
+            if cycle['organization_id'] is not None:
+                scope = _get_admin_scope_or_403(connection, user)
+                if not scope.is_superadmin and int(cycle['organization_id']) not in scope.organization_ids:
+                    raise PermissionError("Organization admin access required")
+            result = m10_orchestration.request_processing_recovery(
+                connection, cycle_id=str(cycle_id), idempotency_key=payload.idempotency_key,
+                created_by=int(user.id))
+            connection.commit()
+            return {"recovery_id":str(result['id']),"status":result['status'],
+                    "contract_version":"m10-processing-recovery/1.0.0"}
+    except PermissionError as exc:
+        raise HTTPException(403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(409, detail=str(exc)) from exc
 
 
 @router.get('/assessment/m8/cycles/{cycle_id}/results')

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "task": "Task-10-12",
+  "base_commit": "1dd8fc0dc79142db8da93c1181599b4d9b5ac2c9",
+  "artifacts": [
+    {"path": "processing-state-examples.json", "sha256": "89113f86011ef0dffc4634eceba246919b3488b64f9cbe942f3d4c5c2fb869f8"},
+    {"path": "fault-recovery-receipt.json", "sha256": "12b3bc0576a7a5c5b864fd2026562615a9c05f0c7c245eb5da2bb592f8c006f9"}
+  ],
+  "known_gap": "F8 catalog-bound synthetic product-path proof is blocked by the accepted 10.11 rule: synthetic/fixture origin is QA-only while production orchestration selects assessment-only cycles. No guard was weakened."
+}

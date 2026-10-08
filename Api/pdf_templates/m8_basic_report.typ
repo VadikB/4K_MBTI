@@ -11,6 +11,12 @@
   Cycle: #data.cycle_id · Results revision: #data.results_revision_no · Report: #data.report_revision_no
 ]
 
+#if data.processing.status == "failed" [
+  #block(fill: rgb("#fff4e5"), inset: 8pt, radius: 4pt)[
+    *Обработка результата ограничена.* #data.processing.message
+  ]
+]
+
 == Результаты по навыкам
 #table(
   columns: (2.2fr, 1fr, 1fr, 0.9fr),

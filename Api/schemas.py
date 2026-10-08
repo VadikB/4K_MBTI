@@ -1489,6 +1489,10 @@ class M5CatalogPublishRequest(M5CatalogPlanRequest):
     idempotency_key: str
 
 
+class M10ProcessingRecoveryRequest(BaseModel):
+    idempotency_key: str = Field(min_length=1, max_length=200)
+
+
 class PlatformRoleAssignmentRequest(BaseModel):
     user_id: int
     role_code: str

@@ -84,6 +84,29 @@ def test_failure_not_ie_and_no_fallback(material_resolver,stage):
     assert result['skill_outcomes'][0]['outcome']==('no_result' if stage=='individual' else 'result_without_score')
 
 
+@pytest.mark.parametrize('stage',['individual','joint'])
+@pytest.mark.parametrize('fault',['timeout','invalid_json','schema','foreign_ref'])
+def test_processing_fault_matrix_is_technical_not_substantive(material_resolver,stage,fault):
+    class Fault(RecordedAdmissionGateway):
+        def chat(self,messages,**kwargs):
+            value=json.loads(messages[1]['content'])
+            if value['stage'] != stage:
+                return super().chat(messages,**kwargs)
+            if fault == 'timeout': raise TimeoutError('synthetic timeout')
+            if fault == 'invalid_json': return '{'
+            valid=json.loads(super().chat(messages,**kwargs))
+            if fault == 'schema': valid.pop('status')
+            else:
+                if stage == 'individual': valid['revision_id']='foreign'
+                else: valid['considered_revision_ids']=['foreign']
+            return json.dumps(valid)
+    decision,result=run([observation(1)],Fault())
+    failed=decision['individual'][0] if stage=='individual' else decision['joint']
+    assert failed['status']=='PROCESSING_FAILED'
+    assert failed['reason_code'] not in {'NOT_ADMITTED','INSUFFICIENT_EVIDENCE'}
+    assert result['skill_outcomes'][0]['outcome']==('no_result' if stage=='individual' else 'result_without_score')
+
+
 def test_duplicate_same_as_is_not_new_observation(material_resolver):
     with pytest.raises(ValueError,match='AMBIGUOUS_REVISION'):
         run([observation(1),{**observation(1),'revision_id':'r2'}],RecordedAdmissionGateway())
