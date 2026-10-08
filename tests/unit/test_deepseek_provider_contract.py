@@ -34,7 +34,9 @@ def test_product_gateway_captures_declared_json_payload_without_secret(monkeypat
     assert result.sent["model"] == "deepseek-flash"
     assert "test-secret" not in json.dumps(result.sent)
     assert result.provider["usage"]["total_tokens"] == 5
-    assert result.provider["transport_attempts"] == [{"attempt":1,"outcome":"completed"}]
+    assert result.provider["transport_attempts"][0]["attempt"] == 1
+    assert result.provider["transport_attempts"][0]["outcome"] == "completed"
+    assert result.provider["transport_attempts"][0]["duration_ms"] >= 0
 
 
 @pytest.mark.parametrize("content,finish_reason,message", [

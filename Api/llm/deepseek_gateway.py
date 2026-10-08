@@ -128,6 +128,7 @@ class DeepSeekGateway:
         request_started_at = time.perf_counter()
         try:
             for api_key in self.get_key_chain(routing_key, messages):
+                attempt_started_at = time.perf_counter()
                 req = request.Request(
                     url=f"{self.base_url}/chat/completions",
                     data=payload,
@@ -140,7 +141,6 @@ class DeepSeekGateway:
                 try:
                     with request.urlopen(req, timeout=timeout_seconds) as response:
                         body = json.loads(response.read().decode("utf-8"))
-                    transport_attempts.append({"attempt": len(transport_attempts) + 1, "outcome": "completed"})
                     logger.info(
                         "DeepSeek request completed duration_ms=%.2f queue_wait_ms=%.2f paused_db_connections=%s routing_key=%s",
                         (time.perf_counter() - request_started_at) * 1000,
@@ -151,12 +151,21 @@ class DeepSeekGateway:
                     choice = body["choices"][0]
                     content = choice["message"].get("content")
                     if content is None or not str(content).strip():
+                        transport_attempts.append({"attempt": len(transport_attempts) + 1,
+                            "outcome": "empty_response",
+                            "duration_ms": round((time.perf_counter() - attempt_started_at) * 1000, 2)})
                         raise LlmGatewayError("DeepSeek returned an empty response", sent=sent,
                                               provider={"transport_attempts": transport_attempts})
                     if choice.get("finish_reason") == "length":
+                        transport_attempts.append({"attempt": len(transport_attempts) + 1,
+                            "outcome": "truncated",
+                            "duration_ms": round((time.perf_counter() - attempt_started_at) * 1000, 2)})
                         raise LlmGatewayError("DeepSeek response was truncated", sent=sent,
                                               provider={"transport_attempts": transport_attempts,
                                                         "finish_reason": "length", "usage": body.get("usage")})
+                    transport_attempts.append({"attempt": len(transport_attempts) + 1,
+                        "outcome": "completed",
+                        "duration_ms": round((time.perf_counter() - attempt_started_at) * 1000, 2)})
                     return LlmResponse(
                         content=str(content),
                         sent=sent,
@@ -169,14 +178,17 @@ class DeepSeekGateway:
                     )
                 except TimeoutError:
                     last_error = RuntimeError("DeepSeek request timed out")
-                    transport_attempts.append({"attempt": len(transport_attempts) + 1, "outcome": "timeout"})
+                    transport_attempts.append({"attempt": len(transport_attempts) + 1, "outcome": "timeout",
+                                               "duration_ms": round((time.perf_counter() - attempt_started_at) * 1000, 2)})
                 except error.HTTPError as exc:
                     last_error = RuntimeError(f"DeepSeek request failed with HTTP {exc.code}")
                     transport_attempts.append({"attempt": len(transport_attempts) + 1,
-                                               "outcome": "http_error", "status": exc.code})
+                                               "outcome": "http_error", "status": exc.code,
+                                               "duration_ms": round((time.perf_counter() - attempt_started_at) * 1000, 2)})
                 except error.URLError as exc:
                     last_error = RuntimeError(f"DeepSeek request failed: {exc}")
-                    transport_attempts.append({"attempt": len(transport_attempts) + 1, "outcome": "network_error"})
+                    transport_attempts.append({"attempt": len(transport_attempts) + 1, "outcome": "network_error",
+                                               "duration_ms": round((time.perf_counter() - attempt_started_at) * 1000, 2)})
 
             if last_error is not None:
                 raise LlmGatewayError(str(last_error), sent=sent,
