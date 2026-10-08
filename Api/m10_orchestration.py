@@ -13,6 +13,7 @@ from Api.m6_assessment_package import load_mechanism as load_assessment_mechanis
 from Api.m10_input_resolver import resolve
 from Api.m10_product_queue import enqueue_assessment, enqueue_evidence
 from Api.m6_package import load_mechanism as load_evidence_mechanism
+from Api.qa_orchestration import sql_scope
 
 logger = logging.getLogger(__name__)
 PROCESSING_CONTRACT_VERSION = "m10-processing-recovery/1.0.0"
@@ -117,10 +118,10 @@ def enqueue_handoff(connection, *, handoff_id: str, created_by: int) -> dict:
 
 
 def _queue_outbox(connection) -> bool:
-    row = connection.execute("""SELECT o.*,c.created_by,c.id AS cycle_db_id FROM m7_finalization_outbox o
+    row = connection.execute(f"""SELECT o.*,c.created_by,c.id AS cycle_db_id FROM m7_finalization_outbox o
         JOIN m5_assessment_situations s ON s.id=o.assessment_situation_db_id
         JOIN m5_cycles c ON c.id=s.cycle_db_id
-        WHERE o.status='pending' AND c.usage_scope='assessment' ORDER BY o.created_at
+        WHERE o.status='pending' AND {sql_scope('c')} ORDER BY o.created_at
         FOR UPDATE OF o SKIP LOCKED LIMIT 1""").fetchone()
     if not row:
         return False
@@ -137,10 +138,10 @@ def _queue_outbox(connection) -> bool:
 
 
 def _queue_assessment(connection) -> bool:
-    row = connection.execute("""SELECT a.id,a.as_db_id,r.created_by,s.cycle_db_id FROM m6_analysis_revisions a
+    row = connection.execute(f"""SELECT a.id,a.as_db_id,r.created_by,s.cycle_db_id FROM m6_analysis_revisions a
         JOIN m6_processing_requests r ON r.id=a.request_id
         JOIN m5_assessment_situations s ON s.id=a.as_db_id JOIN m5_cycles c ON c.id=s.cycle_db_id
-        WHERE c.usage_scope='assessment' AND NOT EXISTS(
+        WHERE {sql_scope('c')} AND NOT EXISTS(
           SELECT 1 FROM m6_assessment_requests q WHERE q.evidence_revision_id=a.id)
         ORDER BY a.created_at FOR UPDATE OF s SKIP LOCKED LIMIT 1""").fetchone()
     if not row:
@@ -158,9 +159,9 @@ def _clarify_interim(connection, gateway=None) -> bool:
         from Api.m10_test_gateway import acceptance_fixture, BrowserAcceptanceGateway
         if acceptance_fixture():
             gateway=BrowserAcceptanceGateway()
-    row = connection.execute("""SELECT c.id,c.as_db_id,s.cycle_db_id,cy.created_by FROM m6_c54_revisions c
+    row = connection.execute(f"""SELECT c.id,c.as_db_id,s.cycle_db_id,cy.created_by FROM m6_c54_revisions c
         JOIN m5_assessment_situations s ON s.id=c.as_db_id JOIN m5_cycles cy ON cy.id=s.cycle_db_id
-        WHERE c.mode='interim' AND cy.usage_scope='assessment' AND NOT EXISTS(
+        WHERE c.mode='interim' AND {sql_scope('cy')} AND NOT EXISTS(
           SELECT 1 FROM m7_clarification_decisions d WHERE d.c54_revision_id=c.id)
         ORDER BY c.created_at FOR UPDATE OF s SKIP LOCKED LIMIT 1""").fetchone()
     if not row:
@@ -181,8 +182,8 @@ def _finalize_cycle(connection, gateway=None) -> bool:
         from Api.m10_test_gateway import enabled, BrowserAcceptanceGateway
         if enabled():
             gateway = BrowserAcceptanceGateway()
-    row = connection.execute("""SELECT c.id,c.cycle_id,c.created_by FROM m5_cycles c
-        WHERE c.usage_scope='assessment' AND c.status IN('collection_closed','calculation_pending')
+    row = connection.execute(f"""SELECT c.id,c.cycle_id,c.created_by FROM m5_cycles c
+        WHERE {sql_scope('c')} AND c.status IN('collection_closed','calculation_pending')
           AND NOT EXISTS(SELECT 1 FROM m7_finalization_outbox o JOIN m5_assessment_situations s ON s.id=o.assessment_situation_db_id
               LEFT JOIN m6_processing_requests e ON e.id=o.m6_request_id
               LEFT JOIN m6_analysis_revisions ar ON ar.request_id=e.id
@@ -292,13 +293,13 @@ def _process_recovery(connection, gateway=None) -> bool:
 
 
 def _propagate_failure(connection) -> bool:
-    row = connection.execute("""SELECT c.id,
+    row = connection.execute(f"""SELECT c.id,
         CASE WHEN e.status='failed' THEN 'M6_EVIDENCE_FAILED' ELSE 'M6_ASSESSMENT_FAILED' END AS error
         FROM m5_cycles c JOIN m5_assessment_situations s ON s.cycle_db_id=c.id
         LEFT JOIN m6_processing_requests e ON e.as_db_id=s.id
         LEFT JOIN m6_analysis_revisions a ON a.request_id=e.id
         LEFT JOIN m6_assessment_requests q ON q.evidence_revision_id=a.id
-        WHERE c.usage_scope='assessment' AND (e.status='failed' OR q.status='failed')
+        WHERE {sql_scope('c')} AND (e.status='failed' OR q.status='failed')
           AND NOT EXISTS(SELECT 1 FROM m10_pipeline_runs p WHERE p.cycle_db_id=c.id AND p.status='failed')
         ORDER BY c.id LIMIT 1""").fetchone()
     if not row:

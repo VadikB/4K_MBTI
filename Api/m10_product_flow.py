@@ -5,6 +5,7 @@ from pathlib import Path
 
 from Api import m7_cycle_planner, participant_profile
 from Api import m5_scenario_runtime, m7_completion
+from Api import qa_orchestration
 
 CASE_PACKAGE = Path(__file__).resolve().parents[1] / "assessment_definitions/cases/competencies_4k/1.1"
 
@@ -17,15 +18,16 @@ def _owned_profile(connection, user_id: int, profile_id=None) -> int:
     return int(participant_profile.profile_for_start(connection, user_id=user_id, profile_id=profile_id)['id'])
 
 
-def _current_cycle(connection, user_id: int, organization_id: int, configuration_id=None) -> dict | None:
+def _current_cycle(connection, user_id: int, organization_id: int, configuration_id=None,
+                   usage_scope: str = "assessment") -> dict | None:
     rows = connection.execute(
         """SELECT c.cycle_id FROM m5_cycles c
            JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
-           WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.usage_scope='assessment'
+           WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.usage_scope=%s
              AND (%s::bigint IS NULL OR p.assessment_configuration_id=%s)
              AND c.status IN('prepared','active','paused','interrupted','collection_closed','calculation_pending')
            ORDER BY c.created_at DESC""",
-        (user_id, organization_id, configuration_id, configuration_id),
+        (user_id, organization_id, usage_scope, configuration_id, configuration_id),
     ).fetchall()
     if len(rows) > 1:
         raise ValueError('M4_PROFILE_SELECTION_REQUIRED: Выберите конфигурацию оценки в профиле.')
@@ -59,7 +61,8 @@ def start_or_resume(connection, *, user_id: int, key: str,
         if not scope:
             raise ValueError('M4_PROFILE_SCOPE_MISMATCH: Подтвердите профиль для текущей организации.')
         configuration_id = scope['assessment_configuration_id']
-    current = _current_cycle(connection, user_id, organization_id, configuration_id)
+    usage_scope = qa_orchestration.usage_scope()
+    current = _current_cycle(connection, user_id, organization_id, configuration_id, usage_scope)
     if current:
         open_as = connection.execute(
             """SELECT assessment_situation_id,status FROM m5_assessment_situations
@@ -79,7 +82,7 @@ def start_or_resume(connection, *, user_id: int, key: str,
         plan = m7_cycle_planner.create_plan(
             connection, personalized_profile_id=profile_id,
             selected_skills=selected_skills or ["K1", "K2", "K3", "K4"],
-            created_by=user_id, key=f"product-start:{key}", usage_scope="assessment",
+            created_by=user_id, key=f"product-start:{key}", usage_scope=usage_scope,
         )
         if plan['plan']['status'] == 'NO_ROUTE':
             raise ValueError('M7_NO_ADMISSIBLE_CASE: Профиль готов. Ответственный специалист должен подготовить допустимые кейсы для выбранной роли и конфигурации.')

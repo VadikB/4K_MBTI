@@ -45,8 +45,9 @@ def environment(state):
         AUTH_SESSION_SECURE_COOKIE='false',LOG_TO_STDOUT='true',LOG_TO_FILE='false',
         PYTHONPATH=str(ROOT),STAND_STATE=str(state['state_path']),
         AGENT4K_STAND_MARKER=state['owner_marker'],STAND_ADMIN_URL=os.environ['STAND_ADMIN_URL'])
-    if state.get('browser_scenario') == 'acceptance-v1':
+    if state.get('qa_orchestration') is True and state.get('browser_scenario') == 'acceptance-v1':
         env['AGENT4K_BROWSER_SCENARIO']='acceptance-v1'
+        env['AGENT4K_QA_ORCHESTRATION']='1'
     return env
 
 
@@ -130,6 +131,9 @@ def main():
             # No FORCE: active app connections must be stopped first.
             c.execute(sql.SQL('DROP DATABASE {}').format(sql.Identifier(state['database'])))
             path.unlink();print('Owned stand removed');return
+    if args.action == 'smoke' and state.get('qa_orchestration') is True:
+        state['browser_scenario']='acceptance-v1'
+        path.write_text(json.dumps(state))
     env=environment(state)
     if args.action in ('bootstrap','seed'):
         subprocess.run([sys.executable,__file__,'_'+args.action,'--state',str(path)],env=env,cwd=ROOT,check=True)

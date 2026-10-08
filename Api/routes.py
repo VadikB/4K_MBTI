@@ -608,6 +608,7 @@ def _compact_user_response(user: UserResponse | None) -> UserResponse | None:
 
 
 def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> UserDashboard:
+    from Api.qa_orchestration import usage_scope
     # Dashboard follows the current Cycle runtime; legacy aggregate views are not inputs.
     readiness = participant_profile.readiness(connection, user_id=user.id, profile_id=profile_id)
     cycle = connection.execute("""SELECT c.id,c.status,
@@ -615,10 +616,10 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         COUNT(s.id) FILTER (WHERE s.status='closed')::int AS completed_cases
         FROM m5_cycles c LEFT JOIN m5_assessment_situations s ON s.cycle_db_id=c.id
         JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
-        WHERE c.owner_user_id=%s AND c.usage_scope='assessment'
+        WHERE c.owner_user_id=%s AND c.usage_scope=%s
           AND p.organization_id=%s AND p.assessment_configuration_id=%s
         GROUP BY c.id ORDER BY c.created_at DESC,c.id DESC LIMIT 1""",
-        (user.id, readiness.get('organization_id'), readiness.get('assessment_configuration_id'))).fetchone()
+        (user.id, usage_scope(), readiness.get('organization_id'), readiness.get('assessment_configuration_id'))).fetchone()
     report_rows = m8_results.list_owned_reports(connection, user.id)
     completed_cases = int(cycle['completed_cases']) if cycle else 0
     total_cases = int(cycle['total_cases']) if cycle else 0
@@ -3171,15 +3172,16 @@ def _onboarding_response(payload: dict) -> OnboardingStateResponse:
 
 @router.get("/{user_id}/journey-state", response_model=UserJourneyStateResponse)
 def get_user_journey_state(user_id: int, request: Request, personalized_profile_id: int | None = None) -> UserJourneyStateResponse:
+    from Api.qa_orchestration import usage_scope
     user = _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         profile = participant_profile.readiness(connection, user_id=user.id, profile_id=personalized_profile_id)
         onboarding = get_or_create_onboarding_state(connection, user_id)
         cycle = connection.execute("""SELECT c.status FROM m5_cycles c
             JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
-            WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.usage_scope='assessment'
+            WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.usage_scope=%s
               AND p.assessment_configuration_id=%s ORDER BY c.created_at DESC,c.id DESC LIMIT 1""",
-            (user.id, profile.get('organization_id'), profile.get('assessment_configuration_id'))).fetchone()
+            (user.id, profile.get('organization_id'), usage_scope(), profile.get('assessment_configuration_id'))).fetchone()
         connection.commit()
     ready = profile['status'] == 'ready'
     assessment_status = ({'prepared':'preparing','active':'in_progress','paused':'in_progress',
@@ -4936,6 +4938,7 @@ def _m5_superadmin(request: Request):
 
 
 def _m5_owned_situation(request: Request, assessment_situation_id: str) -> None:
+    from Api.qa_orchestration import permits
     token = request.cookies.get(SESSION_COOKIE_NAME)
     user = web_session_service.get_user_by_token(token) if token else None
     if user is None:
@@ -4951,23 +4954,25 @@ def _m5_owned_situation(request: Request, assessment_situation_id: str) -> None:
         raise HTTPException(status_code=404, detail="M5_AS_NOT_FOUND")
     if int(row["user_id"]) != int(user.id):
         raise HTTPException(status_code=403, detail="Нет доступа к чужой Assessment Situation.")
-    if row["usage_scope"] != "assessment":
+    if not permits(row["usage_scope"]):
         raise HTTPException(status_code=403, detail="QA_AS_NOT_AVAILABLE_IN_PRODUCT_ROUTE")
     return user
 
 
 def _m7_owned_cycle(request:Request,cycle_id:str):
+    from Api.qa_orchestration import permits
     token=request.cookies.get(SESSION_COOKIE_NAME);user=web_session_service.get_user_by_token(token) if token else None
     if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
     with get_connection() as connection:
         row=connection.execute('SELECT owner_user_id,usage_scope FROM m5_cycles WHERE cycle_id=%s',(UUID(cycle_id),)).fetchone()
     if not row:raise HTTPException(status_code=404,detail='M7_CYCLE_NOT_FOUND')
     if int(row['owner_user_id'])!=int(user.id):raise HTTPException(status_code=403,detail='Нет доступа к чужому Assessment Cycle.')
-    if row['usage_scope']!='assessment':raise HTTPException(status_code=403,detail='QA_CYCLE_NOT_AVAILABLE_IN_PRODUCT_ROUTE')
+    if not permits(row['usage_scope']):raise HTTPException(status_code=403,detail='QA_CYCLE_NOT_AVAILABLE_IN_PRODUCT_ROUTE')
     return user
 
 
 def _m7_owned_clarification(request:Request,decision_id:str):
+    from Api.qa_orchestration import permits
     token=request.cookies.get(SESSION_COOKIE_NAME);user=web_session_service.get_user_by_token(token) if token else None
     if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
     with get_connection() as connection:
@@ -4976,7 +4981,7 @@ def _m7_owned_clarification(request:Request,decision_id:str):
             JOIN m5_cycles c ON c.id=s.cycle_db_id WHERE d.id=%s""",(UUID(decision_id),)).fetchone()
     if not row:raise HTTPException(status_code=404,detail='M7_CLARIFICATION_NOT_FOUND')
     if int(row['owner_user_id'])!=int(user.id):raise HTTPException(status_code=403,detail='Нет доступа к чужому уточнению.')
-    if row['usage_scope']!='assessment':raise HTTPException(status_code=403,detail='QA_CLARIFICATION_NOT_AVAILABLE_IN_PRODUCT_ROUTE')
+    if not permits(row['usage_scope']):raise HTTPException(status_code=403,detail='QA_CLARIFICATION_NOT_AVAILABLE_IN_PRODUCT_ROUTE')
     return user
 
 

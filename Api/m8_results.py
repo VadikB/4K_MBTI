@@ -98,7 +98,7 @@ def _partial_result_projection(c46: dict, c56: dict, processing: dict, template:
     if processing["status"] == "failed":
         codes.append("technical_failure")
     messages = template["partial_result"]
-    return {
+    result = {
         "contract_version": "m8-partial-result/1.0.0",
         "is_incomplete": bool(codes), "close_reason": close_reason,
         "progress": {"completed": len(completed), "planned": planned,
@@ -110,6 +110,7 @@ def _partial_result_projection(c46: dict, c56: dict, processing: dict, template:
         "messages": {"title": messages["incomplete_title"] if codes else "Оценка завершена",
                      "confirmed": messages["confirmed"], "not_inferred": messages["not_inferred"]},
     }
+    return result
 
 
 def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: dict | None,
@@ -155,7 +156,7 @@ def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: di
         limitations.append("Часть результата ограничена техническим сбоем обработки; это не L0 и не содержательный вывод.")
     partial_result = _partial_result_projection(c46, c56, processing, load_report_package()["template"])
     limitations += [x["message"] for x in partial_result["limitation_reasons"]]
-    return {
+    result = {
         "schema_version": 1, "results_version": RESULTS_VERSION, "cycle_id": str(cycle["cycle_id"]),
         "subject_user_id": cycle["owner_user_id"], "profile_ref": cycle["profile_ref_json"],
         "personalized_profile_snapshot": profile_snapshot,
@@ -176,6 +177,10 @@ def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: di
         "partial_result": partial_result,
         "target_profile": target_profile, "sources": c56["sources"], "algorithm": c56["algorithm"],
     }
+    if cycle["usage_scope"] == "qa":
+        result["test_result"] = {"synthetic": True, "usage_scope": "qa",
+                                 "participant_assessment": False}
+    return result
 
 
 def create_results(connection, *, cycle_id: str, calculation_id: str, key: str,
@@ -301,7 +306,7 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
             "notices": [package["template"]["recommendation_failure_notice"]],
             "status": "failed", "failure_reason": "RECOMMENDATION_GENERATION_FAILED",
         }
-    return {"schema_version": 1, "contract": "C-67", "message_version": "1.1", "owner": "PM-06", "consumer": "PM-07",
+    report = {"schema_version": 1, "contract": "C-67", "message_version": "1.1", "owner": "PM-06", "consumer": "PM-07",
             "results_id": results["id"], "results_revision_id": results["revision_id"],
             "results_revision_no": results["revision_no"], "cycle_id": results["cycle_id"], "audience": audience,
             "disclosure": detail, "profile_ref": payload["profile_ref"], "role_ref": payload["role_ref"],
@@ -322,6 +327,9 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
             "recommendation_generation": recommendation_generation,
             "recommendations": recommendation_generation["recommendations"],
             "recommendation_notices": recommendation_generation["notices"]}
+    if payload.get("test_result"):
+        report["test_result"] = payload["test_result"]
+    return report
 
 
 def create_report(connection, *, results_revision_id: str, audience: str, key: str,
@@ -358,12 +366,19 @@ OWNER_CYCLE_SCOPE = """c.owner_user_id=%s AND c.usage_scope='assessment'
 
 
 def owner_can_read_cycle(connection, cycle_id: str, user_id: int) -> bool:
-    return connection.execute("SELECT c.id FROM m5_cycles c WHERE c.cycle_id=%s AND " + OWNER_CYCLE_SCOPE,
-                              (UUID(str(cycle_id)), user_id)).fetchone() is not None
+    from Api.qa_orchestration import permits
+    row = connection.execute("""SELECT c.id,c.usage_scope FROM m5_cycles c WHERE c.cycle_id=%s
+        AND c.owner_user_id=%s AND EXISTS (SELECT 1 FROM organization_memberships member
+          JOIN organizations org ON org.id=member.organization_id
+          WHERE member.user_id=c.owner_user_id AND member.organization_id=c.organization_id
+            AND org.is_active=TRUE)""", (UUID(str(cycle_id)), user_id)).fetchone()
+    return bool(row and permits(row["usage_scope"]))
 
 
 def list_owned_cycles(connection, user_id: int) -> list[dict]:
     """Read-only owner history; one card per Cycle, revisions never count as Cycles."""
+    from Api.qa_orchestration import sql_scope
+    owner_scope = OWNER_CYCLE_SCOPE.replace("c.usage_scope='assessment'", sql_scope("c"))
     rows = connection.execute("""SELECT c.cycle_id,c.status AS cycle_status,
         c.created_at AS cycle_created_at,c.started_at,c.collection_closed_at,
         pipeline.status AS processing_status,pipeline.stage AS processing_stage,
@@ -375,7 +390,7 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
         LEFT JOIN m8_results r ON r.cycle_db_id=c.id
         LEFT JOIN m8_result_revisions rr ON rr.results_id=r.id
         LEFT JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
-        WHERE """ + OWNER_CYCLE_SCOPE + """
+        WHERE """ + owner_scope + """
         ORDER BY c.created_at DESC,c.id DESC,rr.revision_no DESC NULLS LAST,
                  p.revision_no DESC NULLS LAST""", (user_id,)).fetchall()
     cycles = {}
@@ -490,7 +505,8 @@ def render_pdf(report: dict) -> bytes:
             ratio = "не определено" if cut["ratio"] is None else f"{cut['numerator']}/{cut['denominator']} ({cut['ratio'] * 100:.1f}%)"
             coverage.append({"scope": scope, "name": name, "ratio": ratio})
     payload = {
-        "title": "4K — базовый индивидуальный отчёт",
+        "title": ("ТЕСТОВЫЙ РЕЗУЛЬТАТ — 4K" if c67.get("test_result")
+                  else "4K — базовый индивидуальный отчёт"),
         "cycle_id": c67["cycle_id"],
         "results_revision_no": c67["results_revision_no"],
         "report_revision_no": report["revision_no"],

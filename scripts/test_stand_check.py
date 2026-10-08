@@ -21,7 +21,9 @@ def check(directory,port,keep=False):
     run('create')
     process=None;log=None
     try:
-        run('bootstrap');run('seed')
+        run('bootstrap')
+        value=json.loads(state.read_text());value.update(qa_orchestration=True,browser_scenario='acceptance-v1');state.write_text(json.dumps(value))
+        run('seed')
         for iteration in range(2):
             log=(directory/'app.log').open('a')
             process=subprocess.Popen([sys.executable,str(CLI),'serve','--state',str(state)],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT)

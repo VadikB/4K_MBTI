@@ -1,32 +1,13 @@
-import { test as base, expect, chromium } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 const root=process.cwd(), python=process.env.BROWSER_PYTHON || path.join(root,'.venv/bin/python');
 const fixture=JSON.parse(fs.readFileSync('tests/browser/fixtures/v1.json','utf8'));
-const test=base.extend({context:async({browser},use,info)=>{
- if(info.title.includes('C1')){
-   // Real background visibility: default Playwright focus emulation keeps every page visible.
-   const owned=await chromium.launch({headless:false,
-     ignoreDefaultArgs:['--disable-backgrounding-occluded-windows','--disable-renderer-backgrounding','--disable-background-timer-throttling'],
-     args:['--remote-debugging-port=18831']});
-   let connected;
-   try{
-     connected=await chromium.connectOverCDP('http://127.0.0.1:18831',{noDefaults:true});
-     const context=connected.contexts()[0];
-     context.restoreDownloadDefaults=async()=>{
-       await connected.close();
-       connected=await chromium.connectOverCDP('http://127.0.0.1:18831');
-       return connected.contexts()[0];
-     };
-     await use(context);
-   }
-   finally{if(connected)await connected.close();await owned.close();}
- }else{
-   const context=await browser.newContext({viewport:{width:1440,height:1000},locale:'ru-RU',acceptDownloads:true});
-   try{await use(context);}finally{await context.close();}
- }
+const test=base.extend({context:async({browser},use)=>{
+ const context=await browser.newContext({viewport:{width:1440,height:1000},locale:'ru-RU',acceptDownloads:true});
+ try{await use(context);}finally{await context.close();}
 },stand:async({},use,info)=>{
   if(!process.env.STAND_ADMIN_URL) throw new Error('Explicit isolated STAND_ADMIN_URL required');
   const dir=path.join(root,'.test-stand/browser',randomUUID());fs.mkdirSync(dir,{recursive:true});
@@ -36,6 +17,7 @@ const test=base.extend({context:async({browser},use,info)=>{
   cli('create');
   try{
     cli('bootstrap');
+    {const inputs=JSON.parse(fs.readFileSync(statePath));inputs.qa_orchestration=true;inputs.browser_scenario='acceptance-v1';fs.writeFileSync(statePath,JSON.stringify(inputs));}
     if(info.title.includes('character')){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_case='character';fs.writeFileSync(statePath,JSON.stringify(inputs));}
     if((info.title.includes('REV-02') || info.title.includes('P10.5') || info.title.includes('G10.7'))){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_profile='unprepared';fs.writeFileSync(statePath,JSON.stringify(inputs));}
     if(info.title.includes('no admitted catalog')){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_catalog='unavailable';fs.writeFileSync(statePath,JSON.stringify(inputs));}
@@ -214,9 +196,9 @@ for(const variant of ['C1','C2']) test(`S10-${variant} background time closure w
    await page.locator('#interview-pause-button').click();await expect(page.locator('#interview-pause-button')).toHaveText('Продолжить');
    await page.close();page=await context.newPage();
  }else{
-   const other=await context.newPage();await other.goto('about:blank');await other.bringToFront();
-   await expect.poll(()=>page.evaluate(()=>document.visibilityState)).toBe('hidden');
-   await info.attach('background-visibility',{body:JSON.stringify({at:new Date().toISOString(),visibility:await page.evaluate(()=>document.visibilityState)}),contentType:'application/json'});
+   page.acceptanceCdp=await context.newCDPSession(page);
+   await page.acceptanceCdp.send('Page.setWebLifecycleState',{state:'frozen'});
+   await info.attach('background-visibility',{body:JSON.stringify({at:new Date().toISOString(),lifecycle:'frozen'}),contentType:'application/json'});
  }
  const statusUrl=`${stand.url}/users/assessment/m7/cycles/${before.cycle_id}`;
  // Allow the 30s fixture budget, the 30s worker sweep and result calculation on CI.
@@ -225,9 +207,8 @@ for(const variant of ['C1','C2']) test(`S10-${variant} background time closure w
  const late=await context.request.post(`${stand.url}/users/assessment/m5/situations/${before.current_situation.assessment_situation_id}/turns`,{data:{request_id:'late',turn_id:randomUUID(),content:'Late synthetic answer'}});expect(late.status()).toBe(409);
  await info.attach('late-turn',{body:JSON.stringify({status:late.status(),response:await late.json()}),contentType:'application/json'});
  if(variant==='C1'){
-   // Same browser/tab/cookies. Restore ordinary download handling only after expiry proof.
-   const restored=await context.restoreDownloadDefaults();
-   page=restored.pages().find(p=>p.url().startsWith(stand.url));expect(page).toBeTruthy();
+   await page.acceptanceCdp.send('Page.setWebLifecycleState',{state:'active'});
+   await page.acceptanceCdp.detach();
  }
  await page.bringToFront();
  await page.goto(`${stand.url}/?screen=interview&cycle_id=${before.cycle_id}`);

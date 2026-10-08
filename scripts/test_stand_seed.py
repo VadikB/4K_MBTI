@@ -20,6 +20,7 @@ def read(path):
 
 
 def seed(state):
+    qa_mode=state.get('qa_orchestration') is True
     with get_connection() as c:
         if c.execute("SELECT id FROM organizations WHERE code='e102_synthetic'").fetchone():
             print('synthetic seed already present; no data changed');return
@@ -68,13 +69,13 @@ def seed(state):
             for scope in ('case_format','case_dialogue','assessment_situation'):
                 evidence={'schema_version':1,'eligibility':'user_admission','scope':scope,'result':'PASS',
                     'case_ref':{'id':case_row['case_id'],'version':case_row['case_version'],'checksum':case_row['content_checksum']},
-                    'base_role':case_row['base_role'],'usage_scopes':['assessment','qa'],
-                    'origin':{'type':'human_review','actor_ref':'controlled-test:E10.2'}}
+                    'base_role':case_row['base_role'],'usage_scopes':['qa'] if qa_mode else ['assessment'],
+                    'origin':{'type':'fixture' if qa_mode else 'human_review','actor_ref':'controlled-test:E10.2'}}
                 c.execute("INSERT INTO m5_qa_evidence(case_version_id,scope,result,evidence_json,evidence_checksum) VALUES(%s,%s,'PASS',%s::jsonb,%s)",(cid,scope,json.dumps(evidence),checksum(evidence)))
         package_row=c.execute("SELECT id FROM m5_packages ORDER BY id DESC LIMIT 1").fetchone()
         catalog=publish_catalog(c,catalog_id='e102-controlled',catalog_version='1.0',package_db_id=package_row['id'],
             case_version_ids=[row['id'] for row in c.execute("SELECT id FROM m5_case_versions WHERE status='FROZEN' ORDER BY id").fetchall()],
-            usage_scope='assessment',organization_id=org,published_by=users[0],decision_basis=basis,
+            usage_scope='qa' if qa_mode else 'assessment',organization_id=org,published_by=users[0],decision_basis=basis,
             idempotency_key='e102-controlled-catalog')
         base_config=c.execute('SELECT * FROM assessment_configurations WHERE id=%s',(publication['configuration_id'],)).fetchone()
         runtime_config=assessment_authoring_service.create_configuration(c,code='e102_controlled_catalog',name='E10.2 controlled catalog',
