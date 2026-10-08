@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "task": "10.13",
+  "implementation_candidate_sha": "03f4b87b0e80620635773b7014b89c0a55f346ad",
+  "statuses": ["REAL_PROVIDER_NOT_RUN", "SEMANTIC_NOT_VERIFIED"],
+  "files": [
+    {"path":"captured-requests.json","sha256":"7aab351f3f560421f3b09efe60bf3c59c1ba91ef4f0755fcbbc504c84ca49a1a"},
+    {"path":"operation-matrix.json","sha256":"7d9d2eeb7a198ec517c32aaac0325940079e86448ba1c901723dea7f8282448b"},
+    {"path":"future-run-manifest.json","sha256":"61526224ff7c6669ffe9f5cdaf213a9fbbd927fefc6da4c1c7268e5b8ca0ed54"},
+    {"path":"deploy-plan.md","sha256":"76e5e9eacf27d2f40425b1aae97a903998fc14a54a1130130706abc02000c745"}
+  ]
+}

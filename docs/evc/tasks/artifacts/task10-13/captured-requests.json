@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "mode": "scripted_no_network",
+  "authorization_captured": false,
+  "requests": [{
+    "operation": "m5.semantic_decision",
+    "provider": "deepseek",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "requested_model": "deepseek-flash",
+    "provider_reported_model": "DeepSeek-V4.1-Flash",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 30,
+      "max_tokens": 100,
+      "thinking": {"type": "disabled"},
+      "response_format": {"type": "json_object"}
+    },
+    "transport_attempts": [{"attempt": 1, "outcome": "completed"}],
+    "usage": {"prompt_tokens": 3, "completion_tokens": 2, "total_tokens": 5}
+  }]
+}

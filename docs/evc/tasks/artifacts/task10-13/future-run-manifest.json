@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "status": "prepared_not_authorized",
+  "implementation_candidate_sha": "03f4b87b0e80620635773b7014b89c0a55f346ad",
+  "runner": {"path":"Api/llm/deepseek_gateway.py","sha256":"47e4982a1e6c594106e140a9f6611bc1175ae512f9159133e6036c2518771f91"},
+  "provider_contract": {"version":"1.0.0","sha256":"a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"},
+  "catalog_contract": "m5-catalog-integrity/1",
+  "processing_contract": "m10-processing-state/1",
+  "gateway_operations": ["m5.semantic_decision","m5.character_response","m5.technical_c45","m6.evidence","m6.indicator_assessment","m6.substantive_admission","m7.assessment_clarification"],
+  "inputs": {"m4_as":"required_frozen_snapshot","catalog":"required_versioned_snapshot","configuration":"required_versioned_snapshot"},
+  "limits": {"maximum_calls":7,"maximum_transport_attempts":7,"maximum_input_tokens":100000,"maximum_output_tokens":36000,"maximum_cost_usd":1.00},
+  "retry_policy": "acceptance_max_attempts=1",
+  "requested_model": "deepseek-flash",
+  "provider_reported_model": null,
+  "real_provider_run": false,
+  "semantic_verified": false,
+  "authorization_required": true,
+  "refresh_required_if_candidate_or_runner_changes": true
+}
