@@ -40,4 +40,6 @@ teardown после сохранения evidence.
 удаляется отдельно. Admission guard, права участника и human-origin policy не менялись.
 
 Безопасный архив: `artifacts/task10-15-1/task10-15-1-traces-safe.zip`, SHA-256
-`87bd5221f8e8bcb270d97032ce80d0644e783d1f890409cd6e3daccdb726371d`.
+`e9b82f65150544dd3699f4fe5559cc359ec9f37c8effbfb058897cc26beed9c1`.
+Архив включает финальные matrix/verification receipts, inline traces, шесть C-67,
+шесть PDF и шесть server logs; credentials и токены в него не включены.

@@ -4,8 +4,8 @@
   "candidate": "01aee3b19e7d3e385a64fc764222b863553219b0",
   "archive": {
     "path": "task10-15-1-traces-safe.zip",
-    "sha256": "87bd5221f8e8bcb270d97032ce80d0644e783d1f890409cd6e3daccdb726371d",
-    "contents": "Playwright JSON with six per-attempt inline traces, six C-67 JSON files and six PDFs"
+    "sha256": "e9b82f65150544dd3699f4fe5559cc359ec9f37c8effbfb058897cc26beed9c1",
+    "contents": "Playwright JSON with six per-attempt inline traces, six C-67 JSON files, six PDFs, six server logs and verification-log.json"
   },
   "attempts": [
     {"scenario":"C1","attempt":1,"status":"PASS","duration":"1.5m"},
