@@ -68,6 +68,7 @@ async function login(page,stand,email='participant@example.test',prepare=false,n
    const options=await (await page.request.get(stand.url+'/users/assessment/profile/options')).json();
    expect(options.current_profile).toBeNull();
    await page.locator('[name="role_profile_version_id"]').selectOption({label:'Менеджер проекта, продукта или процесса · версия 1'});
+   await page.locator('[name="assessment_configuration_id"]').selectOption({label:'E10.2 controlled catalog'});
    await page.locator('[name="position"]').fill('Эксперт по программам');
    await page.locator('[name="duties"]').fill('Согласовать план разработки программ');
    await test.info().attach('profile-confirmation',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
@@ -313,7 +314,7 @@ test('S10-A character branch: actual character Turn, order and no invented recom
  await login(page,stand);await start(page,'Нина');
  const before=await runtime(page,stand);
  expect(before.trace.turns).toHaveLength(0);
- expect(before.plan.plan.catalog.find(x=>x.case_id==='CASE-TDISC-04').reasons).toContain('CASE_UNRESOLVED_DECISIONS');
+ expect(before.plan.plan.catalog.some(x=>x.case_id==='CASE-BROWSER-CHARACTER-01')).toBe(true);
  expect(JSON.stringify(before)).not.toContain(fixture.character_response);
  await answer(page,fixture.character_answer);
  await expect(page.locator('#interview-messages')).toContainText(fixture.character_response);
@@ -519,6 +520,7 @@ test('P10.5 fresh profile, lost confirmation response, reload and first AS',asyn
  await page.locator('[name="position"]').fill('Эксперт по программам');
  await page.locator('[name="duties"]').fill('Согласовать план разработки программ');
  await page.locator('[name="role_profile_version_id"]').selectOption({label:'Менеджер проекта, продукта или процесса · версия 1'});
+ await page.locator('[name="assessment_configuration_id"]').selectOption({label:'E10.2 controlled catalog'});
  await page.getByRole('button',{name:'Подтвердить профиль',exact:true}).click();
  await expect(page.locator('#chat-error')).toBeVisible();
  const committed=profileReceipts(stand);expect(committed.profiles).toHaveLength(1);

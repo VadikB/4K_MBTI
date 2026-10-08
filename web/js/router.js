@@ -2,6 +2,7 @@ import { state, persistAssessmentContext, clearAssessmentContext } from './state
 import {
   authPanel,
   authCompletePanel,
+  authEmailForm,
   emailInput,
   authTokenForm,
   authCredentialLabel,
@@ -166,6 +167,7 @@ export const returnToStart = () => {
   if (authTokenForm) {
     authTokenForm.classList.add('hidden');
   }
+  authEmailForm?.classList.remove('hidden');
   if (authStatus) {
     authStatus.textContent = '';
     authStatus.classList.add('hidden');
