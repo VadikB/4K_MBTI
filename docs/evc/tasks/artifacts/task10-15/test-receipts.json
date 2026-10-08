@@ -1,0 +1,12 @@
+{
+  "schema_version":1,
+  "candidate":"107afe320b1dec5fe383b5f79361a3d5482d448f",
+  "receipts":[
+    {"suite":"backend","command":"pytest -m not-integration/not-e2e/not-llm","status":"PASS","result":"378 passed, 144 deselected","duration_seconds":15.36},
+    {"suite":"HTTP","command":"pytest -m e2e tests/e2e","status":"PASS","result":"46 passed","duration_seconds":24.51},
+    {"suite":"frontend lint","command":"npm run lint:js","status":"PASS"},
+    {"suite":"frontend build","command":"npm run build:web","status":"PASS"},
+    {"suite":"integration first","status":"FAIL","result":"test_clean_bootstrap_db: 2 failed, 1 passed","cause":"STAND_ADMIN_URL dbname agent4k_pytest_1015 rejected by explicit maintenance DB allowlist"},
+    {"suite":"integration correction","status":"INCOMPLETE","result":"maintenance DB agent4k_pytest created; rerun started but complete terminal summary not captured"}
+  ]
+}

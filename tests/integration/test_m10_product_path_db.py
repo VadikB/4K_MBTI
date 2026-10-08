@@ -199,6 +199,66 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
         assert connection.execute("SELECT count(*) AS n FROM m8_results").fetchone()["n"]==1
 
 
+def test_admission_processing_failure_is_limited_and_recovery_is_new_revision(product_db):
+    from Api.m8_results import list_owned_cycles
+    factory=product_db
+    with factory() as connection:
+        started=start_or_resume(connection,user_id=99,key="processing-failure")
+        cycle_id=str(started["plan"]["cycle_id"])
+        as_id=str(started["decision"]["assessment_situation_id"])
+        frozen_catalog=dict(connection.execute("SELECT catalog_ref_json FROM m5_cycles WHERE cycle_id=%s",
+                                               (cycle_id,)).fetchone()["catalog_ref_json"] or {})
+        _add_turn(connection,as_id,"Сохранённый ответ до технического сбоя","processing-failure-turn")
+        complete(connection,cycle_id=cycle_id,key="processing-failure-close",action="complete",
+                 reason="plan_finished",initiated_by=99)
+        connection.commit()
+    assert m10_orchestration.advance_once(connection_factory=factory,gateway=RecordedAdmissionGateway())
+    with factory() as connection:
+        evidence=connection.execute("SELECT id FROM m6_processing_requests").fetchone()
+    run_evidence(evidence["id"],connection_factory=factory,gateway=EvidenceGateway())
+    assert m10_orchestration.advance_once(connection_factory=factory,gateway=RecordedAdmissionGateway())
+    with factory() as connection:
+        assessment=connection.execute("SELECT id FROM m6_assessment_requests").fetchone()
+    run_assessment(assessment["id"],connection_factory=factory,gateway=AssessmentGateway())
+    assert m10_orchestration.advance_once(connection_factory=factory,
+        gateway=RecordedAdmissionGateway(fail='joint'))
+    with factory() as connection:
+        failed=connection.execute("SELECT * FROM m10_pipeline_runs").fetchone()
+        assert (failed["status"],failed["stage"],failed["error_code"]) == (
+            "failed","admission_processing_failed","M6_ADMISSION_PROCESSING_FAILED")
+        old_report=read_latest_report(connection,cycle_id,"assessee")
+        assert old_report["c67"]["processing"]["status"] == "failed"
+        assert {x["code"] for x in old_report["c67"]["partial_result"]["limitation_reasons"]} >= {
+            "technical_failure"}
+        assert any("не L0" in item for item in old_report["c67"]["limitations"])
+        assert render_pdf(old_report).startswith(b"%PDF")
+        card=list_owned_cycles(connection,99)[0]
+        assert card["status"] == "failed" and card["report_id"] == old_report["id"]
+        saved_turns=connection.execute("SELECT count(*) AS n FROM m5_dialogue_turns").fetchone()["n"]
+        assert saved_turns == 1
+        retry=m10_orchestration.request_processing_recovery(
+            connection,cycle_id=cycle_id,idempotency_key="owned-recovery",created_by=99)
+        replay=m10_orchestration.request_processing_recovery(
+            connection,cycle_id=cycle_id,idempotency_key="owned-recovery",created_by=99)
+        assert retry["id"] == replay["id"]
+        connection.commit()
+    assert m10_orchestration.advance_once(connection_factory=factory,gateway=RecordedAdmissionGateway())
+    with factory() as connection:
+        recovered=connection.execute("SELECT * FROM m10_pipeline_runs").fetchone()
+        assert (recovered["status"],recovered["stage"]) == ("ready","recovered_report_ready")
+        latest=read_latest_report(connection,cycle_id,"assessee")
+        assert latest["id"] != old_report["id"] and latest["c67"]["processing"]["status"] == "completed"
+        assert read_report(connection,old_report["id"]) == old_report
+        assert connection.execute("SELECT count(*) AS n FROM m6_cycle_calculations").fetchone()["n"] == 2
+        assert connection.execute("SELECT count(*) AS n FROM m8_result_revisions").fetchone()["n"] == 2
+        assert connection.execute("SELECT count(*) AS n FROM m10_processing_recoveries WHERE status='succeeded'").fetchone()["n"] == 1
+        assert connection.execute("SELECT count(*) AS n FROM m5_dialogue_turns").fetchone()["n"] == saved_turns
+        assert dict(connection.execute("SELECT catalog_ref_json FROM m5_cycles WHERE cycle_id=%s",
+                                      (cycle_id,)).fetchone()["catalog_ref_json"] or {}) == frozen_catalog
+        assert connection.execute("SELECT count(*) AS n FROM m5_cycle_sessions").fetchone()["n"] == 1
+        connection.commit()
+
+
 def test_s10_b_additional_session_preserves_boundary_and_reaches_report(product_db):
     factory=product_db
     with factory() as connection:
@@ -251,6 +311,14 @@ def test_s10_d_closed_cycle_without_presented_material_has_no_result_report(prod
         assert report["c67"]["contract"] == "C-67"
         assert all(skill["outcome"] == "no_result" for skill in report["c67"]["skills"])
         assert report["c67"]["coverage"]["cycle_plan"]["admissible_contributions"]["numerator"] == 0
+        partial=report["c67"]["partial_result"]
+        assert partial["is_incomplete"] is True
+        assert partial["progress"]["completed"] == 0
+        assert partial["progress"]["planned"] >= 1
+        assert partial["progress"]["not_presented"] == partial["progress"]["planned"]
+        assert {x["code"] for x in partial["limitation_reasons"]} >= {
+            "collection_incomplete","observation_missing"}
+        assert render_pdf(report).startswith(b"%PDF")
         assert connection.execute("SELECT status FROM m10_pipeline_runs").fetchone()["status"] == "ready"
 
 

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "contract_version": "m10-processing-recovery/1.0.0",
+  "examples": {
+    "success": {"status": "completed", "message": "Обработка завершена.", "allowed_actions": []},
+    "processing": {"status": "processing", "message": "Результат обрабатывается.", "allowed_actions": []},
+    "failed": {"status": "failed", "message": "Не удалось завершить техническую обработку. Сохранённые ответы не потеряны.", "allowed_actions": []},
+    "recovered": {"status": "recovered", "message": "Обработка восстановлена.", "allowed_actions": []}
+  },
+  "diagnostic_example": {
+    "pipeline_stage": "admission_processing_failed",
+    "processing_error": "M6_ADMISSION_PROCESSING_FAILED",
+    "report_status": "limited"
+  }
+}

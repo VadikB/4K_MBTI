@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "task": "10.15.2",
+  "runtime_candidate": "01aee3b19e7d3e385a64fc764222b863553219b0",
+  "files": [
+    {"path":"acceptance-matrix.json","kind":"H1-H12 final matrix"},
+    {"path":"verification-log.json","kind":"commands, exit codes, summaries and preserved failures"},
+    {"path":"task10-15-2-h8-logs-safe.zip","kind":"pre-10.11/current H8 logs, report JSON/PDF and smoke trace","sha256":"f2766807b920e35bb523f638a184545185ea2d64db1748754ddaec092d1095ce"},
+    {"path":"../task10-15-1/task10-15-1-traces-safe.zip","kind":"six C1/C2 traces, C67, PDF and server logs","sha256":"e9b82f65150544dd3699f4fe5559cc359ec9f37c8effbfb058897cc26beed9c1"}
+  ]
+}

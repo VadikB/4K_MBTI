@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "task": "Task-10-11",
+  "base_commit": "15f41a229c6cc2b33e8a0b99306433ebb3df8b5d",
+  "artifacts": [
+    "publication-dry-run-receipt.json",
+    "negative-evidence.json",
+    "../../task10-11-catalog-integrity.md",
+    "../../../architecture/product-4k/m5-catalog-integrity-contract.md"
+  ],
+  "note": "Финальный commit и diff фиксируются после завершения проверок; production publication не выполнялась."
+}

@@ -163,9 +163,10 @@ def test_m5_import_readback_and_rejected_as_are_transactional(test_database_url)
                     "indicator_id": "K1.I13", "m2_version": "v1.1",
                     "status": "technical_received", "boundary_sequence": handoff["boundary_sequence"],
                 }
+                sent_parameters = {key: value for key, value in kwargs.items() if key != "routing_key"}
                 return LlmResponse(json.dumps(payload), {"request_id": "provider-qa-1", "model": self.model},
                                    {"provider": operation["provider"], "endpoint": operation["endpoint"],
-                                    "model": self.model, "parameters": operation["parameters"], "messages": messages})
+                                    "model": self.model, "parameters": sent_parameters, "messages": messages})
 
         receipt = execute_technical_c45(
             connection, assessment_situation_id=prepared["assessment_situation_id"],

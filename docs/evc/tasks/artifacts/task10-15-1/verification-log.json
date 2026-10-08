@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "runtime_candidate": "01aee3b19e7d3e385a64fc764222b863553219b0",
+  "runs": [
+    {"suite":"backend","exit_code":0,"summary":"380 passed, 144 deselected, 1 warning in 6.62s"},
+    {"suite":"http","exit_code":0,"summary":"46 passed, 1 warning in 13.34s"},
+    {"suite":"clean_bootstrap_report_pdf","exit_code":0,"summary":"1 passed in 102.09s"},
+    {"suite":"browser_c1_c2_x3","exit_code":0,"retries":0,"poll_timeout_seconds":120,"test_timeout_seconds":240,"summary":"6 passed in 8.8m"},
+    {"suite":"full_integration_before_final_seed_split","exit_code":1,"summary":"92 passed, 2 failed, 430 deselected in 360.57s","status":"PARTIAL"}
+  ],
+  "preserved_failures": [
+    {"stage":"10.15 first integration","error":"maintenance DB agent4k_pytest_1015 rejected by ownership allowlist"},
+    {"stage":"10.15.1 sandbox integration attempt","error":"TCP 127.0.0.1:55435 Operation not permitted"},
+    {"stage":"10.15.1 full integration","error":"M5 technical-C54 legacy fixture sent.parameters identity mismatch"}
+  ]
+}

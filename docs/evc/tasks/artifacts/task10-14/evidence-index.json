@@ -1,0 +1,11 @@
+{
+  "schema_version":1,
+  "task":"10.14",
+  "implementation_commit":"c72c5c3ef87da3a239e13ae78e2c157aaa6c5cca",
+  "files":[
+    {"path":"ux-examples.json","sha256":"95ff5ef257e95b1238bfee08ed40bbb085284e0050ae05c3c1928a25861ee9dc"},
+    {"path":"receipts.json","sha256":"8b82ed3148c5037a4371065d6847ab0b090a645551f865d989936c0d71043416"},
+    {"path":"../../../../architecture/product-4k/m8-partial-result-contract.md","sha256":"94e1f438c428e1539974b677925a1ec53e79aa9678d4f77be1855311a9243e46"}
+  ],
+  "statuses":{"R1":"BLOCKED","R8":"BLOCKED","R9":"PARTIAL","R10":"PARTIAL","real_ai":"NOT_RUN"}
+}

@@ -13,7 +13,7 @@ from Api.m8_recommendations import generate as generate_recommendations
 from Api.typst_pdf_renderer import render_typst_report
 
 RESULTS_VERSION = "m8-results/1.0.0"
-REPORT_TEMPLATE_VERSION = "m8-basic-report/1.2.0"
+REPORT_TEMPLATE_VERSION = "m8-basic-report/1.3.0"
 ALLOWED_AUDIENCES = {"assessee", "customer", "methodology_qa"}
 
 
@@ -75,6 +75,44 @@ def _comparison(skill: dict, target: dict | None) -> dict:
             "reason": "NORMATIVE_SKILL_LEVEL_NOT_AVAILABLE"}
 
 
+def _partial_result_projection(c46: dict, c56: dict, processing: dict, template: dict) -> dict:
+    situations = list(c56["cycle_context"].get("assessment_situations") or [])
+    route = list((c46["payload_json"].get("plan") or {}).get("untraversed_route") or [])
+    planned = len(route)
+    presented = [x for x in situations if x.get("handoff_id") or x.get("status") not in {"prepared", "admitted"}]
+    completed = [x for x in situations if x.get("handoff_id")]
+    interrupted = [x for x in presented if x.get("status") in {"terminated", "closed"} and not x.get("handoff_id")]
+    not_presented = max(0, planned - len(presented))
+    full_cut = c56["coverage"]["full_m2"]["indicator_assessments"]
+    plan_cut = c56["coverage"]["cycle_plan"]["indicator_assessments"]
+    codes = []
+    if c56["coverage"]["cycle_plan"]["indicator_assessments"]["denominator"] < full_cut["denominator"]:
+        codes.append("plan_scope")
+    close_reason = str(c46["payload_json"].get("collection", {}).get("reason") or "")
+    if not_presented or close_reason in {"time_budget", "calendar_deadline"}:
+        codes.append("collection_incomplete")
+    if plan_cut["numerator"] < plan_cut["denominator"]:
+        codes.append("observation_missing")
+    if c56.get("limitations"):
+        codes.append("context_limited")
+    if processing["status"] == "failed":
+        codes.append("technical_failure")
+    messages = template["partial_result"]
+    result = {
+        "contract_version": "m8-partial-result/1.0.0",
+        "is_incomplete": bool(codes), "close_reason": close_reason,
+        "progress": {"completed": len(completed), "planned": planned,
+                     "presented": len(presented), "interrupted": len(interrupted),
+                     "not_presented": not_presented,
+                     "formula": "completed AS with final handoff / immutable accepted plan route"},
+        "plan_revision_id": (c46["payload_json"].get("plan") or {}).get("revision_id"),
+        "limitation_reasons": [{"code": code, "message": messages["reasons"][code]} for code in dict.fromkeys(codes)],
+        "messages": {"title": messages["incomplete_title"] if codes else "Оценка завершена",
+                     "confirmed": messages["confirmed"], "not_inferred": messages["not_inferred"]},
+    }
+    return result
+
+
 def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: dict | None,
                    profile_snapshot: dict | None) -> dict:
     c56 = calculation["c56"]
@@ -101,7 +139,24 @@ def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: di
     competencies = defaultdict(list)
     for skill in skills:
         competencies[(skill["competency_id"], skill["competency_name"])].append(skill["skill_id"])
-    return {
+    failed_admissions = [item for item in c56.get("admissions", []) if item.get("processing_status") == "failed"]
+    processing = {
+        "contract_version": "m10-processing-recovery/1.0.0",
+        "status": "failed" if failed_admissions else "completed",
+        "stage": "substantive_admission",
+        "error_code": "M6_ADMISSION_PROCESSING_FAILED" if failed_admissions else None,
+        "affected_indicator_ids": sorted(item["indicator_id"] for item in failed_admissions),
+        "message": ("Не удалось завершить техническую обработку части результатов. "
+                    "Сохранённые ответы и подтверждённые основания не потеряны."
+                    if failed_admissions else "Обработка завершена."),
+        "allowed_actions": [],
+    }
+    limitations = list(c56.get("limitations") or []) + ["Skill Level is not derived from numeric Score"]
+    if failed_admissions:
+        limitations.append("Часть результата ограничена техническим сбоем обработки; это не L0 и не содержательный вывод.")
+    partial_result = _partial_result_projection(c46, c56, processing, load_report_package()["template"])
+    limitations += [x["message"] for x in partial_result["limitation_reasons"]]
+    result = {
         "schema_version": 1, "results_version": RESULTS_VERSION, "cycle_id": str(cycle["cycle_id"]),
         "subject_user_id": cycle["owner_user_id"], "profile_ref": cycle["profile_ref_json"],
         "personalized_profile_snapshot": profile_snapshot,
@@ -118,9 +173,14 @@ def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: di
                           "score": None} for key, value in sorted(competencies.items())],
         "coverage": c56["coverage"], "admissions": c56["admissions"], "observations": c56["observations"],
         "confidence": c56["confidence"], "reliability": c56["reliability"],
-        "limitations": list(c56.get("limitations") or []) + ["Skill Level is not derived from numeric Score"],
+        "limitations": list(dict.fromkeys(limitations)), "processing": processing,
+        "partial_result": partial_result,
         "target_profile": target_profile, "sources": c56["sources"], "algorithm": c56["algorithm"],
     }
+    if cycle["usage_scope"] == "qa":
+        result["test_result"] = {"synthetic": True, "usage_scope": "qa",
+                                 "participant_assessment": False}
+    return result
 
 
 def create_results(connection, *, cycle_id: str, calculation_id: str, key: str,
@@ -246,7 +306,7 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
             "notices": [package["template"]["recommendation_failure_notice"]],
             "status": "failed", "failure_reason": "RECOMMENDATION_GENERATION_FAILED",
         }
-    return {"schema_version": 1, "contract": "C-67", "message_version": "1.1", "owner": "PM-06", "consumer": "PM-07",
+    report = {"schema_version": 1, "contract": "C-67", "message_version": "1.1", "owner": "PM-06", "consumer": "PM-07",
             "results_id": results["id"], "results_revision_id": results["revision_id"],
             "results_revision_no": results["revision_no"], "cycle_id": results["cycle_id"], "audience": audience,
             "disclosure": detail, "profile_ref": payload["profile_ref"], "role_ref": payload["role_ref"],
@@ -255,14 +315,21 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
             "skills": skills, "competencies": payload["competencies"], "coverage": payload["coverage"],
             "confidence": payload["confidence"], "reliability": payload["reliability"],
             "limitations": payload["limitations"], "target_profile": target_profile or payload.get("target_profile"),
+            "partial_result": payload.get("partial_result"),
             "provenance": {"composition_checksum": payload["composition_checksum"], "c46_ref": payload["c46_ref"],
                            "c56_ref": payload["c56_ref"], "sources": payload["sources"], "algorithm": payload["algorithm"]},
-            "admission_summary": admission_summary,
+            "admission_summary": admission_summary, "processing": payload.get("processing", {
+                "contract_version":"m10-processing-recovery/1.0.0","status":"completed",
+                "stage":"substantive_admission","error_code":None,"affected_indicator_ids":[],
+                "message":"Обработка завершена.","allowed_actions":[]}),
             "report_mechanism": {"id": package["manifest"]["id"], "version": package["manifest"]["version"],
                                  "checksum": package["template_hash"]},
             "recommendation_generation": recommendation_generation,
             "recommendations": recommendation_generation["recommendations"],
             "recommendation_notices": recommendation_generation["notices"]}
+    if payload.get("test_result"):
+        report["test_result"] = payload["test_result"]
+    return report
 
 
 def create_report(connection, *, results_revision_id: str, audience: str, key: str,
@@ -299,15 +366,23 @@ OWNER_CYCLE_SCOPE = """c.owner_user_id=%s AND c.usage_scope='assessment'
 
 
 def owner_can_read_cycle(connection, cycle_id: str, user_id: int) -> bool:
-    return connection.execute("SELECT c.id FROM m5_cycles c WHERE c.cycle_id=%s AND " + OWNER_CYCLE_SCOPE,
-                              (UUID(str(cycle_id)), user_id)).fetchone() is not None
+    from Api.qa_orchestration import permits
+    row = connection.execute("""SELECT c.id,c.usage_scope FROM m5_cycles c WHERE c.cycle_id=%s
+        AND c.owner_user_id=%s AND EXISTS (SELECT 1 FROM organization_memberships member
+          JOIN organizations org ON org.id=member.organization_id
+          WHERE member.user_id=c.owner_user_id AND member.organization_id=c.organization_id
+            AND org.is_active=TRUE)""", (UUID(str(cycle_id)), user_id)).fetchone()
+    return bool(row and permits(row["usage_scope"]))
 
 
 def list_owned_cycles(connection, user_id: int) -> list[dict]:
     """Read-only owner history; one card per Cycle, revisions never count as Cycles."""
+    from Api.qa_orchestration import sql_scope
+    owner_scope = OWNER_CYCLE_SCOPE.replace("c.usage_scope='assessment'", sql_scope("c"))
     rows = connection.execute("""SELECT c.cycle_id,c.status AS cycle_status,
         c.created_at AS cycle_created_at,c.started_at,c.collection_closed_at,
         pipeline.status AS processing_status,pipeline.stage AS processing_stage,
+        (to_jsonb(pipeline)->>'error_code') AS processing_error,
         rr.id AS results_revision_id,rr.revision_no AS results_revision_no,
         p.id AS report_id,p.revision_no,p.created_at
         FROM m5_cycles c
@@ -315,7 +390,7 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
         LEFT JOIN m8_results r ON r.cycle_db_id=c.id
         LEFT JOIN m8_result_revisions rr ON rr.results_id=r.id
         LEFT JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
-        WHERE """ + OWNER_CYCLE_SCOPE + """
+        WHERE """ + owner_scope + """
         ORDER BY c.created_at DESC,c.id DESC,rr.revision_no DESC NULLS LAST,
                  p.revision_no DESC NULLS LAST""", (user_id,)).fetchall()
     cycles = {}
@@ -326,6 +401,10 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
             'cycle_created_at':row['cycle_created_at'], 'started_at':row['started_at'],
             'collection_closed_at':row['collection_closed_at'],
             'processing_status':row['processing_status'], 'processing_stage':row['processing_stage'],
+            'processing_error':row['processing_error'],
+            'processing_message':('Не удалось завершить техническую обработку. Сохранённые ответы не потеряны.'
+                                  if row['processing_status']=='failed' else None),
+            'allowed_actions':[],
             'results_revision_id':str(row['results_revision_id']) if row['results_revision_id'] else None,
             'results_revision_no':row['results_revision_no'],
             'latest_results_revision_id':str(row['results_revision_id']) if row['results_revision_id'] else None,
@@ -339,8 +418,8 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
             if item['report_id'] is None:
                 item.update({k:version[k] for k in ('report_id','revision_no','created_at','results_revision_id','results_revision_no')})
     for item in cycles.values():
-        item['status'] = ('report_ready' if item['report_id'] else
-            'failed' if item['processing_status']=='failed' or item['cycle_status']=='failed' else
+        item['status'] = ('failed' if item['processing_status']=='failed' or item['cycle_status']=='failed' else
+            'report_ready' if item['report_id'] else
             'results_ready' if item['results_revision_id'] else
             'processing' if item['cycle_status'] in {'collection_closed','calculation_pending','calculated'} else 'collecting')
     return list(cycles.values())
@@ -426,13 +505,16 @@ def render_pdf(report: dict) -> bytes:
             ratio = "не определено" if cut["ratio"] is None else f"{cut['numerator']}/{cut['denominator']} ({cut['ratio'] * 100:.1f}%)"
             coverage.append({"scope": scope, "name": name, "ratio": ratio})
     payload = {
-        "title": "4K — базовый индивидуальный отчёт",
+        "title": ("ТЕСТОВЫЙ РЕЗУЛЬТАТ — 4K" if c67.get("test_result")
+                  else "4K — базовый индивидуальный отчёт"),
         "cycle_id": c67["cycle_id"],
         "results_revision_no": c67["results_revision_no"],
         "report_revision_no": report["revision_no"],
         "skills": skills,
         "coverage": coverage,
         "limitations": c67["limitations"],
+        "partial_result": c67.get("partial_result"),
+        "processing": c67.get("processing", {"status":"completed","message":"Обработка завершена."}),
         "recommendations": c67.get("recommendations", []),
         "recommendation_notices": c67.get("recommendation_notices", []),
         "reliability": c67["reliability"].get("status", "not_provided"),

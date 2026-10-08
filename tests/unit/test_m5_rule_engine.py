@@ -4,6 +4,7 @@ from Api.llm.contracts import LlmResponse
 from Api.m5_rule_engine import (ControlledSemanticAdapter, DeepSeekCharacterAdapter,
                                 DeepSeekSemanticAdapter, RuleOutcome,
                                 build_m5_ai_operations_snapshot, evaluate_rule)
+from Api.llm.provider_contract import operation_parameters
 
 pytestmark = pytest.mark.unit
 
@@ -72,7 +73,7 @@ def test_semantic_adapter_sends_frozen_model_endpoint_parameters_and_keeps_provi
                 '{"code":"MATCH","basis":"ok"}',
                 {"request_id": "provider-1", "model": operation["model"], "revision": None},
                 {"provider": "deepseek", "endpoint": operation["endpoint"], "model": operation["model"],
-                 "parameters": operation["parameters"], "messages": messages},
+                 "parameters": operation_parameters(operation), "messages": messages},
             )
 
     result = DeepSeekSemanticAdapter(Gateway(), operation=operation).decide(
@@ -97,7 +98,7 @@ def test_semantic_adapter_records_provider_resolved_model_alias():
             return LlmResponse(
                 '{"code":"MATCH","basis":"ok"}', {"model": "unexpected-model"},
                 {"provider": operation["provider"], "endpoint": operation["endpoint"],
-                 "model": operation["model"], "parameters": operation["parameters"], "messages": messages},
+                 "model": operation["model"], "parameters": operation_parameters(operation), "messages": messages},
             )
 
     result = DeepSeekSemanticAdapter(Gateway(), operation=operation).decide(
@@ -122,7 +123,7 @@ def test_semantic_adapter_rejects_sent_model_different_from_snapshot():
             return LlmResponse(
                 '{"code":"MATCH","basis":"ok"}', {"model": "unexpected-model"},
                 {"provider": operation["provider"], "endpoint": operation["endpoint"],
-                 "model": "unexpected-model", "parameters": operation["parameters"], "messages": messages},
+                 "model": "unexpected-model", "parameters": operation_parameters(operation), "messages": messages},
             )
 
     result = DeepSeekSemanticAdapter(Gateway(), operation=operation).decide(

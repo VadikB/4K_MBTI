@@ -67,10 +67,25 @@ def options(connection, *, user_id):
         JOIN assessment_organization_contexts c ON c.id=v.organization_context_id
         WHERE c.organization_id=%s AND v.status='published'
         ORDER BY c.code,v.version DESC''', (organization_id,)).fetchall()
-    configurations = connection.execute('''SELECT c.id,c.code,c.name FROM assessment_configurations c
-        JOIN assessment_methodology_versions m ON m.id=c.methodology_version_id
-        WHERE c.status='published' AND m.status='published'
-          AND m.definition_json->>'methodology_version'='1.1' ORDER BY c.id''').fetchall()
+    catalog_schema = connection.execute("""SELECT
+        to_regclass(current_schema()||'.m5_catalogs') IS NOT NULL AS has_catalog,
+        EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema=current_schema()
+          AND table_name='assessment_configurations' AND column_name='catalog_version_id') AS has_binding""").fetchone()
+    if catalog_schema['has_catalog'] and catalog_schema['has_binding']:
+        configurations = connection.execute('''SELECT c.id,c.code,c.name,c.catalog_version_id,
+            (catalog.id IS NOT NULL AND catalog.status='published') AS catalog_available
+            FROM assessment_configurations c
+            JOIN assessment_methodology_versions m ON m.id=c.methodology_version_id
+            LEFT JOIN m5_catalogs catalog ON catalog.id=c.catalog_version_id
+            WHERE c.status='published' AND m.status='published'
+              AND m.definition_json->>'methodology_version'='1.1'
+            ORDER BY (catalog.id IS NOT NULL AND catalog.status='published') DESC,c.is_default DESC,c.id''').fetchall()
+    else:
+        configurations = connection.execute('''SELECT c.id,c.code,c.name,NULL::BIGINT AS catalog_version_id,
+            FALSE AS catalog_available FROM assessment_configurations c
+            JOIN assessment_methodology_versions m ON m.id=c.methodology_version_id
+            WHERE c.status='published' AND m.status='published'
+              AND m.definition_json->>'methodology_version'='1.1' ORDER BY c.id''').fetchall()
     roles = list_available_role_profiles(connection, user_id=user_id)
     selected = get_selected_role_profile(connection, user_id=user_id)
     current = readiness(connection, user_id=user_id)

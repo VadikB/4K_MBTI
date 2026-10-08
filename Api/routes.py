@@ -22,6 +22,7 @@ from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_ser
 from Api.config import settings
 from Api.assessment_service import assessment_service
 from Api import m5_generation_lab
+from Api import m5_catalog_integrity
 from Api import m5_cycle_runtime, m5_scenario_runtime, m5_storage
 from Api import m7_cycle_planner
 from Api.m7_planning_contracts import CreateCyclePlanRequest, NextSituationRequest, PresentSituationRequest
@@ -208,6 +209,9 @@ from Api.schemas import (
     AssessmentConfigurationCreateRequest,
     AssessmentConfigurationPublishRequest,
     AssessmentConfigurationResponse,
+    M5CatalogPlanRequest,
+    M5CatalogPublishRequest,
+    M10ProcessingRecoveryRequest,
     PlatformRoleAssignmentRequest,
 )
 
@@ -604,6 +608,7 @@ def _compact_user_response(user: UserResponse | None) -> UserResponse | None:
 
 
 def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> UserDashboard:
+    from Api.qa_orchestration import usage_scope
     # Dashboard follows the current Cycle runtime; legacy aggregate views are not inputs.
     readiness = participant_profile.readiness(connection, user_id=user.id, profile_id=profile_id)
     cycle = connection.execute("""SELECT c.id,c.status,
@@ -611,10 +616,10 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         COUNT(s.id) FILTER (WHERE s.status='closed')::int AS completed_cases
         FROM m5_cycles c LEFT JOIN m5_assessment_situations s ON s.cycle_db_id=c.id
         JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
-        WHERE c.owner_user_id=%s AND c.usage_scope='assessment'
+        WHERE c.owner_user_id=%s AND c.usage_scope=%s
           AND p.organization_id=%s AND p.assessment_configuration_id=%s
         GROUP BY c.id ORDER BY c.created_at DESC,c.id DESC LIMIT 1""",
-        (user.id, readiness.get('organization_id'), readiness.get('assessment_configuration_id'))).fetchone()
+        (user.id, usage_scope(), readiness.get('organization_id'), readiness.get('assessment_configuration_id'))).fetchone()
     report_rows = m8_results.list_owned_reports(connection, user.id)
     completed_cases = int(cycle['completed_cases']) if cycle else 0
     total_cases = int(cycle['total_cases']) if cycle else 0
@@ -3167,15 +3172,16 @@ def _onboarding_response(payload: dict) -> OnboardingStateResponse:
 
 @router.get("/{user_id}/journey-state", response_model=UserJourneyStateResponse)
 def get_user_journey_state(user_id: int, request: Request, personalized_profile_id: int | None = None) -> UserJourneyStateResponse:
+    from Api.qa_orchestration import usage_scope
     user = _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         profile = participant_profile.readiness(connection, user_id=user.id, profile_id=personalized_profile_id)
         onboarding = get_or_create_onboarding_state(connection, user_id)
         cycle = connection.execute("""SELECT c.status FROM m5_cycles c
             JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
-            WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.usage_scope='assessment'
+            WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.usage_scope=%s
               AND p.assessment_configuration_id=%s ORDER BY c.created_at DESC,c.id DESC LIMIT 1""",
-            (user.id, profile.get('organization_id'), profile.get('assessment_configuration_id'))).fetchone()
+            (user.id, profile.get('organization_id'), usage_scope(), profile.get('assessment_configuration_id'))).fetchone()
         connection.commit()
     ready = profile['status'] == 'ready'
     assessment_status = ({'prepared':'preparing','active':'in_progress','paused':'in_progress',
@@ -4932,6 +4938,7 @@ def _m5_superadmin(request: Request):
 
 
 def _m5_owned_situation(request: Request, assessment_situation_id: str) -> None:
+    from Api.qa_orchestration import permits
     token = request.cookies.get(SESSION_COOKIE_NAME)
     user = web_session_service.get_user_by_token(token) if token else None
     if user is None:
@@ -4947,23 +4954,25 @@ def _m5_owned_situation(request: Request, assessment_situation_id: str) -> None:
         raise HTTPException(status_code=404, detail="M5_AS_NOT_FOUND")
     if int(row["user_id"]) != int(user.id):
         raise HTTPException(status_code=403, detail="Нет доступа к чужой Assessment Situation.")
-    if row["usage_scope"] != "assessment":
+    if not permits(row["usage_scope"]):
         raise HTTPException(status_code=403, detail="QA_AS_NOT_AVAILABLE_IN_PRODUCT_ROUTE")
     return user
 
 
 def _m7_owned_cycle(request:Request,cycle_id:str):
+    from Api.qa_orchestration import permits
     token=request.cookies.get(SESSION_COOKIE_NAME);user=web_session_service.get_user_by_token(token) if token else None
     if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
     with get_connection() as connection:
         row=connection.execute('SELECT owner_user_id,usage_scope FROM m5_cycles WHERE cycle_id=%s',(UUID(cycle_id),)).fetchone()
     if not row:raise HTTPException(status_code=404,detail='M7_CYCLE_NOT_FOUND')
     if int(row['owner_user_id'])!=int(user.id):raise HTTPException(status_code=403,detail='Нет доступа к чужому Assessment Cycle.')
-    if row['usage_scope']!='assessment':raise HTTPException(status_code=403,detail='QA_CYCLE_NOT_AVAILABLE_IN_PRODUCT_ROUTE')
+    if not permits(row['usage_scope']):raise HTTPException(status_code=403,detail='QA_CYCLE_NOT_AVAILABLE_IN_PRODUCT_ROUTE')
     return user
 
 
 def _m7_owned_clarification(request:Request,decision_id:str):
+    from Api.qa_orchestration import permits
     token=request.cookies.get(SESSION_COOKIE_NAME);user=web_session_service.get_user_by_token(token) if token else None
     if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
     with get_connection() as connection:
@@ -4972,7 +4981,7 @@ def _m7_owned_clarification(request:Request,decision_id:str):
             JOIN m5_cycles c ON c.id=s.cycle_db_id WHERE d.id=%s""",(UUID(decision_id),)).fetchone()
     if not row:raise HTTPException(status_code=404,detail='M7_CLARIFICATION_NOT_FOUND')
     if int(row['owner_user_id'])!=int(user.id):raise HTTPException(status_code=403,detail='Нет доступа к чужому уточнению.')
-    if row['usage_scope']!='assessment':raise HTTPException(status_code=403,detail='QA_CLARIFICATION_NOT_AVAILABLE_IN_PRODUCT_ROUTE')
+    if not permits(row['usage_scope']):raise HTTPException(status_code=403,detail='QA_CLARIFICATION_NOT_AVAILABLE_IN_PRODUCT_ROUTE')
     return user
 
 
@@ -5918,6 +5927,7 @@ def create_assessment_configuration(
                 name=payload.name,
                 methodology_version_id=payload.methodology_version_id,
                 scenario_version_id=payload.scenario_version_id,
+                catalog_version_id=payload.catalog_version_id,
                 actor_user_id=int(user.id),
                 comment=payload.comment,
             )
@@ -5953,6 +5963,63 @@ def publish_assessment_configuration(
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return AssessmentConfigurationResponse(**row)
+
+
+@router.post("/admin/m5-catalogs/plan")
+def plan_m5_catalog_publication(payload: M5CatalogPlanRequest, request: Request) -> dict[str, object]:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, "configuration.publish")
+            if payload.organization_id is not None:
+                scope = _get_admin_scope_or_403(connection, user)
+                if not scope.is_superadmin and payload.organization_id not in scope.organization_ids:
+                    raise PermissionError("Organization admin access required")
+            return m5_catalog_integrity.publication_plan(
+                connection, package_db_id=payload.package_db_id,
+                case_version_ids=payload.case_version_ids, usage_scope=payload.usage_scope,
+                organization_id=payload.organization_id,
+            )
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/admin/m5-catalogs/publish")
+def publish_m5_catalog(payload: M5CatalogPublishRequest, request: Request) -> dict[str, object]:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, "configuration.publish")
+            if payload.organization_id is not None:
+                scope = _get_admin_scope_or_403(connection, user)
+                if not scope.is_superadmin and payload.organization_id not in scope.organization_ids:
+                    raise PermissionError("Organization admin access required")
+            return m5_catalog_integrity.publish_catalog(
+                connection, catalog_id=payload.catalog_id, catalog_version=payload.catalog_version,
+                package_db_id=payload.package_db_id, case_version_ids=payload.case_version_ids,
+                usage_scope=payload.usage_scope, organization_id=payload.organization_id,
+                published_by=int(user.id), decision_basis=payload.decision_basis,
+                idempotency_key=payload.idempotency_key,
+            )
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/admin/m5-catalogs/{catalog_db_id}")
+def read_m5_catalog(catalog_db_id: int, request: Request) -> dict[str, object]:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, "configuration.publish")
+            return m5_catalog_integrity.catalog_readback(connection, catalog_db_id)
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.post("/admin/platform-role-assignments")
@@ -7031,23 +7098,71 @@ def read_owned_m8_status(cycle_id: UUID, request: Request):
         cycle = m7_completion.read_status(connection, str(cycle_id))
         pipeline = connection.execute("""SELECT p.status,p.stage,p.error_code FROM m10_pipeline_runs p
             JOIN m5_cycles c ON c.id=p.cycle_db_id WHERE c.cycle_id=%s""", (cycle_id,)).fetchone()
+        if pipeline and pipeline['status']=='failed':
+            try:
+                report = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
+            except ValueError:
+                report = None
+            return {**cycle,'results_status':'failed',
+                    'report_status':'limited' if report else 'not_created',
+                    'report_id':report['id'] if report else None,
+                    'pipeline_stage':pipeline['stage'],
+                    'processing_error':pipeline['error_code'],
+                    'processing':{'contract_version':'m10-processing-recovery/1.0.0','status':'failed',
+                        'message':'Не удалось завершить техническую обработку. Сохранённые ответы не потеряны.',
+                        'allowed_actions':[]}}
         try:
             report = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
+            partial = report['c67'].get('partial_result')
+            new_cycle = ({'action':'start_new_cycle','method':'POST','href':'/assessment/cycles/start',
+                          'availability':'requires_current_profile_configuration_catalog_and_membership'}
+                         if partial and partial.get('is_incomplete') else None)
             return {**cycle, 'results_status': 'ready', 'report_status': report['status'], 'report_id': report['id'],
-                    'pipeline_stage': pipeline['stage'] if pipeline else 'report_ready', 'processing_error': None}
+                    'pipeline_stage': pipeline['stage'] if pipeline else 'report_ready', 'processing_error': None,
+                    'processing':{'contract_version':'m10-processing-recovery/1.0.0',
+                        'status':'recovered' if pipeline and pipeline['stage']=='recovered_report_ready' else 'completed',
+                        'message':'Обработка восстановлена.' if pipeline and pipeline['stage']=='recovered_report_ready' else 'Обработка завершена.',
+                        'allowed_actions':([new_cycle] if new_cycle else [])},
+                    'partial_result':partial,'new_cycle':new_cycle}
         except ValueError:
-            if pipeline and pipeline['status']=='failed':
-                return {**cycle,'results_status':'failed','report_status':'not_created','report_id':None,
-                        'pipeline_stage':pipeline['stage'],'processing_error':pipeline['error_code']}
             try:
                 m8_results.read_latest_results(connection, str(cycle_id))
                 return {**cycle, 'results_status': 'ready', 'report_status': 'not_created', 'report_id': None,
-                        'pipeline_stage':pipeline['stage'] if pipeline else 'results_ready','processing_error':None}
+                        'pipeline_stage':pipeline['stage'] if pipeline else 'results_ready','processing_error':None,
+                        'processing':{'contract_version':'m10-processing-recovery/1.0.0','status':'processing',
+                                      'message':'Готовится представление результата.','allowed_actions':[]}}
             except ValueError:
                 pass
             result_status = 'processing' if cycle['collection_status'] in {'collection_closed','calculation_pending'} else cycle['collection_status']
             return {**cycle, 'results_status': result_status, 'report_status': 'not_created', 'report_id': None,
-                    'pipeline_stage':pipeline['stage'] if pipeline else None,'processing_error':None}
+                    'pipeline_stage':pipeline['stage'] if pipeline else None,'processing_error':None,
+                    'processing':{'contract_version':'m10-processing-recovery/1.0.0','status':'processing',
+                                  'message':'Результат обрабатывается.','allowed_actions':[]}}
+
+
+@router.post('/admin/assessment/m8/cycles/{cycle_id}/processing-recovery', status_code=202)
+def request_m8_processing_recovery(cycle_id: UUID, payload: M10ProcessingRecoveryRequest, request: Request):
+    user = _assessment_definition_user(request)
+    try:
+        with get_connection() as connection:
+            require_platform_permission(connection, user, "configuration.publish")
+            cycle = connection.execute("SELECT organization_id FROM m5_cycles WHERE cycle_id=%s", (cycle_id,)).fetchone()
+            if cycle is None:
+                raise ValueError("M5_CYCLE_NOT_FOUND")
+            if cycle['organization_id'] is not None:
+                scope = _get_admin_scope_or_403(connection, user)
+                if not scope.is_superadmin and int(cycle['organization_id']) not in scope.organization_ids:
+                    raise PermissionError("Organization admin access required")
+            result = m10_orchestration.request_processing_recovery(
+                connection, cycle_id=str(cycle_id), idempotency_key=payload.idempotency_key,
+                created_by=int(user.id))
+            connection.commit()
+            return {"recovery_id":str(result['id']),"status":result['status'],
+                    "contract_version":"m10-processing-recovery/1.0.0"}
+    except PermissionError as exc:
+        raise HTTPException(403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(409, detail=str(exc)) from exc
 
 
 @router.get('/assessment/m8/cycles/{cycle_id}/results')

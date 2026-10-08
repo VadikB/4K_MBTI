@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "task": "Task-10-11",
+  "kind": "controlled-test-summary",
+  "result": "PASS",
+  "covered_rejections": [
+    "foreign_case_id",
+    "foreign_case_version",
+    "foreign_content_checksum",
+    "foreign_base_role",
+    "foreign_usage_scope",
+    "tampered_payload_checksum",
+    "fixture_for_assessment",
+    "newer_fail_over_old_pass",
+    "catalog_membership_immutability"
+  ],
+  "evidence": [
+    "tests/unit/test_m5_catalog_integrity.py",
+    "tests/integration/test_m5_catalog_integrity_db.py"
+  ],
+  "production_data_used": false
+}

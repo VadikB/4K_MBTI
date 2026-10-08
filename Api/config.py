@@ -68,7 +68,7 @@ class Settings:
     deepseek_api_key_3: str = os.getenv("DEEPSEEK_API_KEY_3", "")
     deepseek_api_keys_raw: str = os.getenv("DEEPSEEK_API_KEYS", "")
     deepseek_base_url: str = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
-    deepseek_model: str = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+    deepseek_model: str = os.getenv("DEEPSEEK_MODEL", "deepseek-flash")
     deepseek_max_concurrency: int = int(os.getenv("DEEPSEEK_MAX_CONCURRENCY", "10"))
     deepseek_queue_timeout_seconds: float = float(os.getenv("DEEPSEEK_QUEUE_TIMEOUT_SECONDS", "30"))
     assessment_preparation_max_concurrency: int = int(os.getenv("ASSESSMENT_PREPARATION_MAX_CONCURRENCY", "2"))

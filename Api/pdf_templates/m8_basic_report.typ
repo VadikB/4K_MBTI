@@ -11,6 +11,21 @@
   Cycle: #data.cycle_id · Results revision: #data.results_revision_no · Report: #data.report_revision_no
 ]
 
+#if data.processing.status == "failed" [
+  #block(fill: rgb("#fff4e5"), inset: 8pt, radius: 4pt)[
+    *Обработка результата ограничена.* #data.processing.message
+  ]
+]
+
+#if data.partial_result != none and data.partial_result.is_incomplete [
+  #block(fill: rgb("#fff8e1"), inset: 8pt, radius: 4pt)[
+    *#data.partial_result.messages.title* \
+    #data.partial_result.messages.confirmed \
+    #data.partial_result.messages.not_inferred \
+    Прогресс: #data.partial_result.progress.completed/#data.partial_result.progress.planned завершённых ситуаций.
+  ]
+]
+
 == Результаты по навыкам
 #table(
   columns: (2.2fr, 1fr, 1fr, 0.9fr),

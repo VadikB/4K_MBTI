@@ -10,6 +10,11 @@ from Api.m5_scenario_runtime import start as start_situation
 from Api.m5_storage import prepare_assessment_situation
 from Api.m7_planning_package import load_rules, methodology_targets
 from Api import m7_planning_repository as repo
+from Api.m5_catalog_integrity import (
+    case_admission,
+    resolve_configuration_catalog,
+    resolve_profile_base_role,
+)
 
 
 def _profile_role(profile: dict) -> str:
@@ -18,23 +23,37 @@ def _profile_role(profile: dict) -> str:
     return str(content.get("base_role") or content.get("base_role_code") or role.get("code") or "")
 
 
-def _catalog(connection, *, role: str, rules: dict, planned_ids: set[str]) -> list[dict]:
-    rows=connection.execute("""SELECT cv.id,cv.case_id,cv.case_version,cv.status,cv.base_role,cv.content_json,
+def _catalog(connection, *, role: str, rules: dict, planned_ids: set[str],
+             catalog_db_id: int | None, usage_scope: str) -> list[dict]:
+    if catalog_db_id is None:
+        rows=connection.execute("""SELECT cv.id,cv.case_id,cv.case_version,cv.status,cv.base_role,cv.content_json,
+            array_agg(t.indicator_id ORDER BY t.display_order) AS target_ids
+            FROM m5_case_versions cv JOIN m5_case_targets t ON t.case_version_id=cv.id
+            GROUP BY cv.id ORDER BY cv.case_id,cv.case_version""").fetchall()
+    else:
+        rows=connection.execute("""SELECT cv.id,cv.case_id,cv.case_version,cv.status,cv.base_role,cv.content_json,
         array_agg(t.indicator_id ORDER BY t.display_order) AS target_ids
-        FROM m5_case_versions cv JOIN m5_case_targets t ON t.case_version_id=cv.id
-        GROUP BY cv.id ORDER BY cv.case_id,cv.case_version""").fetchall()
+        FROM m5_catalog_case_versions member
+        JOIN m5_case_versions cv ON cv.id=member.case_version_id
+        JOIN m5_case_targets t ON t.case_version_id=cv.id
+        WHERE member.catalog_db_id=%s
+        GROUP BY cv.id ORDER BY cv.case_id,cv.case_version""",(catalog_db_id,)).fetchall()
     result=[]
     for row in rows:
         content=row["content_json"];reasons=[]
-        if row["status"] not in rules["required_case_statuses"]:reasons.append("CASE_STATUS_NOT_ADMITTED")
         if row["base_role"] != role:reasons.append("ROLE_NOT_ALLOWED")
-        if content.get("unresolved_decisions"):reasons.append("CASE_UNRESOLVED_DECISIONS")
-        evidence=connection.execute("""SELECT DISTINCT ON(scope) scope,result FROM m5_qa_evidence
-            WHERE case_version_id=%s AND assessment_situation_id IS NULL AND evidence_json->>'eligibility'='user_admission'
-            ORDER BY scope,id DESC""",(row["id"],)).fetchall()
-        passed={x["scope"] for x in evidence if x["result"]=="PASS"}
-        missing=set(rules["required_qa_scopes"])-passed
-        if missing:reasons.append("QA_EVIDENCE_MISSING:"+",".join(sorted(missing)))
+        if catalog_db_id is None:
+            evidence={item["scope"]:item["result"] for item in connection.execute(
+                "SELECT DISTINCT ON(scope) scope,result FROM m5_qa_evidence "
+                "WHERE case_version_id=%s AND assessment_situation_id IS NULL ORDER BY scope,id DESC",
+                (row["id"],)).fetchall()}
+            if row["status"] != "FROZEN": reasons.append(f"CASE_STATUS_NOT_ADMITTED:{row['status']}")
+            for scope in ("case_format","case_dialogue","assessment_situation"):
+                if evidence.get(scope) != "PASS": reasons.append(f"QA_EVIDENCE_MISSING_OR_FAIL:{scope}")
+        else:
+            decision=case_admission(connection,case_version_id=int(row["id"]),usage_scope=usage_scope,
+                                    catalog_db_id=catalog_db_id)
+            reasons.extend(decision["reasons"])
         targets=sorted(set(row["target_ids"]) & planned_ids)
         if not targets:reasons.append("NO_PLAN_CONTRIBUTION")
         result.append({"case_id":row["case_id"],"case_version":row["case_version"],"base_role":row["base_role"],
@@ -69,9 +88,21 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
     rules=load_rules();targets=methodology_targets(request["selected_skills"]);target_ids={x["indicator_id"] for x in targets}
     profile=connection.execute("SELECT to_jsonb(p) AS value FROM assessment_personalized_profiles p WHERE id=%s",(personalized_profile_id,)).fetchone()
     if not profile or profile["value"].get("status")!="ready":raise ValueError("M4_PROFILE_NOT_READY")
-    profile=dict(profile["value"]);role=_profile_role(profile)
-    if not role:raise ValueError("ROLE_NOT_ALLOWED")
-    catalog=_catalog(connection,role=role,rules=rules,planned_ids=target_ids)
+    profile=dict(profile["value"])
+    if profile.get("role_profile_version_id") is None:
+        role=_profile_role(profile)
+        role_ref={"id":role,"version":"0","checksum":"legacy","code":role}
+    else:
+        role_ref=resolve_profile_base_role(connection,role_profile_version_id=int(profile["role_profile_version_id"]))
+        role=role_ref["code"]
+    catalog_ref=resolve_configuration_catalog(connection,
+        configuration_id=int(profile.get("assessment_configuration_id") or 0),usage_scope=usage_scope)
+    if catalog_ref["organization_id"] is not None and int(catalog_ref["organization_id"]) != int(profile["organization_id"]):
+        raise ValueError("M5_CATALOG_ORGANIZATION_MISMATCH")
+    if catalog_ref["m2_checksum"] != "legacy" and catalog_ref["m2_checksum"] != profile.get("provenance_json",{}).get("m2_checksum",catalog_ref["m2_checksum"]):
+        raise ValueError("M5_CATALOG_M2_DEPENDENCY_MISMATCH")
+    catalog=_catalog(connection,role=role,rules=rules,planned_ids=target_ids,
+                     catalog_db_id=catalog_ref["db_id"],usage_scope=usage_scope)
     uncovered=set(target_ids);route=[]
     while True:
         ranked=_rank(catalog,uncovered,{x["indicator_id"]:x for x in targets})
@@ -83,12 +114,12 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
     budget=time_budget_seconds or rules["default_time_budget_seconds"]
     calendar=calendar_window_seconds or rules["default_calendar_window_seconds"]
     profile_ref={"id":f"assessment_personalized_profiles:{personalized_profile_id}","version":"1","checksum":profile["checksum"]}
-    role_ref={"id":role,"version":"frozen-profile","checksum":profile["checksum"]}
     cycle=create_cycle(connection,personalized_profile_id=personalized_profile_id,selected_role_ref=role_ref,
         target_set=[{"indicator_id":x["indicator_id"],"m2_version":x["m2_version"]} for x in targets],created_by=created_by,
         time_budget_seconds=budget,calendar_window_seconds=calendar,
         parameter_sources={"time_budget":"m7_cycle_plan/1.0.0:"+("request" if time_budget_seconds else "method_default"),
-                           "calendar_window":"m7_cycle_plan/1.0.0:"+("request" if calendar_window_seconds else "method_default")},usage_scope=usage_scope)
+                           "calendar_window":"m7_cycle_plan/1.0.0:"+("request" if calendar_window_seconds else "method_default")},usage_scope=usage_scope,
+        catalog_ref={key:catalog_ref[key] for key in ("id","version","checksum","package_checksum","m2_checksum","db_id")})
     session=create_session(connection,cycle_id=str(cycle["cycle_id"]),created_by=created_by)
     total=sum(x["planned_max_minutes"]*60 for x in route)
     status="READY" if not uncovered and total<=budget else ("LIMITED" if route else "NO_ROUTE")
@@ -97,7 +128,8 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
     content={"schema_version":1,"status":status,"goal":{"kind":"skills","selected_skills":request["selected_skills"]},
         "full_target_set":targets,"planned_target_set":targets,"route":route,"reserves":[],
         "uncovered_target_ids":sorted(uncovered),"planned_max_seconds":total,"time_budget_seconds":budget,
-        "calendar_window_seconds":calendar,"known_limitations":["Cases are conditional opportunities; not guaranteed Evidence"]+
+        "calendar_window_seconds":calendar,"catalog_ref":{key:catalog_ref[key] for key in ("id","version","checksum","package_checksum","m2_checksum")},
+        "known_limitations":["Cases are conditional opportunities; not guaranteed Evidence"]+
             (["Route exceeds time budget"] if total>budget else []),"catalog":catalog,"algorithm_version":rules["algorithm_version"]}
     repo.save_plan(connection,cycle=cycle,profile_ref=profile_ref,full_targets=targets,planned_targets=targets,
                    requirements=requirements,rules=rules,content=content,created_by=created_by,key=key,request_hash=request_hash)

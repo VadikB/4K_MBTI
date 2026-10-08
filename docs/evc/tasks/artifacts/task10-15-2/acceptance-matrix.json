@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "runtime_candidate": "01aee3b19e7d3e385a64fc764222b863553219b0",
+  "criteria": [
+    {"id":"H1","status":"PASS","evidence":"backend 380 PASS; HTTP 46 PASS; integration 94 PASS"},
+    {"id":"H2","status":"PASS","evidence":"QA full API path M4-AS-Dialogue-Evidence-IA-admission-calculation-Results-C67-PDF"},
+    {"id":"H3","status":"PASS","evidence":"C1/C2 x3; retries=0; poll 120s; timeout 240s; 6 PASS"},
+    {"id":"H4","status":"PASS","evidence":"ordinary/QA seed separation and catalog admission regressions pass"},
+    {"id":"H5","status":"PASS","evidence":"C67/PDF persisted and owner-readable"},
+    {"id":"H6","status":"PASS","evidence":"Git evidence indexes and safe trace/log archives"},
+    {"id":"H7","status":"PASS","evidence":"ancestry includes 10.11-10.15.1 and runtime 01aee3b"},
+    {"id":"H8","status":"PASS","evidence":"new DB bootstrap plus pre-10.11 owned DB migration with historical relations and owner PDF readback"},
+    {"id":"H9","status":"PASS","evidence":"repeatable fullpath C1/C2 and complete integration"},
+    {"id":"H10","status":"PASS","evidence":"persisted IDs and per-attempt traces cover M4-M8 chain"},
+    {"id":"H11","status":"PASS","evidence":"owner/tenant/BaseRole/catalog/evidence guards and late-Turn rejection pass"},
+    {"id":"H12","status":"PASS","evidence":"recommendation and report regressions included in all-green suites"}
+  ],
+  "conclusion": "TECHNICAL_ACCEPTANCE_PASS"
+}

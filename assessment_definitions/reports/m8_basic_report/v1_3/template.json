@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "outcome_labels": {
+    "full_score": "Полный результат со Score",
+    "partial_score": "Частный результат со Score",
+    "result_without_score": "Результат без общего Score",
+    "no_result": "Нет Skill Result"
+  },
+  "coverage_labels": {
+    "opportunities": "Фактические возможности",
+    "indicator_assessments": "Обоснованные IA",
+    "admissible_contributions": "Допустимые вклады",
+    "components_with_score": "Components со Score",
+    "complete_components": "Полные Components"
+  },
+  "invariants": {"show_recommendations": true, "derive_skill_level": false, "derive_competency_score": false, "preserve_exact_fraction": true},
+  "partial_result": {
+    "incomplete_title": "Оценка не завершена полностью",
+    "confirmed": "Показаны только подтверждённые результаты по фактически принятому материалу.",
+    "not_inferred": "Общий уровень компетенции и результаты по непокрытым элементам не выводятся.",
+    "reasons": {
+      "plan_scope": "Принятый план изначально покрывал только часть целевой области.",
+      "collection_incomplete": "Не все предусмотренные планом ситуации были предъявлены и завершены.",
+      "observation_missing": "Для части целей не возникло достаточной возможности наблюдения или данных.",
+      "context_limited": "Организационный или индивидуальный контекст неполон либо противоречив.",
+      "technical_failure": "Техническая обработка части материала не завершена; сохранённые ответы не потеряны."
+    },
+    "new_cycle_available": "Можно явно начать новую независимую оценку после проверки актуального назначения, роли и конфигурации.",
+    "new_cycle_unavailable": "Новая оценка сейчас недоступна: требуется актуальное назначение, роль, конфигурация и право доступа."
+  },
+  "recommendation_contract_version": "m8-recommendations/1.1.0",
+  "legacy_recommendation_notice": {"kind":"LEGACY_BASIS_UNVERIFIED","skill_id":null,"text":"Ранее сохранённые рекомендации скрыты: их основания не прошли текущую проверку. Фактический результат сохранён; новая редакция рекомендаций доступна через явную регенерацию.","limitations":["Историческая редакция отчёта сохранена без изменений."]},
+  "recommendation_failure_notice": {"kind":"GENERATION_FAILURE","skill_id":null,"text":"Рекомендации временно недоступны из-за ошибки проверки или генерации. Основной отчёт сохранён.","limitations":[]}
+}

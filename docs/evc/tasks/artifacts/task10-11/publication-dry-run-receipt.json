@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "task": "Task-10-11",
+  "kind": "controlled-integration-test-receipt",
+  "operation": "m5_catalog_publication_dry_run",
+  "scope": "isolated_postgresql_test",
+  "result": "PASS",
+  "evidence": "tests/integration/test_m5_catalog_integrity_db.py::test_catalog_publication_is_exact_idempotent_and_immutable",
+  "production_publication": false
+}

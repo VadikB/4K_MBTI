@@ -3218,6 +3218,55 @@ def ensure_m5_runtime_schema(connection) -> None:
         )
     """)
     connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_catalogs (
+            id BIGSERIAL PRIMARY KEY,
+            catalog_id TEXT NOT NULL,
+            catalog_version TEXT NOT NULL,
+            organization_id BIGINT,
+            usage_scope TEXT NOT NULL CHECK (usage_scope IN ('assessment','qa')),
+            package_db_id BIGINT NOT NULL REFERENCES m5_packages(id) ON DELETE RESTRICT,
+            manifest_json JSONB NOT NULL,
+            manifest_checksum TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL CHECK (status IN ('published','retired')),
+            published_by BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            decision_basis TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL,
+            request_hash TEXT NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            published_at TIMESTAMPTZ NOT NULL,
+            UNIQUE (catalog_id,catalog_version),
+            UNIQUE (published_by,idempotency_key)
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_catalog_case_versions (
+            catalog_db_id BIGINT NOT NULL REFERENCES m5_catalogs(id) ON DELETE RESTRICT,
+            case_version_id BIGINT NOT NULL REFERENCES m5_case_versions(id) ON DELETE RESTRICT,
+            PRIMARY KEY (catalog_db_id,case_version_id)
+        )
+    """)
+    connection.execute("""
+        CREATE OR REPLACE FUNCTION prevent_published_m5_catalog_change()
+        RETURNS trigger AS $$ BEGIN
+            IF TG_OP = 'DELETE' OR NEW IS DISTINCT FROM OLD THEN
+                RAISE EXCEPTION 'Published M5 catalog is immutable';
+            END IF;
+            RETURN NEW;
+        END; $$ LANGUAGE plpgsql
+    """)
+    connection.execute("DROP TRIGGER IF EXISTS immutable_m5_catalog ON m5_catalogs")
+    connection.execute("CREATE TRIGGER immutable_m5_catalog BEFORE UPDATE OR DELETE ON m5_catalogs "
+                       "FOR EACH ROW EXECUTE FUNCTION prevent_published_m5_catalog_change()")
+    connection.execute("""
+        CREATE OR REPLACE FUNCTION prevent_m5_catalog_membership_change()
+        RETURNS trigger AS $$ BEGIN
+            RAISE EXCEPTION 'Published M5 catalog membership is immutable';
+        END; $$ LANGUAGE plpgsql
+    """)
+    connection.execute("DROP TRIGGER IF EXISTS immutable_m5_catalog_membership ON m5_catalog_case_versions")
+    connection.execute("CREATE TRIGGER immutable_m5_catalog_membership BEFORE UPDATE OR DELETE ON m5_catalog_case_versions "
+                       "FOR EACH ROW EXECUTE FUNCTION prevent_m5_catalog_membership_change()")
+    connection.execute("""
         CREATE TABLE IF NOT EXISTS m5_assessment_situations (
             id BIGSERIAL PRIMARY KEY,
             assessment_situation_id UUID NOT NULL UNIQUE,
@@ -3259,6 +3308,7 @@ def ensure_m5_runtime_schema(connection) -> None:
         EXCEPTION WHEN duplicate_object THEN NULL; END $$
     """)
     connection.execute("CREATE INDEX IF NOT EXISTS ix_m5_as_cycle_session ON m5_assessment_situations(cycle_db_id,session_db_id)")
+    connection.execute("ALTER TABLE m5_cycles ADD COLUMN IF NOT EXISTS catalog_ref_json JSONB")
     connection.execute("ALTER TABLE m5_assessment_situations DROP CONSTRAINT IF EXISTS m5_assessment_situations_status_check")
     connection.execute("ALTER TABLE m5_assessment_situations ADD CONSTRAINT m5_assessment_situations_status_check CHECK (status IN ('prepared','admitted','rejected','active','paused','scenario_ended','terminated','closed'))")
     connection.execute("""
@@ -3644,6 +3694,9 @@ def ensure_core_schema() -> None:
         connection.execute("ALTER TABLE assessment_configurations ADD COLUMN IF NOT EXISTS prompt_bundle_json JSONB")
         connection.execute("ALTER TABLE assessment_configurations ADD COLUMN IF NOT EXISTS prompt_bundle_checksum TEXT")
         connection.execute(
+            "ALTER TABLE assessment_configurations ADD COLUMN IF NOT EXISTS catalog_version_id BIGINT"
+        )
+        connection.execute(
             """
             CREATE TABLE IF NOT EXISTS assessment_methodology_publications (
                 id BIGSERIAL PRIMARY KEY,
@@ -3667,10 +3720,10 @@ def ensure_core_schema() -> None:
             RETURNS trigger AS $$
             BEGIN
                 IF OLD.status = 'published'
-                   AND OLD.prompt_bundle_json IS NOT NULL
                    AND (NEW.prompt_bundle_json IS DISTINCT FROM OLD.prompt_bundle_json
-                     OR NEW.prompt_bundle_checksum IS DISTINCT FROM OLD.prompt_bundle_checksum) THEN
-                    RAISE EXCEPTION 'Published assessment configuration prompt bundle is immutable';
+                     OR NEW.prompt_bundle_checksum IS DISTINCT FROM OLD.prompt_bundle_checksum
+                     OR NEW.catalog_version_id IS DISTINCT FROM OLD.catalog_version_id) THEN
+                    RAISE EXCEPTION 'Published assessment configuration runtime refs are immutable';
                 END IF;
                 RETURN NEW;
             END;
@@ -4289,6 +4342,12 @@ def ensure_core_schema() -> None:
         ensure_role_profile_schema(connection)
         ensure_assessment_context_schema(connection)
         ensure_m5_runtime_schema(connection)
+        connection.execute("""
+            DO $$ BEGIN
+                ALTER TABLE assessment_configurations ADD CONSTRAINT fk_assessment_configuration_catalog
+                    FOREIGN KEY (catalog_version_id) REFERENCES m5_catalogs(id) ON DELETE RESTRICT;
+            EXCEPTION WHEN duplicate_object THEN NULL; END $$
+        """)
         from Api.m6_repository import ensure_schema as ensure_m6_schema
         ensure_m6_schema(connection)
         from Api.m10_orchestration import ensure_schema as ensure_m10_orchestration_schema

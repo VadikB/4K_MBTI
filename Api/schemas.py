@@ -1452,6 +1452,7 @@ class AssessmentConfigurationCreateRequest(BaseModel):
     name: str
     methodology_version_id: int
     scenario_version_id: int
+    catalog_version_id: int | None = None
     comment: str | None = None
 
 
@@ -1466,11 +1467,30 @@ class AssessmentConfigurationResponse(BaseModel):
     name: str
     methodology_version_id: int
     scenario_version_id: int
+    catalog_version_id: int | None = None
     status: str
     is_default: bool
     prompt_bundle_checksum: str | None = None
     created_at: datetime
     published_at: datetime | None = None
+
+
+class M5CatalogPlanRequest(BaseModel):
+    package_db_id: int
+    case_version_ids: list[int] = Field(default_factory=list)
+    usage_scope: Literal["assessment", "qa"] = "assessment"
+    organization_id: int | None = None
+
+
+class M5CatalogPublishRequest(M5CatalogPlanRequest):
+    catalog_id: str
+    catalog_version: str
+    decision_basis: str
+    idempotency_key: str
+
+
+class M10ProcessingRecoveryRequest(BaseModel):
+    idempotency_key: str = Field(min_length=1, max_length=200)
 
 
 class PlatformRoleAssignmentRequest(BaseModel):

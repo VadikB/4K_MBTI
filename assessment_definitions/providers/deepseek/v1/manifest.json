@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "deepseek_product_gateway",
+  "version": "1.0.0",
+  "status": "draft",
+  "provider": "deepseek",
+  "endpoint": "https://api.deepseek.com/chat/completions",
+  "model": "deepseek-flash",
+  "thinking": {"type": "disabled"},
+  "defaults": {"timeout_seconds": 120, "max_tokens": 12000},
+  "supported_response_formats": ["text", "json_object"],
+  "retry_policy": {"acceptance_max_attempts": 1}
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "provider_contract": "deepseek_product_gateway/1.0.0",
+  "common": {"model": "deepseek-flash", "thinking": "disabled", "endpoint": "https://api.deepseek.com/chat/completions"},
+  "operations": [
+    {"id":"m5.semantic_decision","response_format":"json_object","prompt":"m5_semantic_decision/1.0.0"},
+    {"id":"m5.character_response","response_format":"json_object","prompt":"m5_character_response/1.0.0"},
+    {"id":"m5.technical_c45","response_format":"json_object","prompt":"m5_technical_c45/1.0.0"},
+    {"id":"m6.evidence","response_format":"json_object","prompt":"m6_evidence/1.0.0"},
+    {"id":"m6.indicator_assessment","response_format":"json_object","prompt":"m6_indicator_assessment/1.0.0"},
+    {"id":"m6.substantive_admission","response_format":"json_object","prompt":"m6_substantive_admission/2.0.0"},
+    {"id":"m7.assessment_clarification","response_format":"json_object","prompt":"m7_assessment_clarification/1.0.0"},
+    {"id":"legacy.direct_chat","response_format":"text","prompt":"caller-owned","note":"формат не форсируется глобально"}
+  ]
+}

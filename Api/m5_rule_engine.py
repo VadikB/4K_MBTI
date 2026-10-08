@@ -11,6 +11,7 @@ from typing import Any, Protocol
 from Api.config import settings
 from Api.llm.contracts import LlmGatewayError
 from Api.llm.deepseek_gateway import DeepSeekGateway
+from Api.llm.provider_contract import load_provider_contract, operation_parameters
 
 
 class RuleOutcome(StrEnum):
@@ -82,6 +83,7 @@ def _prompt_bundle(name: str) -> tuple[str, dict]:
 def build_m5_ai_operations_snapshot() -> dict[str, dict[str, Any]]:
     """Фиксирует исполнимые настройки; секреты в snapshot не входят."""
     operations = {}
+    provider_contract = load_provider_contract()
     for code, bundle, parameters in (
         ("semantic_decision", "m5_semantic_decision", {"temperature": 0, "max_tokens": 300, "timeout_seconds": 60}),
         ("character_response", "m5_character_response", {"temperature": 0.2, "max_tokens": 500, "timeout_seconds": 60}),
@@ -90,8 +92,10 @@ def build_m5_ai_operations_snapshot() -> dict[str, dict[str, Any]]:
         _, prompt_ref = _prompt_bundle(bundle)
         operations[code] = {
             "schema_version": 1, "provider": "deepseek",
-            "endpoint": f"{str(settings.deepseek_base_url).rstrip('/')}/chat/completions",
-            "model": str(settings.deepseek_model), "parameters": parameters,
+            "endpoint": provider_contract["endpoint"],
+            "model": provider_contract["model"], "parameters": parameters,
+            "thinking": provider_contract["thinking"],
+            "provider_contract": {"version": provider_contract["version"], "checksum": provider_contract["checksum"]},
             "prompt_ref": prompt_ref, "response_format": "json_object",
             "limits": {"max_input_bytes": 200000},
             "identity_policy": {
@@ -119,8 +123,8 @@ def _gateway_for(operation: dict | None, gateway: Any | None) -> Any:
 
 
 def _call_with_trace(gateway: Any, messages: list[dict], *, operation: dict, routing_key: str) -> tuple[str, dict]:
-    params = dict(operation["parameters"])
-    intended = {key: operation[key] for key in ("provider", "endpoint", "model", "parameters", "prompt_ref", "response_format")}
+    params = operation_parameters(operation)
+    intended = {key: operation.get(key) for key in ("provider", "endpoint", "model", "parameters", "prompt_ref", "response_format", "thinking", "provider_contract")}
     try:
         if hasattr(gateway, "chat_with_trace"):
             response = gateway.chat_with_trace(messages, routing_key=routing_key, **params)
