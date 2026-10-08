@@ -58,6 +58,9 @@ async function login(page,stand,email='participant@example.test',prepare=false,n
  await page.locator('#request-magic-link-button').click();
  await page.locator('#magic-token-input').fill(stand.state.password);
  await page.locator('#verify-magic-link-button').click();
+ const continueButton=page.getByRole('button',{name:'Продолжить',exact:true});
+ await expect(continueButton).toBeVisible();
+ await continueButton.click();
  const confirm=page.getByRole('button',{name:'Подтвердить профиль',exact:true});
  await expect(confirm).toBeVisible();
  await expect(confirm).toBeEnabled();
@@ -510,6 +513,7 @@ test('P10.5 fresh profile, lost confirmation response, reload and first AS',asyn
  await page.goto(stand.url);
  await page.locator('#email-input').fill('participant@example.test');await page.locator('#request-magic-link-button').click();
  await page.locator('#magic-token-input').fill(stand.state.password);await page.locator('#verify-magic-link-button').click();
+ await page.getByRole('button',{name:'Продолжить',exact:true}).click();
  await expect(page.getByRole('button',{name:'Подтвердить профиль',exact:true})).toBeEnabled();
  await page.locator('[name="full_name"]').fill('Синтетический участник приёмки');
  await page.locator('[name="position"]').fill('Эксперт по программам');

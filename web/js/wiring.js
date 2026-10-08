@@ -28,6 +28,7 @@ import {
   organizationInvitationName,
   organizationInvitationIntro,
   authChangeCredentialEmailButton,
+  authCompleteContinueButton,
   authCompleteLogoutButton,
   chatForm,
   chatInput,
@@ -525,13 +526,6 @@ const applyAuthResponse = async (data) => {
     return;
   }
 
-  state.sessionId = null;
-  state.pendingAgentMessage = null;
-  state.pendingRoleOptions = [];
-  state.pendingActionOptions = [];
-  state.pendingConsentTitle = null;
-  state.pendingConsentText = null;
-  state.pendingNoChangesQuickReply = false;
   hideLoader();
   setCurrentScreen('auth-complete');
   persistAssessmentContext();
@@ -828,6 +822,12 @@ if (authChangeCredentialEmailButton) {
 
 if (authCompleteLogoutButton) {
   authCompleteLogoutButton.addEventListener('click', () => void logoutAndReturnToStart(authCompleteLogoutButton));
+}
+
+if (authCompleteContinueButton) {
+  authCompleteContinueButton.addEventListener('click', () => {
+    withScreen(loadChat, (module) => module.openChat());
+  });
 }
 
 if (authResendEmailButton) {

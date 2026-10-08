@@ -1,5 +1,6 @@
 export const authPanel = document.getElementById('auth-panel');
 export const authCompletePanel = document.getElementById('auth-complete-panel');
+export const authCompleteContinueButton = document.getElementById('auth-complete-continue-button');
 export const authCompleteLogoutButton = document.getElementById('auth-complete-logout-button');
 export const onboardingPanel = document.getElementById('onboarding-panel');
 export const dashboardPanel = document.getElementById('dashboard-panel');
