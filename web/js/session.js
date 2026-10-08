@@ -1,5 +1,5 @@
 import { state, persistAssessmentContext, clearAssessmentContext } from './state.js';
-import { readApiResponse } from './api.js';
+import { advanceSessionGeneration, getSessionGeneration, readApiResponse } from './api.js';
 import { isAdminUserPayload } from './utils/format.js';
 import { resetChatScreen } from './screen-loaders.js';
 import { returnToStart } from './router.js';
@@ -51,7 +51,10 @@ export const isMissingUserError = (error) => {
   return message.includes('user not found') || message.includes('пользователь не найден');
 };
 
-export const resetStaleUserState = async () => {
+export const resetStaleUserState = async ({ advance = true, broadcast = true } = {}) => {
+  const recoveryGeneration = advance
+    ? advanceSessionGeneration({ broadcast })
+    : getSessionGeneration();
   clearAssessmentContext();
   clearProfileDisplay();
   state.sessionId = null;
@@ -69,7 +72,7 @@ export const resetStaleUserState = async () => {
   // A late 401 can belong to another tab's old session. Never revoke the
   // current shared-cookie session here; explicit logout owns that operation.
   try {
-    await resetChatScreen();
+    await resetChatScreen({ shouldReset: () => getSessionGeneration() === recoveryGeneration });
   } catch (_error) {
     // Expired sessions must still return to auth if lazy screen cleanup fails.
   }
@@ -87,6 +90,7 @@ export const restoreServerSession = async () => {
     return false;
   }
   if (state.pendingUser?.id !== data.user.id) { clearAssessmentContext(); clearProfileDisplay(); }
+  advanceSessionGeneration({ broadcast: false });
   state.pendingUser = data.user;
   state.dashboard = data.dashboard || null;
   state.isAdmin = isAdminUserPayload(data.user, Boolean(data.is_admin));
@@ -98,7 +102,7 @@ export const restoreServerSession = async () => {
     state.pendingNoChangesQuickReply = false;
     state.currentScreen = 'admin';
   } else if (!state.currentScreen || state.currentScreen === 'auth') {
-    state.currentScreen = state.dashboard ? 'dashboard' : 'chat';
+    state.currentScreen = 'auth-complete';
   }
   persistAssessmentContext();
   return true;
@@ -115,6 +119,7 @@ export const restoreLocalUserSession = async () => {
     });
     const data = await readApiResponse(response, 'Не удалось восстановить локальную пользовательскую сессию.');
     if (state.pendingUser?.id !== data.user.id) { clearAssessmentContext(); clearProfileDisplay(); }
+    advanceSessionGeneration({ broadcast: false });
     state.pendingUser = data.user;
     state.dashboard = data.dashboard;
     state.isAdmin = isAdminUserPayload(data.user, Boolean(data.is_admin));
@@ -126,7 +131,7 @@ export const restoreLocalUserSession = async () => {
       state.pendingNoChangesQuickReply = false;
       state.currentScreen = 'admin';
     } else if (!state.currentScreen || state.currentScreen === 'auth') {
-      state.currentScreen = 'dashboard';
+      state.currentScreen = 'auth-complete';
     }
     persistAssessmentContext();
     return true;
@@ -150,6 +155,7 @@ export const loadUserJourneyState = async () => {
 };
 
 export const logoutAndReturnToStart = async (trigger = null) => {
+  advanceSessionGeneration();
   const restoreButton = applyLogoutButtonPendingState(trigger);
   const startedAt = Date.now();
   try {

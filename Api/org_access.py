@@ -7,6 +7,7 @@ from Api.config import settings
 
 ORG_ADMIN_ROLE = "admin"
 ORG_MEMBER_ROLE = "member"
+EXPLICIT_MEMBER_ADMISSION_SOURCES = frozenset({"admin_add", "csv_import"})
 
 
 @dataclass(frozen=True)
@@ -138,7 +139,6 @@ def ensure_configured_organizations(connection) -> None:
 
 def assign_user_organization_from_email(connection, *, user_id: int, email: str | None) -> None:
     normalized_email = normalize_email_for_access(email)
-    domain = email_domain(normalized_email)
     if not normalized_email:
         return
 
@@ -154,24 +154,14 @@ def assign_user_organization_from_email(connection, *, user_id: int, email: str 
         ).fetchone()
         if org_row is None:
             continue
-        _upsert_membership(connection, organization_id=int(org_row["id"]), user_id=user_id, role=ORG_ADMIN_ROLE)
+        _upsert_membership(
+            connection,
+            organization_id=int(org_row["id"]),
+            user_id=user_id,
+            role=ORG_ADMIN_ROLE,
+            admission_source="configured_admin",
+        )
         return
-
-    if not domain:
-        return
-    domain_row = connection.execute(
-        """
-        SELECT organization_id
-        FROM organization_email_domains
-        JOIN organizations ON organizations.id = organization_email_domains.organization_id
-        WHERE LOWER(domain) = %s
-          AND organizations.is_active = TRUE
-        LIMIT 1
-        """,
-        (domain,),
-    ).fetchone()
-    if domain_row is not None:
-        _upsert_membership(connection, organization_id=int(domain_row["organization_id"]), user_id=user_id, role=ORG_MEMBER_ROLE)
 
 
 def email_has_organization_access(connection, *, email: str | None) -> bool:
@@ -187,9 +177,9 @@ def email_has_organization_access(connection, *, email: str | None) -> bool:
         if normalized_email in emails:
             return True
 
-    membership_row = connection.execute(
+    membership_rows = connection.execute(
         """
-        SELECT 1
+        SELECT DISTINCT om.organization_id, om.role, om.admission_source
         FROM organization_memberships om
         JOIN organizations o ON o.id = om.organization_id
         JOIN users u ON u.id = om.user_id
@@ -199,43 +189,44 @@ def email_has_organization_access(connection, *, email: str | None) -> bool:
             LOWER(u.email) = %s
             OR LOWER(ui.email) = %s
           )
-        LIMIT 1
         """,
         (normalized_email, normalized_email),
-    ).fetchone()
-    if membership_row is not None:
+    ).fetchall()
+    if any(row["role"] == ORG_ADMIN_ROLE for row in membership_rows):
         return True
-
-    domain = email_domain(normalized_email)
-    if not domain:
-        return False
-    domain_row = connection.execute(
-        """
-        SELECT 1
-        FROM organization_email_domains oed
-        JOIN organizations o ON o.id = oed.organization_id
-        WHERE o.is_active = TRUE
-          AND LOWER(oed.domain) = %s
-        LIMIT 1
-        """,
-        (domain,),
-    ).fetchone()
-    return domain_row is not None
+    member_rows = [
+        row for row in membership_rows
+        if row["role"] == ORG_MEMBER_ROLE and row["admission_source"] in EXPLICIT_MEMBER_ADMISSION_SOURCES
+    ]
+    return len(member_rows) == 1
 
 
-def _upsert_membership(connection, *, organization_id: int, user_id: int, role: str) -> None:
+def _upsert_membership(
+    connection,
+    *,
+    organization_id: int,
+    user_id: int,
+    role: str,
+    admission_source: str,
+    admitted_by_user_id: int | None = None,
+) -> None:
     connection.execute(
         """
-        INSERT INTO organization_memberships (organization_id, user_id, role)
-        VALUES (%s, %s, %s)
+        INSERT INTO organization_memberships (
+            organization_id, user_id, role, admission_source, admitted_by_user_id, admitted_at
+        )
+        VALUES (%s, %s, %s, %s, %s, NOW())
         ON CONFLICT (organization_id, user_id) DO UPDATE
         SET role = CASE
                 WHEN organization_memberships.role = 'admin' THEN organization_memberships.role
                 ELSE EXCLUDED.role
             END,
+            admission_source = EXCLUDED.admission_source,
+            admitted_by_user_id = EXCLUDED.admitted_by_user_id,
+            admitted_at = EXCLUDED.admitted_at,
             updated_at = NOW()
         """,
-        (organization_id, user_id, role),
+        (organization_id, user_id, role, admission_source, admitted_by_user_id),
     )
 
 

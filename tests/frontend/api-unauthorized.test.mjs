@@ -2,9 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  advanceSessionGeneration,
   ApiResponseError,
+  createSessionAwareFetch,
   readApiResponse,
   registerUnauthorizedResponseHandler,
+  StaleApiResponseError,
 } from '../../web/js/api.js';
 
 const unauthorizedResponse = (detail = 'Admin session not found') =>
@@ -63,4 +66,79 @@ test('concurrent 401 responses trigger only one recovery flow', async () => {
   assert.equal(recoveries, 1);
   assert.ok(attempts.every((attempt) => attempt.status === 'rejected' && attempt.reason.status === 401));
   finishRecovery();
+});
+
+test('a late 401 from an earlier session generation does not recover the current session', async () => {
+  let releaseRequest;
+  let recoveries = 0;
+  const trackedFetch = createSessionAwareFetch(
+    () =>
+      new Promise((resolve) => {
+        releaseRequest = () => resolve(unauthorizedResponse('Old session'));
+      }),
+  );
+  registerUnauthorizedResponseHandler(() => {
+    recoveries += 1;
+  });
+
+  const pendingResponse = trackedFetch('/protected');
+  advanceSessionGeneration();
+  releaseRequest();
+  const response = await pendingResponse;
+
+  await assert.rejects(
+    readApiResponse(response, 'Fallback'),
+    (error) => error instanceof StaleApiResponseError,
+  );
+  await Promise.resolve();
+
+  assert.equal(recoveries, 0);
+});
+
+test('a late successful response cannot overwrite a newer session', async () => {
+  let releaseRequest;
+  const trackedFetch = createSessionAwareFetch(
+    () =>
+      new Promise((resolve) => {
+        releaseRequest = () =>
+          resolve(
+            new Response(JSON.stringify({ user: { id: 'account-a' } }), {
+              status: 200,
+              headers: { 'content-type': 'application/json' },
+            }),
+          );
+      }),
+  );
+
+  const pendingResponse = trackedFetch('/protected');
+  advanceSessionGeneration();
+  releaseRequest();
+
+  await assert.rejects(
+    readApiResponse(await pendingResponse, 'Fallback'),
+    (error) => error instanceof StaleApiResponseError,
+  );
+});
+
+test('an unfinished old recovery does not suppress recovery for the current generation', async () => {
+  const recoveryResolvers = [];
+  let recoveries = 0;
+  registerUnauthorizedResponseHandler(
+    () =>
+      new Promise((resolve) => {
+        recoveries += 1;
+        recoveryResolvers.push(resolve);
+      }),
+  );
+
+  await assert.rejects(readApiResponse(unauthorizedResponse(), 'Fallback'), ApiResponseError);
+  await Promise.resolve();
+  assert.equal(recoveries, 1);
+
+  advanceSessionGeneration();
+  await assert.rejects(readApiResponse(unauthorizedResponse(), 'Fallback'), ApiResponseError);
+  await Promise.resolve();
+  assert.equal(recoveries, 2);
+
+  recoveryResolvers.forEach((resolve) => resolve());
 });

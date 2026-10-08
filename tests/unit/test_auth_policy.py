@@ -30,9 +30,11 @@ def test_registration_request_carries_verification_token() -> None:
         password="ReliablePass42",
         password_confirm="ReliablePass42",
         verification_token="verification-token",
+        organization_invitation_token="organization-invitation",
     )
     assert payload.email == "user@example.com"
     assert payload.verification_token == "verification-token"
+    assert payload.organization_invitation_token == "organization-invitation"
 
 
 def test_reset_request_requires_action_token_and_new_password() -> None:

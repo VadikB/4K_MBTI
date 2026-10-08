@@ -15,6 +15,8 @@ import {
   authPasswordConfirmToggleButton,
   requestMagicLinkButton,
   forgotPasswordButton,
+  authTitle,
+  authSubtitle,
   authEmailSent,
   authEmailSentAddress,
   authResendEmailButton,
@@ -22,6 +24,11 @@ import {
   verifyMagicLinkButton,
   authStatus,
   authError,
+  organizationInvitationContext,
+  organizationInvitationName,
+  organizationInvitationIntro,
+  authChangeCredentialEmailButton,
+  authCompleteLogoutButton,
   chatForm,
   chatInput,
   restartButton,
@@ -146,7 +153,33 @@ import {
   libraryStartButton,
   welcomeProfileButton,
 } from './dom.js';
-import { readApiResponse, createOperationId } from './api.js';
+
+let organizationInvitationToken = '';
+
+const renderOrganizationInvitation = (organization) => {
+  const available = Boolean(organization?.organization_name);
+  organizationInvitationContext?.classList.toggle('hidden', !available);
+  if (organizationInvitationName) organizationInvitationName.textContent = available ? organization.organization_name : '';
+  if (organizationInvitationIntro) organizationInvitationIntro.textContent = available ? organization.invitation_intro || '' : '';
+};
+
+export const activateOrganizationInvitation = async (tokenValue) => {
+  const token = String(tokenValue || '').trim();
+  if (!token) {
+    organizationInvitationToken = '';
+    renderOrganizationInvitation(null);
+    return null;
+  }
+  const response = await fetch('/users/organization-invitations/' + encodeURIComponent(token));
+  const organization = await readApiResponse(response, 'Приглашение недействительно или устарело.', {
+    recoverUnauthorized: false,
+  });
+  organizationInvitationToken = token;
+  try { window.sessionStorage.setItem('agent4k.organizationInvitationToken', token); } catch (_error) { /* optional */ }
+  renderOrganizationInvitation(organization);
+  return organization;
+};
+import { advanceSessionGeneration, readApiResponse, createOperationId } from './api.js';
 import {
   buildExistingUserAgentMessage,
   shouldOfferNoChangesQuickReply,
@@ -154,7 +187,7 @@ import {
   isAdminUserPayload,
 } from './utils/format.js';
 import { showError } from './components/errors.js';
-import { navigateBackOrFallback } from './router.js';
+import { navigateBackOrFallback, openAuthComplete } from './router.js';
 import { hideLoader } from './utils/loader.js';
 import { logoutAndReturnToStart } from './session.js';
 import { setProfileStatus } from './components/profile-avatar.js';
@@ -215,6 +248,9 @@ let authPasswordVisible = false;
 let authPasswordConfirmVisible = false;
 let authActionToken = '';
 let authResendTimer = null;
+let authRequestInFlight = false;
+let authCredentialInFlight = false;
+let authResetRequestInFlight = false;
 const AUTH_RESEND_COOLDOWN_SECONDS = 60;
 
 const stopAuthResendCountdown = () => {
@@ -257,6 +293,8 @@ const showEmailEntry = () => {
   authEmailSent?.classList.add('hidden');
   authTokenForm?.classList.add('hidden');
   authEmailForm?.classList.remove('hidden');
+  if (authTitle) authTitle.textContent = 'Добро пожаловать';
+  if (authSubtitle) authSubtitle.textContent = 'Введите рабочий email, чтобы продолжить вход.';
   setAuthStatus('');
   showError(authError, '');
   emailInput?.focus();
@@ -372,6 +410,14 @@ const configureAuthCredentialForm = (mode) => {
   const isReset = authCredentialMode === 'password_reset';
   const isNewPassword = isRegistration || isReset;
   const isPasswordMode = authCredentialMode === 'password' || isNewPassword;
+  authEmailForm?.classList.add('hidden');
+  authEmailSent?.classList.add('hidden');
+  if (authTitle) authTitle.textContent = isReset ? 'Новый пароль' : isRegistration ? 'Завершите регистрацию' : 'Вход';
+  if (authSubtitle) authSubtitle.textContent = isReset
+    ? 'Задайте новый пароль для рабочего аккаунта.'
+    : isRegistration
+      ? 'Email подтверждён. Теперь задайте пароль.'
+      : `Введите пароль для ${authCredentialEmail || 'рабочего аккаунта'}.`;
   if (authCredentialLabel) {
     authCredentialLabel.textContent = isPasswordMode ? 'Пароль' : 'Код или ссылка для входа';
   }
@@ -447,6 +493,9 @@ if (authPasswordGenerateButton) {
 const applyAuthResponse = async (data) => {
   if (state.pendingUser?.id !== data.user?.id) clearAssessmentContext();
   const agent = data.agent || null;
+  renderOrganizationInvitation(data.organization || null);
+
+  advanceSessionGeneration();
 
   state.sessionId = agent?.session_id || null;
   state.pendingUser = data.user || null;
@@ -476,12 +525,21 @@ const applyAuthResponse = async (data) => {
     return;
   }
 
+  state.sessionId = null;
+  state.pendingAgentMessage = null;
+  state.pendingRoleOptions = [];
+  state.pendingActionOptions = [];
+  state.pendingConsentTitle = null;
+  state.pendingConsentText = null;
+  state.pendingNoChangesQuickReply = false;
   hideLoader();
-  const chatModule = await loadChat();
-  chatModule.openChat();
+  setCurrentScreen('auth-complete');
+  persistAssessmentContext();
+  openAuthComplete();
 };
 
 const handleEmailMagicLinkRequest = async () => {
+  if (authRequestInFlight) return;
   showError(authError, '');
   setAuthStatus('');
 
@@ -493,8 +551,10 @@ const handleEmailMagicLinkRequest = async () => {
   }
 
   try {
+    authRequestInFlight = true;
     if (requestMagicLinkButton) {
       requestMagicLinkButton.disabled = true;
+      requestMagicLinkButton.setAttribute('aria-busy', 'true');
       requestMagicLinkButton.textContent = 'Проверяем...';
     }
     if (emailInput) {
@@ -520,9 +580,13 @@ const handleEmailMagicLinkRequest = async () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({
+        email,
+        organization_invitation_token: organizationInvitationToken || null,
+      }),
     });
     const data = await readApiResponse(response, 'Не удалось отправить ссылку для входа.');
+    renderOrganizationInvitation(data.organization || null);
     const isDevMode = Boolean(data.dev_mode);
     const nextMode = isDevMode ? 'dev_token' : data.auth_mode || data.delivery_method || 'password';
     authCredentialEmail = data.email || email;
@@ -557,11 +621,13 @@ const handleEmailMagicLinkRequest = async () => {
   } finally {
     if (requestMagicLinkButton) {
       requestMagicLinkButton.disabled = false;
+      requestMagicLinkButton.removeAttribute('aria-busy');
       requestMagicLinkButton.textContent = 'Продолжить';
     }
     if (emailInput) {
       emailInput.disabled = false;
     }
+    authRequestInFlight = false;
   }
 };
 
@@ -592,6 +658,7 @@ export const verifyEmailMagicLinkToken = async (tokenValue = null) => {
 };
 
 const submitEmailPassword = async () => {
+  if (authCredentialInFlight) return;
   showError(authError, '');
   const email = String(authCredentialEmail || emailInput?.value || '').trim();
   const password = String(magicTokenInput?.value || '');
@@ -616,8 +683,10 @@ const submitEmailPassword = async () => {
   }
 
   try {
+    authCredentialInFlight = true;
     if (verifyMagicLinkButton) {
       verifyMagicLinkButton.disabled = true;
+      verifyMagicLinkButton.setAttribute('aria-busy', 'true');
       verifyMagicLinkButton.textContent = isReset ? 'Сохраняем...' : isRegistration ? 'Регистрируем...' : 'Входим...';
     }
     const response = await fetch(
@@ -632,8 +701,14 @@ const submitEmailPassword = async () => {
           isReset
             ? { token: authActionToken, password, password_confirm: passwordConfirm }
             : isRegistration
-            ? { email, password, password_confirm: passwordConfirm, verification_token: authActionToken || null }
-            : { email, password },
+            ? {
+                email,
+                password,
+                password_confirm: passwordConfirm,
+                verification_token: authActionToken || null,
+                organization_invitation_token: organizationInvitationToken || null,
+              }
+            : { email, password, organization_invitation_token: organizationInvitationToken || null },
         ),
       },
     );
@@ -656,8 +731,10 @@ const submitEmailPassword = async () => {
   } finally {
     if (verifyMagicLinkButton) {
       verifyMagicLinkButton.disabled = false;
+      verifyMagicLinkButton.removeAttribute('aria-busy');
       verifyMagicLinkButton.textContent = isReset ? 'Сохранить новый пароль' : isRegistration ? 'Задать пароль и войти' : 'Войти';
     }
+    authCredentialInFlight = false;
   }
 };
 
@@ -672,6 +749,7 @@ export const handleAuthActionToken = async (action, tokenValue) => {
       body: JSON.stringify({ token }),
     });
     const data = await readApiResponse(response, 'Ссылка недействительна или устарела.');
+    renderOrganizationInvitation(data.organization || null);
     authActionToken = token;
     authCredentialEmail = data.email || '';
     if (emailInput) emailInput.value = authCredentialEmail;
@@ -686,6 +764,7 @@ export const handleAuthActionToken = async (action, tokenValue) => {
 };
 
 const requestPasswordReset = async () => {
+  if (authResetRequestInFlight) return;
   showError(authError, '');
   const email = String(emailInput?.value || '').trim();
   if (!email) {
@@ -694,6 +773,9 @@ const requestPasswordReset = async () => {
     return;
   }
   try {
+    authResetRequestInFlight = true;
+    forgotPasswordButton?.setAttribute('aria-busy', 'true');
+    if (forgotPasswordButton) forgotPasswordButton.disabled = true;
     const response = await fetch('/users/auth/password/forgot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -706,6 +788,10 @@ const requestPasswordReset = async () => {
     }
   } catch (error) {
     showError(authError, error.message);
+  } finally {
+    authResetRequestInFlight = false;
+    forgotPasswordButton?.removeAttribute('aria-busy');
+    if (forgotPasswordButton) forgotPasswordButton.disabled = false;
   }
 };
 
@@ -734,6 +820,14 @@ if (forgotPasswordButton) {
 
 if (authChangeEmailButton) {
   authChangeEmailButton.addEventListener('click', showEmailEntry);
+}
+
+if (authChangeCredentialEmailButton) {
+  authChangeCredentialEmailButton.addEventListener('click', showEmailEntry);
+}
+
+if (authCompleteLogoutButton) {
+  authCompleteLogoutButton.addEventListener('click', () => void logoutAndReturnToStart(authCompleteLogoutButton));
 }
 
 if (authResendEmailButton) {

@@ -121,6 +121,12 @@ class WebSessionService:
             ).fetchone()
             if row is None:
                 return None
+            from Api.org_access import email_has_organization_access
+
+            if not email_has_organization_access(connection, email=row["email"]):
+                connection.execute("DELETE FROM web_user_sessions WHERE token = %s", (token,))
+                connection.commit()
+                return None
             connection.execute(
                 """
                 UPDATE web_user_sessions
