@@ -1,0 +1,14 @@
+{
+  "schema_version":1,
+  "environment":{"database":"agent4k_pytest_1014","host":"127.0.0.1:55436","ownership":"dedicated Docker container 4k_task10_14_pytest","external_ai_calls":0},
+  "receipts":[
+    {"criteria":["R3","R7"],"test":"test_s10_d_closed_cycle_without_presented_material_has_no_result_report","result":"PASS","duration_seconds":8.45},
+    {"criteria":["R5","R7","R11"],"test":"test_admission_processing_failure_is_limited_and_recovery_is_new_revision","result":"PASS","duration_seconds":25.86},
+    {"criteria":["R2","R7"],"test":"test_browser_turn_close_lock_order_and_late_turn","result":"PASS"},
+    {"criteria":["R6","R9"],"test":"test_s10_e_recalculation_preserves_old_results_and_report","result":"PASS"},
+    {"criteria":["R2","R6"],"test":"test_s10_b_additional_session_preserves_boundary_and_reaches_report","result":"PASS","duration_seconds":26.62},
+    {"criteria":["HTTP","R6"],"test":"tests/e2e/test_m10_processing_recovery_http.py","result":"PASS","summary":"4 passed"},
+    {"criteria":["R1","R8"],"result":"BLOCKED","reason":"Accepted catalog contract permits synthetic fixture evidence only for qa while product start selects assessment; guard was not weakened."},
+    {"criteria":["R9","R10"],"result":"PARTIAL","reason":"Snapshot immutability and owner scope are covered; A→B five-case product route remains dependent on R8."}
+  ]
+}
