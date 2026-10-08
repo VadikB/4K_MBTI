@@ -1,0 +1,90 @@
+Created empty owned stand: product4k_pytest_af1bb7161c7942bba432b024c14b1601 application_tables=0
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-7.1.0, anyio-4.13.0
+collected 474 items / 395 deselected / 79 selected
+
+tests/integration/test_assessment_analysis_queue_db.py ........          [ 10%]
+tests/integration/test_assessment_authoring_workflow_db.py .......       [ 18%]
+tests/integration/test_assessment_evaluation_material_repository_db.py . [ 20%]
+                                                                         [ 20%]
+tests/integration/test_assessment_indicator_repository_db.py ..          [ 22%]
+tests/integration/test_assessment_queue_db.py ......                     [ 30%]
+tests/integration/test_assessment_shadow_aggregate_db.py ..              [ 32%]
+tests/integration/test_m10_product_path_db.py .....                      [ 39%]
+tests/integration/test_m3_role_profiles_db.py .                          [ 40%]
+tests/integration/test_m4_contexts_db.py .                               [ 41%]
+tests/integration/test_m5_cycle_runtime_db.py ..                         [ 44%]
+tests/integration/test_m5_generation_lab_db.py .                         [ 45%]
+tests/integration/test_m5_runtime_db.py ..                               [ 48%]
+tests/integration/test_m6_evidence_db.py ........................        [ 78%]
+tests/integration/test_m7_cycle_planner_db.py ......                     [ 86%]
+tests/integration/test_m8_recommendation_basis_db.py ......              [ 93%]
+tests/integration/test_profile_access_owned_stand.py .                   [ 94%]
+tests/integration/test_profile_to_m4_owned_stand.py .                    [ 96%]
+tests/integration/test_removed_personality_schema_cleanup_db.py .        [ 97%]
+tests/integration/test_review_m4_confirmation_db.py .                    [ 98%]
+tests/integration/test_review_report_history_db.py F                     [100%]
+
+=================================== FAILURES ===================================
+_________ test_history_groups_cycles_and_preserves_all_saved_versions __________
+
+test_database_url = 'user=vadim_bogachev dbname=product4k_pytest_af1bb7161c7942bba432b024c14b1601 host=127.0.0.1 port=55491 connect_timeout=5'
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/integration/test_review_report_history_db.py:37:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+Api/m8_results.py:333: in list_owned_reports
+    return [item for item in list_owned_cycles(connection, user_id) if item['report_id']]
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Api/m8_results.py:291: in list_owned_cycles
+    rows = connection.execute("""SELECT c.cycle_id,c.status AS cycle_status,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Connection [BAD] at 0x10bc7cda0>
+query = 'SELECT c.cycle_id,c.status AS cycle_status,\n        c.created_at AS cycle_created_at,c.started_at,c.collection_close...  ORDER BY c.created_at DESC,c.id DESC,rr.revision_no DESC NULLS LAST,\n                 p.revision_no DESC NULLS LAST'
+params = (91,), prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "m10_pipeline_runs" does not exist
+E           LINE 7:         LEFT JOIN m10_pipeline_runs pipeline ON pipeline.cyc...
+E                                     ^
+
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: UndefinedTable
+=============================== warnings summary ===============================
+../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/integration/test_review_report_history_db.py::test_history_groups_cycles_and_preserves_all_saved_versions
+===== 1 failed, 78 passed, 395 deselected, 1 warning in 274.07s (0:04:34) ======
+Owned stand removed

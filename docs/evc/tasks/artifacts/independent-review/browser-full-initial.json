@@ -1,0 +1,37 @@
+[
+  {
+    "scenario": "S10-A and T11-10 positive, clarification and saved Report/PDF",
+    "status": "passed",
+    "duration_ms": 33894
+  },
+  {
+    "scenario": "S10-B interruption and Additional Session preserve Cycle and deadline",
+    "status": "passed",
+    "duration_ms": 21627
+  },
+  {
+    "scenario": "S10-C1 background time closure without another Turn",
+    "status": "timedOut",
+    "duration_ms": 152443
+  },
+  {
+    "scenario": "S10-C2 background time closure without another Turn",
+    "status": "passed",
+    "duration_ms": 74646
+  },
+  {
+    "scenario": "Recovery: lost response, unaccepted request, two tabs and owner boundaries",
+    "status": "passed",
+    "duration_ms": 14647
+  },
+  {
+    "scenario": "S10-A character branch: actual character Turn, order and no invented recommendation",
+    "status": "passed",
+    "duration_ms": 17766
+  },
+  {
+    "scenario": "REV-02 fresh M4 confirmation, canonical context and saved history after login",
+    "status": "passed",
+    "duration_ms": 21485
+  }
+]

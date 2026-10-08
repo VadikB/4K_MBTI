@@ -239,7 +239,7 @@ def assign_role_profile(
     return int(row["id"])
 
 
-def create_personalized_profile(
+def build_from_confirmed_sources(
     connection,
     *,
     user_id: int,
@@ -249,7 +249,7 @@ def create_personalized_profile(
     user_context_version_id: int,
     conflicts: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Freeze confirmed M4 sources for a methodology 1.1 assessment configuration."""
+    """Validate and assemble current source refs without writing or regenerating history."""
     organization_id = load_single_active_organization_id(connection, user_id=user_id)
     configuration = connection.execute(
         """
@@ -313,6 +313,25 @@ def create_personalized_profile(
         user_context_ref={"version_id": user_context_version_id, "checksum": user_row["checksum"]},
         conflicts=conflicts,
     )
+    return snapshot
+
+
+def create_personalized_profile(
+    connection,
+    *,
+    user_id: int,
+    assessment_configuration_id: int,
+    organization_context_version_id: int,
+    role_profile_version_id: int,
+    user_context_version_id: int,
+    conflicts: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    snapshot = build_from_confirmed_sources(connection, user_id=user_id,
+        assessment_configuration_id=assessment_configuration_id,
+        organization_context_version_id=organization_context_version_id,
+        role_profile_version_id=role_profile_version_id, user_context_version_id=user_context_version_id,
+        conflicts=conflicts)
+    organization_id = snapshot['organization_id']
     row = connection.execute(
         """
         INSERT INTO assessment_personalized_profiles (

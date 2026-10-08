@@ -1,0 +1,36 @@
+
+> prebuild:web
+> npm run clean:web
+
+
+> clean:web
+> node scripts/clean_web_dist.mjs
+
+
+> build:web
+> esbuild web/js/main.js --outdir=web/dist --target=es2020 --format=esm --splitting --public-path=/web/dist/ --entry-names=[name] --chunk-names=[name]-[hash] --bundle --minify
+
+
+  web/dist/chunk-KCGPGAUN.js                   168.7kb
+  web/dist/admin-methodology-KBV2JSQ2.js        67.4kb
+  web/dist/admin-prompt-lab-YE4A44FT.js         45.5kb
+  web/dist/main.js                              45.2kb
+  web/dist/chunk-V3ARP47R.js                    29.4kb
+  web/dist/admin-organizations-SF4RZU77.js      28.8kb
+  web/dist/chunk-7K5YMZXA.js                    27.3kb
+  web/dist/chunk-YKUHV5JM.js                    24.0kb
+  web/dist/admin-regression-tests-3C77N43H.js   12.7kb
+  web/dist/chunk-6JGSJ2GW.js                    12.2kb
+  web/dist/admin-reports-L5TAZHSI.js            11.0kb
+  web/dist/chunk-OAXDEQDN.js                    10.0kb
+  web/dist/chunk-5MZOBMNI.js                     9.7kb
+  web/dist/chunk-VLNM4KQG.js                     8.7kb
+  web/dist/chunk-QEXQGSIU.js                     4.0kb
+  web/dist/onboarding-6PGOLLXL.js                2.8kb
+  web/dist/chunk-56ORZIJI.js                     2.1kb
+  web/dist/interview-PM4WOMAY.js                 891b
+  web/dist/chunk-6WKNOBGK.js                     628b
+  web/dist/chat-SHT67OGX.js                      609b
+  ...and 12 more output files...
+
+⚡ Done in 111ms

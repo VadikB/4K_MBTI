@@ -162,7 +162,7 @@ const bootApp = async () => {
   if (screen === 'report') {
     const m8CycleId = params.get('cycle_id');
     if (m8CycleId) {
-      void openReportScreen({ m8CycleId });
+      void openReportScreen({ m8CycleId, m8ReportId: params.get('report_id'), returnTarget: params.get('report_id') ? 'reports' : 'home' });
       return;
     }
     if (state.pendingUser?.id && state.assessmentSessionId) {

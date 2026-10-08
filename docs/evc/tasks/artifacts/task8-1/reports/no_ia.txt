@@ -1,0 +1,52 @@
+4K — базовый индивидуальный отчёт
+Cycle: a037b3d8-ceba-4a0e-8479-71f8afcb0c41 · Results revision: 2 · Report: 1
+Результаты по навыкам
+Навык Исход Score Полнота
+Слушание, реконструкция и верификация
+смысла другого
+Нет Skill Result — —
+Согласование смыслов и позиций Нет Skill Result — —
+Координация совместных действий Нет Skill Result — —
+Анализ и оценка информации Нет Skill Result — —
+Постановка и анализ проблемы Нет Skill Result — —
+Принятие решений Нет Skill Result — —
+Покрытие
+Контур Срез Покрытие
+full_m2 opportunities 9/24 (37.5%)
+full_m2 complete_components 0/15 (0.0%)
+full_m2 components_with_score 0/15 (0.0%)
+full_m2 indicator_assessments 0/24 (0.0%)
+full_m2 admissible_contributions 0/24 (0.0%)
+cycle_plan opportunities 9/9 (100.0%)
+cycle_plan complete_components 0/7 (0.0%)
+cycle_plan components_with_score 0/7 (0.0%)
+cycle_plan indicator_assessments 0/9 (0.0%)
+cycle_plan admissible_contributions 0/9 (0.0%)
+Ограничения
+• K1.I13: Synthetic transport fixture, not GC
+• K1.I13: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA
+• K1.I16: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA
+• K1.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA
+• K2.I07: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA
+• K2.I08: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA
+• K4.I05: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA
+• K4.I10: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA
+• K4.I17: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA
+• K4.I18: NO_INTERPRETABLE_IA; NO_INTERPRETABLE_IA
+• Skill Level is not derived from numeric Score
+Reliability: not_verified
+Недостаток оснований
+• K1.3: По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются.
+При необходимости возможен новый самостоятельный Cycle.
+• K1.4: По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются.
+При необходимости возможен новый самостоятельный Cycle.
+• K2.2: По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются.
+При необходимости возможен новый самостоятельный Cycle.
+• K4.1: По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются.
+При необходимости возможен новый самостоятельный Cycle.
+• K4.2: По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются.
+При необходимости возможен новый самостоятельный Cycle.
+1
+• K4.4: По этому Skill нет результата, поэтому вывод о дефиците и рекомендация по развитию не формируются.
+При необходимости возможен новый самостоятельный Cycle.
+2

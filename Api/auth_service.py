@@ -422,7 +422,7 @@ class AuthService:
                 expires_at=expires_at,
             )
 
-        logger.info("Magic link requested for %s", normalized_email)
+        logger.info("Magic link requested")
         return MagicLinkRequestResult(
             email=normalized_email,
             expires_at=expires_at,
@@ -550,7 +550,7 @@ class AuthService:
 
         if user_row is None:
             raise ValueError("Пользователь не найден после подтверждения входа.")
-        logger.info("Magic link verified for %s", normalized_email)
+        logger.info("Magic link verified")
         return MagicLinkVerificationResult(
             user=UserResponse(**dict(user_row)),
             is_new_user=is_new_user,
@@ -763,7 +763,7 @@ class AuthService:
 
         if user_row is None:
             raise ValueError("Пользователь не найден после регистрации пароля.")
-        logger.info("Password registered for %s", normalized_email)
+        logger.info("Password registered")
         return PasswordLoginResult(
             user=UserResponse(**dict(user_row)),
             is_new_user=is_new_user,
@@ -794,7 +794,7 @@ class AuthService:
             )
             connection.execute("DELETE FROM web_user_sessions WHERE user_id = %s", (user_id,))
             connection.commit()
-        logger.info("Password reset completed for %s", email)
+        logger.info("Password reset completed")
         return email
 
     def verify_password_login(self, *, email: str, password: str) -> PasswordLoginResult:
@@ -823,11 +823,11 @@ class AuthService:
                     salt=credential_row["password_salt"],
                     password_hash=credential_row["password_hash"],
                 ):
-                    logger.warning("Password login rejected for %s: bad password", normalized_email)
+                    logger.warning("Password login rejected: bad password")
                     raise ValueError("Неверный пароль.")
                 user_id = int(credential_row["user_id"])
             else:
-                logger.warning("Password login rejected for %s: password not set", normalized_email)
+                logger.warning("Password login rejected: password not set")
                 raise ValueError("Пароль еще не задан. Пройдите первичную регистрацию.")
 
             connection.execute(
@@ -872,7 +872,7 @@ class AuthService:
 
         if user_row is None:
             raise ValueError("Пользователь не найден после входа.")
-        logger.info("Password login verified for %s", normalized_email)
+        logger.info("Password login verified")
         return PasswordLoginResult(
             user=UserResponse(**dict(user_row)),
             is_new_user=is_new_user,

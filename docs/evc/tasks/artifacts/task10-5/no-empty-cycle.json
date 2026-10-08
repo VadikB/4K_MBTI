@@ -1,0 +1,23 @@
+{
+  "owner": 1,
+  "user_context_count": 1,
+  "profiles": [
+    {
+      "id": 2,
+      "user_id": 1,
+      "organization_id": 1,
+      "assessment_configuration_id": 2,
+      "role_profile_version_id": 4,
+      "organization_context_version_id": 1,
+      "user_context_version_id": 2,
+      "status": "ready",
+      "checksum": "1114c2649485f60192626e90f239c5b4b57773e67067d05717d4ef5dd1e78611",
+      "provenance_json": {
+        "role_profile": "role_profile",
+        "user_context": "user",
+        "organization_context": "organization"
+      }
+    }
+  ],
+  "cycles": []
+}

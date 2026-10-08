@@ -9,20 +9,21 @@ from Api.m5_case_runtime import checksum
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "assessment_definitions/recommendations/m8/v1_1"
-CONTRACT_VERSION = "m8-recommendations/1.1.0"
+PACKAGE = ROOT / "assessment_definitions/recommendations/m8/v1_2"
+CONTRACT_VERSION = "m8-recommendations/1.2.0"
+VERIFIED_CONTRACT_VERSIONS = {"m8-recommendations/1.1.0", CONTRACT_VERSION}
+# Canonical M4 content only: identity and arbitrary nested metadata never cross this boundary.
 PROFILE_ALLOWLIST = {
-    "organization_context": ("description", "activities", "products", "employee_context"),
-    "role_profile": ("name", "short_description", "mission", "typical_tasks", "objects_of_work"),
-    "user_context": ("position", "department", "specialization", "regular_tasks", "systems", "tools"),
+    "organization_context": ("activity_description", "activities", "products", "employee_context"),
+    "role_profile": ("mission", "typical_tasks", "work_objects", "independent_authority", "approval_required", "escalation", "role_constraints"),
+    "user_context": ("position_or_status", "unit_or_program", "specialization", "regular_tasks", "systems_and_tools", "irrelevant_areas"),
 }
-FORBIDDEN_PROFILE_KEYS = {"full_name", "contacts", "email", "phone", "name"}
 
 
 def load_package() -> dict[str, Any]:
     manifest = json.loads((PACKAGE / "manifest.json").read_bytes())
     raw = (PACKAGE / "templates.json").read_bytes()
-    expected = (1, "m8_recommendations", "1.1.0", "draft", "individual_report", "PM-06")
+    expected = (1, "m8_recommendations", "1.2.0", "draft", "individual_report", "PM-06")
     if tuple(manifest.get(key) for key in ("schema_version", "id", "version", "status", "scope", "owner")) != expected:
         raise ValueError("M8_RECOMMENDATION_PACKAGE_INVALID")
     if manifest.get("artifacts") != [{"name": "templates.json", "sha256": hashlib.sha256(raw).hexdigest()}]:
@@ -43,33 +44,61 @@ def load_package() -> dict[str, Any]:
 
 def profile_projection(snapshot: dict[str, Any] | None) -> dict[str, Any]:
     """Return the minimum M4 content used for action context, never identity/contact data."""
-    content = dict((snapshot or {}).get("content") or snapshot or {})
+    if snapshot is not None and not isinstance(snapshot, dict):
+        raise ValueError("M8_PROFILE_INVALID")
+    if (snapshot or {}).get("schema_version", 1) != 1 or (snapshot or {}).get("status") == "blocked":
+        raise ValueError("M8_PROFILE_INVALID")
+    content = (snapshot or {}).get("content", snapshot or {})
+    if not isinstance(content, dict):
+        raise ValueError("M8_PROFILE_INVALID")
     projection: dict[str, Any] = {}
     for section, allowed in PROFILE_ALLOWLIST.items():
         source = content.get(section)
-        if not isinstance(source, dict):
+        if source is None:
             continue
-        selected = {key: source[key] for key in allowed if key in source and source[key] not in (None, "", [], {})}
+        if not isinstance(source, dict):
+            raise ValueError("M8_PROFILE_INVALID")
+        if section == "role_profile":
+            source = source.get("card", {})
+        if not isinstance(source, dict):
+            raise ValueError("M8_PROFILE_INVALID")
+        # Professional text or lists of text, never unbounded dictionaries containing contacts.
+        selected = {}
+        for key in allowed:
+            value = source.get(key)
+            if isinstance(value, str) and value.strip():
+                selected[key] = value
+            elif isinstance(value, list):
+                if any(not isinstance(item, str) for item in value):
+                    raise ValueError("M8_PROFILE_INVALID")
+                texts = [item for item in value if isinstance(item, str) and item.strip()]
+                if texts:
+                    selected[key] = texts
+            elif value is not None and not isinstance(value, str):
+                raise ValueError("M8_PROFILE_INVALID")
         if selected:
             projection[section] = selected
     return projection
 
 
-def _flatten_strings(value: Any):
-    if isinstance(value, str) and value.strip():
-        yield value.strip()
-    elif isinstance(value, list):
-        for item in value:
-            yield from _flatten_strings(item)
-    elif isinstance(value, dict):
-        for key, item in value.items():
-            if str(key).lower() not in FORBIDDEN_PROFILE_KEYS:
-                yield from _flatten_strings(item)
-
-
-def _action_context(profile: dict[str, Any], fallback: str) -> str:
-    values = list(_flatten_strings(profile))
-    return values[0][:240] if values else fallback
+def _select_context(profile: dict[str, Any], policy: dict) -> dict:
+    boundaries = []
+    for section in ("role_profile", "user_context"):
+        for key, label in policy["boundary_labels"].items():
+            value = profile.get(section, {}).get(key)
+            if value:
+                boundaries.append({"path": f"{section}.{key}", "label": label, "value": value})
+    selection = {"policy_version": policy["version"], "status": "missing",
+                 "selected_path": None, "selected_index": None, "value": None, "boundaries": boundaries}
+    for path in policy["selection_order"]:
+        section, key = path.split(".")
+        value = profile.get(section, {}).get(key)
+        if value:
+            selection.update(status="available", selected_path=path,
+                             selected_index=0 if isinstance(value, list) else None,
+                             value=value[0] if isinstance(value, list) else value)
+            break
+    return selection
 
 
 def _skill_indicators(skill: dict[str, Any]) -> set[str]:
@@ -123,6 +152,7 @@ def generate(results: dict, profile_snapshot: dict | None, *, resolved: dict | N
     package = load_package()
     content = package["templates"]
     profile = profile_projection(profile_snapshot)
+    context = _select_context(profile, content["context_policy"])
     observations = results.get("observations", [])
     if resolved is not None and (resolved.get("cycle_id") != results.get("cycle_id")
             or resolved.get("results_revision_id") != results.get("results_revision_id")
@@ -164,19 +194,25 @@ def generate(results: dict, profile_snapshot: dict | None, *, resolved: dict | N
                 values = {"manifestation":basis["manifestation"], "indicator_name":criterion["name"],
                           "function":criterion["function"], "product":criterion["product"], "action":action}
                 limitations = list(content["common_limitations"]) + list(results.get("limitations", []))
+                limitations += [content["context_policy"]["boundary_template"].format(
+                    label=boundary["label"], value="; ".join(boundary["value"]) if isinstance(boundary["value"], list) else boundary["value"])
+                    for boundary in context["boundaries"]]
                 limitations += target["confidence"].get("limitations", []) + projection["bundle"].get("limitations", [])
                 for trace in projection["traces"]:
                     limitations += trace.get("limitations", [])
                 recommendations.append({"recommendation_id":f"{skill['skill_id']}:{obs['revision_id']}:{kind.split()[0].lower()}",
                     "skill_id":skill["skill_id"], "type":kind, "basis_refs":[basis],
                     **{key:template[key].format(**values) for key in ("goal","practice","progress_signal")},
-                    "application_context":_action_context(profile, content["fallback_context"]),
+                    "practice":content["context_policy"]["practice_guard"] + template["practice"].format(**values),
+                    "application_context":content["context_policy"]["application_template"].format(
+                        context=context["value"], function=criterion["function"]) if context["status"] == "available" else content["fallback_context"],
                     "limitations":list(dict.fromkeys(limitations)), "component_ids":[criterion["component_id"]],
                     "indicator_ids":[obs["indicator_id"]], "gap_ref":None})
         if len(recommendations) == before:
             notices.append({"skill_id":skill["skill_id"], "kind":"BASIS_UNAVAILABLE", **content["unresolved_basis_notice"]})
     generation_input = {"results_revision_id":results.get("results_revision_id"), "results_version":results.get("results_version"),
         "cycle_id":results.get("cycle_id"), "profile_ref":results.get("profile_ref"), "profile_projection":profile,
+        "context_selection":context,
         "target_profile":results.get("target_profile"), "skill_inputs":results.get("assessed_skill_profile", []),
         "observation_refs":observations, "admissions":results.get("admissions", []), "resolved":resolved}
     return {"contract_version":CONTRACT_VERSION, "mechanism":{"kind":"deterministic_template", "id":package["manifest"]["id"],

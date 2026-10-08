@@ -1,0 +1,59 @@
+> test:browser
+> playwright test
+
+
+Running 8 tests using 1 worker
+
+(node:25350) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/runtime.spec.mjs:119:1 › S10-A and T11-10 positive, clarification and saved Report/PDF (2.4m)
+  ✓  2 tests/browser/runtime.spec.mjs:178:1 › S10-B interruption and Additional Session preserve Cycle and deadline (50.9s)
+  ✘  3 tests/browser/runtime.spec.mjs:206:35 › S10-C1 background time closure without another Turn (1.1m)
+(node:26310) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  4 tests/browser/runtime.spec.mjs:206:35 › S10-C2 background time closure without another Turn (1.9m)
+  ✓  5 tests/browser/runtime.spec.mjs:235:1 › Recovery: lost response, unaccepted request, two tabs and owner boundaries (1.3m)
+  ✓  6 tests/browser/runtime.spec.mjs:267:1 › S10-A character branch: actual character Turn, order and no invented recommendation (1.2m)
+  ✓  7 tests/browser/runtime.spec.mjs:292:1 › REV-02 fresh M4 confirmation, canonical context and saved history after login (1.4m)
+  ✓  8 tests/browser/runtime.spec.mjs:334:1 › S10.4 owner profile, 403, logout, late response and account switch (48.3s)
+
+
+  1) tests/browser/runtime.spec.mjs:206:35 › S10-C1 background time closure without another Turn ───
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  locator('#assessment-action-button')
+    Expected: visible
+    Received: hidden
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeVisible" locator('#assessment-action-button') with timeout 5000ms
+      - waiting for locator('#assessment-action-button')
+        6 × locator resolved to <button type="button" class="primary-button" id="assessment-action-button">Продолжить</button>
+          - unexpected value "hidden"
+
+
+      88 |  }
+      89 |  await confirm.click();
+    > 90 |  await expect(page.locator('#assessment-action-button')).toBeVisible();
+         |                                                          ^
+      91 | }
+      92 | async function start(page,expected='готовности'){
+      93 |  await page.locator('#assessment-action-button').click();
+        at login (/Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation/tests/browser/runtime.spec.mjs:90:58)
+        at /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation/tests/browser/runtime.spec.mjs:207:2
+
+    attachment #1: browser-version (text/plain) ────────────────────────────────────────────────────
+    153.0.8010.12
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/attachments/server-log-e1dd0c5e0184e4a612c0a1de48d3eaa92735b1d8.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/error-context.md
+
+  1 failed
+    tests/browser/runtime.spec.mjs:206:35 › S10-C1 background time closure without another Turn ────
+  7 passed (11.1m)

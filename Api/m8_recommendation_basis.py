@@ -33,8 +33,12 @@ def resolve(connection, results: dict) -> dict:
     ids = [x['revision_id'] for x in payload.get('observations', [])]
     if len(ids) != len(set(ids)):
         raise ValueError('RECOMMENDATION_AMBIGUOUS_IA')
+    decisions = {d['indicator_id']: d for d in payload.get('admissions', [])}
     projections = []
     for observation in payload.get('observations', []):
+        decision = decisions.get(observation['indicator_id'], {})
+        if decision.get('schema_version') == 2 and observation['revision_id'] not in decision['interpretable_revision_ids']:
+            continue
         # No-assessment entries are explicitly not IA; keep them as rejected candidates.
         if observation['revision_id'].startswith('non-numeric:'):
             continue

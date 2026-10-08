@@ -1,0 +1,47 @@
+{
+  "baseline": "d5752740770e7241756a3bb42fa94e743da89605",
+  "observed": "Substantive conditions are absent from the admission input and decision.",
+  "not_claimed": "Different conditions do not automatically mean incomparable.",
+  "decision": {
+    "indicator_id": "I1",
+    "included_revision_ids": [
+      "r1",
+      "r2"
+    ],
+    "interpretation_admissible": true,
+    "numeric_admissible": true,
+    "reason_code": "ADMITTED_ALL_CHECKS",
+    "mechanism": {
+      "id": "m6_admission",
+      "version": "1.0.0",
+      "rules_checksum": "c17a802d770adfa6f2641e103281c0a78f369ad5966029b9f150dc3a60a5122a"
+    },
+    "checks": {
+      "numeric_ia_present": true,
+      "all_opportunities_present": true,
+      "all_refs_resolved": true,
+      "same_m2_version": true,
+      "same_base_role": true,
+      "no_reported_contradiction": true,
+      "distinct_as_sufficient": true
+    },
+    "contexts": [
+      {
+        "assessment_situation_id": "as1",
+        "base_role": "same-role",
+        "case_ref": {
+          "id": "as1"
+        }
+      },
+      {
+        "assessment_situation_id": "as2",
+        "base_role": "same-role",
+        "case_ref": {
+          "id": "as2"
+        }
+      }
+    ]
+  }
+}
+.
+1 passed in 0.48s

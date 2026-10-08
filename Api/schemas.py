@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -184,6 +186,7 @@ class AuthActionResponse(BaseModel):
 
 
 class AgentReply(BaseModel):
+    dashboard: UserDashboard | None = None
     session_id: str
     message: str
     stage: str
@@ -973,6 +976,8 @@ class AdminReportDetailResponse(BaseModel):
 
 
 class UserDashboard(BaseModel):
+    personalized_profile_id: int | None = None
+    profile_readiness: str = "not_ready"
     greeting_name: str
     active_assessment: AssessmentCard
     available_assessments: list[AvailableAssessment]
@@ -1031,18 +1036,25 @@ class AgentMessageRequest(BaseModel):
     message: str
 
 
+class PersonalizedProfileSelection(BaseModel):
+    organization_context_version_id: int = Field(gt=0)
+    role_profile_version_id: int = Field(gt=0)
+    assessment_configuration_id: int = Field(gt=0)
+
+
 class AgentProfileConfirmRequest(BaseModel):
+    personalized_profile: PersonalizedProfileSelection | None = None
     session_id: str
     full_name: str
     email: str
     telegram: str | None = None
-    position: str
-    duties: str
-    role_id: int
-    company_industry: str
+    position: str = ""
+    duties: str = ""
+    role_id: int | None = None
+    company_industry: str = ""
     consent_accepted: bool = False
 
-    @field_validator("session_id", "full_name", "email", "position", "duties", "company_industry", mode="before")
+    @field_validator("session_id", "full_name", "email", mode="before")
     @classmethod
     def normalize_required_text(cls, value: object) -> str:
         normalized = str(value or "").strip()
@@ -1272,6 +1284,14 @@ class AdminExpertGroupExportRequest(BaseModel):
     session_ids: list[int] = Field(default_factory=list)
 
 
+class M8HistoryResponse(BaseModel):
+    owner_user_id: int
+    cycles: list[dict[str, Any]]
+    assessments_total: int
+    reports_total: int
+    completed_assessments: int
+
+
 class UserProfileSummaryResponse(BaseModel):
     user: UserResponse
     total_assessments: int
@@ -1279,9 +1299,13 @@ class UserProfileSummaryResponse(BaseModel):
     average_score_percent: int | None = None
     latest_session_id: int | None = None
     history: list[UserAssessmentHistoryItem]
+    cycle_reports: list[dict[str, Any]] = Field(default_factory=list)
+    cycle_history: list[dict[str, Any]] = Field(default_factory=list)
+    legacy_assessments_total: int = 0
 
 
 class UserProfileUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     email: str | None = None
     telegram: str | None = None
     avatar_data_url: str | None = None
@@ -1453,3 +1477,6 @@ class PlatformRoleAssignmentRequest(BaseModel):
     user_id: int
     role_code: str
     organization_id: int | None = None
+
+# Resolve the reply/dashboard forward reference after both models are defined.
+AgentReply.model_rebuild()

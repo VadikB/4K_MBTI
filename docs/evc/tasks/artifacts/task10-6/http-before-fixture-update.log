@@ -1,0 +1,161 @@
+
+> test:backend:http
+> .venv/bin/python -m pytest -m e2e tests/e2e
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.worktrees/independent-review-remediation
+configfile: pyproject.toml
+plugins: cov-7.1.0, anyio-4.13.0
+collected 37 items
+
+tests/e2e/test_assessment_authoring_http.py ...                          [  8%]
+tests/e2e/test_assessment_shadow_admin_http.py .....                     [ 21%]
+tests/e2e/test_m3_role_profile_selection_http.py ....                    [ 32%]
+tests/e2e/test_m5_generation_lab_http.py .......                         [ 51%]
+tests/e2e/test_m5_runtime_http.py ....                                   [ 62%]
+tests/e2e/test_m6_evidence_http.py .....F                                [ 78%]
+tests/e2e/test_review_profile_http.py ....F...                           [100%]
+
+=================================== FAILURES ===================================
+______ test_t11_owner_regeneration_is_scoped_and_idempotency_is_forwarded ______
+
+client = (<starlette.testclient.TestClient object at 0x10c1e0350>, <_pytest.monkeypatch.MonkeyPatch object at 0x10c3a7cb0>)
+
+>   ???
+
+/private/tmp/4k-review-remediation/tests/e2e/test_m6_evidence_http.py:137:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+../../.venv/lib/python3.12/site-packages/starlette/testclient.py:560: in post
+    return super().post(
+../../.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+../../.venv/lib/python3.12/site-packages/starlette/testclient.py:459: in request
+    return super().request(
+../../.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+../../.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+../../.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.12/site-packages/starlette/testclient.py:362: in handle_request
+    raise exc
+../../.venv/lib/python3.12/site-packages/starlette/testclient.py:359: in handle_request
+    portal.call(self.app, scope, receive, send)
+../../.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/local/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+../../.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+../../.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+../../.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+../../.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+../../.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+../../.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../../.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../../.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+../../.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+../../.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+../../.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+../../.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+../../.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../../.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../../.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+../../.venv/lib/python3.12/site-packages/fastapi/routing.py:330: in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.12/site-packages/starlette/concurrency.py:32: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.venv/lib/python3.12/site-packages/anyio/to_thread.py:63: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+../../.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:2518: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+../../.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:1002: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+Api/routes.py:7052: in regenerate_owned_m8_report
+    user = _m8_owned_cycle(request, str(cycle_id))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Api/routes.py:6991: in _m8_owned_cycle
+    if not m8_results.owner_can_read_cycle(connection, cycle_id, user.id):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+connection = namespace(commit=<function client.<locals>.connection.<locals>.<lambda> at 0x10c146e80>)
+cycle_id = '0837eaae-cce6-43c6-988a-bbc89b52e9bc', user_id = 7
+
+    def owner_can_read_cycle(connection, cycle_id: str, user_id: int) -> bool:
+>       return connection.execute("SELECT c.id FROM m5_cycles c WHERE c.cycle_id=%s AND " + OWNER_CYCLE_SCOPE,
+               ^^^^^^^^^^^^^^^^^^
+                                  (UUID(str(cycle_id)), user_id)).fetchone() is not None
+E       AttributeError: 'types.SimpleNamespace' object has no attribute 'execute'
+
+Api/m8_results.py:285: AttributeError
+_____________________ test_saved_report_owner_and_audience _____________________
+
+profile_client = (<starlette.testclient.TestClient object at 0x10d285790>, <test_review_profile_http.profile_client.<locals>.Connection object at 0x10c46e5d0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10c5074a0>
+
+    def test_saved_report_owner_and_audience(profile_client, monkeypatch):
+        client, _ = profile_client
+        report = {'owner_user_id':91, 'audience':'assessee', 'id':str(uuid4())}
+        monkeypatch.setattr(routes.m8_results, 'read_report', lambda *_: report)
+        url = '/users/assessment/m8/reports/' + report['id']
+        assert client.get(url).status_code == 401
+        client.cookies.set(routes.SESSION_COOKIE_NAME, 'owner')
+>       assert client.get(url).json() == report
+E       AssertionError: assert {'detail': 'M...RT_NOT_FOUND'} == {'owner_user_...f448d8299d8d'}
+E
+E         Left contains 1 more item:
+E         {'detail': 'M8_REPORT_NOT_FOUND'}
+E         Right contains 3 more items:
+E         {'audience': 'assessee',
+E          'id': 'a85950e4-33fa-4a01-a478-f448d8299d8d',
+E          'owner_user_id': 91}
+E         Use -v to get more diff
+
+tests/e2e/test_review_profile_http.py:67: AssertionError
+=============================== warnings summary ===============================
+../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/vadim_bogachev/Desktop/mbti/4K_MBTI/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/e2e/test_m6_evidence_http.py::test_t11_owner_regeneration_is_scoped_and_idempotency_is_forwarded
+FAILED tests/e2e/test_review_profile_http.py::test_saved_report_owner_and_audience
+=================== 2 failed, 35 passed, 1 warning in 44.82s ===================
