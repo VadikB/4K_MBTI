@@ -47,13 +47,15 @@ def test_participant_profile_urls_require_the_same_session_owner(admission_clien
 @pytest.mark.e2e
 def test_same_domain_outside_allowlist_is_rejected_by_auth_http(admission_client) -> None:
     client, monkeypatch = admission_client
+    deny = lambda **_kwargs: (_ for _ in ()).throw(
+        AuthAccessDeniedError("Пользователь с таким email не найден в активных организациях.")
+    )
     monkeypatch.setattr(
         routes.auth_service,
         "get_password_auth_mode",
-        lambda **_kwargs: (_ for _ in ()).throw(
-            AuthAccessDeniedError("Пользователь с таким email не найден в активных организациях.")
-        ),
+        deny,
     )
+    monkeypatch.setattr(routes.auth_service, "create_magic_link_request", deny)
 
     response = client.post("/users/auth/email/request-link", json={"email": "outside@example.test"})
 
