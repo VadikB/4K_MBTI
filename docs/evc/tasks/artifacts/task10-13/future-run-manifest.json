@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "status": "prepared_not_authorized",
-  "implementation_candidate_sha": "03f4b87b0e80620635773b7014b89c0a55f346ad",
-  "runner": {"path":"Api/llm/deepseek_gateway.py","sha256":"47e4982a1e6c594106e140a9f6611bc1175ae512f9159133e6036c2518771f91"},
+  "implementation_candidate_sha": "2673db303afda6e7d6958b819e338b41850d500e",
+  "runner": {"path":"Api/llm/deepseek_gateway.py","sha256":"2f55cde5d70b30d3d723ab98b0055750b36657e29d8e1cc2d17514f68d063768"},
   "provider_contract": {"version":"1.0.0","sha256":"a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"},
   "catalog_contract": "m5-catalog-integrity/1",
   "processing_contract": "m10-processing-state/1",

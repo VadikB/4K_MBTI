@@ -53,6 +53,6 @@ safe failures и no-network tests. Default example/config переведён с 
 ## Передача
 
 Branch `codex/task10-13-provider-contract`; implementation commit
-`03f4b87b0e80620635773b7014b89c0a55f346ad`. Evidence находится в
+`2673db303afda6e7d6958b819e338b41850d500e`. Evidence находится в
 `docs/evc/tasks/artifacts/task10-13/`. Откат — revert commits задачи и возврат test
 config; сохранённые snapshots не переписывать. Следующие задачи не запускались.
