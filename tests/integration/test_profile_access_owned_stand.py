@@ -56,7 +56,10 @@ def internal(destination):
         otherorg=c.execute("INSERT INTO organizations(code,name) VALUES('t104_other','Synthetic other tenant') RETURNING id").fetchone()['id']
         other=c.execute("INSERT INTO users(full_name,email) VALUES('Synthetic other tenant','tenant@example.test') RETURNING id").fetchone()['id']
         admin=c.execute("INSERT INTO users(full_name,email) VALUES('Synthetic org admin','orgadmin@example.test') RETURNING id").fetchone()['id']
-        c.execute("INSERT INTO organization_memberships(organization_id,user_id,role) VALUES(%s,%s,'member'),(%s,%s,'admin')",(otherorg,other,org,admin));c.commit()
+        c.execute("""INSERT INTO organization_memberships(
+            organization_id,user_id,role,admission_source,admitted_at
+        ) VALUES(%s,%s,'member','admin_add',NOW()),(%s,%s,'admin','admin_add',NOW())""",
+            (otherorg,other,org,admin));c.commit()
     tokens={actor:web_session_service.create_session(uid) for actor,uid in [('owner',owner),('same_org',same),('other_tenant',other),('org_admin',admin),('expired',owner)]}
     with get_connection() as c:
         c.execute("UPDATE web_user_sessions SET expires_at=NOW()-INTERVAL '1 minute' WHERE token=%s",(tokens['expired'],));c.commit()

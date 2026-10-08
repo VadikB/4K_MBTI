@@ -29,14 +29,15 @@ def seed(state):
         org=c.execute("""INSERT INTO organizations(code,name,invitation_intro)
             VALUES('e102_synthetic','Синтетическая организация E10.2','Техническое приглашение из изолированного стенда')
             RETURNING id""").fetchone()['id']
-        invitation_token='browser-invitation-'+state['run_id']
-        c.execute("""INSERT INTO organization_invitations(organization_id,token_hash,expires_at)
-            VALUES(%s,%s,%s)""",(org,hash_invitation_token(invitation_token),datetime.now()+timedelta(days=30)))
-        other_org=c.execute("INSERT INTO organizations(code,name) VALUES('e102_other','Другая синтетическая организация') RETURNING id").fetchone()['id']
-        other_user=c.execute("INSERT INTO users(full_name,email) VALUES('Участник другой организации','member-b@example.test') RETURNING id").fetchone()['id']
-        c.execute("""INSERT INTO organization_memberships(
-            organization_id,user_id,role,admission_source,admitted_at
-        ) VALUES(%s,%s,'member','admin_add',NOW())""",(other_org,other_user))
+        if state.get('browser_scenario') == 'acceptance-v1':
+            invitation_token='browser-invitation-'+state['run_id']
+            c.execute("""INSERT INTO organization_invitations(organization_id,token_hash,expires_at)
+                VALUES(%s,%s,%s)""",(org,hash_invitation_token(invitation_token),datetime.now()+timedelta(days=30)))
+            other_org=c.execute("INSERT INTO organizations(code,name) VALUES('e102_other','Другая синтетическая организация') RETURNING id").fetchone()['id']
+            other_user=c.execute("INSERT INTO users(full_name,email) VALUES('Участник другой организации','member-b@example.test') RETURNING id").fetchone()['id']
+            c.execute("""INSERT INTO organization_memberships(
+                organization_id,user_id,role,admission_source,admitted_at
+            ) VALUES(%s,%s,'member','admin_add',NOW())""",(other_org,other_user))
         from Api.assessment_configuration import load_default_methodology_roles,ensure_methodology_role_projection
         legacy_roles=load_default_methodology_roles(c)
         ensure_methodology_role_projection(c,{'roles':legacy_roles})
