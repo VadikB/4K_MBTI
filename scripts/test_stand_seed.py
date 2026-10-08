@@ -9,6 +9,8 @@ from Api.assessment_contexts import (create_organization_context_draft,publish_o
     create_user_context_draft,confirm_user_context,create_personalized_profile)
 from Api.m5_storage import import_package
 from Api.m5_case_runtime import checksum
+from Api.m5_catalog_integrity import publish_catalog
+from Api.assessment_authoring_service import assessment_authoring_service
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -51,14 +53,6 @@ def seed(state):
             'activity_description':'Техническая проверка','case_reality_level':'обобщённый','organization_name_usage_rules':'не использовать название'}
         org_version=create_organization_context_draft(c,organization_id=org,definition=definition,source_manifest={'fixture':'E10.2'})
         publish_organization_context(c,version_id=org_version,confirmed_by_user_id=users[0])
-        for uid in users:
-            if state.get('browser_profile') == 'unprepared' and uid == users[0]:
-                continue
-            select_role_profile_for_user(c,user_id=uid,version_id=role)
-            version=create_user_context_draft(c,user_id=uid,identity={'full_name':'Синтетический участник'},professional={'position_or_status':'Технический участник'})
-            confirm_user_context(c,version_id=version,user_id=uid)
-            create_personalized_profile(c,user_id=uid,assessment_configuration_id=publication['configuration_id'],
-                organization_context_version_id=org_version,role_profile_version_id=role,user_context_version_id=version)
         # Same isolated fixture lifecycle as test_m10_product_path_db; repository package stays WORKING.
         admitted=([read('tests/browser/fixtures/sources/character-case-v1.json')] if state.get('browser_case')=='character' else [cases['cases'][0],cases['cases'][2]])
         if state.get('browser_catalog') == 'unavailable':
@@ -70,9 +64,31 @@ def seed(state):
             import_package(c,package={**cases,'cases':admitted},manifest=read('tests/browser/fixtures/character-manifest.json'),
                            execution_rules=read('assessment_definitions/cases/competencies_4k/1.1/execution-rules.json'))
         for case in admitted:
-            cid=c.execute('SELECT id FROM m5_case_versions WHERE case_id=%s',(case['case_id'],)).fetchone()['id']
+            case_row=c.execute('SELECT * FROM m5_case_versions WHERE case_id=%s',(case['case_id'],)).fetchone();cid=case_row['id']
             for scope in ('case_format','case_dialogue','assessment_situation'):
-                evidence={'eligibility':'user_admission','scope':scope,'fixture':'E10.2 synthetic','case_id':case['case_id']}
+                evidence={'schema_version':1,'eligibility':'user_admission','scope':scope,'result':'PASS',
+                    'case_ref':{'id':case_row['case_id'],'version':case_row['case_version'],'checksum':case_row['content_checksum']},
+                    'base_role':case_row['base_role'],'usage_scopes':['assessment','qa'],
+                    'origin':{'type':'human_review','actor_ref':'controlled-test:E10.2'}}
                 c.execute("INSERT INTO m5_qa_evidence(case_version_id,scope,result,evidence_json,evidence_checksum) VALUES(%s,%s,'PASS',%s::jsonb,%s)",(cid,scope,json.dumps(evidence),checksum(evidence)))
+        package_row=c.execute("SELECT id FROM m5_packages ORDER BY id DESC LIMIT 1").fetchone()
+        catalog=publish_catalog(c,catalog_id='e102-controlled',catalog_version='1.0',package_db_id=package_row['id'],
+            case_version_ids=[row['id'] for row in c.execute("SELECT id FROM m5_case_versions WHERE status='FROZEN' ORDER BY id").fetchall()],
+            usage_scope='assessment',organization_id=org,published_by=users[0],decision_basis=basis,
+            idempotency_key='e102-controlled-catalog')
+        base_config=c.execute('SELECT * FROM assessment_configurations WHERE id=%s',(publication['configuration_id'],)).fetchone()
+        runtime_config=assessment_authoring_service.create_configuration(c,code='e102_controlled_catalog',name='E10.2 controlled catalog',
+            methodology_version_id=base_config['methodology_version_id'],scenario_version_id=base_config['scenario_version_id'],
+            catalog_version_id=catalog['catalog_db_id'],actor_user_id=users[0],comment=basis)
+        runtime_config=assessment_authoring_service.publish_configuration(c,configuration_id=runtime_config['id'],make_default=False,
+            actor_user_id=users[0],comment=basis)
+        for uid in users:
+            if state.get('browser_profile') == 'unprepared' and uid == users[0]:
+                continue
+            select_role_profile_for_user(c,user_id=uid,version_id=role)
+            version=create_user_context_draft(c,user_id=uid,identity={'full_name':'Синтетический участник'},professional={'position_or_status':'Технический участник'})
+            confirm_user_context(c,version_id=version,user_id=uid)
+            create_personalized_profile(c,user_id=uid,assessment_configuration_id=runtime_config['id'],
+                organization_context_version_id=org_version,role_profile_version_id=role,user_context_version_id=version)
         c.commit()
     print('Synthetic input seed ready; no assessment results created')

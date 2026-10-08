@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "m5_catalog_integrity",
+  "version": "1.0.0",
+  "required_evidence_scopes": [
+    "case_format",
+    "case_dialogue",
+    "assessment_situation"
+  ],
+  "allowed_case_statuses": ["FROZEN"],
+  "allowed_origins": {
+    "assessment": ["human_review"],
+    "qa": ["human_review", "fixture", "synthetic_test"]
+  },
+  "ordinary_usage_scope": "assessment",
+  "evidence_eligibility": "user_admission",
+  "evidence_checksum_algorithm": "sha256-canonical-json-v1",
+  "revision_order": "highest_database_id_per_scope",
+  "required_case_ref_fields": ["id", "version", "checksum"],
+  "required_role_binding": "base_role_code"
+}

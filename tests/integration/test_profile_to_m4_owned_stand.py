@@ -307,7 +307,8 @@ def internal(destination):
             # A second published configuration is an admin input, not an SQL-prepared user M4.
             config = c.execute('SELECT * FROM assessment_configurations WHERE id=%s',(selection['assessment_configuration_id'],)).fetchone()
             cfg2 = assessment_authoring_service.create_configuration(c,code='synthetic_105_second',name='Synthetic second',
-                methodology_version_id=config['methodology_version_id'],scenario_version_id=config['scenario_version_id'],actor_user_id=owner,comment='Synthetic 10.5')
+                methodology_version_id=config['methodology_version_id'],scenario_version_id=config['scenario_version_id'],
+                catalog_version_id=config['catalog_version_id'],actor_user_id=owner,comment='Synthetic 10.5')
             assessment_authoring_service.publish_configuration(c,configuration_id=cfg2['id'],make_default=False,actor_user_id=owner,comment='Synthetic 10.5')
             c.commit()
         second_selection = {**selection,'assessment_configuration_id':cfg2['id']}

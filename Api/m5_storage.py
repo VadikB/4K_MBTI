@@ -9,6 +9,7 @@ from Api.assessment_case_contracts import AssessmentSituationV2, CaseVersionV2
 from Api.assessment_contexts import build_personalized_profile, canonical_json, context_checksum
 from Api.m5_case_runtime import build_assessment_situation, checksum
 from Api.m5_rule_engine import build_m5_ai_operations_snapshot
+from Api.m5_catalog_integrity import case_admission
 
 
 class M5ImportConflict(ValueError):
@@ -320,7 +321,7 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
                                  substitutions: list[dict], policy: dict,
                                  usage_scope: str = "assessment", qa_authorized_by: int | None = None) -> dict:
     case_row = connection.execute(
-        "SELECT cv.content_json, p.manifest_json, p.runtime_rules_json FROM m5_case_versions cv JOIN m5_packages p ON p.id=cv.package_id WHERE cv.case_id=%s AND cv.case_version=%s",
+        "SELECT cv.id,cv.content_json, p.manifest_json, p.runtime_rules_json FROM m5_case_versions cv JOIN m5_packages p ON p.id=cv.package_id WHERE cv.case_id=%s AND cv.case_version=%s",
         (case_id, case_version),
     ).fetchone()
     profile_row = connection.execute("""
@@ -334,26 +335,39 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
     profile = dict(profile_row["content_json"])
     role_profile = profile.get("role_profile") if isinstance(profile.get("role_profile"), dict) else {}
     base_role = profile.get("base_role") or profile.get("base_role_code") or role_profile.get("code")
-    evidence_rows = connection.execute("""
-        SELECT id, scope, result, evidence_json, evidence_checksum
-        FROM m5_qa_evidence
-        WHERE case_version_id=(SELECT id FROM m5_case_versions WHERE case_id=%s AND case_version=%s)
-          AND assessment_situation_id IS NULL
-          AND evidence_json->>'eligibility'='user_admission'
-        ORDER BY id DESC
-    """, (case_id, case_version)).fetchall()
-    latest = {}
-    for item in evidence_rows:
-        latest.setdefault(item["scope"], item)
-    evidence = [{"scope": x["scope"], "result": x["result"],
-                 "artifact_ref": f"db:m5_qa_evidence:{x['id']}", "checksum": x["evidence_checksum"]}
-                for x in latest.values()]
     refs = [{"id": "m2-competencies-4k", "version": "1.1",
              "checksum": case_row["manifest_json"]["dependencies"]["m2"]}]
     cycle = connection.execute("SELECT * FROM m5_cycles WHERE id=%s", (cycle_db_id,)).fetchone()
     session = connection.execute("SELECT * FROM m5_cycle_sessions WHERE id=%s AND cycle_db_id=%s", (session_db_id, cycle_db_id)).fetchone()
     if not cycle or not session:
         raise ValueError("M7_CYCLE_SESSION_OWNERSHIP_MISMATCH")
+    catalog_ref = dict(cycle["catalog_ref_json"] or {})
+    catalog_db_id = int(catalog_ref["db_id"]) if catalog_ref.get("db_id") is not None else None
+    legacy_unbound = catalog_ref.get("id") == "legacy-unbound-test-catalog"
+    if usage_scope == "assessment" and catalog_db_id is None and not legacy_unbound:
+        raise ValueError("M5_CATALOG_REF_REQUIRED")
+    admission = case_admission(connection, case_version_id=int(case_row["id"]),
+                               usage_scope=usage_scope, catalog_db_id=catalog_db_id)
+    if legacy_unbound:
+        legacy_rows = connection.execute(
+            "SELECT DISTINCT ON(scope) id,scope,result,evidence_checksum FROM m5_qa_evidence "
+            "WHERE case_version_id=%s AND assessment_situation_id IS NULL ORDER BY scope,id DESC",
+            (case_row["id"],),
+        ).fetchall()
+        admission["evidence"] = [
+            {"id": int(item["id"]), "scope": item["scope"], "result": item["result"],
+             "artifact_ref": f"db:m5_qa_evidence:{item['id']}", "checksum": item["evidence_checksum"]}
+            for item in legacy_rows
+        ]
+        admission["admitted"] = (
+            case_row["content_json"].get("status") == "FROZEN"
+            and {item["scope"] for item in legacy_rows if item["result"] == "PASS"}
+            >= {"case_format", "case_dialogue", "assessment_situation"}
+        )
+    if usage_scope == "assessment" and not admission["admitted"]:
+        raise ValueError("M5_CASE_NOT_ADMITTED:" + ",".join(admission["reasons"]))
+    evidence = [{key:item[key] for key in ("scope","result","artifact_ref","checksum")}
+                for item in admission["evidence"]]
     situation, execution = build_assessment_situation(
         assessment_situation_id=assessment_situation_id, case_value=case_row["content_json"],
         cycle_ref={"id": str(cycle_db_id), "version": "1", "checksum": checksum({"cycle_id": str(cycle["cycle_id"]), "target_set_checksum": cycle["target_set_checksum"]})},
@@ -369,7 +383,7 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
     saved = save_assessment_situation(connection, situation=situation, execution_payload=execution,
                                       personalized_profile_id=personalized_profile_id, cycle_db_id=cycle_db_id,
                                       session_db_id=session_db_id, policy=policy,
-                                      evidence_ids=[int(x["id"]) for x in latest.values()], usage_scope=usage_scope,
+                                      evidence_ids=[int(x["id"]) for x in admission["evidence"]], usage_scope=usage_scope,
                                       qa_authorized_by=qa_authorized_by)
     return {**saved, "snapshot": situation, "execution_payload": execution}
 

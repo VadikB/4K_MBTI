@@ -22,6 +22,7 @@ from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_ser
 from Api.config import settings
 from Api.assessment_service import assessment_service
 from Api import m5_generation_lab
+from Api import m5_catalog_integrity
 from Api import m5_cycle_runtime, m5_scenario_runtime, m5_storage
 from Api import m7_cycle_planner
 from Api.m7_planning_contracts import CreateCyclePlanRequest, NextSituationRequest, PresentSituationRequest
@@ -208,6 +209,8 @@ from Api.schemas import (
     AssessmentConfigurationCreateRequest,
     AssessmentConfigurationPublishRequest,
     AssessmentConfigurationResponse,
+    M5CatalogPlanRequest,
+    M5CatalogPublishRequest,
     PlatformRoleAssignmentRequest,
 )
 
@@ -5918,6 +5921,7 @@ def create_assessment_configuration(
                 name=payload.name,
                 methodology_version_id=payload.methodology_version_id,
                 scenario_version_id=payload.scenario_version_id,
+                catalog_version_id=payload.catalog_version_id,
                 actor_user_id=int(user.id),
                 comment=payload.comment,
             )
@@ -5953,6 +5957,63 @@ def publish_assessment_configuration(
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return AssessmentConfigurationResponse(**row)
+
+
+@router.post("/admin/m5-catalogs/plan")
+def plan_m5_catalog_publication(payload: M5CatalogPlanRequest, request: Request) -> dict[str, object]:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, "configuration.publish")
+            if payload.organization_id is not None:
+                scope = _get_admin_scope_or_403(connection, user)
+                if not scope.is_superadmin and payload.organization_id not in scope.organization_ids:
+                    raise PermissionError("Organization admin access required")
+            return m5_catalog_integrity.publication_plan(
+                connection, package_db_id=payload.package_db_id,
+                case_version_ids=payload.case_version_ids, usage_scope=payload.usage_scope,
+                organization_id=payload.organization_id,
+            )
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/admin/m5-catalogs/publish")
+def publish_m5_catalog(payload: M5CatalogPublishRequest, request: Request) -> dict[str, object]:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, "configuration.publish")
+            if payload.organization_id is not None:
+                scope = _get_admin_scope_or_403(connection, user)
+                if not scope.is_superadmin and payload.organization_id not in scope.organization_ids:
+                    raise PermissionError("Organization admin access required")
+            return m5_catalog_integrity.publish_catalog(
+                connection, catalog_id=payload.catalog_id, catalog_version=payload.catalog_version,
+                package_db_id=payload.package_db_id, case_version_ids=payload.case_version_ids,
+                usage_scope=payload.usage_scope, organization_id=payload.organization_id,
+                published_by=int(user.id), decision_basis=payload.decision_basis,
+                idempotency_key=payload.idempotency_key,
+            )
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/admin/m5-catalogs/{catalog_db_id}")
+def read_m5_catalog(catalog_db_id: int, request: Request) -> dict[str, object]:
+    user = _assessment_definition_user(request)
+    with get_connection() as connection:
+        try:
+            require_platform_permission(connection, user, "configuration.publish")
+            return m5_catalog_integrity.catalog_readback(connection, catalog_db_id)
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.post("/admin/platform-role-assignments")

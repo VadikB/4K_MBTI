@@ -33,6 +33,7 @@ def create_cycle(
     calendar_window_seconds: int = DEFAULT_CALENDAR_WINDOW_SECONDS,
     parameter_sources: dict[str, Any] | None = None,
     usage_scope: str = "assessment",
+    catalog_ref: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     profile = _profile_row(connection, personalized_profile_id)
     if time_budget_seconds <= 0 or calendar_window_seconds <= 0:
@@ -64,14 +65,15 @@ def create_cycle(
         "calendar_window_seconds": calendar_window_seconds,
         "parameter_sources": sources,
         "usage_scope": usage_scope,
+        "catalog_ref": catalog_ref,
     }
     row = connection.execute(
         """
         INSERT INTO m5_cycles
             (cycle_id,owner_user_id,organization_id,personalized_profile_id,profile_ref_json,
              selected_role_ref_json,target_set_json,target_set_checksum,time_budget_seconds,
-             calendar_window_seconds,parameter_sources_json,usage_scope,status,created_by)
-        VALUES (%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s,%s,%s,%s::jsonb,%s,'prepared',%s)
+             calendar_window_seconds,parameter_sources_json,usage_scope,catalog_ref_json,status,created_by)
+        VALUES (%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s,%s,%s,%s::jsonb,%s,%s::jsonb,'prepared',%s)
         RETURNING *
         """,
         (
@@ -87,6 +89,7 @@ def create_cycle(
             calendar_window_seconds,
             json.dumps(sources),
             usage_scope,
+            json.dumps(catalog_ref) if catalog_ref else None,
             created_by,
         ),
     ).fetchone()

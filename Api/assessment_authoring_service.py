@@ -42,6 +42,14 @@ ENTITY_CONFIG = {
 
 
 class AssessmentAuthoringService:
+    @staticmethod
+    def _ensure_catalog_binding_column(connection) -> None:
+        # Поддерживает изолированные contract-test схемы; production bootstrap
+        # создаёт этот столбец до добавления внешнего ключа на m5_catalogs.
+        connection.execute(
+            "ALTER TABLE assessment_configurations ADD COLUMN IF NOT EXISTS catalog_version_id BIGINT"
+        )
+
     def _config(self, entity_type: str) -> dict[str, str]:
         try:
             return ENTITY_CONFIG[entity_type]
@@ -124,10 +132,11 @@ class AssessmentAuthoringService:
         return {**dict(created), "code": normalized_code, "name": normalized_name}
 
     def list_configurations(self, connection) -> list[dict[str, Any]]:
+        self._ensure_catalog_binding_column(connection)
         rows = connection.execute(
             """
             SELECT id, code, name, methodology_version_id, scenario_version_id,
-                   status, is_default, prompt_bundle_checksum, created_at, published_at
+                   catalog_version_id, status, is_default, prompt_bundle_checksum, created_at, published_at
             FROM assessment_configurations
             ORDER BY id DESC
             """
@@ -142,9 +151,11 @@ class AssessmentAuthoringService:
         name: str,
         methodology_version_id: int,
         scenario_version_id: int,
+        catalog_version_id: int | None = None,
         actor_user_id: int,
         comment: str | None,
     ) -> dict[str, Any]:
+        self._ensure_catalog_binding_column(connection)
         normalized_code = str(code or "").strip()
         normalized_name = str(name or "").strip()
         if not normalized_code or not normalized_name:
@@ -168,16 +179,22 @@ class AssessmentAuthoringService:
             raise ValueError("Methodology or scenario version was not found.")
         if versions["methodology_status"] != "published" or versions["scenario_status"] != "published":
             raise ValueError("Assessment configuration requires published methodology and scenario versions.")
+        if catalog_version_id is not None:
+            catalog = connection.execute(
+                "SELECT id,status FROM m5_catalogs WHERE id=%s", (catalog_version_id,)
+            ).fetchone()
+            if catalog is None or catalog["status"] != "published":
+                raise ValueError("Assessment configuration requires a published M5 catalog.")
         created = connection.execute(
             """
             INSERT INTO assessment_configurations (
-                code, name, methodology_version_id, scenario_version_id,
+                code, name, methodology_version_id, scenario_version_id, catalog_version_id,
                 status, is_default
             )
-            VALUES (%s, %s, %s, %s, 'draft', %s)
+            VALUES (%s, %s, %s, %s, %s, 'draft', %s)
             RETURNING *
             """,
-            (normalized_code, normalized_name, methodology_version_id, scenario_version_id, False),
+            (normalized_code, normalized_name, methodology_version_id, scenario_version_id, catalog_version_id, False),
         ).fetchone()
         self._audit(
             connection,
@@ -200,6 +217,7 @@ class AssessmentAuthoringService:
         actor_user_id: int,
         comment: str | None,
     ) -> dict[str, Any]:
+        self._ensure_catalog_binding_column(connection)
         current = connection.execute(
             """
             SELECT configuration.*,
@@ -222,6 +240,11 @@ class AssessmentAuthoringService:
             raise ValueError("Only draft assessment configurations can be published.")
         if current["methodology_status"] != "published" or current["scenario_status"] != "published":
             raise ValueError("Configuration components must remain published.")
+        if current["catalog_version_id"] is not None and connection.execute(
+            "SELECT 1 FROM m5_catalogs WHERE id=%s AND status='published'",
+            (current["catalog_version_id"],),
+        ).fetchone() is None:
+            raise ValueError("Configuration catalog must remain published.")
         prompt_bundle = load_active_prompt_bundle(connection)
         agent_definitions = load_published_agent_definition_bundle(
             connection,
