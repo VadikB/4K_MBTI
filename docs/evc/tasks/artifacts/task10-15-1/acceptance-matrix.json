@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "candidate": "01aee3b19e7d3e385a64fc764222b863553219b0",
+  "criteria": [
+    {"id":"H1.backend_http","status":"PASS","evidence":"380 backend and 46 HTTP passed"},
+    {"id":"H1.integration","status":"PARTIAL","evidence":"clean bootstrap PASS; full integration 92 PASS / 2 FAIL before final ordinary-vs-QA seed correction"},
+    {"id":"H2","status":"PASS","evidence":"real QA API path reaches AS, Dialogue, Evidence, IA, admission, calculation, Results, C-67 and PDF"},
+    {"id":"H3","status":"PASS","evidence":"C1/C2 x3, retries=0, polling=120s, timeout=240s; 6 PASS"},
+    {"id":"H4","status":"PASS","evidence":"qa fixture retains qa origin/scope; production-shaped assessment remains denied"},
+    {"id":"H5","status":"PASS","evidence":"six saved C-67 and PDF attachments"},
+    {"id":"H6","status":"PASS","evidence":"safe archive plus indexed per-attempt attachments"},
+    {"id":"H7","status":"PASS","evidence":"candidate descends from 107afe3 and 360b8e9"},
+    {"id":"H8","status":"PARTIAL","evidence":"clean disposable bootstrap PASS; full integration rerun not all-green"},
+    {"id":"H9","status":"PASS_SCOPED","evidence":"C1/C2 fullpath repeatability established"},
+    {"id":"H10","status":"PASS","evidence":"actual persisted chain represented in report/runtime/HTTP attachments"},
+    {"id":"H11","status":"PASS","evidence":"late Turn rejected in all six attempts; owner and qa scope guarded"},
+    {"id":"H12","status":"PASS_COMPONENT","evidence":"backend/HTTP recommendation regressions passed"}
+  ],
+  "conclusion": "TECHNICAL_ACCEPTANCE_PASS_QA_ORCHESTRATION_SCOPE"
+}
