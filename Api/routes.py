@@ -7108,12 +7108,17 @@ def read_owned_m8_status(cycle_id: UUID, request: Request):
                         'allowed_actions':[]}}
         try:
             report = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
+            partial = report['c67'].get('partial_result')
+            new_cycle = ({'action':'start_new_cycle','method':'POST','href':'/assessment/cycles/start',
+                          'availability':'requires_current_profile_configuration_catalog_and_membership'}
+                         if partial and partial.get('is_incomplete') else None)
             return {**cycle, 'results_status': 'ready', 'report_status': report['status'], 'report_id': report['id'],
                     'pipeline_stage': pipeline['stage'] if pipeline else 'report_ready', 'processing_error': None,
                     'processing':{'contract_version':'m10-processing-recovery/1.0.0',
                         'status':'recovered' if pipeline and pipeline['stage']=='recovered_report_ready' else 'completed',
                         'message':'Обработка восстановлена.' if pipeline and pipeline['stage']=='recovered_report_ready' else 'Обработка завершена.',
-                        'allowed_actions':[]}}
+                        'allowed_actions':([new_cycle] if new_cycle else [])},
+                    'partial_result':partial,'new_cycle':new_cycle}
         except ValueError:
             try:
                 m8_results.read_latest_results(connection, str(cycle_id))

@@ -228,6 +228,8 @@ def test_admission_processing_failure_is_limited_and_recovery_is_new_revision(pr
             "failed","admission_processing_failed","M6_ADMISSION_PROCESSING_FAILED")
         old_report=read_latest_report(connection,cycle_id,"assessee")
         assert old_report["c67"]["processing"]["status"] == "failed"
+        assert {x["code"] for x in old_report["c67"]["partial_result"]["limitation_reasons"]} >= {
+            "technical_failure"}
         assert any("не L0" in item for item in old_report["c67"]["limitations"])
         assert render_pdf(old_report).startswith(b"%PDF")
         card=list_owned_cycles(connection,99)[0]
@@ -309,6 +311,14 @@ def test_s10_d_closed_cycle_without_presented_material_has_no_result_report(prod
         assert report["c67"]["contract"] == "C-67"
         assert all(skill["outcome"] == "no_result" for skill in report["c67"]["skills"])
         assert report["c67"]["coverage"]["cycle_plan"]["admissible_contributions"]["numerator"] == 0
+        partial=report["c67"]["partial_result"]
+        assert partial["is_incomplete"] is True
+        assert partial["progress"]["completed"] == 0
+        assert partial["progress"]["planned"] >= 1
+        assert partial["progress"]["not_presented"] == partial["progress"]["planned"]
+        assert {x["code"] for x in partial["limitation_reasons"]} >= {
+            "collection_incomplete","observation_missing"}
+        assert render_pdf(report).startswith(b"%PDF")
         assert connection.execute("SELECT status FROM m10_pipeline_runs").fetchone()["status"] == "ready"
 
 

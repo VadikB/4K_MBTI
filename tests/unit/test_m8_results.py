@@ -1,5 +1,6 @@
 from Api import m8_results
-from Api.m8_results import _comparison, _report_content
+from Api.m8_results import _comparison, _partial_result_projection, _report_content
+from Api.m8_report_package import load_package
 
 
 def skill(outcome="full_score", score=None):
@@ -52,3 +53,32 @@ def test_recommendation_failure_keeps_base_c67_available(monkeypatch):
     assert report["recommendations"] == []
     assert report["recommendation_generation"]["status"] == "failed"
     assert report["recommendation_notices"][0]["kind"] == "GENERATION_FAILURE"
+
+
+def test_partial_result_uses_as_lifecycle_not_message_count_and_keeps_reasons_separate():
+    cut = lambda numerator, denominator: {"numerator":numerator,"denominator":denominator,"ratio":numerator/denominator}
+    c46 = {"payload_json":{"collection":{"reason":"time_budget"},"plan":{
+        "revision_id":"plan-a","untraversed_route":[{"case_id":f"c{i}"} for i in range(5)]}}}
+    c56 = {"cycle_context":{"assessment_situations":[
+        {"status":"closed","handoff_id":"h1"}, {"status":"closed","handoff_id":"h2"},
+        {"status":"closed","handoff_id":None}]},
+        "coverage":{"full_m2":{"indicator_assessments":cut(2,4)},
+                    "cycle_plan":{"indicator_assessments":cut(2,3)}},
+        "limitations":["context fixture"]}
+    result = _partial_result_projection(c46, c56, {"status":"completed"}, load_package()["template"])
+    assert result["progress"] == {"completed":2,"planned":5,"presented":3,"interrupted":1,
+        "not_presented":2,"formula":"completed AS with final handoff / immutable accepted plan route"}
+    assert {x["code"] for x in result["limitation_reasons"]} == {
+        "plan_scope","collection_incomplete","observation_missing","context_limited"}
+    assert "technical_failure" not in {x["code"] for x in result["limitation_reasons"]}
+
+
+def test_technical_failure_is_not_collection_incomplete():
+    cut = {"numerator":1,"denominator":1,"ratio":1.0}
+    c46 = {"payload_json":{"collection":{"reason":"plan_finished"},"plan":{
+        "revision_id":"plan","untraversed_route":[{"case_id":"c1"}]}}}
+    c56 = {"cycle_context":{"assessment_situations":[{"status":"closed","handoff_id":"h1"}]},
+           "coverage":{"full_m2":{"indicator_assessments":cut},"cycle_plan":{"indicator_assessments":cut}},
+           "limitations":[]}
+    result = _partial_result_projection(c46, c56, {"status":"failed"}, load_package()["template"])
+    assert [x["code"] for x in result["limitation_reasons"]] == ["technical_failure"]

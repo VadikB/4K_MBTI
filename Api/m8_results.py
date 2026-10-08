@@ -13,7 +13,7 @@ from Api.m8_recommendations import generate as generate_recommendations
 from Api.typst_pdf_renderer import render_typst_report
 
 RESULTS_VERSION = "m8-results/1.0.0"
-REPORT_TEMPLATE_VERSION = "m8-basic-report/1.2.0"
+REPORT_TEMPLATE_VERSION = "m8-basic-report/1.3.0"
 ALLOWED_AUDIENCES = {"assessee", "customer", "methodology_qa"}
 
 
@@ -75,6 +75,43 @@ def _comparison(skill: dict, target: dict | None) -> dict:
             "reason": "NORMATIVE_SKILL_LEVEL_NOT_AVAILABLE"}
 
 
+def _partial_result_projection(c46: dict, c56: dict, processing: dict, template: dict) -> dict:
+    situations = list(c56["cycle_context"].get("assessment_situations") or [])
+    route = list((c46["payload_json"].get("plan") or {}).get("untraversed_route") or [])
+    planned = len(route)
+    presented = [x for x in situations if x.get("handoff_id") or x.get("status") not in {"prepared", "admitted"}]
+    completed = [x for x in situations if x.get("handoff_id")]
+    interrupted = [x for x in presented if x.get("status") in {"terminated", "closed"} and not x.get("handoff_id")]
+    not_presented = max(0, planned - len(presented))
+    full_cut = c56["coverage"]["full_m2"]["indicator_assessments"]
+    plan_cut = c56["coverage"]["cycle_plan"]["indicator_assessments"]
+    codes = []
+    if c56["coverage"]["cycle_plan"]["indicator_assessments"]["denominator"] < full_cut["denominator"]:
+        codes.append("plan_scope")
+    close_reason = str(c46["payload_json"].get("collection", {}).get("reason") or "")
+    if not_presented or close_reason in {"time_budget", "calendar_deadline"}:
+        codes.append("collection_incomplete")
+    if plan_cut["numerator"] < plan_cut["denominator"]:
+        codes.append("observation_missing")
+    if c56.get("limitations"):
+        codes.append("context_limited")
+    if processing["status"] == "failed":
+        codes.append("technical_failure")
+    messages = template["partial_result"]
+    return {
+        "contract_version": "m8-partial-result/1.0.0",
+        "is_incomplete": bool(codes), "close_reason": close_reason,
+        "progress": {"completed": len(completed), "planned": planned,
+                     "presented": len(presented), "interrupted": len(interrupted),
+                     "not_presented": not_presented,
+                     "formula": "completed AS with final handoff / immutable accepted plan route"},
+        "plan_revision_id": (c46["payload_json"].get("plan") or {}).get("revision_id"),
+        "limitation_reasons": [{"code": code, "message": messages["reasons"][code]} for code in dict.fromkeys(codes)],
+        "messages": {"title": messages["incomplete_title"] if codes else "Оценка завершена",
+                     "confirmed": messages["confirmed"], "not_inferred": messages["not_inferred"]},
+    }
+
+
 def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: dict | None,
                    profile_snapshot: dict | None) -> dict:
     c56 = calculation["c56"]
@@ -116,6 +153,8 @@ def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: di
     limitations = list(c56.get("limitations") or []) + ["Skill Level is not derived from numeric Score"]
     if failed_admissions:
         limitations.append("Часть результата ограничена техническим сбоем обработки; это не L0 и не содержательный вывод.")
+    partial_result = _partial_result_projection(c46, c56, processing, load_report_package()["template"])
+    limitations += [x["message"] for x in partial_result["limitation_reasons"]]
     return {
         "schema_version": 1, "results_version": RESULTS_VERSION, "cycle_id": str(cycle["cycle_id"]),
         "subject_user_id": cycle["owner_user_id"], "profile_ref": cycle["profile_ref_json"],
@@ -133,7 +172,8 @@ def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: di
                           "score": None} for key, value in sorted(competencies.items())],
         "coverage": c56["coverage"], "admissions": c56["admissions"], "observations": c56["observations"],
         "confidence": c56["confidence"], "reliability": c56["reliability"],
-        "limitations": limitations, "processing": processing,
+        "limitations": list(dict.fromkeys(limitations)), "processing": processing,
+        "partial_result": partial_result,
         "target_profile": target_profile, "sources": c56["sources"], "algorithm": c56["algorithm"],
     }
 
@@ -270,6 +310,7 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
             "skills": skills, "competencies": payload["competencies"], "coverage": payload["coverage"],
             "confidence": payload["confidence"], "reliability": payload["reliability"],
             "limitations": payload["limitations"], "target_profile": target_profile or payload.get("target_profile"),
+            "partial_result": payload.get("partial_result"),
             "provenance": {"composition_checksum": payload["composition_checksum"], "c46_ref": payload["c46_ref"],
                            "c56_ref": payload["c56_ref"], "sources": payload["sources"], "algorithm": payload["algorithm"]},
             "admission_summary": admission_summary, "processing": payload.get("processing", {
@@ -456,6 +497,7 @@ def render_pdf(report: dict) -> bytes:
         "skills": skills,
         "coverage": coverage,
         "limitations": c67["limitations"],
+        "partial_result": c67.get("partial_result"),
         "processing": c67.get("processing", {"status":"completed","message":"Обработка завершена."}),
         "recommendations": c67.get("recommendations", []),
         "recommendation_notices": c67.get("recommendation_notices", []),

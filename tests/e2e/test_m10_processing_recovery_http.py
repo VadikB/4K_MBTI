@@ -96,3 +96,28 @@ def test_owner_status_has_stable_failure_projection_without_retry_button(monkeyp
     assert value["report_id"]=="report-1"
     assert value["processing"]["allowed_actions"]==[]
     assert "Traceback" not in str(value)
+
+
+def test_owner_status_exposes_explicit_new_cycle_action_without_creating_cycle(monkeypatch):
+    cycle=uuid4()
+    class StatusConnection:
+        def execute(self, sql, _params):
+            if "FROM m10_pipeline_runs" in sql:
+                return Result({"status":"ready","stage":"report_ready","error_code":None})
+            raise AssertionError(sql)
+    @contextmanager
+    def connection(): yield StatusConnection()
+    monkeypatch.setattr(routes,"get_connection",connection)
+    monkeypatch.setattr(routes.web_session_service,"get_user_by_token",lambda _token:SimpleNamespace(id=17))
+    monkeypatch.setattr(routes,"_m8_owned_cycle",lambda *_args:SimpleNamespace(id=17))
+    monkeypatch.setattr(routes.m7_completion,"read_status",lambda *_args:{"cycle_id":str(cycle),"collection_status":"calculated"})
+    partial={"is_incomplete":True,"progress":{"completed":2,"planned":5}}
+    monkeypatch.setattr(routes.m8_results,"read_latest_report",lambda *_args:{"id":"report-2","status":"ready","c67":{"partial_result":partial}})
+    app=FastAPI();app.include_router(routes.router)
+    with TestClient(app) as client:
+        response=client.get(f"/users/assessment/m8/cycles/{cycle}/status")
+    assert response.status_code==200
+    value=response.json()
+    assert value["partial_result"]==partial
+    assert value["new_cycle"]["method"]=="POST"
+    assert value["processing"]["allowed_actions"]==[value["new_cycle"]]
