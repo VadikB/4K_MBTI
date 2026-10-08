@@ -1,0 +1,21 @@
+{
+  "schema_version":1,
+  "criteria":[
+    {"id":"H1.backend","status":"PASS","evidence":"378 passed, 144 deselected"},
+    {"id":"H1.http","status":"PASS","evidence":"46 passed"},
+    {"id":"H1.frontend_lint_build","status":"PASS","evidence":"eslint exit 0; esbuild exit 0"},
+    {"id":"H1.integration","status":"PARTIAL","evidence":"first run preserved: 2 clean-bootstrap FAIL caused by invalid maintenance DB name; corrected maintenance DB created, complete summary not obtained within run window"},
+    {"id":"H2","status":"BLOCKED","evidence":"catalog-bound product path stops before AS; no derived entities fabricated"},
+    {"id":"H3","status":"BLOCKED","evidence":"C1/C2 x3 not executed because H2 cannot reach target stage"},
+    {"id":"H4","status":"PARTIAL","evidence":"10.11 negative, 10.12 fault/recovery, 10.14 partial tests pass independently; same-version fullpath blocked"},
+    {"id":"H5","status":"PASS_COMPONENT","evidence":"Results/C67/PDF and recommendation regressions pass"},
+    {"id":"H6","status":"PARTIAL","evidence":"single index and safe archive prepared; no six attempt traces exist"},
+    {"id":"H7","status":"PASS","evidence":"ancestry contains commits 10.11–10.14"},
+    {"id":"H8","status":"NOT_RUN","evidence":"no compatible baseline-to-10.11 migration runner selected in this blocked acceptance"},
+    {"id":"H9","status":"PARTIAL","evidence":"existing C1–C9 tests present; cross-candidate fullpath subset blocked"},
+    {"id":"H10","status":"BLOCKED","evidence":"no complete trace past M5 admission"},
+    {"id":"H11","status":"BLOCKED","evidence":"target stages cannot be reached without an authorized fixture mode"},
+    {"id":"H12","status":"PASS_COMPONENT","evidence":"recommendation basis/failure/unsupported regressions included in backend suite"}
+  ],
+  "conclusion":"TECHNICAL_ACCEPTANCE_NOT_ESTABLISHED"
+}

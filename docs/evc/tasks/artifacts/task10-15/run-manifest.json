@@ -1,0 +1,14 @@
+{
+  "schema_version":1,
+  "task":"10.15",
+  "source_candidate_sha":"107afe320b1dec5fe383b5f79361a3d5482d448f",
+  "base_sha":"15f41a229c6cc2b33e8a0b99306433ebb3df8b5d",
+  "included_commits":{"task10_11":"1dd8fc0dc79142db8da93c1181599b4d9b5ac2c9","task10_12":"8c7c52b8cd1c799bf771a148d6009a81f7a7b9f7","task10_13":"7c0dfb2","task10_14":"107afe3"},
+  "transport":"scripted_no_network",
+  "real_provider_calls":0,
+  "ux_p4_01_included":false,
+  "database":{"ownership":"dedicated Docker container 4k_task10_15_pytest","test_database":"agent4k_pytest_1015","maintenance_database":"agent4k_pytest","cleanup_required":true},
+  "runner_hashes":{"browser_stand.py":"0ee8795776514c4f06b311b7ab1911d26d1303f2c56afb32680d1f0330db5e7a","runtime.spec.mjs":"03451853962a3b079cc197c8de9eb1d73bb603b10f1bd9b7c1cb71891f89ee81","m10_orchestration.py":"19f007ed77022e287d976f74f561bb4fd87c72c4aca3695f4cd5faf80a1691ef"},
+  "browser":{"c1_attempts_required":3,"c2_attempts_required":3,"timeout_seconds":240,"readiness_seconds":120,"retries":0,"attempts_executed":0,"status":"BLOCKED_BEFORE_RUN"},
+  "blocker":"No accepted catalog-bound fixture path reaches product usage_scope=assessment; synthetic evidence is restricted to qa."
+}

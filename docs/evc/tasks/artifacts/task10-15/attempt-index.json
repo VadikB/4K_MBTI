@@ -1,0 +1,8 @@
+{
+  "schema_version":1,
+  "required":{"C1":3,"C2":3},
+  "attempts":[],
+  "status":"BLOCKED_BEFORE_RUN",
+  "reason":"Product orchestration requires assessment scope while accepted synthetic fixture evidence is qa-only.",
+  "note":"No timestamps, ids, hashes or stage events were invented. Component receipts remain in Task-10-11 through Task-10-14 evidence folders."
+}

@@ -1,0 +1,14 @@
+{
+  "schema_version":1,
+  "task":"10.15",
+  "source_candidate_sha":"107afe320b1dec5fe383b5f79361a3d5482d448f",
+  "conclusion":"TECHNICAL_ACCEPTANCE_NOT_ESTABLISHED",
+  "files":[
+    {"path":"run-manifest.json","sha256":"14e1dafbac35b0ee346cad4e4cb490d9c3e00fd6c57ed0cb4751280108422d0f"},
+    {"path":"acceptance-matrix.json","sha256":"2e3b8c3ddbde476daad4ad68650aef90316e96c33fea7c59e4aeb5fa76cd4081"},
+    {"path":"attempt-index.json","sha256":"11a5b1a60f5a7338ac190831b16860182fd6581aaca24abee258be0a7b6f10da"},
+    {"path":"test-receipts.json","sha256":"babc23ecc491cb3f1c84e58643c0cd2bf7094d61391b11d3b1d5173b4dc208bd"},
+    {"path":"../../task10-15-headless-acceptance.md","sha256":"a9073ab4e0fbdd15df43f045c2bbcdde20f299302545c17450364e54fd546b03"}
+  ],
+  "safe_zip":"created after fixation commit; checksum recorded beside archive"
+}
