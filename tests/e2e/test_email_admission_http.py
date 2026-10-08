@@ -49,7 +49,7 @@ def test_same_domain_outside_allowlist_is_rejected_by_auth_http(admission_client
     client, monkeypatch = admission_client
     monkeypatch.setattr(
         routes.auth_service,
-        "create_magic_link_request",
+        "get_password_auth_mode",
         lambda **_kwargs: (_ for _ in ()).throw(
             AuthAccessDeniedError("Пользователь с таким email не найден в активных организациях.")
         ),
