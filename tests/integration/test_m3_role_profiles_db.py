@@ -17,6 +17,7 @@ from Api.assessment_role_profiles import (
     get_selected_role_profile,
     select_role_profile_for_user,
 )
+from Api.m5_catalog_integrity import resolve_profile_base_role
 from Api.database import ensure_role_profile_schema
 from Api.snapshot_integrity import bind_execution_snapshot, snapshot_checksum
 
@@ -99,6 +100,9 @@ def test_base_and_organization_roles_are_versioned_visible_and_immutable(test_da
         assert len(list_available_role_profiles(connection, user_id=9)) == 7
         assert len(list_available_role_profiles(connection, user_id=8)) == 6
         assert load_published_role_profile(connection, organization_role_id)["code"] == definition["code"]
+        resolved = resolve_profile_base_role(connection, role_profile_version_id=organization_role_id)
+        assert resolved["id"] == str(base_ids[1])
+        assert resolved["code"] != definition["code"]
         assert select_role_profile_for_user(connection, user_id=7, version_id=organization_role_id)["id"] == organization_role_id
         assert get_selected_role_profile(connection, user_id=7)["id"] == organization_role_id
         assert select_role_profile_for_user(connection, user_id=9, version_id=organization_role_id)["id"] == organization_role_id

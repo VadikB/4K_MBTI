@@ -22,6 +22,10 @@ def smoke(state):
         return value if raw else json.loads(value)
     ready=request('/health/ready');assert ready['status']=='ready' and ready['gateway_mode']=='synthetic'
     assert b'<html' in request('/',raw=True).lower()
+    signed_in=request('/users/auth/email/password-login',{'email':'superadmin@example.test','password':state['password']})
+    assert signed_in['admin_dashboard'] is not None
+    admin_dashboard=request('/users/admin/dashboard')
+    assert any(item['label'] == 'Среднее время прохождения' for item in admin_dashboard['metrics'])
     request('/users/auth/email/password-login',{'email':'participant@example.test','password':state['password']})
     out=Path(state['state_path']).parent
     saved=out/'smoke.json'

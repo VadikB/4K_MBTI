@@ -43,6 +43,7 @@ def environment(state):
         DB_POOL_TIMEOUT_SECONDS='3',AGENT4K_BROWSER_TEST_GATEWAY=str(state['gateway']),
         APP_BASE_URL=f"http://127.0.0.1:{state['port']}",AUTH_MAGIC_LINK_DEV_MODE='false',
         AUTH_SESSION_SECURE_COOKIE='false',LOG_TO_STDOUT='true',LOG_TO_FILE='false',
+        SUPERADMIN_EMAILS='superadmin@example.test',
         PYTHONPATH=str(ROOT),STAND_STATE=str(state['state_path']),
         AGENT4K_STAND_MARKER=state['owner_marker'],STAND_ADMIN_URL=os.environ['STAND_ADMIN_URL'])
     if state.get('qa_orchestration') is True and state.get('browser_scenario') == 'acceptance-v1':
