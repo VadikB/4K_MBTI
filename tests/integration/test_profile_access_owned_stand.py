@@ -50,8 +50,12 @@ def internal(destination):
                 for table in ['users','user_role_profiles','user_identities','auth_password_credentials',
                     'organization_memberships','assessment_user_context_versions','assessment_personalized_profiles','m5_cycles','m8_reports']}
     with get_connection() as c:
-        people=c.execute('SELECT id,email FROM users ORDER BY id').fetchall()
-        owner,same=[p['id'] for p in people]
+        people=c.execute("""SELECT id,email FROM users
+            WHERE email IN ('participant@example.test','other@example.test')
+            ORDER BY email""").fetchall()
+        people_by_email={p['email']:p['id'] for p in people}
+        owner=people_by_email['participant@example.test']
+        same=people_by_email['other@example.test']
         org=c.execute('SELECT organization_id FROM organization_memberships WHERE user_id=%s',(owner,)).fetchone()['organization_id']
         otherorg=c.execute("INSERT INTO organizations(code,name) VALUES('t104_other','Synthetic other tenant') RETURNING id").fetchone()['id']
         other=c.execute("INSERT INTO users(full_name,email) VALUES('Synthetic other tenant','tenant@example.test') RETURNING id").fetchone()['id']

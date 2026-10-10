@@ -120,7 +120,11 @@ Revert только commits remediation. Nullable schema extension не удал
   зависимых `INPUT_NOT_READY`; затронутые M5 tests PASS. В этой задаче M6/provider
   artifacts не менялись и критерий полного backend остаётся незелёным.
 - `git diff --check`, `py_compile` изменённых Python-файлов → PASS.
-- CI → NOT_RUN: PR не создан.
+- CI push run `38048348226`: frontend → PASS; pytest → FAIL на
+  `test_profile_access_owned_stand`. Причина — stand seed теперь содержит
+  отдельного superadmin, а legacy-тест распаковывал всех `users` ровно в
+  два id. Исправлено на явный выбор двух fixture identity; повторный CI
+  фиксируется отдельно.
 
 ### Риски, остатки и откат
 
