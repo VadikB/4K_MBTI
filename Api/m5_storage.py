@@ -9,11 +9,24 @@ from Api.assessment_case_contracts import AssessmentSituationV2, CaseVersionV2
 from Api.assessment_contexts import build_personalized_profile, canonical_json, context_checksum
 from Api.m5_case_runtime import build_assessment_situation, checksum
 from Api.m5_rule_engine import build_m5_ai_operations_snapshot
-from Api.m5_catalog_integrity import case_admission
+from Api.m5_catalog_integrity import case_admission, resolve_profile_base_role
 
 
 class M5ImportConflict(ValueError):
     pass
+
+
+def _frozen_cycle_base_role(selected_role: dict, profile: dict, resolved_numeric_code: str | None = None) -> str:
+    """Resolve AS role from the Cycle snapshot, with legacy-only profile fallback."""
+    if selected_role.get("code"):
+        return str(selected_role["code"])
+    selected_id = str(selected_role.get("id", ""))
+    if selected_id and not selected_id.isdigit():
+        return selected_id
+    if selected_id and resolved_numeric_code:
+        return resolved_numeric_code
+    role_profile = profile.get("role_profile") if isinstance(profile.get("role_profile"), dict) else {}
+    return str(profile.get("base_role") or profile.get("base_role_code") or role_profile.get("code") or "")
 
 
 def resolve_legacy_base_role(*values: object) -> str:
@@ -333,14 +346,22 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
     if not profile_row or profile_row["status"] != "ready":
         raise ValueError("M4_PROFILE_NOT_READY")
     profile = dict(profile_row["content_json"])
-    role_profile = profile.get("role_profile") if isinstance(profile.get("role_profile"), dict) else {}
-    base_role = profile.get("base_role") or profile.get("base_role_code") or role_profile.get("code")
     refs = [{"id": "m2-competencies-4k", "version": "1.1",
              "checksum": case_row["manifest_json"]["dependencies"]["m2"]}]
     cycle = connection.execute("SELECT * FROM m5_cycles WHERE id=%s", (cycle_db_id,)).fetchone()
     session = connection.execute("SELECT * FROM m5_cycle_sessions WHERE id=%s AND cycle_db_id=%s", (session_db_id, cycle_db_id)).fetchone()
     if not cycle or not session:
         raise ValueError("M7_CYCLE_SESSION_OWNERSHIP_MISMATCH")
+    selected_role = dict(cycle["selected_role_ref_json"] or {})
+    selected_id = str(selected_role.get("id", ""))
+    resolved_numeric_code = None
+    if selected_id.isdigit() and connection.execute(
+        "SELECT to_regclass('assessment_role_profile_versions') AS name"
+    ).fetchone()["name"] is not None:
+        resolved_numeric_code = resolve_profile_base_role(
+            connection, role_profile_version_id=int(selected_id)
+        )["code"]
+    base_role = _frozen_cycle_base_role(selected_role, profile, resolved_numeric_code)
     catalog_ref = dict(cycle["catalog_ref_json"] or {})
     catalog_db_id = int(catalog_ref["db_id"]) if catalog_ref.get("db_id") is not None else None
     legacy_unbound = catalog_ref.get("id") == "legacy-unbound-test-catalog"

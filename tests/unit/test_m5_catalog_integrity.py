@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import copy
 
+import pytest
+
 from Api.m5_case_runtime import checksum
 from Api.m5_catalog_integrity import _validate_evidence, case_admission, load_policy
 
@@ -131,3 +133,65 @@ def test_latest_relevant_fail_wins_and_fixture_is_qa_only():
                               usage_scope="assessment", catalog_db_id=5)["admitted"]
     assert case_admission(AdmissionConnection(fixture_rows), case_version_id=7,
                           usage_scope="qa", catalog_db_id=5)["admitted"]
+
+
+def _complete_rows() -> list[dict]:
+    rows = []
+    for index, scope in enumerate(("case_format", "case_dialogue", "assessment_situation"), 1):
+        item = evidence(scope)
+        item["id"] = index
+        rows.append(item)
+    return rows
+
+
+@pytest.mark.parametrize(
+    ("mutation", "reason"),
+    [
+        ({"result": "FAIL"}, "QA_EVIDENCE_FAIL:case_dialogue"),
+        ({"result": "NOT_RUN"}, "QA_EVIDENCE_NOT_RUN:case_dialogue"),
+        ({"eligibility": "laboratory_only"}, "QA_EVIDENCE_ELIGIBILITY_MISMATCH:case_dialogue"),
+        ({"version": "2.0"}, "QA_EVIDENCE_CASE_REF_MISMATCH:case_dialogue"),
+        ({"checksum": "b" * 64}, "QA_EVIDENCE_CASE_REF_MISMATCH:case_dialogue"),
+        ({"base_role": "specialist_expert"}, "QA_EVIDENCE_BASE_ROLE_MISMATCH:case_dialogue"),
+        ({"usage_scopes": ["qa"]}, "QA_EVIDENCE_USAGE_SCOPE_MISMATCH:case_dialogue"),
+        ({"origin": "fixture"}, "QA_EVIDENCE_ORIGIN_NOT_ALLOWED:case_dialogue"),
+    ],
+)
+def test_latest_row_is_selected_before_eligibility_and_binding_validation(mutation, reason):
+    rows = _complete_rows()
+    newer = evidence("case_dialogue", result=mutation.get("result", "PASS"))
+    newer["id"] = 99
+    payload = newer["evidence_json"]
+    if "eligibility" in mutation:
+        payload["eligibility"] = mutation["eligibility"]
+    if "version" in mutation:
+        payload["case_ref"]["version"] = mutation["version"]
+    if "checksum" in mutation:
+        payload["case_ref"]["checksum"] = mutation["checksum"]
+    if "base_role" in mutation:
+        payload["base_role"] = mutation["base_role"]
+    if "usage_scopes" in mutation:
+        payload["usage_scopes"] = mutation["usage_scopes"]
+    if "origin" in mutation:
+        payload["origin"]["type"] = mutation["origin"]
+    newer["evidence_checksum"] = checksum(payload)
+    rows.insert(0, newer)
+
+    result = case_admission(AdmissionConnection(rows), case_version_id=7,
+                            usage_scope="assessment", catalog_db_id=5)
+    assert not result["admitted"]
+    assert reason in result["reasons"]
+    selected = next(item for item in result["evidence_considered"]
+                    if item["scope"] == "case_dialogue")
+    assert selected["id"] == 99
+
+
+def test_latest_valid_pass_is_admitted():
+    rows = _complete_rows()
+    newer = evidence("case_dialogue")
+    newer["id"] = 99
+    rows.insert(0, newer)
+    result = case_admission(AdmissionConnection(rows), case_version_id=7,
+                            usage_scope="assessment", catalog_db_id=5)
+    assert result["admitted"]
+    assert {item["id"] for item in result["evidence_considered"]} == {1, 3, 99}

@@ -101,14 +101,14 @@ def case_admission(
         """SELECT id,scope,result,evidence_json,evidence_checksum,created_at
            FROM m5_qa_evidence
            WHERE case_version_id=%s AND assessment_situation_id IS NULL
-             AND evidence_json->>'eligibility'=%s
            ORDER BY scope,id DESC""",
-        (case_version_id, policy["evidence_eligibility"]),
+        (case_version_id,),
     ).fetchall()
     latest: dict[str, dict[str, Any]] = {}
     for raw in rows:
         latest.setdefault(str(raw["scope"]), dict(raw))
     accepted: list[dict[str, Any]] = []
+    considered: list[dict[str, Any]] = []
     for scope in policy["required_evidence_scopes"]:
         row = latest.get(scope)
         if row is None:
@@ -116,6 +116,10 @@ def case_admission(
             continue
         item_reasons = _validate_evidence(row=row, case=case, usage_scope=usage_scope, policy=policy)
         reasons.extend(item_reasons)
+        considered.append({
+            "id": int(row["id"]), "scope": scope, "result": row["result"],
+            "reasons": item_reasons,
+        })
         if not item_reasons:
             accepted.append({
                 "id": int(row["id"]), "scope": scope, "result": row["result"],
@@ -128,6 +132,7 @@ def case_admission(
         "reasons": reasons,
         "case": case,
         "evidence": accepted,
+        "evidence_considered": considered,
         "policy_ref": {"id": policy["id"], "version": policy["version"], "checksum": policy["checksum"]},
     }
 

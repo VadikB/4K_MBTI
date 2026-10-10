@@ -5414,6 +5414,12 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             """
+            ALTER TABLE IF EXISTS session_cases
+            ADD COLUMN IF NOT EXISTS actual_duration_seconds INTEGER
+            """
+        )
+        connection.execute(
+            """
             ALTER TABLE IF EXISTS session_prompts
             ADD COLUMN IF NOT EXISTS case_text_quality_score DOUBLE PRECISION
             """

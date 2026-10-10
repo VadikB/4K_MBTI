@@ -58,6 +58,16 @@ def seed(state):
             salt,digest=_hash_password(state['password'])
             c.execute('INSERT INTO auth_password_credentials(user_id,email,password_hash,password_salt) VALUES(%s,%s,%s,%s)',(uid,email,digest,salt))
             c.execute("INSERT INTO user_identities(user_id,provider,email,is_primary,is_verified,verified_at) VALUES(%s,'email_magic_link',%s,TRUE,TRUE,NOW())",(uid,email))
+        admin_email = 'superadmin@example.test'
+        admin_id = c.execute(
+            "INSERT INTO users(full_name,email) VALUES('Синтетический суперадминистратор',%s) RETURNING id",
+            (admin_email,),
+        ).fetchone()['id']
+        salt,digest=_hash_password(state['password'])
+        c.execute('INSERT INTO auth_password_credentials(user_id,email,password_hash,password_salt) VALUES(%s,%s,%s,%s)',
+                  (admin_id,admin_email,digest,salt))
+        c.execute("INSERT INTO user_identities(user_id,provider,email,is_primary,is_verified,verified_at) VALUES(%s,'email_magic_link',%s,TRUE,TRUE,NOW())",
+                  (admin_id,admin_email))
         basis='E10.2 synthetic disposable fixture; technical admission only, not normative approval/GC'
         publication=publish_m2_qa_configuration(c,published_by_user_id=users[0],decision_basis=basis)
         roles=publish_base_roles(c,package=read('assessment_definitions/role_profiles/competencies_4k/1.1/base_roles.json'),

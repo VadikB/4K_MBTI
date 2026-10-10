@@ -10,6 +10,7 @@ from psycopg.rows import dict_row
 from Api.database import ensure_m5_runtime_schema
 from Api.m5_case_runtime import checksum
 from Api.m5_storage import import_package
+from Api.m5_storage import prepare_assessment_situation
 from Api.m5_scenario_runtime import build_c45,transition
 from Api.m7_cycle_planner import choose_next,create_plan,present,read_plan
 from Api.m7_completion import complete,create_additional_session,read_c46,reconcile_c46,expire_due_cycles
@@ -63,10 +64,44 @@ def test_plan_keeps_full_goal_and_explains_unadmitted_pool(db):
         assert result['cycle_status']=='prepared'
 
 
+def test_same_latest_fail_blocks_planner_and_direct_as(db):
+    with db() as c:
+        case = setup(c, admitted=True)
+        admit_case(c, case)
+        case_row = c.execute("SELECT id FROM m5_case_versions WHERE case_id=%s",
+                             (case['case_id'],)).fetchone()
+        failed = {'eligibility':'user_admission','scope':'case_dialogue','result':'FAIL','synthetic':True}
+        c.execute("""INSERT INTO m5_qa_evidence(case_version_id,scope,result,evidence_json,evidence_checksum)
+                     VALUES(%s,'case_dialogue','FAIL',%s::jsonb,%s)""",
+                  (case_row['id'], json.dumps(failed), checksum(failed)))
+        plan = create_plan(c, personalized_profile_id=7,
+                           selected_skills=['K1','K2','K3','K4'], created_by=99, key='denied')
+        assert plan['plan']['status'] == 'NO_ROUTE'
+        denied = next(item for item in plan['plan']['catalog'] if item['case_id'] == case['case_id'])
+        assert 'QA_EVIDENCE_MISSING_OR_FAIL:case_dialogue' in denied['reasons']
+        cycle = c.execute("SELECT id FROM m5_cycles WHERE cycle_id=%s",
+                          (plan['cycle_id'],)).fetchone()
+        session = c.execute("SELECT id FROM m5_cycle_sessions WHERE cycle_db_id=%s",
+                            (cycle['id'],)).fetchone()
+        policy = json.loads((OUTPUT/'admission-policy.json').read_text())
+        with pytest.raises(ValueError, match='M5_CASE_NOT_ADMITTED'):
+            prepare_assessment_situation(
+                c, assessment_situation_id=str(uuid4()), case_id=case['case_id'],
+                case_version=case['version'], personalized_profile_id=7,
+                cycle_db_id=cycle['id'], session_db_id=session['id'], substitutions=[],
+                policy=policy, usage_scope='assessment',
+            )
+
+
 def test_selected_case_is_prepared_presented_once_and_low_level_does_not_drive_repeat(db):
     with db() as c:
         case=setup(c,admitted=True);admit_case(c,case)
         plan=create_plan(c,personalized_profile_id=7,selected_skills=['K1','K2','K3','K4'],created_by=99,key='plan');c.commit()
+        # The M4 row is mutable only in this adversarial fixture. The already-created
+        # Cycle must keep the frozen selected role when direct AS preparation runs.
+        c.execute("UPDATE assessment_personalized_profiles SET content_json=%s::jsonb WHERE id=7",
+                  (json.dumps({'role_profile': {'code': 'changed-organization-role'}}),))
+        c.commit()
     policy=json.loads((OUTPUT/'admission-policy.json').read_text())
     with db() as c:
         decision=choose_next(c,cycle_id=str(plan['cycle_id']),expected_plan_revision_id=str(plan['revision_id']),key='next',created_by=99,policy=policy)

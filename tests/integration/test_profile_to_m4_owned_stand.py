@@ -318,17 +318,42 @@ def internal(destination):
         assert http.get(f'/users/{owner}/journey-state',params={'personalized_profile_id':second_config_id}).json()['next_action'] == 'show_dashboard'
         ambiguous = http.post('/users/assessment/cycles/start',json={'idempotency_key':'ambiguous'})
         assert ambiguous.status_code == 409 and 'SELECTION_REQUIRED' in ambiguous.text
-        # Remove only synthetic admission evidence from the owned stand: ready profile, no allowed route.
+        # A genuinely published empty catalog preserves ready M4 but cannot create a hidden
+        # legacy Cycle/AS/timer. This is distinct from deleting evidence after publication.
+        from Api.m5_catalog_integrity import publish_catalog
         with get_connection() as c:
-            c.execute('DELETE FROM m5_qa_evidence')
+            package_id = c.execute('SELECT id FROM m5_packages ORDER BY id LIMIT 1').fetchone()['id']
+            empty_catalog = publish_catalog(
+                c, catalog_id='synthetic-105-empty', catalog_version='1.0',
+                package_db_id=package_id, case_version_ids=[], usage_scope='assessment',
+                organization_id=original['organization_id'], published_by=owner,
+                decision_basis='Synthetic current-schema empty catalog regression',
+                idempotency_key='synthetic-105-empty',
+            )
+            empty_cfg = assessment_authoring_service.create_configuration(
+                c, code='synthetic_105_empty', name='Synthetic empty catalog',
+                methodology_version_id=config['methodology_version_id'],
+                scenario_version_id=config['scenario_version_id'],
+                catalog_version_id=empty_catalog['catalog_db_id'], actor_user_id=owner,
+                comment='Synthetic current-schema empty catalog regression',
+            )
+            empty_cfg = assessment_authoring_service.publish_configuration(
+                c, configuration_id=empty_cfg['id'], make_default=False,
+                actor_user_id=owner, comment='Synthetic current-schema empty catalog regression',
+            )
+            c.commit()
+        empty_profile_id = confirmed({**revised, 'personalized_profile': {
+            **selection, 'assessment_configuration_id': empty_cfg['id']}})
+        with get_connection() as c:
             before_reports = c.execute('SELECT count(*) AS n FROM m8_reports').fetchone()['n']
             before_cycles = c.execute('SELECT count(*) AS n FROM m5_cycles').fetchone()['n']
-            c.commit()
-        no_route = http.post('/users/assessment/cycles/start',json={'idempotency_key':'no-route','personalized_profile_id':second_config_id})
+        no_route = http.post('/users/assessment/cycles/start',json={'idempotency_key':'no-route','personalized_profile_id':empty_profile_id})
         assert no_route.status_code == 409 and 'M7_NO_ADMISSIBLE_CASE' in no_route.text, no_route.text
         with get_connection() as c:
             assert c.execute('SELECT count(*) AS n FROM m5_cycles').fetchone()['n'] == before_cycles
             assert c.execute('SELECT count(*) AS n FROM m8_reports').fetchone()['n'] == before_reports
+            assert c.execute('SELECT status FROM assessment_personalized_profiles WHERE id=%s',
+                             (empty_profile_id,)).fetchone()['status'] == 'ready'
             # Active organization changes cannot select a profile from the old organization.
             org2 = c.execute("INSERT INTO organizations(code,name) VALUES('synthetic_105_other','Synthetic other') RETURNING id").fetchone()['id']
             # The real bootstrap enforces one membership per user; do not weaken that constraint.

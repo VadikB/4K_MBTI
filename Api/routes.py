@@ -1454,9 +1454,10 @@ def _build_admin_dashboard(connection, scope: AdminScope, period_key: str = "30d
     competency_rows = connection.execute(
         f"""
         SELECT
-            ssa.competency_name,
+            s.competency_name,
             ROUND(AVG(alw.percent_value))::int AS avg_percent
         FROM session_skill_assessments ssa
+        JOIN skills s ON s.id = ssa.skill_id
         JOIN user_sessions us ON us.id = ssa.session_id
         JOIN users u ON u.id = us.user_id
         JOIN assessment_level_weights alw ON alw.level_code = ssa.assessed_level_code
@@ -1465,8 +1466,8 @@ def _build_admin_dashboard(connection, scope: AdminScope, period_key: str = "30d
           AND ssa.assessed_level_code IS NOT NULL
           AND LOWER(COALESCE(u.email, '')) <> %s
           {scope_sql}
-        GROUP BY ssa.competency_name
-        ORDER BY ssa.competency_name
+        GROUP BY s.competency_name
+        ORDER BY s.competency_name
         """,
         (ADMIN_EMAIL.lower(), *scope_params),
     ).fetchall()
