@@ -18,10 +18,19 @@ class OrganizationInvitationContext:
     organization_name: str
     invitation_intro: str | None
     expires_at: datetime
+    recipient_email: str | None = None
+    purpose: str = "shared_access"
 
 
 def hash_invitation_token(token: str) -> str:
     return hashlib.sha256(str(token or "").strip().encode("utf-8")).hexdigest()
+
+
+def _optional_row_value(row, key: str, default=None):
+    try:
+        return row[key]
+    except (KeyError, TypeError):
+        return default
 
 
 def resolve_invitation(connection, *, token: str) -> OrganizationInvitationContext:
@@ -31,7 +40,8 @@ def resolve_invitation(connection, *, token: str) -> OrganizationInvitationConte
     row = connection.execute(
         """
         SELECT invitation.id, invitation.organization_id, invitation.expires_at,
-               invitation.revoked_at, organization.name, organization.invitation_intro,
+               invitation.revoked_at, invitation.used_at, invitation.recipient_email,
+               invitation.purpose, organization.name, organization.invitation_intro,
                organization.is_active
         FROM organization_invitations invitation
         JOIN organizations organization ON organization.id = invitation.organization_id
@@ -44,6 +54,8 @@ def resolve_invitation(connection, *, token: str) -> OrganizationInvitationConte
         raise OrganizationInvitationError("Приглашение недействительно.")
     if row["revoked_at"] is not None:
         raise OrganizationInvitationError("Приглашение отозвано.")
+    if _optional_row_value(row, "used_at") is not None:
+        raise OrganizationInvitationError("Приглашение уже использовано.")
     if row["expires_at"] is None or row["expires_at"] <= datetime.now():
         raise OrganizationInvitationError("Срок действия приглашения истёк.")
     return OrganizationInvitationContext(
@@ -52,6 +64,8 @@ def resolve_invitation(connection, *, token: str) -> OrganizationInvitationConte
         organization_name=str(row["name"]),
         invitation_intro=str(row["invitation_intro"] or "").strip() or None,
         expires_at=row["expires_at"],
+        recipient_email=normalize_email_for_access(_optional_row_value(row, "recipient_email")) or None,
+        purpose=str(_optional_row_value(row, "purpose", "shared_access") or "shared_access"),
     )
 
 
@@ -59,7 +73,8 @@ def resolve_invitation_by_id(connection, *, invitation_id: int) -> OrganizationI
     row = connection.execute(
         """
         SELECT invitation.id, invitation.organization_id, invitation.expires_at,
-               invitation.revoked_at, organization.name, organization.invitation_intro,
+               invitation.revoked_at, invitation.used_at, invitation.recipient_email,
+               invitation.purpose, organization.name, organization.invitation_intro,
                organization.is_active
         FROM organization_invitations invitation
         JOIN organizations organization ON organization.id = invitation.organization_id
@@ -72,6 +87,8 @@ def resolve_invitation_by_id(connection, *, invitation_id: int) -> OrganizationI
         raise OrganizationInvitationError("Приглашение недействительно.")
     if row["revoked_at"] is not None:
         raise OrganizationInvitationError("Приглашение отозвано.")
+    if _optional_row_value(row, "used_at") is not None:
+        raise OrganizationInvitationError("Приглашение уже использовано.")
     if row["expires_at"] is None or row["expires_at"] <= datetime.now():
         raise OrganizationInvitationError("Срок действия приглашения истёк.")
     return OrganizationInvitationContext(
@@ -80,11 +97,15 @@ def resolve_invitation_by_id(connection, *, invitation_id: int) -> OrganizationI
         organization_name=str(row["name"]),
         invitation_intro=str(row["invitation_intro"] or "").strip() or None,
         expires_at=row["expires_at"],
+        recipient_email=normalize_email_for_access(_optional_row_value(row, "recipient_email")) or None,
+        purpose=str(_optional_row_value(row, "purpose", "shared_access") or "shared_access"),
     )
 
 
 def ensure_email_admitted_to_invitation(connection, *, email: str, invitation: OrganizationInvitationContext) -> None:
     normalized = normalize_email_for_access(email)
+    if invitation.recipient_email and invitation.recipient_email != normalized:
+        raise OrganizationInvitationError("Приглашение выпущено для другого email.")
     row = connection.execute(
         """
         SELECT DISTINCT membership.role, membership.admission_source
@@ -116,4 +137,6 @@ def public_context(invitation: OrganizationInvitationContext) -> dict:
         "organization_name": invitation.organization_name,
         "invitation_intro": invitation.invitation_intro,
         "expires_at": invitation.expires_at,
+        "recipient_email": invitation.recipient_email,
+        "personal": invitation.purpose == "personal_registration",
     }

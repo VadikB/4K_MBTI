@@ -89,6 +89,9 @@ class OrganizationInvitationPublicResponse(BaseModel):
     organization_name: str
     invitation_intro: str | None = None
     expires_at: datetime | None = None
+    recipient_email: str | None = None
+    personal: bool = False
+    auth_mode: str | None = None
 
 
 class AuthEmailRequest(BaseModel):
@@ -204,6 +207,22 @@ class OrganizationInvitationAdminResponse(OrganizationInvitationPublicResponse):
     invitation_id: int
     invitation_url: str
     token: str
+
+
+class PersonalInvitationRequest(BaseModel):
+    emails: list[str] = Field(min_length=1, max_length=500)
+
+
+class PersonalInvitationResultItem(BaseModel):
+    email: str
+    status: str
+    invitation_id: int | None = None
+    expires_at: datetime | None = None
+    error: str | None = None
+
+
+class PersonalInvitationBatchResponse(BaseModel):
+    items: list[PersonalInvitationResultItem]
 
 
 class AgentReply(BaseModel):
@@ -852,6 +871,9 @@ class AdminOrganizationMemberItem(BaseModel):
     assessment_preparation_operation_id: str | None = None
     assessment_prepared: bool = False
     assessment_profile_ready: bool = False
+    invitation_id: int | None = None
+    invitation_status: str = "not_sent"
+    invitation_expires_at: datetime | None = None
 
 
 class AdminOrganizationItem(BaseModel):

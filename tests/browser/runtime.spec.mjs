@@ -59,9 +59,9 @@ async function login(page,stand,email='participant@example.test',prepare=false,n
  await page.locator('#magic-token-input').fill(stand.state.password);
  await page.locator('#verify-magic-link-button').click();
  const continueButton=page.getByRole('button',{name:'Продолжить',exact:true});
- await expect(continueButton).toBeVisible();
- await continueButton.click();
  const confirm=page.getByRole('button',{name:'Подтвердить профиль',exact:true});
+ await expect(continueButton.or(confirm)).toBeVisible();
+ if(await continueButton.isVisible())await continueButton.click();
  await expect(confirm).toBeVisible();
  await expect(confirm).toBeEnabled();
  if(prepare){
@@ -82,7 +82,8 @@ test('Same-domain email outside the exact allowlist is denied',async({page,stand
  const denied=page.waitForResponse(response=>new URL(response.url()).pathname==='/users/auth/email/request-link');
  await page.locator('#request-magic-link-button').click();
  expect((await denied).status()).toBe(403);
- await expect(page.locator('#auth-error')).toBeVisible();
+ await expect(page.locator('#auth-email-sent')).toBeVisible();
+ await expect(page.locator('#auth-email-sent')).toContainText('Доступ пока не открыт');
  await expect(page.locator('#auth-token-form')).toBeHidden();
 });
 test('Organization invitation keeps context and cannot admit a member of another organization',async({page,stand})=>{
@@ -96,7 +97,8 @@ test('Organization invitation keeps context and cannot admit a member of another
  const denied=page.waitForResponse(response=>new URL(response.url()).pathname==='/users/auth/email/request-link');
  await page.locator('#request-magic-link-button').click();
  expect((await denied).status()).toBe(403);
- await expect(page.locator('#auth-error')).toContainText('выбранной организации');
+ await expect(page.locator('#auth-email-sent')).toBeVisible();
+ await expect(page.locator('#auth-email-sent')).toContainText('Доступ пока не открыт');
  await expect(page.locator('#auth-token-form')).toBeHidden();
 });
 async function start(page,expected='готовности'){
@@ -514,18 +516,21 @@ test('P10.5 fresh profile, lost confirmation response, reload and first AS',asyn
  await page.goto(stand.url);
  await page.locator('#email-input').fill('participant@example.test');await page.locator('#request-magic-link-button').click();
  await page.locator('#magic-token-input').fill(stand.state.password);await page.locator('#verify-magic-link-button').click();
- await page.getByRole('button',{name:'Продолжить',exact:true}).click();
- await expect(page.getByRole('button',{name:'Подтвердить профиль',exact:true})).toBeEnabled();
+ const continueButton=page.getByRole('button',{name:'Продолжить',exact:true});
+ const confirmButton=page.getByRole('button',{name:'Подтвердить профиль',exact:true});
+ await expect(continueButton.or(confirmButton)).toBeVisible();
+ if(await continueButton.isVisible())await continueButton.click();
+ await expect(confirmButton).toBeEnabled();
  await page.locator('[name="full_name"]').fill('Синтетический участник приёмки');
  await page.locator('[name="position"]').fill('Эксперт по программам');
  await page.locator('[name="duties"]').fill('Согласовать план разработки программ');
  await page.locator('[name="role_profile_version_id"]').selectOption({label:'Менеджер проекта, продукта или процесса · версия 1'});
  await page.locator('[name="assessment_configuration_id"]').selectOption({label:'E10.2 controlled catalog'});
- await page.getByRole('button',{name:'Подтвердить профиль',exact:true}).click();
+ await confirmButton.click();
  await expect(page.locator('#chat-error')).toBeVisible();
  const committed=profileReceipts(stand);expect(committed.profiles).toHaveLength(1);
  await info.attach('lost-confirmation-response',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
- await page.getByRole('button',{name:'Подтвердить профиль',exact:true}).click();
+ await confirmButton.click();
  await expect(page.locator('#assessment-action-button')).toBeVisible();
  expect(profileReceipts(stand)).toEqual(committed);
  await page.reload();await expect(page.locator('#assessment-action-button')).toBeVisible();

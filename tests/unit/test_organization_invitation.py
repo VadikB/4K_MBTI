@@ -101,6 +101,17 @@ def test_same_domain_is_not_an_invitation_admission_rule() -> None:
         )
 
 
+def test_personal_invitation_is_bound_to_recipient_email() -> None:
+    invitation = resolve_invitation(
+        _Connection(invitation=_invitation(recipient_email="person@example.test", purpose="personal_registration")),
+        token="personal-secret",
+    )
+    allowed = _Connection(memberships=[{"role": "member", "admission_source": "admin_add"}])
+    ensure_email_admitted_to_invitation(allowed, email="person@example.test", invitation=invitation)
+    with pytest.raises(OrganizationInvitationError, match="другого email"):
+        ensure_email_admitted_to_invitation(allowed, email="other@example.test", invitation=invitation)
+
+
 def test_verification_action_is_bound_to_the_server_invitation(monkeypatch) -> None:
     calls = []
 

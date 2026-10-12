@@ -110,15 +110,22 @@ def _verify_password(password: str, *, salt: str | None, password_hash: str | No
 def validate_password_strength(password: str, *, password_confirm: str | None = None) -> None:
     password_value = str(password or "")
     if password_confirm is not None and password_value != str(password_confirm or ""):
-        raise ValueError("Пароли не совпадают.")
-    if len(password_value) < 10:
-        raise ValueError("Пароль должен содержать минимум 10 символов.")
-    if not any(symbol.islower() for symbol in password_value):
-        raise ValueError("Пароль должен содержать хотя бы одну строчную букву.")
-    if not any(symbol.isupper() for symbol in password_value):
-        raise ValueError("Пароль должен содержать хотя бы одну заглавную букву.")
-    if not any(symbol.isdigit() for symbol in password_value):
-        raise ValueError("Пароль должен содержать хотя бы одну цифру.")
+        raise ValueError("Пароли не совпадают. Попробуйте ещё раз.")
+    is_printable_ascii = all("!" <= symbol <= "~" for symbol in password_value)
+    has_lower = any("a" <= symbol <= "z" for symbol in password_value)
+    has_upper = any("A" <= symbol <= "Z" for symbol in password_value)
+    has_digit = any("0" <= symbol <= "9" for symbol in password_value)
+    has_special = any(
+        "!" <= symbol <= "~" and not (
+            "a" <= symbol <= "z" or "A" <= symbol <= "Z" or "0" <= symbol <= "9"
+        )
+        for symbol in password_value
+    )
+    if len(password_value) < 10 or not is_printable_ascii or not all((has_lower, has_upper, has_digit, has_special)):
+        raise ValueError(
+            "Используйте не менее 10 символов: заглавную и строчную латинские буквы, "
+            "цифру и спецсимвол. Пробелы и кириллица не допускаются."
+        )
 
 
 def _build_placeholder_full_name(email: str) -> str:
@@ -792,7 +799,18 @@ class AuthService:
         self.ensure_schema()
         normalized_email = normalize_email(email)
         validate_password_strength(password, password_confirm=password_confirm)
-        if settings.auth_email_verification_required and not settings.auth_magic_link_dev_mode:
+        personal_invitation_id = None
+        if organization_invitation_token and not verification_token:
+            with get_connection() as connection:
+                try:
+                    direct_invitation = resolve_invitation(connection, token=organization_invitation_token)
+                    ensure_email_admitted_to_invitation(connection, email=normalized_email, invitation=direct_invitation)
+                except OrganizationInvitationError as exc:
+                    raise AuthAccessDeniedError(str(exc)) from exc
+                if direct_invitation.purpose != "personal_registration" or not direct_invitation.recipient_email:
+                    raise AuthAccessDeniedError("Персональное приглашение недействительно.")
+                personal_invitation_id = direct_invitation.invitation_id
+        if settings.auth_email_verification_required and not settings.auth_magic_link_dev_mode and personal_invitation_id is None:
             verified_email, invitation_id = self.verify_auth_action_token_details(
                 token=str(verification_token or ""),
                 purpose="email_verification",
@@ -806,7 +824,7 @@ class AuthService:
                 consume=True,
             )
         else:
-            invitation_id = None
+            invitation_id = personal_invitation_id
 
         with get_connection() as connection:
             invitation = self._ensure_email_can_authenticate(
@@ -856,6 +874,18 @@ class AuthService:
                 """,
                 (user_id, normalized_email, password_hash, salt),
             )
+            if personal_invitation_id is not None:
+                consumed = connection.execute(
+                    """
+                    UPDATE organization_invitations
+                    SET used_at = NOW()
+                    WHERE id = %s AND used_at IS NULL AND revoked_at IS NULL AND expires_at > NOW()
+                    RETURNING id
+                    """,
+                    (personal_invitation_id,),
+                ).fetchone()
+                if consumed is None:
+                    raise AuthAccessDeniedError("Приглашение недействительно или уже использовано.")
             self._ensure_user_identity(
                 connection,
                 user_id=user_id,

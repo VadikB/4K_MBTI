@@ -7,12 +7,12 @@ from Api.schemas import AuthPasswordRegisterRequest, AuthPasswordResetRequest
 
 
 def test_password_policy_accepts_strong_password() -> None:
-    validate_password_strength("ReliablePass42", password_confirm="ReliablePass42")
+    validate_password_strength("Reliable!42", password_confirm="Reliable!42")
 
 
 @pytest.mark.parametrize(
     "password",
-    ["Short1A", "lowercase123", "UPPERCASE123", "LettersOnlyPassword"],
+    ["Short1A!", "lowercase123!", "UPPERCASE123!", "LettersOnlyPassword!", "Reliable Pass42!", "НадёжныйPass42!"],
 )
 def test_password_policy_rejects_weak_password(password: str) -> None:
     with pytest.raises(ValueError):
@@ -21,14 +21,14 @@ def test_password_policy_rejects_weak_password(password: str) -> None:
 
 def test_password_policy_rejects_mismatched_confirmation() -> None:
     with pytest.raises(ValueError, match="Пароли не совпадают"):
-        validate_password_strength("ReliablePass42", password_confirm="ReliablePass43")
+        validate_password_strength("Reliable!42", password_confirm="Reliable!43")
 
 
 def test_registration_request_carries_verification_token() -> None:
     payload = AuthPasswordRegisterRequest(
         email="User@Example.com",
-        password="ReliablePass42",
-        password_confirm="ReliablePass42",
+        password="Reliable!42",
+        password_confirm="Reliable!42",
         verification_token="verification-token",
         organization_invitation_token="organization-invitation",
     )
@@ -40,8 +40,8 @@ def test_registration_request_carries_verification_token() -> None:
 def test_reset_request_requires_action_token_and_new_password() -> None:
     payload = AuthPasswordResetRequest(
         token="reset-token",
-        password="ReliablePass42",
-        password_confirm="ReliablePass42",
+        password="Reliable!42",
+        password_confirm="Reliable!42",
     )
     assert payload.token == "reset-token"
 

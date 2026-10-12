@@ -36,6 +36,7 @@ export const authPasswordConfirmInput = document.getElementById('auth-password-c
 export const authPasswordConfirmToggleButton = document.getElementById('auth-password-confirm-toggle-button');
 export const requestMagicLinkButton = document.getElementById('request-magic-link-button');
 export const forgotPasswordButton = document.getElementById('forgot-password-button');
+export const forgotPasswordCredentialButton = document.getElementById('forgot-password-credential-button');
 export const authEmailSent = document.getElementById('auth-email-sent');
 export const authEmailSentAddress = document.getElementById('auth-email-sent-address');
 export const authResendEmailButton = document.getElementById('auth-resend-email-button');

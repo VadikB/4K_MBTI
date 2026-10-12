@@ -15,6 +15,7 @@ import {
   authPasswordConfirmToggleButton,
   requestMagicLinkButton,
   forgotPasswordButton,
+  forgotPasswordCredentialButton,
   authTitle,
   authSubtitle,
   authEmailSent,
@@ -176,8 +177,23 @@ export const activateOrganizationInvitation = async (tokenValue) => {
     recoverUnauthorized: false,
   });
   organizationInvitationToken = token;
-  try { window.sessionStorage.setItem('agent4k.organizationInvitationToken', token); } catch (_error) { /* optional */ }
   renderOrganizationInvitation(organization);
+  if (organization?.personal && organization?.recipient_email) {
+    try { window.sessionStorage.removeItem('agent4k.organizationInvitationToken'); } catch (_error) { /* optional */ }
+    window.history.replaceState({ screen: 'auth' }, '', '/');
+    authCredentialEmail = organization.recipient_email;
+    if (emailInput) emailInput.value = authCredentialEmail;
+    configureAuthCredentialForm(organization.auth_mode === 'password' ? 'password' : 'password_registration');
+    if (authTokenForm) authTokenForm.classList.remove('hidden');
+    setAuthStatus(
+      organization.auth_mode === 'password'
+        ? 'Приглашение подтверждено. Войдите с паролем.'
+        : 'Приглашение подтверждено. Создайте пароль.',
+    );
+    magicTokenInput?.focus();
+  } else {
+    try { window.sessionStorage.setItem('agent4k.organizationInvitationToken', token); } catch (_error) { /* optional */ }
+  }
   return organization;
 };
 import { advanceSessionGeneration, readApiResponse, createOperationId } from './api.js';
@@ -188,7 +204,7 @@ import {
   isAdminUserPayload,
 } from './utils/format.js';
 import { showError } from './components/errors.js';
-import { navigateBackOrFallback, openAuthComplete } from './router.js';
+import { navigateBackOrFallback } from './router.js';
 import { hideLoader } from './utils/loader.js';
 import { logoutAndReturnToStart } from './session.js';
 import { setProfileStatus } from './components/profile-avatar.js';
@@ -244,6 +260,8 @@ const setAuthStatus = (message = '', { isError = false } = {}) => {
 };
 
 let authCredentialMode = 'dev_token';
+let authCredentialStep = 1;
+let newPasswordDraft = '';
 let authCredentialEmail = '';
 let authPasswordVisible = false;
 let authPasswordConfirmVisible = false;
@@ -252,6 +270,7 @@ let authResendTimer = null;
 let authRequestInFlight = false;
 let authCredentialInFlight = false;
 let authResetRequestInFlight = false;
+let authPendingEmailAction = 'verification';
 const AUTH_RESEND_COOLDOWN_SECONDS = 60;
 
 const stopAuthResendCountdown = () => {
@@ -280,13 +299,42 @@ const startAuthResendCountdown = () => {
 };
 
 const showEmailVerificationPending = (email) => {
+  authPendingEmailAction = 'verification';
+  authResendEmailButton?.classList.remove('hidden');
   authEmailForm?.classList.add('hidden');
   authTokenForm?.classList.add('hidden');
   authEmailSent?.classList.remove('hidden');
   if (authEmailSentAddress) authEmailSentAddress.textContent = email;
+  const title = authEmailSent?.querySelector('h2');
+  const paragraphs = authEmailSent?.querySelectorAll('.auth-email-sent-copy p');
+  if (title) title.textContent = 'Проверьте почту';
+  if (paragraphs?.[0]) paragraphs[0].innerHTML = 'Мы отправили ссылку для подтверждения на <strong id="auth-email-sent-address"></strong>.';
+  const sentAddress = document.getElementById('auth-email-sent-address');
+  if (sentAddress) sentAddress.textContent = email;
+  if (paragraphs?.[1]) paragraphs[1].textContent = 'Продолжите регистрацию во вкладке, которая откроется из письма. Эту вкладку можно закрыть.';
+  if (authChangeEmailButton) authChangeEmailButton.textContent = 'Изменить email';
   setAuthStatus('');
   showError(authError, '');
   startAuthResendCountdown();
+};
+
+const showAccessUnavailable = (email) => {
+  authPendingEmailAction = 'access';
+  authEmailForm?.classList.add('hidden');
+  authTokenForm?.classList.add('hidden');
+  authEmailSent?.classList.remove('hidden');
+  const title = authEmailSent?.querySelector('h2');
+  const paragraphs = authEmailSent?.querySelectorAll('.auth-email-sent-copy p');
+  if (title) title.textContent = 'Доступ пока не открыт';
+  if (paragraphs?.[0]) paragraphs[0].textContent = 'Этот email пока не добавлен в список участников организации. Проверьте адрес или обратитесь к HR либо организатору оценки.';
+  if (paragraphs?.[1]) paragraphs[1].textContent = email;
+  if (authResendEmailButton) {
+    authResendEmailButton.disabled = false;
+    authResendEmailButton.textContent = 'Проверить снова';
+  }
+  if (authChangeEmailButton) authChangeEmailButton.textContent = 'Изменить email';
+  setAuthStatus('');
+  showError(authError, '');
 };
 
 const showEmailEntry = () => {
@@ -294,6 +342,7 @@ const showEmailEntry = () => {
   authEmailSent?.classList.add('hidden');
   authTokenForm?.classList.add('hidden');
   authEmailForm?.classList.remove('hidden');
+  authResendEmailButton?.classList.remove('hidden');
   if (authTitle) authTitle.textContent = 'Добро пожаловать';
   if (authSubtitle) authSubtitle.textContent = 'Введите рабочий email, чтобы продолжить вход.';
   setAuthStatus('');
@@ -348,7 +397,7 @@ const generateStrongPassword = () => {
     digits[passwordRandomInt(digits.length)],
     symbols[passwordRandomInt(symbols.length)],
   ];
-  while (chars.length < 16) {
+  while (chars.length < 10) {
     chars.push(all[passwordRandomInt(all.length)]);
   }
   return shufflePasswordChars(chars);
@@ -413,7 +462,9 @@ const configureAuthCredentialForm = (mode) => {
   const isPasswordMode = authCredentialMode === 'password' || isNewPassword;
   authEmailForm?.classList.add('hidden');
   authEmailSent?.classList.add('hidden');
-  if (authTitle) authTitle.textContent = isReset ? 'Новый пароль' : isRegistration ? 'Завершите регистрацию' : 'Вход';
+  authCredentialStep = 1;
+  newPasswordDraft = '';
+  if (authTitle) authTitle.textContent = isReset ? 'Создайте новый пароль' : isRegistration ? 'Создайте пароль' : 'Вход';
   if (authSubtitle) authSubtitle.textContent = isReset
     ? 'Задайте новый пароль для рабочего аккаунта.'
     : isRegistration
@@ -433,12 +484,10 @@ const configureAuthCredentialForm = (mode) => {
     magicTokenInput.placeholder = isPasswordMode ? 'Введите пароль' : 'Вставьте код или ссылку из письма';
     magicTokenInput.value = '';
   }
-  if (authPasswordConfirmField) {
-    authPasswordConfirmField.classList.toggle('hidden', !isNewPassword);
-  }
+  if (authPasswordConfirmField) authPasswordConfirmField.classList.add('hidden');
   if (authPasswordConfirmInput) {
     authPasswordConfirmInput.name = isRegistration ? 'new-password-confirm' : 'password-confirm-disabled';
-    authPasswordConfirmInput.required = isNewPassword;
+    authPasswordConfirmInput.required = false;
     authPasswordConfirmInput.value = '';
   }
   if (authPasswordRequirements) {
@@ -451,13 +500,115 @@ const configureAuthCredentialForm = (mode) => {
     authPasswordToggleButton.classList.toggle('hidden', !isPasswordMode);
   }
   if (authPasswordConfirmToggleButton) {
-    authPasswordConfirmToggleButton.classList.toggle('hidden', !isNewPassword);
+    authPasswordConfirmToggleButton.classList.add('hidden');
   }
   syncAuthPasswordVisibility();
   if (verifyMagicLinkButton) {
-    verifyMagicLinkButton.textContent = isReset ? 'Сохранить новый пароль' : isRegistration ? 'Задать пароль и войти' : 'Войти';
+    verifyMagicLinkButton.textContent = isNewPassword ? 'Продолжить' : 'Войти';
   }
+  forgotPasswordCredentialButton?.classList.toggle('hidden', authCredentialMode !== 'password');
 };
+
+const NEW_PASSWORD_ERROR = 'Используйте не менее 10 символов: заглавную и строчную латинские буквы, цифру и спецсимвол. Пробелы и кириллица не допускаются.';
+const isValidNewPassword = (value) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])[!-~]{10,}$/.test(value);
+
+const showPasswordConfirmationStep = () => {
+  authCredentialStep = 2;
+  authPasswordVisible = false;
+  if (authTitle) authTitle.textContent = 'Подтвердите пароль';
+  if (authSubtitle) authSubtitle.textContent = 'Введите пароль повторно.';
+  if (authCredentialLabel) authCredentialLabel.textContent = 'Введите пароль повторно';
+  if (magicTokenInput) {
+    magicTokenInput.value = '';
+    magicTokenInput.placeholder = 'Введите пароль повторно';
+  }
+  authPasswordGenerateRow?.classList.add('hidden');
+  if (verifyMagicLinkButton) {
+    verifyMagicLinkButton.textContent = authCredentialMode === 'password_reset' ? 'Сохранить пароль' : 'Создать пароль';
+  }
+  if (authChangeCredentialEmailButton) authChangeCredentialEmailButton.textContent = 'Назад';
+  syncAuthPasswordVisibility();
+  magicTokenInput?.focus();
+};
+
+const showPasswordCreationStep = () => {
+  authCredentialStep = 1;
+  authPasswordVisible = false;
+  const isReset = authCredentialMode === 'password_reset';
+  if (authTitle) authTitle.textContent = isReset ? 'Создайте новый пароль' : 'Создайте пароль';
+  if (authSubtitle) authSubtitle.textContent = isReset ? 'Задайте новый пароль для рабочего аккаунта.' : 'Email подтверждён. Теперь задайте пароль.';
+  if (authCredentialLabel) authCredentialLabel.textContent = 'Пароль';
+  if (magicTokenInput) {
+    magicTokenInput.value = newPasswordDraft;
+    magicTokenInput.placeholder = 'Введите пароль';
+  }
+  authPasswordGenerateRow?.classList.remove('hidden');
+  if (verifyMagicLinkButton) verifyMagicLinkButton.textContent = 'Продолжить';
+  if (authChangeCredentialEmailButton) authChangeCredentialEmailButton.textContent = 'Указать другой email';
+  syncAuthPasswordVisibility();
+  magicTokenInput?.focus();
+};
+
+const showPasswordResetComplete = (email) => {
+  authCredentialMode = 'password';
+  authCredentialStep = 1;
+  newPasswordDraft = '';
+  authTokenForm?.classList.add('hidden');
+  authEmailForm?.classList.add('hidden');
+  authEmailSent?.classList.remove('hidden');
+  const title = authEmailSent?.querySelector('h2');
+  const paragraphs = authEmailSent?.querySelectorAll('.auth-email-sent-copy p');
+  if (title) title.textContent = 'Пароль изменён';
+  if (paragraphs?.[0]) paragraphs[0].textContent = 'Новый пароль сохранён. Вернитесь ко входу.';
+  if (paragraphs?.[1]) paragraphs[1].textContent = email;
+  authResendEmailButton?.classList.add('hidden');
+  if (authChangeEmailButton) authChangeEmailButton.textContent = 'Вернуться ко входу';
+};
+
+const isNewPasswordMode = () => authCredentialMode === 'password_registration' || authCredentialMode === 'password_reset';
+const hasUnsupportedPasswordChars = (value) => /[^!-~]/.test(String(value || ''));
+
+magicTokenInput?.addEventListener('keydown', (event) => {
+  if (isNewPasswordMode() && event.key === ' ' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    event.preventDefault();
+    showError(authError, 'Пробелы в пароле не допускаются.');
+  }
+});
+
+magicTokenInput?.addEventListener('beforeinput', (event) => {
+  if (isNewPasswordMode() && typeof event.data === 'string' && hasUnsupportedPasswordChars(event.data)) {
+    event.preventDefault();
+    showError(authError, 'Пробелы и кириллица в пароле не допускаются.');
+  }
+});
+
+magicTokenInput?.addEventListener('paste', (event) => {
+  const value = event.clipboardData?.getData('text') || '';
+  if (isNewPasswordMode() && hasUnsupportedPasswordChars(value)) {
+    event.preventDefault();
+    showError(authError, 'Вставка отклонена: пробелы и кириллица в пароле не допускаются.');
+  }
+});
+
+magicTokenInput?.addEventListener('input', () => {
+  magicTokenInput.removeAttribute('aria-invalid');
+  showError(authError, '');
+});
+
+const requirementsTrigger = document.getElementById('auth-password-requirements-trigger');
+const requirementsPopover = document.getElementById('auth-password-requirements-popover');
+const setRequirementsOpen = (open) => {
+  requirementsPopover?.classList.toggle('hidden', !open);
+  requirementsTrigger?.setAttribute('aria-expanded', String(open));
+};
+requirementsTrigger?.addEventListener('click', () => setRequirementsOpen(requirementsTrigger.getAttribute('aria-expanded') !== 'true'));
+requirementsTrigger?.addEventListener('focus', () => setRequirementsOpen(true));
+requirementsTrigger?.addEventListener('mouseenter', () => setRequirementsOpen(true));
+authPasswordRequirements?.addEventListener('mouseleave', () => setRequirementsOpen(false));
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setRequirementsOpen(false); });
+document.addEventListener('pointerdown', (event) => {
+  if (authPasswordRequirements && !authPasswordRequirements.contains(event.target)) setRequirementsOpen(false);
+});
 
 if (authPasswordToggleButton) {
   authPasswordToggleButton.addEventListener('click', () => {
@@ -481,11 +632,7 @@ if (authPasswordGenerateButton) {
     if (magicTokenInput) {
       magicTokenInput.value = password;
     }
-    if (authPasswordConfirmInput) {
-      authPasswordConfirmInput.value = password;
-    }
     authPasswordVisible = true;
-    authPasswordConfirmVisible = true;
     syncAuthPasswordVisibility();
     magicTokenInput?.focus();
   });
@@ -527,9 +674,34 @@ const applyAuthResponse = async (data) => {
   }
 
   hideLoader();
-  setCurrentScreen('auth-complete');
-  persistAssessmentContext();
-  openAuthComplete();
+  if (!data.exists) {
+    setCurrentScreen('onboarding');
+    persistAssessmentContext();
+    await openOnboardingScreen({ currentStep: 0 });
+    return;
+  }
+  try {
+    const { loadUserJourneyState } = await import('./session.js');
+    const journey = await loadUserJourneyState();
+    if (journey?.next_action === 'show_onboarding') {
+      await openOnboardingScreen({ currentStep: Number(journey.onboarding?.current_step || 0) });
+      return;
+    }
+    if (journey?.next_action === 'resume_assessment') {
+      const module = await loadAiWelcome();
+      module.openPrechat();
+      return;
+    }
+    if (['show_processing', 'show_assessment_error'].includes(journey?.next_action)) {
+      const module = await loadProcessing();
+      module.openProcessing();
+      return;
+    }
+  } catch (error) {
+    console.error('Failed to route authenticated user', error);
+  }
+  const module = await loadChat();
+  module.openChat();
 };
 
 const handleEmailMagicLinkRequest = async () => {
@@ -539,10 +711,18 @@ const handleEmailMagicLinkRequest = async () => {
 
   const email = emailInput.value.trim();
   if (!email) {
-    showError(authError, 'введите email');
+    showError(authError, 'Введите рабочий email');
+    emailInput.setAttribute('aria-invalid', 'true');
     emailInput.focus();
     return;
   }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showError(authError, 'Введите email в формате name@company.ru');
+    emailInput.setAttribute('aria-invalid', 'true');
+    emailInput.focus();
+    return;
+  }
+  emailInput.removeAttribute('aria-invalid');
 
   try {
     authRequestInFlight = true;
@@ -611,7 +791,14 @@ const handleEmailMagicLinkRequest = async () => {
   } catch (error) {
     hideLoader();
     setAuthStatus('');
-    showError(authError, error.message);
+    const message = String(error?.message || '');
+    if (message.includes('не найден в активных организациях') || message.includes('не добавлен в список участников')) {
+      showAccessUnavailable(email);
+    } else if (message === 'Failed to fetch' || error instanceof TypeError) {
+      showError(authError, 'Не удалось связаться с сервером. Попробуйте ещё раз.');
+    } else {
+      showError(authError, message);
+    }
   } finally {
     if (requestMagicLinkButton) {
       requestMagicLinkButton.disabled = false;
@@ -655,8 +842,8 @@ const submitEmailPassword = async () => {
   if (authCredentialInFlight) return;
   showError(authError, '');
   const email = String(authCredentialEmail || emailInput?.value || '').trim();
-  const password = String(magicTokenInput?.value || '');
-  const passwordConfirm = String(authPasswordConfirmInput?.value || '');
+  let password = String(magicTokenInput?.value || '');
+  let passwordConfirm = '';
   const isRegistration = authCredentialMode === 'password_registration';
   const isReset = authCredentialMode === 'password_reset';
 
@@ -666,14 +853,30 @@ const submitEmailPassword = async () => {
     return;
   }
   if (!password) {
-    showError(authError, 'введите пароль');
+    showError(authError, 'Введите пароль');
     magicTokenInput?.focus();
     return;
   }
-  if ((isRegistration || isReset) && password !== passwordConfirm) {
-    showError(authError, 'пароли не совпадают');
-    authPasswordConfirmInput?.focus();
+  if ((isRegistration || isReset) && authCredentialStep === 1) {
+    if (!isValidNewPassword(password)) {
+      showError(authError, NEW_PASSWORD_ERROR);
+      magicTokenInput?.setAttribute('aria-invalid', 'true');
+      magicTokenInput?.focus();
+      return;
+    }
+    newPasswordDraft = password;
+    showPasswordConfirmationStep();
     return;
+  }
+  if (isRegistration || isReset) {
+    passwordConfirm = password;
+    password = newPasswordDraft;
+    if (password !== passwordConfirm) {
+      showError(authError, 'Пароли не совпадают. Попробуйте ещё раз.');
+      magicTokenInput?.setAttribute('aria-invalid', 'true');
+      magicTokenInput?.focus();
+      return;
+    }
   }
 
   try {
@@ -712,9 +915,7 @@ const submitEmailPassword = async () => {
     if (isReset) {
       authActionToken = '';
       authCredentialEmail = data.email || email;
-      configureAuthCredentialForm('password');
-      setAuthStatus(data.message || 'Пароль изменён. Теперь войдите.');
-      magicTokenInput?.focus();
+      showPasswordResetComplete(authCredentialEmail);
       return;
     }
     await offerPasswordSave({ email, password });
@@ -726,7 +927,9 @@ const submitEmailPassword = async () => {
     if (verifyMagicLinkButton) {
       verifyMagicLinkButton.disabled = false;
       verifyMagicLinkButton.removeAttribute('aria-busy');
-      verifyMagicLinkButton.textContent = isReset ? 'Сохранить новый пароль' : isRegistration ? 'Задать пароль и войти' : 'Войти';
+      verifyMagicLinkButton.textContent = (isReset || isRegistration) && authCredentialStep === 2
+        ? isReset ? 'Сохранить пароль' : 'Создать пароль'
+        : (isReset || isRegistration) ? 'Продолжить' : 'Войти';
     }
     authCredentialInFlight = false;
   }
@@ -751,9 +954,21 @@ export const handleAuthActionToken = async (action, tokenValue) => {
     configureAuthCredentialForm(isReset ? 'password_reset' : 'password_registration');
     setAuthStatus(data.message || (isReset ? 'Задайте новый пароль.' : 'Email подтвержден. Задайте пароль.'));
     magicTokenInput?.focus();
-  } catch (error) {
+  } catch (_error) {
     setAuthStatus('');
-    showError(authError, error.message);
+    authEmailForm?.classList.add('hidden');
+    authTokenForm?.classList.add('hidden');
+    authEmailSent?.classList.remove('hidden');
+    authResendEmailButton?.classList.add('hidden');
+    const title = authEmailSent?.querySelector('h2');
+    const paragraphs = authEmailSent?.querySelectorAll('.auth-email-sent-copy p');
+    if (title) title.textContent = isReset ? 'Ссылка недействительна' : 'Не удалось проверить ссылку';
+    if (paragraphs?.[0]) paragraphs[0].textContent = isReset
+      ? 'Срок действия ссылки истёк, она была отозвана или уже использована.'
+      : 'Запросите новую ссылку и попробуйте ещё раз.';
+    if (paragraphs?.[1]) paragraphs[1].textContent = '';
+    if (authChangeEmailButton) authChangeEmailButton.textContent = isReset ? 'Запросить новую ссылку' : 'Вернуться';
+    showError(authError, '');
   }
 };
 
@@ -776,9 +991,21 @@ const requestPasswordReset = async () => {
       body: JSON.stringify({ email }),
     });
     const data = await readApiResponse(response, 'Не удалось запросить восстановление пароля.');
-    setAuthStatus(data.message);
     if (data.dev_action_token) {
       await handleAuthActionToken('password_reset', data.dev_action_token);
+    } else {
+      authPendingEmailAction = 'reset';
+      authEmailForm?.classList.add('hidden');
+      authTokenForm?.classList.add('hidden');
+      authEmailSent?.classList.remove('hidden');
+      const title = authEmailSent?.querySelector('h2');
+      const paragraphs = authEmailSent?.querySelectorAll('.auth-email-sent-copy p');
+      if (title) title.textContent = 'Проверьте почту';
+      if (paragraphs?.[0]) paragraphs[0].textContent = `Мы отправили ссылку для восстановления на ${email}.`;
+      if (paragraphs?.[1]) paragraphs[1].textContent = 'Перейдите по ссылке из письма, чтобы создать новый пароль.';
+      if (authChangeEmailButton) authChangeEmailButton.textContent = 'Вернуться';
+      setAuthStatus('');
+      startAuthResendCountdown();
     }
   } catch (error) {
     showError(authError, error.message);
@@ -791,18 +1018,12 @@ const requestPasswordReset = async () => {
 
 export const initWiring = () => {
 authEmailForm.addEventListener('submit', (event) => {
-  if (!authEmailForm.reportValidity()) {
-    return;
-  }
   event.preventDefault();
   void handleEmailMagicLinkRequest();
 });
 
 if (requestMagicLinkButton) {
   requestMagicLinkButton.addEventListener('click', (event) => {
-    if (!authEmailForm.reportValidity()) {
-      return;
-    }
     event.preventDefault();
     void handleEmailMagicLinkRequest();
   });
@@ -811,13 +1032,23 @@ if (requestMagicLinkButton) {
 if (forgotPasswordButton) {
   forgotPasswordButton.addEventListener('click', () => void requestPasswordReset());
 }
+if (forgotPasswordCredentialButton) {
+  forgotPasswordCredentialButton.addEventListener('click', () => void requestPasswordReset());
+}
 
 if (authChangeEmailButton) {
   authChangeEmailButton.addEventListener('click', showEmailEntry);
 }
 
 if (authChangeCredentialEmailButton) {
-  authChangeCredentialEmailButton.addEventListener('click', showEmailEntry);
+  authChangeCredentialEmailButton.addEventListener('click', () => {
+    if ((authCredentialMode === 'password_registration' || authCredentialMode === 'password_reset') && authCredentialStep === 2) {
+      showError(authError, '');
+      showPasswordCreationStep();
+      return;
+    }
+    showEmailEntry();
+  });
 }
 
 if (authCompleteLogoutButton) {
@@ -833,6 +1064,10 @@ if (authCompleteContinueButton) {
 if (authResendEmailButton) {
   authResendEmailButton.addEventListener('click', () => {
     if (authResendEmailButton.disabled) return;
+    if (authPendingEmailAction === 'reset') {
+      void requestPasswordReset();
+      return;
+    }
     showEmailEntry();
     void handleEmailMagicLinkRequest();
   });
@@ -1131,6 +1366,16 @@ if (adminOrganizationsList) {
         return;
       }
       withScreen(loadAdminOrganizations, (module) => module.resetAdminOrganizationMemberPassword(organizationId, value));
+      return;
+    }
+    if (button.dataset.action === 'send-member-invitation') {
+      withScreen(loadAdminOrganizations, (module) => module.sendAdminOrganizationMemberInvitation(organizationId, value));
+      return;
+    }
+    if (button.dataset.action === 'revoke-member-invitation') {
+      const invitationId = Number(button.getAttribute('data-invitation-id'));
+      if (!invitationId) return;
+      withScreen(loadAdminOrganizations, (module) => module.revokeAdminOrganizationMemberInvitation(organizationId, invitationId));
       return;
     }
     if (button.dataset.action === 'prepare-member-assessment') {
