@@ -228,6 +228,100 @@
     }
 }
 
+/* UX-R02 uses the Product Lead approved R01 card as the auth-only surface. */
+.auth-panel {
+    width: min(calc(100% - 32px), 474px);
+    min-height: 474px;
+    padding: 36px 64px;
+    gap: 20px;
+    border: 0;
+    border-radius: 8px;
+    background: #b3ebef;
+    box-shadow: none;
+    justify-content: center;
+}
+
+.auth-panel::before { background: #fff; }
+.auth-panel-head { display: none; }
+.auth-panel-copy { align-items: center; text-align: center; }
+.auth-panel h1 { color: #0f172a; font-size: 24px; line-height: 32px; font-weight: 700; letter-spacing: 0; }
+.auth-panel .subtitle { color: #64748b; font-size: 14px; line-height: 20px; text-align: center; }
+.auth-panel .field { color: #64748b; font-weight: 400; }
+.auth-panel input {
+    min-height: 56px;
+    padding: 0 16px;
+    border-color: #cbd5e1;
+    border-radius: 8px;
+    background: #f6f9f9;
+}
+.auth-password-input-row { position: relative; display: block; }
+.auth-panel .auth-password-input-row input { padding-right: 52px; }
+.auth-password-tool {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    transform: translateY(-50%);
+    border: 0 !important;
+    font-size: 0 !important;
+}
+.auth-password-tool::after { content: "◉"; font-size: 18px; color: #222c30; }
+.auth-panel .primary-button {
+    min-height: 56px;
+    border-radius: 8px;
+    background: #222c30;
+    color: #f6f9f9;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 700;
+    box-shadow: none;
+}
+.auth-panel .primary-button:hover:not(:disabled) { background: #34454b; }
+.auth-panel .ghost-button { border-color: #769fa5; border-radius: 8px; }
+.auth-password-requirements { position: relative; width: 100%; text-align: left; }
+.auth-password-requirements-trigger {
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    text-align: left;
+}
+.auth-password-requirements-popover {
+    position: absolute;
+    z-index: 20;
+    left: 0;
+    bottom: calc(100% + 6px);
+    width: 280px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+    padding: 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #f6f9f9;
+    color: #222c30;
+    box-shadow: 0 3px 14px rgba(20, 36, 41, 0.08);
+}
+.auth-password-requirements-popover ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.auth-password-generate-row .ghost-button { min-height: 44px; padding: 4px 0; border: 0; text-decoration: underline; text-underline-offset: 3px; }
+
+@media (max-width: 767px) {
+    .auth-panel { min-height: 0; padding: 36px 32px; }
+}
+@media (max-width: 479px) {
+    .auth-panel { padding: 32px 24px; }
+}
+@media (max-width: 359px) {
+    .auth-panel { padding: 28px 16px; }
+}
+@media (max-height: 720px) {
+    .auth-panel { align-self: flex-start; margin-top: 24px; }
+}
+
 .auth-complete-panel {
     display: flex;
     flex-direction: column;
@@ -634,3 +728,27 @@
         animation-iteration-count: 1 !important;
     }
 }
+
+.auth-panel.auth-panel {
+    width: min(calc(100% - 32px), 474px);
+    min-height: 474px;
+    padding: 36px 64px;
+    gap: 20px;
+    border: 0;
+    border-radius: 8px;
+    background: #b3ebef;
+    box-shadow: none;
+    justify-content: center;
+}
+.auth-panel.auth-panel::before { display: none; }
+.auth-panel.auth-panel .auth-panel-head { display: none; }
+.auth-panel.auth-panel .auth-panel-copy { align-items: center; text-align: center; }
+.auth-panel.auth-panel h1 { color: #0f172a; font-size: 24px; line-height: 32px; font-weight: 700; letter-spacing: 0; }
+.auth-panel.auth-panel .subtitle { color: #64748b; font-size: 14px; line-height: 20px; text-align: center; }
+.auth-panel.auth-panel input { min-height: 56px; border-radius: 8px; background: #f6f9f9; }
+.auth-panel.auth-panel .primary-button { min-height: 56px; border-radius: 8px; background: #222c30; color: #f6f9f9; font-size: 16px; font-weight: 700; box-shadow: none; }
+.auth-panel.auth-panel .auth-password-input-row { position: relative; display: block; }
+.auth-panel.auth-panel .auth-password-tool { position: absolute; top: 50%; right: 4px; width: 44px; min-width: 44px; height: 44px; padding: 0; transform: translateY(-50%); border: 0; font-size: 0; }
+@media (max-width: 767px) { .auth-panel.auth-panel { min-height: 0; padding: 36px 32px; } }
+@media (max-width: 479px) { .auth-panel.auth-panel { padding: 32px 24px; } }
+@media (max-width: 359px) { .auth-panel.auth-panel { padding: 28px 16px; } }

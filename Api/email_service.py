@@ -143,6 +143,9 @@ def send_auth_action_email(*, email: str, action_url: str, expires_at: datetime,
     elif purpose == "password_reset":
         subject = "Восстановление пароля — 4K Ассистент"
         intro = "Чтобы задать новый пароль, перейдите по ссылке:"
+    elif purpose == "organization_invitation":
+        subject = "Приглашение в 4K Ассистент"
+        intro = "Вас пригласили пройти оценку. Чтобы продолжить, перейдите по персональной ссылке:"
     else:
         raise EmailDeliveryError("Неизвестный тип письма авторизации.")
     expires_label = expires_at.strftime("%d.%m.%Y %H:%M UTC")

@@ -4401,6 +4401,17 @@ def ensure_core_schema() -> None:
             "CREATE INDEX IF NOT EXISTS idx_organization_invitations_org_active "
             "ON organization_invitations(organization_id, expires_at) WHERE revoked_at IS NULL"
         )
+        connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS recipient_email TEXT")
+        connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS purpose TEXT NOT NULL DEFAULT 'shared_access'")
+        connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS used_at TIMESTAMP")
+        connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS delivery_status TEXT NOT NULL DEFAULT 'not_sent'")
+        connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS delivery_error TEXT")
+        connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP")
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_organization_invitations_recipient "
+            "ON organization_invitations(organization_id, LOWER(recipient_email), expires_at) "
+            "WHERE recipient_email IS NOT NULL"
+        )
         ensure_role_profile_schema(connection)
         ensure_assessment_context_schema(connection)
         ensure_m5_runtime_schema(connection)

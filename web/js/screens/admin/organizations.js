@@ -229,6 +229,38 @@ export const resetAdminOrganizationMemberPassword = async (organizationId, email
   }
 };
 
+export const sendAdminOrganizationMemberInvitation = async (organizationId, email) => {
+  try {
+    const response = await fetch('/users/admin/organizations/' + organizationId + '/personal-invitations', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emails: [email] }),
+    });
+    const result = await readApiResponse(response, 'Не удалось отправить приглашение.');
+    const item = result.items?.[0];
+    if (!item || item.status === 'error') throw new Error(item?.error || 'Не удалось отправить приглашение.');
+    await loadAdminOrganizations();
+    setStatus('Приглашение принято почтовым сервисом.', 'success');
+  } catch (error) {
+    setStatus(error.message || 'Не удалось отправить приглашение.', 'error');
+  }
+};
+
+export const revokeAdminOrganizationMemberInvitation = async (organizationId, invitationId) => {
+  try {
+    const response = await fetch('/users/admin/organizations/' + organizationId + '/personal-invitations/' + invitationId, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+    });
+    await readApiResponse(response, 'Не удалось отозвать приглашение.');
+    await loadAdminOrganizations();
+    setStatus('Приглашение отозвано.', 'success');
+  } catch (error) {
+    setStatus(error.message || 'Не удалось отозвать приглашение.', 'error');
+  }
+};
+
 export const prepareAdminOrganizationMemberAssessment = async (organizationId, userId) => {
   try {
     const response = await fetch(
@@ -473,6 +505,12 @@ const renderMemberList = (items) => {
             escapeHtml(email) +
             '" title="Сбросить пароль" aria-label="Сбросить пароль">Сбросить пароль</button>'
           : '<span class="admin-organization-password-state" title="Пользователь еще не задавал пароль">Пароль не задан</span>';
+        const invitationStatus = String(item.invitation_status || 'not_sent');
+        const invitationLabels = { not_sent: 'Не отправлено', queued: 'В очереди', accepted: 'Принято почтовым сервисом', error: 'Ошибка', revoked: 'Отозвано', expired: 'Истекло', used: 'Регистрация завершена' };
+        const invitationButton = invitationStatus === 'accepted' || invitationStatus === 'queued'
+          ? '<button type="button" data-action="revoke-member-invitation" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать</button>'
+          : '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + (item.invitation_id ? 'Отправить повторно' : 'Отправить') + '</button>';
+        const invitationControls = '<span class="admin-organization-invitation-state">' + escapeHtml(invitationLabels[invitationStatus] || invitationStatus) + '</span>' + invitationButton;
         return (
           '<div class="admin-organization-member">' +
           '<div class="admin-organization-member-main"><strong>' +
@@ -481,6 +519,7 @@ const renderMemberList = (items) => {
           (details ? '<span>' + escapeHtml(details) + '</span>' : '') +
           '</div>' +
           '<div class="admin-organization-member-actions">' +
+          invitationControls +
           preparationButton +
           passwordButton +
           removeButton +

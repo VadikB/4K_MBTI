@@ -81,7 +81,10 @@ def test_public_invitation_returns_only_allowed_organization_copy(admission_clie
     response = client.get("/users/organization-invitations/valid")
     assert response.status_code == 200
     assert response.json()["organization_name"] == "Организация A"
-    assert set(response.json()) == {"organization_id", "organization_name", "invitation_intro", "expires_at"}
+    assert set(response.json()) == {
+        "organization_id", "organization_name", "invitation_intro", "expires_at",
+        "recipient_email", "personal", "auth_mode",
+    }
     assert client.get("/users/organization-invitations/tampered").status_code == 404
 
 

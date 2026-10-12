@@ -10,15 +10,15 @@ test('auth forms expose password-manager fields and an explicit way to change em
   assert.match(html, /autocomplete="username email"/);
   assert.match(html, /autocomplete="new-password"/);
   assert.match(html, /id="auth-change-credential-email-button"/);
-  assert.match(wiring, /authChangeCredentialEmailButton\.addEventListener\('click', showEmailEntry\)/);
+  assert.match(wiring, /authChangeCredentialEmailButton\.addEventListener\('click'/);
+  assert.match(wiring, /showPasswordCreationStep\(\)/);
 });
 
-test('ordinary login and session restore route to the neutral auth-complete destination', () => {
-  assert.match(html, /id="auth-complete-panel"/);
-  assert.match(html, /Следующий этап готовится/);
-  assert.doesNotMatch(html.match(/<section class="panel auth-complete-panel[\s\S]*?<\/section>/)?.[0] || '', /assessment|оценк/i);
-  assert.match(wiring, /openAuthComplete\(\)/);
-  assert.match(session, /state\.currentScreen = 'auth-complete'/);
+test('registration and repeat login route through the existing journey without auth-complete', () => {
+  assert.match(wiring, /loadUserJourneyState/);
+  assert.match(wiring, /next_action === 'show_onboarding'/);
+  assert.match(wiring, /next_action === 'resume_assessment'/);
+  assert.doesNotMatch(session, /state\.currentScreen = 'auth-complete'/);
 });
 
 test('mutating auth actions guard repeated submissions and expose busy state', () => {
@@ -26,4 +26,14 @@ test('mutating auth actions guard repeated submissions and expose busy state', (
   assert.match(wiring, /if \(authCredentialInFlight\) return/);
   assert.match(wiring, /if \(authResetRequestInFlight\) return/);
   assert.match(wiring, /setAttribute\('aria-busy', 'true'\)/);
+});
+
+test('new passwords use two in-memory steps and the accepted ASCII policy', () => {
+  assert.match(wiring, /let newPasswordDraft = ''/);
+  assert.match(wiring, /showPasswordConfirmationStep/);
+  assert.match(wiring, /\[!-~\]\{10,/);
+  assert.match(wiring, /while \(chars\.length < 10\)/);
+  assert.doesNotMatch(wiring, /sessionStorage.*newPasswordDraft|localStorage.*newPasswordDraft/);
+  assert.match(html, /Требования к паролю/);
+  assert.match(html, /Без пробелов и кириллицы/);
 });
