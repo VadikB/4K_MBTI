@@ -97,7 +97,8 @@ test('Organization invitation keeps context and cannot admit a member of another
  const denied=page.waitForResponse(response=>new URL(response.url()).pathname==='/users/auth/email/request-link');
  await page.locator('#request-magic-link-button').click();
  expect((await denied).status()).toBe(403);
- await expect(page.locator('#auth-error')).toContainText('выбранной организации');
+ await expect(page.locator('#auth-email-sent')).toBeVisible();
+ await expect(page.locator('#auth-email-sent')).toContainText('Доступ пока не открыт');
  await expect(page.locator('#auth-token-form')).toBeHidden();
 });
 async function start(page,expected='готовности'){
