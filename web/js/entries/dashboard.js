@@ -1,1 +1,1 @@
-export { hasIncompleteAssessment } from '../screens/dashboard.js';
+export { hasIncompleteAssessment, openDashboard } from '../screens/dashboard.js';
