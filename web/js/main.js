@@ -127,8 +127,14 @@ const bootApp = async () => {
   }
   if (invitationToken && !authTokenFromLink) {
     try {
-      await activateOrganizationInvitation(invitationToken);
+      const organization = await activateOrganizationInvitation(invitationToken);
+      if (organization?.personal) {
+        // A personal invitation is a complete, priority auth route. Do not let
+        // stale local state or another server session replace its recipient.
+        return;
+      }
     } catch (error) {
+      try { window.sessionStorage.removeItem('agent4k.organizationInvitationToken'); } catch (_storageError) { /* optional */ }
       if (authError) {
         authError.textContent = error.message;
         authError.hidden = false;

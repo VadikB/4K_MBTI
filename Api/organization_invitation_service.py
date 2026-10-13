@@ -69,7 +69,12 @@ def resolve_invitation(connection, *, token: str) -> OrganizationInvitationConte
     )
 
 
-def resolve_invitation_by_id(connection, *, invitation_id: int) -> OrganizationInvitationContext:
+def resolve_invitation_by_id(
+    connection,
+    *,
+    invitation_id: int,
+    allow_used: bool = False,
+) -> OrganizationInvitationContext:
     row = connection.execute(
         """
         SELECT invitation.id, invitation.organization_id, invitation.expires_at,
@@ -87,7 +92,7 @@ def resolve_invitation_by_id(connection, *, invitation_id: int) -> OrganizationI
         raise OrganizationInvitationError("Приглашение недействительно.")
     if row["revoked_at"] is not None:
         raise OrganizationInvitationError("Приглашение отозвано.")
-    if _optional_row_value(row, "used_at") is not None:
+    if _optional_row_value(row, "used_at") is not None and not allow_used:
         raise OrganizationInvitationError("Приглашение уже использовано.")
     if row["expires_at"] is None or row["expires_at"] <= datetime.now():
         raise OrganizationInvitationError("Срок действия приглашения истёк.")

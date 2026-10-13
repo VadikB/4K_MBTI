@@ -818,11 +818,6 @@ class AuthService:
             )
             if verified_email != normalized_email:
                 raise ValueError("Ссылка подтверждения выпущена для другого email.")
-            self.verify_auth_action_token_details(
-                token=str(verification_token or ""),
-                purpose="email_verification",
-                consume=True,
-            )
         else:
             invitation_id = personal_invitation_id
 
@@ -857,7 +852,10 @@ class AuthService:
                 """,
                 (normalized_email,),
             ).fetchone()
-            is_new_user = False
+            # A pre-created organization member without credentials is still on
+            # the first-registration journey. User row existence is not proof
+            # that onboarding has already been completed.
+            is_new_user = True
             if user_row is not None:
                 user_id = int(user_row["id"])
             else:
@@ -874,6 +872,21 @@ class AuthService:
                 """,
                 (user_id, normalized_email, password_hash, salt),
             )
+            if verification_token and personal_invitation_id is None:
+                consumed_action = connection.execute(
+                    """
+                    UPDATE auth_action_tokens
+                    SET used_at = NOW()
+                    WHERE token_hash = %s
+                      AND purpose = 'email_verification'
+                      AND used_at IS NULL
+                      AND expires_at > NOW()
+                    RETURNING id
+                    """,
+                    (_hash_magic_token(str(verification_token)),),
+                ).fetchone()
+                if consumed_action is None:
+                    raise ValueError("Ссылка недействительна или уже использована.")
             if personal_invitation_id is not None:
                 consumed = connection.execute(
                     """

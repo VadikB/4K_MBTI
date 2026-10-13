@@ -917,6 +917,14 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                 prep.status AS assessment_preparation_status,
                 personal_invitation.id AS invitation_id,
                 personal_invitation.expires_at AS invitation_expires_at,
+                personal_invitation.delivery_status AS invitation_delivery_status,
+                CASE
+                    WHEN personal_invitation.id IS NULL THEN 'not_created'
+                    WHEN personal_invitation.revoked_at IS NOT NULL THEN 'revoked'
+                    WHEN personal_invitation.used_at IS NOT NULL THEN 'used'
+                    WHEN personal_invitation.expires_at <= NOW() THEN 'expired'
+                    ELSE 'active'
+                END AS invitation_link_status,
                 CASE
                     WHEN personal_invitation.id IS NULL THEN 'not_sent'
                     WHEN personal_invitation.revoked_at IS NOT NULL THEN 'revoked'
@@ -982,6 +990,10 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                     ),
                     "invitation_id": row["invitation_id"],
                     "invitation_status": row["invitation_status"] or "not_sent",
+                    "admission_status": "admitted",
+                    "registration_status": "registered" if bool(row["has_password"]) else "pending",
+                    "invitation_delivery_status": row["invitation_delivery_status"] or "not_sent",
+                    "invitation_link_status": row["invitation_link_status"] or "not_created",
                     "invitation_expires_at": row["invitation_expires_at"],
                 }
             )
@@ -1027,6 +1039,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
     return AdminOrganizationsResponse(
         title="Организации",
         subtitle="Управление доменами и администраторами организаций.",
+        is_superadmin=bool(scope is None or scope.is_superadmin),
         items=[
             AdminOrganizationItem(
                 id=int(row["id"]),
@@ -2822,7 +2835,11 @@ def _public_invitation_by_id(invitation_id: int | None) -> OrganizationInvitatio
         return None
     try:
         with get_connection() as connection:
-            invitation = resolve_invitation_by_id(connection, invitation_id=invitation_id)
+            invitation = resolve_invitation_by_id(
+                connection,
+                invitation_id=invitation_id,
+                allow_used=True,
+            )
     except OrganizationInvitationError:
         return None
     return OrganizationInvitationPublicResponse(**invitation_public_context(invitation))
@@ -3532,6 +3549,9 @@ def send_personal_organization_invitations(
     request: Request,
 ) -> PersonalInvitationBatchResponse:
     current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    request_id = str(
+        request.headers.get("Idempotency-Key") or payload.operation_id or ""
+    ).strip() or None
     results: list[PersonalInvitationResultItem] = []
     for raw_email in dict.fromkeys(payload.emails):
         invitation_id: int | None = None
@@ -3555,35 +3575,72 @@ def send_personal_organization_invitations(
                 ).fetchone()
                 if member is None:
                     raise ValueError("Участник не добавлен в эту организацию.")
+                if settings.auth_magic_link_dev_mode or settings.email_provider in {"", "console"}:
+                    raise EmailDeliveryError("Почтовый провайдер не настроен для отправки приглашений.")
+                row = connection.execute(
+                    """
+                    INSERT INTO organization_invitations (
+                        organization_id, token_hash, expires_at, created_by_user_id,
+                        recipient_email, purpose, delivery_status, request_id
+                    ) VALUES (%s, %s, %s, %s, %s, 'personal_registration', 'queued', %s)
+                    ON CONFLICT DO NOTHING
+                    RETURNING id, expires_at, delivery_status
+                    """,
+                    (
+                        organization_id,
+                        hash_invitation_token(raw_token),
+                        expires_at,
+                        int(current_user.id),
+                        email,
+                        request_id,
+                    ),
+                ).fetchone()
+                if row is None and request_id is not None:
+                    row = connection.execute(
+                        """
+                        SELECT id, expires_at, delivery_status
+                        FROM organization_invitations
+                        WHERE organization_id = %s
+                          AND LOWER(recipient_email) = %s
+                          AND purpose = 'personal_registration'
+                          AND request_id = %s
+                        LIMIT 1
+                        """,
+                        (organization_id, email, request_id),
+                    ).fetchone()
+                    if row is None:
+                        raise RuntimeError("Не удалось восстановить результат операции отправки.")
+                    connection.commit()
+                    results.append(
+                        PersonalInvitationResultItem(
+                            email=email,
+                            status=str(row["delivery_status"] or "queued"),
+                            invitation_id=int(row["id"]),
+                            expires_at=row["expires_at"],
+                        )
+                    )
+                    continue
+                if row is None:
+                    raise RuntimeError("Не удалось создать приглашение.")
+                invitation_id = int(row["id"])
                 connection.execute(
                     """
                     UPDATE organization_invitations
                     SET revoked_at = COALESCE(revoked_at, NOW())
                     WHERE organization_id = %s AND LOWER(recipient_email) = %s
                       AND purpose = 'personal_registration' AND used_at IS NULL AND revoked_at IS NULL
+                      AND id <> %s
                     """,
-                    (organization_id, email),
+                    (organization_id, email, invitation_id),
                 )
-                row = connection.execute(
-                    """
-                    INSERT INTO organization_invitations (
-                        organization_id, token_hash, expires_at, created_by_user_id,
-                        recipient_email, purpose, delivery_status
-                    ) VALUES (%s, %s, %s, %s, %s, 'personal_registration', 'queued')
-                    RETURNING id
-                    """,
-                    (organization_id, hash_invitation_token(raw_token), expires_at, int(current_user.id), email),
-                ).fetchone()
-                invitation_id = int(row["id"])
                 connection.commit()
             invitation_url = settings.app_base_url.rstrip("/") + "/?invite=" + quote(raw_token, safe="")
-            if settings.email_provider not in {"", "console"} and not settings.auth_magic_link_dev_mode:
-                send_auth_action_email(
-                    email=email,
-                    action_url=invitation_url,
-                    expires_at=expires_at,
-                    purpose="organization_invitation",
-                )
+            send_auth_action_email(
+                email=email,
+                action_url=invitation_url,
+                expires_at=expires_at,
+                purpose="organization_invitation",
+            )
             with get_connection() as connection:
                 connection.execute(
                     "UPDATE organization_invitations SET delivery_status = 'accepted', sent_at = NOW(), delivery_error = NULL WHERE id = %s",
@@ -3635,7 +3692,23 @@ def create_admin_organization(payload: AdminOrganizationCreateRequest, request: 
     org_code = _normalize_admin_org_code(payload.code)
     org_name = _normalize_admin_org_name(payload.name)
     with get_connection() as connection:
-        _require_superadmin(connection, user)
+        scope = _get_admin_scope_or_403(connection, user)
+        if not scope.is_superadmin:
+            existing = connection.execute(
+                """
+                SELECT id
+                FROM organizations
+                WHERE id = ANY(%s) AND code = %s AND name = %s
+                LIMIT 1
+                """,
+                (list(scope.organization_ids), org_code, org_name),
+            ).fetchone()
+            if existing is None:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Администратор организации может открыть только закреплённую организацию.",
+                )
+            return _build_admin_organizations(connection, scope)
         try:
             connection.execute(
                 """
@@ -3648,7 +3721,7 @@ def create_admin_organization(payload: AdminOrganizationCreateRequest, request: 
         except Exception as exc:
             connection.rollback()
             raise HTTPException(status_code=409, detail="Organization with this code already exists") from exc
-        return _build_admin_organizations(connection)
+        return _build_admin_organizations(connection, scope)
 
 
 @router.patch("/admin/organizations/{organization_id}", response_model=AdminOrganizationsResponse)
@@ -4224,7 +4297,7 @@ def import_admin_organization_members(
     skipped_count = 0
     errors: list[str] = []
     with get_connection() as connection:
-        _require_superadmin(connection, user)
+        scope = _require_organization_admin(connection, user, organization_id)
         reader = csv.DictReader(io.StringIO(csv_text))
         if not reader.fieldnames:
             raise HTTPException(status_code=400, detail="CSV header is required")
@@ -4250,7 +4323,7 @@ def import_admin_organization_members(
                 skipped_count += 1
                 errors.append(f"Строка {line_number}: {exc}")
         connection.commit()
-        organizations = _build_admin_organizations(connection)
+        organizations = _build_admin_organizations(connection, scope)
     return AdminOrganizationImportResult(
         imported_count=imported_count,
         skipped_count=skipped_count,

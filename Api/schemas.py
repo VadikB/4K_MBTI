@@ -211,6 +211,7 @@ class OrganizationInvitationAdminResponse(OrganizationInvitationPublicResponse):
 
 class PersonalInvitationRequest(BaseModel):
     emails: list[str] = Field(min_length=1, max_length=500)
+    operation_id: str | None = Field(default=None, min_length=8, max_length=200)
 
 
 class PersonalInvitationResultItem(BaseModel):
@@ -873,6 +874,10 @@ class AdminOrganizationMemberItem(BaseModel):
     assessment_profile_ready: bool = False
     invitation_id: int | None = None
     invitation_status: str = "not_sent"
+    admission_status: str = "admitted"
+    registration_status: str = "pending"
+    invitation_delivery_status: str = "not_sent"
+    invitation_link_status: str = "not_created"
     invitation_expires_at: datetime | None = None
 
 
@@ -902,6 +907,7 @@ class AdminOrganizationItem(BaseModel):
 class AdminOrganizationsResponse(BaseModel):
     title: str
     subtitle: str
+    is_superadmin: bool = False
     items: list[AdminOrganizationItem]
 
 

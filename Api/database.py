@@ -4407,10 +4407,16 @@ def ensure_core_schema() -> None:
         connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS delivery_status TEXT NOT NULL DEFAULT 'not_sent'")
         connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS delivery_error TEXT")
         connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP")
+        connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS request_id TEXT")
         connection.execute(
             "CREATE INDEX IF NOT EXISTS idx_organization_invitations_recipient "
             "ON organization_invitations(organization_id, LOWER(recipient_email), expires_at) "
             "WHERE recipient_email IS NOT NULL"
+        )
+        connection.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_organization_personal_invitation_request "
+            "ON organization_invitations(organization_id, LOWER(recipient_email), request_id) "
+            "WHERE purpose = 'personal_registration' AND recipient_email IS NOT NULL AND request_id IS NOT NULL"
         )
         ensure_role_profile_schema(connection)
         ensure_assessment_context_schema(connection)

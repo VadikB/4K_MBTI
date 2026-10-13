@@ -179,7 +179,7 @@ export const activateOrganizationInvitation = async (tokenValue) => {
   organizationInvitationToken = token;
   renderOrganizationInvitation(organization);
   if (organization?.personal && organization?.recipient_email) {
-    try { window.sessionStorage.removeItem('agent4k.organizationInvitationToken'); } catch (_error) { /* optional */ }
+    try { window.sessionStorage.setItem('agent4k.organizationInvitationToken', token); } catch (_error) { /* optional */ }
     window.history.replaceState({ screen: 'auth' }, '', '/');
     authCredentialEmail = organization.recipient_email;
     if (emailInput) emailInput.value = authCredentialEmail;
@@ -187,15 +187,40 @@ export const activateOrganizationInvitation = async (tokenValue) => {
     if (authTokenForm) authTokenForm.classList.remove('hidden');
     setAuthStatus(
       organization.auth_mode === 'password'
-        ? 'Приглашение подтверждено. Войдите с паролем.'
-        : 'Приглашение подтверждено. Создайте пароль.',
+        ? `Приглашение подтверждено для ${organization.recipient_email}. Вход переключит текущий аккаунт на получателя приглашения.`
+        : `Приглашение подтверждено для ${organization.recipient_email}. Создайте пароль, чтобы продолжить знакомство.`,
     );
+    const conflict = document.getElementById('organization-invitation-account-conflict');
+    const conflictCopy = document.getElementById('organization-invitation-account-conflict-copy');
+    try {
+      const currentResponse = await fetch('/users/session/restore', { credentials: 'same-origin', cache: 'no-store' });
+      const current = await readApiResponse(currentResponse, 'Не удалось проверить текущий аккаунт.', { recoverUnauthorized: false });
+      const currentEmail = normalizeCredentialEmail(current?.user?.email);
+      const recipientEmail = normalizeCredentialEmail(organization.recipient_email);
+      const hasConflict = Boolean(current?.authenticated && currentEmail && currentEmail !== recipientEmail);
+      conflict?.classList.toggle('hidden', !hasConflict);
+      if (hasConflict && conflictCopy) {
+        conflictCopy.textContent = `Сейчас открыт аккаунт ${currentEmail}. Приглашение предназначено для ${recipientEmail}.`;
+      }
+    } catch {
+      conflict?.classList.add('hidden');
+    }
     magicTokenInput?.focus();
   } else {
     try { window.sessionStorage.setItem('agent4k.organizationInvitationToken', token); } catch (_error) { /* optional */ }
   }
   return organization;
 };
+
+document.getElementById('organization-invitation-continue-button')?.addEventListener('click', () => {
+  document.getElementById('organization-invitation-account-conflict')?.classList.add('hidden');
+  magicTokenInput?.focus();
+});
+document.getElementById('organization-invitation-keep-session-button')?.addEventListener('click', () => {
+  organizationInvitationToken = '';
+  try { window.sessionStorage.removeItem('agent4k.organizationInvitationToken'); } catch (_error) { /* optional */ }
+  window.location.assign('/');
+});
 import { advanceSessionGeneration, readApiResponse, createOperationId } from './api.js';
 import {
   buildExistingUserAgentMessage,
@@ -215,6 +240,7 @@ import {
   loadInterview,
   loadProcessing,
   loadReport,
+  loadDashboard,
   loadAdminDashboard,
   loadAdminOrganizations,
   loadAdminRegressionTests,
@@ -271,6 +297,8 @@ let authRequestInFlight = false;
 let authCredentialInFlight = false;
 let authResetRequestInFlight = false;
 let authPendingEmailAction = 'verification';
+let authPendingTokenAction = '';
+let authOperationGeneration = 0;
 const AUTH_RESEND_COOLDOWN_SECONDS = 60;
 
 const stopAuthResendCountdown = () => {
@@ -338,6 +366,8 @@ const showAccessUnavailable = (email) => {
 };
 
 const showEmailEntry = () => {
+  authOperationGeneration += 1;
+  authCredentialInFlight = false;
   stopAuthResendCountdown();
   authEmailSent?.classList.add('hidden');
   authTokenForm?.classList.add('hidden');
@@ -460,11 +490,16 @@ const configureAuthCredentialForm = (mode) => {
   const isReset = authCredentialMode === 'password_reset';
   const isNewPassword = isRegistration || isReset;
   const isPasswordMode = authCredentialMode === 'password' || isNewPassword;
+  const authPanel = authTokenForm?.closest('.auth-panel');
+  const stepIndicator = document.getElementById('auth-credential-step-indicator');
+  authPanel?.classList.toggle('auth-panel--password-create', isNewPassword);
+  stepIndicator?.classList.toggle('hidden', !isNewPassword);
+  if (stepIndicator) stepIndicator.textContent = 'Шаг 1/2';
   authEmailForm?.classList.add('hidden');
   authEmailSent?.classList.add('hidden');
   authCredentialStep = 1;
   newPasswordDraft = '';
-  if (authTitle) authTitle.textContent = isReset ? 'Создайте новый пароль' : isRegistration ? 'Создайте пароль' : 'Вход';
+  if (authTitle) authTitle.textContent = isReset ? 'Создайте новый пароль' : isRegistration ? 'Создайте пароль' : 'С возвращением';
   if (authSubtitle) authSubtitle.textContent = isReset
     ? 'Задайте новый пароль для рабочего аккаунта.'
     : isRegistration
@@ -504,7 +539,7 @@ const configureAuthCredentialForm = (mode) => {
   }
   syncAuthPasswordVisibility();
   if (verifyMagicLinkButton) {
-    verifyMagicLinkButton.textContent = isNewPassword ? 'Продолжить' : 'Войти';
+    verifyMagicLinkButton.textContent = 'Продолжить';
   }
   forgotPasswordCredentialButton?.classList.toggle('hidden', authCredentialMode !== 'password');
 };
@@ -514,8 +549,12 @@ const isValidNewPassword = (value) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^
 
 const showPasswordConfirmationStep = () => {
   authCredentialStep = 2;
+  const stepIndicator = document.getElementById('auth-credential-step-indicator');
+  if (stepIndicator) stepIndicator.textContent = 'Шаг 2/2';
   authPasswordVisible = false;
-  if (authTitle) authTitle.textContent = 'Подтвердите пароль';
+  if (authTitle) authTitle.textContent = authCredentialMode === 'password_reset'
+    ? 'Подтвердите новый пароль'
+    : 'Подтвердите пароль';
   if (authSubtitle) authSubtitle.textContent = 'Введите пароль повторно.';
   if (authCredentialLabel) authCredentialLabel.textContent = 'Введите пароль повторно';
   if (magicTokenInput) {
@@ -533,6 +572,8 @@ const showPasswordConfirmationStep = () => {
 
 const showPasswordCreationStep = () => {
   authCredentialStep = 1;
+  const stepIndicator = document.getElementById('auth-credential-step-indicator');
+  if (stepIndicator) stepIndicator.textContent = 'Шаг 1/2';
   authPasswordVisible = false;
   const isReset = authCredentialMode === 'password_reset';
   if (authTitle) authTitle.textContent = isReset ? 'Создайте новый пароль' : 'Создайте пароль';
@@ -550,6 +591,7 @@ const showPasswordCreationStep = () => {
 };
 
 const showPasswordResetComplete = (email) => {
+  authPendingEmailAction = 'reset-complete';
   authCredentialMode = 'password';
   authCredentialStep = 1;
   newPasswordDraft = '';
@@ -597,14 +639,51 @@ magicTokenInput?.addEventListener('input', () => {
 
 const requirementsTrigger = document.getElementById('auth-password-requirements-trigger');
 const requirementsPopover = document.getElementById('auth-password-requirements-popover');
+let requirementsCloseTimer = null;
+const positionRequirementsPopover = () => {
+  if (!requirementsTrigger || !requirementsPopover || requirementsPopover.classList.contains('hidden')) return;
+  const trigger = requirementsTrigger.getBoundingClientRect();
+  const popover = requirementsPopover.getBoundingClientRect();
+  const margin = 16;
+  const gap = 6;
+  const left = Math.min(
+    Math.max(trigger.left, margin),
+    Math.max(margin, window.innerWidth - popover.width - margin),
+  );
+  const fitsAbove = trigger.top - gap - popover.height >= margin;
+  const top = fitsAbove
+    ? trigger.top - gap - popover.height
+    : Math.min(trigger.bottom + gap, window.innerHeight - popover.height - margin);
+  requirementsPopover.style.left = `${left}px`;
+  requirementsPopover.style.top = `${Math.max(margin, top)}px`;
+};
 const setRequirementsOpen = (open) => {
+  if (requirementsCloseTimer) {
+    window.clearTimeout(requirementsCloseTimer);
+    requirementsCloseTimer = null;
+  }
   requirementsPopover?.classList.toggle('hidden', !open);
   requirementsTrigger?.setAttribute('aria-expanded', String(open));
+  if (open) window.requestAnimationFrame(positionRequirementsPopover);
 };
-requirementsTrigger?.addEventListener('click', () => setRequirementsOpen(requirementsTrigger.getAttribute('aria-expanded') !== 'true'));
+requirementsTrigger?.addEventListener('pointerdown', (event) => {
+  const open = requirementsTrigger.getAttribute('aria-expanded') === 'true';
+  event.preventDefault();
+  requirementsTrigger.focus();
+  setRequirementsOpen(!open);
+});
+requirementsTrigger?.addEventListener('click', (event) => {
+  if (event.detail !== 0) return;
+  setRequirementsOpen(requirementsTrigger.getAttribute('aria-expanded') !== 'true');
+});
 requirementsTrigger?.addEventListener('focus', () => setRequirementsOpen(true));
 requirementsTrigger?.addEventListener('mouseenter', () => setRequirementsOpen(true));
-authPasswordRequirements?.addEventListener('mouseleave', () => setRequirementsOpen(false));
+authPasswordRequirements?.addEventListener('mouseleave', () => {
+  requirementsCloseTimer = window.setTimeout(() => setRequirementsOpen(false), 150);
+});
+requirementsPopover?.addEventListener('mouseenter', () => setRequirementsOpen(true));
+window.addEventListener('resize', positionRequirementsPopover);
+window.addEventListener('scroll', positionRequirementsPopover, true);
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setRequirementsOpen(false); });
 document.addEventListener('pointerdown', (event) => {
   if (authPasswordRequirements && !authPasswordRequirements.contains(event.target)) setRequirementsOpen(false);
@@ -639,6 +718,8 @@ if (authPasswordGenerateButton) {
 }
 
 const applyAuthResponse = async (data) => {
+  organizationInvitationToken = '';
+  try { window.sessionStorage.removeItem('agent4k.organizationInvitationToken'); } catch (_error) { /* optional */ }
   if (state.pendingUser?.id !== data.user?.id) clearAssessmentContext();
   const agent = data.agent || null;
   renderOrganizationInvitation(data.organization || null);
@@ -687,6 +768,16 @@ const applyAuthResponse = async (data) => {
       await openOnboardingScreen({ currentStep: Number(journey.onboarding?.current_step || 0) });
       return;
     }
+    if (journey?.next_action === 'complete_profile') {
+      const profileRecovery = await import('./screens/profile-recovery.js');
+      await profileRecovery.recoverProfileCompletionForAssessment({ resumeAssessment: false });
+      return;
+    }
+    if (journey?.next_action === 'show_dashboard') {
+      const module = await loadDashboard();
+      module.openDashboard();
+      return;
+    }
     if (journey?.next_action === 'resume_assessment') {
       const module = await loadAiWelcome();
       module.openPrechat();
@@ -697,11 +788,12 @@ const applyAuthResponse = async (data) => {
       module.openProcessing();
       return;
     }
+    throw new Error(`Неизвестный серверный этап: ${journey?.next_action || 'empty'}`);
   } catch (error) {
     console.error('Failed to route authenticated user', error);
+    showError(authError, 'Не удалось определить актуальный этап. Обновите страницу или повторите вход.');
+    return;
   }
-  const module = await loadChat();
-  module.openChat();
 };
 
 const handleEmailMagicLinkRequest = async () => {
@@ -879,6 +971,7 @@ const submitEmailPassword = async () => {
     }
   }
 
+  const operationGeneration = ++authOperationGeneration;
   try {
     authCredentialInFlight = true;
     if (verifyMagicLinkButton) {
@@ -886,6 +979,9 @@ const submitEmailPassword = async () => {
       verifyMagicLinkButton.setAttribute('aria-busy', 'true');
       verifyMagicLinkButton.textContent = isReset ? 'Сохраняем...' : isRegistration ? 'Регистрируем...' : 'Входим...';
     }
+    [magicTokenInput, authPasswordToggleButton, authChangeCredentialEmailButton, authPasswordGenerateButton]
+      .filter(Boolean)
+      .forEach((control) => { control.disabled = true; });
     const response = await fetch(
       isReset ? '/users/auth/password/reset' : isRegistration ? '/users/auth/email/password-register' : '/users/auth/email/password-login',
       {
@@ -912,6 +1008,7 @@ const submitEmailPassword = async () => {
     const data = await readApiResponse(response, isReset ? 'Не удалось изменить пароль.' : 'Не удалось выполнить вход.', {
       recoverUnauthorized: false,
     });
+    if (operationGeneration !== authOperationGeneration) return;
     if (isReset) {
       authActionToken = '';
       authCredentialEmail = data.email || email;
@@ -922,20 +1019,31 @@ const submitEmailPassword = async () => {
     setAuthStatus(isRegistration ? 'Пароль задан. Загружаем профиль...' : 'Вход выполнен. Загружаем профиль...');
     await applyAuthResponse(data);
   } catch (error) {
-    showError(authError, error.message);
+    if (operationGeneration !== authOperationGeneration) return;
+    const message = error instanceof TypeError || error?.message === 'Failed to fetch'
+      ? 'Не удалось связаться с сервером. Проверьте соединение и повторите попытку.'
+      : error.message;
+    showError(authError, message);
   } finally {
-    if (verifyMagicLinkButton) {
-      verifyMagicLinkButton.disabled = false;
-      verifyMagicLinkButton.removeAttribute('aria-busy');
-      verifyMagicLinkButton.textContent = (isReset || isRegistration) && authCredentialStep === 2
-        ? isReset ? 'Сохранить пароль' : 'Создать пароль'
-        : (isReset || isRegistration) ? 'Продолжить' : 'Войти';
+    const isCurrentOperation = operationGeneration === authOperationGeneration;
+    if (isCurrentOperation) {
+      if (verifyMagicLinkButton) {
+        verifyMagicLinkButton.disabled = false;
+        verifyMagicLinkButton.removeAttribute('aria-busy');
+        verifyMagicLinkButton.textContent = (isReset || isRegistration) && authCredentialStep === 2
+          ? isReset ? 'Сохранить пароль' : 'Создать пароль'
+          : (isReset || isRegistration) ? 'Продолжить' : 'Войти';
+      }
+      [magicTokenInput, authPasswordToggleButton, authChangeCredentialEmailButton, authPasswordGenerateButton]
+        .filter(Boolean)
+        .forEach((control) => { control.disabled = false; });
+      authCredentialInFlight = false;
     }
-    authCredentialInFlight = false;
   }
 };
 
 export const handleAuthActionToken = async (action, tokenValue) => {
+  authPendingTokenAction = action;
   const token = String(tokenValue || '').trim();
   const isReset = action === 'password_reset';
   const endpoint = isReset ? '/users/auth/password/reset/validate' : '/users/auth/email/confirm';
@@ -954,7 +1062,18 @@ export const handleAuthActionToken = async (action, tokenValue) => {
     configureAuthCredentialForm(isReset ? 'password_reset' : 'password_registration');
     setAuthStatus(data.message || (isReset ? 'Задайте новый пароль.' : 'Email подтвержден. Задайте пароль.'));
     magicTokenInput?.focus();
-  } catch (_error) {
+  } catch (error) {
+    const networkFailure = error instanceof TypeError || error?.message === 'Failed to fetch';
+    const failureMessage = String(error?.message || '').toLowerCase();
+    const resetFailureTitle = failureMessage.includes('отозван')
+      ? 'Ссылка отозвана'
+      : failureMessage.includes('ист')
+        ? 'Срок ссылки истёк'
+        : failureMessage.includes('использован')
+          ? 'Ссылка уже использована'
+          : 'Ссылка недействительна';
+    authPendingEmailAction = networkFailure ? 'action-token-retry' : isReset ? 'reset-invalid' : 'verification-invalid';
+    authActionToken = token;
     setAuthStatus('');
     authEmailForm?.classList.add('hidden');
     authTokenForm?.classList.add('hidden');
@@ -962,12 +1081,14 @@ export const handleAuthActionToken = async (action, tokenValue) => {
     authResendEmailButton?.classList.add('hidden');
     const title = authEmailSent?.querySelector('h2');
     const paragraphs = authEmailSent?.querySelectorAll('.auth-email-sent-copy p');
-    if (title) title.textContent = isReset ? 'Ссылка недействительна' : 'Не удалось проверить ссылку';
-    if (paragraphs?.[0]) paragraphs[0].textContent = isReset
-      ? 'Срок действия ссылки истёк, она была отозвана или уже использована.'
-      : 'Запросите новую ссылку и попробуйте ещё раз.';
+    if (title) title.textContent = networkFailure ? 'Нет связи с сервером' : isReset ? resetFailureTitle : 'Не удалось проверить ссылку';
+    if (paragraphs?.[0]) paragraphs[0].textContent = networkFailure
+      ? 'Проверьте соединение и повторите проверку ссылки.'
+      : isReset
+        ? 'Срок действия ссылки истёк, она была отозвана или уже использована.'
+        : 'Запросите новую ссылку и попробуйте ещё раз.';
     if (paragraphs?.[1]) paragraphs[1].textContent = '';
-    if (authChangeEmailButton) authChangeEmailButton.textContent = isReset ? 'Запросить новую ссылку' : 'Вернуться';
+    if (authChangeEmailButton) authChangeEmailButton.textContent = networkFailure ? 'Повторить' : isReset ? 'Запросить новую ссылку' : 'Вернуться';
     showError(authError, '');
   }
 };
@@ -1008,7 +1129,12 @@ const requestPasswordReset = async () => {
       startAuthResendCountdown();
     }
   } catch (error) {
-    showError(authError, error.message);
+    showError(
+      authError,
+      error instanceof TypeError || error?.message === 'Failed to fetch'
+        ? 'Не удалось связаться с сервером. Проверьте соединение и повторите запрос.'
+        : error.message,
+    );
   } finally {
     authResetRequestInFlight = false;
     forgotPasswordButton?.removeAttribute('aria-busy');
@@ -1037,7 +1163,28 @@ if (forgotPasswordCredentialButton) {
 }
 
 if (authChangeEmailButton) {
-  authChangeEmailButton.addEventListener('click', showEmailEntry);
+  authChangeEmailButton.addEventListener('click', () => {
+    if (authPendingEmailAction === 'reset-complete') {
+      authEmailSent?.classList.add('hidden');
+      configureAuthCredentialForm('password');
+      authTokenForm?.classList.remove('hidden');
+      if (authTitle) authTitle.textContent = 'С возвращением';
+      void fillStoredPasswordIfAvailable();
+      magicTokenInput?.focus();
+      return;
+    }
+    if (authPendingEmailAction === 'action-token-retry') {
+      void handleAuthActionToken(authPendingTokenAction || 'email_verification', authActionToken);
+      return;
+    }
+    if (authPendingEmailAction === 'reset-invalid') {
+      showEmailEntry();
+      if (emailInput && authCredentialEmail) emailInput.value = authCredentialEmail;
+      void requestPasswordReset();
+      return;
+    }
+    showEmailEntry();
+  });
 }
 
 if (authChangeCredentialEmailButton) {
@@ -1246,6 +1393,15 @@ if (adminOrganizationsList) {
     const input = form.querySelector('input');
     const value = input?.value || '';
     if (!organizationId) {
+      return;
+    }
+    if (form.dataset.action === 'send-member-invitations') {
+      const emails = [...card.querySelectorAll('input[name="invitation_email"]:checked')]
+        .map((checkbox) => checkbox.value)
+        .filter(Boolean);
+      withScreen(loadAdminOrganizations, (module) =>
+        module.sendAdminOrganizationMemberInvitation(organizationId, emails),
+      );
       return;
     }
     if (form.dataset.action === 'update-profile') {

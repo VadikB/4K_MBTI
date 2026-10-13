@@ -68,14 +68,21 @@
       <div id="organization-invitation-context" class="organization-invitation-context hidden" aria-live="polite">
         <strong id="organization-invitation-name"></strong>
         <p id="organization-invitation-intro"></p>
+        <div id="organization-invitation-account-conflict" class="organization-invitation-account-conflict hidden" role="alert">
+          <p id="organization-invitation-account-conflict-copy"></p>
+          <div class="organization-invitation-account-actions">
+            <button id="organization-invitation-continue-button" type="button" class="primary-button">Продолжить по приглашению</button>
+            <button id="organization-invitation-keep-session-button" type="button" class="ghost-button">Остаться в текущем аккаунте</button>
+          </div>
+        </div>
       </div>
       <form id="auth-email-form" class="stack" autocomplete="on" novalidate>
         <label class="field">
-          <span>Email</span>
+          <span class="sr-only">Рабочий email</span>
           <input id="email-input" name="email" type="email" placeholder="name@company.ru" autocomplete="username email" aria-describedby="auth-error" required>
         </label>
         <button id="request-magic-link-button" type="submit" class="primary-button">Продолжить</button>
-        <button id="forgot-password-button" type="button" class="ghost-button auth-secondary-action">Забыли пароль?</button>
+        <button id="forgot-password-button" type="button" class="ghost-button auth-secondary-action hidden">Забыли пароль?</button>
       </form>
       <div id="auth-email-sent" class="auth-email-sent hidden" role="status" aria-live="polite">
         <div class="auth-email-sent-icon" aria-hidden="true">✓</div>
@@ -88,6 +95,7 @@
         <button id="auth-change-email-button" type="button" class="ghost-button auth-secondary-action">Указать другой email</button>
       </div>
       <form id="auth-token-form" class="stack hidden" autocomplete="on">
+        <p id="auth-credential-step-indicator" class="auth-credential-step-indicator hidden" aria-live="polite">Шаг 1/2</p>
         <input id="auth-credential-email-input" name="username" type="email" autocomplete="username" hidden>
         <label class="field">
           <span id="auth-credential-label">Код или ссылка для входа</span>

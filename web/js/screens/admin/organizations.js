@@ -1,4 +1,4 @@
-import { readApiResponse } from '../../api.js';
+import { createOperationId, readApiResponse } from '../../api.js';
 import {
   adminOrganizationCodeInput,
   adminOrganizationCreateButton,
@@ -14,6 +14,7 @@ import { hideAllPanels, syncUrlState } from '../../router.js';
 import { persistAssessmentContext, setCurrentScreen, state } from '../../state.js';
 
 let selectedOrganizationId = null;
+const invitationRequestsInFlight = new Set();
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -229,21 +230,39 @@ export const resetAdminOrganizationMemberPassword = async (organizationId, email
   }
 };
 
-export const sendAdminOrganizationMemberInvitation = async (organizationId, email) => {
+export const sendAdminOrganizationMemberInvitation = async (organizationId, emailOrEmails) => {
+  const emails = (Array.isArray(emailOrEmails) ? emailOrEmails : [emailOrEmails])
+    .map((email) => String(email || '').trim().toLowerCase())
+    .filter(Boolean);
+  const requestKey = organizationId + ':' + [...new Set(emails)].sort().join(',');
+  if (!emails.length || invitationRequestsInFlight.has(requestKey)) return;
+  const operationId = createOperationId();
   try {
+    invitationRequestsInFlight.add(requestKey);
     const response = await fetch('/users/admin/organizations/' + organizationId + '/personal-invitations', {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ emails: [email] }),
+      headers: { 'Content-Type': 'application/json', 'Idempotency-Key': operationId },
+      body: JSON.stringify({ emails, operation_id: operationId }),
     });
     const result = await readApiResponse(response, 'Не удалось отправить приглашение.');
-    const item = result.items?.[0];
-    if (!item || item.status === 'error') throw new Error(item?.error || 'Не удалось отправить приглашение.');
+    const items = Array.isArray(result.items) ? result.items : [];
+    const failed = items.filter((item) => item.status === 'error');
+    const succeeded = items.length - failed.length;
     await loadAdminOrganizations();
-    setStatus('Приглашение принято почтовым сервисом.', 'success');
+    if (failed.length) {
+      setStatus(
+        'Отправлено: ' + succeeded + '. Ошибок: ' + failed.length + '. ' +
+          failed.map((item) => item.email + ': ' + (item.error || 'ошибка отправки')).join('; '),
+        'error',
+      );
+    } else {
+      setStatus('Почтовый сервис принял приглашения: ' + succeeded + '.', 'success');
+    }
   } catch (error) {
     setStatus(error.message || 'Не удалось отправить приглашение.', 'error');
+  } finally {
+    invitationRequestsInFlight.delete(requestKey);
   }
 };
 
@@ -455,12 +474,12 @@ const renderTagList = (items, emptyText, className, deleteAction) => {
           '<span class="admin-organizations-tag ' + className + '">' +
           '<span>' +
           escapeHtml(label) +
-          '</span>' +
+          '</span>' + (deleteAction ?
           '<button type="button" data-action="' +
           deleteAction +
           '" data-value="' +
           escapeHtml(label) +
-          '" aria-label="Удалить">×</button>' +
+          '" aria-label="Удалить">×</button>' : '') +
           '</span>'
         );
       })
@@ -469,7 +488,7 @@ const renderTagList = (items, emptyText, className, deleteAction) => {
   );
 };
 
-const renderMemberList = (items) => {
+const renderMemberList = (items, { isSuperadmin = false } = {}) => {
   if (!items.length) {
     return '<p class="admin-organizations-empty">Участники не привязаны.</p>';
   }
@@ -486,7 +505,7 @@ const renderMemberList = (items) => {
         const isPreparing = preparationStatus === 'queued' || preparationStatus === 'running';
         const isPrepared = item.assessment_prepared === true;
         const canPrepare = item.assessment_profile_ready === true && !isPreparing && !isPrepared;
-        const preparationButton = isPrepared
+        const preparationButton = !isSuperadmin ? '' : isPrepared
           ? '<span class="admin-organization-preparation-state ready">Кейсы готовы</span>'
           : isPreparing
             ? '<span class="admin-organization-preparation-state">Подготовка…</span>'
@@ -500,17 +519,22 @@ const renderMemberList = (items) => {
           : '<button class="admin-organization-remove-button" type="button" data-action="delete-member" data-value="' +
             escapeHtml(email) +
             '" aria-label="Отвязать">×</button>';
-        const passwordButton = hasPassword
+        const passwordButton = !isSuperadmin ? '' : hasPassword
           ? '<button class="admin-organization-password-button" type="button" data-action="reset-member-password" data-value="' +
             escapeHtml(email) +
             '" title="Сбросить пароль" aria-label="Сбросить пароль">Сбросить пароль</button>'
           : '<span class="admin-organization-password-state" title="Пользователь еще не задавал пароль">Пароль не задан</span>';
         const invitationStatus = String(item.invitation_status || 'not_sent');
-        const invitationLabels = { not_sent: 'Не отправлено', queued: 'В очереди', accepted: 'Принято почтовым сервисом', error: 'Ошибка', revoked: 'Отозвано', expired: 'Истекло', used: 'Регистрация завершена' };
-        const invitationButton = invitationStatus === 'accepted' || invitationStatus === 'queued'
-          ? '<button type="button" data-action="revoke-member-invitation" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать</button>'
-          : '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + (item.invitation_id ? 'Отправить повторно' : 'Отправить') + '</button>';
-        const invitationControls = '<span class="admin-organization-invitation-state">' + escapeHtml(invitationLabels[invitationStatus] || invitationStatus) + '</span>' + invitationButton;
+        const invitationLabels = { not_sent: 'Письмо не отправлено', queued: 'Письмо в очереди', accepted: 'Письмо принято провайдером', error: 'Ошибка отправки', revoked: 'Ссылка отозвана', expired: 'Ссылка истекла', used: 'Регистрация завершена' };
+        const deliveryLabels = { not_sent: 'Письмо: не отправлено', queued: 'Письмо: в очереди', accepted: 'Письмо: принято провайдером', error: 'Письмо: ошибка' };
+        const linkLabels = { not_created: 'Ссылка: не создана', active: 'Ссылка: действует 72 часа', revoked: 'Ссылка: отозвана', expired: 'Ссылка: истекла', used: 'Ссылка: использована' };
+        const registrationLabel = item.registration_status === 'registered' ? 'Регистрация: завершена' : 'Регистрация: ожидается';
+        const sendLabel = item.invitation_id ? 'Отправить повторно' : 'Отправить';
+        const invitationButton = '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
+        const revokeButton = (invitationStatus === 'accepted' || invitationStatus === 'queued')
+          ? '<button type="button" data-action="revoke-member-invitation" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать ссылку</button>'
+          : '';
+        const invitationControls = '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '"><span class="sr-only">Выбрать ' + escapeHtml(email) + '</span></label><span class="admin-organization-invitation-state">Допуск: разрешён</span><span class="admin-organization-invitation-state">' + escapeHtml(registrationLabel) + '</span><span class="admin-organization-invitation-state">' + escapeHtml(deliveryLabels[item.invitation_delivery_status] || invitationLabels[invitationStatus] || invitationStatus) + '</span><span class="admin-organization-invitation-state">' + escapeHtml(linkLabels[item.invitation_link_status] || item.invitation_link_status || 'Ссылка: не создана') + '</span>' + invitationButton + revokeButton;
         return (
           '<div class="admin-organization-member">' +
           '<div class="admin-organization-member-main"><strong>' +
@@ -544,6 +568,8 @@ export const renderAdminOrganizations = () => {
     adminOrganizationsSubtitle.textContent = data?.subtitle || 'Управление доменами и администраторами организаций.';
   }
   const organizations = Array.isArray(data?.items) ? data.items : [];
+  const isSuperadmin = Boolean(data?.is_superadmin);
+  document.getElementById('admin-organization-create-form')?.classList.toggle('hidden', !isSuperadmin);
   if (!organizations.length) {
     if (adminOrganizationSelect) adminOrganizationSelect.innerHTML = '<option value="">Нет организаций</option>';
     adminOrganizationsList.innerHTML = '<p class="report-empty-state">Организации пока не созданы.</p>';
@@ -589,11 +615,11 @@ export const renderAdminOrganizations = () => {
         Number(org.members_count || 0) +
         ' участников</span><span>' +
         Number(org.reports_count || 0) +
-        ' отчетов</span><button class="ghost-button compact-ghost" type="button" data-action="prepare-organization-assessments"' +
+        ' отчетов</span>' + (isSuperadmin ? '<button class="ghost-button compact-ghost" type="button" data-action="prepare-organization-assessments"' +
         (batchIsRunning || !isActive ? ' disabled' : '') +
         '>Подготовить кейсы всем</button><button class="ghost-button compact-ghost danger" type="button" data-action="delete-organization">' +
         actionLabel +
-        '</button></div>' +
+        '</button>' : '') + '</div>' +
         '</div>' +
         renderOrganizationBatchProgress(orgId) +
         '<form class="admin-organization-profile-form" data-action="update-profile">' +
@@ -609,16 +635,17 @@ export const renderAdminOrganizations = () => {
         '</form>' +
         '<div class="admin-organization-columns">' +
         '<section><h4>Домены</h4>' +
-        renderTagList(org.domains || [], 'Домены не заданы.', 'domain', 'delete-domain') +
-        '<form class="admin-organization-inline-form" data-action="add-domain"><input type="text" placeholder="company.ru"><button class="ghost-button compact-ghost" type="submit">Добавить</button></form>' +
+        renderTagList(org.domains || [], 'Домены не заданы.', 'domain', isSuperadmin ? 'delete-domain' : '') +
+        (isSuperadmin ? '<form class="admin-organization-inline-form" data-action="add-domain"><input type="text" placeholder="company.ru"><button class="ghost-button compact-ghost" type="submit">Добавить</button></form>' : '') +
         '</section>' +
         '<section><h4>Администраторы</h4>' +
-        renderTagList(org.admins || [], 'Администраторы не заданы.', 'admin', 'delete-admin') +
-        '<form class="admin-organization-inline-form" data-action="add-admin"><input type="email" placeholder="admin@company.ru"><button class="ghost-button compact-ghost" type="submit">Добавить</button></form>' +
+        renderTagList(org.admins || [], 'Администраторы не заданы.', 'admin', isSuperadmin ? 'delete-admin' : '') +
+        (isSuperadmin ? '<form class="admin-organization-inline-form" data-action="add-admin"><input type="email" placeholder="admin@company.ru"><button class="ghost-button compact-ghost" type="submit">Добавить</button></form>' : '') +
         '</section>' +
         '</div>' +
         '<section class="admin-organization-members-section"><h4>Участники</h4>' +
-        renderMemberList(org.members || []) +
+        '<form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
+        renderMemberList(org.members || [], { isSuperadmin }) +
         '<form class="admin-organization-member-form" data-action="add-member">' +
         '<input name="email" type="email" placeholder="user@company.ru" required>' +
         '<input name="full_name" type="text" placeholder="ФИО">' +

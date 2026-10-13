@@ -44,7 +44,10 @@ export const renderAdminDashboard = () => {
   adminTitle.textContent = adminDashboard.title || 'Сводный отчет';
   adminActivityTitle.innerHTML = 'Количество завершенных ассессментов за период';
   const isSuperadmin = Boolean(adminDashboard.is_superadmin);
-  [adminOpenOrganizationsButton, adminOpenRegressionTestsButton, adminOpenMethodologyButton, adminOpenPromptLabButton].forEach((button) => {
+  if (adminOpenOrganizationsButton) {
+    adminOpenOrganizationsButton.classList.toggle('hidden', !state.isAdmin);
+  }
+  [adminOpenRegressionTestsButton, adminOpenMethodologyButton, adminOpenPromptLabButton].forEach((button) => {
     if (button) {
       button.classList.toggle('hidden', !isSuperadmin);
     }
