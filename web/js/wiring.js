@@ -375,6 +375,8 @@ const showEmailEntry = () => {
   authResendEmailButton?.classList.remove('hidden');
   if (authTitle) authTitle.textContent = 'Добро пожаловать';
   if (authSubtitle) authSubtitle.textContent = 'Введите рабочий email, чтобы продолжить вход.';
+  if (requestMagicLinkButton) requestMagicLinkButton.textContent = 'Продолжить';
+  forgotPasswordButton?.classList.add('hidden');
   setAuthStatus('');
   showError(authError, '');
   emailInput?.focus();
@@ -494,7 +496,10 @@ const configureAuthCredentialForm = (mode) => {
   const stepIndicator = document.getElementById('auth-credential-step-indicator');
   authPanel?.classList.toggle('auth-panel--password-create', isNewPassword);
   stepIndicator?.classList.toggle('hidden', !isNewPassword);
-  if (stepIndicator) stepIndicator.textContent = 'Шаг 1/2';
+  if (stepIndicator) {
+    stepIndicator.textContent = 'Шаг 1 из 2';
+    stepIndicator.dataset.step = '1';
+  }
   authEmailForm?.classList.add('hidden');
   authEmailSent?.classList.add('hidden');
   authCredentialStep = 1;
@@ -503,7 +508,7 @@ const configureAuthCredentialForm = (mode) => {
   if (authSubtitle) authSubtitle.textContent = isReset
     ? 'Задайте новый пароль для рабочего аккаунта.'
     : isRegistration
-      ? 'Email подтверждён. Теперь задайте пароль.'
+      ? 'Он понадобится для следующих входов в систему.'
       : `Введите пароль для ${authCredentialEmail || 'рабочего аккаунта'}.`;
   if (authCredentialLabel) {
     authCredentialLabel.textContent = isPasswordMode ? 'Пароль' : 'Код или ссылка для входа';
@@ -550,12 +555,15 @@ const isValidNewPassword = (value) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^
 const showPasswordConfirmationStep = () => {
   authCredentialStep = 2;
   const stepIndicator = document.getElementById('auth-credential-step-indicator');
-  if (stepIndicator) stepIndicator.textContent = 'Шаг 2/2';
+  if (stepIndicator) {
+    stepIndicator.textContent = 'Шаг 2 из 2';
+    stepIndicator.dataset.step = '2';
+  }
   authPasswordVisible = false;
   if (authTitle) authTitle.textContent = authCredentialMode === 'password_reset'
     ? 'Подтвердите новый пароль'
     : 'Подтвердите пароль';
-  if (authSubtitle) authSubtitle.textContent = 'Введите пароль повторно.';
+  if (authSubtitle) authSubtitle.textContent = 'Введите пароль повторно';
   if (authCredentialLabel) authCredentialLabel.textContent = 'Введите пароль повторно';
   if (magicTokenInput) {
     magicTokenInput.value = '';
@@ -573,11 +581,14 @@ const showPasswordConfirmationStep = () => {
 const showPasswordCreationStep = () => {
   authCredentialStep = 1;
   const stepIndicator = document.getElementById('auth-credential-step-indicator');
-  if (stepIndicator) stepIndicator.textContent = 'Шаг 1/2';
+  if (stepIndicator) {
+    stepIndicator.textContent = 'Шаг 1 из 2';
+    stepIndicator.dataset.step = '1';
+  }
   authPasswordVisible = false;
   const isReset = authCredentialMode === 'password_reset';
   if (authTitle) authTitle.textContent = isReset ? 'Создайте новый пароль' : 'Создайте пароль';
-  if (authSubtitle) authSubtitle.textContent = isReset ? 'Задайте новый пароль для рабочего аккаунта.' : 'Email подтверждён. Теперь задайте пароль.';
+  if (authSubtitle) authSubtitle.textContent = isReset ? 'Он заменит ваш текущий пароль' : 'Он понадобится для следующих входов в систему.';
   if (authCredentialLabel) authCredentialLabel.textContent = 'Пароль';
   if (magicTokenInput) {
     magicTokenInput.value = newPasswordDraft;
@@ -668,16 +679,23 @@ const setRequirementsOpen = (open) => {
 };
 requirementsTrigger?.addEventListener('pointerdown', (event) => {
   const open = requirementsTrigger.getAttribute('aria-expanded') === 'true';
+  const openedByHover = requirementsTrigger.dataset.openedByHover === 'true';
   event.preventDefault();
   requirementsTrigger.focus();
-  setRequirementsOpen(!open);
+  setRequirementsOpen(openedByHover ? true : !open);
+  delete requirementsTrigger.dataset.openedByHover;
 });
 requirementsTrigger?.addEventListener('click', (event) => {
   if (event.detail !== 0) return;
   setRequirementsOpen(requirementsTrigger.getAttribute('aria-expanded') !== 'true');
 });
 requirementsTrigger?.addEventListener('focus', () => setRequirementsOpen(true));
-requirementsTrigger?.addEventListener('mouseenter', () => setRequirementsOpen(true));
+requirementsTrigger?.addEventListener('mouseenter', () => {
+  if (requirementsTrigger.getAttribute('aria-expanded') !== 'true') {
+    requirementsTrigger.dataset.openedByHover = 'true';
+  }
+  setRequirementsOpen(true);
+});
 authPasswordRequirements?.addEventListener('mouseleave', () => {
   requirementsCloseTimer = window.setTimeout(() => setRequirementsOpen(false), 150);
 });
@@ -979,7 +997,7 @@ const submitEmailPassword = async () => {
       verifyMagicLinkButton.setAttribute('aria-busy', 'true');
       verifyMagicLinkButton.textContent = isReset ? 'Сохраняем...' : isRegistration ? 'Регистрируем...' : 'Входим...';
     }
-    [magicTokenInput, authPasswordToggleButton, authChangeCredentialEmailButton, authPasswordGenerateButton]
+    [magicTokenInput, authPasswordToggleButton, authChangeCredentialEmailButton, authPasswordGenerateButton, forgotPasswordCredentialButton]
       .filter(Boolean)
       .forEach((control) => { control.disabled = true; });
     const response = await fetch(
@@ -1034,7 +1052,7 @@ const submitEmailPassword = async () => {
           ? isReset ? 'Сохранить пароль' : 'Создать пароль'
           : (isReset || isRegistration) ? 'Продолжить' : 'Войти';
       }
-      [magicTokenInput, authPasswordToggleButton, authChangeCredentialEmailButton, authPasswordGenerateButton]
+      [magicTokenInput, authPasswordToggleButton, authChangeCredentialEmailButton, authPasswordGenerateButton, forgotPasswordCredentialButton]
         .filter(Boolean)
         .forEach((control) => { control.disabled = false; });
       authCredentialInFlight = false;
@@ -1060,7 +1078,7 @@ export const handleAuthActionToken = async (action, tokenValue) => {
     if (emailInput) emailInput.value = authCredentialEmail;
     if (authTokenForm) authTokenForm.classList.remove('hidden');
     configureAuthCredentialForm(isReset ? 'password_reset' : 'password_registration');
-    setAuthStatus(data.message || (isReset ? 'Задайте новый пароль.' : 'Email подтвержден. Задайте пароль.'));
+    setAuthStatus('');
     magicTokenInput?.focus();
   } catch (error) {
     const networkFailure = error instanceof TypeError || error?.message === 'Failed to fetch';
@@ -1094,7 +1112,8 @@ export const handleAuthActionToken = async (action, tokenValue) => {
 };
 
 const requestPasswordReset = async () => {
-  if (authResetRequestInFlight) return;
+  if (authResetRequestInFlight || authCredentialInFlight) return;
+  const operationGeneration = ++authOperationGeneration;
   showError(authError, '');
   const email = String(emailInput?.value || '').trim();
   if (!email) {
@@ -1112,6 +1131,7 @@ const requestPasswordReset = async () => {
       body: JSON.stringify({ email }),
     });
     const data = await readApiResponse(response, 'Не удалось запросить восстановление пароля.');
+    if (operationGeneration !== authOperationGeneration) return;
     if (data.dev_action_token) {
       await handleAuthActionToken('password_reset', data.dev_action_token);
     } else {
@@ -1129,6 +1149,7 @@ const requestPasswordReset = async () => {
       startAuthResendCountdown();
     }
   } catch (error) {
+    if (operationGeneration !== authOperationGeneration) return;
     showError(
       authError,
       error instanceof TypeError || error?.message === 'Failed to fetch'
@@ -1145,12 +1166,20 @@ const requestPasswordReset = async () => {
 export const initWiring = () => {
 authEmailForm.addEventListener('submit', (event) => {
   event.preventDefault();
+  if (authPendingEmailAction === 'reset-entry') {
+    void requestPasswordReset();
+    return;
+  }
   void handleEmailMagicLinkRequest();
 });
 
 if (requestMagicLinkButton) {
   requestMagicLinkButton.addEventListener('click', (event) => {
     event.preventDefault();
+    if (authPendingEmailAction === 'reset-entry') {
+      void requestPasswordReset();
+      return;
+    }
     void handleEmailMagicLinkRequest();
   });
 }
@@ -1180,7 +1209,11 @@ if (authChangeEmailButton) {
     if (authPendingEmailAction === 'reset-invalid') {
       showEmailEntry();
       if (emailInput && authCredentialEmail) emailInput.value = authCredentialEmail;
-      void requestPasswordReset();
+      authPendingEmailAction = 'reset-entry';
+      if (authTitle) authTitle.textContent = 'Восстановление пароля';
+      if (authSubtitle) authSubtitle.textContent = 'Введите рабочий email, чтобы получить новую ссылку.';
+      if (requestMagicLinkButton) requestMagicLinkButton.textContent = 'Получить новую ссылку';
+      forgotPasswordButton?.classList.remove('hidden');
       return;
     }
     showEmailEntry();

@@ -15,6 +15,7 @@ import { persistAssessmentContext, setCurrentScreen, state } from '../../state.j
 
 let selectedOrganizationId = null;
 const invitationRequestsInFlight = new Set();
+const invitationOperationIds = new Map();
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -236,7 +237,8 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
     .filter(Boolean);
   const requestKey = organizationId + ':' + [...new Set(emails)].sort().join(',');
   if (!emails.length || invitationRequestsInFlight.has(requestKey)) return;
-  const operationId = createOperationId();
+  const operationId = invitationOperationIds.get(requestKey) || createOperationId();
+  invitationOperationIds.set(requestKey, operationId);
   try {
     invitationRequestsInFlight.add(requestKey);
     const response = await fetch('/users/admin/organizations/' + organizationId + '/personal-invitations', {
@@ -248,19 +250,26 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
     const result = await readApiResponse(response, 'Не удалось отправить приглашение.');
     const items = Array.isArray(result.items) ? result.items : [];
     const failed = items.filter((item) => item.status === 'error');
-    const succeeded = items.length - failed.length;
+    const queued = items.filter((item) => item.status === 'queued');
+    const accepted = items.filter((item) => item.status === 'accepted');
+    invitationOperationIds.delete(requestKey);
     await loadAdminOrganizations();
     if (failed.length) {
       setStatus(
-        'Отправлено: ' + succeeded + '. Ошибок: ' + failed.length + '. ' +
+        'Принято провайдером: ' + accepted.length + '. В очереди: ' + queued.length + '. Ошибок: ' + failed.length + '. ' +
           failed.map((item) => item.email + ': ' + (item.error || 'ошибка отправки')).join('; '),
         'error',
       );
+    } else if (queued.length) {
+      setStatus('Принято провайдером: ' + accepted.length + '. В очереди: ' + queued.length + '.', 'muted');
     } else {
-      setStatus('Почтовый сервис принял приглашения: ' + succeeded + '.', 'success');
+      setStatus('Почтовый сервис принял приглашения: ' + accepted.length + '.', 'success');
     }
   } catch (error) {
-    setStatus(error.message || 'Не удалось отправить приглашение.', 'error');
+    const message = error instanceof TypeError || error?.message === 'Failed to fetch'
+      ? 'Не удалось связаться с сервером. Повторите отправку — операция не будет продублирована.'
+      : error.message || 'Не удалось отправить приглашение.';
+    setStatus(message, 'error');
   } finally {
     invitationRequestsInFlight.delete(requestKey);
   }
@@ -569,7 +578,7 @@ export const renderAdminOrganizations = () => {
   }
   const organizations = Array.isArray(data?.items) ? data.items : [];
   const isSuperadmin = Boolean(data?.is_superadmin);
-  document.getElementById('admin-organization-create-form')?.classList.toggle('hidden', !isSuperadmin);
+  document.getElementById('admin-organization-create-form')?.classList.toggle('hidden', !data);
   if (!organizations.length) {
     if (adminOrganizationSelect) adminOrganizationSelect.innerHTML = '<option value="">Нет организаций</option>';
     adminOrganizationsList.innerHTML = '<p class="report-empty-state">Организации пока не созданы.</p>';

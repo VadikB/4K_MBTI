@@ -94,7 +94,9 @@ def resolve_invitation_by_id(
         raise OrganizationInvitationError("Приглашение отозвано.")
     if _optional_row_value(row, "used_at") is not None and not allow_used:
         raise OrganizationInvitationError("Приглашение уже использовано.")
-    if row["expires_at"] is None or row["expires_at"] <= datetime.now():
+    if (row["expires_at"] is None or row["expires_at"] <= datetime.now()) and not (
+        allow_used and _optional_row_value(row, "used_at") is not None
+    ):
         raise OrganizationInvitationError("Срок действия приглашения истёк.")
     return OrganizationInvitationContext(
         invitation_id=int(row["id"]),

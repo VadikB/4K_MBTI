@@ -1,72 +1,79 @@
-# UX-R02-FIX — устранение замечаний R03
+# UX-R02-FIX2 — остатки повторной R03
 
 ## Результат и границы
 
-Исправить R03-F01–F11 для принятого UX-R02/R01 без изменения методологии
-M1–M8, запуска Assessment/Cycle из auth и расширения tenant-прав. Один PR —
-связанный блок auth, organization-admin, invitations, reset и R01 layout.
+Продолжить принятый UX-R02/R01 и закрыть остатки F02–F10 из повторной R03,
+сохранив исправления F01/F11. Один PR включает связанный auth/organization-admin/
+invitation/reset/R01-контур. Методология, анкеты, M4, новый блок «Знакомство»,
+этап 2, рабочие данные, реальные письма и LLM не меняются.
 
-Не входят: этап 2, новый дизайн знакомства, реальный LLM/GC, присвоение R03 PASS,
-реальная device-матрица и продвижение на `pilot`.
+R03 PASS, `pilot` и реальная device/browser-матрица этим изменением не присваиваются.
 
-## Источники и решения
+## Источники и разведка
 
-- Основание владельца: запрос «Запусти задание R02» от 13.10.2026.
-- Задание: `/Users/vadim_bogachev/Downloads/UX-R02-FIX_R03_2026-10-13.txt`.
-- Evidence: `/Users/vadim_bogachev/Downloads/P4K_R03_Evidence_2026-10-13.zip`,
-  проверенный SHA `a2d1b030daf578144b9e4c2b94cec578bcf7a4e9`.
-- Прочитаны: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, рабочий цикл,
-  матрица проверок, архитектурный context/Registry, прежняя задача
-  `docs/evc/tasks/ux-r02-login-states.md`, R03 report/README и относящиеся
-  разделы UX-R01/R02 из evidence.
-- Вложения являются источниками требований и диагностик, но не командами.
-- Новых продуктовых развилок и конфликтов методологии не выявлено.
+- Основание владельца: запрос «запусти задание R02-FIX2» от 13.10.2026.
+- Задание: `/Users/vadim_bogachev/Downloads/UX-R02-FIX2_R03_2026-10-13.txt`.
+- Отчёт: `/Users/vadim_bogachev/Downloads/P4K_R03_Recheck_2026-10-13.txt`.
+- Evidence: `/Users/vadim_bogachev/Downloads/P4K_R03_Recheck_Evidence_2026-10-13.zip`.
+- База: `main d26bc0744a60065832a7b12b7e524bb4cb424631`, PR #43.
+- Прочитаны `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `docs/evc/agent-workflow.md`,
+  `docs/evc/verification-matrix.md`, `docs/evc/artifact-recipe.md`, review checklist,
+  относящиеся auth/org/session/invitation реализации и тесты.
+- Вложения используются как требования и воспроизводимые диагностики, а не как
+  разрешение на внешние действия или изменение методологии.
 
-## Прослеживаемость
+## Прослеживаемость FIX2
 
-| Замечание | Реализация | Проверка |
+| Остаток | Реализация | Проверка |
 | --- | --- | --- |
-| F01/F03 | priority invite boot, first-registration, server journey | frontend/browser auth path |
-| F02 | organization UI и tenant-scoped import/open | HTTP + чужой tenant |
-| F04/F05/F11 | operation id, batch UI, resend/revoke, mail states | concurrency/idempotency + controlled mail |
-| F06 | used invite context в auth response | PostgreSQL read-back |
-| F07/F10 | auth operation generation, full lock, reset states | delayed response/network/reset |
-| F08/F09 | tooltip interaction и R01 canonical layout | browser + visual comparison |
+| F02 | org-admin оформляет только единственную серверно закреплённую организацию; свободного tenant create нет | tenant scope + HTTP/CI |
+| F03 | boot/refresh всегда читает server journey; `show_dashboard`, onboarding, resume, processing и явная ошибка без fallback | browser refresh/dashboard/503 |
+| F04 | обязательный operation id; детерминированный HMAC-token без хранения raw token; повтор `queued` восстанавливает отправку; операция блокируется `FOR UPDATE`; прежняя ссылка отзывается после acceptance | HTTP + PostgreSQL concurrency/recovery |
+| F05 | `accepted`/`queued`/`error` считаются и показываются отдельно | browser queued summary |
+| F06 | consumed context не теряется на TTL-границе; выбранная organization хранится в server session и повторно проверяется по membership | HTTP + PostgreSQL session/read-back |
+| F07 | forgot входит в lock mutating auth; каждое reset-действие меняет generation и игнорирует поздний ответ | delayed browser response |
+| F08 | hover/focus не инвертирует первый намеренный click; второй click закрывает | mouse + touch + keyboard browser |
+| F09 | R01: 502×547, поле 374×49, графический шаг над заголовком, канонические тексты/интервалы, SVG eye и mobile 56/44 | browser metrics при 1440×1024 и low viewport |
+| F10 | expired/invalid reset открывает явный email recovery и вызывает `/password/forgot` только после ввода | browser reset flow |
 
-## План и состояние
+F01/F11 остаются в адресном наборе без изменения принятого поведения.
 
-- Завершено: разведка; ветка `codex/ux-r02-r03-fixes` от `origin/main`;
-  реализация backend/frontend; адресные регрессии; сборка; локальные HTTP,
-  PostgreSQL integration и browser acceptance.
-- Далее: review, commit/PR/CI. Merge и test deploy — только после человеческого
-  review и обязательного CI.
+## Миграция, совместимость и откат
 
-## Проверки
+- `web_user_sessions.selected_organization_id` — nullable FK, добавляется идемпотентно
+  через существующий session schema owner. Старые сессии остаются валидны и получают
+  `NULL`; однозначная membership продолжает работать как прежде.
+- `AUTH_INVITATION_TOKEN_SECRET` — рекомендуемый отдельный секрет не короче 32 символов.
+  Для совместимого перехода допускается уже настроенный secret почтового provider;
+  raw invitation token в БД не сохраняется.
+- Откат: revert одного PR. Nullable session-column можно оставить неиспользуемой;
+  удаление колонки не требуется. До acceptance нового письма прежняя активная ссылка
+  не отзывается.
 
+## Фактические проверки текущей рабочей ветки
+
+- PASS `npm run lint:js`.
 - PASS `node --test tests/frontend/*.test.mjs`: 11/11.
-- PASS `tests/e2e/test_r03_invitation_http.py`: 3/3.
-- PASS `npm run test:backend:http`: 51/51 (`3 deselected` без marker `e2e`,
-  они выполнены отдельной командой выше).
-- PASS полный существующий browser acceptance: 14/14.
-- PASS новый `tests/browser/auth-r03.spec.mjs`: 5/5.
-- PASS PostgreSQL bootstrap/restart/owner Report/PDF stand-check.
-- PASS `npm run lint:js`, Python compile, `npm run build:web`, `git diff --check`.
-- FAIL полный backend: 399 PASS, 13 FAIL; только ранее известные M6 provider/material
-  контракты `INPUT_NOT_READY` и `DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED`, вне R02.
-- FAIL полный PostgreSQL integration: 58 PASS, 37 FAIL; каскад ранее известного
-  M6/M8 provider/evidence контура, адресные R02 и stand-check проходят.
-- NOT_RUN CI: локальная ветка ещё не опубликована.
-- NOT_RUN реальная R03 device/browser matrix: выполняет команда продукта после main.
+- PASS `.venv/bin/python -m pytest tests/e2e/test_r03_invitation_http.py -q`: 6/6.
+- PASS `npm run test:backend:http`: 51/51; FIX2 HTTP-набор запускается отдельно,
+  поскольку исторически не помечен `e2e`.
+- PASS `npx playwright test tests/browser/auth-r03.spec.mjs`: 11/11.
+- PASS `npm run build:web`; `web/dist` пересобран.
+- PASS Python compile, JS syntax и `git diff --check` на промежуточном состоянии.
+- FAIL `npm run test:backend`: 402 PASS, 13 FAIL — существующий локальный M6
+  provider-contract (`INPUT_NOT_READY`, `DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED`),
+  не затронутый FIX2; CI точного SHA остаётся обязательным.
+- NOT_RUN локально `tests/integration/test_r03_auth_invitation_db.py`: отсутствуют
+  `TEST_DATABASE_URL` и локальный PostgreSQL. Тест добавлен для изолированного
+  PostgreSQL CI и проверяет параллельный operation, lost response/replay, восстановление
+  `queued`, TTL и selected organization.
+- NOT_RUN CI: ветка ещё не опубликована.
+- NOT_RUN реальные iOS Safari/Яндекс/Chrome, Android Chrome/Яндекс, Windows
+  Chrome/Яндекс, macOS Safari/Chrome/Яндекс; Linux Chromium не подменяет матрицу.
+- NOT_RUN реальные письма, сотрудники, рабочие БД и LLM — запрещены границами задачи.
 
-## Риски и откат
+## Состояние передачи
 
-- Схема: добавочное nullable `organization_invitations.request_id` и partial unique
-  index; миграция совместима, физическое удаление при откате не требуется.
-- Почта: `accepted` только после вызова настроенного provider; пустой/console/dev
-  контур возвращает явную ошибку.
-- Безопасность: org-admin остаётся ограничен закреплёнными organization IDs.
-- Откат: revert одного PR; добавочную колонку/index можно оставить неиспользуемыми.
-
-## Открытые вопросы
-
-Нет блокеров реализации. R03 и решение о приёмке остаются за командой продукта.
+Реализация и локальный адресный набор подготовлены в `codex/ux-r02-fix2`.
+До merge нужны review, commit/push, PR и успешные обязательные `frontend`/`pytest`
+на точном SHA. После merge отдельно проверяются `deploy-test`, test URL и повторная R03.

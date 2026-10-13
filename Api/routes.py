@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import base64
 import csv
+import hashlib
+import hmac
 import io
 import json
 import logging
@@ -2845,13 +2848,18 @@ def _public_invitation_by_id(invitation_id: int | None) -> OrganizationInvitatio
     return OrganizationInvitationPublicResponse(**invitation_public_context(invitation))
 
 
-def _organization_context_for_user(connection, user_id: int) -> OrganizationInvitationPublicResponse | None:
+def _organization_context_for_user(
+    connection,
+    user_id: int,
+    preferred_organization_id: int | None = None,
+) -> OrganizationInvitationPublicResponse | None:
     row = connection.execute(
         """
         SELECT organization.id, organization.name, organization.invitation_intro
         FROM organization_memberships membership
         JOIN organizations organization ON organization.id = membership.organization_id
         WHERE membership.user_id = %s
+          AND (%s IS NULL OR organization.id = %s)
           AND organization.is_active = TRUE
           AND (
             membership.role = 'admin'
@@ -2859,7 +2867,7 @@ def _organization_context_for_user(connection, user_id: int) -> OrganizationInvi
           )
         LIMIT 2
         """,
-        (user_id,),
+        (user_id, preferred_organization_id, preferred_organization_id),
     ).fetchall()
     if len(row) != 1:
         return None
@@ -2881,13 +2889,19 @@ def _build_authenticated_user_response(
     organization_invitation_id: int | None = None,
 ) -> CheckOrCreateUserResponse:
     compact_user = _compact_user_response(user)
-    _set_user_session_cookie(response, web_session_service.create_session(user.id))
     assign_user_organization_from_email(connection, user_id=user.id, email=user.email)
     admin_scope = _get_admin_scope_or_403(connection, user) if _is_admin_user(connection, user) else AdminScope()
-    organization = (
-        _public_invitation_by_id(organization_invitation_id)
-        if organization_invitation_id is not None
-        else _organization_context_for_user(connection, user.id)
+    preferred_organization_id = None
+    if organization_invitation_id is not None:
+        selected = connection.execute(
+            "SELECT organization_id FROM organization_invitations WHERE id = %s AND used_at IS NOT NULL LIMIT 1",
+            (organization_invitation_id,),
+        ).fetchone()
+        preferred_organization_id = int(selected["organization_id"]) if selected else None
+    organization = _organization_context_for_user(connection, user.id, preferred_organization_id)
+    _set_user_session_cookie(
+        response,
+        web_session_service.create_session(user.id, selected_organization_id=preferred_organization_id),
     )
 
     if admin_scope.can_admin:
@@ -3198,6 +3212,7 @@ def restore_user_session(request: Request, personalized_profile_id: int | None =
         return UserSessionRestoreResponse(authenticated=False)
     full_user = _strip_avatar(user)
     compact_user = _compact_user_response(full_user)
+    selected_organization_id = web_session_service.selected_organization_id(token)
 
     with get_connection() as connection:
         admin_scope = _get_admin_scope_or_403(connection, full_user) if _is_admin_user(connection, full_user) else AdminScope()
@@ -3207,13 +3222,13 @@ def restore_user_session(request: Request, personalized_profile_id: int | None =
                 user=compact_user,
                 is_admin=True,
                 admin_dashboard=_build_admin_dashboard(connection, admin_scope),
-                organization=_organization_context_for_user(connection, full_user.id),
+                organization=_organization_context_for_user(connection, full_user.id, selected_organization_id),
             )
         return UserSessionRestoreResponse(
             authenticated=True,
             user=compact_user,
             dashboard=_build_dashboard(connection, full_user, profile_id=personalized_profile_id),
-            organization=_organization_context_for_user(connection, full_user.id),
+            organization=_organization_context_for_user(connection, full_user.id, selected_organization_id),
         )
 
 
@@ -3552,12 +3567,25 @@ def send_personal_organization_invitations(
     request_id = str(
         request.headers.get("Idempotency-Key") or payload.operation_id or ""
     ).strip() or None
+    if request_id is None:
+        raise HTTPException(status_code=400, detail="Idempotency-Key or operation_id is required")
+    invitation_secret = str(
+        settings.auth_invitation_token_secret
+        or settings.postmark_server_token
+        or settings.unisender_go_api_key
+        or ""
+    )
+    if len(invitation_secret) < 32:
+        raise HTTPException(status_code=503, detail="Сервис приглашений не настроен.")
     results: list[PersonalInvitationResultItem] = []
     for raw_email in dict.fromkeys(payload.emails):
         invitation_id: int | None = None
         try:
             email = normalize_email(raw_email)
-            raw_token = secrets.token_urlsafe(32)
+            token_material = f"{organization_id}:{email}:{request_id}".encode("utf-8")
+            raw_token = base64.urlsafe_b64encode(
+                hmac.new(invitation_secret.encode("utf-8"), token_material, hashlib.sha256).digest()
+            ).decode("ascii").rstrip("=")
             expires_at = datetime.now() + timedelta(hours=72)
             with get_connection() as connection:
                 _require_organization_admin(connection, current_user, organization_id)
@@ -3610,19 +3638,46 @@ def send_personal_organization_invitations(
                     ).fetchone()
                     if row is None:
                         raise RuntimeError("Не удалось восстановить результат операции отправки.")
-                    connection.commit()
-                    results.append(
-                        PersonalInvitationResultItem(
+                    if str(row["delivery_status"] or "queued") == "accepted":
+                        connection.commit()
+                        results.append(PersonalInvitationResultItem(
                             email=email,
-                            status=str(row["delivery_status"] or "queued"),
+                            status="accepted",
                             invitation_id=int(row["id"]),
                             expires_at=row["expires_at"],
-                        )
-                    )
-                    continue
+                        ))
+                        continue
                 if row is None:
                     raise RuntimeError("Не удалось создать приглашение.")
                 invitation_id = int(row["id"])
+                connection.commit()
+            invitation_url = settings.app_base_url.rstrip("/") + "/?invite=" + quote(raw_token, safe="")
+            with get_connection() as connection:
+                locked = connection.execute(
+                    "SELECT id, expires_at, delivery_status FROM organization_invitations WHERE id = %s FOR UPDATE",
+                    (invitation_id,),
+                ).fetchone()
+                if locked is None:
+                    raise RuntimeError("Операция отправки не найдена.")
+                if str(locked["delivery_status"] or "queued") == "accepted":
+                    connection.commit()
+                    results.append(PersonalInvitationResultItem(
+                        email=email,
+                        status="accepted",
+                        invitation_id=invitation_id,
+                        expires_at=locked["expires_at"],
+                    ))
+                    continue
+                send_auth_action_email(
+                    email=email,
+                    action_url=invitation_url,
+                    expires_at=locked["expires_at"],
+                    purpose="organization_invitation",
+                )
+                connection.execute(
+                    "UPDATE organization_invitations SET delivery_status = 'accepted', sent_at = NOW(), delivery_error = NULL WHERE id = %s",
+                    (invitation_id,),
+                )
                 connection.execute(
                     """
                     UPDATE organization_invitations
@@ -3634,20 +3689,7 @@ def send_personal_organization_invitations(
                     (organization_id, email, invitation_id),
                 )
                 connection.commit()
-            invitation_url = settings.app_base_url.rstrip("/") + "/?invite=" + quote(raw_token, safe="")
-            send_auth_action_email(
-                email=email,
-                action_url=invitation_url,
-                expires_at=expires_at,
-                purpose="organization_invitation",
-            )
-            with get_connection() as connection:
-                connection.execute(
-                    "UPDATE organization_invitations SET delivery_status = 'accepted', sent_at = NOW(), delivery_error = NULL WHERE id = %s",
-                    (invitation_id,),
-                )
-                connection.commit()
-            results.append(PersonalInvitationResultItem(email=email, status="accepted", invitation_id=invitation_id, expires_at=expires_at))
+            results.append(PersonalInvitationResultItem(email=email, status="accepted", invitation_id=invitation_id, expires_at=locked["expires_at"]))
         except (ValueError, EmailDeliveryError) as exc:
             logger.warning("Personal invitation delivery failed organization_id=%s", organization_id)
             if invitation_id is not None:
@@ -3694,20 +3736,24 @@ def create_admin_organization(payload: AdminOrganizationCreateRequest, request: 
     with get_connection() as connection:
         scope = _get_admin_scope_or_403(connection, user)
         if not scope.is_superadmin:
-            existing = connection.execute(
-                """
-                SELECT id
-                FROM organizations
-                WHERE id = ANY(%s) AND code = %s AND name = %s
-                LIMIT 1
-                """,
-                (list(scope.organization_ids), org_code, org_name),
-            ).fetchone()
-            if existing is None:
+            if len(scope.organization_ids) != 1:
                 raise HTTPException(
                     status_code=403,
-                    detail="Администратор организации может открыть только закреплённую организацию.",
+                    detail="Первичное оформление доступно только для единственной закреплённой организации.",
                 )
+            try:
+                connection.execute(
+                    """
+                    UPDATE organizations
+                    SET code = %s, name = %s, updated_at = NOW()
+                    WHERE id = %s AND is_active = TRUE
+                    """,
+                    (org_code, org_name, int(scope.organization_ids[0])),
+                )
+                connection.commit()
+            except Exception as exc:
+                connection.rollback()
+                raise HTTPException(status_code=409, detail="Organization with this code already exists") from exc
             return _build_admin_organizations(connection, scope)
         try:
             connection.execute(

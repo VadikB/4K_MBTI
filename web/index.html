@@ -61,6 +61,7 @@
         </div>
         <div id="app-release-badge" class="release-badge hidden" aria-hidden="true"></div>
       </div>
+      <p id="auth-credential-step-indicator" class="auth-credential-step-indicator hidden" data-step="1" aria-live="polite">Шаг 1 из 2</p>
       <div class="auth-panel-copy">
         <h1 id="auth-title">Добро пожаловать</h1>
         <p id="auth-subtitle" class="subtitle">Введите рабочий email, чтобы продолжить вход.</p>
@@ -95,7 +96,6 @@
         <button id="auth-change-email-button" type="button" class="ghost-button auth-secondary-action">Указать другой email</button>
       </div>
       <form id="auth-token-form" class="stack hidden" autocomplete="on">
-        <p id="auth-credential-step-indicator" class="auth-credential-step-indicator hidden" aria-live="polite">Шаг 1/2</p>
         <input id="auth-credential-email-input" name="username" type="email" autocomplete="username" hidden>
         <label class="field">
           <span id="auth-credential-label">Код или ссылка для входа</span>

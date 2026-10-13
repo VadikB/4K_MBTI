@@ -26,7 +26,8 @@ test('registration and repeat login route through the existing journey without a
 test('mutating auth actions guard repeated submissions and expose busy state', () => {
   assert.match(wiring, /if \(authRequestInFlight\) return/);
   assert.match(wiring, /if \(authCredentialInFlight\) return/);
-  assert.match(wiring, /if \(authResetRequestInFlight\) return/);
+  assert.match(wiring, /if \(authResetRequestInFlight \|\| authCredentialInFlight\) return/);
+  assert.match(wiring, /forgotPasswordCredentialButton\]/);
   assert.match(wiring, /setAttribute\('aria-busy', 'true'\)/);
 });
 

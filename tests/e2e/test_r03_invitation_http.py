@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+import pytest
 
 from Api import routes
 from Api.org_access import AdminScope
@@ -72,6 +73,8 @@ class _InvitationConnection:
                 and row["request_id"] == request_id
             )
             return _Result(one=row)
+        if "WHERE id = %s FOR UPDATE" in query:
+            return _Result(one=next(row for row in self.rows if row["id"] == params[0]))
         if "SET delivery_status = 'accepted'" in query:
             row = next(row for row in self.rows if row["id"] == params[0])
             row["delivery_status"] = "accepted"
@@ -111,6 +114,7 @@ def _client(monkeypatch, connection, sent):
     )
     monkeypatch.setattr(routes.settings, "auth_magic_link_dev_mode", False)
     monkeypatch.setattr(routes.settings, "email_provider", "postmark")
+    monkeypatch.setattr(routes.settings, "auth_invitation_token_secret", "r03-test-secret-that-is-at-least-32-characters")
     monkeypatch.setattr(routes, "send_auth_action_email", lambda **payload: sent.append(payload))
     app = FastAPI()
     app.include_router(routes.router)
@@ -184,3 +188,59 @@ def test_consumed_personal_invitation_keeps_public_organization_context(monkeypa
     assert result is not None
     assert result.organization_id == 3
     assert result.recipient_email == "person@example.test"
+
+
+def test_personal_invitation_retry_recovers_queued_operation(monkeypatch) -> None:
+    connection = _InvitationConnection()
+    sent = []
+    client = _client(monkeypatch, connection, sent)
+    operation = "r03-interrupted-operation"
+    original_sender = routes.send_auth_action_email
+    monkeypatch.setattr(routes, "send_auth_action_email", lambda **_payload: (_ for _ in ()).throw(RuntimeError("controlled stop")))
+
+    with pytest.raises(RuntimeError, match="controlled stop"):
+        client.post(
+            "/users/admin/organizations/3/personal-invitations",
+            json={"emails": ["person@example.test"], "operation_id": operation},
+            headers={"Idempotency-Key": operation},
+        )
+
+    monkeypatch.setattr(routes, "send_auth_action_email", original_sender)
+    monkeypatch.setattr(routes, "send_auth_action_email", lambda **payload: sent.append(payload))
+    response = client.post(
+        "/users/admin/organizations/3/personal-invitations",
+        json={"emails": ["PERSON@EXAMPLE.TEST"], "operation_id": operation},
+        headers={"Idempotency-Key": operation},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["items"][0]["status"] == "accepted"
+    assert len(connection.rows) == 1
+    assert len(sent) == 1
+
+
+def test_personal_invitation_requires_operation_identifier(monkeypatch) -> None:
+    client = _client(monkeypatch, _InvitationConnection(), [])
+    response = client.post(
+        "/users/admin/organizations/3/personal-invitations",
+        json={"emails": ["person@example.test"]},
+    )
+    assert response.status_code == 400
+
+
+def test_consumed_invitation_context_survives_expiry_boundary(monkeypatch) -> None:
+    connection = _InvitationConnection()
+    connection.rows.append({
+        "id": 8, "organization_id": 3, "expires_at": datetime.now() - timedelta(seconds=1),
+        "recipient_email": "person@example.test", "request_id": "r03-consumed-expired",
+        "delivery_status": "accepted", "used_at": datetime.now(), "revoked_at": None,
+        "name": "Organization A", "invitation_intro": "Welcome", "is_active": True,
+        "purpose": "personal_registration",
+    })
+
+    @contextmanager
+    def get_connection():
+        yield connection
+
+    monkeypatch.setattr(routes, "get_connection", get_connection)
+    assert routes._public_invitation_by_id(8).organization_id == 3

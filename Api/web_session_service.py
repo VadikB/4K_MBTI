@@ -51,6 +51,7 @@ class WebSessionService:
                 CREATE TABLE IF NOT EXISTS web_user_sessions (
                     token TEXT PRIMARY KEY,
                     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    selected_organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
                     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
                     expires_at TIMESTAMP NOT NULL DEFAULT (NOW() + INTERVAL '14 days')
@@ -60,21 +61,35 @@ class WebSessionService:
             connection.execute(
                 "ALTER TABLE web_user_sessions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP NOT NULL DEFAULT (NOW() + INTERVAL '14 days')"
             )
+            connection.execute(
+                "ALTER TABLE web_user_sessions ADD COLUMN IF NOT EXISTS selected_organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL"
+            )
             connection.commit()
 
-    def create_session(self, user_id: int) -> str:
+    def create_session(self, user_id: int, *, selected_organization_id: int | None = None) -> str:
         self.ensure_schema()
         token = token_urlsafe(32)
         with get_connection() as connection:
             connection.execute(
                 """
-                INSERT INTO web_user_sessions (token, user_id, expires_at)
-                VALUES (%s, %s, NOW() + INTERVAL '14 days')
+                INSERT INTO web_user_sessions (token, user_id, selected_organization_id, expires_at)
+                VALUES (%s, %s, %s, NOW() + INTERVAL '14 days')
                 """,
-                (token, user_id),
+                (token, user_id, selected_organization_id),
             )
             connection.commit()
         return token
+
+    def selected_organization_id(self, token: str | None) -> int | None:
+        if not token:
+            return None
+        self.ensure_schema()
+        with get_connection() as connection:
+            row = connection.execute(
+                "SELECT selected_organization_id FROM web_user_sessions WHERE token = %s AND expires_at > NOW() LIMIT 1",
+                (token,),
+            ).fetchone()
+        return int(row["selected_organization_id"]) if row and row["selected_organization_id"] is not None else None
 
     def touch_session(self, token: str) -> None:
         self.ensure_schema()
