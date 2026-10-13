@@ -2859,7 +2859,7 @@ def _organization_context_for_user(
         FROM organization_memberships membership
         JOIN organizations organization ON organization.id = membership.organization_id
         WHERE membership.user_id = %s
-          AND (%s IS NULL OR organization.id = %s)
+          AND (%s::BIGINT IS NULL OR organization.id = %s::BIGINT)
           AND organization.is_active = TRUE
           AND (
             membership.role = 'admin'
