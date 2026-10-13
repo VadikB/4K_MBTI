@@ -20,7 +20,7 @@ import {
   installSessionRequestTracking,
   registerUnauthorizedResponseHandler,
 } from './api.js';
-import { hideAllPanels, openAuthComplete, returnToStart } from './router.js';
+import { hideAllPanels, returnToStart } from './router.js';
 import { activateOrganizationInvitation, handleAuthActionToken, initWiring, verifyEmailMagicLinkToken } from './wiring.js';
 import {
   openProcessingScreen,
@@ -43,6 +43,7 @@ import {
   openAdminMethodologyScreen,
   loadAdminMethodologyData,
   openAdminReportDetailScreen,
+  loadDashboard,
 } from './screen-loaders.js';
 
 if (appReleaseNumber) {
@@ -225,10 +226,6 @@ const bootApp = async () => {
   }
 
   if (state.pendingUser?.id) {
-    if (state.currentScreen === 'auth-complete' && !state.isAdmin) {
-      openAuthComplete();
-      return;
-    }
     const cycleId = params.get('cycle_id') || state.productCycleId;
     if (screen === 'interview' && cycleId) {
       const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(cycleId) + '/runtime', { credentials: 'same-origin' });
@@ -239,10 +236,6 @@ const bootApp = async () => {
       state.assessmentRuntimeKind = 'cycle';
       state.productCycleId = cycleId;
       (await loadInterview()).openInterview();
-      return;
-    }
-    if (state.currentScreen === 'onboarding') {
-      await openOnboardingScreen();
       return;
     }
     if (state.currentScreen === 'admin-prompt-lab' && state.isAdmin) {
@@ -295,7 +288,7 @@ const bootApp = async () => {
       await openAdminDashboardScreen();
       return;
     }
-    if (!state.isAdmin && !['profile', 'reports', 'report'].includes(state.currentScreen)) {
+    if (!state.isAdmin) {
       try {
         const journey = await loadUserJourneyState();
         if (journey?.assessment?.session_id) {
@@ -323,8 +316,28 @@ const bootApp = async () => {
           await openProcessingScreen();
           return;
         }
+        if (journey?.next_action === 'show_dashboard') {
+          if (state.currentScreen === 'profile') {
+            await openProfileScreen();
+            return;
+          }
+          if (state.currentScreen === 'reports') {
+            await openReportsScreen();
+            return;
+          }
+          const dashboardModule = await loadDashboard();
+          dashboardModule.openDashboard();
+          return;
+        }
+        throw new Error(`Unknown journey action: ${journey?.next_action || 'empty'}`);
       } catch (error) {
         console.error('Failed to route by server journey state', error);
+        returnToStart();
+        if (authError) {
+          authError.textContent = 'Не удалось определить актуальный этап. Обновите страницу или повторите вход.';
+          authError.hidden = false;
+        }
+        return;
       }
     }
     if (state.currentScreen === 'interview' && state.assessmentSessionCode) {

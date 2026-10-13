@@ -50,6 +50,7 @@ class Settings:
     auth_password_reset_enabled: bool = os.getenv("AUTH_PASSWORD_RESET_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
     auth_action_token_ttl_minutes: int = int(os.getenv("AUTH_ACTION_TOKEN_TTL_MINUTES", "30"))
     auth_session_secure_cookie: bool = os.getenv("AUTH_SESSION_SECURE_COOKIE", "false").strip().lower() in {"1", "true", "yes", "on"}
+    auth_invitation_token_secret: str = os.getenv("AUTH_INVITATION_TOKEN_SECRET", "").strip()
     superadmin_emails_raw: str = os.getenv("SUPERADMIN_EMAILS", "")
     org_admin_emails_raw: str = os.getenv("ORG_ADMIN_EMAILS", "")
     org_member_domains_raw: str = os.getenv("ORG_MEMBER_DOMAINS", "")
