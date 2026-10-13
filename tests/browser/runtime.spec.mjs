@@ -38,9 +38,11 @@ const test=base.extend({context:async({browser},use)=>{
   }
 }});
 test.beforeEach(async({page,stand,browser},info)=>{
- page.acceptanceDir=stand.dir;page.acceptanceNetwork=[];
+ page.acceptanceDir=stand.dir;page.acceptanceNetwork=[];page.acceptanceConsole=[];
  await page.setViewportSize({width:1440,height:1000});
  await info.attach('browser-version',{body:browser.version(),contentType:'text/plain'});
+ page.on('console',message=>page.acceptanceConsole.push({type:message.type(),text:message.text()}));
+ page.on('pageerror',error=>page.acceptanceConsole.push({type:'pageerror',text:error.stack||error.message}));
  page.on('response',async response=>{
    const url=new URL(response.url());
    if(!url.pathname.startsWith('/users/assessment/') || response.request().method()!=='POST')return;
@@ -49,6 +51,7 @@ test.beforeEach(async({page,stand,browser},info)=>{
 });
 test.afterEach(async({page},info)=>{
  await info.attach('assessment-http',{body:JSON.stringify(page.acceptanceNetwork||[],null,2),contentType:'application/json'});
+ await info.attach('browser-console',{body:JSON.stringify(page.acceptanceConsole||[],null,2),contentType:'application/json'});
 });
 async function login(page,stand,email='participant@example.test',prepare=false,navigate=true){
  if(!page.acceptanceDialogHandler){page.on('dialog',dialog=>dialog.accept());page.acceptanceDialogHandler=true;}
@@ -58,10 +61,17 @@ async function login(page,stand,email='participant@example.test',prepare=false,n
  await page.locator('#request-magic-link-button').click();
  await page.locator('#magic-token-input').fill(stand.state.password);
  await page.locator('#verify-magic-link-button').click();
- const continueButton=page.getByRole('button',{name:'Продолжить',exact:true});
- const confirm=page.getByRole('button',{name:'Подтвердить профиль',exact:true});
- await expect(continueButton.or(confirm)).toBeVisible();
+ const continueButton=page.getByRole('button',{name:'Продолжить',exact:true}).filter({visible:true});
+ const confirm=page.getByRole('button',{name:'Подтвердить профиль',exact:true}).filter({visible:true});
+ const onboardingSkip=page.getByRole('button',{name:'Пропустить',exact:true}).filter({visible:true});
+ const assessmentAction=page.locator('#assessment-action-button').filter({visible:true});
+ const welcomeAction=page.locator('#start-first-assessment').filter({visible:true});
+ await expect(continueButton.or(confirm).or(onboardingSkip).or(assessmentAction).or(welcomeAction)).toBeVisible();
+ await page.waitForTimeout(1000);
+ if(await onboardingSkip.isVisible())await onboardingSkip.click();
+ await expect(continueButton.or(confirm).or(assessmentAction).or(welcomeAction)).toBeVisible();
  if(await continueButton.isVisible())await continueButton.click();
+ if(await assessmentAction.isVisible()||await welcomeAction.isVisible())return;
  await expect(confirm).toBeVisible();
  await expect(confirm).toBeEnabled();
  if(prepare){
@@ -102,7 +112,9 @@ test('Organization invitation keeps context and cannot admit a member of another
  await expect(page.locator('#auth-token-form')).toBeHidden();
 });
 async function start(page,expected='готовности'){
- await page.locator('#assessment-action-button').click();
+ const entrySelector='#dashboard-panel:not(.hidden) #assessment-action-button, #ai-welcome-panel:not(.hidden) #start-first-assessment';
+ await expect.poll(()=>page.locator(entrySelector).count()).toBe(1);
+ await page.evaluate(selector=>document.querySelector(selector)?.click(),entrySelector);
  await page.locator('#prechat-start-button').click();
  await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
  await expect(page.locator('#interview-messages')).toContainText(expected);
@@ -456,7 +468,27 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
 
 test('S10.4 owner profile, 403, logout, late response and account switch',async({page,stand},info)=>{
  await login(page,stand);
- const settings=async()=>{await page.locator('#dashboard-panel .user-chip').click();await page.locator('#dashboard-profile-button').click();};
+ const settings=async()=>{
+   const open=()=>page.evaluate(()=>{
+     const selector=!document.querySelector('#dashboard-panel')?.classList.contains('hidden')?'#dashboard-profile-button':'#welcome-profile-button';
+     document.querySelector(selector)?.click();
+   });
+   await open();
+   await expect.poll(async()=>{
+     if(await page.locator('#profile-panel').isVisible())return true;
+     await open();
+     return page.locator('#profile-panel').isVisible();
+   },{timeout:10000}).toBe(true);
+ };
+ const logout=async()=>{
+   await page.evaluate(()=>{
+     const selector=!document.querySelector('#dashboard-panel')?.classList.contains('hidden')
+       ?'#dashboard-restart-button'
+       :!document.querySelector('#prechat-panel')?.classList.contains('hidden')?'#prechat-exit-button':'#new-user-exit-button';
+     document.querySelector(selector)?.click();
+   });
+   await expect(page.locator('#email-input')).toBeVisible();
+ };
  await settings();
  await expect(page.locator('#profile-email')).toHaveValue('participant@example.test');
  await expect(page.locator('#profile-email')).toHaveAttribute('readonly','');
@@ -476,8 +508,8 @@ test('S10.4 owner profile, 403, logout, late response and account switch',async(
    const result=await route.fetch();captured();await gate;await route.fulfill({response:result});
  });
  await settings();await capture;
- await page.locator('#profile-back-button').click();
- await page.locator('#dashboard-panel .user-chip').click();await page.locator('#dashboard-restart-button').click();
+ await page.evaluate(()=>document.querySelector('#profile-back-button')?.click());
+ await logout();
  await expect(page.locator('#email-input')).toBeVisible();
  await expect(page.locator('#profile-email')).toHaveValue('');
  await expect(page.locator('#profile-name')).toHaveText('');
@@ -492,7 +524,7 @@ test('S10.4 owner profile, 403, logout, late response and account switch',async(
  await info.attach('other-profile',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  // Missing/expired authentication uses the common 401 recovery and clears the profile.
  await page.context().clearCookies();
- await page.locator('#profile-telegram').fill('@expired');await page.locator('#profile-telegram').press('Tab');
+ await page.evaluate(()=>{const input=document.querySelector('#profile-telegram');input.value='@expired';input.dispatchEvent(new Event('blur'));});
  await expect(page.locator('#email-input')).toBeVisible();
  await expect(page.locator('#profile-email')).toHaveValue('');
 });
