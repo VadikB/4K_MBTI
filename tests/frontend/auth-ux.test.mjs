@@ -5,6 +5,7 @@ import test from 'node:test';
 const html = await readFile(new URL('../../web/index.html', import.meta.url), 'utf8');
 const wiring = await readFile(new URL('../../web/js/wiring.js', import.meta.url), 'utf8');
 const session = await readFile(new URL('../../web/js/session.js', import.meta.url), 'utf8');
+const main = await readFile(new URL('../../web/js/main.js', import.meta.url), 'utf8');
 const dashboardEntry = await readFile(new URL('../../web/js/entries/dashboard.js', import.meta.url), 'utf8');
 
 test('auth forms expose password-manager fields and an explicit way to change email', () => {
@@ -21,6 +22,17 @@ test('registration and repeat login route through the existing journey without a
   assert.match(wiring, /next_action === 'resume_assessment'/);
   assert.doesNotMatch(session, /state\.currentScreen = 'auth-complete'/);
   assert.match(dashboardEntry, /openDashboard/);
+});
+
+test('server dashboard journey preserves safe profile and reports subroutes on reload', () => {
+  const dashboardJourney = main.slice(
+    main.indexOf("journey?.next_action === 'show_dashboard'"),
+    main.indexOf('throw new Error(`Unknown journey action'),
+  );
+  assert.match(dashboardJourney, /state\.currentScreen === 'profile'/);
+  assert.match(dashboardJourney, /openProfileScreen\(\)/);
+  assert.match(dashboardJourney, /state\.currentScreen === 'reports'/);
+  assert.match(dashboardJourney, /openReportsScreen\(\)/);
 });
 
 test('mutating auth actions guard repeated submissions and expose busy state', () => {

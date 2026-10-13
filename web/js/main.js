@@ -317,6 +317,14 @@ const bootApp = async () => {
           return;
         }
         if (journey?.next_action === 'show_dashboard') {
+          if (state.currentScreen === 'profile') {
+            await openProfileScreen();
+            return;
+          }
+          if (state.currentScreen === 'reports') {
+            await openReportsScreen();
+            return;
+          }
           const dashboardModule = await loadDashboard();
           dashboardModule.openDashboard();
           return;
