@@ -221,5 +221,6 @@ F01/F11 остаются в адресном наборе без изменен�
   расширен сверх существующего session/read-back теста и остаётся `NOT_RUN` как
   отдельный обязательный пункт текущей задачи; это не скрывается локальными PASS.
 - PASS `git diff --check`. Временный PostgreSQL-контейнер и disposable-БД удалены.
-- NOT_RUN CI, commit/push/PR, deploy-test и test URL: локальная реализация ещё не
-  опубликована. NOT_RUN реальная device/browser-матрица и реальные письма.
+- Реализация зафиксирована commit `22299e6` и опубликована в
+  `origin/codex/ux-r02-fix4-r03`; PR/CI/deploy-test и test URL на момент этой записи
+  ещё `NOT_RUN`. NOT_RUN реальная device/browser-матрица и реальные письма.
