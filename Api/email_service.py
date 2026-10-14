@@ -16,6 +16,10 @@ class EmailDeliveryError(RuntimeError):
     pass
 
 
+class EmailDeliveryUncertainError(EmailDeliveryError):
+    """Transport failed after dispatch; provider acceptance cannot be proven."""
+
+
 def _build_magic_link_email_payload(email: str, login_url: str, expires_at: datetime) -> dict[str, object]:
     expires_label = expires_at.strftime("%d.%m.%Y %H:%M UTC")
     subject = settings.auth_magic_link_subject
@@ -70,7 +74,7 @@ def _send_via_postmark(email: str, login_url: str, expires_at: datetime) -> None
             f"Не удалось отправить письмо через Postmark: HTTP {exc.code}. {detail[:240]}"
         ) from exc
     except URLError as exc:
-        raise EmailDeliveryError(f"Не удалось подключиться к Postmark: {exc.reason}") from exc
+        raise EmailDeliveryUncertainError(f"Исход отправки через Postmark неизвестен: {exc.reason}") from exc
 
 
 def _send_via_unisender_go(*, email: str, subject: str, text_body: str, html_body: str) -> None:
@@ -112,7 +116,7 @@ def _send_via_unisender_go(*, email: str, subject: str, text_body: str, html_bod
         detail = exc.read().decode("utf-8", errors="ignore")
         raise EmailDeliveryError(f"Unisender Go вернул HTTP {exc.code}: {detail[:240]}") from exc
     except URLError as exc:
-        raise EmailDeliveryError(f"Не удалось подключиться к Unisender Go: {exc.reason}") from exc
+        raise EmailDeliveryUncertainError(f"Исход отправки через Unisender Go неизвестен: {exc.reason}") from exc
 
 
 def send_magic_link_email(*, email: str, login_url: str, expires_at: datetime) -> None:
@@ -181,5 +185,7 @@ def send_auth_action_email(*, email: str, action_url: str, expires_at: datetime,
         with urlrequest.urlopen(req, timeout=15) as response:
             if getattr(response, "status", response.getcode()) >= 400:
                 raise EmailDeliveryError("Провайдер отклонил письмо авторизации.")
-    except (HTTPError, URLError) as exc:
+    except HTTPError as exc:
         raise EmailDeliveryError(f"Не удалось отправить письмо авторизации: {exc}") from exc
+    except URLError as exc:
+        raise EmailDeliveryUncertainError(f"Исход отправки письма авторизации неизвестен: {exc.reason}") from exc

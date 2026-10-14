@@ -596,7 +596,7 @@ const showPasswordCreationStep = () => {
   }
   authPasswordGenerateRow?.classList.remove('hidden');
   if (verifyMagicLinkButton) verifyMagicLinkButton.textContent = 'Продолжить';
-  if (authChangeCredentialEmailButton) authChangeCredentialEmailButton.textContent = 'Указать другой email';
+  if (authChangeCredentialEmailButton) authChangeCredentialEmailButton.textContent = 'Вернуться назад';
   syncAuthPasswordVisibility();
   magicTokenInput?.focus();
 };
@@ -782,6 +782,15 @@ const applyAuthResponse = async (data) => {
   try {
     const { loadUserJourneyState } = await import('./session.js');
     const journey = await loadUserJourneyState();
+    state.assessmentSessionId = journey?.assessment?.session_id
+      ? Number(journey.assessment.session_id) : null;
+    state.assessmentSessionCode = journey?.assessment?.session_code || null;
+    if (!journey?.assessment?.session_id) {
+      state.assessmentRuntimeKind = null;
+      state.productCycleId = null;
+      state.productAssessmentSituationId = null;
+    }
+    persistAssessmentContext();
     if (journey?.next_action === 'show_onboarding') {
       await openOnboardingScreen({ currentStep: Number(journey.onboarding?.current_step || 0) });
       return;
@@ -1123,8 +1132,13 @@ const requestPasswordReset = async () => {
   }
   try {
     authResetRequestInFlight = true;
-    forgotPasswordButton?.setAttribute('aria-busy', 'true');
-    if (forgotPasswordButton) forgotPasswordButton.disabled = true;
+    const resetTrigger = forgotPasswordCredentialButton && !forgotPasswordCredentialButton.classList.contains('hidden')
+      ? forgotPasswordCredentialButton : forgotPasswordButton;
+    resetTrigger?.setAttribute('aria-busy', 'true');
+    [emailInput, magicTokenInput, verifyMagicLinkButton, requestMagicLinkButton,
+      forgotPasswordButton, forgotPasswordCredentialButton, authChangeEmailButton,
+      authChangeCredentialEmailButton, authPasswordToggleButton, authPasswordGenerateButton]
+      .filter(Boolean).forEach((control) => { control.disabled = true; });
     const response = await fetch('/users/auth/password/forgot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1157,9 +1171,15 @@ const requestPasswordReset = async () => {
         : error.message,
     );
   } finally {
-    authResetRequestInFlight = false;
-    forgotPasswordButton?.removeAttribute('aria-busy');
-    if (forgotPasswordButton) forgotPasswordButton.disabled = false;
+    if (operationGeneration === authOperationGeneration) {
+      authResetRequestInFlight = false;
+      [forgotPasswordButton, forgotPasswordCredentialButton].filter(Boolean)
+        .forEach((control) => control.removeAttribute('aria-busy'));
+      [emailInput, magicTokenInput, verifyMagicLinkButton, requestMagicLinkButton,
+        forgotPasswordButton, forgotPasswordCredentialButton, authChangeEmailButton,
+        authChangeCredentialEmailButton, authPasswordToggleButton, authPasswordGenerateButton]
+        .filter(Boolean).forEach((control) => { control.disabled = false; });
+    }
   }
 };
 

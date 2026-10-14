@@ -290,6 +290,28 @@
     color: #64748b;
     text-align: left;
 }
+.auth-password-requirements-info {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-left: 6px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+}
+#auth-change-credential-email-button {
+    width: auto;
+    min-height: 44px;
+    justify-self: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #64748b;
+}
 .auth-password-requirements-popover {
     position: fixed;
     z-index: 20;

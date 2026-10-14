@@ -77,3 +77,71 @@ F01/F11 остаются в адресном наборе без изменен�
 Реализация и локальный адресный набор подготовлены в `codex/ux-r02-fix2`.
 До merge нужны review, commit/push, PR и успешные обязательные `frontend`/`pytest`
 на точном SHA. После merge отдельно проверяются `deploy-test`, test URL и повторная R03.
+
+## UX-R02-FIX3 — остатки повторной проверки 14.10.2026
+
+### Основание и границы
+
+- Задание: `/Users/vadim_bogachev/Downloads/UX-R02-FIX3_R03_2026-10-14.txt`.
+- Повторная проверка: `/Users/vadim_bogachev/Downloads/P4K_R03_Recheck_2026-10-14.txt`.
+- Evidence: `/Users/vadim_bogachev/Downloads/P4K_R03_Evidence_2026-10-14.zip`.
+- Указанный merge-SHA `7cb34207f6661cd662f8c9d1c7a7ecaaac2d95c9` отсутствует в локальных refs;
+  работа продолжена от эквивалентного head PR #44 —
+  `3ae5190ef094e863a12de78dc5a9111a86940f0f`.
+- В область входят только F03, F04, F06, F07, F09 и зависимые регрессии.
+  Методология, анкеты, сценарий «Знакомство», помощь этапа 2, реальные письма,
+  LLM и рабочие БД не изменяются.
+- На момент начала в рабочем дереве находился отдельный untracked-документ
+  `docs/evc/timer-and-configuration-storage.md`; он сохранён и не входит в FIX3.
+
+### Реализация и прослеживаемость
+
+| Остаток | Реализация | Проверка |
+| --- | --- | --- |
+| F03 | processing/report больше не обходят server journey; login и refresh одинаково переносят либо очищают Session/runtime IDs; разрешённый report deep link открывается только после journey и серверных API | browser: processing deep link, fresh login resume IDs, refresh/journey error |
+| F04 | перед вызовом provider операция фиксируется как `sending`; неизвестный исход не отправляется повторно; legacy hash, used/revoked/expired и чужой адресат/tenant отклоняются; явный resend использует новый operation ID и новый TTL | HTTP state-machine; PostgreSQL integration подготовлен, локальный запуск зависит от `TEST_DATABASE_URL` |
+| F06 | tenant выбирается из проверенного invitation ID независимо от `used_at`, но только при совпадении recipient, membership, активной организации и active/consumed ссылке | HTTP password-login → response/session tenant; DB integration для restore/recheck |
+| F07 | запрос reset блокирует все видимые mutating auth controls, показывает busy на фактически нажатой кнопке и восстанавливает только текущую generation | browser delayed forgot response |
+| F09 | возвращены info-маркер требований и каноническое действие «Вернуться назад» без полноширинной обводки; сохранены размеры R01 и tooltip | browser R01 desktop/mobile и auth composition |
+
+### Совместимость, миграция и откат
+
+- `organization_invitations.delivery_started_at` добавляется идемпотентно и nullable.
+  Старые строки остаются читаемыми.
+- Старая `queued` операция восстанавливается только когда детерминированный токен
+  текущего секрета совпадает с сохранённым `token_hash`. Иначе требуется явный resend;
+  срок старой ссылки не продлевается.
+- `sending` означает, что provider мог принять письмо. Автоматический retry той же
+  операции запрещён; UI показывает неопределённый исход. Новый resend создаёт новую
+  операцию, не отзывает прежнюю ссылку до подтверждённого acceptance новой. Если
+  ссылка отозвана или истекла между отправкой и фиксацией, сервер не возвращает
+  ложный `accepted`.
+- Откат: revert FIX3. Nullable-колонку можно безопасно оставить неиспользуемой;
+  destructive rollback схемы не требуется.
+
+### Текущее состояние проверок FIX3
+
+- PASS Python compile затронутых backend-файлов.
+- PASS JS syntax и `npm run lint:js`.
+- PASS `node --test tests/frontend/*.test.mjs`: 12/12.
+- PASS `tests/e2e/test_r03_invitation_http.py`: 10/10, включая legacy hash и
+  used/revoked/expired replay.
+- PASS `tests/e2e/test_email_admission_http.py`: 6/6.
+- PASS `tests/unit/test_organization_invitation.py`: 8/8; общий адресный backend-набор
+  FIX3 — 24/24.
+- PASS `npm run test:backend:http`: 52/52, 10 deselected.
+- PASS `tests/browser/auth-r03.spec.mjs`: 14/14 после финальной сборки.
+- PASS `npm run build:web`; `web/dist` пересобран, повторная сборка дала тот же
+  SHA-256 diff `d2bbae6eadc6d6ac6d9268376b87c3865af305b9564c58f2459f760533da0593`.
+- PASS `git diff --check` на финальном рабочем состоянии.
+- FAIL `npm run test:backend`: 402 PASS, 13 FAIL, 154 deselected — тот же
+  предсуществующий M6 provider-contract, что и до FIX3 (`INPUT_NOT_READY`,
+  `DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED`, отсутствующий `ai_trace`); затронутые
+  FIX3 HTTP- и unit-наборы проходят. Полный CI точного SHA остаётся обязательным.
+- NOT_RUN PostgreSQL integration: `TEST_DATABASE_URL` не задан; это обязательный
+  блокер заявления готовности DB-пути до CI/изолированного прогона.
+- NOT_RUN CI точного FIX3 SHA, deploy-test и повторная R03: commit/PR ещё не созданы.
+- NOT_RUN реальные iOS/Android/Windows/macOS browser-комбинации, реальные письма,
+  сотрудники, рабочие БД и LLM.
+
+Исторические результаты FIX2 выше сохранены как история и не являются итогом FIX3.

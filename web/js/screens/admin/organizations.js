@@ -252,12 +252,14 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
     const failed = items.filter((item) => item.status === 'error');
     const queued = items.filter((item) => item.status === 'queued');
     const accepted = items.filter((item) => item.status === 'accepted');
+    const uncertain = items.filter((item) => item.status === 'uncertain');
     invitationOperationIds.delete(requestKey);
     await loadAdminOrganizations();
-    if (failed.length) {
+    if (failed.length || uncertain.length) {
       setStatus(
-        'Принято провайдером: ' + accepted.length + '. В очереди: ' + queued.length + '. Ошибок: ' + failed.length + '. ' +
-          failed.map((item) => item.email + ': ' + (item.error || 'ошибка отправки')).join('; '),
+        'Принято провайдером: ' + accepted.length + '. В очереди: ' + queued.length +
+          '. Неопределённый исход: ' + uncertain.length + '. Ошибок: ' + failed.length + '. ' +
+          [...uncertain, ...failed].map((item) => item.email + ': ' + (item.error || 'ошибка отправки')).join('; '),
         'error',
       );
     } else if (queued.length) {
@@ -534,13 +536,13 @@ const renderMemberList = (items, { isSuperadmin = false } = {}) => {
             '" title="Сбросить пароль" aria-label="Сбросить пароль">Сбросить пароль</button>'
           : '<span class="admin-organization-password-state" title="Пользователь еще не задавал пароль">Пароль не задан</span>';
         const invitationStatus = String(item.invitation_status || 'not_sent');
-        const invitationLabels = { not_sent: 'Письмо не отправлено', queued: 'Письмо в очереди', accepted: 'Письмо принято провайдером', error: 'Ошибка отправки', revoked: 'Ссылка отозвана', expired: 'Ссылка истекла', used: 'Регистрация завершена' };
-        const deliveryLabels = { not_sent: 'Письмо: не отправлено', queued: 'Письмо: в очереди', accepted: 'Письмо: принято провайдером', error: 'Письмо: ошибка' };
+        const invitationLabels = { not_sent: 'Письмо не отправлено', queued: 'Письмо в очереди', sending: 'Исход отправки уточняется', accepted: 'Письмо принято провайдером', error: 'Ошибка отправки', revoked: 'Ссылка отозвана', expired: 'Ссылка истекла', used: 'Регистрация завершена' };
+        const deliveryLabels = { not_sent: 'Письмо: не отправлено', queued: 'Письмо: в очереди', sending: 'Письмо: исход неизвестен', accepted: 'Письмо: принято провайдером', error: 'Письмо: ошибка' };
         const linkLabels = { not_created: 'Ссылка: не создана', active: 'Ссылка: действует 72 часа', revoked: 'Ссылка: отозвана', expired: 'Ссылка: истекла', used: 'Ссылка: использована' };
         const registrationLabel = item.registration_status === 'registered' ? 'Регистрация: завершена' : 'Регистрация: ожидается';
         const sendLabel = item.invitation_id ? 'Отправить повторно' : 'Отправить';
         const invitationButton = '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
-        const revokeButton = (invitationStatus === 'accepted' || invitationStatus === 'queued')
+        const revokeButton = (invitationStatus === 'accepted' || invitationStatus === 'queued' || invitationStatus === 'sending')
           ? '<button type="button" data-action="revoke-member-invitation" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать ссылку</button>'
           : '';
         const invitationControls = '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '"><span class="sr-only">Выбрать ' + escapeHtml(email) + '</span></label><span class="admin-organization-invitation-state">Допуск: разрешён</span><span class="admin-organization-invitation-state">' + escapeHtml(registrationLabel) + '</span><span class="admin-organization-invitation-state">' + escapeHtml(deliveryLabels[item.invitation_delivery_status] || invitationLabels[invitationStatus] || invitationStatus) + '</span><span class="admin-organization-invitation-state">' + escapeHtml(linkLabels[item.invitation_link_status] || item.invitation_link_status || 'Ссылка: не создана') + '</span>' + invitationButton + revokeButton;

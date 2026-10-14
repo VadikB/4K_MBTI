@@ -8,6 +8,7 @@ import {
   restoreAssessmentContext,
   restoreAssessmentContextFromParams,
   clearAssessmentContext,
+  persistAssessmentContext,
 } from './state.js';
 import {
   restoreServerSession,
@@ -182,33 +183,6 @@ const bootApp = async () => {
   const hadStoredPendingUser = Boolean(state.pendingUser?.id);
   let restoredServerSession = false;
 
-  if (screen === 'processing') {
-    if (state.pendingUser?.id && state.assessmentSessionId) {
-      await openProcessingScreen();
-      return;
-    }
-  }
-
-  if (screen === 'report') {
-    const m8CycleId = params.get('cycle_id');
-    if (m8CycleId) {
-      void openReportScreen({ m8CycleId, m8ReportId: params.get('report_id'), returnTarget: params.get('report_id') ? 'reports' : 'home' });
-      return;
-    }
-    if (state.pendingUser?.id && state.assessmentSessionId) {
-      void (async () => {
-        try {
-          await loadSkillAssessmentsForReport();
-          await openReportScreen();
-        } catch (error) {
-          console.error('Failed to open report screen', error);
-          returnToStart();
-        }
-      })();
-      return;
-    }
-  }
-
   if (!state.pendingUser?.id) {
     try {
       restoredServerSession = await restoreServerSession();
@@ -290,13 +264,25 @@ const bootApp = async () => {
     }
     if (!state.isAdmin) {
       try {
+        const requestedLegacyReportSessionId = screen === 'report'
+          ? state.assessmentSessionId : null;
         const journey = await loadUserJourneyState();
-        if (journey?.assessment?.session_id) {
-          state.assessmentSessionId = Number(journey.assessment.session_id);
+        state.assessmentSessionId = journey?.assessment?.session_id
+          ? Number(journey.assessment.session_id) : null;
+        state.assessmentSessionCode = journey?.assessment?.session_code || null;
+        const serverAllowsLegacyReport = Boolean(
+          requestedLegacyReportSessionId
+          && journey?.next_action === 'show_dashboard'
+          && journey?.assessment?.status === 'report_ready',
+        );
+        if (serverAllowsLegacyReport) {
+          state.assessmentSessionId = requestedLegacyReportSessionId;
+        } else if (!journey?.assessment?.session_id) {
+          state.assessmentRuntimeKind = null;
+          state.productCycleId = null;
+          state.productAssessmentSituationId = null;
         }
-        if (journey?.assessment?.session_code) {
-          state.assessmentSessionCode = journey.assessment.session_code;
-        }
+        persistAssessmentContext();
         if (journey?.next_action === 'complete_profile') {
           const profileRecovery = await import('./screens/profile-recovery.js');
           await profileRecovery.recoverProfileCompletionForAssessment({ resumeAssessment: false });
@@ -317,6 +303,18 @@ const bootApp = async () => {
           return;
         }
         if (journey?.next_action === 'show_dashboard') {
+          if (screen === 'report') {
+            const m8CycleId = params.get('cycle_id');
+            if (m8CycleId) {
+              await openReportScreen({ m8CycleId, m8ReportId: params.get('report_id'), returnTarget: params.get('report_id') ? 'reports' : 'home' });
+              return;
+            }
+            if (state.assessmentSessionId) {
+              await loadSkillAssessmentsForReport();
+              await openReportScreen();
+              return;
+            }
+          }
           if (state.currentScreen === 'profile') {
             await openProfileScreen();
             return;
