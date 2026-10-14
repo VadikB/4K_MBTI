@@ -72,6 +72,30 @@ def determine_next_action(*, profile_status: str, onboarding_status: str, assess
     return "show_dashboard"
 
 
+def determine_cycle_next_action(
+    *,
+    profile_status: str,
+    onboarding_status: str,
+    cycle_status: str | None,
+    assessment_situation_status: str | None,
+) -> str:
+    """Project the owned Cycle runtime without inventing a second workflow state."""
+    if cycle_status is None:
+        # This endpoint is entered after the participant profile/M4 flow.  The
+        # legacy onboarding row may still be ``not_started`` and must not reopen
+        # onboarding once M4 is ready; that was the pre-Cycle route invariant.
+        return "show_dashboard" if profile_status == "complete" else "complete_profile"
+    if cycle_status in {"active", "paused", "interrupted"}:
+        if assessment_situation_status in {"prepared", "admitted", "active", "paused"}:
+            return "resume_assessment"
+        return "show_assessment_error"
+    if cycle_status in {"collection_closed", "calculation_pending"}:
+        return "show_processing"
+    if cycle_status == "failed":
+        return "show_assessment_error"
+    return "show_dashboard"
+
+
 def get_or_create_onboarding_state(connection, user_id: int) -> dict:
     row = connection.execute(
         """

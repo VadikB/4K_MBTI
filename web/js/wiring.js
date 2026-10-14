@@ -1,4 +1,4 @@
-import { state, persistAssessmentContext, clearAssessmentContext, safeStorage, STORAGE_KEYS, setCurrentScreen } from './state.js';
+import { state, persistAssessmentContext, clearAssessmentContext, safeStorage, STORAGE_KEYS, setCurrentScreen, applyJourneyAssessmentContext } from './state.js';
 import {
   authEmailForm,
   emailInput,
@@ -332,6 +332,8 @@ const showEmailVerificationPending = (email) => {
   authEmailForm?.classList.add('hidden');
   authTokenForm?.classList.add('hidden');
   authEmailSent?.classList.remove('hidden');
+  authTitle?.classList.add('hidden');
+  authSubtitle?.classList.add('hidden');
   if (authEmailSentAddress) authEmailSentAddress.textContent = email;
   const title = authEmailSent?.querySelector('h2');
   const paragraphs = authEmailSent?.querySelectorAll('.auth-email-sent-copy p');
@@ -351,6 +353,8 @@ const showAccessUnavailable = (email) => {
   authEmailForm?.classList.add('hidden');
   authTokenForm?.classList.add('hidden');
   authEmailSent?.classList.remove('hidden');
+  authTitle?.classList.add('hidden');
+  authSubtitle?.classList.add('hidden');
   const title = authEmailSent?.querySelector('h2');
   const paragraphs = authEmailSent?.querySelectorAll('.auth-email-sent-copy p');
   if (title) title.textContent = 'Доступ пока не открыт';
@@ -372,6 +376,8 @@ const showEmailEntry = () => {
   authEmailSent?.classList.add('hidden');
   authTokenForm?.classList.add('hidden');
   authEmailForm?.classList.remove('hidden');
+  authTitle?.classList.remove('hidden');
+  authSubtitle?.classList.remove('hidden');
   authResendEmailButton?.classList.remove('hidden');
   if (authTitle) authTitle.textContent = 'Добро пожаловать';
   if (authSubtitle) authSubtitle.textContent = 'Введите рабочий email, чтобы продолжить вход.';
@@ -502,6 +508,8 @@ const configureAuthCredentialForm = (mode) => {
   }
   authEmailForm?.classList.add('hidden');
   authEmailSent?.classList.add('hidden');
+  authTitle?.classList.remove('hidden');
+  authSubtitle?.classList.remove('hidden');
   authCredentialStep = 1;
   newPasswordDraft = '';
   if (authTitle) authTitle.textContent = isReset ? 'Создайте новый пароль' : isRegistration ? 'Создайте пароль' : 'С возвращением';
@@ -573,7 +581,7 @@ const showPasswordConfirmationStep = () => {
   if (verifyMagicLinkButton) {
     verifyMagicLinkButton.textContent = authCredentialMode === 'password_reset' ? 'Сохранить пароль' : 'Создать пароль';
   }
-  if (authChangeCredentialEmailButton) authChangeCredentialEmailButton.textContent = 'Назад';
+  if (authChangeCredentialEmailButton) authChangeCredentialEmailButton.textContent = 'Вернуться назад';
   syncAuthPasswordVisibility();
   magicTokenInput?.focus();
 };
@@ -782,15 +790,7 @@ const applyAuthResponse = async (data) => {
   try {
     const { loadUserJourneyState } = await import('./session.js');
     const journey = await loadUserJourneyState();
-    state.assessmentSessionId = journey?.assessment?.session_id
-      ? Number(journey.assessment.session_id) : null;
-    state.assessmentSessionCode = journey?.assessment?.session_code || null;
-    if (!journey?.assessment?.session_id) {
-      state.assessmentRuntimeKind = null;
-      state.productCycleId = null;
-      state.productAssessmentSituationId = null;
-    }
-    persistAssessmentContext();
+    applyJourneyAssessmentContext(journey);
     if (journey?.next_action === 'show_onboarding') {
       await openOnboardingScreen({ currentStep: Number(journey.onboarding?.current_step || 0) });
       return;
@@ -806,6 +806,13 @@ const applyAuthResponse = async (data) => {
       return;
     }
     if (journey?.next_action === 'resume_assessment') {
+      if (state.assessmentRuntimeKind === 'cycle' && state.productCycleId) {
+        const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(state.productCycleId) + '/runtime', { credentials: 'same-origin' });
+        if (!response.ok) throw new Error('Cycle runtime is not available');
+        const module = await import('./screen-loaders.js');
+        (await module.loadInterview()).openInterview();
+        return;
+      }
       const module = await loadAiWelcome();
       module.openPrechat();
       return;

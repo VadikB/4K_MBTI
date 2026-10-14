@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import threading
 import time
 import uuid
+from urllib.parse import parse_qs, urlparse
 
 import psycopg
 from psycopg import sql
@@ -29,6 +30,7 @@ def invitation_database(test_database_url, monkeypatch):
         connection.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(schema)))
         connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
         connection.execute("CREATE TABLE users(id BIGSERIAL PRIMARY KEY, email TEXT NOT NULL)")
+        connection.execute("CREATE TABLE auth_password_credentials(email TEXT PRIMARY KEY)")
         connection.execute("CREATE TABLE organizations(id BIGSERIAL PRIMARY KEY, code TEXT UNIQUE, name TEXT, invitation_intro TEXT, is_active BOOLEAN NOT NULL DEFAULT TRUE)")
         connection.execute("""CREATE TABLE organization_memberships(
             organization_id BIGINT NOT NULL REFERENCES organizations(id), user_id BIGINT NOT NULL REFERENCES users(id),
@@ -95,6 +97,11 @@ def test_same_operation_is_serialized_and_lost_response_is_replayed(invitation_d
     assert [response.status_code for response in responses] == [200, 200]
     assert {response.json()["items"][0]["status"] for response in responses} == {"accepted"}
     assert len(sent) == 1
+    token = parse_qs(urlparse(sent[0]["action_url"]).query)["invite"][0]
+    with TestClient(app) as client:
+        resolved = client.get(f"/users/organization-invitations/{token}")
+    assert resolved.status_code == 200
+    assert resolved.json()["organization_id"] == organization_id
     replay = _send(app, organization_id, operation, "PERSON@EXAMPLE.TEST")
     assert replay.json()["items"][0]["invitation_id"] == responses[0].json()["items"][0]["invitation_id"]
     assert len(sent) == 1
@@ -103,6 +110,47 @@ def test_same_operation_is_serialized_and_lost_response_is_replayed(invitation_d
         row = connection.execute("SELECT delivery_status,expires_at-created_at AS ttl FROM organization_invitations").fetchone()
         assert row["delivery_status"] == "accepted"
         assert 71.99 <= row["ttl"].total_seconds() / 3600 <= 72.01
+
+
+def test_inactive_organization_neither_creates_nor_sends(invitation_database, monkeypatch):
+    database_url, schema, organization_id, app = invitation_database
+    with psycopg.connect(database_url) as connection:
+        connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
+        connection.execute("UPDATE organizations SET is_active=FALSE WHERE id=%s", (organization_id,))
+        connection.commit()
+    sent = []
+    monkeypatch.setattr(routes, "send_auth_action_email", lambda **payload: sent.append(payload))
+    response = _send(app, organization_id, "inactive-before-request")
+    assert response.status_code == 200
+    assert response.json()["items"][0]["status"] == "error"
+    assert sent == []
+    with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
+        assert connection.execute("SELECT count(*) AS n FROM organization_invitations").fetchone()["n"] == 0
+
+
+def test_deactivation_after_provider_acceptance_is_uncertain_and_link_is_not_resolved(invitation_database, monkeypatch):
+    database_url, schema, organization_id, app = invitation_database
+    sent = []
+
+    def sink(**payload):
+        sent.append(payload)
+        with psycopg.connect(database_url) as connection:
+            connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
+            connection.execute("UPDATE organizations SET is_active=FALSE WHERE id=%s", (organization_id,))
+            connection.commit()
+
+    monkeypatch.setattr(routes, "send_auth_action_email", sink)
+    response = _send(app, organization_id, "inactive-after-provider")
+    assert response.status_code == 200
+    assert response.json()["items"][0]["status"] == "uncertain"
+    assert len(sent) == 1
+    token = parse_qs(urlparse(sent[0]["action_url"]).query)["invite"][0]
+    with TestClient(app) as client:
+        assert client.get(f"/users/organization-invitations/{token}").status_code == 404
+    with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
+        assert connection.execute("SELECT delivery_status FROM organization_invitations").fetchone()["delivery_status"] == "sending"
 
 
 def test_unknown_outcome_is_not_sent_twice(invitation_database, monkeypatch):
