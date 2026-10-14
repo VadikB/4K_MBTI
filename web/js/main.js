@@ -264,11 +264,20 @@ const bootApp = async () => {
     }
     if (!state.isAdmin) {
       try {
+        const requestedLegacyReportSessionId = screen === 'report'
+          ? state.assessmentSessionId : null;
         const journey = await loadUserJourneyState();
         state.assessmentSessionId = journey?.assessment?.session_id
           ? Number(journey.assessment.session_id) : null;
         state.assessmentSessionCode = journey?.assessment?.session_code || null;
-        if (!journey?.assessment?.session_id) {
+        const serverAllowsLegacyReport = Boolean(
+          requestedLegacyReportSessionId
+          && journey?.next_action === 'show_dashboard'
+          && journey?.assessment?.status === 'report_ready',
+        );
+        if (serverAllowsLegacyReport) {
+          state.assessmentSessionId = requestedLegacyReportSessionId;
+        } else if (!journey?.assessment?.session_id) {
           state.assessmentRuntimeKind = null;
           state.productCycleId = null;
           state.productAssessmentSituationId = null;
