@@ -98,6 +98,14 @@ def test_assessment_status_is_normalized_for_user_journey() -> None:
 
 def test_cycle_runtime_drives_journey_without_reopening_confirmed_profile() -> None:
     assert determine_cycle_next_action(
+        profile_status="complete", onboarding_status="not_started",
+        cycle_status=None, assessment_situation_status=None,
+    ) == "show_dashboard"
+    assert determine_cycle_next_action(
+        profile_status="incomplete", onboarding_status="completed",
+        cycle_status=None, assessment_situation_status=None,
+    ) == "complete_profile"
+    assert determine_cycle_next_action(
         profile_status="incomplete", onboarding_status="in_progress",
         cycle_status="active", assessment_situation_status="active",
     ) == "resume_assessment"
