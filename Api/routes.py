@@ -97,6 +97,7 @@ from Api.regression_tests import (
 from Api.web_session_service import web_session_service
 from Api.user_journey import (
     determine_cycle_next_action,
+    determine_next_action,
     evaluate_profile_state,
     get_or_create_onboarding_state,
     normalize_assessment_status,
@@ -3369,6 +3370,12 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
     with get_connection() as connection:
         profile = participant_profile.readiness(connection, user_id=user.id, profile_id=personalized_profile_id)
         onboarding = get_or_create_onboarding_state(connection, user_id)
+        prior_cycle = connection.execute(
+            """SELECT 1 FROM m5_cycles
+               WHERE owner_user_id=%s AND organization_id=%s AND usage_scope=%s
+               LIMIT 1""",
+            (user.id, profile.get('organization_id'), usage_scope()),
+        ).fetchone()
         cycle = connection.execute("""SELECT c.status,c.cycle_id,
             latest_as.assessment_situation_id,latest_as.as_status,latest_as.session_id
             FROM m5_cycles c
@@ -3388,12 +3395,23 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
     assessment_status = ({'prepared':'preparing','active':'in_progress','paused':'in_progress',
         'interrupted':'in_progress','collection_closed':'analyzing','calculation_pending':'analyzing',
         'calculated':'report_ready','failed':'failed'}.get(cycle['status'], 'not_started') if cycle else 'not_started')
-    next_action = determine_cycle_next_action(
-        profile_status='complete' if ready else 'incomplete',
-        onboarding_status=str(onboarding['status']),
-        cycle_status=str(cycle['status']) if cycle else None,
-        assessment_situation_status=str(cycle['as_status']) if cycle and cycle['as_status'] else None,
-    )
+    if cycle is None and prior_cycle is not None:
+        # A new configuration branch after an earlier Cycle retains its
+        # onboarding gate.  The first confirmed M4, with no Cycle history yet,
+        # must keep the established dashboard route on reload even though the
+        # dashboard URL includes its personalized_profile_id.
+        next_action = determine_next_action(
+            profile_status='complete' if ready else 'incomplete',
+            onboarding_status=str(onboarding['status']),
+            assessment_status='not_started',
+        )
+    else:
+        next_action = determine_cycle_next_action(
+            profile_status='complete' if ready else 'incomplete',
+            onboarding_status=str(onboarding['status']),
+            cycle_status=str(cycle['status']) if cycle else None,
+            assessment_situation_status=str(cycle['as_status']) if cycle and cycle['as_status'] else None,
+        )
     # A stored Cycle owns the confirmed M4 snapshot. Reading this projection must
     # not reopen M4 or mutate Cycle intervals/time budgets.
     return UserJourneyStateResponse(
