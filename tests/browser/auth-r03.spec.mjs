@@ -317,3 +317,67 @@ test('R03 network retry reuses invitation operation id', async ({ page }) => {
   await expect.poll(() => keys.length).toBe(2);
   expect(keys[0]).toBe(keys[1]);
 });
+
+test('R03 processing deep link obeys server journey before local state', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  await page.addInitScript(({ user }) => {
+    localStorage.setItem('agent4k.pendingUser', JSON.stringify(user));
+    localStorage.setItem('agent4k.assessmentSessionId', '99');
+    localStorage.setItem('agent4k.currentScreen', 'processing');
+  }, { user });
+  let journeyRead = false;
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'r03-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: false });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, {
+      user, is_admin: false,
+      dashboard: { active_assessment: { code: 'competencies_4k', title: 'Компетенции 4К', description: 'Тест', completed_cases: 0, progress_percent: 0, status_label: 'Не начато', button_label: 'Начать' }, available_assessments: [], reports: [] },
+    });
+    if (pathname === '/users/8/journey-state') {
+      journeyRead = true;
+      return fulfillJson(route, { next_action: 'show_dashboard', profile: { status: 'complete' }, onboarding: { status: 'completed' }, assessment: { status: 'report_ready' } });
+    }
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(`${base}/?screen=processing`);
+  await expect(page.locator('#dashboard-panel')).toBeVisible();
+  expect(journeyRead).toBe(true);
+  await expect(page.locator('#processing-panel')).toBeHidden();
+});
+
+test('R03 fresh login persists journey assessment identifiers', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'r03-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: false });
+    if (pathname === '/users/auth/email/request-link') return fulfillJson(route, { email: user.email, auth_mode: 'password' });
+    if (pathname === '/users/auth/email/password-login') return fulfillJson(route, { exists: true, user, is_admin: false, agent: { session_id: 'profile', message: '', stage: 'profile', completed: false }, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'resume_assessment', profile: { status: 'complete' }, onboarding: { status: 'completed' }, assessment: { status: 'in_progress', session_id: 99, session_code: 'session-99' } });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await page.locator('#email-input').fill(user.email);
+  await page.locator('#request-magic-link-button').click();
+  await page.locator('#magic-token-input').fill('legacy-password');
+  await page.locator('#verify-magic-link-button').click();
+  await expect(page.locator('#prechat-panel')).toBeVisible();
+  const saved = await page.evaluate(() => ({ id: localStorage.getItem('agent4k.assessmentSessionId'), code: localStorage.getItem('agent4k.assessmentSessionCode') }));
+  expect(saved).toEqual({ id: '99', code: 'session-99' });
+});
+
+test('R03 reset request locks every visible credential action', async ({ page }) => {
+  await baseRoutes(page);
+  await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, { email: 'person@example.test', auth_mode: 'password' }));
+  let finishReset;
+  await page.route('**/users/auth/password/forgot', (route) => { finishReset = () => fulfillJson(route, { message: 'sent' }); });
+  await page.goto(base);
+  await page.locator('#email-input').fill('person@example.test');
+  await page.locator('#request-magic-link-button').click();
+  await page.locator('#forgot-password-credential-button').click();
+  for (const selector of ['#magic-token-input', '#verify-magic-link-button', '#auth-change-credential-email-button', '#forgot-password-credential-button']) {
+    await expect(page.locator(selector)).toBeDisabled();
+  }
+  finishReset();
+});

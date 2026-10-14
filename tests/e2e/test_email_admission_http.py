@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from types import SimpleNamespace
 from datetime import datetime, timedelta
 
@@ -8,9 +9,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 import Api.routes as routes
-from Api.auth_service import AuthAccessDeniedError, MagicLinkRequestResult
+from Api.auth_service import AuthAccessDeniedError, MagicLinkRequestResult, PasswordLoginResult
 from Api.organization_invitation_service import OrganizationInvitationError
-from Api.schemas import OrganizationInvitationPublicResponse
+from Api.schemas import AgentReply, OrganizationInvitationPublicResponse, UserResponse
 
 
 @pytest.fixture
@@ -123,3 +124,51 @@ def test_auth_request_preserves_invitation_server_context(admission_client) -> N
     assert response.status_code == 200
     assert captured["organization_invitation_token"] == "shared-token"
     assert response.json()["organization"]["organization_id"] == 3
+
+
+@pytest.mark.e2e
+def test_password_login_uses_active_personal_invitation_as_session_tenant(admission_client) -> None:
+    client, monkeypatch = admission_client
+    user = UserResponse(
+        id=8, email="owner@example.test", full_name="Owner", created_at=datetime.now(),
+        role_id=None, job_description=None, raw_duties=None,
+    )
+    monkeypatch.setattr(routes.settings, "auth_magic_link_dev_mode", False)
+    monkeypatch.setattr(routes.auth_service, "verify_password_login", lambda **_kwargs: PasswordLoginResult(
+        user=user, is_new_user=False, email=user.email, organization_invitation_id=17,
+    ))
+    monkeypatch.setattr(routes, "evaluate_profile_state", lambda _user: SimpleNamespace(is_complete=True))
+    monkeypatch.setattr(routes, "assign_user_organization_from_email", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(routes, "_is_admin_user", lambda *_args, **_kwargs: False)
+    captured = {}
+    def organization_context(_connection, _user_id, preferred):
+        captured["organization"] = preferred
+        return OrganizationInvitationPublicResponse(organization_id=3, organization_name="B")
+    def create_session(_user_id, selected_organization_id=None):
+        captured["session"] = selected_organization_id
+        return "session-token"
+    monkeypatch.setattr(routes, "_organization_context_for_user", organization_context)
+    monkeypatch.setattr(routes.web_session_service, "create_session", create_session)
+    monkeypatch.setattr(routes, "_set_user_session_cookie", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(routes.interviewer_agent, "start", lambda **_kwargs: AgentReply(session_id="profile", message="", stage="profile", completed=False, user=user))
+    monkeypatch.setattr(routes, "_build_dashboard", lambda *_args, **_kwargs: None)
+
+    class Connection:
+        def execute(self, query, params=()):
+            assert "invitation.purpose = 'personal_registration'" in query
+            assert params == (8, 17, "owner@example.test")
+            return SimpleNamespace(fetchone=lambda: {"organization_id": 3})
+
+    @contextmanager
+    def get_connection():
+        yield Connection()
+
+    monkeypatch.setattr(routes, "get_connection", get_connection)
+    response = client.post("/users/auth/email/password-login", json={
+        "email": "owner@example.test", "password": "ValidPass1!",
+        "organization_invitation_token": "active-b-invitation",
+    })
+
+    assert response.status_code == 200
+    assert response.json()["organization"]["organization_id"] == 3
+    assert captured == {"organization": 3, "session": 3}

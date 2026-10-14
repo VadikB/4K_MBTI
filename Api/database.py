@@ -4408,6 +4408,7 @@ def ensure_core_schema() -> None:
         connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS delivery_error TEXT")
         connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP")
         connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS request_id TEXT")
+        connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS delivery_started_at TIMESTAMP")
         connection.execute(
             "CREATE INDEX IF NOT EXISTS idx_organization_invitations_recipient "
             "ON organization_invitations(organization_id, LOWER(recipient_email), expires_at) "

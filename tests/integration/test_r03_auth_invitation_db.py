@@ -37,7 +37,8 @@ def invitation_database(test_database_url, monkeypatch):
             id BIGSERIAL PRIMARY KEY, organization_id BIGINT NOT NULL REFERENCES organizations(id), token_hash TEXT UNIQUE NOT NULL,
             expires_at TIMESTAMP NOT NULL, revoked_at TIMESTAMP, created_by_user_id BIGINT REFERENCES users(id), created_at TIMESTAMP NOT NULL DEFAULT NOW(),
             recipient_email TEXT, purpose TEXT NOT NULL DEFAULT 'shared_access', used_at TIMESTAMP,
-            delivery_status TEXT NOT NULL DEFAULT 'not_sent', delivery_error TEXT, sent_at TIMESTAMP, request_id TEXT)""")
+            delivery_status TEXT NOT NULL DEFAULT 'not_sent', delivery_error TEXT, sent_at TIMESTAMP,
+            delivery_started_at TIMESTAMP, request_id TEXT)""")
         connection.execute("""CREATE UNIQUE INDEX uq_r03_operation ON organization_invitations(
             organization_id,LOWER(recipient_email),request_id) WHERE purpose='personal_registration' AND request_id IS NOT NULL""")
         admin = connection.execute("INSERT INTO users(email) VALUES('admin@example.test') RETURNING id").fetchone()[0]
@@ -104,7 +105,7 @@ def test_same_operation_is_serialized_and_lost_response_is_replayed(invitation_d
         assert 71.99 <= row["ttl"].total_seconds() / 3600 <= 72.01
 
 
-def test_committed_queue_recovers_after_process_stop_before_mail(invitation_database, monkeypatch):
+def test_unknown_outcome_is_not_sent_twice(invitation_database, monkeypatch):
     database_url, schema, organization_id, app = invitation_database
     operation = "r03-recover-queued"
     monkeypatch.setattr(routes, "send_auth_action_email", lambda **_payload: (_ for _ in ()).throw(RuntimeError("controlled stop before acceptance")))
@@ -112,14 +113,14 @@ def test_committed_queue_recovers_after_process_stop_before_mail(invitation_data
         _send(app, organization_id, operation)
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
         connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
-        assert connection.execute("SELECT delivery_status FROM organization_invitations").fetchone()["delivery_status"] == "queued"
+        assert connection.execute("SELECT delivery_status FROM organization_invitations").fetchone()["delivery_status"] == "sending"
 
     sent = []
     monkeypatch.setattr(routes, "send_auth_action_email", lambda **payload: sent.append(payload))
     response = _send(app, organization_id, operation)
     assert response.status_code == 200
-    assert response.json()["items"][0]["status"] == "accepted"
-    assert len(sent) == 1
+    assert response.json()["items"][0]["status"] == "uncertain"
+    assert len(sent) == 0
 
 
 def test_selected_organization_survives_session_restore_and_access_recheck(invitation_database, monkeypatch):
