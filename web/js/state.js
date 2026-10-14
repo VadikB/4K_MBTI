@@ -256,27 +256,31 @@ export const persistAssessmentContext = () => {
   );
   safeStorage.setItem(STORAGE_KEYS.adminReportsSearch, state.adminReportsSearch || '');
   safeStorage.setItem(STORAGE_KEYS.adminReportsPage, String(state.adminReportsPage || 1));
-  if (state.assessmentSessionId) {
-    safeStorage.setItem(STORAGE_KEYS.assessmentSessionId, String(state.assessmentSessionId));
-  }
-  if (state.assessmentSessionCode) {
-    safeStorage.setItem(STORAGE_KEYS.assessmentSessionCode, state.assessmentSessionCode);
-  }
-  if (state.assessmentRuntimeKind) {
-    safeStorage.setItem(STORAGE_KEYS.assessmentRuntimeKind, state.assessmentRuntimeKind);
-  }
-  if (state.productCycleId) {
-    safeStorage.setItem(STORAGE_KEYS.productCycleId, state.productCycleId);
-  }
-  if (state.productAssessmentSituationId) {
-    safeStorage.setItem(STORAGE_KEYS.productAssessmentSituationId, state.productAssessmentSituationId);
-  }
+  const persistNullable = (key, value) => {
+    if (value === null || value === undefined || value === '') safeStorage.removeItem(key);
+    else safeStorage.setItem(key, String(value));
+  };
+  persistNullable(STORAGE_KEYS.assessmentSessionId, state.assessmentSessionId);
+  persistNullable(STORAGE_KEYS.assessmentSessionCode, state.assessmentSessionCode);
+  persistNullable(STORAGE_KEYS.assessmentRuntimeKind, state.assessmentRuntimeKind);
+  persistNullable(STORAGE_KEYS.productCycleId, state.productCycleId);
+  persistNullable(STORAGE_KEYS.productAssessmentSituationId, state.productAssessmentSituationId);
   if (state.assessmentTotalCases) {
     safeStorage.setItem(STORAGE_KEYS.assessmentTotalCases, String(state.assessmentTotalCases));
   }
   if (state.assessmentSessionId || state.skillAssessments.length > 0) {
     safeStorage.setItem(STORAGE_KEYS.assessmentCompletedOnce, '1');
   }
+};
+
+export const applyJourneyAssessmentContext = (journey) => {
+  const assessment = journey?.assessment || {};
+  state.assessmentSessionId = assessment.session_id ? Number(assessment.session_id) : null;
+  state.assessmentSessionCode = assessment.session_code || null;
+  state.assessmentRuntimeKind = assessment.runtime_kind || null;
+  state.productCycleId = assessment.cycle_id || null;
+  state.productAssessmentSituationId = assessment.assessment_situation_id || null;
+  persistAssessmentContext();
 };
 
 export const restoreAssessmentContext = () => {

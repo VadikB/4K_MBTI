@@ -12,7 +12,7 @@ import secrets
 import time
 from pathlib import Path
 from urllib.parse import quote
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 from uuid import UUID, uuid4
 
@@ -96,7 +96,7 @@ from Api.regression_tests import (
 )
 from Api.web_session_service import web_session_service
 from Api.user_journey import (
-    determine_next_action,
+    determine_cycle_next_action,
     evaluate_profile_state,
     get_or_create_onboarding_state,
     normalize_assessment_status,
@@ -3369,8 +3369,17 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
     with get_connection() as connection:
         profile = participant_profile.readiness(connection, user_id=user.id, profile_id=personalized_profile_id)
         onboarding = get_or_create_onboarding_state(connection, user_id)
-        cycle = connection.execute("""SELECT c.status FROM m5_cycles c
+        cycle = connection.execute("""SELECT c.status,c.cycle_id,
+            latest_as.assessment_situation_id,latest_as.as_status,latest_as.session_id
+            FROM m5_cycles c
             JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
+            LEFT JOIN LATERAL (
+                SELECT s.assessment_situation_id,s.status AS as_status,cs.session_id
+                FROM m5_assessment_situations s
+                JOIN m5_cycle_sessions cs ON cs.id=s.session_db_id
+                WHERE s.cycle_db_id=c.id
+                ORDER BY s.created_at DESC,s.id DESC LIMIT 1
+            ) latest_as ON TRUE
             WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.usage_scope=%s
               AND p.assessment_configuration_id=%s ORDER BY c.created_at DESC,c.id DESC LIMIT 1""",
             (user.id, profile.get('organization_id'), usage_scope(), profile.get('assessment_configuration_id'))).fetchone()
@@ -3379,15 +3388,30 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
     assessment_status = ({'prepared':'preparing','active':'in_progress','paused':'in_progress',
         'interrupted':'in_progress','collection_closed':'analyzing','calculation_pending':'analyzing',
         'calculated':'report_ready','failed':'failed'}.get(cycle['status'], 'not_started') if cycle else 'not_started')
-    # Cycle navigation is restored through its owned runtime and dashboard. Legacy
-    # profile completeness/onboarding must not reopen an already confirmed M4 form.
+    next_action = determine_cycle_next_action(
+        profile_status='complete' if ready else 'incomplete',
+        onboarding_status=str(onboarding['status']),
+        cycle_status=str(cycle['status']) if cycle else None,
+        assessment_situation_status=str(cycle['as_status']) if cycle and cycle['as_status'] else None,
+    )
+    # A stored Cycle owns the confirmed M4 snapshot. Reading this projection must
+    # not reopen M4 or mutate Cycle intervals/time budgets.
     return UserJourneyStateResponse(
         profile=ProfileStateResponse(status='complete' if ready else 'incomplete',
             missing_fields=[] if ready else ['personalized_profile']),
         onboarding=_onboarding_response(onboarding),
-        assessment=JourneyAssessmentState(status=assessment_status),
+        assessment=JourneyAssessmentState(
+            status=assessment_status,
+            runtime_kind='cycle' if cycle else None,
+            cycle_id=str(cycle['cycle_id']) if cycle else None,
+            cycle_session_id=str(cycle['session_id']) if cycle and cycle['session_id'] else None,
+            assessment_situation_id=(
+                str(cycle['assessment_situation_id'])
+                if cycle and cycle['assessment_situation_id'] else None
+            ),
+        ),
         report_status='ready' if assessment_status == 'report_ready' else 'not_ready',
-        next_action='show_dashboard' if ready else 'complete_profile',
+        next_action=next_action,
     )
 
 
@@ -3610,7 +3634,8 @@ def send_personal_organization_invitations(
             raw_token = base64.urlsafe_b64encode(
                 hmac.new(invitation_secret.encode("utf-8"), token_material, hashlib.sha256).digest()
             ).decode("ascii").rstrip("=")
-            expires_at = datetime.now() + timedelta(hours=72)
+            now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+            expires_at = now_utc + timedelta(hours=72)
             with get_connection() as connection:
                 _require_organization_admin(connection, current_user, organization_id)
                 member = connection.execute(
@@ -3618,9 +3643,11 @@ def send_personal_organization_invitations(
                     SELECT u.id
                     FROM organization_memberships om
                     JOIN users u ON u.id = om.user_id
+                    JOIN organizations o ON o.id = om.organization_id
                     WHERE om.organization_id = %s
                       AND LOWER(u.email) = %s
                       AND (om.role = 'admin' OR om.admission_source IN ('admin_add', 'csv_import'))
+                      AND o.is_active = TRUE
                     LIMIT 1
                     """,
                     (organization_id, email),
@@ -3669,6 +3696,10 @@ def send_personal_organization_invitations(
                 connection.commit()
             invitation_url = settings.app_base_url.rstrip("/") + "/?invite=" + quote(raw_token, safe="")
             with get_connection() as connection:
+                try:
+                    _require_organization_admin(connection, current_user, organization_id)
+                except HTTPException as exc:
+                    raise ValueError("Права отправителя на организацию отозваны.") from exc
                 locked = connection.execute(
                     """SELECT id, expires_at, delivery_status, token_hash, used_at, revoked_at,
                               recipient_email, organization_id
@@ -3679,12 +3710,24 @@ def send_personal_organization_invitations(
                     raise RuntimeError("Операция отправки не найдена.")
                 if int(locked["organization_id"]) != organization_id or normalize_email(locked["recipient_email"]) != email:
                     raise ValueError("Сохранённая операция не соответствует адресату или организации.")
+                recipient_allowed = connection.execute(
+                    """SELECT 1 FROM organization_memberships om
+                       JOIN users u ON u.id=om.user_id
+                       JOIN organizations o ON o.id=om.organization_id
+                       WHERE om.organization_id=%s AND LOWER(u.email)=%s
+                         AND (om.role='admin' OR om.admission_source IN ('admin_add','csv_import'))
+                         AND o.is_active=TRUE LIMIT 1""",
+                    (organization_id, email),
+                ).fetchone()
+                if recipient_allowed is None:
+                    raise ValueError("Организация неактивна или доступ участника отозван.")
                 if str(locked["token_hash"]) != hash_invitation_token(raw_token):
                     raise ValueError(
                         "Старая операция не может быть безопасно восстановлена. "
                         "Выполните явную повторную отправку с новым operation_id."
                     )
-                if locked["used_at"] is not None or locked["revoked_at"] is not None or locked["expires_at"] <= datetime.now():
+                if (locked["used_at"] is not None or locked["revoked_at"] is not None
+                        or locked["expires_at"] <= datetime.now(timezone.utc).replace(tzinfo=None)):
                     raise ValueError("Приглашение уже использовано, отозвано или истекло. Выполните явную повторную отправку.")
                 if str(locked["delivery_status"] or "queued") == "accepted":
                     connection.commit()
@@ -3710,7 +3753,7 @@ def send_personal_organization_invitations(
                             and str(current["delivery_status"]) == "accepted"
                             and current["used_at"] is None
                             and current["revoked_at"] is None
-                            and current["expires_at"] > datetime.now()
+                            and current["expires_at"] > datetime.now(timezone.utc).replace(tzinfo=None)
                         ):
                             results.append(PersonalInvitationResultItem(
                                 email=email, status="accepted", invitation_id=invitation_id,
@@ -3737,6 +3780,25 @@ def send_personal_organization_invitations(
                 purpose="organization_invitation",
             )
             with get_connection() as connection:
+                try:
+                    _require_organization_admin(connection, current_user, organization_id)
+                except HTTPException as exc:
+                    raise InvitationDeliveryUncertainError(
+                        "Письмо могло быть принято провайдером, но права отправителя изменились."
+                    ) from exc
+                recipient_allowed = connection.execute(
+                    """SELECT 1 FROM organization_memberships om
+                       JOIN users u ON u.id=om.user_id
+                       JOIN organizations o ON o.id=om.organization_id
+                       WHERE om.organization_id=%s AND LOWER(u.email)=%s
+                         AND (om.role='admin' OR om.admission_source IN ('admin_add','csv_import'))
+                         AND o.is_active=TRUE LIMIT 1""",
+                    (organization_id, email),
+                ).fetchone()
+                if recipient_allowed is None:
+                    raise InvitationDeliveryUncertainError(
+                        "Письмо могло быть принято провайдером, но организация или доступ участника изменились."
+                    )
                 accepted = connection.execute(
                     """UPDATE organization_invitations
                        SET delivery_status = 'accepted', sent_at = NOW(), delivery_error = NULL

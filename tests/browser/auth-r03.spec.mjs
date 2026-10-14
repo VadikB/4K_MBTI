@@ -104,6 +104,25 @@ test('R03 personal invitation has priority and exposes an explicit account choic
   await expect(page.locator('#organization-invitation-account-conflict')).toContainText('person@example.test');
 });
 
+test('R03 verification pending renders one mail-check heading without password copy', async ({ page }) => {
+  await baseRoutes(page);
+  await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, {
+    email: 'person@example.test', auth_mode: 'verification_pending', message: 'Проверьте почту.',
+  }));
+  await page.goto(base);
+  await page.locator('#email-input').fill('person@example.test');
+  await page.locator('#request-magic-link-button').click();
+  await expect(page.locator('#auth-title')).toBeHidden();
+  await expect(page.locator('#auth-subtitle')).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Проверьте почту' })).toBeVisible();
+  await expect(page.getByText('С возвращением', { exact: true })).toBeHidden();
+  await expect(page.getByText(/Введите пароль для/)).toBeHidden();
+  await expect(page.locator('#auth-resend-email-button')).toContainText('Отправить повторно через');
+  await page.locator('#auth-change-email-button').click();
+  await expect(page.locator('#auth-title')).toBeVisible();
+  await expect(page.locator('#auth-title')).toHaveText('Добро пожаловать');
+});
+
 test('R03 reset returns to AUTH 03 with known email and no autologin', async ({ page }) => {
   await baseRoutes(page);
   await page.route('**/users/auth/password/reset/validate', (route) => fulfillJson(route, {
@@ -365,6 +384,38 @@ test('R03 fresh login persists journey assessment identifiers', async ({ page })
   await expect(page.locator('#prechat-panel')).toBeVisible();
   const saved = await page.evaluate(() => ({ id: localStorage.getItem('agent4k.assessmentSessionId'), code: localStorage.getItem('agent4k.assessmentSessionCode') }));
   expect(saved).toEqual({ id: '99', code: 'session-99' });
+});
+
+test('R03 null journey removes stale legacy and Cycle identifiers', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  await page.addInitScript(() => {
+    for (const [key, value] of Object.entries({
+      'agent4k.assessmentSessionId': '99',
+      'agent4k.assessmentSessionCode': 'stale-code',
+      'agent4k.assessmentRuntimeKind': 'cycle',
+      'agent4k.productCycleId': 'stale-cycle',
+      'agent4k.productAssessmentSituationId': 'stale-as',
+    })) localStorage.setItem(key, value);
+  });
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, {
+      authenticated: true, user, is_admin: false, dashboard: {},
+    });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'show_dashboard', profile: { status: 'complete' },
+      onboarding: { status: 'completed' }, assessment: { status: 'not_started' },
+    });
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'r03-test' });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await expect.poll(() => page.evaluate(() => [
+      'agent4k.assessmentSessionId', 'agent4k.assessmentSessionCode',
+      'agent4k.assessmentRuntimeKind', 'agent4k.productCycleId',
+      'agent4k.productAssessmentSituationId',
+    ].map((key) => localStorage.getItem(key))))
+    .toEqual([null, null, null, null, null]);
 });
 
 test('R03 reset request locks every visible credential action', async ({ page }) => {

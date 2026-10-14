@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import base64
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
 from types import SimpleNamespace
@@ -13,6 +13,10 @@ import pytest
 
 from Api import routes
 from Api.org_access import AdminScope
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class _Result:
@@ -81,7 +85,7 @@ class _InvitationConnection:
             return _Result(one=next(row for row in self.rows if row["id"] == params[0]))
         if "SET delivery_status = 'accepted'" in query:
             row = next(row for row in self.rows if row["id"] == params[0])
-            if row["used_at"] is not None or row["revoked_at"] is not None or row["expires_at"] <= datetime.now():
+            if row["used_at"] is not None or row["revoked_at"] is not None or row["expires_at"] <= _utcnow():
                 return _Result(one=None)
             row["delivery_status"] = "accepted"
             return _Result(one=row)
@@ -157,7 +161,7 @@ def test_personal_invitation_repeated_operation_has_one_effect(monkeypatch) -> N
     assert len(connection.rows) == 1
     assert len(sent) == 1
     expires_at = datetime.fromisoformat(first.json()["items"][0]["expires_at"])
-    assert timedelta(hours=71, minutes=59) < expires_at - datetime.now() <= timedelta(hours=72)
+    assert timedelta(hours=71, minutes=59) < expires_at - _utcnow() <= timedelta(hours=72)
 
 
 def test_personal_invitation_without_provider_is_not_accepted(monkeypatch) -> None:
@@ -184,11 +188,11 @@ def test_consumed_personal_invitation_keeps_public_organization_context(monkeypa
         {
             "id": 7,
             "organization_id": 3,
-            "expires_at": datetime.now() + timedelta(hours=70),
+            "expires_at": _utcnow() + timedelta(hours=70),
             "recipient_email": "person@example.test",
             "request_id": "r03-consumed",
             "delivery_status": "accepted",
-            "used_at": datetime.now(),
+            "used_at": _utcnow(),
             "revoked_at": None,
             "name": "Organization A",
             "invitation_intro": "Welcome",
@@ -240,9 +244,9 @@ def test_personal_invitation_retry_does_not_duplicate_uncertain_delivery(monkeyp
 @pytest.mark.parametrize(
     ("used_at", "revoked_at", "expires_at"),
     [
-        (datetime.now(), None, datetime.now() + timedelta(hours=70)),
-        (None, datetime.now(), datetime.now() + timedelta(hours=70)),
-        (None, None, datetime.now() - timedelta(seconds=1)),
+        (_utcnow(), None, _utcnow() + timedelta(hours=70)),
+        (None, _utcnow(), _utcnow() + timedelta(hours=70)),
+        (None, None, _utcnow() - timedelta(seconds=1)),
     ],
 )
 def test_personal_invitation_does_not_recover_inactive_accepted_operation(
@@ -276,7 +280,7 @@ def test_personal_invitation_rejects_legacy_operation_without_reconstructable_to
     connection = _InvitationConnection()
     connection.rows.append({
         "id": 1, "organization_id": 3, "token_hash": "legacy-random-token-hash",
-        "expires_at": datetime.now() + timedelta(hours=70), "recipient_email": "person@example.test",
+        "expires_at": _utcnow() + timedelta(hours=70), "recipient_email": "person@example.test",
         "request_id": operation, "delivery_status": "queued", "delivery_error": None,
         "used_at": None, "revoked_at": None, "name": "Organization A",
         "invitation_intro": "Welcome", "is_active": True, "purpose": "personal_registration",
@@ -307,9 +311,9 @@ def test_personal_invitation_requires_operation_identifier(monkeypatch) -> None:
 def test_consumed_invitation_context_survives_expiry_boundary(monkeypatch) -> None:
     connection = _InvitationConnection()
     connection.rows.append({
-        "id": 8, "organization_id": 3, "expires_at": datetime.now() - timedelta(seconds=1),
+        "id": 8, "organization_id": 3, "expires_at": _utcnow() - timedelta(seconds=1),
         "recipient_email": "person@example.test", "request_id": "r03-consumed-expired",
-        "delivery_status": "accepted", "used_at": datetime.now(), "revoked_at": None,
+        "delivery_status": "accepted", "used_at": _utcnow(), "revoked_at": None,
         "name": "Organization A", "invitation_intro": "Welcome", "is_active": True,
         "purpose": "personal_registration",
     })

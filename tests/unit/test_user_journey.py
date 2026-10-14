@@ -2,6 +2,7 @@ from datetime import datetime
 
 from Api.schemas import UserResponse
 from Api.user_journey import (
+    determine_cycle_next_action,
     determine_next_action,
     evaluate_profile_state,
     normalize_assessment_status,
@@ -93,3 +94,30 @@ def test_assessment_status_is_normalized_for_user_journey() -> None:
     assert normalize_assessment_status("active") == "in_progress"
     assert normalize_assessment_status("completed") == "report_ready"
     assert normalize_assessment_status("failed") == "failed"
+
+
+def test_cycle_runtime_drives_journey_without_reopening_confirmed_profile() -> None:
+    assert determine_cycle_next_action(
+        profile_status="incomplete", onboarding_status="in_progress",
+        cycle_status="active", assessment_situation_status="active",
+    ) == "resume_assessment"
+    assert determine_cycle_next_action(
+        profile_status="complete", onboarding_status="completed",
+        cycle_status="paused", assessment_situation_status="paused",
+    ) == "resume_assessment"
+    assert determine_cycle_next_action(
+        profile_status="complete", onboarding_status="completed",
+        cycle_status="calculation_pending", assessment_situation_status="closed",
+    ) == "show_processing"
+    assert determine_cycle_next_action(
+        profile_status="complete", onboarding_status="completed",
+        cycle_status="failed", assessment_situation_status="closed",
+    ) == "show_assessment_error"
+    assert determine_cycle_next_action(
+        profile_status="complete", onboarding_status="completed",
+        cycle_status="calculated", assessment_situation_status="closed",
+    ) == "show_dashboard"
+    assert determine_cycle_next_action(
+        profile_status="complete", onboarding_status="completed",
+        cycle_status="active", assessment_situation_status=None,
+    ) == "show_assessment_error"

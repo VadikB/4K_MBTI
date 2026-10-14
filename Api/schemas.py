@@ -1435,6 +1435,10 @@ class JourneyAssessmentState(BaseModel):
     status: str
     session_id: int | None = None
     session_code: str | None = None
+    runtime_kind: str | None = None
+    cycle_id: str | None = None
+    cycle_session_id: str | None = None
+    assessment_situation_id: str | None = None
 
 
 class UserJourneyStateResponse(BaseModel):

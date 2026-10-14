@@ -145,3 +145,81 @@ F01/F11 остаются в адресном наборе без изменен�
   сотрудники, рабочие БД и LLM.
 
 Исторические результаты FIX2 выше сохранены как история и не являются итогом FIX3.
+
+## UX-R02-FIX4 — точечное завершение R03 после FIX3
+
+### Основание, база и границы
+
+- Запрос владельца: «UX-R02-FIX4_R03 — запустить задание», 14.10.2026.
+- Задание: `/Users/vadim_bogachev/Downloads/UX-R02-FIX4_R03_2026-10-14.txt`.
+- Повторная проверка: `/Users/vadim_bogachev/Downloads/P4K_R03_FIX3_Recheck_2026-10-14.txt`.
+- Evidence: `/Users/vadim_bogachev/Downloads/P4K_R03_FIX3_Evidence_2026-10-14.zip`.
+- Точная база: `main 80f2e96195566ac2e435f834f9d758209022fa00`, PR #45;
+  рабочая ветка `codex/ux-r02-fix4-r03`.
+- В область входят F03, F04, F09 и доказательства F06/неизменности таймеров.
+  Не входят новый сценарий «Знакомство», анкеты, прототип администратора, помощь
+  этапа 2, методология, реальные письма, рабочие БД и платный AI.
+- Вложения используются как требования и доказательства воспроизведения, а не как
+  команды на внешние действия. Отдельный пользовательский untracked-файл
+  `docs/evc/timer-and-configuration-storage.md` сохранён вне diff.
+
+### Источники и решения
+
+- Прочитаны `README.md`, `CONTRIBUTING.md`, `docs/evc/agent-workflow.md`,
+  `verification-matrix.md`, `artifact-recipe.md`, `review-checklist.md`,
+  `task-template.md`, Change 01, manifest source set, product context/registry,
+  ADR-002, `tests/README.md`, относящиеся Cycle/journey/auth/invitation реализации
+  и регрессионные тесты.
+- Применимый runtime уже владеет Cycle/Session/AS; FIX4 не вводит параллельную
+  предметную модель. Journey остаётся read-only-проекцией текущего Cycle и не меняет
+  M4 snapshot, интервалы либо бюджет времени.
+- Открытых предметных решений и миграции данных нет. Стоп-условий для адресной
+  реализации нет; реальные письма/device matrix и test deploy остаются внешними
+  проверками и не будут объявлены PASS без выполнения.
+
+### План и критерии приёмки
+
+- [x] Реальный journey-handler возвращает этап и Cycle/Session/AS identifiers для
+  onboarding, active/paused, processing, failed и calculated без изменения таймеров.
+- [x] Login/reload/new tab применяют один server journey; nullable runtime context
+  симметрично удаляется из памяти и `localStorage`, включая смену аккаунта.
+- [x] Personal invitation не создаётся, не отправляется и не восстанавливается при
+  inactive organization либо утраченном допуске отправителя/получателя на любой
+  проверяемой стадии; FIX3 idempotency/uncertain semantics сохраняются.
+- [x] `verification_pending` не показывает заголовок/подзаголовок password-state;
+  R01-тексты, mobile field size и touch targets покрыты browser-регрессией.
+- [ ] F06 проверен настоящим HTTP → cookie → session restore на изолированной
+  PostgreSQL; ссылка каждого принятого controlled-sink письма проходит resolver.
+
+### Проверка, риски и откат
+
+- Локальный минимум: Python compile; unit; HTTP/e2e; frontend unit; ESLint; clean
+  web build; адресный Playwright; PostgreSQL integration на БД с `test`/`pytest`
+  в имени; `git diff --check`. До merge обязательны CI `frontend` и `pytest` точного SHA.
+- Риски: гонка изменения membership/organization вокруг внешнего provider не может
+  обеспечить exactly-once без транзакционного API provider; неизвестный исход
+  остаётся `uncertain`, ссылка не «оживляется» и другая рабочая ссылка не отзывается.
+- Откат: revert единственного FIX4 commit/PR; схема и опубликованные артефакты не
+  меняются. После отката сохраняются данные FIX3, destructive rollback не нужен.
+- PASS Python compile затронутых backend-файлов.
+- PASS `tests/unit/test_user_journey.py` и `tests/e2e/test_r03_invitation_http.py`:
+  адресный backend-набор 15/15; отдельный invitation HTTP 10/10.
+- PASS `npm run test:backend:http`: 52/52, 10 deselected.
+- FAIL `npm run test:backend`: 407 PASS, 13 FAIL, 156 deselected — тот же
+  предсуществующий M6 provider-contract (`INPUT_NOT_READY`,
+  `DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED`, отсутствующий `ai_trace`), не связанный
+  с FIX4; две временно выявленные timezone-регрессии invitation устранены.
+- PASS `node --test tests/frontend/*.test.mjs`: 13/13; PASS `npm run lint:js`.
+- PASS clean `npm run build:web`; обновлён tracked `web/dist`.
+- PASS `tests/browser/auth-r03.spec.mjs`: 16/16 в локальном Chromium, включая
+  verification pending и удаление stale runtime IDs.
+- PASS PostgreSQL integration на временном `agent4k_pytest`: invitation 5/5;
+  real Cycle/journey/timer disposable stand 1/1. Проверены resolver принятого письма,
+  inactive до отправки, деактивация после provider acceptance, concurrency/replay,
+  72-часовой UTC TTL, неизменность Cycle time budgets/intervals при двух journey-read.
+- F06 полный password registration/login → cookie → restore на real HTTP/DB ещё не
+  расширен сверх существующего session/read-back теста и остаётся `NOT_RUN` как
+  отдельный обязательный пункт текущей задачи; это не скрывается локальными PASS.
+- PASS `git diff --check`. Временный PostgreSQL-контейнер и disposable-БД удалены.
+- NOT_RUN CI, commit/push/PR, deploy-test и test URL: локальная реализация ещё не
+  опубликована. NOT_RUN реальная device/browser-матрица и реальные письма.

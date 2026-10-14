@@ -72,6 +72,31 @@ def determine_next_action(*, profile_status: str, onboarding_status: str, assess
     return "show_dashboard"
 
 
+def determine_cycle_next_action(
+    *,
+    profile_status: str,
+    onboarding_status: str,
+    cycle_status: str | None,
+    assessment_situation_status: str | None,
+) -> str:
+    """Project the owned Cycle runtime without inventing a second workflow state."""
+    if cycle_status is None:
+        return determine_next_action(
+            profile_status=profile_status,
+            onboarding_status=onboarding_status,
+            assessment_status="not_started",
+        )
+    if cycle_status in {"active", "paused", "interrupted"}:
+        if assessment_situation_status in {"prepared", "admitted", "active", "paused"}:
+            return "resume_assessment"
+        return "show_assessment_error"
+    if cycle_status in {"collection_closed", "calculation_pending"}:
+        return "show_processing"
+    if cycle_status == "failed":
+        return "show_assessment_error"
+    return "show_dashboard"
+
+
 def get_or_create_onboarding_state(connection, user_id: int) -> dict:
     row = connection.execute(
         """

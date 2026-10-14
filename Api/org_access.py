@@ -240,11 +240,13 @@ def get_admin_scope(connection, user) -> AdminScope:
     assign_user_organization_from_email(connection, user_id=int(user.id), email=email)
     rows = connection.execute(
         """
-        SELECT organization_id
-        FROM organization_memberships
-        WHERE user_id = %s
-          AND role = %s
-        ORDER BY organization_id ASC
+        SELECT membership.organization_id
+        FROM organization_memberships membership
+        JOIN organizations organization ON organization.id = membership.organization_id
+        WHERE membership.user_id = %s
+          AND membership.role = %s
+          AND organization.is_active = TRUE
+        ORDER BY membership.organization_id ASC
         """,
         (int(user.id), ORG_ADMIN_ROLE),
     ).fetchall()

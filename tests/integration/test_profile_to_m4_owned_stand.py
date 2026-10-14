@@ -159,9 +159,34 @@ def internal(destination):
         # Optional professional fields use the M4 contract, not legacy completeness gates.
         revised = {**payload, 'position':'', 'duties':'', 'company_industry':''}
         new_id = confirmed(revised)
+        with get_connection() as c:
+            timer_before = c.execute(
+                "SELECT time_budget_seconds,calendar_window_seconds,started_at,updated_at FROM m5_cycles WHERE cycle_id=%s",
+                (cycle_id,),
+            ).fetchone()
+            intervals_before = c.execute(
+                "SELECT to_jsonb(i) AS value FROM m5_cycle_time_intervals i WHERE cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s) ORDER BY id",
+                (cycle_id,),
+            ).fetchall()
         journey = http.get(f'/users/{owner}/journey-state').json()
         assert journey['profile'] == {'status':'complete','missing_fields':[]}
-        assert journey['next_action'] == 'show_dashboard'
+        assert journey['next_action'] == 'resume_assessment'
+        assert journey['assessment']['runtime_kind'] == 'cycle'
+        assert journey['assessment']['cycle_id'] == cycle_id
+        assert journey['assessment']['assessment_situation_id'] == as_id
+        assert journey['assessment']['cycle_session_id']
+        assert http.get(f'/users/{owner}/journey-state').json() == journey
+        with get_connection() as c:
+            timer_after = c.execute(
+                "SELECT time_budget_seconds,calendar_window_seconds,started_at,updated_at FROM m5_cycles WHERE cycle_id=%s",
+                (cycle_id,),
+            ).fetchone()
+            intervals_after = c.execute(
+                "SELECT to_jsonb(i) AS value FROM m5_cycle_time_intervals i WHERE cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s) ORDER BY id",
+                (cycle_id,),
+            ).fetchall()
+        assert timer_after == timer_before
+        assert intervals_after == intervals_before
         assert http.get('/users/session/restore').json()['user']['personal_data_consent_accepted_at']
         assert new_id != profile_id
         assert confirmed(revised) == new_id
@@ -173,6 +198,7 @@ def internal(destination):
             # Finish collection through the existing domain operation; no output material is fabricated.
             complete(c,cycle_id=cycle_id,key='close-fixture',action='complete',reason='synthetic acceptance',initiated_by=owner)
             c.commit()
+        assert http.get(f'/users/{owner}/journey-state').json()['next_action'] == 'show_processing'
         assert http.get('/users/assessment/m8/history').json()['cycles'][0]['status'] == 'processing'
         with get_connection() as c:
             db_cycle = c.execute('SELECT id FROM m5_cycles WHERE cycle_id=%s',(cycle_id,)).fetchone()['id']
@@ -183,6 +209,9 @@ def internal(destination):
             m10_orchestration._set_state(c,db_cycle,status='processing',stage='synthetic_recovery')
             c.commit()
         finish_pipeline(cycle_id)
+        calculated_journey = http.get(f'/users/{owner}/journey-state').json()
+        assert calculated_journey['next_action'] == 'show_dashboard'
+        assert calculated_journey['assessment']['status'] == 'report_ready'
         with get_connection() as c:
             historical_reports = c.execute('SELECT to_jsonb(r) AS value FROM m8_reports r ORDER BY id').fetchall()
         final_id = confirmed({**revised, 'position':'Synthetic after completion'})
@@ -315,7 +344,7 @@ def internal(destination):
         second_config_id = confirmed({**revised,'personalized_profile':second_selection})
         restored = http.get('/users/session/restore',params={'personalized_profile_id':second_config_id}).json()
         assert restored['dashboard']['personalized_profile_id'] == second_config_id
-        assert http.get(f'/users/{owner}/journey-state',params={'personalized_profile_id':second_config_id}).json()['next_action'] == 'show_dashboard'
+        assert http.get(f'/users/{owner}/journey-state',params={'personalized_profile_id':second_config_id}).json()['next_action'] == 'show_onboarding'
         ambiguous = http.post('/users/assessment/cycles/start',json={'idempotency_key':'ambiguous'})
         assert ambiguous.status_code == 409 and 'SELECTION_REQUIRED' in ambiguous.text
         # A genuinely published empty catalog preserves ready M4 but cannot create a hidden

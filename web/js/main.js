@@ -8,7 +8,7 @@ import {
   restoreAssessmentContext,
   restoreAssessmentContextFromParams,
   clearAssessmentContext,
-  persistAssessmentContext,
+  applyJourneyAssessmentContext,
 } from './state.js';
 import {
   restoreServerSession,
@@ -267,9 +267,7 @@ const bootApp = async () => {
         const requestedLegacyReportSessionId = screen === 'report'
           ? state.assessmentSessionId : null;
         const journey = await loadUserJourneyState();
-        state.assessmentSessionId = journey?.assessment?.session_id
-          ? Number(journey.assessment.session_id) : null;
-        state.assessmentSessionCode = journey?.assessment?.session_code || null;
+        applyJourneyAssessmentContext(journey);
         const serverAllowsLegacyReport = Boolean(
           requestedLegacyReportSessionId
           && journey?.next_action === 'show_dashboard'
@@ -277,12 +275,7 @@ const bootApp = async () => {
         );
         if (serverAllowsLegacyReport) {
           state.assessmentSessionId = requestedLegacyReportSessionId;
-        } else if (!journey?.assessment?.session_id) {
-          state.assessmentRuntimeKind = null;
-          state.productCycleId = null;
-          state.productAssessmentSituationId = null;
         }
-        persistAssessmentContext();
         if (journey?.next_action === 'complete_profile') {
           const profileRecovery = await import('./screens/profile-recovery.js');
           await profileRecovery.recoverProfileCompletionForAssessment({ resumeAssessment: false });
@@ -292,6 +285,12 @@ const bootApp = async () => {
           await openOnboardingScreen({
             currentStep: Number(journey.onboarding?.current_step || 0),
           });
+          return;
+        }
+        if (journey?.next_action === 'resume_assessment' && state.assessmentRuntimeKind === 'cycle' && state.productCycleId) {
+          const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(state.productCycleId) + '/runtime', { credentials: 'same-origin' });
+          if (!response.ok) throw new Error('Cycle runtime is not available');
+          (await loadInterview()).openInterview();
           return;
         }
         if (journey?.next_action === 'resume_assessment' && state.assessmentSessionCode) {
