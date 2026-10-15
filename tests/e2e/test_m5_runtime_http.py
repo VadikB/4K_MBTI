@@ -170,3 +170,26 @@ def test_p01_replacement_http_is_owner_scoped_and_forwards_optimistic_state(clie
     assert response.status_code==201 and response.json()['position_no']==3
     assert captured['requested_by']==7 and captured['expected_assessment_situation_id']==old_as
     assert captured['expected_state']=='active' and captured['key']=='replace-1'
+
+
+def test_p02_equivalent_candidate_http_runs_controlled_provider(client):
+    http,monkeypatch,_=client;cycle_id=str(uuid4());operation_id=str(uuid4());lease=str(uuid4())
+    calls=[]
+    monkeypatch.setattr(routes.m5_equivalent_generation,'load_variability_package',lambda:{'contract':{}})
+    monkeypatch.setattr(routes.m5_equivalent_generation,'begin_generation',
+        lambda connection,**kwargs:{'id':operation_id,'status':'pending'})
+    monkeypatch.setattr(routes.m5_equivalent_generation,'claim_generation',
+        lambda connection,_id:{'id':operation_id,'status':'leased','lease_token':lease,'input_json':{'safe':True}})
+    class Provider:
+        def generate(self,*,input_snapshot):
+            calls.append(input_snapshot);return {'candidate':'ok'}
+    monkeypatch.setattr(routes.m5_equivalent_generation,'runtime_provider',Provider())
+    monkeypatch.setattr(routes.m5_equivalent_generation,'complete_generation',
+        lambda connection,**kwargs:{'status':'completed','operation_id':operation_id,
+            'assessment_situation_id':str(uuid4()),'candidate_as_db_id':42})
+    http.cookies.set(routes.SESSION_COOKIE_NAME,'owner')
+    response=http.post(f'/users/assessment/m7/cycles/{cycle_id}/positions/1/equivalent-candidate',json={
+        'expected_assessment_situation_id':str(uuid4()),'idempotency_key':'p02-http-1',
+        'provider_config_ref':{'id':'controlled','version':'1','checksum':'a'*64}})
+    assert response.status_code==201 and response.json()['candidate_as_db_id']==42
+    assert calls==[{'safe':True}]

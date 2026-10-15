@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 from uuid import uuid4
 
 import psycopg
@@ -10,12 +11,15 @@ from psycopg.rows import dict_row
 
 from Api.database import ensure_m5_runtime_schema
 from Api.m5_case_runtime import checksum
+from Api.m5_equivalent_generation import (ControlledEquivalentProvider, begin_generation,
+    claim_generation, complete_generation, load_variability_package, run_provider)
 from Api.m5_storage import import_package
 from Api.m5_storage import prepare_assessment_situation
 from Api.m5_scenario_runtime import build_c45,transition
 from Api.m7_cycle_planner import _facts,choose_next,create_plan,present,read_plan
 from Api.m7_completion import complete,create_additional_session,read_c46,reconcile_c46,expire_due_cycles
-from Api.m7_route_replacement import FixedCaseReplacementProvider,replace_current,replacement_metadata
+from Api.m7_route_replacement import (FixedCaseReplacementProvider,GeneratedCandidateReplacementProvider,
+    replace_current,replacement_metadata)
 from Api.m5_cycle_runtime import begin_blocking_wait,end_blocking_wait,read_cycle
 from scripts.build_m5_case_package import OUTPUT
 
@@ -181,6 +185,75 @@ def test_active_route_position_is_replaced_once_without_counting_archived_as(db)
         _,_,material=_inputs(c,cycle_id,c46['composition_checksum'])
         assert material['observations']==[]
         assert {x['status'] for x in material['processing']}=={'excluded_replaced','not_presented'}
+
+
+def test_equivalent_generation_is_persisted_validated_and_handed_to_p01(db):
+    policy=json.loads((OUTPUT/'admission-policy.json').read_text())
+    package=load_variability_package()
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id'])
+        old_as=str(shown['decision']['assessment_situation_id'])
+        operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
+            request_key='p02-generate-1',requested_by=99,package=package,
+            provider_config={'id':'controlled','version':'1','checksum':'a'*64})
+        replay=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
+            request_key='p02-generate-1',requested_by=99,package=package,
+            provider_config={'id':'controlled','version':'1','checksum':'a'*64})
+        assert replay['id']==operation['id']
+        claimed=claim_generation(c,str(operation['id']));c.commit()
+    source=claimed['input_json']['old_content']
+    candidate={'case_id':'CASE-TDISC-01','case_version':'v0.1',
+        'base_role':claimed['input_json']['base_role'],'indicator_targets':claimed['input_json']['indicator_targets'],
+        'participant_payload':deepcopy(source['participant_payload']),
+        'execution_payload':deepcopy(source['execution_payload'])}
+    candidate['participant_payload']['initial_situation']='Согласованная новая вводная QA.'
+    candidate['participant_payload']['trigger']='Новый содержательный триггер QA.'
+    candidate['execution_payload']['materials'][0]['participant_payload']='Согласованная новая вводная QA.'
+    output=run_provider(ControlledEquivalentProvider(candidate),claimed)
+    with db() as c:
+        completed=complete_generation(c,operation_id=str(operation['id']),lease_token=str(claimed['lease_token']),
+            candidate=output,policy=policy)
+        assert completed['status']=='completed' and completed['validation']['admitted']
+        assert c.execute('SELECT count(*) AS n FROM m5_assessment_situations').fetchone()['n']==2
+        replaced=replace_current(c,cycle_id=cycle_id,position_no=1,
+            expected_assessment_situation_id=old_as,expected_state='active',key='p01-after-p02',
+            reason='authorized_return',policy_ref={'id':'P01','version':'2.0','checksum':'f'*64},requested_by=99,
+            provider=GeneratedCandidateReplacementProvider(str(operation['id'])))
+        assert replaced['new_assessment_situation_id']==completed['assessment_situation_id']
+        assert c.execute('SELECT count(*) AS n FROM m5_assessment_situations').fetchone()['n']==2
+
+
+def test_equivalent_generation_claim_is_single_and_late_result_is_not_admitted(db):
+    policy=json.loads((OUTPUT/'admission-policy.json').read_text())
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);old_as=str(shown['decision']['assessment_situation_id'])
+        operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
+            request_key='p02-late',requested_by=99,package=load_variability_package(),
+            provider_config={'id':'controlled','version':'1','checksum':'b'*64});c.commit()
+    def claim():
+        with db() as c:
+            try:
+                result=claim_generation(c,str(operation['id']));c.commit();return result
+            except ValueError as exc:
+                return str(exc)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes=[future.result(timeout=20) for future in (pool.submit(claim),pool.submit(claim))]
+    claimed=next(item for item in outcomes if isinstance(item,dict))
+    assert outcomes.count('M5_EQUIVALENT_OPERATION_ALREADY_CLAIMED')==1
+    source=claimed['input_json']['old_content']
+    candidate={'case_id':'CASE-TDISC-01','case_version':'v0.1','base_role':claimed['input_json']['base_role'],
+        'indicator_targets':claimed['input_json']['indicator_targets'],
+        'participant_payload':deepcopy(source['participant_payload']),'execution_payload':deepcopy(source['execution_payload'])}
+    candidate['participant_payload']['initial_situation']='Поздняя новая вводная.'
+    candidate['participant_payload']['trigger']='Поздний новый триггер.'
+    candidate['execution_payload']['materials'][0]['participant_payload']='Поздняя новая вводная.'
+    with db() as c:
+        c.execute("UPDATE m5_cycles SET status='collection_closed'");c.commit()
+    with db() as c:
+        result=complete_generation(c,operation_id=str(operation['id']),lease_token=str(claimed['lease_token']),
+            candidate=candidate,policy=policy);c.commit()
+        assert result=={'status':'rejected_late','error_code':'M5_EQUIVALENT_OPERATION_EXPIRED'}
+        assert c.execute('SELECT count(*) AS n FROM m5_assessment_situations').fetchone()['n']==1
 
 
 def test_two_replacement_requests_have_one_effect(db):

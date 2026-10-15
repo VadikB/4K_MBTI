@@ -1,0 +1,12 @@
+{
+  "artifacts": [
+    {
+      "name": "contract.json",
+      "checksum": "470f48c111f48816e56a2a7232248f732413cb79c5913fe756ddedc8999fb334"
+    }
+  ],
+  "id": "m5-equivalent-generation-case-tdisc-01-qa",
+  "scope": "qa_only",
+  "status": "draft",
+  "version": "1.0"
+}

@@ -29,11 +29,11 @@ from Api.email_service import EmailDeliveryError, EmailDeliveryUncertainError, s
 from Api.assessment_service import assessment_service
 from Api import m5_generation_lab
 from Api import m5_catalog_integrity
-from Api import m5_cycle_runtime, m5_scenario_runtime, m5_storage
+from Api import m5_cycle_runtime, m5_scenario_runtime, m5_storage, m5_equivalent_generation
 from Api import m7_cycle_planner
 from Api.m7_planning_contracts import CreateCyclePlanRequest, NextSituationRequest, PresentSituationRequest
 from Api import m7_route_replacement
-from Api.m7_replacement_contracts import ReplaceRoutePositionRequest
+from Api.m7_replacement_contracts import ReplaceRoutePositionRequest, GenerateEquivalentSituationRequest
 from Api import m7_clarification
 from Api.m7_clarification_contracts import CreateClarificationRequest,PresentClarificationRequest,ClarificationAnswerRequest,ClarificationOutcomeRequest
 from Api import m7_completion
@@ -5877,6 +5877,52 @@ def replace_owned_assessment_situation(cycle_id:UUID,position_no:int,payload:Rep
             if result.get('status')!='completed':
                 raise HTTPException(status_code=409,detail=result.get('error_code','M7_REPLACEMENT_PREPARATION_FAILED'))
             return result
+    except HTTPException:raise
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.post('/assessment/m7/cycles/{cycle_id}/positions/{position_no}/equivalent-candidate', status_code=201)
+def generate_owned_equivalent_candidate(cycle_id:UUID,position_no:int,
+        payload:GenerateEquivalentSituationRequest,request:Request):
+    user=_m7_owned_cycle(request,str(cycle_id))
+    try:
+        with get_connection() as connection:
+            operation=m5_equivalent_generation.begin_generation(connection,cycle_id=str(cycle_id),
+                position_no=position_no,expected_as_id=payload.expected_assessment_situation_id,
+                request_key=payload.idempotency_key,requested_by=int(user.id),
+                package=m5_equivalent_generation.load_variability_package(),
+                provider_config=payload.provider_config_ref)
+            if operation['status']=='completed':
+                return {'status':'completed','operation_id':str(operation['id']),
+                    'candidate_as_db_id':operation['candidate_as_db_id']}
+            if operation['status'] in {'failed','rejected_late'}:
+                raise HTTPException(status_code=409,detail=operation.get('error_code') or 'M5_EQUIVALENT_OPERATION_FAILED')
+            claimed=m5_equivalent_generation.claim_generation(connection,str(operation['id']))
+            connection.commit()
+        provider=m5_equivalent_generation.runtime_provider
+        if provider is None:
+            with get_connection() as connection:
+                failed=m5_equivalent_generation.fail_generation(connection,operation_id=str(claimed['id']),
+                    lease_token=str(claimed['lease_token']),error_code='M5_EQUIVALENT_PROVIDER_UNAVAILABLE')
+                connection.commit()
+            raise HTTPException(status_code=409,detail=failed['error_code'])
+        try:
+            output=m5_equivalent_generation.run_provider(provider,claimed)
+        except Exception as exc:
+            code=f'M5_EQUIVALENT_PROVIDER_FAILED:{type(exc).__name__}'
+            with get_connection() as connection:
+                m5_equivalent_generation.fail_generation(connection,operation_id=str(claimed['id']),
+                    lease_token=str(claimed['lease_token']),error_code=code)
+                connection.commit()
+            raise HTTPException(status_code=409,detail=code) from exc
+        with get_connection() as connection:
+            policy=json.loads((M5_PACKAGE_DIR/'admission-policy.json').read_text())
+            result=m5_equivalent_generation.complete_generation(connection,operation_id=str(claimed['id']),
+                lease_token=str(claimed['lease_token']),candidate=output,policy=policy)
+            connection.commit()
+        if result.get('status')!='completed':
+            raise HTTPException(status_code=409,detail=result.get('error_code','M5_EQUIVALENT_CANDIDATE_NOT_ADMITTED'))
+        return result
     except HTTPException:raise
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 

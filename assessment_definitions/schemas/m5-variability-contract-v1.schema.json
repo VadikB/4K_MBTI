@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allowed_paths": {"items": {"pattern": "^/", "type": "string"}, "minItems": 1, "type": "array"},
+    "case_id": {"minLength": 1, "type": "string"},
+    "case_version": {"minLength": 1, "type": "string"},
+    "content_admission": {"enum": ["not_approved", "approved_for_qa", "approved"]},
+    "id": {"minLength": 1, "type": "string"},
+    "immutable_paths": {"items": {"pattern": "^/", "type": "string"}, "type": "array"},
+    "linked_equal_paths": {"items": {"items": {"pattern": "^/", "type": "string"}, "minItems": 2, "type": "array"}, "type": "array"},
+    "min_substantive_changes": {"minimum": 1, "type": "integer"},
+    "schema_version": {"const": 1},
+    "status": {"enum": ["draft", "published"]},
+    "substantive_paths": {"items": {"pattern": "^/", "type": "string"}, "minItems": 1, "type": "array"},
+    "usage_scope": {"enum": ["qa", "assessment"]},
+    "version": {"minLength": 1, "type": "string"}
+  },
+  "required": ["schema_version", "id", "version", "status", "usage_scope", "case_id", "case_version", "allowed_paths", "immutable_paths", "linked_equal_paths", "substantive_paths", "min_substantive_changes", "content_admission"],
+  "type": "object"
+}

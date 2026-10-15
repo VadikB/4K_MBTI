@@ -13,3 +13,9 @@ class ReplaceRoutePositionRequest(StrictModel):
     idempotency_key: str = Field(min_length=1, max_length=200)
     reason: str = Field(min_length=1, max_length=500)
     policy_ref: dict
+
+
+class GenerateEquivalentSituationRequest(StrictModel):
+    expected_assessment_situation_id: str = Field(min_length=1)
+    idempotency_key: str = Field(min_length=1, max_length=200)
+    provider_config_ref: dict
