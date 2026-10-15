@@ -23,8 +23,8 @@ from Api.org_access import AdminScope
 pytestmark = pytest.mark.integration
 
 
-@pytest.fixture
-def invitation_database(test_database_url, monkeypatch):
+@pytest.fixture(params=["UTC", "Europe/Moscow"])
+def invitation_database(test_database_url, monkeypatch, request):
     schema = "r03_fix2_" + uuid.uuid4().hex
     with psycopg.connect(test_database_url) as connection:
         connection.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(schema)))
@@ -54,6 +54,7 @@ def invitation_database(test_database_url, monkeypatch):
     def connection_factory():
         with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
             connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
+            connection.execute("SELECT set_config('TimeZone', %s, false)", (request.param,))
             yield connection
 
     monkeypatch.setattr(routes, "get_connection", connection_factory)

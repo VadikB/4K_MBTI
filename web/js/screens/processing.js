@@ -232,19 +232,23 @@ export const pollAnalysisStatus = async () => {
         clarification_resolved: 60, results_ready: 85, report_ready: 100,
       };
       state.processingServerProgress = stageProgress[snapshot.pipeline_stage] || 10;
+      renderProcessingProgress();
       processingStatusText.textContent = snapshot.results_status === 'failed'
-        ? 'Обработка завершилась ошибкой: ' + (snapshot.processing_error || 'причина сохранена на сервере')
+        ? 'Не удалось завершить обработку результата. Сохранённые ответы не потеряны; обновите состояние или обратитесь к администратору.'
         : snapshot.report_status === 'ready'
           ? 'Итоговый Report готов.'
           : 'Сервер обрабатывает закрытый материал: ' + (snapshot.pipeline_stage || 'ожидание очереди');
-      renderProcessingProgress();
       if (snapshot.report_status === 'ready') {
         clearProcessingTimer();
         openReport({ m8CycleId: state.productCycleId });
         return;
       }
       if (snapshot.results_status === 'failed') {
-        clearProcessingTimer();
+        processingAgentsList.innerHTML = '<article class="card card--inset processing-agent-card error">' +
+          '<div class="processing-agent-main"><div class="processing-agent-copy">' +
+          '<strong>Обработка приостановлена</strong><p>Ответы сохранены. Состояние можно проверить повторно.</p>' +
+          '</div></div><button type="button" class="primary-button compact-primary" data-cycle-status-refresh>Обновить состояние</button></article>';
+        processingAgentsList.querySelector('[data-cycle-status-refresh]')?.addEventListener('click', () => void pollAnalysisStatus());
         return;
       }
       scheduleAnalysisPoll();

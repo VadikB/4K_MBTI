@@ -92,7 +92,8 @@
           <p>Мы отправили ссылку для подтверждения на <strong id="auth-email-sent-address"></strong>.</p>
           <p class="subtitle">Продолжите регистрацию во вкладке, которая откроется из письма. Эту вкладку можно закрыть.</p>
         </div>
-        <button id="auth-resend-email-button" type="button" class="primary-button" disabled>Отправить повторно через 60 сек.</button>
+        <button id="auth-resend-email-button" type="button" class="ghost-button auth-resend-action" disabled>Отправить повторно</button>
+        <p id="auth-resend-countdown" class="auth-resend-countdown">Повторная отправка доступна через 60 сек.</p>
         <button id="auth-change-email-button" type="button" class="ghost-button auth-secondary-action">Указать другой email</button>
       </div>
       <form id="auth-token-form" class="stack hidden" autocomplete="on">

@@ -117,7 +117,8 @@ test('R03 verification pending renders one mail-check heading without password c
   await expect(page.getByRole('heading', { name: 'Проверьте почту' })).toBeVisible();
   await expect(page.getByText('С возвращением', { exact: true })).toBeHidden();
   await expect(page.getByText(/Введите пароль для/)).toBeHidden();
-  await expect(page.locator('#auth-resend-email-button')).toContainText('Отправить повторно через');
+  await expect(page.locator('#auth-resend-email-button')).toHaveText('Отправить повторно');
+  await expect(page.locator('#auth-resend-countdown')).toContainText('доступна через');
   await page.locator('#auth-change-email-button').click();
   await expect(page.locator('#auth-title')).toBeVisible();
   await expect(page.locator('#auth-title')).toHaveText('Добро пожаловать');
@@ -363,6 +364,36 @@ test('R03 processing deep link obeys server journey before local state', async (
   await expect(page.locator('#dashboard-panel')).toBeVisible();
   expect(journeyRead).toBe(true);
   await expect(page.locator('#processing-panel')).toBeHidden();
+});
+
+test('R03 direct interview URL uses journey and keeps Cycle failure visible', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  await page.addInitScript(({ user }) => localStorage.setItem('agent4k.pendingUser', JSON.stringify(user)), { user });
+  let journeyRead = false;
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'r03-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: false });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') {
+      journeyRead = true;
+      return fulfillJson(route, {
+        next_action: 'show_assessment_error', profile: { status: 'complete' }, onboarding: { status: 'completed' },
+        assessment: { status: 'failed', runtime_kind: 'cycle', cycle_id: 'current-cycle', cycle_session_id: 'session-1', assessment_situation_id: 'as-1' },
+      });
+    }
+    if (pathname === '/users/assessment/m8/cycles/current-cycle/status') return fulfillJson(route, {
+      results_status: 'failed', report_status: 'limited', processing_error: 'CONTROLLED_CODE', pipeline_stage: 'failed',
+    });
+    return fulfillJson(route, {}, 404);
+  });
+
+  await page.goto(`${base}/?screen=interview&cycle_id=stale-cycle`);
+  await expect(page.locator('#processing-panel')).toBeVisible();
+  await expect(page.locator('#processing-status-text')).toContainText('Не удалось завершить обработку');
+  await expect(page.getByRole('button', { name: 'Обновить состояние' })).toBeVisible();
+  expect(journeyRead).toBe(true);
+  expect(await page.evaluate(() => localStorage.getItem('agent4k.productCycleId'))).toBe('current-cycle');
 });
 
 test('R03 fresh login persists journey assessment identifiers', async ({ page }) => {

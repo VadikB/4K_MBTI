@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from contextlib import contextmanager
 
 import pytest
@@ -43,7 +43,7 @@ def _invitation(**overrides):
     value = {
         "id": 9,
         "organization_id": 3,
-        "expires_at": datetime.now() + timedelta(days=30),
+        "expires_at": datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=30),
         "revoked_at": None,
         "name": "Организация A",
         "invitation_intro": "Добро пожаловать",
@@ -69,7 +69,7 @@ def test_resolve_invitation_uses_hash_and_returns_only_public_context() -> None:
     [
         (None, "недействительно"),
         (_invitation(revoked_at=datetime.now()), "отозвано"),
-        (_invitation(expires_at=datetime.now() - timedelta(seconds=1)), "истёк"),
+        (_invitation(expires_at=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(seconds=1)), "истёк"),
     ],
 )
 def test_invalid_revoked_and_expired_invitations_fail_closed(row, message) -> None:

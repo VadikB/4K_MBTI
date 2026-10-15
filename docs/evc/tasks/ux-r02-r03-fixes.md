@@ -224,3 +224,61 @@ F01/F11 остаются в адресном наборе без изменен�
 - Реализация зафиксирована commit `22299e6` и опубликована в
   `origin/codex/ux-r02-fix4-r03`; PR/CI/deploy-test и test URL на момент этой записи
   ещё `NOT_RUN`. NOT_RUN реальная device/browser-матрица и реальные письма.
+
+## UX-R02-FIX5 — завершение оставшихся критериев R03 после FIX4
+
+### Основание, результат и границы
+
+- Запрос владельца: «запустить UX-R02-FIX5_R03», 15.10.2026.
+- Задание: `/Users/vadim_bogachev/Downloads/UX-R02-FIX5_R03_2026-10-15.txt`.
+- Повторная проверка: `/Users/vadim_bogachev/Downloads/P4K_R03_FIX4_Recheck_2026-10-15.txt`.
+- Принятый визуальный источник: `/Users/vadim_bogachev/Downloads/p4k-r01-prototype.zip`,
+  исходный commit `1bd546700515276450ce6f882bc31e2f4b29bb49` по README пакета.
+- Точная база: `main 08cadca627b42ec82f63e8591604a5c47b06cb90`, release `2.1.32`;
+  рабочая ветка `codex/ux-r02-fix5-r03`.
+- В область входят F03, F04, F06, F09 и их регрессии. Не входят W01/A01, новые
+  анкеты/методология, несколько организаций у пользователя, реальные письма/LLM
+  и изменение управляющих документов. Пользовательский untracked-файл
+  `docs/evc/timer-and-configuration-storage.md` сохранён вне diff.
+
+### Источники, решения и стоп-условия
+
+- Прочитаны `README.md`, `CONTRIBUTING.md`, EVC workflow/matrix/artifact recipe,
+  Product 4K context/Registry, Change 01, task manifest, ADR-002, traceability,
+  `tests/README.md`, FIX4 history и затронутые Cycle/auth/invitation/UI реализации.
+- Вложения трактуются как требования и диагностика, а не как самостоятельное
+  разрешение на внешние действия. FIX5 использует существующие Cycle/journey,
+  invitation/auth/session контракты и не вводит новую предметную модель.
+- Стоп-условия: нет изменения смысла/PM-границ/публичного API/схемы/данных,
+  нового формата артефакта или передачи чувствительных данных. Миграция не нужна:
+  существующие `TIMESTAMP` значения трактуются как UTC; новые записи и SQL-сравнения
+  используют явный UTC. Откат — revert одного FIX5 PR, destructive rollback отсутствует.
+
+### Прослеживаемость реализации
+
+| Критерий | Реализация | Проверка |
+| --- | --- | --- |
+| F03 | незавершённый onboarding учитывается без зависимости от Cycle history; `scenario_ended` и `interrupted+closed` допускают штатное продолжение; direct interview проходит через journey; Cycle failure не затирается ожиданием и показывает повторную проверку | unit + frontend + Chromium; существующий owned Cycle/timer stand остаётся обязательным в CI |
+| F04 | создание, Python resolver и SQL expiry приведены к UTC; новая запись получает явный UTC `created_at`; retry не продлевает TTL | PostgreSQL 16 при session timezone UTC и Europe/Moscow, controlled sink/replay/resolver |
+| F06 | добавлен полный clean-bootstrap HTTP password login и registration → `Set-Cookie` → restore выбранной организации; scanner GET не consumes, повторная регистрация used-ссылкой запрещена | owned disposable PostgreSQL stand, реальные router/auth/session/resolver, без подмены функций |
+| F09 | info расположен перед текстом; веса/шрифт генерации и возврата соответствуют R01; VERIFY имеет вторичную resend-кнопку и отдельный countdown, центрированную композицию | computed/DOM browser regression, desktop/mobile размеры и touch target сохранены |
+
+### Проверки и передача
+
+- PASS Python compile затронутых backend-файлов.
+- PASS адресный unit/e2e: 29/29.
+- PASS frontend Node: 13/13; ESLint PASS.
+- PASS clean `npm run build:web`; tracked `web/dist` обновлён.
+- PASS Chromium `tests/browser/auth-r03.spec.mjs`: 17/17.
+- PASS PostgreSQL 16: FIX5 full auth + invitation matrix UTC/Europe-Moscow 11/11;
+  временные контейнеры и owned базы удалены.
+- PASS `npm run test:backend:http`: 52/52; PASS `git diff --check`.
+- FAIL `npm run test:backend`: 407 PASS, 13 FAIL, 162 deselected — тот же локальный
+  M6 provider-contract (`INPUT_NOT_READY`, `DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED`,
+  отсутствующий `ai_trace`), который уже фиксировался до FIX5; затронутые FIX5
+  unit/HTTP/integration наборы проходят. Обязательный CI точного SHA остаётся решающим.
+- PENDING перед PR: финальное review diff и commit.
+- NOT_RUN до публикации: CI точного SHA, PR review, merge, deploy-test, test URL/version.
+- NOT_RUN реальная device/browser-матрица: iOS Safari/Яндекс/Chrome; Android
+  Chrome/Яндекс; Windows Chrome/Яндекс; macOS Safari/Chrome/Яндекс. Linux Chromium
+  не считается заменой. Реальные письма, рабочие БД и платный AI не запускались.
