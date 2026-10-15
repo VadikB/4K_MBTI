@@ -73,6 +73,18 @@ def prepare(connection, *, user_id: int, key: str,
         connection, user_id, organization_id, profile["assessment_configuration_id"], usage_scope,
     )
     if current:
+        situation = connection.execute(
+            """SELECT status FROM m5_assessment_situations
+               WHERE cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s)
+               ORDER BY id DESC LIMIT 1""",
+            (current["cycle_id"],),
+        ).fetchone()
+        if not situation:
+            result = _prepare_next(
+                connection, plan=current, user_id=user_id,
+                key=f"product-prepared:{key}",
+            )
+            return {"resumed": True, **result}
         return {"resumed": True, "plan": current,
                 "decision": current["decisions"][-1] if current["decisions"] else None,
                 "presentation": None}
