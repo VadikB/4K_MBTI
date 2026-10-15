@@ -44,6 +44,28 @@ class FixedCaseReplacementProvider:
         )
 
 
+@dataclass(frozen=True)
+class GeneratedCandidateReplacementProvider:
+    """Передаёт P01 только уже сохранённый и допущенный candidate UX-P02."""
+
+    operation_id: str
+
+    def prepare(self, connection, *, context: dict) -> dict:
+        row = connection.execute("""SELECT o.status,o.candidate_as_db_id,s.assessment_situation_id,
+            s.cycle_db_id,s.session_db_id,s.personalized_profile_id,s.usage_scope
+            FROM m5_equivalent_generation_operations o
+            LEFT JOIN m5_assessment_situations s ON s.id=o.candidate_as_db_id
+            WHERE o.id=%s""", (UUID(self.operation_id),)).fetchone()
+        if not row or row["status"] != "completed" or not row["candidate_as_db_id"]:
+            raise ValueError("M5_EQUIVALENT_CANDIDATE_NOT_READY")
+        if (row["cycle_db_id"], row["session_db_id"], row["personalized_profile_id"], row["usage_scope"]) != (
+            context["cycle_db_id"], context["session_db_id"], context["personalized_profile_id"], context["usage_scope"]
+        ):
+            raise ValueError("M5_EQUIVALENT_CANDIDATE_CONTEXT_MISMATCH")
+        return {"id": int(row["candidate_as_db_id"]),
+                "assessment_situation_id": str(row["assessment_situation_id"]), "status": "admitted"}
+
+
 def ensure_schema(connection) -> None:
     connection.execute("""CREATE TABLE IF NOT EXISTS m7_route_positions (
         id UUID PRIMARY KEY,

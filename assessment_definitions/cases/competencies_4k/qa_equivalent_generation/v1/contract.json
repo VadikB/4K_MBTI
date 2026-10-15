@@ -1,0 +1,40 @@
+{
+  "allowed_paths": [
+    "/participant_payload/initial_situation",
+    "/participant_payload/trigger",
+    "/execution_payload/characters/0/name_and_role",
+    "/execution_payload/characters/0/public_position",
+    "/execution_payload/materials/0/participant_payload"
+  ],
+  "case_id": "CASE-TDISC-01",
+  "case_version": "v0.1",
+  "content_admission": "approved_for_qa",
+  "id": "m5-equivalent-generation-case-tdisc-01-qa",
+  "immutable_paths": [
+    "/participant_payload/case_id",
+    "/participant_payload/case_version",
+    "/participant_payload/assessee_position",
+    "/participant_payload/assessee_task",
+    "/participant_payload/conditions_and_constraints",
+    "/execution_payload/case_id",
+    "/execution_payload/case_version",
+    "/execution_payload/indicator_targets",
+    "/execution_payload/scenario"
+  ],
+  "linked_equal_paths": [
+    [
+      "/participant_payload/initial_situation",
+      "/execution_payload/materials/0/participant_payload"
+    ]
+  ],
+  "min_substantive_changes": 2,
+  "schema_version": 1,
+  "status": "draft",
+  "substantive_paths": [
+    "/participant_payload/initial_situation",
+    "/participant_payload/trigger",
+    "/execution_payload/materials/0/participant_payload"
+  ],
+  "usage_scope": "qa",
+  "version": "1.0"
+}
