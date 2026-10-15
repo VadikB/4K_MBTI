@@ -252,7 +252,7 @@ for(const variant of ['C1','C2']) test(`S10-${variant} background time closure w
    await page.acceptanceCdp.detach();
  }
  await page.bringToFront();
- await page.goto(`${stand.url}/?screen=interview&cycle_id=${before.cycle_id}`);
+ await page.goto(`${stand.url}/?screen=report&cycle_id=${before.cycle_id}`);
  const saved=await report(page,stand,info);
  expect(saved.c67.collection.reason).toBe(variant==='C1'?'time_budget':'calendar_deadline');
  const trace=await (await page.request.get(`${stand.url}/users/assessment/m5/situations/${before.current_situation.assessment_situation_id}/trace`)).json();
@@ -565,7 +565,10 @@ test('P10.5 fresh profile, lost confirmation response, reload and first AS',asyn
  await confirmButton.click();
  await expect(page.locator('#assessment-action-button')).toBeVisible();
  expect(profileReceipts(stand)).toEqual(committed);
- await page.reload();await expect(page.locator('#assessment-action-button')).toBeVisible();
+ await page.reload();
+ await expect(page.locator('#onboarding-skip')).toBeVisible();
+ await page.locator('#onboarding-skip').click();
+ await expect(page.locator('#start-first-assessment')).toBeVisible();
  await start(page);
  const after=profileReceipts(stand);
  expect(after.profiles).toEqual(committed.profiles);expect(after.cycles).toHaveLength(1);
