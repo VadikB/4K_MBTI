@@ -43,7 +43,7 @@ from Api import participant_profile
 from Api import m8_results
 from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest, RegenerateReportRequest
 from Api import m10_product_flow, m10_orchestration
-from Api.m10_contracts import ProductCycleStartRequest, ProductPreparedCycleStartRequest, ProductNextRequest
+from Api.m10_contracts import ProductCycleStartRequest, ProductCycleActionRequest, ProductNextRequest
 from scripts.build_m5_case_package import OUTPUT as M5_PACKAGE_DIR
 from Api.assessment_role_profiles import (
     create_organization_role_profile_draft,
@@ -5827,13 +5827,18 @@ def prepare_owned_assessment_cycle(payload: ProductCycleStartRequest, request: R
 
 
 @router.post('/assessment/cycles/start', status_code=201)
-def start_owned_assessment_cycle(payload: ProductPreparedCycleStartRequest, request: Request):
+def start_owned_assessment_cycle(payload: ProductCycleActionRequest, request: Request):
     token=request.cookies.get(SESSION_COOKIE_NAME);user=web_session_service.get_user_by_token(token) if token else None
     if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
     try:
         with get_connection() as connection:
-            result=m10_product_flow.start_prepared(connection,user_id=int(user.id),cycle_id=payload.cycle_id,
-                key=payload.idempotency_key)
+            if payload.cycle_id:
+                result=m10_product_flow.start_prepared(connection,user_id=int(user.id),cycle_id=payload.cycle_id,
+                    key=payload.idempotency_key)
+            else:
+                # Compatibility path for released clients. New UI always prepares first.
+                result=m10_product_flow.start_or_resume(connection,user_id=int(user.id),key=payload.idempotency_key,
+                    selected_skills=list(payload.selected_skills),profile_id=payload.personalized_profile_id)
             runtime=m10_product_flow.read_runtime(connection,cycle_id=str(result['plan']['cycle_id']))
             connection.commit();return {**m10_product_flow.participant_presentation(result),'runtime':runtime}
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
