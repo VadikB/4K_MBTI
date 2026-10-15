@@ -277,8 +277,10 @@ F01/F11 остаются в адресном наборе без изменен�
   M6 provider-contract (`INPUT_NOT_READY`, `DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED`,
   отсутствующий `ai_trace`), который уже фиксировался до FIX5; затронутые FIX5
   unit/HTTP/integration наборы проходят. Обязательный CI точного SHA остаётся решающим.
-- PENDING перед PR: финальное review diff и commit.
-- NOT_RUN до публикации: CI точного SHA, PR review, merge, deploy-test, test URL/version.
+- Реализация зафиксирована в `bad12a3`; PR #48:
+  `https://github.com/VadikB/4K_MBTI/pull/48`.
+- PENDING: CI точного финального SHA и человеческое review.
+- NOT_RUN до принятия: merge, deploy-test, test URL/version.
 - NOT_RUN реальная device/browser-матрица: iOS Safari/Яндекс/Chrome; Android
   Chrome/Яндекс; Windows Chrome/Яндекс; macOS Safari/Chrome/Яндекс. Linux Chromium
   не считается заменой. Реальные письма, рабочие БД и платный AI не запускались.
