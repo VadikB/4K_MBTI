@@ -48,6 +48,81 @@ def _present_next(connection, *, plan: dict, user_id: int, key: str) -> dict:
             "decision": decision, "presentation": presentation}
 
 
+def _prepare_next(connection, *, plan: dict, user_id: int, key: str) -> dict:
+    """Prepare an admitted AS without presenting it or starting M7 time."""
+    decision = m7_cycle_planner.choose_next(
+        connection, cycle_id=str(plan["cycle_id"]), expected_plan_revision_id=str(plan["revision_id"]),
+        key=key, created_by=user_id, policy=_policy(),
+    )
+    return {"plan": m7_cycle_planner.read_plan(connection, str(plan["cycle_id"])),
+            "decision": decision, "presentation": None}
+
+
+def prepare(connection, *, user_id: int, key: str,
+            selected_skills: list[str] | None = None, profile_id: int | None = None) -> dict:
+    """Create/reuse one prepared Cycle; never start its Session or calendar window."""
+    connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(user_id),))
+    organization_id = participant_profile.active_organization(connection, user_id)
+    profile_id = _owned_profile(connection, user_id, profile_id)
+    profile = connection.execute(
+        "SELECT assessment_configuration_id FROM assessment_personalized_profiles WHERE id=%s",
+        (profile_id,),
+    ).fetchone()
+    usage_scope = qa_orchestration.usage_scope()
+    current = _current_cycle(
+        connection, user_id, organization_id, profile["assessment_configuration_id"], usage_scope,
+    )
+    if current:
+        return {"resumed": True, "plan": current,
+                "decision": current["decisions"][-1] if current["decisions"] else None,
+                "presentation": None}
+    plan = m7_cycle_planner.create_plan(
+        connection, personalized_profile_id=profile_id,
+        selected_skills=selected_skills or ["K1", "K2", "K3", "K4"],
+        created_by=user_id, key=f"product-prepare:{key}", usage_scope=usage_scope,
+    )
+    if plan["plan"]["status"] == "NO_ROUTE":
+        raise ValueError('M7_NO_ADMISSIBLE_CASE: Профиль готов. Ответственный специалист должен подготовить допустимые кейсы для выбранной роли и конфигурации.')
+    result = _prepare_next(connection, plan=plan, user_id=user_id, key=f"product-prepared:{key}")
+    return {"resumed": False, **result}
+
+
+def start_prepared(connection, *, user_id: int, cycle_id: str, key: str) -> dict:
+    """Recheck owned M4 readiness and explicitly present the already prepared AS."""
+    connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(user_id),))
+    plan = m7_cycle_planner.read_plan(connection, cycle_id)
+    cycle = connection.execute(
+        "SELECT owner_user_id,personalized_profile_id,status,started_at FROM m5_cycles WHERE cycle_id=%s FOR UPDATE",
+        (cycle_id,),
+    ).fetchone()
+    if not cycle or int(cycle["owner_user_id"]) != int(user_id):
+        raise ValueError("M7_CYCLE_NOT_FOUND")
+    participant_profile.profile_for_start(
+        connection, user_id=user_id, profile_id=int(cycle["personalized_profile_id"]),
+    )
+    open_as = connection.execute(
+        """SELECT s.id,s.assessment_situation_id,s.status,d.id AS decision_id,d.revision_no
+           FROM m5_assessment_situations s
+           JOIN m7_route_assignments a ON a.assessment_situation_db_id=s.id
+           JOIN m7_route_decisions d ON d.id=a.decision_id
+           WHERE s.cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s)
+             AND s.status NOT IN('closed','terminated','rejected')
+           ORDER BY s.id DESC LIMIT 1""",
+        (cycle_id,),
+    ).fetchone()
+    if not open_as:
+        raise ValueError("M7_PREPARED_SITUATION_NOT_FOUND")
+    if open_as["status"] == "active":
+        return {"resumed": True, "plan": plan, "decision": None,
+                "presentation": dict(open_as)}
+    presented = m7_cycle_planner.present(
+        connection, decision_id=str(open_as["decision_id"]),
+        expected_revision=int(open_as["revision_no"]),
+    )
+    return {"resumed": False, "plan": m7_cycle_planner.read_plan(connection, cycle_id),
+            "decision": presented["decision"], "presentation": presented["presentation"]}
+
+
 def start_or_resume(connection, *, user_id: int, key: str,
                     selected_skills: list[str] | None = None, profile_id: int | None = None) -> dict:
     # Serialize owner start across reloads/tabs before checking for an active Cycle.

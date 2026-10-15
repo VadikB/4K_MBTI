@@ -14,5 +14,10 @@ class ProductCycleStartRequest(StrictModel):
     selected_skills: list[Literal["K1", "K2", "K3", "K4"]] = ["K1", "K2", "K3", "K4"]
 
 
+class ProductPreparedCycleStartRequest(StrictModel):
+    cycle_id: str = Field(min_length=1, max_length=80)
+    idempotency_key: str = Field(min_length=1, max_length=200)
+
+
 class ProductNextRequest(StrictModel):
     idempotency_key: str = Field(min_length=1, max_length=200)

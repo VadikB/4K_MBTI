@@ -17,7 +17,7 @@ from Api.m5_storage import import_package
 from Api.m7_completion import complete
 from Api.m7_completion import create_additional_session
 from Api.m5_cycle_runtime import read_cycle
-from Api.m10_product_flow import start_or_resume, read_runtime
+from Api.m10_product_flow import prepare, start_prepared, start_or_resume, read_runtime
 from Api.m10_product_flow import next_situation
 from Api.m7_cycle_planner import create_plan
 from tests.m6_admission_fixture import RecordedAdmissionGateway
@@ -133,6 +133,32 @@ def _add_turn(connection, as_id, text, key):
     connection.execute("""INSERT INTO m5_dialogue_turns
         (assessment_situation_db_id,turn_id,sequence_no,speaker_type,speaker_id,content_text,request_id)
         VALUES(%s,%s,2,'assessee','assessee',%s,%s)""",(as_db,uuid4(),text,key))
+
+
+def test_prepare_does_not_start_time_and_explicit_start_presents_same_situation(product_db):
+    with product_db() as connection:
+        prepared = prepare(connection, user_id=99, key="w02-prepare")
+        cycle_id = str(prepared["plan"]["cycle_id"])
+        decision = prepared["decision"]
+        assert decision["status"] == "SELECTED"
+        assert prepared["presentation"] is None
+        before = read_cycle(connection, cycle_id)
+        assert before["status"] == "prepared"
+        assert before["started_at"] is None
+        assert before["calendar_deadline"] is None
+        assert before["consumed_seconds"] == 0
+        assert before["sessions"][-1]["status"] == "prepared"
+        situation_id = str(decision["assessment_situation_id"])
+
+        started = start_prepared(
+            connection, user_id=99, cycle_id=cycle_id, key="w02-start",
+        )
+        assert str(started["decision"]["assessment_situation_id"]) == situation_id
+        after = read_cycle(connection, cycle_id)
+        assert after["status"] == "active"
+        assert after["started_at"] is not None
+        assert after["calendar_deadline"] is not None
+        assert after["sessions"][-1]["status"] == "active"
 
 
 def _drain_product_pipeline(factory):
