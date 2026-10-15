@@ -1,0 +1,9 @@
+from Api.m7_return_integration import load_policy
+
+
+def test_p03_policy_is_qa_only_and_keeps_exact_threshold():
+    policy = load_policy()
+    assert policy["status"] == "draft"
+    assert policy["usage_scope"] == "qa"
+    assert policy["replacement_threshold_seconds"] == 180
+    assert policy["production_activation"] == "blocked_by_D08_D09_and_methodology"

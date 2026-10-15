@@ -193,3 +193,23 @@ def test_p02_equivalent_candidate_http_runs_controlled_provider(client):
         'provider_config_ref':{'id':'controlled','version':'1','checksum':'a'*64}})
     assert response.status_code==201 and response.json()['candidate_as_db_id']==42
     assert calls==[{'safe':True}]
+
+
+def test_p03_return_state_is_read_only_and_continue_is_explicit(client):
+    http,monkeypatch,_=client;cycle_id=str(uuid4());as_id=str(uuid4());calls=[]
+    state={'cycle_id':cycle_id,'position_no':1,'current_assessment_situation_id':as_id,
+        'allowed_action':'continue_current','recognized_absence_seconds':179}
+    monkeypatch.setattr(routes.m7_return_integration,'read_return_state',
+        lambda connection,**kwargs:{**state,'owner_user_id':kwargs['owner_user_id']})
+    def proceed(connection,**kwargs):
+        calls.append(kwargs);return {'status':'active','branch':'continued_current','assessment_situation_id':as_id}
+    monkeypatch.setattr(routes.m7_return_integration,'continue_return',proceed)
+    http.cookies.set(routes.SESSION_COOKIE_NAME,'owner')
+    loaded=http.get(f'/users/assessment/m7/cycles/{cycle_id}/return-state')
+    assert loaded.status_code==200 and loaded.json()['allowed_action']=='continue_current'
+    assert calls==[]
+    continued=http.post(f'/users/assessment/m7/cycles/{cycle_id}/return-continue',json={
+        'position_no':1,'expected_assessment_situation_id':as_id,'expected_state':'active',
+        'idempotency_key':'p03-continue-1'})
+    assert continued.status_code==200 and continued.json()['branch']=='continued_current'
+    assert calls[0]['owner_user_id']==7 and calls[0]['generation_operation_id'] is None
