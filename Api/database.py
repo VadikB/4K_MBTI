@@ -3545,6 +3545,8 @@ def ensure_m5_runtime_schema(connection) -> None:
     ensure_m7_planning_schema(connection)
     from Api.m5_equivalent_generation import ensure_schema as ensure_equivalent_generation_schema
     ensure_equivalent_generation_schema(connection)
+    from Api.m7_return_integration import ensure_schema as ensure_return_integration_schema
+    ensure_return_integration_schema(connection)
     from Api.m7_completion_repository import ensure_schema as ensure_m7_completion_schema
     ensure_m7_completion_schema(connection)
     from Api.m6_cycle_aggregation_repository import ensure_schema as ensure_m6_cycle_aggregation_schema

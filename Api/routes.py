@@ -37,7 +37,8 @@ from Api.m7_replacement_contracts import ReplaceRoutePositionRequest, GenerateEq
 from Api import m7_clarification
 from Api.m7_clarification_contracts import CreateClarificationRequest,PresentClarificationRequest,ClarificationAnswerRequest,ClarificationOutcomeRequest
 from Api import m7_completion
-from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,AdditionalSessionRequest,BlockingWaitRequest,ReconcileC46Request
+from Api import m7_return_integration
+from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,AdditionalSessionRequest,BlockingWaitRequest,ReconcileC46Request,ReturnContinueRequest
 from Api import m6_cycle_aggregation_repository
 from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest, CreateSubstantiveAggregationRequest
 from Api.profile_access import require_unchanged_email
@@ -5954,6 +5955,27 @@ def outcome_owned_clarification(decision_id:UUID,payload:ClarificationOutcomeReq
 def get_owned_m7_cycle(cycle_id:UUID,request:Request):
     _m7_owned_cycle(request,str(cycle_id))
     with get_connection() as connection:return m7_completion.read_status(connection,str(cycle_id))
+
+
+@router.get('/assessment/m7/cycles/{cycle_id}/return-state')
+def get_owned_m7_return_state(cycle_id:UUID,request:Request):
+    user=_m7_owned_cycle(request,str(cycle_id))
+    try:
+        with get_connection() as connection:
+            return m7_return_integration.read_return_state(connection,cycle_id=str(cycle_id),owner_user_id=int(user.id))
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.post('/assessment/m7/cycles/{cycle_id}/return-continue')
+def continue_owned_m7_return(cycle_id:UUID,payload:ReturnContinueRequest,request:Request):
+    user=_m7_owned_cycle(request,str(cycle_id))
+    try:
+        with get_connection() as connection:
+            result=m7_return_integration.continue_return(connection,cycle_id=str(cycle_id),position_no=payload.position_no,
+                expected_as_id=payload.expected_assessment_situation_id,expected_state=payload.expected_state,
+                key=payload.idempotency_key,owner_user_id=int(user.id),generation_operation_id=payload.generation_operation_id)
+            connection.commit();return result
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 
 @router.post('/assessment/m7/cycles/{cycle_id}/control')

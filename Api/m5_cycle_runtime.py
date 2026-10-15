@@ -271,6 +271,10 @@ def assert_collecting(connection, *, cycle_db_id: int, session_db_id: int) -> di
     ).fetchone()
     if not row or row["status"] != "active" or row["session_status"] != "active":
         raise ValueError("M7_COLLECTION_CLOSED")
+    if connection.execute("""SELECT 1 FROM m5_cycle_time_intervals
+        WHERE cycle_db_id=%s AND interval_type='blocking_system_wait' AND ended_at IS NULL""",
+        (cycle_db_id,)).fetchone():
+        raise ValueError("M7_BLOCKING_SYSTEM_WAIT")
     if not _can_continue(connection, dict(row)):
         connection.execute(
             "UPDATE m5_cycle_time_intervals SET ended_at=NOW() WHERE cycle_db_id=%s AND ended_at IS NULL",
@@ -289,10 +293,10 @@ def assert_collecting(connection, *, cycle_db_id: int, session_db_id: int) -> di
 
 
 def begin_blocking_wait(connection, *, cycle_db_id: int, session_db_id: int, operation_ref: str, reason: str) -> dict[str, Any]:
-    row=assert_collecting(connection,cycle_db_id=cycle_db_id,session_db_id=session_db_id)
     existing=connection.execute("SELECT * FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND operation_ref=%s",
         (cycle_db_id,operation_ref)).fetchone()
     if existing:return dict(existing)
+    assert_collecting(connection,cycle_db_id=cycle_db_id,session_db_id=session_db_id)
     connection.execute("UPDATE m5_cycle_time_intervals SET ended_at=NOW() WHERE cycle_db_id=%s AND ended_at IS NULL",(cycle_db_id,))
     return dict(connection.execute("""INSERT INTO m5_cycle_time_intervals
         (cycle_db_id,session_db_id,interval_type,started_at,reason,operation_ref)

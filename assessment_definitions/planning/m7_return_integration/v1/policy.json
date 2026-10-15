@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "ux-p03-controlled-return",
+  "version": "1.0",
+  "status": "draft",
+  "usage_scope": "qa",
+  "replacement_threshold_seconds": 180,
+  "absence_source": "controlled_fixture",
+  "production_activation": "blocked_by_D08_D09_and_methodology"
+}
