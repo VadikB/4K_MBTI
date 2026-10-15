@@ -32,6 +32,8 @@ from Api import m5_catalog_integrity
 from Api import m5_cycle_runtime, m5_scenario_runtime, m5_storage
 from Api import m7_cycle_planner
 from Api.m7_planning_contracts import CreateCyclePlanRequest, NextSituationRequest, PresentSituationRequest
+from Api import m7_route_replacement
+from Api.m7_replacement_contracts import ReplaceRoutePositionRequest
 from Api import m7_clarification
 from Api.m7_clarification_contracts import CreateClarificationRequest,PresentClarificationRequest,ClarificationAnswerRequest,ClarificationOutcomeRequest
 from Api import m7_completion
@@ -5859,6 +5861,23 @@ def next_owned_assessment_situation(cycle_id:UUID,payload:ProductNextRequest,req
         with get_connection() as connection:
             result=m10_product_flow.next_situation(connection,cycle_id=str(cycle_id),user_id=int(user.id),
                 key=payload.idempotency_key);connection.commit();return m10_product_flow.participant_presentation(result)
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.post('/assessment/m7/cycles/{cycle_id}/positions/{position_no}/replacement', status_code=201)
+def replace_owned_assessment_situation(cycle_id:UUID,position_no:int,payload:ReplaceRoutePositionRequest,request:Request):
+    user=_m7_owned_cycle(request,str(cycle_id))
+    try:
+        with get_connection() as connection:
+            result=m7_route_replacement.replace_current(connection,cycle_id=str(cycle_id),position_no=position_no,
+                expected_assessment_situation_id=payload.expected_assessment_situation_id,
+                expected_state=payload.expected_state,key=payload.idempotency_key,reason=payload.reason,
+                policy_ref=payload.policy_ref,requested_by=int(user.id),provider=m7_route_replacement.runtime_provider)
+            connection.commit()
+            if result.get('status')!='completed':
+                raise HTTPException(status_code=409,detail=result.get('error_code','M7_REPLACEMENT_PREPARATION_FAILED'))
+            return result
+    except HTTPException:raise
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 

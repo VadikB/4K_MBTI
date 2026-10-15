@@ -50,15 +50,22 @@ def _finalize_as(connection,row,reason,key):
     return handoff
 
 def _composition(connection,cycle):
+    from Api.m7_route_replacement import replacement_metadata
     sessions=[dict(x) for x in connection.execute('SELECT * FROM m5_cycle_sessions WHERE cycle_db_id=%s ORDER BY ordinal',(cycle['id'],)).fetchall()]
     situations=[dict(x) for x in connection.execute("""SELECT s.id,s.assessment_situation_id,s.session_db_id,s.status,s.snapshot_json,s.scenario_ended_at,s.closed_at,
         h.handoff_id,h.envelope_checksum,h.boundary_sequence FROM m5_assessment_situations s
         LEFT JOIN LATERAL(SELECT * FROM m5_c45_handoffs x WHERE x.assessment_situation_db_id=s.id AND x.mode='final' ORDER BY x.created_at DESC LIMIT 1) h ON TRUE
         WHERE s.cycle_db_id=%s ORDER BY s.id""",(cycle['id'],)).fetchall()]
+    replacement = replacement_metadata(connection, cycle['id'])
+    dispositions = {item['assessment_situation_id']: item['disposition']
+        for position in replacement['positions'] for item in position['history']}
+    for situation in situations:
+        situation['route_disposition'] = dispositions.get(str(situation['assessment_situation_id']), 'legacy_current')
     identity={'cycle_id':str(cycle['cycle_id']),'target_set_checksum':cycle['target_set_checksum'],
         'sessions':[{'session_id':str(x['session_id']),'ordinal':x['ordinal']} for x in sessions],
         'situations':[{'assessment_situation_id':str(x['assessment_situation_id']),'session_db_id':x['session_db_id'],
-            'handoff_id':str(x['handoff_id']) if x['handoff_id'] else None,'handoff_checksum':x['envelope_checksum']} for x in situations]}
+            'handoff_id':str(x['handoff_id']) if x['handoff_id'] else None,'handoff_checksum':x['envelope_checksum'],
+            'route_disposition':x['route_disposition']} for x in situations], 'route': replacement}
     return sessions,situations,identity,checksum(identity)
 
 def _create_c46(connection,cycle):
@@ -80,7 +87,8 @@ def _create_c46(connection,cycle):
             'ended_at':x['ended_at'].isoformat() if x['ended_at'] else None,'close_reason':x['close_reason']} for x in sessions],
         'assessment_situations':[{'assessment_situation_id':str(x['assessment_situation_id']),'session_db_id':x['session_db_id'],'status':x['status'],
             'case_ref':x['snapshot_json']['case_ref'],'handoff_id':str(x['handoff_id']) if x['handoff_id'] else None,
-            'handoff_checksum':x['envelope_checksum'],'boundary_sequence':x['boundary_sequence']} for x in situations],
+            'handoff_checksum':x['envelope_checksum'],'boundary_sequence':x['boundary_sequence'],
+            'route_disposition':x['route_disposition']} for x in situations], 'route': identity['route'],
         'time':{'budget_seconds':cycle['time_budget_seconds'],'calendar_window_seconds':cycle['calendar_window_seconds'],
             'parameter_sources':cycle['parameter_sources_json'],'started_at':cycle['started_at'].isoformat() if cycle['started_at'] else None,
             'deadline':state['calendar_deadline'].isoformat() if state['calendar_deadline'] else None,'consumed_seconds':state['consumed_seconds'],
@@ -112,8 +120,14 @@ def complete(connection,*,cycle_id,key,action,reason,initiated_by):
     situations=connection.execute("SELECT * FROM m5_assessment_situations WHERE cycle_db_id=%s AND status NOT IN('closed','rejected') ORDER BY id FOR UPDATE",(cycle['id'],)).fetchall()
     handoffs=[]
     for item in situations:
+        from Api.m7_route_replacement import is_excluded
+        if is_excluded(connection, int(item['id'])):
+            continue
         handoff=_finalize_as(connection,dict(item),reason,key)
         if handoff:handoffs.append(str(handoff['handoff_id']))
+    connection.execute("""UPDATE m7_route_positions p SET state='completed',updated_at=NOW()
+        FROM m5_assessment_situations s WHERE p.current_as_db_id=s.id AND p.cycle_db_id=%s
+        AND s.status IN('closed','terminated')""", (cycle['id'],))
     connection.execute('UPDATE m5_cycle_time_intervals SET ended_at=NOW() WHERE cycle_db_id=%s AND ended_at IS NULL',(cycle['id'],))
     if action=='interrupt_for_continuation':
         if not current or current['status'] not in {'active','paused'}:raise ValueError('M7_CONTINUATION_NOT_INTERRUPTED')
