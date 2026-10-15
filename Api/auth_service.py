@@ -72,6 +72,15 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _is_expired(value: datetime | None) -> bool:
+    if value is None:
+        return True
+    now = _utc_now()
+    if value.tzinfo is None:
+        now = now.replace(tzinfo=None)
+    return value < now
+
+
 def normalize_email(value: str | None) -> str:
     email = str(value or "").strip().lower()
     if not email or "@" not in email or email.startswith("@") or email.endswith("@"):
@@ -361,7 +370,7 @@ class AuthService:
             ).fetchone()
             if row is None or row["used_at"] is not None:
                 raise ValueError("Ссылка недействительна или уже использована.")
-            if row["expires_at"] is None or row["expires_at"] < datetime.now():
+            if _is_expired(row["expires_at"]):
                 raise ValueError("Срок действия ссылки истек.")
             email = normalize_email(row["email"])
             invitation_id = int(row["organization_invitation_id"]) if row["organization_invitation_id"] else None
@@ -550,7 +559,7 @@ class AuthService:
             if link_row["used_at"] is not None:
                 raise ValueError("Эта ссылка уже была использована.")
             expires_at = link_row["expires_at"]
-            if expires_at is None or expires_at < datetime.now():
+            if _is_expired(expires_at):
                 raise ValueError("Срок действия ссылки истек. Запросите новую ссылку.")
 
             normalized_email = normalize_email(link_row["email"])
@@ -880,7 +889,7 @@ class AuthService:
                     WHERE token_hash = %s
                       AND purpose = 'email_verification'
                       AND used_at IS NULL
-                      AND expires_at > NOW()
+                      AND expires_at > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
                     RETURNING id
                     """,
                     (_hash_magic_token(str(verification_token)),),
@@ -892,7 +901,8 @@ class AuthService:
                     """
                     UPDATE organization_invitations
                     SET used_at = NOW()
-                    WHERE id = %s AND used_at IS NULL AND revoked_at IS NULL AND expires_at > NOW()
+                    WHERE id = %s AND used_at IS NULL AND revoked_at IS NULL
+                      AND expires_at > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
                     RETURNING id
                     """,
                     (personal_invitation_id,),

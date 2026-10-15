@@ -97,10 +97,8 @@ from Api.regression_tests import (
 from Api.web_session_service import web_session_service
 from Api.user_journey import (
     determine_cycle_next_action,
-    determine_next_action,
     evaluate_profile_state,
     get_or_create_onboarding_state,
-    normalize_assessment_status,
     update_onboarding_state,
 )
 
@@ -933,14 +931,14 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                     WHEN personal_invitation.id IS NULL THEN 'not_created'
                     WHEN personal_invitation.revoked_at IS NOT NULL THEN 'revoked'
                     WHEN personal_invitation.used_at IS NOT NULL THEN 'used'
-                    WHEN personal_invitation.expires_at <= NOW() THEN 'expired'
+                    WHEN personal_invitation.expires_at <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') THEN 'expired'
                     ELSE 'active'
                 END AS invitation_link_status,
                 CASE
                     WHEN personal_invitation.id IS NULL THEN 'not_sent'
                     WHEN personal_invitation.revoked_at IS NOT NULL THEN 'revoked'
                     WHEN personal_invitation.used_at IS NOT NULL THEN 'used'
-                    WHEN personal_invitation.expires_at <= NOW() THEN 'expired'
+                    WHEN personal_invitation.expires_at <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') THEN 'expired'
                     ELSE personal_invitation.delivery_status
                 END AS invitation_status,
                 EXISTS (
@@ -2916,7 +2914,7 @@ def _build_authenticated_user_response(
               AND (membership.role = 'admin' OR membership.admission_source IN ('admin_add', 'csv_import'))
               AND (
                 invitation.used_at IS NOT NULL
-                OR (invitation.revoked_at IS NULL AND invitation.expires_at > NOW())
+                OR (invitation.revoked_at IS NULL AND invitation.expires_at > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))
               )
             LIMIT 1
             """,
@@ -3370,12 +3368,6 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
     with get_connection() as connection:
         profile = participant_profile.readiness(connection, user_id=user.id, profile_id=personalized_profile_id)
         onboarding = get_or_create_onboarding_state(connection, user_id)
-        prior_cycle = connection.execute(
-            """SELECT 1 FROM m5_cycles
-               WHERE owner_user_id=%s AND organization_id=%s AND usage_scope=%s
-               LIMIT 1""",
-            (user.id, profile.get('organization_id'), usage_scope()),
-        ).fetchone()
         cycle = connection.execute("""SELECT c.status,c.cycle_id,
             latest_as.assessment_situation_id,latest_as.as_status,latest_as.session_id
             FROM m5_cycles c
@@ -3395,23 +3387,12 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
     assessment_status = ({'prepared':'preparing','active':'in_progress','paused':'in_progress',
         'interrupted':'in_progress','collection_closed':'analyzing','calculation_pending':'analyzing',
         'calculated':'report_ready','failed':'failed'}.get(cycle['status'], 'not_started') if cycle else 'not_started')
-    if cycle is None and prior_cycle is not None:
-        # A new configuration branch after an earlier Cycle retains its
-        # onboarding gate.  The first confirmed M4, with no Cycle history yet,
-        # must keep the established dashboard route on reload even though the
-        # dashboard URL includes its personalized_profile_id.
-        next_action = determine_next_action(
-            profile_status='complete' if ready else 'incomplete',
-            onboarding_status=str(onboarding['status']),
-            assessment_status='not_started',
-        )
-    else:
-        next_action = determine_cycle_next_action(
-            profile_status='complete' if ready else 'incomplete',
-            onboarding_status=str(onboarding['status']),
-            cycle_status=str(cycle['status']) if cycle else None,
-            assessment_situation_status=str(cycle['as_status']) if cycle and cycle['as_status'] else None,
-        )
+    next_action = determine_cycle_next_action(
+        profile_status='complete' if ready else 'incomplete',
+        onboarding_status=str(onboarding['status']),
+        cycle_status=str(cycle['status']) if cycle else None,
+        assessment_situation_status=str(cycle['as_status']) if cycle and cycle['as_status'] else None,
+    )
     # A stored Cycle owns the confirmed M4 snapshot. Reading this projection must
     # not reopen M4 or mutate Cycle intervals/time budgets.
     return UserJourneyStateResponse(
@@ -3565,7 +3546,7 @@ def create_organization_invitation(
 ) -> OrganizationInvitationAdminResponse:
     current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     raw_token = secrets.token_urlsafe(32)
-    expires_at = datetime.now() + timedelta(days=payload.expires_in_days)
+    expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=payload.expires_in_days)
     with get_connection() as connection:
         _require_superadmin(connection, current_user)
         organization = connection.execute(
@@ -3577,9 +3558,9 @@ def create_organization_invitation(
         invitation = connection.execute(
             """
             INSERT INTO organization_invitations (
-                organization_id, token_hash, expires_at, created_by_user_id
+                organization_id, token_hash, expires_at, created_by_user_id, created_at
             )
-            VALUES (%s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))
             RETURNING id
             """,
             (organization_id, hash_invitation_token(raw_token), expires_at, int(current_user.id)),
@@ -3678,8 +3659,9 @@ def send_personal_organization_invitations(
                     """
                     INSERT INTO organization_invitations (
                         organization_id, token_hash, expires_at, created_by_user_id,
-                        recipient_email, purpose, delivery_status, request_id
-                    ) VALUES (%s, %s, %s, %s, %s, 'personal_registration', 'queued', %s)
+                        recipient_email, purpose, delivery_status, request_id, created_at
+                    ) VALUES (%s, %s, %s, %s, %s, 'personal_registration', 'queued', %s,
+                        (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))
                     ON CONFLICT DO NOTHING
                     RETURNING id, expires_at, delivery_status
                     """,
@@ -3821,7 +3803,8 @@ def send_personal_organization_invitations(
                     """UPDATE organization_invitations
                        SET delivery_status = 'accepted', sent_at = NOW(), delivery_error = NULL
                        WHERE id = %s AND delivery_status = 'sending'
-                         AND used_at IS NULL AND revoked_at IS NULL AND expires_at > NOW()
+                         AND used_at IS NULL AND revoked_at IS NULL
+                         AND expires_at > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
                        RETURNING id""",
                     (invitation_id,),
                 ).fetchone()

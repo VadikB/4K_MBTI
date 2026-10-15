@@ -200,18 +200,6 @@ const bootApp = async () => {
   }
 
   if (state.pendingUser?.id) {
-    const cycleId = params.get('cycle_id') || state.productCycleId;
-    if (screen === 'interview' && cycleId) {
-      const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(cycleId) + '/runtime', { credentials: 'same-origin' });
-      if (!response.ok) {
-        returnToStart();
-        return;
-      }
-      state.assessmentRuntimeKind = 'cycle';
-      state.productCycleId = cycleId;
-      (await loadInterview()).openInterview();
-      return;
-    }
     if (state.currentScreen === 'admin-prompt-lab' && state.isAdmin) {
       void openAdminPromptLabScreen();
       return;

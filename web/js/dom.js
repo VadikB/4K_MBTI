@@ -40,6 +40,7 @@ export const forgotPasswordCredentialButton = document.getElementById('forgot-pa
 export const authEmailSent = document.getElementById('auth-email-sent');
 export const authEmailSentAddress = document.getElementById('auth-email-sent-address');
 export const authResendEmailButton = document.getElementById('auth-resend-email-button');
+export const authResendCountdown = document.getElementById('auth-resend-countdown');
 export const authChangeEmailButton = document.getElementById('auth-change-email-button');
 export const authChangeCredentialEmailButton = document.getElementById('auth-change-credential-email-button');
 export const verifyMagicLinkButton = document.getElementById('verify-magic-link-button');

@@ -100,7 +100,7 @@ def test_cycle_runtime_drives_journey_without_reopening_confirmed_profile() -> N
     assert determine_cycle_next_action(
         profile_status="complete", onboarding_status="not_started",
         cycle_status=None, assessment_situation_status=None,
-    ) == "show_dashboard"
+    ) == "show_onboarding"
     assert determine_cycle_next_action(
         profile_status="incomplete", onboarding_status="completed",
         cycle_status=None, assessment_situation_status=None,
@@ -129,3 +129,11 @@ def test_cycle_runtime_drives_journey_without_reopening_confirmed_profile() -> N
         profile_status="complete", onboarding_status="completed",
         cycle_status="active", assessment_situation_status=None,
     ) == "show_assessment_error"
+    assert determine_cycle_next_action(
+        profile_status="complete", onboarding_status="completed",
+        cycle_status="active", assessment_situation_status="scenario_ended",
+    ) == "resume_assessment"
+    assert determine_cycle_next_action(
+        profile_status="complete", onboarding_status="completed",
+        cycle_status="interrupted", assessment_situation_status="closed",
+    ) == "resume_assessment"

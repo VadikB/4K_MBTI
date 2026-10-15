@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 
 from Api.org_access import EXPLICIT_MEMBER_ADMISSION_SOURCES, normalize_email_for_access
@@ -33,6 +33,14 @@ def _optional_row_value(row, key: str, default=None):
         return default
 
 
+def _is_expired(value: datetime | None) -> bool:
+    if value is None:
+        return True
+    if value.tzinfo is not None:
+        return value <= datetime.now(timezone.utc)
+    return value <= datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 def resolve_invitation(connection, *, token: str) -> OrganizationInvitationContext:
     cleaned = str(token or "").strip()
     if not cleaned:
@@ -56,7 +64,7 @@ def resolve_invitation(connection, *, token: str) -> OrganizationInvitationConte
         raise OrganizationInvitationError("Приглашение отозвано.")
     if _optional_row_value(row, "used_at") is not None:
         raise OrganizationInvitationError("Приглашение уже использовано.")
-    if row["expires_at"] is None or row["expires_at"] <= datetime.now():
+    if _is_expired(row["expires_at"]):
         raise OrganizationInvitationError("Срок действия приглашения истёк.")
     return OrganizationInvitationContext(
         invitation_id=int(row["id"]),
@@ -94,7 +102,7 @@ def resolve_invitation_by_id(
         raise OrganizationInvitationError("Приглашение отозвано.")
     if _optional_row_value(row, "used_at") is not None and not allow_used:
         raise OrganizationInvitationError("Приглашение уже использовано.")
-    if (row["expires_at"] is None or row["expires_at"] <= datetime.now()) and not (
+    if _is_expired(row["expires_at"]) and not (
         allow_used and _optional_row_value(row, "used_at") is not None
     ):
         raise OrganizationInvitationError("Срок действия приглашения истёк.")

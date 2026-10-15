@@ -283,12 +283,18 @@
 .auth-panel .ghost-button { border-color: #769fa5; border-radius: 8px; }
 .auth-password-requirements { position: relative; width: 100%; text-align: left; }
 .auth-password-requirements-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     min-height: 44px;
     padding: 0;
     border: 0;
     background: transparent;
     color: #64748b;
     text-align: left;
+    font-family: "Onest", sans-serif;
+    font-size: 14px;
+    font-weight: 400;
 }
 .auth-password-requirements-info {
     display: inline-flex;
@@ -303,6 +309,7 @@
     font-weight: 700;
     line-height: 1;
 }
+.auth-password-requirements-trigger .auth-password-requirements-info { order: -1; margin-left: 0; }
 #auth-change-credential-email-button {
     width: auto;
     min-height: 44px;
@@ -330,7 +337,7 @@
     box-shadow: 0 3px 14px rgba(20, 36, 41, 0.08);
 }
 .auth-password-requirements-popover ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
-.auth-password-generate-row .ghost-button { min-height: 44px; padding: 4px 0; border: 0; text-decoration: underline; text-underline-offset: 3px; }
+.auth-password-generate-row .ghost-button { min-height: 44px; padding: 4px 0; border: 0; font-family: "Onest", sans-serif; font-size: 14px; font-weight: 400; text-decoration: underline; text-underline-offset: 3px; }
 
 @media (max-width: 767px) {
     .auth-panel { min-height: 0; padding: 36px 32px; }
@@ -783,6 +790,12 @@
 .auth-panel.auth-panel .primary-button { min-height: 56px; border-radius: 8px; background: #222c30; color: #f6f9f9; font-size: 16px; font-weight: 700; box-shadow: none; }
 .auth-panel.auth-panel .auth-password-input-row { position: relative; display: block; }
 .auth-panel.auth-panel .auth-password-tool { position: absolute; top: 50%; right: 4px; width: 44px; min-width: 44px; height: 44px; padding: 0; transform: translateY(-50%); border: 0; font-size: 0; }
+.auth-panel.auth-panel .auth-secondary-action,
+.auth-panel.auth-panel #auth-change-credential-email-button { font-family: "Onest", sans-serif; font-size: 16px; font-weight: 400; text-decoration: underline; text-underline-offset: 3px; }
+.auth-panel.auth-panel .auth-email-sent { align-items: center; text-align: center; }
+.auth-panel.auth-panel .auth-email-sent-icon { margin-inline: auto; }
+.auth-panel.auth-panel .auth-resend-action { width: 100%; min-height: 56px; border: 1px solid #769fa5; border-radius: 8px; color: #222c30; font-size: 16px; font-weight: 700; }
+.auth-resend-countdown { margin: -12px 0 0; color: #64748b; font: 400 12px/18px "Onest", sans-serif; text-align: center; }
 @media (max-width: 767px) { .auth-panel.auth-panel { min-height: 0; padding: 36px 32px; } }
 @media (max-width: 479px) { .auth-panel.auth-panel { padding: 32px 24px; } }
 @media (max-width: 359px) { .auth-panel.auth-panel { padding: 28px 16px; } }

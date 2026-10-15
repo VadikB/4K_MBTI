@@ -21,6 +21,7 @@ import {
   authEmailSent,
   authEmailSentAddress,
   authResendEmailButton,
+  authResendCountdown,
   authChangeEmailButton,
   verifyMagicLinkButton,
   authStatus,
@@ -314,9 +315,11 @@ const startAuthResendCountdown = () => {
   const render = () => {
     if (!authResendEmailButton) return;
     authResendEmailButton.disabled = secondsLeft > 0;
-    authResendEmailButton.textContent = secondsLeft > 0
-      ? `Отправить повторно через ${secondsLeft} сек.`
-      : 'Отправить письмо повторно';
+    authResendEmailButton.textContent = 'Отправить повторно';
+    if (authResendCountdown) {
+      authResendCountdown.hidden = secondsLeft <= 0;
+      authResendCountdown.textContent = `Повторная отправка доступна через ${secondsLeft} сек.`;
+    }
   };
   render();
   authResendTimer = window.setInterval(() => {
@@ -329,6 +332,7 @@ const startAuthResendCountdown = () => {
 const showEmailVerificationPending = (email) => {
   authPendingEmailAction = 'verification';
   authResendEmailButton?.classList.remove('hidden');
+  if (authResendCountdown) authResendCountdown.hidden = false;
   authEmailForm?.classList.add('hidden');
   authTokenForm?.classList.add('hidden');
   authEmailSent?.classList.remove('hidden');
@@ -364,6 +368,7 @@ const showAccessUnavailable = (email) => {
     authResendEmailButton.disabled = false;
     authResendEmailButton.textContent = 'Проверить снова';
   }
+  if (authResendCountdown) authResendCountdown.hidden = true;
   if (authChangeEmailButton) authChangeEmailButton.textContent = 'Изменить email';
   setAuthStatus('');
   showError(authError, '');
@@ -379,6 +384,7 @@ const showEmailEntry = () => {
   authTitle?.classList.remove('hidden');
   authSubtitle?.classList.remove('hidden');
   authResendEmailButton?.classList.remove('hidden');
+  if (authResendCountdown) authResendCountdown.hidden = true;
   if (authTitle) authTitle.textContent = 'Добро пожаловать';
   if (authSubtitle) authSubtitle.textContent = 'Введите рабочий email, чтобы продолжить вход.';
   if (requestMagicLinkButton) requestMagicLinkButton.textContent = 'Продолжить';
