@@ -139,7 +139,10 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
 def _facts(connection, cycle_db_id:int, target_ids:set[str]) -> dict:
     rows=connection.execute("""SELECT DISTINCT ON(r.indicator_id) r.indicator_id,r.status,r.payload_json,r.created_at
         FROM m5_c54_receipts r JOIN m5_assessment_situations s ON s.id=r.assessment_situation_db_id
-        WHERE s.cycle_db_id=%s ORDER BY r.indicator_id,r.created_at DESC""",(cycle_db_id,)).fetchall()
+        WHERE s.cycle_db_id=%s
+          AND NOT EXISTS(SELECT 1 FROM m7_route_position_as_history h
+              WHERE h.assessment_situation_db_id=s.id AND h.disposition='replaced')
+        ORDER BY r.indicator_id,r.created_at DESC""",(cycle_db_id,)).fetchall()
     final_ia=set();opportunity=set();pending=[];failures=[]
     for row in rows:
         target=(row["payload_json"] or {}).get("target") or {}
@@ -154,6 +157,9 @@ def _facts(connection, cycle_db_id:int, target_ids:set[str]) -> dict:
 def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:str, created_by:int, policy:dict) -> dict:
     plan=repo.read_plan(connection,cycle_id)
     connection.execute("SELECT id FROM m5_cycles WHERE id=%s FOR UPDATE",(plan["cycle_db_id"],)).fetchone()
+    connection.execute("""UPDATE m7_route_positions p SET state='completed',updated_at=NOW()
+        FROM m5_assessment_situations s WHERE p.current_as_db_id=s.id AND p.cycle_db_id=%s
+        AND s.status='closed' AND p.state<>'completed'""", (plan["cycle_db_id"],))
     request_hash=checksum({"cycle_id":cycle_id,"revision":expected_plan_revision_id})
     existing=repo.existing_next(connection,plan["cycle_db_id"],key,request_hash)
     if existing:return existing
@@ -215,6 +221,8 @@ def present(connection, *, decision_id:str, expected_revision:int) -> dict:
     if current["status"]!="admitted":raise ValueError("AS_NOT_ADMITTED")
     presentation=start_situation(connection,str(current["assessment_situation_id"]))
     connection.execute("UPDATE m7_route_assignments SET presented_at=NOW() WHERE decision_id=%s AND presented_at IS NULL",(decision["id"],))
+    from Api.m7_route_replacement import mark_presented
+    mark_presented(connection, int(decision["assigned_as_db_id"]))
     return {"decision":repo.read_decision(connection,decision_id),"presentation":presentation}
 
 

@@ -220,8 +220,11 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
         "SELECT id,status FROM m7_continuation_intents WHERE cycle_db_id=%s ORDER BY created_at DESC LIMIT 1",
         (cycle["id"],),
     ).fetchone()
+    from Api.m7_route_replacement import replacement_metadata
+    route = replacement_metadata(connection, cycle["id"])
     return {
         "runtime_kind": "cycle", "cycle_id": cycle_id, "plan": plan, "status": status,
+        "route": route,
         "situations": [{"assessment_situation_id": str(x["assessment_situation_id"]), "status": x["status"]}
                        for x in situations],
         "current_situation": ({

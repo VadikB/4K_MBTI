@@ -39,6 +39,10 @@ def _inputs(connection, cycle_id: str, expected_composition_checksum: str):
     target_ids = {x["indicator_id"] for x in full_targets}
     observations, processing = [], []
     for situation in situations:
+        if situation.get("route_disposition") == "replaced":
+            processing.append({"assessment_situation_id": str(situation["assessment_situation_id"]),
+                               "status": "excluded_replaced"})
+            continue
         if not situation["handoff_id"]:
             processing.append({"assessment_situation_id": str(situation["assessment_situation_id"]), "status": "not_presented"})
             continue
@@ -93,7 +97,7 @@ def create(connection, *, cycle_id: str, key: str, expected_composition_checksum
         planned_indicator_ids=[x["indicator_id"] for x in value["planned_target_set"]], composition_version=expected_composition_checksum)
     revision_no = connection.execute("SELECT COALESCE(MAX(revision_no),0)+1 AS n FROM m6_cycle_calculations WHERE cycle_db_id=%s", (cycle["id"],)).fetchone()["n"]
     calculation_id = uuid4()
-    readiness = "ready_for_pm06" if all(x["status"] in {"completed", "not_presented"} for x in value["processing"]) else "not_ready"
+    readiness = "ready_for_pm06" if all(x["status"] in {"completed", "not_presented", "excluded_replaced"} for x in value["processing"]) else "not_ready"
     c56 = {"schema_version": 1, "contract": "C-56", "message_version": "1.0", "owner": "PM-05", "consumer": "PM-06",
         "message_id": str(uuid4()), "correlation_id": str(cycle["cycle_id"]), "readiness": readiness,
         "cycle_id": str(cycle["cycle_id"]), "composition": value["composition"], "composition_checksum": expected_composition_checksum,

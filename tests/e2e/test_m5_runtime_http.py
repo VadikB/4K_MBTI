@@ -148,3 +148,25 @@ def test_product_m7_completion_routes_enforce_owner_and_keep_processing_distinct
     assert result.status_code==200 and result.json()['processing_status']=='pending'
     connection.scope='qa'
     assert http.get(f'/users/assessment/m7/cycles/{cycle_id}').status_code==403
+
+
+def test_p01_replacement_http_is_owner_scoped_and_forwards_optimistic_state(client):
+    http,monkeypatch,_=client;cycle_id=str(uuid4());old_as=str(uuid4())
+    captured={}
+    def replace(*_args,**kwargs):
+        captured.update(kwargs)
+        return {'status':'completed','old_assessment_situation_id':old_as,
+                'new_assessment_situation_id':str(uuid4()),'position_no':kwargs['position_no']}
+    monkeypatch.setattr(routes.m7_route_replacement,'replace_current',replace)
+    payload={'expected_assessment_situation_id':old_as,'expected_state':'active',
+        'idempotency_key':'replace-1','reason':'authorized_return',
+        'policy_ref':{'id':'P01','version':'2.0','checksum':'a'*64}}
+    url=f'/users/assessment/m7/cycles/{cycle_id}/positions/3/replacement'
+    assert http.post(url,json=payload).status_code==401
+    http.cookies.set(routes.SESSION_COOKIE_NAME,'other')
+    assert http.post(url,json=payload).status_code==403
+    http.cookies.set(routes.SESSION_COOKIE_NAME,'owner')
+    response=http.post(url,json=payload)
+    assert response.status_code==201 and response.json()['position_no']==3
+    assert captured['requested_by']==7 and captured['expected_assessment_situation_id']==old_as
+    assert captured['expected_state']=='active' and captured['key']=='replace-1'

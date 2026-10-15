@@ -49,6 +49,8 @@ def ensure_schema(connection) -> None:
     for table in ("m7_cycle_plans", "m7_plan_revisions", "m7_route_decisions"):
         connection.execute(f"DROP TRIGGER IF EXISTS immutable_m7_planning ON {table}")
         connection.execute(f"CREATE TRIGGER immutable_m7_planning BEFORE UPDATE OR DELETE ON {table} FOR EACH ROW EXECUTE FUNCTION prevent_m7_planning_history_change()")
+    from Api.m7_route_replacement import ensure_schema as ensure_replacement_schema
+    ensure_replacement_schema(connection)
 
 
 def save_plan(connection, *, cycle: dict, profile_ref: dict, full_targets: list, planned_targets: list,
@@ -104,6 +106,8 @@ def save_decision(connection, *, plan: dict, session_db_id: int, key: str, reque
 
 def attach_prepared_as(connection, decision_id, as_db_id: int) -> None:
     connection.execute("INSERT INTO m7_route_assignments(decision_id,assessment_situation_db_id) VALUES (%s,%s)",(decision_id,as_db_id))
+    from Api.m7_route_replacement import attach_initial
+    attach_initial(connection, decision_id=decision_id, as_db_id=as_db_id)
 
 
 def read_decision(connection, decision_id) -> dict:
