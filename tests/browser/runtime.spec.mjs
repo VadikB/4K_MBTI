@@ -131,7 +131,9 @@ async function report(page,stand,info){
   });
   expect(closed.ok()).toBeTruthy();await page.reload();
  }catch(_error){}
- await expect(page.locator('#report-panel')).toBeVisible({timeout:70000});
+ await expect(page.locator('#processing-outcome-title')).toHaveText('Ваш результат готов',{timeout:70000});
+ await page.getByRole('button',{name:'Посмотреть результат'}).click();
+ await expect(page.locator('#report-panel')).toBeVisible();
  await expect(page.locator('#m8-report-state')).toContainText('Report готов',{timeout:70000});
  const cycle=new URL(page.url()).searchParams.get('cycle_id');expect(cycle).toBeTruthy();
  const response=await page.request.get(`${stand.url}/users/assessment/m8/cycles/${cycle}/reports/latest`);expect(response.ok()).toBeTruthy();const saved=await response.json();
