@@ -70,6 +70,10 @@ async function openAdminOrganizations(page, invitationHandler) {
     if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') {
       return fulfillJson(route, { is_superadmin: false, items: [adminOrganization] });
     }
+    if (pathname === '/users/admin/organizations/3/questionnaire') {
+      return fulfillJson(route, { items: [{ id: 11, assignment_ref: 'competencies_4k',
+        status: 'confirmed', channel: 'product_form', validation_json: {}, briefing: {} }] });
+    }
     if (pathname === '/users/admin/organizations/3/personal-invitations') return invitationHandler(route);
     return fulfillJson(route, {}, 404);
   });
