@@ -38,7 +38,7 @@ from Api import m7_clarification
 from Api.m7_clarification_contracts import CreateClarificationRequest,PresentClarificationRequest,ClarificationAnswerRequest,ClarificationOutcomeRequest
 from Api import m7_completion
 from Api import m7_return_integration
-from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,AdditionalSessionRequest,BlockingWaitRequest,ReconcileC46Request,ReturnContinueRequest
+from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,AdditionalSessionRequest,BlockingWaitRequest,ReconcileC46Request,ReturnContinueRequest,ReturnHeartbeatRequest
 from Api import m6_cycle_aggregation_repository
 from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest, CreateSubstantiveAggregationRequest
 from Api.profile_access import require_unchanged_email
@@ -6026,6 +6026,17 @@ def get_owned_m7_return_state(cycle_id:UUID,request:Request):
     try:
         with get_connection() as connection:
             return m7_return_integration.read_return_state(connection,cycle_id=str(cycle_id),owner_user_id=int(user.id))
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.post('/assessment/m7/cycles/{cycle_id}/presence')
+def heartbeat_owned_m7_return(cycle_id:UUID,payload:ReturnHeartbeatRequest,request:Request):
+    user=_m7_owned_cycle(request,str(cycle_id))
+    try:
+        with get_connection() as connection:
+            result=m7_return_integration.heartbeat(connection,cycle_id=str(cycle_id),owner_user_id=int(user.id),
+                client_id=payload.client_id,expected_as_id=payload.expected_assessment_situation_id)
+            connection.commit();return result
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 

@@ -50,6 +50,13 @@ import { recoverProfileCompletionForAssessment, shouldRecoverProfileOnAssessment
 const interviewCaseContextByKey = new Map();
 const PRODUCT_RUNTIME_POLL_MS = 1200;
 let productRuntimePollGeneration = 0;
+let returnHeartbeatTimer = null;
+const returnClientId = (() => {
+  const key = 'agent4k.returnClientId';
+  let value = window.sessionStorage.getItem(key);
+  if (!value) { value = crypto.randomUUID(); window.sessionStorage.setItem(key, value); }
+  return value;
+})();
 
 export const isCycleAssessment = () =>
   state.assessmentRuntimeKind === 'cycle' && Boolean(state.productCycleId);
@@ -141,6 +148,77 @@ const renderProductRuntime = (snapshot) => {
   return snapshot;
 };
 
+const heartbeatProductPresence = async () => {
+  if (!state.productCycleId || !state.productAssessmentSituationId) return;
+  const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/presence', {
+    method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_id: returnClientId, expected_assessment_situation_id: state.productAssessmentSituationId }),
+  });
+  if (!response.ok && response.status !== 409) await readApiResponse(response, 'Не удалось подтвердить связь с оценкой.');
+};
+
+const startProductPresence = () => {
+  if (returnHeartbeatTimer) window.clearInterval(returnHeartbeatTimer);
+  void heartbeatProductPresence();
+  returnHeartbeatTimer = window.setInterval(() => { void heartbeatProductPresence(); }, 10000);
+};
+
+const renderReturnCard = (value) => {
+  interviewMessages.innerHTML = '';
+  const card = document.createElement('section'); card.className = 'interview-return-card';
+  const title = document.createElement('h3'); title.textContent = 'Продолжение оценки';
+  const progress = value.progress || {};
+  const copy = document.createElement('p');
+  copy.textContent = `Пройдено ${progress.completed_positions || 0} из ${progress.total_positions || 0}. Остаток времени выполнения: ${Math.ceil(Number(value.remaining_seconds || 0) / 60)} мин.`;
+  const deadline = document.createElement('p');
+  deadline.textContent = value.calendar_deadline ? `Календарный срок: ${new Date(value.calendar_deadline).toLocaleString('ru-RU')}.` : '';
+  const reason = document.createElement('p');
+  reason.textContent = value.allowed_action === 'replace_current'
+    ? 'После продолжения текущая незавершённая ситуация будет обновлена. Частичный диалог не переносится, завершённые ситуации сохраняются.'
+    : 'После продолжения откроется та же незавершённая ситуация и сохранённый диалог.';
+  const button = document.createElement('button'); button.type = 'button'; button.className = 'primary-button'; button.textContent = 'Продолжить';
+  const status = document.createElement('p'); status.setAttribute('role', 'status');
+  button.addEventListener('click', async () => {
+    button.disabled = true; status.textContent = value.allowed_action === 'replace_current' ? 'Готовим допустимое обновление ситуации…' : 'Восстанавливаем ситуацию…';
+    try {
+      let generationOperationId = null;
+      if (value.allowed_action === 'replace_current') {
+        if (!value.provider_config_ref) throw new Error('Для этого Cycle ещё не подключён допущенный provider обновления.');
+        const generatedResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId)
+          + '/positions/' + encodeURIComponent(value.position_no) + '/equivalent-candidate', {
+          method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expected_assessment_situation_id: value.current_assessment_situation_id,
+            idempotency_key: createOperationId(), provider_config_ref: value.provider_config_ref }),
+        });
+        const generated = await readApiResponse(generatedResponse, 'Не удалось подготовить допустимое обновление ситуации.');
+        generationOperationId = generated.operation_id;
+      }
+      const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/return-continue', {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ position_no: value.position_no,
+          expected_assessment_situation_id: value.current_assessment_situation_id,
+          expected_state: value.current_assessment_situation_status,
+          idempotency_key: createOperationId(), generation_operation_id: generationOperationId }),
+      });
+      const continued = await readApiResponse(response, 'Не удалось продолжить оценку.');
+      if (continued.status === 'collection_closed') { openProcessing(); return; }
+      state.productAssessmentSituationId = continued.assessment_situation_id;
+      await loadProductRuntime();
+    } catch (error) { status.textContent = error.message; button.disabled = false; }
+  });
+  card.append(title, copy, deadline, reason, button, status); interviewMessages.appendChild(card);
+  interviewTextarea.disabled = true; interviewSubmitButton.disabled = true; interviewFinishButton.disabled = true;
+  interviewCaseStatus.textContent = 'Оценка остановлена до явного продолжения.';
+  scheduleInterviewBottomAlignment();
+};
+
+const loadReturnState = async () => {
+  const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/return-state', { credentials: 'same-origin' });
+  const value = await readApiResponse(response, 'Не удалось проверить состояние возврата.');
+  if (['continue_current', 'replace_current'].includes(value.allowed_action)) { renderReturnCard(value); return true; }
+  return false;
+};
+
 export const loadProductRuntime = async ({ generation = null } = {}) => {
   if (!state.productCycleId) throw new Error('Cycle runtime не инициализирован.');
   const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(state.productCycleId) + '/runtime', {
@@ -148,7 +226,10 @@ export const loadProductRuntime = async ({ generation = null } = {}) => {
   });
   const saved = await readApiResponse(response, 'Не удалось восстановить состояние оценки.');
   if (generation !== null && generation !== productRuntimePollGeneration) return saved;
+  state.productAssessmentSituationId = saved.current_situation?.assessment_situation_id || null;
+  if (saved.current_situation && await loadReturnState()) return saved;
   const snapshot = renderProductRuntime(saved);
+  if (snapshot.current_situation) startProductPresence();
   if (['collection_closed', 'calculation_pending', 'calculated'].includes(snapshot.status?.collection_status) &&
       !interviewPanel.classList.contains('hidden')) {
     openProcessing();
@@ -1107,6 +1188,7 @@ export const initInterview = () => {
 
   registerLeaveInterviewCleanup(() => {
     clearInterviewTimer();
+    if (returnHeartbeatTimer) { window.clearInterval(returnHeartbeatTimer); returnHeartbeatTimer = null; }
     void pauseAssessmentTimerIfNeeded();
   });
 };

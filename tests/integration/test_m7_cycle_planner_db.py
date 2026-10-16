@@ -16,12 +16,13 @@ from Api.m5_equivalent_generation import (ControlledEquivalentProvider, begin_ge
     claim_generation, complete_generation, load_variability_package, run_provider)
 from Api.m5_storage import import_package
 from Api.m5_storage import prepare_assessment_situation
-from Api.m5_scenario_runtime import build_c45,transition
+from Api.m5_scenario_runtime import build_c45,start as start_situation,transition
 from Api.m7_cycle_planner import _facts,choose_next,create_plan,present,read_plan
 from Api.m7_completion import complete,create_additional_session,read_c46,reconcile_c46,expire_due_cycles
 from Api.m7_route_replacement import (FixedCaseReplacementProvider,GeneratedCandidateReplacementProvider,
-    replace_current,replacement_metadata)
-from Api.m7_return_integration import continue_return,read_return_state,record_controlled_absence
+    mark_presented,replace_current,replacement_metadata)
+from Api.m7_return_integration import (continue_return,heartbeat,read_return_state,
+    record_controlled_absence)
 from Api.m5_cycle_runtime import begin_blocking_wait,end_blocking_wait,read_cycle
 from scripts.build_m5_case_package import OUTPUT
 
@@ -282,6 +283,51 @@ def test_controlled_return_179_continues_same_as_without_restoring_budget(db):
         assert result['remaining_seconds']<int(c.execute('SELECT time_budget_seconds FROM m5_cycles').fetchone()['time_budget_seconds'])
         assert result['calendar_deadline']==deadline.isoformat()
         assert c.execute("SELECT count(*) AS n FROM m5_assessment_situations").fetchone()['n']==1
+
+
+def test_presence_lease_119_120_and_two_clients_use_last_server_expiry(db):
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);as_id=str(shown['decision']['assessment_situation_id'])
+        base=datetime.now(timezone.utc)-timedelta(seconds=180)
+        heartbeat(c,cycle_id=cycle_id,owner_user_id=99,client_id=str(uuid4()),expected_as_id=as_id,received_at=base)
+        second=str(uuid4())
+        heartbeat(c,cycle_id=cycle_id,owner_user_id=99,client_id=second,expected_as_id=as_id,received_at=base+timedelta(seconds=60))
+        at_119=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=base+timedelta(seconds=179))
+        assert at_119['allowed_action']=='connected' and at_119['recognized_absence_seconds']==0
+        at_120=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=base+timedelta(seconds=180))
+        assert at_120['allowed_action']=='continue_current' and at_120['recognized_absence_seconds']==0
+        assert c.execute("SELECT count(*) AS n FROM m7_return_absence_events").fetchone()['n']==0
+        c.commit()
+        result=continue_return(c,cycle_id=cycle_id,position_no=1,expected_as_id=as_id,expected_state='active',
+            key='presence-continue',owner_user_id=99,evaluated_at=base+timedelta(seconds=180))
+        assert result['branch']=='continued_current'
+        event=c.execute("SELECT recognized_at,source_kind FROM m7_return_absence_events").fetchone()
+        assert event['recognized_at']==base+timedelta(seconds=180) and event['source_kind']=='presence_lease'
+
+
+def test_fourth_successful_return_replacement_closes_collection_without_new_cycle(db):
+    policy=json.loads((OUTPUT/'admission-policy.json').read_text())
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id'])
+        current=str(shown['decision']['assessment_situation_id'])
+        for index in range(3):
+            replaced=replace_current(c,cycle_id=cycle_id,position_no=1,
+                expected_assessment_situation_id=current,expected_state='active',key=f'd09-replace-{index}',
+                reason='recognized_return_threshold',policy_ref={'id':'p03','version':'1.2','checksum':'b'*64},
+                requested_by=99,provider=FixedCaseReplacementProvider(policy))
+            current=replaced['new_assessment_situation_id'];start_situation(c,current)
+            row=c.execute('SELECT id FROM m5_assessment_situations WHERE assessment_situation_id=%s',(current,)).fetchone()
+            mark_presented(c,row['id'])
+        evaluated=datetime.now(timezone.utc)
+        c.execute("UPDATE m5_cycle_time_intervals SET started_at=%s WHERE ended_at IS NULL AND interval_type='collecting'",
+            (evaluated-timedelta(seconds=300),))
+        record_controlled_absence(c,cycle_id=cycle_id,expected_as_id=current,source_ref='fourth-required',
+            recognized_at=evaluated-timedelta(seconds=180))
+        result=continue_return(c,cycle_id=cycle_id,position_no=1,expected_as_id=current,expected_state='active',
+            key='fourth-required',owner_user_id=99,evaluated_at=evaluated)
+        assert result['branch']=='replacement_limit_closed' and result['status']=='collection_closed'
+        assert c.execute('SELECT count(*) AS n FROM m5_cycles').fetchone()['n']==1
+        assert c.execute("SELECT count(*) AS n FROM m7_route_position_as_history WHERE disposition='replaced'").fetchone()['n']==3
 
 
 def test_controlled_return_180_replaces_presents_once_and_keeps_deadline(db):

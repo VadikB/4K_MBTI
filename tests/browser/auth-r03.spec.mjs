@@ -451,6 +451,37 @@ test('R03 fresh login persists journey assessment identifiers', async ({ page })
   expect(saved).toEqual({ id: '99', code: 'session-99' });
 });
 
+test('P03 return card hides stopped AS and keeps explicit continue in the same chat', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'p03-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'resume_assessment', profile: { status: 'complete' }, onboarding: { status: 'completed' },
+      assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: 'cycle-p03', cycle_session_id: 'session-p03', assessment_situation_id: 'as-old' },
+    });
+    if (pathname === '/users/assessment/cycles/cycle-p03/runtime') return fulfillJson(route, {
+      cycle_id: 'cycle-p03', status: { collection_status: 'active', remaining_seconds: 1200 },
+      current_situation: { assessment_situation_id: 'as-old', status: 'active', participant_payload: { title: 'Скрытая ситуация', content: 'Нельзя показывать до Continue' } },
+      situations: [], plan: { plan: { route: [{}] } }, trace: { turns: [], events: [] },
+    });
+    if (pathname === '/users/assessment/m7/cycles/cycle-p03/return-state') return fulfillJson(route, {
+      cycle_id: 'cycle-p03', position_no: 1, current_assessment_situation_id: 'as-old', current_assessment_situation_status: 'active',
+      allowed_action: 'replace_current', recognized_absence_seconds: 180, remaining_seconds: 1200,
+      calendar_deadline: '2026-10-18T12:00:00Z', progress: { completed_positions: 2, total_positions: 4 },
+      provider_config_ref: null,
+    });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(`${base}/?screen=interview`);
+  await expect(page.locator('.interview-return-card')).toBeVisible();
+  await expect(page.getByText('Пройдено 2 из 4', { exact: false })).toBeVisible();
+  await expect(page.getByText('Нельзя показывать до Continue')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Продолжить', exact: true })).toBeVisible();
+  await expect(page.locator('#interview-textarea')).toBeDisabled();
+});
+
 test('R03 null journey removes stale legacy and Cycle identifiers', async ({ page }) => {
   const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
   await page.addInitScript(() => {

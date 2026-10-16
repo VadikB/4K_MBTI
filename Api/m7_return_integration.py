@@ -29,6 +29,10 @@ def load_policy(path: Path = POLICY_PATH) -> dict:
         raise ValueError("M7_RETURN_POLICY_NOT_QA_DRAFT")
     if int(policy.get("replacement_threshold_seconds", 0)) != 180:
         raise ValueError("M7_RETURN_POLICY_INVALID")
+    if int(policy.get("presence_lease_seconds", 0)) != 120:
+        raise ValueError("M7_RETURN_POLICY_INVALID")
+    if int(policy.get("max_successful_replacements_per_position", 0)) != 3:
+        raise ValueError("M7_RETURN_POLICY_INVALID")
     return policy
 
 
@@ -38,16 +42,91 @@ def ensure_schema(connection) -> None:
         session_db_id BIGINT NOT NULL REFERENCES m5_cycle_sessions(id),
         position_id UUID NOT NULL REFERENCES m7_route_positions(id),
         assessment_situation_db_id BIGINT NOT NULL REFERENCES m5_assessment_situations(id),
-        source_kind TEXT NOT NULL CHECK(source_kind='controlled_fixture'),source_ref TEXT NOT NULL,
+        source_kind TEXT NOT NULL CHECK(source_kind IN('controlled_fixture','presence_lease')),source_ref TEXT NOT NULL,
         recognized_at TIMESTAMPTZ NOT NULL,policy_ref_json JSONB NOT NULL,
         status TEXT NOT NULL CHECK(status IN('recognized','consumed')),consumed_at TIMESTAMPTZ,
         result_json JSONB,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),UNIQUE(cycle_db_id,source_ref))""")
     connection.execute("""CREATE UNIQUE INDEX IF NOT EXISTS uq_m7_one_open_return_event
         ON m7_return_absence_events(cycle_db_id) WHERE status='recognized'""")
+    connection.execute("ALTER TABLE m7_return_absence_events DROP CONSTRAINT IF EXISTS m7_return_absence_events_source_kind_check")
+    connection.execute("""ALTER TABLE m7_return_absence_events ADD CONSTRAINT m7_return_absence_events_source_kind_check
+        CHECK(source_kind IN('controlled_fixture','presence_lease'))""")
     connection.execute("""CREATE TABLE IF NOT EXISTS m7_return_commands (
         cycle_db_id BIGINT NOT NULL REFERENCES m5_cycles(id),request_key TEXT NOT NULL,
         request_checksum TEXT NOT NULL,result_json JSONB NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         PRIMARY KEY(cycle_db_id,request_key))""")
+    connection.execute("""CREATE TABLE IF NOT EXISTS m7_return_presence_clients (
+        cycle_db_id BIGINT NOT NULL REFERENCES m5_cycles(id),client_id UUID NOT NULL,
+        owner_user_id BIGINT NOT NULL,assessment_situation_db_id BIGINT NOT NULL REFERENCES m5_assessment_situations(id),
+        last_seen_at TIMESTAMPTZ NOT NULL,lease_expires_at TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),PRIMARY KEY(cycle_db_id,client_id))""")
+    connection.execute("""CREATE TABLE IF NOT EXISTS m7_return_infrastructure_incidents (
+        id UUID PRIMARY KEY,started_at TIMESTAMPTZ NOT NULL,recovered_at TIMESTAMPTZ,
+        reason TEXT NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())""")
+
+
+def heartbeat(connection, *, cycle_id: str, owner_user_id: int, client_id: str,
+              expected_as_id: str, received_at: datetime | None = None) -> dict:
+    cycle, _session, _position, situation = _context(connection, cycle_id, lock=True)
+    if int(cycle["owner_user_id"]) != int(owner_user_id):
+        raise ValueError("M7_CYCLE_NOT_FOUND")
+    if cycle["status"] in TERMINAL_CYCLE or situation["status"] not in {"active", "paused"}:
+        raise ValueError("M7_RETURN_NOT_APPLICABLE")
+    if str(situation["assessment_situation_id"]) != expected_as_id:
+        raise ValueError("M7_RETURN_STALE_CURRENT_AS")
+    now = (received_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    # A late heartbeat cannot move the already elapsed server boundary forward.
+    reconcile_presence(connection, cycle_id=cycle_id, owner_user_id=owner_user_id, evaluated_at=now)
+    lease = now.timestamp() + int(load_policy()["presence_lease_seconds"])
+    expires_at = datetime.fromtimestamp(lease, timezone.utc)
+    row = connection.execute("""INSERT INTO m7_return_presence_clients(
+        cycle_db_id,client_id,owner_user_id,assessment_situation_db_id,last_seen_at,lease_expires_at)
+        VALUES(%s,%s,%s,%s,%s,%s)
+        ON CONFLICT(cycle_db_id,client_id) DO UPDATE SET
+          owner_user_id=EXCLUDED.owner_user_id,assessment_situation_db_id=EXCLUDED.assessment_situation_db_id,
+          last_seen_at=EXCLUDED.last_seen_at,lease_expires_at=EXCLUDED.lease_expires_at
+        RETURNING client_id,last_seen_at,lease_expires_at""",
+        (cycle["id"], UUID(client_id), owner_user_id, situation["id"], now, expires_at),
+    ).fetchone()
+    return {**dict(row), "client_id": str(row["client_id"]), "cycle_id": cycle_id,
+            "assessment_situation_id": expected_as_id}
+
+
+def _open_incident_overlaps(connection, at: datetime) -> bool:
+    return bool(connection.execute("""SELECT 1 FROM m7_return_infrastructure_incidents
+        WHERE started_at<=%s AND (recovered_at IS NULL OR recovered_at>=%s) LIMIT 1""", (at, at)).fetchone())
+
+
+def _recognize_presence_absence(connection, *, cycle: dict, session: dict, position: dict,
+                                situation: dict, recognized_at: datetime, source_ref: str) -> dict:
+    policy = load_policy();policy_ref={"id":policy["id"],"version":policy["version"],"checksum":checksum(policy)}
+    connection.execute("UPDATE m5_cycle_time_intervals SET ended_at=%s WHERE cycle_db_id=%s AND ended_at IS NULL AND interval_type='collecting'",
+                       (recognized_at, cycle["id"]))
+    operation_ref=f"return:{source_ref}"
+    connection.execute("""INSERT INTO m5_cycle_time_intervals
+        (cycle_db_id,session_db_id,interval_type,started_at,reason,operation_ref)
+        VALUES(%s,%s,'blocking_system_wait',%s,'recognized_presence_absence',%s)
+        ON CONFLICT DO NOTHING""", (cycle["id"],session["id"],recognized_at,operation_ref))
+    return dict(connection.execute("""INSERT INTO m7_return_absence_events
+        (id,cycle_db_id,session_db_id,position_id,assessment_situation_db_id,source_kind,source_ref,
+         recognized_at,policy_ref_json,status)
+        VALUES(%s,%s,%s,%s,%s,'presence_lease',%s,%s,%s::jsonb,'recognized') RETURNING *""",
+        (uuid4(),cycle["id"],session["id"],position["id"],situation["id"],source_ref,recognized_at,json.dumps(policy_ref))).fetchone())
+
+
+def reconcile_presence(connection, *, cycle_id: str, owner_user_id: int,
+                       evaluated_at: datetime | None = None) -> dict | None:
+    cycle, session, position, situation = _context(connection, cycle_id, lock=True)
+    if int(cycle["owner_user_id"]) != int(owner_user_id): raise ValueError("M7_CYCLE_NOT_FOUND")
+    existing=connection.execute("SELECT * FROM m7_return_absence_events WHERE cycle_db_id=%s AND status='recognized' FOR UPDATE",(cycle["id"],)).fetchone()
+    if existing:return dict(existing)
+    latest=connection.execute("""SELECT MAX(lease_expires_at) AS value FROM m7_return_presence_clients
+        WHERE cycle_db_id=%s AND assessment_situation_db_id=%s""",(cycle["id"],situation["id"])).fetchone()["value"]
+    now=(evaluated_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    if latest is None or latest>now:return None
+    if _open_incident_overlaps(connection,latest):return None
+    return _recognize_presence_absence(connection,cycle=cycle,session=session,position=position,
+        situation=situation,recognized_at=latest,source_ref=f"lease:{position['id']}:{latest.isoformat()}")
 
 
 def _context(connection, cycle_id: str, *, lock: bool = False) -> tuple[dict, dict, dict, dict]:
@@ -122,7 +201,14 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
                                (cycle["id"],)).fetchone()
     now = evaluated_at or datetime.now(timezone.utc)
     if not event:
-        action, absence_seconds, event_id = "dependency_unavailable", None, None
+        latest=connection.execute("""SELECT MAX(lease_expires_at) AS value FROM m7_return_presence_clients
+            WHERE cycle_db_id=%s AND assessment_situation_db_id=%s""",(cycle["id"],situation["id"])).fetchone()["value"]
+        if latest and latest<=now and not _open_incident_overlaps(connection,latest):
+            absence_seconds=max(0,int((now-latest).total_seconds()))
+            action="continue_current" if absence_seconds<load_policy()["replacement_threshold_seconds"] else "replace_current"
+        else:
+            action,absence_seconds=("connected",0) if latest and latest>now else ("dependency_unavailable",None)
+        event_id = None
     else:
         absence_seconds = max(0, int((now - event["recognized_at"]).total_seconds()))
         action = "continue_current" if absence_seconds < load_policy()["replacement_threshold_seconds"] else "replace_current"
@@ -134,7 +220,10 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
             "absence_event_id": event_id, "recognized_absence_seconds": absence_seconds,
             "allowed_action": action, "remaining_seconds": timing["remaining_seconds"],
             "calendar_deadline": timing["calendar_deadline"], "progress": route["progress"],
-            "planned_total": True}
+            "planned_total": True,
+            "presence_lease_seconds": int(load_policy()["presence_lease_seconds"]),
+            "replacement_count": sum(1 for item in next(x for x in route["positions"] if x["position_no"]==position["position_no"])["history"] if item["disposition"]=="replaced"),
+            "replacement_limit": int(load_policy()["max_successful_replacements_per_position"])}
 
 
 def continue_return(connection, *, cycle_id: str, position_no: int, expected_as_id: str,
@@ -160,7 +249,8 @@ def continue_return(connection, *, cycle_id: str, position_no: int, expected_as_
     event = connection.execute("SELECT * FROM m7_return_absence_events WHERE cycle_db_id=%s AND status='recognized' FOR UPDATE",
                                (cycle["id"],)).fetchone()
     if not event:
-        raise ValueError("M7_RETURN_D08_EVENT_REQUIRED")
+        event = reconcile_presence(connection,cycle_id=cycle_id,owner_user_id=owner_user_id,evaluated_at=evaluated_at)
+    if not event:raise ValueError("M7_RETURN_ACTIVE_CONNECTION")
     from Api.m7_completion import _effective_limit
     if _effective_limit(connection, cycle) != (None, None):
         raise ValueError("M7_TIME_LIMIT_REACHED")
@@ -171,6 +261,23 @@ def continue_return(connection, *, cycle_id: str, position_no: int, expected_as_
         end_blocking_wait(connection, cycle_db_id=cycle["id"], session_db_id=session["id"],
                           operation_ref=f"return:{event['source_ref']}", reason="explicit_return_continue")
     else:
+        route=replacement_metadata(connection,cycle["id"])
+        current_route=next(x for x in route["positions"] if x["position_no"]==position_no)
+        replacement_count=sum(1 for item in current_route["history"] if item["disposition"]=="replaced")
+        if replacement_count>=int(load_policy()["max_successful_replacements_per_position"]):
+            from Api.m7_completion import complete
+            closed=complete(connection,cycle_id=cycle_id,key=f"{key}:replacement-limit",action="complete",
+                reason="return_replacement_limit_reached",initiated_by=owner_user_id)
+            result={"cycle_id":cycle_id,"position_no":position_no,"status":"collection_closed",
+                "branch":"replacement_limit_closed","assessment_situation_id":expected_as_id,
+                "recognized_absence_seconds":elapsed,"remaining_seconds":read_cycle(connection,cycle_id)["remaining_seconds"],
+                "calendar_deadline":read_cycle(connection,cycle_id)["calendar_deadline"].isoformat(),
+                "completion":closed}
+            connection.execute("UPDATE m7_return_absence_events SET status='consumed',consumed_at=NOW(),result_json=%s::jsonb WHERE id=%s",
+                (json.dumps(result),event["id"]))
+            connection.execute("INSERT INTO m7_return_commands VALUES(%s,%s,%s,%s::jsonb,NOW())",
+                (cycle["id"],key,digest,json.dumps(result)))
+            return result
         if not generation_operation_id:
             raise ValueError("M7_RETURN_P02_CANDIDATE_REQUIRED")
         replaced = replace_current(connection, cycle_id=cycle_id, position_no=position_no,

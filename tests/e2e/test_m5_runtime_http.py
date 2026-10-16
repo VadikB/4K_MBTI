@@ -213,3 +213,16 @@ def test_p03_return_state_is_read_only_and_continue_is_explicit(client):
         'idempotency_key':'p03-continue-1'})
     assert continued.status_code==200 and continued.json()['branch']=='continued_current'
     assert calls[0]['owner_user_id']==7 and calls[0]['generation_operation_id'] is None
+
+
+def test_p03_presence_heartbeat_is_owned_and_server_scoped(client):
+    http,monkeypatch,_=client;cycle_id=str(uuid4());as_id=str(uuid4());client_id=str(uuid4());calls=[]
+    def beat(connection,**kwargs):
+        calls.append(kwargs);return {'cycle_id':cycle_id,'assessment_situation_id':as_id,
+            'client_id':kwargs['client_id'],'lease_expires_at':'2026-10-16T12:02:00Z'}
+    monkeypatch.setattr(routes.m7_return_integration,'heartbeat',beat)
+    http.cookies.set(routes.SESSION_COOKIE_NAME,'owner')
+    response=http.post(f'/users/assessment/m7/cycles/{cycle_id}/presence',json={
+        'client_id':client_id,'expected_assessment_situation_id':as_id})
+    assert response.status_code==200 and response.json()['client_id']==client_id
+    assert calls==[{'cycle_id':cycle_id,'owner_user_id':7,'client_id':client_id,'expected_as_id':as_id}]

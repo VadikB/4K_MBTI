@@ -6,4 +6,7 @@ def test_p03_policy_is_qa_only_and_keeps_exact_threshold():
     assert policy["status"] == "draft"
     assert policy["usage_scope"] == "qa"
     assert policy["replacement_threshold_seconds"] == 180
-    assert policy["production_activation"] == "blocked_by_D08_D09_and_methodology"
+    assert policy["presence_lease_seconds"] == 120
+    assert policy["heartbeat_interval_seconds"] == 10
+    assert policy["max_successful_replacements_per_position"] == 3
+    assert policy["production_activation"] == "blocked_by_methodology_and_provider_admission"

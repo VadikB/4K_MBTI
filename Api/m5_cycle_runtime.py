@@ -311,7 +311,10 @@ def end_blocking_wait(connection, *, cycle_db_id: int, session_db_id: int, opera
     connection.execute("UPDATE m5_cycle_time_intervals SET ended_at=NOW() WHERE id=%s",(interval['id'],))
     state=connection.execute("SELECT c.status,s.status AS session_status FROM m5_cycles c JOIN m5_cycle_sessions s ON s.id=%s WHERE c.id=%s FOR UPDATE OF c,s",
         (session_db_id,cycle_db_id)).fetchone()
-    if state and state['status']=='active' and state['session_status']=='active':
+    another_wait=connection.execute("""SELECT 1 FROM m5_cycle_time_intervals
+        WHERE cycle_db_id=%s AND ended_at IS NULL AND interval_type<>'collecting' LIMIT 1""",
+        (cycle_db_id,)).fetchone()
+    if state and state['status']=='active' and state['session_status']=='active' and not another_wait:
         connection.execute("""INSERT INTO m5_cycle_time_intervals(cycle_db_id,session_db_id,interval_type,started_at,reason)
             VALUES(%s,%s,'collecting',NOW(),%s)""",(cycle_db_id,session_db_id,reason))
     return dict(connection.execute('SELECT * FROM m5_cycle_time_intervals WHERE id=%s',(interval['id'],)).fetchone())
