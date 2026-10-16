@@ -3,6 +3,7 @@ export {
   openInterview,
   addInterviewMessage,
   setInterviewMessageDeliveryState,
+  clearInterviewDraft,
   clearInterviewTimer,
   resumeProductRuntimePolling,
   startAssessmentInterview,

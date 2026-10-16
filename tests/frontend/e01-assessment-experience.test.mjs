@@ -5,6 +5,7 @@ import test from 'node:test';
 const html = fs.readFileSync('web/index.html', 'utf8');
 const interview = fs.readFileSync('web/js/screens/interview.js', 'utf8');
 const wiring = fs.readFileSync('web/js/wiring.js', 'utf8');
+const interviewEntry = fs.readFileSync('web/js/entries/interview.js', 'utf8');
 const styles = fs.readFileSync('web/styles/screens/interview.css', 'utf8');
 
 test('E01 names assessment positions as situations and separates sending from completion', () => {
@@ -28,6 +29,7 @@ test('E01 scopes editable drafts to cycle and assessment situation', () => {
   assert.match(interview, /agent4k\.assessmentDraft:\$\{state\.productCycleId\}:\$\{state\.productAssessmentSituationId\}/);
   assert.match(interview, /window\.sessionStorage\.setItem\(key, interviewTextarea\.value\)/);
   assert.match(wiring, /interviewModule\.clearInterviewDraft\(\)/);
+  assert.match(interviewEntry, /clearInterviewDraft/);
 });
 
 test('E01 protects supplied materials without blocking own text or pasted answers', () => {
