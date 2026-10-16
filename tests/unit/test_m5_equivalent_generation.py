@@ -88,3 +88,33 @@ def test_cosmetic_name_only_is_not_substantive_and_provider_has_no_db_access():
         "organization_context": {"industry": "test"}, "role_profile": {"code": "manager"},
         "user_context": {"regular_tasks": ["planning"]}, "identity": {"full_name": "Private Person"}}})
     assert "private" not in str(safe).lower() and "email" not in str(safe).lower()
+
+
+def test_null_whitespace_and_linked_copy_do_not_prove_substantive_difference():
+    value = base_input()
+    for malformed in (None, [], {}, {"participant_payload": None, "execution_payload": {}}):
+        assert validate_candidate(value, malformed)["admitted"] is False
+    for replacement in (None, " "):
+        item = candidate(value)
+        item["participant_payload"]["initial_situation"] = replacement
+        item["execution_payload"]["materials"][0]["participant_payload"] = replacement
+        item["participant_payload"]["trigger"] = value["old_content"]["participant_payload"]["trigger"]
+        result = validate_candidate(value, item)
+        assert result["admitted"] is False
+    linked_only = candidate(value)
+    linked_only["participant_payload"]["trigger"] = value["old_content"]["participant_payload"]["trigger"]
+    assert validate_candidate(value, linked_only)["admitted"] is False
+
+
+def test_assessment_scope_requires_active_pass_evidence_and_has_no_qa_contradiction():
+    value = base_input()
+    value["variability_contract"].update({
+        "status": "published", "usage_scope": "assessment", "content_admission": "approved",
+        "admission_evidence": [{"evidence_id": "synthetic-a01", "result": "PASS", "status": "active",
+                                "provenance": {"fixture": "unit-only"}}],
+    })
+    assert validate_candidate(value, candidate(value))["admitted"] is True
+    for result, status in (("UNKNOWN", "active"), ("NOT_RUN", "active"), ("PASS", "revoked")):
+        denied = deepcopy(value)
+        denied["variability_contract"]["admission_evidence"][0].update(result=result, status=status)
+        assert validate_candidate(denied, candidate(denied))["admitted"] is False

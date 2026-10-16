@@ -166,7 +166,11 @@ def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:
     if str(plan["revision_id"])!=expected_plan_revision_id:raise ValueError("M7_STALE_PLAN_REVISION")
     cycle=read_cycle(connection,cycle_id);session=cycle["sessions"][-1]
     facts=_facts(connection,plan["cycle_db_id"],{x["indicator_id"] for x in plan["planned_target_set_json"]})
-    open_as=connection.execute("SELECT assessment_situation_id,status FROM m5_assessment_situations WHERE cycle_db_id=%s AND status NOT IN ('closed','terminated','rejected') ORDER BY id DESC LIMIT 1",(plan["cycle_db_id"],)).fetchone()
+    open_as=connection.execute("""SELECT s.assessment_situation_id,s.status
+        FROM m7_route_positions p JOIN m5_assessment_situations s ON s.id=p.current_as_db_id
+        WHERE p.cycle_db_id=%s AND p.state IN('not_presented','in_progress','awaiting_replacement')
+          AND s.status NOT IN ('closed','terminated','rejected')
+        ORDER BY p.position_no LIMIT 1""",(plan["cycle_db_id"],)).fetchone()
     decision={"trigger":{"kind":"next_as_request","created_by":created_by},"facts":facts,"considered":[],"expected_targets":[],"explanation":{}}
     if cycle["status"] in {"collection_closed","calculation_pending","calculated","failed"}:
         decision.update(status="COLLECTION_CLOSED",explanation={"code":"M7_COLLECTION_CLOSED"})
@@ -176,7 +180,8 @@ def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:
         decision.update(status="OUT_OF_TIME",explanation={"code":"M7_TIME_LIMIT_REACHED"})
     else:
         completed=set(facts["final_ia_target_ids"]);needed={x["indicator_id"] for x in plan["planned_target_set_json"]}-completed
-        used={x["case_id"] for x in connection.execute("SELECT snapshot_json->'case_ref'->>'id' AS case_id FROM m5_assessment_situations WHERE cycle_db_id=%s",(plan["cycle_db_id"],)).fetchall()}
+        used={x["case_id"] for x in connection.execute("""SELECT p.case_id
+            FROM m7_route_positions p WHERE p.cycle_db_id=%s""",(plan["cycle_db_id"],)).fetchall()}
         candidates=[]
         for item in plan["content_json"]["route"]:
             reasons=[]

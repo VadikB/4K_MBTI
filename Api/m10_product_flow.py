@@ -191,8 +191,29 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
         """SELECT assessment_situation_id,status,snapshot_json,started_at,scenario_ended_at,closed_at
            FROM m5_assessment_situations WHERE cycle_db_id=%s ORDER BY id""", (cycle["id"],)
     ).fetchall()
-    current = dict(situations[-1]) if situations else None
-    trace = participant_trace(m5_scenario_runtime.trace(connection, str(current["assessment_situation_id"]))) if current else None
+    route_current = connection.execute(
+        """SELECT s.assessment_situation_id,s.status,s.snapshot_json,s.started_at,
+                  s.scenario_ended_at,s.closed_at
+           FROM m7_route_positions p
+           JOIN m5_assessment_situations s ON s.id=p.current_as_db_id
+           WHERE p.cycle_db_id=%s AND p.state IN('not_presented','in_progress','awaiting_replacement')
+           ORDER BY p.position_no LIMIT 1""",
+        (cycle["id"],),
+    ).fetchone()
+    if route_current:
+        current = dict(route_current)
+    elif not connection.execute(
+        "SELECT 1 FROM m7_route_positions WHERE cycle_db_id=%s", (cycle["id"],)
+    ).fetchone():
+        # Legacy cycles have no route ownership. Generated candidates always belong
+        # to a route cycle and therefore can never enter this compatibility branch.
+        current = dict(situations[-1]) if situations else None
+    else:
+        current = None
+    presented = bool(current and current["started_at"] is not None and current["status"] != "admitted")
+    trace = participant_trace(
+        m5_scenario_runtime.trace(connection, str(current["assessment_situation_id"]))
+    ) if presented else None
     clarification = None
     if current:
         row = connection.execute(
@@ -222,15 +243,19 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
     ).fetchone()
     from Api.m7_route_replacement import replacement_metadata
     route = replacement_metadata(connection, cycle["id"])
+    attached_ids = {item["assessment_situation_id"] for position in route["positions"]
+                    for item in position["history"]}
+    visible_situations = [x for x in situations
+                          if not route["positions"] or str(x["assessment_situation_id"]) in attached_ids]
     return {
         "runtime_kind": "cycle", "cycle_id": cycle_id, "plan": plan, "status": status,
         "route": route,
         "situations": [{"assessment_situation_id": str(x["assessment_situation_id"]), "status": x["status"]}
-                       for x in situations],
+                       for x in visible_situations],
         "current_situation": ({
             "assessment_situation_id": str(current["assessment_situation_id"]),
             "status": current["status"],
-            "participant_payload": current["snapshot_json"]["participant_payload"],
+            **({"participant_payload": current["snapshot_json"]["participant_payload"]} if presented else {}),
         } if current else None),
         "trace": trace, "clarification": clarification,
         "continuation": ({"intent_id": str(continuation["id"]), "status": continuation["status"]}
@@ -241,6 +266,9 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
 
 def participant_trace(trace: dict) -> dict:
     """Only delivered dialogue/material; no execution envelope, hidden cards or AI reasoning."""
+    if trace.get('status') in {'prepared', 'admitted', 'rejected'}:
+        return {'assessment_situation_id': trace['assessment_situation_id'],
+                'status': trace['status'], 'turns': [], 'events': []}
     return {'assessment_situation_id':trace['assessment_situation_id'],'status':trace['status'],
         'turns':[{**{k:x[k] for k in ('turn_id','sequence_no','speaker_type','speaker_id','content_text')},
                   'speaker_name':x.get('speaker_name')} for x in trace['turns']],

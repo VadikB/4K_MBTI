@@ -3,6 +3,10 @@
   "additionalProperties": false,
   "properties": {
     "allowed_paths": {"items": {"pattern": "^/", "type": "string"}, "minItems": 1, "type": "array"},
+    "admission_evidence": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+      "properties": {"evidence_id": {"type": "string", "minLength": 1}, "result": {"type": "string"},
+        "status": {"type": "string"}, "provenance": {"type": "object", "minProperties": 1}},
+      "required": ["evidence_id", "result", "status", "provenance"]}},
     "case_id": {"minLength": 1, "type": "string"},
     "case_version": {"minLength": 1, "type": "string"},
     "content_admission": {"enum": ["not_approved", "approved_for_qa", "approved"]},

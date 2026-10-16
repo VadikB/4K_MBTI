@@ -197,21 +197,44 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
         raise ValueError("M7_CYCLE_NOT_FOUND")
     timing = read_cycle(connection, cycle_id)
     route = replacement_metadata(connection, cycle["id"])
+    plan = connection.execute("""SELECT r.content_json FROM m7_cycle_plans p
+        JOIN LATERAL(SELECT content_json FROM m7_plan_revisions
+            WHERE plan_id=p.id ORDER BY revision_no DESC LIMIT 1) r ON TRUE
+        WHERE p.cycle_db_id=%s""", (cycle["id"],)).fetchone()
+    planned_positions = len((plan["content_json"] or {}).get("route", [])) if plan else None
     event = connection.execute("SELECT * FROM m7_return_absence_events WHERE cycle_db_id=%s AND status='recognized' ORDER BY created_at DESC LIMIT 1",
                                (cycle["id"],)).fetchone()
     now = evaluated_at or datetime.now(timezone.utc)
-    if not event:
+    limit_reached = (cycle["status"] in TERMINAL_CYCLE or timing["remaining_seconds"] <= 0 or
+                     bool(timing["calendar_deadline"] and now >= timing["calendar_deadline"]))
+    if limit_reached:
+        action, absence_seconds, event_id = "time_limit_reached", None, str(event["id"]) if event else None
+    elif not event:
         latest=connection.execute("""SELECT MAX(lease_expires_at) AS value FROM m7_return_presence_clients
             WHERE cycle_db_id=%s AND assessment_situation_db_id=%s""",(cycle["id"],situation["id"])).fetchone()["value"]
         if latest and latest<=now and not _open_incident_overlaps(connection,latest):
             absence_seconds=max(0,int((now-latest).total_seconds()))
-            action="continue_current" if absence_seconds<load_policy()["replacement_threshold_seconds"] else "replace_current"
+            if absence_seconds < load_policy()["replacement_threshold_seconds"]:
+                action = "continue_current"
+            else:
+                ready = connection.execute("""SELECT 1 FROM m5_equivalent_generation_operations
+                    WHERE cycle_db_id=%s AND position_id=%s AND expected_as_db_id=%s
+                      AND status='completed' ORDER BY completed_at DESC LIMIT 1""",
+                    (cycle["id"], position["id"], situation["id"])).fetchone()
+                action = "replace_current" if ready else "replacement_candidate_required"
         else:
             action,absence_seconds=("connected",0) if latest and latest>now else ("dependency_unavailable",None)
         event_id = None
     else:
         absence_seconds = max(0, int((now - event["recognized_at"]).total_seconds()))
-        action = "continue_current" if absence_seconds < load_policy()["replacement_threshold_seconds"] else "replace_current"
+        if absence_seconds < load_policy()["replacement_threshold_seconds"]:
+            action = "continue_current"
+        else:
+            ready = connection.execute("""SELECT 1 FROM m5_equivalent_generation_operations
+                WHERE cycle_db_id=%s AND position_id=%s AND expected_as_db_id=%s
+                  AND status='completed' ORDER BY completed_at DESC LIMIT 1""",
+                (cycle["id"], position["id"], situation["id"])).fetchone()
+            action = "replace_current" if ready else "replacement_candidate_required"
         event_id = str(event["id"])
     return {"cycle_id": cycle_id, "collection_status": cycle["status"],
             "position_no": position["position_no"],
@@ -220,7 +243,8 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
             "absence_event_id": event_id, "recognized_absence_seconds": absence_seconds,
             "allowed_action": action, "remaining_seconds": timing["remaining_seconds"],
             "calendar_deadline": timing["calendar_deadline"], "progress": route["progress"],
-            "planned_total": True,
+            "planned_positions": planned_positions,
+            "planned_total": planned_positions is not None,
             "presence_lease_seconds": int(load_policy()["presence_lease_seconds"]),
             "replacement_count": sum(1 for item in next(x for x in route["positions"] if x["position_no"]==position["position_no"])["history"] if item["disposition"]=="replaced"),
             "replacement_limit": int(load_policy()["max_successful_replacements_per_position"])}

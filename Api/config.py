@@ -84,6 +84,12 @@ class Settings:
         os.getenv("ASSESSMENT_QUEUE_LEASE_TIMEOUT_SECONDS", "900")
     )
     assessment_queue_max_attempts: int = int(os.getenv("ASSESSMENT_QUEUE_MAX_ATTEMPTS", "3"))
+    assessment_equivalent_generation_lease_seconds: int = int(
+        os.getenv("ASSESSMENT_EQUIVALENT_GENERATION_LEASE_SECONDS", "120")
+    )
+    assessment_equivalent_generation_max_attempts: int = int(
+        os.getenv("ASSESSMENT_EQUIVALENT_GENERATION_MAX_ATTEMPTS", "3")
+    )
     assessment_queue_retention_hours: int = int(os.getenv("ASSESSMENT_QUEUE_RETENTION_HOURS", "168"))
     assessment_analysis_worker_threads: int = int(os.getenv("ASSESSMENT_ANALYSIS_WORKER_THREADS", "1"))
     assessment_universal_llm_enabled: bool = (

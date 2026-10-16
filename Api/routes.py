@@ -5967,7 +5967,7 @@ def generate_owned_equivalent_candidate(cycle_id:UUID,position_no:int,
         if provider is None:
             with get_connection() as connection:
                 failed=m5_equivalent_generation.fail_generation(connection,operation_id=str(claimed['id']),
-                    lease_token=str(claimed['lease_token']),error_code='M5_EQUIVALENT_PROVIDER_UNAVAILABLE')
+                    lease_token=str(claimed['lease_token']),error_code='M5_EQUIVALENT_PROVIDER_UNAVAILABLE',retryable=True)
                 connection.commit()
             raise HTTPException(status_code=409,detail=failed['error_code'])
         try:
@@ -5976,7 +5976,7 @@ def generate_owned_equivalent_candidate(cycle_id:UUID,position_no:int,
             code=f'M5_EQUIVALENT_PROVIDER_FAILED:{type(exc).__name__}'
             with get_connection() as connection:
                 m5_equivalent_generation.fail_generation(connection,operation_id=str(claimed['id']),
-                    lease_token=str(claimed['lease_token']),error_code=code)
+                    lease_token=str(claimed['lease_token']),error_code=code,retryable=True)
                 connection.commit()
             raise HTTPException(status_code=409,detail=code) from exc
         with get_connection() as connection:

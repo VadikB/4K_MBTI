@@ -19,3 +19,11 @@ def test_owner_start_excludes_execution_envelope_without_mutating_saved_source()
     projected=participant_presentation(value)
     assert projected['presentation']=={'status':'active','participant_payload':{'title':'case'}}
     assert 'execution_envelope' in value['presentation']
+
+
+def test_owner_trace_before_presentation_exposes_no_case_content():
+    value = participant_trace({'assessment_situation_id': 'as-prepared', 'status': 'admitted',
+        'turns': [{'content_text': 'hidden dialogue'}],
+        'events': [{'event_type': 'material_disclosed', 'payload_json': {'content': 'hidden material'}}]})
+    assert value == {'assessment_situation_id': 'as-prepared', 'status': 'admitted',
+                     'turns': [], 'events': []}

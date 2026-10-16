@@ -218,12 +218,69 @@ def test_equivalent_generation_is_persisted_validated_and_handed_to_p01(db):
             candidate=output,policy=policy)
         assert completed['status']=='completed' and completed['validation']['admitted']
         assert c.execute('SELECT count(*) AS n FROM m5_assessment_situations').fetchone()['n']==2
+        current=c.execute("""SELECT s.assessment_situation_id FROM m7_route_positions p
+            JOIN m5_cycles c ON c.id=p.cycle_db_id
+            JOIN m5_assessment_situations s ON s.id=p.current_as_db_id WHERE c.cycle_id=%s""",
+            (cycle_id,)).fetchone()
+        assert str(current['assessment_situation_id'])==old_as
         replaced=replace_current(c,cycle_id=cycle_id,position_no=1,
             expected_assessment_situation_id=old_as,expected_state='active',key='p01-after-p02',
             reason='authorized_return',policy_ref={'id':'P01','version':'2.0','checksum':'f'*64},requested_by=99,
             provider=GeneratedCandidateReplacementProvider(str(operation['id'])))
         assert replaced['new_assessment_situation_id']==completed['assessment_situation_id']
         assert c.execute('SELECT count(*) AS n FROM m5_assessment_situations').fetchone()['n']==2
+        assert begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
+            request_key='p02-generate-1',requested_by=99,package=package,
+            provider_config={'id':'controlled','version':'1','checksum':'a'*64})['id']==operation['id']
+
+
+def test_equivalent_generation_recovers_expired_lease_and_fences_late_worker(db, monkeypatch):
+    from Api.config import settings
+    monkeypatch.setattr(settings,'assessment_equivalent_generation_max_attempts',2)
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);old_as=str(shown['decision']['assessment_situation_id'])
+        operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
+            request_key='p02-recover',requested_by=99,package=load_variability_package(),
+            provider_config={'id':'controlled','version':'1','checksum':'c'*64})
+        first=claim_generation(c,str(operation['id']))
+        c.execute("UPDATE m5_equivalent_generation_operations SET lease_expires_at=NOW()-INTERVAL '1 second' WHERE id=%s",(operation['id'],))
+        second=claim_generation(c,str(operation['id']))
+        assert second['attempt_no']==2 and second['lease_token']!=first['lease_token']
+        source=second['input_json']['old_content'];candidate={'case_id':'CASE-TDISC-01','case_version':'v0.1',
+            'base_role':second['input_json']['base_role'],'indicator_targets':second['input_json']['indicator_targets'],
+            'participant_payload':deepcopy(source['participant_payload']),'execution_payload':deepcopy(source['execution_payload'])}
+        candidate['participant_payload']['initial_situation']='Восстановленная вводная.'
+        candidate['participant_payload']['trigger']='Восстановленный триггер.'
+        candidate['execution_payload']['materials'][0]['participant_payload']='Восстановленная вводная.'
+        with pytest.raises(ValueError,match='M5_EQUIVALENT_LEASE_LOST'):
+            complete_generation(c,operation_id=str(operation['id']),lease_token=str(first['lease_token']),
+                candidate=candidate,policy=json.loads((OUTPUT/'admission-policy.json').read_text()))
+        completed=complete_generation(c,operation_id=str(operation['id']),lease_token=str(second['lease_token']),
+            candidate=candidate,policy=json.loads((OUTPUT/'admission-policy.json').read_text()))
+        assert completed['status']=='completed'
+
+
+def test_candidate_admission_revocation_blocks_replacement(db):
+    policy=json.loads((OUTPUT/'admission-policy.json').read_text())
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);old_as=str(shown['decision']['assessment_situation_id'])
+        operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
+            request_key='p02-revoked',requested_by=99,package=load_variability_package(),
+            provider_config={'id':'controlled','version':'1','checksum':'d'*64})
+        claimed=claim_generation(c,str(operation['id']));source=claimed['input_json']['old_content']
+        candidate={'case_id':'CASE-TDISC-01','case_version':'v0.1','base_role':claimed['input_json']['base_role'],
+            'indicator_targets':claimed['input_json']['indicator_targets'],'participant_payload':deepcopy(source['participant_payload']),
+            'execution_payload':deepcopy(source['execution_payload'])}
+        candidate['participant_payload']['initial_situation']='Кандидат до отзыва.'
+        candidate['participant_payload']['trigger']='Триггер до отзыва.'
+        candidate['execution_payload']['materials'][0]['participant_payload']='Кандидат до отзыва.'
+        completed=complete_generation(c,operation_id=str(operation['id']),lease_token=str(claimed['lease_token']),candidate=candidate,policy=policy)
+        c.execute("INSERT INTO m5_admission_decisions(assessment_situation_db_id,policy_id,policy_version,policy_checksum,admitted,code,reasons_json,evidence_ids_json) VALUES(%s,'revocation','1','x',FALSE,'REVOKED','[]','[]')",(completed['candidate_as_db_id'],))
+        denied=replace_current(c,cycle_id=cycle_id,position_no=1,expected_assessment_situation_id=old_as,
+                expected_state='active',key='replace-revoked',reason='return',policy_ref={'id':'P01','version':'2','checksum':'x'},
+                requested_by=99,provider=GeneratedCandidateReplacementProvider(str(operation['id'])))
+        assert denied['status']=='preparation_failed'
+        assert c.execute("SELECT current_as_db_id FROM m7_route_positions").fetchone()['current_as_db_id'] != completed['candidate_as_db_id']
 
 
 def test_equivalent_generation_claim_is_single_and_late_result_is_not_admitted(db):
@@ -267,12 +324,20 @@ def test_controlled_return_179_continues_same_as_without_restoring_budget(db):
         evaluated=datetime.now(timezone.utc)
         event=record_controlled_absence(c,cycle_id=cycle_id,expected_as_id=old_as,source_ref='controlled-179',
             recognized_at=evaluated-timedelta(seconds=179))
+        revision=c.execute("SELECT * FROM m7_plan_revisions ORDER BY revision_no DESC LIMIT 1").fetchone()
+        content=deepcopy(revision['content_json']);content['route'].append(deepcopy(content['route'][0]))
+        content['route'][1]['case_id']='PLANNED-NOT-CREATED'
+        c.execute("""INSERT INTO m7_plan_revisions(id,plan_id,cycle_db_id,revision_no,content_json,content_checksum,reason)
+            VALUES(%s,%s,%s,%s,%s::jsonb,%s,'a01_multi_step_fixture')""",
+            (uuid4(),revision['plan_id'],revision['cycle_db_id'],revision['revision_no']+1,
+             json.dumps(content),checksum(content)))
         counts_before=c.execute("SELECT (SELECT count(*) FROM m5_assessment_situations) AS situations,(SELECT count(*) FROM m7_return_commands) AS commands").fetchone()
         state=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=evaluated)
         counts_after=c.execute("SELECT (SELECT count(*) FROM m5_assessment_situations) AS situations,(SELECT count(*) FROM m7_return_commands) AS commands").fetchone()
         assert counts_after==counts_before
         assert state['allowed_action']=='continue_current' and state['recognized_absence_seconds']==179
         assert state['progress']=={'total_positions':1,'completed_positions':0}
+        assert state['planned_positions']==2 and state['planned_total'] is True
         assert str(event['id'])==state['absence_event_id']
         result=continue_return(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,expected_state='active',
             key='return-179',owner_user_id=99,evaluated_at=evaluated)
@@ -363,6 +428,22 @@ def test_controlled_return_180_replaces_presents_once_and_keeps_deadline(db):
         route=replacement_metadata(c,c.execute('SELECT id FROM m5_cycles').fetchone()['id'])
         assert route['progress']=={'total_positions':1,'completed_positions':0}
         assert [x['disposition'] for x in route['positions'][0]['history']]==['replaced','current']
+
+
+def test_return_state_closes_action_at_calendar_deadline(db):
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);old_as=str(shown['decision']['assessment_situation_id'])
+        c.execute("UPDATE m5_cycles SET started_at=NOW()-(calendar_window_seconds-20)*INTERVAL '1 second'")
+        c.execute("UPDATE m5_cycle_sessions SET started_at=(SELECT started_at FROM m5_cycles)")
+        c.execute("UPDATE m5_cycle_time_intervals SET started_at=NOW()-INTERVAL '20 seconds' WHERE ended_at IS NULL")
+        timing=read_cycle(c,cycle_id);deadline=timing['calendar_deadline']
+        record_controlled_absence(c,cycle_id=cycle_id,expected_as_id=old_as,source_ref='controlled-deadline',
+            recognized_at=datetime.now(timezone.utc)-timedelta(seconds=10))
+        before=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=deadline-timedelta(microseconds=1))
+        at=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=deadline)
+        after=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=deadline+timedelta(seconds=1))
+        assert before['allowed_action']=='continue_current'
+        assert at['allowed_action']==after['allowed_action']=='time_limit_reached'
 
 
 def test_two_replacement_requests_have_one_effect(db):

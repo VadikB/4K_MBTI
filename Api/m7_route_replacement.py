@@ -51,10 +51,15 @@ class GeneratedCandidateReplacementProvider:
     operation_id: str
 
     def prepare(self, connection, *, context: dict) -> dict:
-        row = connection.execute("""SELECT o.status,o.candidate_as_db_id,s.assessment_situation_id,
-            s.cycle_db_id,s.session_db_id,s.personalized_profile_id,s.usage_scope
+        row = connection.execute("""SELECT o.status,o.candidate_as_db_id,o.position_id,o.expected_as_db_id,
+            o.input_json,o.validation_json,s.assessment_situation_id,s.case_version_id,
+            s.cycle_db_id,s.session_db_id,s.personalized_profile_id,s.usage_scope,
+            cv.case_id,cv.case_version,
+            (SELECT d.admitted FROM m5_admission_decisions d
+                WHERE d.assessment_situation_db_id=s.id ORDER BY d.id DESC LIMIT 1) AS admitted
             FROM m5_equivalent_generation_operations o
             LEFT JOIN m5_assessment_situations s ON s.id=o.candidate_as_db_id
+            LEFT JOIN m5_case_versions cv ON cv.id=s.case_version_id
             WHERE o.id=%s""", (UUID(self.operation_id),)).fetchone()
         if not row or row["status"] != "completed" or not row["candidate_as_db_id"]:
             raise ValueError("M5_EQUIVALENT_CANDIDATE_NOT_READY")
@@ -62,6 +67,14 @@ class GeneratedCandidateReplacementProvider:
             context["cycle_db_id"], context["session_db_id"], context["personalized_profile_id"], context["usage_scope"]
         ):
             raise ValueError("M5_EQUIVALENT_CANDIDATE_CONTEXT_MISMATCH")
+        input_cycle = (row["input_json"] or {}).get("cycle") or {}
+        if (row["position_id"] != context["position_id"] or
+                row["expected_as_db_id"] != context["expected_as_db_id"] or
+                str(input_cycle.get("position_id")) != str(context["position_id"]) or
+                int(input_cycle.get("position_no", 0)) != int(context["position_no"]) or
+                row["case_id"] != context["case_id"] or row["case_version"] != context["case_version"] or
+                not row["admitted"] or not (row["validation_json"] or {}).get("admitted")):
+            raise ValueError("M5_EQUIVALENT_CANDIDATE_ADMISSION_INVALID")
         return {"id": int(row["candidate_as_db_id"]),
                 "assessment_situation_id": str(row["assessment_situation_id"]), "status": "admitted"}
 
@@ -245,6 +258,8 @@ def replace_current(connection, *, cycle_id: str, position_no: int,
             (json.dumps(failed), operation_id))
         return failed
     context = {"cycle_db_id": cycle["id"], "session_db_id": old["session_db_id"],
+               "position_id": position["id"], "position_no": position_no,
+               "expected_as_db_id": old["id"],
                "personalized_profile_id": cycle["personalized_profile_id"], "usage_scope": cycle["usage_scope"],
                "case_id": position["case_id"], "case_version": position["case_version"],
                "expected_targets": position["expected_targets_json"], "requested_by": requested_by}
