@@ -41,6 +41,24 @@ def _present_next(connection, *, plan: dict, user_id: int, key: str) -> dict:
     )
     presentation = None
     if decision["status"] == "SELECTED":
+        cycle = connection.execute(
+            "SELECT status FROM m5_cycles WHERE cycle_id=%s FOR UPDATE", (plan["cycle_id"],),
+        ).fetchone()
+        if cycle and cycle["status"] == "paused":
+            session = connection.execute(
+                "SELECT session_id FROM m5_cycle_sessions "
+                "WHERE cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s) "
+                "AND status='paused' ORDER BY ordinal DESC LIMIT 1",
+                (plan["cycle_id"],),
+            ).fetchone()
+            if session:
+                from Api.m5_cycle_runtime import transition_session
+                transition_session(
+                    connection,
+                    session_id=str(session["session_id"]),
+                    action="resume",
+                    reason="participant_started_next_situation",
+                )
         presentation = m7_cycle_planner.present(
             connection, decision_id=str(decision["id"]), expected_revision=int(decision["revision_no"]),
         )["presentation"]
@@ -210,6 +228,10 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
         current = dict(situations[-1]) if situations else None
     else:
         current = None
+    between_situations = bool(current and current["status"] == "closed"
+                              and status["collection_status"] in {"active", "paused"})
+    if between_situations:
+        current = None
     presented = bool(current and current["started_at"] is not None and current["status"] != "admitted")
     trace = participant_trace(
         m5_scenario_runtime.trace(connection, str(current["assessment_situation_id"]))
@@ -249,6 +271,7 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
                           if not route["positions"] or str(x["assessment_situation_id"]) in attached_ids]
     return {
         "runtime_kind": "cycle", "cycle_id": cycle_id, "plan": plan, "status": status,
+        "between_situations": between_situations,
         "return_policy_enabled": bool(plan.get("plan", {}).get("return_policy_snapshot")),
         "route": route,
         "situations": [{"assessment_situation_id": str(x["assessment_situation_id"]), "status": x["status"]}

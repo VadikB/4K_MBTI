@@ -16,6 +16,7 @@ import { persistAssessmentContext, setCurrentScreen, state } from '../../state.j
 let selectedOrganizationId = null;
 const invitationRequestsInFlight = new Set();
 const invitationOperationIds = new Map();
+const questionnairePreviews = new Map();
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -446,6 +447,35 @@ export const importAdminOrganizationMembers = async (organizationId, csvText) =>
   }
 };
 
+export const previewAdminOrganizationQuestionnaire = async (organizationId, payload) => {
+  try {
+    const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/preview', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const preview = await readApiResponse(response, 'Не удалось распознать анкету.');
+    questionnairePreviews.set(Number(organizationId), preview);
+    renderAdminOrganizations();
+    setStatus(preview.status === 'ready_for_confirmation'
+      ? 'Анкета распознана. Проверьте сведения и подтвердите источник.'
+      : 'Черновик сохранён. Исправьте перечисленные ошибки или заполните обязательные поля.',
+    preview.status === 'ready_for_confirmation' ? 'success' : 'error');
+  } catch (error) { setStatus(error.message, 'error'); }
+};
+
+export const confirmAdminOrganizationQuestionnaire = async (organizationId, revisionId, recipients) => {
+  try {
+    const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/' + revisionId + '/confirm', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipients }),
+    });
+    await readApiResponse(response, 'Не удалось подтвердить анкету.');
+    questionnairePreviews.delete(Number(organizationId));
+    renderAdminOrganizations();
+    setStatus('Источник анкеты подтверждён и опубликован новой редакцией.', 'success');
+  } catch (error) { setStatus(error.message, 'error'); }
+};
+
 export const deleteOrDeactivateAdminOrganization = async (organizationId, organizationName = '') => {
   const previousItems = Array.isArray(state.adminOrganizations?.items) ? state.adminOrganizations.items : [];
   const previousOrg = previousItems.find((item) => Number(item.id) === Number(organizationId));
@@ -608,6 +638,10 @@ export const renderAdminOrganizations = () => {
       const activeBatch = state.adminOrganizationPreparationBatches?.[orgId];
       const batchIsRunning = activeBatch?.status === 'in_progress';
       const actionLabel = Number(org.members_count || 0) || Number(org.reports_count || 0) ? 'Деактивировать' : 'Удалить';
+      const questionnairePreview = questionnairePreviews.get(orgId);
+      const questionnaireValidation = questionnairePreview?.validation_json || {};
+      const questionnaireProblems = [...(questionnaireValidation.errors || []).map((item) => item.code),
+        ...(questionnaireValidation.missing || [])];
       return (
         '<article class="card card--inset admin-organization-card" data-organization-id="' +
         orgId +
@@ -669,6 +703,25 @@ export const renderAdminOrganizations = () => {
         '<span>CSV: email, full_name, role_description, job_instructions</span>' +
         '<button class="ghost-button compact-ghost" type="submit">Импорт</button>' +
         '</form>' +
+        '</section>' +
+        '<section class="admin-organization-members-section"><h4>Анкета заказчика</h4>' +
+        '<p>Загрузите UTF-8 CSV по шаблону. Файл сначала сохраняется как предпросмотр и не меняет опубликованные данные.</p>' +
+        '<p><a class="text-link" href="/users/admin/organizations/' + orgId + '/questionnaire/template">Скачать CSV-шаблон</a></p>' +
+        '<form class="admin-organization-import-form" data-action="preview-questionnaire">' +
+        '<input name="assignment_ref" type="text" placeholder="Назначение / программа оценки" required>' +
+        '<input name="source_author" type="text" placeholder="Автор сведений со стороны заказчика" required>' +
+        '<input name="csv" type="file" accept=".csv,text/csv" required>' +
+        '<button class="ghost-button compact-ghost" type="submit">Предпросмотр анкеты</button></form>' +
+        (questionnairePreview ? '<div class="admin-questionnaire-preview" role="status"><strong>Статус: ' +
+          escapeHtml(questionnairePreview.status) + '</strong>' +
+          (questionnaireProblems.length ? '<p>Проверить: ' + escapeHtml(questionnaireProblems.join(', ')) + '</p>' :
+            '<p>Обязательные поля распознаны. Подтверждение создаст новую опубликованную редакцию.</p>') +
+          (questionnairePreview.status === 'ready_for_confirmation' ?
+            '<fieldset><legend>Получатели результатов по действующим правам</legend>' +
+            '<label><input type="checkbox" name="questionnaire_recipient" value="participant" checked> Участник</label>' +
+            '<label><input type="checkbox" name="questionnaire_recipient" value="organization_admin" checked> Администратор организации</label>' +
+            '</fieldset><button type="button" class="primary-button compact-primary" data-action="confirm-questionnaire" data-value="' +
+            Number(questionnairePreview.id) + '">Подтвердить анкету</button>' : '') + '</div>' : '') +
         '</section>' +
         '</article>'
       );

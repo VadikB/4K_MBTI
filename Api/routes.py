@@ -44,6 +44,7 @@ from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest, CreateS
 from Api.profile_access import require_unchanged_email
 from Api import participant_profile
 from Api import acquaintance
+from Api import questionnaire_sources
 from Api import m8_results
 from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest, RegenerateReportRequest
 from Api import m10_product_flow, m10_orchestration
@@ -145,6 +146,8 @@ from Api.schemas import (
     AdminOrganizationMembersImportRequest,
     AdminOrganizationsResponse,
     AdminOrganizationUpdateRequest,
+    QuestionnairePreviewRequest,
+    QuestionnaireConfirmRequest,
     AdminRegressionTestRunResponse,
     AdminRegressionTestStatusResponse,
     AppVersionResponse,
@@ -4607,6 +4610,68 @@ def import_admin_organization_members(
     )
 
 
+@router.get("/admin/organizations/{organization_id}/questionnaire/template")
+def download_admin_organization_questionnaire_template(organization_id: int, request: Request) -> Response:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    with get_connection() as connection:
+        _require_organization_admin(connection, user, organization_id)
+    return Response(
+        content="\ufeff" + questionnaire_sources.template_csv(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="p4k-corporate-questionnaire-0.1.csv"'},
+    )
+
+
+@router.post("/admin/organizations/{organization_id}/questionnaire/preview", status_code=201)
+def preview_admin_organization_questionnaire(
+    organization_id: int, payload: QuestionnairePreviewRequest, request: Request,
+) -> dict:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    with get_connection() as connection:
+        _require_organization_admin(connection, user, organization_id)
+        try:
+            result = questionnaire_sources.save_preview(
+                connection, organization_id=organization_id, assignment_ref=payload.assignment_ref,
+                channel=payload.channel, template_variant=payload.template_variant,
+                template_version=payload.template_version, answers=payload.answers,
+                raw_text=payload.csv_text, uploaded_by=int(user.id),
+                source_author=payload.source_author, idempotency_key=payload.idempotency_key,
+            )
+            connection.commit()
+            return result
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/admin/organizations/{organization_id}/questionnaire/{revision_id}/confirm")
+def confirm_admin_organization_questionnaire(
+    organization_id: int, revision_id: int, payload: QuestionnaireConfirmRequest, request: Request,
+) -> dict:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    with get_connection() as connection:
+        _require_organization_admin(connection, user, organization_id)
+        # Uploading as a platform superadmin does not silently grant authority to
+        # confirm the customer's facts. Confirmation belongs to an organization admin.
+        membership = connection.execute(
+            "SELECT 1 FROM organization_memberships WHERE organization_id=%s AND user_id=%s AND role='admin'",
+            (organization_id, int(user.id)),
+        ).fetchone()
+        if membership is None:
+            raise HTTPException(status_code=403, detail="Organization responsible confirmation required")
+        try:
+            result = questionnaire_sources.confirm(
+                connection, revision_id=revision_id, organization_id=organization_id,
+                confirmed_by=int(user.id), recipients=list(payload.recipients),
+            )
+            connection.commit()
+            return result
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
 @router.get("/admin/reports", response_model=AdminDetailedReportsResponse)
 def get_admin_reports(request: Request) -> AdminDetailedReportsResponse:
     token = request.cookies.get(SESSION_COOKIE_NAME)
@@ -5944,6 +6009,19 @@ def next_owned_assessment_situation(cycle_id:UUID,payload:ProductNextRequest,req
         with get_connection() as connection:
             result=m10_product_flow.next_situation(connection,cycle_id=str(cycle_id),user_id=int(user.id),
                 key=payload.idempotency_key);connection.commit();return m10_product_flow.participant_presentation(result)
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.post('/assessment/m7/cycles/{cycle_id}/finish-situation')
+def finish_owned_assessment_situation(cycle_id:UUID,payload:ProductNextRequest,request:Request):
+    user=_m7_owned_cycle(request,str(cycle_id))
+    try:
+        with get_connection() as connection:
+            result=m7_completion.finish_current_situation(connection,cycle_id=str(cycle_id),
+                key=payload.idempotency_key,initiated_by=int(user.id))
+            if result.get('handoff_id'):
+                m10_orchestration.enqueue_handoff(connection,handoff_id=result['handoff_id'],created_by=int(user.id))
+            connection.commit();return result
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 

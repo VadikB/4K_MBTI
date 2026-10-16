@@ -1,0 +1,198 @@
+"""Versioned questionnaire intake shared by product, external and CSV adapters."""
+
+from __future__ import annotations
+
+import csv
+import hashlib
+import io
+import json
+
+from Api.assessment_contexts import create_organization_context_draft, publish_organization_context
+
+TEMPLATE_VARIANT = "corporate"
+TEMPLATE_VERSION = "0.1"
+HEADER = ("question_id", "field", "value")
+FIELDS = {
+    "C01": {"name", "organization_type", "industry", "activity_description"},
+    "C02a": {"answer", "participant_text"},
+    "C02b": {"answer"},
+    "C03": {"answer", "participant_text"},
+    "C04": {"answer"},
+    "C17": {"case_reality_level", "organization_name_usage_rules", "restrictions"},
+    "C21": {"organizer", "responsible_contact"},
+    # C22 is retained as source material only. It never replaces the separate,
+    # authenticated confirmation event performed by an organization admin.
+    "C22": {"answer"},
+    **{key: {"answer"} for key in (
+        "C05", "C06", "C07a", "C07b", "C08", "C09", "C10", "C11", "C12",
+        "C13", "C14", "C15", "C16", "C18", "C20",
+    )},
+}
+EARLY_REQUIRED = {
+    ("C01", "name"), ("C01", "organization_type"), ("C01", "industry"),
+    ("C01", "activity_description"), ("C02a", "participant_text"),
+    ("C03", "participant_text"), ("C04", "answer"),
+    ("C17", "case_reality_level"), ("C17", "organization_name_usage_rules"),
+    ("C21", "organizer"), ("C21", "responsible_contact"),
+}
+ALLOWED_CHANNELS = {"csv", "product_form", "external_form"}
+ALLOWED_RECIPIENTS = {"participant", "organization_admin"}
+MAX_SOURCE_BYTES = 1_048_576
+
+
+def _digest(value: object) -> str:
+    payload = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def parse_csv(text: str) -> dict:
+    if not isinstance(text, str) or not text.strip("\ufeff\r\n "):
+        raise ValueError("QUESTIONNAIRE_EMPTY_FILE")
+    try:
+        clean = text.lstrip("\ufeff")
+        first = clean.splitlines()[0]
+        delimiter = "," if first == ",".join(HEADER) else ";" if first == ";".join(HEADER) else None
+        if delimiter is None:
+            raise ValueError("QUESTIONNAIRE_HEADER_INVALID")
+        reader = csv.DictReader(io.StringIO(clean), delimiter=delimiter)
+        if tuple(reader.fieldnames or ()) != HEADER:
+            raise ValueError("QUESTIONNAIRE_HEADER_INVALID")
+        rows = []
+        values: dict[str, dict[str, str]] = {}
+        seen: dict[tuple[str, str], str] = {}
+        errors = []
+        for line, raw in enumerate(reader, start=2):
+            question_id = str(raw.get("question_id") or "").strip()
+            field = str(raw.get("field") or "").strip()
+            value = str(raw.get("value") or "").strip()
+            if question_id not in FIELDS or field not in FIELDS.get(question_id, set()):
+                errors.append({"line": line, "code": "UNKNOWN_FIELD", "question_id": question_id, "field": field})
+                continue
+            key = (question_id, field)
+            if key in seen and seen[key] != value:
+                errors.append({"line": line, "code": "CONFLICTING_VALUE", "question_id": question_id, "field": field})
+                continue
+            seen[key] = value
+            values.setdefault(question_id, {})[field] = value
+            rows.append({"question_id": question_id, "field": field, "value": value})
+    except UnicodeError as exc:
+        raise ValueError("QUESTIONNAIRE_ENCODING_INVALID") from exc
+    missing = [f"{qid}.{field}" for qid, field in sorted(EARLY_REQUIRED)
+               if not values.get(qid, {}).get(field)]
+    return {"rows": rows, "answers": values, "errors": errors, "missing": missing,
+            "delimiter": delimiter, "status": "invalid" if errors else "draft" if missing else "ready_for_confirmation"}
+
+
+def normalize_answers(*, answers: dict, channel: str) -> dict:
+    if channel not in ALLOWED_CHANNELS:
+        raise ValueError("QUESTIONNAIRE_CHANNEL_UNSUPPORTED")
+    rows = [{"question_id": qid, "field": field, "value": str(value).strip()}
+            for qid, fields in answers.items() for field, value in fields.items()]
+    csv_text = ",".join(HEADER) + "\n" + "\n".join(
+        ",".join('"' + item[key].replace('"', '""') + '"' for key in HEADER) for item in rows
+    )
+    return parse_csv(csv_text)
+
+
+def save_preview(connection, *, organization_id: int, assignment_ref: str, channel: str,
+                 template_variant: str, template_version: str, answers: dict,
+                 raw_text: str | None, uploaded_by: int, source_author: str,
+                 idempotency_key: str) -> dict:
+    if template_variant != TEMPLATE_VARIANT or template_version != TEMPLATE_VERSION:
+        raise ValueError("QUESTIONNAIRE_TEMPLATE_MISMATCH")
+    if channel not in ALLOWED_CHANNELS:
+        raise ValueError("QUESTIONNAIRE_CHANNEL_UNSUPPORTED")
+    if raw_text is not None and len(raw_text.encode("utf-8")) > MAX_SOURCE_BYTES:
+        raise ValueError("QUESTIONNAIRE_FILE_TOO_LARGE")
+    normalized = parse_csv(raw_text or "") if channel == "csv" else normalize_answers(answers=answers, channel=channel)
+    request = {"organization_id": organization_id, "assignment_ref": assignment_ref,
+               "channel": channel, "template_variant": template_variant,
+               "template_version": template_version, "answers": normalized["answers"]}
+    request_hash = _digest(request)
+    prior = connection.execute(
+        "SELECT * FROM questionnaire_response_revisions WHERE uploaded_by_user_id=%s AND idempotency_key=%s",
+        (uploaded_by, idempotency_key),
+    ).fetchone()
+    if prior:
+        if prior["request_hash"] != request_hash:
+            raise ValueError("IDEMPOTENCY_CONFLICT")
+        return dict(prior)
+    row = connection.execute(
+        """INSERT INTO questionnaire_response_revisions(
+             organization_id,assignment_ref,template_variant,template_version,channel,status,
+             answers_json,validation_json,raw_source_text,source_checksum,uploaded_by_user_id,
+             source_author,idempotency_key,request_hash)
+           VALUES(%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s,%s,%s,%s,%s,%s) RETURNING *""",
+        (organization_id, assignment_ref, template_variant, template_version, channel,
+         normalized["status"], json.dumps(normalized["answers"], ensure_ascii=False),
+         json.dumps({"errors": normalized["errors"], "missing": normalized["missing"]}, ensure_ascii=False),
+         raw_text, hashlib.sha256((raw_text or "").encode("utf-8")).hexdigest(), uploaded_by,
+         source_author.strip(), idempotency_key, request_hash),
+    ).fetchone()
+    return dict(row)
+
+
+def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by: int,
+            recipients: list[str]) -> dict:
+    row = connection.execute(
+        "SELECT * FROM questionnaire_response_revisions WHERE id=%s AND organization_id=%s FOR UPDATE",
+        (revision_id, organization_id),
+    ).fetchone()
+    if row is None:
+        raise ValueError("QUESTIONNAIRE_REVISION_NOT_FOUND")
+    if row["status"] == "confirmed":
+        return dict(row)
+    validation = dict(row["validation_json"] or {})
+    if validation.get("errors") or validation.get("missing"):
+        raise ValueError("QUESTIONNAIRE_NOT_READY_FOR_CONFIRMATION")
+    mapped = sorted(set(recipients))
+    if not mapped or any(item not in ALLOWED_RECIPIENTS for item in mapped):
+        raise ValueError("QUESTIONNAIRE_RECIPIENTS_CONFLICT")
+    answers = dict(row["answers_json"] or {})
+    current = connection.execute(
+        """SELECT v.definition_json FROM assessment_organization_context_versions v
+           JOIN assessment_organization_contexts c ON c.id=v.organization_context_id
+           WHERE c.organization_id=%s AND v.status='published' ORDER BY v.version DESC,v.id DESC LIMIT 1""",
+        (organization_id,),
+    ).fetchone()
+    definition = dict(current["definition_json"] or {}) if current else {}
+    definition.update(answers["C01"])
+    definition.update({key: value for key, value in answers["C17"].items()
+                       if key in {"case_reality_level", "organization_name_usage_rules", "restrictions"}})
+    previous = dict(definition.get("participant_briefing") or {})
+    participant_briefing = {
+        **previous,
+        "purpose": answers["C02a"]["participant_text"],
+        "customer_question": answers["C02b"].get("answer", ""),
+        "organizer": answers["C21"]["organizer"],
+        "responsible_contact": answers["C21"]["responsible_contact"],
+        "results_usage": answers["C03"]["participant_text"],
+        "result_recipients": ", ".join(mapped),
+        "recipient_mapping": mapped,
+        "provided_participant_fields": previous.get("provided_participant_fields") or ["role", "position", "duties"],
+        "participant_questions": previous.get("participant_questions") or [],
+        "consent_version": int(previous.get("consent_version") or 1),
+        "consent_text": str(previous.get("consent_text") or ""),
+        "questionnaire_revision_id": int(row["id"]),
+    }
+    definition["participant_briefing"] = participant_briefing
+    version_id = create_organization_context_draft(
+        connection, organization_id=organization_id, definition=definition,
+        source_manifest={"questionnaire_revision_id": int(row["id"]), "channel": row["channel"],
+                         "template_variant": row["template_variant"], "template_version": row["template_version"],
+                         "source_checksum": row["source_checksum"]},
+    )
+    publish_organization_context(connection, version_id=version_id, confirmed_by_user_id=confirmed_by)
+    saved = connection.execute(
+        """UPDATE questionnaire_response_revisions SET status='confirmed',confirmed_by_user_id=%s,
+           confirmed_at=NOW(),organization_context_version_id=%s,recipient_mapping_json=%s::jsonb
+           WHERE id=%s RETURNING *""",
+        (confirmed_by, version_id, json.dumps(mapped), row["id"]),
+    ).fetchone()
+    return dict(saved)
+
+
+def template_csv() -> str:
+    rows = [(qid, field, "") for qid, fields in FIELDS.items() for field in sorted(fields)]
+    output = io.StringIO(); writer = csv.writer(output); writer.writerow(HEADER); writer.writerows(rows)
+    return output.getvalue()

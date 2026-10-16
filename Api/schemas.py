@@ -962,6 +962,21 @@ class AdminOrganizationImportResult(BaseModel):
     organizations: AdminOrganizationsResponse
 
 
+class QuestionnairePreviewRequest(BaseModel):
+    assignment_ref: str = Field(min_length=1, max_length=200)
+    template_variant: Literal["corporate"] = "corporate"
+    template_version: str = "0.1"
+    channel: Literal["csv", "product_form", "external_form"] = "csv"
+    csv_text: str | None = None
+    answers: dict = Field(default_factory=dict)
+    source_author: str = Field(min_length=1, max_length=500)
+    idempotency_key: str = Field(min_length=1, max_length=200)
+
+
+class QuestionnaireConfirmRequest(BaseModel):
+    recipients: list[Literal["participant", "organization_admin"]] = Field(min_length=1)
+
+
 class AdminReportCaseMessage(BaseModel):
     role: str
     message_text: str

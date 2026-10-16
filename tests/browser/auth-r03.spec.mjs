@@ -553,7 +553,7 @@ test('W02 blocks direct entry on missing participant briefing and supports readi
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 
-test('W02 shows resolved assignment timing before plan preparation', async ({ page }) => {
+test('W02 does not present plan cards before the prepared plan exists', async ({ page }) => {
   const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
   const acquaintance = {
     readiness: { status: 'ready', organization_name: 'Организация А', briefing: {
@@ -581,10 +581,9 @@ test('W02 shows resolved assignment timing before plan preparation', async ({ pa
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.getByText('Назначенный общий бюджет')).toBeVisible();
-  await expect(page.getByText('70 мин.')).toBeVisible();
-  await expect(page.getByText('Календарное окно после старта')).toBeVisible();
-  await expect(page.getByText('48 ч.')).toBeVisible();
+  await expect(page.getByText('Назначенный общий бюджет')).toBeHidden();
+  await expect(page.getByText('Календарное окно после старта')).toBeHidden();
+  await expect(page.getByText('Время на выполнение')).toBeHidden();
   await expect(page.getByText('Ориентировочная общая длительность')).toBeHidden();
 });
 

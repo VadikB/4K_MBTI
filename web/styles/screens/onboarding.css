@@ -6,6 +6,10 @@
     background: var(--bg-soft);
 }
 
+#onboarding-description {
+  white-space: pre-line;
+}
+
 .onboarding-shell {
     position: relative;
     z-index: 1;

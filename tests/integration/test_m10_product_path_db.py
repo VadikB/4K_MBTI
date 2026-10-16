@@ -14,7 +14,7 @@ from Api.schemas import PersonalizedProfileSelection
 from Api.m5_case_runtime import checksum
 from Api.m5_scenario_runtime import transition
 from Api.m5_storage import import_package
-from Api.m7_completion import complete
+from Api.m7_completion import complete, finish_current_situation
 from Api.m7_completion import create_additional_session
 from Api.m5_cycle_runtime import read_cycle
 from Api.m10_product_flow import prepare, start_prepared, start_or_resume, read_runtime
@@ -192,6 +192,42 @@ def test_prepare_does_not_start_time_and_explicit_start_presents_same_situation(
             "SELECT status FROM m5_assessment_situations WHERE assessment_situation_id=%s", (candidate_id,)
         ).fetchone()["status"]
         assert candidate_status == "admitted"
+
+
+def test_inter_case_break_closes_only_current_as_and_resumes_on_explicit_next(product_db):
+    with product_db() as connection:
+        started = start_or_resume(connection, user_id=99, key="w02-inter-case")
+        cycle_id = str(started["plan"]["cycle_id"])
+        first_as = str(started["decision"]["assessment_situation_id"])
+        _add_turn(connection, first_as, "Синтетический ответ первой ситуации", "w02-inter-case-turn")
+        transition(
+            connection, assessment_situation_id=first_as, action="scenario_end",
+            reason="participant_completed", request_id="w02-inter-case-scenario-end",
+        )
+
+        closed = finish_current_situation(
+            connection, cycle_id=cycle_id, key="w02-inter-case-close", initiated_by=99,
+        )
+        assert closed["status"] == "between_situations"
+        paused = read_cycle(connection, cycle_id)
+        assert paused["status"] == "paused"
+        assert paused["sessions"][-1]["status"] == "paused"
+        assert read_runtime(connection, cycle_id=cycle_id)["between_situations"] is True
+        replay = finish_current_situation(
+            connection, cycle_id=cycle_id, key="w02-inter-case-close", initiated_by=99,
+        )
+        assert replay["idempotent"] is True
+
+        selected = next_situation(
+            connection, cycle_id=cycle_id, user_id=99, key="w02-inter-case-next",
+        )
+        assert selected["decision"]["status"] == "SELECTED"
+        second_as = str(selected["decision"]["assessment_situation_id"])
+        assert second_as != first_as
+        resumed = read_cycle(connection, cycle_id)
+        assert resumed["status"] == "active"
+        assert resumed["sessions"][-1]["status"] == "active"
+        assert read_runtime(connection, cycle_id=cycle_id)["current_situation"]["assessment_situation_id"] == second_as
 
 
 def _drain_product_pipeline(factory):

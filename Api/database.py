@@ -3052,6 +3052,8 @@ def ensure_assessment_context_schema(connection) -> None:
         )
         """
     )
+
+
     connection.execute(
         """
         CREATE OR REPLACE FUNCTION prevent_frozen_m4_change()
@@ -3090,6 +3092,41 @@ def ensure_assessment_context_schema(connection) -> None:
     connection.execute(
         "ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS personalized_profile_id "
         "BIGINT REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT"
+    )
+
+
+def ensure_questionnaire_source_schema(connection) -> None:
+    """Create the immutable questionnaire intake store for isolated tests and bootstrap."""
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS questionnaire_response_revisions (
+            id BIGSERIAL PRIMARY KEY,
+            organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+            assignment_ref TEXT NOT NULL,
+            template_variant TEXT NOT NULL,
+            template_version TEXT NOT NULL,
+            channel TEXT NOT NULL CHECK (channel IN ('csv','product_form','external_form')),
+            status TEXT NOT NULL CHECK (status IN ('invalid','draft','ready_for_confirmation','confirmed')),
+            answers_json JSONB NOT NULL,
+            validation_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+            raw_source_text TEXT,
+            source_checksum TEXT NOT NULL,
+            uploaded_by_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            source_author TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL,
+            request_hash TEXT NOT NULL,
+            confirmed_by_user_id BIGINT REFERENCES users(id) ON DELETE RESTRICT,
+            confirmed_at TIMESTAMPTZ,
+            organization_context_version_id BIGINT REFERENCES assessment_organization_context_versions(id) ON DELETE RESTRICT,
+            recipient_mapping_json JSONB,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE(uploaded_by_user_id,idempotency_key)
+        )
+        """
+    )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_questionnaire_response_org_assignment "
+        "ON questionnaire_response_revisions(organization_id,assignment_ref,created_at DESC)"
     )
 
 
@@ -4462,6 +4499,7 @@ def ensure_core_schema() -> None:
         )
         ensure_role_profile_schema(connection)
         ensure_assessment_context_schema(connection)
+        ensure_questionnaire_source_schema(connection)
         ensure_m5_runtime_schema(connection)
         connection.execute("""
             DO $$ BEGIN
