@@ -134,6 +134,12 @@ participant-safe `assigned_timing` → при подготовке неизме�
 - PR/GitHub CI/test deploy, реальные устройства и полный runtime browser suite —
   NOT_RUN: push/PR/merge в этом шаге не запрашивались.
 
+Для общего PR изолированная browser fixture дополнена валидным синтетическим
+participant briefing, подтверждёнными ответами/consent и завершённым onboarding;
+production/test данные не использовались. Journey после знакомства возвращает
+`complete_profile`, если M4 ещё не готов, а подготовленные time-boundary Cycle
+получают AS до явного старта. Адресные C1/P10.5 регрессии — PASS.
+
 Схема и существующие данные не меняются. Откат — revert ADD01-коммита; frozen Cycle
 и plan revisions остаются неизменными и совместимыми, legacy-прохождения не удаляются.
 

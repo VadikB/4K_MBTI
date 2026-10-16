@@ -3422,6 +3422,8 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
         next_action = "wait_for_acquaintance_data"
     elif str(onboarding["status"]) in {"not_started", "in_progress"}:
         next_action = "show_onboarding"
+    elif not ready:
+        next_action = "complete_profile"
     else:
         next_action = "show_dashboard"
     # A stored Cycle owns the confirmed M4 snapshot. Reading this projection must

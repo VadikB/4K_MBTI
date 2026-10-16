@@ -249,6 +249,7 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
                           if not route["positions"] or str(x["assessment_situation_id"]) in attached_ids]
     return {
         "runtime_kind": "cycle", "cycle_id": cycle_id, "plan": plan, "status": status,
+        "return_policy_enabled": bool(plan.get("plan", {}).get("return_policy_snapshot")),
         "route": route,
         "situations": [{"assessment_situation_id": str(x["assessment_situation_id"]), "status": x["status"]}
                        for x in visible_situations],

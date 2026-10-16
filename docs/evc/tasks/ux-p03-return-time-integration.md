@@ -136,3 +136,16 @@ Heartbeat interval и lease сервер сообщает клиенту; UI б�
 
 Схема БД не меняется: snapshot хранится в существующей immutable plan revision.
 Откат — revert ADD01-коммита; сохранённые события и route history не удаляются.
+
+### Интеграционная регрессия общего PR
+
+Перед общим PR policy activation дополнительно ограничена наличием сохранённого
+`return_policy_snapshot`: assessment Cycle без QA snapshot не вызывает P03 endpoints.
+В QA Cycle первый heartbeat выполняется до проверки return-state, heartbeat одного
+Cycle сериализован поколением клиента и останавливается до completion/interrupt.
+Это устраняет ложное отсутствие и deadlock heartbeat/completion. Прерывание без
+текущей AS сохраняет доступ к Additional Session; повторный старт всегда сначала
+получает серверный prepared Cycle, поэтому terminal Cycle не переиспользуется.
+
+Адресные Chromium-регрессии P03, S10-B, S10-C1, REV-02, P10.5 и G10.7 — PASS;
+frontend — 21 PASS. Полный результат GitHub CI фиксируется в PR №54.

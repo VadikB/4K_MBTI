@@ -13,6 +13,8 @@ from Api.m5_case_runtime import checksum
 from Api.m5_catalog_integrity import publish_catalog
 from Api.assessment_authoring_service import assessment_authoring_service
 from Api.organization_invitation_service import hash_invitation_token
+from Api.acquaintance import accept_consent,save_answers
+from Api.user_journey import update_onboarding_state
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -76,9 +78,27 @@ def seed(state):
         role_code=cases['cases'][3 if state.get('browser_case')=='character' else 0]['base_role']
         role=c.execute('SELECT v.id FROM assessment_role_profile_versions v JOIN assessment_role_profiles r ON r.id=v.role_profile_id WHERE r.code=%s',(role_code,)).fetchone()['id']
         definition={'name':'Синтетическая организация','organization_type':'компания','industry':'образование',
-            'activity_description':'Техническая проверка','case_reality_level':'обобщённый','organization_name_usage_rules':'не использовать название'}
+            'activity_description':'Техническая проверка','case_reality_level':'обобщённый','organization_name_usage_rules':'не использовать название',
+            'participant_briefing':{
+                'purpose':'Техническая проверка полного пользовательского пути.',
+                'organizer':'Синтетическая организация E10.2',
+                'results_usage':'Только проверка изолированного тестового контура.',
+                'result_recipients':'Синтетический участник и технический проверяющий.',
+                'provided_participant_fields':['role','position','duties'],
+                'participant_questions':['Подтвердите роль.','Подтвердите задачи.','Подтвердите готовность.'],
+                'consent_version':1,
+                'consent_text':'Синтетическое согласие только для тестового контура.',
+            }}
         org_version=create_organization_context_draft(c,organization_id=org,definition=definition,source_manifest={'fixture':'E10.2'})
         publish_organization_context(c,version_id=org_version,confirmed_by_user_id=users[0])
+        for uid in users:
+            accept_consent(c,user_id=uid,version=1)
+            save_answers(c,user_id=uid,answers={
+                'answer_1':'Синтетическая роль подтверждена.',
+                'answer_2':'Синтетические задачи подтверждены.',
+                'answer_3':'Синтетическая готовность подтверждена.',
+            },confirm=True)
+            update_onboarding_state(c,uid,status='completed',current_step=6)
         # Same isolated fixture lifecycle as test_m10_product_path_db; repository package stays WORKING.
         admitted=([read('tests/browser/fixtures/sources/character-case-v1.json')] if state.get('browser_case')=='character' else [cases['cases'][0],cases['cases'][2]])
         if state.get('browser_catalog') == 'unavailable':

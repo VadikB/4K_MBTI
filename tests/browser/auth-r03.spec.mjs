@@ -465,8 +465,13 @@ test('P03 return card hides stopped AS and keeps explicit continue in the same c
     });
     if (pathname === '/users/assessment/cycles/cycle-p03/runtime') return fulfillJson(route, {
       cycle_id: 'cycle-p03', status: { collection_status: 'active', remaining_seconds: 1200 },
+      return_policy_enabled: true,
       current_situation: { assessment_situation_id: 'as-old', status: 'active', participant_payload: { title: 'Скрытая ситуация', content: 'Нельзя показывать до Continue' } },
       situations: [], plan: { plan: { route: [{}] } }, trace: { turns: [], events: [] },
+    });
+    if (pathname === '/users/assessment/m7/cycles/cycle-p03/presence') return fulfillJson(route, {
+      cycle_id: 'cycle-p03', assessment_situation_id: 'as-old',
+      heartbeat_interval_seconds: 30, presence_lease_seconds: 60,
     });
     if (pathname === '/users/assessment/m7/cycles/cycle-p03/return-state') return fulfillJson(route, {
       cycle_id: 'cycle-p03', position_no: 1, current_assessment_situation_id: 'as-old', current_assessment_situation_status: 'active',
