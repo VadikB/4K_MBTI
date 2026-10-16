@@ -1574,6 +1574,22 @@ if (adminOrganizationsList) {
           form.reset();
         });
       });
+      return;
+    }
+    if (form.dataset.action === 'preview-questionnaire') {
+      const formData = new FormData(form);
+      const file = form.querySelector('input[type="file"]')?.files?.[0];
+      if (!file) return;
+      file.text().then((csvText) => {
+        withScreen(loadAdminOrganizations, async (module) => {
+          await module.previewAdminOrganizationQuestionnaire(organizationId, {
+            assignment_ref: String(formData.get('assignment_ref') || '').trim(),
+            source_author: String(formData.get('source_author') || '').trim(),
+            channel: 'csv', template_variant: 'corporate', template_version: '0.1',
+            csv_text: csvText, answers: {}, idempotency_key: createOperationId(),
+          });
+        });
+      });
     }
   });
 
@@ -1598,6 +1614,13 @@ if (adminOrganizationsList) {
         return;
       }
       withScreen(loadAdminOrganizations, (module) => module.deleteOrDeactivateAdminOrganization(organizationId, organizationName));
+      return;
+    }
+    if (button.dataset.action === 'confirm-questionnaire') {
+      const recipients = [...(card?.querySelectorAll('input[name="questionnaire_recipient"]:checked') || [])]
+        .map((input) => input.value);
+      withScreen(loadAdminOrganizations, (module) =>
+        module.confirmAdminOrganizationQuestionnaire(organizationId, Number(value), recipients));
       return;
     }
     if (button.dataset.action === 'prepare-organization-assessments') {

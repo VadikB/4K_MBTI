@@ -17,5 +17,7 @@ export {
   prepareAdminOrganizationMemberAssessment,
   prepareAdminOrganizationAssessments,
   importAdminOrganizationMembers,
+  previewAdminOrganizationQuestionnaire,
+  confirmAdminOrganizationQuestionnaire,
   deleteOrDeactivateAdminOrganization,
 } from '../screens/admin/organizations.js';

@@ -122,6 +122,15 @@ async function start(page,expected='готовности'){
 }
 async function answer(page,text=fixture.answer){await page.locator('#interview-textarea').fill(text);await page.locator('#interview-submit-button').click();await expect(page.locator('#interview-submit-button')).toBeEnabled({timeout:30000});await expect(page.locator('#interview-error')).toBeHidden();await expect(page.locator('#interview-messages .own')).toContainText([text]);}
 async function report(page,stand,info){
+ const nextCase=page.getByRole('button',{name:'Приступить к следующему кейсу'});
+ try{
+  await nextCase.waitFor({state:'visible',timeout:3000});
+  const cycle=new URL(page.url()).searchParams.get('cycle_id');
+  const closed=await page.request.post(`${stand.url}/users/assessment/m7/cycles/${cycle}/completion`,{
+   data:{action:'complete',reason:'browser_fixture_plan_finished',idempotency_key:randomUUID()},
+  });
+  expect(closed.ok()).toBeTruthy();await page.reload();
+ }catch(_error){}
  await expect(page.locator('#report-panel')).toBeVisible({timeout:70000});
  await expect(page.locator('#m8-report-state')).toContainText('Report готов',{timeout:70000});
  const cycle=new URL(page.url()).searchParams.get('cycle_id');expect(cycle).toBeTruthy();

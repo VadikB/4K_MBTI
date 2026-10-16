@@ -5,6 +5,7 @@ from uuid import UUID,uuid4
 
 from Api.m5_case_runtime import checksum
 from Api import m5_scenario_runtime
+from Api import m5_cycle_runtime
 from Api.m5_cycle_runtime import read_cycle
 from Api import m7_completion_repository as repo
 
@@ -48,6 +49,52 @@ def _finalize_as(connection,row,reason,key):
     connection.execute("""INSERT INTO m7_finalization_outbox(assessment_situation_db_id,handoff_id,status)
         VALUES(%s,%s,'pending') ON CONFLICT(assessment_situation_db_id) DO NOTHING""",(row['id'],handoff['handoff_id']))
     return handoff
+
+
+def finish_current_situation(connection, *, cycle_id: str, key: str, initiated_by: int) -> dict:
+    """Close one completed AS without closing its Cycle (W02 inter-case boundary)."""
+    cycle = _cycle(connection, cycle_id)
+    if cycle['status'] not in {'active', 'paused'}:
+        raise ValueError('M7_CYCLE_NOT_ACTIVE')
+    row = connection.execute(
+        """SELECT s.* FROM m5_assessment_situations s
+           JOIN m7_route_positions p ON p.current_as_db_id=s.id
+           WHERE s.cycle_db_id=%s AND p.state='in_progress'
+           ORDER BY p.position_no LIMIT 1 FOR UPDATE OF s""",
+        (cycle['id'],),
+    ).fetchone()
+    if row is None:
+        raise ValueError('M7_CURRENT_AS_NOT_FOUND')
+    if row['status'] == 'closed':
+        handoff = connection.execute(
+            "SELECT handoff_id FROM m5_c45_handoffs WHERE assessment_situation_db_id=%s AND mode='final' ORDER BY created_at DESC LIMIT 1",
+            (row['id'],),
+        ).fetchone()
+        return {"status": "between_situations", "assessment_situation_id": str(row['assessment_situation_id']),
+                "handoff_id": str(handoff['handoff_id']) if handoff else None, "idempotent": True}
+    if cycle['status'] != 'active':
+        raise ValueError('M7_CYCLE_NOT_ACTIVE')
+    if row['status'] != 'scenario_ended':
+        raise ValueError('M7_SCENARIO_NOT_COMPLETED')
+    clarification = connection.execute(
+        """SELECT d.status,r.outcome AS response_outcome FROM m7_clarification_decisions d
+           LEFT JOIN m7_clarification_responses r ON r.decision_id=d.id
+           WHERE d.assessment_situation_db_id=%s ORDER BY d.created_at DESC LIMIT 1""",
+        (row['id'],),
+    ).fetchone()
+    if clarification is not None and clarification['status'] == 'ASK' and not clarification['response_outcome']:
+        raise ValueError('M7_CLARIFICATION_PENDING')
+    handoff = _finalize_as(connection, dict(row), 'user_finished_situation', key)
+    session = connection.execute(
+        "SELECT session_id FROM m5_cycle_sessions WHERE cycle_db_id=%s AND status='active' ORDER BY ordinal DESC LIMIT 1",
+        (cycle['id'],),
+    ).fetchone()
+    if session:
+        m5_cycle_runtime.transition_session(connection, session_id=str(session['session_id']),
+                                            action='pause', reason='between_situations')
+    return {"status": "between_situations", "assessment_situation_id": str(row['assessment_situation_id']),
+            "handoff_id": str(handoff['handoff_id']) if handoff else None, "idempotent": False,
+            "initiated_by": initiated_by}
 
 def _composition(connection,cycle):
     from Api.m7_route_replacement import replacement_metadata

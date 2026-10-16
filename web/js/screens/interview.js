@@ -126,6 +126,39 @@ const renderProductRuntime = (snapshot) => {
   interviewPanel.classList.remove('single-turn-mode', 'completed');
   interviewCompleteActions.classList.add('hidden');
 
+  if (snapshot.between_situations) {
+    interviewMessages.innerHTML = '';
+    const card = document.createElement('section'); card.className = 'interview-return-card';
+    const title = document.createElement('h3'); title.textContent = 'Ситуация завершена';
+    const copy = document.createElement('p');
+    copy.textContent = 'Сейчас можно сделать перерыв. Время на выполнение не расходуется, но общий срок завершения оценки продолжает идти.';
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'primary-button';
+    button.textContent = 'Приступить к следующему кейсу';
+    const status = document.createElement('p'); status.setAttribute('role', 'status');
+    button.addEventListener('click', async () => {
+      button.disabled = true; status.textContent = 'Проверяем готовность следующей ситуации…';
+      try {
+        const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/next', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idempotency_key: createOperationId() }),
+        });
+        const next = await readApiResponse(response, 'Не удалось перейти к следующей ситуации.');
+        if (next.decision?.status === 'SELECTED') { await loadProductRuntime(); return; }
+        if (['NO_ADMISSIBLE_CASE', 'OUT_OF_TIME'].includes(next.decision?.status)) {
+          await completeProductCycle(); return;
+        }
+        status.textContent = 'Следующая ситуация ещё не готова. Попробуйте ещё раз.';
+        button.disabled = false;
+      } catch (error) { status.textContent = error.message; button.disabled = false; }
+    });
+    card.append(title, copy, button, status); interviewMessages.appendChild(card);
+    interviewTextarea.disabled = true; interviewSubmitButton.disabled = true; interviewFinishButton.disabled = true;
+    interviewPauseButton?.classList.add('hidden'); interviewAdditionalButton?.classList.add('hidden');
+    interviewCaseStatus.textContent = 'Текущая ситуация завершена. Следующая откроется только после вашего действия.';
+    updateInterviewTimer(); scheduleInterviewBottomAlignment();
+    return snapshot;
+  }
+
   const cycleStatus = snapshot.status?.collection_status;
   const waitingQuestion = clarification?.status === 'ASK' && !clarification.response_outcome;
   const closed = ['collection_closed', 'calculation_pending', 'calculated', 'failed'].includes(cycleStatus);
@@ -325,7 +358,13 @@ export const finishProductAssessment = async () => {
     renderProductRuntime(snapshot);
     return;
   }
-  await completeProductCycle();
+  stopProductPresence();
+  const finishedResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/finish-situation', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idempotency_key: createOperationId() }),
+  });
+  await readApiResponse(finishedResponse, 'Не удалось завершить текущую ситуацию.');
+  await loadProductRuntime();
 };
 
 export const toggleProductPause = async () => {

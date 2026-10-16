@@ -30,19 +30,20 @@ const acquaintanceSteps = () => {
   const preparedPlan = preparedPlanSnapshot?.plan || preparedPlanSnapshot;
   const assignedTiming = acquaintanceModel?.assigned_timing?.status === 'resolved'
     ? acquaintanceModel.assigned_timing : null;
-  const calendarHours = preparedPlan ? Math.ceil(Number(preparedPlan.calendar_window_seconds || 0) / 3600) : 0;
+  const effectiveTiming = preparedPlan || assignedTiming;
+  const calendarHours = effectiveTiming ? Math.ceil(Number(effectiveTiming.calendar_window_seconds || 0) / 3600) : 0;
+  const returnCopy = preparedPlan?.return_policy_snapshot
+    ? '\n\nЕсли прервать незавершённую ситуацию, при возвращении её содержание может обновиться. При этом ваше место в оценке сохранится — завершённые ситуации повторять не потребуется.'
+    : '';
   const readyDescription = preparedPlan
-    ? `На прохождение оценки у вас будет ${calendarHours} ч. с момента её начала. Между ситуациями можно сделать перерыв: таймер выполнения остановится, но общий календарный срок продолжит идти. После возвращения вы продолжите с места остановки.`
+    ? 'Вам предстоит разобраться в нескольких ситуациях. Опишите, как вы будете действовать, и поясните свои решения.\n\n' +
+      'В некоторых ситуациях у вас будет собеседник. Если для решения не хватает информации, можно задать собеседнику вопрос.\n\n' +
+      'Между ситуациями можно сделать перерыв. Завершите текущую ситуацию и переходите к следующей, когда будете готовы. Во время такого перерыва время на выполнение не расходуется, но общий срок завершения оценки продолжает идти.\n\n' +
+      `Завершить оценку нужно в течение ${calendarHours} ч. после её начала.` + returnCopy
     : 'Система подготовит план и покажет фактические параметры до старта. Срок начнётся только после явного начала первой ситуации.';
   const planFeatures = preparedPlan ? [
-    feature('Запланировано ситуаций', String(Array.isArray(preparedPlan.route) ? preparedPlan.route.length : 0)),
-    feature('Ориентировочная общая длительность', `${Math.ceil(Number(preparedPlan.planned_max_seconds || 0) / 60)} мин.`),
-    feature('Предельный бюджет выполнения', `${Math.ceil(Number(preparedPlan.time_budget_seconds || 0) / 60)} мин.`),
-    feature('Календарный срок после старта', `${Math.ceil(Number(preparedPlan.calendar_window_seconds || 0) / 3600)} ч.`),
-  ] : [];
-  const assignedTimingFeatures = assignedTiming ? [
-    feature('Назначенный общий бюджет', `${Math.ceil(Number(assignedTiming.time_budget_seconds) / 60)} мин.`),
-    feature('Календарное окно после старта', `${Math.ceil(Number(assignedTiming.calendar_window_seconds) / 3600)} ч.`),
+    feature('Ситуации', String(Array.isArray(preparedPlan.route) ? preparedPlan.route.length : 0)),
+    feature('Время на выполнение', `${Math.ceil(Number(preparedPlan.time_budget_seconds || 0) / 60)} мин.`),
   ] : [];
   const steps = [
     {
@@ -50,7 +51,7 @@ const acquaintanceSteps = () => {
       title: `Оценку организует ${briefing.organizer || acquaintanceModel?.readiness?.organization_name || 'ваша организация'}`,
       description: briefing.purpose || '',
       features: [feature('Как используются результаты', briefing.results_usage || ''),
-        feature('Кто получит результаты', briefing.result_recipients || ''), ...assignedTimingFeatures],
+        feature('Кто получит результаты', briefing.result_recipients || '')],
     },
     {
       step: 'Ваши данные', progressIndex: 0,
@@ -91,7 +92,8 @@ const acquaintanceSteps = () => {
         ? readyDescription
         : 'Ваши ответы сохранены. Организация ещё готовит исходные данные для оценки.',
       features: planFeatures, action: 'finish',
-      finalButton: acquaintanceModel?.late_readiness?.status === 'ready_to_prepare' ? 'Перейти к готовности оценки' : 'Проверить готовность',
+      finalButton: preparedPlan ? 'Приступить к оценке'
+        : acquaintanceModel?.late_readiness?.status === 'ready_to_prepare' ? 'Перейти к готовности оценки' : 'Проверить готовность',
     },
   ];
   return steps;
