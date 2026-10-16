@@ -458,6 +458,7 @@ export const restoreAssessmentContextFromParams = (params) => {
   const totalCases = params.get('total_cases');
   const fullName = params.get('full_name');
   const jobDescription = params.get('job_description');
+  const cycleId = params.get('cycle_id');
 
   if (userId) {
     state.pendingUser = {
@@ -482,5 +483,10 @@ export const restoreAssessmentContextFromParams = (params) => {
 
   if (totalCases) {
     state.assessmentTotalCases = Number(totalCases);
+  }
+
+  if (cycleId) {
+    state.assessmentRuntimeKind = 'cycle';
+    state.productCycleId = cycleId;
   }
 };

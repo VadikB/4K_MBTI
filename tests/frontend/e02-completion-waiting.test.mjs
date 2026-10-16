@@ -38,6 +38,7 @@ test('E02 polling is cancellable, visibility-aware and ignores stale responses',
   assert.match(processing, /requestEpoch !== cycleRequestEpoch/);
   assert.match(processing, /state\.currentScreen !== 'processing'/);
   assert.match(processing, /CYCLE_POLL_INTERVAL_MS = 5000/);
+  assert.match(processing, /cycleIdFromUrl/);
 });
 
 test('E02 uses accepted visual tokens and mobile actions', () => {

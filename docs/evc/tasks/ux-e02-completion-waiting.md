@@ -53,6 +53,7 @@ runtime-фактов.
 - `npx playwright test tests/browser/auth-r03.spec.mjs --grep "processing deep link|Cycle failure|E02 shows ready"` — PASS, 3/3 после разрешения loopback; первичный sandbox-запуск — EPERM до выполнения тестов.
 - `npm run test:backend` — 423 PASS, 13 FAIL в существующих M6 provider/admission fixtures (`DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED` / `INPUT_NOT_READY`); затронутые UX-E02 unit/e2e — PASS, а изолированный обязательный backend проверяет CI.
 - Первый CI head `3962b26`: frontend PASS; pytest FAIL в пяти browser acceptance-сценариях, ожидавших удалённый E02 автоматический переход в Report. Общий helper исправлен на явное действие участника; актуальный CI повторяется.
+- Второй CI head `3893c5f`: frontend PASS; новые E02 browser-тесты PASS, но пять runtime-сценариев выявили потерю Cycle identity при восстановлении URL. `cycle_id` теперь восстанавливается до открытия processing, legacy и Cycle-разметка разделены; актуальный CI повторяется.
 - Полный backend/CI и post-merge deploy-test фиксируются перед слиянием и после него.
 
 ## Непроверенное

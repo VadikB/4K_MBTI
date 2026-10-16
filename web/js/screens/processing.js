@@ -7,6 +7,7 @@ import {
   processingAgentsList,
   processingPhaseLabel,
   processingLegacy,
+  processingOutcomeCard,
   processingOutcomeTitle,
   processingOutcomeDescription,
   processingOutcomeProgress,
@@ -140,6 +141,9 @@ export const finishProcessingSequence = () => {
 };
 
 export const openProcessing = () => {
+  const cycleIdFromUrl = new URLSearchParams(window.location.search).get('cycle_id');
+  if (!state.productCycleId && cycleIdFromUrl) state.productCycleId = cycleIdFromUrl;
+  if (state.productCycleId) state.assessmentRuntimeKind = 'cycle';
   setCurrentScreen('processing');
   syncUrlState('processing');
   hideAllPanels();
@@ -152,10 +156,12 @@ export const openProcessing = () => {
   state.processingAutoTransitionStarted = false;
   state.processingServerProgress = 0;
   if (state.assessmentRuntimeKind === 'cycle') {
+    processingOutcomeCard?.classList.remove('hidden');
     processingLegacy?.classList.add('hidden');
     renderCycleOutcome('confirming');
     processingOutcomeTitle?.focus();
   } else {
+    processingOutcomeCard?.classList.add('hidden');
     processingLegacy?.classList.remove('hidden');
   }
   processingStatusText.textContent = 'Подтягиваем итоговые оценки и формируем профиль компетенций.';

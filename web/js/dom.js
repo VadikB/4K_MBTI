@@ -384,6 +384,7 @@ export const processingStatusText = document.getElementById('processing-status-t
 export const processingAgentsList = document.getElementById('processing-agents-list');
 export const processingPhaseLabel = document.getElementById('processing-phase-label');
 export const processingLegacy = document.getElementById('processing-legacy');
+export const processingOutcomeCard = document.getElementById('processing-outcome-card');
 export const processingOutcomeTitle = document.getElementById('processing-outcome-title');
 export const processingOutcomeDescription = document.getElementById('processing-outcome-description');
 export const processingOutcomeProgress = document.getElementById('processing-outcome-progress');
