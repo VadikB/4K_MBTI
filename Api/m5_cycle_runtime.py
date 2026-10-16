@@ -8,10 +8,6 @@ from uuid import UUID, uuid4
 from Api.m5_case_runtime import checksum
 
 
-DEFAULT_TIME_BUDGET_SECONDS = 60 * 60
-DEFAULT_CALENDAR_WINDOW_SECONDS = 72 * 60 * 60
-
-
 def _profile_row(connection, personalized_profile_id: int) -> dict[str, Any]:
     row = connection.execute(
         "SELECT to_jsonb(p) AS value FROM assessment_personalized_profiles p WHERE p.id=%s",
@@ -29,14 +25,26 @@ def create_cycle(
     selected_role_ref: dict[str, Any],
     target_set: list[dict[str, str]],
     created_by: int,
-    time_budget_seconds: int = DEFAULT_TIME_BUDGET_SECONDS,
-    calendar_window_seconds: int = DEFAULT_CALENDAR_WINDOW_SECONDS,
+    time_budget_seconds: int | None = None,
+    calendar_window_seconds: int | None = None,
     parameter_sources: dict[str, Any] | None = None,
     usage_scope: str = "assessment",
     catalog_ref: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     profile = _profile_row(connection, personalized_profile_id)
-    if time_budget_seconds <= 0 or calendar_window_seconds <= 0:
+    if parameter_sources is None:
+        from Api.m7_parameter_resolution import resolve
+        overrides={name:value for name,value in {
+            "time_budget_seconds":time_budget_seconds,
+            "calendar_window_seconds":calendar_window_seconds}.items() if value is not None}
+        resolved = resolve(connection, personalized_profile_id=personalized_profile_id,
+                           usage_scope=usage_scope,qa_overrides=overrides or None)
+        time_budget_seconds = resolved["values"]["time_budget_seconds"]
+        calendar_window_seconds = resolved["values"]["calendar_window_seconds"]
+        parameter_sources = {"time_budget": resolved["sources"]["time_budget_seconds"],
+                             "calendar_window": resolved["sources"]["calendar_window_seconds"],
+                             "resolution_checksum": resolved["resolved_checksum"]}
+    if type(time_budget_seconds) is not int or type(calendar_window_seconds) is not int or time_budget_seconds <= 0 or calendar_window_seconds <= 0:
         raise ValueError("M7_TIME_LIMIT_INVALID")
     if usage_scope not in {"assessment", "qa"}:
         raise ValueError("M7_USAGE_SCOPE_INVALID")
@@ -52,10 +60,9 @@ def create_cycle(
         "version": "1",
         "checksum": profile["checksum"],
     }
-    sources = parameter_sources or {
-        "time_budget": "m7-default:60m" if time_budget_seconds == DEFAULT_TIME_BUDGET_SECONDS else "explicit:create_cycle",
-        "calendar_window": "m7-default:72h" if calendar_window_seconds == DEFAULT_CALENDAR_WINDOW_SECONDS else "explicit:create_cycle",
-    }
+    if parameter_sources is None:
+        raise ValueError("M7_PARAMETER_PROVENANCE_REQUIRED")
+    sources = parameter_sources
     value = {
         "cycle_id": str(cycle_id),
         "profile_ref": profile_ref,
@@ -126,8 +133,8 @@ def create_cycle_session_for_case(
     case_version: str,
     created_by: int,
     usage_scope: str,
-    time_budget_seconds: int = DEFAULT_TIME_BUDGET_SECONDS,
-    calendar_window_seconds: int = DEFAULT_CALENDAR_WINDOW_SECONDS,
+    time_budget_seconds: int | None = None,
+    calendar_window_seconds: int | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     profile = _profile_row(connection, personalized_profile_id)
     targets = connection.execute(

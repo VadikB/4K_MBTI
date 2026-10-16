@@ -13,7 +13,7 @@ from psycopg.rows import dict_row
 from Api.database import ensure_m5_runtime_schema
 from Api.m5_case_runtime import checksum
 from Api.m5_equivalent_generation import (ControlledEquivalentProvider, begin_generation,
-    claim_generation, complete_generation, load_variability_package, run_provider)
+    claim_generation, complete_generation, controlled_provider_ref, load_variability_package, run_provider)
 from Api.m5_storage import import_package
 from Api.m5_storage import prepare_assessment_situation
 from Api.m5_scenario_runtime import build_c45,start as start_situation,transition
@@ -198,10 +198,10 @@ def test_equivalent_generation_is_persisted_validated_and_handed_to_p01(db):
         old_as=str(shown['decision']['assessment_situation_id'])
         operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
             request_key='p02-generate-1',requested_by=99,package=package,
-            provider_config={'id':'controlled','version':'1','checksum':'a'*64})
+            provider_config=controlled_provider_ref())
         replay=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
             request_key='p02-generate-1',requested_by=99,package=package,
-            provider_config={'id':'controlled','version':'1','checksum':'a'*64})
+            provider_config=controlled_provider_ref())
         assert replay['id']==operation['id']
         claimed=claim_generation(c,str(operation['id']));c.commit()
     source=claimed['input_json']['old_content']
@@ -231,7 +231,7 @@ def test_equivalent_generation_is_persisted_validated_and_handed_to_p01(db):
         assert c.execute('SELECT count(*) AS n FROM m5_assessment_situations').fetchone()['n']==2
         assert begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
             request_key='p02-generate-1',requested_by=99,package=package,
-            provider_config={'id':'controlled','version':'1','checksum':'a'*64})['id']==operation['id']
+            provider_config=controlled_provider_ref())['id']==operation['id']
 
 
 def test_equivalent_generation_recovers_expired_lease_and_fences_late_worker(db, monkeypatch):
@@ -241,7 +241,7 @@ def test_equivalent_generation_recovers_expired_lease_and_fences_late_worker(db,
         plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);old_as=str(shown['decision']['assessment_situation_id'])
         operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
             request_key='p02-recover',requested_by=99,package=load_variability_package(),
-            provider_config={'id':'controlled','version':'1','checksum':'c'*64})
+            provider_config=controlled_provider_ref())
         first=claim_generation(c,str(operation['id']))
         c.execute("UPDATE m5_equivalent_generation_operations SET lease_expires_at=NOW()-INTERVAL '1 second' WHERE id=%s",(operation['id'],))
         second=claim_generation(c,str(operation['id']))
@@ -266,7 +266,7 @@ def test_candidate_admission_revocation_blocks_replacement(db):
         plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);old_as=str(shown['decision']['assessment_situation_id'])
         operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
             request_key='p02-revoked',requested_by=99,package=load_variability_package(),
-            provider_config={'id':'controlled','version':'1','checksum':'d'*64})
+            provider_config=controlled_provider_ref())
         claimed=claim_generation(c,str(operation['id']));source=claimed['input_json']['old_content']
         candidate={'case_id':'CASE-TDISC-01','case_version':'v0.1','base_role':claimed['input_json']['base_role'],
             'indicator_targets':claimed['input_json']['indicator_targets'],'participant_payload':deepcopy(source['participant_payload']),
@@ -289,7 +289,7 @@ def test_equivalent_generation_claim_is_single_and_late_result_is_not_admitted(d
         plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);old_as=str(shown['decision']['assessment_situation_id'])
         operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
             request_key='p02-late',requested_by=99,package=load_variability_package(),
-            provider_config={'id':'controlled','version':'1','checksum':'b'*64});c.commit()
+            provider_config=controlled_provider_ref());c.commit()
     def claim():
         with db() as c:
             try:
@@ -405,7 +405,7 @@ def test_controlled_return_180_replaces_presents_once_and_keeps_deadline(db):
             recognized_at=evaluated-timedelta(seconds=180))
         operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
             request_key='p03-generate',requested_by=99,package=package,
-            provider_config={'id':'controlled','version':'1','checksum':'e'*64})
+            provider_config=controlled_provider_ref())
         claimed=claim_generation(c,str(operation['id']));source=claimed['input_json']['old_content']
         candidate={'case_id':'CASE-TDISC-01','case_version':'v0.1','base_role':claimed['input_json']['base_role'],
             'indicator_targets':claimed['input_json']['indicator_targets'],

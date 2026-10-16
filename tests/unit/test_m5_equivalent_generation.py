@@ -1,9 +1,13 @@
 from copy import deepcopy
 
+import pytest
+
 from Api.m5_equivalent_generation import (
     ControlledEquivalentProvider,
     _safe_profile,
+    controlled_provider_ref,
     load_variability_package,
+    resolve_provider_config,
     run_provider,
     validate_candidate,
 )
@@ -118,3 +122,16 @@ def test_assessment_scope_requires_active_pass_evidence_and_has_no_qa_contradict
         denied = deepcopy(value)
         denied["variability_contract"]["admission_evidence"][0].update(result=result, status=status)
         assert validate_candidate(denied, candidate(denied))["admitted"] is False
+
+
+def test_provider_reference_is_resolved_by_server_and_false_identity_is_rejected():
+    resolved=resolve_provider_config(controlled_provider_ref(),usage_scope='qa')
+    assert resolved['id']=='controlled-equivalent-fixture'
+    assert resolved['lease_seconds']>0 and resolved['max_attempts']>0
+    for forged in ({'id':'controlled-equivalent-fixture','version':'1','checksum':'x'*64},
+                   {'id':'deepseek_product_gateway','version':'1.0.0','checksum':'x'*64}):
+        with pytest.raises(ValueError,match='M5_EQUIVALENT_PROVIDER_CONFIG'):
+            resolve_provider_config(forged,usage_scope='qa')
+    with pytest.raises(ValueError,match='M5_EQUIVALENT_PROVIDER_CONFIG_NOT_ADMITTED'):
+        resolve_provider_config({'id':'deepseek_product_gateway','version':'1.0.0','checksum':'x'*64},
+                                usage_scope='assessment')

@@ -9,6 +9,7 @@ from Api.m5_cycle_runtime import create_cycle, create_session, read_cycle, start
 from Api.m5_scenario_runtime import start as start_situation
 from Api.m5_storage import prepare_assessment_situation
 from Api.m7_planning_package import load_rules, methodology_targets
+from Api.m7_parameter_resolution import resolve as resolve_parameters
 from Api import m7_planning_repository as repo
 from Api.m5_catalog_integrity import (
     case_admission,
@@ -111,14 +112,20 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
         route.append({**chosen,"purpose_target_ids":contribution,"duration_source":"M5 CaseVersion planned range",
                       "conditional":True,"reserve_for":[]})
         uncovered-=set(contribution)
-    budget=time_budget_seconds or rules["default_time_budget_seconds"]
-    calendar=calendar_window_seconds or rules["default_calendar_window_seconds"]
+    overrides={name:value for name,value in {
+        "time_budget_seconds":time_budget_seconds,"calendar_window_seconds":calendar_window_seconds}.items()
+        if value is not None}
+    resolved=resolve_parameters(connection,personalized_profile_id=personalized_profile_id,
+                                usage_scope=usage_scope,qa_overrides=overrides or None)
+    budget=resolved["values"]["time_budget_seconds"]
+    calendar=resolved["values"]["calendar_window_seconds"]
     profile_ref={"id":f"assessment_personalized_profiles:{personalized_profile_id}","version":"1","checksum":profile["checksum"]}
     cycle=create_cycle(connection,personalized_profile_id=personalized_profile_id,selected_role_ref=role_ref,
         target_set=[{"indicator_id":x["indicator_id"],"m2_version":x["m2_version"]} for x in targets],created_by=created_by,
         time_budget_seconds=budget,calendar_window_seconds=calendar,
-        parameter_sources={"time_budget":"m7_cycle_plan/1.0.0:"+("request" if time_budget_seconds else "method_default"),
-                           "calendar_window":"m7_cycle_plan/1.0.0:"+("request" if calendar_window_seconds else "method_default")},usage_scope=usage_scope,
+        parameter_sources={"time_budget":resolved["sources"]["time_budget_seconds"],
+                           "calendar_window":resolved["sources"]["calendar_window_seconds"],
+                           "resolution_checksum":resolved["resolved_checksum"]},usage_scope=usage_scope,
         catalog_ref={key:catalog_ref[key] for key in ("id","version","checksum","package_checksum","m2_checksum","db_id")})
     session=create_session(connection,cycle_id=str(cycle["cycle_id"]),created_by=created_by)
     total=sum(x["planned_max_minutes"]*60 for x in route)
@@ -128,7 +135,9 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
     content={"schema_version":1,"status":status,"goal":{"kind":"skills","selected_skills":request["selected_skills"]},
         "full_target_set":targets,"planned_target_set":targets,"route":route,"reserves":[],
         "uncovered_target_ids":sorted(uncovered),"planned_max_seconds":total,"time_budget_seconds":budget,
-        "calendar_window_seconds":calendar,"catalog_ref":{key:catalog_ref[key] for key in ("id","version","checksum","package_checksum","m2_checksum")},
+        "calendar_window_seconds":calendar,"parameter_sources":resolved["sources"],
+        "parameter_resolution_checksum":resolved["resolved_checksum"],
+        "catalog_ref":{key:catalog_ref[key] for key in ("id","version","checksum","package_checksum","m2_checksum")},
         "known_limitations":["Cases are conditional opportunities; not guaranteed Evidence"]+
             (["Route exceeds time budget"] if total>budget else []),"catalog":catalog,"algorithm_version":rules["algorithm_version"]}
     repo.save_plan(connection,cycle=cycle,profile_ref=profile_ref,full_targets=targets,planned_targets=targets,
@@ -238,3 +247,38 @@ def read_plan(connection, cycle_id:str) -> dict:
             "revision_no":row["revision_no"],"plan":row["content_json"],"profile_ref":row["profile_ref_json"],
             "rules_ref":{"checksum":row["rules_checksum"],"algorithm_version":row["rules_json"]["algorithm_version"]},
             "decisions":[repo.read_decision(connection,x["id"]) for x in decisions]}
+
+
+def revise_prepared_parameters(connection, *, cycle_id: str, created_by: int,
+                               reason: str, time_budget_seconds: int | None = None,
+                               calendar_window_seconds: int | None = None) -> dict:
+    """Create an auditable plan revision before the first Session starts."""
+    plan = repo.read_plan(connection, cycle_id)
+    cycle = connection.execute("SELECT * FROM m5_cycles WHERE id=%s FOR UPDATE", (plan["cycle_db_id"],)).fetchone()
+    if cycle["started_at"] is not None or connection.execute(
+        "SELECT 1 FROM m5_cycle_sessions WHERE cycle_db_id=%s AND started_at IS NOT NULL", (cycle["id"],)
+    ).fetchone():
+        raise ValueError("M7_PLAN_PARAMETERS_ALREADY_FROZEN")
+    overrides = {name:value for name,value in {
+        "time_budget_seconds":time_budget_seconds,
+        "calendar_window_seconds":calendar_window_seconds}.items() if value is not None}
+    resolved = resolve_parameters(connection, personalized_profile_id=int(cycle["personalized_profile_id"]),
+                                  usage_scope=str(cycle["usage_scope"]), qa_overrides=overrides or None)
+    content = dict(plan["content_json"])
+    content.update(time_budget_seconds=resolved["values"]["time_budget_seconds"],
+                   calendar_window_seconds=resolved["values"]["calendar_window_seconds"],
+                   parameter_sources=resolved["sources"],
+                   parameter_resolution_checksum=resolved["resolved_checksum"])
+    total = int(content.get("planned_max_seconds") or 0)
+    uncovered = list(content.get("uncovered_target_ids") or [])
+    content["status"] = "READY" if not uncovered and total <= content["time_budget_seconds"] else (
+        "LIMITED" if content.get("route") else "NO_ROUTE")
+    sources = {"time_budget":resolved["sources"]["time_budget_seconds"],
+               "calendar_window":resolved["sources"]["calendar_window_seconds"],
+               "resolution_checksum":resolved["resolved_checksum"]}
+    connection.execute("""UPDATE m5_cycles SET time_budget_seconds=%s,calendar_window_seconds=%s,
+        parameter_sources_json=%s::jsonb,updated_at=NOW() WHERE id=%s""",
+        (content["time_budget_seconds"], content["calendar_window_seconds"], json.dumps(sources), cycle["id"]))
+    repo.save_parameter_revision(connection, plan=plan, content=content,
+                                 reason=f"parameter_revision:{created_by}:{reason}")
+    return read_plan(connection, cycle_id)

@@ -27,6 +27,18 @@ def load_rules() -> dict:
         raise ValueError("SOURCE_UNRESOLVED")
     if hashlib.sha256((ROOT / registered["path"]).read_bytes()).hexdigest() != source["sha256"]:
         raise ValueError("SOURCE_UNRESOLVED")
+    if rules.get("duration_estimate") != "planned_max_minutes":
+        raise ValueError("M7_PLANNING_ALGORITHM_CONFIGURATION_UNSUPPORTED")
+    if rules.get("tie_break") != ["uncovered_indicator_count_desc", "skill_spread_desc",
+                                  "planned_max_minutes_asc", "case_id_asc", "case_version_asc"]:
+        raise ValueError("M7_PLANNING_ALGORITHM_CONFIGURATION_UNSUPPORTED")
+    if rules.get("required_case_statuses") != ["FROZEN"] or rules.get("required_qa_scopes") != [
+        "case_format", "case_dialogue", "assessment_situation"
+    ]:
+        raise ValueError("M7_PLANNING_ALGORITHM_CONFIGURATION_UNSUPPORTED")
+    for name in ("default_time_budget_seconds", "default_calendar_window_seconds"):
+        if type(rules.get(name)) is not int or rules[name] <= 0:
+            raise ValueError("M7_PLANNING_PARAMETER_INVALID")
     rules["snapshot_checksum"] = checksum(rules)
     return rules
 

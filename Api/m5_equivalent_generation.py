@@ -15,8 +15,34 @@ from Api.config import settings
 
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1] / "assessment_definitions/cases/competencies_4k/qa_equivalent_generation/v1"
+PROVIDER_MANIFEST = Path(__file__).resolve().parents[1] / "assessment_definitions/providers/deepseek/v1/manifest.json"
 TERMINAL_CYCLE = {"collection_closed", "calculation_pending", "calculated", "failed"}
 runtime_provider = None
+
+
+def controlled_provider_ref() -> dict:
+    identity = {"id":"controlled-equivalent-fixture","version":"1","scope":"qa"}
+    return {"id":identity["id"],"version":identity["version"],"checksum":checksum(identity)}
+
+
+def resolve_provider_config(requested: dict, *, usage_scope: str) -> dict:
+    if not isinstance(requested, dict) or set(requested) - {"id", "version", "checksum"}:
+        raise ValueError("M5_EQUIVALENT_PROVIDER_CONFIG_REF_INVALID")
+    if usage_scope == "qa":
+        expected = controlled_provider_ref()
+        if requested != expected:
+            raise ValueError("M5_EQUIVALENT_PROVIDER_CONFIG_REF_MISMATCH")
+        return {**expected,"scope":"qa","lease_seconds":max(1,settings.assessment_equivalent_generation_lease_seconds),
+                "max_attempts":max(1,settings.assessment_equivalent_generation_max_attempts)}
+    manifest = json.loads(PROVIDER_MANIFEST.read_bytes())
+    expected = {"id":manifest.get("id"),"version":manifest.get("version"),
+                "checksum":checksum(manifest)}
+    if manifest.get("status") != "published":
+        raise ValueError("M5_EQUIVALENT_PROVIDER_CONFIG_NOT_ADMITTED")
+    if requested != expected:
+        raise ValueError("M5_EQUIVALENT_PROVIDER_CONFIG_REF_MISMATCH")
+    return {**expected,"provider":manifest["provider"],"model":manifest["model"],
+            "defaults":manifest["defaults"],"retry_policy":manifest["retry_policy"]}
 
 
 class EquivalentGenerationProvider(Protocol):
@@ -176,19 +202,16 @@ def begin_generation(connection, *, cycle_id: str, position_no: int, expected_as
                      request_key: str, requested_by: int, package: dict,
                      provider_config: dict) -> dict:
     contract = VariabilityContract.model_validate(package["contract"]).model_dump()
-    if set(provider_config) - {"id", "version", "checksum", "prompt_ref"} or not all(
-        provider_config.get(key) for key in ("id", "version", "checksum")
-    ):
-        raise ValueError("M5_EQUIVALENT_PROVIDER_CONFIG_REF_INVALID")
     cycle = connection.execute("SELECT * FROM m5_cycles WHERE cycle_id=%s FOR UPDATE", (UUID(cycle_id),)).fetchone()
     if not cycle or int(cycle["owner_user_id"]) != int(requested_by):
         raise ValueError("M7_CYCLE_NOT_FOUND")
     if cycle["status"] in TERMINAL_CYCLE:
         raise ValueError("M5_EQUIVALENT_OPERATION_NOT_APPLICABLE")
+    resolved_provider_config = resolve_provider_config(provider_config, usage_scope=str(cycle["usage_scope"]))
     variability_ref = {"id": contract["id"], "version": contract["version"],
                        "checksum": package["contract_checksum"]}
     request = {"position_no": position_no, "expected_as_id": expected_as_id,
-               "variability_ref": variability_ref, "provider_config": provider_config}
+               "variability_ref": variability_ref, "provider_config": resolved_provider_config}
     request_checksum = checksum(request)
     prior = connection.execute("SELECT * FROM m5_equivalent_generation_operations WHERE cycle_db_id=%s AND request_key=%s",
                                (cycle["id"], request_key)).fetchone()
@@ -210,14 +233,14 @@ def begin_generation(connection, *, cycle_id: str, position_no: int, expected_as
         raise ValueError("M5_VARIABILITY_CONTRACT_NOT_APPLICABLE")
     operation_id = str(uuid4())
     input_snapshot = build_input_snapshot(connection, position=dict(position), old_as=dict(old), contract=contract,
-                                          operation_id=operation_id, provider_config=provider_config)
+                                          operation_id=operation_id, provider_config=resolved_provider_config)
     row = connection.execute("""INSERT INTO m5_equivalent_generation_operations
         (id,request_key,request_checksum,cycle_db_id,position_id,expected_as_db_id,requested_by,
          variability_ref_json,input_json,input_checksum,provider_config_json,status)
         VALUES(%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s,%s::jsonb,'pending') RETURNING *""",
         (UUID(operation_id), request_key, request_checksum, cycle["id"], position["id"], old["id"], requested_by,
          json.dumps(variability_ref), json.dumps(input_snapshot, ensure_ascii=False), checksum(input_snapshot),
-         json.dumps(provider_config))).fetchone()
+         json.dumps(resolved_provider_config))).fetchone()
     return dict(row)
 
 

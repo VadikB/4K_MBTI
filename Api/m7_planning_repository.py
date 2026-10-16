@@ -84,6 +84,16 @@ def read_plan(connection, cycle_id: str) -> dict:
     return dict(row)
 
 
+def save_parameter_revision(connection, *, plan: dict, content: dict, reason: str) -> dict:
+    revision_no = int(plan["revision_no"]) + 1
+    row = connection.execute("""INSERT INTO m7_plan_revisions
+        (id,plan_id,cycle_db_id,revision_no,content_json,content_checksum,reason)
+        VALUES(%s,%s,%s,%s,%s::jsonb,%s,%s) RETURNING *""",
+        (uuid4(), plan["id"], plan["cycle_db_id"], revision_no,
+         json.dumps(content, ensure_ascii=False), checksum(content), reason)).fetchone()
+    return dict(row)
+
+
 def existing_next(connection, cycle_db_id: int, key: str, request_hash: str):
     row=connection.execute("SELECT * FROM m7_next_as_requests WHERE cycle_db_id=%s AND key=%s",(cycle_db_id,key)).fetchone()
     if not row:return None
