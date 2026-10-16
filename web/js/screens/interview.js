@@ -81,14 +81,20 @@ const productEventText = (event) => {
 
 const renderProductRuntime = (snapshot) => {
   const current = snapshot.current_situation;
+  const routePositions = Array.isArray(snapshot.route?.positions) ? snapshot.route.positions : [];
+  const currentPosition = routePositions.find((position) =>
+    position.current_assessment_situation_id === current?.assessment_situation_id)
+    || routePositions.find((position) => ['in_progress', 'awaiting_replacement'].includes(position.state));
+  const completedPositions = routePositions.filter((position) => position.state === 'completed').length;
   state.assessmentRuntimeKind = 'cycle';
   state.productCycleId = snapshot.cycle_id;
   state.productAssessmentSituationId = current?.assessment_situation_id || null;
   state.productClarificationDecisionId = snapshot.clarification?.id || null;
   state.productCycleStatus = snapshot.status?.collection_status || null;
   state.assessmentRemainingSeconds = snapshot.status?.remaining_seconds ?? null;
-  state.assessmentCaseNumber = Math.max(1, snapshot.situations?.length || 1);
-  state.assessmentTotalCases = Math.max(state.assessmentCaseNumber, snapshot.plan?.plan?.route?.length || 1);
+  state.assessmentCaseNumber = Math.max(1, Number(currentPosition?.position_no || completedPositions + 1));
+  state.assessmentTotalCases = Math.max(state.assessmentCaseNumber,
+    Number(snapshot.route?.progress?.total_positions || routePositions.length || 1));
   state.assessmentCaseTitle = current?.participant_payload?.title || current?.participant_payload?.case_title || 'Оценочная ситуация';
   state.activeInterviewCaseKey = current?.assessment_situation_id || null;
   persistAssessmentContext();

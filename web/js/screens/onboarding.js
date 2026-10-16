@@ -26,7 +26,10 @@ const acquaintanceSteps = () => {
   const briefing = acquaintanceModel?.readiness?.briefing || {};
   const questions = Array.isArray(briefing.questions) ? briefing.questions : [];
   const provided = Array.isArray(briefing.provided_participant_fields) ? briefing.provided_participant_fields : [];
-  const preparedPlan = acquaintanceModel?.prepared_plan || null;
+  const preparedPlanSnapshot = acquaintanceModel?.prepared_plan || null;
+  const preparedPlan = preparedPlanSnapshot?.plan || preparedPlanSnapshot;
+  const assignedTiming = acquaintanceModel?.assigned_timing?.status === 'resolved'
+    ? acquaintanceModel.assigned_timing : null;
   const calendarHours = preparedPlan ? Math.ceil(Number(preparedPlan.calendar_window_seconds || 0) / 3600) : 0;
   const readyDescription = preparedPlan
     ? `На прохождение оценки у вас будет ${calendarHours} ч. с момента её начала. Между ситуациями можно сделать перерыв: таймер выполнения остановится, но общий календарный срок продолжит идти. После возвращения вы продолжите с места остановки.`
@@ -37,12 +40,17 @@ const acquaintanceSteps = () => {
     feature('Предельный бюджет выполнения', `${Math.ceil(Number(preparedPlan.time_budget_seconds || 0) / 60)} мин.`),
     feature('Календарный срок после старта', `${Math.ceil(Number(preparedPlan.calendar_window_seconds || 0) / 3600)} ч.`),
   ] : [];
+  const assignedTimingFeatures = assignedTiming ? [
+    feature('Назначенный общий бюджет', `${Math.ceil(Number(assignedTiming.time_budget_seconds) / 60)} мин.`),
+    feature('Календарное окно после старта', `${Math.ceil(Number(assignedTiming.calendar_window_seconds) / 3600)} ч.`),
+  ] : [];
   const steps = [
     {
       step: 'Знакомство', progressIndex: 0,
       title: `Оценку организует ${briefing.organizer || acquaintanceModel?.readiness?.organization_name || 'ваша организация'}`,
       description: briefing.purpose || '',
-      features: [feature('Как используются результаты', briefing.results_usage || ''), feature('Кто получит результаты', briefing.result_recipients || '')],
+      features: [feature('Как используются результаты', briefing.results_usage || ''),
+        feature('Кто получит результаты', briefing.result_recipients || ''), ...assignedTimingFeatures],
     },
     {
       step: 'Ваши данные', progressIndex: 0,
@@ -270,7 +278,12 @@ export const initOnboarding = () => {
         });
         const prepared = await readApiResponse(prepare, 'Не удалось подготовить план оценки.');
         state.assessmentRuntimeKind = 'cycle'; state.productCycleId = prepared.plan.cycle_id;
-        acquaintanceModel.prepared_plan = prepared.plan.plan;
+        acquaintanceModel.prepared_plan = {
+          cycle_id: prepared.plan.cycle_id,
+          revision_id: prepared.plan.revision_id,
+          revision_no: prepared.plan.revision_no,
+          plan: prepared.plan.plan,
+        };
         persistAssessmentContext();
       }
     }

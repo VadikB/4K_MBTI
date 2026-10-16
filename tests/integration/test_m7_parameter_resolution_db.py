@@ -9,6 +9,7 @@ from Api.database import ensure_m5_runtime_schema
 from Api.m5_cycle_runtime import create_cycle, create_session, start_session
 from Api.m7_cycle_planner import read_plan, revise_prepared_parameters
 from Api.m7_parameter_resolution import resolve, save_revision
+from Api.acquaintance import _prepared_plan_snapshot, resolve_display_timing
 from Api.m7_planning_package import load_rules
 from Api import m7_planning_repository as repo
 
@@ -52,6 +53,11 @@ def test_sources_resolve_independently_and_started_cycle_keeps_snapshot(db):
     assert resolved['values']=={'time_budget_seconds':4200,'calendar_window_seconds':172800}
     assert resolved['sources']['time_budget_seconds']['kind']=='organization'
     assert resolved['sources']['calendar_window_seconds']['kind']=='program'
+    display=resolve_display_timing(db,personalized_profile_id=1)
+    assert display['status']=='resolved'
+    assert display['time_budget_seconds']==4200
+    assert display['calendar_window_seconds']==172800
+    assert display['resolved_checksum']==resolved['resolved_checksum']
     cycle=create_cycle(db,personalized_profile_id=1,selected_role_ref={'id':'r','version':'1','checksum':'x'},
         target_set=[{'indicator_id':'K1.I1','m2_version':'1'}],created_by=7,usage_scope='assessment')
     save_revision(db,source_scope='organization',organization_id=10,assessment_configuration_id=None,
@@ -104,3 +110,19 @@ def test_prepared_plan_revision_is_historical_and_freezes_at_first_start(db):
     with pytest.raises(ValueError,match='M7_PLAN_PARAMETERS_ALREADY_FROZEN'):
         revise_prepared_parameters(db,cycle_id=str(cycle['cycle_id']),created_by=99,
             reason='late',time_budget_seconds=5000)
+
+
+def test_w02_reloads_the_saved_assessment_plan_snapshot(db):
+    cycle=create_cycle(db,personalized_profile_id=1,selected_role_ref={'id':'r','version':'1','checksum':'x'},
+        target_set=[{'indicator_id':'K1.I1','m2_version':'1'}],created_by=7,usage_scope='assessment')
+    rules=load_rules();content={'status':'READY','route':[{'planned_max_minutes':12}],
+        'planned_max_seconds':720,'uncovered_target_ids':[],'time_budget_seconds':3600,
+        'calendar_window_seconds':259200}
+    repo.save_plan(db,cycle=cycle,profile_ref=cycle['profile_ref_json'],full_targets=cycle['target_set_json'],
+        planned_targets=cycle['target_set_json'],requirements=[],rules=rules,content=content,
+        created_by=7,key='w02-display',request_hash='w02-display-hash')
+    snapshot=_prepared_plan_snapshot(db,personalized_profile_id=1)
+    assert snapshot['cycle_id']==str(cycle['cycle_id'])
+    assert snapshot['revision_no']==1
+    assert snapshot['revision_id']
+    assert snapshot['plan']['planned_max_seconds']==720

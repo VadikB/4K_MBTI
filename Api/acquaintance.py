@@ -6,6 +6,7 @@ import hashlib
 import json
 
 from Api import participant_profile
+from Api.m7_parameter_resolution import resolve as resolve_parameters
 
 
 REQUIRED_BRIEFING_FIELDS = ("purpose", "organizer", "results_usage", "result_recipients")
@@ -99,6 +100,7 @@ def _waiting(reason: str, *, university: bool, organization: dict | None = None)
 
 def read_state(connection, *, user_id: int) -> dict:
     readiness = early_readiness(connection, user_id=user_id)
+    late = late_readiness(connection, user_id=user_id)
     row = connection.execute(
         "SELECT * FROM participant_acquaintance_states WHERE user_id=%s",
         (user_id,),
@@ -107,7 +109,53 @@ def read_state(connection, *, user_id: int) -> dict:
         "status": "not_started", "current_step": 0, "answers_json": {},
         "answers_confirmed_at": None, "consent_accepted_at": None,
     }
-    return {"readiness": readiness, "state": state, "late_readiness": late_readiness(connection, user_id=user_id)}
+    profile_id = late.get("personalized_profile_id")
+    return {
+        "readiness": readiness,
+        "state": state,
+        "late_readiness": late,
+        "assigned_timing": resolve_display_timing(connection, personalized_profile_id=profile_id),
+        "prepared_plan": _prepared_plan_snapshot(connection, personalized_profile_id=profile_id),
+    }
+
+
+def resolve_display_timing(connection, *, personalized_profile_id: int | None) -> dict:
+    """Participant-safe projection of the assignment-level resolved timing."""
+    if personalized_profile_id is None:
+        return {"status": "unavailable"}
+    resolved = resolve_parameters(
+        connection,
+        personalized_profile_id=int(personalized_profile_id),
+        usage_scope="assessment",
+    )
+    return {
+        "status": "resolved",
+        "time_budget_seconds": resolved["values"]["time_budget_seconds"],
+        "calendar_window_seconds": resolved["values"]["calendar_window_seconds"],
+        "sources": resolved["sources"],
+        "resolved_checksum": resolved["resolved_checksum"],
+    }
+
+
+def _prepared_plan_snapshot(connection, *, personalized_profile_id: int | None) -> dict | None:
+    if personalized_profile_id is None:
+        return None
+    row = connection.execute(
+        """SELECT cycle_id FROM m5_cycles
+           WHERE personalized_profile_id=%s AND usage_scope='assessment' AND status='prepared'
+           ORDER BY created_at DESC,id DESC LIMIT 1""",
+        (int(personalized_profile_id),),
+    ).fetchone()
+    if row is None:
+        return None
+    from Api.m7_cycle_planner import read_plan
+    snapshot = read_plan(connection, str(row["cycle_id"]))
+    return {
+        "cycle_id": str(snapshot["cycle_id"]),
+        "revision_id": str(snapshot["revision_id"]),
+        "revision_no": int(snapshot["revision_no"]),
+        "plan": snapshot["plan"],
+    }
 
 
 def save_answers(connection, *, user_id: int, answers: dict, confirm: bool = False) -> dict:

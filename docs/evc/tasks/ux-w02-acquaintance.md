@@ -89,3 +89,50 @@
 GitHub CI и review. Для полного положительного запуска на test владелец должен
 предоставить и опубликовать participant-facing briefing с тремя согласованными
 вопросами; затем выполняются W02 positive, two-tabs и физическая browser matrix.
+
+## ADD01 — отображение времени и граница legacy
+
+Источник: `UX-W02-ADD01_Time_Display_2026-10-16.txt`, rev 1.0,
+SHA-256 `f608a604c76b609e2965fd0b75f50a5ef9559457496b646d16a0ca706ac48023`.
+Ветка `codex/ux-w02-add01-time-display`, база `cd45c03`; серверный resolver из
+UX-A01-ADD01 уже присутствовал в `b5839c1` и не дублировался.
+
+Цепочка значения: опубликованная revision уровня organization/program либо
+versioned method default → `m7_parameter_resolution.resolve` → до подготовки
+participant-safe `assigned_timing` → при подготовке неизменяемая revision M7 plan
+и snapshot параметров Cycle → W02 UI. До плана UI показывает только общий бюджет
+и календарное окно; `planned_max_seconds` показывается только из подготовленного
+плана и не трактуется как таймер отдельного Case. Если профиль/назначение ещё не
+готовы, числовой default конкретной оценки не показывается.
+
+Добавлено:
+
+- W02 API возвращает server-resolved timing назначения и восстанавливает последний
+  prepared plan snapshot с `cycle_id`, `revision_id` и `revision_no` после reload;
+- первый экран знакомства показывает назначенный бюджет и календарное окно, а экран
+  перед стартом — плановую длительность, бюджет и окно из plan snapshot;
+- Cycle UI считает текущий шаг и общее число по `route.positions`, а не по числу AS
+  и кандидатов в истории замены.
+
+Проверенная граница: `assessmentRuntimeKind === 'cycle'` направляет runtime только
+в Cycle endpoints; ошибка чтения показывается пользователю и не включает legacy.
+`__timeout__`, `pending_auto_finish` и задержка 2200 ms остаются совместимым старым
+сценарием и не используются как правило завершения нового Cycle. Polling 1200 ms
+остаётся только техническим обновлением. Правило «последний кейс +5 минут» не
+реализовывалось — этап 2.
+
+Проверки ADD01:
+
+- Python/JS syntax, `git diff --check`, `npm run lint:js`, `npm run build:web` — PASS;
+- `node --test tests/frontend/*.test.mjs` — 21 PASS;
+- W02/M7 PostgreSQL integration на disposable `agent4k_pytest` — 5 PASS: разные
+  server revisions, snapshot после старта, история до старта и reload prepared plan;
+- адресные Chromium W02 — 2 PASS: отсутствующие данные и non-default 70 мин./48 ч.;
+- `npm run test:backend:http` — 56 PASS, 10 deselected;
+- `npm run test:backend` — 415 PASS / 13 FAIL: прежние несвязанные M6 ошибки
+  `INPUT_NOT_READY` и `DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED`; W02/M7 tests PASS;
+- PR/GitHub CI/test deploy, реальные устройства и полный runtime browser suite —
+  NOT_RUN: push/PR/merge в этом шаге не запрашивались.
+
+Схема и существующие данные не меняются. Откат — revert ADD01-коммита; frozen Cycle
+и plan revisions остаются неизменными и совместимыми, legacy-прохождения не удаляются.
