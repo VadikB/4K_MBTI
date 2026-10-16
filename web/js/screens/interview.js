@@ -53,6 +53,7 @@ let productRuntimePollGeneration = 0;
 let returnHeartbeatTimer = null;
 let returnPresenceCycleId = null;
 let returnPresenceGeneration = 0;
+let activeInterviewDraftKey = null;
 const returnClientId = (() => {
   const key = 'agent4k.returnClientId';
   let value = window.sessionStorage.getItem(key);
@@ -60,11 +61,28 @@ const returnClientId = (() => {
   return value;
 })();
 
+const interviewDraftKey = () => state.productCycleId && state.productAssessmentSituationId
+  ? `agent4k.assessmentDraft:${state.productCycleId}:${state.productAssessmentSituationId}`
+  : null;
+
+const restoreInterviewDraft = () => {
+  const key = interviewDraftKey();
+  if (key === activeInterviewDraftKey) return;
+  activeInterviewDraftKey = key;
+  interviewTextarea.value = key ? window.sessionStorage.getItem(key) || '' : '';
+};
+
+export const clearInterviewDraft = () => {
+  const key = interviewDraftKey();
+  if (key) window.sessionStorage.removeItem(key);
+  activeInterviewDraftKey = key;
+};
+
 export const isCycleAssessment = () =>
   state.assessmentRuntimeKind === 'cycle' && Boolean(state.productCycleId);
 
 const productPayloadText = (payload) => {
-  if (!payload) return 'Кейс подготовлен. Ознакомьтесь с ситуацией и дайте ответ.';
+  if (!payload) return 'Ситуация подготовлена. Ознакомьтесь с условиями и дайте ответ.';
   if (typeof payload === 'string') return payload;
   const parts = [];
   for (const key of ['title', 'initial_situation', 'trigger', 'assessee_position',
@@ -100,6 +118,7 @@ const renderProductRuntime = (snapshot) => {
   state.assessmentCaseTitle = current?.participant_payload?.title || current?.participant_payload?.case_title || 'Оценочная ситуация';
   state.activeInterviewCaseKey = current?.assessment_situation_id || null;
   persistAssessmentContext();
+  restoreInterviewDraft();
 
   interviewMessages.innerHTML = '';
   if (current) addInterviewMessage('assistant', productPayloadText(current.participant_payload));
@@ -111,7 +130,7 @@ const renderProductRuntime = (snapshot) => {
   for (const item of dialogue) {
     if (item.text) {
       const label = item.speaker_type === 'character' ? item.speaker_name || 'Персонаж'
-        : item.speaker_type === 'assessment' ? 'Уточняющий вопрос' : 'Материал кейса';
+        : item.speaker_type === 'assessment' ? 'Уточнение к вашему ответу' : 'Материал ситуации';
       const row = addInterviewMessage(item.role, item.text, label);
       if (item.turn_id) row.dataset.turnId = item.turn_id;
     }
@@ -119,21 +138,23 @@ const renderProductRuntime = (snapshot) => {
   const clarification = snapshot.clarification;
   if (clarification?.status === 'ASK' && !clarification.response_outcome && clarification.question?.text &&
       !(snapshot.trace?.turns || []).some((turn) => turn.turn_id === clarification.question_turn_id)) {
-    addInterviewMessage('assistant', clarification.question.text);
+    addInterviewMessage('assistant', clarification.question.text, 'Уточнение к вашему ответу');
   }
   renderInterviewMeta();
   renderCaseProgress(false);
   interviewPanel.classList.remove('single-turn-mode', 'completed');
   interviewCompleteActions.classList.add('hidden');
+  interviewTimerBadge.classList.remove('is-paused');
 
   if (snapshot.between_situations) {
+    interviewTimerBadge.classList.add('is-paused');
     interviewMessages.innerHTML = '';
     const card = document.createElement('section'); card.className = 'interview-return-card';
-    const title = document.createElement('h3'); title.textContent = 'Ситуация завершена';
+    const title = document.createElement('h3'); title.textContent = `Ситуация ${state.assessmentCaseNumber} завершена`;
     const copy = document.createElement('p');
-    copy.textContent = 'Сейчас можно сделать перерыв. Время на выполнение не расходуется, но общий срок завершения оценки продолжает идти.';
+    copy.textContent = 'Ответы сохранены. Сейчас пауза: время на выполнение не расходуется, но общий срок завершения оценки продолжает идти.';
     const button = document.createElement('button'); button.type = 'button'; button.className = 'primary-button';
-    button.textContent = 'Приступить к следующему кейсу';
+    button.textContent = 'Приступить к следующей ситуации';
     const status = document.createElement('p'); status.setAttribute('role', 'status');
     button.addEventListener('click', async () => {
       button.disabled = true; status.textContent = 'Проверяем готовность следующей ситуации…';
@@ -154,7 +175,7 @@ const renderProductRuntime = (snapshot) => {
     card.append(title, copy, button, status); interviewMessages.appendChild(card);
     interviewTextarea.disabled = true; interviewSubmitButton.disabled = true; interviewFinishButton.disabled = true;
     interviewPauseButton?.classList.add('hidden'); interviewAdditionalButton?.classList.add('hidden');
-    interviewCaseStatus.textContent = 'Текущая ситуация завершена. Следующая откроется только после вашего действия.';
+    interviewCaseStatus.textContent = 'Пауза. Следующая ситуация откроется только после вашего действия.';
     updateInterviewTimer(); scheduleInterviewBottomAlignment();
     return snapshot;
   }
@@ -163,6 +184,7 @@ const renderProductRuntime = (snapshot) => {
   const waitingQuestion = clarification?.status === 'ASK' && !clarification.response_outcome;
   const closed = ['collection_closed', 'calculation_pending', 'calculated', 'failed'].includes(cycleStatus);
   const suspended = ['paused', 'interrupted'].includes(cycleStatus);
+  interviewTimerBadge.classList.toggle('is-paused', suspended);
   interviewTextarea.disabled = closed || suspended || !current;
   interviewSubmitButton.disabled = closed || suspended || !current;
   interviewFinishButton.disabled = closed || suspended || !current || waitingQuestion;
@@ -232,14 +254,14 @@ const stopProductPresence = () => {
 };
 
 const renderReturnCard = (value) => {
+  interviewTimerBadge.classList.add('is-paused');
+  updateInterviewTimer();
   interviewMessages.innerHTML = '';
   const card = document.createElement('section'); card.className = 'interview-return-card';
   const title = document.createElement('h3'); title.textContent = 'Продолжение оценки';
   const progress = value.progress || {};
   const copy = document.createElement('p');
   copy.textContent = `Пройдено ${progress.completed_positions || 0} из ${progress.total_positions || 0}. Остаток времени выполнения: ${Math.ceil(Number(value.remaining_seconds || 0) / 60)} мин.`;
-  const deadline = document.createElement('p');
-  deadline.textContent = value.calendar_deadline ? `Календарный срок: ${new Date(value.calendar_deadline).toLocaleString('ru-RU')}.` : '';
   const reason = document.createElement('p');
   reason.textContent = value.allowed_action === 'replace_current'
     ? 'После продолжения текущая незавершённая ситуация будет обновлена. Частичный диалог не переносится, завершённые ситуации сохраняются.'
@@ -274,9 +296,9 @@ const renderReturnCard = (value) => {
       await loadProductRuntime();
     } catch (error) { status.textContent = error.message; button.disabled = false; }
   });
-  card.append(title, copy, deadline, reason, button, status); interviewMessages.appendChild(card);
+  card.append(title, copy, reason, button, status); interviewMessages.appendChild(card);
   interviewTextarea.disabled = true; interviewSubmitButton.disabled = true; interviewFinishButton.disabled = true;
-  interviewCaseStatus.textContent = 'Оценка остановлена до явного продолжения.';
+  interviewCaseStatus.textContent = 'Пауза. Оценка продолжится только после вашего действия.';
   scheduleInterviewBottomAlignment();
 };
 
@@ -681,16 +703,16 @@ const getCurrentCaseDropdownLabel = () => {
     return state.assessmentCaseTitle;
   }
   if (state.assessmentCaseNumber) {
-    return 'Кейс ' + state.assessmentCaseNumber;
+    return 'Ситуация ' + state.assessmentCaseNumber;
   }
-  return 'Кейс';
+  return 'Ситуация';
 };
 
 const updateCaseSidebarToggle = () => {
   if (!caseSidebarToggle || !caseSidebarToggleLabel) return;
   const label = getCurrentCaseDropdownLabel();
   caseSidebarToggleLabel.textContent = label;
-  caseSidebarToggle.setAttribute('aria-label', 'Список кейсов: ' + label);
+  caseSidebarToggle.setAttribute('aria-label', 'Маршрут оценки: ' + label);
 };
 
 const setCaseSidebarOpen = (isOpen) => {
@@ -766,8 +788,8 @@ const disableTextareaAssistFeatures = (element) => {
 };
 
 const renderInterviewMeta = () => {
-  interviewCaseBadge.textContent = 'Кейс ' + state.assessmentCaseNumber + ' из ' + state.assessmentTotalCases;
-  interviewCaseTitle.textContent = state.assessmentCaseTitle || 'Кейс';
+  interviewCaseBadge.textContent = 'Ситуация ' + state.assessmentCaseNumber + ' из ' + state.assessmentTotalCases;
+  interviewCaseTitle.textContent = state.assessmentCaseTitle || 'Оценочная ситуация';
   interviewCaseStatus.textContent = '';
   if (interviewProgressFill) {
     const totalCases = Math.max(1, Number(state.assessmentTotalCases || 0));
@@ -786,7 +808,7 @@ const renderCaseProgress = (assessmentCompleted = false) => {
     return;
   }
 
-  interviewRouteLabel.textContent = assessmentCompleted ? 'Завершено' : 'Текущий кейс: ' + state.assessmentCaseNumber;
+  interviewRouteLabel.textContent = assessmentCompleted ? 'Завершено' : 'Текущая ситуация: ' + state.assessmentCaseNumber;
 
   for (let index = 1; index <= state.assessmentTotalCases; index += 1) {
     const item = document.createElement('div');
@@ -940,20 +962,21 @@ const stopAssessmentTransitionLoader = () => {
 
 const updateInterviewTimer = () => {
   const remainingMs = getRemainingCaseTimeMs();
+  const prefix = interviewTimerBadge.classList.contains('is-paused') ? 'Пауза · ' : '';
   if (remainingMs === null) {
-    interviewTimerBadge.textContent = 'Без лимита';
+    interviewTimerBadge.textContent = prefix + 'Без лимита';
     interviewTimerBadge.classList.remove('is-low-time');
     return false;
   }
 
   if (remainingMs <= 0) {
-    interviewTimerBadge.textContent = '00:00';
+    interviewTimerBadge.textContent = prefix + '00:00';
     interviewTimerBadge.classList.add('is-low-time');
-    interviewCaseStatus.textContent = 'Кейс завершается автоматически из-за окончания времени.';
+    interviewCaseStatus.textContent = 'Ситуация завершается автоматически из-за окончания времени.';
     return true;
   }
 
-  interviewTimerBadge.textContent = formatRemainingTime(remainingMs);
+  interviewTimerBadge.textContent = prefix + formatRemainingTime(remainingMs);
   interviewTimerBadge.classList.toggle('is-low-time', remainingMs < 180000);
   return false;
 };
@@ -1048,7 +1071,7 @@ const handleAssessmentResponse = (data) => {
     interviewFinishButton.disabled = true;
     interviewPanel.classList.remove('completed');
     interviewCompleteActions.classList.add('hidden');
-    interviewCaseStatus.textContent = 'Кейс будет автоматически завершен.';
+    interviewCaseStatus.textContent = 'Ситуация будет автоматически завершена.';
     const delayMs = Math.max(800, Number(data.auto_finish_delay_ms || 2200));
     state.assessmentAutoFinishTimerId = window.setTimeout(() => {
       state.assessmentAutoFinishTimerId = null;
@@ -1131,7 +1154,7 @@ const submitAssessmentMessage = async (text, requestIdentity = null) => {
         message: text,
       }),
     });
-    const data = await readApiResponse(response, 'Не удалось обработать ответ по кейсу.');
+    const data = await readApiResponse(response, 'Не удалось обработать ответ по ситуации.');
     handleAssessmentResponse(data);
     stopAssessmentTransitionLoader();
   } catch (error) {
@@ -1230,6 +1253,13 @@ export const handleAssessmentEntryClick = () => {
 
 export const initInterview = () => {
   disableTextareaAssistFeatures(interviewTextarea);
+  interviewTextarea.addEventListener('input', () => {
+    const key = interviewDraftKey();
+    if (!key) return;
+    activeInterviewDraftKey = key;
+    if (interviewTextarea.value) window.sessionStorage.setItem(key, interviewTextarea.value);
+    else window.sessionStorage.removeItem(key);
+  });
   placeInterviewTimerBadge();
   interviewCompactQuery?.addEventListener('change', placeInterviewTimerBadge);
 

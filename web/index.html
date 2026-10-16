@@ -1547,8 +1547,8 @@
       <div class="interview-topbar">
         <div class="interview-topbar-head">
           <div class="interview-title-row">
-            <strong id="interview-section-title">Интервью</strong>
-            <span id="interview-case-badge" class="interview-case-badge">Кейс 1 из 5</span>
+            <strong id="interview-section-title">4К Ассистент</strong>
+            <span id="interview-case-badge" class="interview-case-badge">Ситуация 1 из 5</span>
           </div>
           <div class="interview-topbar-actions">
             <button id="interview-profile-button" type="button" class="ghost-button compact-ghost">Домой</button>
@@ -1577,11 +1577,11 @@
             aria-expanded="false"
             aria-controls="case-progress-list"
           >
-            <span id="case-sidebar-toggle-label" class="case-sidebar-toggle-label">Кейс</span>
+            <span id="case-sidebar-toggle-label" class="case-sidebar-toggle-label">Ситуация</span>
             <span class="case-sidebar-toggle-icon" aria-hidden="true">⌄</span>
           </button>
           <div class="case-sidebar-header">
-            <strong>Маршрут по кейсам</strong>
+            <strong>Маршрут оценки</strong>
             <span id="interview-route-label">Подготовка</span>
           </div>
           <div id="case-progress-list" class="case-progress-list"></div>
@@ -1590,18 +1590,19 @@
         <div class="interview-main">
           <div class="interview-case-header">
             <div class="interview-case-heading">
-              <h3 id="interview-case-title">Кейс</h3>
+              <h3 id="interview-case-title">Оценочная ситуация</h3>
               <span id="interview-timer-badge" class="interview-timer-badge">00:00</span>
             </div>
             <p id="interview-case-status">Ожидается запуск интервью</p>
           </div>
 
           <aside class="interview-case-guide" aria-labelledby="interview-case-guide-title">
-            <strong id="interview-case-guide-title">Как работать с кейсом</strong>
+            <strong id="interview-case-guide-title">Как работать с ситуацией</strong>
             <ol>
               <li>Изучите ситуацию и опишите своё решение в поле ответа.</li>
-              <li><b>«Отправить ответ»</b> сохраняет сообщение и продолжает диалог с AI. Если появится уточняющий вопрос, ответьте и снова нажмите эту кнопку.</li>
-              <li><b>«Завершить кейс»</b> можно нажимать после отправки хотя бы одного ответа: сначала введите решение и нажмите <b>«Отправить ответ»</b>, затем завершите кейс.</li>
+              <li>Если для решения не хватает информации, можно задать собеседнику вопрос.</li>
+              <li><b>«Отправить»</b> сохраняет сообщение и продолжает диалог. После отправки ответ нельзя изменить.</li>
+              <li><b>«Завершить ситуацию»</b> доступно после сохранения хотя бы одного ответа.</li>
             </ol>
           </aside>
 
@@ -1621,7 +1622,7 @@
           <form id="interview-form" class="interview-form">
             <textarea
               id="interview-textarea"
-              placeholder="Опишите ваше решение..."
+              placeholder="Введите ответ или вопрос собеседнику..."
               autocomplete="off"
               autocorrect="off"
               autocapitalize="off"
@@ -1632,8 +1633,8 @@
               <div class="interview-action-buttons">
                 <button id="interview-pause-button" type="button" class="ghost-button interview-finish-button hidden">Пауза</button>
                 <button id="interview-additional-button" type="button" class="ghost-button interview-finish-button hidden">Дополнительная сессия</button>
-                <button id="interview-finish-button" type="button" class="ghost-button interview-finish-button" title="Зафиксировать ответы и перейти к следующему кейсу">Завершить кейс</button>
-                <button id="interview-submit-button" type="button" class="primary-button"><span id="interview-submit-label">Отправить ответ</span><img class="button-icon" src="/web/assets/icons/arrowtriangle-forward-white-icon.svg" alt="" aria-hidden="true"></button>
+                <button id="interview-finish-button" type="button" class="ghost-button interview-finish-button" title="Завершить основной диалог текущей ситуации">Завершить ситуацию</button>
+                <button id="interview-submit-button" type="button" class="primary-button"><span id="interview-submit-label">Отправить</span></button>
               </div>
             </div>
           </form>

@@ -489,8 +489,46 @@ test('P03 return card hides stopped AS and keeps explicit continue in the same c
   await expect(page.locator('.interview-return-card')).toBeVisible();
   await expect(page.getByText('Пройдено 2 из 4', { exact: false })).toBeVisible();
   await expect(page.getByText('Нельзя показывать до Continue')).toBeHidden();
+  await expect(page.getByText('Календарный срок:', { exact: false })).toBeHidden();
+  await expect(page.locator('#interview-timer-badge')).toContainText('Пауза');
   await expect(page.getByRole('button', { name: 'Продолжить', exact: true })).toBeVisible();
   await expect(page.locator('#interview-textarea')).toBeDisabled();
+});
+
+test('E01 renders accepted active assessment copy, colors and AS-scoped draft', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'e01-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'resume_assessment', profile: { status: 'complete' }, onboarding: { status: 'completed' },
+      assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: 'cycle-e01', cycle_session_id: 'session-e01', assessment_situation_id: 'as-e01' },
+    });
+    if (pathname === '/users/assessment/cycles/cycle-e01/runtime') return fulfillJson(route, {
+      cycle_id: 'cycle-e01', status: { collection_status: 'active', remaining_seconds: 2700 },
+      return_policy_enabled: false,
+      route: { positions: [{ position_no: 1, state: 'in_progress', current_assessment_situation_id: 'as-e01' }], progress: { total_positions: 3 } },
+      current_situation: { assessment_situation_id: 'as-e01', status: 'active', participant_payload: { title: 'Разговор с коллегой', content: 'Обсудите изменение сроков' } },
+      trace: { turns: [{ sequence_no: 1, turn_id: 'turn-person', speaker_type: 'character', speaker_name: 'Анна', content_text: 'Какие варианты вы предлагаете?' }], events: [] },
+    });
+    return fulfillJson(route, {}, 404);
+  });
+
+  await page.goto(`${base}/?screen=interview`);
+  await expect(page.locator('#interview-case-badge')).toHaveText('Ситуация 1 из 3');
+  await expect(page.locator('#interview-section-title')).toHaveText('4К Ассистент');
+  await expect(page.getByRole('button', { name: 'Завершить ситуацию' })).toBeVisible();
+  await expect(page.getByText('После отправки ответ нельзя изменить')).toBeVisible();
+  await expect(page.locator('[data-speaker-label="Анна"]')).toBeVisible();
+  await expect(page.locator('.interview-bubble.bot').first()).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+
+  await page.locator('#interview-textarea').fill('Мой незавершённый ответ');
+  await page.reload();
+  await expect(page.locator('#interview-textarea')).toHaveValue('Мой незавершённый ответ');
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expect(page.locator('#interview-submit-button')).toHaveCSS('height', '48px');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test('R03 null journey removes stale legacy and Cycle identifiers', async ({ page }) => {
