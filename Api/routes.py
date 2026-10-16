@@ -3003,7 +3003,9 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
                     user_agent=user_agent,
                 )
             except AuthRateLimitError as exc:
-                raise HTTPException(status_code=429, detail=str(exc)) from exc
+                headers = ({"Retry-After":str(exc.retry_after_seconds)}
+                           if exc.retry_after_seconds is not None else None)
+                raise HTTPException(status_code=429, detail=str(exc), headers=headers) from exc
             except RuntimeError as exc:
                 raise HTTPException(status_code=503, detail=str(exc)) from exc
             return AuthEmailRequestResponse(
@@ -3015,6 +3017,9 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
                 auth_mode="verification_pending",
                 dev_magic_token=action_result.dev_token,
                 organization=_public_invitation_by_id(action_result.organization_invitation_id),
+                server_time=action_result.server_time,
+                next_request_at=action_result.next_request_at,
+                retry_after_seconds=max(settings.auth_magic_link_resend_cooldown_seconds,0),
             )
         return AuthEmailRequestResponse(
             message="Задайте пароль для первичного входа." if is_registration else "Введите пароль для входа.",
@@ -3036,7 +3041,9 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
     except AuthAccessDeniedError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except AuthRateLimitError as exc:
-        raise HTTPException(status_code=429, detail=str(exc)) from exc
+        headers = ({"Retry-After":str(exc.retry_after_seconds)}
+                   if exc.retry_after_seconds is not None else None)
+        raise HTTPException(status_code=429, detail=str(exc), headers=headers) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     return AuthEmailRequestResponse(
@@ -3128,15 +3135,25 @@ def forgot_password(payload: AuthPasswordForgotRequest, request: Request) -> Aut
             client_ip=request.client.host if request.client else None,
             user_agent=request.headers.get("User-Agent"),
         )
-    except (AuthAccessDeniedError, AuthRateLimitError, ValueError):
+    except AuthRateLimitError as exc:
         action_result = None
-        pass
+        retry_after = exc.retry_after_seconds
+    except (AuthAccessDeniedError, ValueError):
+        action_result = None
+        retry_after = max(settings.auth_magic_link_resend_cooldown_seconds,0)
     except RuntimeError as exc:
         logger.exception("Password reset email delivery failed")
         raise HTTPException(status_code=503, detail="Не удалось отправить письмо. Попробуйте позже.") from exc
+    server_time = action_result.server_time if action_result is not None else datetime.now(timezone.utc)
+    retry_after = (max(settings.auth_magic_link_resend_cooldown_seconds,0)
+                   if action_result is not None else retry_after)
     return AuthActionResponse(
         message=neutral_message,
         dev_action_token=action_result.dev_token if action_result is not None else None,
+        server_time=server_time,
+        next_request_at=(action_result.next_request_at if action_result is not None
+                         else server_time+timedelta(seconds=max(retry_after or 0,0))),
+        retry_after_seconds=max(retry_after or 0,0),
     )
 
 
@@ -3700,7 +3717,7 @@ def send_personal_organization_invitations(
                 hmac.new(invitation_secret.encode("utf-8"), token_material, hashlib.sha256).digest()
             ).decode("ascii").rstrip("=")
             now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
-            expires_at = now_utc + timedelta(hours=72)
+            expires_at = now_utc + timedelta(hours=max(settings.auth_personal_invitation_ttl_hours,1))
             with get_connection() as connection:
                 _require_organization_admin(connection, current_user, organization_id)
                 member = connection.execute(

@@ -42,6 +42,7 @@ class Settings:
     auth_magic_link_ttl_minutes: int = int(os.getenv("AUTH_MAGIC_LINK_TTL_MINUTES", "15"))
     auth_magic_link_dev_mode: bool = os.getenv("AUTH_MAGIC_LINK_DEV_MODE", "true").strip().lower() in {"1", "true", "yes", "on"}
     auth_magic_link_resend_cooldown_seconds: int = int(os.getenv("AUTH_MAGIC_LINK_RESEND_COOLDOWN_SECONDS", "60"))
+    auth_personal_invitation_ttl_hours: int = int(os.getenv("AUTH_PERSONAL_INVITATION_TTL_HOURS", "72"))
     auth_magic_link_email_hourly_limit: int = int(os.getenv("AUTH_MAGIC_LINK_EMAIL_HOURLY_LIMIT", "5"))
     auth_magic_link_ip_hourly_limit: int = int(os.getenv("AUTH_MAGIC_LINK_IP_HOURLY_LIMIT", "20"))
     auth_magic_link_from_email: str = os.getenv("AUTH_MAGIC_LINK_FROM_EMAIL", "no-reply@agent4k.local").strip() or "no-reply@agent4k.local"

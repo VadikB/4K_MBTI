@@ -103,3 +103,47 @@ Product Lead Дмитрий принял R01 12.10.2026. UX-R04-CLOSE явно �
 
 Нет блокеров для PR. Физическая browser/device matrix и внешняя доставка письма
 остаются обязательной последующей приёмкой владельца test-инфраструктуры.
+
+## ADD01 — серверный auth timing
+
+Источник дополнения: `UX-R04-ADD01_Auth_Timing_2026-10-16.txt`, rev 1.0,
+SHA-256 `ffb60b09857c8e00a7cc8fdbfc09391a009c7c7e4e166854d6bee9e8332d231a`.
+Реализация выполнена в ветке `codex/ux-r04-add01-auth-timing` поверх
+`b5839c1`; основной R04 уже присутствовал в истории (`7143c1d`) и повторно не
+переписывался. Карта `docs/evc/timer-and-configuration-storage.md` в рабочем
+каталоге является пользовательским незакоммиченным материалом: не изменялась и
+не включалась в результат.
+
+Добавлено:
+
+- backend возвращает `server_time`, `next_request_at` и
+  `retry_after_seconds`; повторный запрос получает `429` и `Retry-After`;
+- UI вычисляет оставшийся срок из серверного интервала, а не из фиксированных
+  60 секунд, хранит абсолютный deadline в `localStorage`, пересчитывает его по
+  текущему времени после фонового режима и принимает обновление другой вкладки;
+- password reset сохраняет одинаковый нейтральный ответ для существующего и
+  отсутствующего аккаунта;
+- персональный invitation TTL вынесен в независимый auth/config-параметр
+  `AUTH_PERSONAL_INVITATION_TTL_HOURS` (default 72). Значение применяется только
+  при создании записи и сохраняется в `organization_invitations.expires_at`;
+  изменение настройки не меняет ранее выданный срок, replay возвращает исходную
+  запись. Параметр не связан с Cycle72 и M7.
+
+Проверки ADD01:
+
+- `git diff --check`, Python/JS syntax, `npm run lint:js`, `npm run build:web` — PASS;
+- `node --test tests/frontend/*.test.mjs` — 19 PASS;
+- `npm run test:backend:http` — 56 PASS, 10 deselected;
+- PostgreSQL auth/invitation integration на disposable PostgreSQL 16 с БД
+  `agent4k_pytest` — 15 PASS; проверены non-default cooldown 7 секунд, `429`,
+  нейтральный reset, TTL 5/9 часов и неизменность replay;
+- адресный Chromium-сценарий mail state/cooldown — 1 PASS;
+- `npm run test:backend` — 415 PASS / 13 FAIL. Те же внешние M6-падения
+  (`INPUT_NOT_READY`, `DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED`) находятся вне
+  auth diff; затронутые auth tests PASS. Поэтому полный локальный набор не зелёный;
+- GitHub CI/PR и test deploy — NOT_RUN: в этом шаге push/PR/merge не запрашивались;
+  внешняя почтовая доставка, напоминания и правило «последний кейс +5 минут» —
+  NOT_RUN/этап 2 согласно ADD01.
+
+Схема БД и сохранённые строки не мигрируются. Откат — revert ADD01-коммита и
+возврат прежнего env-набора; уже сохранённые `expires_at` остаются действительными.

@@ -104,13 +104,23 @@ def _internal() -> None:
 
     sent: list[dict] = []
     original_sender = auth_module.send_auth_action_email
+    original_cooldown = auth_module.settings.auth_magic_link_resend_cooldown_seconds
     auth_module.send_auth_action_email = lambda **payload: sent.append(payload)
+    auth_module.settings.auth_magic_link_resend_cooldown_seconds = 7
     try:
         with TestClient(app) as http:
             request = http.post("/users/auth/email/request-link", json={
                 "email": "other@example.test", "organization_invitation_token": registration_token,
             })
             assert request.status_code == 200 and request.json()["auth_mode"] == "verification_pending"
+            assert request.json()["retry_after_seconds"] == 7
+            assert request.json()["server_time"]
+            assert request.json()["next_request_at"]
+            throttled = http.post("/users/auth/email/request-link", json={
+                "email": "other@example.test", "organization_invitation_token": registration_token,
+            })
+            assert throttled.status_code == 429
+            assert 1 <= int(throttled.headers["Retry-After"]) <= 7
             action_token = parse_qs(urlparse(sent[-1]["action_url"]).query)["token"][0]
             confirmed = http.post("/users/auth/email/confirm", json={"token": action_token})
             assert confirmed.status_code == 200 and confirmed.json()["auth_mode"] == "password_registration"
@@ -130,6 +140,11 @@ def _internal() -> None:
             assert repeated.status_code in {400, 403}
             forgot = http.post("/users/auth/password/forgot", json={"email": "other@example.test"})
             assert forgot.status_code == 200
+            missing_forgot = http.post("/users/auth/password/forgot", json={"email": "missing@example.test"})
+            assert missing_forgot.status_code == 200
+            for response in (forgot, missing_forgot):
+                assert response.json()["message"] == "Если учетная запись существует, мы отправили ссылку для восстановления пароля."
+                assert response.json()["retry_after_seconds"] == 7
             reset_token = parse_qs(urlparse(sent[-1]["action_url"]).query)["token"][0]
             validated = http.post("/users/auth/password/reset/validate", json={"token": reset_token})
             assert validated.status_code == 200 and validated.json()["auth_mode"] == "password_reset"
@@ -154,6 +169,7 @@ def _internal() -> None:
             assert runtime_counts_after == runtime_counts_before
     finally:
         auth_module.send_auth_action_email = original_sender
+        auth_module.settings.auth_magic_link_resend_cooldown_seconds = original_cooldown
         close_connection_pool()
 
 

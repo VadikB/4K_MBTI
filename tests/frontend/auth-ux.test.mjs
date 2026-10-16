@@ -63,3 +63,14 @@ test('auth surface exposes the R04 mail state and non-interactive shared footer'
   assert.match(html, />© 2026 LIDUM<\/span>/);
   assert.doesNotMatch(html, /href="#"[^>]*>\s*(?:Политика|Согласие)/);
 });
+
+test('resend timing is server-driven and survives reload, background time and another tab', () => {
+  assert.doesNotMatch(wiring, /AUTH_RESEND_COOLDOWN_SECONDS/);
+  assert.match(wiring, /timing\?\.next_request_at/);
+  assert.match(wiring, /timing\?\.server_time/);
+  assert.match(wiring, /Date\.parse\(timing\.next_request_at\) - Date\.parse\(timing\.server_time\)/);
+  assert.match(wiring, /timing\?\.retry_after_seconds/);
+  assert.match(wiring, /Date\.now\(\)/);
+  assert.match(wiring, /window\.localStorage\.setItem\(AUTH_RESEND_TIMING_KEY/);
+  assert.match(wiring, /window\.addEventListener\('storage'/);
+});

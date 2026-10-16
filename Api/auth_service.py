@@ -29,7 +29,9 @@ PASSWORD_HASH_ITERATIONS = 210_000
 
 
 class AuthRateLimitError(ValueError):
-    pass
+    def __init__(self, message: str, *, retry_after_seconds: int | None = None):
+        super().__init__(message)
+        self.retry_after_seconds = retry_after_seconds
 
 
 class AuthAccessDeniedError(ValueError):
@@ -66,6 +68,8 @@ class AuthActionTokenResult:
     expires_at: datetime
     dev_token: str | None = None
     organization_invitation_id: int | None = None
+    server_time: datetime | None = None
+    next_request_at: datetime | None = None
 
 
 def _utc_now() -> datetime:
@@ -275,7 +279,8 @@ class AuthService:
         self.ensure_schema()
         normalized_email = normalize_email(email)
         raw_token = secrets.token_urlsafe(32)
-        expires_at = _utc_now() + timedelta(minutes=max(settings.auth_action_token_ttl_minutes, 5))
+        requested_at = _utc_now()
+        expires_at = requested_at + timedelta(minutes=max(settings.auth_action_token_ttl_minutes, 5))
         with get_connection() as connection:
             invitation = self._ensure_email_can_authenticate(
                 connection,
@@ -284,15 +289,21 @@ class AuthService:
             )
             recent = connection.execute(
                 """
-                SELECT created_at FROM auth_action_tokens
+                SELECT created_at,
+                  GREATEST(0,CEIL(EXTRACT(EPOCH FROM (
+                    created_at + (%s * INTERVAL '1 second') - (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+                  ))))::INTEGER AS retry_after_seconds
+                FROM auth_action_tokens
                 WHERE LOWER(email) = %s AND purpose = %s
                   AND created_at > NOW() - (%s * INTERVAL '1 second')
                 ORDER BY created_at DESC LIMIT 1
                 """,
-                (normalized_email, purpose, max(settings.auth_magic_link_resend_cooldown_seconds, 0)),
+                (max(settings.auth_magic_link_resend_cooldown_seconds, 0), normalized_email, purpose,
+                 max(settings.auth_magic_link_resend_cooldown_seconds, 0)),
             ).fetchone()
             if recent is not None:
-                raise AuthRateLimitError("Письмо уже отправлено. Повторите попытку чуть позже.")
+                raise AuthRateLimitError("Письмо уже отправлено. Повторите попытку чуть позже.",
+                                         retry_after_seconds=int(recent["retry_after_seconds"]))
             hourly = connection.execute(
                 """
                 SELECT COUNT(*) AS request_count FROM auth_action_tokens
@@ -334,11 +345,14 @@ class AuthService:
         action_url = settings.app_base_url.rstrip("/") + "/?auth_action=" + purpose + "&token=" + quote(raw_token, safe="")
         if not settings.auth_magic_link_dev_mode and settings.email_provider != "console":
             send_auth_action_email(email=normalized_email, action_url=action_url, expires_at=expires_at, purpose=purpose)
+        server_time = _utc_now()
         return AuthActionTokenResult(
             normalized_email,
             expires_at,
             raw_token if settings.auth_magic_link_dev_mode or settings.email_provider == "console" else None,
             invitation.invitation_id if invitation else None,
+            server_time,
+            requested_at + timedelta(seconds=max(settings.auth_magic_link_resend_cooldown_seconds, 0)),
         )
 
     def verify_auth_action_token(self, *, token: str, purpose: str, consume: bool = False) -> str:
@@ -425,18 +439,22 @@ class AuthService:
         if cooldown_seconds:
             recent_row = connection.execute(
                 """
-                SELECT created_at
+                SELECT created_at,
+                  GREATEST(0,CEIL(EXTRACT(EPOCH FROM (
+                    created_at + (%s * INTERVAL '1 second') - (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+                  ))))::INTEGER AS retry_after_seconds
                 FROM auth_magic_links
                 WHERE LOWER(email) = %s
                   AND created_at > NOW() - (%s * INTERVAL '1 second')
                 ORDER BY created_at DESC
                 LIMIT 1
                 """,
-                (email, cooldown_seconds),
+                (cooldown_seconds, email, cooldown_seconds),
             ).fetchone()
             if recent_row is not None:
                 raise AuthRateLimitError(
-                    "Ссылка уже отправлена. Проверьте почту или запросите новую ссылку чуть позже."
+                    "Ссылка уже отправлена. Проверьте почту или запросите новую ссылку чуть позже.",
+                    retry_after_seconds=int(recent_row["retry_after_seconds"]),
                 )
 
         email_hourly_limit = max(int(settings.auth_magic_link_email_hourly_limit or 0), 0)

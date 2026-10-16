@@ -120,6 +120,9 @@ class AuthEmailRequestResponse(BaseModel):
     auth_mode: str = "magic_link"
     dev_magic_token: str | None = None
     organization: OrganizationInvitationPublicResponse | None = None
+    server_time: datetime | None = None
+    next_request_at: datetime | None = None
+    retry_after_seconds: int | None = None
 
 
 class AuthEmailVerifyRequest(BaseModel):
@@ -197,6 +200,9 @@ class AuthActionResponse(BaseModel):
     auth_mode: str | None = None
     dev_action_token: str | None = None
     organization: OrganizationInvitationPublicResponse | None = None
+    server_time: datetime | None = None
+    next_request_at: datetime | None = None
+    retry_after_seconds: int | None = None
 
 
 class OrganizationInvitationCreateRequest(BaseModel):

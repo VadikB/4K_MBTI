@@ -114,6 +114,30 @@ def test_same_operation_is_serialized_and_lost_response_is_replayed(invitation_d
         assert 71.99 <= row["ttl"].total_seconds() / 3600 <= 72.01
 
 
+def test_personal_invitation_ttl_is_snapshotted_per_created_invitation(invitation_database, monkeypatch):
+    database_url, schema, organization_id, app = invitation_database
+    monkeypatch.setattr(routes, "send_auth_action_email", lambda **_payload: None)
+    monkeypatch.setattr(routes.settings, "auth_personal_invitation_ttl_hours", 5)
+    first = _send(app, organization_id, "ttl-five-hours")
+    assert first.status_code == 200
+    first_id = first.json()["items"][0]["invitation_id"]
+
+    monkeypatch.setattr(routes.settings, "auth_personal_invitation_ttl_hours", 9)
+    replay = _send(app, organization_id, "ttl-five-hours")
+    second = _send(app, organization_id, "ttl-nine-hours", "admin@example.test")
+    assert second.status_code == 200
+    assert replay.json()["items"][0]["invitation_id"] == first_id
+
+    with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
+        rows = connection.execute(
+            "SELECT id,expires_at-created_at AS ttl FROM organization_invitations ORDER BY id"
+        ).fetchall()
+    assert len(rows) == 2
+    assert 4.99 <= rows[0]["ttl"].total_seconds() / 3600 <= 5.01
+    assert 8.99 <= rows[1]["ttl"].total_seconds() / 3600 <= 9.01
+
+
 def test_inactive_organization_neither_creates_nor_sends(invitation_database, monkeypatch):
     database_url, schema, organization_id, app = invitation_database
     with psycopg.connect(database_url) as connection:

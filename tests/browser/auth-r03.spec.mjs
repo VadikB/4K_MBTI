@@ -108,6 +108,7 @@ test('R03 verification pending renders one mail-check heading without password c
   await baseRoutes(page);
   await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, {
     email: 'person@example.test', auth_mode: 'verification_pending', message: 'Проверьте почту.',
+    retry_after_seconds: 7,
   }));
   await page.goto(base);
   await page.locator('#email-input').fill('person@example.test');
@@ -119,6 +120,7 @@ test('R03 verification pending renders one mail-check heading without password c
   await expect(page.getByText(/Введите пароль для/)).toBeHidden();
   await expect(page.locator('#auth-resend-email-button')).toHaveText('Отправить повторно');
   await expect(page.locator('#auth-resend-countdown')).toContainText('доступна через');
+  await expect(page.locator('#auth-resend-email-button')).toBeDisabled();
   const mailHeading = await page.getByRole('heading', { name: 'Проверьте почту' }).evaluate((node) => {
     const style = getComputedStyle(node);
     return { fontSize: style.fontSize, fontWeight: style.fontWeight, lineHeight: style.lineHeight };

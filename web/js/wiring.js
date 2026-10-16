@@ -300,7 +300,7 @@ let authResetRequestInFlight = false;
 let authPendingEmailAction = 'verification';
 let authPendingTokenAction = '';
 let authOperationGeneration = 0;
-const AUTH_RESEND_COOLDOWN_SECONDS = 60;
+const AUTH_RESEND_TIMING_KEY = 'agent4k.authResendTiming';
 
 const stopAuthResendCountdown = () => {
   if (authResendTimer) {
@@ -309,11 +309,27 @@ const stopAuthResendCountdown = () => {
   }
 };
 
-const startAuthResendCountdown = () => {
+const startAuthResendCountdown = (timing = null) => {
   stopAuthResendCountdown();
-  let secondsLeft = AUTH_RESEND_COOLDOWN_SECONDS;
+  let deadline = Number(timing?.deadline || 0);
+  if (!deadline && timing?.next_request_at && timing?.server_time) {
+    const serverRemaining = Date.parse(timing.next_request_at) - Date.parse(timing.server_time);
+    if (Number.isFinite(serverRemaining)) deadline = Date.now() + Math.max(0, serverRemaining);
+  }
+  if (!deadline && timing?.next_request_at) deadline = Date.parse(timing.next_request_at);
+  if (!deadline && Number.isFinite(Number(timing?.retry_after_seconds))) {
+    deadline = Date.now() + Math.max(0, Number(timing.retry_after_seconds)) * 1000;
+  }
+  if (!deadline) {
+    try { deadline = Number(JSON.parse(window.localStorage.getItem(AUTH_RESEND_TIMING_KEY) || '{}').deadline || 0); }
+    catch (_error) { deadline = 0; }
+  }
+  if (deadline > Date.now()) {
+    try { window.localStorage.setItem(AUTH_RESEND_TIMING_KEY, JSON.stringify({ deadline })); } catch (_error) { /* no storage */ }
+  }
   const render = () => {
     if (!authResendEmailButton) return;
+    const secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
     authResendEmailButton.disabled = secondsLeft > 0;
     authResendEmailButton.textContent = 'Отправить повторно';
     if (authResendCountdown) {
@@ -323,13 +339,15 @@ const startAuthResendCountdown = () => {
   };
   render();
   authResendTimer = window.setInterval(() => {
-    secondsLeft -= 1;
     render();
-    if (secondsLeft <= 0) stopAuthResendCountdown();
+    if (deadline <= Date.now()) {
+      stopAuthResendCountdown();
+      try { window.localStorage.removeItem(AUTH_RESEND_TIMING_KEY); } catch (_error) { /* no storage */ }
+    }
   }, 1000);
 };
 
-const showEmailVerificationPending = (email) => {
+const showEmailVerificationPending = (email, timing = null) => {
   authPendingEmailAction = 'verification';
   authResendEmailButton?.classList.remove('hidden');
   if (authResendCountdown) authResendCountdown.hidden = false;
@@ -349,7 +367,7 @@ const showEmailVerificationPending = (email) => {
   if (authChangeEmailButton) authChangeEmailButton.textContent = 'Изменить email';
   setAuthStatus('');
   showError(authError, '');
-  startAuthResendCountdown();
+  startAuthResendCountdown(timing);
 };
 
 const showAccessUnavailable = (email) => {
@@ -890,6 +908,9 @@ const handleEmailMagicLinkRequest = async () => {
         organization_invitation_token: organizationInvitationToken || null,
       }),
     });
+    if (response.status === 429) {
+      showEmailVerificationPending(email, { retry_after_seconds: Number(response.headers.get('Retry-After') || 0) });
+    }
     const data = await readApiResponse(response, 'Не удалось отправить ссылку для входа.');
     renderOrganizationInvitation(data.organization || null);
     const isDevMode = Boolean(data.dev_mode);
@@ -900,7 +921,7 @@ const handleEmailMagicLinkRequest = async () => {
     }
     configureAuthCredentialForm(nextMode);
     if (nextMode === 'verification_pending') {
-      showEmailVerificationPending(authCredentialEmail);
+      showEmailVerificationPending(authCredentialEmail, data);
       if (data.dev_magic_token) {
         await handleAuthActionToken('email_verification', data.dev_magic_token);
       }
@@ -1172,7 +1193,7 @@ const requestPasswordReset = async () => {
       if (paragraphs?.[1]) paragraphs[1].textContent = 'Перейдите по ссылке из письма, чтобы создать новый пароль.';
       if (authChangeEmailButton) authChangeEmailButton.textContent = 'Вернуться';
       setAuthStatus('');
-      startAuthResendCountdown();
+      startAuthResendCountdown(data);
     }
   } catch (error) {
     if (operationGeneration !== authOperationGeneration) return;
@@ -1196,6 +1217,16 @@ const requestPasswordReset = async () => {
 };
 
 export const initWiring = () => {
+window.addEventListener('storage', (event) => {
+  if (event.key !== AUTH_RESEND_TIMING_KEY || authEmailSent?.classList.contains('hidden')) return;
+  try {
+    const deadline = Number(JSON.parse(event.newValue || '{}').deadline || 0);
+    startAuthResendCountdown({ deadline });
+  } catch (_error) {
+    startAuthResendCountdown({ deadline: 0 });
+  }
+});
+
 authEmailForm.addEventListener('submit', (event) => {
   event.preventDefault();
   if (authPendingEmailAction === 'reset-entry') {
