@@ -344,7 +344,12 @@ def internal(destination):
         second_config_id = confirmed({**revised,'personalized_profile':second_selection})
         restored = http.get('/users/session/restore',params={'personalized_profile_id':second_config_id}).json()
         assert restored['dashboard']['personalized_profile_id'] == second_config_id
-        assert http.get(f'/users/{owner}/journey-state',params={'personalized_profile_id':second_config_id}).json()['next_action'] == 'show_onboarding'
+        second_journey = http.get(
+            f'/users/{owner}/journey-state',
+            params={'personalized_profile_id': second_config_id},
+        ).json()
+        assert second_journey['next_action'] == 'wait_for_acquaintance_data'
+        assert second_journey['acquaintance']['readiness']['status'] == 'waiting_for_organization'
         ambiguous = http.post('/users/assessment/cycles/start',json={'idempotency_key':'ambiguous'})
         assert ambiguous.status_code == 409 and 'SELECTION_REQUIRED' in ambiguous.text
         # A genuinely published empty catalog preserves ready M4 but cannot create a hidden

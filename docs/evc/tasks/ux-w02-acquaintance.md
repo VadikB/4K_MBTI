@@ -136,3 +136,8 @@ participant-safe `assigned_timing` → при подготовке неизме�
 
 Схема и существующие данные не меняются. Откат — revert ADD01-коммита; frozen Cycle
 и plan revisions остаются неизменными и совместимыми, legacy-прохождения не удаляются.
+
+После первого CI общего PR исправлен приоритет `journey-state`: уже существующий
+Cycle продолжает frozen runtime независимо от нового W02 gate, а для новой
+конфигурации без Cycle сначала возвращается `wait_for_acquaintance_data`. Регрессия
+`test_profile_to_m4_on_owned_stand` повторена на disposable PostgreSQL — 1 PASS.
