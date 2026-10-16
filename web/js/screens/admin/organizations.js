@@ -17,6 +17,7 @@ let selectedOrganizationId = null;
 const invitationRequestsInFlight = new Set();
 const invitationOperationIds = new Map();
 const questionnairePreviews = new Map();
+const questionnaireRevisions = new Map();
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -68,6 +69,16 @@ export const loadAdminOrganizations = async () => {
     { method: 'GET', headers: {} },
     'Не удалось загрузить организации.',
   );
+  await Promise.all((data.items || []).map(async (org) => {
+    const response = await fetch('/users/admin/organizations/' + org.id + '/questionnaire', {
+      credentials: 'same-origin',
+    });
+    if (response.ok) {
+      const result = await response.json();
+      questionnaireRevisions.set(Number(org.id), Array.isArray(result.items) ? result.items : []);
+    }
+  }));
+  renderAdminOrganizations();
   return data;
 };
 
@@ -232,11 +243,16 @@ export const resetAdminOrganizationMemberPassword = async (organizationId, email
   }
 };
 
-export const sendAdminOrganizationMemberInvitation = async (organizationId, emailOrEmails) => {
+export const sendAdminOrganizationMemberInvitation = async (organizationId, emailOrEmails, assignmentRef) => {
   const emails = (Array.isArray(emailOrEmails) ? emailOrEmails : [emailOrEmails])
     .map((email) => String(email || '').trim().toLowerCase())
     .filter(Boolean);
-  const requestKey = organizationId + ':' + [...new Set(emails)].sort().join(',');
+  const assessment = String(assignmentRef || '').trim();
+  if (!assessment) {
+    setStatus('Сначала укажите оценку в разделе «Данные организации».', 'error');
+    return;
+  }
+  const requestKey = organizationId + ':' + assessment + ':' + [...new Set(emails)].sort().join(',');
   if (!emails.length || invitationRequestsInFlight.has(requestKey)) return;
   const operationId = invitationOperationIds.get(requestKey) || createOperationId();
   invitationOperationIds.set(requestKey, operationId);
@@ -246,7 +262,7 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'Idempotency-Key': operationId },
-      body: JSON.stringify({ emails, operation_id: operationId }),
+      body: JSON.stringify({ emails, assignment_ref: assessment, operation_id: operationId }),
     });
     const result = await readApiResponse(response, 'Не удалось отправить приглашение.');
     const items = Array.isArray(result.items) ? result.items : [];
@@ -639,6 +655,9 @@ export const renderAdminOrganizations = () => {
       const batchIsRunning = activeBatch?.status === 'in_progress';
       const actionLabel = Number(org.members_count || 0) || Number(org.reports_count || 0) ? 'Деактивировать' : 'Удалить';
       const questionnairePreview = questionnairePreviews.get(orgId);
+      const revisions = questionnaireRevisions.get(orgId) || [];
+      const currentRevision = questionnairePreview || revisions[0] || null;
+      const confirmedRevision = revisions.find((item) => item.status === 'confirmed');
       const questionnaireValidation = questionnairePreview?.validation_json || {};
       const questionnaireProblems = [...(questionnaireValidation.errors || []).map((item) => item.code),
         ...(questionnaireValidation.missing || [])];
@@ -688,7 +707,9 @@ export const renderAdminOrganizations = () => {
         (isSuperadmin ? '<form class="admin-organization-inline-form" data-action="add-admin"><input type="email" placeholder="admin@company.ru"><button class="ghost-button compact-ghost" type="submit">Добавить</button></form>' : '') +
         '</section>' +
         '</div>' +
-        '<section class="admin-organization-members-section"><h4>Участники</h4>' +
+        '<nav class="admin-organization-steps" aria-label="Разделы организации"><button type="button" class="primary-button compact-primary" data-action="show-people">Участники и приглашения</button><button type="button" class="ghost-button compact-ghost" data-action="show-organization-data">Данные организации</button></nav>' +
+        '<section class="admin-organization-members-section" data-admin-view="people"><h4>Участники и приглашения</h4>' +
+        '<p>Перед отправкой выберите оценку в разделе «Данные организации» и подтвердите сведения для знакомства.</p>' +
         '<form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
         renderMemberList(org.members || [], { isSuperadmin }) +
         '<form class="admin-organization-member-form" data-action="add-member">' +
@@ -704,11 +725,14 @@ export const renderAdminOrganizations = () => {
         '<button class="ghost-button compact-ghost" type="submit">Импорт</button>' +
         '</form>' +
         '</section>' +
-        '<section class="admin-organization-members-section"><h4>Анкета заказчика</h4>' +
+        '<section class="admin-organization-members-section hidden" data-admin-view="organization-data"><div class="admin-readiness-panel"><strong>Готовность</strong><p>' +
+        (confirmedRevision ? 'Можно приглашать участников для оценки «' + escapeHtml(confirmedRevision.assignment_ref) + '». Готовность назначения проверяется отдельно.' : 'Чтобы пригласить участников, заполните и подтвердите сведения для знакомства.') +
+        '</p></div><h4>Данные организации</h4>' +
         '<p>Загрузите UTF-8 CSV по шаблону. Файл сначала сохраняется как предпросмотр и не меняет опубликованные данные.</p>' +
         '<p><a class="text-link" href="/users/admin/organizations/' + orgId + '/questionnaire/template">Скачать CSV-шаблон</a></p>' +
         '<form class="admin-organization-import-form" data-action="preview-questionnaire">' +
-        '<input name="assignment_ref" type="text" placeholder="Назначение / программа оценки" required>' +
+        '<label><span>Оценка</span><input name="assignment_ref" list="assessment-options-' + orgId + '" type="text" value="' + escapeHtml(currentRevision?.assignment_ref || '') + '" placeholder="Например, 4К · поток октябрь 2026" required></label>' +
+        '<datalist id="assessment-options-' + orgId + '">' + revisions.map((item) => '<option value="' + escapeHtml(item.assignment_ref) + '"></option>').join('') + '</datalist>' +
         '<input name="source_author" type="text" placeholder="Автор сведений со стороны заказчика" required>' +
         '<input name="csv" type="file" accept=".csv,text/csv" required>' +
         '<button class="ghost-button compact-ghost" type="submit">Предпросмотр анкеты</button></form>' +
@@ -719,9 +743,10 @@ export const renderAdminOrganizations = () => {
           (questionnairePreview.status === 'ready_for_confirmation' ?
             '<fieldset><legend>Получатели результатов по действующим правам</legend>' +
             '<label><input type="checkbox" name="questionnaire_recipient" value="participant" checked> Участник</label>' +
-            '<label><input type="checkbox" name="questionnaire_recipient" value="organization_admin" checked> Администратор организации</label>' +
+            '<label><input type="checkbox" name="questionnaire_recipient" value="organization_admin" checked> Представитель заказчика</label>' +
             '</fieldset><button type="button" class="primary-button compact-primary" data-action="confirm-questionnaire" data-value="' +
-            Number(questionnairePreview.id) + '">Подтвердить анкету</button>' : '') + '</div>' : '') +
+            Number(questionnairePreview.id) + '">Подтвердить сведения</button>' : '') + '</div>' : '') +
+        '<button type="button" class="ghost-button compact-ghost" data-action="show-people">Вернуться к участникам</button>' +
         '</section>' +
         '</article>'
       );

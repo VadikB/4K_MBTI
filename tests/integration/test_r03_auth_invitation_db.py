@@ -41,7 +41,7 @@ def invitation_database(test_database_url, monkeypatch, request):
             expires_at TIMESTAMP NOT NULL, revoked_at TIMESTAMP, created_by_user_id BIGINT REFERENCES users(id), created_at TIMESTAMP NOT NULL DEFAULT NOW(),
             recipient_email TEXT, purpose TEXT NOT NULL DEFAULT 'shared_access', used_at TIMESTAMP,
             delivery_status TEXT NOT NULL DEFAULT 'not_sent', delivery_error TEXT, sent_at TIMESTAMP,
-            delivery_started_at TIMESTAMP, request_id TEXT)""")
+            delivery_started_at TIMESTAMP, request_id TEXT, assignment_ref TEXT)""")
         connection.execute("""CREATE UNIQUE INDEX uq_r03_operation ON organization_invitations(
             organization_id,LOWER(recipient_email),request_id) WHERE purpose='personal_registration' AND request_id IS NOT NULL""")
         admin = connection.execute("INSERT INTO users(email) VALUES('admin@example.test') RETURNING id").fetchone()[0]
@@ -64,6 +64,10 @@ def invitation_database(test_database_url, monkeypatch, request):
     monkeypatch.setattr(routes.settings, "auth_magic_link_dev_mode", False)
     monkeypatch.setattr(routes.settings, "email_provider", "controlled-sink")
     monkeypatch.setattr(routes.settings, "auth_invitation_token_secret", "integration-secret-that-is-at-least-32-characters")
+    monkeypatch.setattr(
+        routes.questionnaire_sources, "assignment_readiness",
+        lambda *_args, **_kwargs: {"status": "ready"},
+    )
     app = FastAPI()
     app.include_router(routes.router)
     yield test_database_url, schema, organization, app

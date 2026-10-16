@@ -1512,7 +1512,9 @@ if (adminOrganizationsList) {
         .map((checkbox) => checkbox.value)
         .filter(Boolean);
       withScreen(loadAdminOrganizations, (module) =>
-        module.sendAdminOrganizationMemberInvitation(organizationId, emails),
+        module.sendAdminOrganizationMemberInvitation(
+          organizationId, emails, card.querySelector('input[name="assignment_ref"]')?.value,
+        ),
       );
       return;
     }
@@ -1660,7 +1662,16 @@ if (adminOrganizationsList) {
       return;
     }
     if (button.dataset.action === 'send-member-invitation') {
-      withScreen(loadAdminOrganizations, (module) => module.sendAdminOrganizationMemberInvitation(organizationId, value));
+      withScreen(loadAdminOrganizations, (module) => module.sendAdminOrganizationMemberInvitation(
+        organizationId, value, card.querySelector('input[name="assignment_ref"]')?.value,
+      ));
+      return;
+    }
+    if (button.dataset.action === 'show-people' || button.dataset.action === 'show-organization-data') {
+      const target = button.dataset.action === 'show-people' ? 'people' : 'organization-data';
+      card.querySelectorAll('[data-admin-view]').forEach((section) => {
+        section.classList.toggle('hidden', section.getAttribute('data-admin-view') !== target);
+      });
       return;
     }
     if (button.dataset.action === 'revoke-member-invitation') {

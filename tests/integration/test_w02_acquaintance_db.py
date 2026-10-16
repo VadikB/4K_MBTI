@@ -16,10 +16,16 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
         schema = "w02_" + uuid4().hex
         connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
         connection.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
-        connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY)")
+        connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY,email TEXT)")
         connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY,name TEXT,is_active BOOLEAN)")
         connection.execute("""CREATE TABLE organization_memberships(
             organization_id BIGINT,user_id BIGINT,role TEXT,UNIQUE(organization_id,user_id))""")
+        connection.execute("""CREATE TABLE organization_invitations(
+            id BIGSERIAL PRIMARY KEY,organization_id BIGINT,recipient_email TEXT,purpose TEXT,
+            assignment_ref TEXT,revoked_at TIMESTAMP)""")
+        connection.execute("""CREATE TABLE questionnaire_response_revisions(
+            id BIGSERIAL PRIMARY KEY,organization_id BIGINT,assignment_ref TEXT,status TEXT,
+            briefing_json JSONB,organization_context_version_id BIGINT,confirmed_at TIMESTAMP)""")
         connection.execute("""CREATE TABLE assessment_organization_contexts(
             id BIGINT PRIMARY KEY,organization_id BIGINT,code TEXT)""")
         connection.execute("""CREATE TABLE assessment_organization_context_versions(
@@ -33,7 +39,8 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
         connection.execute("""CREATE TABLE participant_data_issue_reports(
             id BIGSERIAL PRIMARY KEY,user_id BIGINT,organization_id BIGINT,message TEXT,status TEXT DEFAULT 'open',
             created_at TIMESTAMP DEFAULT NOW(),resolved_at TIMESTAMP,UNIQUE(user_id,organization_id,message))""")
-        connection.execute("INSERT INTO users VALUES(1),(2),(3)")
+        connection.execute("""INSERT INTO users VALUES
+            (1,'participant@example.test'),(2,'admin-a@example.test'),(3,'admin-b@example.test')""")
         connection.execute("INSERT INTO organizations VALUES(10,'Организация А',TRUE),(20,'Организация Б',TRUE)")
         connection.execute("INSERT INTO organization_memberships VALUES(10,1,'member'),(10,2,'admin'),(20,3,'admin')")
         connection.execute("INSERT INTO assessment_organization_contexts VALUES(100,10,'default')")

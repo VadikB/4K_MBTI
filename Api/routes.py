@@ -3704,6 +3704,7 @@ def send_personal_organization_invitations(
     ).strip() or None
     if request_id is None:
         raise HTTPException(status_code=400, detail="Idempotency-Key or operation_id is required")
+    assignment_ref = str(payload.assignment_ref or "").strip()
     invitation_secret = str(
         settings.auth_invitation_token_secret
         or settings.postmark_server_token
@@ -3717,7 +3718,7 @@ def send_personal_organization_invitations(
         invitation_id: int | None = None
         try:
             email = normalize_email(raw_email)
-            token_material = f"{organization_id}:{email}:{request_id}".encode("utf-8")
+            token_material = f"{organization_id}:{assignment_ref}:{email}:{request_id}".encode("utf-8")
             raw_token = base64.urlsafe_b64encode(
                 hmac.new(invitation_secret.encode("utf-8"), token_material, hashlib.sha256).digest()
             ).decode("ascii").rstrip("=")
@@ -3725,6 +3726,13 @@ def send_personal_organization_invitations(
             expires_at = now_utc + timedelta(hours=max(settings.auth_personal_invitation_ttl_hours,1))
             with get_connection() as connection:
                 _require_organization_admin(connection, current_user, organization_id)
+                readiness = questionnaire_sources.assignment_readiness(
+                    connection, organization_id=organization_id, assignment_ref=assignment_ref,
+                )
+                if readiness["status"] != "ready":
+                    raise ValueError(
+                        "Чтобы пригласить участников, заполните и подтвердите сведения для знакомства."
+                    )
                 member = connection.execute(
                     """
                     SELECT u.id
@@ -3747,8 +3755,8 @@ def send_personal_organization_invitations(
                     """
                     INSERT INTO organization_invitations (
                         organization_id, token_hash, expires_at, created_by_user_id,
-                        recipient_email, purpose, delivery_status, request_id, created_at
-                    ) VALUES (%s, %s, %s, %s, %s, 'personal_registration', 'queued', %s,
+                        recipient_email, purpose, delivery_status, request_id, assignment_ref, created_at
+                    ) VALUES (%s, %s, %s, %s, %s, 'personal_registration', 'queued', %s, %s,
                         (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))
                     ON CONFLICT DO NOTHING
                     RETURNING id, expires_at, delivery_status
@@ -3760,13 +3768,14 @@ def send_personal_organization_invitations(
                         int(current_user.id),
                         email,
                         request_id,
+                        assignment_ref,
                     ),
                 ).fetchone()
                 if row is None and request_id is not None:
                     row = connection.execute(
                         """
                         SELECT id, expires_at, delivery_status, token_hash, used_at, revoked_at,
-                               recipient_email, organization_id
+                               recipient_email, organization_id, assignment_ref
                         FROM organization_invitations
                         WHERE organization_id = %s
                           AND LOWER(recipient_email) = %s
@@ -3778,6 +3787,9 @@ def send_personal_organization_invitations(
                     ).fetchone()
                     if row is None:
                         raise RuntimeError("Не удалось восстановить результат операции отправки.")
+                    stored_assignment = str(row.get("assignment_ref") or "competencies_4k")
+                    if stored_assignment != assignment_ref:
+                        raise ValueError("operation_id уже использован для другой оценки.")
                 if row is None:
                     raise RuntimeError("Не удалось создать приглашение.")
                 invitation_id = int(row["id"])
@@ -3788,6 +3800,10 @@ def send_personal_organization_invitations(
                     _require_organization_admin(connection, current_user, organization_id)
                 except HTTPException as exc:
                     raise ValueError("Права отправителя на организацию отозваны.") from exc
+                if questionnaire_sources.assignment_readiness(
+                    connection, organization_id=organization_id, assignment_ref=assignment_ref,
+                )["status"] != "ready":
+                    raise ValueError("Сведения для знакомства изменились. Подтвердите их перед отправкой.")
                 locked = connection.execute(
                     """SELECT id, expires_at, delivery_status, token_hash, used_at, revoked_at,
                               recipient_email, organization_id
@@ -4623,6 +4639,24 @@ def download_admin_organization_questionnaire_template(organization_id: int, req
     )
 
 
+@router.get("/admin/organizations/{organization_id}/questionnaire")
+def list_admin_organization_questionnaire_revisions(organization_id: int, request: Request) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_organization_admin(connection, user, organization_id)
+        rows = connection.execute(
+            """SELECT * FROM questionnaire_response_revisions
+               WHERE organization_id=%s ORDER BY created_at DESC,id DESC LIMIT 100""",
+            (organization_id,),
+        ).fetchall()
+        latest = {}
+        for row in rows:
+            key = str(row["assignment_ref"])
+            if key not in latest:
+                latest[key] = questionnaire_sources.public_revision(dict(row))
+        return {"items": list(latest.values())}
+
+
 @router.post("/admin/organizations/{organization_id}/questionnaire/preview", status_code=201)
 def preview_admin_organization_questionnaire(
     organization_id: int, payload: QuestionnairePreviewRequest, request: Request,
@@ -4640,7 +4674,7 @@ def preview_admin_organization_questionnaire(
                 source_author=payload.source_author, idempotency_key=payload.idempotency_key,
             )
             connection.commit()
-            return result
+            return questionnaire_sources.public_revision(result)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -4667,7 +4701,7 @@ def confirm_admin_organization_questionnaire(
                 confirmed_by=int(user.id), recipients=list(payload.recipients),
             )
             connection.commit()
-            return result
+            return questionnaire_sources.public_revision(result)
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 

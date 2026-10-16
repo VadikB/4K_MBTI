@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from Api.questionnaire_sources import normalize_answers, parse_csv
+from Api.questionnaire_sources import PARTICIPANT_QUESTIONS, normalize_answers, parse_csv
 
 
 EXAMPLE = Path("assessment_definitions/questionnaires/corporate/0.1/example.synthetic.csv")
@@ -47,3 +47,8 @@ def test_all_adapters_use_same_normalized_contract():
 def test_header_must_be_exact():
     with pytest.raises(ValueError, match="QUESTIONNAIRE_HEADER_INVALID"):
         parse_csv("field,question_id,value\nname,C01,Example")
+
+
+def test_canonical_participant_questions_are_not_customer_authored():
+    assert len(PARTICIPANT_QUESTIONS) == 3
+    assert all(question.strip().endswith("?") for question in PARTICIPANT_QUESTIONS)
