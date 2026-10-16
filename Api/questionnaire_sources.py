@@ -38,6 +38,12 @@ EARLY_REQUIRED = {
 ALLOWED_CHANNELS = {"csv", "product_form", "external_form"}
 ALLOWED_RECIPIENTS = {"participant", "organization_admin"}
 MAX_SOURCE_BYTES = 1_048_576
+PARTICIPANT_QUESTIONS = [
+    "Какие задачи и рабочие ситуации занимают большую часть вашего времени?",
+    "Какие решения в вашей роли требуют наибольшего внимания?",
+    "С какими ограничениями и взаимодействиями вы чаще всего сталкиваетесь?",
+]
+PROVIDED_PARTICIPANT_FIELDS = ["role", "position", "duties"]
 
 
 def _digest(value: object) -> str:
@@ -159,23 +165,23 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     definition.update(answers["C01"])
     definition.update({key: value for key, value in answers["C17"].items()
                        if key in {"case_reality_level", "organization_name_usage_rules", "restrictions"}})
-    previous = dict(definition.get("participant_briefing") or {})
     participant_briefing = {
-        **previous,
         "purpose": answers["C02a"]["participant_text"],
         "customer_question": answers["C02b"].get("answer", ""),
         "organizer": answers["C21"]["organizer"],
         "responsible_contact": answers["C21"]["responsible_contact"],
         "results_usage": answers["C03"]["participant_text"],
-        "result_recipients": ", ".join(mapped),
+        "result_recipients": answers["C04"]["answer"],
         "recipient_mapping": mapped,
-        "provided_participant_fields": previous.get("provided_participant_fields") or ["role", "position", "duties"],
-        "participant_questions": previous.get("participant_questions") or [],
-        "consent_version": int(previous.get("consent_version") or 1),
-        "consent_text": str(previous.get("consent_text") or ""),
+        "organization_type": answers["C01"]["organization_type"],
+        "provided_participant_fields": PROVIDED_PARTICIPANT_FIELDS,
+        "participant_questions": PARTICIPANT_QUESTIONS,
+        "consent_version": 1,
+        "consent_text": "Подтвердите согласие на использование указанных сведений в рамках оценки.",
         "questionnaire_revision_id": int(row["id"]),
+        "assignment_ref": str(row["assignment_ref"]),
     }
-    definition["participant_briefing"] = participant_briefing
+    definition.pop("participant_briefing", None)
     version_id = create_organization_context_draft(
         connection, organization_id=organization_id, definition=definition,
         source_manifest={"questionnaire_revision_id": int(row["id"]), "channel": row["channel"],
@@ -185,14 +191,60 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     publish_organization_context(connection, version_id=version_id, confirmed_by_user_id=confirmed_by)
     saved = connection.execute(
         """UPDATE questionnaire_response_revisions SET status='confirmed',confirmed_by_user_id=%s,
-           confirmed_at=NOW(),organization_context_version_id=%s,recipient_mapping_json=%s::jsonb
+           confirmed_at=NOW(),organization_context_version_id=%s,briefing_json=%s::jsonb,
+           recipient_mapping_json=%s::jsonb
            WHERE id=%s RETURNING *""",
-        (confirmed_by, version_id, json.dumps(mapped), row["id"]),
+        (confirmed_by, version_id, json.dumps(participant_briefing, ensure_ascii=False),
+         json.dumps(mapped), row["id"]),
     ).fetchone()
     return dict(saved)
+
+
+def assignment_readiness(connection, *, organization_id: int, assignment_ref: str) -> dict:
+    """Return the confirmed early minimum for one assessment preparation."""
+    normalized_ref = str(assignment_ref or "").strip()
+    if not normalized_ref:
+        return {"status": "draft", "reason": "assignment_ref", "missing": ["assessment"]}
+    row = connection.execute(
+        """SELECT id,assignment_ref,briefing_json,organization_context_version_id,confirmed_at
+           FROM questionnaire_response_revisions
+           WHERE organization_id=%s AND assignment_ref=%s AND status='confirmed'
+           ORDER BY confirmed_at DESC,id DESC LIMIT 1""",
+        (organization_id, normalized_ref),
+    ).fetchone()
+    if row is None:
+        return {"status": "draft", "reason": "confirmed_questionnaire", "missing": ["confirmation"]}
+    briefing = dict(row["briefing_json"] or {})
+    if str(briefing.get("organization_type") or "").strip().lower() in {
+        "университет", "вуз", "university",
+    }:
+        return {"status": "draft", "reason": "university_admission_not_supported", "missing": ["admission"]}
+    required = ("purpose", "organizer", "responsible_contact", "results_usage", "result_recipients")
+    missing = [key for key in required if not str(briefing.get(key) or "").strip()]
+    if missing:
+        return {"status": "draft", "reason": "early_minimum", "missing": missing}
+    return {
+        "status": "ready", "reason": None, "missing": [], "assignment_ref": normalized_ref,
+        "questionnaire_revision_id": int(row["id"]),
+        "organization_context_version_id": int(row["organization_context_version_id"]),
+        "briefing": briefing,
+    }
 
 
 def template_csv() -> str:
     rows = [(qid, field, "") for qid, fields in FIELDS.items() for field in sorted(fields)]
     output = io.StringIO(); writer = csv.writer(output); writer.writerow(HEADER); writer.writerows(rows)
     return output.getvalue()
+
+
+def public_revision(row: dict) -> dict:
+    """Admin-safe projection without raw source, checksums or internal request metadata."""
+    item = dict(row)
+    return {
+        "id": int(item["id"]), "assignment_ref": str(item["assignment_ref"]),
+        "status": str(item["status"]), "channel": str(item["channel"]),
+        "validation_json": dict(item.get("validation_json") or {}),
+        "answers_json": dict(item.get("answers_json") or {}),
+        "briefing": dict(item.get("briefing_json") or {}),
+        "confirmed_at": item.get("confirmed_at"),
+    }

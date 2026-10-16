@@ -217,6 +217,7 @@ class OrganizationInvitationAdminResponse(OrganizationInvitationPublicResponse):
 
 class PersonalInvitationRequest(BaseModel):
     emails: list[str] = Field(min_length=1, max_length=500)
+    assignment_ref: str = Field(default="competencies_4k", min_length=1, max_length=200)
     operation_id: str | None = Field(default=None, min_length=8, max_length=200)
 
 

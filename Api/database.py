@@ -3118,11 +3118,15 @@ def ensure_questionnaire_source_schema(connection) -> None:
             confirmed_by_user_id BIGINT REFERENCES users(id) ON DELETE RESTRICT,
             confirmed_at TIMESTAMPTZ,
             organization_context_version_id BIGINT REFERENCES assessment_organization_context_versions(id) ON DELETE RESTRICT,
+            briefing_json JSONB,
             recipient_mapping_json JSONB,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             UNIQUE(uploaded_by_user_id,idempotency_key)
         )
         """
+    )
+    connection.execute(
+        "ALTER TABLE questionnaire_response_revisions ADD COLUMN IF NOT EXISTS briefing_json JSONB"
     )
     connection.execute(
         "CREATE INDEX IF NOT EXISTS idx_questionnaire_response_org_assignment "
@@ -4487,6 +4491,7 @@ def ensure_core_schema() -> None:
         connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP")
         connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS request_id TEXT")
         connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS delivery_started_at TIMESTAMP")
+        connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS assignment_ref TEXT")
         connection.execute(
             "CREATE INDEX IF NOT EXISTS idx_organization_invitations_recipient "
             "ON organization_invitations(organization_id, LOWER(recipient_email), expires_at) "

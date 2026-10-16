@@ -60,6 +60,7 @@ class _InvitationConnection:
                 "expires_at": params[2],
                 "recipient_email": params[4],
                 "request_id": request_id,
+                "assignment_ref": params[6],
                 "delivery_status": "queued",
                 "delivery_error": None,
                 "used_at": None,
@@ -131,6 +132,10 @@ def _client(monkeypatch, connection, sent):
     monkeypatch.setattr(routes.settings, "email_provider", "postmark")
     monkeypatch.setattr(routes.settings, "auth_invitation_token_secret", "r03-test-secret-that-is-at-least-32-characters")
     monkeypatch.setattr(routes, "send_auth_action_email", lambda **payload: sent.append(payload))
+    monkeypatch.setattr(
+        routes.questionnaire_sources, "assignment_readiness",
+        lambda *_args, **_kwargs: {"status": "ready"},
+    )
     app = FastAPI()
     app.include_router(routes.router)
     return TestClient(app)
@@ -138,7 +143,7 @@ def _client(monkeypatch, connection, sent):
 
 def _operation_token_hash(operation: str, email: str = "person@example.test") -> str:
     secret = "r03-test-secret-that-is-at-least-32-characters"
-    material = f"3:{email}:{operation}".encode("utf-8")
+    material = f"3:competencies_4k:{email}:{operation}".encode("utf-8")
     raw_token = base64.urlsafe_b64encode(
         hmac.new(secret.encode("utf-8"), material, hashlib.sha256).digest()
     ).decode("ascii").rstrip("=")
@@ -180,6 +185,28 @@ def test_personal_invitation_without_provider_is_not_accepted(monkeypatch) -> No
     assert "не настроен" in response.json()["items"][0]["error"]
     assert sent == []
     assert connection.rows == []
+
+
+def test_personal_invitation_is_blocked_without_confirmed_assessment_context(monkeypatch) -> None:
+    connection = _InvitationConnection()
+    sent = []
+    client = _client(monkeypatch, connection, sent)
+    monkeypatch.setattr(
+        routes.questionnaire_sources, "assignment_readiness",
+        lambda *_args, **_kwargs: {"status": "draft", "missing": ["confirmation"]},
+    )
+
+    response = client.post(
+        "/users/admin/organizations/3/personal-invitations",
+        json={"emails": ["person@example.test"], "assignment_ref": "assessment-a",
+              "operation_id": "adm01-missing-context"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["items"][0]["status"] == "error"
+    assert "заполните и подтвердите" in response.json()["items"][0]["error"]
+    assert connection.rows == []
+    assert sent == []
 
 
 def test_consumed_personal_invitation_keeps_public_organization_context(monkeypatch) -> None:

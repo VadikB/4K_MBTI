@@ -6,7 +6,7 @@ import pytest
 from psycopg.rows import dict_row
 
 from Api.database import ensure_questionnaire_source_schema
-from Api.questionnaire_sources import confirm, save_preview
+from Api.questionnaire_sources import assignment_readiness, confirm, save_preview
 
 
 pytestmark = pytest.mark.integration
@@ -54,12 +54,32 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
             (confirmed["organization_context_version_id"],),
         ).fetchone()
         assert version["status"] == "published"
-        assert version["definition_json"]["participant_briefing"]["purpose"]
+        assert "participant_briefing" not in version["definition_json"]
+        assert confirmed["briefing_json"]["purpose"]
+        assert confirmed["briefing_json"]["assignment_ref"] == "synthetic-assignment"
         assert version["source_manifest_json"]["questionnaire_revision_id"] == preview["id"]
         assert confirm(
             connection, revision_id=preview["id"], organization_id=10,
             confirmed_by=2, recipients=["participant"],
         )["organization_context_version_id"] == confirmed["organization_context_version_id"]
+
+        second_kwargs = {
+            **kwargs, "assignment_ref": "second-assignment", "idempotency_key": "preview-2",
+            "raw_text": EXAMPLE.read_text().replace(
+                "Познакомиться с форматом оценки и получить развивающую обратную связь",
+                "Отдельная цель второй оценки",
+            ),
+        }
+        second = save_preview(connection, **second_kwargs)
+        confirm(connection, revision_id=second["id"], organization_id=10,
+                confirmed_by=2, recipients=["participant"])
+        first_ready = assignment_readiness(
+            connection, organization_id=10, assignment_ref="synthetic-assignment",
+        )
+        second_ready = assignment_readiness(
+            connection, organization_id=10, assignment_ref="second-assignment",
+        )
+        assert first_ready["briefing"]["purpose"] != second_ready["briefing"]["purpose"]
 
         with pytest.raises(ValueError, match="QUESTIONNAIRE_REVISION_NOT_FOUND"):
             confirm(

@@ -7,6 +7,7 @@ import json
 
 from Api import participant_profile
 from Api.m7_parameter_resolution import resolve as resolve_parameters
+from Api.questionnaire_sources import assignment_readiness
 
 
 REQUIRED_BRIEFING_FIELDS = ("purpose", "organizer", "results_usage", "result_recipients")
@@ -27,6 +28,47 @@ def early_readiness(connection, *, user_id: int) -> dict:
     if len(memberships) != 1:
         return _waiting("active_membership", university=False)
     organization = dict(memberships[0])
+    assignment_rows = connection.execute(
+        """SELECT DISTINCT oi.assignment_ref
+           FROM organization_invitations oi
+           JOIN users u ON LOWER(u.email)=LOWER(oi.recipient_email)
+           WHERE u.id=%s AND oi.organization_id=%s AND oi.purpose='personal_registration'
+             AND oi.assignment_ref IS NOT NULL AND oi.revoked_at IS NULL
+           ORDER BY oi.assignment_ref""",
+        (user_id, organization["id"]),
+    ).fetchall()
+    if not assignment_rows:
+        assignment_rows = connection.execute(
+            """SELECT DISTINCT assignment_ref FROM questionnaire_response_revisions
+               WHERE organization_id=%s AND status='confirmed' ORDER BY assignment_ref""",
+            (organization["id"],),
+        ).fetchall()
+    if len(assignment_rows) == 1:
+        assignment = assignment_readiness(
+            connection, organization_id=int(organization["id"]),
+            assignment_ref=str(assignment_rows[0]["assignment_ref"]),
+        )
+        if assignment["status"] == "ready":
+            briefing = assignment["briefing"]
+            safe_briefing = {key: briefing[key] for key in REQUIRED_BRIEFING_FIELDS}
+            safe_briefing.update({
+                "provided_participant_fields": briefing["provided_participant_fields"],
+                "questions": briefing["participant_questions"],
+                "consent_version": int(briefing.get("consent_version") or 1),
+                "consent_text": str(briefing.get("consent_text") or ""),
+            })
+            return {
+                "status": "ready", "reason": None, "message": "",
+                "organization_id": int(organization["id"]),
+                "organization_name": str(organization["name"]),
+                "organization_context_version_id": assignment["organization_context_version_id"],
+                "assignment_ref": assignment["assignment_ref"],
+                "organization_kind": "organization",
+                "responsible_contact": str(briefing.get("responsible_contact") or "").strip() or None,
+                "briefing": safe_briefing, "briefing_checksum": _checksum(safe_briefing),
+            }
+    elif len(assignment_rows) > 1:
+        return _waiting("assessment_assignment", university=False, organization=organization)
     row = connection.execute(
         """SELECT v.id,v.definition_json FROM assessment_organization_context_versions v
            JOIN assessment_organization_contexts c ON c.id=v.organization_context_id

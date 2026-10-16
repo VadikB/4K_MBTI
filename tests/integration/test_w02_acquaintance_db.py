@@ -20,6 +20,12 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
         connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY,name TEXT,is_active BOOLEAN)")
         connection.execute("""CREATE TABLE organization_memberships(
             organization_id BIGINT,user_id BIGINT,role TEXT,UNIQUE(organization_id,user_id))""")
+        connection.execute("""CREATE TABLE organization_invitations(
+            id BIGSERIAL PRIMARY KEY,organization_id BIGINT,recipient_email TEXT,purpose TEXT,
+            assignment_ref TEXT,revoked_at TIMESTAMP)""")
+        connection.execute("""CREATE TABLE questionnaire_response_revisions(
+            id BIGSERIAL PRIMARY KEY,organization_id BIGINT,assignment_ref TEXT,status TEXT,
+            briefing_json JSONB,organization_context_version_id BIGINT,confirmed_at TIMESTAMP)""")
         connection.execute("""CREATE TABLE assessment_organization_contexts(
             id BIGINT PRIMARY KEY,organization_id BIGINT,code TEXT)""")
         connection.execute("""CREATE TABLE assessment_organization_context_versions(
