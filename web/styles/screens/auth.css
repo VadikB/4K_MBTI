@@ -961,7 +961,7 @@ body:has(#auth-panel:not(.hidden)),
 .app-footer-copyright {
     font-size: 10px;
     line-height: 16px;
-    letter-spacing: 0.8px;
+    letter-spacing: 0;
 }
 
 @media (max-width: 767px) {

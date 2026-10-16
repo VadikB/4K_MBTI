@@ -36,7 +36,7 @@ test('W02 displays server-resolved assignment timing and restores the prepared s
 
 test('W02 closes one situation and requires an explicit start for the next one', () => {
   assert.match(interview, /finish-situation/);
-  assert.match(interview, /Приступить к следующему кейсу/);
+  assert.match(interview, /Приступить к следующей ситуации/);
   assert.match(interview, /snapshot\.between_situations/);
 });
 

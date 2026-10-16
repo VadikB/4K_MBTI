@@ -2325,6 +2325,7 @@ const sendInterviewAnswer = async (text, existingMessageRow = null) => {
       turnId: messageRow.dataset.turnId,
     };
     await interviewModule.submitAssessmentMessage(text, messageRow.productRequestIdentity);
+    interviewModule.clearInterviewDraft();
     interviewModule.setInterviewMessageDeliveryState(messageRow, 'sent');
     if (interviewModule.isCycleAssessment()) interviewModule.resumeProductRuntimePolling();
     logAssessmentClientEvent('request_succeeded');
@@ -2363,11 +2364,11 @@ const submitCurrentInterviewAnswer = async () => {
 
   const text = interviewTextarea.value.trim();
   if (!text) {
-    showError(interviewError, 'Введите ответ по текущему кейсу.');
+    showError(interviewError, 'Введите ответ по текущей ситуации.');
     return;
   }
   if (!state.assessmentSessionCode && !state.productCycleId) {
-    showError(interviewError, 'Сессия кейсового интервью не инициализирована.');
+    showError(interviewError, 'Сессия оценки не инициализирована.');
     return;
   }
 
@@ -2386,7 +2387,7 @@ const submitCurrentInterviewAnswer = async () => {
     const sent = await sendInterviewAnswer(text, reusableFailedRow);
     setInterviewSubmitLabel(sent ? 'Ответ сохранён' : 'Повторить отправку');
     if (sent) {
-      window.setTimeout(() => setInterviewSubmitLabel('Отправить ответ'), 1200);
+      window.setTimeout(() => setInterviewSubmitLabel('Отправить'), 1200);
     }
   } catch (error) {
     showError(interviewError, error?.message || 'Не удалось подготовить отправку ответа. Повторите попытку.');
@@ -2410,7 +2411,7 @@ if (!ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED) {
   interviewPanel.classList.add('external-transfer-disabled');
   interviewMessages.classList.add('external-transfer-disabled');
 
-  const blockExternalTransfer = (event) => {
+  const blockProtectedCopy = (event) => {
     event.preventDefault();
     event.stopImmediatePropagation();
     if (event.clipboardData) {
@@ -2419,7 +2420,7 @@ if (!ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED) {
     }
     showError(
       interviewError,
-      'Копирование вопросов и вставка готовых ответов отключены для этого тестирования.',
+      'Копирование условия, материалов и реплик собеседника ограничено для этой оценки.',
     );
   };
 
@@ -2427,14 +2428,22 @@ if (!ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED) {
     return state.currentScreen === 'interview' && !interviewPanel.classList.contains('hidden');
   };
 
+  const protectedSelection = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) return false;
+    return [...interviewPanel.querySelectorAll(
+      '.interview-message:not(.own), .interview-summary, .interview-case-guide, .interview-case-header, .case-sidebar',
+    )].some((node) => selection.containsNode(node, true));
+  };
+
   document.addEventListener('copy', (event) => {
-    if (isInterviewScreenActive()) {
-      blockExternalTransfer(event);
+    if (isInterviewScreenActive() && protectedSelection()) {
+      blockProtectedCopy(event);
     }
   }, true);
   document.addEventListener('cut', (event) => {
-    if (isInterviewScreenActive()) {
-      blockExternalTransfer(event);
+    if (isInterviewScreenActive() && protectedSelection()) {
+      blockProtectedCopy(event);
     }
   }, true);
   document.addEventListener('keydown', (event) => {
@@ -2443,16 +2452,17 @@ if (!ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED) {
       (event.ctrlKey || event.metaKey) &&
       ['c', 'x'].includes(String(event.key || '').toLowerCase())
     ) {
-      blockExternalTransfer(event);
+      if (protectedSelection()) blockProtectedCopy(event);
     }
   }, true);
-  interviewMessages.addEventListener('contextmenu', blockExternalTransfer);
-  interviewMessages.addEventListener('dragstart', blockExternalTransfer);
-  interviewTextarea.addEventListener('paste', blockExternalTransfer);
-  interviewTextarea.addEventListener('drop', blockExternalTransfer);
-  interviewTextarea.addEventListener('beforeinput', (event) => {
-    if (event.inputType === 'insertFromPaste' || event.inputType === 'insertFromDrop') {
-      blockExternalTransfer(event);
+  interviewPanel.addEventListener('contextmenu', (event) => {
+    if (event.target.closest('.interview-message:not(.own), .interview-summary, .interview-case-guide, .interview-case-header, .case-sidebar')) {
+      blockProtectedCopy(event);
+    }
+  });
+  interviewPanel.addEventListener('dragstart', (event) => {
+    if (event.target.closest('.interview-message:not(.own), .interview-summary, .interview-case-guide, .interview-case-header, .case-sidebar')) {
+      blockProtectedCopy(event);
     }
   });
 }
@@ -2466,13 +2476,13 @@ interviewFinishButton.addEventListener('click', async () => {
   showError(interviewError, '');
 
   if (interviewTextarea.value.trim()) {
-    showError(interviewError, 'В поле есть неотправленный ответ. Сначала нажмите «Отправить ответ».');
+    showError(interviewError, 'В поле есть неотправленный ответ. Сначала нажмите «Отправить».');
     interviewTextarea.focus();
     return;
   }
 
   if (!state.assessmentSessionCode && !state.productCycleId) {
-    showError(interviewError, 'Сессия кейсового интервью не инициализирована.');
+    showError(interviewError, 'Сессия оценки не инициализирована.');
     return;
   }
 
