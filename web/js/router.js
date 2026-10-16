@@ -2,6 +2,9 @@ import { state, persistAssessmentContext, clearAssessmentContext } from './state
 import {
   authPanel,
   authCompletePanel,
+  authCompleteTitle,
+  authCompleteDescription,
+  authCompleteContinueButton,
   authEmailForm,
   emailInput,
   authTokenForm,
@@ -61,6 +64,23 @@ export const openAuthComplete = () => {
   hideAllPanels();
   state.currentScreen = 'auth-complete';
   persistAssessmentContext();
+  authCompletePanel?.classList.remove('hidden');
+  window.history.replaceState({ screen: 'auth-complete' }, '', '/?screen=auth-complete');
+};
+
+export const openAcquaintanceWaiting = (readiness = {}) => {
+  hideAllPanels();
+  state.currentScreen = 'auth-complete';
+  persistAssessmentContext();
+  if (authCompleteTitle) authCompleteTitle.textContent = 'Данные для оценки готовятся';
+  if (authCompleteDescription) {
+    authCompleteDescription.textContent = readiness.message
+      || 'Организация ещё готовит данные для вашей оценки. Когда подготовка будет завершена, здесь можно будет начать знакомство';
+  }
+  if (authCompleteContinueButton) {
+    authCompleteContinueButton.textContent = 'Проверить готовность';
+    authCompleteContinueButton.dataset.action = 'check-acquaintance-readiness';
+  }
   authCompletePanel?.classList.remove('hidden');
   window.history.replaceState({ screen: 'auth-complete' }, '', '/?screen=auth-complete');
 };

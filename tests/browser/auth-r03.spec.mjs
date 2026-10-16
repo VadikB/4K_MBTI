@@ -483,6 +483,38 @@ test('R03 null journey removes stale legacy and Cycle identifiers', async ({ pag
     .toEqual([null, null, null, null, null]);
 });
 
+test('W02 blocks direct entry on missing participant briefing and supports readiness retry on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 720 });
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  let checks = 0;
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, {
+      authenticated: true, user, is_admin: false, dashboard: {},
+    });
+    if (pathname === '/users/8/journey-state') {
+      checks += 1;
+      return fulfillJson(route, {
+        next_action: 'wait_for_acquaintance_data', profile: { status: 'incomplete' },
+        onboarding: { status: 'not_started' }, assessment: { status: 'not_started' },
+        acquaintance: { readiness: {
+          status: 'waiting_for_organization',
+          message: 'Организация ещё готовит данные для вашей оценки. Когда подготовка будет завершена, здесь можно будет начать знакомство',
+        } },
+      });
+    }
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'w02-test' });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(`${base}/?screen=onboarding`);
+  await expect(page.getByRole('heading', { name: 'Данные для оценки готовятся' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Проверить готовность' })).toBeVisible();
+  await expect(page.locator('#onboarding-panel')).toBeHidden();
+  await page.getByRole('button', { name: 'Проверить готовность' }).click();
+  await expect.poll(() => checks).toBeGreaterThan(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+});
+
 test('R03 reset request locks every visible credential action', async ({ page }) => {
   await baseRoutes(page);
   await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, { email: 'person@example.test', auth_mode: 'password' }));

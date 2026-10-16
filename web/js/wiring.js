@@ -787,16 +787,15 @@ const applyAuthResponse = async (data) => {
   }
 
   hideLoader();
-  if (!data.exists) {
-    setCurrentScreen('onboarding');
-    persistAssessmentContext();
-    await openOnboardingScreen({ currentStep: 0 });
-    return;
-  }
   try {
     const { loadUserJourneyState } = await import('./session.js');
     const journey = await loadUserJourneyState();
     applyJourneyAssessmentContext(journey);
+    if (journey?.next_action === 'wait_for_acquaintance_data') {
+      const { openAcquaintanceWaiting } = await import('./router.js');
+      openAcquaintanceWaiting(journey.acquaintance?.readiness);
+      return;
+    }
     if (journey?.next_action === 'show_onboarding') {
       await openOnboardingScreen({ currentStep: Number(journey.onboarding?.current_step || 0) });
       return;
@@ -1269,7 +1268,23 @@ if (authCompleteLogoutButton) {
 }
 
 if (authCompleteContinueButton) {
-  authCompleteContinueButton.addEventListener('click', () => {
+  authCompleteContinueButton.addEventListener('click', async () => {
+    if (authCompleteContinueButton.dataset.action === 'check-acquaintance-readiness') {
+      authCompleteContinueButton.disabled = true;
+      try {
+        const { loadUserJourneyState } = await import('./session.js');
+        const journey = await loadUserJourneyState();
+        if (journey?.next_action === 'wait_for_acquaintance_data') {
+          const { openAcquaintanceWaiting } = await import('./router.js');
+          openAcquaintanceWaiting(journey.acquaintance?.readiness);
+          return;
+        }
+        window.location.reload();
+      } finally {
+        authCompleteContinueButton.disabled = false;
+      }
+      return;
+    }
     withScreen(loadChat, (module) => module.openChat());
   });
 }

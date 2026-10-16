@@ -43,6 +43,7 @@ from Api import m6_cycle_aggregation_repository
 from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest, CreateSubstantiveAggregationRequest
 from Api.profile_access import require_unchanged_email
 from Api import participant_profile
+from Api import acquaintance
 from Api import m8_results
 from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest, RegenerateReportRequest
 from Api import m10_product_flow, m10_orchestration
@@ -219,6 +220,9 @@ from Api.schemas import (
     JourneyAssessmentState,
     OnboardingStateResponse,
     OnboardingStateUpdateRequest,
+    AcquaintanceAnswersRequest,
+    AcquaintanceConsentRequest,
+    AcquaintanceIssueRequest,
     ProfileStateResponse,
     UserJourneyStateResponse,
     UserResponse,
@@ -3371,6 +3375,7 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
     with get_connection() as connection:
         profile = participant_profile.readiness(connection, user_id=user.id, profile_id=personalized_profile_id)
         onboarding = get_or_create_onboarding_state(connection, user_id)
+        acquaintance_state = acquaintance.read_state(connection, user_id=user.id)
         cycle = connection.execute("""SELECT c.status,c.cycle_id,
             latest_as.assessment_situation_id,latest_as.as_status,latest_as.session_id
             FROM m5_cycles c
@@ -3390,12 +3395,18 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
     assessment_status = ({'prepared':'preparing','active':'in_progress','paused':'in_progress',
         'interrupted':'in_progress','collection_closed':'analyzing','calculation_pending':'analyzing',
         'calculated':'report_ready','failed':'failed'}.get(cycle['status'], 'not_started') if cycle else 'not_started')
-    next_action = determine_cycle_next_action(
-        profile_status='complete' if ready else 'incomplete',
-        onboarding_status=str(onboarding['status']),
-        cycle_status=str(cycle['status']) if cycle else None,
-        assessment_situation_status=str(cycle['as_status']) if cycle and cycle['as_status'] else None,
-    )
+    if acquaintance_state["readiness"]["status"] != "ready":
+        next_action = "wait_for_acquaintance_data"
+    elif str(onboarding["status"]) in {"not_started", "in_progress"}:
+        next_action = "show_onboarding"
+    elif cycle:
+        next_action = determine_cycle_next_action(
+            profile_status='complete', onboarding_status=str(onboarding['status']),
+            cycle_status=str(cycle['status']),
+            assessment_situation_status=str(cycle['as_status']) if cycle['as_status'] else None,
+        )
+    else:
+        next_action = "show_dashboard"
     # A stored Cycle owns the confirmed M4 snapshot. Reading this projection must
     # not reopen M4 or mutate Cycle intervals/time budgets.
     return UserJourneyStateResponse(
@@ -3414,6 +3425,7 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
         ),
         report_status='ready' if assessment_status == 'report_ready' else 'not_ready',
         next_action=next_action,
+        acquaintance=acquaintance_state,
     )
 
 
@@ -3436,6 +3448,57 @@ def set_user_onboarding_state(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         connection.commit()
     return _onboarding_response(onboarding)
+
+
+@router.get("/{user_id}/acquaintance")
+def get_participant_acquaintance(user_id: int, request: Request) -> dict:
+    _require_matching_session_user(request, user_id)
+    with get_connection() as connection:
+        return acquaintance.read_state(connection, user_id=user_id)
+
+
+@router.put("/{user_id}/acquaintance/answers")
+def save_participant_acquaintance_answers(
+    user_id: int, payload: AcquaintanceAnswersRequest, request: Request,
+) -> dict:
+    _require_matching_session_user(request, user_id)
+    try:
+        with get_connection() as connection:
+            result = acquaintance.save_answers(
+                connection, user_id=user_id, answers=payload.answers, confirm=payload.confirm,
+            )
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/{user_id}/acquaintance/consent")
+def accept_participant_acquaintance_consent(
+    user_id: int, payload: AcquaintanceConsentRequest, request: Request,
+) -> dict:
+    _require_matching_session_user(request, user_id)
+    try:
+        with get_connection() as connection:
+            result = acquaintance.accept_consent(connection, user_id=user_id, version=payload.version)
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/{user_id}/acquaintance/issues", status_code=201)
+def report_participant_data_issue(
+    user_id: int, payload: AcquaintanceIssueRequest, request: Request,
+) -> dict:
+    _require_matching_session_user(request, user_id)
+    try:
+        with get_connection() as connection:
+            result = acquaintance.report_issue(connection, user_id=user_id, message=payload.message)
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.get("/admin/dashboard", response_model=AdminDashboard)

@@ -21,7 +21,7 @@ import {
   installSessionRequestTracking,
   registerUnauthorizedResponseHandler,
 } from './api.js';
-import { hideAllPanels, returnToStart } from './router.js';
+import { hideAllPanels, returnToStart, openAcquaintanceWaiting } from './router.js';
 import { activateOrganizationInvitation, handleAuthActionToken, initWiring, verifyEmailMagicLinkToken } from './wiring.js';
 import {
   openProcessingScreen,
@@ -256,6 +256,10 @@ const bootApp = async () => {
           ? state.assessmentSessionId : null;
         const journey = await loadUserJourneyState();
         applyJourneyAssessmentContext(journey);
+        if (journey?.next_action === 'wait_for_acquaintance_data') {
+          openAcquaintanceWaiting(journey.acquaintance?.readiness);
+          return;
+        }
         const serverAllowsLegacyReport = Boolean(
           requestedLegacyReportSessionId
           && journey?.next_action === 'show_dashboard'

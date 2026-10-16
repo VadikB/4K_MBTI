@@ -1431,6 +1431,19 @@ class OnboardingStateResponse(BaseModel):
     updated_at: datetime | None = None
 
 
+class AcquaintanceAnswersRequest(BaseModel):
+    answers: dict[str, str]
+    confirm: bool = False
+
+
+class AcquaintanceConsentRequest(BaseModel):
+    version: int = Field(gt=0)
+
+
+class AcquaintanceIssueRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2000)
+
+
 class JourneyAssessmentState(BaseModel):
     status: str
     session_id: int | None = None
@@ -1447,6 +1460,7 @@ class UserJourneyStateResponse(BaseModel):
     assessment: JourneyAssessmentState
     report_status: str
     next_action: str
+    acquaintance: dict = Field(default_factory=dict)
 
 
 class AppVersionResponse(BaseModel):

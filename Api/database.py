@@ -4342,6 +4342,41 @@ def ensure_core_schema() -> None:
             """
         )
         connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS participant_acquaintance_states (
+                user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+                organization_context_version_id BIGINT,
+                status TEXT NOT NULL DEFAULT 'not_started',
+                current_step INTEGER NOT NULL DEFAULT 0,
+                answers_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+                answers_confirmed_at TIMESTAMP,
+                briefing_checksum TEXT,
+                consent_version INTEGER,
+                consent_accepted_at TIMESTAMP,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                CONSTRAINT participant_acquaintance_status_check
+                    CHECK (status IN ('not_started', 'in_progress', 'answers_confirmed', 'completed')),
+                CONSTRAINT participant_acquaintance_step_check CHECK (current_step >= 0)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS participant_data_issue_reports (
+                id BIGSERIAL PRIMARY KEY,
+                user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+                message TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved')),
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                resolved_at TIMESTAMP,
+                UNIQUE (user_id, organization_id, message)
+            )
+            """
+        )
+        connection.execute(
             "ALTER TABLE organization_memberships ADD COLUMN IF NOT EXISTS admission_source "
             "TEXT NOT NULL DEFAULT 'legacy_unclassified'"
         )
