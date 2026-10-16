@@ -122,7 +122,7 @@ async function start(page,expected='готовности'){
 }
 async function answer(page,text=fixture.answer){await page.locator('#interview-textarea').fill(text);await page.locator('#interview-submit-button').click();await expect(page.locator('#interview-submit-button')).toBeEnabled({timeout:30000});await expect(page.locator('#interview-error')).toBeHidden();await expect(page.locator('#interview-messages .own')).toContainText([text]);}
 async function report(page,stand,info){
- const nextCase=page.getByRole('button',{name:'Приступить к следующему кейсу'});
+ const nextCase=page.getByRole('button',{name:'Приступить к следующей ситуации'});
  try{
   await nextCase.waitFor({state:'visible',timeout:3000});
   const cycle=new URL(page.url()).searchParams.get('cycle_id');
