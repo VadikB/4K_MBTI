@@ -97,3 +97,42 @@ provider configuration. Реальный путь замены не получа
 После допуска methodology/Cases и provider configuration подключить реальный
 provider reference, источник подтверждённых infrastructure incidents и провести
 device matrix. Вопрос `scenario_ended` вынести в отдельное решение владельца.
+
+## ADD01 — исполнение сохранённой политики возврата
+
+Источник: `UX-P03-ADD01_Saved_Return_Policy_2026-10-16.txt`, rev 1.0,
+SHA-256 `b185da2691b8fee838673f58725d70e7c8bba8506abfb9c105ea340373d65bfb`.
+Ветка `codex/ux-p03-add01-saved-return-policy`, база `c88564d`. Существующий
+P03 return flow и versioned M7 plan сохранены; универсальный settings service и
+новый счётчик времени не создавались.
+
+Политика `ux-p03-controlled-return@1.2` остаётся `draft`/`qa`: product activation
+не расширена. В draft добавлены явные `schema_version`, `algorithm` и допустимые
+terminal branches; manifest checksum обновлён. При создании QA plan полный content
+и checksum сохраняются в `return_policy_snapshot` ревизии плана. Assessment plan
+не получает QA policy. Старый Cycle без snapshot не подключается автоматически.
+
+Read, heartbeat, Continue, replay/retry и новая Session разрешают policy только из
+последней сохранённой plan revision. Проверяются checksum, schema/algorithm, scope,
+status и terminal branches; отсутствие или несовместимость дают явную ошибку без
+fallback на latest-файл. События и клиентский контракт возвращают один `policy_ref`.
+Heartbeat interval и lease сервер сообщает клиенту; UI больше не содержит локальную
+продуктовую константу 10 секунд. Факты absence, интервалы бюджета и число успешных
+замен по-прежнему читаются из БД/route history. Значения 120/180/3 в UI отсутствуют.
+
+Проверки ADD01:
+
+- Python/JS syntax, `git diff --check`, `npm run lint:js`, `npm run build:web` — PASS;
+- policy/unit — 2 PASS; frontend — 21 PASS;
+- M7/P03 PostgreSQL integration на disposable `agent4k_pytest` — 30 PASS, включая
+  неизменность started Cycle при недоступном latest-loader, missing/checksum/schema/
+  scope fail-closed, 119/120, 179/180, multi-client, replay и replacement limit;
+- адресный Chromium P03 same-chat return — 1 PASS;
+- `npm run test:backend:http` — 56 PASS, 10 deselected;
+- `npm run test:backend` — 415 PASS / 13 FAIL: прежние несвязанные M6 ошибки
+  `INPUT_NOT_READY` и `DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED`; P03/M7 tests PASS;
+- PR/GitHub CI/test deploy, внешние устройства, production policy/provider и
+  `scenario_ended` с незакрытым уточнением — NOT_RUN/вне границ.
+
+Схема БД не меняется: snapshot хранится в существующей immutable plan revision.
+Откат — revert ADD01-коммита; сохранённые события и route history не удаляются.

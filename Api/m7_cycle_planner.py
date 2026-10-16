@@ -10,6 +10,7 @@ from Api.m5_scenario_runtime import start as start_situation
 from Api.m5_storage import prepare_assessment_situation
 from Api.m7_planning_package import load_rules, methodology_targets
 from Api.m7_parameter_resolution import resolve as resolve_parameters
+from Api.m7_return_integration import policy_snapshot_for_plan
 from Api import m7_planning_repository as repo
 from Api.m5_catalog_integrity import (
     case_admission,
@@ -137,6 +138,7 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
         "uncovered_target_ids":sorted(uncovered),"planned_max_seconds":total,"time_budget_seconds":budget,
         "calendar_window_seconds":calendar,"parameter_sources":resolved["sources"],
         "parameter_resolution_checksum":resolved["resolved_checksum"],
+        "return_policy_snapshot": policy_snapshot_for_plan(usage_scope=usage_scope),
         "catalog_ref":{key:catalog_ref[key] for key in ("id","version","checksum","package_checksum","m2_checksum")},
         "known_limitations":["Cases are conditional opportunities; not guaranteed Evidence"]+
             (["Route exceeds time budget"] if total>budget else []),"catalog":catalog,"algorithm_version":rules["algorithm_version"]}

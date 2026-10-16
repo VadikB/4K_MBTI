@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "algorithm": "m7-return-v1",
   "id": "ux-p03-controlled-return",
   "version": "1.2",
   "status": "draft",
@@ -9,5 +10,9 @@
   "heartbeat_interval_seconds": 10,
   "presence_lease_seconds": 120,
   "max_successful_replacements_per_position": 3,
+  "terminal_branches": [
+    "time_limit_reached",
+    "replacement_limit_closed"
+  ],
   "production_activation": "blocked_by_methodology_and_provider_admission"
 }

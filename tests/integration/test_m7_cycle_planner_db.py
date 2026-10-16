@@ -23,6 +23,7 @@ from Api.m7_route_replacement import (FixedCaseReplacementProvider,GeneratedCand
     mark_presented,replace_current,replacement_metadata)
 from Api.m7_return_integration import (continue_return,heartbeat,read_return_state,
     record_controlled_absence)
+from Api import m7_return_integration as return_integration
 from Api.m5_cycle_runtime import begin_blocking_wait,end_blocking_wait,read_cycle
 from scripts.build_m5_case_package import OUTPUT
 
@@ -508,6 +509,55 @@ def active_cycle(connection):
     decision=choose_next(connection,cycle_id=str(plan['cycle_id']),expected_plan_revision_id=str(plan['revision_id']),key='next',created_by=99,policy=policy)
     shown=present(connection,decision_id=str(decision['id']),expected_revision=1)
     return plan,shown
+
+
+def test_started_cycle_uses_saved_return_policy_when_current_loader_changes(db, monkeypatch):
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);as_id=str(shown['decision']['assessment_situation_id'])
+        monkeypatch.setattr(return_integration, 'load_policy', lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError('latest policy read')))
+        result=heartbeat(c,cycle_id=cycle_id,owner_user_id=99,client_id=str(uuid4()),expected_as_id=as_id)
+        state=read_return_state(c,cycle_id=cycle_id,owner_user_id=99)
+        assert result['heartbeat_interval_seconds']==10
+        assert result['policy_ref']==state['policy_ref']
+        assert state['presence_lease_seconds']==120 and state['replacement_threshold_seconds']==180
+
+
+def test_new_qa_plan_receives_new_admitted_return_policy_snapshot(db, monkeypatch):
+    with db() as c:
+        case=setup(c,admitted=True);admit_case(c,case)
+        first=create_plan(c,personalized_profile_id=7,selected_skills=['K1','K2','K3','K4'],created_by=99,key='policy-v1')
+        changed=deepcopy(return_integration.load_policy())
+        changed.update(replacement_threshold_seconds=7,presence_lease_seconds=12,heartbeat_interval_seconds=2)
+        monkeypatch.setattr(return_integration,'load_policy',lambda *_args,**_kwargs:changed)
+        second=create_plan(c,personalized_profile_id=7,selected_skills=['K1','K2','K3','K4'],created_by=99,key='policy-v2')
+        assert first['plan']['return_policy_snapshot']['content']['replacement_threshold_seconds']==180
+        assert second['plan']['return_policy_snapshot']['content']['replacement_threshold_seconds']==7
+        assert first['plan']['return_policy_snapshot']['checksum']!=second['plan']['return_policy_snapshot']['checksum']
+
+
+@pytest.mark.parametrize(('mutation','error'), [
+    ('missing','M7_RETURN_POLICY_NOT_SNAPSHOTTED'),
+    ('checksum','M7_RETURN_POLICY_SNAPSHOT_CHECKSUM_MISMATCH'),
+    ('schema','M7_RETURN_POLICY_SCHEMA_UNSUPPORTED'),
+    ('scope','M7_RETURN_POLICY_SCOPE_MISMATCH'),
+])
+def test_return_policy_snapshot_fails_closed_without_latest_fallback(db, mutation, error):
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id'])
+        revision=c.execute("SELECT * FROM m7_plan_revisions ORDER BY revision_no DESC LIMIT 1").fetchone()
+        content=deepcopy(revision['content_json']);snapshot=content.get('return_policy_snapshot')
+        if mutation=='missing': content.pop('return_policy_snapshot',None)
+        elif mutation=='checksum': snapshot['checksum']='0'*64
+        elif mutation=='schema':
+            snapshot['content']['schema_version']=999;snapshot['checksum']=checksum(snapshot['content'])
+        else:
+            snapshot['content']['usage_scope']='assessment';snapshot['checksum']=checksum(snapshot['content'])
+        c.execute("""INSERT INTO m7_plan_revisions(id,plan_id,cycle_db_id,revision_no,content_json,content_checksum,reason)
+            VALUES(%s,%s,%s,%s,%s::jsonb,%s,'synthetic_invalid_return_policy')""",
+            (uuid4(),revision['plan_id'],revision['cycle_db_id'],revision['revision_no']+1,
+             json.dumps(content),checksum(content)))
+        with pytest.raises(ValueError,match=error):
+            read_return_state(c,cycle_id=cycle_id,owner_user_id=99)
 
 
 def test_completion_closes_open_as_persists_final_c45_and_c46(db):

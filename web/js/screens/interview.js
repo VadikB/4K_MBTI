@@ -160,13 +160,26 @@ const heartbeatProductPresence = async () => {
     method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ client_id: returnClientId, expected_assessment_situation_id: state.productAssessmentSituationId }),
   });
-  if (!response.ok && response.status !== 409) await readApiResponse(response, 'Не удалось подтвердить связь с оценкой.');
+  if (response.status === 409) return null;
+  return readApiResponse(response, 'Не удалось подтвердить связь с оценкой.');
 };
 
 const startProductPresence = () => {
-  if (returnHeartbeatTimer) window.clearInterval(returnHeartbeatTimer);
-  void heartbeatProductPresence();
-  returnHeartbeatTimer = window.setInterval(() => { void heartbeatProductPresence(); }, 10000);
+  if (returnHeartbeatTimer) window.clearTimeout(returnHeartbeatTimer);
+  const tick = async () => {
+    try {
+      const contract = await heartbeatProductPresence();
+      if (!contract) return;
+      const intervalSeconds = Number(contract.heartbeat_interval_seconds);
+      if (!Number.isFinite(intervalSeconds) || intervalSeconds <= 0) {
+        throw new Error('Сервер не вернул допустимый интервал подтверждения связи.');
+      }
+      returnHeartbeatTimer = window.setTimeout(tick, intervalSeconds * 1000);
+    } catch (error) {
+      showError(interviewError, error.message);
+    }
+  };
+  void tick();
 };
 
 const renderReturnCard = (value) => {
