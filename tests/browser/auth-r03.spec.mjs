@@ -430,10 +430,39 @@ test('R03 direct interview URL uses journey and keeps Cycle failure visible', as
 
   await page.goto(`${base}/?screen=interview&cycle_id=stale-cycle`);
   await expect(page.locator('#processing-panel')).toBeVisible();
-  await expect(page.locator('#processing-status-text')).toContainText('Не удалось завершить обработку');
-  await expect(page.getByRole('button', { name: 'Обновить состояние' })).toBeVisible();
+  await expect(page.locator('#processing-outcome-title')).toContainText('Не удалось подготовить результат');
+  await expect(page.getByRole('button', { name: 'Проверить готовность' })).toBeVisible();
   expect(journeyRead).toBe(true);
   expect(await page.evaluate(() => localStorage.getItem('agent4k.productCycleId'))).toBe('current-cycle');
+});
+
+test('E02 shows ready Cycle without automatic navigation and keeps mobile actions usable', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.addInitScript(({ user }) => localStorage.setItem('agent4k.pendingUser', JSON.stringify(user)), { user });
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'e02-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: false });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'show_processing', report_status: 'ready', profile: { status: 'complete' }, onboarding: { status: 'completed' },
+      assessment: { status: 'report_ready', runtime_kind: 'cycle', cycle_id: 'ready-cycle' },
+    });
+    if (pathname === '/users/assessment/m8/cycles/ready-cycle/status') return fulfillJson(route, {
+      results_status: 'ready', report_status: 'ready', report_id: 'report-1', close_reason: 'complete',
+      route_progress: { completed: 3, total: 3 }, partial_result: null,
+    });
+    return fulfillJson(route, {}, 404);
+  });
+
+  await page.goto(`${base}/?screen=processing`);
+  await expect(page.locator('#processing-outcome-title')).toHaveText('Ваш результат готов');
+  await expect(page.locator('#report-panel')).toBeHidden();
+  const action = page.getByRole('button', { name: 'Посмотреть результат' });
+  await expect(action).toBeVisible();
+  expect(await action.evaluate((node) => Math.round(node.getBoundingClientRect().height))).toBeGreaterThanOrEqual(48);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 
 test('R03 fresh login persists journey assessment identifiers', async ({ page }) => {

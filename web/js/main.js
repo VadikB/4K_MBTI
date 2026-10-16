@@ -268,6 +268,14 @@ const bootApp = async () => {
         if (serverAllowsLegacyReport) {
           state.assessmentSessionId = requestedLegacyReportSessionId;
         }
+        if (screen === 'report' && journey?.report_status === 'ready' && state.productCycleId) {
+          await openReportScreen({
+            m8CycleId: state.productCycleId,
+            m8ReportId: params.get('report_id'),
+            returnTarget: params.get('report_id') ? 'reports' : 'home',
+          });
+          return;
+        }
         if (journey?.next_action === 'complete_profile') {
           const profileRecovery = await import('./screens/profile-recovery.js');
           await profileRecovery.recoverProfileCompletionForAssessment({ resumeAssessment: false });

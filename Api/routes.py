@@ -3414,7 +3414,24 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
     ready = profile['status'] == 'ready'
     assessment_status = ({'prepared':'preparing','active':'in_progress','paused':'in_progress',
         'interrupted':'in_progress','collection_closed':'analyzing','calculation_pending':'analyzing',
-        'calculated':'report_ready','failed':'failed'}.get(cycle['status'], 'not_started') if cycle else 'not_started')
+        'calculated':'results_ready','failed':'failed'}.get(cycle['status'], 'not_started') if cycle else 'not_started')
+    report_status = 'not_ready'
+    if cycle:
+        with get_connection() as connection:
+            pipeline = connection.execute("""SELECT p.status FROM m10_pipeline_runs p
+                JOIN m5_cycles c ON c.id=p.cycle_db_id WHERE c.cycle_id=%s""", (cycle['cycle_id'],)).fetchone()
+            report = connection.execute("""SELECT r.status FROM m8_reports r
+                JOIN m8_result_revisions rr ON rr.id=r.result_revision_id
+                JOIN m8_results mr ON mr.id=rr.results_id
+                JOIN m5_cycles c ON c.id=mr.cycle_db_id
+                WHERE c.cycle_id=%s AND r.audience='assessee'
+                ORDER BY r.revision_no DESC LIMIT 1""", (cycle['cycle_id'],)).fetchone()
+        if pipeline and pipeline['status'] == 'failed':
+            assessment_status = 'failed'
+            report_status = 'limited' if report else 'not_ready'
+        elif report and report['status'] == 'ready':
+            assessment_status = 'report_ready'
+            report_status = 'ready'
     if cycle:
         next_action = determine_cycle_next_action(
             profile_status='complete', onboarding_status=str(onboarding['status']),
@@ -3445,7 +3462,7 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
                 if cycle and cycle['assessment_situation_id'] else None
             ),
         ),
-        report_status='ready' if assessment_status == 'report_ready' else 'not_ready',
+        report_status=report_status,
         next_action=next_action,
         acquaintance=acquaintance_state,
     )

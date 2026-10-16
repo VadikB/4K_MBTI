@@ -2564,10 +2564,12 @@ if (interviewExitButton) {
   });
 }
 
-processingBackButton.addEventListener('click', () => {
-  withScreen(loadChat, (module) => module.clearProcessingTimer());
-  withScreen(loadAiWelcome, (module) => module.openWelcomeScreen());
-});
+if (processingBackButton) {
+  processingBackButton.addEventListener('click', () => {
+    withScreen(loadChat, (module) => module.clearProcessingTimer());
+    withScreen(loadAiWelcome, (module) => module.openWelcomeScreen());
+  });
+}
 
 reportHomeButton.addEventListener('click', () => {
   withScreen(loadAiWelcome, (module) => module.openHomePage());
