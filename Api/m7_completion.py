@@ -59,8 +59,12 @@ def _composition(connection,cycle):
     replacement = replacement_metadata(connection, cycle['id'])
     dispositions = {item['assessment_situation_id']: item['disposition']
         for position in replacement['positions'] for item in position['history']}
+    has_route = bool(replacement['positions'])
     for situation in situations:
-        situation['route_disposition'] = dispositions.get(str(situation['assessment_situation_id']), 'legacy_current')
+        situation['route_disposition'] = dispositions.get(
+            str(situation['assessment_situation_id']),
+            'unattached_candidate' if has_route else 'legacy_current',
+        )
     identity={'cycle_id':str(cycle['cycle_id']),'target_set_checksum':cycle['target_set_checksum'],
         'sessions':[{'session_id':str(x['session_id']),'ordinal':x['ordinal']} for x in sessions],
         'situations':[{'assessment_situation_id':str(x['assessment_situation_id']),'session_db_id':x['session_db_id'],
@@ -117,7 +121,12 @@ def complete(connection,*,cycle_id,key,action,reason,initiated_by):
     sessions=connection.execute("SELECT * FROM m5_cycle_sessions WHERE cycle_db_id=%s AND status IN('prepared','active','paused','interrupted') ORDER BY ordinal FOR UPDATE",(cycle['id'],)).fetchall()
     current=dict(sessions[-1]) if sessions else None
     before={'cycle':cycle['status'],'session':current['status'] if current else None}
-    situations=connection.execute("SELECT * FROM m5_assessment_situations WHERE cycle_db_id=%s AND status NOT IN('closed','rejected') ORDER BY id FOR UPDATE",(cycle['id'],)).fetchall()
+    has_route=connection.execute("SELECT 1 FROM m7_route_positions WHERE cycle_db_id=%s",(cycle['id'],)).fetchone()
+    situations=connection.execute("""SELECT s.* FROM m5_assessment_situations s
+        WHERE s.cycle_db_id=%s AND s.status NOT IN('closed','rejected')
+          AND (%s=FALSE OR EXISTS(SELECT 1 FROM m7_route_position_as_history h
+              WHERE h.assessment_situation_db_id=s.id AND h.disposition='current'))
+        ORDER BY s.id FOR UPDATE""",(cycle['id'],bool(has_route))).fetchall()
     handoffs=[]
     for item in situations:
         from Api.m7_route_replacement import is_excluded

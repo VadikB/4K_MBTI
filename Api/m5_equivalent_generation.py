@@ -11,15 +11,50 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from Api.m5_case_runtime import checksum
+from Api.config import settings
 
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1] / "assessment_definitions/cases/competencies_4k/qa_equivalent_generation/v1"
+PROVIDER_MANIFEST = Path(__file__).resolve().parents[1] / "assessment_definitions/providers/deepseek/v1/manifest.json"
 TERMINAL_CYCLE = {"collection_closed", "calculation_pending", "calculated", "failed"}
 runtime_provider = None
 
 
+def controlled_provider_ref() -> dict:
+    identity = {"id":"controlled-equivalent-fixture","version":"1","scope":"qa"}
+    return {"id":identity["id"],"version":identity["version"],"checksum":checksum(identity)}
+
+
+def resolve_provider_config(requested: dict, *, usage_scope: str) -> dict:
+    if not isinstance(requested, dict) or set(requested) - {"id", "version", "checksum"}:
+        raise ValueError("M5_EQUIVALENT_PROVIDER_CONFIG_REF_INVALID")
+    if usage_scope == "qa":
+        expected = controlled_provider_ref()
+        if requested != expected:
+            raise ValueError("M5_EQUIVALENT_PROVIDER_CONFIG_REF_MISMATCH")
+        return {**expected,"scope":"qa","lease_seconds":max(1,settings.assessment_equivalent_generation_lease_seconds),
+                "max_attempts":max(1,settings.assessment_equivalent_generation_max_attempts)}
+    manifest = json.loads(PROVIDER_MANIFEST.read_bytes())
+    expected = {"id":manifest.get("id"),"version":manifest.get("version"),
+                "checksum":checksum(manifest)}
+    if manifest.get("status") != "published":
+        raise ValueError("M5_EQUIVALENT_PROVIDER_CONFIG_NOT_ADMITTED")
+    if requested != expected:
+        raise ValueError("M5_EQUIVALENT_PROVIDER_CONFIG_REF_MISMATCH")
+    return {**expected,"provider":manifest["provider"],"model":manifest["model"],
+            "defaults":manifest["defaults"],"retry_policy":manifest["retry_policy"]}
+
+
 class EquivalentGenerationProvider(Protocol):
     def generate(self, *, input_snapshot: dict) -> dict: ...
+
+
+class AdmissionEvidence(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    evidence_id: str = Field(min_length=1)
+    result: str
+    status: str = "active"
+    provenance: dict
 
 
 class VariabilityContract(BaseModel):
@@ -37,6 +72,7 @@ class VariabilityContract(BaseModel):
     substantive_paths: list[str]
     min_substantive_changes: int = Field(ge=1)
     content_admission: str
+    admission_evidence: list[AdmissionEvidence] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_scope(self):
@@ -87,6 +123,7 @@ def ensure_schema(connection) -> None:
         provider_config_json JSONB NOT NULL,
         status TEXT NOT NULL CHECK(status IN ('pending','leased','completed','failed','rejected_late')),
         lease_token UUID,
+        lease_expires_at TIMESTAMPTZ,
         attempt_no INTEGER NOT NULL DEFAULT 0,
         output_json JSONB,
         output_checksum TEXT,
@@ -96,6 +133,7 @@ def ensure_schema(connection) -> None:
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         completed_at TIMESTAMPTZ,
         UNIQUE(cycle_db_id,request_key))""")
+    connection.execute("ALTER TABLE m5_equivalent_generation_operations ADD COLUMN IF NOT EXISTS lease_expires_at TIMESTAMPTZ")
 
 
 def _pointer(value: dict, path: str):
@@ -164,15 +202,23 @@ def begin_generation(connection, *, cycle_id: str, position_no: int, expected_as
                      request_key: str, requested_by: int, package: dict,
                      provider_config: dict) -> dict:
     contract = VariabilityContract.model_validate(package["contract"]).model_dump()
-    if set(provider_config) - {"id", "version", "checksum", "prompt_ref"} or not all(
-        provider_config.get(key) for key in ("id", "version", "checksum")
-    ):
-        raise ValueError("M5_EQUIVALENT_PROVIDER_CONFIG_REF_INVALID")
     cycle = connection.execute("SELECT * FROM m5_cycles WHERE cycle_id=%s FOR UPDATE", (UUID(cycle_id),)).fetchone()
     if not cycle or int(cycle["owner_user_id"]) != int(requested_by):
         raise ValueError("M7_CYCLE_NOT_FOUND")
     if cycle["status"] in TERMINAL_CYCLE:
         raise ValueError("M5_EQUIVALENT_OPERATION_NOT_APPLICABLE")
+    resolved_provider_config = resolve_provider_config(provider_config, usage_scope=str(cycle["usage_scope"]))
+    variability_ref = {"id": contract["id"], "version": contract["version"],
+                       "checksum": package["contract_checksum"]}
+    request = {"position_no": position_no, "expected_as_id": expected_as_id,
+               "variability_ref": variability_ref, "provider_config": resolved_provider_config}
+    request_checksum = checksum(request)
+    prior = connection.execute("SELECT * FROM m5_equivalent_generation_operations WHERE cycle_db_id=%s AND request_key=%s",
+                               (cycle["id"], request_key)).fetchone()
+    if prior:
+        if prior["request_checksum"] != request_checksum:
+            raise ValueError("IDEMPOTENCY_CONFLICT")
+        return dict(prior)
     position = connection.execute("SELECT * FROM m7_route_positions WHERE cycle_db_id=%s AND position_no=%s FOR UPDATE",
                                   (cycle["id"], position_no)).fetchone()
     if not position:
@@ -185,27 +231,16 @@ def begin_generation(connection, *, cycle_id: str, position_no: int, expected_as
         position["case_id"], position["case_version"], cycle["usage_scope"]
     ):
         raise ValueError("M5_VARIABILITY_CONTRACT_NOT_APPLICABLE")
-    variability_ref = {"id": contract["id"], "version": contract["version"],
-                       "checksum": package["contract_checksum"]}
-    request = {"position_no": position_no, "expected_as_id": expected_as_id,
-               "variability_ref": variability_ref, "provider_config": provider_config}
-    request_checksum = checksum(request)
-    prior = connection.execute("SELECT * FROM m5_equivalent_generation_operations WHERE cycle_db_id=%s AND request_key=%s",
-                               (cycle["id"], request_key)).fetchone()
-    if prior:
-        if prior["request_checksum"] != request_checksum:
-            raise ValueError("IDEMPOTENCY_CONFLICT")
-        return dict(prior)
     operation_id = str(uuid4())
     input_snapshot = build_input_snapshot(connection, position=dict(position), old_as=dict(old), contract=contract,
-                                          operation_id=operation_id, provider_config=provider_config)
+                                          operation_id=operation_id, provider_config=resolved_provider_config)
     row = connection.execute("""INSERT INTO m5_equivalent_generation_operations
         (id,request_key,request_checksum,cycle_db_id,position_id,expected_as_db_id,requested_by,
          variability_ref_json,input_json,input_checksum,provider_config_json,status)
         VALUES(%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s,%s::jsonb,'pending') RETURNING *""",
         (UUID(operation_id), request_key, request_checksum, cycle["id"], position["id"], old["id"], requested_by,
          json.dumps(variability_ref), json.dumps(input_snapshot, ensure_ascii=False), checksum(input_snapshot),
-         json.dumps(provider_config))).fetchone()
+         json.dumps(resolved_provider_config))).fetchone()
     return dict(row)
 
 
@@ -216,20 +251,54 @@ def claim_generation(connection, operation_id: str) -> dict:
         raise ValueError("M5_EQUIVALENT_OPERATION_NOT_FOUND")
     if row["status"] == "completed":
         return dict(row)
-    if row["status"] != "pending":
+    expired = row["status"] == "leased" and row["lease_expires_at"] is not None and connection.execute(
+        "SELECT %s<=NOW() AS value", (row["lease_expires_at"],)
+    ).fetchone()["value"]
+    if row["status"] == "leased" and not expired:
         raise ValueError("M5_EQUIVALENT_OPERATION_ALREADY_CLAIMED")
+    if row["status"] not in {"pending", "leased"}:
+        raise ValueError("M5_EQUIVALENT_OPERATION_ALREADY_CLAIMED")
+    if int(row["attempt_no"]) >= max(1, settings.assessment_equivalent_generation_max_attempts):
+        connection.execute("""UPDATE m5_equivalent_generation_operations
+            SET status='failed',error_code='M5_EQUIVALENT_RETRY_LIMIT_REACHED',completed_at=NOW(),
+                lease_token=NULL,lease_expires_at=NULL WHERE id=%s""", (row["id"],))
+        raise ValueError("M5_EQUIVALENT_RETRY_LIMIT_REACHED")
     token = uuid4()
     return dict(connection.execute("""UPDATE m5_equivalent_generation_operations
-        SET status='leased',lease_token=%s,attempt_no=attempt_no+1 WHERE id=%s RETURNING *""",
-        (token, row["id"])).fetchone())
+        SET status='leased',lease_token=%s,lease_expires_at=NOW()+%s*INTERVAL '1 second',
+            attempt_no=attempt_no+1,error_code=NULL WHERE id=%s RETURNING *""",
+        (token, max(1, settings.assessment_equivalent_generation_lease_seconds), row["id"])).fetchone())
 
 
-def validate_candidate(input_snapshot: dict, candidate: dict) -> dict:
+def _meaningful(value) -> bool:
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, dict):
+        return bool(value) and all(_meaningful(item) for item in value.values())
+    if isinstance(value, list):
+        return bool(value) and all(_meaningful(item) for item in value)
+    return value is not None
+
+
+def _equivalent(left, right) -> bool:
+    if isinstance(left, str) and isinstance(right, str):
+        return " ".join(left.split()) == " ".join(right.split())
+    return left == right
+
+
+def validate_candidate(input_snapshot: dict, candidate: object) -> dict:
     contract = VariabilityContract.model_validate(input_snapshot["variability_contract"])
     old = input_snapshot["old_content"]
     checks = []
     def check(code: str, passed: bool):
         checks.append({"code": code, "result": "PASS" if passed else "FAIL"})
+    structurally_valid = (isinstance(candidate, dict) and
+                          isinstance(candidate.get("participant_payload"), dict) and
+                          isinstance(candidate.get("execution_payload"), dict))
+    check("candidate_structure", structurally_valid)
+    if not structurally_valid:
+        return {"checks": checks, "changed_paths": [], "admitted": False,
+                "code": "M5_EQUIVALENT_CANDIDATE_NOT_ADMITTED"}
     check("case_identity", candidate.get("case_id") == contract.case_id and candidate.get("case_version") == contract.case_version)
     check("role_and_targets", candidate.get("base_role") == input_snapshot["base_role"] and
           candidate.get("indicator_targets") == input_snapshot["indicator_targets"])
@@ -242,7 +311,11 @@ def validate_candidate(input_snapshot: dict, candidate: dict) -> dict:
     changed = []
     for path in contract.allowed_paths:
         try:
-            if _pointer(old, path) != _pointer(new_content, path):
+            old_value, new_value = _pointer(old, path), _pointer(new_content, path)
+            if type(old_value) is not type(new_value) or not _meaningful(new_value):
+                check("allowed_value_structure", False)
+                continue
+            if not _equivalent(old_value, new_value):
                 changed.append(path)
         except (KeyError, IndexError, TypeError, ValueError):
             check("allowed_path_integrity", False)
@@ -264,22 +337,43 @@ def validate_candidate(input_snapshot: dict, candidate: dict) -> dict:
         except (KeyError, IndexError, TypeError, ValueError):
             links_ok = False
     check("participant_execution_consistency", links_ok)
-    substantive = sum(path in changed for path in contract.substantive_paths)
+    substantive_groups = []
+    for path in contract.substantive_paths:
+        if path not in changed:
+            continue
+        group = next((tuple(paths) for paths in contract.linked_equal_paths if path in paths), (path,))
+        if group not in substantive_groups:
+            substantive_groups.append(group)
+    substantive = len(substantive_groups)
     check("substantive_difference", substantive >= contract.min_substantive_changes)
-    admitted = all(item["result"] == "PASS" for item in checks) and contract.content_admission == "approved_for_qa"
+    evidence_ok = bool(contract.admission_evidence) and all(
+        item.result == "PASS" and item.status == "active" and bool(item.provenance)
+        for item in contract.admission_evidence
+    )
     if contract.usage_scope == "assessment":
-        admitted = admitted and contract.status == "published" and contract.content_admission == "approved"
+        check("independent_content_admission_evidence", evidence_ok)
+        scope_admitted = contract.status == "published" and contract.content_admission == "approved"
+    else:
+        scope_admitted = contract.content_admission == "approved_for_qa"
+    admitted = all(item["result"] == "PASS" for item in checks) and scope_admitted
     return {"checks": checks, "changed_paths": changed, "admitted": admitted,
             "code": "ADMITTED" if admitted else "M5_EQUIVALENT_CANDIDATE_NOT_ADMITTED"}
 
 
 def fail_generation(connection, *, operation_id: str, lease_token: str, error_code: str,
-                    output: dict | None = None, validation: dict | None = None) -> dict:
-    row = connection.execute("""UPDATE m5_equivalent_generation_operations SET status='failed',error_code=%s,
-        output_json=%s::jsonb,output_checksum=%s,validation_json=%s::jsonb,completed_at=NOW()
-        WHERE id=%s AND status='leased' AND lease_token=%s RETURNING *""",
-        (error_code, json.dumps(output) if output is not None else None, checksum(output) if output is not None else None,
-         json.dumps(validation) if validation is not None else None, UUID(operation_id), UUID(lease_token))).fetchone()
+                    output: dict | None = None, validation: dict | None = None,
+                    retryable: bool = False) -> dict:
+    current = connection.execute("SELECT attempt_no FROM m5_equivalent_generation_operations WHERE id=%s",
+                                 (UUID(operation_id),)).fetchone()
+    retry = bool(retryable and current and int(current["attempt_no"]) <
+                 max(1, settings.assessment_equivalent_generation_max_attempts))
+    row = connection.execute("""UPDATE m5_equivalent_generation_operations SET status=%s,error_code=%s,
+        output_json=%s::jsonb,output_checksum=%s,validation_json=%s::jsonb,
+        completed_at=CASE WHEN %s THEN NULL ELSE NOW() END
+        ,lease_token=NULL,lease_expires_at=NULL
+        WHERE id=%s AND status='leased' AND lease_token=%s AND lease_expires_at>NOW() RETURNING *""",
+        ('pending' if retry else 'failed', error_code, json.dumps(output) if output is not None else None, checksum(output) if output is not None else None,
+         json.dumps(validation) if validation is not None else None, retry, UUID(operation_id), UUID(lease_token))).fetchone()
     if not row:
         raise ValueError("M5_EQUIVALENT_LEASE_LOST")
     return dict(row)
@@ -287,13 +381,18 @@ def fail_generation(connection, *, operation_id: str, lease_token: str, error_co
 
 def complete_generation(connection, *, operation_id: str, lease_token: str, candidate: dict,
                         policy: dict) -> dict:
+    operation_ref = connection.execute("SELECT cycle_db_id,position_id FROM m5_equivalent_generation_operations WHERE id=%s",
+                                       (UUID(operation_id),)).fetchone()
+    if not operation_ref:
+        raise ValueError("M5_EQUIVALENT_LEASE_LOST")
+    cycle = connection.execute("SELECT * FROM m5_cycles WHERE id=%s FOR UPDATE", (operation_ref["cycle_db_id"],)).fetchone()
+    position = connection.execute("SELECT * FROM m7_route_positions WHERE id=%s FOR UPDATE",
+                                  (operation_ref["position_id"],)).fetchone()
     operation = connection.execute("SELECT * FROM m5_equivalent_generation_operations WHERE id=%s FOR UPDATE",
                                    (UUID(operation_id),)).fetchone()
-    if not operation or operation["status"] != "leased" or str(operation["lease_token"]) != lease_token:
+    lease_active = connection.execute("SELECT %s>NOW() AS value", (operation["lease_expires_at"],)).fetchone()["value"] if operation["lease_expires_at"] else False
+    if operation["status"] != "leased" or str(operation["lease_token"]) != lease_token or not lease_active:
         raise ValueError("M5_EQUIVALENT_LEASE_LOST")
-    position = connection.execute("SELECT * FROM m7_route_positions WHERE id=%s FOR UPDATE",
-                                  (operation["position_id"],)).fetchone()
-    cycle = connection.execute("SELECT * FROM m5_cycles WHERE id=%s FOR UPDATE", (operation["cycle_db_id"],)).fetchone()
     old = connection.execute("SELECT * FROM m5_assessment_situations WHERE id=%s FOR UPDATE",
                              (operation["expected_as_db_id"],)).fetchone()
     if cycle["status"] in TERMINAL_CYCLE or position["current_as_db_id"] != old["id"] or old["status"] not in {"active", "paused"}:

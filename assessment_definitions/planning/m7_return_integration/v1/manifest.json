@@ -1,12 +1,12 @@
 {
   "id": "ux-p03-controlled-return",
-  "version": "1.0",
+  "version": "1.2",
   "status": "draft",
   "usage_scope": "qa",
   "artifacts": [
     {
       "path": "policy.json",
-      "checksum": "aa3d0ef4ddecc5d9a5c4642ccfedd4de4e09e18c40d91a99fd8df246eaeba2d0"
+      "checksum": "74a489437730d0bab59de97b9b9d2f44fc65ac01701b3de5791225e6af33d348"
     }
   ]
 }

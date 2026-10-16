@@ -149,6 +149,10 @@ def test_prepare_does_not_start_time_and_explicit_start_presents_same_situation(
         assert before["consumed_seconds"] == 0
         assert before["sessions"][-1]["status"] == "prepared"
         situation_id = str(decision["assessment_situation_id"])
+        prepared_runtime = read_runtime(connection, cycle_id=cycle_id)
+        assert prepared_runtime["current_situation"] == {
+            "assessment_situation_id": situation_id, "status": "admitted"}
+        assert prepared_runtime["trace"] is None
 
         started = start_prepared(
             connection, user_id=99, cycle_id=cycle_id, key="w02-start",
@@ -159,6 +163,35 @@ def test_prepare_does_not_start_time_and_explicit_start_presents_same_situation(
         assert after["started_at"] is not None
         assert after["calendar_deadline"] is not None
         assert after["sessions"][-1]["status"] == "active"
+        original = connection.execute(
+            "SELECT * FROM m5_assessment_situations WHERE assessment_situation_id=%s", (situation_id,)
+        ).fetchone()
+        candidate_id = uuid4()
+        candidate_snapshot = dict(original["snapshot_json"])
+        candidate_snapshot["assessment_situation_id"] = str(candidate_id)
+        connection.execute("""INSERT INTO m5_assessment_situations
+            (assessment_situation_id,case_version_id,personalized_profile_id,cycle_db_id,session_db_id,
+             usage_scope,status,snapshot_json,execution_payload_json,snapshot_checksum)
+            VALUES(%s,%s,%s,%s,%s,%s,'admitted',%s::jsonb,%s::jsonb,%s)""",
+            (candidate_id,original["case_version_id"],original["personalized_profile_id"],original["cycle_db_id"],
+             original["session_db_id"],original["usage_scope"],json.dumps(candidate_snapshot),
+             json.dumps(original["execution_payload_json"]),checksum(candidate_snapshot)))
+        started_runtime = read_runtime(connection, cycle_id=cycle_id)
+        assert started_runtime["current_situation"]["assessment_situation_id"] == situation_id
+        assert started_runtime["current_situation"]["participant_payload"]
+        assert str(candidate_id) not in {x["assessment_situation_id"] for x in started_runtime["situations"]}
+        _add_turn(connection, situation_id, "Ответ для проверки состава A01", "a01-composition-turn")
+        complete(connection, cycle_id=cycle_id, key="a01-composition-close", action="complete",
+                 reason="plan_finished", initiated_by=99)
+        c46 = read_c46(connection, cycle_id)["payload_json"]
+        dispositions = {x["assessment_situation_id"]: x["route_disposition"]
+                        for x in c46["assessment_situations"]}
+        assert dispositions[situation_id] == "current"
+        assert dispositions[str(candidate_id)] == "unattached_candidate"
+        candidate_status = connection.execute(
+            "SELECT status FROM m5_assessment_situations WHERE assessment_situation_id=%s", (candidate_id,)
+        ).fetchone()["status"]
+        assert candidate_status == "admitted"
 
 
 def _drain_product_pipeline(factory):
@@ -193,6 +226,7 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
         as_id=str(started["decision"]["assessment_situation_id"])
         runtime=read_runtime(connection,cycle_id=cycle_id)
         assert runtime["runtime_kind"]=="cycle"
+        assert runtime["return_policy_enabled"] is False
         assert runtime["current_situation"]["assessment_situation_id"]==as_id
         assert runtime["current_situation"]["participant_payload"]
         _add_turn(connection,as_id,"Синтетический ответ S10-A","s10-a-turn")

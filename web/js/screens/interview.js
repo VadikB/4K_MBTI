@@ -50,6 +50,15 @@ import { recoverProfileCompletionForAssessment, shouldRecoverProfileOnAssessment
 const interviewCaseContextByKey = new Map();
 const PRODUCT_RUNTIME_POLL_MS = 1200;
 let productRuntimePollGeneration = 0;
+let returnHeartbeatTimer = null;
+let returnPresenceCycleId = null;
+let returnPresenceGeneration = 0;
+const returnClientId = (() => {
+  const key = 'agent4k.returnClientId';
+  let value = window.sessionStorage.getItem(key);
+  if (!value) { value = crypto.randomUUID(); window.sessionStorage.setItem(key, value); }
+  return value;
+})();
 
 export const isCycleAssessment = () =>
   state.assessmentRuntimeKind === 'cycle' && Boolean(state.productCycleId);
@@ -74,14 +83,20 @@ const productEventText = (event) => {
 
 const renderProductRuntime = (snapshot) => {
   const current = snapshot.current_situation;
+  const routePositions = Array.isArray(snapshot.route?.positions) ? snapshot.route.positions : [];
+  const currentPosition = routePositions.find((position) =>
+    position.current_assessment_situation_id === current?.assessment_situation_id)
+    || routePositions.find((position) => ['in_progress', 'awaiting_replacement'].includes(position.state));
+  const completedPositions = routePositions.filter((position) => position.state === 'completed').length;
   state.assessmentRuntimeKind = 'cycle';
   state.productCycleId = snapshot.cycle_id;
   state.productAssessmentSituationId = current?.assessment_situation_id || null;
   state.productClarificationDecisionId = snapshot.clarification?.id || null;
   state.productCycleStatus = snapshot.status?.collection_status || null;
   state.assessmentRemainingSeconds = snapshot.status?.remaining_seconds ?? null;
-  state.assessmentCaseNumber = Math.max(1, snapshot.situations?.length || 1);
-  state.assessmentTotalCases = Math.max(state.assessmentCaseNumber, snapshot.plan?.plan?.route?.length || 1);
+  state.assessmentCaseNumber = Math.max(1, Number(currentPosition?.position_no || completedPositions + 1));
+  state.assessmentTotalCases = Math.max(state.assessmentCaseNumber,
+    Number(snapshot.route?.progress?.total_positions || routePositions.length || 1));
   state.assessmentCaseTitle = current?.participant_payload?.title || current?.participant_payload?.case_title || 'Оценочная ситуация';
   state.activeInterviewCaseKey = current?.assessment_situation_id || null;
   persistAssessmentContext();
@@ -119,18 +134,18 @@ const renderProductRuntime = (snapshot) => {
   interviewSubmitButton.disabled = closed || suspended || !current;
   interviewFinishButton.disabled = closed || suspended || !current || waitingQuestion;
   interviewPauseButton?.classList.toggle('hidden', closed || !current || cycleStatus === 'interrupted');
-  interviewAdditionalButton?.classList.toggle('hidden', closed || !current);
+  interviewAdditionalButton?.classList.toggle('hidden', closed || (!current && cycleStatus !== 'interrupted'));
   if (interviewPauseButton) interviewPauseButton.textContent = state.productCycleStatus === 'paused' ? 'Продолжить' : 'Пауза';
   if (interviewAdditionalButton) interviewAdditionalButton.textContent = cycleStatus === 'interrupted'
     ? 'Продолжить в дополнительной сессии' : 'Прервать и продолжить позже';
-  interviewCaseStatus.textContent = !current
+  interviewCaseStatus.textContent = cycleStatus === 'interrupted'
+    ? 'Сессия прервана. Ответы сохранены; можно продолжить в дополнительной сессии в пределах оставшегося времени.'
+    : !current
     ? 'Нет доступной оценочной ситуации. Для продолжения требуется подготовка назначения.'
     : closed
     ? snapshot.pipeline?.status === 'failed'
       ? 'Обработка завершилась ошибкой. Ответы сохранены.'
       : 'Сбор завершён. Выполняется итоговая обработка.'
-    : cycleStatus === 'interrupted'
-      ? 'Сессия прервана. Ответы сохранены; можно продолжить в дополнительной сессии в пределах оставшегося времени.'
     : waitingQuestion
       ? 'Ответьте на уточняющий вопрос.'
       : current?.status === 'scenario_ended'
@@ -141,6 +156,104 @@ const renderProductRuntime = (snapshot) => {
   return snapshot;
 };
 
+const heartbeatProductPresence = async () => {
+  if (!state.productCycleId || !state.productAssessmentSituationId) return;
+  const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/presence', {
+    method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_id: returnClientId, expected_assessment_situation_id: state.productAssessmentSituationId }),
+  });
+  if (response.status === 409) return null;
+  return readApiResponse(response, 'Не удалось подтвердить связь с оценкой.');
+};
+
+const startProductPresence = (initialContract = null) => {
+  if (returnHeartbeatTimer) window.clearTimeout(returnHeartbeatTimer);
+  const generation = ++returnPresenceGeneration;
+  const tick = async () => {
+    try {
+      const contract = await heartbeatProductPresence();
+      if (generation !== returnPresenceGeneration) return;
+      if (!contract) { await loadReturnState(); return; }
+      const intervalSeconds = Number(contract.heartbeat_interval_seconds);
+      if (!Number.isFinite(intervalSeconds) || intervalSeconds <= 0) {
+        throw new Error('Сервер не вернул допустимый интервал подтверждения связи.');
+      }
+      returnHeartbeatTimer = window.setTimeout(tick, intervalSeconds * 1000);
+    } catch (error) {
+      showError(interviewError, error.message);
+    }
+  };
+  const intervalSeconds = Number(initialContract?.heartbeat_interval_seconds);
+  if (Number.isFinite(intervalSeconds) && intervalSeconds > 0) {
+    returnHeartbeatTimer = window.setTimeout(tick, intervalSeconds * 1000);
+  } else {
+    void tick();
+  }
+};
+
+const stopProductPresence = () => {
+  returnPresenceGeneration += 1;
+  if (returnHeartbeatTimer) window.clearTimeout(returnHeartbeatTimer);
+  returnHeartbeatTimer = null;
+  returnPresenceCycleId = null;
+};
+
+const renderReturnCard = (value) => {
+  interviewMessages.innerHTML = '';
+  const card = document.createElement('section'); card.className = 'interview-return-card';
+  const title = document.createElement('h3'); title.textContent = 'Продолжение оценки';
+  const progress = value.progress || {};
+  const copy = document.createElement('p');
+  copy.textContent = `Пройдено ${progress.completed_positions || 0} из ${progress.total_positions || 0}. Остаток времени выполнения: ${Math.ceil(Number(value.remaining_seconds || 0) / 60)} мин.`;
+  const deadline = document.createElement('p');
+  deadline.textContent = value.calendar_deadline ? `Календарный срок: ${new Date(value.calendar_deadline).toLocaleString('ru-RU')}.` : '';
+  const reason = document.createElement('p');
+  reason.textContent = value.allowed_action === 'replace_current'
+    ? 'После продолжения текущая незавершённая ситуация будет обновлена. Частичный диалог не переносится, завершённые ситуации сохраняются.'
+    : 'После продолжения откроется та же незавершённая ситуация и сохранённый диалог.';
+  const button = document.createElement('button'); button.type = 'button'; button.className = 'primary-button'; button.textContent = 'Продолжить';
+  const status = document.createElement('p'); status.setAttribute('role', 'status');
+  button.addEventListener('click', async () => {
+    button.disabled = true; status.textContent = value.allowed_action === 'replace_current' ? 'Готовим допустимое обновление ситуации…' : 'Восстанавливаем ситуацию…';
+    try {
+      let generationOperationId = null;
+      if (value.allowed_action === 'replace_current') {
+        if (!value.provider_config_ref) throw new Error('Для этого Cycle ещё не подключён допущенный provider обновления.');
+        const generatedResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId)
+          + '/positions/' + encodeURIComponent(value.position_no) + '/equivalent-candidate', {
+          method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expected_assessment_situation_id: value.current_assessment_situation_id,
+            idempotency_key: createOperationId(), provider_config_ref: value.provider_config_ref }),
+        });
+        const generated = await readApiResponse(generatedResponse, 'Не удалось подготовить допустимое обновление ситуации.');
+        generationOperationId = generated.operation_id;
+      }
+      const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/return-continue', {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ position_no: value.position_no,
+          expected_assessment_situation_id: value.current_assessment_situation_id,
+          expected_state: value.current_assessment_situation_status,
+          idempotency_key: createOperationId(), generation_operation_id: generationOperationId }),
+      });
+      const continued = await readApiResponse(response, 'Не удалось продолжить оценку.');
+      if (continued.status === 'collection_closed') { openProcessing(); return; }
+      state.productAssessmentSituationId = continued.assessment_situation_id;
+      await loadProductRuntime();
+    } catch (error) { status.textContent = error.message; button.disabled = false; }
+  });
+  card.append(title, copy, deadline, reason, button, status); interviewMessages.appendChild(card);
+  interviewTextarea.disabled = true; interviewSubmitButton.disabled = true; interviewFinishButton.disabled = true;
+  interviewCaseStatus.textContent = 'Оценка остановлена до явного продолжения.';
+  scheduleInterviewBottomAlignment();
+};
+
+const loadReturnState = async () => {
+  const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/return-state', { credentials: 'same-origin' });
+  const value = await readApiResponse(response, 'Не удалось проверить состояние возврата.');
+  if (['continue_current', 'replace_current'].includes(value.allowed_action)) { renderReturnCard(value); return true; }
+  return false;
+};
+
 export const loadProductRuntime = async ({ generation = null } = {}) => {
   if (!state.productCycleId) throw new Error('Cycle runtime не инициализирован.');
   const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(state.productCycleId) + '/runtime', {
@@ -148,7 +261,20 @@ export const loadProductRuntime = async ({ generation = null } = {}) => {
   });
   const saved = await readApiResponse(response, 'Не удалось восстановить состояние оценки.');
   if (generation !== null && generation !== productRuntimePollGeneration) return saved;
+  state.productAssessmentSituationId = saved.current_situation?.assessment_situation_id || null;
+  const terminal = ['collection_closed', 'calculation_pending', 'calculated', 'failed']
+    .includes(saved.status?.collection_status);
+  let presenceContract = null;
+  if (saved.return_policy_enabled && saved.current_situation && returnPresenceCycleId !== saved.cycle_id) {
+    presenceContract = await heartbeatProductPresence();
+    if (await loadReturnState()) return saved;
+    returnPresenceCycleId = saved.cycle_id;
+  }
   const snapshot = renderProductRuntime(saved);
+  if (saved.return_policy_enabled && snapshot.current_situation && presenceContract) startProductPresence(presenceContract);
+  if (terminal && returnPresenceCycleId) {
+    stopProductPresence();
+  }
   if (['collection_closed', 'calculation_pending', 'calculated'].includes(snapshot.status?.collection_status) &&
       !interviewPanel.classList.contains('hidden')) {
     openProcessing();
@@ -168,6 +294,7 @@ const waitForProductClarification = async (previousDecisionId = null) => {
 };
 
 const completeProductCycle = async () => {
+  stopProductPresence();
   const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/completion', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'complete', reason: 'user_completed_scenario', idempotency_key: createOperationId() }),
@@ -213,10 +340,11 @@ export const toggleProductPause = async () => {
 
 export const createProductAdditionalSession = async () => {
   let snapshot = await loadProductRuntime();
-  if (!(snapshot.trace?.turns || []).some((turn) => turn.speaker_type === 'assessee')) {
-    throw new Error('Перед Additional Session сохраните ответ по текущей ситуации.');
-  }
   if (snapshot.status?.collection_status !== 'interrupted') {
+    if (!(snapshot.trace?.turns || []).some((turn) => turn.speaker_type === 'assessee')) {
+      throw new Error('Перед Additional Session сохраните ответ по текущей ситуации.');
+    }
+    stopProductPresence();
     const interruptedResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/completion', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'interrupt_for_continuation', reason: 'user_requested_additional_session', idempotency_key: createOperationId() }),
@@ -1105,6 +1233,7 @@ export const initInterview = () => {
 
   registerLeaveInterviewCleanup(() => {
     clearInterviewTimer();
+    stopProductPresence();
     void pauseAssessmentTimerIfNeeded();
   });
 };

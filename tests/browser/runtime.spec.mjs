@@ -566,9 +566,6 @@ test('P10.5 fresh profile, lost confirmation response, reload and first AS',asyn
  await expect(page.locator('#assessment-action-button')).toBeVisible();
  expect(profileReceipts(stand)).toEqual(committed);
  await page.reload();
- await expect(page.locator('#onboarding-skip')).toBeVisible();
- await page.locator('#onboarding-skip').click();
- await expect(page.locator('#start-first-assessment')).toBeVisible();
  await start(page);
  const after=profileReceipts(stand);
  expect(after.profiles).toEqual(committed.profiles);expect(after.cycles).toHaveLength(1);

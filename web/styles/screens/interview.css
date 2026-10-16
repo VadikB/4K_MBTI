@@ -943,3 +943,21 @@
         max-height: 104px;
     }
 }
+.interview-return-card {
+    display: grid;
+    gap: 12px;
+    padding: 20px;
+    border: 1px solid #d8e1e1;
+    border-radius: 18px;
+    background: #fff;
+    overflow-wrap: anywhere;
+}
+
+.interview-return-card p,
+.interview-return-card h3 {
+    margin: 0;
+}
+
+.interview-return-card .primary-button {
+    justify-self: start;
+}

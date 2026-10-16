@@ -108,6 +108,7 @@ test('R03 verification pending renders one mail-check heading without password c
   await baseRoutes(page);
   await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, {
     email: 'person@example.test', auth_mode: 'verification_pending', message: 'Проверьте почту.',
+    retry_after_seconds: 7,
   }));
   await page.goto(base);
   await page.locator('#email-input').fill('person@example.test');
@@ -119,6 +120,17 @@ test('R03 verification pending renders one mail-check heading without password c
   await expect(page.getByText(/Введите пароль для/)).toBeHidden();
   await expect(page.locator('#auth-resend-email-button')).toHaveText('Отправить повторно');
   await expect(page.locator('#auth-resend-countdown')).toContainText('доступна через');
+  await expect(page.locator('#auth-resend-email-button')).toBeDisabled();
+  const mailHeading = await page.getByRole('heading', { name: 'Проверьте почту' }).evaluate((node) => {
+    const style = getComputedStyle(node);
+    return { fontSize: style.fontSize, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
+  });
+  expect(mailHeading).toEqual({ fontSize: '24px', fontWeight: '700', lineHeight: '32px' });
+  await expect(page.locator('.auth-email-sent-icon')).toHaveCSS('background-image', /auth-email-outline\.svg/);
+  await expect(page.locator('#auth-change-email-button')).toHaveCSS('border-top-width', '0px');
+  const changeEmail = await page.locator('#auth-change-email-button').boundingBox();
+  const resend = await page.locator('#auth-resend-email-button').boundingBox();
+  expect(changeEmail.width).toBeLessThan(resend.width);
   await page.locator('#auth-change-email-button').click();
   await expect(page.locator('#auth-title')).toBeVisible();
   await expect(page.locator('#auth-title')).toHaveText('Добро пожаловать');
@@ -221,15 +233,39 @@ test('R03 AUTH 01 and password creation keep canonical R01 metrics', async ({ pa
   }));
   await page.goto(`${base}/?auth_action=email_verification&token=verify-r03`);
   const createCard = await page.locator('#auth-panel').boundingBox();
+  const createTitle = await page.locator('#auth-title').boundingBox();
   const passwordField = await page.locator('#magic-token-input').boundingBox();
   expect(Math.round(createCard.width)).toBe(502);
   expect(Math.round(createCard.height)).toBe(547);
   expect(Math.round(passwordField.height)).toBe(49);
+  expect(Math.round(createTitle.y - createCard.y)).toBe(78);
+  expect(Math.round(passwordField.y - createCard.y)).toBe(190);
   await expect(page.locator('#auth-credential-step-indicator')).toHaveText('Шаг 1 из 2');
+  await expect(page.locator('#auth-password-generate-button')).toHaveCSS('font-weight', '400');
   const eyeImage = await page.locator('#auth-password-toggle-button').evaluate(
     (button) => getComputedStyle(button, '::after').backgroundImage,
   );
   expect(eyeImage).toMatch(/auth-eye\.svg/);
+});
+
+test('R04 shared footer stays in document flow and stacks on mobile', async ({ page }) => {
+  await baseRoutes(page);
+  await page.goto(base);
+  const footer = page.locator('.app-footer');
+  await expect(footer).toBeVisible();
+  await expect(footer.getByText('Политика конфиденциальности')).toBeVisible();
+  await expect(footer.getByText('Согласие на обработку персональных данных')).toBeVisible();
+  await expect(footer.getByText('© 2026 LIDUM')).toBeVisible();
+  await expect(footer.locator('a')).toHaveCount(0);
+  await expect(footer).toHaveCSS('position', 'static');
+  await page.setViewportSize({ width: 360, height: 760 });
+  await expect(page.locator('#email-input')).toHaveCSS('font-size', '16px');
+  await expect(page.locator('.app-footer-documents')).toHaveCSS('flex-direction', 'column');
+  const layout = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(layout.scrollWidth).toBe(layout.clientWidth);
 });
 
 test('R03 refresh obeys server journey and fails closed on journey outage', async ({ page }) => {
@@ -417,6 +453,42 @@ test('R03 fresh login persists journey assessment identifiers', async ({ page })
   expect(saved).toEqual({ id: '99', code: 'session-99' });
 });
 
+test('P03 return card hides stopped AS and keeps explicit continue in the same chat', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'p03-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'resume_assessment', profile: { status: 'complete' }, onboarding: { status: 'completed' },
+      assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: 'cycle-p03', cycle_session_id: 'session-p03', assessment_situation_id: 'as-old' },
+    });
+    if (pathname === '/users/assessment/cycles/cycle-p03/runtime') return fulfillJson(route, {
+      cycle_id: 'cycle-p03', status: { collection_status: 'active', remaining_seconds: 1200 },
+      return_policy_enabled: true,
+      current_situation: { assessment_situation_id: 'as-old', status: 'active', participant_payload: { title: 'Скрытая ситуация', content: 'Нельзя показывать до Continue' } },
+      situations: [], plan: { plan: { route: [{}] } }, trace: { turns: [], events: [] },
+    });
+    if (pathname === '/users/assessment/m7/cycles/cycle-p03/presence') return fulfillJson(route, {
+      cycle_id: 'cycle-p03', assessment_situation_id: 'as-old',
+      heartbeat_interval_seconds: 30, presence_lease_seconds: 60,
+    });
+    if (pathname === '/users/assessment/m7/cycles/cycle-p03/return-state') return fulfillJson(route, {
+      cycle_id: 'cycle-p03', position_no: 1, current_assessment_situation_id: 'as-old', current_assessment_situation_status: 'active',
+      allowed_action: 'replace_current', recognized_absence_seconds: 180, remaining_seconds: 1200,
+      calendar_deadline: '2026-10-18T12:00:00Z', progress: { completed_positions: 2, total_positions: 4 },
+      provider_config_ref: null,
+    });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(`${base}/?screen=interview`);
+  await expect(page.locator('.interview-return-card')).toBeVisible();
+  await expect(page.getByText('Пройдено 2 из 4', { exact: false })).toBeVisible();
+  await expect(page.getByText('Нельзя показывать до Continue')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Продолжить', exact: true })).toBeVisible();
+  await expect(page.locator('#interview-textarea')).toBeDisabled();
+});
+
 test('R03 null journey removes stale legacy and Cycle identifiers', async ({ page }) => {
   const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
   await page.addInitScript(() => {
@@ -447,6 +519,73 @@ test('R03 null journey removes stale legacy and Cycle identifiers', async ({ pag
       'agent4k.productAssessmentSituationId',
     ].map((key) => localStorage.getItem(key))))
     .toEqual([null, null, null, null, null]);
+});
+
+test('W02 blocks direct entry on missing participant briefing and supports readiness retry on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 720 });
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  let checks = 0;
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, {
+      authenticated: true, user, is_admin: false, dashboard: {},
+    });
+    if (pathname === '/users/8/journey-state') {
+      checks += 1;
+      return fulfillJson(route, {
+        next_action: 'wait_for_acquaintance_data', profile: { status: 'incomplete' },
+        onboarding: { status: 'not_started' }, assessment: { status: 'not_started' },
+        acquaintance: { readiness: {
+          status: 'waiting_for_organization',
+          message: 'Организация ещё готовит данные для вашей оценки. Когда подготовка будет завершена, здесь можно будет начать знакомство',
+        } },
+      });
+    }
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'w02-test' });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(`${base}/?screen=onboarding`);
+  await expect(page.getByRole('heading', { name: 'Данные для оценки готовятся' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Проверить готовность' })).toBeVisible();
+  await expect(page.locator('#onboarding-panel')).toBeHidden();
+  await page.getByRole('button', { name: 'Проверить готовность' }).click();
+  await expect.poll(() => checks).toBeGreaterThan(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+});
+
+test('W02 shows resolved assignment timing before plan preparation', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  const acquaintance = {
+    readiness: { status: 'ready', organization_name: 'Организация А', briefing: {
+      organizer: 'Организация А', purpose: 'Развитие компетенций',
+      results_usage: 'Для плана развития', result_recipients: 'Участник',
+      provided_participant_fields: [{ label: 'Подразделение', value: 'Продукт' }],
+      questions: ['Роль?', 'Задачи?', 'Взаимодействие?'], consent_version: 1,
+    } },
+    state: { answers_json: {} },
+    late_readiness: { status: 'ready_to_prepare', personalized_profile_id: 4 },
+    assigned_timing: { status: 'resolved', time_budget_seconds: 4200, calendar_window_seconds: 172800 },
+    prepared_plan: null,
+  };
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'show_onboarding', profile: { status: 'complete' },
+      onboarding: { status: 'not_started', current_step: 0 }, assessment: { status: 'not_started' },
+      acquaintance,
+    });
+    if (pathname === '/users/8/acquaintance') return fulfillJson(route, acquaintance);
+    if (pathname === '/users/8/onboarding') return fulfillJson(route, { status: 'in_progress', current_step: 0 });
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'w02-add01-test' });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await expect(page.getByText('Назначенный общий бюджет')).toBeVisible();
+  await expect(page.getByText('70 мин.')).toBeVisible();
+  await expect(page.getByText('Календарное окно после старта')).toBeVisible();
+  await expect(page.getByText('48 ч.')).toBeVisible();
+  await expect(page.getByText('Ориентировочная общая длительность')).toBeHidden();
 });
 
 test('R03 reset request locks every visible credential action', async ({ page }) => {

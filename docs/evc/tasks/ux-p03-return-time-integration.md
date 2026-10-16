@@ -1,66 +1,151 @@
-# UX-P03 — Return Time Integration
+# UX-P03 — Return Time Integration, продолжение
 
-Дата: 15.10.2026. Ветка: `codex/ux-p03-return-time-integration`.
+Дата: 16.10.2026. Ветка: `codex/ux-p03-continue`.
 
 ## Результат и границы
 
-Первый этап: QA-only интеграционный адаптер P03 поверх контролируемого события
-отсутствия, P02 candidate и P01 replacement. Production activation, UI/W02 copy и
-полная сквозная приёмка ожидают D08/D09, методологический контракт и допущенные Cases.
+Реализовано продолжение P03 по принятому дополнению rev 1.2: server-time presence
+lease, multi-client семантика, явная карточка возврата в том же чате, граница
+119/120 секунд и предел трёх успешных замен одной позиции. Реализация использует
+существующие контуры P01/P02/P03, не вводит новый Cycle и не подменяет предметные
+артефакты значениями в коде.
 
-## Источники и решения
+Обычная product-активация остаётся заблокирована допуском методологии/Cases и
+provider configuration. Реальный путь замены не получает встроенный fallback: если
+допущенный `provider_config_ref` отсутствует, UI сообщает о недоступности операции.
 
-- `UX-P03_Return_Time_Integration_2026-10-15.txt`, rev 1.0 — постановка.
-- `README.md`, `CONTRIBUTING.md`, EVC workflow/matrix/artifact recipe.
-- Change 01 и manifest 2026-10-01; M1 v1.4, M7 v1.3.
-- `docs/architecture/m7-completion-contract.md`, P01 и P02 contracts.
-- Base: P02 `86080b201c0cc3063de0fae21629a6009b28ac8d`, который зависит от
-  `main@909979043a0aecc6ebfee34e1cf1092121cc8d14`.
+## Прочитанные источники и состояние Git
 
-Стоп-условия: D08/D09 и неприменимый пока product content contract блокируют только
-production event ingestion/activation и UI-обещание полной механики. Постановка явно
-разрешает контролируемый fixture adapter; предметные решения не добавлены.
+- `/Users/vadim_bogachev/Downloads/UX-P03_CONTINUE_2026-10-16.txt`, rev 1.2,
+  SHA-256 `a0f9156c8218eeb8d4abf828e11fe657399f5a18ffdcd4455fc08e3da609c2bb`.
+- `/Users/vadim_bogachev/Downloads/UX-P03_Return_Time_Integration_2026-10-15.txt`,
+  rev 1.0, SHA-256
+  `c69813f2147013b706068de58375942e8d54e3210f3499423a96f818c5123c82`.
+- `README.md`, `CONTRIBUTING.md`, EVC workflow, verification matrix, artifact
+  recipe и review checklist.
+- Change 01, source-set manifest 2026-10-01, M1 v1.4 и относящиеся к задаче
+  контракты/карта реализации; CURRENT им не присваивался.
+- До изменения: `main@39ffa2bdd43c002341a6630b905018d080f396ef`, P03 PR #53.
+  Ветка продолжает принятые зависимости R04
+  `7143c1d` и W02 `391235a05a6495bb9bcb844e09467d8483e2adf6`.
 
-## Реализация
+## Трассировка правила → контракт → код → проверка
 
-- `Api/m7_return_integration.py`: read model, controlled event seam и explicit Continue.
-- Draft QA policy с границей 180 секунд вне кода.
-- Аддитивные event/command tables и запрет Turn во время blocking wait.
-- Owner GET/POST; GET не мутирует состояние.
-- Регрессии 179/180, replay, deadline/budget, P02→P01→presentation и route history.
+| Правило rev 1.2 | Контракт/данные | Реализация | Доказательство |
+|---|---|---|---|
+| Heartbeat около 10 секунд, lease 120 секунд по server time | policy v1.2, presence clients | `heartbeat`, `reconcile_presence`, owner HTTP endpoint | unit, HTTP и PostgreSQL 119/120 |
+| Несколько клиентов: действует последний lease, отсутствие начинается на expiry | `m7_return_presence_clients`, return event | `MAX(lease_expires_at)`, событие на точной границе | PostgreSQL multi-client regression |
+| До expiry время расходуется; признанное отсутствие и системное ожидание не расходуют его | M5 time intervals | закрытие collecting на expiry, `blocking_system_wait`, защита перекрытий | PostgreSQL budget/deadline regressions |
+| Только явный Continue завершает отсутствие | return state/command | stopped AS скрыт, input заблокирован, explicit Continue | frontend unit и Playwright |
+| `<180` — тот же AS, `>=180` — новый AS в той же позиции | P03 policy, P02 candidate, P01 replacement | существующий continue/replace pipeline | PostgreSQL 179/180 |
+| Не более трёх успешных замен позиции | route history, P03 policy | четвёртая требуемая замена закрывает collection с фактическим материалом | PostgreSQL replacement-limit regression |
+| GET не создаёт AS/command/event | return read model | виртуальное состояние рассчитывается из lease | integration/read-model regression |
 
-## Проверки
+## Изменённые контуры
 
-- `python -m py_compile` для изменённых Python-модулей — PASS.
-- `pytest tests/unit/test_m7_return_integration.py tests/e2e/test_m5_runtime_http.py` —
-  8 PASS, одно существующее предупреждение Starlette.
-- P03 PostgreSQL integration (изолированная `agent4k_pytest`) — 2 PASS.
-- `pytest tests/integration/test_m7_cycle_planner_db.py` — 15 PASS.
-- `pytest tests/e2e` — 65 PASS, одно существующее предупреждение Starlette.
-- `npm run test:backend` — 411 PASS / 13 FAIL: известный baseline M6
-  (`INPUT_NOT_READY`, `DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED`), вне diff P03.
-- `npm run test:backend:integration` — 78 PASS / 37 FAIL: тот же известный
-  M6/provider baseline; все добавленные P03 integration-проверки PASS.
+- `assessment_definitions/planning/m7_return_integration/v1`: immutable policy
+  rev 1.2 и обновлённый checksum manifest.
+- `Api/m7_return_integration.py`: server presence, точная фиксация absence,
+  multi-client lease, лимит замен и расширенный read model.
+- `Api/m5_cycle_runtime.py`: перекрывающиеся blocking intervals больше не
+  возобновляют расход времени преждевременно.
+- `Api/routes.py`, `Api/m7_completion_contracts.py`: owner-scoped heartbeat API.
+- `web/js/screens/interview.js`, `web/styles/screens/interview.css`: независимый
+  heartbeat и same-chat return card; `web/dist` пересобран.
+- Unit, frontend, HTTP, PostgreSQL integration и browser regressions.
 
-## Непроверенное
+## Фактические проверки
 
-- D08: реальный server presence/event source и multi-client semantics — NOT_RUN/blocked.
-- D09: retry ceiling, недостаток времени, окончательная ошибка и scenario-ended branch — NOT_RUN/blocked.
-- Product Cases/provider, UI/W02 и device/browser matrix — NOT_RUN; первый этап их не включает.
+- Python `py_compile` изменённых backend-модулей — PASS.
+- `npm run lint:js` — PASS.
+- `npm run build:web` — PASS.
+- `node --test tests/frontend/*.test.mjs` — 18 PASS.
+- `pytest tests/unit/test_m7_return_integration.py -q` — 1 PASS.
+- `pytest tests/integration/test_m7_cycle_planner_db.py` на изолированной
+  `agent4k_pytest` — 17 PASS.
+- Целевые PostgreSQL проверки 119/120, 179/180, multi-client и четвёртой замены —
+  4 PASS.
+- `npm run test:backend:http` на изолированной `agent4k_pytest` — 56 PASS,
+  10 deselected, одно существующее предупреждение Starlette.
+- `tests/browser/auth-r03.spec.mjs` — 20 PASS; отдельный P03 сценарий — 1 PASS.
+- `git diff --check` — PASS.
 
-## Риски и откат
+## Непроверенное и открытые границы
 
-- Config: draft QA policy, assessment activation отсутствует.
-- Schema: две аддитивные таблицы; старые Cycles без события получают dependency state.
-- Security: owner scope; fixture event разрешён только `qa`; публичного ingestion API нет.
-- Откат: отключить GET/POST и adapter; историю replacement/AS не удалять и не возвращать
-  автоматически в расчёт.
+- Физические устройства и полный browser/device matrix — NOT_RUN; проверен
+  автоматизированный Chromium-контур.
+- Реальные LLM-вызовы — NOT_RUN и не входят в стандартный набор.
+- Фактический detector/feed инфраструктурных инцидентов — NOT_RUN: таблица и
+  защита от ложного absence при уже подтверждённом incident готовы, но источник
+  подтверждения находится вне этой задачи.
+- Ветка `scenario_ended` при незакрытых уточнениях не реализована: дополнение не
+  содержит принятого решения для этого сценария.
+- Product Cases/provider admission остаются блокером обычной оценки. Подключение
+  source/policy и техническая реализация не означают допуск runtime-контента.
+
+## Риски, совместимость и откат
+
+- API расширен аддитивно; существующие клиенты и история Cycle сохраняются.
+- Миграция добавляет presence/incident tables и расширяет допустимый source kind.
+- Heartbeat авторизован владельцем Cycle; server timestamps не принимаются от
+  клиента. Секреты и production/test данные в проверки не передавались.
+- Откат: отменить этот коммит и отключить presence endpoint; уже записанные
+  events/route history не удалять и не возвращать автоматически в расчёт.
 
 ## Следующий минимальный шаг
 
-Владельцы продукта/методологии закрывают D08/D09 и публикуют применимые policy/Case
-contracts; затем отдельный PR подключает production event source, UI и полный E2E.
+После допуска methodology/Cases и provider configuration подключить реальный
+provider reference, источник подтверждённых infrastructure incidents и провести
+device matrix. Вопрос `scenario_ended` вынести в отдельное решение владельца.
 
-## Открытые вопросы
+## ADD01 — исполнение сохранённой политики возврата
 
-D08/D09 остаются явными блокерами полного UX-P03; первый этап их не закрывает.
+Источник: `UX-P03-ADD01_Saved_Return_Policy_2026-10-16.txt`, rev 1.0,
+SHA-256 `b185da2691b8fee838673f58725d70e7c8bba8506abfb9c105ea340373d65bfb`.
+Ветка `codex/ux-p03-add01-saved-return-policy`, база `c88564d`. Существующий
+P03 return flow и versioned M7 plan сохранены; универсальный settings service и
+новый счётчик времени не создавались.
+
+Политика `ux-p03-controlled-return@1.2` остаётся `draft`/`qa`: product activation
+не расширена. В draft добавлены явные `schema_version`, `algorithm` и допустимые
+terminal branches; manifest checksum обновлён. При создании QA plan полный content
+и checksum сохраняются в `return_policy_snapshot` ревизии плана. Assessment plan
+не получает QA policy. Старый Cycle без snapshot не подключается автоматически.
+
+Read, heartbeat, Continue, replay/retry и новая Session разрешают policy только из
+последней сохранённой plan revision. Проверяются checksum, schema/algorithm, scope,
+status и terminal branches; отсутствие или несовместимость дают явную ошибку без
+fallback на latest-файл. События и клиентский контракт возвращают один `policy_ref`.
+Heartbeat interval и lease сервер сообщает клиенту; UI больше не содержит локальную
+продуктовую константу 10 секунд. Факты absence, интервалы бюджета и число успешных
+замен по-прежнему читаются из БД/route history. Значения 120/180/3 в UI отсутствуют.
+
+Проверки ADD01:
+
+- Python/JS syntax, `git diff --check`, `npm run lint:js`, `npm run build:web` — PASS;
+- policy/unit — 2 PASS; frontend — 21 PASS;
+- M7/P03 PostgreSQL integration на disposable `agent4k_pytest` — 30 PASS, включая
+  неизменность started Cycle при недоступном latest-loader, missing/checksum/schema/
+  scope fail-closed, 119/120, 179/180, multi-client, replay и replacement limit;
+- адресный Chromium P03 same-chat return — 1 PASS;
+- `npm run test:backend:http` — 56 PASS, 10 deselected;
+- `npm run test:backend` — 415 PASS / 13 FAIL: прежние несвязанные M6 ошибки
+  `INPUT_NOT_READY` и `DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED`; P03/M7 tests PASS;
+- PR/GitHub CI/test deploy, внешние устройства, production policy/provider и
+  `scenario_ended` с незакрытым уточнением — NOT_RUN/вне границ.
+
+Схема БД не меняется: snapshot хранится в существующей immutable plan revision.
+Откат — revert ADD01-коммита; сохранённые события и route history не удаляются.
+
+### Интеграционная регрессия общего PR
+
+Перед общим PR policy activation дополнительно ограничена наличием сохранённого
+`return_policy_snapshot`: assessment Cycle без QA snapshot не вызывает P03 endpoints.
+В QA Cycle первый heartbeat выполняется до проверки return-state, heartbeat одного
+Cycle сериализован поколением клиента и останавливается до completion/interrupt.
+Это устраняет ложное отсутствие и deadlock heartbeat/completion. Прерывание без
+текущей AS сохраняет доступ к Additional Session; повторный старт всегда сначала
+получает серверный prepared Cycle, поэтому terminal Cycle не переиспользуется.
+
+Адресные Chromium-регрессии P03, S10-B, S10-C1, REV-02, P10.5 и G10.7 — PASS;
+frontend — 21 PASS. Полный результат GitHub CI фиксируется в PR №54.

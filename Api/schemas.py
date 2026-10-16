@@ -120,6 +120,9 @@ class AuthEmailRequestResponse(BaseModel):
     auth_mode: str = "magic_link"
     dev_magic_token: str | None = None
     organization: OrganizationInvitationPublicResponse | None = None
+    server_time: datetime | None = None
+    next_request_at: datetime | None = None
+    retry_after_seconds: int | None = None
 
 
 class AuthEmailVerifyRequest(BaseModel):
@@ -197,6 +200,9 @@ class AuthActionResponse(BaseModel):
     auth_mode: str | None = None
     dev_action_token: str | None = None
     organization: OrganizationInvitationPublicResponse | None = None
+    server_time: datetime | None = None
+    next_request_at: datetime | None = None
+    retry_after_seconds: int | None = None
 
 
 class OrganizationInvitationCreateRequest(BaseModel):
@@ -1431,6 +1437,19 @@ class OnboardingStateResponse(BaseModel):
     updated_at: datetime | None = None
 
 
+class AcquaintanceAnswersRequest(BaseModel):
+    answers: dict[str, str]
+    confirm: bool = False
+
+
+class AcquaintanceConsentRequest(BaseModel):
+    version: int = Field(gt=0)
+
+
+class AcquaintanceIssueRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2000)
+
+
 class JourneyAssessmentState(BaseModel):
     status: str
     session_id: int | None = None
@@ -1447,6 +1466,7 @@ class UserJourneyStateResponse(BaseModel):
     assessment: JourneyAssessmentState
     report_status: str
     next_action: str
+    acquaintance: dict = Field(default_factory=dict)
 
 
 class AppVersionResponse(BaseModel):

@@ -30,6 +30,10 @@ class ReturnContinueRequest(StrictModel):
     idempotency_key:str=Field(min_length=1,max_length=200)
     generation_operation_id:str|None=None
 
+class ReturnHeartbeatRequest(StrictModel):
+    client_id:str=Field(min_length=36,max_length=36)
+    expected_assessment_situation_id:str=Field(min_length=1)
+
 class ReconcileC46Request(StrictModel):
     expected_composition_checksum:str=Field(min_length=64,max_length=64)
     calculation_ref:dict[str,Any]

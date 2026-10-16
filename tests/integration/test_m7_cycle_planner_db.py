@@ -13,15 +13,17 @@ from psycopg.rows import dict_row
 from Api.database import ensure_m5_runtime_schema
 from Api.m5_case_runtime import checksum
 from Api.m5_equivalent_generation import (ControlledEquivalentProvider, begin_generation,
-    claim_generation, complete_generation, load_variability_package, run_provider)
+    claim_generation, complete_generation, controlled_provider_ref, load_variability_package, run_provider)
 from Api.m5_storage import import_package
 from Api.m5_storage import prepare_assessment_situation
-from Api.m5_scenario_runtime import build_c45,transition
+from Api.m5_scenario_runtime import build_c45,start as start_situation,transition
 from Api.m7_cycle_planner import _facts,choose_next,create_plan,present,read_plan
 from Api.m7_completion import complete,create_additional_session,read_c46,reconcile_c46,expire_due_cycles
 from Api.m7_route_replacement import (FixedCaseReplacementProvider,GeneratedCandidateReplacementProvider,
-    replace_current,replacement_metadata)
-from Api.m7_return_integration import continue_return,read_return_state,record_controlled_absence
+    mark_presented,replace_current,replacement_metadata)
+from Api.m7_return_integration import (continue_return,heartbeat,read_return_state,
+    record_controlled_absence)
+from Api import m7_return_integration as return_integration
 from Api.m5_cycle_runtime import begin_blocking_wait,end_blocking_wait,read_cycle
 from scripts.build_m5_case_package import OUTPUT
 
@@ -197,10 +199,10 @@ def test_equivalent_generation_is_persisted_validated_and_handed_to_p01(db):
         old_as=str(shown['decision']['assessment_situation_id'])
         operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
             request_key='p02-generate-1',requested_by=99,package=package,
-            provider_config={'id':'controlled','version':'1','checksum':'a'*64})
+            provider_config=controlled_provider_ref())
         replay=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
             request_key='p02-generate-1',requested_by=99,package=package,
-            provider_config={'id':'controlled','version':'1','checksum':'a'*64})
+            provider_config=controlled_provider_ref())
         assert replay['id']==operation['id']
         claimed=claim_generation(c,str(operation['id']));c.commit()
     source=claimed['input_json']['old_content']
@@ -217,12 +219,69 @@ def test_equivalent_generation_is_persisted_validated_and_handed_to_p01(db):
             candidate=output,policy=policy)
         assert completed['status']=='completed' and completed['validation']['admitted']
         assert c.execute('SELECT count(*) AS n FROM m5_assessment_situations').fetchone()['n']==2
+        current=c.execute("""SELECT s.assessment_situation_id FROM m7_route_positions p
+            JOIN m5_cycles c ON c.id=p.cycle_db_id
+            JOIN m5_assessment_situations s ON s.id=p.current_as_db_id WHERE c.cycle_id=%s""",
+            (cycle_id,)).fetchone()
+        assert str(current['assessment_situation_id'])==old_as
         replaced=replace_current(c,cycle_id=cycle_id,position_no=1,
             expected_assessment_situation_id=old_as,expected_state='active',key='p01-after-p02',
             reason='authorized_return',policy_ref={'id':'P01','version':'2.0','checksum':'f'*64},requested_by=99,
             provider=GeneratedCandidateReplacementProvider(str(operation['id'])))
         assert replaced['new_assessment_situation_id']==completed['assessment_situation_id']
         assert c.execute('SELECT count(*) AS n FROM m5_assessment_situations').fetchone()['n']==2
+        assert begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
+            request_key='p02-generate-1',requested_by=99,package=package,
+            provider_config=controlled_provider_ref())['id']==operation['id']
+
+
+def test_equivalent_generation_recovers_expired_lease_and_fences_late_worker(db, monkeypatch):
+    from Api.config import settings
+    monkeypatch.setattr(settings,'assessment_equivalent_generation_max_attempts',2)
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);old_as=str(shown['decision']['assessment_situation_id'])
+        operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
+            request_key='p02-recover',requested_by=99,package=load_variability_package(),
+            provider_config=controlled_provider_ref())
+        first=claim_generation(c,str(operation['id']))
+        c.execute("UPDATE m5_equivalent_generation_operations SET lease_expires_at=NOW()-INTERVAL '1 second' WHERE id=%s",(operation['id'],))
+        second=claim_generation(c,str(operation['id']))
+        assert second['attempt_no']==2 and second['lease_token']!=first['lease_token']
+        source=second['input_json']['old_content'];candidate={'case_id':'CASE-TDISC-01','case_version':'v0.1',
+            'base_role':second['input_json']['base_role'],'indicator_targets':second['input_json']['indicator_targets'],
+            'participant_payload':deepcopy(source['participant_payload']),'execution_payload':deepcopy(source['execution_payload'])}
+        candidate['participant_payload']['initial_situation']='Восстановленная вводная.'
+        candidate['participant_payload']['trigger']='Восстановленный триггер.'
+        candidate['execution_payload']['materials'][0]['participant_payload']='Восстановленная вводная.'
+        with pytest.raises(ValueError,match='M5_EQUIVALENT_LEASE_LOST'):
+            complete_generation(c,operation_id=str(operation['id']),lease_token=str(first['lease_token']),
+                candidate=candidate,policy=json.loads((OUTPUT/'admission-policy.json').read_text()))
+        completed=complete_generation(c,operation_id=str(operation['id']),lease_token=str(second['lease_token']),
+            candidate=candidate,policy=json.loads((OUTPUT/'admission-policy.json').read_text()))
+        assert completed['status']=='completed'
+
+
+def test_candidate_admission_revocation_blocks_replacement(db):
+    policy=json.loads((OUTPUT/'admission-policy.json').read_text())
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);old_as=str(shown['decision']['assessment_situation_id'])
+        operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
+            request_key='p02-revoked',requested_by=99,package=load_variability_package(),
+            provider_config=controlled_provider_ref())
+        claimed=claim_generation(c,str(operation['id']));source=claimed['input_json']['old_content']
+        candidate={'case_id':'CASE-TDISC-01','case_version':'v0.1','base_role':claimed['input_json']['base_role'],
+            'indicator_targets':claimed['input_json']['indicator_targets'],'participant_payload':deepcopy(source['participant_payload']),
+            'execution_payload':deepcopy(source['execution_payload'])}
+        candidate['participant_payload']['initial_situation']='Кандидат до отзыва.'
+        candidate['participant_payload']['trigger']='Триггер до отзыва.'
+        candidate['execution_payload']['materials'][0]['participant_payload']='Кандидат до отзыва.'
+        completed=complete_generation(c,operation_id=str(operation['id']),lease_token=str(claimed['lease_token']),candidate=candidate,policy=policy)
+        c.execute("INSERT INTO m5_admission_decisions(assessment_situation_db_id,policy_id,policy_version,policy_checksum,admitted,code,reasons_json,evidence_ids_json) VALUES(%s,'revocation','1','x',FALSE,'REVOKED','[]','[]')",(completed['candidate_as_db_id'],))
+        denied=replace_current(c,cycle_id=cycle_id,position_no=1,expected_assessment_situation_id=old_as,
+                expected_state='active',key='replace-revoked',reason='return',policy_ref={'id':'P01','version':'2','checksum':'x'},
+                requested_by=99,provider=GeneratedCandidateReplacementProvider(str(operation['id'])))
+        assert denied['status']=='preparation_failed'
+        assert c.execute("SELECT current_as_db_id FROM m7_route_positions").fetchone()['current_as_db_id'] != completed['candidate_as_db_id']
 
 
 def test_equivalent_generation_claim_is_single_and_late_result_is_not_admitted(db):
@@ -231,7 +290,7 @@ def test_equivalent_generation_claim_is_single_and_late_result_is_not_admitted(d
         plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);old_as=str(shown['decision']['assessment_situation_id'])
         operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
             request_key='p02-late',requested_by=99,package=load_variability_package(),
-            provider_config={'id':'controlled','version':'1','checksum':'b'*64});c.commit()
+            provider_config=controlled_provider_ref());c.commit()
     def claim():
         with db() as c:
             try:
@@ -266,12 +325,20 @@ def test_controlled_return_179_continues_same_as_without_restoring_budget(db):
         evaluated=datetime.now(timezone.utc)
         event=record_controlled_absence(c,cycle_id=cycle_id,expected_as_id=old_as,source_ref='controlled-179',
             recognized_at=evaluated-timedelta(seconds=179))
+        revision=c.execute("SELECT * FROM m7_plan_revisions ORDER BY revision_no DESC LIMIT 1").fetchone()
+        content=deepcopy(revision['content_json']);content['route'].append(deepcopy(content['route'][0]))
+        content['route'][1]['case_id']='PLANNED-NOT-CREATED'
+        c.execute("""INSERT INTO m7_plan_revisions(id,plan_id,cycle_db_id,revision_no,content_json,content_checksum,reason)
+            VALUES(%s,%s,%s,%s,%s::jsonb,%s,'a01_multi_step_fixture')""",
+            (uuid4(),revision['plan_id'],revision['cycle_db_id'],revision['revision_no']+1,
+             json.dumps(content),checksum(content)))
         counts_before=c.execute("SELECT (SELECT count(*) FROM m5_assessment_situations) AS situations,(SELECT count(*) FROM m7_return_commands) AS commands").fetchone()
         state=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=evaluated)
         counts_after=c.execute("SELECT (SELECT count(*) FROM m5_assessment_situations) AS situations,(SELECT count(*) FROM m7_return_commands) AS commands").fetchone()
         assert counts_after==counts_before
         assert state['allowed_action']=='continue_current' and state['recognized_absence_seconds']==179
         assert state['progress']=={'total_positions':1,'completed_positions':0}
+        assert state['planned_positions']==2 and state['planned_total'] is True
         assert str(event['id'])==state['absence_event_id']
         result=continue_return(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,expected_state='active',
             key='return-179',owner_user_id=99,evaluated_at=evaluated)
@@ -284,6 +351,51 @@ def test_controlled_return_179_continues_same_as_without_restoring_budget(db):
         assert c.execute("SELECT count(*) AS n FROM m5_assessment_situations").fetchone()['n']==1
 
 
+def test_presence_lease_119_120_and_two_clients_use_last_server_expiry(db):
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);as_id=str(shown['decision']['assessment_situation_id'])
+        base=datetime.now(timezone.utc)-timedelta(seconds=180)
+        heartbeat(c,cycle_id=cycle_id,owner_user_id=99,client_id=str(uuid4()),expected_as_id=as_id,received_at=base)
+        second=str(uuid4())
+        heartbeat(c,cycle_id=cycle_id,owner_user_id=99,client_id=second,expected_as_id=as_id,received_at=base+timedelta(seconds=60))
+        at_119=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=base+timedelta(seconds=179))
+        assert at_119['allowed_action']=='connected' and at_119['recognized_absence_seconds']==0
+        at_120=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=base+timedelta(seconds=180))
+        assert at_120['allowed_action']=='continue_current' and at_120['recognized_absence_seconds']==0
+        assert c.execute("SELECT count(*) AS n FROM m7_return_absence_events").fetchone()['n']==0
+        c.commit()
+        result=continue_return(c,cycle_id=cycle_id,position_no=1,expected_as_id=as_id,expected_state='active',
+            key='presence-continue',owner_user_id=99,evaluated_at=base+timedelta(seconds=180))
+        assert result['branch']=='continued_current'
+        event=c.execute("SELECT recognized_at,source_kind FROM m7_return_absence_events").fetchone()
+        assert event['recognized_at']==base+timedelta(seconds=180) and event['source_kind']=='presence_lease'
+
+
+def test_fourth_successful_return_replacement_closes_collection_without_new_cycle(db):
+    policy=json.loads((OUTPUT/'admission-policy.json').read_text())
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id'])
+        current=str(shown['decision']['assessment_situation_id'])
+        for index in range(3):
+            replaced=replace_current(c,cycle_id=cycle_id,position_no=1,
+                expected_assessment_situation_id=current,expected_state='active',key=f'd09-replace-{index}',
+                reason='recognized_return_threshold',policy_ref={'id':'p03','version':'1.2','checksum':'b'*64},
+                requested_by=99,provider=FixedCaseReplacementProvider(policy))
+            current=replaced['new_assessment_situation_id'];start_situation(c,current)
+            row=c.execute('SELECT id FROM m5_assessment_situations WHERE assessment_situation_id=%s',(current,)).fetchone()
+            mark_presented(c,row['id'])
+        evaluated=datetime.now(timezone.utc)
+        c.execute("UPDATE m5_cycle_time_intervals SET started_at=%s WHERE ended_at IS NULL AND interval_type='collecting'",
+            (evaluated-timedelta(seconds=300),))
+        record_controlled_absence(c,cycle_id=cycle_id,expected_as_id=current,source_ref='fourth-required',
+            recognized_at=evaluated-timedelta(seconds=180))
+        result=continue_return(c,cycle_id=cycle_id,position_no=1,expected_as_id=current,expected_state='active',
+            key='fourth-required',owner_user_id=99,evaluated_at=evaluated)
+        assert result['branch']=='replacement_limit_closed' and result['status']=='collection_closed'
+        assert c.execute('SELECT count(*) AS n FROM m5_cycles').fetchone()['n']==1
+        assert c.execute("SELECT count(*) AS n FROM m7_route_position_as_history WHERE disposition='replaced'").fetchone()['n']==3
+
+
 def test_controlled_return_180_replaces_presents_once_and_keeps_deadline(db):
     policy=json.loads((OUTPUT/'admission-policy.json').read_text());package=load_variability_package()
     with db() as c:
@@ -294,7 +406,7 @@ def test_controlled_return_180_replaces_presents_once_and_keeps_deadline(db):
             recognized_at=evaluated-timedelta(seconds=180))
         operation=begin_generation(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,
             request_key='p03-generate',requested_by=99,package=package,
-            provider_config={'id':'controlled','version':'1','checksum':'e'*64})
+            provider_config=controlled_provider_ref())
         claimed=claim_generation(c,str(operation['id']));source=claimed['input_json']['old_content']
         candidate={'case_id':'CASE-TDISC-01','case_version':'v0.1','base_role':claimed['input_json']['base_role'],
             'indicator_targets':claimed['input_json']['indicator_targets'],
@@ -317,6 +429,22 @@ def test_controlled_return_180_replaces_presents_once_and_keeps_deadline(db):
         route=replacement_metadata(c,c.execute('SELECT id FROM m5_cycles').fetchone()['id'])
         assert route['progress']=={'total_positions':1,'completed_positions':0}
         assert [x['disposition'] for x in route['positions'][0]['history']]==['replaced','current']
+
+
+def test_return_state_closes_action_at_calendar_deadline(db):
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);old_as=str(shown['decision']['assessment_situation_id'])
+        c.execute("UPDATE m5_cycles SET started_at=NOW()-(calendar_window_seconds-20)*INTERVAL '1 second'")
+        c.execute("UPDATE m5_cycle_sessions SET started_at=(SELECT started_at FROM m5_cycles)")
+        c.execute("UPDATE m5_cycle_time_intervals SET started_at=NOW()-INTERVAL '20 seconds' WHERE ended_at IS NULL")
+        timing=read_cycle(c,cycle_id);deadline=timing['calendar_deadline']
+        record_controlled_absence(c,cycle_id=cycle_id,expected_as_id=old_as,source_ref='controlled-deadline',
+            recognized_at=datetime.now(timezone.utc)-timedelta(seconds=10))
+        before=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=deadline-timedelta(microseconds=1))
+        at=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=deadline)
+        after=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=deadline+timedelta(seconds=1))
+        assert before['allowed_action']=='continue_current'
+        assert at['allowed_action']==after['allowed_action']=='time_limit_reached'
 
 
 def test_two_replacement_requests_have_one_effect(db):
@@ -381,6 +509,55 @@ def active_cycle(connection):
     decision=choose_next(connection,cycle_id=str(plan['cycle_id']),expected_plan_revision_id=str(plan['revision_id']),key='next',created_by=99,policy=policy)
     shown=present(connection,decision_id=str(decision['id']),expected_revision=1)
     return plan,shown
+
+
+def test_started_cycle_uses_saved_return_policy_when_current_loader_changes(db, monkeypatch):
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);as_id=str(shown['decision']['assessment_situation_id'])
+        monkeypatch.setattr(return_integration, 'load_policy', lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError('latest policy read')))
+        result=heartbeat(c,cycle_id=cycle_id,owner_user_id=99,client_id=str(uuid4()),expected_as_id=as_id)
+        state=read_return_state(c,cycle_id=cycle_id,owner_user_id=99)
+        assert result['heartbeat_interval_seconds']==10
+        assert result['policy_ref']==state['policy_ref']
+        assert state['presence_lease_seconds']==120 and state['replacement_threshold_seconds']==180
+
+
+def test_new_qa_plan_receives_new_admitted_return_policy_snapshot(db, monkeypatch):
+    with db() as c:
+        case=setup(c,admitted=True);admit_case(c,case)
+        first=create_plan(c,personalized_profile_id=7,selected_skills=['K1','K2','K3','K4'],created_by=99,key='policy-v1')
+        changed=deepcopy(return_integration.load_policy())
+        changed.update(replacement_threshold_seconds=7,presence_lease_seconds=12,heartbeat_interval_seconds=2)
+        monkeypatch.setattr(return_integration,'load_policy',lambda *_args,**_kwargs:changed)
+        second=create_plan(c,personalized_profile_id=7,selected_skills=['K1','K2','K3','K4'],created_by=99,key='policy-v2')
+        assert first['plan']['return_policy_snapshot']['content']['replacement_threshold_seconds']==180
+        assert second['plan']['return_policy_snapshot']['content']['replacement_threshold_seconds']==7
+        assert first['plan']['return_policy_snapshot']['checksum']!=second['plan']['return_policy_snapshot']['checksum']
+
+
+@pytest.mark.parametrize(('mutation','error'), [
+    ('missing','M7_RETURN_POLICY_NOT_SNAPSHOTTED'),
+    ('checksum','M7_RETURN_POLICY_SNAPSHOT_CHECKSUM_MISMATCH'),
+    ('schema','M7_RETURN_POLICY_SCHEMA_UNSUPPORTED'),
+    ('scope','M7_RETURN_POLICY_SCOPE_MISMATCH'),
+])
+def test_return_policy_snapshot_fails_closed_without_latest_fallback(db, mutation, error):
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id'])
+        revision=c.execute("SELECT * FROM m7_plan_revisions ORDER BY revision_no DESC LIMIT 1").fetchone()
+        content=deepcopy(revision['content_json']);snapshot=content.get('return_policy_snapshot')
+        if mutation=='missing': content.pop('return_policy_snapshot',None)
+        elif mutation=='checksum': snapshot['checksum']='0'*64
+        elif mutation=='schema':
+            snapshot['content']['schema_version']=999;snapshot['checksum']=checksum(snapshot['content'])
+        else:
+            snapshot['content']['usage_scope']='assessment';snapshot['checksum']=checksum(snapshot['content'])
+        c.execute("""INSERT INTO m7_plan_revisions(id,plan_id,cycle_db_id,revision_no,content_json,content_checksum,reason)
+            VALUES(%s,%s,%s,%s,%s::jsonb,%s,'synthetic_invalid_return_policy')""",
+            (uuid4(),revision['plan_id'],revision['cycle_db_id'],revision['revision_no']+1,
+             json.dumps(content),checksum(content)))
+        with pytest.raises(ValueError,match=error):
+            read_return_state(c,cycle_id=cycle_id,owner_user_id=99)
 
 
 def test_completion_closes_open_as_persists_final_c45_and_c46(db):

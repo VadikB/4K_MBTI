@@ -38,11 +38,12 @@ from Api import m7_clarification
 from Api.m7_clarification_contracts import CreateClarificationRequest,PresentClarificationRequest,ClarificationAnswerRequest,ClarificationOutcomeRequest
 from Api import m7_completion
 from Api import m7_return_integration
-from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,AdditionalSessionRequest,BlockingWaitRequest,ReconcileC46Request,ReturnContinueRequest
+from Api.m7_completion_contracts import CompletionRequest,CycleControlRequest,AdditionalSessionRequest,BlockingWaitRequest,ReconcileC46Request,ReturnContinueRequest,ReturnHeartbeatRequest
 from Api import m6_cycle_aggregation_repository
 from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest, CreateSubstantiveAggregationRequest
 from Api.profile_access import require_unchanged_email
 from Api import participant_profile
+from Api import acquaintance
 from Api import m8_results
 from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest, RegenerateReportRequest
 from Api import m10_product_flow, m10_orchestration
@@ -219,6 +220,9 @@ from Api.schemas import (
     JourneyAssessmentState,
     OnboardingStateResponse,
     OnboardingStateUpdateRequest,
+    AcquaintanceAnswersRequest,
+    AcquaintanceConsentRequest,
+    AcquaintanceIssueRequest,
     ProfileStateResponse,
     UserJourneyStateResponse,
     UserResponse,
@@ -2999,7 +3003,9 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
                     user_agent=user_agent,
                 )
             except AuthRateLimitError as exc:
-                raise HTTPException(status_code=429, detail=str(exc)) from exc
+                headers = ({"Retry-After":str(exc.retry_after_seconds)}
+                           if exc.retry_after_seconds is not None else None)
+                raise HTTPException(status_code=429, detail=str(exc), headers=headers) from exc
             except RuntimeError as exc:
                 raise HTTPException(status_code=503, detail=str(exc)) from exc
             return AuthEmailRequestResponse(
@@ -3011,6 +3017,9 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
                 auth_mode="verification_pending",
                 dev_magic_token=action_result.dev_token,
                 organization=_public_invitation_by_id(action_result.organization_invitation_id),
+                server_time=action_result.server_time,
+                next_request_at=action_result.next_request_at,
+                retry_after_seconds=max(settings.auth_magic_link_resend_cooldown_seconds,0),
             )
         return AuthEmailRequestResponse(
             message="Задайте пароль для первичного входа." if is_registration else "Введите пароль для входа.",
@@ -3032,7 +3041,9 @@ def request_email_magic_link(payload: AuthEmailRequest, request: Request) -> Aut
     except AuthAccessDeniedError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except AuthRateLimitError as exc:
-        raise HTTPException(status_code=429, detail=str(exc)) from exc
+        headers = ({"Retry-After":str(exc.retry_after_seconds)}
+                   if exc.retry_after_seconds is not None else None)
+        raise HTTPException(status_code=429, detail=str(exc), headers=headers) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     return AuthEmailRequestResponse(
@@ -3124,15 +3135,25 @@ def forgot_password(payload: AuthPasswordForgotRequest, request: Request) -> Aut
             client_ip=request.client.host if request.client else None,
             user_agent=request.headers.get("User-Agent"),
         )
-    except (AuthAccessDeniedError, AuthRateLimitError, ValueError):
+    except AuthRateLimitError as exc:
         action_result = None
-        pass
+        retry_after = exc.retry_after_seconds
+    except (AuthAccessDeniedError, ValueError):
+        action_result = None
+        retry_after = max(settings.auth_magic_link_resend_cooldown_seconds,0)
     except RuntimeError as exc:
         logger.exception("Password reset email delivery failed")
         raise HTTPException(status_code=503, detail="Не удалось отправить письмо. Попробуйте позже.") from exc
+    server_time = action_result.server_time if action_result is not None else datetime.now(timezone.utc)
+    retry_after = (max(settings.auth_magic_link_resend_cooldown_seconds,0)
+                   if action_result is not None else retry_after)
     return AuthActionResponse(
         message=neutral_message,
         dev_action_token=action_result.dev_token if action_result is not None else None,
+        server_time=server_time,
+        next_request_at=(action_result.next_request_at if action_result is not None
+                         else server_time+timedelta(seconds=max(retry_after or 0,0))),
+        retry_after_seconds=max(retry_after or 0,0),
     )
 
 
@@ -3371,6 +3392,7 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
     with get_connection() as connection:
         profile = participant_profile.readiness(connection, user_id=user.id, profile_id=personalized_profile_id)
         onboarding = get_or_create_onboarding_state(connection, user_id)
+        acquaintance_state = acquaintance.read_state(connection, user_id=user.id)
         cycle = connection.execute("""SELECT c.status,c.cycle_id,
             latest_as.assessment_situation_id,latest_as.as_status,latest_as.session_id
             FROM m5_cycles c
@@ -3390,12 +3412,20 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
     assessment_status = ({'prepared':'preparing','active':'in_progress','paused':'in_progress',
         'interrupted':'in_progress','collection_closed':'analyzing','calculation_pending':'analyzing',
         'calculated':'report_ready','failed':'failed'}.get(cycle['status'], 'not_started') if cycle else 'not_started')
-    next_action = determine_cycle_next_action(
-        profile_status='complete' if ready else 'incomplete',
-        onboarding_status=str(onboarding['status']),
-        cycle_status=str(cycle['status']) if cycle else None,
-        assessment_situation_status=str(cycle['as_status']) if cycle and cycle['as_status'] else None,
-    )
+    if cycle:
+        next_action = determine_cycle_next_action(
+            profile_status='complete', onboarding_status=str(onboarding['status']),
+            cycle_status=str(cycle['status']),
+            assessment_situation_status=str(cycle['as_status']) if cycle['as_status'] else None,
+        )
+    elif acquaintance_state["readiness"]["status"] != "ready":
+        next_action = "wait_for_acquaintance_data"
+    elif str(onboarding["status"]) in {"not_started", "in_progress"}:
+        next_action = "show_onboarding"
+    elif not ready:
+        next_action = "complete_profile"
+    else:
+        next_action = "show_dashboard"
     # A stored Cycle owns the confirmed M4 snapshot. Reading this projection must
     # not reopen M4 or mutate Cycle intervals/time budgets.
     return UserJourneyStateResponse(
@@ -3414,6 +3444,7 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
         ),
         report_status='ready' if assessment_status == 'report_ready' else 'not_ready',
         next_action=next_action,
+        acquaintance=acquaintance_state,
     )
 
 
@@ -3436,6 +3467,57 @@ def set_user_onboarding_state(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         connection.commit()
     return _onboarding_response(onboarding)
+
+
+@router.get("/{user_id}/acquaintance")
+def get_participant_acquaintance(user_id: int, request: Request) -> dict:
+    _require_matching_session_user(request, user_id)
+    with get_connection() as connection:
+        return acquaintance.read_state(connection, user_id=user_id)
+
+
+@router.put("/{user_id}/acquaintance/answers")
+def save_participant_acquaintance_answers(
+    user_id: int, payload: AcquaintanceAnswersRequest, request: Request,
+) -> dict:
+    _require_matching_session_user(request, user_id)
+    try:
+        with get_connection() as connection:
+            result = acquaintance.save_answers(
+                connection, user_id=user_id, answers=payload.answers, confirm=payload.confirm,
+            )
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/{user_id}/acquaintance/consent")
+def accept_participant_acquaintance_consent(
+    user_id: int, payload: AcquaintanceConsentRequest, request: Request,
+) -> dict:
+    _require_matching_session_user(request, user_id)
+    try:
+        with get_connection() as connection:
+            result = acquaintance.accept_consent(connection, user_id=user_id, version=payload.version)
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/{user_id}/acquaintance/issues", status_code=201)
+def report_participant_data_issue(
+    user_id: int, payload: AcquaintanceIssueRequest, request: Request,
+) -> dict:
+    _require_matching_session_user(request, user_id)
+    try:
+        with get_connection() as connection:
+            result = acquaintance.report_issue(connection, user_id=user_id, message=payload.message)
+            connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.get("/admin/dashboard", response_model=AdminDashboard)
@@ -3637,7 +3719,7 @@ def send_personal_organization_invitations(
                 hmac.new(invitation_secret.encode("utf-8"), token_material, hashlib.sha256).digest()
             ).decode("ascii").rstrip("=")
             now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
-            expires_at = now_utc + timedelta(hours=72)
+            expires_at = now_utc + timedelta(hours=max(settings.auth_personal_invitation_ttl_hours,1))
             with get_connection() as connection:
                 _require_organization_admin(connection, current_user, organization_id)
                 member = connection.execute(
@@ -5904,7 +5986,7 @@ def generate_owned_equivalent_candidate(cycle_id:UUID,position_no:int,
         if provider is None:
             with get_connection() as connection:
                 failed=m5_equivalent_generation.fail_generation(connection,operation_id=str(claimed['id']),
-                    lease_token=str(claimed['lease_token']),error_code='M5_EQUIVALENT_PROVIDER_UNAVAILABLE')
+                    lease_token=str(claimed['lease_token']),error_code='M5_EQUIVALENT_PROVIDER_UNAVAILABLE',retryable=True)
                 connection.commit()
             raise HTTPException(status_code=409,detail=failed['error_code'])
         try:
@@ -5913,7 +5995,7 @@ def generate_owned_equivalent_candidate(cycle_id:UUID,position_no:int,
             code=f'M5_EQUIVALENT_PROVIDER_FAILED:{type(exc).__name__}'
             with get_connection() as connection:
                 m5_equivalent_generation.fail_generation(connection,operation_id=str(claimed['id']),
-                    lease_token=str(claimed['lease_token']),error_code=code)
+                    lease_token=str(claimed['lease_token']),error_code=code,retryable=True)
                 connection.commit()
             raise HTTPException(status_code=409,detail=code) from exc
         with get_connection() as connection:
@@ -5963,6 +6045,17 @@ def get_owned_m7_return_state(cycle_id:UUID,request:Request):
     try:
         with get_connection() as connection:
             return m7_return_integration.read_return_state(connection,cycle_id=str(cycle_id),owner_user_id=int(user.id))
+    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+
+@router.post('/assessment/m7/cycles/{cycle_id}/presence')
+def heartbeat_owned_m7_return(cycle_id:UUID,payload:ReturnHeartbeatRequest,request:Request):
+    user=_m7_owned_cycle(request,str(cycle_id))
+    try:
+        with get_connection() as connection:
+            result=m7_return_integration.heartbeat(connection,cycle_id=str(cycle_id),owner_user_id=int(user.id),
+                client_id=payload.client_id,expected_as_id=payload.expected_assessment_situation_id)
+            connection.commit();return result
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 

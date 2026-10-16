@@ -42,6 +42,7 @@ class Settings:
     auth_magic_link_ttl_minutes: int = int(os.getenv("AUTH_MAGIC_LINK_TTL_MINUTES", "15"))
     auth_magic_link_dev_mode: bool = os.getenv("AUTH_MAGIC_LINK_DEV_MODE", "true").strip().lower() in {"1", "true", "yes", "on"}
     auth_magic_link_resend_cooldown_seconds: int = int(os.getenv("AUTH_MAGIC_LINK_RESEND_COOLDOWN_SECONDS", "60"))
+    auth_personal_invitation_ttl_hours: int = int(os.getenv("AUTH_PERSONAL_INVITATION_TTL_HOURS", "72"))
     auth_magic_link_email_hourly_limit: int = int(os.getenv("AUTH_MAGIC_LINK_EMAIL_HOURLY_LIMIT", "5"))
     auth_magic_link_ip_hourly_limit: int = int(os.getenv("AUTH_MAGIC_LINK_IP_HOURLY_LIMIT", "20"))
     auth_magic_link_from_email: str = os.getenv("AUTH_MAGIC_LINK_FROM_EMAIL", "no-reply@agent4k.local").strip() or "no-reply@agent4k.local"
@@ -84,6 +85,12 @@ class Settings:
         os.getenv("ASSESSMENT_QUEUE_LEASE_TIMEOUT_SECONDS", "900")
     )
     assessment_queue_max_attempts: int = int(os.getenv("ASSESSMENT_QUEUE_MAX_ATTEMPTS", "3"))
+    assessment_equivalent_generation_lease_seconds: int = int(
+        os.getenv("ASSESSMENT_EQUIVALENT_GENERATION_LEASE_SECONDS", "120")
+    )
+    assessment_equivalent_generation_max_attempts: int = int(
+        os.getenv("ASSESSMENT_EQUIVALENT_GENERATION_MAX_ATTEMPTS", "3")
+    )
     assessment_queue_retention_hours: int = int(os.getenv("ASSESSMENT_QUEUE_RETENTION_HOURS", "168"))
     assessment_analysis_worker_threads: int = int(os.getenv("ASSESSMENT_ANALYSIS_WORKER_THREADS", "1"))
     assessment_universal_llm_enabled: bool = (

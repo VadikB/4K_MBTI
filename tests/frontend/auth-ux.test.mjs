@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const html = await readFile(new URL('../../web/index.html', import.meta.url), 'utf8');
+const authCss = await readFile(new URL('../../web/styles/screens/auth.css', import.meta.url), 'utf8');
 const wiring = await readFile(new URL('../../web/js/wiring.js', import.meta.url), 'utf8');
 const session = await readFile(new URL('../../web/js/session.js', import.meta.url), 'utf8');
 const main = await readFile(new URL('../../web/js/main.js', import.meta.url), 'utf8');
@@ -51,4 +52,25 @@ test('new passwords use two in-memory steps and the accepted ASCII policy', () =
   assert.doesNotMatch(wiring, /sessionStorage.*newPasswordDraft|localStorage.*newPasswordDraft/);
   assert.match(html, /Требования к паролю/);
   assert.match(html, /Без пробелов и кириллицы/);
+});
+
+test('auth surface exposes the R04 mail state and non-interactive shared footer', () => {
+  assert.match(authCss, /auth-email-outline\.svg/);
+  assert.match(html, /id="auth-change-email-button"[^>]*>Изменить email</);
+  assert.match(html, /<footer class="app-footer"/);
+  assert.match(html, />Политика конфиденциальности<\/span>/);
+  assert.match(html, />Согласие на обработку персональных данных<\/span>/);
+  assert.match(html, />© 2026 LIDUM<\/span>/);
+  assert.doesNotMatch(html, /href="#"[^>]*>\s*(?:Политика|Согласие)/);
+});
+
+test('resend timing is server-driven and survives reload, background time and another tab', () => {
+  assert.doesNotMatch(wiring, /AUTH_RESEND_COOLDOWN_SECONDS/);
+  assert.match(wiring, /timing\?\.next_request_at/);
+  assert.match(wiring, /timing\?\.server_time/);
+  assert.match(wiring, /Date\.parse\(timing\.next_request_at\) - Date\.parse\(timing\.server_time\)/);
+  assert.match(wiring, /timing\?\.retry_after_seconds/);
+  assert.match(wiring, /Date\.now\(\)/);
+  assert.match(wiring, /window\.localStorage\.setItem\(AUTH_RESEND_TIMING_KEY/);
+  assert.match(wiring, /window\.addEventListener\('storage'/);
 });
