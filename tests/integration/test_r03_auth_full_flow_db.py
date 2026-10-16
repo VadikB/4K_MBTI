@@ -63,6 +63,9 @@ def _internal() -> None:
         new_user_id = connection.execute(
             "SELECT id FROM users WHERE email='other@example.test'"
         ).fetchone()["id"]
+        runtime_counts_before = connection.execute(
+            "SELECT (SELECT count(*) FROM m5_cycles) AS cycles, (SELECT count(*) FROM m5_cycle_sessions) AS sessions"
+        ).fetchone()
         connection.execute("DELETE FROM auth_password_credentials WHERE user_id=%s", (new_user_id,))
         connection.execute("DELETE FROM user_identities WHERE user_id=%s", (new_user_id,))
         expires = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=72)
@@ -125,6 +128,30 @@ def _internal() -> None:
                 "verification_token": action_token, "organization_invitation_token": registration_token,
             })
             assert repeated.status_code in {400, 403}
+            forgot = http.post("/users/auth/password/forgot", json={"email": "other@example.test"})
+            assert forgot.status_code == 200
+            reset_token = parse_qs(urlparse(sent[-1]["action_url"]).query)["token"][0]
+            validated = http.post("/users/auth/password/reset/validate", json={"token": reset_token})
+            assert validated.status_code == 200 and validated.json()["auth_mode"] == "password_reset"
+            reset = http.post("/users/auth/password/reset", json={
+                "token": reset_token, "password": "ChangedPass2!", "password_confirm": "ChangedPass2!",
+            })
+            assert reset.status_code == 200, reset.text
+            assert http.post("/users/auth/email/password-login", json={
+                "email": "other@example.test", "password": "ValidPass1!",
+            }).status_code in {400, 401, 403}
+            assert http.post("/users/auth/email/password-login", json={
+                "email": "other@example.test", "password": "ChangedPass2!",
+            }).status_code == 200
+            reused_reset = http.post("/users/auth/password/reset", json={
+                "token": reset_token, "password": "ThirdPass3!", "password_confirm": "ThirdPass3!",
+            })
+            assert reused_reset.status_code in {400, 403}
+        with get_connection() as connection:
+            runtime_counts_after = connection.execute(
+                "SELECT (SELECT count(*) FROM m5_cycles) AS cycles, (SELECT count(*) FROM m5_cycle_sessions) AS sessions"
+            ).fetchone()
+            assert runtime_counts_after == runtime_counts_before
     finally:
         auth_module.send_auth_action_email = original_sender
         close_connection_pool()

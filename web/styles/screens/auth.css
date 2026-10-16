@@ -861,3 +861,135 @@ body:has(#auth-panel:not(.hidden)),
         height: 56px;
     }
 }
+
+/* UX-R04-CLOSE: final R01 alignment and the shared non-interactive footer. */
+.shell {
+    flex-direction: column;
+}
+
+.auth-panel.auth-panel {
+    flex: 0 0 auto;
+    margin-block: auto;
+}
+
+.auth-panel.auth-panel--password-create {
+    justify-content: flex-start;
+    padding-top: 78px;
+    gap: 22px;
+}
+
+.auth-panel.auth-panel--password-create .auth-credential-step-indicator {
+    position: absolute;
+    top: 38px;
+    left: 64px;
+    width: calc(100% - 128px);
+}
+
+.auth-panel.auth-panel--password-create .auth-panel-copy {
+    justify-content: flex-start;
+}
+
+.auth-panel.auth-panel--password-create .stack {
+    gap: 12px;
+}
+
+.auth-panel.auth-panel .auth-password-generate-row .ghost-button {
+    font-weight: 400;
+}
+
+.auth-panel.auth-panel .auth-email-sent {
+    gap: 20px;
+}
+
+.auth-panel.auth-panel .auth-email-sent-icon {
+    width: 56px;
+    height: 56px;
+    border: 0;
+    border-radius: 0;
+    background: center / 56px 56px no-repeat url("/web/assets/icons/auth-email-outline.svg");
+}
+
+.auth-panel.auth-panel .auth-email-sent-copy h2 {
+    color: #0f172a;
+    font: 700 24px/32px "Onest", sans-serif;
+}
+
+.auth-panel.auth-panel #auth-change-email-button {
+    width: auto;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    font: 400 16px/24px "Onest", sans-serif;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.auth-panel.auth-panel #auth-change-email-button:hover:not(:disabled),
+.auth-panel.auth-panel #auth-change-email-button:focus-visible {
+    border: 0;
+    background: transparent;
+    color: #222c30;
+}
+
+.app-footer {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 16px;
+    padding: 24px max(24px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+    background: #f6f9f9;
+    color: rgba(100, 116, 139, 0.6);
+    font-family: "Onest", sans-serif;
+    font-weight: 400;
+    text-align: center;
+}
+
+.app-footer-documents {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 32px;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.8px;
+}
+
+.app-footer-copyright {
+    font-size: 10px;
+    line-height: 16px;
+    letter-spacing: 0.8px;
+}
+
+@media (max-width: 767px) {
+    .auth-panel.auth-panel--password-create {
+        padding-top: 78px;
+    }
+
+    .auth-panel.auth-panel--password-create .auth-credential-step-indicator {
+        left: 32px;
+        width: calc(100% - 64px);
+    }
+}
+
+@media (max-width: 479px) {
+    .app-footer-documents {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .auth-panel.auth-panel--password-create .auth-credential-step-indicator {
+        left: 24px;
+        width: calc(100% - 48px);
+    }
+}
+
+@media (max-width: 359px) {
+    .auth-panel.auth-panel--password-create .auth-credential-step-indicator {
+        left: 16px;
+        width: calc(100% - 32px);
+    }
+}

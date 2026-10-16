@@ -119,6 +119,16 @@ test('R03 verification pending renders one mail-check heading without password c
   await expect(page.getByText(/Введите пароль для/)).toBeHidden();
   await expect(page.locator('#auth-resend-email-button')).toHaveText('Отправить повторно');
   await expect(page.locator('#auth-resend-countdown')).toContainText('доступна через');
+  const mailHeading = await page.getByRole('heading', { name: 'Проверьте почту' }).evaluate((node) => {
+    const style = getComputedStyle(node);
+    return { fontSize: style.fontSize, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
+  });
+  expect(mailHeading).toEqual({ fontSize: '24px', fontWeight: '700', lineHeight: '32px' });
+  await expect(page.locator('.auth-email-sent-icon')).toHaveCSS('background-image', /auth-email-outline\.svg/);
+  await expect(page.locator('#auth-change-email-button')).toHaveCSS('border-top-width', '0px');
+  const changeEmail = await page.locator('#auth-change-email-button').boundingBox();
+  const resend = await page.locator('#auth-resend-email-button').boundingBox();
+  expect(changeEmail.width).toBeLessThan(resend.width);
   await page.locator('#auth-change-email-button').click();
   await expect(page.locator('#auth-title')).toBeVisible();
   await expect(page.locator('#auth-title')).toHaveText('Добро пожаловать');
@@ -221,15 +231,39 @@ test('R03 AUTH 01 and password creation keep canonical R01 metrics', async ({ pa
   }));
   await page.goto(`${base}/?auth_action=email_verification&token=verify-r03`);
   const createCard = await page.locator('#auth-panel').boundingBox();
+  const createTitle = await page.locator('#auth-title').boundingBox();
   const passwordField = await page.locator('#magic-token-input').boundingBox();
   expect(Math.round(createCard.width)).toBe(502);
   expect(Math.round(createCard.height)).toBe(547);
   expect(Math.round(passwordField.height)).toBe(49);
+  expect(Math.round(createTitle.y - createCard.y)).toBe(78);
+  expect(Math.round(passwordField.y - createCard.y)).toBe(190);
   await expect(page.locator('#auth-credential-step-indicator')).toHaveText('Шаг 1 из 2');
+  await expect(page.locator('#auth-password-generate-button')).toHaveCSS('font-weight', '400');
   const eyeImage = await page.locator('#auth-password-toggle-button').evaluate(
     (button) => getComputedStyle(button, '::after').backgroundImage,
   );
   expect(eyeImage).toMatch(/auth-eye\.svg/);
+});
+
+test('R04 shared footer stays in document flow and stacks on mobile', async ({ page }) => {
+  await baseRoutes(page);
+  await page.goto(base);
+  const footer = page.locator('.app-footer');
+  await expect(footer).toBeVisible();
+  await expect(footer.getByText('Политика конфиденциальности')).toBeVisible();
+  await expect(footer.getByText('Согласие на обработку персональных данных')).toBeVisible();
+  await expect(footer.getByText('© 2026 LIDUM')).toBeVisible();
+  await expect(footer.locator('a')).toHaveCount(0);
+  await expect(footer).toHaveCSS('position', 'static');
+  await page.setViewportSize({ width: 360, height: 760 });
+  await expect(page.locator('#email-input')).toHaveCSS('font-size', '16px');
+  await expect(page.locator('.app-footer-documents')).toHaveCSS('flex-direction', 'column');
+  const layout = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(layout.scrollWidth).toBe(layout.clientWidth);
 });
 
 test('R03 refresh obeys server journey and fails closed on journey outage', async ({ page }) => {

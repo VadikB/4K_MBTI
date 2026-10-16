@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/web/styles/tokens.css?v=20260701-no-font-import">
   <link rel="stylesheet" href="/web/styles/base.css?v=20260517-scrollbar">
   <link rel="stylesheet" href="/web/styles/components.css?v=20260516-merged">
-  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=20261012-ux-r02">
+  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=20261016-ux-r04-close">
   <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=20260521-onboarding-progress-transition">
   <link rel="stylesheet" href="/web/styles/screens/processing.css?v=20260516-merged">
   <link rel="stylesheet" href="/web/styles/screens/profile.css?v=20260517-redesign-3">
@@ -86,7 +86,7 @@
         <button id="forgot-password-button" type="button" class="ghost-button auth-secondary-action hidden">Забыли пароль?</button>
       </form>
       <div id="auth-email-sent" class="auth-email-sent hidden" role="status" aria-live="polite">
-        <div class="auth-email-sent-icon" aria-hidden="true">✓</div>
+        <div class="auth-email-sent-icon" aria-hidden="true"></div>
         <div class="auth-email-sent-copy">
           <h2>Проверьте почту</h2>
           <p>Мы отправили ссылку для подтверждения на <strong id="auth-email-sent-address"></strong>.</p>
@@ -94,7 +94,7 @@
         </div>
         <button id="auth-resend-email-button" type="button" class="ghost-button auth-resend-action" disabled>Отправить повторно</button>
         <p id="auth-resend-countdown" class="auth-resend-countdown">Повторная отправка доступна через 60 сек.</p>
-        <button id="auth-change-email-button" type="button" class="ghost-button auth-secondary-action">Указать другой email</button>
+        <button id="auth-change-email-button" type="button" class="ghost-button auth-secondary-action">Изменить email</button>
       </div>
       <form id="auth-token-form" class="stack hidden" autocomplete="on">
         <input id="auth-credential-email-input" name="username" type="email" autocomplete="username" hidden>
@@ -1960,6 +1960,14 @@
       </form>
       <p id="chat-error" class="error" hidden></p>
     </section>
+
+    <footer class="app-footer" aria-label="Правовая информация">
+      <div class="app-footer-documents">
+        <span>Политика конфиденциальности</span>
+        <span>Согласие на обработку персональных данных</span>
+      </div>
+      <span class="app-footer-copyright">© 2026 LIDUM</span>
+    </footer>
   </main>
 
   <div id="report-info-modal" class="report-info-modal hidden" aria-hidden="true">

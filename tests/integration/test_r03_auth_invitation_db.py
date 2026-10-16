@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient
 from Api import routes
 from Api import web_session_service as session_module
 from Api.org_access import AdminScope
+from Api.organization_invitation_service import hash_invitation_token
 
 
 pytestmark = pytest.mark.integration
@@ -197,3 +198,30 @@ def test_selected_organization_survives_session_restore_and_access_recheck(invit
         connection.commit()
     with session_connection() as connection:
         assert routes._organization_context_for_user(connection, user_id, second_id) is None
+
+
+def test_invitation_expiry_boundary_and_consumed_history_are_timezone_stable(invitation_database):
+    database_url, schema, organization_id, app = invitation_database
+    with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
+        exact_token = "r04-exact-boundary"
+        active_token = "r04-before-boundary"
+        consumed_token = "r04-consumed-history"
+        exact_id = connection.execute("""INSERT INTO organization_invitations(
+            organization_id,token_hash,expires_at,recipient_email,purpose,delivery_status,sent_at)
+            VALUES(%s,%s,CURRENT_TIMESTAMP AT TIME ZONE 'UTC','person@example.test','personal_registration','accepted',NOW()) RETURNING id""",
+            (organization_id, hash_invitation_token(exact_token))).fetchone()["id"]
+        connection.execute("""INSERT INTO organization_invitations(
+            organization_id,token_hash,expires_at,recipient_email,purpose,delivery_status,sent_at)
+            VALUES(%s,%s,(CURRENT_TIMESTAMP AT TIME ZONE 'UTC')+INTERVAL '1 minute','person@example.test','personal_registration','accepted',NOW())""",
+            (organization_id, hash_invitation_token(active_token)))
+        consumed_id = connection.execute("""INSERT INTO organization_invitations(
+            organization_id,token_hash,expires_at,recipient_email,purpose,delivery_status,sent_at,used_at)
+            VALUES(%s,%s,(CURRENT_TIMESTAMP AT TIME ZONE 'UTC')-INTERVAL '1 minute','person@example.test','personal_registration','accepted',NOW(),NOW()) RETURNING id""",
+            (organization_id, hash_invitation_token(consumed_token))).fetchone()["id"]
+        connection.commit()
+    with TestClient(app) as client:
+        assert client.get(f"/users/organization-invitations/{exact_token}").status_code == 410
+        assert client.get(f"/users/organization-invitations/{active_token}").status_code == 200
+    assert routes._public_invitation_by_id(consumed_id).organization_id == organization_id
+    assert routes._public_invitation_by_id(exact_id) is None
