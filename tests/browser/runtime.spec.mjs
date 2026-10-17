@@ -126,10 +126,40 @@ async function start(page,expected='готовности'){
  const entrySelector='#dashboard-panel:not(.hidden) #assessment-action-button, #ai-welcome-panel:not(.hidden) #start-first-assessment';
  await expect.poll(()=>page.locator(entrySelector).count()).toBe(1);
  await page.evaluate(selector=>document.querySelector(selector)?.click(),entrySelector);
+ await expect.poll(async()=>await page.locator('#onboarding-panel').isVisible() || await page.locator('#prechat-panel').isVisible()).toBe(true);
+ if(await page.locator('#onboarding-panel').isVisible()){
+  await completeAcquaintance(page);
+  await expect.poll(()=>page.locator(entrySelector).count()).toBe(1);
+  await page.evaluate(selector=>document.querySelector(selector)?.click(),entrySelector);
+ }
  await page.locator('#prechat-start-button').click();
  await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
  await expect(page.locator('#interview-messages')).toContainText(expected);
  await test.info().attach('interview-start',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+}
+async function completeAcquaintance(page){
+ const panel=page.locator('#onboarding-panel');
+ const answers=[
+  'Синтетические задачи: анализировать материалы и согласовывать рабочие решения.',
+  'Синтетические решения: проверять условия и выбирать обоснованный следующий шаг.',
+  'Синтетические ограничения: сроки, зависимости и взаимодействие с коллегами.',
+ ];
+ let answerIndex=0;
+ for(let step=0;step<9 && await panel.isVisible();step+=1){
+  const input=panel.locator('.onboarding-answer');
+  if(await input.isVisible())await input.fill(answers[answerIndex++]||`Синтетический ответ ${answerIndex}.`);
+  const next=page.locator('#onboarding-next');
+  await expect(next).toBeEnabled();
+  await next.click();
+ }
+ await expect(panel).toBeHidden();
+}
+async function openReportsHistory(page,stand,expectedCycles){
+ await expect(page.locator('#dashboard-panel')).toBeVisible();
+ await expect(page.locator('#completed-assessments .participant-assessment-card')).toHaveCount(expectedCycles);
+ await page.goto(`${stand.url}/?screen=reports`);
+ await expect(page.locator('#reports-panel')).toBeVisible();
+ await expect(page.locator('.cycle-report')).toHaveCount(expectedCycles);
 }
 async function answer(page,text=fixture.answer){await page.locator('#interview-textarea').fill(text);await page.locator('#interview-submit-button').click();await expect(page.locator('#interview-submit-button')).toBeEnabled({timeout:30000});await expect(page.locator('#interview-error')).toBeHidden();await expect(page.locator('#interview-messages .own')).toContainText([text]);}
 async function report(page,stand,info){
@@ -406,8 +436,7 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  await page.locator('#dashboard-panel .user-chip').click();
  await page.locator('#dashboard-restart-button').click();
  await login(page,stand,'participant@example.test',false,true,true);
- await expect(page.locator('.reports-summary-count')).toHaveText('1');
- await page.locator('.reports-summary-button').click();
+ await openReportsHistory(page,stand,1);
  const card=page.locator('.cycle-report');await expect(card).toHaveCount(1);
  await info.attach('history-list',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  await expect(card.locator('option')).toHaveCount(2);
@@ -437,7 +466,7 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  const second=await report(page,{...stand,dir:secondDir},info);
  expect(second.cycle_id).not.toBe(saved.cycle_id); expect(second.results_revision_id).not.toBe(saved.results_revision_id);
  await page.locator('#report-back-button').click();
- await page.locator('.reports-summary-button').click();
+ await openReportsHistory(page,stand,2);
  await expect(page.locator('.cycle-report')).toHaveCount(2);
  const firstCard=page.locator(`.cycle-report[data-cycle-id="${saved.cycle_id}"]`);
  await expect(firstCard.locator('option')).toHaveCount(2);
@@ -478,7 +507,7 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  await expect(page.locator('#m8-report-shell')).toBeHidden();
  await page.unrouteAll({behavior:'wait'});
  // Reload defaults legacy returnTarget to home; enter history through the dashboard again.
- await page.locator('#report-back-button').click(); await page.locator('.reports-summary-button').click();
+ await page.locator('#report-back-button').click(); await openReportsHistory(page,stand,2);
  await expect(page.locator('.cycle-report')).toHaveCount(2);
  await info.attach('two-cycles-and-legacy',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  await firstCard.locator('select').selectOption(saved.id); await firstCard.locator('.cycle-report-open').click();
@@ -611,9 +640,11 @@ test('P10.5 fresh profile, lost confirmation response, reload and first AS',asyn
 test('P10.5 ready profile with no admitted catalog',async({page,stand},info)=>{
  await login(page,stand,'participant@example.test',true);
  const ready=profileReceipts(stand);expect(ready.profiles[0].status).toBe('ready');
- await page.locator('#assessment-action-button').click();await page.locator('#prechat-start-button').click();
- await expect(page.locator('#prechat-error')).toContainText('Профиль готов');
- await expect(page.locator('#prechat-error')).toContainText('допустимые кейсы');
+ await page.locator('#assessment-action-button').click();
+ await completeAcquaintance(page);
+ await expect(page.locator('#onboarding-panel')).toBeHidden();
+ await expect(page.getByRole('heading',{name:'Данные для оценки готовятся'})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Проверить готовность'})).toBeVisible();
  expect(profileReceipts(stand)).toEqual(ready);
  await expect(page.getByRole('button',{name:'Подтвердить профиль',exact:true})).toBeHidden();
  await info.attach('ready-no-catalog',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
@@ -656,8 +687,7 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  await expect(page.locator('#email-input')).toBeVisible();
  await page.context().clearCookies();await page.evaluate(()=>{localStorage.clear();sessionStorage.clear();});
  await login(page,stand,'participant@example.test',false,true,true);
- await expect(page.locator('.reports-summary-count')).toHaveText('1');
- await page.locator('.reports-summary-button').click();await expect(page.locator('.cycle-report')).toHaveCount(1);
+ await openReportsHistory(page,stand,1);
  await page.locator('.cycle-report-open').click();await expect(page.locator('#m8-report-state')).toContainText('Report готов');
  expect(await (await page.request.get(`${stand.url}/users/assessment/m8/reports/${first.id}`)).json()).toEqual(first);
  expect(await (await page.request.get(resultUrl)).json()).toEqual(results);
@@ -682,7 +712,7 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  expect(await (await page.request.post(regenerateUrl,{data:{idempotency_key:'G03-representation'}})).json()).toEqual(revision);
  expect(await (await page.request.get(resultUrl)).json()).toEqual(results);
  expect(await (await page.request.get(`${stand.url}/users/assessment/m8/reports/${first.id}`)).json()).toEqual(first);
- await page.locator('#report-back-button').click();await page.locator('.reports-summary-button').click();
+ await page.locator('#report-back-button').click();await openReportsHistory(page,stand,2);
  await expect(page.locator('.cycle-report')).toHaveCount(2);
  await expect(page.locator(`.cycle-report[data-cycle-id="${first.cycle_id}"] option`)).toHaveCount(2);
  await info.attach('G03-two-independent-results',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});

@@ -295,6 +295,22 @@ class AssessmentReport(BaseModel):
     expert_comment: str | None = None
 
 
+class ParticipantAssessmentCard(BaseModel):
+    cycle_id: str | None = None
+    title: str
+    organization_name: str | None = None
+    status: str
+    status_label: str
+    description: str
+    action: str | None = None
+    button_label: str | None = None
+    completed_cases: int | None = None
+    total_cases: int | None = None
+    calendar_deadline: datetime | None = None
+    report_id: str | None = None
+    closed_at: datetime | None = None
+
+
 class AdminMetricCard(BaseModel):
     label: str
     value: str
@@ -1056,6 +1072,8 @@ class UserDashboard(BaseModel):
     available_assessments: list[AvailableAssessment]
     reports_total: int = 0
     reports: list[AssessmentReport]
+    current_assessments: list[ParticipantAssessmentCard] = Field(default_factory=list)
+    completed_assessments: list[ParticipantAssessmentCard] = Field(default_factory=list)
 
 
 class CheckOrCreateUserResponse(BaseModel):

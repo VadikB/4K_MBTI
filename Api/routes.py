@@ -205,6 +205,7 @@ from Api.schemas import (
     AssessmentCard,
     AssessmentReportInterpretationResponse,
     AssessmentReport,
+    ParticipantAssessmentCard,
     AssessmentStartResponse,
     AvailableAssessment,
     CheckOrCreateUserRequest,
@@ -641,23 +642,123 @@ def _compact_user_response(user: UserResponse | None) -> UserResponse | None:
     )
 
 
+def _participant_cycle_outcome(history: dict) -> tuple[str, str, str, str, str]:
+    """Project one closed Cycle; processing failure wins over an existing limited Report."""
+    if history.get('status') == 'failed':
+        return ('failed', 'Не удалось подготовить результат',
+                'Ваши ответы сохранены. Повторно проходить оценку не нужно.',
+                'open_processing', 'Подробнее')
+    if history.get('report_id'):
+        return ('report_ready', 'Результат готов',
+                'Результат оценки доступен для просмотра.', 'open_report', 'Посмотреть результат')
+    return ('processing', 'Результат готовится', 'Вы можете вернуться позже.',
+            'open_processing', 'Подробнее')
+
+
 def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> UserDashboard:
     from Api.qa_orchestration import usage_scope
     # Dashboard follows the current Cycle runtime; legacy aggregate views are not inputs.
     readiness = participant_profile.readiness(connection, user_id=user.id, profile_id=profile_id)
-    cycle = connection.execute("""SELECT c.id,c.status,
-        COUNT(s.id)::int AS total_cases,
-        COUNT(s.id) FILTER (WHERE s.status='closed')::int AS completed_cases
-        FROM m5_cycles c LEFT JOIN m5_assessment_situations s ON s.cycle_db_id=c.id
+    cycle_rows = connection.execute("""SELECT c.id,c.cycle_id,c.status,c.started_at,c.collection_closed_at,
+        configuration.name AS assessment_title,organization.name AS organization_name,
+        COUNT(position.id)::int AS total_cases,
+        COUNT(position.id) FILTER (WHERE position.state='completed')::int AS completed_cases
+        FROM m5_cycles c
         JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
-        WHERE c.owner_user_id=%s AND c.usage_scope=%s
-          AND p.organization_id=%s AND p.assessment_configuration_id=%s
-        GROUP BY c.id ORDER BY c.created_at DESC,c.id DESC LIMIT 1""",
-        (user.id, usage_scope(), readiness.get('organization_id'), readiness.get('assessment_configuration_id'))).fetchone()
+        JOIN assessment_configurations configuration ON configuration.id=p.assessment_configuration_id
+        JOIN organizations organization ON organization.id=c.organization_id
+        LEFT JOIN m7_route_positions position ON position.cycle_db_id=c.id
+        WHERE c.owner_user_id=%s AND c.usage_scope=%s AND organization.is_active=TRUE
+          AND EXISTS (SELECT 1 FROM organization_memberships member
+              WHERE member.user_id=c.owner_user_id AND member.organization_id=c.organization_id)
+        GROUP BY c.id,configuration.name,organization.name
+        ORDER BY c.created_at DESC,c.id DESC""", (user.id, usage_scope())).fetchall()
+    history_by_cycle = {item['cycle_id']: item for item in m8_results.list_owned_cycles(connection, user.id)}
+    current_assessments: list[ParticipantAssessmentCard] = []
+    completed_assessments: list[ParticipantAssessmentCard] = []
+    for raw_cycle in cycle_rows:
+        cycle = dict(raw_cycle)
+        cycle_id = str(cycle['cycle_id'])
+        history = history_by_cycle.get(cycle_id, {})
+        completed_cases = int(cycle['completed_cases'] or 0)
+        total_cases = int(cycle['total_cases'] or 0)
+        deadline = None
+        if cycle['started_at'] and cycle['status'] in {'active', 'paused', 'interrupted'}:
+            try:
+                deadline = m7_completion.read_status(connection, cycle_id).get('calendar_deadline')
+            except ValueError:
+                deadline = None
+        if cycle['status'] in {'collection_closed', 'calculation_pending', 'calculated', 'failed'}:
+            status, label, description, action, button = _participant_cycle_outcome(history)
+            completed_assessments.append(ParticipantAssessmentCard(
+                cycle_id=cycle_id, title=cycle['assessment_title'],
+                organization_name=cycle['organization_name'], status=status,
+                status_label=label, description=description, action=action,
+                button_label=button, completed_cases=completed_cases,
+                total_cases=total_cases or None, report_id=history.get('report_id'),
+                closed_at=cycle['collection_closed_at']))
+            continue
+        if cycle['status'] == 'prepared':
+            label, description, action, button = (
+                'Можно начать', 'Ваша оценка подготовлена.', 'start', 'Приступить к оценке')
+        else:
+            label, description, action, button = (
+                'Оценка начата', 'Продолжите с того же места.', 'continue', 'Продолжить')
+        current_assessments.append(ParticipantAssessmentCard(
+            cycle_id=cycle_id, title=cycle['assessment_title'],
+            organization_name=cycle['organization_name'], status=cycle['status'],
+            status_label=label, description=description, action=action,
+            button_label=button, completed_cases=completed_cases,
+            total_cases=total_cases or None, calendar_deadline=deadline))
+
+    completed_assessments.sort(
+        key=lambda card: (
+            card.closed_at.timestamp() if card.closed_at is not None else 0,
+            card.cycle_id or '',
+        ),
+        reverse=True,
+    )
+
+    acquaintance_state = acquaintance.read_state(connection, user_id=user.id)
+    if not current_assessments and not any(row['status'] in {'collection_closed', 'calculation_pending', 'calculated', 'failed'} for row in cycle_rows):
+        organization_name = acquaintance_state['readiness'].get('organization_name')
+        assessment_title = 'Оценка 4К'
+        if readiness.get('assessment_configuration_id'):
+            assignment = connection.execute("""SELECT configuration.name,organization.name AS organization_name
+                FROM assessment_personalized_profiles profile
+                JOIN assessment_configurations configuration ON configuration.id=profile.assessment_configuration_id
+                JOIN organizations organization ON organization.id=profile.organization_id
+                WHERE profile.id=%s""", (readiness.get('id'),)).fetchone()
+            if assignment:
+                assessment_title = assignment['name']
+                organization_name = assignment['organization_name']
+        if (acquaintance_state['readiness']['status'] != 'ready'
+                and acquaintance_state['readiness'].get('organization_id') is None):
+            status = None
+        elif acquaintance_state['readiness']['status'] != 'ready':
+            status, label, description, action, button = ('organization_preparing', 'Оценка ещё не готова к началу',
+                'Организация завершает подготовку оценки.', None, None)
+        elif acquaintance_state['state']['status'] not in {'completed', 'skipped'}:
+            started = int(acquaintance_state['state'].get('current_step') or 0) > 0
+            status, label, description, action, button = ('acquaintance', 'Знакомство с оценкой',
+                'Перед началом познакомьтесь с форматом оценки.', 'acquaintance',
+                'Продолжить знакомство' if started else 'Познакомиться с оценкой')
+        elif readiness['status'] != 'ready':
+            status, label, description, action, button = ('organization_preparing', 'Оценка ещё не готова к началу',
+                readiness['message'], None, None)
+        else:
+            status, label, description, action, button = ('ready', 'Можно начать',
+                'Оценка готова к началу.', 'start', 'Приступить к оценке')
+        if status is not None:
+            current_assessments.append(ParticipantAssessmentCard(
+                title=assessment_title, organization_name=organization_name, status=status,
+                status_label=label, description=description, action=action, button_label=button))
+
     report_rows = m8_results.list_owned_reports(connection, user.id)
-    completed_cases = int(cycle['completed_cases']) if cycle else 0
-    total_cases = int(cycle['total_cases']) if cycle else 0
-    is_complete = bool(cycle and cycle['status']=='calculated')
+    latest_cycle = dict(cycle_rows[0]) if cycle_rows else None
+    completed_cases = int(latest_cycle['completed_cases'] or 0) if latest_cycle else 0
+    total_cases = int(latest_cycle['total_cases'] or 0) if latest_cycle else 0
+    is_complete = bool(latest_cycle and latest_cycle['status'] in {'collection_closed', 'calculation_pending', 'calculated', 'failed'})
     # Compatibility field: no inferred percent for an adaptive, not-yet-finished plan.
     progress_percent = 100 if is_complete else 0
     reports = [AssessmentReport(title='4K — индивидуальный отчёт',summary='Сохранённый отчёт Cycle',
@@ -671,8 +772,8 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
             AvailableAssessment(
                 code="competencies_4k",
                 title="Компетенции 4К",
-                description="Комплексная оценка критического мышления, креативности, коммуникации и кооперации.",
-                duration_minutes=45,
+                description="Оценка навыков 4К.",
+                duration_minutes=0,
                 status="Доступен",
             )
         )
@@ -681,7 +782,7 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         code="competencies_4k",
         title="Компетенции 4К",
         description=(
-            "Комплексная оценка критического мышления, креативности, коммуникации и кооперации."
+            "Оценка навыков 4К."
             if assessment_allowed
             else readiness["message"]
         ),
@@ -689,9 +790,9 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         completed_cases=completed_cases if assessment_allowed else 0,
         total_cases=total_cases if assessment_allowed else 0,
         status_label=(
-            "Новый цикл оценки" if is_complete else "Продолжить ассессмент"
+            "Результат готовится" if is_complete else "Продолжить оценку"
         ) if assessment_allowed else "Нужно заполнить профиль",
-        button_label=("Пройти ассессмент снова" if is_complete else "Продолжить") if assessment_allowed else "Заполнить профиль",
+        button_label=("Подробнее" if is_complete else "Продолжить") if assessment_allowed else "Заполнить профиль",
     )
 
     greeting_name = user.full_name.split()[0] if user.full_name else "коллега"
@@ -702,6 +803,8 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         available_assessments=available_assessments,
         reports_total=int(reports_total_row["reports_total"]) if reports_total_row and reports_total_row["reports_total"] is not None else 0,
         reports=reports,
+        current_assessments=current_assessments,
+        completed_assessments=completed_assessments,
     )
 
 
