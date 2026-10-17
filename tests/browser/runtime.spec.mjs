@@ -157,7 +157,7 @@ async function completeAcquaintance(page){
 async function openReportsHistory(page,stand,expectedCycles){
  await expect(page.locator('#dashboard-panel')).toBeVisible();
  await expect(page.locator('#completed-assessments .participant-assessment-card')).toHaveCount(expectedCycles);
- await page.goto(`${stand.url}/?screen=reports`);
+ await page.evaluate(() => import('/web/js/screen-loaders.js').then((module) => module.openReportsScreen()));
  await expect(page.locator('#reports-panel')).toBeVisible();
  await expect(page.locator('.cycle-report')).toHaveCount(expectedCycles);
 }
@@ -643,8 +643,10 @@ test('P10.5 ready profile with no admitted catalog',async({page,stand},info)=>{
  await page.locator('#assessment-action-button').click();
  await completeAcquaintance(page);
  await expect(page.locator('#onboarding-panel')).toBeHidden();
- await expect(page.getByRole('heading',{name:'Данные для оценки готовятся'})).toBeVisible();
- await expect(page.getByRole('button',{name:'Проверить готовность'})).toBeVisible();
+ await expect(page.locator('#dashboard-panel')).toBeVisible();
+ await expect(page.locator('#current-assessments')).toContainText('Оценка ещё не готова к началу');
+ await expect(page.locator('#current-assessments')).toContainText('Организация завершает подготовку оценки');
+ await expect(page.locator('#assessment-action-button')).toBeHidden();
  expect(profileReceipts(stand)).toEqual(ready);
  await expect(page.getByRole('button',{name:'Подтвердить профиль',exact:true})).toBeHidden();
  await info.attach('ready-no-catalog',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
