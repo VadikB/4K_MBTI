@@ -486,14 +486,29 @@ def read_latest_report(connection, cycle_id: str, audience: str) -> dict:
 def render_pdf(report: dict) -> bytes:
     package = load_report_package(); labels = package["template"]["outcome_labels"]
     c67 = _present_report(report["c67"])
+    participant_labels = {
+        "full_score": "Результат по полному составу навыка",
+        "partial_score": "Результат по части навыка",
+        "result_without_score": "Есть наблюдения без общего балла по навыку",
+        "no_result": "Недостаточно оснований для результата",
+    }
+    participant_coverage_labels = {
+        "opportunities": "Фактическая возможность наблюдения",
+        "indicator_assessments": "Обоснованные оценки индикаторов",
+        "admissible_contributions": "Допустимые вклады",
+        "components_with_score": "Компоненты с баллом",
+        "complete_components": "Полностью оценённые компоненты",
+    }
+    participant_pdf = c67.get("template_version") == REPORT_TEMPLATE_VERSION
     skills = []
     for skill in c67["skills"]:
         score = skill.get("score")
         skills.append({
             "name": skill.get("skill_name") or skill["skill_id"],
-            "outcome": labels.get(skill["outcome"], skill["outcome"]),
+            "outcome": (participant_labels if participant_pdf else labels).get(skill["outcome"], "Неизвестный формат результата"),
             "score": "—" if score is None else f"{score['numerator']}/{score['denominator']} ({score['value']})",
             "completeness": skill.get("completeness") or "—",
+            "competency": skill.get("competency_name") or "Группа навыков",
         })
     coverage = []
     for scope, cuts in c67["coverage"].items():
@@ -503,7 +518,7 @@ def render_pdf(report: dict) -> bytes:
             if not isinstance(cut, dict) or "ratio" not in cut:
                 continue
             ratio = "не определено" if cut["ratio"] is None else f"{cut['numerator']}/{cut['denominator']} ({cut['ratio'] * 100:.1f}%)"
-            coverage.append({"scope": scope, "name": name, "ratio": ratio})
+            coverage.append({"scope": scope, "name": participant_coverage_labels.get(name, "Неизвестный разрез покрытия") if participant_pdf else name, "ratio": ratio})
     payload = {
         "title": ("ТЕСТОВЫЙ РЕЗУЛЬТАТ — 4K" if c67.get("test_result")
                   else "4K — базовый индивидуальный отчёт"),
@@ -518,5 +533,6 @@ def render_pdf(report: dict) -> bytes:
         "recommendations": c67.get("recommendations", []),
         "recommendation_notices": c67.get("recommendation_notices", []),
         "reliability": c67["reliability"].get("status", "not_provided"),
+        "created_at": str(report.get("created_at") or ""),
     }
-    return render_typst_report(payload, "m8_basic_report.typ")
+    return render_typst_report(payload, "m8_participant_report_v1.typ" if participant_pdf else "m8_basic_report.typ")

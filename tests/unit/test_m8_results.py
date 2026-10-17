@@ -82,3 +82,22 @@ def test_technical_failure_is_not_collection_incomplete():
            "limitations":[]}
     result = _partial_result_projection(c46, c56, {"status":"failed"}, load_package()["template"])
     assert [x["code"] for x in result["limitation_reasons"]] == ["technical_failure"]
+
+
+def test_pdf_renderer_is_bound_to_saved_report_template(monkeypatch):
+    captured = []
+    monkeypatch.setattr(m8_results, "render_typst_report", lambda payload, template: captured.append((payload, template)) or b"pdf")
+    base = _report_content(results("no_result"), "assessee", None)
+    base.update({"results_revision_no": 1, "report_id": "report", "test_result": False})
+    report = {"revision_no": 2, "created_at": "2026-10-17T10:00:00Z", "c67": base}
+
+    report["c67"]["template_version"] = "m8-basic-report/1.2.0"
+    assert m8_results.render_pdf(report) == b"pdf"
+    assert captured[-1][1] == "m8_basic_report.typ"
+
+    report["c67"]["template_version"] = m8_results.REPORT_TEMPLATE_VERSION
+    assert m8_results.render_pdf(report) == b"pdf"
+    payload, template = captured[-1]
+    assert template == "m8_participant_report_v1.typ"
+    assert payload["skills"][0]["outcome"] == "Недостаточно оснований для результата"
+    assert payload["skills"][0]["score"] == "—"
