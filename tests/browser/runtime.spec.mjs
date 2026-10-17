@@ -70,7 +70,7 @@ async function login(page,stand,email='participant@example.test',prepare=false,n
  const completedDashboardAction=page.getByRole('button',{name:'В личный кабинет',exact:true}).filter({visible:true});
  let routeReady=continueButton.or(confirm).or(onboardingSkip).or(assessmentAction).or(welcomeAction);
  if(allowDashboard)routeReady=routeReady.or(dashboard).or(completedDashboardAction);
- await expect(routeReady).toBeVisible({timeout:15000});
+ await expect(routeReady.first()).toBeVisible({timeout:15000});
  await page.waitForTimeout(1000);
  if(allowDashboard&&await completedDashboardAction.isVisible()){
    await completedDashboardAction.click();
@@ -80,7 +80,7 @@ async function login(page,stand,email='participant@example.test',prepare=false,n
  if(await onboardingSkip.isVisible())await onboardingSkip.click();
  routeReady=continueButton.or(confirm).or(assessmentAction).or(welcomeAction);
  if(allowDashboard)routeReady=routeReady.or(dashboard);
- await expect(routeReady).toBeVisible();
+ await expect(routeReady.first()).toBeVisible();
  if(await continueButton.isVisible())await continueButton.click();
  if(await assessmentAction.isVisible()||await welcomeAction.isVisible()||(allowDashboard&&await dashboard.isVisible()))return;
  await expect(confirm).toBeVisible();

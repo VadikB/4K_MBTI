@@ -268,7 +268,12 @@ const bootApp = async () => {
         if (serverAllowsLegacyReport) {
           state.assessmentSessionId = requestedLegacyReportSessionId;
         }
-        if (screen === 'report' && journey?.report_status === 'ready' && state.productCycleId) {
+        if (
+          screen === 'report'
+          && !requestedLegacyReportSessionId
+          && journey?.report_status === 'ready'
+          && state.productCycleId
+        ) {
           await openReportScreen({
             m8CycleId: state.productCycleId,
             m8ReportId: params.get('report_id'),

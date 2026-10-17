@@ -34,6 +34,7 @@ test('server dashboard journey preserves safe profile and reports subroutes on r
   assert.match(dashboardJourney, /openProfileScreen\(\)/);
   assert.match(dashboardJourney, /state\.currentScreen === 'reports'/);
   assert.match(dashboardJourney, /openReportsScreen\(\)/);
+  assert.match(main, /screen === 'report'[\s\S]*!requestedLegacyReportSessionId[\s\S]*journey\?\.report_status === 'ready'/);
 });
 
 test('mutating auth actions guard repeated submissions and expose busy state', () => {
