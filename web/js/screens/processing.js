@@ -384,15 +384,18 @@ export const pollAnalysisStatus = async () => {
     try {
       let response = null;
       let snapshot = null;
-      if (cycleStatusUsesJourney) {
-        snapshot = await readJourneyCycleStatus();
+      const journeySnapshot = await readJourneyCycleStatus();
+      if (journeySnapshot.report_status === 'ready' || journeySnapshot.results_status === 'failed') {
+        snapshot = journeySnapshot;
+      } else if (cycleStatusUsesJourney) {
+        snapshot = journeySnapshot;
       } else {
         try {
           ({ response } = await readDetailedCycleStatus());
         } catch (error) {
           if (error?.name !== 'AbortError') throw error;
           cycleStatusUsesJourney = true;
-          snapshot = await readJourneyCycleStatus();
+          snapshot = journeySnapshot;
         }
       }
       if (requestEpoch !== cycleRequestEpoch || state.currentScreen !== 'processing') return;

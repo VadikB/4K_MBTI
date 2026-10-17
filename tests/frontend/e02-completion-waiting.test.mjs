@@ -40,6 +40,8 @@ test('E02 polling is cancellable, visibility-aware and ignores stale responses',
   assert.match(processing, /state\.currentScreen !== 'processing'/);
   assert.match(processing, /CYCLE_POLL_INTERVAL_MS = 5000/);
   assert.match(processing, /cycleIdFromUrl/);
+  assert.match(processing, /const journeySnapshot = await readJourneyCycleStatus\(\)/);
+  assert.match(processing, /journeySnapshot\.report_status === 'ready'/);
   assert.match(processing, /await readApiResponse\(response,[\s\S]*window\.clearTimeout\(timeoutId\)/);
   assert.match(wiring, /module\.openProcessing\(\{[\s\S]*initialCycleSnapshot:[\s\S]*journey\?\.report_status/);
 });
