@@ -252,7 +252,8 @@ const bootApp = async () => {
     }
     if (!state.isAdmin) {
       try {
-        const requestedLegacyReportSessionId = screen === 'report' && !params.get('cycle_id')
+        const requestedM8CycleId = screen === 'report' ? params.get('cycle_id') : null;
+        const requestedLegacyReportSessionId = screen === 'report' && !requestedM8CycleId
           ? Number(params.get('session_id') || state.assessmentSessionId) || null : null;
         const journey = await loadUserJourneyState();
         applyJourneyAssessmentContext(journey);
@@ -269,11 +270,10 @@ const bootApp = async () => {
         if (
           screen === 'report'
           && !requestedLegacyReportSessionId
-          && journey?.report_status === 'ready'
-          && state.productCycleId
+          && (requestedM8CycleId || (journey?.report_status === 'ready' && state.productCycleId))
         ) {
           await openReportScreen({
-            m8CycleId: state.productCycleId,
+            m8CycleId: requestedM8CycleId || state.productCycleId,
             m8ReportId: params.get('report_id'),
             returnTarget: params.get('report_id') ? 'reports' : 'home',
           });

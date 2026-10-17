@@ -35,7 +35,9 @@ test('server dashboard journey preserves safe profile and reports subroutes on r
   assert.match(dashboardJourney, /state\.currentScreen === 'reports'/);
   assert.match(dashboardJourney, /openReportsScreen\(\)/);
   assert.match(main, /screen === 'report'[\s\S]*!requestedLegacyReportSessionId[\s\S]*journey\?\.report_status === 'ready'/);
-  assert.match(main, /screen === 'report' && !params\.get\('cycle_id'\)[\s\S]*Number\(params\.get\('session_id'\) \|\| state\.assessmentSessionId\)/);
+  assert.match(main, /requestedM8CycleId = screen === 'report' \? params\.get\('cycle_id'\) : null/);
+  assert.match(main, /screen === 'report' && !requestedM8CycleId[\s\S]*Number\(params\.get\('session_id'\) \|\| state\.assessmentSessionId\)/);
+  assert.match(main, /m8CycleId: requestedM8CycleId \|\| state\.productCycleId/);
   assert.match(main, /if \(requestedLegacyReportSessionId\) \{[\s\S]*loadSkillAssessmentsForReport\(\)[\s\S]*openReportScreen\(\)[\s\S]*return/);
 });
 
