@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const html = fs.readFileSync('web/index.html', 'utf8');
 const processing = fs.readFileSync('web/js/screens/processing.js', 'utf8');
+const wiring = fs.readFileSync('web/js/wiring.js', 'utf8');
 const styles = fs.readFileSync('web/styles/screens/processing.css', 'utf8');
 const routes = fs.readFileSync('Api/routes.py', 'utf8');
 
@@ -39,6 +40,8 @@ test('E02 polling is cancellable, visibility-aware and ignores stale responses',
   assert.match(processing, /state\.currentScreen !== 'processing'/);
   assert.match(processing, /CYCLE_POLL_INTERVAL_MS = 5000/);
   assert.match(processing, /cycleIdFromUrl/);
+  assert.match(processing, /await readApiResponse\(response,[\s\S]*window\.clearTimeout\(timeoutId\)/);
+  assert.match(wiring, /module\.openProcessing\(\{[\s\S]*initialCycleSnapshot:[\s\S]*journey\?\.report_status/);
 });
 
 test('E02 uses accepted visual tokens and mobile actions', () => {

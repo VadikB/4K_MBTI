@@ -286,7 +286,9 @@ const readDetailedCycleStatus = async () => {
       credentials: 'same-origin',
       signal: controller.signal,
     });
-    return { response, snapshot: null };
+    if (response.status === 403 || response.status === 404) return { response, snapshot: null };
+    const snapshot = await readApiResponse(response, 'Не удалось получить состояние Cycle runtime.');
+    return { response, snapshot };
   } finally {
     window.clearTimeout(timeoutId);
   }
