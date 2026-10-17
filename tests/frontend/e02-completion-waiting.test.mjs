@@ -5,6 +5,7 @@ import test from 'node:test';
 const html = fs.readFileSync('web/index.html', 'utf8');
 const processing = fs.readFileSync('web/js/screens/processing.js', 'utf8');
 const wiring = fs.readFileSync('web/js/wiring.js', 'utf8');
+const report = fs.readFileSync('web/js/screens/report.js', 'utf8');
 const styles = fs.readFileSync('web/styles/screens/processing.css', 'utf8');
 const routes = fs.readFileSync('Api/routes.py', 'utf8');
 
@@ -32,6 +33,12 @@ test('E02 keeps calculated results waiting until an owned assessee report is rea
   assert.match(routes, /r\.audience='assessee'/);
   assert.match(routes, /pipeline\['status'\] == 'failed'/);
   assert.match(routes, /report_status = 'ready'/);
+});
+
+test('E02 restores an explicit M8 report after URL identifiers become strings', () => {
+  assert.match(report, /Number\(report\.owner_user_id\) !== Number\(ownerId\)/);
+  assert.match(report, /String\(report\.cycle_id\) !== String\(cycleId\)/);
+  assert.match(report, /String\(report\.id\) !== String\(reportId\)/);
 });
 
 test('E02 polling is cancellable, visibility-aware and ignores stale responses', () => {

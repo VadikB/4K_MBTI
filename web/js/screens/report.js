@@ -1388,7 +1388,11 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId) => {
   const response = await fetch(reportId ? `/users/assessment/m8/reports/${encodeURIComponent(reportId)}` : `/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/reports/latest`);
   const report = await readApiResponse(response, 'Не удалось загрузить базовый Report.');
   if (!isCurrent()) return;
-  if (report.owner_user_id !== ownerId || report.cycle_id !== cycleId || (reportId && report.id !== reportId)) throw new Error('Сессия или выбранный отчёт изменились.');
+  if (
+    Number(report.owner_user_id) !== Number(ownerId)
+    || String(report.cycle_id) !== String(cycleId)
+    || (reportId && String(report.id) !== String(reportId))
+  ) throw new Error('Сессия или выбранный отчёт изменились.');
   const c67 = report.c67;
   stateNode.textContent = `Report готов · расчётная редакция ${c67.results_revision_no} · версия представления ${report.revision_no}`;
   const metadata = document.getElementById('m8-report-metadata');
