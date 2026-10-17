@@ -25,6 +25,7 @@ const ANALYSIS_POLL_INTERVAL_MS = 1200;
 const CYCLE_POLL_INTERVAL_MS = 5000;
 let cycleRequestEpoch = 0;
 let lastCycleSnapshot = null;
+let cycleStatusUsesJourney = false;
 
 document.addEventListener('visibilitychange', () => {
   if (state.currentScreen !== 'processing' || state.assessmentRuntimeKind !== 'cycle') return;
@@ -155,6 +156,7 @@ export const openProcessing = ({ initialCycleSnapshot = null } = {}) => {
   state.processingDataLoaded = false;
   state.processingAutoTransitionStarted = false;
   state.processingServerProgress = 0;
+  cycleStatusUsesJourney = false;
   if (state.assessmentRuntimeKind === 'cycle') {
     processingOutcomeCard?.classList.remove('hidden');
     processingLegacy?.classList.add('hidden');
@@ -255,6 +257,33 @@ const cycleOutcomeKind = (snapshot) => {
   return 'waiting';
 };
 
+const readJourneyCycleStatus = async () => {
+  if (!state.pendingUser?.id) throw new Error('Не удалось определить владельца Cycle.');
+  const response = await fetch('/users/' + encodeURIComponent(state.pendingUser.id) + '/journey-state', {
+    credentials: 'same-origin',
+  });
+  const journey = await readApiResponse(response, 'Не удалось получить состояние оценки.');
+  return {
+    results_status: journey?.assessment?.status === 'failed' ? 'failed'
+      : journey?.report_status === 'ready' ? 'ready' : 'processing',
+    report_status: journey?.report_status || 'not_ready',
+  };
+};
+
+const readDetailedCycleStatus = async () => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 4000);
+  try {
+    const response = await fetch('/users/assessment/m8/cycles/' + encodeURIComponent(state.productCycleId) + '/status', {
+      credentials: 'same-origin',
+      signal: controller.signal,
+    });
+    return { response, snapshot: null };
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
+
 const applyServerAnalysisProgress = (snapshot) => {
   const progress = Math.max(0, Math.min(100, Number(snapshot?.progress_percent || 0)));
   const step = String(snapshot?.current_step || 'queued');
@@ -343,16 +372,26 @@ export const pollAnalysisStatus = async () => {
   if (state.assessmentRuntimeKind === 'cycle' && state.productCycleId) {
     const requestEpoch = ++cycleRequestEpoch;
     try {
-      const response = await fetch('/users/assessment/m8/cycles/' + encodeURIComponent(state.productCycleId) + '/status', {
-        credentials: 'same-origin',
-      });
+      let response = null;
+      let snapshot = null;
+      if (cycleStatusUsesJourney) {
+        snapshot = await readJourneyCycleStatus();
+      } else {
+        try {
+          ({ response } = await readDetailedCycleStatus());
+        } catch (error) {
+          if (error?.name !== 'AbortError') throw error;
+          cycleStatusUsesJourney = true;
+          snapshot = await readJourneyCycleStatus();
+        }
+      }
       if (requestEpoch !== cycleRequestEpoch || state.currentScreen !== 'processing') return;
-      if (response.status === 403 || response.status === 404) {
+      if (response && (response.status === 403 || response.status === 404)) {
         clearProcessingTimer();
         renderCycleOutcome(response.status === 403 ? 'accessDenied' : 'unavailable');
         return;
       }
-      const snapshot = await readApiResponse(response, 'Не удалось получить состояние Cycle runtime.');
+      if (!snapshot) snapshot = await readApiResponse(response, 'Не удалось получить состояние Cycle runtime.');
       if (requestEpoch !== cycleRequestEpoch || state.currentScreen !== 'processing') return;
       lastCycleSnapshot = snapshot;
       renderCycleOutcome(cycleOutcomeKind(snapshot), snapshot);

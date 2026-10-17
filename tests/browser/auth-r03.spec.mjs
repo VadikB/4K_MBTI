@@ -465,6 +465,35 @@ test('E02 shows ready Cycle without automatic navigation and keeps mobile action
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 
+test('E02 falls back to journey polling when detailed Cycle status stalls', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  let journeyReads = 0;
+  await page.addInitScript(({ user }) => localStorage.setItem('agent4k.pendingUser', JSON.stringify(user)), { user });
+  await page.route('**/users/**', async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'e02-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: false });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') {
+      journeyReads += 1;
+      return fulfillJson(route, {
+        next_action: 'show_processing', report_status: journeyReads > 1 ? 'ready' : 'not_ready',
+        profile: { status: 'complete' }, onboarding: { status: 'completed' },
+        assessment: { status: journeyReads > 1 ? 'report_ready' : 'analyzing', runtime_kind: 'cycle', cycle_id: 'slow-cycle' },
+      });
+    }
+    if (pathname === '/users/assessment/m8/cycles/slow-cycle/status') {
+      await new Promise((resolve) => setTimeout(resolve, 6000));
+      return fulfillJson(route, { results_status: 'processing', report_status: 'not_created' });
+    }
+    return fulfillJson(route, {}, 404);
+  });
+
+  await page.goto(`${base}/?screen=processing`);
+  await expect(page.locator('#processing-outcome-title')).toHaveText('Ваш результат готов', { timeout: 10000 });
+  expect(journeyReads).toBeGreaterThan(1);
+});
+
 test('R03 fresh login persists journey assessment identifiers', async ({ page }) => {
   const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
   await page.route('**/users/**', (route) => {
