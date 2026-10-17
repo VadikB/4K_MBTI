@@ -159,6 +159,18 @@ async function completeAcquaintance(page){
  }
  await expect(panel).toBeHidden();
 }
+async function startIndependentCycle(page,stand,expected='готовности'){
+ const response=await page.request.post(`${stand.url}/users/assessment/cycles/start`,{
+  data:{idempotency_key:randomUUID(),selected_skills:['K1','K2','K3','K4']},
+ });
+ expect(response.ok()).toBeTruthy();
+ const payload=await response.json();
+ const cycle=payload.runtime?.cycle_id||payload.plan?.cycle_id;
+ expect(cycle).toBeTruthy();page.acceptanceCycle=cycle;
+ await page.goto(`${stand.url}/?screen=interview&cycle_id=${encodeURIComponent(cycle)}`);
+ await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
+ await expect(page.locator('#interview-messages')).toContainText(expected);
+}
 async function openCompletedReport(page,expectedCycles,cycleId=null){
  await expect(page.locator('#dashboard-panel')).toBeVisible();
  await expect(page.locator('#completed-assessments .participant-assessment-card')).toHaveCount(expectedCycles);
@@ -457,7 +469,7 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  await info.attach('history-report',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  // H10.6: a new independent Cycle remains a separate card, revisions stay inside the first.
  await page.locator('#report-back-button').click();
- await start(page); await answer(page);
+ await startIndependentCycle(page,stand); await answer(page);
  await page.locator('#interview-finish-button').click();
  await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
  await answer(page,fixture.clarification_answer);
@@ -601,6 +613,7 @@ test('P10.5 ready profile with no admitted catalog',async({page,stand},info)=>{
  await page.locator('#assessment-action-button').click();
  await completeAcquaintance(page);
  await expect(page.locator('#onboarding-panel')).toBeHidden();
+ await page.reload();
  await expect(page.locator('#dashboard-panel')).toBeVisible();
  await expect(page.locator('#current-assessments')).toContainText('Оценка ещё не готова к началу');
  await expect(page.locator('#current-assessments')).toContainText('Организация завершает подготовку оценки');
@@ -658,7 +671,7 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  expect(checked.status,checked.stderr).toBe(0);
  await info.attach('G02-relogin-pdf',{path:pdf,contentType:'application/pdf'});
  await page.locator('#report-back-button').click();
- await start(page);await answer(page);await page.locator('#interview-finish-button').click();
+ await startIndependentCycle(page,stand);await answer(page);await page.locator('#interview-finish-button').click();
  await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
  await answer(page,fixture.clarification_answer);await page.locator('#interview-finish-button').click();
  const secondDir=path.join(stand.dir,'G03-second');fs.mkdirSync(secondDir);
