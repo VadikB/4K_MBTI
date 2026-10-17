@@ -149,8 +149,13 @@ async function completeAcquaintance(page){
   const input=panel.locator('.onboarding-answer');
   if(await input.isVisible())await input.fill(answers[answerIndex++]||`Синтетический ответ ${answerIndex}.`);
   const next=page.locator('#onboarding-next');
+  const marker=`${await panel.getAttribute('data-step')}|${await page.locator('#onboarding-title').textContent()}`;
   await expect(next).toBeEnabled();
   await next.click();
+  await expect.poll(async()=>{
+   if(!await panel.isVisible())return true;
+   return `${await panel.getAttribute('data-step')}|${await page.locator('#onboarding-title').textContent()}`!==marker;
+  }).toBe(true);
  }
  await expect(panel).toBeHidden();
 }
