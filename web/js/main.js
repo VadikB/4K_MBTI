@@ -252,7 +252,7 @@ const bootApp = async () => {
     }
     if (!state.isAdmin) {
       try {
-        const requestedLegacyReportSessionId = screen === 'report'
+        const requestedLegacyReportSessionId = screen === 'report' && !params.get('cycle_id')
           ? Number(params.get('session_id') || state.assessmentSessionId) || null : null;
         const journey = await loadUserJourneyState();
         applyJourneyAssessmentContext(journey);
