@@ -3,6 +3,58 @@ from Api import assessment_contexts as contexts
 from Api.assessment_role_profiles import list_available_role_profiles, get_selected_role_profile
 
 
+def _confirmed_acquaintance_professional(connection, *, user_id: int, organization_id: int) -> tuple[dict, int | None]:
+    """Return the latest immutable corporate answer set for this tenant, if present."""
+    available = connection.execute(
+        "SELECT to_regclass(current_schema()||'.participant_acquaintance_confirmations') AS relation"
+    ).fetchone()
+    if not available or available['relation'] is None:
+        return {}, None
+    state_table = connection.execute(
+        "SELECT to_regclass(current_schema()||'.participant_acquaintance_states') AS relation"
+    ).fetchone()
+    assignment_ref = None
+    if state_table and state_table['relation'] is not None:
+        state = connection.execute(
+            'SELECT assignment_ref FROM participant_acquaintance_states WHERE user_id=%s', (user_id,),
+        ).fetchone()
+        assignment_ref = str((state or {}).get('assignment_ref') or '').strip() or None
+    if assignment_ref is None:
+        assignments = connection.execute('''SELECT DISTINCT assignment_ref
+            FROM participant_acquaintance_confirmations WHERE user_id=%s AND organization_id=%s''',
+            (user_id, organization_id)).fetchall()
+        if len(assignments) != 1:
+            return {}, None
+        assignment_ref = str(assignments[0]['assignment_ref'])
+    row = connection.execute('''SELECT id,answers_json FROM participant_acquaintance_confirmations
+        WHERE user_id=%s AND organization_id=%s AND assignment_ref=%s
+        ORDER BY confirmed_at DESC,id DESC LIMIT 1''', (user_id, organization_id, assignment_ref)).fetchone()
+    if row is None:
+        return {}, None
+    answer_set = dict(row['answers_json'] or {})
+    if answer_set.get('schema_variant') != 'corporate':
+        return {}, None
+    items = {item.get('key'): item for item in answer_set.get('items', []) if isinstance(item, dict)}
+    required = ('work_situations', 'decision_situations', 'constraints_interactions')
+    if any(not str((items.get(key) or {}).get('raw_answer') or '').strip() for key in required):
+        return {}, None
+    return {
+        'regular_tasks': str(items['work_situations']['raw_answer']).strip(),
+        'decision_situations': str(items['decision_situations']['raw_answer']).strip(),
+        'constraints_and_interactions': str(items['constraints_interactions']['raw_answer']).strip(),
+        'acquaintance_answers': answer_set,
+    }, int(row['id'])
+
+
+def _link_acquaintance_confirmation(connection, *, confirmation_id: int | None,
+                                     user_context_version_id: int, personalized_profile_id: int) -> None:
+    if confirmation_id is not None:
+        connection.execute('''UPDATE participant_acquaintance_confirmations SET
+            user_context_version_id=COALESCE(user_context_version_id,%s),
+            personalized_profile_id=COALESCE(personalized_profile_id,%s)
+            WHERE id=%s''', (user_context_version_id, personalized_profile_id, confirmation_id))
+
+
 def active_organization(connection, user_id):
     try:
         return contexts.load_single_active_organization_id(connection, user_id=user_id)
@@ -123,6 +175,10 @@ def confirm(connection, *, user_id, selection, full_name, position, duties):
     if any(c.get('type') in contexts.BLOCKING_CONFLICTS and not c.get('resolved') for c in conflicts):
         raise ValueError('Сначала требуется разрешить существенные противоречия профиля с ответственным специалистом.')
     professional = {'position_or_status': position, 'regular_tasks': duties}
+    acquaintance_professional, acquaintance_confirmation_id = _confirmed_acquaintance_professional(
+        connection, user_id=user_id, organization_id=organization_id,
+    )
+    professional.update(acquaintance_professional)
     if previous and previous['status'] == 'ready' and all(previous[k] == getattr(selection, k) for k in
             ('role_profile_version_id', 'organization_context_version_id', 'assessment_configuration_id')):
         source = connection.execute('SELECT checksum FROM assessment_user_context_versions WHERE id=%s', (previous['user_context_version_id'],)).fetchone()
@@ -132,14 +188,24 @@ def confirm(connection, *, user_id, selection, full_name, position, duties):
             if available['selected_role_version_id'] != selection.role_profile_version_id:
                 contexts.assign_role_profile(connection, user_id=user_id, role_profile_version_id=selection.role_profile_version_id,
                                              determined_by='user', determined_by_user_id=user_id)
+            _link_acquaintance_confirmation(
+                connection, confirmation_id=acquaintance_confirmation_id,
+                user_context_version_id=int(previous['user_context_version_id']),
+                personalized_profile_id=int(previous['id']),
+            )
             return {'id': previous['id'], **snapshot}
     contexts.assign_role_profile(connection, user_id=user_id, role_profile_version_id=selection.role_profile_version_id,
                                  determined_by='user', determined_by_user_id=user_id)
     version = contexts.create_user_context_draft(connection, user_id=user_id,
         identity={'full_name': full_name}, professional=professional)
     contexts.confirm_user_context(connection, version_id=version, user_id=user_id)
-    return contexts.create_personalized_profile(connection, user_id=user_id,
+    profile = contexts.create_personalized_profile(connection, user_id=user_id,
         assessment_configuration_id=selection.assessment_configuration_id,
         organization_context_version_id=selection.organization_context_version_id,
         role_profile_version_id=selection.role_profile_version_id, user_context_version_id=version,
         conflicts=conflicts)
+    _link_acquaintance_confirmation(
+        connection, confirmation_id=acquaintance_confirmation_id,
+        user_context_version_id=version, personalized_profile_id=int(profile['id']),
+    )
+    return profile

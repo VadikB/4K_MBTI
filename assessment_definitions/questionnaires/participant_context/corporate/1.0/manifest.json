@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "artifact_id": "participant-context-corporate",
+  "version": "1.0",
+  "status": "FROZEN",
+  "source": "UX-CTX01_Acquaintance_Context_Flow_2026-10-17.txt rev 1.0",
+  "owner": "Product Lead",
+  "artifacts": [
+    {
+      "name": "definition.json",
+      "sha256": "3d4c18bbec032822b1c90e912f7ffadb4cd6f2765439d5fec16d2142a2d49071"
+    }
+  ]
+}

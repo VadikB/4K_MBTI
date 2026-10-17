@@ -8,6 +8,8 @@ from psycopg.rows import dict_row
 from Api.database import ensure_role_profile_schema, ensure_assessment_context_schema
 from Api.assessment_role_profiles import publish_base_roles
 from Api import assessment_contexts as contexts, participant_profile
+from Api.acquaintance import _bind_confirmed_answers
+from Api.questionnaire_sources import PARTICIPANT_QUESTION_SCHEMA
 from Api.schemas import PersonalizedProfileSelection
 from Api.m10_product_flow import _owned_profile
 
@@ -19,7 +21,7 @@ def test_confirmed_profile_lifecycle_and_boundaries(test_database_url):
         schema = 'review_m4_pytest_' + uuid4().hex
         c.execute(psycopg.sql.SQL('CREATE SCHEMA {}').format(psycopg.sql.Identifier(schema)))
         c.execute(psycopg.sql.SQL('SET LOCAL search_path TO {}').format(psycopg.sql.Identifier(schema)))
-        c.execute('CREATE TABLE users(id BIGINT PRIMARY KEY)')
+        c.execute('CREATE TABLE users(id BIGINT PRIMARY KEY,full_name TEXT,selected_role_profile_version_id BIGINT)')
         c.execute('CREATE TABLE organizations(id BIGINT PRIMARY KEY,is_active BOOLEAN NOT NULL)')
         c.execute('CREATE TABLE organization_memberships(organization_id BIGINT REFERENCES organizations(id),user_id BIGINT REFERENCES users(id),UNIQUE(organization_id,user_id))')
         c.execute('CREATE TABLE user_sessions(id BIGINT PRIMARY KEY,user_id BIGINT REFERENCES users(id),execution_snapshot_json JSONB,execution_checksum TEXT)')
@@ -27,9 +29,15 @@ def test_confirmed_profile_lifecycle_and_boundaries(test_database_url):
         c.execute('CREATE TABLE assessment_methodology_versions(id BIGINT PRIMARY KEY,methodology_id BIGINT REFERENCES assessment_methodologies(id),status TEXT,definition_json JSONB)')
         c.execute('CREATE TABLE assessment_configurations(id BIGINT PRIMARY KEY,methodology_version_id BIGINT REFERENCES assessment_methodology_versions(id),status TEXT,code TEXT,name TEXT)')
         c.execute('CREATE TABLE assessment_preparation_jobs(id BIGINT PRIMARY KEY)')
-        c.execute('INSERT INTO users VALUES(1),(2)')
+        c.execute("INSERT INTO users VALUES(1,'Synthetic one',NULL),(2,'Synthetic two',NULL)")
         c.execute('INSERT INTO organizations VALUES(10,TRUE),(20,TRUE)')
         ensure_role_profile_schema(c); ensure_assessment_context_schema(c)
+        c.execute('''CREATE TABLE participant_acquaintance_confirmations(
+            id BIGSERIAL PRIMARY KEY,user_id BIGINT,organization_id BIGINT,assignment_ref TEXT,
+            questionnaire_revision_id BIGINT,question_schema_json JSONB,answers_json JSONB,
+            answers_checksum TEXT,user_context_version_id BIGINT,personalized_profile_id BIGINT,
+            confirmed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE(user_id,organization_id,assignment_ref,answers_checksum))''')
         c.execute('INSERT INTO organization_memberships VALUES(10,1),(20,2)')
         c.execute('INSERT INTO assessment_methodologies VALUES(1)')
         c.execute("INSERT INTO assessment_methodology_versions VALUES(1,1,'published','{\"methodology_version\":\"1.1\"}')")
@@ -43,6 +51,31 @@ def test_confirmed_profile_lifecycle_and_boundaries(test_database_url):
         org = contexts.create_organization_context_draft(c,organization_id=10,definition=organization)
         foreign = contexts.create_organization_context_draft(c,organization_id=20,definition=organization)
         for version in (org,foreign):contexts.publish_organization_context(c,version_id=version,confirmed_by_user_id=1)
+        from Api.assessment_role_profiles import select_role_profile_for_user
+        select_role_profile_for_user(c,user_id=2,version_id=roles['version_ids'][0])
+        answers = {
+            'answer_1': 'Разбираю неоднозначные задачи',
+            'answer_2': 'Выбираю вариант при неполных данных',
+            'answer_3': 'Согласую ограничения с несколькими командами',
+        }
+        bound = _bind_confirmed_answers(c,user_id=2,readiness={
+            'organization_id': 20, 'organization_kind': 'organization',
+            'organization_context_version_id': foreign, 'assignment_ref': 'ctx01-review',
+            'questionnaire_revision_id': 101,
+            'briefing': {'question_schema': PARTICIPANT_QUESTION_SCHEMA},
+        },answers=answers)
+        assert bound['personalized_profile_id']
+        bound_profile = c.execute('SELECT content_json FROM assessment_personalized_profiles WHERE id=%s',
+                                  (bound['personalized_profile_id'],)).fetchone()['content_json']
+        assert bound_profile['user_context']['regular_tasks'] == answers['answer_1']
+        assert bound_profile['user_context']['decision_situations'] == answers['answer_2']
+        assert bound_profile['user_context']['constraints_and_interactions'] == answers['answer_3']
+        assert _bind_confirmed_answers(c,user_id=2,readiness={
+            'organization_id': 20, 'organization_kind': 'organization',
+            'organization_context_version_id': foreign, 'assignment_ref': 'ctx01-review',
+            'questionnaire_revision_id': 101,
+            'briefing': {'question_schema': PARTICIPANT_QUESTION_SCHEMA},
+        },answers=answers)['personalized_profile_id'] == bound['personalized_profile_id']
         assert participant_profile.options(c,user_id=1)['current_profile'] is None
         selection = PersonalizedProfileSelection(organization_context_version_id=org,
             role_profile_version_id=roles['version_ids'][0],assessment_configuration_id=1)

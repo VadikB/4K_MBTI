@@ -4390,6 +4390,8 @@ def ensure_core_schema() -> None:
                 user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
                 organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
                 organization_context_version_id BIGINT,
+                assignment_ref TEXT,
+                questionnaire_revision_id BIGINT,
                 status TEXT NOT NULL DEFAULT 'not_started',
                 current_step INTEGER NOT NULL DEFAULT 0,
                 answers_json JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -4404,6 +4406,24 @@ def ensure_core_schema() -> None:
                 CONSTRAINT participant_acquaintance_step_check CHECK (current_step >= 0)
             )
             """
+        )
+        connection.execute("ALTER TABLE participant_acquaintance_states ADD COLUMN IF NOT EXISTS assignment_ref TEXT")
+        connection.execute("ALTER TABLE participant_acquaintance_states ADD COLUMN IF NOT EXISTS questionnaire_revision_id BIGINT")
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS participant_acquaintance_confirmations (
+                id BIGSERIAL PRIMARY KEY,
+                user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+                assignment_ref TEXT NOT NULL,
+                questionnaire_revision_id BIGINT,
+                question_schema_json JSONB NOT NULL,
+                answers_json JSONB NOT NULL,
+                answers_checksum TEXT NOT NULL,
+                user_context_version_id BIGINT REFERENCES assessment_user_context_versions(id) ON DELETE RESTRICT,
+                personalized_profile_id BIGINT REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT,
+                confirmed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE(user_id,organization_id,assignment_ref,answers_checksum)
+            )"""
         )
         connection.execute(
             """

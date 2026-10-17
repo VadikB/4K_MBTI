@@ -6,6 +6,7 @@ import csv
 import hashlib
 import io
 import json
+from pathlib import Path
 
 from Api.assessment_contexts import create_organization_context_draft, publish_organization_context
 
@@ -38,11 +39,28 @@ EARLY_REQUIRED = {
 ALLOWED_CHANNELS = {"csv", "product_form", "external_form"}
 ALLOWED_RECIPIENTS = {"participant", "organization_admin"}
 MAX_SOURCE_BYTES = 1_048_576
-PARTICIPANT_QUESTIONS = [
-    "Какие задачи и рабочие ситуации занимают большую часть вашего времени?",
-    "Какие решения в вашей роли требуют наибольшего внимания?",
-    "С какими ограничениями и взаимодействиями вы чаще всего сталкиваетесь?",
-]
+
+
+def _load_participant_question_schema() -> dict:
+    path = (Path(__file__).resolve().parents[1] / "assessment_definitions" / "questionnaires"
+            / "participant_context" / "corporate" / "1.0" / "definition.json")
+    manifest = json.loads((path.parent / "manifest.json").read_text(encoding="utf-8"))
+    expected = manifest.get("artifacts", [{}])[0].get("sha256")
+    if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+        raise ValueError("PARTICIPANT_CONTEXT_ARTIFACT_CHECKSUM_INVALID")
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if value.get("variant") != "corporate" or value.get("version") != "1.0":
+        raise ValueError("PARTICIPANT_CONTEXT_ARTIFACT_IDENTITY_INVALID")
+    questions = value.get("questions")
+    if not isinstance(questions, list) or [item.get("key") for item in questions] != [
+        "work_situations", "decision_situations", "constraints_interactions",
+    ] or any(not str(item.get("text") or "").strip() for item in questions):
+        raise ValueError("PARTICIPANT_CONTEXT_ARTIFACT_QUESTIONS_INVALID")
+    return {"variant": value["variant"], "version": value["version"], "questions": questions}
+
+
+PARTICIPANT_QUESTION_SCHEMA = _load_participant_question_schema()
+PARTICIPANT_QUESTIONS = [item["text"] for item in PARTICIPANT_QUESTION_SCHEMA["questions"]]
 PROVIDED_PARTICIPANT_FIELDS = ["role", "position", "duties"]
 
 
@@ -176,6 +194,7 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
         "organization_type": answers["C01"]["organization_type"],
         "provided_participant_fields": PROVIDED_PARTICIPANT_FIELDS,
         "participant_questions": PARTICIPANT_QUESTIONS,
+        "participant_question_schema": PARTICIPANT_QUESTION_SCHEMA,
         "consent_version": 1,
         "consent_text": "Подтвердите согласие на использование указанных сведений в рамках оценки.",
         "questionnaire_revision_id": int(row["id"]),
