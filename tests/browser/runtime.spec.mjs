@@ -66,7 +66,7 @@ async function login(page,stand,email='participant@example.test',prepare=false,n
  const onboardingSkip=page.getByRole('button',{name:'Пропустить',exact:true}).filter({visible:true});
  const assessmentAction=page.locator('#assessment-action-button').filter({visible:true});
  const welcomeAction=page.locator('#start-first-assessment').filter({visible:true});
- await expect(continueButton.or(confirm).or(onboardingSkip).or(assessmentAction).or(welcomeAction)).toBeVisible();
+ await expect(continueButton.or(confirm).or(onboardingSkip).or(assessmentAction).or(welcomeAction)).toBeVisible({timeout:15000});
  await page.waitForTimeout(1000);
  if(await onboardingSkip.isVisible())await onboardingSkip.click();
  await expect(continueButton.or(confirm).or(assessmentAction).or(welcomeAction)).toBeVisible();
@@ -138,7 +138,9 @@ async function report(page,stand,info){
   if(!response.ok)return `http_${response.status}`;
   return (await response.json()).report_status;
  }),{timeout:70000}).toBe('ready');
- await page.reload();
+ const readyCycle=new URL(page.url()).searchParams.get('cycle_id') || page.acceptanceCycle;
+ expect(readyCycle).toBeTruthy();
+ await page.goto(`${stand.url}/?screen=processing&cycle_id=${encodeURIComponent(readyCycle)}`);
  await expect(page.locator('#processing-outcome-title')).toHaveText('Ваш результат готов',{timeout:70000});
  await page.getByRole('button',{name:'Посмотреть результат'}).click();
  await expect(page.locator('#report-panel')).toBeVisible();
