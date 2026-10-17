@@ -199,61 +199,24 @@
       </div>
 
       <div class="dashboard-hero">
-        <h2 id="dashboard-greeting">Добро пожаловать</h2>
-        <p class="dashboard-subtitle">Ваш текущий прогресс развития компетенций</p>
+        <h2 id="dashboard-greeting">Мои оценки</h2>
+        <p class="dashboard-subtitle">Здесь собраны ваши текущие и завершённые оценки.</p>
+        <div id="dashboard-refresh-status" class="dashboard-refresh-status hidden" role="status" aria-live="polite">
+          <span>Не удалось обновить сведения</span>
+          <button id="dashboard-refresh-button" type="button" class="text-link">Повторить</button>
+        </div>
       </div>
 
       <section class="dashboard-section">
-        <p class="section-label accent-label">Продолжить ассессмент</p>
-        <div class="card card--lg assessment-card">
-          <div class="assessment-icon">4K</div>
-          <div class="assessment-copy">
-            <h3 id="assessment-title">Компетенции 4К</h3>
-            <p id="assessment-description"></p>
-            <div class="assessment-meta">
-              <span id="assessment-status-label" class="assessment-state"></span>
-              <span id="assessment-cases-label"></span>
-            </div>
-            <div class="progress-track">
-              <div id="assessment-progress-bar" class="progress-bar"></div>
-            </div>
-          </div>
-          <div class="assessment-actions">
-            <button id="assessment-action-button" type="button" class="primary-button">Продолжить</button>
-            <div id="assessment-preparing" class="preparing-hero hidden" style="--progress: 0%;" aria-live="polite">
-              <div class="preparing-hero-row">
-                <span class="preparing-hero-pulse" aria-hidden="true"></span>
-                <strong class="preparing-hero-label">Подготовка кейсов</strong>
-                <span id="assessment-preparing-percent" class="preparing-hero-value">0%</span>
-              </div>
-              <div class="preparing-hero-meter">
-                <div class="preparing-hero-meter-fill"></div>
-                <div class="preparing-hero-meter-shimmer" aria-hidden="true"></div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <h3 id="current-assessments-title" class="dashboard-section-title">Текущая оценка</h3>
+        <div id="current-assessments" class="participant-assessment-list" aria-live="polite"></div>
       </section>
 
       <section class="dashboard-section">
-        <div class="section-row">
-          <div>
-            <p class="section-label">Библиотека</p>
-            <h3 class="dashboard-section-title">Доступные ассессменты</h3>
-          </div>
-          <button type="button" class="text-link">Смотреть все</button>
-        </div>
-        <div id="available-assessments" class="assessment-grid"></div>
+        <h3 class="dashboard-section-title">Завершённые оценки</h3>
+        <div id="completed-assessments" class="participant-assessment-list" aria-live="polite"></div>
       </section>
-
-        <section class="dashboard-section">
-          <div>
-            <p class="section-label">Ваши отчеты</p>
-            <h3 class="dashboard-section-title">Отчеты по ассессменту</h3>
-          </div>
-          <div id="reports-list" class="reports-list"></div>
-        </section>
-      </section>
+    </section>
 
     <section class="panel ai-welcome-panel hidden" id="ai-welcome-panel">
       <div class="dashboard-topbar">

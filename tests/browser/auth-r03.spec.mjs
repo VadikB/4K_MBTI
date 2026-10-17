@@ -302,6 +302,55 @@ test('R03 refresh obeys server journey and fails closed on journey outage', asyn
   await expect(page.locator('#auth-error')).toContainText('Не удалось определить актуальный этап');
 });
 
+test('LK01 renders selected Cycle cards without catalogue or horizontal overflow', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person', job_description: 'Product Lead' };
+  const dashboard = {
+    greeting_name: 'Person', profile_readiness: 'ready', personalized_profile_id: 11,
+    active_assessment: { code: 'competencies_4k', title: 'Legacy', description: '', completed_cases: 0,
+      total_cases: 0, progress_percent: 0, status_label: '', button_label: '' },
+    available_assessments: [], reports: [], reports_total: 1,
+    current_assessments: [{ cycle_id: 'cycle-current', title: 'Оценка руководителей',
+      organization_name: 'Организация с очень длинным названием для проверки переноса строки',
+      status: 'active', status_label: 'Оценка начата', description: 'Продолжите с того же места.',
+      action: 'continue', button_label: 'Продолжить', completed_cases: 0, total_cases: 4,
+      calendar_deadline: '2026-10-19T15:30:00Z' }],
+    completed_assessments: [{ cycle_id: 'cycle-ready', report_id: 'report-ready', title: 'Оценка 4К',
+      organization_name: 'Организация', status: 'report_ready', status_label: 'Результат готов',
+      description: 'Результат оценки доступен для просмотра.', action: 'open_report',
+      button_label: 'Посмотреть результат', completed_cases: 4, total_cases: 4 }],
+  };
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'lk01-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, dashboard });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'show_dashboard', profile: { status: 'complete' }, onboarding: { status: 'completed' },
+      assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: 'cycle-current' },
+    });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto(base);
+  await expect(page.getByRole('heading', { name: 'Мои оценки' })).toBeVisible();
+  await expect(page.getByText('Завершено ситуаций: 0 из 4')).toBeVisible();
+  await expect(page.getByText('Завершить до 19 октября, 18:30 (МСК)')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Продолжить' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Посмотреть результат' })).toBeVisible();
+  await expect(page.getByText('Скоро')).toHaveCount(0);
+  const desktopCard = await page.locator('.participant-assessment-card').first().boundingBox();
+  const desktopButton = await page.getByRole('button', { name: 'Продолжить' }).boundingBox();
+  expect(Math.abs(desktopCard.y - desktopButton.y)).toBeLessThan(desktopCard.height);
+  await page.setViewportSize({ width: 360, height: 760 });
+  const mobileCard = await page.locator('.participant-assessment-card').first().boundingBox();
+  const mobileButton = await page.getByRole('button', { name: 'Продолжить' }).boundingBox();
+  expect(mobileCard.width - mobileButton.width).toBeLessThanOrEqual(36);
+  const layout = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(layout.scrollWidth).toBe(layout.clientWidth);
+});
+
 test('R03 late login cannot replace a password-reset step', async ({ page }) => {
   await baseRoutes(page);
   await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, {

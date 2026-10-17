@@ -2232,7 +2232,7 @@ welcomeProfileButton.addEventListener('click', () => {
 });
 
 
-assessmentActionButton.addEventListener('click', () => {
+assessmentActionButton?.addEventListener('click', () => {
   withScreen(loadInterview, (module) => module.handleAssessmentEntryClick());
 });
 
