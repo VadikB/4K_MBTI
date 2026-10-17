@@ -253,19 +253,18 @@ const bootApp = async () => {
     if (!state.isAdmin) {
       try {
         const requestedLegacyReportSessionId = screen === 'report'
-          ? state.assessmentSessionId : null;
+          ? Number(params.get('session_id') || state.assessmentSessionId) || null : null;
         const journey = await loadUserJourneyState();
         applyJourneyAssessmentContext(journey);
         if (journey?.next_action === 'wait_for_acquaintance_data') {
           openAcquaintanceWaiting(journey.acquaintance?.readiness);
           return;
         }
-        const serverAllowsLegacyReport = Boolean(
-          requestedLegacyReportSessionId
-          && journey?.next_action === 'show_dashboard',
-        );
-        if (serverAllowsLegacyReport) {
+        if (requestedLegacyReportSessionId) {
           state.assessmentSessionId = requestedLegacyReportSessionId;
+          await loadSkillAssessmentsForReport();
+          await openReportScreen();
+          return;
         }
         if (
           screen === 'report'
