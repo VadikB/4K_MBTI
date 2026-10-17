@@ -12,7 +12,7 @@ for number,page in enumerate(PdfReader(pdf).pages,1):
     if lines and lines[-1].strip()==str(number):lines.pop()  # page footer, not report content
     pages.append('\n'.join(lines))
 text=normalize('\n'.join(pages))
-assert normalize(value['cycle_id']) in text
+assert normalize(value['cycle_id']) not in text, 'technical cycle id'
 for skill in value['skills']:
     assert normalize(skill['skill_name']) in text
 for recommendation in value['recommendations']:

@@ -178,7 +178,7 @@ async function openCompletedReport(page,expectedCycles,cycleId=null){
   ? page.locator(`#completed-assessments .participant-assessment-card [data-cycle-id="${cycleId}"]`).locator('..')
   : page.locator('#completed-assessments .participant-assessment-card').first();
  await card.locator('.participant-assessment-action').click();
- await expect(page.locator('#m8-report-state')).toContainText('Report готов');
+ await expect(page.locator('#m8-report-state')).toContainText('Результат готов');
 }
 async function answer(page,text=fixture.answer){await page.locator('#interview-textarea').fill(text);await page.locator('#interview-submit-button').click();await expect(page.locator('#interview-submit-button')).toBeEnabled({timeout:30000});await expect(page.locator('#interview-error')).toBeHidden();await expect(page.locator('#interview-messages .own')).toContainText([text]);}
 async function report(page,stand,info){
@@ -204,7 +204,11 @@ async function report(page,stand,info){
  await expect(page.locator('#processing-outcome-title')).toHaveText('Ваш результат готов',{timeout:70000});
  await page.getByRole('button',{name:'Посмотреть результат'}).click();
  await expect(page.locator('#report-panel')).toBeVisible();
- await expect(page.locator('#m8-report-state')).toContainText('Report готов',{timeout:70000});
+ await expect(page.locator('#m8-report-state')).toContainText('Результат готов',{timeout:70000});
+ await expect(page.locator('#m8-report-title')).toHaveText('Результат оценки');
+ await expect(page.locator('#m8-report-tabs [role="tab"]')).toHaveCount(4);
+ await expect(page.locator('#m8-report-skills')).toContainText('общий уровень навыка не присваивается');
+ await expect(page.locator('#m8-report-shell')).not.toContainText(/Indicator:|IA:|Turn:|Fragment:/);
  const cycle=new URL(page.url()).searchParams.get('cycle_id');expect(cycle).toBeTruthy();
  const response=await page.request.get(`${stand.url}/users/assessment/m8/cycles/${cycle}/reports/latest`);expect(response.ok()).toBeTruthy();const saved=await response.json();
  const downloadPromise=page.waitForEvent('download');await page.locator('#report-download-button').click();
@@ -218,7 +222,7 @@ async function report(page,stand,info){
  await info.attach('pdf-content-check',{body:checked.stdout,contentType:'text/plain'});
  await page.screenshot({path:path.join(stand.dir,'report.png'),fullPage:true});
  await info.attach('report-ui',{path:path.join(stand.dir,'report.png'),contentType:'image/png'});
- await page.reload();await expect(page.locator('#m8-report-state')).toContainText('Report готов');
+ await page.reload();await expect(page.locator('#m8-report-state')).toContainText('Результат готов');
  expect(await (await page.request.get(`${stand.url}/users/assessment/m8/cycles/${cycle}/reports/latest`)).json()).toEqual(saved);
  return saved;
 }
@@ -484,7 +488,7 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  await expect(page.locator('#report-download-button')).toHaveAttribute('data-m8-report-id',latest.id);
  const otherTab=await page.context().newPage();
  await otherTab.goto(page.url());
- await expect(otherTab.locator('#m8-report-state')).toContainText('Report готов');
+ await expect(otherTab.locator('#m8-report-state')).toContainText('Результат готов');
  await page.locator('#report-back-button').click();
  await page.locator('#dashboard-panel .user-chip').click(); await page.locator('#dashboard-restart-button').click();
  await login(page,stand,'other@example.test');

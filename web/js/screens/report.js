@@ -1319,10 +1319,13 @@ export const openReport = (options = {}) => {
     const legacy = document.getElementById('legacy-report-shell');
     const shell = document.getElementById('m8-report-shell');
     legacy?.classList.add('hidden'); shell?.classList.remove('hidden');
-    for (const id of ['m8-report-metadata', 'm8-report-skills', 'm8-report-coverage', 'm8-report-limitations', 'm8-report-recommendations', 'm8-report-recommendation-notices']) {
+    requestAnimationFrame(() => document.getElementById('m8-report-title')?.focus({ preventScroll: true }));
+    for (const id of ['m8-report-metadata', 'm8-report-tabs', 'm8-report-tab-select', 'm8-report-skills', 'm8-report-coverage', 'm8-report-limitations', 'm8-report-recommendations', 'm8-report-recommendation-notices']) {
       document.getElementById(id)?.replaceChildren();
     }
-    document.getElementById('m8-report-state').textContent = 'Загружаем сохранённый отчёт…';
+    document.getElementById('m8-report-state').textContent = 'Открываем результат…';
+    document.getElementById('m8-report-summary').textContent = 'Ниже — результаты по вашим ответам, их основания и ограничения.';
+    document.getElementById('m8-report-partial')?.classList.add('hidden');
     const download = document.getElementById('report-download-button');
     delete download.dataset.m8ReportId;
     download.disabled = true;
@@ -1330,11 +1333,14 @@ export const openReport = (options = {}) => {
     if (m8ReportId) url.searchParams.set('report_id', m8ReportId);
     else url.searchParams.delete('report_id');
     window.history.replaceState({}, '', url.pathname + '?' + url.searchParams.toString());
-    void loadM8Report(m8CycleId, m8ReportId, isCurrent, ownerId).catch((error) => {
+    const load = () => void loadM8Report(m8CycleId, m8ReportId, isCurrent, ownerId).catch(() => {
       if (!isCurrent()) return;
       const stateNode = document.getElementById('m8-report-state');
-      if (stateNode) stateNode.textContent = error?.message || 'Не удалось загрузить Report.';
+      if (!stateNode) return;
+      stateNode.innerHTML = 'Не удалось открыть результат. <button class="ghost-button compact-ghost" type="button">Повторить</button>';
+      stateNode.querySelector('button')?.addEventListener('click', load, { once: true });
     });
+    load();
     return;
   }
   const legacyUrl = new URL(window.location.href);
@@ -1353,19 +1359,101 @@ export const openReport = (options = {}) => {
 };
 
 const outcomeLabels = {
-  full_score: 'Полный результат со Score', partial_score: 'Частный результат со Score',
-  result_without_score: 'Результат без общего Score', no_result: 'Нет Skill Result',
+  full_score: 'Результат по полному составу навыка',
+  partial_score: 'Результат по части навыка',
+  result_without_score: 'Есть наблюдения без общего балла по навыку',
+  no_result: 'Недостаточно оснований для результата',
+};
+
+const comparisonLabels = {
+  NO_TARGET_REQUIREMENT: 'Целевое требование для сопоставления не задано',
+  NO_SKILL_RESULT: 'Сопоставление недоступно: по навыку нет результата',
+  NOT_COMPARABLE: 'Сопоставление с требованиями недоступно',
+};
+
+const coverageLabels = {
+  opportunities: 'Фактическая возможность наблюдения',
+  indicator_assessments: 'Обоснованные оценки индикаторов',
+  admissible_contributions: 'Допустимые вклады',
+  components_with_score: 'Компоненты с баллом',
+  complete_components: 'Полностью оценённые компоненты',
+};
+
+const recommendationTypeLabels = {
+  Development: 'Развитие',
+  'Consolidation / Maintenance': 'Закрепление результата',
+  'Application / Transfer': 'Применение в другой ситуации',
+};
+
+const formatParticipantDate = (value) => {
+  const date = parseApiDateTime(value);
+  return date ? date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Дата не указана';
 };
 
 const formatExactScore = (score) => {
-  if (!score || score.value == null) return 'Score отсутствует';
-  return `${score.value} · ${score.numerator}/${score.denominator}`;
+  if (!score || score.value == null) return 'Общий балл не сформирован';
+  return `${score.value}`;
 };
 
 const coverageLabel = (cut) => {
   if (!cut || cut.denominator == null) return 'не передано';
   if (cut.denominator === 0 || cut.ratio == null) return `${cut.numerator}/${cut.denominator} · доля не определена`;
   return `${cut.numerator}/${cut.denominator} · ${(cut.ratio * 100).toFixed(1)}%`;
+};
+
+const buildSkillDetails = (skill, recommendations) => {
+  const bases = recommendations.flatMap((item) => item.basis_refs || []);
+  const manifestations = [...new Set(bases.map((item) => item.manifestation).filter(Boolean))];
+  const excerpts = [...new Set(bases.flatMap((item) => item.material_excerpts || []).map((item) => item.quote).filter(Boolean))];
+  const limitations = [...new Set([
+    ...(Array.isArray(skill.limitations) ? skill.limitations : []),
+    ...bases.flatMap((item) => item.limitations || []),
+  ])];
+  if (!manifestations.length && !excerpts.length && !limitations.length) return '';
+  return `<details class="m8-skill-basis"><summary>Основания</summary>` +
+    manifestations.map((value) => `<p>${escapeHtml(value)}</p>`).join('') +
+    excerpts.map((value) => `<blockquote>${escapeHtml(value)}</blockquote>`).join('') +
+    limitations.map((value) => `<p class="m8-local-limitation">${escapeHtml(value)}</p>`).join('') +
+    `</details>`;
+};
+
+const renderM8Skills = (c67, competencyId) => {
+  const skillsNode = document.getElementById('m8-report-skills');
+  const recommendations = Array.isArray(c67.recommendations) ? c67.recommendations : [];
+  const selected = (c67.skills || []).filter((skill) => String(skill.competency_id) === String(competencyId));
+  skillsNode.innerHTML = selected.map((skill) => {
+    const related = recommendations.filter((item) => String(item.skill_id) === String(skill.skill_id));
+    const comparison = comparisonLabels[skill.comparison?.status] || 'Сведения о сопоставлении недоступны';
+    const exact = skill.score?.value == null ? '' : `<details><summary>Как получен результат</summary><p>Точное значение: ${escapeHtml(String(skill.score.value))}; числитель: ${escapeHtml(String(skill.score.numerator))}; знаменатель: ${escapeHtml(String(skill.score.denominator))}.</p></details>`;
+    return `<article class="report-skill-item"><div><strong>${escapeHtml(skill.skill_name || 'Навык без названия')}</strong>` +
+      `<p class="m8-outcome">${escapeHtml(outcomeLabels[skill.outcome] || 'Неизвестный формат результата')}</p>` +
+      `<p>В этой версии оценки общий уровень навыка не присваивается.</p>${buildSkillDetails(skill, related)}</div>` +
+      `<div class="m8-skill-result"><strong>${escapeHtml(formatExactScore(skill.score))}</strong>` +
+      `<p>${escapeHtml(skill.completeness || (skill.outcome === 'partial_score' ? 'Результат ограничен частью состава навыка' : 'Полнота отдельно не указана'))}</p>` +
+      `<p>${escapeHtml(comparison)}</p>${exact}</div></article>`;
+  }).join('') || '<p>В этой группе нет навыков, включённых в сохранённый результат.</p>';
+};
+
+const setupM8CompetencyNavigation = (c67) => {
+  const groups = Array.isArray(c67.competencies) && c67.competencies.length
+    ? c67.competencies
+    : [...new Map((c67.skills || []).map((skill) => [skill.competency_id, { competency_id: skill.competency_id, competency_name: skill.competency_name }])).values()];
+  const tabs = document.getElementById('m8-report-tabs');
+  const select = document.getElementById('m8-report-tab-select');
+  const selectGroup = (id) => {
+    tabs.querySelectorAll('button').forEach((button) => {
+      const active = button.dataset.competencyId === String(id);
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    select.value = String(id);
+    renderM8Skills(c67, id);
+  };
+  tabs.innerHTML = groups.map((group, index) => `<button class="report-tab-button${index === 0 ? ' active' : ''}" type="button" role="tab" aria-selected="${index === 0}" data-competency-id="${escapeHtml(group.competency_id)}">${escapeHtml(group.competency_name || 'Группа навыков')}</button>`).join('');
+  select.innerHTML = groups.map((group) => `<option value="${escapeHtml(group.competency_id)}">${escapeHtml(group.competency_name || 'Группа навыков')}</option>`).join('');
+  tabs.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => selectGroup(button.dataset.competencyId)));
+  select.onchange = () => selectGroup(select.value);
+  if (groups[0]) selectGroup(groups[0].competency_id);
 };
 
 const loadM8Report = async (cycleId, reportId, isCurrent, ownerId) => {
@@ -1394,31 +1482,37 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId) => {
     || (reportId && String(report.id) !== String(reportId))
   ) throw new Error('Сессия или выбранный отчёт изменились.');
   const c67 = report.c67;
-  stateNode.textContent = `Report готов · расчётная редакция ${c67.results_revision_no} · версия представления ${report.revision_no}`;
+  stateNode.textContent = `Результат готов · версия ${report.revision_no} от ${formatParticipantDate(report.created_at)}`;
   const metadata = document.getElementById('m8-report-metadata');
-  metadata.innerHTML = `<div><dt>Cycle</dt><dd>${escapeHtml(c67.cycle_id)}</dd></div>` +
-    `<div><dt>Sessions</dt><dd>${c67.sessions.length}</dd></div>` +
-    `<div><dt>Причина закрытия</dt><dd>${escapeHtml(c67.collection?.reason || 'не передана')}</dd></div>` +
-    `<div><dt>Бюджет / окно</dt><dd>${c67.time?.budget_seconds ?? '—'} с / ${c67.time?.calendar_window_seconds ?? '—'} с</dd></div>` +
-    `<div><dt>Reliability</dt><dd>${escapeHtml(c67.reliability?.status || 'не передана')}</dd></div>`;
-  const skills = document.getElementById('m8-report-skills');
-  skills.innerHTML = c67.skills.map((skill) => `<article class="report-skill-item"><div><strong>${escapeHtml(skill.skill_name || skill.skill_id)}</strong>` +
-    `<p>${escapeHtml(outcomeLabels[skill.outcome] || skill.outcome)}</p></div><div><strong>${escapeHtml(formatExactScore(skill.score))}</strong>` +
-    `<p>${escapeHtml(skill.completeness || 'полнота не применима')}</p><p>${escapeHtml(skill.comparison?.status || '')}</p></div></article>`).join('');
+  const startedAt = c67.time?.started_at || c67.sessions?.[0]?.started_at;
+  const finishedAt = c67.collection?.closed_at || c67.sessions?.at(-1)?.ended_at;
+  metadata.innerHTML = `<div><dt>Оценка</dt><dd>4К — индивидуальный результат</dd></div>` +
+    `<div><dt>Период</dt><dd>${escapeHtml(formatParticipantDate(startedAt))} — ${escapeHtml(formatParticipantDate(finishedAt))}</dd></div>` +
+    `<div><dt>Версия отчёта</dt><dd>${escapeHtml(report.revision_no)}</dd></div>`;
+  const partial = c67.partial_result;
+  const partialNode = document.getElementById('m8-report-partial');
+  if (partial?.is_incomplete) {
+    const progress = partial.progress || {};
+    partialNode.innerHTML = `<strong>Оценка завершена не полностью</strong><p>Подтверждено ${escapeHtml(String(progress.completed ?? '—'))} из ${escapeHtml(String(progress.planned ?? '—'))} запланированных ситуаций. Показаны только подтверждённые результаты; непокрытые элементы не считаются неуспехом.</p>` +
+      (partial.limitation_reasons || []).map((item) => `<p>${escapeHtml(item.text || item.code)}</p>`).join('');
+    partialNode.classList.remove('hidden');
+  } else {
+    partialNode.classList.add('hidden');
+  }
+  setupM8CompetencyNavigation(c67);
   const coverage = document.getElementById('m8-report-coverage');
-  coverage.innerHTML = Object.entries(c67.coverage).map(([scope, cuts]) => `<section><h4>${escapeHtml(scope === 'full_m2' ? 'Полный M2' : 'План Cycle')}</h4>` +
-    Object.entries(cuts).map(([name, cut]) => `<p><strong>${escapeHtml(name)}</strong>: ${escapeHtml(coverageLabel(cut))}</p>`).join('') + '</section>').join('');
-  document.getElementById('m8-report-limitations').innerHTML = c67.limitations.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+  coverage.innerHTML = `<details><summary>Как получен результат</summary>` + Object.entries(c67.coverage || {}).map(([scope, cuts]) => `<section><h4>${escapeHtml(scope === 'full_m2' ? 'Полный состав методологии' : 'План этой оценки')}</h4>` +
+    Object.entries(cuts).map(([name, cut]) => `<p><strong>${escapeHtml(coverageLabels[name] || 'Неизвестный разрез покрытия')}</strong>: ${escapeHtml(coverageLabel(cut))}</p>`).join('') + '</section>').join('') +
+    `<p><strong>Проверка механизма:</strong> ${c67.reliability?.status === 'verified' ? 'проверена в указанной области' : c67.reliability?.status === 'not_verified' ? 'нормативная проверка ещё не подтверждена' : 'сведения о проверке отсутствуют'}.</p></details>`;
+  document.getElementById('m8-report-limitations').innerHTML = (c67.limitations || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('');
   const recommendations = document.getElementById('m8-report-recommendations');
   recommendations.innerHTML = (c67.recommendations || []).map((item) => `<article class="report-skill-item m8-recommendation-item">` +
-    `<div><strong>${escapeHtml(item.skill_id)} · ${escapeHtml(item.type)}</strong><p>${escapeHtml(item.goal)}</p></div>` +
-    `<div><p><strong>Практика:</strong> ${escapeHtml(item.practice)}</p><p><strong>Контекст:</strong> ${escapeHtml(item.application_context)}</p>` +
+    `<div><strong>${escapeHtml(recommendationTypeLabels[item.type] || 'Неизвестный тип рекомендации')}</strong><p>${escapeHtml(item.goal)}</p></div>` +
+    `<div><p><strong>Практика:</strong> ${escapeHtml(item.practice)}</p><p><strong>Где попробовать:</strong> ${escapeHtml(item.application_context)}</p>` +
     `<p><strong>Признак прогресса:</strong> ${escapeHtml(item.progress_signal)}</p>` +
-    (item.basis_refs || []).map((basis) => `<details><summary>Основание</summary><p>${escapeHtml(basis.manifestation)}</p>` +
-      `<p>Indicator: ${escapeHtml(basis.indicator_id)} · IA: ${escapeHtml(basis.ia_revision_id)}</p>` +
-      (basis.material_excerpts || []).map((fragment) => `<blockquote>${escapeHtml(fragment.quote)}</blockquote><p>Turn: ${escapeHtml(fragment.turn_id)} · Fragment: ${escapeHtml(fragment.fragment_id)}</p>`).join('') +
-      (basis.refs || []).map((ref) => `<p>${escapeHtml(ref.kind)}: ${escapeHtml(ref.id)} — ${escapeHtml(ref.meaning)}</p>`).join('') + '</details>').join('') +
-    `<p>${item.limitations.map((value) => escapeHtml(value)).join(' · ')}</p></div></article>`).join('');
+    (item.basis_refs || []).map((basis) => `<details><summary>Основание рекомендации</summary><p>${escapeHtml(basis.manifestation)}</p>` +
+      (basis.material_excerpts || []).map((fragment) => `<blockquote>${escapeHtml(fragment.quote)}</blockquote>`).join('') + '</details>').join('') +
+    `<p class="m8-local-limitation">${(item.limitations || []).map((value) => escapeHtml(value)).join(' · ')}</p></div></article>`).join('') || '<p>Для этой версии результата подходящие рекомендации не сформированы.</p>';
   document.getElementById('m8-report-recommendation-notices').innerHTML = (c67.recommendation_notices || [])
     .map((item) => `<li><strong>${escapeHtml(item.skill_id)}:</strong> ${escapeHtml(item.text)}</li>`).join('');
   const download = document.getElementById('report-download-button');

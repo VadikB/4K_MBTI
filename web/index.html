@@ -1786,32 +1786,40 @@
       <div class="dashboard-topbar">
         <div class="report-title-group">
           <button id="report-back-button" class="report-back-button" type="button" aria-label="Назад"></button>
-          <div class="brand dashboard-brand">Профиль компетенций<img class="report-title-icon" src="/web/assets/icons/report-star-icon.svg" alt="" aria-hidden="true"></div>
+          <div class="brand dashboard-brand">Результат оценки<img class="report-title-icon" src="/web/assets/icons/report-star-icon.svg" alt="" aria-hidden="true"></div>
         </div>
         <div class="dashboard-topbar-actions">
           <button id="report-home-button" class="ghost-button compact-ghost" type="button">Главная</button>
           <button id="report-download-button" class="primary-button compact-primary" type="button"><img class="button-icon" src="/web/assets/icons/download-icon.svg" alt="" aria-hidden="true">Скачать PDF</button>
+          <span id="report-download-status" class="admin-inline-status" role="status"></span>
         </div>
       </div>
 
       <div id="m8-report-shell" class="report-shell m8-report-shell hidden" aria-live="polite">
-        <section class="card report-details-card">
-          <p class="section-label accent-label">Результаты закрытого цикла</p>
-          <h2 id="m8-report-title">Базовый индивидуальный отчёт</h2>
-          <p id="m8-report-state">Загружаем состояние расчёта…</p>
+        <section class="card report-details-card m8-report-header" aria-labelledby="m8-report-title">
+          <p class="section-label accent-label">Индивидуальный результат</p>
+          <h2 id="m8-report-title" tabindex="-1">Результат оценки</h2>
+          <p id="m8-report-state" role="status">Открываем результат…</p>
           <dl id="m8-report-metadata" class="report-metadata-list"></dl>
         </section>
+        <section class="card report-details-card" aria-labelledby="m8-report-summary-title">
+          <div class="report-card-head"><div><p class="section-label">Кратко</p><h3 id="m8-report-summary-title">Что удалось оценить</h3></div></div>
+          <p id="m8-report-summary">Ниже — результаты по вашим ответам, их основания и ограничения.</p>
+          <div id="m8-report-partial" class="m8-report-notice hidden"></div>
+        </section>
         <section class="card report-details-card">
-          <div class="report-card-head"><div><p class="section-label">Профиль навыков</p><h3>Фактические результаты</h3></div></div>
+          <div class="report-card-head"><div><p class="section-label">Компетенции и навыки</p><h3>Фактические результаты</h3></div></div>
+          <div id="m8-report-tabs" class="report-tabs" role="tablist" aria-label="Компетенции"></div>
+          <select id="m8-report-tab-select" class="report-tab-select" aria-label="Выберите компетенцию"></select>
           <div id="m8-report-skills" class="m8-report-skills"></div>
         </section>
         <section class="card report-details-card">
-          <div class="report-card-head"><div><p class="section-label">Пять разрезов</p><h3>Покрытие и ограничения</h3></div></div>
+          <div class="report-card-head"><div><p class="section-label">Сведения об оценке</p><h3>Покрытие и ограничения результата</h3></div></div>
           <div id="m8-report-coverage"></div>
           <ul id="m8-report-limitations" class="report-recommendations"></ul>
         </section>
         <section class="card report-details-card">
-          <div class="report-card-head"><div><p class="section-label">Следующие шаги</p><h3>Рекомендации по результатам Cycle</h3></div></div>
+          <div class="report-card-head"><div><p class="section-label">Следующие шаги</p><h3>Что можно развивать</h3></div></div>
           <div id="m8-report-recommendations" class="m8-report-recommendations"></div>
           <ul id="m8-report-recommendation-notices" class="report-recommendations"></ul>
         </section>
