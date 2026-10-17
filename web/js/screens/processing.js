@@ -157,12 +157,20 @@ export const openProcessing = ({ initialCycleSnapshot = null } = {}) => {
   state.processingAutoTransitionStarted = false;
   state.processingServerProgress = 0;
   cycleStatusUsesJourney = false;
+  const restoredCycleSnapshot = initialCycleSnapshot || (
+    state.assessmentRuntimeKind === 'cycle' && state.productReportStatus
+      ? {
+          results_status: state.productReportStatus === 'ready' ? 'ready' : 'processing',
+          report_status: state.productReportStatus,
+        }
+      : null
+  );
   if (state.assessmentRuntimeKind === 'cycle') {
     processingOutcomeCard?.classList.remove('hidden');
     processingLegacy?.classList.add('hidden');
-    if (initialCycleSnapshot) {
-      lastCycleSnapshot = initialCycleSnapshot;
-      renderCycleOutcome(cycleOutcomeKind(initialCycleSnapshot), initialCycleSnapshot);
+    if (restoredCycleSnapshot) {
+      lastCycleSnapshot = restoredCycleSnapshot;
+      renderCycleOutcome(cycleOutcomeKind(restoredCycleSnapshot), restoredCycleSnapshot);
     } else {
       renderCycleOutcome('confirming');
     }
@@ -173,7 +181,7 @@ export const openProcessing = ({ initialCycleSnapshot = null } = {}) => {
   }
   processingStatusText.textContent = 'Подтягиваем итоговые оценки и формируем профиль компетенций.';
   renderProcessingProgress();
-  if (initialCycleSnapshot?.report_status !== 'ready' && initialCycleSnapshot?.results_status !== 'failed') {
+  if (restoredCycleSnapshot?.report_status !== 'ready' && restoredCycleSnapshot?.results_status !== 'failed') {
     void pollAnalysisStatus();
   }
 };
