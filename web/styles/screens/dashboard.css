@@ -327,6 +327,25 @@
     line-height: var(--lh-normal);
 }
 
+.dashboard-refresh-status {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #b42318;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.dashboard-refresh-status.hidden {
+    display: none;
+}
+
+.dashboard-refresh-status .text-link {
+    min-height: 44px;
+    color: #007d89;
+}
+
 .dashboard-section-title {
     margin: var(--space-1) 0 0;
     color: var(--text-main);
@@ -341,6 +360,107 @@
     font-size: var(--fs-h1);
     line-height: var(--lh-tight);
     letter-spacing: var(--ls-tight);
+}
+
+.participant-assessment-list {
+    display: grid;
+    gap: 16px;
+}
+
+.participant-assessment-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 24px;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+.participant-assessment-main {
+    min-width: 0;
+}
+
+.participant-assessment-main h4 {
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: #222c30;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 28px;
+}
+
+.participant-assessment-main p {
+    margin: 8px 0 0;
+    color: #68777c;
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.participant-assessment-organization,
+.participant-assessment-meta {
+    font-size: 14px !important;
+    line-height: 20px !important;
+}
+
+.participant-assessment-status {
+    display: block;
+    margin-top: 16px;
+    color: #222c30;
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.participant-assessment-card--failed .participant-assessment-status {
+    color: #b42318;
+}
+
+.participant-assessment-action {
+    min-width: 220px;
+    min-height: 48px;
+    background: #18b8c6;
+    color: #222c30;
+}
+
+.participant-assessment-action:hover:not(:disabled) {
+    background: #109eab;
+}
+
+.participant-assessment-action:active:not(:disabled) {
+    background: #0c8591;
+}
+
+.participant-assessment-action:focus-visible {
+    outline: 3px solid #007d89;
+    outline-offset: 2px;
+}
+
+.participant-assessment-empty {
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+.participant-assessment-empty p {
+    margin: 8px 0 0;
+    color: #68777c;
+}
+
+@media (max-width: 640px) {
+    .participant-assessment-card {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+        padding: 16px;
+    }
+
+    .participant-assessment-action {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .participant-assessment-empty {
+        padding: 16px;
+    }
 }
 
 .compact-ghost {

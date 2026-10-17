@@ -1,133 +1,198 @@
 import { state, persistAssessmentContext, safeStorage, STORAGE_KEYS, setCurrentScreen } from '../state.js';
 import {
-  dashboardPanel,
-  dashboardGreeting,
-  dashboardUserName,
-  dashboardUserRole,
-  dashboardAvatar,
-  assessmentTitle,
-  assessmentDescription,
-  assessmentStatusLabel,
-  assessmentCasesLabel,
-  assessmentProgressBar,
-  assessmentActionButton,
-  availableAssessments,
-  reportsList,
+  dashboardPanel, dashboardGreeting, dashboardUserName, dashboardUserRole, dashboardAvatar,
+  currentAssessmentsTitle, currentAssessments, completedAssessments,
+  dashboardRefreshStatus, dashboardRefreshButton,
 } from '../dom.js';
-import { staticAssessments } from '../config.js';
 import { hideAllPanels, syncUrlState } from '../router.js';
-import { sanitizeDisplayRole, getSignupFirstName, buildInitials, escapeHtml } from '../utils/format.js';
-import {
-  canReusePreparedAssessment,
-  renderAssessmentPreparationState,
-} from './assessment.js';
+import { sanitizeDisplayRole, getSignupFirstName, buildInitials } from '../utils/format.js';
 import { handleAssessmentEntryClick } from './interview.js';
-import { openReports } from './reports.js';
+import { readApiResponse } from '../api.js';
+
+const DASHBOARD_REFRESH_INTERVAL_MS = 30000;
+const DASHBOARD_RETRY_INTERVAL_MS = 60000;
+let dashboardRefreshTimer = null;
+let dashboardRefreshPending = false;
+
+const scheduleDashboardRefresh = (delay = DASHBOARD_REFRESH_INTERVAL_MS) => {
+  window.clearTimeout(dashboardRefreshTimer);
+  dashboardRefreshTimer = window.setTimeout(() => {
+    if (state.currentScreen === 'dashboard') void refreshDashboard();
+  }, delay);
+};
+
+const refreshDashboard = async () => {
+  if (dashboardRefreshPending || state.currentScreen !== 'dashboard' || !state.pendingUser?.id) return;
+  dashboardRefreshPending = true;
+  const ownerId = state.pendingUser.id;
+  const identityEpoch = state.identityEpoch;
+  const profileQuery = state.dashboard?.personalized_profile_id
+    ? `?personalized_profile_id=${encodeURIComponent(state.dashboard.personalized_profile_id)}` : '';
+  try {
+    const response = await fetch(`/users/${encodeURIComponent(ownerId)}/session-bootstrap${profileQuery}`, {
+      credentials: 'same-origin',
+    });
+    const payload = await readApiResponse(response, 'Не удалось обновить сведения');
+    if (state.currentScreen !== 'dashboard' || state.identityEpoch !== identityEpoch || state.pendingUser?.id !== ownerId) return;
+    const focusedAction = document.activeElement?.dataset?.dashboardAction || null;
+    const focusedCycleId = document.activeElement?.dataset?.cycleId || null;
+    state.dashboard = payload.dashboard || state.dashboard;
+    persistAssessmentContext();
+    renderDashboard();
+    if (focusedAction) {
+      const matchingButton = [...dashboardPanel.querySelectorAll('[data-dashboard-action]')].find((button) =>
+        button.dataset.dashboardAction === focusedAction && button.dataset.cycleId === focusedCycleId);
+      matchingButton?.focus({ preventScroll: true });
+    }
+    dashboardRefreshStatus.classList.add('hidden');
+    scheduleDashboardRefresh();
+  } catch (_error) {
+    if (state.currentScreen === 'dashboard' && state.identityEpoch === identityEpoch && state.pendingUser?.id === ownerId) {
+      dashboardRefreshStatus.classList.remove('hidden');
+      scheduleDashboardRefresh(DASHBOARD_RETRY_INTERVAL_MS);
+    }
+  } finally {
+    dashboardRefreshPending = false;
+  }
+};
+
+dashboardRefreshButton?.addEventListener('click', () => void refreshDashboard());
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.currentScreen === 'dashboard') void refreshDashboard();
+});
+
+const formatDeadline = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const datePart = new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric', month: 'long', timeZone: 'Europe/Moscow',
+  }).format(date);
+  const timePart = new Intl.DateTimeFormat('ru-RU', {
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Moscow',
+  }).format(date);
+  return `Завершить до ${datePart}, ${timePart} (МСК)`;
+};
+
+const progressText = (card) => {
+  const completed = Number(card.completed_cases);
+  const total = Number(card.total_cases);
+  if (!Number.isInteger(completed) || completed < 0) return '';
+  if (Number.isInteger(total) && total > 0) return `Завершено ситуаций: ${completed} из ${total}`;
+  return ['prepared', 'ready'].includes(card.status) ? '' : `Завершено ситуаций: ${completed}`;
+};
+
+const performCardAction = async (card, event) => {
+  if (card.cycle_id) {
+    state.productCycleId = card.cycle_id;
+    state.assessmentRuntimeKind = 'cycle';
+    persistAssessmentContext();
+  }
+  if (card.action === 'open_report') {
+    const { openReportScreen } = await import('../screen-loaders.js');
+    await openReportScreen({ returnTarget: 'home', m8CycleId: card.cycle_id, m8ReportId: card.report_id });
+    return;
+  }
+  if (card.action === 'open_processing') {
+    const { openProcessingScreen } = await import('../screen-loaders.js');
+    await openProcessingScreen();
+    return;
+  }
+  if (card.action === 'acquaintance') {
+    const { openOnboardingScreen } = await import('../screen-loaders.js');
+    await openOnboardingScreen();
+    return;
+  }
+  await handleAssessmentEntryClick(event);
+};
+
+const buildCard = (card, { primaryEntry = false } = {}) => {
+  const article = document.createElement('article');
+  article.className = `card participant-assessment-card participant-assessment-card--${card.status}`;
+  const main = document.createElement('div');
+  main.className = 'participant-assessment-main';
+  const title = document.createElement('h4');
+  title.textContent = card.title;
+  main.appendChild(title);
+  if (card.organization_name) {
+    const organization = document.createElement('p');
+    organization.className = 'participant-assessment-organization';
+    organization.textContent = card.organization_name;
+    main.appendChild(organization);
+  }
+  const status = document.createElement('strong');
+  status.className = 'participant-assessment-status';
+  status.textContent = card.status_label;
+  main.appendChild(status);
+  const description = document.createElement('p');
+  description.textContent = card.description;
+  main.appendChild(description);
+  const progress = progressText(card);
+  if (progress) {
+    const node = document.createElement('p');
+    node.className = 'participant-assessment-meta';
+    node.textContent = progress;
+    main.appendChild(node);
+  }
+  const deadline = formatDeadline(card.calendar_deadline);
+  if (deadline) {
+    const node = document.createElement('p');
+    node.className = 'participant-assessment-meta';
+    node.textContent = deadline;
+    main.appendChild(node);
+  }
+  article.appendChild(main);
+  if (card.action && card.button_label) {
+    const button = document.createElement('button');
+    // Keep the stable entry-point id on the first actionable assessment card.
+    // The action can be acquaintance before it becomes start/continue.
+    if (primaryEntry) button.id = 'assessment-action-button';
+    button.type = 'button';
+    button.className = 'primary-button participant-assessment-action';
+    button.dataset.dashboardAction = card.action;
+    button.dataset.cycleId = card.cycle_id || '';
+    button.textContent = card.button_label;
+    button.addEventListener('click', (event) => void performCardAction(card, event));
+    article.appendChild(button);
+  }
+  return article;
+};
+
+const renderCards = (container, cards, emptyTitle, emptyDescription) => {
+  container.replaceChildren();
+  if (cards.length) {
+    cards.forEach((card, index) => container.appendChild(buildCard(card, {
+      primaryEntry: container === currentAssessments && index === 0,
+    })));
+    return;
+  }
+  const empty = document.createElement('div');
+  empty.className = 'card participant-assessment-empty';
+  const title = document.createElement('strong');
+  title.textContent = emptyTitle;
+  const description = document.createElement('p');
+  description.textContent = emptyDescription;
+  empty.append(title, description);
+  container.appendChild(empty);
+};
 
 export const renderDashboard = () => {
   const dashboard = state.dashboard;
-  if (!dashboard) {
-    return;
-  }
-
+  if (!dashboard) return;
   const user = state.pendingUser;
-  const position = sanitizeDisplayRole(user && user.job_description ? user.job_description : '');
-  const progressText = dashboard.active_assessment.status_label;
-
-  dashboardGreeting.textContent = 'Добро пожаловать, ' + (user?.full_name || dashboard.greeting_name);
+  const position = sanitizeDisplayRole(user?.job_description || '');
+  dashboardGreeting.textContent = 'Мои оценки';
   dashboardUserName.textContent = user
     ? getSignupFirstName(user.full_name, dashboard.greeting_name)
     : getSignupFirstName(dashboard.greeting_name);
   dashboardUserRole.textContent = position;
   dashboardUserRole.style.display = position ? '' : 'none';
   dashboardAvatar.textContent = buildInitials(user ? user.full_name : dashboard.greeting_name);
-  assessmentTitle.textContent =
-    dashboard.active_assessment.code === 'competencies_4k' ? 'Компетенции 4К' : dashboard.active_assessment.title;
-  assessmentDescription.textContent = dashboard.active_assessment.description;
-  assessmentStatusLabel.textContent = progressText;
-  assessmentCasesLabel.textContent =
-    'Завершено ситуаций: ' + dashboard.active_assessment.completed_cases;
-  assessmentProgressBar.style.width = dashboard.active_assessment.progress_percent + '%';
-  assessmentActionButton.textContent = canReusePreparedAssessment()
-    ? 'Перейти к кейсам'
-    : dashboard.active_assessment.button_label;
-  renderAssessmentPreparationState();
-
-  availableAssessments.innerHTML = '';
-  dashboard.available_assessments.forEach((item, index) => {
-    const card = document.createElement('article');
-    card.className = 'card assessment-mini-card';
-    const actionMarkup =
-      index === 0
-        ? '<button id="dashboard-mini-start" class="mini-card-action-button" type="button">' +
-          (canReusePreparedAssessment() ? 'К кейсам' : 'Начать') +
-          '</button>' +
-          '<div id="dashboard-mini-preparing" class="preparing-hero preparing-hero--mini hidden" aria-live="polite">' +
-          '<div id="dashboard-mini-ring" class="preparing-hero-row" style="--progress: 0%;">' +
-          '<span class="preparing-hero-pulse" aria-hidden="true"></span>' +
-          '<span id="dashboard-mini-percent" class="preparing-hero-value">0%</span>' +
-          '</div>' +
-          '</div>'
-        : '<span>' + escapeHtml(item.status) + '</span>';
-    card.innerHTML =
-      '<div class="mini-card-icon"><img src="/web/assets/icons/4k-icon.svg" alt="" aria-hidden="true"></div>' +
-      '<h3>' +
-      escapeHtml(item.title) +
-      '</h3>' +
-      '<p>' +
-      escapeHtml(item.description) +
-      '</p>' +
-      '<div class="mini-card-meta"><span>' +
-      escapeHtml(item.duration_minutes) +
-      ' минут</span>' +
-      actionMarkup +
-      '</div>';
-    if (index === 0) {
-      const actionButton = card.querySelector('.mini-card-action-button');
-      actionButton.addEventListener('click', handleAssessmentEntryClick);
-    }
-    availableAssessments.appendChild(card);
-  });
-  renderAssessmentPreparationState();
-
-  staticAssessments.forEach((item) => {
-    const card = document.createElement('article');
-    card.className = 'card is-placeholder assessment-mini-card muted-card ' + item.tone;
-    card.innerHTML =
-      '<div class="mini-card-icon muted-icon"><img src="/web/assets/icons/4k-icon.svg" alt="" aria-hidden="true"></div>' +
-      '<h3>' +
-      item.title +
-      '</h3>' +
-      '<p>' +
-      item.description +
-      '</p>' +
-      '<div class="mini-card-meta"><span>' +
-      item.duration +
-      '</span><button class="mini-start-button disabled" type="button" disabled>Скоро</button></div>';
-    availableAssessments.appendChild(card);
-  });
-
-  reportsList.innerHTML = '';
-  const reportsCount = Number.isFinite(Number(dashboard.reports_total))
-    ? Number(dashboard.reports_total)
-    : Array.isArray(dashboard.reports)
-      ? dashboard.reports.length
-      : 0;
-  const reportsSummary = document.createElement('button');
-  reportsSummary.type = 'button';
-  reportsSummary.className = 'reports-summary-button';
-  reportsSummary.innerHTML =
-    '<div class="reports-summary-copy">' +
-    '<span class="reports-summary-label">Всего отчетов по оценке</span>' +
-    '<strong class="reports-summary-count">' +
-    reportsCount +
-    '</strong>' +
-    '</div>' +
-    '<span class="reports-summary-action">Перейти к отчетам</span>';
-  reportsSummary.addEventListener('click', () => {
-    void openReports();
-  });
-  reportsList.appendChild(reportsSummary);
+  const current = Array.isArray(dashboard.current_assessments) ? dashboard.current_assessments : [];
+  const completed = Array.isArray(dashboard.completed_assessments) ? dashboard.completed_assessments : [];
+  currentAssessmentsTitle.textContent = current.length > 1 ? 'Текущие оценки' : 'Текущая оценка';
+  renderCards(currentAssessments, current, 'Пока нет назначенных оценок', 'Когда вам назначат оценку, она появится здесь');
+  renderCards(completedAssessments, completed, 'Здесь появятся результаты ваших оценок', 'Завершённые оценки пока отсутствуют');
 };
 
 export const openDashboard = () => {
@@ -137,27 +202,19 @@ export const openDashboard = () => {
   hideAllPanels();
   renderDashboard();
   dashboardPanel.classList.remove('hidden');
+  dashboardRefreshStatus.classList.add('hidden');
+  scheduleDashboardRefresh();
 };
 
-export const hasIncompleteAssessment = () => {
-  if (!state.dashboard || !state.dashboard.active_assessment) {
-    return false;
-  }
-  const progress = Number(state.dashboard.active_assessment.progress_percent || 0);
-  return progress > 0 && progress < 100;
-};
+export const hasIncompleteAssessment = () =>
+  (state.dashboard?.current_assessments || []).some((card) => ['active', 'paused', 'interrupted'].includes(card.status));
 
 export const hasAssessmentHistory = () => {
-  const dashboardProgress = Number(state.dashboard?.active_assessment?.progress_percent || 0);
-  const dashboardCompletedCases = Number(state.dashboard?.active_assessment?.completed_cases || 0);
-  const hasReports = Array.isArray(state.dashboard?.reports) && state.dashboard.reports.length > 0;
+  const hasCycles = (state.dashboard?.completed_assessments || []).length > 0;
   const hasProfileSessions = Array.isArray(state.profileSummary?.sessions) && state.profileSummary.sessions.length > 0;
-  const hasCompletedAssessmentFlag = safeStorage.getItem(STORAGE_KEYS.assessmentCompletedOnce) === '1';
-
-  return dashboardProgress > 0 || dashboardCompletedCases > 0 || hasReports || hasProfileSessions || hasCompletedAssessmentFlag;
+  return hasCycles || hasProfileSessions || safeStorage.getItem(STORAGE_KEYS.assessmentCompletedOnce) === '1';
 };
 
 export const hasCompletedAssessmentBefore = () =>
-  hasAssessmentHistory() ||
-  Boolean(state.assessmentSessionId) ||
+  hasAssessmentHistory() || Boolean(state.assessmentSessionId) ||
   safeStorage.getItem(STORAGE_KEYS.assessmentCompletedOnce) === '1';

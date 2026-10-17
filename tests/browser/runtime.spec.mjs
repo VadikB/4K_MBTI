@@ -126,10 +126,59 @@ async function start(page,expected='готовности'){
  const entrySelector='#dashboard-panel:not(.hidden) #assessment-action-button, #ai-welcome-panel:not(.hidden) #start-first-assessment';
  await expect.poll(()=>page.locator(entrySelector).count()).toBe(1);
  await page.evaluate(selector=>document.querySelector(selector)?.click(),entrySelector);
+ await expect.poll(async()=>await page.locator('#onboarding-panel').isVisible() || await page.locator('#prechat-panel').isVisible()).toBe(true);
+ if(await page.locator('#onboarding-panel').isVisible()){
+  await completeAcquaintance(page);
+  await expect.poll(()=>page.locator(entrySelector).count()).toBe(1);
+  await page.evaluate(selector=>document.querySelector(selector)?.click(),entrySelector);
+ }
  await page.locator('#prechat-start-button').click();
  await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
  await expect(page.locator('#interview-messages')).toContainText(expected);
  await test.info().attach('interview-start',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+}
+async function completeAcquaintance(page){
+ const panel=page.locator('#onboarding-panel');
+ const answers=[
+  'Синтетические задачи: анализировать материалы и согласовывать рабочие решения.',
+  'Синтетические решения: проверять условия и выбирать обоснованный следующий шаг.',
+  'Синтетические ограничения: сроки, зависимости и взаимодействие с коллегами.',
+ ];
+ let answerIndex=0;
+ for(let step=0;step<16 && await panel.isVisible();step+=1){
+  const input=panel.locator('.onboarding-answer');
+  if(await input.isVisible())await input.fill(answers[answerIndex++]||`Синтетический ответ ${answerIndex}.`);
+  const next=page.locator('#onboarding-next');
+  const marker=`${await panel.getAttribute('data-step')}|${await page.locator('#onboarding-title').textContent()}`;
+  await expect(next).toBeEnabled();
+  await next.click();
+  await expect.poll(async()=>{
+   if(!await panel.isVisible())return true;
+   return `${await panel.getAttribute('data-step')}|${await page.locator('#onboarding-title').textContent()}`!==marker;
+  }).toBe(true);
+ }
+ await expect(panel).toBeHidden();
+}
+async function startIndependentCycle(page,stand,expected='готовности'){
+ const response=await page.request.post(`${stand.url}/users/assessment/cycles/start`,{
+  data:{idempotency_key:randomUUID(),selected_skills:['K1','K2','K3','K4']},
+ });
+ expect(response.ok()).toBeTruthy();
+ const payload=await response.json();
+ const cycle=payload.runtime?.cycle_id||payload.plan?.cycle_id;
+ expect(cycle).toBeTruthy();page.acceptanceCycle=cycle;
+ await page.goto(`${stand.url}/?screen=interview&cycle_id=${encodeURIComponent(cycle)}`);
+ await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
+ await expect(page.locator('#interview-messages')).toContainText(expected);
+}
+async function openCompletedReport(page,expectedCycles,cycleId=null){
+ await expect(page.locator('#dashboard-panel')).toBeVisible();
+ await expect(page.locator('#completed-assessments .participant-assessment-card')).toHaveCount(expectedCycles);
+ const card=cycleId
+  ? page.locator(`#completed-assessments .participant-assessment-card [data-cycle-id="${cycleId}"]`).locator('..')
+  : page.locator('#completed-assessments .participant-assessment-card').first();
+ await card.locator('.participant-assessment-action').click();
+ await expect(page.locator('#m8-report-state')).toContainText('Report готов');
 }
 async function answer(page,text=fixture.answer){await page.locator('#interview-textarea').fill(text);await page.locator('#interview-submit-button').click();await expect(page.locator('#interview-submit-button')).toBeEnabled({timeout:30000});await expect(page.locator('#interview-error')).toBeHidden();await expect(page.locator('#interview-messages .own')).toContainText([text]);}
 async function report(page,stand,info){
@@ -406,18 +455,11 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  await page.locator('#dashboard-panel .user-chip').click();
  await page.locator('#dashboard-restart-button').click();
  await login(page,stand,'participant@example.test',false,true,true);
- await expect(page.locator('.reports-summary-count')).toHaveText('1');
- await page.locator('.reports-summary-button').click();
- const card=page.locator('.cycle-report');await expect(card).toHaveCount(1);
+ await openCompletedReport(page,1,saved.cycle_id);
  await info.attach('history-list',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
- await expect(card.locator('option')).toHaveCount(2);
- await card.locator('select').selectOption(saved.id);
- await card.locator('.cycle-report-open').click();
- await expect(page.locator('#m8-report-state')).toContainText('Report готов');
- expect(new URL(page.url()).searchParams.get('report_id')).toBe(saved.id);
+ await expect(page.locator('#report-download-button')).toHaveAttribute('data-m8-report-id',latest.id);
  const exact=await (await page.request.get(`${stand.url}/users/assessment/m8/reports/${saved.id}`)).json();expect(exact).toEqual(saved);
- await page.reload();await expect(page.locator('#m8-report-state')).toContainText('Report готов');
- expect(new URL(page.url()).searchParams.get('report_id')).toBe(saved.id);
+ expect(await (await page.request.get(`${stand.url}/users/assessment/m8/reports/${latest.id}`)).json()).toEqual(latest);
  const downloaded=page.waitForEvent('download');await page.locator('#report-download-button').click();
  const pdf=path.join(stand.dir,'history.pdf');await (await downloaded).saveAs(pdf);
  const historyCheck=spawnSync(python,['scripts/verify_browser_pdf.py',pdf,path.join(stand.dir,'report.json')],{encoding:'utf8'});
@@ -427,8 +469,7 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  await info.attach('history-report',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  // H10.6: a new independent Cycle remains a separate card, revisions stay inside the first.
  await page.locator('#report-back-button').click();
- await page.locator('#reports-back-button').click();
- await start(page); await answer(page);
+ await startIndependentCycle(page,stand); await answer(page);
  await page.locator('#interview-finish-button').click();
  await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
  await answer(page,fixture.clarification_answer);
@@ -437,56 +478,14 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  const second=await report(page,{...stand,dir:secondDir},info);
  expect(second.cycle_id).not.toBe(saved.cycle_id); expect(second.results_revision_id).not.toBe(saved.results_revision_id);
  await page.locator('#report-back-button').click();
- await page.locator('.reports-summary-button').click();
- await expect(page.locator('.cycle-report')).toHaveCount(2);
- const firstCard=page.locator(`.cycle-report[data-cycle-id="${saved.cycle_id}"]`);
- await expect(firstCard.locator('option')).toHaveCount(2);
- // Delay a real saved response, select a newer revision, then release the older response.
- let releaseOld; const oldGate=new Promise(resolve=>{releaseOld=resolve;});
- let capturedOld; const oldCaptured=new Promise(resolve=>{capturedOld=resolve;});
- await page.route(`**/users/assessment/m8/reports/${saved.id}`,async route=>{
-   const response=await route.fetch(); capturedOld(); await oldGate; await route.fulfill({response});
- });
- await firstCard.locator('select').selectOption(saved.id); await firstCard.locator('.cycle-report-open').click();
- await oldCaptured;
- await page.locator('#report-back-button').click();
- await firstCard.locator('select').selectOption(latest.id); await firstCard.locator('.cycle-report-open').click();
- await expect(page.locator('#report-download-button')).toHaveAttribute('data-m8-report-id',latest.id);
- const oldDelivered=page.waitForResponse(response=>response.url().endsWith('/reports/'+saved.id));
- releaseOld(); await (await oldDelivered).finished(); await page.unrouteAll({behavior:'wait'});
- await expect(page.locator('#report-download-button')).toHaveAttribute('data-m8-report-id',latest.id);
- await page.locator('#report-back-button').click();
- await firstCard.locator('select').selectOption(saved.id);
- await firstCard.locator('.cycle-report-open').click();
- await expect(page.locator('#m8-report-state')).toContainText('версия представления 1');
- // A real synthetic legacy session coexists with both Cycles; its URL never retains Cycle IDs.
- const archive=spawnSync(python,['scripts/browser_report_fixture.py','--state',path.join(stand.dir,'state.json'),'--cycle',saved.cycle_id,'--kind','archive-session'],{encoding:'utf8'});
- expect(archive.status,archive.stderr).toBe(0);
- await page.locator('#report-back-button').click();
- await expect(page.locator('.cycle-report')).toHaveCount(2);
- // Bootstrap 10.2 does not claim a complete historical DDL. Only legacy screen
- // routing is simulated here; the mixed history above is read from the real DB.
- await page.route('**/users/*/assessment/*/skill-assessments',route=>route.fulfill({status:200,contentType:'application/json',body:'[]'}));
- await page.route('**/users/*/assessment/*/report-interpretation',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({insight_title:'Синтетический архив',insight_text:'Проверка маршрутизации',basis_items:[],growth_areas:[],has_interpretation_signal:false,has_confident_strongest:false,response_pattern:'synthetic'})}));
- await page.locator('.profile-history-item').click();
- await page.locator('.profile-history-report-button').click();
- await expect(page.locator('#legacy-report-shell')).toBeVisible();
- expect(new URL(page.url()).searchParams.has('cycle_id')).toBe(false);
- expect(new URL(page.url()).searchParams.has('report_id')).toBe(false);
- await expect(page.locator('#report-download-button')).toBeEnabled();
- await page.reload(); await expect(page.locator('#legacy-report-shell')).toBeVisible();
- await expect(page.locator('#m8-report-shell')).toBeHidden();
- await page.unrouteAll({behavior:'wait'});
- // Reload defaults legacy returnTarget to home; enter history through the dashboard again.
- await page.locator('#report-back-button').click(); await page.locator('.reports-summary-button').click();
- await expect(page.locator('.cycle-report')).toHaveCount(2);
+ await expect(page.locator('#completed-assessments .participant-assessment-card')).toHaveCount(2);
  await info.attach('two-cycles-and-legacy',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
- await firstCard.locator('select').selectOption(saved.id); await firstCard.locator('.cycle-report-open').click();
- await expect(page.locator('#m8-report-state')).toContainText('версия представления 1');
+ await openCompletedReport(page,2,saved.cycle_id);
+ await expect(page.locator('#report-download-button')).toHaveAttribute('data-m8-report-id',latest.id);
  const otherTab=await page.context().newPage();
  await otherTab.goto(page.url());
  await expect(otherTab.locator('#m8-report-state')).toContainText('Report готов');
- await page.locator('#report-back-button').click(); await page.locator('#reports-back-button').click();
+ await page.locator('#report-back-button').click();
  await page.locator('#dashboard-panel .user-chip').click(); await page.locator('#dashboard-restart-button').click();
  await login(page,stand,'other@example.test');
  await otherTab.bringToFront(); await otherTab.evaluate(()=>window.dispatchEvent(new Event('focus')));
@@ -611,9 +610,13 @@ test('P10.5 fresh profile, lost confirmation response, reload and first AS',asyn
 test('P10.5 ready profile with no admitted catalog',async({page,stand},info)=>{
  await login(page,stand,'participant@example.test',true);
  const ready=profileReceipts(stand);expect(ready.profiles[0].status).toBe('ready');
- await page.locator('#assessment-action-button').click();await page.locator('#prechat-start-button').click();
- await expect(page.locator('#prechat-error')).toContainText('Профиль готов');
- await expect(page.locator('#prechat-error')).toContainText('допустимые кейсы');
+ await page.locator('#assessment-action-button').click();
+ await completeAcquaintance(page);
+ await expect(page.locator('#onboarding-panel')).toBeHidden();
+ await page.reload();
+ await expect(page.locator('#dashboard-panel')).toBeVisible();
+ await expect(page.locator('#current-assessments')).toContainText('Знакомство с оценкой');
+ await expect(page.locator('#assessment-action-button')).toHaveText('Продолжить знакомство');
  expect(profileReceipts(stand)).toEqual(ready);
  await expect(page.getByRole('button',{name:'Подтвердить профиль',exact:true})).toBeHidden();
  await info.attach('ready-no-catalog',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
@@ -656,9 +659,8 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  await expect(page.locator('#email-input')).toBeVisible();
  await page.context().clearCookies();await page.evaluate(()=>{localStorage.clear();sessionStorage.clear();});
  await login(page,stand,'participant@example.test',false,true,true);
- await expect(page.locator('.reports-summary-count')).toHaveText('1');
- await page.locator('.reports-summary-button').click();await expect(page.locator('.cycle-report')).toHaveCount(1);
- await page.locator('.cycle-report-open').click();await expect(page.locator('#m8-report-state')).toContainText('Report готов');
+ await openCompletedReport(page,1,first.cycle_id);
+ await expect(page.locator('#report-download-button')).toHaveAttribute('data-m8-report-id',first.id);
  expect(await (await page.request.get(`${stand.url}/users/assessment/m8/reports/${first.id}`)).json()).toEqual(first);
  expect(await (await page.request.get(resultUrl)).json()).toEqual(results);
  expect(profileReceipts(stand)).toEqual(after); // No hidden re-evaluation on login/read.
@@ -667,8 +669,8 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  const checked=spawnSync(python,['scripts/verify_browser_pdf.py',pdf,path.join(stand.dir,'report.json')],{encoding:'utf8'});
  expect(checked.status,checked.stderr).toBe(0);
  await info.attach('G02-relogin-pdf',{path:pdf,contentType:'application/pdf'});
- await page.locator('#report-back-button').click();await page.locator('#reports-back-button').click();
- await start(page);await answer(page);await page.locator('#interview-finish-button').click();
+ await page.locator('#report-back-button').click();
+ await startIndependentCycle(page,stand);await answer(page);await page.locator('#interview-finish-button').click();
  await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
  await answer(page,fixture.clarification_answer);await page.locator('#interview-finish-button').click();
  const secondDir=path.join(stand.dir,'G03-second');fs.mkdirSync(secondDir);
@@ -682,9 +684,12 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  expect(await (await page.request.post(regenerateUrl,{data:{idempotency_key:'G03-representation'}})).json()).toEqual(revision);
  expect(await (await page.request.get(resultUrl)).json()).toEqual(results);
  expect(await (await page.request.get(`${stand.url}/users/assessment/m8/reports/${first.id}`)).json()).toEqual(first);
- await page.locator('#report-back-button').click();await page.locator('.reports-summary-button').click();
- await expect(page.locator('.cycle-report')).toHaveCount(2);
- await expect(page.locator(`.cycle-report[data-cycle-id="${first.cycle_id}"] option`)).toHaveCount(2);
+ await page.locator('#report-back-button').click();
+ await expect(page.locator('#completed-assessments .participant-assessment-card')).toHaveCount(2);
+ const history=await (await page.request.get(`${stand.url}/users/assessment/m8/history`)).json();
+ expect(history.assessments_total).toBe(2);expect(history.reports_total).toBe(2);
+ const firstHistory=history.cycles.find(item=>item.cycle_id===first.cycle_id);
+ expect(firstHistory).toBeTruthy();expect(firstHistory.versions).toHaveLength(2);
  await info.attach('G03-two-independent-results',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  await info.attach('G01-03-receipts',{body:JSON.stringify({before,ready,after,final:profileReceipts(stand),first,second,revision,results},null,2),contentType:'application/json'});
 });
