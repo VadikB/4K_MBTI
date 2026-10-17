@@ -126,10 +126,35 @@ async function start(page,expected='готовности'){
  const entrySelector='#dashboard-panel:not(.hidden) #assessment-action-button, #ai-welcome-panel:not(.hidden) #start-first-assessment';
  await expect.poll(()=>page.locator(entrySelector).count()).toBe(1);
  await page.evaluate(selector=>document.querySelector(selector)?.click(),entrySelector);
+ await expect.poll(async()=>await page.locator('#onboarding-panel').isVisible() || await page.locator('#prechat-panel').isVisible()).toBe(true);
+ if(await page.locator('#onboarding-panel').isVisible()){
+  await completeAcquaintance(page);
+  await expect.poll(()=>page.locator(entrySelector).count()).toBe(1);
+  await page.evaluate(selector=>document.querySelector(selector)?.click(),entrySelector);
+ }
  await page.locator('#prechat-start-button').click();
  await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
  await expect(page.locator('#interview-messages')).toContainText(expected);
  await test.info().attach('interview-start',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+}
+async function completeAcquaintance(page,{allowWaiting=false}={}){
+ const panel=page.locator('#onboarding-panel');
+ const answers=[
+  'Синтетические задачи: анализировать материалы и согласовывать рабочие решения.',
+  'Синтетические решения: проверять условия и выбирать обоснованный следующий шаг.',
+  'Синтетические ограничения: сроки, зависимости и взаимодействие с коллегами.',
+ ];
+ let answerIndex=0;
+ for(let step=0;step<9 && await panel.isVisible();step+=1){
+  const input=panel.locator('.onboarding-answer');
+  if(await input.isVisible())await input.fill(answers[answerIndex++]||`Синтетический ответ ${answerIndex}.`);
+  const next=page.locator('#onboarding-next');
+  await expect(next).toBeEnabled();
+  const waiting=allowWaiting && await next.getByText('Проверить готовность',{exact:true}).isVisible();
+  await next.click();
+  if(waiting)return;
+ }
+ await expect(panel).toBeHidden();
 }
 async function answer(page,text=fixture.answer){await page.locator('#interview-textarea').fill(text);await page.locator('#interview-submit-button').click();await expect(page.locator('#interview-submit-button')).toBeEnabled({timeout:30000});await expect(page.locator('#interview-error')).toBeHidden();await expect(page.locator('#interview-messages .own')).toContainText([text]);}
 async function report(page,stand,info){
@@ -611,9 +636,9 @@ test('P10.5 fresh profile, lost confirmation response, reload and first AS',asyn
 test('P10.5 ready profile with no admitted catalog',async({page,stand},info)=>{
  await login(page,stand,'participant@example.test',true);
  const ready=profileReceipts(stand);expect(ready.profiles[0].status).toBe('ready');
- await page.locator('#assessment-action-button').click();await page.locator('#prechat-start-button').click();
- await expect(page.locator('#prechat-error')).toContainText('Профиль готов');
- await expect(page.locator('#prechat-error')).toContainText('допустимые кейсы');
+ await page.locator('#assessment-action-button').click();
+ await completeAcquaintance(page,{allowWaiting:true});
+ await expect(page.locator('#onboarding-panel')).toContainText('Организация ещё готовит исходные данные');
  expect(profileReceipts(stand)).toEqual(ready);
  await expect(page.getByRole('button',{name:'Подтвердить профиль',exact:true})).toBeHidden();
  await info.attach('ready-no-catalog',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
