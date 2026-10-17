@@ -298,7 +298,12 @@ const bootApp = async () => {
           return;
         }
         if (['show_processing', 'show_assessment_error'].includes(journey?.next_action)) {
-          await openProcessingScreen();
+          await openProcessingScreen({
+            initialCycleSnapshot: state.assessmentRuntimeKind === 'cycle' ? {
+              results_status: journey?.assessment?.status === 'failed' ? 'failed' : 'processing',
+              report_status: journey?.report_status || 'not_ready',
+            } : null,
+          });
           return;
         }
         if (journey?.next_action === 'show_dashboard') {

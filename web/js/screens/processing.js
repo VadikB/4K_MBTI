@@ -140,7 +140,7 @@ export const finishProcessingSequence = () => {
   tryOpenReportAfterProcessing();
 };
 
-export const openProcessing = () => {
+export const openProcessing = ({ initialCycleSnapshot = null } = {}) => {
   const cycleIdFromUrl = new URLSearchParams(window.location.search).get('cycle_id');
   if (!state.productCycleId && cycleIdFromUrl) state.productCycleId = cycleIdFromUrl;
   if (state.productCycleId) state.assessmentRuntimeKind = 'cycle';
@@ -158,7 +158,12 @@ export const openProcessing = () => {
   if (state.assessmentRuntimeKind === 'cycle') {
     processingOutcomeCard?.classList.remove('hidden');
     processingLegacy?.classList.add('hidden');
-    renderCycleOutcome('confirming');
+    if (initialCycleSnapshot) {
+      lastCycleSnapshot = initialCycleSnapshot;
+      renderCycleOutcome(cycleOutcomeKind(initialCycleSnapshot), initialCycleSnapshot);
+    } else {
+      renderCycleOutcome('confirming');
+    }
     processingOutcomeTitle?.focus();
   } else {
     processingOutcomeCard?.classList.add('hidden');
@@ -166,7 +171,9 @@ export const openProcessing = () => {
   }
   processingStatusText.textContent = 'Подтягиваем итоговые оценки и формируем профиль компетенций.';
   renderProcessingProgress();
-  void pollAnalysisStatus();
+  if (initialCycleSnapshot?.report_status !== 'ready' && initialCycleSnapshot?.results_status !== 'failed') {
+    void pollAnalysisStatus();
+  }
 };
 
 const outcomeCopy = {
