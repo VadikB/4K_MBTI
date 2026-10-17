@@ -615,9 +615,8 @@ test('P10.5 ready profile with no admitted catalog',async({page,stand},info)=>{
  await expect(page.locator('#onboarding-panel')).toBeHidden();
  await page.reload();
  await expect(page.locator('#dashboard-panel')).toBeVisible();
- await expect(page.locator('#current-assessments')).toContainText('Оценка ещё не готова к началу');
- await expect(page.locator('#current-assessments')).toContainText('Организация завершает подготовку оценки');
- await expect(page.locator('#assessment-action-button')).toBeHidden();
+ await expect(page.locator('#current-assessments')).toContainText('Знакомство с оценкой');
+ await expect(page.locator('#assessment-action-button')).toHaveText('Продолжить знакомство');
  expect(profileReceipts(stand)).toEqual(ready);
  await expect(page.getByRole('button',{name:'Подтвердить профиль',exact:true})).toBeHidden();
  await info.attach('ready-no-catalog',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
