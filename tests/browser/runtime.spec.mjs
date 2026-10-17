@@ -131,6 +131,14 @@ async function report(page,stand,info){
   });
   expect(closed.ok()).toBeTruthy();await page.reload();
  }catch(_error){}
+ await expect.poll(async()=>page.evaluate(async()=>{
+  const user=JSON.parse(localStorage.getItem('agent4k.pendingUser')||'null');
+  if(!user?.id)return 'missing_owner';
+  const response=await fetch(`/users/${user.id}/journey-state`,{credentials:'same-origin'});
+  if(!response.ok)return `http_${response.status}`;
+  return (await response.json()).report_status;
+ }),{timeout:70000}).toBe('ready');
+ await page.reload();
  await expect(page.locator('#processing-outcome-title')).toHaveText('Ваш результат готов',{timeout:70000});
  await page.getByRole('button',{name:'Посмотреть результат'}).click();
  await expect(page.locator('#report-panel')).toBeVisible();
