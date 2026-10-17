@@ -262,8 +262,7 @@ const bootApp = async () => {
         }
         const serverAllowsLegacyReport = Boolean(
           requestedLegacyReportSessionId
-          && journey?.next_action === 'show_dashboard'
-          && journey?.assessment?.status === 'report_ready',
+          && journey?.next_action === 'show_dashboard',
         );
         if (serverAllowsLegacyReport) {
           state.assessmentSessionId = requestedLegacyReportSessionId;
