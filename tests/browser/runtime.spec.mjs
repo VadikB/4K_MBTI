@@ -66,12 +66,13 @@ async function login(page,stand,email='participant@example.test',prepare=false,n
  const onboardingSkip=page.getByRole('button',{name:'Пропустить',exact:true}).filter({visible:true});
  const assessmentAction=page.locator('#assessment-action-button').filter({visible:true});
  const welcomeAction=page.locator('#start-first-assessment').filter({visible:true});
- await expect(continueButton.or(confirm).or(onboardingSkip).or(assessmentAction).or(welcomeAction)).toBeVisible({timeout:15000});
+ const dashboard=page.locator('#dashboard-panel').filter({visible:true});
+ await expect(continueButton.or(confirm).or(onboardingSkip).or(assessmentAction).or(welcomeAction).or(dashboard)).toBeVisible({timeout:15000});
  await page.waitForTimeout(1000);
  if(await onboardingSkip.isVisible())await onboardingSkip.click();
- await expect(continueButton.or(confirm).or(assessmentAction).or(welcomeAction)).toBeVisible();
+ await expect(continueButton.or(confirm).or(assessmentAction).or(welcomeAction).or(dashboard)).toBeVisible();
  if(await continueButton.isVisible())await continueButton.click();
- if(await assessmentAction.isVisible()||await welcomeAction.isVisible())return;
+ if(await assessmentAction.isVisible()||await welcomeAction.isVisible()||await dashboard.isVisible())return;
  await expect(confirm).toBeVisible();
  await expect(confirm).toBeEnabled();
  if(prepare){
