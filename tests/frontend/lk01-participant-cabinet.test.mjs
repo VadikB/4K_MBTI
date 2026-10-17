@@ -20,6 +20,7 @@ test('LK01 has explicit Cycle actions and no catalogue or repeat action', () => 
   assert.match(dashboard, /card\.action === 'open_processing'/);
   assert.match(dashboard, /card\.action === 'open_report'/);
   assert.match(dashboard, /card\.action === 'acquaintance'/);
+  assert.match(dashboard, /if \(primaryEntry\) button\.id = 'assessment-action-button'/);
   assert.doesNotMatch(dashboard, /staticAssessments|Скоро|Пройти ассессмент снова|Перейти к кейсам|К кейсам/);
   assert.match(dashboard, /DASHBOARD_REFRESH_INTERVAL_MS/);
   assert.match(dashboard, /focus\(\{ preventScroll: true \}\)/);

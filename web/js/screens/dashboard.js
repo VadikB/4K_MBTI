@@ -144,7 +144,9 @@ const buildCard = (card, { primaryEntry = false } = {}) => {
   article.appendChild(main);
   if (card.action && card.button_label) {
     const button = document.createElement('button');
-    if (primaryEntry && ['start', 'continue'].includes(card.action)) button.id = 'assessment-action-button';
+    // Keep the stable entry-point id on the first actionable assessment card.
+    // The action can be acquaintance before it becomes start/continue.
+    if (primaryEntry) button.id = 'assessment-action-button';
     button.type = 'button';
     button.className = 'primary-button participant-assessment-action';
     button.dataset.dashboardAction = card.action;
