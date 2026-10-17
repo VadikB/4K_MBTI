@@ -124,7 +124,7 @@ def test_cycle_runtime_drives_journey_without_reopening_confirmed_profile() -> N
     assert determine_cycle_next_action(
         profile_status="complete", onboarding_status="completed",
         cycle_status="calculated", assessment_situation_status="closed",
-    ) == "show_dashboard"
+    ) == "show_processing"
     assert determine_cycle_next_action(
         profile_status="complete", onboarding_status="completed",
         cycle_status="active", assessment_situation_status=None,

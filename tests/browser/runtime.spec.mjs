@@ -53,7 +53,7 @@ test.afterEach(async({page},info)=>{
  await info.attach('assessment-http',{body:JSON.stringify(page.acceptanceNetwork||[],null,2),contentType:'application/json'});
  await info.attach('browser-console',{body:JSON.stringify(page.acceptanceConsole||[],null,2),contentType:'application/json'});
 });
-async function login(page,stand,email='participant@example.test',prepare=false,navigate=true){
+async function login(page,stand,email='participant@example.test',prepare=false,navigate=true,allowDashboard=false){
  if(!page.acceptanceDialogHandler){page.on('dialog',dialog=>dialog.accept());page.acceptanceDialogHandler=true;}
  page.on('response',async response=>{try{if(response.url().endsWith('/runtime') && response.ok()){page.acceptanceCycle=(await response.json()).cycle_id;}}catch{/* Navigation may discard diagnostic response bodies. */}});
  if(navigate) await page.goto(stand.url);
@@ -66,12 +66,23 @@ async function login(page,stand,email='participant@example.test',prepare=false,n
  const onboardingSkip=page.getByRole('button',{name:'Пропустить',exact:true}).filter({visible:true});
  const assessmentAction=page.locator('#assessment-action-button').filter({visible:true});
  const welcomeAction=page.locator('#start-first-assessment').filter({visible:true});
- await expect(continueButton.or(confirm).or(onboardingSkip).or(assessmentAction).or(welcomeAction)).toBeVisible();
+ const dashboard=page.locator('#dashboard-panel').filter({visible:true});
+ const completedDashboardAction=page.getByRole('button',{name:'В личный кабинет',exact:true}).filter({visible:true});
+ let routeReady=continueButton.or(confirm).or(onboardingSkip).or(assessmentAction).or(welcomeAction);
+ if(allowDashboard)routeReady=routeReady.or(dashboard).or(completedDashboardAction);
+ await expect(routeReady.first()).toBeVisible({timeout:15000});
  await page.waitForTimeout(1000);
+ if(allowDashboard&&await completedDashboardAction.isVisible()){
+   await completedDashboardAction.click();
+   await expect(dashboard).toBeVisible();
+   return;
+ }
  if(await onboardingSkip.isVisible())await onboardingSkip.click();
- await expect(continueButton.or(confirm).or(assessmentAction).or(welcomeAction)).toBeVisible();
+ routeReady=continueButton.or(confirm).or(assessmentAction).or(welcomeAction);
+ if(allowDashboard)routeReady=routeReady.or(dashboard);
+ await expect(routeReady.first()).toBeVisible();
  if(await continueButton.isVisible())await continueButton.click();
- if(await assessmentAction.isVisible()||await welcomeAction.isVisible())return;
+ if(await assessmentAction.isVisible()||await welcomeAction.isVisible()||(allowDashboard&&await dashboard.isVisible()))return;
  await expect(confirm).toBeVisible();
  await expect(confirm).toBeEnabled();
  if(prepare){
@@ -131,7 +142,19 @@ async function report(page,stand,info){
   });
   expect(closed.ok()).toBeTruthy();await page.reload();
  }catch(_error){}
- await expect(page.locator('#report-panel')).toBeVisible({timeout:70000});
+ await expect.poll(async()=>page.evaluate(async()=>{
+  const user=JSON.parse(localStorage.getItem('agent4k.pendingUser')||'null');
+  if(!user?.id)return 'missing_owner';
+  const response=await fetch(`/users/${user.id}/journey-state`,{credentials:'same-origin'});
+  if(!response.ok)return `http_${response.status}`;
+  return (await response.json()).report_status;
+ }),{timeout:70000}).toBe('ready');
+ const readyCycle=new URL(page.url()).searchParams.get('cycle_id') || page.acceptanceCycle;
+ expect(readyCycle).toBeTruthy();
+ await page.goto(`${stand.url}/?screen=processing&cycle_id=${encodeURIComponent(readyCycle)}`);
+ await expect(page.locator('#processing-outcome-title')).toHaveText('Ваш результат готов',{timeout:70000});
+ await page.getByRole('button',{name:'Посмотреть результат'}).click();
+ await expect(page.locator('#report-panel')).toBeVisible();
  await expect(page.locator('#m8-report-state')).toContainText('Report готов',{timeout:70000});
  const cycle=new URL(page.url()).searchParams.get('cycle_id');expect(cycle).toBeTruthy();
  const response=await page.request.get(`${stand.url}/users/assessment/m8/cycles/${cycle}/reports/latest`);expect(response.ok()).toBeTruthy();const saved=await response.json();
@@ -180,7 +203,7 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
    for(const basis of r.basis_refs){expect(basis.cycle_id).toBe(saved.cycle_id);expect(basis.results_revision_id).toBe(saved.results_revision_id);expect(basis.outcome).toBe('L1');expect(basis.material_excerpts[0].quote).toBe(fixture.answer);}
    await expect(page.locator('#report-panel')).toContainText(r.goal);
  }
- const other=await page.context().browser().newContext();const second=await other.newPage();await login(second,stand,'other@example.test');
+ const other=await page.context().browser().newContext();const second=await other.newPage();await login(second,stand,'other@example.test',false,true,true);
  for(const endpoint of [`/users/assessment/m8/cycles/${saved.cycle_id}/results`,`/users/assessment/m8/cycles/${saved.cycle_id}/reports/latest`,`/users/assessment/m8/reports/${saved.id}/pdf`])expect((await second.request.get(stand.url+endpoint)).status()).toBe(403);
  await other.close();
  // N3/N4: rare saved-history/failure fixtures only after the full positive browser path.
@@ -382,7 +405,7 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  await page.locator('#report-back-button').click();
  await page.locator('#dashboard-panel .user-chip').click();
  await page.locator('#dashboard-restart-button').click();
- await login(page,stand);
+ await login(page,stand,'participant@example.test',false,true,true);
  await expect(page.locator('.reports-summary-count')).toHaveText('1');
  await page.locator('.reports-summary-button').click();
  const card=page.locator('.cycle-report');await expect(card).toHaveCount(1);
@@ -632,7 +655,7 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  await page.locator('#dashboard-panel .user-chip').click();await page.locator('#dashboard-restart-button').click();
  await expect(page.locator('#email-input')).toBeVisible();
  await page.context().clearCookies();await page.evaluate(()=>{localStorage.clear();sessionStorage.clear();});
- await login(page,stand);
+ await login(page,stand,'participant@example.test',false,true,true);
  await expect(page.locator('.reports-summary-count')).toHaveText('1');
  await page.locator('.reports-summary-button').click();await expect(page.locator('.cycle-report')).toHaveCount(1);
  await page.locator('.cycle-report-open').click();await expect(page.locator('#m8-report-state')).toContainText('Report готов');

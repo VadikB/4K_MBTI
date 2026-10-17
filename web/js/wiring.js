@@ -842,7 +842,12 @@ const applyAuthResponse = async (data) => {
     }
     if (['show_processing', 'show_assessment_error'].includes(journey?.next_action)) {
       const module = await loadProcessing();
-      module.openProcessing();
+      module.openProcessing({
+        initialCycleSnapshot: state.assessmentRuntimeKind === 'cycle' ? {
+          results_status: journey?.assessment?.status === 'failed' ? 'failed' : 'processing',
+          report_status: journey?.report_status || 'not_ready',
+        } : null,
+      });
       return;
     }
     throw new Error(`Неизвестный серверный этап: ${journey?.next_action || 'empty'}`);
@@ -2564,10 +2569,12 @@ if (interviewExitButton) {
   });
 }
 
-processingBackButton.addEventListener('click', () => {
-  withScreen(loadChat, (module) => module.clearProcessingTimer());
-  withScreen(loadAiWelcome, (module) => module.openWelcomeScreen());
-});
+if (processingBackButton) {
+  processingBackButton.addEventListener('click', () => {
+    withScreen(loadChat, (module) => module.clearProcessingTimer());
+    withScreen(loadAiWelcome, (module) => module.openWelcomeScreen());
+  });
+}
 
 reportHomeButton.addEventListener('click', () => {
   withScreen(loadAiWelcome, (module) => module.openHomePage());

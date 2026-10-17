@@ -69,9 +69,9 @@ export const resetChatScreen = async ({ shouldReset = () => true } = {}) => {
   }
 };
 
-export const openProcessingScreen = async () => {
+export const openProcessingScreen = async (options) => {
   const module = await loadProcessing();
-  module.openProcessing();
+  module.openProcessing(options);
 };
 
 export const openReportScreen = async (options = {}) => {

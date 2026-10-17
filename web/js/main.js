@@ -252,21 +252,32 @@ const bootApp = async () => {
     }
     if (!state.isAdmin) {
       try {
-        const requestedLegacyReportSessionId = screen === 'report'
-          ? state.assessmentSessionId : null;
+        const requestedM8CycleId = screen === 'report' ? params.get('cycle_id') : null;
+        const requestedLegacyReportSessionId = screen === 'report' && !requestedM8CycleId
+          ? Number(params.get('session_id') || state.assessmentSessionId) || null : null;
         const journey = await loadUserJourneyState();
         applyJourneyAssessmentContext(journey);
         if (journey?.next_action === 'wait_for_acquaintance_data') {
           openAcquaintanceWaiting(journey.acquaintance?.readiness);
           return;
         }
-        const serverAllowsLegacyReport = Boolean(
-          requestedLegacyReportSessionId
-          && journey?.next_action === 'show_dashboard'
-          && journey?.assessment?.status === 'report_ready',
-        );
-        if (serverAllowsLegacyReport) {
+        if (requestedLegacyReportSessionId) {
           state.assessmentSessionId = requestedLegacyReportSessionId;
+          await loadSkillAssessmentsForReport();
+          await openReportScreen();
+          return;
+        }
+        if (
+          screen === 'report'
+          && !requestedLegacyReportSessionId
+          && (requestedM8CycleId || (journey?.report_status === 'ready' && state.productCycleId))
+        ) {
+          await openReportScreen({
+            m8CycleId: requestedM8CycleId || state.productCycleId,
+            m8ReportId: params.get('report_id'),
+            returnTarget: params.get('report_id') ? 'reports' : 'home',
+          });
+          return;
         }
         if (journey?.next_action === 'complete_profile') {
           const profileRecovery = await import('./screens/profile-recovery.js');
@@ -290,7 +301,12 @@ const bootApp = async () => {
           return;
         }
         if (['show_processing', 'show_assessment_error'].includes(journey?.next_action)) {
-          await openProcessingScreen();
+          await openProcessingScreen({
+            initialCycleSnapshot: state.assessmentRuntimeKind === 'cycle' ? {
+              results_status: journey?.assessment?.status === 'failed' ? 'failed' : 'processing',
+              report_status: journey?.report_status || 'not_ready',
+            } : null,
+          });
           return;
         }
         if (journey?.next_action === 'show_dashboard') {

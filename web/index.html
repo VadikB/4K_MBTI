@@ -1768,16 +1768,21 @@
 
     <section class="panel processing-panel hidden" id="processing-panel">
       <div class="processing-topbar">
-        <button id="processing-back-button" class="ghost-button processing-back-button" type="button">4K Ассистент</button>
-        <span class="processing-safe-badge">Безопасная среда</span>
+        <span class="brand processing-brand">4К Ассистент</span>
       </div>
 
       <div class="processing-shell">
-        <div class="processing-copy">
-          <h2>Анализируем ваши ответы...</h2>
-          <p>Наши алгоритмы обрабатывают данные сессии и формируют итоговый профиль по четырем направлениям оценки.</p>
-        </div>
+        <section class="processing-outcome-card" id="processing-outcome-card" aria-labelledby="processing-outcome-title">
+          <div id="processing-outcome-indicator" class="processing-outcome-indicator" aria-hidden="true"></div>
+          <h1 id="processing-outcome-title" tabindex="-1">Проверяем завершение оценки…</h1>
+          <p id="processing-outcome-description">Уточняем состояние вашей оценки</p>
+          <p id="processing-outcome-progress" class="processing-outcome-progress hidden"></p>
+          <p id="processing-outcome-status" class="processing-outcome-status" role="status" aria-live="polite"></p>
+          <p id="processing-outcome-notice" class="processing-outcome-notice hidden"></p>
+          <div id="processing-outcome-actions" class="processing-outcome-actions"></div>
+        </section>
 
+        <div class="processing-legacy" id="processing-legacy">
         <div class="processing-orbit">
           <div class="processing-node top" id="processing-node-communication">Коммуникация</div>
           <div class="processing-node left" id="processing-node-teamwork">Командная работа</div>
@@ -1809,6 +1814,7 @@
           </div>
           <div id="processing-agents-list" class="processing-agents-list"></div>
         </section>
+        </div>
 
       </div>
     </section>

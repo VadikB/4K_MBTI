@@ -94,6 +94,8 @@ def determine_cycle_next_action(
         return "show_assessment_error"
     if cycle_status in {"collection_closed", "calculation_pending"}:
         return "show_processing"
+    if cycle_status == "calculated":
+        return "show_processing"
     if cycle_status == "failed":
         return "show_assessment_error"
     return "show_dashboard"

@@ -210,7 +210,7 @@ def internal(destination):
             c.commit()
         finish_pipeline(cycle_id)
         calculated_journey = http.get(f'/users/{owner}/journey-state').json()
-        assert calculated_journey['next_action'] == 'show_dashboard'
+        assert calculated_journey['next_action'] == 'show_processing'
         assert calculated_journey['assessment']['status'] == 'report_ready'
         with get_connection() as c:
             historical_reports = c.execute('SELECT to_jsonb(r) AS value FROM m8_reports r ORDER BY id').fetchall()

@@ -83,6 +83,7 @@ export const state = {
   productAssessmentSituationId: null,
   productClarificationDecisionId: null,
   productCycleStatus: null,
+  productReportStatus: null,
   skillAssessments: [],
   reportCompetencyTab: 'Коммуникация',
   reportReturnTarget: 'home',
@@ -280,6 +281,7 @@ export const applyJourneyAssessmentContext = (journey) => {
   state.assessmentRuntimeKind = assessment.runtime_kind || null;
   state.productCycleId = assessment.cycle_id || null;
   state.productAssessmentSituationId = assessment.assessment_situation_id || null;
+  state.productReportStatus = journey?.report_status || null;
   persistAssessmentContext();
 };
 
@@ -458,6 +460,7 @@ export const restoreAssessmentContextFromParams = (params) => {
   const totalCases = params.get('total_cases');
   const fullName = params.get('full_name');
   const jobDescription = params.get('job_description');
+  const cycleId = params.get('cycle_id');
 
   if (userId) {
     state.pendingUser = {
@@ -482,5 +485,10 @@ export const restoreAssessmentContextFromParams = (params) => {
 
   if (totalCases) {
     state.assessmentTotalCases = Number(totalCases);
+  }
+
+  if (cycleId) {
+    state.assessmentRuntimeKind = 'cycle';
+    state.productCycleId = cycleId;
   }
 };
