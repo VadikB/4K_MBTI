@@ -42,8 +42,8 @@
 
 - Завершено: разведка, фиксация границ и источников, реализация, адресные тесты,
   сборка и локальная браузерная проверка.
-- Активный шаг: итоговое review, commit и PR.
-- Следующий шаг: обязательный CI и человеческая приёмка; после успешных gates — merge.
+- Активный шаг: исправление регрессии CI и повтор обязательных проверок.
+- Следующий шаг: зелёный CI и человеческая приёмка; после успешных gates — merge.
 - Ветка: `codex/ux-ui01-common-footer`.
 
 ## Ограничения и риски
@@ -84,6 +84,11 @@ Revert squash-коммита UX-UI01; схемы и миграций нет.
 - `npm run lint:js` — PASS.
 - `node --test tests/frontend/*.test.mjs` — PASS, 52/52.
 - `npm run build:web` — PASS.
+- CI head `30507ad`: frontend — PASS; `pytest` — FAIL на browser acceptance:
+  каноническая высота password-create карточки стала `511px` вместо `547px`.
+  Причина — общее правило `min-height: 0` с большей специфичностью; правило удалено.
+- `npx playwright test tests/browser/auth-r03.spec.mjs --grep "R03 AUTH 01|R04 shared footer"`
+  после исправления — PASS, 2/2: метрики AUTH и footer-регрессия.
 - In-app Chromium — PASS: AUTH и reload; viewport 320, 430, 1024, 1440;
   `document.fonts.check('12px Onest') === true`; `#68777C`; нижний край короткой
   страницы; column/row breakpoints; `scrollWidth === viewportWidth`.

@@ -75,10 +75,6 @@ body {
     backdrop-filter: none;
 }
 
-.shell > .panel:not(.hidden) {
-    min-height: 0;
-}
-
 .dashboard-panel,
 .admin-panel,
 .admin-organizations-panel,
