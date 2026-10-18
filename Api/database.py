@@ -4531,6 +4531,8 @@ def ensure_core_schema() -> None:
         ensure_questionnaire_source_schema(connection)
         ensure_acquaintance_confirmation_schema(connection)
         ensure_m5_runtime_schema(connection)
+        from Api.m8_report_access import ensure_schema as ensure_m8_report_access_schema
+        ensure_m8_report_access_schema(connection)
         connection.execute("""
             DO $$ BEGIN
                 ALTER TABLE assessment_configurations ADD CONSTRAINT fk_assessment_configuration_catalog
