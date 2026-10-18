@@ -63,7 +63,7 @@ def smoke(state):
     (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
     result={'gateway':'synthetic','cycle_id':cycle,'report_id':report['id'],
         'results_revision_id':report['results_revision_id'],'report_revision':report['revision_no'],
-        'report_mechanism':report['c67']['report_mechanism'],'recommendation_status':report['c67']['recommendation_generation']['status']}
+        'report_mechanism':report['c67']['report_mechanism'],'description_status':report['c67']['descriptive']['status']}
     request('/users/auth/email/password-login',{'email':'other@example.test','password':state['password']})
     request(f'/users/assessment/m8/cycles/{cycle}/reports/latest',code=403)
     request(f"/users/assessment/m8/reports/{report['id']}/pdf",code=403)

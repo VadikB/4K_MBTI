@@ -21,7 +21,6 @@ else:
     from Api.database import get_connection
     from Api import m8_results
     from Api.m5_case_runtime import checksum
-    from unittest.mock import patch
     with get_connection() as c:
         report=m8_results.read_latest_report(c,a.cycle,'assessee')
         before=c.execute('SELECT payload_checksum FROM m8_result_revisions WHERE id=%s',(report['results_revision_id'],)).fetchone()
@@ -29,8 +28,10 @@ else:
             c.execute("""INSERT INTO user_sessions(user_id,session_code,assessment_code,status)
                 VALUES(%s,'synthetic-browser-h106-archive','competencies_4k','completed')""", (report['owner_user_id'],))
         elif a.kind=='legacy':
-            old=json.loads(json.dumps(report['c67']));old['recommendation_generation']['contract_version']='m8-recommendations/1.0.0'
-            old['recommendations'][0]['goal']='Недопустимое историческое проявление — synthetic fixture'
+            old=json.loads(json.dumps(report['c67']))
+            old.pop('descriptive',None)
+            old['recommendation_generation']={'contract_version':'m8-recommendations/1.0.0','status':'ready'}
+            old['recommendations']=[{'goal':'Недопустимое историческое проявление — synthetic fixture'}]
             old_id=str(uuid4());revision=report['revision_no']+1;old['report_id']=old_id;old['report_revision_no']=revision
             c.execute('''INSERT INTO m8_reports(id,result_revision_id,revision_no,audience,template_version,c67_json,c67_checksum,status,request_key,request_hash,created_by)
                 VALUES(%s,%s,%s,'assessee','m8-basic-report/1.1.0',%s::jsonb,%s,'ready','browser-old','browser-old',%s)''',
@@ -38,8 +39,11 @@ else:
             assert m8_results.read_report(c,old_id)['c67']['recommendations']==[]
             assert c.execute('SELECT c67_json FROM m8_reports WHERE id=%s',(old_id,)).fetchone()['c67_json']==old
         else:
-            with patch.object(m8_results,'generate_recommendations',side_effect=ValueError('synthetic recommendation failure')):
-                m8_results.create_report(c,results_revision_id=report['results_revision_id'],audience='assessee',key='browser-failure',target_profile=None,created_by=report['owner_user_id'])
+            class DisabledGateway:
+                enabled=False
+            failed=m8_results.create_report(c,results_revision_id=report['results_revision_id'],audience='assessee',
+                key='browser-failure',target_profile=None,created_by=report['owner_user_id'],gateway=DisabledGateway())
+            assert failed['c67']['descriptive']['status']=='failed'
         assert c.execute('SELECT payload_checksum FROM m8_result_revisions WHERE id=%s',(report['results_revision_id'],)).fetchone()==before
         c.commit()
     print('Rare fixture prepared:',a.kind)
