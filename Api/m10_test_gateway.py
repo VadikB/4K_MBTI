@@ -80,6 +80,19 @@ class BrowserAcceptanceGateway:
 
     def chat(self, messages, **_kwargs):
         value = json.loads(messages[1]["content"])
+        if value.get('contract_version') == 'm8-descriptive-report/1.0.0':
+            claims=[]
+            for basis in value.get('bases',[]):
+                limitation=list(basis.get('limitations') or ['Синтетическое основание; не содержательная приёмка.'])
+                claims.append({'kind':'observation','skill_ids':[basis['skill_id']],
+                    'basis_refs':[basis['ref']], 'text':str(basis.get('rationale') or 'Наблюдаемое действие сохранено в результате.'),
+                    'limitations':limitation,'context_refs':[]})
+                if basis.get('fragments'):
+                    claims.append({'kind':'quote','skill_ids':[basis['skill_id']],
+                        'basis_refs':[basis['ref']],'text':basis['fragments'][0]['quote'],
+                        'limitations':limitation,'context_refs':[]})
+            return json.dumps({'summary':[x['text'] for x in claims if x['kind']=='observation'][:4],
+                               'claims':claims},ensure_ascii=False)
         if value.get('stage') in ('individual','joint'):
             return json.dumps(_admission_output(value),ensure_ascii=False)
         fixture=acceptance_fixture()

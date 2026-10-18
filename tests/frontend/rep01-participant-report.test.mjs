@@ -20,10 +20,19 @@ test('REP01 groups saved skills and hides technical trace identifiers from parti
   assert.match(markup, /id="m8-report-tabs"/);
   assert.match(markup, /id="m8-report-tab-select"/);
   assert.match(report, /skill\.competency_id/);
-  assert.match(report, /Основания/);
+  assert.match(report, /Почему сделан такой вывод/);
   assert.doesNotMatch(report, /Indicator:|IA:|Turn:|Fragment:/);
   assert.match(report, /Неизвестный формат результата/);
-  assert.match(report, /Неизвестный тип рекомендации/);
+});
+
+test('REP02 presents saved descriptions and explicit non-blocking states without advice', () => {
+  assert.match(markup, /Главное из вашей оценки/);
+  assert.match(markup, /Ваши результаты по 4К/);
+  assert.match(markup, /Что удалось оценить и где данных недостаточно/);
+  assert.match(report, /Пояснение готовится/);
+  assert.match(report, /Пояснение временно недоступно/);
+  assert.match(report, /descriptive\.claims/);
+  assert.doesNotMatch(markup, /Что можно развивать|Рекомендации по развитию/);
 });
 
 test('REP01 keeps exact report binding and handles PDF failure locally', () => {

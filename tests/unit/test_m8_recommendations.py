@@ -106,7 +106,9 @@ def test_r11_09_legacy_presentation_preserves_history():
            'recommendation_generation':{'contract_version':'m8-recommendations/1.0.0','recommendations':[{'goal':'старый текст'}]},'skills':[1]}
     original=deepcopy(saved);view=_present_report(saved)
     assert saved==original and view['skills']==[1] and view['recommendations']==[]
-    assert view['recommendation_notices'][0]['kind']=='LEGACY_BASIS_UNVERIFIED'
+    assert view['recommendation_notices']==[]
+    assert view['recommendation_presentation']['status']=='historical_hidden'
+    assert view['descriptive']['status']=='historical'
     assert 'старый текст' not in str(view)
 
 

@@ -9,11 +9,10 @@ from Api.m5_case_runtime import checksum
 from Api import m7_completion
 from Api import m6_cycle_aggregation_repository as calculations
 from Api.m8_report_package import load_package as load_report_package
-from Api.m8_recommendations import generate as generate_recommendations
 from Api.typst_pdf_renderer import render_typst_report
 
 RESULTS_VERSION = "m8-results/1.0.0"
-REPORT_TEMPLATE_VERSION = "m8-basic-report/1.3.0"
+REPORT_TEMPLATE_VERSION = "m8-basic-report/1.4.0"
 ALLOWED_AUDIENCES = {"assessee", "customer", "methodology_qa"}
 
 
@@ -58,6 +57,7 @@ def _skill_catalog() -> dict[str, dict]:
             result[skill["id"]] = {
                 "skill_id": skill["id"],
                 "skill_name": skill.get("name") or skill["id"],
+                "skill_description": skill.get("function") or skill.get("place_in_logic") or "",
                 "competency_id": competency["id"],
                 "competency_name": competency.get("name") or competency["id"],
             }
@@ -266,46 +266,29 @@ def _admission_summary(decision: dict) -> dict:
     return result
 
 
-def _report_content(results: dict, audience: str, target_profile: dict | None, *, connection=None) -> dict:
+def _report_content(results: dict, audience: str, target_profile: dict | None, *, connection=None, gateway=None) -> dict:
     package = load_report_package()
     payload = results["results"]
     if audience not in ALLOWED_AUDIENCES:
         raise ValueError("M8_AUDIENCE_INVALID")
     detail = "full" if audience == "methodology_qa" else ("summary_with_coverage" if audience == "customer" else "personal")
     skills = []
-    recommendation_skills = []
     targets = {x["skill_id"]: x for x in (target_profile or {}).get("requirements", [])}
     for source in payload["assessed_skill_profile"]:
         item = dict(source)
         item["comparison"] = _comparison(source, targets.get(source["skill_id"])) if target_profile else source["comparison"]
-        recommendation_skills.append(dict(item))
         if audience == "assessee":
             item.pop("components", None)
         skills.append(item)
     admission_summary = [_admission_summary(d) for d in payload.get("admissions", []) if d.get("schema_version") == 2]
-    recommendation_payload = {**payload, "assessed_skill_profile": recommendation_skills,
-                              "admissions": [_admission_summary(d) if d.get("schema_version") == 2 else d
-                                             for d in payload.get("admissions", [])],
-                              "target_profile": target_profile or payload.get("target_profile")}
+    descriptive = {"contract_version":"m8-descriptive-report/1.0.0", "status":"failed",
+                   "failure_reason":"DESCRIPTION_GENERATION_FAILED", "summary":[], "claims":[]}
     try:
         from Api.m8_recommendation_basis import resolve
-        resolved = resolve(connection, results) if connection is not None else None
-        if resolved is not None:
-            resolved = {**resolved, "results_checksum": checksum(recommendation_payload)}
-        recommendation_generation = generate_recommendations(
-            {**recommendation_payload, "results_revision_id": results["revision_id"]},
-            payload.get("personalized_profile_snapshot"), resolved=resolved,
-        )
-    except (ValueError, KeyError, OSError) as exc:
-        recommendation_generation = {
-            "contract_version": "m8-recommendations/1.2.0",
-            "mechanism": None,
-            "input": {"results_revision_id": results["revision_id"], "profile_ref": payload.get("profile_ref")},
-            "input_checksum": None,
-            "recommendations": [],
-            "notices": [package["template"]["recommendation_failure_notice"]],
-            "status": "failed", "failure_reason": "RECOMMENDATION_GENERATION_FAILED",
-        }
+        from Api.m8_descriptive_report import generate
+        descriptive = generate(results, resolve(connection, results), gateway=gateway)
+    except (ValueError, KeyError, OSError):
+        pass
     report = {"schema_version": 1, "contract": "C-67", "message_version": "1.1", "owner": "PM-06", "consumer": "PM-07",
             "results_id": results["id"], "results_revision_id": results["revision_id"],
             "results_revision_no": results["revision_no"], "cycle_id": results["cycle_id"], "audience": audience,
@@ -324,16 +307,14 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
                 "message":"Обработка завершена.","allowed_actions":[]}),
             "report_mechanism": {"id": package["manifest"]["id"], "version": package["manifest"]["version"],
                                  "checksum": package["template_hash"]},
-            "recommendation_generation": recommendation_generation,
-            "recommendations": recommendation_generation["recommendations"],
-            "recommendation_notices": recommendation_generation["notices"]}
+            "descriptive": descriptive, "recommendations": [], "recommendation_notices": []}
     if payload.get("test_result"):
         report["test_result"] = payload["test_result"]
     return report
 
 
 def create_report(connection, *, results_revision_id: str, audience: str, key: str,
-                  target_profile: dict | None, created_by: int) -> dict:
+                  target_profile: dict | None, created_by: int, gateway=None) -> dict:
     results = read_results_revision(connection, results_revision_id)
     request = {"audience": audience, "target_profile": target_profile, "template_version": REPORT_TEMPLATE_VERSION}
     request_hash = checksum(request)
@@ -346,7 +327,7 @@ def create_report(connection, *, results_revision_id: str, audience: str, key: s
     revision_no = connection.execute("SELECT COALESCE(MAX(revision_no),0)+1 AS n FROM m8_reports WHERE result_revision_id=%s",
                                      (UUID(results_revision_id),)).fetchone()["n"]
     report_id = uuid4()
-    c67 = _report_content(results, audience, target_profile, connection=connection)
+    c67 = _report_content(results, audience, target_profile, connection=connection, gateway=gateway)
     c67["report_id"] = str(report_id); c67["report_revision_no"] = revision_no
     c67["template_version"] = REPORT_TEMPLATE_VERSION
     target_hash = checksum(target_profile) if target_profile else None
@@ -460,16 +441,17 @@ def read_report(connection, report_id) -> dict:
 def _present_report(saved: dict) -> dict:
     """Pure projection: immutable historical C-67 remains untouched; no generation on GET."""
     from copy import deepcopy
-    from Api.m8_recommendations import CONTRACT_VERSION, VERIFIED_CONTRACT_VERSIONS
     c67 = deepcopy(saved)
-    generation = c67.get("recommendation_generation") or {}
-    if generation.get("contract_version") not in VERIFIED_CONTRACT_VERSIONS and c67.get("recommendations"):
+    if c67.get("recommendations") or c67.get("recommendation_generation"):
         c67["recommendations"] = []
-        c67["recommendation_notices"] = [load_report_package()["template"]["legacy_recommendation_notice"]]
-        c67["recommendation_generation"] = {"contract_version":generation.get("contract_version"),
-            "status":"unavailable", "failure_reason":None, "recommendations":[],
-            "notices":c67["recommendation_notices"]}
-        c67["recommendation_presentation"] = {"policy_version":CONTRACT_VERSION, "status":"legacy_unverified"}
+        c67["recommendation_notices"] = []
+        c67.pop("recommendation_generation", None)
+        c67["recommendation_presentation"] = {
+            "policy_version":"m8-descriptive-report/1.0.0", "status":"historical_hidden",
+            "message":load_report_package()["template"]["states"]["historical"]}
+    if "descriptive" not in c67:
+        c67["descriptive"] = {"contract_version":"m8-descriptive-report/1.0.0",
+            "status":"historical", "failure_reason":None, "summary":[], "claims":[]}
     return c67
 
 
@@ -505,6 +487,7 @@ def render_pdf(report: dict) -> bytes:
         score = skill.get("score")
         skills.append({
             "name": skill.get("skill_name") or skill["skill_id"],
+            "description": skill.get("skill_description") or "",
             "outcome": (participant_labels if participant_pdf else labels).get(skill["outcome"], "Неизвестный формат результата"),
             "score": "—" if score is None else f"{score['numerator']}/{score['denominator']} ({score['value']})",
             "completeness": skill.get("completeness") or "—",
@@ -530,6 +513,7 @@ def render_pdf(report: dict) -> bytes:
         "limitations": c67["limitations"],
         "partial_result": c67.get("partial_result"),
         "processing": c67.get("processing", {"status":"completed","message":"Обработка завершена."}),
+        "descriptive": c67.get("descriptive", {"status":"historical", "summary":[], "claims":[]}),
         "recommendations": c67.get("recommendations", []),
         "recommendation_notices": c67.get("recommendation_notices", []),
         "reliability": c67["reliability"].get("status", "not_provided"),

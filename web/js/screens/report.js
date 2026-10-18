@@ -1379,12 +1379,6 @@ const coverageLabels = {
   complete_components: 'Полностью оценённые компоненты',
 };
 
-const recommendationTypeLabels = {
-  Development: 'Развитие',
-  'Consolidation / Maintenance': 'Закрепление результата',
-  'Application / Transfer': 'Применение в другой ситуации',
-};
-
 const formatParticipantDate = (value) => {
   const date = parseApiDateTime(value);
   return date ? date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Дата не указана';
@@ -1401,17 +1395,16 @@ const coverageLabel = (cut) => {
   return `${cut.numerator}/${cut.denominator} · ${(cut.ratio * 100).toFixed(1)}%`;
 };
 
-const buildSkillDetails = (skill, recommendations) => {
-  const bases = recommendations.flatMap((item) => item.basis_refs || []);
-  const manifestations = [...new Set(bases.map((item) => item.manifestation).filter(Boolean))];
-  const excerpts = [...new Set(bases.flatMap((item) => item.material_excerpts || []).map((item) => item.quote).filter(Boolean))];
+const buildSkillDetails = (skill, claims) => {
+  const explanations = claims.filter((item) => item.kind !== 'quote' && item.text).map((item) => item.text);
+  const excerpts = claims.filter((item) => item.kind === 'quote' && item.text).map((item) => item.text);
   const limitations = [...new Set([
     ...(Array.isArray(skill.limitations) ? skill.limitations : []),
-    ...bases.flatMap((item) => item.limitations || []),
+    ...claims.flatMap((item) => item.limitations || []),
   ])];
-  if (!manifestations.length && !excerpts.length && !limitations.length) return '';
-  return `<details class="m8-skill-basis"><summary>Основания</summary>` +
-    manifestations.map((value) => `<p>${escapeHtml(value)}</p>`).join('') +
+  if (!explanations.length && !excerpts.length && !limitations.length) return '';
+  return `<details class="m8-skill-basis"><summary>Почему сделан такой вывод</summary>` +
+    explanations.map((value) => `<p>${escapeHtml(value)}</p>`).join('') +
     excerpts.map((value) => `<blockquote>${escapeHtml(value)}</blockquote>`).join('') +
     limitations.map((value) => `<p class="m8-local-limitation">${escapeHtml(value)}</p>`).join('') +
     `</details>`;
@@ -1419,13 +1412,14 @@ const buildSkillDetails = (skill, recommendations) => {
 
 const renderM8Skills = (c67, competencyId) => {
   const skillsNode = document.getElementById('m8-report-skills');
-  const recommendations = Array.isArray(c67.recommendations) ? c67.recommendations : [];
+  const claims = Array.isArray(c67.descriptive?.claims) ? c67.descriptive.claims : [];
   const selected = (c67.skills || []).filter((skill) => String(skill.competency_id) === String(competencyId));
   skillsNode.innerHTML = selected.map((skill) => {
-    const related = recommendations.filter((item) => String(item.skill_id) === String(skill.skill_id));
+    const related = claims.filter((item) => (item.skill_ids || []).map(String).includes(String(skill.skill_id)));
     const comparison = comparisonLabels[skill.comparison?.status] || 'Сведения о сопоставлении недоступны';
     const exact = skill.score?.value == null ? '' : `<details><summary>Как получен результат</summary><p>Точное значение: ${escapeHtml(String(skill.score.value))}; числитель: ${escapeHtml(String(skill.score.numerator))}; знаменатель: ${escapeHtml(String(skill.score.denominator))}.</p></details>`;
     return `<article class="report-skill-item"><div><strong>${escapeHtml(skill.skill_name || 'Навык без названия')}</strong>` +
+      `${skill.skill_description ? `<p>${escapeHtml(skill.skill_description)}</p>` : ''}` +
       `<p class="m8-outcome">${escapeHtml(outcomeLabels[skill.outcome] || 'Неизвестный формат результата')}</p>` +
       `<p>В этой версии оценки общий уровень навыка не присваивается.</p>${buildSkillDetails(skill, related)}</div>` +
       `<div class="m8-skill-result"><strong>${escapeHtml(formatExactScore(skill.score))}</strong>` +
@@ -1489,6 +1483,17 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId) => {
   metadata.innerHTML = `<div><dt>Оценка</dt><dd>4К — индивидуальный результат</dd></div>` +
     `<div><dt>Период</dt><dd>${escapeHtml(formatParticipantDate(startedAt))} — ${escapeHtml(formatParticipantDate(finishedAt))}</dd></div>` +
     `<div><dt>Версия отчёта</dt><dd>${escapeHtml(report.revision_no)}</dd></div>`;
+  const descriptive = c67.descriptive || {};
+  const summary = document.getElementById('m8-report-summary');
+  if (descriptive.status === 'ready' && descriptive.summary?.length) {
+    summary.innerHTML = descriptive.summary.map((item) => `<p>${escapeHtml(item)}</p>`).join('');
+  } else if (descriptive.status === 'failed') {
+    summary.innerHTML = '<p>Пояснение временно недоступно</p><p>Фактический результат и ограничения доступны ниже.</p>';
+  } else if (descriptive.status === 'historical') {
+    summary.innerHTML = '<p>Для этой исторической версии показаны только сохранённые фактические данные.</p>';
+  } else {
+    summary.innerHTML = '<p>Пояснение готовится</p><p>Фактический результат уже доступен ниже.</p>';
+  }
   const partial = c67.partial_result;
   const partialNode = document.getElementById('m8-report-partial');
   if (partial?.is_incomplete) {
@@ -1505,16 +1510,12 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId) => {
     Object.entries(cuts).map(([name, cut]) => `<p><strong>${escapeHtml(coverageLabels[name] || 'Неизвестный разрез покрытия')}</strong>: ${escapeHtml(coverageLabel(cut))}</p>`).join('') + '</section>').join('') +
     `<p><strong>Проверка механизма:</strong> ${c67.reliability?.status === 'verified' ? 'проверена в указанной области' : c67.reliability?.status === 'not_verified' ? 'нормативная проверка ещё не подтверждена' : 'сведения о проверке отсутствуют'}.</p></details>`;
   document.getElementById('m8-report-limitations').innerHTML = (c67.limitations || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('');
-  const recommendations = document.getElementById('m8-report-recommendations');
-  recommendations.innerHTML = (c67.recommendations || []).map((item) => `<article class="report-skill-item m8-recommendation-item">` +
-    `<div><strong>${escapeHtml(recommendationTypeLabels[item.type] || 'Неизвестный тип рекомендации')}</strong><p>${escapeHtml(item.goal)}</p></div>` +
-    `<div><p><strong>Практика:</strong> ${escapeHtml(item.practice)}</p><p><strong>Где попробовать:</strong> ${escapeHtml(item.application_context)}</p>` +
-    `<p><strong>Признак прогресса:</strong> ${escapeHtml(item.progress_signal)}</p>` +
-    (item.basis_refs || []).map((basis) => `<details><summary>Основание рекомендации</summary><p>${escapeHtml(basis.manifestation)}</p>` +
-      (basis.material_excerpts || []).map((fragment) => `<blockquote>${escapeHtml(fragment.quote)}</blockquote>`).join('') + '</details>').join('') +
-    `<p class="m8-local-limitation">${(item.limitations || []).map((value) => escapeHtml(value)).join(' · ')}</p></div></article>`).join('') || '<p>Для этой версии результата подходящие рекомендации не сформированы.</p>';
-  document.getElementById('m8-report-recommendation-notices').innerHTML = (c67.recommendation_notices || [])
-    .map((item) => `<li><strong>${escapeHtml(item.skill_id)}:</strong> ${escapeHtml(item.text)}</li>`).join('');
+  const explanations = document.getElementById('m8-report-recommendations');
+  explanations.innerHTML = (descriptive.claims || []).filter((item) => item.kind !== 'quote').map((item) =>
+    `<article class="report-skill-item m8-recommendation-item"><div><strong>${escapeHtml(item.kind === 'context' ? 'Как это связано с вашей работой' : 'Наблюдение')}</strong>` +
+    `<p>${escapeHtml(item.text)}</p></div><div><p class="m8-local-limitation">${(item.limitations || []).map((value) => escapeHtml(value)).join(' · ')}</p></div></article>`
+  ).join('') || `<p>${descriptive.status === 'failed' ? 'Пояснение временно недоступно' : descriptive.status === 'historical' ? 'Для исторической версии персональное пояснение не создавалось.' : 'Пояснение готовится'}</p>`;
+  document.getElementById('m8-report-recommendation-notices').replaceChildren();
   const download = document.getElementById('report-download-button');
   download.dataset.m8ReportId = report.id;
   download.disabled = false;
