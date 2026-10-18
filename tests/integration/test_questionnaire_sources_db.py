@@ -19,12 +19,12 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         schema = "questionnaire_pytest_" + uuid4().hex
         connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
         connection.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
-        connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY)")
+        connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY,full_name TEXT,email TEXT)")
         connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY,is_active BOOLEAN DEFAULT TRUE)")
         connection.execute("CREATE TABLE organization_memberships(organization_id BIGINT,user_id BIGINT,role TEXT)")
         connection.execute("CREATE TABLE m5_cycles(id BIGINT PRIMARY KEY)")
         connection.execute("CREATE TABLE m8_reports(id UUID PRIMARY KEY)")
-        connection.execute("INSERT INTO users VALUES(1),(2)")
+        connection.execute("INSERT INTO users VALUES(1,'Участник','participant@example.test'),(2,'Администратор','admin@example.test')")
         connection.execute("INSERT INTO organizations VALUES(10),(20)")
         connection.execute("""CREATE TABLE assessment_organization_contexts(
             id BIGSERIAL PRIMARY KEY,organization_id BIGINT NOT NULL REFERENCES organizations(id),
