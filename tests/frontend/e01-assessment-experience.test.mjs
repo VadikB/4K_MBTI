@@ -47,3 +47,13 @@ test('E01 applies accepted conversation tokens and mobile layout', () => {
   assert.match(styles, /min-height: 100dvh/);
   assert.match(styles, /@media \(max-width: 900px\)[\s\S]*grid-template-columns: 1fr/);
 });
+
+test('E01 ADD01 presents the admitted situation once inside the chat without raw JSON or a route column', () => {
+  assert.doesNotMatch(html, /class="case-sidebar"/);
+  assert.match(interview, /addProductSituationMessage\(current\.participant_payload\)/);
+  assert.match(interview, /bubble\.dataset\.speakerLabel = '4К Ассистент'/);
+  assert.match(interview, /\['Ситуация',[\s\S]*\['Ваша роль',[\s\S]*\['Задача',[\s\S]*\['Условия'/);
+  assert.doesNotMatch(interview, /JSON\.stringify\(payload/);
+  assert.match(interview, /previousCaseKey !== current\.assessment_situation_id \? 0 : previousScrollTop/);
+  assert.match(styles, /\.interview-main[\s\S]*width: min\(960px, 100%\)/);
+});
