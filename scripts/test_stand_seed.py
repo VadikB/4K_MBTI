@@ -137,7 +137,10 @@ def seed(state):
             confirm_user_context(c,version_id=version,user_id=uid)
             profile=create_personalized_profile(c,user_id=uid,assessment_configuration_id=runtime_config['id'],
                 organization_context_version_id=org_version,role_profile_version_id=role,user_context_version_id=version)
-            confirmation=save_answers(c,user_id=uid,answers=ACQUAINTANCE_ANSWERS,confirm=True)
+            save_answers(c,user_id=uid,answers=ACQUAINTANCE_ANSWERS,confirm=True)
+            confirmation=c.execute('''SELECT id FROM participant_acquaintance_confirmations
+                WHERE user_id=%s AND organization_id=%s ORDER BY confirmed_at DESC,id DESC LIMIT 1''',
+                (uid,org)).fetchone()
             c.execute('''UPDATE participant_acquaintance_confirmations
                 SET user_context_version_id=%s,personalized_profile_id=%s WHERE id=%s''',
                 (version,profile['id'],confirmation['id']))

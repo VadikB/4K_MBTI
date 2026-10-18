@@ -90,6 +90,9 @@
   synthetic stand публиковал устаревшие неканонические вопросы. Fixture переведён
   на `participant_context/corporate/1.0`, ответы связаны с подготовленным runtime
   profile; строгое ожидание смены шага оставлено равным 5 секундам.
+- Пятый CI остановился до browser acceptance на собственном `KeyError`: fixture
+  принял возвращаемый acquaintance state за confirmation row. Confirmation теперь
+  выбирается явно в tenant/user scope перед привязкой synthetic runtime profile.
 - Полный локальный backend: 427 PASS / 13 FAIL. Сбои относятся к предсуществующему
   локальному рассогласованию M6 provider artifact/fixture; в CI unit-этап прошёл,
   а внесённые исправления M6 не затрагивают.
