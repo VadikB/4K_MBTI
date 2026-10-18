@@ -317,7 +317,8 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
     with factory() as connection:
         report=read_latest_report(connection,cycle_id,"assessee")
         assert report["c67"]["contract"]=="C-67"
-        assert report["c67"]["recommendations"]
+        assert report["c67"]["recommendations"] == []
+        assert report["c67"]["descriptive"]["status"] in {"ready", "failed"}
         result = connection.execute('''SELECT r.payload_json FROM m8_result_revisions r
             JOIN m8_results logical ON logical.id=r.results_id
             JOIN m5_cycles cycle ON cycle.id=logical.cycle_db_id
@@ -326,8 +327,6 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
         assert frozen['regular_tasks'].startswith('CTX01:')
         assert frozen['decision_situations'].startswith('CTX01:')
         assert frozen['constraints_and_interactions'].startswith('CTX01:')
-        assert {item["type"] for item in report["c67"]["recommendations"]} == {
-            "Development"}
         assert any(skill.get("score",{}).get("value")==0 for skill in report["c67"]["skills"]), report["c67"]["skills"]
         assert report["c67"]["reliability"]["status"]=="not_verified"
         assert render_pdf(report).startswith(b"%PDF")

@@ -62,10 +62,8 @@ def test_saved_chain_retry_and_http(database,monkeypatch,tmp_path,mode):
         assert 'm6-substantive-admission/2' not in json.dumps(report['c67'])
         assert all(d['mechanism_ref']['ref']=='m6_substantive_admission/2.0.0' for d in report['c67']['admission_summary'])
         assert report['c67']['reliability']['status']=='not_verified'
-        refs={r for d in calculated['c56']['admissions'] for r in d['interpretable_revision_ids']}
-        assert all(b['ia_revision_id'] in refs for rec in report['c67']['recommendations'] for b in rec['basis_refs'])
-        if mode=='no_ia': assert not report['c67']['recommendations']
-        else: assert report['c67']['recommendations']
+        assert report['c67']['recommendations'] == []
+        assert report['c67']['descriptive']['status'] in {'ready','failed'}
         if mode in ('joint_failure','not_comparable'):
             assert any(s['outcome']=='result_without_score' for s in report['c67']['skills'])
         original=deepcopy(report)

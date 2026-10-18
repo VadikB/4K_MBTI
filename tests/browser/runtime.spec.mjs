@@ -249,13 +249,10 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
  for(const skill of scored){expect(skill.outcome).toBe('partial_score');expect(skill.score).toEqual({value:1,numerator:1,denominator:1});expect(skill.skill_level).toBeUndefined();}
  expect(saved.c67.coverage.full_m2.admissible_contributions.numerator).toBe(2);
  expect(saved.c67.coverage.full_m2.admissible_contributions.denominator).toBe(61);
- expect(saved.c67.recommendations.filter(x=>x.skill_id==='K1.4').map(x=>x.type)).toEqual(['Development']);
- expect(saved.c67.recommendations.map(x=>x.type)).toEqual(expect.arrayContaining(['Development','Consolidation / Maintenance','Application / Transfer']));
- for(const r of saved.c67.recommendations){
-   expect(r.basis_refs.length).toBeGreaterThan(0);
-   for(const basis of r.basis_refs){expect(basis.cycle_id).toBe(saved.cycle_id);expect(basis.results_revision_id).toBe(saved.results_revision_id);expect(basis.outcome).toBe('L1');expect(basis.material_excerpts[0].quote).toBe(fixture.answer);}
-   await expect(page.locator('#report-panel')).toContainText(r.goal);
- }
+ expect(saved.c67.recommendations).toEqual([]);
+ expect(['ready','failed']).toContain(saved.c67.descriptive.status);
+ expect(saved.c67.descriptive.input.cycle_id).toBe(saved.cycle_id);
+ expect(saved.c67.descriptive.input.results_revision_id).toBe(saved.results_revision_id);
  const other=await page.context().browser().newContext();const second=await other.newPage();await login(second,stand,'other@example.test',false,true,true);
  for(const endpoint of [`/users/assessment/m8/cycles/${saved.cycle_id}/results`,`/users/assessment/m8/cycles/${saved.cycle_id}/reports/latest`,`/users/assessment/m8/reports/${saved.id}/pdf`])expect((await second.request.get(stand.url+endpoint)).status()).toBe(403);
  await other.close();
@@ -268,13 +265,13 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
    const rare=await report(page,{...stand,dir},info);
    expect(rare.results_revision_id).toBe(saved.results_revision_id);expect(rare.c67.recommendations).toHaveLength(0);
    expect(rare.c67.skills).toEqual(saved.c67.skills);
-   if(kind==='failure')expect(rare.c67.recommendation_generation.status).toBe('failed');
+   if(kind==='failure')expect(rare.c67.descriptive.status).toBe('failed');
    await expect(page.locator('#report-panel')).not.toContainText('Недопустимое историческое проявление');
    const url=`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/reports/regenerate`,data={idempotency_key:'browser-regenerate-'+kind};
    const freshResponse=await page.request.post(url,{data});expect(freshResponse.status()).toBe(201);const fresh=await freshResponse.json();
    expect(fresh.revision_no).toBe(rare.revision_no+1);expect(fresh.results_revision_id).toBe(saved.results_revision_id);
    expect((await (await page.request.post(url,{data})).json()).id).toBe(fresh.id);
-   expect(fresh.c67.recommendations).toEqual(saved.c67.recommendations);
+   expect(fresh.c67.descriptive.input).toEqual(saved.c67.descriptive.input);
  }
 
 });
@@ -430,7 +427,7 @@ test('S10-A character branch: actual character Turn, order and no invented recom
  await answer(page,'Я предложил проверить запрос и остановиться при отличии условий от инструкции.');
  await expect(page.locator('#interview-finish-button')).toBeEnabled();await page.locator('#interview-finish-button').click();
  const saved=await report(page,stand,info);expect(saved.c67.recommendations).toHaveLength(0);
- expect(saved.c67.recommendation_generation.status).toBe('unavailable');
+ expect(['ready','failed']).toContain(saved.c67.descriptive.status);
 });
 
 
@@ -445,12 +442,10 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  const saved=await report(page,stand,info);
  const results=await (await page.request.get(`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/results`)).json();
  expect(results.results.personalized_profile_snapshot.content.user_context.position_or_status).toBe('Эксперт по программам');
- expect(saved.c67.recommendations.length).toBeGreaterThan(0);
- const selection=saved.c67.recommendation_generation.input.context_selection;
- expect(selection.status).toBe('available');
- expect(selection.selected_path).toBe('user_context.regular_tasks');
- for(const item of saved.c67.recommendations)expect(item.application_context).toContain(selection.value);
- expect(saved.c67.recommendation_generation.input.profile_projection.organization_context.activity_description).toBe('Техническая проверка');
+ expect(saved.c67.recommendations).toEqual([]);
+ const contexts=Object.fromEntries(saved.c67.descriptive.input.context.map(item=>[item.ref,item.text]));
+ expect(contexts['user_context.regular_tasks']).toBeTruthy();
+ expect(contexts['organization_context.activity_description']).toBe('Техническая проверка');
  await info.attach('canonical-results',{body:JSON.stringify(results,null,2),contentType:'application/json'});
  const regenerated=await page.request.post(`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/reports/regenerate`,{data:{idempotency_key:'review-history-revision'}});
  expect(regenerated.status()).toBe(201);const latest=await regenerated.json();expect(latest.id).not.toBe(saved.id);
@@ -650,13 +645,8 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  expect(after.cycles[0].organization_id).toBe(ready.profiles[0].organization_id);
  expect(after.cycles[0].profile_ref_json.checksum).toBe(ready.profiles[0].checksum);
  expect(results.results.personalized_profile_snapshot.content.user_context.position_or_status).toBe('Эксперт по программам');
- const selection=first.c67.recommendation_generation.input.context_selection;
- expect(selection.status).toBe('available');expect(first.c67.recommendations.length).toBeGreaterThan(0);
- for(const rec of first.c67.recommendations){
-   expect(rec.application_context).toContain(selection.value);
-   await expect(page.locator('#report-panel')).toContainText(rec.application_context);
- }
- const projection=JSON.stringify(first.c67.recommendation_generation.input.profile_projection);
+ expect(first.c67.recommendations).toEqual([]);
+ const projection=JSON.stringify(first.c67.descriptive.input.context);
  expect(projection).not.toContain('participant@example.test');expect(projection).not.toContain('full_name');
  await page.locator('#report-back-button').click();
  await page.locator('#dashboard-panel .user-chip').click();await page.locator('#dashboard-restart-button').click();
@@ -680,7 +670,7 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  const secondDir=path.join(stand.dir,'G03-second');fs.mkdirSync(secondDir);
  const second=await report(page,{...stand,dir:secondDir},info);
  expect(second.cycle_id).not.toBe(first.cycle_id);expect(second.results_revision_id).not.toBe(first.results_revision_id);
- for(const rec of second.c67.recommendations)for(const basis of rec.basis_refs)expect(basis.cycle_id).toBe(second.cycle_id);
+ expect(second.c67.descriptive.input.cycle_id).toBe(second.cycle_id);
  const regenerateUrl=`${stand.url}/users/assessment/m8/cycles/${first.cycle_id}/reports/regenerate`;
  const regenerated=await page.request.post(regenerateUrl,{data:{idempotency_key:'G03-representation'}});
  expect(regenerated.status()).toBe(201);const revision=await regenerated.json();

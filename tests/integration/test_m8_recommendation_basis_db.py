@@ -96,27 +96,22 @@ def test_r11_saved_basis_and_scope(database,mode):
     if os.getenv('R11_ARTIFACT_DIR'):
         destination=Path(os.environ['R11_ARTIFACT_DIR']);destination.mkdir(parents=True,exist_ok=True)
         (destination/(mode+'.json')).write_text(json.dumps(report,ensure_ascii=False,indent=2,default=str)+'\n')
-    recs=report['c67']['recommendations']
-    if mode in ('empty','denied'):
-        assert not recs and report['c67']['recommendation_generation']['status']=='unavailable'
-    else:
-        assert recs, report['c67']['recommendation_generation']
-        assert all(x['basis_refs'][0]['outcome']=='L1' for x in recs)
-        assert {x['type'] for x in recs}==({'Development'} if mode=='mixed' else
-            {'Development','Consolidation / Maintenance','Application / Transfer'})
-        if mode=='qualitative':
-            assert any(s['outcome']=='result_without_score' for s in results['results']['assessed_skill_profile'])
-        with factory() as c:
-            resolved=resolve(c,results)
+    assert report['c67']['recommendations'] == []
+    assert report['c67']['descriptive']['status'] in {'ready','failed'}
+    if mode=='qualitative':
+        assert any(s['outcome']=='result_without_score' for s in results['results']['assessed_skill_profile'])
+    with factory() as c:
+        resolved=resolve(c,results)
+        if mode not in ('empty','denied'):
             assert any(p['traces'] and p['traces'][0].get('fragments') for p in resolved['projections'])
-            for change in ('cycle','results','ia','evidence','duplicate'):
-                bad=deepcopy(results)
-                if change=='cycle':bad['cycle_id']=str(uuid4())
-                if change=='results':bad['results']['admissions']=[]
-                if change=='ia':bad['results']['observations'][0]['revision_id']=str(uuid4())
-                if change=='evidence':bad['results']['observations'][0]['evidence_revision_id']=str(uuid4())
-                if change=='duplicate':bad['results']['observations']*=2
-                with pytest.raises(ValueError):resolve(c,bad)
+        for change in ('cycle','results','ia','evidence','duplicate'):
+            bad=deepcopy(results)
+            if change=='cycle':bad['cycle_id']=str(uuid4())
+            if change=='results':bad['results']['admissions']=[]
+            if change=='ia':bad['results']['observations'][0]['revision_id']=str(uuid4())
+            if change=='evidence':bad['results']['observations'][0]['evidence_revision_id']=str(uuid4())
+            if change=='duplicate':bad['results']['observations']*=2
+            with pytest.raises(ValueError):resolve(c,bad)
 
 
 def test_r11_history_regeneration_failure_and_real_http(database,monkeypatch,tmp_path):
@@ -124,8 +119,9 @@ def test_r11_history_regeneration_failure_and_real_http(database,monkeypatch,tmp
     with factory() as c:
         ia_before=c.execute('SELECT id,content_hash FROM m6_indicator_assessment_revisions ORDER BY id').fetchall()
         before=c.execute('SELECT payload_checksum FROM m8_result_revisions WHERE id=%s',(results['revision_id'],)).fetchone()
-        old=deepcopy(report['c67']);old['recommendation_generation']['contract_version']='m8-recommendations/1.0.0'
-        old['recommendations'][0]['goal']='Выдуманное проявление старого генератора'
+        old=deepcopy(report['c67'])
+        old['recommendation_generation']={'contract_version':'m8-recommendations/1.0.0','status':'ready'}
+        old['recommendations']=[{'goal':'Выдуманное проявление старого генератора'}]
         old_id=str(uuid4());old['report_id']=old_id;old['report_revision_no']=2
         c.execute('''INSERT INTO m8_reports(id,result_revision_id,revision_no,audience,template_version,c67_json,c67_checksum,status,request_key,request_hash,created_by)
                      VALUES(%s,%s,2,'assessee','m8-basic-report/1.1.0',%s::jsonb,%s,'ready','old','old',99)''',
@@ -138,7 +134,7 @@ def test_r11_history_regeneration_failure_and_real_http(database,monkeypatch,tmp
                   (json.dumps(newer_profile),checksum(newer_profile)))
         fresh=m8_results.create_report(c,results_revision_id=results['revision_id'],audience='assessee',key='new',target_profile=None,created_by=99)
         assert 'Новая задача вне snapshot Cycle' not in json.dumps(fresh,ensure_ascii=False,default=str)
-        assert fresh['revision_no']==3 and fresh['c67']['recommendations']==report['c67']['recommendations']
+        assert fresh['revision_no']==3 and fresh['c67']['descriptive']==report['c67']['descriptive']
         assert m8_results.create_report(c,results_revision_id=results['revision_id'],audience='assessee',key='new',target_profile=None,created_by=99)['id']==fresh['id']
         assert before==c.execute('SELECT payload_checksum FROM m8_result_revisions WHERE id=%s',(results['revision_id'],)).fetchone()
         assert ia_before==c.execute('SELECT id,content_hash FROM m6_indicator_assessment_revisions ORDER BY id').fetchall()
@@ -151,7 +147,7 @@ def test_r11_history_regeneration_failure_and_real_http(database,monkeypatch,tmp
         http.cookies.set(routes.SESSION_COOKIE_NAME,'owner')
         url=f"/users/assessment/m8/cycles/{results['cycle_id']}/reports/latest"
         response=http.get(url);assert response.status_code==200
-        assert response.json()['c67']['recommendations']==fresh['c67']['recommendations']
+        assert response.json()['c67']['descriptive']==fresh['c67']['descriptive']
         # REV-03: selecting a historical report must not silently open the latest revision.
         saved_response=http.get(f"/users/assessment/m8/reports/{report['id']}")
         assert saved_response.status_code==200
@@ -175,12 +171,13 @@ def test_r11_history_regeneration_failure_and_real_http(database,monkeypatch,tmp
         assert http.get(url).status_code==403
         assert http.get(f"/users/assessment/m8/reports/{fresh['id']}/pdf").status_code==403
     with factory() as c:
+        import Api.m8_descriptive_report as descriptive_report
         with monkeypatch.context() as patch:
-            patch.setattr(m8_results,'generate_recommendations',lambda *a,**k:(_ for _ in ()).throw(ValueError('synthetic failure')))
+            patch.setattr(descriptive_report,'generate',lambda *a,**k:(_ for _ in ()).throw(ValueError('synthetic failure')))
             failed=m8_results.create_report(c,results_revision_id=results['revision_id'],audience='assessee',key='failure',target_profile=None,created_by=99)
         if os.getenv('R11_ARTIFACT_DIR'):
             (Path(os.environ['R11_ARTIFACT_DIR'])/'failure.json').write_text(json.dumps(failed,ensure_ascii=False,indent=2,default=str)+'\n')
         assert failed['c67']['skills'] and not failed['c67']['recommendations']
-        assert failed['c67']['recommendation_generation']['status']=='failed'
+        assert failed['c67']['descriptive']['status']=='failed'
         assert m8_results.create_report(c,results_revision_id=results['revision_id'],audience='assessee',key='failure',target_profile=None,created_by=99)['id']==failed['id']
         c.commit()

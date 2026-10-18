@@ -80,7 +80,8 @@ def test_four_saved_outcomes_and_ai_independent_read(database,monkeypatch,mode,l
     import Api.m6_admission as admission
     def no_ai(*a,**kw):raise AssertionError('Saved read must not call AI/admission')
     monkeypatch.setattr(admission,'decide',no_ai)
-    monkeypatch.setattr(m8_results,'generate_recommendations',no_ai)
+    import Api.m8_descriptive_report as descriptive_report
+    monkeypatch.setattr(descriptive_report,'generate',no_ai)
     monkeypatch.setattr(routes,'get_connection',factory)
     monkeypatch.setattr(routes.web_session_service,'get_user_by_token',lambda token:SimpleNamespace(id=99))
     app=FastAPI();app.include_router(routes.router)
