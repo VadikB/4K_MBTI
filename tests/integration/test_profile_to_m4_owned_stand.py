@@ -222,7 +222,10 @@ def internal(destination):
         results = http.get(f'/users/assessment/m8/cycles/{cycle_id}/results').json()
         saved_report = http.get(f'/users/assessment/m8/cycles/{cycle_id}/reports/latest').json()
         generation = saved_report['c67']['recommendation_generation']
-        assert generation['input']['profile_projection']['user_context']['regular_tasks'] == payload['duties']
+        frozen_user_context = original['content_json']['user_context']
+        assert generation['input']['profile_projection']['user_context']['regular_tasks'] == frozen_user_context['regular_tasks']
+        assert frozen_user_context['regular_tasks'] != payload['duties']
+        assert frozen_user_context['acquaintance_answers']['schema_variant'] == 'corporate'
         assert generation['input']['context_selection']['selected_path'] == 'user_context.regular_tasks'
         assert results['results']['personalized_profile_snapshot']['content'] == original['content_json']
         regenerated = http.post(f'/users/assessment/m8/cycles/{cycle_id}/reports/regenerate',
