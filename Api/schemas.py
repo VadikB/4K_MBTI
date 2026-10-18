@@ -992,6 +992,7 @@ class QuestionnairePreviewRequest(BaseModel):
 
 class QuestionnaireConfirmRequest(BaseModel):
     recipients: list[Literal["participant", "organization_admin"]] = Field(min_length=1)
+    recipient_user_ids: list[int] = Field(default_factory=list)
 
 
 class AdminReportCaseMessage(BaseModel):

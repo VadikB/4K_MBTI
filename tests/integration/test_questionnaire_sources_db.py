@@ -7,6 +7,7 @@ from psycopg.rows import dict_row
 
 from Api.database import ensure_questionnaire_source_schema
 from Api.questionnaire_sources import assignment_readiness, confirm, save_preview
+from Api.m8_report_access import ensure_schema as ensure_report_access_schema
 
 
 pytestmark = pytest.mark.integration
@@ -18,9 +19,12 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         schema = "questionnaire_pytest_" + uuid4().hex
         connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
         connection.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
-        connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY)")
-        connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY)")
-        connection.execute("INSERT INTO users VALUES(1),(2)")
+        connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY,full_name TEXT,email TEXT)")
+        connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY,is_active BOOLEAN DEFAULT TRUE)")
+        connection.execute("CREATE TABLE organization_memberships(organization_id BIGINT,user_id BIGINT,role TEXT)")
+        connection.execute("CREATE TABLE m5_cycles(id BIGINT PRIMARY KEY)")
+        connection.execute("CREATE TABLE m8_reports(id UUID PRIMARY KEY)")
+        connection.execute("INSERT INTO users VALUES(1,'Участник','participant@example.test'),(2,'Администратор','admin@example.test')")
         connection.execute("INSERT INTO organizations VALUES(10),(20)")
         connection.execute("""CREATE TABLE assessment_organization_contexts(
             id BIGSERIAL PRIMARY KEY,organization_id BIGINT NOT NULL REFERENCES organizations(id),
@@ -32,6 +36,8 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
             confirmed_by_user_id BIGINT REFERENCES users(id),confirmed_at TIMESTAMP,
             created_at TIMESTAMP NOT NULL DEFAULT NOW(),UNIQUE(organization_context_id,version))""")
         ensure_questionnaire_source_schema(connection)
+        ensure_report_access_schema(connection)
+        connection.execute("INSERT INTO organization_memberships VALUES(10,2,'admin')")
 
         kwargs = dict(
             organization_id=10, assignment_ref="synthetic-assignment", channel="csv",
@@ -46,7 +52,7 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
 
         confirmed = confirm(
             connection, revision_id=preview["id"], organization_id=10,
-            confirmed_by=2, recipients=["participant", "organization_admin"],
+            confirmed_by=2, recipients=["participant", "organization_admin"], recipient_user_ids=[2],
         )
         assert confirmed["status"] == "confirmed"
         version = connection.execute(

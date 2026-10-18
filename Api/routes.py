@@ -46,6 +46,7 @@ from Api import participant_profile
 from Api import acquaintance
 from Api import questionnaire_sources
 from Api import m8_results
+from Api import m8_report_access
 from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest, RegenerateReportRequest
 from Api import m10_product_flow, m10_orchestration
 from Api.m10_contracts import ProductCycleStartRequest, ProductCycleActionRequest, ProductNextRequest
@@ -4807,18 +4808,20 @@ def confirm_admin_organization_questionnaire(
     user = web_session_service.get_user_by_token(token)
     with get_connection() as connection:
         _require_organization_admin(connection, user, organization_id)
-        # Uploading as a platform superadmin does not silently grant authority to
-        # confirm the customer's facts. Confirmation belongs to an organization admin.
+        # Organization admins confirm in their scope. A platform superadmin may record
+        # customer-confirmed data only with the source_author already stored by preview.
         membership = connection.execute(
             "SELECT 1 FROM organization_memberships WHERE organization_id=%s AND user_id=%s AND role='admin'",
             (organization_id, int(user.id)),
         ).fetchone()
-        if membership is None:
+        scope = get_admin_scope(connection, user)
+        if membership is None and not scope.is_superadmin:
             raise HTTPException(status_code=403, detail="Organization responsible confirmation required")
         try:
             result = questionnaire_sources.confirm(
                 connection, revision_id=revision_id, organization_id=organization_id,
                 confirmed_by=int(user.id), recipients=list(payload.recipients),
+                recipient_user_ids=list(payload.recipient_user_ids),
             )
             connection.commit()
             return questionnaire_sources.public_revision(result)
@@ -8280,6 +8283,43 @@ def download_owned_m8_report(report_id: UUID, request: Request):
     report = _owned_saved_report(request, report_id)
     pdf = m8_results.render_pdf(report)
     return Response(content=pdf, media_type='application/pdf', headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
+
+
+def _customer_saved_report(request: Request, report_id: UUID, *, channel: str = 'api'):
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail='Требуется авторизация')
+    with get_connection() as connection:
+        if not m8_report_access.customer_can_read_report(connection, report_id=str(report_id), user_id=int(user.id)):
+            raise HTTPException(403, detail='Готовый Report недоступен текущему пользователю.')
+        try:
+            report = m8_report_access.customer_projection(m8_results.read_report(connection, str(report_id)))
+            m8_report_access.record_access(connection, report_id=str(report_id), user_id=int(user.id), channel=channel)
+            connection.commit()
+            return report
+        except ValueError as exc:
+            raise HTTPException(409, detail='Сохранённый Report временно недоступен.') from exc
+
+
+@router.get('/admin/m8-access/reports')
+def list_customer_m8_reports(request: Request):
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail='Требуется авторизация')
+    with get_connection() as connection:
+        return {'items': m8_report_access.list_customer_reports(connection, user_id=int(user.id))}
+
+
+@router.get('/admin/m8-access/reports/{report_id}')
+def read_customer_m8_report(report_id: UUID, request: Request):
+    return _customer_saved_report(request, report_id)
+
+
+@router.get('/admin/m8-access/reports/{report_id}/pdf')
+def download_customer_m8_report(report_id: UUID, request: Request):
+    report = _customer_saved_report(request, report_id, channel='pdf')
+    return Response(content=m8_results.render_pdf(report), media_type='application/pdf',
+                    headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
 
 
 # PM-04 M7: restricted QA path for executable Cycle plan and next AS.

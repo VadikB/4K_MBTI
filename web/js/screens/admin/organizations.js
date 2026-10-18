@@ -479,11 +479,11 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
   } catch (error) { setStatus(error.message, 'error'); }
 };
 
-export const confirmAdminOrganizationQuestionnaire = async (organizationId, revisionId, recipients) => {
+export const confirmAdminOrganizationQuestionnaire = async (organizationId, revisionId, recipients, recipientUserIds = []) => {
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/' + revisionId + '/confirm', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recipients }),
+      body: JSON.stringify({ recipients, recipient_user_ids: recipientUserIds }),
     });
     await readApiResponse(response, 'Не удалось подтвердить анкету.');
     questionnairePreviews.delete(Number(organizationId));
@@ -742,8 +742,11 @@ export const renderAdminOrganizations = () => {
             '<p>Обязательные поля распознаны. Подтверждение создаст новую опубликованную редакцию.</p>') +
           (questionnairePreview.status === 'ready_for_confirmation' ?
             '<fieldset><legend>Получатели результатов по действующим правам</legend>' +
-            '<label><input type="checkbox" name="questionnaire_recipient" value="participant" checked> Участник</label>' +
-            '<label><input type="checkbox" name="questionnaire_recipient" value="organization_admin" checked> Представитель заказчика</label>' +
+            '<label><input type="checkbox" name="questionnaire_recipient" value="participant" checked disabled> Участник — обязательный получатель</label>' +
+            '<label><input type="checkbox" name="questionnaire_recipient" value="organization_admin"> Разрешить выбранным представителям заказчика</label>' +
+            '<div class="admin-questionnaire-recipients">' + (org.admins || []).map((admin) =>
+              '<label><input type="checkbox" name="questionnaire_recipient_user" value="' + Number(admin.user_id) + '"> ' +
+              escapeHtml(admin.full_name || admin.email) + ' · ' + escapeHtml(admin.email) + '</label>').join('') + '</div>' +
             '</fieldset><button type="button" class="primary-button compact-primary" data-action="confirm-questionnaire" data-value="' +
             Number(questionnairePreview.id) + '">Подтвердить сведения</button>' : '') + '</div>' : '') +
         '<button type="button" class="ghost-button compact-ghost" data-action="show-people">Вернуться к участникам</button>' +

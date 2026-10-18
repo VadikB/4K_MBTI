@@ -157,7 +157,7 @@ def save_preview(connection, *, organization_id: int, assignment_ref: str, chann
 
 
 def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by: int,
-            recipients: list[str]) -> dict:
+            recipients: list[str], recipient_user_ids: list[int] | None = None) -> dict:
     row = connection.execute(
         "SELECT * FROM questionnaire_response_revisions WHERE id=%s AND organization_id=%s FOR UPDATE",
         (revision_id, organization_id),
@@ -170,7 +170,10 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     if validation.get("errors") or validation.get("missing"):
         raise ValueError("QUESTIONNAIRE_NOT_READY_FOR_CONFIRMATION")
     mapped = sorted(set(recipients))
-    if not mapped or any(item not in ALLOWED_RECIPIENTS for item in mapped):
+    if "participant" not in mapped or any(item not in ALLOWED_RECIPIENTS for item in mapped):
+        raise ValueError("QUESTIONNAIRE_RECIPIENTS_CONFLICT")
+    selected_users = sorted(set(int(value) for value in (recipient_user_ids or [])))
+    if ("organization_admin" in mapped) != bool(selected_users):
         raise ValueError("QUESTIONNAIRE_RECIPIENTS_CONFLICT")
     answers = dict(row["answers_json"] or {})
     current = connection.execute(
@@ -200,6 +203,18 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
         "questionnaire_revision_id": int(row["id"]),
         "assignment_ref": str(row["assignment_ref"]),
     }
+    if selected_users:
+        recipient_rows = connection.execute("""SELECT u.id,u.full_name,u.email
+            FROM organization_memberships om JOIN users u ON u.id=om.user_id
+            JOIN organizations o ON o.id=om.organization_id
+            WHERE om.organization_id=%s AND om.role='admin' AND o.is_active=TRUE AND u.id=ANY(%s)
+            ORDER BY LOWER(u.email)""", (organization_id, selected_users)).fetchall()
+        if {int(item["id"]) for item in recipient_rows} != set(selected_users):
+            raise ValueError("REPORT_RECIPIENT_SCOPE_CONFLICT")
+        participant_briefing["authorized_recipients"] = [
+            {"user_id": int(item["id"]), "name": item["full_name"], "email": item["email"]}
+            for item in recipient_rows
+        ]
     definition.pop("participant_briefing", None)
     version_id = create_organization_context_draft(
         connection, organization_id=organization_id, definition=definition,
@@ -208,6 +223,12 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
                          "source_checksum": row["source_checksum"]},
     )
     publish_organization_context(connection, version_id=version_id, confirmed_by_user_id=confirmed_by)
+    from Api import m8_report_access
+    m8_report_access.create_revision(
+        connection, questionnaire_revision_id=int(row["id"]), organization_id=organization_id,
+        assignment_ref=str(row["assignment_ref"]), recipient_user_ids=selected_users,
+        source_author=str(row["source_author"]), confirmed_by=confirmed_by,
+    )
     saved = connection.execute(
         """UPDATE questionnaire_response_revisions SET status='confirmed',confirmed_by_user_id=%s,
            confirmed_at=NOW(),organization_context_version_id=%s,briefing_json=%s::jsonb,
