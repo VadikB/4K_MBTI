@@ -1453,6 +1453,259 @@ body.report-info-modal-open {
     color: var(--text-main);
 }
 
+.m8-chart-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin: var(--space-4) 0 var(--space-3);
+}
+
+.m8-chart-head p,
+.m8-chart-note {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--fs-body-sm);
+}
+
+.m8-chart-modes {
+    display: inline-flex;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm);
+    background: var(--palette-graphite-050);
+}
+
+.m8-chart-modes button {
+    min-height: 40px;
+    padding: 8px 14px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-main);
+    font: inherit;
+    cursor: pointer;
+}
+
+.m8-chart-modes button[aria-pressed="true"] {
+    background: var(--palette-white);
+    box-shadow: inset 0 0 0 2px var(--accent);
+    font-weight: var(--fw-semibold);
+}
+
+.m8-chart-modes button:focus-visible,
+.m8-report-chart a:focus-visible,
+.m8-score-bar button:focus-visible {
+    outline: 3px solid var(--palette-graphite-900);
+    outline-offset: 3px;
+}
+
+.m8-report-chart {
+    width: min(100%, 820px);
+    min-height: 360px;
+    margin: var(--space-3) auto 0;
+}
+
+.m8-report-chart svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    font-family: var(--font-body);
+}
+
+.m8-radar-grid,
+.m8-radar-axis {
+    fill: none;
+    stroke: var(--palette-graphite-200);
+    stroke-width: 1;
+}
+
+.m8-radar-fill {
+    fill: var(--accent);
+    fill-opacity: 0.18;
+    stroke: none;
+}
+
+.m8-radar-line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 3;
+    stroke-linejoin: round;
+}
+
+.m8-radar-point {
+    fill: var(--accent);
+    stroke: var(--palette-graphite-900);
+    stroke-width: 1.5;
+}
+
+.m8-radar-point.is-partial {
+    fill: var(--palette-white);
+    stroke: var(--accent);
+    stroke-width: 3;
+}
+
+.m8-radar-hit {
+    fill: transparent;
+}
+
+.m8-radar-label {
+    fill: var(--text-main);
+    font-size: 13px;
+    font-weight: var(--fw-medium);
+}
+
+.m8-radar-scale {
+    fill: var(--text-muted);
+    font-size: 12px;
+}
+
+.m8-chart-note {
+    margin: var(--space-2) 0 var(--space-4);
+    text-align: center;
+}
+
+.m8-chart-empty {
+    display: grid;
+    place-content: center;
+    min-height: 280px;
+    padding: var(--space-4);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm);
+    background: var(--palette-graphite-050);
+    text-align: center;
+}
+
+.m8-chart-empty p {
+    max-width: 540px;
+    margin: var(--space-2) 0 0;
+    color: var(--text-muted);
+}
+
+.m8-score-bars {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-3) 0;
+}
+
+.m8-score-bar {
+    display: grid;
+    grid-template-columns: minmax(170px, 0.8fr) minmax(180px, 1.5fr) 44px;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.m8-score-bar button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-main);
+    font: inherit;
+    text-align: left;
+    text-decoration: underline;
+    text-decoration-color: var(--palette-graphite-200);
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.m8-score-track {
+    position: relative;
+    height: 12px;
+    border-radius: var(--radius-sm);
+    background: var(--palette-graphite-200);
+}
+
+.m8-score-track span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--m8-score);
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+}
+
+.m8-score-track span.is-partial {
+    border: 2px solid var(--accent);
+    background: var(--palette-white);
+}
+
+.m8-score-missing {
+    grid-column: span 2;
+    color: var(--text-muted);
+    font-size: var(--fs-body-sm);
+}
+
+.m8-skill-result strong {
+    font-variant-numeric: tabular-nums;
+}
+
+.m8-score-state {
+    display: inline-flex;
+    width: fit-content;
+    margin-top: var(--space-2);
+    padding: 5px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--palette-cyan-050);
+    color: var(--text-main);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+}
+
+.m8-score-state.is-partial {
+    border: 1px solid var(--accent);
+    background: var(--palette-white);
+}
+
+.m8-competency-heading {
+    margin: var(--space-5) 0 var(--space-2);
+    color: var(--text-main);
+    font-size: var(--fs-h3);
+}
+
+.m8-competency-heading:first-child {
+    margin-top: 0;
+}
+
+@media (max-width: 720px) {
+    .m8-chart-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .m8-chart-modes {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .m8-chart-modes button {
+        min-height: 48px;
+        padding-inline: 8px;
+    }
+
+    .m8-chart-note {
+        text-align: left;
+    }
+
+    .m8-report-chart.is-overview {
+        display: none;
+    }
+
+    .m8-report-chart.is-overview + .m8-chart-note::before {
+        content: "На телефоне выберите направление для радиальной схемы. Все навыки доступны списком ниже. ";
+    }
+
+    .m8-score-bar {
+        grid-template-columns: minmax(0, 1fr) 40px;
+        gap: var(--space-2);
+    }
+
+    .m8-score-bar button,
+    .m8-score-missing {
+        grid-column: 1 / -1;
+    }
+}
+
 .report-insight-body {
     margin-top: var(--space-2);
     color: var(--text-body);

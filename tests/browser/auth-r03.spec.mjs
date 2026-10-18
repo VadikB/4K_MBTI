@@ -351,6 +351,55 @@ test('LK01 renders selected Cycle cards without catalogue or horizontal overflow
   expect(layout.scrollWidth).toBe(layout.clientWidth);
 });
 
+test('RAD01 renders saved scores, gaps and mobile competency view', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person', job_description: 'Product Lead' };
+  const dashboard = {
+    greeting_name: 'Person', profile_readiness: 'ready', personalized_profile_id: 11,
+    active_assessment: null, available_assessments: [], reports: [], reports_total: 1,
+    current_assessments: [],
+    completed_assessments: [{ cycle_id: 'cycle-rad01', report_id: 'report-rad01', title: 'Оценка 4К',
+      organization_name: 'Организация', status: 'report_ready', status_label: 'Результат готов',
+      description: 'Результат доступен.', action: 'open_report', button_label: 'Посмотреть результат' }],
+  };
+  const skills = [
+    { skill_id: 'K1.1', competency_id: 'K1', competency_name: 'Коммуникация', skill_name: 'Понимание собеседника', outcome: 'full_score', score: { value: 0, numerator: 0, denominator: 1 }, completeness: 'Полный состав' },
+    { skill_id: 'K1.2', competency_id: 'K1', competency_name: 'Коммуникация', skill_name: 'Ясность сообщения', outcome: 'partial_score', score: { value: 2.25, numerator: 9, denominator: 4 }, completeness: 'Часть состава' },
+    { skill_id: 'K1.3', competency_id: 'K1', competency_name: 'Коммуникация', skill_name: 'Обратная связь', outcome: 'no_result', completeness: 'Недостаточно оснований' },
+    { skill_id: 'K2.1', competency_id: 'K2', competency_name: 'Командная работа', skill_name: 'Сотрудничество', outcome: 'result_without_score', completeness: 'Наблюдения сохранены' },
+  ];
+  const report = { id: 'report-rad01', owner_user_id: 8, cycle_id: 'cycle-rad01', revision_no: 1, created_at: '2026-10-17T12:00:00Z', c67: {
+    skills, competencies: [
+      { competency_id: 'K1', competency_name: 'Коммуникация', skill_ids: ['K1.1', 'K1.2', 'K1.3'], score: null },
+      { competency_id: 'K2', competency_name: 'Командная работа', skill_ids: ['K2.1'], score: null },
+    ], descriptive: { status: 'ready', summary: ['Сохранённый результат.'], claims: [] },
+    coverage: {}, limitations: [], reliability: { status: 'not_verified' }, sessions: [], collection: {},
+  } };
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'rad01-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, dashboard });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'show_dashboard', profile: { status: 'complete' }, onboarding: { status: 'completed' }, assessment: { status: 'report_ready' } });
+    if (pathname === '/users/assessment/m8/reports/report-rad01') return fulfillJson(route, report);
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await page.getByRole('button', { name: 'Посмотреть результат' }).click();
+  await expect(page.locator('#m8-report-chart svg')).toBeVisible();
+  await expect(page.locator('.m8-radar-point')).toHaveCount(2);
+  await expect(page.locator('.m8-radar-point.is-partial')).toHaveCount(1);
+  await expect(page.locator('#m8-report-skills')).toContainText('По части проявлений');
+  await expect(page.locator('#m8-report-chart-note')).toContainText('Пропуски оставлены открытыми');
+  await page.getByRole('button', { name: 'Шкалы' }).click();
+  await expect(page.locator('.m8-score-bars')).toBeVisible();
+  await page.setViewportSize({ width: 360, height: 760 });
+  await page.getByRole('button', { name: 'Заливка' }).click();
+  await expect(page.locator('#m8-report-chart')).toBeHidden();
+  await page.locator('#m8-report-tab-select').selectOption('K1');
+  await expect(page.locator('#m8-report-chart svg')).toBeVisible();
+  const layout = await page.evaluate(() => ({ scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth }));
+  expect(layout.scrollWidth).toBe(layout.clientWidth);
+});
+
 test('R03 late login cannot replace a password-reset step', async ({ page }) => {
   await baseRoutes(page);
   await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, {

@@ -206,7 +206,12 @@ async function report(page,stand,info){
  await expect(page.locator('#report-panel')).toBeVisible();
  await expect(page.locator('#m8-report-state')).toContainText('Результат готов',{timeout:70000});
  await expect(page.locator('#m8-report-title')).toHaveText('Ваши результаты');
- await expect(page.locator('#m8-report-tabs [role="tab"]')).toHaveCount(4);
+ await expect(page.locator('#m8-report-tabs [role="tab"]')).toHaveCount(5);
+ await expect(page.locator('#m8-report-tabs [role="tab"]').first()).toHaveText('Общий обзор');
+ await expect(page.locator('#m8-report-chart svg')).toBeVisible();
+ await page.getByRole('button',{name:'Шкалы'}).click();
+ await expect(page.locator('#m8-report-chart .m8-score-bars')).toBeVisible();
+ await page.getByRole('button',{name:'Заливка'}).click();
  await expect(page.locator('#m8-report-skills')).toContainText('общий уровень навыка не присваивается');
  await expect(page.locator('#m8-report-shell')).not.toContainText(/Indicator:|IA:|Turn:|Fragment:/);
  const cycle=new URL(page.url()).searchParams.get('cycle_id');expect(cycle).toBeTruthy();
