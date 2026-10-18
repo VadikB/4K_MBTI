@@ -84,11 +84,12 @@
   questionnaire не создаёт M4-зависимости по своему контракту. Confirmation-схема
   выделена в отдельный bootstrap-шаг после M4; самостоятельный loader снова не
   зависит от `assessment_user_context_versions`.
-- Третий CI подтвердил unit/HTTP/PostgreSQL integration, включая questionnaire,
-  и выявил единый browser timeout: после явного подтверждения CTX01 синхронно
-  фиксирует M4 и подготавливает Cycle, тогда как helper ожидал переход не более
-  5 секунд. Для этой подтверждённой операции ожидание увеличено до 30 секунд;
-  проверка фактической смены шага сохранена.
+- Третий и четвёртый CI подтвердили unit/HTTP/PostgreSQL integration, включая
+  questionnaire, и выявили единый browser stop на финальном шаге знакомства.
+  Trace/snapshot доказали не задержку, а корректный `W02_ANSWERS_NOT_BOUND`:
+  synthetic stand публиковал устаревшие неканонические вопросы. Fixture переведён
+  на `participant_context/corporate/1.0`, ответы связаны с подготовленным runtime
+  profile; строгое ожидание смены шага оставлено равным 5 секундам.
 - Полный локальный backend: 427 PASS / 13 FAIL. Сбои относятся к предсуществующему
   локальному рассогласованию M6 provider artifact/fixture; в CI unit-этап прошёл,
   а внесённые исправления M6 не затрагивают.

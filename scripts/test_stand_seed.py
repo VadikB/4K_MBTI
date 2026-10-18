@@ -14,9 +14,15 @@ from Api.m5_catalog_integrity import publish_catalog
 from Api.assessment_authoring_service import assessment_authoring_service
 from Api.organization_invitation_service import hash_invitation_token
 from Api.acquaintance import accept_consent,save_answers
+from Api.questionnaire_sources import PARTICIPANT_QUESTION_SCHEMA
 from Api.user_journey import update_onboarding_state
 
 ROOT=Path(__file__).resolve().parents[1]
+ACQUAINTANCE_ANSWERS = {
+    'answer_1':'Синтетические задачи: анализировать материалы и согласовывать рабочие решения.',
+    'answer_2':'Синтетические решения: проверять условия и выбирать обоснованный следующий шаг.',
+    'answer_3':'Синтетические ограничения: сроки, зависимости и взаимодействие с коллегами.',
+}
 
 
 def read(path):
@@ -85,7 +91,8 @@ def seed(state):
                 'results_usage':'Только проверка изолированного тестового контура.',
                 'result_recipients':'Синтетический участник и технический проверяющий.',
                 'provided_participant_fields':['role','position','duties'],
-                'participant_questions':['Подтвердите роль.','Подтвердите задачи.','Подтвердите готовность.'],
+                'participant_questions':[item['text'] for item in PARTICIPANT_QUESTION_SCHEMA['questions']],
+                'participant_question_schema':PARTICIPANT_QUESTION_SCHEMA,
                 'consent_version':1,
                 'consent_text':'Синтетическое согласие только для тестового контура.',
             }}
@@ -93,12 +100,6 @@ def seed(state):
         publish_organization_context(c,version_id=org_version,confirmed_by_user_id=users[0])
         for uid in users:
             accept_consent(c,user_id=uid,version=1)
-            save_answers(c,user_id=uid,answers={
-                'answer_1':'Синтетическая роль подтверждена.',
-                'answer_2':'Синтетические задачи подтверждены.',
-                'answer_3':'Синтетическая готовность подтверждена.',
-            },confirm=True)
-            update_onboarding_state(c,uid,status='completed',current_step=6)
         # Same isolated fixture lifecycle as test_m10_product_path_db; repository package stays WORKING.
         admitted=([read('tests/browser/fixtures/sources/character-case-v1.json')] if state.get('browser_case')=='character' else [cases['cases'][0],cases['cases'][2]])
         if state.get('browser_catalog') == 'unavailable':
@@ -134,7 +135,12 @@ def seed(state):
             select_role_profile_for_user(c,user_id=uid,version_id=role)
             version=create_user_context_draft(c,user_id=uid,identity={'full_name':'Синтетический участник'},professional={'position_or_status':'Технический участник'})
             confirm_user_context(c,version_id=version,user_id=uid)
-            create_personalized_profile(c,user_id=uid,assessment_configuration_id=runtime_config['id'],
+            profile=create_personalized_profile(c,user_id=uid,assessment_configuration_id=runtime_config['id'],
                 organization_context_version_id=org_version,role_profile_version_id=role,user_context_version_id=version)
+            confirmation=save_answers(c,user_id=uid,answers=ACQUAINTANCE_ANSWERS,confirm=True)
+            c.execute('''UPDATE participant_acquaintance_confirmations
+                SET user_context_version_id=%s,personalized_profile_id=%s WHERE id=%s''',
+                (version,profile['id'],confirmation['id']))
+            update_onboarding_state(c,uid,status='completed',current_step=6)
         c.commit()
     print('Synthetic input seed ready; no assessment results created')

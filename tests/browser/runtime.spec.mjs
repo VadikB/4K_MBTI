@@ -155,7 +155,7 @@ async function completeAcquaintance(page){
   await expect.poll(async()=>{
    if(!await panel.isVisible())return true;
    return `${await panel.getAttribute('data-step')}|${await page.locator('#onboarding-title').textContent()}`!==marker;
-  },{timeout:30000}).toBe(true);
+  },{timeout:5000}).toBe(true);
  }
  await expect(panel).toBeHidden();
 }
