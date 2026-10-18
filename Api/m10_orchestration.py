@@ -203,7 +203,7 @@ def _finalize_cycle(connection, gateway=None) -> bool:
     results = m8_results.create_results(connection, cycle_id=cycle_id, calculation_id=calculation["id"],
         key=f"product-results:{calculation['id']}", target_profile=None, created_by=int(row["created_by"]))
     report = m8_results.create_report(connection, results_revision_id=results["revision_id"], audience="assessee",
-        key="product-report:assessee", target_profile=None, created_by=int(row["created_by"]))
+        key="product-report:assessee", target_profile=None, created_by=int(row["created_by"]), gateway=gateway)
     failure = _processing_failure(calculation)
     _set_state(connection, int(row["id"]), status="failed" if failure else "ready",
                stage="admission_processing_failed" if failure else "report_ready",

@@ -6,10 +6,23 @@
 #set par(leading: 0.7em, spacing: 0.8em)
 #show heading: it => { set text(font: ("Manrope", ..fonts), fill: rgb("#222c30")); it }
 
-= Результат оценки
+= Ваши результаты
 #text(fill: rgb("#526168"))[Индивидуальный отчёт · версия #data.report_revision_no]
 
-Ниже — результаты по вашим ответам, их основания и ограничения.
+Ниже — результаты по вашим ответам, их основания и ограничения. Этот отчёт не содержит рекомендаций, упражнений или плана развития.
+
+== Главное из вашей оценки
+#if data.descriptive.status == "ready" and data.descriptive.summary.len() > 0 [
+  #for item in data.descriptive.summary [
+    #item
+  ]
+] else if data.descriptive.status == "failed" [
+  *Пояснение временно недоступно.* Фактический результат и ограничения доступны ниже.
+] else if data.descriptive.status == "historical" [
+  Показана сохранённая фактическая версия без прежних рекомендаций.
+] else [
+  *Пояснение готовится.* Фактический результат уже доступен ниже.
+]
 
 #if data.processing.status == "failed" [
   #block(fill: rgb("#fff4e5"), inset: 10pt, radius: 4pt)[
@@ -25,12 +38,14 @@
   ]
 ]
 
-== Компетенции и навыки
+== Ваши результаты по 4К
 #for competency in data.skills.map(item => item.competency).dedup() [
   === #competency
   #for skill in data.skills.filter(item => item.competency == competency) [
     #block(stroke: 0.5pt + rgb("#d5dfe2"), inset: 9pt, radius: 4pt, breakable: false)[
       *#skill.name* \
+      #if skill.description != "" [#skill.description \
+      ]
       #skill.outcome \
       *Балл:* #skill.score · *Полнота:* #skill.completeness \
       В этой версии оценки общий уровень навыка не присваивается.
@@ -38,7 +53,7 @@
   ]
 ]
 
-== Покрытие и ограничения результата
+== Что удалось оценить и где данных недостаточно
 #table(
   columns: (1.2fr, 2fr, 1.2fr),
   inset: 6pt,
@@ -63,31 +78,16 @@
   *Проверка механизма:* сведения отсутствуют.
 ]
 
-#if data.recommendations.len() > 0 [
-  == Что можно развивать
-  #for recommendation in data.recommendations [
-    === #recommendation.goal
-    *Практика:* #recommendation.practice
-
-    *Где попробовать:* #recommendation.application_context
-
-    *Признак прогресса:* #recommendation.progress_signal
-
-    #for basis in recommendation.at("basis_refs", default: ()) [
-      *Основание:* #basis.manifestation
-      #for fragment in basis.at("material_excerpts", default: ()) [
-        #quote(block: true)[#fragment.quote]
-      ]
+#if data.descriptive.status == "ready" and data.descriptive.claims.len() > 0 [
+  == Почему сделан такой вывод
+  #for claim in data.descriptive.claims [
+    #if claim.kind == "quote" [
+      #quote(block: true)[#claim.text]
+    ] else [
+      #claim.text
     ]
-    #for limitation in recommendation.limitations [
+    #for limitation in claim.limitations [
       - #limitation
     ]
-  ]
-]
-
-#if data.recommendation_notices.len() > 0 [
-  == Когда рекомендаций нет
-  #for notice in data.recommendation_notices [
-    - #notice.text
   ]
 ]

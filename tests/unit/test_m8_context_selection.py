@@ -45,11 +45,14 @@ def test_task112_empty_and_invalid_are_different():
         profile_projection({'content':['invalid']})
 
 
-def test_task112_preserves_verified_11_report_presentation():
+def test_task112_hides_verified_11_recommendations_without_mutating_history():
     saved = {'recommendations':[{'goal':'Проверенный текст'}],
              'recommendation_generation':{'contract_version':'m8-recommendations/1.1.0'}}
     original = deepcopy(saved)
-    assert _present_report(saved) == original
+    view = _present_report(saved)
+    assert view['recommendations'] == []
+    assert view['recommendation_presentation']['status'] == 'historical_hidden'
+    assert view['descriptive']['status'] == 'historical'
     assert saved == original
 
 

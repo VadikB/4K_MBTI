@@ -46,13 +46,12 @@ def test_three_audiences_share_facts_and_differ_only_in_disclosure():
     assert [x["disclosure"] for x in values] == ["personal", "summary_with_coverage", "full"]
 
 
-def test_recommendation_failure_keeps_base_c67_available(monkeypatch):
-    monkeypatch.setattr(m8_results, "generate_recommendations", lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("broken")))
+def test_description_failure_keeps_base_c67_available():
     report = _report_content(results(), "assessee", None)
     assert report["skills"]
     assert report["recommendations"] == []
-    assert report["recommendation_generation"]["status"] == "failed"
-    assert report["recommendation_notices"][0]["kind"] == "GENERATION_FAILURE"
+    assert report["descriptive"]["status"] == "failed"
+    assert report["descriptive"]["failure_reason"] == "DESCRIPTION_GENERATION_FAILED"
 
 
 def test_partial_result_uses_as_lifecycle_not_message_count_and_keeps_reasons_separate():
@@ -101,3 +100,4 @@ def test_pdf_renderer_is_bound_to_saved_report_template(monkeypatch):
     assert template == "m8_participant_report_v1.typ"
     assert payload["skills"][0]["outcome"] == "Недостаточно оснований для результата"
     assert payload["skills"][0]["score"] == "—"
+    assert payload["descriptive"]["status"] == "failed"

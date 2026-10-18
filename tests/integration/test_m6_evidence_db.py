@@ -429,7 +429,7 @@ def test_m6_cycle_calculation_persists_c56_and_reconciles_c46(database):
         assert {x['c67']['provenance']['composition_checksum'] for x in reports}=={reconciled['composition_checksum']}
         # An empty bundle cannot substantiate the old generic manifestation.
         assert all(x['c67']['recommendations']==[] for x in reports)
-        assert all(x['c67']['recommendation_generation']['status']=='unavailable' for x in reports)
+        assert all(x['c67']['descriptive']['status'] in {'ready','failed'} for x in reports)
         assert read_latest_results(c,cycle_id)['revision_id']==results['revision_id']
         assert read_latest_report(c,cycle_id,'assessee')['id']==reports[0]['id']
         pdf=render_pdf(reports[0]);assert pdf.startswith(b'%PDF') and len(pdf)>1000

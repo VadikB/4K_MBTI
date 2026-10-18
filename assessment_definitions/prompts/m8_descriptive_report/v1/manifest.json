@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "m8_descriptive_report",
+  "version": "1.0.0",
+  "status": "draft",
+  "scope": "m8_descriptive_report",
+  "owner": "PM-06",
+  "source": {
+    "id": "M8",
+    "version": "1.2",
+    "sha256": "a61909c996f66e88668c4cf713fb91129f3ab778ed843d0e796c7d4e226b73fa",
+    "sections": ["M8.2", "M8.3", "M8.7", "M8.7.1", "M8.7.2"]
+  },
+  "input_contract": "M8.DescriptiveInput/1",
+  "output_contract": "M8.DescriptiveOutput/1",
+  "artifacts": [
+    {"name": "prompt.md", "sha256": "b9290628d29db9fc85605f0a7f51169553b8eb8329084736ee2647b874a57bec"},
+    {"name": "schema.json", "sha256": "2ac603501535410eeda17c6406d3264294a1b2c11a24145bcbcbbf9c3feb86fd"}
+  ],
+  "execution": {"temperature": 0, "timeout_seconds": 120, "max_tokens": 8000, "max_input_bytes": 160000, "lease_seconds": 300, "max_attempts": 2}
+}

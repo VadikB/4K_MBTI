@@ -15,13 +15,9 @@ text=normalize('\n'.join(pages))
 assert normalize(value['cycle_id']) not in text, 'technical cycle id'
 for skill in value['skills']:
     assert normalize(skill['skill_name']) in text
-for recommendation in value['recommendations']:
-    for key in ('goal','practice','progress_signal','application_context'):
-        assert normalize(recommendation[key]) in text, key
-    for limit in recommendation['limitations']:
-        assert normalize(limit) in text, 'limitation'
-    for basis in recommendation['basis_refs']:
-        for excerpt in basis['material_excerpts']:
-            assert normalize(excerpt['quote']) in text, 'material quote'
+for summary in value['descriptive'].get('summary', []):
+    assert normalize(summary) in text, 'descriptive summary'
+for claim in value['descriptive'].get('claims', []):
+    assert normalize(claim['text']) in text, 'descriptive claim'
 assert 'Недопустимоеисторическоепроявление' not in text
 print('PDF content matches saved C-67; pages:',len(PdfReader(pdf).pages))

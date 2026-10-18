@@ -221,17 +221,17 @@ def internal(destination):
         # R11.2: the real 10.5 confirmation builder feeds saved Results, never the live profile.
         results = http.get(f'/users/assessment/m8/cycles/{cycle_id}/results').json()
         saved_report = http.get(f'/users/assessment/m8/cycles/{cycle_id}/reports/latest').json()
-        generation = saved_report['c67']['recommendation_generation']
+        generation = saved_report['c67']['descriptive']
         frozen_user_context = original['content_json']['user_context']
-        assert generation['input']['profile_projection']['user_context']['regular_tasks'] == frozen_user_context['regular_tasks']
+        contexts = {item['ref']:item['text'] for item in generation['input']['context']}
+        assert contexts['user_context.regular_tasks'] == frozen_user_context['regular_tasks']
         assert frozen_user_context['regular_tasks'] != payload['duties']
         assert frozen_user_context['acquaintance_answers']['schema_variant'] == 'corporate'
-        assert generation['input']['context_selection']['selected_path'] == 'user_context.regular_tasks'
         assert results['results']['personalized_profile_snapshot']['content'] == original['content_json']
         regenerated = http.post(f'/users/assessment/m8/cycles/{cycle_id}/reports/regenerate',
             json={'idempotency_key':'task112-historical-context'})
         assert regenerated.status_code == 201, regenerated.text
-        assert regenerated.json()['c67']['recommendation_generation']['input'] == generation['input']
+        assert regenerated.json()['c67']['descriptive']['input'] == generation['input']
         assert http.get(f"/users/assessment/m8/reports/{saved_report['id']}").json() == saved_report
         assert 'Synthetic after completion' not in json.dumps(generation)
         assert payload['full_name'] not in json.dumps(generation)
@@ -240,12 +240,9 @@ def internal(destination):
             evidence = Path(os.environ['R112_ARTIFACT_DIR']); evidence.mkdir(parents=True, exist_ok=True)
             (evidence/'saved-context.json').write_text(json.dumps({
                 'm4_content_excerpt':{'user_context':original['content_json']['user_context'],
-                    'role_profile':{'card':{k:v for k,v in original['content_json']['role_profile']['card'].items()
-                        if k in generation['input']['profile_projection'].get('role_profile', {})}},
-                    'organization_context':{k:v for k,v in original['content_json']['organization_context'].items()
-                        if k in generation['input']['profile_projection'].get('organization_context', {})}},
-                'projection':generation['input']['profile_projection'],
-                'selection':generation['input']['context_selection'], 'recommendations':saved_report['c67']['recommendations'],
+                    'role_profile':original['content_json']['role_profile'],
+                    'organization_context':original['content_json']['organization_context']},
+                'context':generation['input']['context'], 'descriptive':saved_report['c67']['descriptive'],
                 'same_historical_input_after_live_change':True},ensure_ascii=False,indent=2)+'\n')
         new_id = final_id
         next_cycle = http.post('/users/assessment/cycles/start',json={'idempotency_key':'new-cycle','personalized_profile_id':new_id})
@@ -275,11 +272,12 @@ def internal(destination):
                 key='h106-customer',target_profile=None,created_by=owner)
             qa_report = m8_results.create_report(c,results_revision_id=results['revision_id'],audience='methodology_qa',
                 key='h106-qa',target_profile=None,created_by=owner)
-            with patch.object(m8_results,'generate_recommendations',side_effect=ValueError('synthetic generator failure')):
+            import Api.m8_descriptive_report as descriptive_report
+            with patch.object(descriptive_report,'generate',side_effect=ValueError('synthetic generator failure')):
                 base_report = m8_results.create_report(c,results_revision_id=results['revision_id'],audience='assessee',
-                    key='h106-failed-recommendations',target_profile=None,created_by=owner)
+                    key='h106-failed-description',target_profile=None,created_by=owner)
             c.commit()
-        assert base_report['c67']['skills'] and base_report['c67']['recommendation_generation']['status'] == 'failed'
+        assert base_report['c67']['skills'] and base_report['c67']['descriptive']['status'] == 'failed'
         history = http.get('/users/assessment/m8/history').json()
         assert history['reports_total'] == 2
         first = next(row for row in history['cycles'] if row['cycle_id'] == cycle_id)
