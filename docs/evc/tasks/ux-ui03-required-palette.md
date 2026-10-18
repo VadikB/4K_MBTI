@@ -46,7 +46,7 @@ AUTH/ADMIN/CHAT/ЛК/Report экранов. Не включено: UI01, E01-ADD
 
 - `git diff --check` — PASS;
 - `npm run lint:js` — PASS;
-- `node --test tests/frontend/*.test.mjs` — PASS, 48/48;
+- `node --test tests/frontend/*.test.mjs` — PASS, 49/49;
 - `npm run build:web` — PASS;
 - in-app Chromium, реальные computed styles — PASS: canvas `rgb(246, 249, 249)`,
   Onest, admin primary `rgb(34, 44, 48) / rgb(255, 255, 255)`, participant primary

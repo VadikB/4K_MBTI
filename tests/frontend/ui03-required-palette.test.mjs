@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const tokens = readFileSync('web/styles/tokens.css', 'utf8').toLowerCase();
 const components = readFileSync('web/styles/components.css', 'utf8').toLowerCase();
+const markup = readFileSync('web/index.html', 'utf8').toLowerCase();
 const allowedHex = new Set([
   '#222c30', '#68777c', '#d6e2e5', '#f7f9fb',
   '#ff563d', '#ff9d8e', '#ffc2b8', '#ffe5e0',
@@ -56,4 +57,9 @@ test('UI03 keeps embedded SVG fills inside the owner palette', () => {
     const encodedColors = readFileSync(file, 'utf8').toLowerCase().match(/%23[0-9a-f]{6}\b/g) ?? [];
     for (const color of encodedColors) assert.ok(allowedHex.has(`#${color.slice(3)}`), `${file}: ${color}`);
   }
+});
+
+test('UI03 invalidates cached CSS and JavaScript entrypoints', () => {
+  assert.match(markup, /styles\/screens\/auth\.css\?v=20261018-ui03-palette/);
+  assert.match(markup, /web\/dist\/main\.js\?v=20261018-ui03-palette/);
 });
