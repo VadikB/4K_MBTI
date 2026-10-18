@@ -3098,22 +3098,6 @@ def ensure_assessment_context_schema(connection) -> None:
 def ensure_questionnaire_source_schema(connection) -> None:
     """Create the immutable questionnaire intake store for isolated tests and bootstrap."""
     connection.execute(
-        """CREATE TABLE IF NOT EXISTS participant_acquaintance_confirmations (
-            id BIGSERIAL PRIMARY KEY,
-            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-            organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
-            assignment_ref TEXT NOT NULL,
-            questionnaire_revision_id BIGINT,
-            question_schema_json JSONB NOT NULL,
-            answers_json JSONB NOT NULL,
-            answers_checksum TEXT NOT NULL,
-            user_context_version_id BIGINT REFERENCES assessment_user_context_versions(id) ON DELETE RESTRICT,
-            personalized_profile_id BIGINT REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT,
-            confirmed_at TIMESTAMP NOT NULL DEFAULT NOW(),
-            UNIQUE(user_id,organization_id,assignment_ref,answers_checksum)
-        )"""
-    )
-    connection.execute(
         """
         CREATE TABLE IF NOT EXISTS questionnaire_response_revisions (
             id BIGSERIAL PRIMARY KEY,
@@ -3147,6 +3131,26 @@ def ensure_questionnaire_source_schema(connection) -> None:
     connection.execute(
         "CREATE INDEX IF NOT EXISTS idx_questionnaire_response_org_assignment "
         "ON questionnaire_response_revisions(organization_id,assignment_ref,created_at DESC)"
+    )
+
+
+def ensure_acquaintance_confirmation_schema(connection) -> None:
+    """Create W02 confirmations after their M4 snapshot dependencies exist."""
+    connection.execute(
+        """CREATE TABLE IF NOT EXISTS participant_acquaintance_confirmations (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+            assignment_ref TEXT NOT NULL,
+            questionnaire_revision_id BIGINT,
+            question_schema_json JSONB NOT NULL,
+            answers_json JSONB NOT NULL,
+            answers_checksum TEXT NOT NULL,
+            user_context_version_id BIGINT REFERENCES assessment_user_context_versions(id) ON DELETE RESTRICT,
+            personalized_profile_id BIGINT REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT,
+            confirmed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE(user_id,organization_id,assignment_ref,answers_checksum)
+        )"""
     )
 
 
@@ -4525,6 +4529,7 @@ def ensure_core_schema() -> None:
         ensure_role_profile_schema(connection)
         ensure_assessment_context_schema(connection)
         ensure_questionnaire_source_schema(connection)
+        ensure_acquaintance_confirmation_schema(connection)
         ensure_m5_runtime_schema(connection)
         connection.execute("""
             DO $$ BEGIN

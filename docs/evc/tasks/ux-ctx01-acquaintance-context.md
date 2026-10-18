@@ -80,6 +80,10 @@
   после `ensure_assessment_context_schema`, запрос исправлен на `results_id`;
   локально compile и `git diff --check` — PASS. Локальная PostgreSQL для повтора
   недоступна; доказательство полного исправления ожидается в изолированном CI.
+- Второй CI подтвердил clean bootstrap и S10-A, но автономный integration-loader
+  questionnaire не создаёт M4-зависимости по своему контракту. Confirmation-схема
+  выделена в отдельный bootstrap-шаг после M4; самостоятельный loader снова не
+  зависит от `assessment_user_context_versions`.
 - Полный локальный backend: 427 PASS / 13 FAIL. Сбои относятся к предсуществующему
   локальному рассогласованию M6 provider artifact/fixture; в CI unit-этап прошёл,
   а внесённые исправления M6 не затрагивают.
