@@ -461,7 +461,9 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  expect(await (await page.request.get(`${stand.url}/users/assessment/m8/reports/${latest.id}`)).json()).toEqual(latest);
  const downloaded=page.waitForEvent('download');await page.locator('#report-download-button').click();
  const pdf=path.join(stand.dir,'history.pdf');await (await downloaded).saveAs(pdf);
- const historyCheck=spawnSync(python,['scripts/verify_browser_pdf.py',pdf,path.join(stand.dir,'report.json')],{encoding:'utf8'});
+ const latestReportPath=path.join(stand.dir,'history-report.json');
+ fs.writeFileSync(latestReportPath,JSON.stringify(latest,null,2));
+ const historyCheck=spawnSync(python,['scripts/verify_browser_pdf.py',pdf,latestReportPath],{encoding:'utf8'});
  expect(historyCheck.status,historyCheck.stderr).toBe(0);
  await info.attach('history-pdf-check',{body:historyCheck.stdout,contentType:'text/plain'});
  await info.attach('history-pdf',{path:pdf,contentType:'application/pdf'});
