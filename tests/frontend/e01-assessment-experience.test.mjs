@@ -40,7 +40,7 @@ test('E01 protects supplied materials without blocking own text or pasted answer
 });
 
 test('E01 applies accepted conversation tokens and mobile layout', () => {
-  assert.match(styles, /background: #eef2f3/);
+  assert.match(styles, /background: var\(--palette-graphite-050\)/);
   assert.match(styles, /background: #b3ebef/);
   assert.match(styles, /background: #18b8c6/);
   assert.match(styles, /font-family: "Onest", sans-serif/);

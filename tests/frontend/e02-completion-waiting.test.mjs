@@ -54,9 +54,9 @@ test('E02 polling is cancellable, visibility-aware and ignores stale responses',
 });
 
 test('E02 uses accepted visual tokens and mobile actions', () => {
-  assert.match(styles, /background: #eef2f3/);
+  assert.match(styles, /background: var\(--palette-graphite-050\)/);
   assert.match(styles, /width: min\(100%, 680px\)/);
   assert.match(styles, /background: #18b8c6/);
-  assert.match(styles, /outline: 3px solid #007d89/);
+  assert.match(styles, /outline: 3px solid var\(--accent\)/);
   assert.match(styles, /@media \(max-width: 600px\)[\s\S]*width: 100%/);
 });

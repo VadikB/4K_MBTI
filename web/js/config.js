@@ -150,31 +150,31 @@ export const levelThresholds = [
 
 export const competencyPalette = {
     Коммуникация: {
-        stroke: "#4648d4",
-        fill: "rgba(70, 72, 212, 0.1)",
-        chartFill: "#4648d4",
+        stroke: "#18b8c6",
+        fill: "rgba(24, 184, 198, 0.1)",
+        chartFill: "#18b8c6",
     },
     "Командная работа": {
-        stroke: "#16a34a",
-        fill: "rgba(22, 163, 74, 0.1)",
-        chartFill: "#16a34a",
+        stroke: "#83dce3",
+        fill: "rgba(131, 220, 227, 0.1)",
+        chartFill: "#83dce3",
     },
     Креативность: {
-        stroke: "#ea580c",
-        fill: "rgba(234, 88, 12, 0.11)",
-        chartFill: "#ea580c",
+        stroke: "#ff563d",
+        fill: "rgba(255, 86, 61, 0.11)",
+        chartFill: "#ff563d",
     },
     "Критическое мышление": {
-        stroke: "#7c3aed",
-        fill: "rgba(124, 58, 237, 0.11)",
-        chartFill: "#7c3aed",
+        stroke: "#18b8c6",
+        fill: "rgba(24, 184, 198, 0.11)",
+        chartFill: "#18b8c6",
     },
 };
 
 export const fallbackCompetencyPalette = {
-    stroke: "#64748b",
-    fill: "rgba(100, 116, 139, 0.08)",
-    chartFill: "#64748b",
+    stroke: "#68777c",
+    fill: "rgba(104, 119, 124, 0.08)",
+    chartFill: "#68777c",
 };
 
 export const onboardingSteps = [

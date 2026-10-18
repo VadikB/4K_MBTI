@@ -947,8 +947,8 @@ const reportCompetencyCardsPlugin = {
       const centerX = typeof xScale.getPixelForValue === 'function' ? xScale.getPixelForValue(index) : bar.x;
       const cardLeft = centerX - cardWidth / 2;
       const cardGradient = context.createLinearGradient(0, cardTop, 0, cardTop + cardHeight);
-      cardGradient.addColorStop(0, '#f1efff');
-      cardGradient.addColorStop(1, '#dfdcfb');
+      cardGradient.addColorStop(0, '#d9f6f8');
+      cardGradient.addColorStop(1, '#b3ebef');
 
       context.fillStyle = cardGradient;
       drawCanvasRoundedRect(context, cardLeft, cardTop, cardWidth, cardHeight, 18);
@@ -994,19 +994,19 @@ const reportCompetencyCardsPlugin = {
         const fillTop = yScale.getPixelForValue(value) + fillOffset;
         const fillHeight = Math.max(0, fillBottom - fillTop);
         const fillGradient = context.createLinearGradient(0, fillBottom, 0, fillTop);
-        fillGradient.addColorStop(0, '#5d4be8');
-        fillGradient.addColorStop(0.54, '#6757f0');
-        fillGradient.addColorStop(1, '#8d84ff');
+        fillGradient.addColorStop(0, '#18b8c6');
+        fillGradient.addColorStop(0.54, '#18b8c6');
+        fillGradient.addColorStop(1, '#18b8c6');
         context.fillStyle = fillGradient;
         drawCanvasRoundedRect(context, centerX - fillWidth / 2, fillTop, fillWidth, fillHeight, fillWidth / 2);
         context.fill();
       }
 
-      context.fillStyle = '#6d61f3';
+      context.fillStyle = '#18b8c6';
       context.font = '800 26px Inter, sans-serif';
       context.fillText(value + '%', centerX, valueY);
 
-      context.fillStyle = '#2b2d42';
+      context.fillStyle = '#222c30';
       context.font = '800 11px Inter, sans-serif';
       drawWrappedCanvasText(context, item.competency || 'Компетенция', centerX, labelY, cardWidth - 18, 14);
     });
@@ -1014,7 +1014,7 @@ const reportCompetencyCardsPlugin = {
   },
 };
 
-const getReportCompetencyGradient = () => 'rgba(93, 75, 232, 0)';
+const getReportCompetencyGradient = () => 'rgba(24, 184, 198, 0)';
 
 const buildReportCompetencyFallbackMarkup = (summary) =>
   summary
@@ -1091,8 +1091,8 @@ const renderReportCompetencyBarChart = (summary = []) => {
           data: items.map((item) => item.avgPercent),
           backgroundColor: getReportCompetencyGradient,
           hoverBackgroundColor: getReportCompetencyGradient,
-          borderColor: 'rgba(70, 72, 212, 0.32)',
-          hoverBorderColor: 'rgba(70, 72, 212, 0.32)',
+          borderColor: 'rgba(24, 184, 198, 0.32)',
+          hoverBorderColor: 'rgba(24, 184, 198, 0.32)',
           borderWidth: 0,
           hoverBorderWidth: 0,
           borderRadius: 999,
@@ -1126,7 +1126,7 @@ const renderReportCompetencyBarChart = (summary = []) => {
           display: false,
         },
         tooltip: {
-          backgroundColor: '#191c1e',
+          backgroundColor: '#222c30',
           displayColors: false,
           titleFont: {
             family: 'Inter',
