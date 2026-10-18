@@ -59,6 +59,7 @@ body {
 .shell {
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: stretch;
     padding: 0;
@@ -66,11 +67,16 @@ body {
 }
 
 .panel {
+    flex: 1 0 auto;
     width: 100%;
     background: transparent;
     border: 0;
     border-radius: 0;
     backdrop-filter: none;
+}
+
+.shell > .panel:not(.hidden) {
+    min-height: 0;
 }
 
 .dashboard-panel,

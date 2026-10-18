@@ -22,6 +22,7 @@ import {
   registerUnauthorizedResponseHandler,
 } from './api.js';
 import { hideAllPanels, returnToStart, openAcquaintanceWaiting } from './router.js';
+import { initAppFooter } from './components/app-footer.js';
 import { activateOrganizationInvitation, handleAuthActionToken, initWiring, verifyEmailMagicLinkToken } from './wiring.js';
 import {
   openProcessingScreen,
@@ -74,6 +75,7 @@ const syncRuntimeReleaseNumber = async () => {
 
 installSessionRequestTracking();
 initWiring();
+initAppFooter();
 void syncRuntimeReleaseNumber();
 
 const resetInitialState = () => {
