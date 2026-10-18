@@ -41,6 +41,8 @@ def ensure_schema(connection) -> None:
         trigger = f"immutable_{table}"
         connection.execute(f"DROP TRIGGER IF EXISTS {trigger} ON {table}")
         connection.execute(f"CREATE TRIGGER {trigger} BEFORE UPDATE OR DELETE ON {table} FOR EACH ROW EXECUTE FUNCTION prevent_m8_history_change()")
+    from Api import m8_report_access
+    m8_report_access.ensure_schema(connection)
 
 
 def _integrity(value: dict, digest: str) -> None:

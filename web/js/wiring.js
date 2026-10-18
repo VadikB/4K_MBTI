@@ -1626,8 +1626,11 @@ if (adminOrganizationsList) {
     if (button.dataset.action === 'confirm-questionnaire') {
       const recipients = [...(card?.querySelectorAll('input[name="questionnaire_recipient"]:checked') || [])]
         .map((input) => input.value);
+      const recipientUserIds = [...(card?.querySelectorAll('input[name="questionnaire_recipient_user"]:checked') || [])]
+        .map((input) => Number(input.value)).filter((value) => Number.isFinite(value) && value > 0);
+      if (recipientUserIds.length && !recipients.includes('organization_admin')) recipients.push('organization_admin');
       withScreen(loadAdminOrganizations, (module) =>
-        module.confirmAdminOrganizationQuestionnaire(organizationId, Number(value), recipients));
+        module.confirmAdminOrganizationQuestionnaire(organizationId, Number(value), recipients, recipientUserIds));
       return;
     }
     if (button.dataset.action === 'prepare-organization-assessments') {
@@ -2694,7 +2697,9 @@ reportDownloadButton.addEventListener('click', async () => {
     reportDownloadButton.disabled = true;
     try {
       const reportId = reportDownloadButton.dataset.m8ReportId;
-      const response = await fetch('/users/assessment/m8/reports/' + encodeURIComponent(reportId) + '/pdf');
+      const response = reportDownloadButton.dataset.m8ReportAccess === 'customer'
+        ? await fetch('/users/admin/m8-access/reports/' + encodeURIComponent(reportId) + '/pdf')
+        : await fetch('/users/assessment/m8/reports/' + encodeURIComponent(reportId) + '/pdf');
       if (!response.ok) throw new Error('PDF_UNAVAILABLE');
       const href = URL.createObjectURL(await response.blob());
       const link = document.createElement('a');

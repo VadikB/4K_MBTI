@@ -1305,7 +1305,7 @@ export const renderReport = () => {
 };
 
 export const openReport = (options = {}) => {
-  const { returnTarget = 'home', m8CycleId = null, m8ReportId = null } = options;
+  const { returnTarget = 'home', m8CycleId = null, m8ReportId = null, customerAccess = false } = options;
   const requestEpoch = ++state.reportRequestEpoch;
   const identityEpoch = state.identityEpoch;
   const ownerId = state.pendingUser?.id;
@@ -1328,12 +1328,15 @@ export const openReport = (options = {}) => {
     document.getElementById('m8-report-partial')?.classList.add('hidden');
     const download = document.getElementById('report-download-button');
     delete download.dataset.m8ReportId;
+    delete download.dataset.m8ReportAccess;
     download.disabled = true;
     const url = new URL(window.location.href); url.searchParams.set('screen', 'report'); url.searchParams.set('cycle_id', m8CycleId);
     if (m8ReportId) url.searchParams.set('report_id', m8ReportId);
     else url.searchParams.delete('report_id');
+    if (customerAccess) url.searchParams.set('report_access', 'customer');
+    else url.searchParams.delete('report_access');
     window.history.replaceState({}, '', url.pathname + '?' + url.searchParams.toString());
-    const load = () => void loadM8Report(m8CycleId, m8ReportId, isCurrent, ownerId).catch(() => {
+    const load = () => void loadM8Report(m8CycleId, m8ReportId, isCurrent, ownerId, customerAccess).catch(() => {
       if (!isCurrent()) return;
       const stateNode = document.getElementById('m8-report-state');
       if (!stateNode) return;
@@ -1346,10 +1349,12 @@ export const openReport = (options = {}) => {
   const legacyUrl = new URL(window.location.href);
   legacyUrl.searchParams.delete('cycle_id');
   legacyUrl.searchParams.delete('report_id');
+  legacyUrl.searchParams.delete('report_access');
   window.history.replaceState({}, '', legacyUrl.pathname + '?' + legacyUrl.searchParams.toString());
   const downloadButton = document.getElementById('report-download-button');
   if (downloadButton) {
     delete downloadButton.dataset.m8ReportId;
+    delete downloadButton.dataset.m8ReportAccess;
     downloadButton.disabled = !state.pendingUser?.id || !state.assessmentSessionId;
   }
   document.getElementById('m8-report-shell')?.classList.add('hidden');
@@ -1450,7 +1455,7 @@ const setupM8CompetencyNavigation = (c67) => {
   if (groups[0]) selectGroup(groups[0].competency_id);
 };
 
-const loadM8Report = async (cycleId, reportId, isCurrent, ownerId) => {
+const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAccess = false) => {
   const stateNode = document.getElementById('m8-report-state');
   if (!reportId) {
   const statusResponse = await fetch(`/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/status`);
@@ -1467,11 +1472,13 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId) => {
     return;
   }
   }
-  const response = await fetch(reportId ? `/users/assessment/m8/reports/${encodeURIComponent(reportId)}` : `/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/reports/latest`);
+  const response = await fetch(customerAccess
+    ? `/users/admin/m8-access/reports/${encodeURIComponent(reportId)}`
+    : reportId ? `/users/assessment/m8/reports/${encodeURIComponent(reportId)}` : `/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/reports/latest`);
   const report = await readApiResponse(response, 'Не удалось загрузить базовый Report.');
   if (!isCurrent()) return;
   if (
-    Number(report.owner_user_id) !== Number(ownerId)
+    (!customerAccess && Number(report.owner_user_id) !== Number(ownerId))
     || String(report.cycle_id) !== String(cycleId)
     || (reportId && String(report.id) !== String(reportId))
   ) throw new Error('Сессия или выбранный отчёт изменились.');
@@ -1518,6 +1525,7 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId) => {
   document.getElementById('m8-report-recommendation-notices').replaceChildren();
   const download = document.getElementById('report-download-button');
   download.dataset.m8ReportId = report.id;
+  download.dataset.m8ReportAccess = customerAccess ? 'customer' : 'owner';
   download.disabled = false;
 };
 

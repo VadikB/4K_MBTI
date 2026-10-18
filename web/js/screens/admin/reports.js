@@ -114,6 +114,7 @@ export const renderAdminReports = () => {
   }
 
   const filteredItems = getFilteredAdminReports();
+  const accessibleM8 = Array.isArray(reports.m8_accessible_reports) ? reports.m8_accessible_reports : [];
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / ADMIN_REPORTS_PAGE_SIZE));
   if (state.adminReportsPage > totalPages) {
     state.adminReportsPage = totalPages;
@@ -123,7 +124,7 @@ export const renderAdminReports = () => {
   }
   const pageStart = (state.adminReportsPage - 1) * ADMIN_REPORTS_PAGE_SIZE;
   const pageItems = filteredItems.slice(pageStart, pageStart + ADMIN_REPORTS_PAGE_SIZE);
-  adminReportsFound.textContent = 'Найдено: ' + filteredItems.length;
+  adminReportsFound.textContent = 'Найдено: ' + (filteredItems.length + accessibleM8.length);
   const selectedIds = new Set((state.adminReportsSelectedSessionIds || []).map((value) => Number(value)));
 
   const scoreValues = filteredItems.map((item) => item.score_percent).filter((value) => typeof value === 'number');
@@ -132,7 +133,27 @@ export const renderAdminReports = () => {
     : '—';
 
   adminReportsList.innerHTML = '';
-  if (!filteredItems.length) {
+  accessibleM8.forEach((item) => {
+    const row = document.createElement('article');
+    row.className = 'admin-report-row admin-report-row--m8';
+    row.tabIndex = 0;
+    row.setAttribute('role', 'button');
+    row.innerHTML = '<div class="admin-report-cell admin-report-user"><div class="admin-report-copy"><strong>' +
+      escapeHtml(item.full_name || item.email || 'Участник') + '</strong><span>Индивидуальный результат 4К</span></div></div>' +
+      '<div class="admin-report-cell admin-report-status"><span class="admin-status-pill done">Готов и доступен</span></div>' +
+      '<div class="admin-report-cell admin-report-date">Версия ' + Number(item.revision_no) + '</div>' +
+      '<div class="admin-report-cell admin-report-download-action"><button class="ghost-button compact-ghost" type="button">Открыть</button></div>';
+    const open = async () => {
+      const module = await import('../report.js');
+      module.openReport({ m8CycleId: item.cycle_id, m8ReportId: item.report_id, customerAccess: true });
+    };
+    row.addEventListener('click', () => { void open(); });
+    row.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); void open(); }
+    });
+    adminReportsList.appendChild(row);
+  });
+  if (!filteredItems.length && !accessibleM8.length) {
     adminReportsList.innerHTML = '<p class="report-empty-state">По текущему фильтру отчеты не найдены.</p>';
     if (adminReportsPageSummary) {
       adminReportsPageSummary.textContent = 'Показано 0 из 0 отчетов';
@@ -262,8 +283,9 @@ export const renderAdminReports = () => {
   });
 
   if (adminReportsPageSummary) {
-    adminReportsPageSummary.textContent =
-      'Показано ' + (pageStart + 1) + '–' + (pageStart + pageItems.length) + ' из ' + filteredItems.length + ' отчетов';
+    const shown = accessibleM8.length + pageItems.length;
+    adminReportsPageSummary.textContent = 'Показано ' + shown + ' из ' +
+      (accessibleM8.length + filteredItems.length) + ' отчетов';
   }
   if (adminReportsPageIndicator) {
     adminReportsPageIndicator.textContent = state.adminReportsPage + ' / ' + totalPages;
@@ -286,10 +308,13 @@ export const renderAdminReports = () => {
 };
 
 export const loadAdminReports = async () => {
-  const response = await fetch('/users/admin/reports', {
-    credentials: 'same-origin',
-  });
+  const [response, accessResponse] = await Promise.all([
+    fetch('/users/admin/reports', { credentials: 'same-origin' }),
+    fetch('/users/admin/m8-access/reports', { credentials: 'same-origin' }),
+  ]);
   const data = await readApiResponse(response, 'Не удалось загрузить подробные отчеты.');
+  const access = await readApiResponse(accessResponse, 'Не удалось загрузить доступные индивидуальные результаты.');
+  data.m8_accessible_reports = Array.isArray(access.items) ? access.items : [];
   state.adminReports = data;
   const allowedSessionIds = new Set(
     (Array.isArray(data?.items) ? data.items : [])

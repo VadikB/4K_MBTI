@@ -100,6 +100,15 @@ def create_cycle(
             created_by,
         ),
     ).fetchone()
+    if usage_scope == "assessment" and profile.get("organization_id") is not None:
+        from Api import m8_report_access
+        m8_report_access.freeze_for_cycle(
+            connection,
+            cycle_db_id=int(row["id"]),
+            personalized_profile_id=personalized_profile_id,
+            participant_user_id=int(profile.get("user_id") or created_by),
+            organization_id=int(profile["organization_id"]),
+        )
     return dict(row)
 
 

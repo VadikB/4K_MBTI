@@ -204,6 +204,15 @@ const bootApp = async () => {
       void openAdminPromptLabScreen();
       return;
     }
+    if (screen === 'report' && state.isAdmin && params.get('report_access') === 'customer'
+      && params.get('cycle_id') && params.get('report_id')) {
+      await openReportScreen({
+        m8CycleId: params.get('cycle_id'),
+        m8ReportId: params.get('report_id'),
+        customerAccess: true,
+      });
+      return;
+    }
     if (state.currentScreen === 'admin-organizations' && state.isAdmin) {
       try {
         await loadAdminOrganizationsData();
