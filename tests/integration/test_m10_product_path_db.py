@@ -319,7 +319,7 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
         assert report["c67"]["contract"]=="C-67"
         assert report["c67"]["recommendations"]
         result = connection.execute('''SELECT r.payload_json FROM m8_result_revisions r
-            JOIN m8_results logical ON logical.id=r.result_id
+            JOIN m8_results logical ON logical.id=r.results_id
             JOIN m5_cycles cycle ON cycle.id=logical.cycle_db_id
             WHERE cycle.cycle_id=%s ORDER BY r.revision_no DESC LIMIT 1''', (cycle_id,)).fetchone()['payload_json']
         frozen = result['personalized_profile_snapshot']['content']['user_context']
