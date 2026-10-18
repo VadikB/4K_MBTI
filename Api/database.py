@@ -3134,6 +3134,26 @@ def ensure_questionnaire_source_schema(connection) -> None:
     )
 
 
+def ensure_acquaintance_confirmation_schema(connection) -> None:
+    """Create W02 confirmations after their M4 snapshot dependencies exist."""
+    connection.execute(
+        """CREATE TABLE IF NOT EXISTS participant_acquaintance_confirmations (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+            assignment_ref TEXT NOT NULL,
+            questionnaire_revision_id BIGINT,
+            question_schema_json JSONB NOT NULL,
+            answers_json JSONB NOT NULL,
+            answers_checksum TEXT NOT NULL,
+            user_context_version_id BIGINT REFERENCES assessment_user_context_versions(id) ON DELETE RESTRICT,
+            personalized_profile_id BIGINT REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT,
+            confirmed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE(user_id,organization_id,assignment_ref,answers_checksum)
+        )"""
+    )
+
+
 def ensure_m5_runtime_schema(connection) -> None:
     """Хранилище неизменяемых M5 CaseVersion, AS, допуска и фактической трассы."""
     connection.execute("""
@@ -4390,6 +4410,8 @@ def ensure_core_schema() -> None:
                 user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
                 organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
                 organization_context_version_id BIGINT,
+                assignment_ref TEXT,
+                questionnaire_revision_id BIGINT,
                 status TEXT NOT NULL DEFAULT 'not_started',
                 current_step INTEGER NOT NULL DEFAULT 0,
                 answers_json JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -4405,6 +4427,8 @@ def ensure_core_schema() -> None:
             )
             """
         )
+        connection.execute("ALTER TABLE participant_acquaintance_states ADD COLUMN IF NOT EXISTS assignment_ref TEXT")
+        connection.execute("ALTER TABLE participant_acquaintance_states ADD COLUMN IF NOT EXISTS questionnaire_revision_id BIGINT")
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS participant_data_issue_reports (
@@ -4505,6 +4529,7 @@ def ensure_core_schema() -> None:
         ensure_role_profile_schema(connection)
         ensure_assessment_context_schema(connection)
         ensure_questionnaire_source_schema(connection)
+        ensure_acquaintance_confirmation_schema(connection)
         ensure_m5_runtime_schema(connection)
         connection.execute("""
             DO $$ BEGIN

@@ -32,6 +32,7 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
             id BIGINT PRIMARY KEY,organization_context_id BIGINT,version INTEGER,status TEXT,definition_json JSONB)""")
         connection.execute("""CREATE TABLE participant_acquaintance_states(
             user_id BIGINT PRIMARY KEY,organization_id BIGINT NOT NULL,organization_context_version_id BIGINT,
+            assignment_ref TEXT,questionnaire_revision_id BIGINT,
             status TEXT NOT NULL DEFAULT 'not_started',current_step INTEGER NOT NULL DEFAULT 0,
             answers_json JSONB NOT NULL DEFAULT '{}'::jsonb,answers_confirmed_at TIMESTAMP,
             briefing_checksum TEXT,consent_version INTEGER,consent_accepted_at TIMESTAMP,

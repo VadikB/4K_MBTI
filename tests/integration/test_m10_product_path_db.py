@@ -82,12 +82,31 @@ def product_db(test_database_url, monkeypatch):
                 'activity_description':'Разработка программ','case_reality_level':'обобщённый','organization_name_usage_rules':'не использовать'}
             org = contexts.create_organization_context_draft(connection,organization_id=10,definition=organization)
             contexts.publish_organization_context(connection,version_id=org,confirmed_by_user_id=99)
+            acquaintance_answers = {
+                'schema_variant': 'corporate', 'schema_version': '1.0', 'assignment_ref': 'ctx01-synthetic',
+                'items': [
+                    {'key': 'work_situations', 'raw_answer': 'CTX01: разбираю неоднозначные рабочие задачи'},
+                    {'key': 'decision_situations', 'raw_answer': 'CTX01: принимаю решения при неполных данных'},
+                    {'key': 'constraints_interactions', 'raw_answer': 'CTX01: согласую ограничения с командами'},
+                ],
+            }
+            connection.execute('''CREATE TABLE participant_acquaintance_confirmations(
+                id BIGSERIAL PRIMARY KEY,user_id BIGINT,organization_id BIGINT,assignment_ref TEXT,answers_json JSONB,
+                user_context_version_id BIGINT,personalized_profile_id BIGINT,
+                confirmed_at TIMESTAMP NOT NULL DEFAULT NOW())''')
+            connection.execute('''INSERT INTO participant_acquaintance_confirmations(
+                user_id,organization_id,assignment_ref,answers_json) VALUES(99,10,'ctx01-synthetic',%s::jsonb)''',
+                (json.dumps(acquaintance_answers, ensure_ascii=False),))
             role = connection.execute("""SELECT v.id FROM assessment_role_profile_versions v
                 JOIN assessment_role_profiles r ON r.id=v.role_profile_id WHERE r.code=%s""",(case['base_role'],)).fetchone()['id']
             profile = participant_profile.confirm(connection,user_id=99,
                 selection=PersonalizedProfileSelection(organization_context_version_id=org,
                     role_profile_version_id=role,assessment_configuration_id=1),
                 full_name='Synthetic participant',position='',duties='')
+            assert profile['content']['user_context']['regular_tasks'] == acquaintance_answers['items'][0]['raw_answer']
+            assert profile['content']['user_context']['decision_situations'] == acquaintance_answers['items'][1]['raw_answer']
+            assert profile['content']['user_context']['constraints_and_interactions'] == acquaintance_answers['items'][2]['raw_answer']
+            assert profile['content']['user_context']['acquaintance_answers'] == acquaintance_answers
             factory.profile_id = profile['id']
             for admitted_case in admitted_cases:
                 case_row=connection.execute("SELECT id FROM m5_case_versions WHERE case_id=%s",(admitted_case["case_id"],)).fetchone()
@@ -267,6 +286,14 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
         assert runtime["current_situation"]["participant_payload"]
         _add_turn(connection,as_id,"Синтетический ответ S10-A","s10-a-turn")
         complete(connection,cycle_id=cycle_id,key="s10-a-close",action="complete",reason="plan_finished",initiated_by=99)
+        handoff = connection.execute(
+            "SELECT envelope_json FROM m5_c45_handoffs WHERE assessment_situation_db_id="
+            "(SELECT id FROM m5_assessment_situations WHERE assessment_situation_id=%s) AND mode='final'",
+            (as_id,),
+        ).fetchone()['envelope_json']
+        assert handoff['profile_snapshot']['user_context']['regular_tasks'].startswith('CTX01:')
+        assert handoff['profile_snapshot']['user_context']['decision_situations'].startswith('CTX01:')
+        assert handoff['profile_snapshot']['user_context']['constraints_and_interactions'].startswith('CTX01:')
         connection.commit()
 
     assert m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
@@ -277,6 +304,12 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
     assert m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
     with factory() as connection:
         assessment=connection.execute("SELECT id,synthetic_confirmed FROM m6_assessment_requests").fetchone()
+        diagnostics = {
+            'processing': connection.execute("SELECT status FROM m6_processing_requests").fetchall(),
+            'attempts': connection.execute("SELECT status,error_code,trace_json FROM m6_processing_attempts").fetchall(),
+            'pipeline': connection.execute("SELECT status,stage,error_code FROM m10_pipeline_runs").fetchall(),
+        }
+        assert assessment is not None, diagnostics
         assert assessment["synthetic_confirmed"] is False
     run_assessment(assessment["id"],connection_factory=factory,gateway=AssessmentGateway())
     assert m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
@@ -285,6 +318,14 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
         report=read_latest_report(connection,cycle_id,"assessee")
         assert report["c67"]["contract"]=="C-67"
         assert report["c67"]["recommendations"]
+        result = connection.execute('''SELECT r.payload_json FROM m8_result_revisions r
+            JOIN m8_results logical ON logical.id=r.results_id
+            JOIN m5_cycles cycle ON cycle.id=logical.cycle_db_id
+            WHERE cycle.cycle_id=%s ORDER BY r.revision_no DESC LIMIT 1''', (cycle_id,)).fetchone()['payload_json']
+        frozen = result['personalized_profile_snapshot']['content']['user_context']
+        assert frozen['regular_tasks'].startswith('CTX01:')
+        assert frozen['decision_situations'].startswith('CTX01:')
+        assert frozen['constraints_and_interactions'].startswith('CTX01:')
         assert {item["type"] for item in report["c67"]["recommendations"]} == {
             "Development"}
         assert any(skill.get("score",{}).get("value")==0 for skill in report["c67"]["skills"]), report["c67"]["skills"]

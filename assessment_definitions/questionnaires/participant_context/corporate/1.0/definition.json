@@ -1,0 +1,22 @@
+{
+  "artifact_id": "participant-context-corporate",
+  "variant": "corporate",
+  "version": "1.0",
+  "status": "FROZEN",
+  "source": "UX-CTX01_Acquaintance_Context_Flow_2026-10-17.txt rev 1.0",
+  "owner": "Product Lead",
+  "questions": [
+    {
+      "key": "work_situations",
+      "text": "Какие задачи и рабочие ситуации занимают большую часть вашего времени?"
+    },
+    {
+      "key": "decision_situations",
+      "text": "Какие решения в вашей роли требуют наибольшего внимания?"
+    },
+    {
+      "key": "constraints_interactions",
+      "text": "С какими ограничениями и взаимодействиями вы чаще всего сталкиваетесь?"
+    }
+  ]
+}

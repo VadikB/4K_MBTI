@@ -2,7 +2,9 @@ from pathlib import Path
 
 import pytest
 
-from Api.questionnaire_sources import PARTICIPANT_QUESTIONS, normalize_answers, parse_csv
+from Api.questionnaire_sources import (
+    PARTICIPANT_QUESTIONS, PARTICIPANT_QUESTION_SCHEMA, normalize_answers, parse_csv,
+)
 
 
 EXAMPLE = Path("assessment_definitions/questionnaires/corporate/0.1/example.synthetic.csv")
@@ -52,3 +54,10 @@ def test_header_must_be_exact():
 def test_canonical_participant_questions_are_not_customer_authored():
     assert len(PARTICIPANT_QUESTIONS) == 3
     assert all(question.strip().endswith("?") for question in PARTICIPANT_QUESTIONS)
+    assert PARTICIPANT_QUESTION_SCHEMA == {
+        "variant": "corporate", "version": "1.0", "questions": [
+            {"key": "work_situations", "text": PARTICIPANT_QUESTIONS[0]},
+            {"key": "decision_situations", "text": PARTICIPANT_QUESTIONS[1]},
+            {"key": "constraints_interactions", "text": PARTICIPANT_QUESTIONS[2]},
+        ],
+    }
