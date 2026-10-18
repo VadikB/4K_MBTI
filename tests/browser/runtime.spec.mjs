@@ -205,7 +205,7 @@ async function report(page,stand,info){
  await page.getByRole('button',{name:'Посмотреть результат'}).click();
  await expect(page.locator('#report-panel')).toBeVisible();
  await expect(page.locator('#m8-report-state')).toContainText('Результат готов',{timeout:70000});
- await expect(page.locator('#m8-report-title')).toHaveText('Результат оценки');
+ await expect(page.locator('#m8-report-title')).toHaveText('Ваши результаты');
  await expect(page.locator('#m8-report-tabs [role="tab"]')).toHaveCount(4);
  await expect(page.locator('#m8-report-skills')).toContainText('общий уровень навыка не присваивается');
  await expect(page.locator('#m8-report-shell')).not.toContainText(/Indicator:|IA:|Turn:|Fragment:/);
