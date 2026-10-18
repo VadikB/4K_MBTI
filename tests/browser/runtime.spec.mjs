@@ -206,11 +206,19 @@ async function report(page,stand,info){
  await expect(page.locator('#report-panel')).toBeVisible();
  await expect(page.locator('#m8-report-state')).toContainText('Результат готов',{timeout:70000});
  await expect(page.locator('#m8-report-title')).toHaveText('Ваши результаты');
- await expect(page.locator('#m8-report-tabs [role="tab"]')).toHaveCount(4);
- await expect(page.locator('#m8-report-skills')).toContainText('общий уровень навыка не присваивается');
- await expect(page.locator('#m8-report-shell')).not.toContainText(/Indicator:|IA:|Turn:|Fragment:/);
+ await expect(page.locator('#m8-report-tabs [role="tab"]')).toHaveCount(5);
+ await expect(page.locator('#m8-report-tabs [role="tab"]').first()).toHaveText('Общий обзор');
  const cycle=new URL(page.url()).searchParams.get('cycle_id');expect(cycle).toBeTruthy();
  const response=await page.request.get(`${stand.url}/users/assessment/m8/cycles/${cycle}/reports/latest`);expect(response.ok()).toBeTruthy();const saved=await response.json();
+ const hasNumericScores=saved.c67.skills.some(skill=>skill.score?.value!=null);
+ if(hasNumericScores){
+  await expect(page.locator('#m8-report-chart svg')).toBeVisible();
+  await page.getByRole('button',{name:'Шкалы'}).click();
+  await expect(page.locator('#m8-report-chart .m8-score-bars')).toBeVisible();
+  await page.getByRole('button',{name:'Заливка'}).click();
+ }else await expect(page.locator('#m8-report-chart .m8-chart-empty')).toContainText('Числовых показателей нет');
+ await expect(page.locator('#m8-report-skills')).toContainText('общий уровень навыка не присваивается');
+ await expect(page.locator('#m8-report-shell')).not.toContainText(/Indicator:|IA:|Turn:|Fragment:/);
  const downloadPromise=page.waitForEvent('download');await page.locator('#report-download-button').click();
  const download=await downloadPromise;const pdf=path.join(stand.dir,'report.pdf');await download.saveAs(pdf);
  expect(fs.readFileSync(pdf).subarray(0,4).toString()).toBe('%PDF');

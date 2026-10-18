@@ -1791,8 +1791,18 @@
         </section>
         <section class="card report-details-card">
           <div class="report-card-head"><div><p class="section-label">Компетенции и навыки</p><h3>Ваши результаты по 4К</h3></div></div>
+          <div class="m8-chart-head">
+            <p>Показатель навыка · шкала 0–3</p>
+            <div id="m8-report-chart-modes" class="m8-chart-modes" role="group" aria-label="Вид графика">
+              <button type="button" data-chart-mode="fill" aria-pressed="true">Заливка</button>
+              <button type="button" data-chart-mode="outline" aria-pressed="false">Контур</button>
+              <button type="button" data-chart-mode="bars" aria-pressed="false">Шкалы</button>
+            </div>
+          </div>
           <div id="m8-report-tabs" class="report-tabs" role="tablist" aria-label="Компетенции"></div>
           <select id="m8-report-tab-select" class="report-tab-select" aria-label="Выберите компетенцию"></select>
+          <div id="m8-report-chart" class="m8-report-chart" aria-live="polite"></div>
+          <p id="m8-report-chart-note" class="m8-chart-note"></p>
           <div id="m8-report-skills" class="m8-report-skills"></div>
         </section>
         <section class="card report-details-card">
