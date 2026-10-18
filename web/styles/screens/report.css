@@ -4,6 +4,45 @@
     padding: var(--space-4) 0;
 }
 
+.m8-comparison-periods {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    margin: 0 0 var(--space-4);
+}
+
+.m8-comparison { min-width: 0; overflow: hidden; }
+.m8-comparison-actions { display: flex; min-width: 0; align-items: end; gap: var(--space-2); flex-wrap: wrap; }
+.m8-comparison-actions label { font-size: var(--fs-caption); color: var(--text-muted); }
+.m8-comparison-actions select { width: min(220px, 100%); min-height: 38px; padding: 0 var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel); color: var(--text-main); }
+
+.m8-comparison-periods > div,
+.m8-comparison-slices article {
+    padding: var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--control-bg);
+}
+
+.m8-comparison-periods dt { color: var(--text-muted); }
+.m8-comparison-periods dd { margin: var(--space-1) 0 0; font-weight: 700; }
+.m8-comparison-table-wrap { overflow-x: auto; }
+.m8-comparison-table { width: 100%; border-collapse: collapse; }
+.m8-comparison-table th,
+.m8-comparison-table td { padding: var(--space-3); border-bottom: 1px solid var(--line); text-align: left; }
+.m8-comparison-slices { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
+.m8-comparison-slices article { display: grid; grid-template-columns: minmax(180px, 1fr) repeat(2, minmax(110px, auto)); gap: var(--space-2) var(--space-4); }
+.m8-comparison-slices article p { grid-column: 1 / -1; margin: 0; color: var(--text-muted); }
+
+@media (max-width: 640px) {
+    .m8-comparison .report-card-head { display: grid; gap: var(--space-3); }
+    .m8-comparison-actions { display: grid; align-items: stretch; width: 100%; }
+    .m8-comparison-actions select { width: 100%; }
+    .m8-comparison-periods { grid-template-columns: 1fr; }
+    .m8-comparison-slices article { grid-template-columns: 1fr; }
+    .m8-comparison-slices article p { grid-column: auto; }
+}
+
 .m8-report-shell {
   width: min(1120px, 100%);
   margin-inline: auto;
