@@ -349,7 +349,7 @@
     .auth-panel { padding: 28px 16px; }
 }
 @media (max-height: 720px) {
-    .auth-panel { align-self: flex-start; margin-top: 24px; }
+    .auth-panel { margin-top: 24px; margin-right: auto; margin-left: auto; }
 }
 
 .auth-complete-panel {
@@ -933,37 +933,6 @@ body:has(#auth-panel:not(.hidden)),
     color: #222c30;
 }
 
-.app-footer {
-    display: flex;
-    flex: 0 0 auto;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    gap: 16px;
-    padding: 24px max(24px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
-    background: #f6f9f9;
-    color: rgb(from var(--palette-graphite-600) r g b / 0.6);
-    font-family: "Onest", sans-serif;
-    font-weight: 400;
-    text-align: center;
-}
-
-.app-footer-documents {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 32px;
-    font-size: 12px;
-    line-height: 16px;
-    letter-spacing: 0.8px;
-}
-
-.app-footer-copyright {
-    font-size: 10px;
-    line-height: 16px;
-    letter-spacing: 0;
-}
-
 @media (max-width: 767px) {
     .auth-panel.auth-panel--password-create {
         padding-top: 78px;
@@ -976,11 +945,6 @@ body:has(#auth-panel:not(.hidden)),
 }
 
 @media (max-width: 479px) {
-    .app-footer-documents {
-        flex-direction: column;
-        gap: 12px;
-    }
-
     .auth-panel.auth-panel--password-create .auth-credential-step-indicator {
         left: 24px;
         width: calc(100% - 48px);

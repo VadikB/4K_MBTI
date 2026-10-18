@@ -7,7 +7,7 @@
   <!-- CSS is modularized under /web/styles/. Load order: tokens → base → components → screens → utilities. -->
   <link rel="stylesheet" href="/web/styles/tokens.css?v=20261018-ui03-palette">
   <link rel="stylesheet" href="/web/styles/base.css?v=20261018-ui03-onest">
-  <link rel="stylesheet" href="/web/styles/components.css?v=20261018-ui03-semantics">
+  <link rel="stylesheet" href="/web/styles/components.css?v=20261018-ui01-footer">
   <link rel="stylesheet" href="/web/styles/screens/auth.css?v=20261018-ui03-palette">
   <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=20261018-ui03-palette">
   <link rel="stylesheet" href="/web/styles/screens/processing.css?v=20261018-ui03-palette">
@@ -1939,12 +1939,12 @@
       <p id="chat-error" class="error" hidden></p>
     </section>
 
-    <footer class="app-footer" aria-label="Правовая информация">
+    <footer class="app-footer" aria-label="Правовая информация" aria-hidden="false">
       <div class="app-footer-documents">
         <span>Политика конфиденциальности</span>
         <span>Согласие на обработку персональных данных</span>
       </div>
-      <span class="app-footer-copyright">© 2026 LIDUM</span>
+      <span class="app-footer-copyright">© <span data-app-footer-year></span> LIDUM</span>
     </footer>
   </main>
 
@@ -1959,6 +1959,6 @@
 
   <script src="/app-config.js"></script>
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=20261018-ui03-palette"></script>
+  <script type="module" src="/web/dist/main.js?v=20261018-ui01-footer"></script>
 </body>
 </html>

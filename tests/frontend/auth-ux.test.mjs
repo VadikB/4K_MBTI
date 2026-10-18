@@ -65,7 +65,7 @@ test('auth surface exposes the R04 mail state and non-interactive shared footer'
   assert.match(html, /<footer class="app-footer"/);
   assert.match(html, />Политика конфиденциальности<\/span>/);
   assert.match(html, />Согласие на обработку персональных данных<\/span>/);
-  assert.match(html, />© 2026 LIDUM<\/span>/);
+  assert.match(html, />© <span data-app-footer-year><\/span> LIDUM<\/span>/);
   assert.doesNotMatch(html, /href="#"[^>]*>\s*(?:Политика|Согласие)/);
 });
 
