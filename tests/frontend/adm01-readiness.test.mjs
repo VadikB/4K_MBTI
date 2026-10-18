@@ -16,6 +16,6 @@ test('ADM01 keeps participant invitations bound to the selected assessment', () 
 test('ADM01 admin surface uses the accepted readiness and control colors', () => {
   assert.match(styles, /background: #b3ebef/);
   assert.match(styles, /background: #222c30/);
-  assert.match(styles, /border-color: #007d89/);
+  assert.match(styles, /border-color: var\(--accent\)/);
   assert.doesNotMatch(organizations, /Администратор организации|Моя организация/);
 });

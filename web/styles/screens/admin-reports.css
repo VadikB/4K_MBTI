@@ -176,12 +176,12 @@
 }
 
 .admin-report-row:hover {
-    background: rgba(70, 72, 212, 0.05);
-    border-color: rgba(70, 72, 212, 0.28);
+    background: rgb(from var(--palette-cyan-600) r g b / 0.05);
+    border-color: rgb(from var(--palette-cyan-600) r g b / 0.28);
 }
 
 .admin-report-row:focus-visible {
-    border-color: rgba(70, 72, 212, 0.28);
+    border-color: rgb(from var(--palette-cyan-600) r g b / 0.28);
     outline: 2px solid var(--accent-border);
     outline-offset: 2px;
 }
@@ -232,7 +232,7 @@
     font-size: var(--fs-meta);
     font-weight: var(--fw-extrabold);
     color: var(--accent);
-    background: rgba(70, 72, 212, 0.1);
+    background: rgb(from var(--palette-cyan-600) r g b / 0.1);
 }
 
 .admin-report-copy,
@@ -299,7 +299,7 @@
 }
 
 .admin-status-pill.draft {
-    background: rgba(70, 72, 212, 0.1);
+    background: rgb(from var(--palette-cyan-600) r g b / 0.1);
     color: var(--accent);
 }
 
@@ -320,7 +320,7 @@
     height: 8px;
     padding: 2px;
     border-radius: var(--radius-pill);
-    background: #eff0f3;
+    background: var(--palette-graphite-050);
     overflow: hidden;
 }
 
@@ -328,7 +328,7 @@
     display: block;
     height: 100%;
     border-radius: var(--radius-pill);
-    background: linear-gradient(90deg, #4b4edb 0%, #7a70ff 100%);
+    background: linear-gradient(90deg, var(--palette-cyan-600) 0%, var(--palette-cyan-600) 100%);
 }
 
 .admin-reports-summary-card {

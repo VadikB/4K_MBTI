@@ -27,7 +27,7 @@
     border-color: transparent;
     outline: 4px dashed var(--line-strong);
     outline-offset: -4px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    background: linear-gradient(180deg, #ffffff 0%, var(--palette-graphite-050) 100%);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72);
 }
 
@@ -50,7 +50,7 @@ select {
 input:focus,
 select:focus {
     border-color: var(--accent);
-    outline: 3px solid rgba(70, 72, 212, 0.2);
+    outline: 3px solid color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 button {
@@ -71,7 +71,7 @@ button {
 }
 
 button:focus-visible {
-    outline: 2px solid rgba(70, 72, 212, 0.32);
+    outline: 3px solid color-mix(in srgb, var(--accent) 42%, transparent);
     outline-offset: 2px;
 }
 
@@ -96,7 +96,7 @@ textarea {
     border: 0;
     border-radius: var(--radius-sm);
     background: var(--accent-bright);
-    color: #fff;
+    color: var(--palette-graphite-900);
     font-family: var(--font-heading);
     font-weight: var(--fw-bold);
     font-size: var(--fs-body-sm);
@@ -105,7 +105,28 @@ textarea {
 }
 
 .primary-button:hover:not(:disabled):not([disabled]):not(.disabled) {
-    background: var(--accent);
+    background: var(--palette-cyan-300);
+}
+
+.admin-panel .primary-button,
+.admin-regression-tests-panel .primary-button,
+.admin-organizations-panel .primary-button,
+.admin-methodology-panel .primary-button,
+.admin-reports-panel .primary-button,
+.admin-report-detail-panel .primary-button,
+.admin-prompt-lab-panel .primary-button {
+    background: var(--admin-primary);
+    color: var(--admin-primary-text);
+}
+
+.admin-panel .primary-button:hover:not(:disabled),
+.admin-regression-tests-panel .primary-button:hover:not(:disabled),
+.admin-organizations-panel .primary-button:hover:not(:disabled),
+.admin-methodology-panel .primary-button:hover:not(:disabled),
+.admin-reports-panel .primary-button:hover:not(:disabled),
+.admin-report-detail-panel .primary-button:hover:not(:disabled),
+.admin-prompt-lab-panel .primary-button:hover:not(:disabled) {
+    background: var(--admin-primary-hover);
 }
 
 .primary-button:active:not(:disabled):not([disabled]):not(.disabled) {
@@ -156,9 +177,9 @@ textarea {
     display: flex;
     align-items: center;
     padding: var(--space-2);
-    border: 1px solid rgba(148, 163, 184, 0.22);
+    border: 1px solid rgb(from var(--palette-graphite-600) r g b / 0.22);
     border-radius: var(--radius-sm);
-    background: #f8fafc;
+    background: var(--palette-graphite-050);
     color: var(--text-muted);
     font-size: var(--fs-meta);
     line-height: var(--lh-normal);
@@ -169,11 +190,11 @@ textarea {
     border: 0;
     border-radius: var(--radius-xl);
     padding: 0;
-    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.18);
+    box-shadow: 0 30px 80px rgb(from var(--palette-graphite-900) r g b / 0.18);
 }
 
 .admin-prompt-lab-case-dialog::backdrop {
-    background: rgba(15, 23, 42, 0.42);
+    background: rgb(from var(--palette-graphite-900) r g b / 0.42);
 }
 
 .admin-prompt-lab-case-dialog-card {
@@ -212,7 +233,7 @@ textarea {
 }
 
 .admin-prompt-lab-case-option.is-dialog-case {
-    border-color: rgba(219, 39, 119, 0.18);
+    border-color: rgb(from var(--palette-coral-600) r g b / 0.18);
     background: linear-gradient(180deg, rgba(253, 242, 248, 0.88) 0%, rgba(255, 255, 255, 0.98) 100%);
 }
 
@@ -241,8 +262,8 @@ textarea {
     min-height: 24px;
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-pill);
-    background: rgba(148, 163, 184, 0.1);
-    color: #64748b;
+    background: rgb(from var(--palette-graphite-600) r g b / 0.1);
+    color: var(--palette-graphite-600);
     font-family: var(--font-heading);
     font-size: var(--fs-caption);
     font-weight: var(--fw-bold);
@@ -263,8 +284,8 @@ textarea {
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-pill);
     border: 1px solid transparent;
-    background: #eef2f7;
-    color: #64748b;
+    background: var(--palette-graphite-050);
+    color: var(--palette-graphite-600);
     font-family: var(--font-heading);
     font-size: var(--fs-caption);
     font-weight: var(--fw-bold);
@@ -274,15 +295,15 @@ textarea {
 }
 
 .admin-prompt-lab-case-badge.dialog {
-    border-color: rgba(244, 114, 182, 0.18);
-    background: rgba(244, 114, 182, 0.12);
-    color: #be185d;
+    border-color: rgb(from var(--palette-coral-600) r g b / 0.18);
+    background: rgb(from var(--palette-coral-600) r g b / 0.12);
+    color: var(--danger);
 }
 
 .admin-prompt-lab-case-badge.turn {
-    border-color: rgba(59, 130, 246, 0.16);
-    background: rgba(59, 130, 246, 0.1);
-    color: #1d4ed8;
+    border-color: rgb(from var(--palette-cyan-600) r g b / 0.16);
+    background: rgb(from var(--palette-cyan-600) r g b / 0.1);
+    color: var(--palette-cyan-600);
 }
 
 .admin-prompt-lab-case-hint {
@@ -293,8 +314,8 @@ textarea {
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-pill);
     border: 1px solid transparent;
-    background: #eef2f7;
-    color: #64748b;
+    background: var(--palette-graphite-050);
+    color: var(--palette-graphite-600);
     font-family: var(--font-heading);
     font-size: var(--fs-caption);
     font-weight: var(--fw-bold);
@@ -302,15 +323,15 @@ textarea {
 }
 
 .admin-prompt-lab-case-hint.is-dialog-case {
-    border-color: rgba(244, 114, 182, 0.18);
-    background: rgba(244, 114, 182, 0.12);
-    color: #be185d;
+    border-color: rgb(from var(--palette-coral-600) r g b / 0.18);
+    background: rgb(from var(--palette-coral-600) r g b / 0.12);
+    color: var(--danger);
 }
 
 .admin-prompt-lab-case-hint.is-turn-case {
-    border-color: rgba(59, 130, 246, 0.16);
-    background: rgba(59, 130, 246, 0.1);
-    color: #1d4ed8;
+    border-color: rgb(from var(--palette-cyan-600) r g b / 0.16);
+    background: rgb(from var(--palette-cyan-600) r g b / 0.1);
+    color: var(--palette-cyan-600);
 }
 
 .ghost-button {
@@ -320,7 +341,7 @@ textarea {
     gap: var(--space-2);
     min-height: 44px;
     padding: var(--space-2) var(--space-3);
-    border: 1px solid rgba(70, 72, 212, 0.22);
+    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.22);
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--accent);
@@ -332,8 +353,8 @@ textarea {
 }
 
 .ghost-button:hover:not(:disabled):not([disabled]):not(.disabled) {
-    background: rgba(70, 72, 212, 0.08);
-    border-color: rgba(70, 72, 212, 0.38);
+    background: rgb(from var(--palette-cyan-600) r g b / 0.08);
+    border-color: rgb(from var(--palette-cyan-600) r g b / 0.38);
 }
 
 .ghost-button:active:not(:disabled):not([disabled]):not(.disabled) {

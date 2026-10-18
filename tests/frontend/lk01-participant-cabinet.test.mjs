@@ -30,7 +30,7 @@ test('LK01 has explicit Cycle actions and no catalogue or repeat action', () => 
 test('LK01 keeps accessible mobile actions and accepted visual tokens', () => {
   assert.match(styles, /min-height:\s*48px/);
   assert.match(styles, /background:\s*#18b8c6/);
-  assert.match(styles, /outline:\s*3px solid #007d89/);
+  assert.match(styles, /outline:\s*3px solid var\(--accent\)/);
   assert.match(styles, /@media \(max-width: 640px\)/);
   assert.match(styles, /width:\s*100%/);
 });

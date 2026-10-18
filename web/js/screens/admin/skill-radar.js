@@ -130,7 +130,7 @@ const radarThresholdRingsPlugin = {
         }
       }
       context.closePath();
-      context.strokeStyle = threshold.code === 'L3' ? 'rgba(15, 23, 42, 0.38)' : 'rgba(15, 23, 42, 0.25)';
+      context.strokeStyle = threshold.code === 'L3' ? 'rgba(104, 119, 124, 0.38)' : 'rgba(104, 119, 124, 0.25)';
       context.stroke();
 
       const labelAngle = -Math.PI / 4;
@@ -144,7 +144,7 @@ const radarThresholdRingsPlugin = {
       const width = context.measureText(text).width + 10;
       context.fillStyle = 'rgba(255, 255, 255, 0.86)';
       context.fillRect(labelX - 4, labelY - 9, width, 18);
-      context.fillStyle = '#334155';
+      context.fillStyle = '#222c30';
       context.fillText(text, labelX + 1, labelY);
       context.setLineDash([5, 5]);
     });
@@ -209,7 +209,7 @@ const adminSkillRadarNotDetectedLabelsPlugin = {
 
     const context = chart.ctx;
     context.save();
-    context.strokeStyle = 'rgba(100, 116, 139, 0.72)';
+    context.strokeStyle = 'rgba(104, 119, 124, 0.72)';
     context.lineWidth = 1;
     context.setLineDash([3, 3]);
 
@@ -416,8 +416,8 @@ export const renderAdminSkillRadar = (skills = []) => {
           label: 'Оценка навыка',
           data: radarSkills.map((skill) => getLevelPercent(skill.assessed_level_code)),
           fill: true,
-          borderColor: '#334155',
-          backgroundColor: 'rgba(51, 65, 85, 0.12)',
+          borderColor: '#222c30',
+          backgroundColor: 'rgba(104, 119, 124, 0.12)',
           borderWidth: 2,
           pointRadius: radarSkills.map((skill) => (isSkillNotDetected(skill) ? 0 : 4)),
           pointHoverRadius: radarSkills.map((skill) => (isSkillNotDetected(skill) ? 0 : 5)),
@@ -456,11 +456,11 @@ export const renderAdminSkillRadar = (skills = []) => {
         tooltip: {
           displayColors: false,
           backgroundColor: '#fff',
-          borderColor: 'rgba(15, 23, 42, 0.12)',
+          borderColor: 'rgba(104, 119, 124, 0.12)',
           borderWidth: 1,
-          titleColor: '#14151f',
-          bodyColor: '#14151f',
-          footerColor: '#64748b',
+          titleColor: '#222c30',
+          bodyColor: '#222c30',
+          footerColor: '#68777c',
           caretPadding: 8,
           cornerRadius: 8,
           titleFont: {
@@ -502,16 +502,16 @@ export const renderAdminSkillRadar = (skills = []) => {
             display: false,
           },
           grid: {
-            color: 'rgba(100, 116, 139, 0.16)',
+            color: 'rgba(104, 119, 124, 0.16)',
           },
           angleLines: {
-            color: 'rgba(100, 116, 139, 0.16)',
+            color: 'rgba(104, 119, 124, 0.16)',
           },
           pointLabels: {
             color(context) {
               const skill = radarSkills[context?.index ?? 0];
               if (isSkillNotDetected(skill)) {
-                return '#94a3b8';
+                return '#68777c';
               }
               return getCompetencyPalette(skill?.competency_name).stroke;
             },

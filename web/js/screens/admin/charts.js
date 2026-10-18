@@ -13,8 +13,8 @@ let adminCompetencyBarChart = null;
 let adminActivityBarChart = null;
 
 const resolveElement = (cachedElement, id) => cachedElement || document.getElementById(id);
-const adminActivityEmptyFill = '#eef2ff';
-const adminActivityPrimaryGradientStops = ['#e1e0ff', '#6063ee', '#4648d4'];
+const adminActivityEmptyFill = '#d9f6f8';
+const adminActivityPrimaryGradientStops = ['#b3ebef', '#18b8c6', '#18b8c6'];
 
 const adminCompetencyBarValueLabelsPlugin = {
   id: 'adminCompetencyBarValueLabels',
@@ -26,7 +26,7 @@ const adminCompetencyBarValueLabelsPlugin = {
     const dataset = chart.data.datasets[0];
     const context = chart.ctx;
     context.save();
-    context.fillStyle = '#4648d4';
+    context.fillStyle = '#18b8c6';
     context.font = '700 13px Inter, sans-serif';
     context.textAlign = 'center';
     context.textBaseline = 'bottom';
@@ -49,7 +49,7 @@ const adminActivityBarValueLabelsPlugin = {
     const context = chart.ctx;
     const barSlotsAreReadable = chart.chartArea.width / Math.max(dataset.data.length, 1) >= 24;
     context.save();
-    context.fillStyle = '#475569';
+    context.fillStyle = '#68777c';
     context.font = '700 11px Inter, sans-serif';
     context.textAlign = 'center';
     context.textBaseline = 'bottom';
@@ -221,7 +221,7 @@ export const renderAdminCompetencyBarChart = (competencies = []) => {
           display: false,
         },
         tooltip: {
-          backgroundColor: '#191c1e',
+          backgroundColor: '#222c30',
           displayColors: false,
           titleFont: {
             family: 'Inter',
@@ -253,7 +253,7 @@ export const renderAdminCompetencyBarChart = (competencies = []) => {
             display: false,
           },
           ticks: {
-            color: '#191c1e',
+            color: '#222c30',
             maxRotation: 0,
             minRotation: 0,
             font: {
@@ -269,7 +269,7 @@ export const renderAdminCompetencyBarChart = (competencies = []) => {
           max: 100,
           ticks: {
             stepSize: 25,
-            color: '#64748b',
+            color: '#68777c',
             callback(value) {
               return value + '%';
             },
@@ -280,7 +280,7 @@ export const renderAdminCompetencyBarChart = (competencies = []) => {
             },
           },
           grid: {
-            color: 'rgba(100, 116, 139, 0.14)',
+            color: 'rgba(104, 119, 124, 0.14)',
           },
           border: {
             display: false,
@@ -470,7 +470,7 @@ export const renderAdminActivityBarChart = (adminDashboard = {}) => {
           display: false,
         },
         tooltip: {
-          backgroundColor: '#191c1e',
+          backgroundColor: '#222c30',
           displayColors: false,
           titleFont: {
             family: 'Inter',
@@ -499,7 +499,7 @@ export const renderAdminActivityBarChart = (adminDashboard = {}) => {
             display: false,
           },
           ticks: {
-            color: '#64748b',
+            color: '#68777c',
             maxRotation: 0,
             minRotation: 0,
             autoSkip: true,
@@ -517,7 +517,7 @@ export const renderAdminActivityBarChart = (adminDashboard = {}) => {
           max: maxPoint,
           ticks: {
             precision: 0,
-            color: '#64748b',
+            color: '#68777c',
             font: {
               family: 'Inter',
               size: 11,
@@ -525,7 +525,7 @@ export const renderAdminActivityBarChart = (adminDashboard = {}) => {
             },
           },
           grid: {
-            color: 'rgba(100, 116, 139, 0.14)',
+            color: 'rgba(104, 119, 124, 0.14)',
           },
           border: {
             display: false,

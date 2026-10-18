@@ -11,7 +11,7 @@
     gap: var(--space-3);
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-lg);
-    border: 1px solid rgba(223, 227, 241, 0.92);
+    border: 1px solid rgb(from var(--palette-graphite-100) r g b / 0.92);
     background: #ffffff;
     color: var(--text-main);
     box-shadow: none;
@@ -19,7 +19,7 @@
 }
 
 .reports-summary-button:hover {
-    background: #fbfbff;
+    background: var(--palette-graphite-050);
 }
 
 .reports-summary-copy {
@@ -28,7 +28,7 @@
 }
 
 .reports-summary-label {
-    color: #8a90ab;
+    color: var(--palette-graphite-600);
     font-family: var(--font-heading);
     font-size: var(--fs-caption);
     font-weight: var(--fw-bold);
@@ -50,7 +50,7 @@
     min-height: 38px;
     padding: 0 var(--space-3);
     border-radius: var(--radius-md);
-    background: #1c2233;
+    background: var(--palette-graphite-900);
     color: #fff;
     font-family: var(--font-heading);
     font-size: var(--fs-caption);
@@ -73,7 +73,7 @@
 
 .report-card-clickable:hover {
     transform: translateY(-1px);
-    box-shadow: 0 20px 48px rgba(76, 80, 148, 0.12);
+    box-shadow: 0 20px 48px rgb(from var(--palette-cyan-600) r g b / 0.12);
 }
 
 .report-badge {
@@ -81,7 +81,7 @@
     min-height: 48px;
     padding: var(--space-2);
     border-radius: var(--radius-md);
-    background: #edeefe;
+    background: var(--palette-cyan-050);
     color: var(--accent);
     font-size: var(--fs-body-sm);
 }
@@ -95,8 +95,8 @@
 }
 
 .muted-report {
-    color: #8a90aa;
-    background: rgba(233, 236, 247, 0.9);
+    color: var(--palette-graphite-600);
+    background: rgb(from var(--palette-graphite-100) r g b / 0.9);
 }
 
 .report-actions {
@@ -106,7 +106,7 @@
 
 .report-action-button {
     color: #fff;
-    background: #1c2233;
+    background: var(--palette-graphite-900);
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-md);
     font-family: var(--font-heading);
@@ -115,8 +115,8 @@
 }
 
 .report-action-button.muted {
-    background: #eef1fb;
-    color: #7780a0;
+    background: var(--palette-cyan-050);
+    color: var(--palette-graphite-600);
 }
 
 .empty-card {
