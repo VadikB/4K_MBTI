@@ -522,10 +522,8 @@
 
 .interview-layout {
     --interview-case-header-space: calc(45px + var(--space-3));
-    display: grid;
-    grid-template-columns: 300px minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-    gap: var(--space-5);
+    display: flex;
+    justify-content: center;
     flex: 1;
     min-height: 0;
     min-width: 0;
@@ -548,6 +546,7 @@
     max-height: 100%;
     min-height: 0;
     min-width: 0;
+    width: min(960px, 100%);
     overflow: hidden;
 }
 
@@ -719,6 +718,40 @@
 .interview-bubble.structured {
     width: 100%;
     max-width: 100%;
+}
+
+.product-situation-message {
+    display: grid;
+    gap: var(--space-3);
+    width: min(760px, 100%);
+    max-width: 100%;
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.product-situation-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 24px;
+}
+
+.product-situation-message .interview-structured-block {
+    gap: var(--space-1);
+}
+
+.product-situation-message .interview-structured-block-label {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 24px;
+}
+
+.product-situation-message .interview-structured-block-body,
+.product-situation-message .interview-structured-block-list,
+.product-situation-error {
+    margin: 0;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
 }
 
 .interview-bubble::before {

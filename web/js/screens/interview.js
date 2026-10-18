@@ -81,16 +81,61 @@ export const clearInterviewDraft = () => {
 export const isCycleAssessment = () =>
   state.assessmentRuntimeKind === 'cycle' && Boolean(state.productCycleId);
 
-const productPayloadText = (payload) => {
-  if (!payload) return 'Ситуация подготовлена. Ознакомьтесь с условиями и дайте ответ.';
-  if (typeof payload === 'string') return payload;
-  const parts = [];
-  for (const key of ['title', 'initial_situation', 'trigger', 'assessee_position',
-    'participants_and_positions', 'assessee_task', 'conditions_and_constraints',
-    'situation', 'context', 'task', 'question', 'content']) {
-    if (typeof payload[key] === 'string' && payload[key].trim()) parts.push(payload[key].trim());
+const payloadText = (payload, keys) => keys
+  .map((key) => typeof payload?.[key] === 'string' ? payload[key].trim() : '')
+  .find(Boolean) || '';
+
+const payloadItems = (payload, keys) => {
+  const value = keys.map((key) => payload?.[key]).find(Array.isArray);
+  if (!value) return [];
+  return value.map((item) => {
+    if (typeof item === 'string') return item.trim();
+    if (!item || typeof item !== 'object') return '';
+    const title = payloadText(item, ['title', 'name', 'label']);
+    const body = payloadText(item, ['content', 'description', 'text']);
+    return [title, body].filter(Boolean).join(': ');
+  }).filter(Boolean);
+};
+
+const addProductSituationMessage = (payload) => {
+  const row = document.createElement('div');
+  row.className = 'interview-message interview-message--situation';
+  const avatar = document.createElement('div');
+  avatar.className = 'interview-avatar bot';
+  avatar.textContent = 'AI';
+  const bubble = document.createElement('div');
+  bubble.className = 'interview-bubble bot product-situation-message';
+  bubble.dataset.speakerLabel = '4К Ассистент';
+
+  const source = typeof payload === 'string' ? { situation: payload } : payload;
+  const title = payloadText(source, ['title', 'case_title']);
+  const sections = [
+    ['Ситуация', payloadText(source, ['initial_situation', 'situation', 'context', 'content', 'trigger'])],
+    ['Ваша роль', payloadText(source, ['assessee_position', 'role', 'position', 'participants_and_positions'])],
+    ['Задача', payloadText(source, ['assessee_task', 'task', 'question'])],
+    ['Условия', payloadText(source, ['conditions_and_constraints', 'conditions', 'constraints'])],
+  ].filter(([, body]) => body);
+  const materials = payloadItems(source, ['available_materials', 'materials', 'attachments']);
+
+  if (title) {
+    const heading = document.createElement('h3');
+    heading.className = 'product-situation-title';
+    heading.textContent = title;
+    bubble.appendChild(heading);
   }
-  return parts.length ? parts.join('\n\n') : JSON.stringify(payload, null, 2);
+  sections.forEach(([label, body]) => bubble.appendChild(renderInterviewStructuredBlock({ label, body })));
+  if (materials.length) {
+    bubble.appendChild(renderInterviewStructuredBlock({ label: 'Материалы', items: materials }));
+  }
+  if (!title && !sections.length && !materials.length) {
+    const error = document.createElement('p');
+    error.className = 'product-situation-error';
+    error.textContent = 'Не удалось отобразить условия ситуации. Обновите страницу или обратитесь к организатору.';
+    bubble.appendChild(error);
+  }
+  row.append(avatar, bubble);
+  interviewMessages.appendChild(row);
+  return row;
 };
 
 const productEventText = (event) => {
@@ -101,6 +146,8 @@ const productEventText = (event) => {
 
 const renderProductRuntime = (snapshot) => {
   const current = snapshot.current_situation;
+  const previousCaseKey = state.activeInterviewCaseKey;
+  const previousScrollTop = interviewScrollArea?.scrollTop || 0;
   const routePositions = Array.isArray(snapshot.route?.positions) ? snapshot.route.positions : [];
   const currentPosition = routePositions.find((position) =>
     position.current_assessment_situation_id === current?.assessment_situation_id)
@@ -121,7 +168,7 @@ const renderProductRuntime = (snapshot) => {
   restoreInterviewDraft();
 
   interviewMessages.innerHTML = '';
-  if (current) addInterviewMessage('assistant', productPayloadText(current.participant_payload));
+  if (current) addProductSituationMessage(current.participant_payload);
   const dialogue = [
     ...(snapshot.trace?.turns || []).map((item) => ({...item, text:item.content_text,
       role:item.speaker_type === 'assessee' ? 'user' : 'assistant'})),
@@ -139,6 +186,14 @@ const renderProductRuntime = (snapshot) => {
   if (clarification?.status === 'ASK' && !clarification.response_outcome && clarification.question?.text &&
       !(snapshot.trace?.turns || []).some((turn) => turn.turn_id === clarification.question_turn_id)) {
     addInterviewMessage('assistant', clarification.question.text, 'Уточнение к вашему ответу');
+  }
+  if (interviewScrollArea) {
+    const targetTop = current && previousCaseKey !== current.assessment_situation_id ? 0 : previousScrollTop;
+    interviewScrollArea.scrollTop = targetTop;
+    window.requestAnimationFrame?.(() => {
+      interviewScrollArea.scrollTop = targetTop;
+      updateInterviewMessagesScrollIndicator();
+    });
   }
   renderInterviewMeta();
   renderCaseProgress(false);
@@ -800,15 +855,19 @@ const renderInterviewMeta = () => {
 };
 
 const renderCaseProgress = (assessmentCompleted = false) => {
-  caseProgressList.innerHTML = '';
+  if (caseProgressList) caseProgressList.innerHTML = '';
 
   if (!state.assessmentTotalCases) {
-    interviewRouteLabel.textContent = 'Подготовка';
+    if (interviewRouteLabel) interviewRouteLabel.textContent = 'Подготовка';
     updateCaseSidebarToggle();
     return;
   }
 
-  interviewRouteLabel.textContent = assessmentCompleted ? 'Завершено' : 'Текущая ситуация: ' + state.assessmentCaseNumber;
+  if (interviewRouteLabel) {
+    interviewRouteLabel.textContent = assessmentCompleted
+      ? 'Завершено'
+      : 'Текущая ситуация: ' + state.assessmentCaseNumber;
+  }
 
   for (let index = 1; index <= state.assessmentTotalCases; index += 1) {
     const item = document.createElement('div');
@@ -854,7 +913,7 @@ const renderCaseProgress = (assessmentCompleted = false) => {
       '</strong>' +
       (metaText ? '<span>' + metaText + '</span>' : '') +
       '</div>';
-    caseProgressList.appendChild(item);
+    caseProgressList?.appendChild(item);
   }
   updateCaseSidebarToggle();
   setCaseSidebarOpen(false);

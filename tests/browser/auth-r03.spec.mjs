@@ -625,6 +625,11 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
   await page.goto(`${base}/?screen=interview`);
   await expect(page.locator('#interview-case-badge')).toHaveText('Ситуация 1 из 3');
   await expect(page.locator('#interview-section-title')).toHaveText('4К Ассистент');
+  await expect(page.locator('.case-sidebar')).toHaveCount(0);
+  await expect(page.locator('.interview-message--situation')).toHaveCount(1);
+  await expect(page.locator('.interview-message--situation')).toContainText('Разговор с коллегой');
+  await expect(page.locator('.interview-message--situation')).toContainText('Обсудите изменение сроков');
+  await expect(page.locator('#interview-scroll-area')).toHaveJSProperty('scrollTop', 0);
   await expect(page.getByRole('button', { name: 'Завершить ситуацию' })).toBeVisible();
   await expect(page.getByText('После отправки ответ нельзя изменить')).toBeVisible();
   await expect(page.locator('[data-speaker-label="Анна"]')).toBeVisible();
