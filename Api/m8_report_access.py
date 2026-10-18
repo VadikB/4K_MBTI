@@ -83,6 +83,18 @@ def create_revision(connection, *, questionnaire_revision_id: int, organization_
 
 def freeze_for_cycle(connection, *, cycle_db_id: int, personalized_profile_id: int,
                      participant_user_id: int, organization_id: int) -> dict:
+    schema_ready = connection.execute(
+        "SELECT to_regclass('m8_cycle_report_access') IS NOT NULL AS value"
+    ).fetchone()
+    if not schema_ready or not schema_ready["value"]:
+        return {
+            "cycle_db_id": cycle_db_id,
+            "access_revision_id": None,
+            "participant_user_id": participant_user_id,
+            "organization_id": organization_id,
+            "assignment_ref": None,
+            "contract_version": ACCESS_CONTRACT_VERSION,
+        }
     confirmation = connection.execute("""SELECT assignment_ref,questionnaire_revision_id
         FROM participant_acquaintance_confirmations
         WHERE personalized_profile_id=%s AND user_id=%s AND organization_id=%s

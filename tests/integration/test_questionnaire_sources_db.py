@@ -23,6 +23,7 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY,is_active BOOLEAN DEFAULT TRUE)")
         connection.execute("CREATE TABLE organization_memberships(organization_id BIGINT,user_id BIGINT,role TEXT)")
         connection.execute("CREATE TABLE m5_cycles(id BIGINT PRIMARY KEY)")
+        connection.execute("CREATE TABLE m8_reports(id UUID PRIMARY KEY)")
         connection.execute("INSERT INTO users VALUES(1),(2)")
         connection.execute("INSERT INTO organizations VALUES(10),(20)")
         connection.execute("""CREATE TABLE assessment_organization_contexts(
