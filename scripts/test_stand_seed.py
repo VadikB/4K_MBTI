@@ -131,6 +131,11 @@ def seed(state):
             actor_user_id=users[0],comment=basis)
         for uid in users:
             if state.get('browser_profile') == 'unprepared' and uid == users[0]:
+                # Keep 10.5's explicit M4 preparation boundary while preserving the
+                # participant's independently confirmed CTX01 input. Two published
+                # configurations make automatic profile selection intentionally impossible.
+                save_answers(c,user_id=uid,answers=ACQUAINTANCE_ANSWERS,confirm=True)
+                update_onboarding_state(c,uid,status='completed',current_step=6)
                 continue
             select_role_profile_for_user(c,user_id=uid,version_id=role)
             version=create_user_context_draft(c,user_id=uid,identity={'full_name':'Синтетический участник'},professional={'position_or_status':'Технический участник'})

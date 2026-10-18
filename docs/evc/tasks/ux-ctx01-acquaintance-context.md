@@ -93,6 +93,10 @@
 - Пятый CI остановился до browser acceptance на собственном `KeyError`: fixture
   принял возвращаемый acquaintance state за confirmation row. Confirmation теперь
   выбирается явно в tenant/user scope перед привязкой synthetic runtime profile.
+- Шестой CI прошёл 136/137 integration и обнаружил потерю независимого CTX01
+  confirmation в специальном состоянии `browser_profile=unprepared`. Для него
+  canonical answers подтверждаются после публикации двух конфигураций, поэтому
+  M4 не выбирается автоматически и граница исходного теста сохраняется.
 - Полный локальный backend: 427 PASS / 13 FAIL. Сбои относятся к предсуществующему
   локальному рассогласованию M6 provider artifact/fixture; в CI unit-этап прошёл,
   а внесённые исправления M6 не затрагивают.
