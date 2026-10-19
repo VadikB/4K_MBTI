@@ -57,7 +57,7 @@
 .processing-safe-badge {
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-pill);
-    background: rgb(from var(--palette-cyan-600) r g b / 0.1);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.1);
     color: var(--accent);
     font-family: var(--font-heading);
     font-size: var(--fs-caption);
@@ -101,7 +101,7 @@
 .processing-outcome-actions button { min-height: 48px; padding: 12px 20px; font-size: 16px; line-height: 24px; font-weight: 600; }
 .processing-outcome-actions .primary-button { background: #18b8c6; color: #222c30; }
 .processing-outcome-actions .primary-button:hover { background: var(--palette-cyan-300); }
-.processing-outcome-actions .primary-button:active { background: var(--palette-cyan-600); }
+.processing-outcome-actions .primary-button:active { background: var(--palette-cyan-500); }
 .processing-outcome-actions button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .processing-legacy { display: grid; justify-items: center; gap: var(--space-5); width: 100%; }
 .processing-legacy.hidden { display: none; }
@@ -197,13 +197,13 @@
 
 .processing-node.done {
     background: var(--success-soft);
-    border-color: rgb(from var(--palette-cyan-600) r g b / 0.2);
+    border-color: rgb(from var(--palette-cyan-500) r g b / 0.2);
     color: var(--success);
 }
 
 .processing-connector {
     position: absolute;
-    background: rgb(from var(--palette-cyan-600) r g b / 0.24);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.24);
     border-radius: var(--radius-pill);
 }
 
@@ -300,13 +300,13 @@
 }
 
 .processing-agent-card.running {
-    background: rgb(from var(--palette-cyan-600) r g b / 0.08);
-    border-color: rgb(from var(--palette-cyan-600) r g b / 0.18);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.08);
+    border-color: rgb(from var(--palette-cyan-500) r g b / 0.18);
 }
 
 .processing-agent-card.done {
     background: var(--success-soft);
-    border-color: rgb(from var(--palette-cyan-600) r g b / 0.18);
+    border-color: rgb(from var(--palette-cyan-500) r g b / 0.18);
 }
 
 .processing-agent-order {

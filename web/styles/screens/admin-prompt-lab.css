@@ -9,7 +9,7 @@
     padding: var(--space-2);
     border-radius: var(--radius-lg);
     background: var(--palette-cyan-050);
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.08);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.08);
     width: fit-content;
     flex-wrap: wrap;
 }
@@ -163,7 +163,7 @@
     width: 0;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, var(--palette-cyan-600) 0%, var(--palette-cyan-600) 100%);
+    background: linear-gradient(90deg, var(--palette-cyan-500) 0%, var(--palette-cyan-500) 100%);
     transition: width 0.25s ease;
 }
 

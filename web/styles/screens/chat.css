@@ -215,7 +215,7 @@
     width: 9px;
     height: 9px;
     border-radius: 50%;
-    background: var(--accent, var(--palette-cyan-600));
+    background: var(--accent, var(--palette-cyan-500));
     opacity: 0.45;
     animation: agent-typing-bounce 1.2s ease-in-out infinite;
 }
@@ -294,9 +294,9 @@
 }
 
 .chat-consent-accordion {
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.14);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.14);
     border-radius: var(--radius-lg);
-    background: rgb(from var(--palette-cyan-600) r g b / 0.05);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.05);
     overflow: hidden;
     width: min(100%, 680px);
 }
@@ -387,8 +387,8 @@
     min-height: 42px;
     padding: var(--space-3);
     border-radius: var(--radius-lg);
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.16);
-    background: rgb(from var(--palette-cyan-600) r g b / 0.08);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.16);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.08);
     color: var(--accent);
     font-family: var(--font-body);
     font-size: var(--fs-body-sm);
@@ -421,8 +421,8 @@
 
 .chat-role-option-button:hover,
 .chat-role-option-button:focus-visible {
-    background: rgb(from var(--palette-cyan-600) r g b / 0.14);
-    border-color: rgb(from var(--palette-cyan-600) r g b / 0.28);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.14);
+    border-color: rgb(from var(--palette-cyan-500) r g b / 0.28);
     transform: translateY(-1px);
     outline: none;
 }
@@ -600,7 +600,7 @@
     align-self: flex-end;
     margin-left: 0;
     padding: var(--space-2) var(--space-3);
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.22);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.22);
     background: var(--accent-bright);
     color: #fff;
     white-space: normal;
@@ -630,7 +630,7 @@
 
 .chat-panel .chat-form input {
     height: 44px;
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.18);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.18);
     border-radius: var(--radius-sm);
     padding: 0 var(--space-2);
     background: transparent;
@@ -663,7 +663,7 @@
     min-height: 44px;
     height: 100%;
     padding: 0;
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.28);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.28);
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--accent);
@@ -689,8 +689,8 @@
 
 .mic-button:hover,
 .mic-button:focus-visible {
-    background: rgb(from var(--palette-cyan-600) r g b / 0.08);
-    border-color: rgb(from var(--palette-cyan-600) r g b / 0.38);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.08);
+    border-color: rgb(from var(--palette-cyan-500) r g b / 0.38);
 }
 
 .mic-button:active:not(:disabled):not([disabled]):not(.disabled) {
@@ -698,8 +698,8 @@
 }
 
 .mic-button.is-listening {
-    border-color: rgb(from var(--palette-cyan-600) r g b / 0.38);
-    background: rgb(from var(--palette-cyan-600) r g b / 0.08);
+    border-color: rgb(from var(--palette-cyan-500) r g b / 0.38);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.08);
     color: var(--danger);
 }
 

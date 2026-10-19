@@ -65,7 +65,7 @@
 
 .user-menu .user-chip:focus-visible,
 .user-menu .topbar-user-chip:focus-visible {
-    outline: 2px solid rgb(from var(--palette-cyan-600) r g b / 0.32);
+    outline: 2px solid rgb(from var(--palette-cyan-500) r g b / 0.32);
     outline-offset: 4px;
 }
 
@@ -268,7 +268,7 @@
     display: inline-grid;
     place-items: center;
     border-radius: var(--radius-sm);
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.12);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.12);
     background: rgba(255, 255, 255, 0.92);
     color: var(--text-muted);
     font-size: 16px;
@@ -279,7 +279,7 @@
 .icon-button:hover:not(:disabled):not([disabled]) {
     background: var(--control-bg);
     color: var(--text-main);
-    border-color: rgb(from var(--palette-cyan-600) r g b / 0.22);
+    border-color: rgb(from var(--palette-cyan-500) r g b / 0.22);
 }
 
 .profile-settings-button {
@@ -427,7 +427,7 @@
 }
 
 .participant-assessment-action:active:not(:disabled) {
-    background: var(--palette-cyan-600);
+    background: var(--palette-cyan-500);
 }
 
 .participant-assessment-action:focus-visible {
@@ -620,7 +620,7 @@
     height: 100%;
     width: 0;
     border-radius: inherit;
-    background: linear-gradient(90deg, var(--palette-cyan-600) 0%, var(--palette-cyan-600) 100%);
+    background: linear-gradient(90deg, var(--palette-cyan-500) 0%, var(--palette-cyan-500) 100%);
 }
 
 .assessment-actions {
@@ -862,19 +862,19 @@
     height: 8px;
     border-radius: 50%;
     background: var(--accent);
-    box-shadow: 0 0 0 0 rgb(from var(--palette-cyan-600) r g b / 0.5);
+    box-shadow: 0 0 0 0 rgb(from var(--palette-cyan-500) r g b / 0.5);
     animation: preparingHeroPulse 1.6s ease-out infinite;
 }
 
 @keyframes preparingHeroPulse {
     0% {
-        box-shadow: 0 0 0 0 rgb(from var(--palette-cyan-600) r g b / 0.5);
+        box-shadow: 0 0 0 0 rgb(from var(--palette-cyan-500) r g b / 0.5);
     }
     70% {
-        box-shadow: 0 0 0 10px rgb(from var(--palette-cyan-600) r g b / 0);
+        box-shadow: 0 0 0 10px rgb(from var(--palette-cyan-500) r g b / 0);
     }
     100% {
-        box-shadow: 0 0 0 0 rgb(from var(--palette-cyan-600) r g b / 0);
+        box-shadow: 0 0 0 0 rgb(from var(--palette-cyan-500) r g b / 0);
     }
 }
 
@@ -914,7 +914,7 @@
     width: var(--progress);
     border-radius: inherit;
     max-width: calc(100% - 4px);
-    background: linear-gradient(90deg, var(--palette-cyan-600) 0%, var(--palette-cyan-600) 100%);
+    background: linear-gradient(90deg, var(--palette-cyan-500) 0%, var(--palette-cyan-500) 100%);
     transition: width 0.4s ease;
 }
 

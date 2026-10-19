@@ -233,7 +233,7 @@ textarea {
 }
 
 .admin-prompt-lab-case-option.is-dialog-case {
-    border-color: rgb(from var(--palette-coral-600) r g b / 0.18);
+    border-color: rgb(from var(--palette-coral-500) r g b / 0.18);
     background: linear-gradient(180deg, rgba(253, 242, 248, 0.88) 0%, rgba(255, 255, 255, 0.98) 100%);
 }
 
@@ -295,15 +295,15 @@ textarea {
 }
 
 .admin-prompt-lab-case-badge.dialog {
-    border-color: rgb(from var(--palette-coral-600) r g b / 0.18);
-    background: rgb(from var(--palette-coral-600) r g b / 0.12);
+    border-color: rgb(from var(--palette-coral-500) r g b / 0.18);
+    background: rgb(from var(--palette-coral-500) r g b / 0.12);
     color: var(--danger);
 }
 
 .admin-prompt-lab-case-badge.turn {
-    border-color: rgb(from var(--palette-cyan-600) r g b / 0.16);
-    background: rgb(from var(--palette-cyan-600) r g b / 0.1);
-    color: var(--palette-cyan-600);
+    border-color: rgb(from var(--palette-cyan-500) r g b / 0.16);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.1);
+    color: var(--palette-cyan-500);
 }
 
 .admin-prompt-lab-case-hint {
@@ -323,15 +323,15 @@ textarea {
 }
 
 .admin-prompt-lab-case-hint.is-dialog-case {
-    border-color: rgb(from var(--palette-coral-600) r g b / 0.18);
-    background: rgb(from var(--palette-coral-600) r g b / 0.12);
+    border-color: rgb(from var(--palette-coral-500) r g b / 0.18);
+    background: rgb(from var(--palette-coral-500) r g b / 0.12);
     color: var(--danger);
 }
 
 .admin-prompt-lab-case-hint.is-turn-case {
-    border-color: rgb(from var(--palette-cyan-600) r g b / 0.16);
-    background: rgb(from var(--palette-cyan-600) r g b / 0.1);
-    color: var(--palette-cyan-600);
+    border-color: rgb(from var(--palette-cyan-500) r g b / 0.16);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.1);
+    color: var(--palette-cyan-500);
 }
 
 .ghost-button {
@@ -341,7 +341,7 @@ textarea {
     gap: var(--space-2);
     min-height: 44px;
     padding: var(--space-2) var(--space-3);
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.22);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.22);
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--accent);
@@ -353,8 +353,8 @@ textarea {
 }
 
 .ghost-button:hover:not(:disabled):not([disabled]):not(.disabled) {
-    background: rgb(from var(--palette-cyan-600) r g b / 0.08);
-    border-color: rgb(from var(--palette-cyan-600) r g b / 0.38);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.08);
+    border-color: rgb(from var(--palette-cyan-500) r g b / 0.38);
 }
 
 .ghost-button:active:not(:disabled):not([disabled]):not(.disabled) {

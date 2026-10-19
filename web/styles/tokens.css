@@ -40,8 +40,8 @@
     --palette-canvas: #f6f9f9;
     --palette-white: #ffffff;
     --palette-error: #b42318;
-    --palette-cyan-018: color-mix(in srgb, var(--palette-cyan-600) 18%, transparent);
-    --palette-cyan-028: color-mix(in srgb, var(--palette-cyan-600) 28%, transparent);
+    --palette-cyan-018: color-mix(in srgb, var(--palette-cyan-500) 18%, transparent);
+    --palette-cyan-028: color-mix(in srgb, var(--palette-cyan-500) 28%, transparent);
     --palette-graphite-008: color-mix(in srgb, var(--palette-graphite-900) 8%, transparent);
     --palette-graphite-012: color-mix(in srgb, var(--palette-graphite-900) 12%, transparent);
     --palette-graphite-018: color-mix(in srgb, var(--palette-graphite-900) 18%, transparent);
