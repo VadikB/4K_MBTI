@@ -23,6 +23,11 @@ def test_sales_package_round_trip_is_idempotent_and_immutable(test_database_url)
         connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
         connection.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
         connection.execute("CREATE TABLE users (id BIGINT PRIMARY KEY)")
+        connection.execute(
+            "CREATE TABLE assessment_personalized_profiles "
+            "(id BIGINT PRIMARY KEY, status TEXT NOT NULL, content_json JSONB NOT NULL, "
+            "provenance_json JSONB NOT NULL, checksum TEXT NOT NULL)"
+        )
         ensure_m5_runtime_schema(connection)
         first = import_package(connection, package=package, manifest=manifest, execution_rules=rules)
         second = import_package(connection, package=package, manifest=manifest, execution_rules=rules)
