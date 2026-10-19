@@ -451,6 +451,91 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   expect(layout.scrollWidth).toBe(layout.clientWidth);
 });
 
+test('UI02 full overview keeps every radar label separate', async ({ page }) => {
+  const names = [
+    'Ориентация и проектирование коммуникации',
+    'Передача смысла',
+    'Слушание, реконструкция и верификация смысла другого',
+    'Согласование смыслов и позиций',
+    'Организация совместной работы',
+    'Координация совместных действий',
+    'Поддержание продуктивного командного взаимодействия',
+    'Исследование пространства возможностей',
+    'Создание новых идей и решений',
+    'Развитие и доведение нового решения',
+    'Анализ и оценка информации',
+    'Постановка и анализ проблемы',
+    'Рассуждение, аргументация и проверка выводов',
+    'Принятие решений',
+    'Понимание собеседника',
+  ];
+  const skills = names.map((skill_name, index) => ({
+    skill_id: `S${index + 1}`, competency_id: 'K1', competency_name: 'Коммуникация',
+    skill_name, outcome: 'full_score', score: { value: 1, numerator: 1, denominator: 1 },
+  }));
+  const user = { id: 8, email: 'synthetic@example.test', full_name: 'Synthetic' };
+  const dashboard = {
+    greeting_name: 'Synthetic', profile_readiness: 'ready', personalized_profile_id: 11,
+    active_assessment: null, available_assessments: [], reports: [], reports_total: 1,
+    current_assessments: [], completed_assessments: [{
+      cycle_id: 'cycle-radar', report_id: 'report-radar', title: 'Оценка 4К',
+      status: 'report_ready', status_label: 'Результат готов', action: 'open_report',
+      button_label: 'Посмотреть результат',
+    }],
+  };
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'radar-layout-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, dashboard });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'show_dashboard', profile: { status: 'complete' }, onboarding: { status: 'completed' }, assessment: { status: 'report_ready' } });
+    if (pathname === '/users/assessment/m8/reports/report-radar') return fulfillJson(route, {
+      id: 'report-radar', owner_user_id: 8, cycle_id: 'cycle-radar', revision_no: 1,
+      created_at: '2026-10-19T12:00:00Z', c67: {
+        skills, competencies: [{ competency_id: 'K1', competency_name: 'Коммуникация', skill_ids: skills.map((skill) => skill.skill_id) }],
+        descriptive: { status: 'ready', summary: [], claims: [] },
+        coverage: {}, limitations: [], reliability: { status: 'not_verified' }, sessions: [], collection: {},
+      },
+    });
+    if (pathname === '/users/assessment/m8/history') return fulfillJson(route, { cycles: [] });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await page.getByRole('button', { name: 'Посмотреть результат' }).click();
+  await expect(page.locator('.m8-radar-label')).toHaveCount(names.length);
+  for (const width of [768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => document.fonts.ready);
+    const boxes = await page.locator('#m8-report-chart svg').evaluate((svg) => {
+      const bounds = svg.getBoundingClientRect();
+      const inset = 19 * bounds.width / svg.viewBox.baseVal.width;
+      return [...svg.querySelectorAll('.m8-radar-label')].map((label) => {
+        const box = label.getBoundingClientRect();
+        return { left: box.left, top: box.top, right: box.right, bottom: box.bottom,
+          minX: bounds.left + inset, minY: bounds.top + inset,
+          maxX: bounds.right - inset, maxY: bounds.bottom - inset };
+      });
+    });
+    for (const [index, box] of boxes.entries()) {
+      expect(box.left).toBeGreaterThanOrEqual(box.minX);
+      expect(box.top).toBeGreaterThanOrEqual(box.minY);
+      expect(box.right).toBeLessThanOrEqual(box.maxX);
+      expect(box.bottom).toBeLessThanOrEqual(box.maxY);
+      for (const other of boxes.slice(index + 1)) {
+        const overlaps = box.left < other.right + 2 && box.right + 2 > other.left &&
+          box.top < other.bottom + 2 && box.bottom + 2 > other.top;
+        expect(overlaps, `labels ${index} and ${boxes.indexOf(other)} overlap at ${width}px`).toBe(false);
+      }
+    }
+    const pageWidth = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+    expect(pageWidth.scroll).toBe(pageWidth.client);
+  }
+  await test.info().attach('radar-overview', {
+    body: await page.locator('#m8-report-chart').screenshot(), contentType: 'image/png',
+  });
+  await page.locator('#m8-report-chart a').first().focus();
+  await expect(page.locator('#m8-report-chart a').first()).toBeFocused();
+});
+
 test('R03 late login cannot replace a password-reset step', async ({ page }) => {
   await baseRoutes(page);
   await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, {

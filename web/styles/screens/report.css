@@ -1541,7 +1541,7 @@ body.report-info-modal-open {
 }
 
 .m8-report-chart {
-    width: min(100%, 820px);
+    width: min(100%, 1000px);
     min-height: 360px;
     margin: var(--space-3) auto 0;
     padding: var(--space-3);
@@ -1561,6 +1561,13 @@ body.report-info-modal-open {
     fill: none;
     stroke: var(--palette-graphite-200);
     stroke-width: 1;
+}
+
+.m8-radar-leader {
+    fill: none;
+    stroke: var(--palette-graphite-200);
+    stroke-width: 1;
+    pointer-events: none;
 }
 
 .m8-radar-fill {
@@ -1609,6 +1616,17 @@ body.report-info-modal-open {
 .m8-radar-scale {
     fill: var(--text-muted);
     font-size: 12px;
+}
+
+@media (min-width: 721px) and (max-width: 960px) {
+    .m8-report-chart.is-overview {
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+    }
+
+    .m8-report-chart.is-overview svg {
+        min-width: 900px;
+    }
 }
 
 .m8-chart-note {

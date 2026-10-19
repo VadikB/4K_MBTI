@@ -1408,14 +1408,45 @@ const fitM8RadarLabels = (node) => {
   const svg = node?.querySelector('svg');
   if (!svg) return;
   const safeInset = 20;
-  const width = Number(svg.viewBox?.baseVal?.width) || 720;
-  const height = Number(svg.viewBox?.baseVal?.height) || 520;
+  const gap = 8;
+  const width = Number(svg.viewBox?.baseVal?.width) || 960;
+  const height = Number(svg.viewBox?.baseVal?.height) || 560;
+  const sides = { left: [], right: [] };
   svg.querySelectorAll('.m8-radar-label').forEach((label) => {
     label.removeAttribute('transform');
     const box = label.getBBox();
-    const dx = Math.max(safeInset - box.x, Math.min(0, width - safeInset - (box.x + box.width)));
-    const dy = Math.max(safeInset - box.y, Math.min(0, height - safeInset - (box.y + box.height)));
-    if (dx || dy) label.setAttribute('transform', `translate(${dx.toFixed(1)} ${dy.toFixed(1)})`);
+    const side = label.dataset.m8Side === 'left' ? 'left' : 'right';
+    const anchorY = Number(label.dataset.m8AnchorY);
+    const dx = Math.max(safeInset - box.x, Math.min(0, width - safeInset - box.x - box.width));
+    sides[side].push({ label, box, anchorY, dx, top: anchorY - box.height / 2 });
+  });
+  Object.values(sides).forEach((entries) => {
+    entries.sort((a, b) => a.anchorY - b.anchorY);
+    let nextTop = safeInset;
+    entries.forEach((entry) => {
+      entry.top = Math.max(nextTop, entry.top);
+      nextTop = entry.top + entry.box.height + gap;
+    });
+    let bottom = height - safeInset;
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      const entry = entries[index];
+      entry.top = Math.min(entry.top, bottom - entry.box.height);
+      bottom = entry.top - gap;
+    }
+    entries.forEach(({ label, box, top, dx }) => {
+      const dy = top - box.y;
+      label.setAttribute('transform', `translate(${dx.toFixed(1)} ${dy.toFixed(1)})`);
+      const leader = label.parentElement.querySelector('.m8-radar-leader');
+      if (!leader) return;
+      const left = box.x + dx;
+      const right = left + box.width;
+      const side = label.dataset.m8Side;
+      const axisX = Number(label.dataset.m8AxisX);
+      const axisY = Number(label.dataset.m8AxisY);
+      const labelX = side === 'left' ? right + 6 : left - 6;
+      const labelY = top + box.height / 2;
+      leader.setAttribute('points', `${axisX},${axisY} ${labelX.toFixed(1)},${labelY.toFixed(1)}`);
+    });
   });
 };
 
@@ -1436,11 +1467,11 @@ const buildM8Bars = (skills) => `<div class="m8-score-bars" role="list">${skills
 
 const buildM8Radar = (skills, mode) => {
   const { values } = summarizeReportScores(skills);
-  const width = 720;
-  const height = 520;
+  const width = 960;
+  const height = 560;
   const centerX = width / 2;
   const centerY = height / 2;
-  const radius = 154;
+  const radius = 170;
   const count = skills.length;
   const angle = (index) => -Math.PI / 2 + index * Math.PI * 2 / count;
   const point = (index, value) => ({
@@ -1461,12 +1492,14 @@ const buildM8Radar = (skills, mode) => {
   skills.forEach((skill, index) => {
     const end = point(index, 3);
     const label = point(index, 3.84);
+    const side = Math.cos(angle(index)) < 0 ? 'left' : 'right';
+    const labelX = side === 'left' ? 20 : width - 20;
     const lines = splitRadarLabel(skill);
     const startY = label.y - (lines.length - 1) * 8;
     const labelMarkup = lines.map((line, lineIndex) =>
-      `<tspan x="${label.x}" y="${startY + lineIndex * 16}">${escapeHtml(line)}</tspan>`
+      `<tspan x="${labelX}" y="${startY + lineIndex * 16}">${escapeHtml(line)}</tspan>`
     ).join('');
-    svg += `<line x1="${centerX}" y1="${centerY}" x2="${end.x}" y2="${end.y}" class="m8-radar-axis"/><a href="#m8-skill-${escapeHtml(String(skill.skill_id))}" data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${skill.skill_name || 'Навык'}. Открыть подробности`)}"><text x="${label.x}" y="${startY}" text-anchor="middle" class="m8-radar-label">${labelMarkup}</text></a>`;
+    svg += `<line x1="${centerX}" y1="${centerY}" x2="${end.x}" y2="${end.y}" class="m8-radar-axis"/><a href="#m8-skill-${escapeHtml(String(skill.skill_id))}" data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${skill.skill_name || 'Навык'}. Открыть подробности`)}"><polyline class="m8-radar-leader"/><text x="${labelX}" y="${startY}" text-anchor="${side === 'left' ? 'start' : 'end'}" class="m8-radar-label" data-m8-side="${side}" data-m8-anchor-y="${label.y.toFixed(1)}" data-m8-axis-x="${end.x.toFixed(1)}" data-m8-axis-y="${end.y.toFixed(1)}">${labelMarkup}</text></a>`;
   });
   runs.forEach((run) => {
     const points = run.indexes.map((index) => point(index, values[index]));
