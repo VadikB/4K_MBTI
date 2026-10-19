@@ -1407,7 +1407,7 @@ const splitRadarLabel = (skill) => {
 const fitM8RadarLabels = (node) => {
   const svg = node?.querySelector('svg');
   if (!svg) return;
-  const safeInset = 20;
+  const safeInset = 24;
   const gap = 8;
   const width = Number(svg.viewBox?.baseVal?.width) || 960;
   const height = Number(svg.viewBox?.baseVal?.height) || 560;
@@ -1451,6 +1451,7 @@ const fitM8RadarLabels = (node) => {
 };
 
 const scheduleM8RadarLabelFit = (node) => {
+  fitM8RadarLabels(node);
   window.requestAnimationFrame(() => fitM8RadarLabels(node));
   document.fonts?.ready?.then(() => fitM8RadarLabels(node));
 };

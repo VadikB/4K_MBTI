@@ -426,25 +426,27 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   for (const width of [320, 360, 430, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     const bounds = await page.locator('#m8-report-chart svg').evaluate((svg) => {
-      const viewBox = svg.viewBox.baseVal;
+      const svgBox = svg.getBoundingClientRect();
+      const inset = 19 * svgBox.width / svg.viewBox.baseVal.width;
       return [...svg.querySelectorAll('.m8-radar-label')].map((label) => {
-        const box = label.getBBox();
-        const matrix = label.getCTM();
+        const box = label.getBoundingClientRect();
         return {
-          left: box.x + matrix.e,
-          top: box.y + matrix.f,
-          right: box.x + box.width + matrix.e,
-          bottom: box.y + box.height + matrix.f,
-          width: viewBox.width,
-          height: viewBox.height,
+          left: box.left,
+          top: box.top,
+          right: box.right,
+          bottom: box.bottom,
+          minX: svgBox.left + inset,
+          minY: svgBox.top + inset,
+          maxX: svgBox.right - inset,
+          maxY: svgBox.bottom - inset,
         };
       });
     });
     for (const box of bounds) {
-      expect(box.left).toBeGreaterThanOrEqual(19);
-      expect(box.top).toBeGreaterThanOrEqual(19);
-      expect(box.right).toBeLessThanOrEqual(box.width - 19);
-      expect(box.bottom).toBeLessThanOrEqual(box.height - 19);
+      expect(box.left).toBeGreaterThanOrEqual(box.minX);
+      expect(box.top).toBeGreaterThanOrEqual(box.minY);
+      expect(box.right).toBeLessThanOrEqual(box.maxX);
+      expect(box.bottom).toBeLessThanOrEqual(box.maxY);
     }
   }
   const layout = await page.evaluate(() => ({ scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth }));
