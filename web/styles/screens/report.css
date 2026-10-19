@@ -1618,6 +1618,73 @@ body.report-info-modal-open {
     font-size: 12px;
 }
 
+.m8-radar-marker-bg {
+    fill: var(--palette-white);
+    stroke: var(--accent);
+    stroke-width: 1.5;
+}
+
+.m8-radar-marker {
+    fill: var(--text-main);
+    font-size: 14px;
+    font-weight: var(--fw-semibold);
+    pointer-events: none;
+}
+
+.m8-radar-key {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.m8-radar-key a {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 4px var(--space-2);
+    align-items: center;
+    min-height: 44px;
+    color: var(--text-main);
+    text-decoration: none;
+}
+
+.m8-radar-key a:hover,
+.m8-radar-key a:focus-visible {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+.m8-radar-key a:focus-visible {
+    outline: 3px solid var(--palette-graphite-900);
+    outline-offset: 2px;
+}
+
+.m8-radar-key-marker {
+    display: grid;
+    grid-row: span 2;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    background: var(--palette-white);
+    font-size: 14px;
+    font-weight: var(--fw-semibold);
+}
+
+.m8-radar-key-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: 14px;
+    font-weight: var(--fw-medium);
+}
+
+.m8-radar-key-value {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
 @media (min-width: 721px) and (max-width: 960px) {
     .m8-report-chart.is-overview {
         overflow-x: auto;

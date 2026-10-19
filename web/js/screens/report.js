@@ -1396,6 +1396,9 @@ const coverageLabels = {
 
 let m8ChartMode = 'fill';
 let m8SelectedCompetencyId = null;
+let m8ChartResizeObserver = null;
+let m8ChartRenderContext = null;
+let m8ObservedChartWidth = 0;
 
 const splitRadarLabel = (skill) => {
   const words = String(skill.skill_name || 'Навык').trim().split(/\s+/).filter(Boolean);
@@ -1466,13 +1469,13 @@ const buildM8Bars = (skills) => `<div class="m8-score-bars" role="list">${skills
     `</article>`;
 }).join('')}</div>`;
 
-const buildM8Radar = (skills, mode) => {
+const buildM8Radar = (skills, mode, { compact = false, chartWidth = 960 } = {}) => {
   const { values } = summarizeReportScores(skills);
-  const width = 960;
-  const height = 560;
+  const width = compact ? chartWidth : 960;
+  const height = compact ? Math.max(260, width) : 560;
   const centerX = width / 2;
   const centerY = height / 2;
-  const radius = 170;
+  const radius = compact ? Math.min(width * 0.27, height * 0.29, 108) : 170;
   const count = skills.length;
   const angle = (index) => -Math.PI / 2 + index * Math.PI * 2 / count;
   const point = (index, value) => ({
@@ -1492,6 +1495,14 @@ const buildM8Radar = (skills, mode) => {
   svg += `<text x="${centerX + 8}" y="${centerY + 14}" class="m8-radar-scale">0</text>`;
   skills.forEach((skill, index) => {
     const end = point(index, 3);
+    if (compact) {
+      const marker = point(index, 3.85);
+      svg += `<line x1="${centerX}" y1="${centerY}" x2="${end.x}" y2="${end.y}" class="m8-radar-axis"/>` +
+        `<a href="#m8-skill-${escapeHtml(String(skill.skill_id))}" data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${index + 1}. ${skill.skill_name || 'Навык'}. Открыть подробности`)}">` +
+        `<circle cx="${marker.x.toFixed(1)}" cy="${marker.y.toFixed(1)}" r="15" class="m8-radar-marker-bg"/>` +
+        `<text x="${marker.x.toFixed(1)}" y="${marker.y.toFixed(1)}" class="m8-radar-marker" text-anchor="middle" dominant-baseline="central">${index + 1}</text></a>`;
+      return;
+    }
     const label = point(index, 3.84);
     const side = Math.cos(angle(index)) < 0 ? 'left' : 'right';
     const labelX = side === 'left' ? 20 : width - 20;
@@ -1518,7 +1529,13 @@ const buildM8Radar = (skills, mode) => {
     const value = point(index, values[index]);
     svg += `<a href="#m8-skill-${escapeHtml(String(skill.skill_id))}" data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${skill.skill_name || 'Навык'}: ${values[index]} из 3. Открыть подробности`)}"><circle cx="${value.x}" cy="${value.y}" r="16" class="m8-radar-hit"/><circle cx="${value.x}" cy="${value.y}" r="6" class="m8-radar-point${skill.outcome === 'partial_score' ? ' is-partial' : ''}"/></a>`;
   });
-  return `${svg}</svg>`;
+  const key = compact ? `<ol class="m8-radar-key" aria-label="Навыки на схеме">${skills.map((skill, index) =>
+    `<li><a href="#m8-skill-${escapeHtml(String(skill.skill_id))}" data-m8-skill-id="${escapeHtml(String(skill.skill_id))}">` +
+    `<span class="m8-radar-key-marker" aria-hidden="true">${index + 1}</span>` +
+    `<span class="m8-radar-key-name">${escapeHtml(skill.skill_name || 'Навык')}</span>` +
+    `<span class="m8-radar-key-value">${values[index] == null ? 'Нет числового показателя' : `${escapeHtml(String(values[index]))} из 3${skill.outcome === 'partial_score' ? ' · частичный результат' : ''}`}</span>` +
+    `</a></li>`).join('')}</ol>` : '';
+  return `${svg}</svg>${key}`;
 };
 
 const focusM8Skill = (skillId) => {
@@ -1532,18 +1549,40 @@ const focusM8Skill = (skillId) => {
 const renderM8Chart = (c67, competencyId) => {
   const node = document.getElementById('m8-report-chart');
   const note = document.getElementById('m8-report-chart-note');
+  const compact = competencyId !== 'all' && window.matchMedia('(max-width: 720px)').matches;
+  m8ChartRenderContext = { c67, competencyId, compact };
+  const style = window.getComputedStyle(node);
+  const contentWidth = node.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  m8ObservedChartWidth = Math.round(contentWidth);
+  if (!m8ChartResizeObserver && typeof ResizeObserver !== 'undefined') {
+    m8ChartResizeObserver = new ResizeObserver(([entry]) => {
+      const nextWidth = Math.round(entry.contentRect.width);
+      if (!nextWidth || !m8ChartRenderContext) return;
+      const nextCompact = m8ChartRenderContext.competencyId !== 'all' && window.matchMedia('(max-width: 720px)').matches;
+      if (nextWidth === m8ObservedChartWidth && nextCompact === m8ChartRenderContext.compact) return;
+      m8ObservedChartWidth = nextWidth;
+      if (nextCompact || nextCompact !== m8ChartRenderContext.compact) {
+        renderM8Chart(m8ChartRenderContext.c67, m8ChartRenderContext.competencyId);
+      } else if (m8ChartMode !== 'bars') {
+        scheduleM8RadarLabelFit(node);
+      }
+    });
+    m8ChartResizeObserver.observe(node);
+  }
   const isOverview = competencyId === 'all';
+  const chartWidth = Math.max(200, Math.floor(contentWidth));
   const skills = isOverview
     ? (c67.skills || [])
     : (c67.skills || []).filter((skill) => String(skill.competency_id) === String(competencyId));
   node.classList.toggle('is-overview', isOverview);
+  node.classList.toggle('is-compact', compact);
   const summary = summarizeReportScores(skills);
   if (!summary.hasScores) {
     node.innerHTML = '<div class="m8-chart-empty"><strong>Числовых показателей нет</strong><p>Доступные наблюдения и причины отсутствия результата приведены в списке ниже.</p></div>';
     note.textContent = 'Отсутствующие значения не заменяются нулями.';
   } else {
-    node.innerHTML = m8ChartMode === 'bars' ? buildM8Bars(skills) : buildM8Radar(skills, m8ChartMode);
-    if (m8ChartMode !== 'bars') scheduleM8RadarLabelFit(node);
+    node.innerHTML = m8ChartMode === 'bars' ? buildM8Bars(skills) : buildM8Radar(skills, m8ChartMode, { compact, chartWidth });
+    if (m8ChartMode !== 'bars' && !compact) scheduleM8RadarLabelFit(node);
     note.textContent = summary.missingCount
       ? 'Пропуски оставлены открытыми: линия и заливка через них не продолжаются.'
       : 'Каждая ось — отдельный навык. Площадь фигуры не является общим баллом.';
