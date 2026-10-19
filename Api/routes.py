@@ -47,6 +47,7 @@ from Api import acquaintance
 from Api import questionnaire_sources
 from Api import m8_results
 from Api import m8_report_access
+from Api import m8_report_comparison
 from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest, RegenerateReportRequest
 from Api import m10_product_flow, m10_orchestration
 from Api.m10_contracts import ProductCycleStartRequest, ProductCycleActionRequest, ProductNextRequest
@@ -8276,6 +8277,71 @@ def _owned_saved_report(request: Request, report_id: UUID):
 @router.get('/assessment/m8/reports/{report_id}')
 def read_owned_saved_m8_report(report_id: UUID, request: Request):
     return _owned_saved_report(request, report_id)
+
+
+@router.get('/assessment/m8/reports/{report_id}/comparison')
+def compare_owned_saved_m8_report(report_id: UUID, request: Request, previous_report_id: UUID | None = None):
+    """Compare exact saved reports; omission selects the latest earlier completed Cycle."""
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail='Требуется авторизация')
+    with get_connection() as connection:
+        current_scope = connection.execute("""SELECT p.id,c.id AS cycle_db_id,c.cycle_id,c.organization_id,
+                c.owner_user_id,c.created_at AS cycle_created_at,c.collection_closed_at
+            FROM m8_reports p
+            JOIN m8_result_revisions rr ON rr.id=p.result_revision_id
+            JOIN m8_results r ON r.id=rr.results_id JOIN m5_cycles c ON c.id=r.cycle_db_id
+            WHERE p.id=%s AND p.audience='assessee'""", (report_id,)).fetchone()
+        if not current_scope:
+            raise HTTPException(404, detail='M8_REPORT_NOT_FOUND')
+        if not current_scope['collection_closed_at'] or not m8_results.owner_can_read_cycle(
+            connection, str(current_scope['cycle_id']), user.id
+        ):
+            raise HTTPException(403, detail='Нет доступа к текущему Report.')
+        if previous_report_id:
+            previous_scope = connection.execute("""SELECT p.id,c.cycle_id,c.organization_id,c.owner_user_id,
+                    c.created_at AS cycle_created_at,c.collection_closed_at
+                FROM m8_reports p
+                JOIN m8_result_revisions rr ON rr.id=p.result_revision_id
+                JOIN m8_results r ON r.id=rr.results_id JOIN m5_cycles c ON c.id=r.cycle_db_id
+                WHERE p.id=%s AND p.audience='assessee'""", (previous_report_id,)).fetchone()
+        else:
+            previous_scope = connection.execute("""SELECT p.id,c.cycle_id,c.organization_id,c.owner_user_id,
+                    c.created_at AS cycle_created_at,c.collection_closed_at
+                FROM m5_cycles c JOIN m8_results r ON r.cycle_db_id=c.id
+                JOIN m8_result_revisions rr ON rr.results_id=r.id
+                JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
+                WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.id<>%s
+                  AND c.collection_closed_at IS NOT NULL AND c.created_at<%s
+                ORDER BY c.created_at DESC,c.id DESC,rr.revision_no DESC,p.revision_no DESC LIMIT 1""",
+                (user.id, current_scope['organization_id'], current_scope['cycle_db_id'], current_scope['cycle_created_at'])).fetchone()
+        if not previous_scope:
+            raise HTTPException(404, detail='PREVIOUS_COMPLETED_REPORT_NOT_FOUND')
+        valid_pair = (
+            int(previous_scope['owner_user_id']) == int(user.id)
+            and previous_scope['organization_id'] == current_scope['organization_id']
+            and str(previous_scope['cycle_id']) != str(current_scope['cycle_id'])
+            and previous_scope['collection_closed_at'] is not None
+            and previous_scope['cycle_created_at'] < current_scope['cycle_created_at']
+            and m8_results.owner_can_read_cycle(connection, str(previous_scope['cycle_id']), user.id)
+        )
+        if not valid_pair:
+            raise HTTPException(403, detail='Предыдущий Report недоступен или не относится к допустимой паре.')
+        try:
+            current = m8_results.read_report(connection, report_id)
+            previous = m8_results.read_report(connection, previous_scope['id'])
+            return m8_report_comparison.compare_reports(current, previous)
+        except ValueError as exc:
+            raise HTTPException(409, detail=str(exc)) from exc
+
+
+@router.get('/assessment/m8/reports/{report_id}/comparison.pdf')
+def download_owned_m8_report_comparison(report_id: UUID, request: Request, previous_report_id: UUID | None = None):
+    comparison = compare_owned_saved_m8_report(report_id, request, previous_report_id)
+    pdf = m8_report_comparison.render_comparison_pdf(comparison)
+    return Response(content=pdf, media_type='application/pdf', headers={
+        'Content-Disposition': f'attachment; filename="4k-report-comparison-{report_id}.pdf"'
+    })
 
 
 @router.get('/assessment/m8/reports/{report_id}/pdf')

@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=20261018-ui03-palette">
   <link rel="stylesheet" href="/web/styles/screens/processing.css?v=20261018-ui03-palette">
   <link rel="stylesheet" href="/web/styles/screens/profile.css?v=20261018-ui03-palette">
-  <link rel="stylesheet" href="/web/styles/screens/report.css?v=20261018-ui03-palette">
+  <link rel="stylesheet" href="/web/styles/screens/report.css?v=20261019-cmp01">
   <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=20261018-ui03-palette">
   <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=20261018-ui03-palette">
   <link rel="stylesheet" href="/web/styles/screens/chat.css?v=20261018-ui03-palette">
@@ -1805,6 +1805,17 @@
           <p id="m8-report-chart-note" class="m8-chart-note"></p>
           <div id="m8-report-skills" class="m8-report-skills"></div>
         </section>
+        <section class="card report-details-card m8-comparison" aria-labelledby="m8-comparison-title">
+          <div class="report-card-head">
+            <div><p class="section-label">История</p><h3 id="m8-comparison-title">Сравнение с предыдущей оценкой</h3></div>
+            <div class="m8-comparison-actions">
+              <label for="m8-comparison-select">Предыдущая оценка</label>
+              <select id="m8-comparison-select" disabled><option value="">Последняя завершённая</option></select>
+              <button id="m8-comparison-open" class="ghost-button compact-ghost" type="button" disabled>Сравнить оценки</button>
+            </div>
+          </div>
+          <div id="m8-comparison-content" aria-live="polite"><p>Сравнение доступно для завершённых оценок.</p></div>
+        </section>
         <section class="card report-details-card">
           <div class="report-card-head"><div><p class="section-label">Сведения об оценке</p><h3>Что удалось оценить и где данных недостаточно</h3></div></div>
           <div id="m8-report-coverage"></div>
@@ -1951,6 +1962,6 @@
 
   <script src="/app-config.js"></script>
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=20261018-e01-add01"></script>
+  <script type="module" src="/web/dist/main.js?v=20261019-cmp01"></script>
 </body>
 </html>

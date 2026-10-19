@@ -61,5 +61,5 @@ test('UI03 keeps embedded SVG fills inside the owner palette', () => {
 
 test('UI03 invalidates cached CSS and JavaScript entrypoints', () => {
   assert.match(markup, /styles\/screens\/auth\.css\?v=20261018-ui03-palette/);
-  assert.match(markup, /web\/dist\/main\.js\?v=20261018-e01-add01/);
+  assert.match(markup, /web\/dist\/main\.js\?v=20261019-cmp01/);
 });

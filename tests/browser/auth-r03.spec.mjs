@@ -374,12 +374,26 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
     ], descriptive: { status: 'ready', summary: ['Сохранённый результат.'], claims: [] },
     coverage: {}, limitations: [], reliability: { status: 'not_verified' }, sessions: [], collection: {},
   } };
+  const comparison = {
+    mode: 'mixed',
+    current: { cycle_id: 'cycle-rad01', report_id: 'report-rad01', report_revision_no: 1, results_revision_id: 'rr2', created_at: '2026-10-17T12:00:00Z', closed_at: '2026-10-17T11:00:00Z', role_ref: { name: 'Product Lead' } },
+    previous: { cycle_id: 'cycle-previous', report_id: 'report-previous', report_revision_no: 1, results_revision_id: 'rr1', created_at: '2026-09-17T12:00:00Z', closed_at: '2026-09-17T11:00:00Z', role_ref: { name: 'Product Lead' } },
+    skills: [
+      { skill_id: 'K1.1', skill_name: 'Понимание собеседника', previous: 1.75, current: 2.25, difference: 0.5, comparability: { status: 'allowed', reason: null } },
+      { skill_id: 'K1.2', skill_name: 'Ясность сообщения', previous: null, current: 2.25, difference: null, comparability: { status: 'not_allowed', reason: 'full_score_required' } },
+    ],
+  };
   await page.route('**/users/**', (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/version') return fulfillJson(route, { version: 'rad01-test' });
     if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, dashboard });
     if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'show_dashboard', profile: { status: 'complete' }, onboarding: { status: 'completed' }, assessment: { status: 'report_ready' } });
     if (pathname === '/users/assessment/m8/reports/report-rad01') return fulfillJson(route, report);
+    if (pathname === '/users/assessment/m8/history') return fulfillJson(route, { cycles: [
+      { cycle_id: 'cycle-rad01', report_id: 'report-rad01', collection_closed_at: '2026-10-17T11:00:00Z' },
+      { cycle_id: 'cycle-previous', report_id: 'report-previous', collection_closed_at: '2026-09-17T11:00:00Z' },
+    ] });
+    if (pathname === '/users/assessment/m8/reports/report-rad01/comparison') return fulfillJson(route, comparison);
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
@@ -389,6 +403,10 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await expect(page.locator('.m8-radar-point.is-partial')).toHaveCount(1);
   await expect(page.locator('#m8-report-skills')).toContainText('По части проявлений');
   await expect(page.locator('#m8-report-chart-note')).toContainText('Пропуски оставлены открытыми');
+  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  await expect(page.locator('.m8-comparison-slices')).toContainText('нет полного результата');
+  await expect(page.getByRole('link', { name: 'Скачать сравнение PDF' })).toHaveAttribute('href', /report-previous/);
   await page.getByRole('button', { name: 'Шкалы' }).click();
   await expect(page.locator('.m8-score-bars')).toBeVisible();
   await page.setViewportSize({ width: 360, height: 760 });
