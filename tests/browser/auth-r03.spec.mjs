@@ -744,14 +744,17 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await expect(page.locator('.m8-radar-key li')).toHaveCount(3);
   await expect(page.locator('.m8-radar-key')).toContainText('Понимание собеседника');
   await expect(page.locator('.m8-radar-key')).toContainText('Нет числового показателя');
-  const markerSize = await page.locator('.m8-radar-marker').first().evaluate((label) => {
-    const svg = label.ownerSVGElement;
+  await expect.poll(() => page.locator('#m8-report-chart').evaluate((chart) => {
+    const svg = chart.querySelector('svg');
+    const label = svg?.querySelector('.m8-radar-marker');
+    if (!label || !svg.viewBox.baseVal.width) return 0;
     return parseFloat(getComputedStyle(label).fontSize) * svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
-  });
-  expect(markerSize, 'mobile radar marker should not shrink below 12 CSS px').toBeGreaterThanOrEqual(12);
+  }), { message: 'mobile radar marker should not shrink below 12 CSS px' }).toBeGreaterThanOrEqual(12);
   for (const width of [320, 360, 430, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    const bounds = await page.locator('#m8-report-chart svg').evaluate((svg) => {
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const bounds = await page.locator('#m8-report-chart').evaluate((chart) => {
+      const svg = chart.querySelector('svg');
       const svgBox = svg.getBoundingClientRect();
       const inset = 19 * svgBox.width / svg.viewBox.baseVal.width;
       return [...svg.querySelectorAll('.m8-radar-label, .m8-radar-marker-bg')].map((label) => {
