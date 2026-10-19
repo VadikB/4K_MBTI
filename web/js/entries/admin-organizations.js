@@ -4,6 +4,7 @@ export {
   renderAdminOrganizations,
   createAdminOrganization,
   selectAdminOrganization,
+  selectAdminOrganizationView,
   updateAdminOrganizationProfile,
   addAdminOrganizationDomain,
   deleteAdminOrganizationDomain,

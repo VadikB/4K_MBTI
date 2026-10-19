@@ -425,18 +425,20 @@
 
     <section class="panel admin-organizations-panel hidden" id="admin-organizations-panel">
       <div class="dashboard-topbar">
-        <div class="brand dashboard-brand">Организации</div>
-        <div class="dashboard-topbar-actions">
-          <button id="admin-organizations-back-button" class="ghost-button compact-ghost" type="button">Назад</button>
-        </div>
+        <div class="brand dashboard-brand">4К Ассистент</div>
+        <nav class="admin-account-navigation" aria-label="Разделы аккаунта">
+          <button class="admin-account-navigation-item current" type="button" aria-current="page">Управление</button>
+          <button class="admin-account-navigation-item" type="button" disabled title="Личный путь будет подключён следующим изменением">Моя оценка</button>
+        </nav>
+        <button id="admin-organizations-back-button" class="ghost-button compact-ghost" type="button">К сводке</button>
       </div>
 
       <div class="admin-shell admin-organizations-shell">
         <section class="card card--lg admin-hero-card admin-organizations-hero">
           <div>
-            <p class="section-label accent-label">Суперадмин</p>
-            <h2 id="admin-organizations-title">Организации</h2>
-            <p id="admin-organizations-subtitle">Управление доменами и администраторами организаций.</p>
+            <p class="section-label accent-label">Управление</p>
+            <h2 id="admin-organizations-title">Организация и участники</h2>
+            <p id="admin-organizations-subtitle">Подготовьте организацию, участников и сведения для оценки.</p>
           </div>
         </section>
 
@@ -464,8 +466,8 @@
         <section class="card card--lg admin-organizations-list-card">
           <div class="report-card-head">
             <div>
-              <p class="section-label accent-label">Организация</p>
-              <h3>Профиль и участники</h3>
+              <p class="section-label accent-label">Рабочая область</p>
+              <h3>Управление организацией</h3>
             </div>
           </div>
           <label class="admin-organization-picker">

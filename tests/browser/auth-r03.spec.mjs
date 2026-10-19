@@ -86,29 +86,111 @@ async function openAdminOrganizations(page, invitationHandler) {
   await page.locator('input[name="invitation_email"]').waitFor();
 }
 
-test('ADM01 organization navigation opens data and returns to the selected organization members', async ({ page }) => {
+test('ADM19-01 exposes three keyboard-operable management blocks without horizontal overflow', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
 
   const card = page.locator('[data-organization-id="3"]');
   const people = card.locator('[data-admin-view="people"]');
   const organizationData = card.locator('[data-admin-view="organization-data"]');
-  const peopleButton = card.getByRole('button', { name: 'Участники и приглашения' });
+  const questionnaire = card.locator('[data-admin-view="questionnaire"]');
+  const peopleButton = card.getByRole('button', { name: 'Организация и участники' });
   const organizationDataButton = card.getByRole('button', { name: 'Данные организации' });
+  const questionnaireButton = card.getByRole('button', { name: 'Анкета', exact: true });
 
   await expect(people).toBeVisible();
   await expect(organizationData).toBeHidden();
+  await expect(questionnaire).toBeHidden();
   await expect(peopleButton).toHaveAttribute('aria-pressed', 'true');
 
-  await organizationDataButton.click();
+  await organizationDataButton.focus();
+  await page.keyboard.press('Enter');
   await expect(people).toBeHidden();
   await expect(organizationData).toBeVisible();
   await expect(organizationDataButton).toHaveAttribute('aria-pressed', 'true');
   await expect(card).toHaveAttribute('data-organization-id', '3');
 
-  await card.getByRole('button', { name: 'Вернуться к участникам' }).click();
+  await questionnaireButton.click();
+  await expect(questionnaire).toBeVisible();
+  await expect(questionnaireButton).toHaveAttribute('aria-pressed', 'true');
+
+  await peopleButton.click();
   await expect(people).toBeVisible();
   await expect(organizationData).toBeHidden();
   await expect(peopleButton).toHaveAttribute('aria-pressed', 'true');
+
+  for (const width of [320, 360, 375, 390, 430, 768, 1024, 1366, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const layout = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+      overflow: [...document.querySelectorAll('*')]
+        .filter((node) => node.getBoundingClientRect().right > document.documentElement.clientWidth + 1)
+        .slice(0, 8)
+        .map((node) => ({ tag: node.tagName, className: node.className, right: node.getBoundingClientRect().right })),
+    }));
+    expect(layout.scrollWidth, JSON.stringify(layout.overflow)).toBe(layout.clientWidth);
+  }
+});
+
+test('ADM19-01 saves early organization data through the versioned product form contract', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  let submittedPayload;
+  await page.route('**/users/admin/organizations/3/questionnaire/preview', async (route) => {
+    submittedPayload = route.request().postDataJSON();
+    return fulfillJson(route, {
+      id: 12, assignment_ref: submittedPayload.assignment_ref, status: 'ready_for_confirmation',
+      channel: 'product_form', answers_json: submittedPayload.answers,
+      validation_json: { errors: [], missing: [] }, briefing: {},
+    });
+  });
+
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  const form = card.locator('[data-action="preview-early-data"]');
+  const values = {
+    assignment_ref: 'Поток октябрь 2026', source_author: 'Анна Петрова',
+    organization_name: 'R03 Organization', organization_type: 'Компания', industry: 'ИТ',
+    activity_description: 'Разрабатывает корпоративные продукты', purpose: 'Оценить управленческие навыки',
+    results_usage: 'Для индивидуального развития', result_recipients: 'Участник и HR',
+    organizer: 'HR-команда', responsible_contact: 'hr@example.test',
+    case_reality_level: 'Реалистичные рабочие ситуации', organization_name_usage_rules: 'Можно использовать название',
+  };
+  for (const [name, value] of Object.entries(values)) await form.locator(`[name="${name}"]`).fill(value);
+  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+
+  await expect(card.locator('[data-admin-view="organization-data"] .admin-questionnaire-preview'))
+    .toContainText('ready_for_confirmation');
+  expect(submittedPayload.channel).toBe('product_form');
+  expect(submittedPayload.csv_text).toBeNull();
+  expect(submittedPayload.answers.C01).toEqual({
+    name: values.organization_name, organization_type: values.organization_type,
+    industry: values.industry, activity_description: values.activity_description,
+  });
+  expect(submittedPayload.answers.C21).toEqual({
+    organizer: values.organizer, responsible_contact: values.responsible_contact,
+  });
+  expect(submittedPayload.idempotency_key).toBeTruthy();
+});
+
+test('ADM19-01 adds a participant with only email, name and role', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  let submittedPayload;
+  await page.route('**/users/admin/organizations/3/members', async (route) => {
+    submittedPayload = route.request().postDataJSON();
+    return fulfillJson(route, { item: { email: submittedPayload.email } });
+  });
+
+  const form = page.locator('[data-organization-id="3"] [data-action="add-member"]');
+  await form.locator('[name="email"]').fill('new.person@example.test');
+  await form.locator('[name="full_name"]').fill('Новый Участник');
+  await form.locator('[name="role_description"]').fill('Руководитель направления');
+  await form.getByRole('button', { name: 'Добавить', exact: true }).click();
+
+  await expect(page.locator('#admin-organizations-status')).toContainText('Участник привязан');
+  expect(submittedPayload).toEqual({
+    email: 'new.person@example.test', full_name: 'Новый Участник',
+    role_description: 'Руководитель направления', job_instructions: null,
+  });
 });
 
 test('QA19-02 resolves palette tokens in visible auth and admin states', async ({ page }) => {
