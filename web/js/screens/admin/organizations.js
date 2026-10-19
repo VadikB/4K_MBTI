@@ -707,7 +707,7 @@ export const renderAdminOrganizations = () => {
         (isSuperadmin ? '<form class="admin-organization-inline-form" data-action="add-admin"><input type="email" placeholder="admin@company.ru"><button class="ghost-button compact-ghost" type="submit">Добавить</button></form>' : '') +
         '</section>' +
         '</div>' +
-        '<nav class="admin-organization-steps" aria-label="Разделы организации"><button type="button" class="primary-button compact-primary" data-action="show-people">Участники и приглашения</button><button type="button" class="ghost-button compact-ghost" data-action="show-organization-data">Данные организации</button></nav>' +
+        '<nav class="admin-organization-steps" aria-label="Разделы организации"><button type="button" class="primary-button compact-primary" data-action="show-people" aria-pressed="true">Участники и приглашения</button><button type="button" class="ghost-button compact-ghost" data-action="show-organization-data" aria-pressed="false">Данные организации</button></nav>' +
         '<section class="admin-organization-members-section" data-admin-view="people"><h4>Участники и приглашения</h4>' +
         '<p>Перед отправкой выберите оценку в разделе «Данные организации» и подтвердите сведения для знакомства.</p>' +
         '<form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
