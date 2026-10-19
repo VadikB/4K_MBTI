@@ -16,7 +16,8 @@ test('UI02 maps waiting statuses to the exact owner palette pair', () => {
 test('UI02 measures real radar labels and keeps them inside a safe area', () => {
   assert.match(report, /document\.fonts\?\.ready/);
   assert.match(report, /label\.getBBox\(\)/);
-  assert.match(report, /const safeInset = 20/);
+  assert.match(report, /const safeInset = 24/);
+  assert.match(report, /const scheduleM8RadarLabelFit = \(node\) => \{\s*fitM8RadarLabels\(node\)/);
   assert.match(report, /splitRadarLabel/);
   assert.match(report, /<tspan/);
   assert.match(report, /data-m8-skill-id/);
