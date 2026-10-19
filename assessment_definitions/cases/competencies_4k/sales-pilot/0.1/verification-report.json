@@ -1,0 +1,13 @@
+{
+  "assessment_situation_count": 9,
+  "case_count": 9,
+  "case_dialogue_qa": "NOT_RUN",
+  "indicator_target_count": 55,
+  "m6_execution": "NOT_RUN",
+  "package_checksum": "a8c876b2cf3656f25fcf12873476d9943287b882f1ac28f410a052ddfbd6fc4b",
+  "result": "PASS",
+  "runtime_admission": "DISABLED",
+  "runtime_execution": "NOT_RUN",
+  "schema_version": 1,
+  "scope": "static_sales_package"
+}

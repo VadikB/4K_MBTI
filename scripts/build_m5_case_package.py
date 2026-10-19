@@ -19,6 +19,7 @@ if __package__ in (None, ""):
 
 from Api.assessment_case_contracts import AssessmentSituationV2, C34ExecutionEnvelope, CaseVersionV2
 from Api.m5_case_runtime import checksum
+from Api.m5_package import verify_package_directory
 ROOT = Path(__file__).resolve().parents[1]
 M2 = ROOT / "assessment_definitions/methodologies/competencies_4k/1.1/methodology.json"
 M3 = ROOT / "assessment_definitions/role_profiles/competencies_4k/1.1/base_roles.json"
@@ -241,20 +242,7 @@ def write_package(source: Path, destination: Path = OUTPUT) -> dict:
 
 
 def verify_directory(destination: Path = OUTPUT) -> dict:
-    manifest = json.loads((destination / "manifest.json").read_text())
-    expected = {"manifest.json"} | {x["name"] for x in manifest["artifacts"]}
-    actual = {str(x.relative_to(destination)) for x in destination.rglob("*") if x.is_file()}
-    if actual != expected:
-        raise ValueError(f"Package inventory mismatch: {sorted(actual ^ expected)}")
-    for artifact in manifest["artifacts"]:
-        if digest((destination / artifact["name"]).read_bytes()) != artifact["sha256"]:
-            raise ValueError(f"Artifact checksum mismatch: {artifact['name']}")
-    package = json.loads((destination / "case-package.json").read_text())
-    for case in package["cases"]:
-        CaseVersionV2.model_validate(case)
-    if package["runtime_enabled"] or package["status"] != "draft":
-        raise ValueError("WORKING package cannot be runtime enabled")
-    return json.loads((destination / "verification-report.json").read_text())
+    return verify_package_directory(destination)
 
 
 def dry_run(source: Path) -> dict:

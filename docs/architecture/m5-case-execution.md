@@ -6,6 +6,16 @@
 Статус: технический проект T08.6 / 4.1, 01.10.2026. Это не нормативная редакция
 M5, не публикация CURRENT и не допуск пяти WORKING Case.
 
+## Совместимое дополнение: JSON-native source refs
+
+Для Sales-пакета SLS01 добавлена schema v3. Она сохраняет семантику CaseVersion,
+но заменяет координату XLSX `sheet/row/field` на `file/sha256/JSON Pointer` и
+допускает пустой список персонажей для самостоятельных письменных Case 02/07.
+Полные author Case и выбранная AS сохраняются как immutable snapshots; проекции
+targets/materials/scenario имеют ссылки назад на точные элементы. Schema v2 и её
+опубликованные bytes не меняются. Schema v3 draft не получает runtime admission:
+структурирование исполнительных правил и runtime AS выполняются отдельными SLS02/03.
+
 ## Исходная точка и область
 
 Ветка анализа: `codex/architecture-change01-contracts`, базовый commit `0d000fd`.
