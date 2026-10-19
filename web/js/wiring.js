@@ -1639,6 +1639,21 @@ if (adminOrganizationsList) {
       withScreen(loadAdminOrganizations, (module) => module.prepareAdminOrganizationAssessments(organizationId));
       return;
     }
+    if (button.dataset.action === 'show-people' || button.dataset.action === 'show-organization-data') {
+      const target = button.dataset.action === 'show-people' ? 'people' : 'organization-data';
+      card.querySelectorAll('[data-admin-view]').forEach((section) => {
+        section.classList.toggle('hidden', section.getAttribute('data-admin-view') !== target);
+      });
+      card.querySelectorAll('.admin-organization-steps button[data-action]').forEach((navigationButton) => {
+        const isActive = navigationButton.dataset.action === button.dataset.action;
+        navigationButton.classList.toggle('primary-button', isActive);
+        navigationButton.classList.toggle('compact-primary', isActive);
+        navigationButton.classList.toggle('ghost-button', !isActive);
+        navigationButton.classList.toggle('compact-ghost', !isActive);
+        navigationButton.setAttribute('aria-pressed', String(isActive));
+      });
+      return;
+    }
     if (!value) {
       return;
     }
@@ -1673,13 +1688,6 @@ if (adminOrganizationsList) {
       withScreen(loadAdminOrganizations, (module) => module.sendAdminOrganizationMemberInvitation(
         organizationId, value, card.querySelector('input[name="assignment_ref"]')?.value,
       ));
-      return;
-    }
-    if (button.dataset.action === 'show-people' || button.dataset.action === 'show-organization-data') {
-      const target = button.dataset.action === 'show-people' ? 'people' : 'organization-data';
-      card.querySelectorAll('[data-admin-view]').forEach((section) => {
-        section.classList.toggle('hidden', section.getAttribute('data-admin-view') !== target);
-      });
       return;
     }
     if (button.dataset.action === 'revoke-member-invitation') {

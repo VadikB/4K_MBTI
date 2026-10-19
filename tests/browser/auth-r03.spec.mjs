@@ -86,6 +86,31 @@ async function openAdminOrganizations(page, invitationHandler) {
   await page.locator('input[name="invitation_email"]').waitFor();
 }
 
+test('ADM01 organization navigation opens data and returns to the selected organization members', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+
+  const card = page.locator('[data-organization-id="3"]');
+  const people = card.locator('[data-admin-view="people"]');
+  const organizationData = card.locator('[data-admin-view="organization-data"]');
+  const peopleButton = card.getByRole('button', { name: 'Участники и приглашения' });
+  const organizationDataButton = card.getByRole('button', { name: 'Данные организации' });
+
+  await expect(people).toBeVisible();
+  await expect(organizationData).toBeHidden();
+  await expect(peopleButton).toHaveAttribute('aria-pressed', 'true');
+
+  await organizationDataButton.click();
+  await expect(people).toBeHidden();
+  await expect(organizationData).toBeVisible();
+  await expect(organizationDataButton).toHaveAttribute('aria-pressed', 'true');
+  await expect(card).toHaveAttribute('data-organization-id', '3');
+
+  await card.getByRole('button', { name: 'Вернуться к участникам' }).click();
+  await expect(people).toBeVisible();
+  await expect(organizationData).toBeHidden();
+  await expect(peopleButton).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('R03 personal invitation has priority and exposes an explicit account choice', async ({ page }) => {
   await baseRoutes(page, {
     authenticated: true,
