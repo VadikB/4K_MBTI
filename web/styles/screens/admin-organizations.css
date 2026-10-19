@@ -424,10 +424,11 @@
 }
 
 .admin-organization-member {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 44px minmax(220px, 1fr) minmax(220px, 1.2fr) minmax(180px, 1fr);
     gap: var(--space-3);
-    align-items: flex-start;
+    align-items: start;
+    min-width: 0;
     border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.12);
     border-radius: var(--radius-md);
     background: rgba(255, 255, 255, 0.78);
@@ -438,39 +439,68 @@
     min-width: 0;
 }
 
-.admin-organization-member strong,
-.admin-organization-member span {
+.admin-organization-member-main strong,
+.admin-organization-member-main span {
     display: block;
     overflow-wrap: anywhere;
 }
 
-.admin-organization-member span {
+.admin-organization-member-main span {
     margin-top: 4px;
     color: var(--text-muted);
     font-size: var(--fs-meta);
 }
 
-.admin-organization-member-actions {
-    flex: 1 1 auto;
-    display: inline-flex;
+.admin-organization-member-select {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+}
+
+.admin-organization-member-select:focus-within,
+.admin-organization-member button:focus-visible {
+    outline: 2px solid var(--palette-cyan-500);
+    outline-offset: 2px;
+}
+
+.admin-organization-member-statuses {
+    display: flex;
     flex-wrap: wrap;
-    justify-content: flex-end;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--space-2);
     min-width: 0;
-    max-width: 100%;
+}
+
+.admin-organization-invitation-state {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--text-muted);
+    font-size: var(--fs-meta);
+}
+
+.admin-organization-member-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: var(--space-2);
+    min-width: 0;
 }
 
 .admin-organization-member button {
-    flex: 0 0 auto;
     display: inline-grid;
     place-items: center;
-    height: 28px;
+    min-height: 44px;
+    max-width: 100%;
+    padding: var(--space-2) var(--space-3);
     border: 0;
     border-radius: var(--radius-pill);
     background: rgb(from var(--palette-cyan-500) r g b / 0.1);
     color: var(--text-main);
     cursor: pointer;
+    overflow-wrap: anywhere;
 }
 
 .admin-organization-password-button {
@@ -526,7 +556,7 @@
 }
 
 .admin-organization-remove-button {
-    width: 28px;
+    width: 44px;
     border-radius: 50%;
 }
 
@@ -584,6 +614,17 @@
     font-size: var(--fs-body-sm);
 }
 
+@media (max-width: 1100px) {
+    .admin-organization-member {
+        grid-template-columns: 44px minmax(0, 1fr);
+    }
+
+    .admin-organization-member-statuses,
+    .admin-organization-member-actions {
+        grid-column: 1 / -1;
+    }
+}
+
 @media (max-width: 860px) {
     .admin-organizations-form,
     .admin-organization-inline-form,
@@ -613,19 +654,6 @@
 
     .admin-organization-head {
         display: grid;
-    }
-
-    .admin-organization-member {
-        display: grid;
-    }
-
-    .admin-organization-member-actions {
-        width: 100%;
-        min-width: 0;
-    }
-
-    .admin-organization-invitation-state {
-        flex: 1 1 140px;
     }
 
     .admin-organization-stats {

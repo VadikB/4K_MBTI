@@ -56,7 +56,7 @@ const adminOrganization = {
     invitation_delivery_status: 'queued', invitation_link_status: 'active' }],
 };
 
-async function openAdminOrganizations(page, invitationHandler) {
+async function openAdminOrganizations(page, invitationHandler, organization = adminOrganization) {
   await page.route('**/users/**', (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: false });
@@ -68,7 +68,7 @@ async function openAdminOrganizations(page, invitationHandler) {
       admin_dashboard: { metrics: [], insights: [], activity_series: [], competency_average: [] },
     });
     if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') {
-      return fulfillJson(route, { is_superadmin: false, items: [adminOrganization] });
+      return fulfillJson(route, { is_superadmin: false, items: [organization] });
     }
     if (pathname === '/users/admin/organizations/3/questionnaire') {
       return fulfillJson(route, { items: [{ id: 11, assignment_ref: 'competencies_4k',
@@ -83,8 +83,86 @@ async function openAdminOrganizations(page, invitationHandler) {
   await page.locator('#magic-token-input').fill('legacy-password');
   await page.locator('#verify-magic-link-button').click();
   await page.locator('#admin-open-organizations-button').click();
-  await page.locator('input[name="invitation_email"]').waitFor();
+  if (organization.members.length) {
+    await page.locator('input[name="invitation_email"]').first().waitFor();
+  } else {
+    await page.locator('.admin-organizations-empty').waitFor();
+  }
 }
+
+test('QA19-03 keeps the participant section available with no members', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), {
+    ...adminOrganization, members_count: 0, members: [],
+  });
+  await expect(page.locator('.admin-organization-member')).toHaveCount(0);
+  await expect(page.locator('.admin-organization-members-section').first()).toBeVisible();
+});
+
+test('QA19-03 keeps long participant rows readable and actions associated after view changes', async ({ page }) => {
+  const longEmail = 'very.long.participant.name.for.layout.regression@example.invalid';
+  const organization = {
+    ...adminOrganization,
+    members_count: 2,
+    members: [
+      { ...adminOrganization.members[0], full_name: 'Очень длинное имя участника для проверки переноса строки без сжатия',
+        email: longEmail, raw_position: 'Руководитель направления поддержки и развития клиентских сервисов',
+        invitation_delivery_status: 'accepted' },
+      { ...adminOrganization.members[0], user_id: 9, email: 'second@example.invalid', full_name: 'Другой участник',
+        registration_status: 'registered', invitation_status: 'used', invitation_delivery_status: 'accepted',
+        invitation_link_status: 'used', invitation_id: 2 },
+    ],
+  };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  const rows = page.locator('.admin-organization-member');
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first().locator('.admin-organization-invitation-state')).toHaveCount(4);
+  await expect(rows.nth(1)).toContainText('Регистрация: завершена');
+
+  // 683 CSS px approximates the available width at 200% browser zoom on a 1366 px display.
+  for (const width of [320, 375, 390, 683, 768, 1024, 1366, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const layout = await rows.first().evaluate((row) => {
+      const main = row.querySelector('.admin-organization-member-main').getBoundingClientRect();
+      const name = row.querySelector('strong').getBoundingClientRect();
+      const statuses = row.querySelector('.admin-organization-member-statuses').getBoundingClientRect();
+      const actions = row.querySelector('.admin-organization-member-actions').getBoundingClientRect();
+      const select = row.querySelector('.admin-organization-member-select').getBoundingClientRect();
+      const buttons = [...row.querySelectorAll('button')].map((button) => button.getBoundingClientRect());
+      return { documentWidth: document.documentElement.scrollWidth, viewportWidth: document.documentElement.clientWidth,
+        mainWidth: main.width, nameWidth: name.width, statusesX: statuses.x, statusesY: statuses.y,
+        mainRight: main.right, mainBottom: main.bottom, actionsX: actions.x, actionsY: actions.y,
+        selectWidth: select.width, selectHeight: select.height,
+        buttons: buttons.map((rect) => ({ width: rect.width, height: rect.height })) };
+    });
+    expect(layout.documentWidth, JSON.stringify(layout)).toBeLessThanOrEqual(layout.viewportWidth + 1);
+    expect(layout.nameWidth).toBeGreaterThan(100);
+    expect(layout.selectWidth).toBeGreaterThanOrEqual(44);
+    expect(layout.selectHeight).toBeGreaterThanOrEqual(44);
+    expect(layout.buttons.every((button) => button.width >= 44 && button.height >= 44)).toBe(true);
+    if (width >= 1100) {
+      expect(layout.mainRight).toBeLessThanOrEqual(layout.statusesX);
+      expect(layout.mainRight).toBeLessThanOrEqual(layout.actionsX);
+    } else {
+      expect(layout.statusesY).toBeGreaterThanOrEqual(layout.mainBottom);
+      expect(layout.actionsY).toBeGreaterThanOrEqual(layout.mainBottom);
+    }
+  }
+
+  const checkbox = rows.first().getByRole('checkbox', { name: 'Выбрать ' + longEmail });
+  await checkbox.focus();
+  await page.keyboard.press('Space');
+  await expect(checkbox).toBeChecked();
+  await rows.first().locator('.admin-organization-member-select').click();
+  await expect(checkbox).not.toBeChecked();
+  await page.getByRole('button', { name: 'Данные организации' }).click();
+  await page.getByRole('button', { name: 'Организация и участники' }).click();
+  await expect(rows.first().locator('[data-action="send-member-invitation"]')).toHaveAttribute('data-value', longEmail);
+  page.once('dialog', async (dialog) => {
+    expect(dialog.message()).toContain(longEmail);
+    await dialog.dismiss();
+  });
+  await rows.first().locator('[data-action="delete-member"]').click();
+});
 
 test('ADM19-01 exposes three keyboard-operable management blocks without horizontal overflow', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
