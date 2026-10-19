@@ -18,6 +18,7 @@ const invitationRequestsInFlight = new Set();
 const invitationOperationIds = new Map();
 const questionnairePreviews = new Map();
 const questionnaireRevisions = new Map();
+const organizationViews = new Map();
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -112,6 +113,12 @@ export const createAdminOrganization = async () => {
 
 export const selectAdminOrganization = (organizationId) => {
   selectedOrganizationId = Number(organizationId) || null;
+  renderAdminOrganizations();
+};
+
+export const selectAdminOrganizationView = (organizationId, view) => {
+  const allowed = new Set(['people', 'organization-data', 'questionnaire']);
+  organizationViews.set(Number(organizationId), allowed.has(view) ? view : 'people');
   renderAdminOrganizations();
 };
 
@@ -557,7 +564,7 @@ const renderMemberList = (items, { isSuperadmin = false } = {}) => {
         const isAutotest = email.toLowerCase().startsWith('__autotest__') || email.toLowerCase().endsWith('@autotest.local');
         const hasPassword = item.has_password === true;
         const label = item.full_name ? item.full_name + ' · ' + email : email;
-        const details = item.raw_position || item.job_description || item.raw_duties || '';
+        const details = item.raw_position || item.job_description || item.role_description || item.raw_duties || '';
         const preparationStatus = String(item.assessment_preparation_status || '');
         const isPreparing = preparationStatus === 'queued' || preparationStatus === 'running';
         const isPrepared = item.assessment_prepared === true;
@@ -619,14 +626,19 @@ export const renderAdminOrganizations = () => {
     return;
   }
   if (adminOrganizationsTitle) {
-    adminOrganizationsTitle.textContent = data?.title || 'Организации';
+    adminOrganizationsTitle.textContent = data?.is_superadmin ? (data?.title || 'Организации') : 'Организация и участники';
   }
   if (adminOrganizationsSubtitle) {
-    adminOrganizationsSubtitle.textContent = data?.subtitle || 'Управление доменами и администраторами организаций.';
+    adminOrganizationsSubtitle.textContent = data?.is_superadmin
+      ? (data?.subtitle || 'Управление доменами и администраторами организаций.')
+      : 'Три шага подготовки: участники, данные организации и анкета.';
   }
   const organizations = Array.isArray(data?.items) ? data.items : [];
   const isSuperadmin = Boolean(data?.is_superadmin);
-  document.getElementById('admin-organization-create-form')?.classList.toggle('hidden', !data);
+  document.getElementById('admin-organization-create-form')?.closest('section')?.classList.toggle(
+    'hidden', !data || (!isSuperadmin && organizations.length > 0),
+  );
+  document.querySelector('.admin-organization-picker')?.classList.toggle('hidden', !isSuperadmin && organizations.length <= 1);
   if (!organizations.length) {
     if (adminOrganizationSelect) adminOrganizationSelect.innerHTML = '<option value="">Нет организаций</option>';
     adminOrganizationsList.innerHTML = '<p class="report-empty-state">Организации пока не созданы.</p>';
@@ -661,6 +673,25 @@ export const renderAdminOrganizations = () => {
       const questionnaireValidation = questionnairePreview?.validation_json || {};
       const questionnaireProblems = [...(questionnaireValidation.errors || []).map((item) => item.code),
         ...(questionnaireValidation.missing || [])];
+      const activeView = organizationViews.get(orgId) || 'people';
+      const revisionAnswers = currentRevision?.answers_json || {};
+      const answer = (questionId, field) => escapeHtml(revisionAnswers?.[questionId]?.[field] || '');
+      const viewButton = (view, label) => '<button type="button" class="admin-organization-step' +
+        (activeView === view ? ' current' : '') + '" data-action="show-admin-view" data-view="' + view +
+        '" aria-pressed="' + String(activeView === view) + '">' + label + '</button>';
+      const previewMarkup = questionnairePreview ? '<div class="admin-questionnaire-preview" role="status"><strong>Статус: ' +
+        escapeHtml(questionnairePreview.status) + '</strong>' +
+        (questionnaireProblems.length ? '<p>Проверить: ' + escapeHtml(questionnaireProblems.join(', ')) + '</p>' :
+          '<p>Обязательные поля распознаны. Подтверждение создаст новую опубликованную редакцию.</p>') +
+        (questionnairePreview.status === 'ready_for_confirmation' ?
+          '<fieldset><legend>Получатели результатов по действующим правам</legend>' +
+          '<label><input type="checkbox" name="questionnaire_recipient" value="participant" checked disabled> Участник — обязательный получатель</label>' +
+          '<label><input type="checkbox" name="questionnaire_recipient" value="organization_admin"> Разрешить выбранным представителям заказчика</label>' +
+          '<div class="admin-questionnaire-recipients">' + (org.admins || []).map((admin) =>
+            '<label><input type="checkbox" name="questionnaire_recipient_user" value="' + Number(admin.user_id) + '"> ' +
+            escapeHtml(admin.full_name || admin.email) + ' · ' + escapeHtml(admin.email) + '</label>').join('') + '</div>' +
+          '</fieldset><button type="button" class="primary-button compact-primary" data-action="confirm-questionnaire" data-value="' +
+          Number(questionnairePreview.id) + '">Подтвердить сведения</button>' : '') + '</div>' : '';
       return (
         '<article class="card card--inset admin-organization-card" data-organization-id="' +
         orgId +
@@ -686,7 +717,7 @@ export const renderAdminOrganizations = () => {
         '</button>' : '') + '</div>' +
         '</div>' +
         renderOrganizationBatchProgress(orgId) +
-        '<form class="admin-organization-profile-form" data-action="update-profile">' +
+        (isSuperadmin ? '<form class="admin-organization-profile-form" data-action="update-profile">' +
         '<div class="admin-organization-profile-heading"><div><p class="section-label accent-label">Профиль</p><h4>Сведения об организации</h4></div>' +
         '<button class="primary-button compact-primary" type="submit">Сохранить карточку</button></div>' +
         '<label class="admin-organization-profile-wide"><span>Профиль организации</span><textarea name="profile" placeholder="Кратко опишите организацию, её деятельность и особенности">' + escapeHtml(org.profile || '') + '</textarea></label>' +
@@ -706,18 +737,20 @@ export const renderAdminOrganizations = () => {
         renderTagList(org.admins || [], 'Администраторы не заданы.', 'admin', isSuperadmin ? 'delete-admin' : '') +
         (isSuperadmin ? '<form class="admin-organization-inline-form" data-action="add-admin"><input type="email" placeholder="admin@company.ru"><button class="ghost-button compact-ghost" type="submit">Добавить</button></form>' : '') +
         '</section>' +
-        '</div>' +
-        '<nav class="admin-organization-steps" aria-label="Разделы организации"><button type="button" class="primary-button compact-primary" data-action="show-people" aria-pressed="true">Участники и приглашения</button><button type="button" class="ghost-button compact-ghost" data-action="show-organization-data" aria-pressed="false">Данные организации</button></nav>' +
-        '<section class="admin-organization-members-section" data-admin-view="people"><h4>Участники и приглашения</h4>' +
+        '</div>' : '') +
+        '<nav class="admin-organization-steps" aria-label="Разделы управления">' +
+        viewButton('people', 'Организация и участники') +
+        viewButton('organization-data', 'Данные организации') +
+        viewButton('questionnaire', 'Анкета') + '</nav>' +
+        '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people"><h4>Организация и участники</h4>' +
         '<p>Перед отправкой выберите оценку в разделе «Данные организации» и подтвердите сведения для знакомства.</p>' +
         '<form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
         renderMemberList(org.members || [], { isSuperadmin }) +
         '<form class="admin-organization-member-form" data-action="add-member">' +
         '<input name="email" type="email" placeholder="user@company.ru" required>' +
         '<input name="full_name" type="text" placeholder="ФИО">' +
-        '<input name="role_description" type="text" placeholder="Описание роли / должность">' +
-        '<textarea name="job_instructions" placeholder="Должностные инструкции"></textarea>' +
-        '<button class="ghost-button compact-ghost" type="submit">Привязать</button>' +
+        '<input name="role_description" type="text" placeholder="Должность">' +
+        '<button class="primary-button compact-primary" type="submit">Добавить</button>' +
         '</form>' +
         '<form class="admin-organization-import-form" data-action="import-members">' +
         '<input name="csv" type="file" accept=".csv,text/csv">' +
@@ -725,10 +758,28 @@ export const renderAdminOrganizations = () => {
         '<button class="ghost-button compact-ghost" type="submit">Импорт</button>' +
         '</form>' +
         '</section>' +
-        '<section class="admin-organization-members-section hidden" data-admin-view="organization-data"><div class="admin-readiness-panel"><strong>Готовность</strong><p>' +
+        '<section class="admin-organization-members-section' + (activeView === 'organization-data' ? '' : ' hidden') + '" data-admin-view="organization-data"><div class="admin-readiness-panel"><strong>Готовность ранних данных</strong><p>' +
         (confirmedRevision ? 'Можно приглашать участников для оценки «' + escapeHtml(confirmedRevision.assignment_ref) + '». Готовность назначения проверяется отдельно.' : 'Чтобы пригласить участников, заполните и подтвердите сведения для знакомства.') +
-        '</p></div><h4>Данные организации</h4>' +
-        '<p>Загрузите UTF-8 CSV по шаблону. Файл сначала сохраняется как предпросмотр и не меняет опубликованные данные.</p>' +
+        '</p></div><h4>Данные организации и выбранной оценки</h4>' +
+        '<p>Черновик и подтверждение сохраняются в общем версионируемом контуре. Изменение полей не переписывает опубликованную редакцию.</p>' +
+        '<form class="admin-organization-early-data-form" data-action="preview-early-data">' +
+        '<label><span>Оценка</span><input name="assignment_ref" type="text" value="' + escapeHtml(currentRevision?.assignment_ref || '') + '" placeholder="Например, 4К · поток октябрь 2026" required></label>' +
+        '<label><span>Автор сведений</span><input name="source_author" type="text" placeholder="Ответственный со стороны заказчика" required></label>' +
+        '<label><span>Название организации</span><input name="organization_name" value="' + answer('C01', 'name') + '" required></label>' +
+        '<label><span>Тип организации</span><input name="organization_type" value="' + answer('C01', 'organization_type') + '" required></label>' +
+        '<label><span>Сфера деятельности</span><input name="industry" value="' + answer('C01', 'industry') + '" required></label>' +
+        '<label class="admin-organization-profile-wide"><span>Описание деятельности</span><textarea name="activity_description" required>' + answer('C01', 'activity_description') + '</textarea></label>' +
+        '<label class="admin-organization-profile-wide"><span>Цель оценки</span><textarea name="purpose" required>' + answer('C02a', 'participant_text') + '</textarea></label>' +
+        '<label class="admin-organization-profile-wide"><span>Использование результатов</span><textarea name="results_usage" required>' + answer('C03', 'participant_text') + '</textarea></label>' +
+        '<label><span>Кто увидит результаты</span><input name="result_recipients" value="' + answer('C04', 'answer') + '" required></label>' +
+        '<label><span>Организатор</span><input name="organizer" value="' + answer('C21', 'organizer') + '" required></label>' +
+        '<label><span>Контакт ответственного</span><input name="responsible_contact" value="' + answer('C21', 'responsible_contact') + '" required></label>' +
+        '<label><span>Реалистичность кейсов</span><input name="case_reality_level" value="' + answer('C17', 'case_reality_level') + '" required></label>' +
+        '<label><span>Правила использования названия</span><input name="organization_name_usage_rules" value="' + answer('C17', 'organization_name_usage_rules') + '" required></label>' +
+        '<button class="primary-button compact-primary" type="submit">Сохранить черновик и предпросмотр</button></form>' +
+        (activeView === 'organization-data' ? previewMarkup : '') + '</section>' +
+        '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') + '" data-admin-view="questionnaire"><div class="admin-readiness-panel"><strong>Анкета</strong><p>Загрузка создаёт только предпросмотр. Подтверждённая версия остаётся неизменной до отдельного подтверждения.</p></div><h4>Корпоративная анкета</h4>' +
+        '<p>Скачайте утверждённый UTF-8 CSV-шаблон, загрузите заполненный файл и проверьте ошибки.</p>' +
         '<p><a class="text-link" href="/users/admin/organizations/' + orgId + '/questionnaire/template">Скачать CSV-шаблон</a></p>' +
         '<form class="admin-organization-import-form" data-action="preview-questionnaire">' +
         '<label><span>Оценка</span><input name="assignment_ref" list="assessment-options-' + orgId + '" type="text" value="' + escapeHtml(currentRevision?.assignment_ref || '') + '" placeholder="Например, 4К · поток октябрь 2026" required></label>' +
@@ -736,20 +787,7 @@ export const renderAdminOrganizations = () => {
         '<input name="source_author" type="text" placeholder="Автор сведений со стороны заказчика" required>' +
         '<input name="csv" type="file" accept=".csv,text/csv" required>' +
         '<button class="ghost-button compact-ghost" type="submit">Предпросмотр анкеты</button></form>' +
-        (questionnairePreview ? '<div class="admin-questionnaire-preview" role="status"><strong>Статус: ' +
-          escapeHtml(questionnairePreview.status) + '</strong>' +
-          (questionnaireProblems.length ? '<p>Проверить: ' + escapeHtml(questionnaireProblems.join(', ')) + '</p>' :
-            '<p>Обязательные поля распознаны. Подтверждение создаст новую опубликованную редакцию.</p>') +
-          (questionnairePreview.status === 'ready_for_confirmation' ?
-            '<fieldset><legend>Получатели результатов по действующим правам</legend>' +
-            '<label><input type="checkbox" name="questionnaire_recipient" value="participant" checked disabled> Участник — обязательный получатель</label>' +
-            '<label><input type="checkbox" name="questionnaire_recipient" value="organization_admin"> Разрешить выбранным представителям заказчика</label>' +
-            '<div class="admin-questionnaire-recipients">' + (org.admins || []).map((admin) =>
-              '<label><input type="checkbox" name="questionnaire_recipient_user" value="' + Number(admin.user_id) + '"> ' +
-              escapeHtml(admin.full_name || admin.email) + ' · ' + escapeHtml(admin.email) + '</label>').join('') + '</div>' +
-            '</fieldset><button type="button" class="primary-button compact-primary" data-action="confirm-questionnaire" data-value="' +
-            Number(questionnairePreview.id) + '">Подтвердить сведения</button>' : '') + '</div>' : '') +
-        '<button type="button" class="ghost-button compact-ghost" data-action="show-people">Вернуться к участникам</button>' +
+        (activeView === 'questionnaire' ? previewMarkup : '') +
         '</section>' +
         '</article>'
       );

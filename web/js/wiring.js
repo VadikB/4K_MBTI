@@ -1563,10 +1563,45 @@ if (adminOrganizationsList) {
           email: formData.get('email'),
           full_name: formData.get('full_name'),
           role_description: formData.get('role_description'),
-          job_instructions: formData.get('job_instructions'),
+          job_instructions: null,
         });
         form.reset();
       });
+      return;
+    }
+    if (form.dataset.action === 'preview-early-data') {
+      const formData = new FormData(form);
+      const value = (name) => String(formData.get(name) || '').trim();
+      withScreen(loadAdminOrganizations, (module) =>
+        module.previewAdminOrganizationQuestionnaire(organizationId, {
+          assignment_ref: value('assignment_ref'),
+          source_author: value('source_author'),
+          channel: 'product_form',
+          template_variant: 'corporate',
+          template_version: '0.1',
+          csv_text: null,
+          answers: {
+            C01: {
+              name: value('organization_name'),
+              organization_type: value('organization_type'),
+              industry: value('industry'),
+              activity_description: value('activity_description'),
+            },
+            C02a: { participant_text: value('purpose') },
+            C03: { participant_text: value('results_usage') },
+            C04: { answer: value('result_recipients') },
+            C17: {
+              case_reality_level: value('case_reality_level'),
+              organization_name_usage_rules: value('organization_name_usage_rules'),
+            },
+            C21: {
+              organizer: value('organizer'),
+              responsible_contact: value('responsible_contact'),
+            },
+          },
+          idempotency_key: createOperationId(),
+        }),
+      );
       return;
     }
     if (form.dataset.action === 'import-members') {
@@ -1639,19 +1674,9 @@ if (adminOrganizationsList) {
       withScreen(loadAdminOrganizations, (module) => module.prepareAdminOrganizationAssessments(organizationId));
       return;
     }
-    if (button.dataset.action === 'show-people' || button.dataset.action === 'show-organization-data') {
-      const target = button.dataset.action === 'show-people' ? 'people' : 'organization-data';
-      card.querySelectorAll('[data-admin-view]').forEach((section) => {
-        section.classList.toggle('hidden', section.getAttribute('data-admin-view') !== target);
-      });
-      card.querySelectorAll('.admin-organization-steps button[data-action]').forEach((navigationButton) => {
-        const isActive = navigationButton.dataset.action === button.dataset.action;
-        navigationButton.classList.toggle('primary-button', isActive);
-        navigationButton.classList.toggle('compact-primary', isActive);
-        navigationButton.classList.toggle('ghost-button', !isActive);
-        navigationButton.classList.toggle('compact-ghost', !isActive);
-        navigationButton.setAttribute('aria-pressed', String(isActive));
-      });
+    if (button.dataset.action === 'show-admin-view') {
+      withScreen(loadAdminOrganizations, (module) =>
+        module.selectAdminOrganizationView(organizationId, button.dataset.view));
       return;
     }
     if (!value) {
