@@ -37,6 +37,7 @@ import {
   restartButton,
   dashboardRestartButton,
   dashboardMobileExitButton,
+  participantReturnManagementButton,
   dashboardProfileButton,
   dashboardOnboardingButton,
   adminLogoutButton,
@@ -1305,6 +1306,10 @@ if (authCompleteLogoutButton) {
 
 if (authCompleteContinueButton) {
   authCompleteContinueButton.addEventListener('click', async () => {
+    if (authCompleteContinueButton.dataset.action === 'return-to-management' && state.canAdmin) {
+      withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations());
+      return;
+    }
     if (authCompleteContinueButton.dataset.action === 'check-acquaintance-readiness') {
       authCompleteContinueButton.disabled = true;
       try {
@@ -1369,6 +1374,12 @@ if (dashboardMobileExitButton) {
   });
 }
 
+if (participantReturnManagementButton) {
+  participantReturnManagementButton.addEventListener('click', () => {
+    withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations());
+  });
+}
+
 adminLogoutButton.addEventListener('click', (event) => {
   void logoutAndReturnToStart(event.currentTarget);
 });
@@ -1381,9 +1392,23 @@ if (adminOpenReportsButton) {
 
 if (adminStartAssessmentButton) {
   adminStartAssessmentButton.addEventListener('click', () => {
+    if (state.adminDashboard?.is_superadmin) {
+      withScreen(() => import('./screens/profile-recovery.js'), (module) => module.recoverProfileCompletionForAssessment());
+      return;
+    }
     withScreen(loadAdminDashboard, (module) => module.openAdminAssessmentDashboard());
   });
 }
+
+document.querySelectorAll('[data-admin-area]').forEach((button) => {
+  button.addEventListener('click', () => {
+    if (button.dataset.adminArea === 'assessment') {
+      withScreen(loadAdminDashboard, (module) => module.openAdminAssessmentDashboard());
+      return;
+    }
+    withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations());
+  });
+});
 
 if (adminOpenOrganizationsButton) {
   adminOpenOrganizationsButton.addEventListener('click', () => {

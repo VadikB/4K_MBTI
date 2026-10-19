@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=20261018-ui03-palette">
   <link rel="stylesheet" href="/web/styles/screens/chat.css?v=20261018-ui03-palette">
   <link rel="stylesheet" href="/web/styles/screens/interview.css?v=20261018-ui03-palette">
-  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=20261018-ui03-palette">
+  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=20261019-adm19-02">
   <link rel="stylesheet" href="/web/styles/screens/reports.css?v=20261018-ui03-palette">
   <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=20261018-ui03-palette">
   <link rel="stylesheet" href="/web/styles/screens/admin.css?v=20261018-ui03-palette">
@@ -53,6 +53,10 @@
     </div>
   </div>
   <main class="shell">
+    <nav id="participant-area-navigation" class="participant-area-navigation hidden" aria-label="Разделы аккаунта">
+      <button id="participant-return-management-button" class="ghost-button compact-ghost" type="button">Управление</button>
+      <span aria-current="page">Моя оценка</span>
+    </nav>
     <section class="panel auth-panel" id="auth-panel">
       <div class="auth-panel-head">
         <div class="auth-brand-lockup">
@@ -427,8 +431,8 @@
       <div class="dashboard-topbar">
         <div class="brand dashboard-brand">4К Ассистент</div>
         <nav class="admin-account-navigation" aria-label="Разделы аккаунта">
-          <button class="admin-account-navigation-item current" type="button" aria-current="page">Управление</button>
-          <button class="admin-account-navigation-item" type="button" disabled title="Личный путь будет подключён следующим изменением">Моя оценка</button>
+          <button class="admin-account-navigation-item current" type="button" data-admin-area="management" aria-current="page">Управление</button>
+          <button class="admin-account-navigation-item" type="button" data-admin-area="assessment">Моя оценка</button>
         </nav>
         <button id="admin-organizations-back-button" class="ghost-button compact-ghost" type="button">К сводке</button>
       </div>

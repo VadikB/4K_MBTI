@@ -21,7 +21,7 @@ def _checksum(value: dict) -> str:
 
 def early_readiness(connection, *, user_id: int) -> dict:
     memberships = connection.execute(
-        """SELECT o.id,o.name FROM organization_memberships m
+        """SELECT o.id,o.name,m.role FROM organization_memberships m
            JOIN organizations o ON o.id=m.organization_id
            WHERE m.user_id=%s AND o.is_active=TRUE ORDER BY o.id""",
         (user_id,),
@@ -39,6 +39,8 @@ def early_readiness(connection, *, user_id: int) -> dict:
         (user_id, organization["id"]),
     ).fetchall()
     if not assignment_rows:
+        if str(organization.get("role") or "") == "admin":
+            return _waiting_assignment(organization)
         assignment_rows = connection.execute(
             """SELECT DISTINCT assignment_ref FROM questionnaire_response_revisions
                WHERE organization_id=%s AND status='confirmed' ORDER BY assignment_ref""",
@@ -139,6 +141,21 @@ def _waiting(reason: str, *, university: bool, organization: dict | None = None)
         "organization_id": int(organization["id"]) if organization else None,
         "organization_name": str(organization["name"]) if organization else None,
         "organization_kind": "university" if university else "organization",
+        "responsible_contact": None,
+        "briefing": None,
+        "briefing_checksum": None,
+        "organization_context_version_id": None,
+    }
+
+
+def _waiting_assignment(organization: dict) -> dict:
+    return {
+        "status": "waiting_for_assignment",
+        "reason": "assessment_assignment",
+        "message": "Оценка пока не назначена. Обратитесь к уполномоченному назначающему.",
+        "organization_id": int(organization["id"]),
+        "organization_name": str(organization["name"]),
+        "organization_kind": "organization",
         "responsible_contact": None,
         "briefing": None,
         "briefing_checksum": None,

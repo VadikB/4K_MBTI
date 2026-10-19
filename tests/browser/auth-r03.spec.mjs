@@ -132,6 +132,91 @@ test('ADM19-01 exposes three keyboard-operable management blocks without horizon
   }
 });
 
+test('ADM19-02 routes org-admin own assessment by server journey and preserves management capability', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  let profileReopens = 0;
+  await page.route('**/users/18/session-bootstrap', (route) => fulfillJson(route, {
+    user: adminUser, is_admin: true,
+    dashboard: { current_assessments: [], completed_assessments: [] },
+    admin_dashboard: { metrics: [], insights: [], activity_series: [], competency_average: [] },
+  }));
+  await page.route('**/users/18/journey-state', (route) => fulfillJson(route, {
+    next_action: 'wait_for_acquaintance_data', profile: { status: 'incomplete' },
+    onboarding: { status: 'not_started' }, assessment: { status: 'not_started' },
+    acquaintance: { readiness: { status: 'waiting_for_assignment', message: 'Оценка пока не назначена. Обратитесь к уполномоченному назначающему.' } },
+  }));
+  await page.route('**/users/session/reopen-profile', (route) => { profileReopens += 1; return fulfillJson(route, {}, 500); });
+
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  await card.locator('[data-action="preview-early-data"] [name="purpose"]').fill('Черновик цели оценки');
+  await page.getByRole('button', { name: 'Моя оценка' }).click();
+  await expect(page.getByRole('heading', { name: 'Оценка пока не назначена' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Вернуться в управление' })).toBeVisible();
+  expect(profileReopens).toBe(0);
+  expect(await page.evaluate(() => localStorage.getItem('agent4k.canAdmin'))).toBe('1');
+
+  await page.getByRole('button', { name: 'Вернуться в управление' }).click();
+  await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+  await expect(card.locator('[data-admin-view="organization-data"]')).toBeVisible();
+  await expect(card.locator('[data-action="preview-early-data"] [name="purpose"]')).toHaveValue('Черновик цели оценки');
+  await page.getByRole('button', { name: 'Моя оценка' }).click();
+  await expect(page.getByRole('heading', { name: 'Оценка пока не назначена' })).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Оценка пока не назначена' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Вернуться в управление' })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('agent4k.activeArea'))).toBe('assessment');
+
+  await page.getByRole('button', { name: 'Вернуться в управление' }).click();
+  await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('agent4k.activeArea'))).toBe('management');
+  expect(await page.evaluate(() => localStorage.getItem('agent4k.isAdmin'))).toBe('1');
+
+  await page.reload();
+  await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+  await page.goto(base + '/?screen=dashboard');
+  await expect(page.getByRole('heading', { name: 'Оценка пока не назначена' })).toBeVisible();
+});
+
+test('ADM19-02 opens the own saved M8 report and returns to management', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  const ownDashboard = {
+    greeting_name: 'Admin', current_assessments: [],
+    completed_assessments: [{ cycle_id: 'cycle-own', report_id: 'report-own', title: 'Моя оценка 4К',
+      organization_name: 'R03 Organization', status: 'report_ready', status_label: 'Результат готов',
+      description: 'Результат доступен.', action: 'open_report', button_label: 'Посмотреть результат' }],
+  };
+  await page.route('**/users/18/session-bootstrap', (route) => fulfillJson(route, {
+    user: adminUser, is_admin: true, dashboard: ownDashboard,
+    admin_dashboard: { metrics: [], insights: [], activity_series: [], competency_average: [], is_superadmin: false },
+  }));
+  await page.route('**/users/18/journey-state', (route) => fulfillJson(route, {
+    next_action: 'show_dashboard', profile: { status: 'complete' },
+    onboarding: { status: 'completed' }, assessment: { status: 'report_ready' },
+  }));
+  await page.route('**/users/assessment/m8/reports/report-own', (route) => fulfillJson(route, {
+    id: 'report-own', owner_user_id: 18, cycle_id: 'cycle-own', revision_no: 1,
+    created_at: '2026-10-19T12:00:00Z', c67: {
+      skills: [{ skill_id: 'K1.1', competency_id: 'K1', competency_name: 'Коммуникация',
+        skill_name: 'Понимание собеседника', outcome: 'full_score',
+        score: { value: 2, numerator: 2, denominator: 1 }, completeness: 'Полный состав' }],
+      competencies: [{ competency_id: 'K1', competency_name: 'Коммуникация', skill_ids: ['K1.1'], score: null }],
+      descriptive: { status: 'ready', summary: ['Сохранённый результат.'], claims: [] },
+      coverage: {}, limitations: [], reliability: { status: 'not_verified' }, sessions: [], collection: {},
+    },
+  }));
+  await page.route('**/users/assessment/m8/history', (route) => fulfillJson(route, { cycles: [] }));
+  await page.route('**/users/assessment/m8/reports/report-own/comparison', (route) => fulfillJson(route, { mode: 'none', skills: [] }));
+
+  await page.getByRole('button', { name: 'Моя оценка' }).click();
+  await expect(page.getByRole('heading', { name: 'Мои оценки' })).toBeVisible();
+  await page.getByRole('button', { name: 'Посмотреть результат' }).click();
+  await expect(page.locator('#m8-report-chart svg')).toBeVisible();
+  await page.locator('#participant-return-management-button').click();
+  await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+});
+
 test('ADM19-01 saves early organization data through the versioned product form contract', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
   let submittedPayload;

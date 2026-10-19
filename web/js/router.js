@@ -30,9 +30,11 @@ import {
   processingPanel,
   reportPanel,
   chatPanel,
+  participantAreaNavigation,
 } from './dom.js';
 
 export const hideAllPanels = () => {
+  participantAreaNavigation?.classList.toggle('hidden', !state.canAdmin || state.activeArea !== 'assessment');
   authPanel.classList.add('hidden');
   authCompletePanel?.classList.add('hidden');
   onboardingPanel.classList.add('hidden');
@@ -72,14 +74,15 @@ export const openAcquaintanceWaiting = (readiness = {}) => {
   hideAllPanels();
   state.currentScreen = 'auth-complete';
   persistAssessmentContext();
-  if (authCompleteTitle) authCompleteTitle.textContent = 'Данные для оценки готовятся';
+  const assignmentMissing = readiness.status === 'waiting_for_assignment';
+  if (authCompleteTitle) authCompleteTitle.textContent = assignmentMissing ? 'Оценка пока не назначена' : 'Данные для оценки готовятся';
   if (authCompleteDescription) {
     authCompleteDescription.textContent = readiness.message
       || 'Организация ещё готовит данные для вашей оценки. Когда подготовка будет завершена, здесь можно будет начать знакомство';
   }
   if (authCompleteContinueButton) {
-    authCompleteContinueButton.textContent = 'Проверить готовность';
-    authCompleteContinueButton.dataset.action = 'check-acquaintance-readiness';
+    authCompleteContinueButton.textContent = assignmentMissing ? 'Вернуться в управление' : 'Проверить готовность';
+    authCompleteContinueButton.dataset.action = assignmentMissing ? 'return-to-management' : 'check-acquaintance-readiness';
   }
   authCompletePanel?.classList.remove('hidden');
   window.history.replaceState({ screen: 'auth-complete' }, '', '/?screen=auth-complete');

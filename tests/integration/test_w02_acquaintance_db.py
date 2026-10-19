@@ -68,6 +68,10 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
         )
         assert early_readiness(connection, user_id=1)["status"] == "ready"
 
+        admin_readiness = early_readiness(connection, user_id=2)
+        assert admin_readiness["status"] == "waiting_for_assignment"
+        assert admin_readiness["reason"] == "assessment_assignment"
+
         accept_consent(connection, user_id=1, version=2)
         save_answers(connection, user_id=1, answers={"answer_1": "Ответ 1"})
         save_answers(connection, user_id=1, answers={"answer_2": "Не знаю"})

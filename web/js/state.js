@@ -9,6 +9,8 @@ export const state = {
   pendingUser: null,
   dashboard: null,
   isAdmin: false,
+  canAdmin: false,
+  activeArea: 'assessment',
   adminDashboard: null,
   adminOrganizations: null,
   adminPromptLab: null,
@@ -119,6 +121,8 @@ export const STORAGE_KEYS = {
   pendingUser: 'agent4k.pendingUser',
   dashboard: 'agent4k.dashboard',
   isAdmin: 'agent4k.isAdmin',
+  canAdmin: 'agent4k.canAdmin',
+  activeArea: 'agent4k.activeArea',
   adminDashboard: 'agent4k.adminDashboard',
   adminOrganizations: 'agent4k.adminOrganizations',
   adminMethodology: 'agent4k.adminMethodology',
@@ -220,6 +224,8 @@ export const persistAssessmentContext = () => {
     safeStorage.setItem(STORAGE_KEYS.dashboard, JSON.stringify(state.dashboard));
   }
   safeStorage.setItem(STORAGE_KEYS.isAdmin, state.isAdmin ? '1' : '0');
+  safeStorage.setItem(STORAGE_KEYS.canAdmin, state.canAdmin ? '1' : '0');
+  safeStorage.setItem(STORAGE_KEYS.activeArea, state.activeArea || 'assessment');
   if (state.adminDashboard) {
     safeStorage.setItem(STORAGE_KEYS.adminDashboard, JSON.stringify(state.adminDashboard));
   }
@@ -291,6 +297,8 @@ export const restoreAssessmentContext = () => {
     const storedDashboard = safeStorage.getItem(STORAGE_KEYS.dashboard);
     const storedSessionId = safeStorage.getItem(STORAGE_KEYS.assessmentSessionId);
     const storedIsAdmin = safeStorage.getItem(STORAGE_KEYS.isAdmin);
+    const storedCanAdmin = safeStorage.getItem(STORAGE_KEYS.canAdmin);
+    const storedActiveArea = safeStorage.getItem(STORAGE_KEYS.activeArea);
     const storedAdminDashboard = safeStorage.getItem(STORAGE_KEYS.adminDashboard);
     const storedAdminOrganizations = safeStorage.getItem(STORAGE_KEYS.adminOrganizations);
     const storedAdminMethodology = safeStorage.getItem(STORAGE_KEYS.adminMethodology);
@@ -330,6 +338,12 @@ export const restoreAssessmentContext = () => {
     }
     if (storedIsAdmin) {
       state.isAdmin = storedIsAdmin === '1';
+    }
+    if (storedCanAdmin) {
+      state.canAdmin = storedCanAdmin === '1';
+    }
+    if (storedActiveArea) {
+      state.activeArea = storedActiveArea;
     }
     if (storedAdminDashboard) {
       state.adminDashboard = JSON.parse(storedAdminDashboard);
