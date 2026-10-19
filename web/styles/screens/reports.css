@@ -11,7 +11,7 @@
     gap: var(--space-3);
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-lg);
-    border: 1px solid rgb(from var(--palette-graphite-100) r g b / 0.92);
+    border: 1px solid rgb(from var(--palette-graphite-200) r g b / 0.92);
     background: #ffffff;
     color: var(--text-main);
     box-shadow: none;
@@ -73,7 +73,7 @@
 
 .report-card-clickable:hover {
     transform: translateY(-1px);
-    box-shadow: 0 20px 48px rgb(from var(--palette-cyan-600) r g b / 0.12);
+    box-shadow: 0 20px 48px rgb(from var(--palette-cyan-500) r g b / 0.12);
 }
 
 .report-badge {
@@ -96,7 +96,7 @@
 
 .muted-report {
     color: var(--palette-graphite-600);
-    background: rgb(from var(--palette-graphite-100) r g b / 0.9);
+    background: rgb(from var(--palette-graphite-050) r g b / 0.9);
 }
 
 .report-actions {

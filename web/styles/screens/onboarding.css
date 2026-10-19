@@ -75,7 +75,7 @@
     min-width: 0;
     padding: var(--space-1) var(--space-3);
     border-radius: var(--radius-md);
-    background: rgb(from var(--palette-cyan-600) r g b / 0.1);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.1);
     color: var(--accent);
     font-family: var(--font-heading);
     font-size: var(--fs-micro);
@@ -166,7 +166,7 @@
     max-height: 160px;
     resize: none;
     overflow-y: auto;
-    border: 1px solid var(--palette-graphite-100);
+    border: 1px solid var(--palette-graphite-200);
     border-radius: 14px;
     padding: 14px 16px;
     font: inherit;
@@ -188,7 +188,7 @@
     width: 100%;
     margin-block: 12px;
     padding: 12px;
-    border: 1px solid var(--palette-graphite-100);
+    border: 1px solid var(--palette-graphite-200);
     border-radius: 12px;
     resize: vertical;
     font: inherit;
@@ -348,7 +348,7 @@
 .visual-card.muted {
     grid-column: 5 / span 2;
     grid-row: 3 / span 3;
-    background: var(--palette-graphite-100);
+    background: var(--palette-graphite-050);
 }
 
 .visual-card.muted span {
@@ -456,7 +456,7 @@
     width: 488px;
     height: 488px;
     border-radius: 50%;
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.05);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.05);
     background: transparent;
     display: grid;
     place-items: center;
@@ -464,7 +464,7 @@
 
 .radar-ring {
     position: absolute;
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.05);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.05);
     border-radius: 50%;
 }
 
@@ -485,7 +485,7 @@
     z-index: 1;
     width: 292px;
     height: 292px;
-    background: rgb(from var(--palette-cyan-600) r g b / 0.46);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.46);
     clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 

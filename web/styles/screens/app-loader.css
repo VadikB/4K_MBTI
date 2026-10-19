@@ -53,7 +53,7 @@
     width: 100%;
     height: 10px;
     border-radius: var(--radius-pill);
-    background: rgb(from var(--palette-cyan-600) r g b / 0.12);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.12);
     overflow: hidden;
 }
 
@@ -87,7 +87,7 @@
     border-radius: var(--radius-pill);
     display: grid;
     place-items: center;
-    background: rgb(from var(--palette-cyan-600) r g b / 0.08);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.08);
     color: var(--text-soft);
     font-family: var(--font-heading);
     font-size: var(--fs-caption);
@@ -134,7 +134,7 @@
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    border: 4px solid rgb(from var(--palette-cyan-600) r g b / 0.16);
+    border: 4px solid rgb(from var(--palette-cyan-500) r g b / 0.16);
     border-top-color: var(--accent);
     animation: app-loader-spin 0.9s linear infinite;
 }

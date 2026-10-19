@@ -27,6 +27,22 @@ const collectFiles = (directory, extension) => readdirSync(directory, { withFile
   return entry.name.endsWith(extension) ? [path] : [];
 });
 
+const rootTokenBlock = tokens.match(/:root\s*\{([\s\S]*?)\}/)?.[1] ?? '';
+const rootTokens = new Map(
+  [...rootTokenBlock.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/g)]
+    .map((match) => [match[1], match[2].trim()]),
+);
+
+const resolveRootToken = (name, trail = []) => {
+  assert.ok(rootTokens.has(name), `${name} is not defined in :root`);
+  assert.ok(!trail.includes(name), `cyclic token dependency: ${[...trail, name].join(' -> ')}`);
+  const value = rootTokens.get(name);
+  for (const reference of value.matchAll(/var\((--[a-z0-9-]+)(?:\s*,[^)]*)?\)/g)) {
+    resolveRootToken(reference[1], [...trail, name]);
+  }
+  return value;
+};
+
 test('UI03 exposes the owner palette and semantic aliases from one token source', () => {
   for (const color of [
     '#222c30', '#68777c', '#d6e2e5', '#f7f9fb',
@@ -38,6 +54,26 @@ test('UI03 exposes the owner palette and semantic aliases from one token source'
   assert.match(tokens, /--success-soft:\s*var\(--palette-cyan-050\)/);
   assert.match(tokens, /--warning-surface:\s*var\(--palette-coral-050\)/);
   assert.match(tokens, /--danger:\s*var\(--palette-error\)/);
+});
+
+test('QA19-02 resolves every palette token and rejects retired undefined names', () => {
+  const retired = new Set([
+    '--palette-cyan-600',
+    '--palette-coral-600',
+    '--palette-graphite-100',
+  ]);
+  for (const file of cssFiles) {
+    const css = readFileSync(file, 'utf8').toLowerCase();
+    for (const reference of css.matchAll(/var\((--palette-[a-z0-9-]+)(?:\s*,\s*([^)]*))?\)/g)) {
+      const [, name, fallback] = reference;
+      assert.ok(!retired.has(name), `${file}: retired undefined token ${name}`);
+      if (!rootTokens.has(name)) {
+        assert.ok(fallback?.trim(), `${file}: unresolved palette token ${name}`);
+        continue;
+      }
+      resolveRootToken(name);
+    }
+  }
 });
 
 test('UI03 keeps participant and admin primary actions semantically distinct', () => {

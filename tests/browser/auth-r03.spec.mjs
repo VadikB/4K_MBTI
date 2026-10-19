@@ -111,6 +111,53 @@ test('ADM01 organization navigation opens data and returns to the selected organ
   await expect(peopleButton).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('QA19-02 resolves palette tokens in visible auth and admin states', async ({ page }) => {
+  await baseRoutes(page);
+  await page.goto(base);
+
+  const palette = await page.evaluate(() => {
+    const styles = getComputedStyle(document.documentElement);
+    return {
+      cyan: styles.getPropertyValue('--palette-cyan-500').trim(),
+      coral: styles.getPropertyValue('--palette-coral-500').trim(),
+      graphiteBorder: styles.getPropertyValue('--palette-graphite-200').trim(),
+      retiredCyan: styles.getPropertyValue('--palette-cyan-600').trim(),
+      retiredCoral: styles.getPropertyValue('--palette-coral-600').trim(),
+      retiredGraphite: styles.getPropertyValue('--palette-graphite-100').trim(),
+    };
+  });
+  expect(palette).toEqual({
+    cyan: '#18b8c6', coral: '#ff563d', graphiteBorder: '#d6e2e5',
+    retiredCyan: '', retiredCoral: '', retiredGraphite: '',
+  });
+
+  await page.locator('#email-input').focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#email-input')).toBeFocused();
+  await expect(page.locator('#email-input')).toHaveCSS('border-color', 'rgb(34, 44, 48)');
+  await expect(page.locator('#email-input')).not.toHaveCSS('box-shadow', 'none');
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#request-magic-link-button')).toBeFocused();
+  await expect(page.locator('#request-magic-link-button')).not.toHaveCSS('outline-style', 'none');
+  for (const width of [320, 360, 375, 390, 430, 768, 1024, 1366, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const focusBounds = await page.locator('#request-magic-link-button').boundingBox();
+    expect(focusBounds.x).toBeGreaterThanOrEqual(3);
+    expect(focusBounds.x + focusBounds.width).toBeLessThanOrEqual(width - 3);
+    const layout = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(layout.scrollWidth).toBe(layout.clientWidth);
+  }
+
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  const card = page.locator('[data-organization-id="3"]');
+  await expect(card.locator('.primary-button').first()).toHaveCSS('background-color', 'rgb(34, 44, 48)');
+  await expect(card).toHaveCSS('border-color', 'rgb(214, 226, 229)');
+});
+
 test('R03 personal invitation has priority and exposes an explicit account choice', async ({ page }) => {
   await baseRoutes(page, {
     authenticated: true,

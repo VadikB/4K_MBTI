@@ -11,7 +11,7 @@
 
 .admin-readiness-panel {
     padding: 20px;
-    border: 1px solid var(--palette-graphite-100);
+    border: 1px solid var(--palette-graphite-200);
     border-radius: 8px;
     background: #b3ebef;
 }
@@ -72,7 +72,7 @@
 .admin-organization-import-form input {
     height: 56px;
     border-radius: 8px;
-    border: 1px solid var(--palette-graphite-100);
+    border: 1px solid var(--palette-graphite-200);
     background: #f6f9f9;
     padding: 0 var(--space-3);
     font: inherit;
@@ -120,7 +120,7 @@
 .admin-organization-picker select {
     width: 100%;
     height: 48px;
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.2);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.2);
     border-radius: var(--radius-md);
     background: #fff;
     padding: 0 var(--space-3);
@@ -138,7 +138,7 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-3);
     padding: var(--space-4);
-    border: 1px solid var(--palette-graphite-100);
+    border: 1px solid var(--palette-graphite-200);
     border-radius: 8px;
     background: #fff;
 }
@@ -172,7 +172,7 @@
 .admin-organization-profile-form textarea {
     width: 100%;
     min-width: 0;
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.16);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.16);
     border-radius: var(--radius-md);
     background: #fff;
     padding: var(--space-3);
@@ -247,9 +247,9 @@
 .admin-organization-batch-progress {
     display: grid;
     gap: var(--space-2);
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.16);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.16);
     border-radius: var(--radius-md);
-    background: rgb(from var(--palette-cyan-600) r g b / 0.04);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.04);
     padding: var(--space-3);
 }
 
@@ -263,7 +263,7 @@
     height: 8px;
     overflow: hidden;
     border-radius: var(--radius-pill);
-    background: rgb(from var(--palette-cyan-600) r g b / 0.12);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.12);
 }
 
 .admin-organization-batch-progress-track span {
@@ -281,7 +281,7 @@
 }
 
 .admin-organization-stats span {
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.12);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.12);
     border-radius: var(--radius-pill);
     padding: 6px 10px;
     background: rgba(255, 255, 255, 0.78);
@@ -312,7 +312,7 @@
     justify-content: space-between;
     gap: var(--space-3);
     align-items: flex-start;
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.12);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.12);
     border-radius: var(--radius-md);
     background: rgba(255, 255, 255, 0.78);
     padding: var(--space-3);
@@ -348,7 +348,7 @@
     height: 28px;
     border: 0;
     border-radius: var(--radius-pill);
-    background: rgb(from var(--palette-cyan-600) r g b / 0.1);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.1);
     color: var(--text-main);
     cursor: pointer;
 }
@@ -379,7 +379,7 @@
     place-items: center;
     min-height: 28px;
     border-radius: var(--radius-pill);
-    background: rgb(from var(--palette-cyan-600) r g b / 0.08);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.08);
     color: var(--accent);
     font-size: var(--fs-meta);
     font-weight: var(--fw-bold);
@@ -388,7 +388,7 @@
 }
 
 .admin-organization-preparation-state.ready {
-    background: rgb(from var(--palette-cyan-600) r g b / 0.1);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.1);
     color: var(--accent);
 }
 
@@ -434,7 +434,7 @@
     gap: 8px;
     min-height: 34px;
     max-width: 100%;
-    border: 1px solid rgb(from var(--palette-cyan-600) r g b / 0.16);
+    border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.16);
     border-radius: var(--radius-pill);
     background: #fff;
     padding: 6px 8px 6px 12px;
@@ -453,7 +453,7 @@
     height: 22px;
     border: 0;
     border-radius: 50%;
-    background: rgb(from var(--palette-cyan-600) r g b / 0.1);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.1);
     color: var(--text-main);
     cursor: pointer;
 }
