@@ -61,6 +61,8 @@ export const resetStaleUserState = async ({ advance = true, broadcast = true } =
   state.pendingUser = null;
   state.dashboard = null;
   state.isAdmin = false;
+  state.canAdmin = false;
+  state.activeArea = 'assessment';
   state.adminDashboard = null;
   state.pendingAgentMessage = null;
   state.pendingRoleOptions = [];
@@ -82,6 +84,7 @@ const selectedProfileQuery = () => state.dashboard?.personalized_profile_id
   ? '?personalized_profile_id=' + encodeURIComponent(state.dashboard.personalized_profile_id) : '';
 
 export const restoreServerSession = async () => {
+  const restoreAssessmentArea = state.canAdmin && state.activeArea === 'assessment';
   const response = await fetch('/users/session/restore' + selectedProfileQuery(), {
     credentials: 'same-origin',
   });
@@ -94,13 +97,16 @@ export const restoreServerSession = async () => {
   state.pendingUser = data.user;
   state.dashboard = data.dashboard || null;
   state.isAdmin = isAdminUserPayload(data.user, Boolean(data.is_admin));
+  state.canAdmin = state.isAdmin;
   state.adminDashboard = data.admin_dashboard || null;
   if (state.isAdmin) {
+    state.activeArea = restoreAssessmentArea ? 'assessment' : 'management';
+    state.isAdmin = !restoreAssessmentArea;
     state.sessionId = null;
     state.pendingAgentMessage = null;
     state.pendingRoleOptions = [];
     state.pendingNoChangesQuickReply = false;
-    state.currentScreen = 'admin';
+    if (!restoreAssessmentArea && !state.currentScreen?.startsWith('admin')) state.currentScreen = 'admin';
   } else if (!state.currentScreen || state.currentScreen === 'auth') {
     state.currentScreen = 'auth';
   }
@@ -114,6 +120,7 @@ export const restoreLocalUserSession = async () => {
   }
 
   try {
+    const restoreAssessmentArea = state.canAdmin && state.activeArea === 'assessment';
     const response = await fetch('/users/' + state.pendingUser.id + '/session-bootstrap' + selectedProfileQuery(), {
       credentials: 'same-origin',
     });
@@ -123,13 +130,16 @@ export const restoreLocalUserSession = async () => {
     state.pendingUser = data.user;
     state.dashboard = data.dashboard;
     state.isAdmin = isAdminUserPayload(data.user, Boolean(data.is_admin));
+    state.canAdmin = state.isAdmin;
     state.adminDashboard = data.admin_dashboard || null;
     if (state.isAdmin) {
+      state.activeArea = restoreAssessmentArea ? 'assessment' : 'management';
+      state.isAdmin = !restoreAssessmentArea;
       state.sessionId = null;
       state.pendingAgentMessage = null;
       state.pendingRoleOptions = [];
       state.pendingNoChangesQuickReply = false;
-      state.currentScreen = 'admin';
+      if (!restoreAssessmentArea && !state.currentScreen?.startsWith('admin')) state.currentScreen = 'admin';
     } else if (!state.currentScreen || state.currentScreen === 'auth') {
       state.currentScreen = 'auth';
     }
@@ -144,8 +154,8 @@ export const restoreLocalUserSession = async () => {
   }
 };
 
-export const loadUserJourneyState = async () => {
-  if (!state.pendingUser?.id || state.isAdmin) {
+export const loadUserJourneyState = async ({ allowAdmin = false } = {}) => {
+  if (!state.pendingUser?.id || (state.isAdmin && !allowAdmin)) {
     return null;
   }
   const response = await fetch('/users/' + state.pendingUser.id + '/journey-state' + selectedProfileQuery(), {

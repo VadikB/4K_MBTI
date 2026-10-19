@@ -19,6 +19,32 @@ const invitationOperationIds = new Map();
 const questionnairePreviews = new Map();
 const questionnaireRevisions = new Map();
 const organizationViews = new Map();
+let managementDraft = null;
+
+const editableManagementFields = () => [...adminOrganizationsPanel.querySelectorAll('input, textarea, select')]
+  .filter((field) => field.type !== 'file' && field.type !== 'hidden');
+
+export const captureAdminOrganizationsDraft = () => {
+  if (adminOrganizationsPanel.classList.contains('hidden')) return;
+  const fields = editableManagementFields();
+  managementDraft = {
+    values: fields.map((field) => ({ value: field.value, checked: field.checked })),
+    focusedIndex: fields.indexOf(document.activeElement),
+  };
+};
+
+const restoreAdminOrganizationsDraft = () => {
+  if (!managementDraft) return;
+  const fields = editableManagementFields();
+  if (fields.length === managementDraft.values.length) {
+    fields.forEach((field, index) => {
+      field.value = managementDraft.values[index].value;
+      if (['checkbox', 'radio'].includes(field.type)) field.checked = managementDraft.values[index].checked;
+    });
+    fields[managementDraft.focusedIndex]?.focus({ preventScroll: true });
+  }
+  managementDraft = null;
+};
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -635,6 +661,7 @@ export const renderAdminOrganizations = () => {
   }
   const organizations = Array.isArray(data?.items) ? data.items : [];
   const isSuperadmin = Boolean(data?.is_superadmin);
+  document.querySelector('[data-admin-area="assessment"]')?.classList.toggle('hidden', isSuperadmin);
   document.getElementById('admin-organization-create-form')?.closest('section')?.classList.toggle(
     'hidden', !data || (!isSuperadmin && organizations.length > 0),
   );
@@ -796,6 +823,8 @@ export const renderAdminOrganizations = () => {
 };
 
 export const openAdminOrganizations = async () => {
+  state.activeArea = 'management';
+  state.isAdmin = Boolean(state.canAdmin || state.isAdmin);
   setCurrentScreen('admin-organizations');
   persistAssessmentContext();
   syncUrlState('admin-organizations');
@@ -810,4 +839,5 @@ export const openAdminOrganizations = async () => {
     return;
   }
   renderAdminOrganizations();
+  restoreAdminOrganizationsDraft();
 };

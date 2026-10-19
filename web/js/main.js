@@ -9,6 +9,7 @@ import {
   restoreAssessmentContextFromParams,
   clearAssessmentContext,
   applyJourneyAssessmentContext,
+  persistAssessmentContext,
 } from './state.js';
 import {
   restoreServerSession,
@@ -199,6 +200,20 @@ const bootApp = async () => {
     } catch (error) {
       console.error('Failed to restore local user session', error);
     }
+  }
+
+  if (state.canAdmin && !state.adminDashboard?.is_superadmin && screen) {
+    if (screen.startsWith('admin')) {
+      state.activeArea = 'management';
+      state.isAdmin = true;
+    } else if (
+      ['auth-complete', 'onboarding', 'dashboard', 'ai-welcome', 'prechat', 'interview', 'profile', 'reports', 'processing', 'chat'].includes(screen)
+      || (screen === 'report' && params.get('report_access') !== 'customer')
+    ) {
+      state.activeArea = 'assessment';
+      state.isAdmin = false;
+    }
+    persistAssessmentContext();
   }
 
   if (state.pendingUser?.id) {

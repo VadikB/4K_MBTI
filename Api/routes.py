@@ -4465,6 +4465,8 @@ def prepare_admin_organization_member_assessment(
 ) -> AssessmentPreparationEnqueueResponse:
     token = request.cookies.get(SESSION_COOKIE_NAME)
     current_user = web_session_service.get_user_by_token(token)
+    if current_user is not None and int(current_user.id) == int(user_id):
+        raise HTTPException(status_code=403, detail="Нельзя назначить оценку самому себе.")
     operation_id = request.headers.get("X-Agent4K-Operation-Id") or uuid4().hex
     with get_connection() as connection:
         _require_superadmin(connection, current_user)
@@ -4600,9 +4602,10 @@ def prepare_admin_organization_assessments(
             JOIN organization_memberships om ON om.user_id = u.id
             WHERE om.organization_id = %s
               AND om.role = 'member'
+              AND u.id <> %s
             ORDER BY u.id
             """,
-            (organization_id,),
+            (organization_id, current_user.id if current_user else -1),
         ).fetchall()
         connection.execute(
             """

@@ -6,6 +6,17 @@
     background: var(--bg-soft);
 }
 
+.participant-area-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    border-bottom: 1px solid var(--palette-graphite-200);
+    background: var(--bg-soft);
+    color: var(--text-main);
+}
+
 .dashboard-topbar,
 .section-row {
     display: flex;
