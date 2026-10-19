@@ -19,6 +19,7 @@ M6–M8 пока не внесены как задачи проекта; гот�
 | Базовые роли M3 | `role_profiles/competencies_4k/1.1`, base_roles и role_profile_contract | `.venv/bin/python -m pytest tests/unit/test_m3_base_roles.py` |
 | Контекст M4 | `contexts/competencies_4k/1.1`, context_contract и personalized_profile.schema | `.venv/bin/python -m pytest tests/unit/test_m4_context_package.py` |
 | Кейсы M5 | `cases/competencies_4k/1.1`, case-package и JSON Schema | `.venv/bin/python scripts/build_m5_case_package.py --verify-only`; `.venv/bin/python -m pytest tests/unit/test_m5_case_package.py` |
+| Sales Case/AS M5 draft | `cases/competencies_4k/sales-pilot/0.1`, JSON-native schema v3, WORKING/runtime disabled | `.venv/bin/python scripts/build_m5_sales_package.py --verify-only`; `.venv/bin/python -m pytest tests/unit/test_m5_sales_package.py` |
 | Лабораторный prompt M5 | `prompts/m5_generation_lab/v1`, `LabPromptManifest` в `Api/m5_generation_lab.py` | `.venv/bin/python -m pytest tests/unit/test_m5_generation_lab.py` |
 | Legacy methodology/scenario/configuration | `methodologies/competencies_4k/v1.yaml`, `scenarios/standard_4k_interview/v1.yaml`, `configurations/4k_standard_v1.yaml` | `.venv/bin/python -m pytest tests/unit/test_assessment_configuration.py tests/unit/test_assessment_authoring.py` |
 

@@ -1,0 +1,267 @@
+[
+  {
+    "as_id": "AS.MOBIUS.SALES.TEST.01.03",
+    "as_source": {
+      "file": "sources/Mobius_Sales_AS_01_v0.3_TEST_DRAFT.json",
+      "pointer": "",
+      "sha256": "ec9ad4fb875832d2c019e778d2328009de656514868c0f3469103d77b013dd71"
+    },
+    "as_version": "v0.3",
+    "case_id": "CASE.SPEC.01",
+    "case_source": {
+      "file": "sources/Case_SPEC_01_v0.3_WORKING.json",
+      "pointer": "",
+      "sha256": "104b9aa2eca8372927877cccf491f08316288b0cf4b57582bef4a99a5c2f7ef7"
+    },
+    "case_version": "v0.3",
+    "characters": 0,
+    "indicator_ids": [
+      "K1.I01",
+      "K1.I13",
+      "K1.I14",
+      "K4.I06"
+    ],
+    "materials": 3,
+    "scenario_steps": 6,
+    "unresolved": [
+      "CHARACTER_PROJECTION_REQUIRES_SLS02"
+    ]
+  },
+  {
+    "as_id": "AS.MOBIUS.SALES.TEST.02.04",
+    "as_source": {
+      "file": "sources/AS_Mobius_Sales_SPEC_02_v0.4_TEST_DRAFT.json",
+      "pointer": "",
+      "sha256": "6d0a8857d7618b0441ee7b4cbe402474dd9a4f7551e9e7337465221cc3869d42"
+    },
+    "as_version": "v0.4",
+    "case_id": "CASE.SPEC.02",
+    "case_source": {
+      "file": "sources/Case_SPEC_02_v0.4_WORKING.json",
+      "pointer": "",
+      "sha256": "a26123553906b0829c10244edb00599c2519feb06bc0f69e3a4d1dd9d36aec52"
+    },
+    "case_version": "v0.4",
+    "characters": 0,
+    "indicator_ids": [
+      "K4.I03",
+      "K4.I05",
+      "K4.I12",
+      "K4.I13",
+      "K4.I14",
+      "K4.I16",
+      "K4.I17",
+      "K1.I06",
+      "K1.I09"
+    ],
+    "materials": 6,
+    "scenario_steps": 3,
+    "unresolved": []
+  },
+  {
+    "as_id": "AS.MOBIUS.SALES.TEST.03.03",
+    "as_source": {
+      "file": "sources/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+      "pointer": "",
+      "sha256": "8b560785b5069d77e63355afb6c04ac3737070c43ca82641127fb88eb87fd13c"
+    },
+    "as_version": "v0.3",
+    "case_id": "CASE.SPEC.03",
+    "case_source": {
+      "file": "sources/Case_SPEC_03_v0.2_WORKING.json",
+      "pointer": "",
+      "sha256": "a513a18a8387545671d01b2081c07b8c58762bd775144fababe2af07dc34ab92"
+    },
+    "case_version": "v0.2",
+    "characters": 3,
+    "indicator_ids": [
+      "K2.I01",
+      "K2.I06",
+      "K2.I07",
+      "K2.I08",
+      "K2.I10",
+      "K2.I13",
+      "K2.I14",
+      "K1.I15",
+      "K1.I17"
+    ],
+    "materials": 4,
+    "scenario_steps": 4,
+    "unresolved": []
+  },
+  {
+    "as_id": "AS.MOBIUS.SALES.TEST.04.04",
+    "as_source": {
+      "file": "sources/AS_Mobius_Sales_SPEC_04_v0.4_TEST_DRAFT.json",
+      "pointer": "",
+      "sha256": "ab6d3668467261f11a67aee75ead594736b37a42bca4fe3e20bc74e8155dbf57"
+    },
+    "as_version": "v0.4",
+    "case_id": "CASE.SPEC.04",
+    "case_source": {
+      "file": "sources/Case_SPEC_04_v0.3_WORKING.json",
+      "pointer": "",
+      "sha256": "0f30026de5e5db44b621118da7d9923da02c42fbb762e4b9822c76f385a05ec9"
+    },
+    "case_version": "v0.3",
+    "characters": 0,
+    "indicator_ids": [
+      "K3.I03",
+      "K3.I06",
+      "K3.I09",
+      "K3.I10",
+      "K3.I11",
+      "K1.I16",
+      "K4.I18"
+    ],
+    "materials": 6,
+    "scenario_steps": 3,
+    "unresolved": [
+      "CHARACTER_PROJECTION_REQUIRES_SLS02"
+    ]
+  },
+  {
+    "as_id": "AS.MOBIUS.SALES.TEST.05.03",
+    "as_source": {
+      "file": "sources/AS_Mobius_Sales_SPEC_05_v0.3_TEST_DRAFT.json",
+      "pointer": "",
+      "sha256": "f688498decf45f555b55842f480de8127675bcaefaace278f75a6ee049ca17e1"
+    },
+    "as_version": "v0.3",
+    "case_id": "CASE.SPEC.05",
+    "case_source": {
+      "file": "sources/Case_SPEC_05_v0.3_WORKING.json",
+      "pointer": "",
+      "sha256": "075d970eb229cdbf4e829f394622df1144f31567c655a354a4cbd03fe67cc8fb"
+    },
+    "case_version": "v0.3",
+    "characters": 0,
+    "indicator_ids": [
+      "K3.I01",
+      "K3.I03",
+      "K3.I06",
+      "K3.I07",
+      "K4.I07",
+      "K4.I08"
+    ],
+    "materials": 6,
+    "scenario_steps": 3,
+    "unresolved": [
+      "CHARACTER_PROJECTION_REQUIRES_SLS02"
+    ]
+  },
+  {
+    "as_id": "AS.MOBIUS.SALES.TEST.06.02",
+    "as_source": {
+      "file": "sources/AS_Mobius_Sales_SPEC_06_v0.2_TEST_DRAFT.json",
+      "pointer": "",
+      "sha256": "e47c8d254d5ef0023afe7c5a035e85cf92c68ddd6cbd312d0944f1676149d0a5"
+    },
+    "as_version": "v0.2",
+    "case_id": "CASE.SPEC.06",
+    "case_source": {
+      "file": "sources/Case_SPEC_06_v0.2_WORKING.json",
+      "pointer": "",
+      "sha256": "92b6be6bd8936ad1c6ce8338eb512241ad38730199cfe9dca38867d3fcfab6a7"
+    },
+    "case_version": "v0.2",
+    "characters": 0,
+    "indicator_ids": [
+      "K2.I02",
+      "K2.I06",
+      "K2.I14",
+      "K3.I09",
+      "K4.I15"
+    ],
+    "materials": 4,
+    "scenario_steps": 3,
+    "unresolved": [
+      "CHARACTER_PROJECTION_REQUIRES_SLS02"
+    ]
+  },
+  {
+    "as_id": "AS.MOBIUS.SALES.TEST.07.01",
+    "as_source": {
+      "file": "sources/AS_Mobius_Sales_SPEC_07_v0.2_TEST_DRAFT.json",
+      "pointer": "",
+      "sha256": "3900d061d31a47c953fa648184a4976a352b37111fca17ce7d00a59836919c19"
+    },
+    "as_version": "v0.2",
+    "case_id": "CASE.SPEC.07",
+    "case_source": {
+      "file": "sources/Case_SPEC_07_v0.2_WORKING.json",
+      "pointer": "",
+      "sha256": "8aaeaf0221a6f632046defba632edc411ef268320b35cf20e5addea066f2f70e"
+    },
+    "case_version": "v0.2",
+    "characters": 0,
+    "indicator_ids": [
+      "K4.I02",
+      "K4.I06",
+      "K4.I07",
+      "K4.I10",
+      "K3.I02",
+      "K3.I06"
+    ],
+    "materials": 5,
+    "scenario_steps": 3,
+    "unresolved": []
+  },
+  {
+    "as_id": "AS.MOBIUS.SALES.TEST.08.01",
+    "as_source": {
+      "file": "sources/AS_Mobius_Sales_SPEC_08_v0.2_TEST_DRAFT.json",
+      "pointer": "",
+      "sha256": "7311226464a2304e70be0c9f1ae78b3224786e2e31e529fb66c09bcf31904e67"
+    },
+    "as_version": "v0.2",
+    "case_id": "CASE.SPEC.08",
+    "case_source": {
+      "file": "sources/Case_SPEC_08_v0.2_WORKING.json",
+      "pointer": "",
+      "sha256": "b709d9ed2f222cf92a7db61572d477da08bc4b5cf793477695ae2a87f37ed4fa"
+    },
+    "case_version": "v0.2",
+    "characters": 0,
+    "indicator_ids": [
+      "K2.I07",
+      "K2.I08",
+      "K2.I14",
+      "K1.I11"
+    ],
+    "materials": 4,
+    "scenario_steps": 3,
+    "unresolved": [
+      "CHARACTER_PROJECTION_REQUIRES_SLS02"
+    ]
+  },
+  {
+    "as_id": "AS.MOBIUS.SALES.TEST.09.01",
+    "as_source": {
+      "file": "sources/AS_Mobius_Sales_SPEC_09_v0.2_TEST_DRAFT.json",
+      "pointer": "",
+      "sha256": "1fe9abc7db68c7f610dcd48841724a36c9e1f884eed44f66cce2136e411e3af3"
+    },
+    "as_version": "v0.2",
+    "case_id": "CASE.SPEC.09",
+    "case_source": {
+      "file": "sources/Case_SPEC_09_v0.2_WORKING.json",
+      "pointer": "",
+      "sha256": "54a3016807f7f995f9abeeff21e44db164a09df88c8f4a0c27253e6ecae1e74c"
+    },
+    "case_version": "v0.2",
+    "characters": 0,
+    "indicator_ids": [
+      "K1.I01",
+      "K1.I16",
+      "K1.I17",
+      "K4.I12",
+      "K4.I16"
+    ],
+    "materials": 4,
+    "scenario_steps": 3,
+    "unresolved": [
+      "CHARACTER_PROJECTION_REQUIRES_SLS02"
+    ]
+  }
+]

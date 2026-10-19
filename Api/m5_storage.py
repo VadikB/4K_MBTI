@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from uuid import UUID
 
-from Api.assessment_case_contracts import AssessmentSituationV2, CaseVersionV2
+from Api.assessment_case_contracts import AssessmentSituationV2, validate_case_version
 from Api.assessment_contexts import build_personalized_profile, canonical_json, context_checksum
 from Api.m5_case_runtime import build_assessment_situation, checksum
 from Api.m5_rule_engine import build_m5_ai_operations_snapshot
@@ -80,7 +80,7 @@ def import_package(connection, *, package: dict, manifest: dict, execution_rules
           json.dumps(execution_rules or {}, ensure_ascii=False))).fetchone()
     package_db_id = int(row["id"])
     for raw in package["cases"]:
-        case = CaseVersionV2.model_validate(raw)
+        case = validate_case_version(raw)
         content = case.model_dump()
         content_checksum = checksum(content)
         conflict = connection.execute(

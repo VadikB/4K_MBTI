@@ -1,0 +1,190 @@
+{
+  "kind": "author_source_selection_not_runtime_package",
+  "date": "2026-10-18",
+  "scope": "Sales; CASE.SPEC.01-09 only; no HR or mini",
+  "reference_main": "193768465f49870aabb3dcb3df8cd04eaa7b831d",
+  "files": [
+    {
+      "case_id": "CASE.SPEC.01",
+      "kind": "case",
+      "file": "sources/Case_SPEC_01_v0.3_WORKING.json",
+      "sha256": "104b9aa2eca8372927877cccf491f08316288b0cf4b57582bef4a99a5c2f7ef7",
+      "bytes": 44089,
+      "supplied_local_source": "analysis/cases/Case_SPEC_01_v0.3_Product_Package/Case_SPEC_01_v0.3_WORKING.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.01",
+      "kind": "sales_as",
+      "file": "sources/Mobius_Sales_AS_01_v0.3_TEST_DRAFT.json",
+      "sha256": "ec9ad4fb875832d2c019e778d2328009de656514868c0f3469103d77b013dd71",
+      "bytes": 33583,
+      "supplied_local_source": "analysis/cases/Case_SPEC_01_v0.3_Product_Package/Mobius_Sales_AS_01_v0.3_TEST_DRAFT.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "kind": "case",
+      "file": "sources/Case_SPEC_02_v0.4_WORKING.json",
+      "sha256": "a26123553906b0829c10244edb00599c2519feb06bc0f69e3a4d1dd9d36aec52",
+      "bytes": 50535,
+      "supplied_local_source": "analysis/cases/Case_SPEC_02_v0.4_Product_Package/Case_SPEC_02_v0.4_WORKING.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "kind": "sales_as",
+      "file": "sources/AS_Mobius_Sales_SPEC_02_v0.4_TEST_DRAFT.json",
+      "sha256": "6d0a8857d7618b0441ee7b4cbe402474dd9a4f7551e9e7337465221cc3869d42",
+      "bytes": 49243,
+      "supplied_local_source": "analysis/cases/Case_SPEC_02_v0.4_Product_Package/AS_Mobius_Sales_SPEC_02_v0.4_TEST_DRAFT.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "kind": "case",
+      "file": "sources/Case_SPEC_03_v0.2_WORKING.json",
+      "sha256": "a513a18a8387545671d01b2081c07b8c58762bd775144fababe2af07dc34ab92",
+      "bytes": 42954,
+      "supplied_local_source": "analysis/cases/Case_SPEC_03_v0.2_AS_v0.3_Product_Package/Case_SPEC_03_v0.2_WORKING.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "kind": "sales_as",
+      "file": "sources/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+      "sha256": "8b560785b5069d77e63355afb6c04ac3737070c43ca82641127fb88eb87fd13c",
+      "bytes": 86366,
+      "supplied_local_source": "analysis/cases/Case_SPEC_03_v0.2_AS_v0.3_Product_Package/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "kind": "case",
+      "file": "sources/Case_SPEC_04_v0.3_WORKING.json",
+      "sha256": "0f30026de5e5db44b621118da7d9923da02c42fbb762e4b9822c76f385a05ec9",
+      "bytes": 38031,
+      "supplied_local_source": "analysis/cases/Case_SPEC_04_v0.3_Sales_HR_Product_Package/Case_SPEC_04_v0.3_WORKING.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "kind": "sales_as",
+      "file": "sources/AS_Mobius_Sales_SPEC_04_v0.4_TEST_DRAFT.json",
+      "sha256": "ab6d3668467261f11a67aee75ead594736b37a42bca4fe3e20bc74e8155dbf57",
+      "bytes": 48197,
+      "supplied_local_source": "analysis/cases/Case_SPEC_04_v0.3_Sales_HR_Product_Package/AS_Mobius_Sales_SPEC_04_v0.4_TEST_DRAFT.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "kind": "case",
+      "file": "sources/Case_SPEC_05_v0.3_WORKING.json",
+      "sha256": "075d970eb229cdbf4e829f394622df1144f31567c655a354a4cbd03fe67cc8fb",
+      "bytes": 37761,
+      "supplied_local_source": "analysis/cases/Case_SPEC_05_v0.3_Sales_HR_Product_Package/Case_SPEC_05_v0.3_WORKING.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "kind": "sales_as",
+      "file": "sources/AS_Mobius_Sales_SPEC_05_v0.3_TEST_DRAFT.json",
+      "sha256": "f688498decf45f555b55842f480de8127675bcaefaace278f75a6ee049ca17e1",
+      "bytes": 50353,
+      "supplied_local_source": "analysis/cases/Case_SPEC_05_v0.3_Sales_HR_Product_Package/AS_Mobius_Sales_SPEC_05_v0.3_TEST_DRAFT.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "kind": "case",
+      "file": "sources/Case_SPEC_06_v0.2_WORKING.json",
+      "sha256": "92b6be6bd8936ad1c6ce8338eb512241ad38730199cfe9dca38867d3fcfab6a7",
+      "bytes": 39536,
+      "supplied_local_source": "analysis/context/Case06_read.txt",
+      "origin": "separate_supplied_json_text; not part of original case ZIP",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "kind": "sales_as",
+      "file": "sources/AS_Mobius_Sales_SPEC_06_v0.2_TEST_DRAFT.json",
+      "sha256": "e47c8d254d5ef0023afe7c5a035e85cf92c68ddd6cbd312d0944f1676149d0a5",
+      "bytes": 79843,
+      "supplied_local_source": "analysis/context/AS_Mobius_Sales_SPEC_06_v0.2_TEST_DRAFT.json",
+      "origin": "separate_supplied_json_text; not part of original case ZIP",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "kind": "case",
+      "file": "sources/Case_SPEC_07_v0.2_WORKING.json",
+      "sha256": "8aaeaf0221a6f632046defba632edc411ef268320b35cf20e5addea066f2f70e",
+      "bytes": 39503,
+      "supplied_local_source": "analysis/cases/Case_SPEC_07_v0.2_Product_Package/Case_SPEC_07_v0.2_WORKING.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "kind": "sales_as",
+      "file": "sources/AS_Mobius_Sales_SPEC_07_v0.2_TEST_DRAFT.json",
+      "sha256": "3900d061d31a47c953fa648184a4976a352b37111fca17ce7d00a59836919c19",
+      "bytes": 76308,
+      "supplied_local_source": "analysis/cases/Case_SPEC_07_v0.2_Product_Package/AS_Mobius_Sales_SPEC_07_v0.2_TEST_DRAFT.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "kind": "case",
+      "file": "sources/Case_SPEC_08_v0.2_WORKING.json",
+      "sha256": "b709d9ed2f222cf92a7db61572d477da08bc4b5cf793477695ae2a87f37ed4fa",
+      "bytes": 45906,
+      "supplied_local_source": "analysis/cases/Case_SPEC_08_v0.2_Product_Package/Case_SPEC_08_v0.2_WORKING.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "kind": "sales_as",
+      "file": "sources/AS_Mobius_Sales_SPEC_08_v0.2_TEST_DRAFT.json",
+      "sha256": "7311226464a2304e70be0c9f1ae78b3224786e2e31e529fb66c09bcf31904e67",
+      "bytes": 79509,
+      "supplied_local_source": "analysis/cases/Case_SPEC_08_v0.2_Product_Package/AS_Mobius_Sales_SPEC_08_v0.2_TEST_DRAFT.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "kind": "case",
+      "file": "sources/Case_SPEC_09_v0.2_WORKING.json",
+      "sha256": "54a3016807f7f995f9abeeff21e44db164a09df88c8f4a0c27253e6ecae1e74c",
+      "bytes": 56933,
+      "supplied_local_source": "analysis/cases/Case_SPEC_09_v0.2_Product_Package/Case_SPEC_09_v0.2_WORKING.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "kind": "sales_as",
+      "file": "sources/AS_Mobius_Sales_SPEC_09_v0.2_TEST_DRAFT.json",
+      "sha256": "1fe9abc7db68c7f610dcd48841724a36c9e1f884eed44f66cce2136e411e3af3",
+      "bytes": 84039,
+      "supplied_local_source": "analysis/cases/Case_SPEC_09_v0.2_Product_Package/AS_Mobius_Sales_SPEC_09_v0.2_TEST_DRAFT.json",
+      "origin": "selected author case package",
+      "note": "Source copy only; WORKING/TEST_DRAFT is not runtime admission."
+    }
+  ],
+  "case06_provenance_note": "The Case06 copy preserves the exact bytes of the supplied Case06_read.txt JSON text. This checksum does not attest the original upstream file bytes. Confirm upstream provenance in SLS06; do not attribute this file to the initial ZIP.",
+  "handoff_revision": "2026-10-19/2"
+}
