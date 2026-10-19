@@ -624,16 +624,22 @@ const renderMemberList = (items, { isSuperadmin = false } = {}) => {
         const revokeButton = (invitationStatus === 'accepted' || invitationStatus === 'queued' || invitationStatus === 'sending')
           ? '<button type="button" data-action="revoke-member-invitation" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать ссылку</button>'
           : '';
-        const invitationControls = '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '"><span class="sr-only">Выбрать ' + escapeHtml(email) + '</span></label><span class="admin-organization-invitation-state">Допуск: разрешён</span><span class="admin-organization-invitation-state">' + escapeHtml(registrationLabel) + '</span><span class="admin-organization-invitation-state">' + escapeHtml(deliveryLabels[item.invitation_delivery_status] || invitationLabels[invitationStatus] || invitationStatus) + '</span><span class="admin-organization-invitation-state">' + escapeHtml(linkLabels[item.invitation_link_status] || item.invitation_link_status || 'Ссылка: не создана') + '</span>' + invitationButton + revokeButton;
         return (
           '<div class="admin-organization-member">' +
+          '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>' +
           '<div class="admin-organization-member-main"><strong>' +
           escapeHtml(label) +
           '</strong>' +
           (details ? '<span>' + escapeHtml(details) + '</span>' : '') +
           '</div>' +
+          '<div class="admin-organization-member-statuses">' +
+          '<span class="admin-organization-invitation-state">Допуск: разрешён</span>' +
+          '<span class="admin-organization-invitation-state">' + escapeHtml(registrationLabel) + '</span>' +
+          '<span class="admin-organization-invitation-state">' + escapeHtml(deliveryLabels[item.invitation_delivery_status] || invitationLabels[invitationStatus] || invitationStatus) + '</span>' +
+          '<span class="admin-organization-invitation-state">' + escapeHtml(linkLabels[item.invitation_link_status] || item.invitation_link_status || 'Ссылка: не создана') + '</span>' +
+          '</div>' +
           '<div class="admin-organization-member-actions">' +
-          invitationControls +
+          invitationButton + revokeButton +
           preparationButton +
           passwordButton +
           removeButton +
