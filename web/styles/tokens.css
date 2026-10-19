@@ -91,6 +91,8 @@
     --warning: var(--palette-coral-500);
     --warning-soft: var(--palette-coral-050);
     --warning-surface: var(--palette-coral-050);
+    --status-wait-bg: var(--palette-coral-050);
+    --status-wait-text: var(--palette-coral-500);
     --danger: var(--palette-error);
     --bot-bubble: var(--palette-graphite-050);
     --user-bubble: var(--palette-cyan-200);

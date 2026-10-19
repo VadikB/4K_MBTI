@@ -1544,6 +1544,8 @@ body.report-info-modal-open {
     width: min(100%, 820px);
     min-height: 360px;
     margin: var(--space-3) auto 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
 }
 
 .m8-report-chart svg {
@@ -1594,6 +1596,14 @@ body.report-info-modal-open {
     fill: var(--text-main);
     font-size: 13px;
     font-weight: var(--fw-medium);
+    line-height: 1.2;
+    pointer-events: auto;
+}
+
+.m8-report-chart a:hover .m8-radar-label,
+.m8-report-chart a:focus .m8-radar-label {
+    fill: var(--accent);
+    text-decoration: underline;
 }
 
 .m8-radar-scale {
@@ -1707,6 +1717,19 @@ body.report-info-modal-open {
 }
 
 @media (max-width: 720px) {
+    .m8-report-chart {
+        min-height: 0;
+        padding: var(--space-2);
+    }
+
+    .m8-report-chart.is-overview svg {
+        min-width: 680px;
+    }
+
+    .m8-report-chart.is-overview {
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+    }
     .m8-chart-head {
         align-items: stretch;
         flex-direction: column;

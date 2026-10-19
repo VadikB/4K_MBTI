@@ -399,6 +399,15 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await page.goto(base);
   await page.getByRole('button', { name: 'Посмотреть результат' }).click();
   await expect(page.locator('#m8-report-chart svg')).toBeVisible();
+  const waitColors = await page.evaluate(() => {
+    const styles = getComputedStyle(document.documentElement);
+    return {
+      background: styles.getPropertyValue('--status-wait-bg').trim(),
+      text: styles.getPropertyValue('--status-wait-text').trim(),
+    };
+  });
+  expect(waitColors).toEqual({ background: '#ffe5e0', text: '#ff563d' });
+  await expect(page.locator('.m8-radar-label').filter({ hasText: 'Понимание' })).toContainText('собеседника');
   await expect(page.locator('.m8-radar-point')).toHaveCount(2);
   await expect(page.locator('.m8-radar-point.is-partial')).toHaveCount(1);
   await expect(page.locator('#m8-report-skills')).toContainText('По части проявлений');
@@ -414,6 +423,30 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await expect(page.locator('#m8-report-chart')).toBeHidden();
   await page.locator('#m8-report-tab-select').selectOption('K1');
   await expect(page.locator('#m8-report-chart svg')).toBeVisible();
+  for (const width of [320, 360, 430, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const bounds = await page.locator('#m8-report-chart svg').evaluate((svg) => {
+      const viewBox = svg.viewBox.baseVal;
+      return [...svg.querySelectorAll('.m8-radar-label')].map((label) => {
+        const box = label.getBBox();
+        const matrix = label.getCTM();
+        return {
+          left: box.x + matrix.e,
+          top: box.y + matrix.f,
+          right: box.x + box.width + matrix.e,
+          bottom: box.y + box.height + matrix.f,
+          width: viewBox.width,
+          height: viewBox.height,
+        };
+      });
+    });
+    for (const box of bounds) {
+      expect(box.left).toBeGreaterThanOrEqual(19);
+      expect(box.top).toBeGreaterThanOrEqual(19);
+      expect(box.right).toBeLessThanOrEqual(box.width - 19);
+      expect(box.bottom).toBeLessThanOrEqual(box.height - 19);
+    }
+  }
   const layout = await page.evaluate(() => ({ scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth }));
   expect(layout.scrollWidth).toBe(layout.clientWidth);
 });

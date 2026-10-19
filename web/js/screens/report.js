@@ -1397,7 +1397,32 @@ const coverageLabels = {
 let m8ChartMode = 'fill';
 let m8SelectedCompetencyId = null;
 
-const shortRadarLabel = (skill) => String(skill.skill_name || 'Навык').split(/\s+/).slice(0, 3).join(' ');
+const splitRadarLabel = (skill) => {
+  const words = String(skill.skill_name || 'Навык').trim().split(/\s+/).filter(Boolean);
+  if (words.length < 2) return [words[0] || 'Навык'];
+  const midpoint = Math.ceil(words.length / 2);
+  return [words.slice(0, midpoint).join(' '), words.slice(midpoint).join(' ')];
+};
+
+const fitM8RadarLabels = (node) => {
+  const svg = node?.querySelector('svg');
+  if (!svg) return;
+  const safeInset = 20;
+  const width = Number(svg.viewBox?.baseVal?.width) || 720;
+  const height = Number(svg.viewBox?.baseVal?.height) || 520;
+  svg.querySelectorAll('.m8-radar-label').forEach((label) => {
+    label.removeAttribute('transform');
+    const box = label.getBBox();
+    const dx = Math.max(safeInset - box.x, Math.min(0, width - safeInset - (box.x + box.width)));
+    const dy = Math.max(safeInset - box.y, Math.min(0, height - safeInset - (box.y + box.height)));
+    if (dx || dy) label.setAttribute('transform', `translate(${dx.toFixed(1)} ${dy.toFixed(1)})`);
+  });
+};
+
+const scheduleM8RadarLabelFit = (node) => {
+  window.requestAnimationFrame(() => fitM8RadarLabels(node));
+  document.fonts?.ready?.then(() => fitM8RadarLabels(node));
+};
 
 const buildM8Bars = (skills) => `<div class="m8-score-bars" role="list">${skills.map((skill) => {
   const value = getReportScoreValue(skill);
@@ -1415,7 +1440,7 @@ const buildM8Radar = (skills, mode) => {
   const height = 520;
   const centerX = width / 2;
   const centerY = height / 2;
-  const radius = 168;
+  const radius = 154;
   const count = skills.length;
   const angle = (index) => -Math.PI / 2 + index * Math.PI * 2 / count;
   const point = (index, value) => ({
@@ -1435,8 +1460,13 @@ const buildM8Radar = (skills, mode) => {
   svg += `<text x="${centerX + 8}" y="${centerY + 14}" class="m8-radar-scale">0</text>`;
   skills.forEach((skill, index) => {
     const end = point(index, 3);
-    const label = point(index, 3.72);
-    svg += `<line x1="${centerX}" y1="${centerY}" x2="${end.x}" y2="${end.y}" class="m8-radar-axis"/><text x="${label.x}" y="${label.y}" text-anchor="middle" class="m8-radar-label">${escapeHtml(shortRadarLabel(skill))}</text>`;
+    const label = point(index, 3.84);
+    const lines = splitRadarLabel(skill);
+    const startY = label.y - (lines.length - 1) * 8;
+    const labelMarkup = lines.map((line, lineIndex) =>
+      `<tspan x="${label.x}" y="${startY + lineIndex * 16}">${escapeHtml(line)}</tspan>`
+    ).join('');
+    svg += `<line x1="${centerX}" y1="${centerY}" x2="${end.x}" y2="${end.y}" class="m8-radar-axis"/><a href="#m8-skill-${escapeHtml(String(skill.skill_id))}" data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${skill.skill_name || 'Навык'}. Открыть подробности`)}"><text x="${label.x}" y="${startY}" text-anchor="middle" class="m8-radar-label">${labelMarkup}</text></a>`;
   });
   runs.forEach((run) => {
     const points = run.indexes.map((index) => point(index, values[index]));
@@ -1479,6 +1509,7 @@ const renderM8Chart = (c67, competencyId) => {
     note.textContent = 'Отсутствующие значения не заменяются нулями.';
   } else {
     node.innerHTML = m8ChartMode === 'bars' ? buildM8Bars(skills) : buildM8Radar(skills, m8ChartMode);
+    if (m8ChartMode !== 'bars') scheduleM8RadarLabelFit(node);
     note.textContent = summary.missingCount
       ? 'Пропуски оставлены открытыми: линия и заливка через них не продолжаются.'
       : 'Каждая ось — отдельный навык. Площадь фигуры не является общим баллом.';
