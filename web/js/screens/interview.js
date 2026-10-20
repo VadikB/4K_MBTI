@@ -110,12 +110,15 @@ const addProductSituationMessage = (payload) => {
   const source = typeof payload === 'string' ? { situation: payload } : payload;
   const title = payloadText(source, ['title', 'case_title']);
   const sections = [
-    ['Ситуация', payloadText(source, ['initial_situation', 'situation', 'context', 'content', 'trigger'])],
-    ['Ваша роль', payloadText(source, ['assessee_position', 'role', 'position', 'participants_and_positions'])],
+    ['Вводная', payloadText(source, ['introduction'])],
+    ['Ситуация', payloadText(source, ['initial_situation', 'situation', 'context', 'content'])],
+    ['Событие', payloadText(source, ['trigger'])],
+    ['Ваша роль', payloadText(source, ['assessee_position', 'role', 'position'])],
+    ['Участники', payloadText(source, ['participants_and_positions'])],
     ['Задача', payloadText(source, ['assessee_task', 'task', 'question'])],
     ['Условия', payloadText(source, ['conditions_and_constraints', 'conditions', 'constraints'])],
   ].filter(([, body]) => body);
-  const materials = payloadItems(source, ['available_materials', 'materials', 'attachments']);
+  const materials = payloadItems(source, ['initial_materials', 'available_materials', 'materials', 'attachments']);
 
   if (title) {
     const heading = document.createElement('h3');

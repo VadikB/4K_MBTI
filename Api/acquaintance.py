@@ -427,11 +427,10 @@ def late_readiness(connection, *, user_id: int, readiness: dict | None = None) -
     confirmation = connection.execute(
         """SELECT personalized_profile_id FROM participant_acquaintance_confirmations
            WHERE user_id=%s AND organization_id=%s AND assignment_ref=%s
-             AND personalized_profile_id IS NOT NULL
            ORDER BY confirmed_at DESC,id DESC LIMIT 1""",
         (user_id, readiness["organization_id"], readiness["assignment_ref"]),
     ).fetchone()
-    if confirmation is None:
+    if confirmation is None or confirmation["personalized_profile_id"] is None:
         return {"status": "waiting_for_assessment_data", "reason": "W02_ANSWERS_NOT_BOUND",
                 "personalized_profile_id": None}
     try:

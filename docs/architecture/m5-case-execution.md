@@ -14,7 +14,18 @@ M5, не публикация CURRENT и не допуск пяти WORKING Case
 Полные author Case и выбранная AS сохраняются как immutable snapshots; проекции
 targets/materials/scenario имеют ссылки назад на точные элементы. Schema v2 и её
 опубликованные bytes не меняются. Schema v3 draft не получает runtime admission:
-структурирование исполнительных правил и runtime AS выполняются отдельными SLS02/03.
+runtime AS реализует SLS02, а структурирование исполнительных правил остаётся SLS03.
+
+### SLS02: открытая Sales-проекция
+
+Schema v3 содержит `participant_presentation`: точную ссылку на author Sales AS,
+поля вводной/ситуации/Trigger/роли/участников/задачи/ограничений, allow-list стартовых
+материалов и source-backed targets допустимых подстановок. PM-03 копирует эту
+проекцию в immutable AS snapshot, сохраняет фактически применённые substitutions и
+не переносит author/private JSON в participant payload. `organization_name` — пока
+единственный допустимый слот; profile rule «не использовать» блокирует его до старта.
+Schema v2 продолжает прежнюю материализацию. Draft Sales package остаётся вне
+пользовательского admission до отдельных QA и публикации.
 
 ## Исходная точка и область
 
