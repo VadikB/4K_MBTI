@@ -589,6 +589,28 @@ test('R04 shared footer stays in document flow and stacks on mobile', async ({ p
   expect(layout.scrollWidth).toBe(layout.clientWidth);
 });
 
+test('REL-VERSION-01 shows one build number on auth and common areas, with a safe fallback', async ({ page }) => {
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: false });
+    if (pathname === '/users/version') return fulfillJson(route, { version: '2.0.2' });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.1');
+  await expect(page.locator('#app-release-badge')).toBeVisible();
+  await expect(page.locator('.app-footer-release')).toBeHidden();
+  await page.setViewportSize({ width: 360, height: 760 });
+  await expect(page.locator('#app-release-badge')).toBeInViewport();
+  await page.locator('#auth-panel').evaluate((panel) => panel.classList.add('hidden'));
+  await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.remove('hidden'));
+  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.1');
+  await expect(page.locator('.app-footer-release')).toBeVisible();
+  await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.add('hidden'));
+  await page.locator('#chat-panel').evaluate((panel) => panel.classList.remove('hidden'));
+  await expect(page.locator('.app-footer')).toBeHidden();
+});
+
 test('R03 refresh obeys server journey and fails closed on journey outage', async ({ page }) => {
   const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
   const auth = {

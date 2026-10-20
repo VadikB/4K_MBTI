@@ -51,10 +51,12 @@ git pull --ff-only
 После этого `git commit` проверяет формат staged diff и не позволяет
 закоммитить изменения `web/js` без пересобранного `web/dist`.
 
-Если нужно поднять версию вручную:
+Для подготовки нового PATCH-кандидата сначала посмотрите расчёт, затем укажите утверждённый номер:
 
 ```bash
-.venv/bin/python scripts/bump_patch_version.py
+.venv/bin/python scripts/bump_patch_version.py --dry-run
+.venv/bin/python scripts/bump_patch_version.py --candidate 2.0.2
+npm run build:web
 ```
 
 После деплоя версии нужен рестарт backend-процесса, потому что `/users/version` читает версию из `pyproject.toml` и кеширует ее в процессе приложения.
@@ -372,19 +374,36 @@ git add web/dist web/index.html web/js web/styles
 /users/version
 ```
 
-Для согласованного bump backend/frontend версии:
+Единая версия приложения имеет вид `MAJOR.MINOR.PATCH` (например, `2.0.10`).
+MAJOR — новое поколение продукта, MINOR — существенная функция, PATCH — исправление
+или небольшое изменение. У MINOR обнуляется PATCH, у MAJOR — MINOR и PATCH.
+Тип существенного выпуска утверждает владелец. Новую версию получает новый набор
+изменений продукта, но не каждый коммит, повторный CI или повторный деплой той же
+сборки. Продвижение той же сборки с test на pilot сохраняет номер.
+
+Исходный номер находится в `pyproject.toml`; операция синхронизирует также корневой
+пакет `uv.lock`, `APP_RELEASE` и версии ссылок на assets. Для подготовки кандидата:
 
 ```bash
-./.venv/bin/python scripts/bump_version.py 2.1.1
+./.venv/bin/python scripts/prepare_release.py patch --dry-run
+./.venv/bin/python scripts/prepare_release.py patch --candidate 2.0.2
+npm run build:web
 ```
 
 или:
 
 ```bash
-npm run bump:version -- 2.1.1
+npm run bump:version -- minor --candidate 2.1.0
 ```
 
-После bump версии пересоберите frontend и перезапустите сервис.
+Для нового поколения используйте `major --candidate 3.0.0`. Повтор той же команды
+для уже подготовленного кандидата ничего не меняет. Одноразовый утверждённый
+переход с исторического `2.1.37` на начало новой последовательности `2.0.1`
+выполнен в REL-VERSION-01; старые commit/tag и сохранённые оценки не переименованы.
+Старый прямой `scripts/bump_version.py` оставлен для совместимости, штатный выпуск
+делайте через `prepare_release.py`. CI сверяет источники и номер с актуальной базой
+PR. При параллельных ветках обновите ветку от свежего `main` и пересчитайте номер.
+Деплой перезапускает backend и проверяет фактически отдаваемые API/assets.
 
 ## Важные файлы
 

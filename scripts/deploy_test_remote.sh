@@ -4,6 +4,7 @@ set -eu
 project_dir="/home/user1/projects/Agent4K-Test"
 service_name="agent4k-test.service"
 health_url="http://127.0.0.1:8002/users/version"
+asset_url="http://127.0.0.1:8002/web/dist/main.js"
 frontend_asset_backup_dir="$(mktemp -d)"
 
 cd "$project_dir"
@@ -62,6 +63,14 @@ until curl -fsS "$health_url" >/dev/null; do
   fi
   sleep 2
 done
+
+expected_version="$(.venv/bin/python -c 'import tomllib; from pathlib import Path; print(tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"])')"
+actual_version="$(curl -fsS "$health_url" | .venv/bin/python -c 'import json, sys; print(json.load(sys.stdin)["version"])')" || rollback
+if [ "$actual_version" != "$expected_version" ]; then
+  echo "Backend release does not match checked-out product release" >&2
+  rollback
+fi
+curl -fsS "$asset_url" | cmp -s - web/dist/main.js || rollback
 
 deployed_commit="$(git rev-parse HEAD)"
 cleanup_frontend_asset_backup
