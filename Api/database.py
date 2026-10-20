@@ -3498,12 +3498,16 @@ def ensure_m5_runtime_schema(connection) -> None:
             outcome TEXT NOT NULL CHECK (outcome IN ('accepted','rejected','technical_failure')),
             validation_json JSONB NOT NULL,
             accepted_result_ref TEXT,
+            attempt_no INTEGER NOT NULL DEFAULT 1 CHECK (attempt_no > 0),
             started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            UNIQUE (assessment_situation_db_id, action_key)
+            UNIQUE (assessment_situation_db_id, action_key, attempt_no)
         )
     """)
     connection.execute("ALTER TABLE m5_ai_attempts ADD COLUMN IF NOT EXISTS response_json JSONB")
+    connection.execute("ALTER TABLE m5_ai_attempts ADD COLUMN IF NOT EXISTS attempt_no INTEGER NOT NULL DEFAULT 1")
+    connection.execute("ALTER TABLE m5_ai_attempts DROP CONSTRAINT IF EXISTS m5_ai_attempts_assessment_situation_db_id_action_key_key")
+    connection.execute("CREATE UNIQUE INDEX IF NOT EXISTS m5_ai_attempts_action_attempt_uq ON m5_ai_attempts(assessment_situation_db_id,action_key,attempt_no)")
     connection.execute("""
         CREATE TABLE IF NOT EXISTS m5_qa_overrides (
             id BIGSERIAL PRIMARY KEY,

@@ -399,7 +399,34 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
         substitutions=substitutions, qa_evidence=evidence, policy=policy,
         ai_operations=build_m5_ai_operations_snapshot(),
     )
-    execution["runtime_rules"] = case_row["runtime_rules_json"]
+    runtime_rules = case_row["runtime_rules_json"] or {}
+    if int(case_row["content_json"].get("schema_version", 2)) == 3:
+        case_rules = (runtime_rules.get("cases") or {}).get(case_id)
+        if not isinstance(case_rules, dict) or str(case_rules.get("case_version")) != str(case_version):
+            raise ValueError("M5_SALES_RUNTIME_RULES_UNAVAILABLE")
+        execution["characters"] = [{
+            "character_id": item["character_id"],
+            "name_and_role": " / ".join(filter(None, [item["content"].get("Имя"), item["content"].get("Роль")])),
+            "public_position": item["content"].get("Текст") or "",
+            "known_facts": item["content"].get("Начальные знания") or [],
+            "disclosure_constraints": {
+                "material_access": {key: value for key, value in item["content"].items() if "Доступ" in key},
+                "own_authority_only": True,
+            },
+            "closed_card": item["content"], "source": item["source"],
+        } for item in case_rules.get("characters", [])]
+        execution["materials"] = case_rules.get("materials", [])
+        execution["scenario"] = [{
+            "step_id": item["step_id"], "order": item["order"],
+            "title": item.get("event") or item["step_id"],
+            "rules": [item["condition"]] if item.get("condition") else [],
+            "source": item.get("source"),
+        } for item in case_rules.get("scenario", [])]
+        execution["initial_materials"] = situation["participant_payload"].get("initial_materials", [])
+        execution["runtime_schema_version"] = 3
+        execution["runtime_rules"] = case_rules
+    else:
+        execution["runtime_rules"] = runtime_rules
     situation["execution_payload_ref"]["checksum"] = checksum(execution)
     saved = save_assessment_situation(connection, situation=situation, execution_payload=execution,
                                       personalized_profile_id=personalized_profile_id, cycle_db_id=cycle_db_id,

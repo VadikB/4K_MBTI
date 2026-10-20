@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 
@@ -223,6 +224,11 @@ def _record_decision(connection, *, row: dict, saved: dict, key: str, rule: dict
         (row["id"], key),
     ).fetchone()
     if existing:
+        if existing["outcome"] == "ERROR" and decision.outcome != RuleOutcome.ERROR:
+            existing = connection.execute("""
+                UPDATE m5_rule_decisions SET outcome=%s,decision_json=%s::jsonb,created_at=NOW()
+                WHERE id=%s RETURNING *
+            """, (decision.outcome.value, json.dumps(decision.as_dict(), ensure_ascii=False), existing["id"])).fetchone()
         return dict(existing)
     recorded = dict(connection.execute("""
         INSERT INTO m5_rule_decisions
@@ -258,28 +264,34 @@ def _record_ai_attempt(connection, *, row: dict, action_key: str, action_type: s
     else:
         outcome = "rejected"
         code = getattr(result, "code", None) or "OUTPUT_REJECTED"
-    existing = connection.execute(
-        "SELECT * FROM m5_ai_attempts WHERE assessment_situation_db_id=%s AND action_key=%s",
+    attempt_no = int(connection.execute(
+        "SELECT count(*) AS n FROM m5_ai_attempts WHERE assessment_situation_db_id=%s AND action_key=%s",
         (row["id"], action_key),
-    ).fetchone()
-    if existing:
-        return dict(existing)
+    ).fetchone()["n"]) + 1
     return dict(connection.execute("""
         INSERT INTO m5_ai_attempts
             (assessment_situation_db_id,action_key,action_type,request_id,attempt_id,boundary_sequence,
-             input_checksum,intended_json,sent_json,provider_json,response_json,outcome,validation_json)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s::jsonb,%s,%s::jsonb) RETURNING *
+             input_checksum,intended_json,sent_json,provider_json,response_json,outcome,validation_json,attempt_no)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s::jsonb,%s,%s::jsonb,%s) RETURNING *
     """, (row["id"], action_key, action_type, uuid4(), uuid4(), boundary_sequence,
           checksum(input_value), json.dumps(ai_trace.get("intended") or {}, ensure_ascii=False),
           json.dumps(ai_trace.get("sent") or {}, ensure_ascii=False),
           json.dumps(ai_trace.get("provider") or {}, ensure_ascii=False),
           json.dumps(ai_trace.get("response") or {}, ensure_ascii=False), outcome,
-          json.dumps({"code": code, "identity_status": identity_status}, ensure_ascii=False))).fetchone())
+          json.dumps({"code": code, "identity_status": identity_status}, ensure_ascii=False), attempt_no)).fetchone())
 
 
 def _evaluate(connection, *, row: dict, saved: dict, operation_key: str, rule: dict, state: dict,
               text: str, turn_id: str, adapter: SemanticDecisionAdapter):
-    request_value = {"rule": rule, "text": text, "turn_id": turn_id, "state_revision": saved["revision"]}
+    factual_state = dict(state)
+    factual_state["dialogue_history"] = [dict(item) for item in connection.execute(
+        """SELECT turn_id::text AS turn_id,sequence_no,speaker_type,speaker_id,content_text FROM m5_dialogue_turns
+           WHERE assessment_situation_db_id=%s ORDER BY sequence_no""", (row["id"],)).fetchall()]
+    factual_state["events"] = [dict(item) for item in connection.execute(
+        """SELECT event_id::text AS event_id,sequence_no,event_type,material_id FROM m5_scenario_events
+           WHERE assessment_situation_db_id=%s ORDER BY sequence_no""", (row["id"],)).fetchall()]
+    request_value = {"rule": rule, "text": text, "turn_id": turn_id,
+                     "state_revision": saved["revision"], "factual_state": factual_state}
     operation = None
     if rule["type"] == "semantic_decision":
         operation = connection.execute("""
@@ -296,7 +308,7 @@ def _evaluate(connection, *, row: dict, saved: dict, operation_key: str, rule: d
             return Decision(RuleOutcome(value["outcome"]), value["code"], value["basis"], tuple(value["turn_ids"]),
                             value["handler_version"], value["adapter"], value.get("model"), value["controlled_test"],
                             value.get("prompt_ref"))
-    decision = evaluate_rule(rule, state=state, data={}, text=text, turn_id=turn_id, semantic_adapter=adapter)
+    decision = evaluate_rule(rule, state=factual_state, data={}, text=text, turn_id=turn_id, semantic_adapter=adapter)
     _record_ai_attempt(connection, row=row, action_key=operation_key, action_type="semantic_decision",
                        boundary_sequence=_next_sequence(connection, int(row["id"])) - 1,
                        input_value=request_value, result=decision)
@@ -304,9 +316,10 @@ def _evaluate(connection, *, row: dict, saved: dict, operation_key: str, rule: d
         current = connection.execute("SELECT status FROM m5_assessment_situations WHERE id=%s", (row["id"],)).fetchone()
         current_state = connection.execute("SELECT revision FROM m5_scenario_states WHERE assessment_situation_db_id=%s", (row["id"],)).fetchone()
         late = current["status"] not in {"active", "paused"} or int(current_state["revision"]) != int(saved["revision"])
+        operation_status = "failed" if decision.outcome == RuleOutcome.ERROR else ("rejected_late" if late else "completed")
         connection.execute("""
             UPDATE m5_semantic_operations SET status=%s, result_json=%s::jsonb, completed_at=NOW() WHERE id=%s
-        """, ("rejected_late" if late else "completed", json.dumps(decision.as_dict(), ensure_ascii=False), operation["id"]))
+        """, (operation_status, json.dumps(decision.as_dict(), ensure_ascii=False), operation["id"]))
         if late:
             append_event(connection, as_db_id=int(row["id"]), event_type="late_result_rejected",
                          event_key=f"late:{operation['operation_id']}", cause={"operation_id": str(operation["operation_id"])})
@@ -345,16 +358,43 @@ def _apply_material(connection, *, row: dict, saved: dict, state: dict, material
 
 def _apply_character_response(connection, *, row: dict, saved: dict, state: dict, material: dict,
                               decision_row: dict, trigger_turn: dict, adapter: CharacterResponseAdapter) -> dict | None:
-    effect_key = f"character-response:{material['material_id']}"
+    effect_key = f"character-response:{material['material_id']}:{trigger_turn['turn_id']}"
     if effect_key in state["applied_effects"]:
         return None
     character = next((x for x in row["execution_payload_json"]["characters"]
                       if x["character_id"] == material.get("speaker_id")), None)
     if not character:
         raise ValueError("CHARACTER_RESPONSE_SPEAKER_UNRESOLVED")
-    reply = adapter.respond(material=material, character=character, text=trigger_turn["content_text"],
+    history = [dict(item) for item in connection.execute(
+        """SELECT turn_id::text AS turn_id,sequence_no,speaker_type,speaker_id,content_text
+           FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s AND sequence_no<=%s ORDER BY sequence_no""",
+        (row["id"], trigger_turn["sequence_no"]),
+    ).fetchall()]
+    occurred = [dict(item) for item in connection.execute(
+        """SELECT event_id::text AS event_id,sequence_no,event_type,material_id
+           FROM m5_scenario_events WHERE assessment_situation_db_id=%s AND sequence_no<=%s ORDER BY sequence_no""",
+        (row["id"], trigger_turn["sequence_no"]),
+    ).fetchall()]
+    raw_character = character.get("content") if isinstance(character.get("content"), dict) else character
+    character_input = {
+        "character_id": character["character_id"],
+        "role_card": raw_character,
+        "public_position": character.get("public_position") or raw_character.get("Текст"),
+        "known_facts": raw_character.get("Начальные знания", character.get("known_facts", [])),
+        "disclosure_constraints": {
+            "material_audiences": [
+                {"material_id": item["material_id"], "audience": (item.get("content") or {}).get("Аудитория", [])}
+                for item in row["execution_payload_json"].get("materials", [])
+            ],
+            "rule": material.get("result_check") or material.get("reaction_rule"),
+        },
+    }
+    reply = adapter.respond(material=material, character=character_input, text=trigger_turn["content_text"],
                             turn_id=str(trigger_turn["turn_id"]),
-                            context={"disclosed_materials": state["disclosed_materials"], "stage": state["current_stage"]})
+                            context={"dialogue_history": history, "events": occurred,
+                                     "disclosed_materials": state["disclosed_materials"],
+                                     "stage": state["current_stage"],
+                                     "facilitator_only": {"must_not_be_disclosed": True}})
     _record_ai_attempt(
         connection, row=row, action_key=effect_key, action_type="character_response",
         boundary_sequence=int(trigger_turn["sequence_no"]),
@@ -407,12 +447,19 @@ def start(connection, assessment_situation_id: str) -> dict:
     envelope = build_execution_envelope(connection, row)
     connection.execute("UPDATE m5_assessment_situations SET status='active', started_at=COALESCE(started_at,NOW()) WHERE id=%s", (row["id"],))
     saved = _state(connection, row, lock=True)
-    state = dict(saved["state_json"])
+    state = deepcopy(saved["state_json"])
     state["status"] = "active"
-    if saved["state_json"].get("status") != "active":
-        _save_state(connection, saved, state)
     event = append_event(connection, as_db_id=int(row["id"]), event_type="scenario_started", event_key="scenario_started",
                          cause={"type": "C-34", "scope": row["usage_scope"]}, payload={"execution_envelope": envelope})
+    for material in row["execution_payload_json"].get("initial_materials", []):
+        material_id = material["material_id"]
+        append_event(connection, as_db_id=int(row["id"]), event_type="material_disclosed",
+                     event_key=f"initial-material:{material_id}", cause={"type": "initial_presentation"},
+                     material_id=material_id, payload={"content": material, "recipient": "assessee"})
+        if material_id not in state["disclosed_materials"]:
+            state["disclosed_materials"].append(material_id)
+    if state != saved["state_json"]:
+        _save_state(connection, saved, state)
     return {"status": "active", "participant_payload": row["snapshot_json"]["participant_payload"],
             "execution_envelope": envelope, "event": event}
 
@@ -428,17 +475,14 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
         raise ValueError("M5_AS_NOT_ACTIVE")
     existing = connection.execute("SELECT * FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s AND request_id=%s",
                                   (row["id"], request_id)).fetchone()
-    if existing:
-        events = [dict(x) for x in connection.execute(
-            "SELECT * FROM m5_scenario_events WHERE assessment_situation_db_id=%s AND cause_json->>'turn_id'=%s ORDER BY sequence_no",
-            (row["id"], str(existing["turn_id"]))).fetchall()]
-        return {"turn": dict(existing), "events": events, "idempotent": True}
     saved = _state(connection, row, lock=True)
-    state = dict(saved["state_json"])
-    turn = connection.execute("""
-        INSERT INTO m5_dialogue_turns (assessment_situation_db_id,turn_id,sequence_no,speaker_type,speaker_id,content_text,request_id)
-        VALUES (%s,%s,%s,'assessee','assessee',%s,%s) RETURNING *
-    """, (row["id"], UUID(turn_id), _next_sequence(connection, int(row["id"])), content, request_id)).fetchone()
+    state = deepcopy(saved["state_json"])
+    turn = existing or connection.execute("""
+            INSERT INTO m5_dialogue_turns (assessment_situation_db_id,turn_id,sequence_no,speaker_type,speaker_id,content_text,request_id)
+            VALUES (%s,%s,%s,'assessee','assessee',%s,%s) RETURNING *
+        """, (row["id"], UUID(turn_id), _next_sequence(connection, int(row["id"])), content, request_id)).fetchone()
+    if existing and (str(existing["turn_id"]) != turn_id or existing["content_text"] != content):
+        raise ValueError("M5_IDEMPOTENCY_PAYLOAD_MISMATCH")
     events = []
     payload = row["execution_payload_json"]
     operations = row["execution_payload_json"].get("ai_operations") or {}
@@ -460,7 +504,11 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
         elif condition.get("type") == "method_owner_unresolved" and isinstance(adapter, ControlledSemanticAdapter):
             candidates.append(("qa_unresolved_branch", condition, "material_disclosed"))
         event_kind = event_condition.get("type", "")
-        if event_kind == "after_first_substantive_turn":
+        if event_kind == "semantic_author_condition" and is_character_reaction:
+            candidates.append(("character_reaction", event_condition, "character_response"))
+        elif event_kind == "semantic_author_condition":
+            candidates.append(("mandatory", event_condition, "mandatory_update"))
+        elif event_kind == "after_first_substantive_turn":
             candidates.append(("mandatory", event_condition, "mandatory_update"))
         elif event_kind.startswith("after_first_"):
             candidates.append(("mandatory", event_condition, "mandatory_update"))
@@ -468,12 +516,9 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
             candidates.append(("character_reaction", event_condition, "character_response"))
         for purpose, specification, event_type in candidates:
             rule_id = f"{material['material_id']}:{purpose}"
-            if event_kind == "after_first_substantive_turn" and purpose == "mandatory":
-                rule = {"rule_id": rule_id, "version": "1", "type": "state_predicate", "field": "status", "equals": "active"}
-            else:
-                rule = {"rule_id": rule_id, "version": "1", "type": "semantic_decision",
-                        "decision_code": specification.get("type", "semantic"), "condition": specification,
-                        "allowed_codes": ["MATCH", "NO_MATCH", "UNKNOWN"], "true_code": "MATCH"}
+            rule = {"rule_id": rule_id, "version": "2", "type": "semantic_decision",
+                    "decision_code": specification.get("type", "semantic"), "condition": specification,
+                    "allowed_codes": ["MATCH", "NO_MATCH", "UNKNOWN"], "true_code": "MATCH"}
             decision = _evaluate(connection, row=row, saved=saved, operation_key=f"{request_id}:{rule_id}",
                                  rule=rule, state=state, text=content, turn_id=str(turn["turn_id"]), adapter=adapter)
             decision_row = _record_decision(connection, row=row, saved=saved,
@@ -506,8 +551,14 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
                                         "rule_id": rule["rule_id"]}, payload={"from": stage["step_id"], "to": target})
             state["current_stage"] = target
             events.append(event)
-    _save_state(connection, saved, state)
-    return {"turn": dict(turn), "events": events, "idempotent": False}
+    if state != saved["state_json"]:
+        _save_state(connection, saved, state)
+    if existing:
+        events = [dict(x) for x in connection.execute(
+            """SELECT * FROM m5_scenario_events WHERE assessment_situation_db_id=%s
+               AND (cause_json->>'turn_id'=%s OR cause_json->>'trigger_turn_id'=%s) ORDER BY sequence_no""",
+            (row["id"], str(turn["turn_id"]), str(turn["turn_id"]))).fetchall()]
+    return {"turn": dict(turn), "events": events, "idempotent": bool(existing)}
 
 
 def transition(connection, *, assessment_situation_id: str, action: str, reason: str, request_id: str) -> dict:
@@ -542,7 +593,7 @@ def transition(connection, *, assessment_situation_id: str, action: str, reason:
     event = append_event(connection, as_db_id=int(row["id"]), event_type=event_types[action], event_key=f"transition:{request_id}",
                          cause={"reason": reason, "from": row["status"], "to": target}, payload={"status": target})
     saved = _state(connection, row, lock=True)
-    state = dict(saved["state_json"])
+    state = deepcopy(saved["state_json"])
     state["status"] = target
     if target == "scenario_ended":
         state["current_stage"] = "scenario_end"
