@@ -1290,7 +1290,13 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
       cycle_id: 'cycle-e01', status: { collection_status: 'active', remaining_seconds: 2700 },
       return_policy_enabled: false,
       route: { positions: [{ position_no: 1, state: 'in_progress', current_assessment_situation_id: 'as-e01' }], progress: { total_positions: 3 } },
-      current_situation: { assessment_situation_id: 'as-e01', status: 'active', participant_payload: { title: 'Разговор с коллегой', content: 'Обсудите изменение сроков' } },
+      current_situation: { assessment_situation_id: 'as-e01', status: 'active', participant_payload: {
+        title: 'Разговор с коллегой', introduction: 'Вводная Sales AS',
+        initial_situation: 'Исходная ситуация', trigger: 'Новое событие',
+        assessee_position: 'Ваша роль в разговоре', participants_and_positions: 'Анна — позиция клиента',
+        assessee_task: 'Обсудите изменение сроков', conditions_and_constraints: 'Не обещать сроки без проверки',
+        initial_materials: [{ material_id: 'M01', title: 'Письмо клиента', text: 'Содержание письма' }],
+      } },
       trace: { turns: [{ sequence_no: 1, turn_id: 'turn-person', speaker_type: 'character', speaker_name: 'Анна', content_text: 'Какие варианты вы предлагаете?' }], events: [] },
     });
     return fulfillJson(route, {}, 404);
@@ -1302,8 +1308,14 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
   await expect(page.locator('.case-sidebar')).toHaveCount(0);
   await expect(page.locator('.interview-message--situation')).toHaveCount(1);
   await expect(page.locator('.interview-message--situation')).toContainText('Разговор с коллегой');
+  await expect(page.locator('.interview-message--situation')).toContainText('Вводная Sales AS');
+  await expect(page.locator('.interview-message--situation')).toContainText('Исходная ситуация');
+  await expect(page.locator('.interview-message--situation')).toContainText('Новое событие');
+  await expect(page.locator('.interview-message--situation')).toContainText('Ваша роль в разговоре');
+  await expect(page.locator('.interview-message--situation')).toContainText('Анна — позиция клиента');
   await expect(page.locator('.interview-message--situation')).toContainText('Обсудите изменение сроков');
-  await expect(page.locator('#interview-scroll-area')).toHaveJSProperty('scrollTop', 0);
+  await expect(page.locator('.interview-message--situation')).toContainText('Не обещать сроки без проверки');
+  await expect(page.locator('.interview-message--situation')).toContainText('Письмо клиента: Содержание письма');
   await expect(page.getByRole('button', { name: 'Завершить ситуацию' })).toBeVisible();
   await expect(page.getByText('После отправки ответ нельзя изменить')).toBeVisible();
   await expect(page.locator('[data-speaker-label="Анна"]')).toBeVisible();
@@ -1311,8 +1323,10 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
 
   await page.locator('#interview-textarea').fill('Мой незавершённый ответ');
   await page.reload();
+  await expect(page.locator('.interview-message--situation')).toHaveCount(1);
   await expect(page.locator('#interview-textarea')).toHaveValue('Мой незавершённый ответ');
   await page.setViewportSize({ width: 375, height: 812 });
+  await expect(page.locator('.interview-message--situation')).toContainText('Новое событие');
   await expect(page.locator('#interview-submit-button')).toHaveCSS('height', '48px');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

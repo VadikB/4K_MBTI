@@ -84,11 +84,125 @@ def _source_entries(source_root: Path) -> tuple[dict, dict[tuple[str, str], dict
 
 
 def _visibility(material: dict[str, Any]) -> bool:
-    presentation = str(_first(material, "Предъявление", "presentation", default="")).lower()
+    presentation = " ".join(str(value) for value in (
+        _first(material, "Предъявление", "presentation", default=""),
+        _first(material, "Когда", "when", default=""),
+    )).lower()
     audience = str(_first(material, "Аудитория", "audience", default="")).lower()
+    excluded = ("отсутствует в старт", "не при старт", "только по ", "после ")
     return ("старт" in presentation or "сразу" in presentation) and not any(
+        marker in presentation for marker in excluded
+    ) and not any(
         marker in audience for marker in ("служеб", "оценщ", "систем")
     )
+
+
+def _readable_text(value: Any) -> str:
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, list):
+        return "\n".join(filter(None, (_readable_text(item) for item in value))).strip()
+    if isinstance(value, dict):
+        direct = _first(value, "Текст", "text", "content")
+        if direct is not None:
+            return _readable_text(direct)
+        hidden = {"AssessmentSituationID", "MaterialID", "Аудитория", "Предъявление", "Происхождение"}
+        lines = []
+        for key, item in value.items():
+            if key in hidden:
+                continue
+            rendered = _readable_text(item)
+            if rendered:
+                lines.append(f"{key}: {rendered}")
+        return "\n".join(lines).strip()
+    return str(value).strip() if value is not None else ""
+
+
+def _start_material_ids(situation: dict[str, Any], materials: list[dict[str, Any]]) -> list[str]:
+    explicit = situation.get("Стартовые MaterialIDs")
+    if isinstance(explicit, list):
+        return [str(item) for item in explicit]
+    ids = [item["material_id"] for item in materials if item["participant_visible_initially"]]
+    start_rules = []
+    for key in ("Начальное предъявление", "Объём предъявления", "Правила предъявления", "Правила предъявления и ведения"):
+        value = situation.get(key)
+        if value is not None:
+            start_rules.append(_readable_text(value))
+    start_text = "\n".join(start_rules)
+    for material_id in re.findall(r"\b(?:P00|M\d{2})\b", start_text):
+        if material_id not in ids and not re.search(
+            rf"{re.escape(material_id)}[^\n]{{0,80}}(?:отсутствует в старт|только по)", start_text, re.IGNORECASE
+        ):
+            ids.append(material_id)
+    if any(item["material_id"] == "P00" for item in materials) and "P00" not in ids:
+        ids.insert(0, "P00")
+    return ids
+
+
+def _organization_name(situation: dict[str, Any]) -> str | None:
+    context = situation.get("Контекст") if isinstance(situation.get("Контекст"), dict) else {}
+    if str(context.get("Организация") or "").strip():
+        return str(context["Организация"]).strip()
+    snapshot = situation.get("Контекстный снимок") if isinstance(situation.get("Контекстный снимок"), dict) else {}
+    profile = snapshot.get("PersonalizedProfile") if isinstance(snapshot.get("PersonalizedProfile"), dict) else {}
+    transfer = profile.get("Передача в M5") if isinstance(profile.get("Передача в M5"), dict) else {}
+    return str(transfer.get("Организация") or "").strip() or None
+
+
+def _participant_presentation(case_id: str, passport: dict[str, Any], situation: dict[str, Any],
+                              as_entry: dict, materials: list[dict[str, Any]]) -> dict[str, Any]:
+    start_ids = _start_material_ids(situation, materials)
+    by_id = {item["material_id"]: item for item in materials}
+    p00 = situation.get("P00") if isinstance(situation.get("P00"), dict) else None
+    if p00 is not None:
+        introduction = _readable_text(p00)
+    elif "P00" in by_id:
+        introduction = _readable_text(by_id["P00"]["content"])
+    else:
+        raise ValueError(f"Participant introduction is absent: {case_id}")
+    initial_materials = []
+    for material_id in start_ids:
+        if material_id == "P00":
+            continue
+        material = by_id.get(material_id)
+        if material is None:
+            raise ValueError(f"Unknown initial material: {case_id} {material_id}")
+        content = material["content"]
+        text = _readable_text(content)
+        if not text:
+            raise ValueError(f"Initial material text is absent: {case_id} {material_id}")
+        initial_materials.append({
+            "material_id": material_id,
+            "title": str(_first(content, "Название", "title", default=material_id)).strip(),
+            "text": text,
+            "source": material["source"],
+        })
+    presentation = {
+        "assessment_situation_id": str(situation["AssessmentSituationID"]),
+        "version": str(_first(situation, "Version", "Версия")),
+        "source": _ref(as_entry["path"].name, as_entry["sha256"]),
+        "title": str(_first(situation, "Заголовок участнику", default=passport["2 Название"])),
+        "introduction": introduction,
+        "initial_situation": str(passport["8 Исходная ситуация"]),
+        "trigger": str(passport["9 Trigger"]),
+        "assessee_position": str(passport["10 Позиция оцениваемого"]),
+        "participants_and_positions": str(passport["11 Участники и позиции"]),
+        "assessee_task": str(passport["12 Задача оцениваемого"]),
+        "conditions_and_constraints": str(passport["13 Условия и ограничения"]),
+        "initial_materials": initial_materials,
+        "substitution_targets": [],
+    }
+    organization_name = _organization_name(situation)
+    if organization_name:
+        values = [("introduction", introduction), *[
+            (f"initial_materials.{index}.text", item["text"]) for index, item in enumerate(initial_materials)
+        ]]
+        for path, text in values:
+            if organization_name.casefold() in text.casefold():
+                presentation["substitution_targets"].append({
+                    "slot": "organization_name", "path": path, "source_value": organization_name,
+                })
+    return presentation
 
 
 def _list_or_dict_items(value: Any) -> list[tuple[str | int, dict[str, Any]]]:
@@ -183,6 +297,7 @@ def _build_case(case_entry: dict, as_entry: dict, m2: dict[str, tuple[str, str]]
         author_case=case, author_assessment_situation=situation,
         author_case_source=_ref(case_entry["path"].name, case_entry["sha256"]),
         author_as_source=_ref(as_entry["path"].name, as_entry["sha256"]),
+        participant_presentation=_participant_presentation(case_id, passport, situation, as_entry, materials),
         unresolved_decisions=unresolved,
     )
     return result.model_dump()
@@ -206,9 +321,8 @@ def build_package(source_root: Path) -> tuple[dict, dict, list[dict], list[dict]
     preview = [{
         "case_id": case["case_id"], "version": case["version"], "title": case["title"],
         "format": case["format"], "planned_minutes": [case["planned_min_minutes"], case["planned_max_minutes"]],
-        "opening": _first(case["author_assessment_situation"], "P00", "Заголовок участнику"),
-        "initial_materials": [{"material_id": item["material_id"], "content": item["content"]}
-                              for item in case["materials"] if item["participant_visible_initially"]],
+        "presentation": case["participant_presentation"],
+        "initial_materials": case["participant_presentation"]["initial_materials"],
     } for case in cases]
     package = {
         "schema_version": 3, "kind": "m5_case_package", "methodology_version": "1.1",
@@ -216,7 +330,7 @@ def build_package(source_root: Path) -> tuple[dict, dict, list[dict], list[dict]
         "scope": {"professional_context": "Sales", "base_role": BASE_ROLE, "case_count": 9,
                   "excluded": ["HR", "mini_cases"]},
         "cases": cases,
-        "blockers": ["SLS02_RUNTIME_AS_NOT_IMPLEMENTED", "CASE_DIALOGUE_QA_NOT_RUN",
+        "blockers": ["CASE_DIALOGUE_QA_NOT_RUN",
                      "METHODOLOGY_REVIEW_NOT_APPROVED", "RUNTIME_ADMISSION_DISABLED"],
     }
     return package, source_manifest, mapping, preview
@@ -234,7 +348,7 @@ def write_package(source_root: Path, destination: Path = OUTPUT) -> dict:
     for item in source_manifest["files"]:
         shutil.copyfile(source_root.parent / item["file"], source_dir / Path(item["file"]).name)
     shutil.copyfile(source_root / "manifest.json", source_dir / "source-selection-manifest.json")
-    execution_rules = {"schema_version": 1, "status": "not_structured", "owner_task": "SLS02/SLS03", "cases": {}}
+    execution_rules = {"schema_version": 1, "status": "not_structured", "owner_task": "SLS03", "cases": {}}
     verification = {
         "schema_version": 1, "result": "PASS", "scope": "static_sales_package",
         "case_count": 9, "assessment_situation_count": 9,

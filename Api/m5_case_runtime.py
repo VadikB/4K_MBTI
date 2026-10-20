@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from copy import deepcopy
 from typing import Any
 from uuid import UUID
@@ -13,8 +14,10 @@ from Api.assessment_case_contracts import (
     AssessmentSituationV2,
     C34ExecutionEnvelope,
     CaseVersionV2,
+    CaseVersionV3,
     QAEvidenceV2,
     VersionRef,
+    validate_case_version,
 )
 
 
@@ -49,6 +52,54 @@ def evaluate_admission(case: CaseVersionV2, evidence: list[QAEvidenceV2], policy
     )
 
 
+def _replace_casefold(value: str, source: str, replacement: str) -> str:
+    return re.sub(re.escape(source), lambda _: replacement, value, flags=re.IGNORECASE)
+
+
+def _materialize_v3_presentation(
+    case: CaseVersionV3, profile_snapshot: dict, profile_ref: dict, substitutions: list[dict],
+) -> dict:
+    presentation = case.participant_presentation.model_dump()
+    targets: dict[str, list] = {}
+    for target in case.participant_presentation.substitution_targets:
+        targets.setdefault(target.slot, []).append(target)
+    supplied = {str(item.get("slot", "")): item for item in substitutions}
+    if len(supplied) != len(substitutions):
+        raise ValueError("DUPLICATE_SUBSTITUTION_SLOT")
+    unknown = set(supplied) - set(targets)
+    if unknown:
+        raise ValueError("SUBSTITUTION_TARGET_NOT_ALLOWED:" + ",".join(sorted(unknown)))
+    organization_context = profile_snapshot.get("organization_context")
+    organization_context = organization_context if isinstance(organization_context, dict) else {}
+    usage_rules = str(organization_context.get("organization_name_usage_rules") or "").casefold()
+    if "organization_name" in supplied and "не использовать" in usage_rules:
+        raise ValueError("ORGANIZATION_NAME_SUBSTITUTION_FORBIDDEN")
+    for slot, item in supplied.items():
+        replacement = str(item.get("value") or "").strip()
+        if not replacement:
+            raise ValueError(f"SUBSTITUTION_VALUE_REQUIRED:{slot}")
+        if slot == "organization_name" and replacement != str(organization_context.get("name") or "").strip():
+            raise ValueError("SUBSTITUTION_VALUE_PROFILE_MISMATCH:organization_name")
+        if item.get("source_path") != "organization_context.name" or item.get("source_checksum") != profile_ref.get("checksum"):
+            raise ValueError(f"SUBSTITUTION_PROVENANCE_MISMATCH:{slot}")
+        for target in targets[slot]:
+            if target.path == "introduction":
+                presentation["introduction"] = _replace_casefold(
+                    presentation["introduction"], target.source_value, replacement,
+                )
+                continue
+            match = re.fullmatch(r"initial_materials\.(\d+)\.text", target.path)
+            if match is None:
+                raise ValueError(f"UNSUPPORTED_SUBSTITUTION_PATH:{target.path}")
+            material = presentation["initial_materials"][int(match.group(1))]
+            material["text"] = _replace_casefold(material["text"], target.source_value, replacement)
+    presentation.pop("substitution_targets", None)
+    presentation["case_id"] = case.case_id
+    presentation["case_version"] = case.version
+    presentation["substitutions"] = deepcopy(substitutions)
+    return presentation
+
+
 def build_assessment_situation(
     *,
     assessment_situation_id: str,
@@ -63,23 +114,26 @@ def build_assessment_situation(
     policy: dict,
     ai_operations: dict | None = None,
 ) -> tuple[dict, dict]:
-    case = CaseVersionV2.model_validate(case_value)
+    case = validate_case_version(case_value)
     if profile_snapshot.get("base_role") != case.base_role:
         raise ValueError("PROFILE_BASE_ROLE_NOT_APPLICABLE")
     evidence = [QAEvidenceV2.model_validate(x) for x in qa_evidence]
     admission = evaluate_admission(case, evidence, policy)
-    participant_payload = {
-        "case_id": case.case_id,
-        "case_version": case.version,
-        "title": case.title,
-        "initial_situation": case.passport["InitialSituation"],
-        "trigger": case.passport["Trigger"],
-        "assessee_position": case.passport["AssesseePosition"],
-        "participants_and_positions": case.passport["ParticipantsAndPositions"],
-        "assessee_task": case.passport["AssesseeTask"],
-        "conditions_and_constraints": case.passport["ConditionsAndConstraints"],
-        "substitutions": deepcopy(substitutions),
-    }
+    if isinstance(case, CaseVersionV3):
+        participant_payload = _materialize_v3_presentation(case, profile_snapshot, profile_ref, substitutions)
+    else:
+        participant_payload = {
+            "case_id": case.case_id,
+            "case_version": case.version,
+            "title": case.title,
+            "initial_situation": case.passport["InitialSituation"],
+            "trigger": case.passport["Trigger"],
+            "assessee_position": case.passport["AssesseePosition"],
+            "participants_and_positions": case.passport["ParticipantsAndPositions"],
+            "assessee_task": case.passport["AssesseeTask"],
+            "conditions_and_constraints": case.passport["ConditionsAndConstraints"],
+            "substitutions": deepcopy(substitutions),
+        }
     execution_payload = {
         "case_id": case.case_id,
         "case_version": case.version,

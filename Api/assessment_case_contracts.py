@@ -157,6 +157,32 @@ class ScenarioStepV3(Contract):
     content: dict[str, Any]
     source: JsonSourceRefV3
 
+class ParticipantMaterialV3(Contract):
+    material_id: Text
+    title: Text
+    text: Text
+    source: JsonSourceRefV3
+
+class SubstitutionTargetV3(Contract):
+    slot: Literal["organization_name"]
+    path: Text
+    source_value: Text
+
+class ParticipantPresentationV3(Contract):
+    assessment_situation_id: Text
+    version: Text
+    source: JsonSourceRefV3
+    title: Text
+    introduction: Text
+    initial_situation: Text
+    trigger: Text
+    assessee_position: Text
+    participants_and_positions: Text
+    assessee_task: Text
+    conditions_and_constraints: Text
+    initial_materials: list[ParticipantMaterialV3]
+    substitution_targets: list[SubstitutionTargetV3] = Field(default_factory=list)
+
 class CaseVersionV3(Contract):
     """JSON-native author package; original author objects remain immutable snapshots."""
     schema_version: Literal[3] = 3
@@ -176,6 +202,7 @@ class CaseVersionV3(Contract):
     characters: list[CaseCharacterV3]
     materials: Annotated[list[CaseMaterialV3], Field(min_length=1)]
     scenario: Annotated[list[ScenarioStepV3], Field(min_length=1)]
+    participant_presentation: ParticipantPresentationV3
     author_case: dict[str, Any]
     author_assessment_situation: dict[str, Any]
     author_case_source: JsonSourceRefV3
@@ -228,7 +255,7 @@ class AssessmentSituationV2(Contract):
     participant_payload: dict[str, Any]
     execution_payload_ref: VersionRef
     planned_minutes: Annotated[int, Field(gt=0)]
-    indicator_targets: Annotated[list[IndicatorTargetV2], Field(min_length=1)]
+    indicator_targets: Annotated[list[IndicatorTargetV2 | IndicatorTargetV3], Field(min_length=1)]
     qa_evidence: list[QAEvidenceV2]
     admission: AdmissionDecisionV2
 

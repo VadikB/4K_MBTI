@@ -7,7 +7,8 @@ import psycopg
 import pytest
 from psycopg.rows import dict_row
 
-from Api.acquaintance import accept_consent, early_readiness, report_issue, save_answers
+from Api import acquaintance
+from Api.acquaintance import accept_consent, early_readiness, late_readiness, report_issue, save_answers
 
 
 @pytest.mark.integration
@@ -85,4 +86,39 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
             "SELECT organization_id FROM participant_data_issue_reports WHERE id=%s", (issue["id"],),
         ).fetchone()
         assert stored["organization_id"] == 10
+        connection.rollback()
+
+
+@pytest.mark.integration
+def test_late_readiness_does_not_fall_back_past_latest_unbound_confirmation(
+    test_database_url, monkeypatch,
+) -> None:
+    with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
+        schema = "w02_latest_" + uuid4().hex
+        connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
+        connection.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
+        connection.execute("""CREATE TABLE participant_acquaintance_confirmations(
+            id BIGSERIAL PRIMARY KEY,user_id BIGINT,organization_id BIGINT,assignment_ref TEXT,
+            personalized_profile_id BIGINT,confirmed_at TIMESTAMP NOT NULL)""")
+        connection.execute("""INSERT INTO participant_acquaintance_confirmations(
+            user_id,organization_id,assignment_ref,personalized_profile_id,confirmed_at)
+            VALUES(1,10,'assignment-a',77,'2026-10-19 10:00:00'),
+                  (1,10,'assignment-a',NULL,'2026-10-19 11:00:00')""")
+        called = False
+
+        def profile_for_start(*args, **kwargs):
+            nonlocal called
+            called = True
+            return {"id": 77}
+
+        monkeypatch.setattr(acquaintance.participant_profile, "profile_for_start", profile_for_start)
+        result = late_readiness(connection, user_id=1, readiness={
+            "status": "ready", "reason": None, "organization_id": 10,
+            "assignment_ref": "assignment-a",
+        })
+        assert result == {
+            "status": "waiting_for_assessment_data", "reason": "W02_ANSWERS_NOT_BOUND",
+            "personalized_profile_id": None,
+        }
+        assert called is False
         connection.rollback()
