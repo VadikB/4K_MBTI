@@ -1,0 +1,14 @@
+{
+  "id": "sales-pilot-return-r1",
+  "version": "2.0",
+  "status": "published",
+  "usage_scope": "assessment",
+  "owner": "product_owner",
+  "source": "P4K_Sales_04_Return.txt; owner decision 2026-10-18",
+  "artifacts": [
+    {
+      "path": "policy.json",
+      "checksum": "1121db8c84b6997ee427264a589b5db088588e134734d8ae0dbc0d2220a36f14"
+    }
+  ]
+}

@@ -72,6 +72,15 @@ def test_sources_resolve_independently_and_started_cycle_keeps_snapshot(db):
     assert resolve(db,personalized_profile_id=1,usage_scope='assessment')['values']['calendar_window_seconds']==172800
 
 
+def test_identical_published_program_revision_is_idempotent(db):
+    first=save_revision(db,source_scope='program',organization_id=10,assessment_configuration_id=100,
+                        values={'time_budget_seconds':7200,'calendar_window_seconds':259200},created_by=99)
+    second=save_revision(db,source_scope='program',organization_id=10,assessment_configuration_id=100,
+                         values={'time_budget_seconds':7200,'calendar_window_seconds':259200},created_by=99)
+    assert second['id']==first['id']
+    assert db.execute("SELECT count(*) AS n FROM m7_parameter_revisions WHERE source_scope='program'").fetchone()['n']==1
+
+
 def test_invalid_values_and_client_override_are_not_defaults(db):
     assert resolve(db,personalized_profile_id=1,usage_scope='assessment')['values']['time_budget_seconds']==3600
     for value in (0,-1,'3600',True):

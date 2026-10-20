@@ -5907,6 +5907,36 @@ def _m7_owned_clarification(request:Request,decision_id:str):
     return user
 
 
+def _m7_require_explicit_return(connection, *, owner_user_id: int,
+                                cycle_id: str | None = None,
+                                assessment_situation_id: str | None = None) -> None:
+    """Persist the lease boundary and block every AS read/write until Continue."""
+    if cycle_id is None:
+        row = connection.execute("""SELECT c.cycle_id FROM m5_assessment_situations s
+            JOIN m5_cycles c ON c.id=s.cycle_db_id WHERE s.assessment_situation_id=%s""",
+            (UUID(str(assessment_situation_id)),)).fetchone()
+        if not row or "cycle_id" not in row:
+            return
+        cycle_id = str(row["cycle_id"])
+    policy = connection.execute("""SELECT r.content_json->'return_policy_snapshot' AS value
+        FROM m7_cycle_plans p JOIN LATERAL(SELECT content_json FROM m7_plan_revisions
+          WHERE plan_id=p.id ORDER BY revision_no DESC LIMIT 1) r ON TRUE
+        JOIN m5_cycles c ON c.id=p.cycle_db_id WHERE c.cycle_id=%s""",
+        (UUID(str(cycle_id)),)).fetchone()
+    if not policy or not policy["value"]:
+        return
+    try:
+        event = m7_return_integration.reconcile_presence(
+            connection, cycle_id=str(cycle_id), owner_user_id=owner_user_id)
+    except ValueError as exc:
+        if str(exc) == "M7_RETURN_CURRENT_POSITION_NOT_FOUND":
+            return
+        raise
+    if event:
+        connection.commit()
+        raise HTTPException(status_code=409, detail="M7_RETURN_EXPLICIT_CONTINUE_REQUIRED")
+
+
 def _persist_time_expiry_for_situation(assessment_situation_id:str):
     with get_connection() as connection:
         row=connection.execute('SELECT c.cycle_id,c.created_by FROM m5_assessment_situations s JOIN m5_cycles c ON c.id=s.cycle_db_id WHERE s.assessment_situation_id=%s',(UUID(assessment_situation_id),)).fetchone()
@@ -6077,9 +6107,11 @@ def start_owned_m5_situation(assessment_situation_id: UUID, request: Request) ->
 
 @router.post("/assessment/m5/situations/{assessment_situation_id}/turns")
 def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, request: Request) -> dict:
-    _m5_owned_situation(request, str(assessment_situation_id))
+    user = _m5_owned_situation(request, str(assessment_situation_id))
     try:
         with get_connection() as connection:
+            _m7_require_explicit_return(connection, owner_user_id=int(user.id),
+                                        assessment_situation_id=str(assessment_situation_id))
             semantic_adapter=character_adapter=None
             from Api.m10_test_gateway import enabled as browser_test_gateway_enabled
             if browser_test_gateway_enabled():
@@ -6110,6 +6142,8 @@ def transition_owned_m5_situation(assessment_situation_id: UUID, payload: M5Tran
     user=_m5_owned_situation(request, str(assessment_situation_id))
     try:
         with get_connection() as connection:
+            _m7_require_explicit_return(connection, owner_user_id=int(user.id),
+                                        assessment_situation_id=str(assessment_situation_id))
             result = m5_scenario_runtime.transition(connection, assessment_situation_id=str(assessment_situation_id),
                                                     action=payload.action, reason=payload.reason, request_id=payload.request_id)
             if payload.action=='scenario_end':
@@ -6124,8 +6158,10 @@ def transition_owned_m5_situation(assessment_situation_id: UUID, payload: M5Tran
 
 @router.get("/assessment/m5/situations/{assessment_situation_id}/trace")
 def get_owned_m5_trace(assessment_situation_id: UUID, request: Request) -> dict:
-    _m5_owned_situation(request, str(assessment_situation_id))
+    user = _m5_owned_situation(request, str(assessment_situation_id))
     with get_connection() as connection:
+        _m7_require_explicit_return(connection, owner_user_id=int(user.id),
+                                    assessment_situation_id=str(assessment_situation_id))
         return m10_product_flow.participant_trace(m5_scenario_runtime.trace(connection, str(assessment_situation_id)))
 
 
@@ -6162,9 +6198,11 @@ def start_owned_assessment_cycle(payload: ProductCycleActionRequest, request: Re
 
 @router.get('/assessment/cycles/{cycle_id}/runtime')
 def read_owned_assessment_runtime(cycle_id:UUID,request:Request):
-    _m7_owned_cycle(request,str(cycle_id))
+    user=_m7_owned_cycle(request,str(cycle_id))
     try:
-        with get_connection() as connection:return m10_product_flow.read_runtime(connection,cycle_id=str(cycle_id))
+        with get_connection() as connection:
+            _m7_require_explicit_return(connection,owner_user_id=int(user.id),cycle_id=str(cycle_id))
+            return m10_product_flow.read_runtime(connection,cycle_id=str(cycle_id))
     except ValueError as exc:raise HTTPException(status_code=404,detail=str(exc)) from exc
 
 

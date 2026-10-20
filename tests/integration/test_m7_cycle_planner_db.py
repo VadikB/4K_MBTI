@@ -351,6 +351,34 @@ def test_controlled_return_179_continues_same_as_without_restoring_budget(db):
         assert c.execute("SELECT count(*) AS n FROM m5_assessment_situations").fetchone()['n']==1
 
 
+def test_sales_r1_long_break_continues_same_as_without_provider_generation(db):
+    with db() as c:
+        plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);as_id=str(shown['decision']['assessment_situation_id'])
+        policy=return_integration.load_policy(usage_scope='assessment')
+        revision=c.execute("SELECT * FROM m7_plan_revisions ORDER BY revision_no DESC LIMIT 1").fetchone()
+        content=deepcopy(revision['content_json'])
+        content['return_policy_snapshot']={'content':policy,'checksum':checksum(policy)}
+        c.execute("""INSERT INTO m7_plan_revisions(id,plan_id,cycle_db_id,revision_no,content_json,
+                  content_checksum,reason) VALUES(%s,%s,%s,%s,%s::jsonb,%s,'sales_r1_fixture')""",
+                  (uuid4(),revision['plan_id'],revision['cycle_db_id'],revision['revision_no']+1,
+                   json.dumps(content),checksum(content)))
+        c.execute("UPDATE m5_cycles SET usage_scope='assessment'")
+        base=datetime.now(timezone.utc)-timedelta(seconds=600)
+        c.execute("UPDATE m5_cycle_time_intervals SET started_at=%s WHERE ended_at IS NULL",
+                  (base-timedelta(seconds=60),))
+        heartbeat(c,cycle_id=cycle_id,owner_user_id=99,client_id=str(uuid4()),expected_as_id=as_id,received_at=base)
+        evaluated=base+timedelta(seconds=480)
+        state=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=evaluated)
+        assert state['allowed_action']=='continue_current'
+        assert state['recognized_absence_seconds']==360
+        assert state['replacement_count'] is None and state['replacement_limit'] is None
+        result=continue_return(c,cycle_id=cycle_id,position_no=1,expected_as_id=as_id,
+            expected_state='active',key='sales-r1-long-return',owner_user_id=99,evaluated_at=evaluated)
+        assert result['branch']=='continued_current'
+        assert result['assessment_situation_id']==as_id
+        assert c.execute("SELECT count(*) AS n FROM m5_equivalent_generation_operations").fetchone()['n']==0
+
+
 def test_presence_lease_119_120_and_two_clients_use_last_server_expiry(db):
     with db() as c:
         plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);as_id=str(shown['decision']['assessment_situation_id'])
