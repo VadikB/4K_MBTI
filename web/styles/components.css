@@ -399,6 +399,11 @@ textarea {
     letter-spacing: 0;
 }
 
+.app-footer-release {
+    font-size: 12px;
+    line-height: 16px;
+}
+
 @media (max-width: 479px) {
     .app-footer {
         padding-right: max(16px, env(safe-area-inset-right));

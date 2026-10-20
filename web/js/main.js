@@ -1,6 +1,7 @@
 import { loadInterview } from './screen-loaders.js';
 import { APP_RELEASE } from './config.js';
-import { appReleaseNumber, authPanel, emailInput, authTokenForm, magicTokenInput, authStatus, authError } from './dom.js';
+import { authPanel, emailInput, authTokenForm, magicTokenInput, authStatus, authError } from './dom.js';
+import { renderReleaseVersion, resolveReleaseVersion } from './release-version.js';
 import {
   state,
   safeStorage,
@@ -49,14 +50,9 @@ import {
   loadDashboard,
 } from './screen-loaders.js';
 
-if (appReleaseNumber) {
-  appReleaseNumber.textContent = APP_RELEASE;
-}
+renderReleaseVersion(document, resolveReleaseVersion(null, APP_RELEASE));
 
 const syncRuntimeReleaseNumber = async () => {
-  if (!appReleaseNumber) {
-    return;
-  }
   try {
     const response = await fetch('/users/version', {
       credentials: 'same-origin',
@@ -65,10 +61,7 @@ const syncRuntimeReleaseNumber = async () => {
       return;
     }
     const payload = await response.json();
-    const runtimeVersion = String(payload?.version || '').trim();
-    if (runtimeVersion) {
-      appReleaseNumber.textContent = runtimeVersion;
-    }
+    renderReleaseVersion(document, resolveReleaseVersion(payload?.version, APP_RELEASE));
   } catch (_error) {
     // keep fallback release number from the frontend config
   }

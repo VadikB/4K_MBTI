@@ -11,6 +11,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify application release
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin main
+            python scripts/check_release_version.py --base-ref origin/main
+          else
+            python scripts/check_release_version.py
+          fi
 
       - uses: actions/setup-node@v4
         with:
