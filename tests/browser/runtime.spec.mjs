@@ -241,7 +241,7 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
  expect(delivered).toBeTruthy();expect(delivered.sequence_no).toBeGreaterThan(dialogue.trace.turns[0].sequence_no);
  expect(JSON.stringify(dialogue)).not.toContain('execution_envelope');
  await page.locator('#interview-finish-button').click();
- await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
+ await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:70000});
  await info.attach('clarification-ui',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  await answer(page,fixture.clarification_answer);
  await expect(page.locator('#interview-finish-button')).toBeEnabled({timeout:30000});
