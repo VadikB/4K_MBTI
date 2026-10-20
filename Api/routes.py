@@ -6087,7 +6087,10 @@ def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, 
                 from Api.m10_test_gateway import acceptance_fixture
                 fixture=acceptance_fixture()
                 matched=bool(fixture and payload.content==fixture['character_answer'])
-                semantic_adapter=ControlledSemanticAdapter({fixture['character_material_id']+':character_reaction':'TRUE'} if matched else {})
+                controlled_outcomes={fixture['mandatory_material_id']+':mandatory':'TRUE'}
+                if matched:
+                    controlled_outcomes[fixture['character_material_id']+':character_reaction']='TRUE'
+                semantic_adapter=ControlledSemanticAdapter(controlled_outcomes)
                 character_adapter=ControlledCharacterAdapter({fixture['character_material_id']:fixture['character_response']} if matched else {})
             result = m5_scenario_runtime.submit_turn(connection, assessment_situation_id=str(assessment_situation_id),
                                                      request_id=payload.request_id, turn_id=str(payload.turn_id),
