@@ -6087,7 +6087,9 @@ def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, 
                 from Api.m10_test_gateway import acceptance_fixture
                 fixture=acceptance_fixture()
                 matched=bool(fixture and payload.content==fixture['character_answer'])
-                controlled_outcomes={fixture['mandatory_material_id']+':mandatory':'TRUE'}
+                controlled_outcomes={}
+                if fixture:
+                    controlled_outcomes[fixture['mandatory_material_id']+':mandatory']='TRUE'
                 if matched:
                     controlled_outcomes[fixture['character_material_id']+':character_reaction']='TRUE'
                 semantic_adapter=ControlledSemanticAdapter(controlled_outcomes)
