@@ -740,12 +740,24 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await expect(page.locator('#m8-report-chart')).toBeHidden();
   await page.locator('#m8-report-tab-select').selectOption('K1');
   await expect(page.locator('#m8-report-chart svg')).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 900 });
+  await expect(page.locator('.m8-radar-key li')).toHaveCount(3);
+  await expect(page.locator('.m8-radar-key')).toContainText('Понимание собеседника');
+  await expect(page.locator('.m8-radar-key')).toContainText('Нет числового показателя');
+  await expect.poll(() => page.locator('#m8-report-chart').evaluate((chart) => {
+    const svg = chart.querySelector('svg');
+    const label = svg?.querySelector('.m8-radar-marker');
+    if (!label || !svg.viewBox.baseVal.width) return 0;
+    return parseFloat(getComputedStyle(label).fontSize) * svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+  }), { message: 'mobile radar marker should not shrink below 12 CSS px' }).toBeGreaterThanOrEqual(12);
   for (const width of [320, 360, 430, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    const bounds = await page.locator('#m8-report-chart svg').evaluate((svg) => {
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const bounds = await page.locator('#m8-report-chart').evaluate((chart) => {
+      const svg = chart.querySelector('svg');
       const svgBox = svg.getBoundingClientRect();
       const inset = 19 * svgBox.width / svg.viewBox.baseVal.width;
-      return [...svg.querySelectorAll('.m8-radar-label')].map((label) => {
+      return [...svg.querySelectorAll('.m8-radar-label, .m8-radar-marker-bg')].map((label) => {
         const box = label.getBoundingClientRect();
         return {
           left: box.left,
@@ -824,6 +836,7 @@ test('UI02 full overview keeps every radar label separate', async ({ page }) => 
   for (const width of [768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     const boxes = await page.locator('#m8-report-chart svg').evaluate((svg) => {
       const bounds = svg.getBoundingClientRect();
       const inset = 19 * bounds.width / svg.viewBox.baseVal.width;
@@ -853,6 +866,141 @@ test('UI02 full overview keeps every radar label separate', async ({ page }) => 
   });
   await page.locator('#m8-report-chart a').first().focus();
   await expect(page.locator('#m8-report-chart a').first()).toBeFocused();
+});
+
+test('QA19-04 keeps four M8 competency radars readable across mobile and desktop widths', async ({ page }) => {
+  const groups = [
+    ['Коммуникация', ['Ориентация и проектирование коммуникации', 'Передача смысла',
+      'Слушание, реконструкция и верификация смысла другого', 'Согласование смыслов и позиций']],
+    ['Командная работа', ['Организация совместной работы', 'Координация совместных действий',
+      'Поддержание продуктивного командного взаимодействия']],
+    ['Креативность', ['Исследование пространства возможностей', 'Создание новых идей и решений',
+      'Развитие и доведение нового решения']],
+    ['Критическое мышление', ['Анализ и оценка информации', 'Постановка и анализ проблемы',
+      'Рассуждение, аргументация и проверка выводов', 'Принятие решений']],
+  ];
+  const skills = groups.flatMap(([competency_name, names], groupIndex) => names.map((skill_name, index) => {
+    const value = groupIndex === 0 ? [0, 3, 1.5, 2][index]
+      : groupIndex === 1 ? [2, null, 1][index]
+        : groupIndex === 2 ? 2 : null;
+    return { skill_id: `S${groupIndex + 1}-${index + 1}`, competency_id: `K${groupIndex + 1}`,
+      competency_name, skill_name, outcome: value == null ? 'no_result'
+        : groupIndex === 1 && index === 0 ? 'partial_score' : 'full_score',
+      ...(value == null ? {} : { score: { value, numerator: value, denominator: 1 } }) };
+  }));
+  const user = { id: 8, email: 'synthetic@example.test', full_name: 'Synthetic' };
+  const dashboard = {
+    greeting_name: 'Synthetic', profile_readiness: 'ready', personalized_profile_id: 11,
+    active_assessment: null, available_assessments: [], reports: [], reports_total: 1,
+    current_assessments: [], completed_assessments: [{ cycle_id: 'cycle-qa04', report_id: 'report-qa04',
+      title: 'Оценка 4К', status: 'report_ready', status_label: 'Результат готов',
+      action: 'open_report', button_label: 'Посмотреть результат' }],
+  };
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'qa19-04-fixture' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, dashboard });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'show_dashboard',
+      profile: { status: 'complete' }, onboarding: { status: 'completed' }, assessment: { status: 'report_ready' } });
+    if (pathname === '/users/assessment/m8/reports/report-qa04') return fulfillJson(route, {
+      id: 'report-qa04', owner_user_id: 8, cycle_id: 'cycle-qa04', revision_no: 1,
+      created_at: '2026-10-19T12:00:00Z', c67: {
+        skills, competencies: groups.map(([competency_name], index) => ({
+          competency_id: `K${index + 1}`, competency_name,
+          skill_ids: skills.filter((skill) => skill.competency_id === `K${index + 1}`).map((skill) => skill.skill_id),
+        })),
+        descriptive: { status: 'ready', summary: [], claims: [] }, coverage: {}, limitations: [],
+        reliability: { status: 'not_verified' }, sessions: [], collection: {},
+      },
+    });
+    if (pathname === '/users/assessment/m8/history') return fulfillJson(route, { cycles: [
+      { cycle_id: 'cycle-qa04', report_id: 'report-qa04', collection_closed_at: '2026-10-19T11:00:00Z' },
+      { cycle_id: 'cycle-qa04-previous', report_id: 'report-qa04-previous', collection_closed_at: '2026-09-19T11:00:00Z' },
+    ] });
+    if (pathname === '/users/assessment/m8/reports/report-qa04/comparison') return fulfillJson(route, {
+      mode: 'mixed',
+      current: { cycle_id: 'cycle-qa04', report_id: 'report-qa04', created_at: '2026-10-19T12:00:00Z' },
+      previous: { cycle_id: 'cycle-qa04-previous', report_id: 'report-qa04-previous', created_at: '2026-09-19T12:00:00Z' },
+      skills: [
+        { skill_id: 'S1-1', skill_name: groups[0][1][0], previous: 1, current: 0, difference: -1,
+          comparability: { status: 'allowed', reason: null } },
+        { skill_id: 'S2-2', skill_name: groups[1][1][1], previous: null, current: null, difference: null,
+          comparability: { status: 'not_allowed', reason: 'full_score_required' } },
+      ],
+    });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await page.getByRole('button', { name: 'Посмотреть результат' }).click();
+  await page.evaluate(async () => { await document.fonts.ready; });
+
+  for (const width of [320, 360, 375, 390, 430]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (let groupIndex = 0; groupIndex < groups.length; groupIndex += 1) {
+      await page.locator('#m8-report-tab-select').selectOption(`K${groupIndex + 1}`);
+      if (groupIndex === 3) {
+        await expect(page.locator('.m8-chart-empty')).toBeVisible();
+        await expect(page.locator('#m8-report-skills .report-skill-item')).toHaveCount(groups[groupIndex][1].length);
+        continue;
+      }
+      await expect(page.locator('.m8-radar-key li')).toHaveCount(groups[groupIndex][1].length);
+      const geometry = await page.locator('#m8-report-chart').evaluate((node) => {
+        const svg = node.querySelector('svg');
+        const chart = svg.getBoundingClientRect();
+        const scale = chart.width / svg.viewBox.baseVal.width;
+        const markers = [...svg.querySelectorAll('.m8-radar-marker-bg')].map((item) => item.getBoundingClientRect());
+        const keyNames = [...node.querySelectorAll('.m8-radar-key-name')];
+        return {
+          markerFont: parseFloat(getComputedStyle(svg.querySelector('.m8-radar-marker')).fontSize) * scale,
+          tickFont: parseFloat(getComputedStyle(svg.querySelector('.m8-radar-scale')).fontSize) * scale,
+          nameFonts: keyNames.map((item) => parseFloat(getComputedStyle(item).fontSize)),
+          names: keyNames.map((item) => item.textContent),
+          markers: markers.map((box) => ({ left: box.left, top: box.top, right: box.right, bottom: box.bottom })),
+          chart: { left: chart.left, top: chart.top, right: chart.right, bottom: chart.bottom },
+          overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        };
+      });
+      expect(geometry.names).toEqual(groups[groupIndex][1]);
+      expect(geometry.markerFont).toBeGreaterThanOrEqual(12);
+      expect(geometry.tickFont).toBeGreaterThanOrEqual(12);
+      expect(geometry.nameFonts.every((size) => size >= 14)).toBe(true);
+      expect(geometry.overflow).toBe(false);
+      for (const [index, marker] of geometry.markers.entries()) {
+        expect(marker.left).toBeGreaterThanOrEqual(geometry.chart.left);
+        expect(marker.right).toBeLessThanOrEqual(geometry.chart.right);
+        expect(marker.top).toBeGreaterThanOrEqual(geometry.chart.top);
+        expect(marker.bottom).toBeLessThanOrEqual(geometry.chart.bottom);
+        for (const other of geometry.markers.slice(index + 1)) {
+          expect(marker.left < other.right && marker.right > other.left &&
+            marker.top < other.bottom && marker.bottom > other.top).toBe(false);
+        }
+      }
+    }
+  }
+  await page.locator('#m8-report-tab-select').selectOption('K1');
+  await expect(page.locator('.m8-radar-key')).toContainText('0 из 3');
+  await expect(page.locator('.m8-radar-key')).toContainText('3 из 3');
+  await page.locator('.m8-radar-key a').first().focus();
+  await expect(page.locator('.m8-radar-key a').first()).toBeFocused();
+  await page.locator('.m8-radar-key a').first().click();
+  await expect(page.locator('#m8-skill-S1-1')).toBeFocused();
+
+  for (const width of [768, 1024, 1366, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(page.locator('.m8-radar-key')).toHaveCount(0);
+    await expect(page.locator('.m8-radar-label')).toHaveCount(groups[0][1].length);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+    expect(overflow).toBe(false);
+  }
+  await page.setViewportSize({ width: 390, height: 900 });
+  await expect(page.locator('.m8-radar-key li')).toHaveCount(groups[0][1].length);
+  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await expect(page.locator('.m8-comparison-table')).toContainText('-1');
+  await expect(page.locator('.m8-comparison-slices')).toContainText('нет полного результата');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+  await test.info().attach('qa19-04-mobile-radar', {
+    body: await page.locator('#m8-report-chart').screenshot(), contentType: 'image/png',
+  });
 });
 
 test('R03 late login cannot replace a password-reset step', async ({ page }) => {
