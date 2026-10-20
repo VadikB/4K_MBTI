@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "m5_character_response",
+  "version": "v2",
+  "status": "draft",
+  "artifacts": [
+    {"name": "prompt.md", "sha256": "177675ea4bb921c61da9dd97c67b776d372ab7ffd1c19eedc75d214d9c088384"}
+  ]
+}

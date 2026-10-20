@@ -593,18 +593,18 @@ test('REL-VERSION-01 shows one build number on auth and common areas, with a saf
   await page.route('**/users/**', (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: false });
-    if (pathname === '/users/version') return fulfillJson(route, { version: '2.0.2' });
+    if (pathname === '/users/version') return fulfillJson(route, { version: '2.0.3' });
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.2');
+  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.3');
   await expect(page.locator('#app-release-badge')).toBeVisible();
   await expect(page.locator('.app-footer-release')).toBeHidden();
   await page.setViewportSize({ width: 360, height: 760 });
   await expect(page.locator('#app-release-badge')).toBeInViewport();
   await page.locator('#auth-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.remove('hidden'));
-  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.2');
+  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.3');
   await expect(page.locator('.app-footer-release')).toBeVisible();
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#chat-panel').evaluate((panel) => panel.classList.remove('hidden'));

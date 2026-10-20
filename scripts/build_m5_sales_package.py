@@ -336,6 +336,59 @@ def build_package(source_root: Path) -> tuple[dict, dict, list[dict], list[dict]
     return package, source_manifest, mapping, preview
 
 
+def build_execution_rules(cases: list[dict]) -> dict:
+    """Структурирует только явно заданные автором события; не добавляет продуктовых эвристик."""
+    result: dict[str, dict] = {}
+    for case in cases:
+        initial_ids = {item["material_id"] for item in case["participant_presentation"]["initial_materials"]}
+        stages = []
+        materials = []
+        for step in sorted(case["scenario"], key=lambda item: item["order"]):
+            content = step["content"]
+            event = content.get("Событие")
+            occurrence = content.get("Условие возникновения")
+            constraints = content.get("Условия")
+            stages.append({
+                "step_id": step["step_id"], "order": step["order"], "event": event,
+                "condition": occurrence or constraints,
+                "source": step["source"],
+            })
+            if event == "character_response":
+                for character in case["characters"]:
+                    materials.append({
+                        "material_id": f"CHARACTER.{character['character_id']}",
+                        "kind": "character_reaction", "speaker_id": character["character_id"],
+                        "participant_payload": None,
+                        "disclosure_condition": {"type": "never"},
+                        "event_condition": {"type": "semantic_author_condition", "text": constraints,
+                                            "source": step["source"]},
+                        "reaction_rule": constraints,
+                        "result_check": "Персонаж отвечает только за собственную позицию и полномочия.",
+                    })
+        for material in sorted(case["materials"], key=lambda item: item["order"]):
+            if material["material_id"] in initial_ids or material["material_id"] == "P00":
+                continue
+            content = material["content"]
+            stage_id = str(content.get("Предъявление") or "")
+            stage = next((item for item in stages if item["step_id"] in stage_id), None)
+            materials.append({
+                "material_id": material["material_id"], "kind": "mandatory_update",
+                "speaker_id": None, "participant_payload": content,
+                "disclosure_condition": {"type": "mandatory"},
+                "event_condition": {"type": "semantic_author_condition",
+                                    "text": (stage or {}).get("condition"),
+                                    "source": (stage or {}).get("source")},
+                "reaction_rule": content.get("Комментарий предъявления") or content.get("Предъявление"),
+                "result_check": "Материал предъявляется однократно при подтверждённом авторском условии.",
+            })
+        result[case["case_id"]] = {
+            "schema_version": 1, "case_version": case["version"],
+            "initial_material_ids": sorted(initial_ids), "actorless": not case["characters"],
+            "characters": case["characters"], "materials": materials, "scenario": stages,
+        }
+    return {"schema_version": 2, "status": "structured_draft", "owner_task": "SLS03", "cases": result}
+
+
 def write_package(source_root: Path, destination: Path = OUTPUT) -> dict:
     if (destination / "manifest.json").exists():
         existing = json.loads((destination / "manifest.json").read_text())
@@ -348,7 +401,7 @@ def write_package(source_root: Path, destination: Path = OUTPUT) -> dict:
     for item in source_manifest["files"]:
         shutil.copyfile(source_root.parent / item["file"], source_dir / Path(item["file"]).name)
     shutil.copyfile(source_root / "manifest.json", source_dir / "source-selection-manifest.json")
-    execution_rules = {"schema_version": 1, "status": "not_structured", "owner_task": "SLS03", "cases": {}}
+    execution_rules = build_execution_rules(package["cases"])
     verification = {
         "schema_version": 1, "result": "PASS", "scope": "static_sales_package",
         "case_count": 9, "assessment_situation_count": 9,

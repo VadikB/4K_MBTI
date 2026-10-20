@@ -128,23 +128,30 @@ def test_m5_import_readback_and_rejected_as_are_transactional(test_database_url)
                             request_id=request_id, turn_id=turn_id, content="Покажите готовность и выборку",
                             semantic_adapter=ControlledSemanticAdapter({"CASE-TDISC-01-D1:disclosure": "TRUE"}))
         assert not first["idempotent"]
-        assert {x["material_id"] for x in first["events"]} >= {"CASE-TDISC-01-D1", "CASE-TDISC-01-D3"}
+        assert {x["material_id"] for x in first["events"]} == {"CASE-TDISC-01-D1"}
         repeated_turn = submit_turn(connection, assessment_situation_id=prepared["assessment_situation_id"],
-                                    request_id=request_id, turn_id=turn_id, content="другая доставка",
+                                    request_id=request_id, turn_id=turn_id, content="Покажите готовность и выборку",
                                     semantic_adapter=ControlledSemanticAdapter({}))
         assert repeated_turn["idempotent"]
+        second_turn_id = str(uuid4())
+        substantive = submit_turn(
+            connection, assessment_situation_id=prepared["assessment_situation_id"],
+            request_id="request-2", turn_id=second_turn_id, content="Предлагаю конкретный следующий шаг",
+            semantic_adapter=ControlledSemanticAdapter({"CASE-TDISC-01-D3:mandatory": "TRUE"}),
+        )
+        assert "CASE-TDISC-01-D3" in {x["material_id"] for x in substantive["events"]}
         assert transition(connection, assessment_situation_id=prepared["assessment_situation_id"], action="pause", reason="test", request_id="pause-1")["status"] == "paused"
         assert transition(connection, assessment_situation_id=prepared["assessment_situation_id"], action="resume", reason="test", request_id="resume-1")["status"] == "active"
         assert transition(connection, assessment_situation_id=prepared["assessment_situation_id"], action="scenario_end", reason="done", request_id="end-1")["status"] == "scenario_ended"
         assert transition(connection, assessment_situation_id=prepared["assessment_situation_id"], action="close", reason="closed", request_id="close-1")["status"] == "closed"
         saved_trace = trace(connection, prepared["assessment_situation_id"])
         assert saved_trace["status"] == "closed"
-        assert len(saved_trace["turns"]) == 1
+        assert len(saved_trace["turns"]) == 2
         assert len({x["event_key"] for x in saved_trace["events"]}) == len(saved_trace["events"])
         handoff = build_c45(connection, prepared["assessment_situation_id"])
         assert handoff["envelope_json"]["contract"] == "C-45"
         assert handoff["envelope_json"]["evaluation_created"] is False
-        assert handoff["envelope_json"]["boundary"]["turn_ids"] == [turn_id]
+        assert handoff["envelope_json"]["boundary"]["turn_ids"] == [turn_id, second_turn_id]
         assert {item["material_id"] for item in handoff["envelope_json"]["presented_materials"]} >= {
             "CASE-TDISC-01-D1", "CASE-TDISC-01-D3"
         }

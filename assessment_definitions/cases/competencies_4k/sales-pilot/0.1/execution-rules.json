@@ -1,6 +1,690 @@
 {
-  "cases": {},
+  "cases": {
+    "CASE.SPEC.01": {
+      "actorless": true,
+      "case_version": "v0.3",
+      "characters": [],
+      "initial_material_ids": [
+        "M01"
+      ],
+      "materials": [
+        {
+          "disclosure_condition": {
+            "type": "mandatory"
+          },
+          "event_condition": {
+            "source": null,
+            "text": null,
+            "type": "semantic_author_condition"
+          },
+          "kind": "mandatory_update",
+          "material_id": "M02",
+          "participant_payload": {
+            "MaterialID": "M02",
+            "Источник": "Коллега клиента из закупок; подготовлено до текущего разговора по первоначальному письму",
+            "Когда": "На S3 при продолжающемся основном сценарии",
+            "Название": "Черновик закупочного плана",
+            "Текст": "Черновик для закупочного плана\n\nПредмет закупки — российские серверы для замены оборудования на трёх площадках.\n\nОжидаемый результат — полная замена в течение месяца. После замены остановки приложения должны быть полностью исключены.\n\nФормулировка направлена в ИТ-службу для согласования."
+          },
+          "reaction_rule": null,
+          "result_check": "Материал предъявляется однократно при подтверждённом авторском условии.",
+          "speaker_id": null
+        }
+      ],
+      "scenario": [
+        {
+          "condition": null,
+          "event": null,
+          "order": 1,
+          "source": {
+            "file": "sources/Mobius_Sales_AS_01_v0.3_TEST_DRAFT.json",
+            "pointer": "/Сценарий/0",
+            "sha256": "ec9ad4fb875832d2c019e778d2328009de656514868c0f3469103d77b013dd71"
+          },
+          "step_id": "S0"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 2,
+          "source": {
+            "file": "sources/Mobius_Sales_AS_01_v0.3_TEST_DRAFT.json",
+            "pointer": "/Сценарий/1",
+            "sha256": "ec9ad4fb875832d2c019e778d2328009de656514868c0f3469103d77b013dd71"
+          },
+          "step_id": "S1"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 3,
+          "source": {
+            "file": "sources/Mobius_Sales_AS_01_v0.3_TEST_DRAFT.json",
+            "pointer": "/Сценарий/2",
+            "sha256": "ec9ad4fb875832d2c019e778d2328009de656514868c0f3469103d77b013dd71"
+          },
+          "step_id": "S2"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 4,
+          "source": {
+            "file": "sources/Mobius_Sales_AS_01_v0.3_TEST_DRAFT.json",
+            "pointer": "/Сценарий/3",
+            "sha256": "ec9ad4fb875832d2c019e778d2328009de656514868c0f3469103d77b013dd71"
+          },
+          "step_id": "S3"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 5,
+          "source": {
+            "file": "sources/Mobius_Sales_AS_01_v0.3_TEST_DRAFT.json",
+            "pointer": "/Сценарий/4",
+            "sha256": "ec9ad4fb875832d2c019e778d2328009de656514868c0f3469103d77b013dd71"
+          },
+          "step_id": "S4"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 6,
+          "source": {
+            "file": "sources/Mobius_Sales_AS_01_v0.3_TEST_DRAFT.json",
+            "pointer": "/Сценарий/5",
+            "sha256": "ec9ad4fb875832d2c019e778d2328009de656514868c0f3469103d77b013dd71"
+          },
+          "step_id": "S5"
+        }
+      ],
+      "schema_version": 1
+    },
+    "CASE.SPEC.02": {
+      "actorless": true,
+      "case_version": "v0.4",
+      "characters": [],
+      "initial_material_ids": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06"
+      ],
+      "materials": [],
+      "scenario": [
+        {
+          "condition": null,
+          "event": null,
+          "order": 1,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_02_v0.4_TEST_DRAFT.json",
+            "pointer": "/Сценарий/0",
+            "sha256": "6d0a8857d7618b0441ee7b4cbe402474dd9a4f7551e9e7337465221cc3869d42"
+          },
+          "step_id": "S0"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 2,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_02_v0.4_TEST_DRAFT.json",
+            "pointer": "/Сценарий/1",
+            "sha256": "6d0a8857d7618b0441ee7b4cbe402474dd9a4f7551e9e7337465221cc3869d42"
+          },
+          "step_id": "S1"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 3,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_02_v0.4_TEST_DRAFT.json",
+            "pointer": "/Сценарий/2",
+            "sha256": "6d0a8857d7618b0441ee7b4cbe402474dd9a4f7551e9e7337465221cc3869d42"
+          },
+          "step_id": "S2"
+        }
+      ],
+      "schema_version": 1
+    },
+    "CASE.SPEC.03": {
+      "actorless": false,
+      "case_version": "v0.2",
+      "characters": [
+        {
+          "character_id": "DENIS",
+          "content": {
+            "CharacterID": "DENIS",
+            "Доступ к M04 при возникновении": false,
+            "Имя": "Денис",
+            "Начальные знания": [
+              "M01",
+              "M02",
+              "M03"
+            ],
+            "Ресурс": "30 минут после получения актуальных вводных; полная проверка рабочей среды сегодня недоступна.",
+            "Роль": "Технический эксперт",
+            "Текст": "Текущее приложение не соответствует запросу. Я против отправки этой версии. После актуальных вводных за 30 минут обновлю свою часть и обозначу границы подтверждений; рабочую среду клиента сегодня полноценно не проверю."
+          },
+          "order": 1,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+            "pointer": "/Участники/0",
+            "sha256": "8b560785b5069d77e63355afb6c04ac3737070c43ca82641127fb88eb87fd13c"
+          }
+        },
+        {
+          "character_id": "ILYA",
+          "content": {
+            "CharacterID": "ILYA",
+            "Доступ к M04 при возникновении": true,
+            "Имя": "Илья",
+            "Начальные знания": [
+              "M01",
+              "M02",
+              "M03"
+            ],
+            "Ресурс": "20 минут после получения технических и сервисных ограничений; не подтверждает чужие части.",
+            "Роль": "Коммерческий коллега",
+            "Текст": "Клиент ждёт ответ сегодня. Предлагаю отправить то, что есть, а исправления дать завтра. Если решим переделывать, мне нужны технические и сервисные ограничения; после них коммерческая часть займёт 20 минут."
+          },
+          "order": 2,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+            "pointer": "/Участники/1",
+            "sha256": "8b560785b5069d77e63355afb6c04ac3737070c43ca82641127fb88eb87fd13c"
+          }
+        },
+        {
+          "character_id": "SVETLANA",
+          "content": {
+            "CharacterID": "SVETLANA",
+            "Доступ к M04 при возникновении": false,
+            "Имя": "Светлана",
+            "Начальные знания": [
+              "M01",
+              "M02",
+              "M03"
+            ],
+            "Ресурс": "30 минут после получения актуального состава и мест размещения; результат проверки условий заранее неизвестен.",
+            "Роль": "Сервисный специалист",
+            "Текст": "Меня в подготовку не включили, а сервис уже обещали. До проверки я эти условия не подтверждаю. По актуальному составу и площадкам за 30 минут подготовлю сервисный блок; какие условия доступны, станет ясно после проверки."
+          },
+          "order": 3,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+            "pointer": "/Участники/2",
+            "sha256": "8b560785b5069d77e63355afb6c04ac3737070c43ca82641127fb88eb87fd13c"
+          }
+        }
+      ],
+      "initial_material_ids": [
+        "M01",
+        "M02",
+        "M03"
+      ],
+      "materials": [
+        {
+          "disclosure_condition": {
+            "type": "never"
+          },
+          "event_condition": {
+            "source": {
+              "file": "sources/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+              "pointer": "/Сценарий/Этапы/1",
+              "sha256": "8b560785b5069d77e63355afb6c04ac3737070c43ca82641127fb88eb87fd13c"
+            },
+            "text": "Каждый подтверждает только понятный и выполнимый собственный вклад. При неопределённости обозначает собственную границу или отсутствие нужного входа. Не формировать вместо участника общую схему работы.",
+            "type": "semantic_author_condition"
+          },
+          "kind": "character_reaction",
+          "material_id": "CHARACTER.DENIS",
+          "participant_payload": null,
+          "reaction_rule": "Каждый подтверждает только понятный и выполнимый собственный вклад. При неопределённости обозначает собственную границу или отсутствие нужного входа. Не формировать вместо участника общую схему работы.",
+          "result_check": "Персонаж отвечает только за собственную позицию и полномочия.",
+          "speaker_id": "DENIS"
+        },
+        {
+          "disclosure_condition": {
+            "type": "never"
+          },
+          "event_condition": {
+            "source": {
+              "file": "sources/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+              "pointer": "/Сценарий/Этапы/1",
+              "sha256": "8b560785b5069d77e63355afb6c04ac3737070c43ca82641127fb88eb87fd13c"
+            },
+            "text": "Каждый подтверждает только понятный и выполнимый собственный вклад. При неопределённости обозначает собственную границу или отсутствие нужного входа. Не формировать вместо участника общую схему работы.",
+            "type": "semantic_author_condition"
+          },
+          "kind": "character_reaction",
+          "material_id": "CHARACTER.ILYA",
+          "participant_payload": null,
+          "reaction_rule": "Каждый подтверждает только понятный и выполнимый собственный вклад. При неопределённости обозначает собственную границу или отсутствие нужного входа. Не формировать вместо участника общую схему работы.",
+          "result_check": "Персонаж отвечает только за собственную позицию и полномочия.",
+          "speaker_id": "ILYA"
+        },
+        {
+          "disclosure_condition": {
+            "type": "never"
+          },
+          "event_condition": {
+            "source": {
+              "file": "sources/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+              "pointer": "/Сценарий/Этапы/1",
+              "sha256": "8b560785b5069d77e63355afb6c04ac3737070c43ca82641127fb88eb87fd13c"
+            },
+            "text": "Каждый подтверждает только понятный и выполнимый собственный вклад. При неопределённости обозначает собственную границу или отсутствие нужного входа. Не формировать вместо участника общую схему работы.",
+            "type": "semantic_author_condition"
+          },
+          "kind": "character_reaction",
+          "material_id": "CHARACTER.SVETLANA",
+          "participant_payload": null,
+          "reaction_rule": "Каждый подтверждает только понятный и выполнимый собственный вклад. При неопределённости обозначает собственную границу или отсутствие нужного входа. Не формировать вместо участника общую схему работы.",
+          "result_check": "Персонаж отвечает только за собственную позицию и полномочия.",
+          "speaker_id": "SVETLANA"
+        },
+        {
+          "disclosure_condition": {
+            "type": "mandatory"
+          },
+          "event_condition": {
+            "source": {
+              "file": "sources/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+              "pointer": "/Сценарий/Этапы/2",
+              "sha256": "8b560785b5069d77e63355afb6c04ac3737070c43ca82641127fb88eb87fd13c"
+            },
+            "text": "Основной сценарий продолжается; участник уже предложил конкретный способ работы по предложению; обновление ещё не предъявлялось; нет явного намерения прекратить сцену. Предъявить после краткой реакции на первый такой способ, до окончательного согласования.",
+            "type": "semantic_author_condition"
+          },
+          "kind": "mandatory_update",
+          "material_id": "M04",
+          "participant_payload": {
+            "MaterialID": "M04",
+            "Автор и версия": "Анна, требования v4; новое письмо получено Ильёй во время разговора",
+            "Аудитория": [
+              "participant",
+              "ILYA"
+            ],
+            "Комментарий предъявления": "Илья передал полученное уточнение оцениваемому. Денису и Светлане текст ещё не передан. Представить как отдельный входящий материал оцениваемому, а не как сообщение Анны в общем чате.",
+            "Название": "Уточнение размещения от клиента",
+            "Предъявление": "Только по S3; отсутствует в стартовом пакете",
+            "Происхождение": "Одно предусмотренное учебное обновление",
+            "Текст": "Иван, уточняю размещение серверов: площадок будет две, по одному серверу на каждой. Версия приложения X 4.2 и срок предварительного предложения сегодня к 17:00 остаются прежними. Пожалуйста, используйте это уточнение вместо списка v3.\n\nАнна"
+          },
+          "reaction_rule": "Илья передал полученное уточнение оцениваемому. Денису и Светлане текст ещё не передан. Представить как отдельный входящий материал оцениваемому, а не как сообщение Анны в общем чате.",
+          "result_check": "Материал предъявляется однократно при подтверждённом авторском условии.",
+          "speaker_id": null
+        }
+      ],
+      "scenario": [
+        {
+          "condition": "Не сообщать готовый план, распределение ответственности или критерии оценки. Три позиции и ресурсы предъявлены до первого ответа.",
+          "event": "initial_disclosure",
+          "order": 1,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/0",
+            "sha256": "8b560785b5069d77e63355afb6c04ac3737070c43ca82641127fb88eb87fd13c"
+          },
+          "step_id": "S1"
+        },
+        {
+          "condition": "Каждый подтверждает только понятный и выполнимый собственный вклад. При неопределённости обозначает собственную границу или отсутствие нужного входа. Не формировать вместо участника общую схему работы.",
+          "event": "character_response",
+          "order": 2,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/1",
+            "sha256": "8b560785b5069d77e63355afb6c04ac3737070c43ca82641127fb88eb87fd13c"
+          },
+          "step_id": "S2"
+        },
+        {
+          "condition": "Основной сценарий продолжается; участник уже предложил конкретный способ работы по предложению; обновление ещё не предъявлялось; нет явного намерения прекратить сцену. Предъявить после краткой реакции на первый такой способ, до окончательного согласования.",
+          "event": "mandatory_update",
+          "order": 3,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/2",
+            "sha256": "8b560785b5069d77e63355afb6c04ac3737070c43ca82641127fb88eb87fd13c"
+          },
+          "step_id": "S3"
+        },
+        {
+          "condition": "Сроки подготовки блоков не являются обещанием положительного результата проверки. При подтверждении предложенного вклада коллеги не требуют полного пересказа плана. Допустим ответ только об изменениях и короткая итоговая фиксация.",
+          "event": "agreement_and_fixation",
+          "order": 4,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_03_v0.3_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/3",
+            "sha256": "8b560785b5069d77e63355afb6c04ac3737070c43ca82641127fb88eb87fd13c"
+          },
+          "step_id": "S4"
+        }
+      ],
+      "schema_version": 1
+    },
+    "CASE.SPEC.04": {
+      "actorless": true,
+      "case_version": "v0.3",
+      "characters": [],
+      "initial_material_ids": [
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "materials": [
+        {
+          "disclosure_condition": {
+            "type": "mandatory"
+          },
+          "event_condition": {
+            "source": null,
+            "text": null,
+            "type": "semantic_author_condition"
+          },
+          "kind": "mandatory_update",
+          "material_id": "M05",
+          "participant_payload": {
+            "AssessmentSituationID": "AS.MOBIUS.SALES.TEST.04.04",
+            "MaterialID": "M05",
+            "Автор": "Алексей, четверг 15:20",
+            "Аудитория": [
+              "PARTICIPANT"
+            ],
+            "Название": "Первое сообщение Алексея",
+            "Предъявление": "Первая реплика при фактическом старте; не повторять после показа",
+            "Происхождение": "Учебные обстоятельства; не сведения о реальном инциденте",
+            "Текст": "Иван, вы пишете, что всё исправили. А запуск сорван, и объяснять это завтра мне. Я два месяца убеждал коллег выбрать вас. Скидку я отклонил; подготовку перехода продолжаю. Для отдельной встречи сегодня могу выделить только 16:00–16:30. Что вы предлагаете?"
+          },
+          "reaction_rule": "Первая реплика при фактическом старте; не повторять после показа",
+          "result_check": "Материал предъявляется однократно при подтверждённом авторском условии.",
+          "speaker_id": null
+        }
+      ],
+      "scenario": [
+        {
+          "condition": null,
+          "event": "initial_disclosure",
+          "order": 1,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_04_v0.4_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/0",
+            "sha256": "ab6d3668467261f11a67aee75ead594736b37a42bca4fe3e20bc74e8155dbf57"
+          },
+          "step_id": "S1"
+        },
+        {
+          "condition": null,
+          "event": "character_response",
+          "order": 2,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_04_v0.4_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/1",
+            "sha256": "ab6d3668467261f11a67aee75ead594736b37a42bca4fe3e20bc74e8155dbf57"
+          },
+          "step_id": "S2"
+        },
+        {
+          "condition": null,
+          "event": "decision_and_end",
+          "order": 3,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_04_v0.4_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/2",
+            "sha256": "ab6d3668467261f11a67aee75ead594736b37a42bca4fe3e20bc74e8155dbf57"
+          },
+          "step_id": "S3"
+        }
+      ],
+      "schema_version": 1
+    },
+    "CASE.SPEC.05": {
+      "actorless": true,
+      "case_version": "v0.3",
+      "characters": [],
+      "initial_material_ids": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05"
+      ],
+      "materials": [],
+      "scenario": [
+        {
+          "condition": null,
+          "event": "initial_disclosure",
+          "order": 1,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_05_v0.3_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/0",
+            "sha256": "f688498decf45f555b55842f480de8127675bcaefaace278f75a6ee049ca17e1"
+          },
+          "step_id": "S1"
+        },
+        {
+          "condition": null,
+          "event": "character_response",
+          "order": 2,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_05_v0.3_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/1",
+            "sha256": "f688498decf45f555b55842f480de8127675bcaefaace278f75a6ee049ca17e1"
+          },
+          "step_id": "S2"
+        },
+        {
+          "condition": null,
+          "event": "decision_and_end",
+          "order": 3,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_05_v0.3_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/2",
+            "sha256": "f688498decf45f555b55842f480de8127675bcaefaace278f75a6ee049ca17e1"
+          },
+          "step_id": "S3"
+        }
+      ],
+      "schema_version": 1
+    },
+    "CASE.SPEC.06": {
+      "actorless": true,
+      "case_version": "v0.2",
+      "characters": [],
+      "initial_material_ids": [
+        "M01",
+        "M02",
+        "M03"
+      ],
+      "materials": [],
+      "scenario": [
+        {
+          "condition": null,
+          "event": null,
+          "order": 1,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_06_v0.2_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/0",
+            "sha256": "e47c8d254d5ef0023afe7c5a035e85cf92c68ddd6cbd312d0944f1676149d0a5"
+          },
+          "step_id": "S1"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 2,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_06_v0.2_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/1",
+            "sha256": "e47c8d254d5ef0023afe7c5a035e85cf92c68ddd6cbd312d0944f1676149d0a5"
+          },
+          "step_id": "S2"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 3,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_06_v0.2_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/2",
+            "sha256": "e47c8d254d5ef0023afe7c5a035e85cf92c68ddd6cbd312d0944f1676149d0a5"
+          },
+          "step_id": "S3"
+        }
+      ],
+      "schema_version": 1
+    },
+    "CASE.SPEC.07": {
+      "actorless": true,
+      "case_version": "v0.2",
+      "characters": [],
+      "initial_material_ids": [
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "materials": [],
+      "scenario": [
+        {
+          "condition": null,
+          "event": null,
+          "order": 1,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_07_v0.2_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/0",
+            "sha256": "3900d061d31a47c953fa648184a4976a352b37111fca17ce7d00a59836919c19"
+          },
+          "step_id": "S1"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 2,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_07_v0.2_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/1",
+            "sha256": "3900d061d31a47c953fa648184a4976a352b37111fca17ce7d00a59836919c19"
+          },
+          "step_id": "S2"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 3,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_07_v0.2_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/2",
+            "sha256": "3900d061d31a47c953fa648184a4976a352b37111fca17ce7d00a59836919c19"
+          },
+          "step_id": "S3"
+        }
+      ],
+      "schema_version": 1
+    },
+    "CASE.SPEC.08": {
+      "actorless": true,
+      "case_version": "v0.2",
+      "characters": [],
+      "initial_material_ids": [
+        "M01",
+        "M02",
+        "M03"
+      ],
+      "materials": [],
+      "scenario": [
+        {
+          "condition": null,
+          "event": null,
+          "order": 1,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_08_v0.2_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/0",
+            "sha256": "7311226464a2304e70be0c9f1ae78b3224786e2e31e529fb66c09bcf31904e67"
+          },
+          "step_id": "S1"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 2,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_08_v0.2_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/1",
+            "sha256": "7311226464a2304e70be0c9f1ae78b3224786e2e31e529fb66c09bcf31904e67"
+          },
+          "step_id": "S2"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 3,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_08_v0.2_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/2",
+            "sha256": "7311226464a2304e70be0c9f1ae78b3224786e2e31e529fb66c09bcf31904e67"
+          },
+          "step_id": "S3"
+        }
+      ],
+      "schema_version": 1
+    },
+    "CASE.SPEC.09": {
+      "actorless": true,
+      "case_version": "v0.2",
+      "characters": [],
+      "initial_material_ids": [
+        "M01",
+        "M02",
+        "M03"
+      ],
+      "materials": [],
+      "scenario": [
+        {
+          "condition": null,
+          "event": null,
+          "order": 1,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_09_v0.2_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/0",
+            "sha256": "1fe9abc7db68c7f610dcd48841724a36c9e1f884eed44f66cce2136e411e3af3"
+          },
+          "step_id": "S1"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 2,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_09_v0.2_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/1",
+            "sha256": "1fe9abc7db68c7f610dcd48841724a36c9e1f884eed44f66cce2136e411e3af3"
+          },
+          "step_id": "S2"
+        },
+        {
+          "condition": null,
+          "event": null,
+          "order": 3,
+          "source": {
+            "file": "sources/AS_Mobius_Sales_SPEC_09_v0.2_TEST_DRAFT.json",
+            "pointer": "/Сценарий/Этапы/2",
+            "sha256": "1fe9abc7db68c7f610dcd48841724a36c9e1f884eed44f66cce2136e411e3af3"
+          },
+          "step_id": "S3"
+        }
+      ],
+      "schema_version": 1
+    }
+  },
   "owner_task": "SLS03",
-  "schema_version": 1,
-  "status": "not_structured"
+  "schema_version": 2,
+  "status": "structured_draft"
 }

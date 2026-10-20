@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "m5_semantic_decision",
+  "version": "v2",
+  "status": "draft",
+  "artifacts": [
+    {"name": "prompt.md", "sha256": "4773023ad4e7208b20b4a71f99d9d71d7091a8c76b3b37f6f1ee29bc892ff95b"}
+  ]
+}

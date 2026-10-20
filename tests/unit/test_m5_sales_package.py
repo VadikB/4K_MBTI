@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from Api.assessment_case_contracts import CaseVersionV3
 from Api.m5_case_runtime import build_assessment_situation
 from Api.m5_package import verify_package_directory
-from scripts.build_m5_sales_package import OUTPUT, build_package, write_package
+from scripts.build_m5_sales_package import OUTPUT, build_execution_rules, build_package, write_package
 
 pytestmark = pytest.mark.unit
 SOURCE_ROOT = OUTPUT / "sources"
@@ -49,6 +49,22 @@ def test_cases_02_and_07_are_valid_without_fake_characters():
     selected = {case["case_id"]: CaseVersionV3.model_validate(case) for case in package()["cases"]}
     assert selected["CASE.SPEC.02"].characters == []
     assert selected["CASE.SPEC.07"].characters == []
+
+
+def test_sls03_rules_cover_nine_cases_without_fake_actor_or_keyword_heuristics():
+    rules = build_execution_rules(package()["cases"])
+    assert rules["schema_version"] == 2
+    assert set(rules["cases"]) == {f"CASE.SPEC.{number:02d}" for number in range(1, 10)}
+    assert rules["cases"]["CASE.SPEC.02"]["actorless"] is True
+    assert rules["cases"]["CASE.SPEC.07"]["actorless"] is True
+    case03 = rules["cases"]["CASE.SPEC.03"]
+    assert {item["speaker_id"] for item in case03["materials"] if item["kind"] == "character_reaction"} == {
+        "DENIS", "ILYA", "SVETLANA",
+    }
+    update = next(item for item in case03["materials"] if item["material_id"] == "M04")
+    assert update["event_condition"]["type"] == "semantic_author_condition"
+    assert "конкретный способ работы" in update["event_condition"]["text"]
+    assert "keywords" not in json.dumps(rules, ensure_ascii=False)
 
 
 def test_closed_material_is_not_in_participant_preview():

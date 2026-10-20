@@ -70,8 +70,15 @@ class ControlledCharacterAdapter:
         return CharacterReply("COMPLETED" if value else "UNKNOWN", value, "controlled", controlled_test=True)
 
 
-def _prompt_bundle(name: str) -> tuple[str, dict]:
-    root = Path(__file__).resolve().parents[1] / f"assessment_definitions/prompts/{name}/v1"
+def _prompt_bundle(name: str, version: str = "v1") -> tuple[str, dict]:
+    package_root = Path(__file__).resolve().parents[1] / f"assessment_definitions/prompts/{name}"
+    root = package_root / version
+    if not root.is_dir():
+        matches = [candidate for candidate in package_root.iterdir() if candidate.is_dir()
+                   and json.loads((candidate / "manifest.json").read_text()).get("version") == version]
+        if len(matches) != 1:
+            raise RuntimeError(f"{name.upper()}_PROMPT_VERSION_UNAVAILABLE:{version}")
+        root = matches[0]
     manifest = json.loads((root / "manifest.json").read_text())
     prompt_bytes = (root / "prompt.md").read_bytes()
     prompt_checksum = hashlib.sha256(prompt_bytes).hexdigest()
@@ -84,12 +91,12 @@ def build_m5_ai_operations_snapshot() -> dict[str, dict[str, Any]]:
     """Фиксирует исполнимые настройки; секреты в snapshot не входят."""
     operations = {}
     provider_contract = load_provider_contract()
-    for code, bundle, parameters in (
-        ("semantic_decision", "m5_semantic_decision", {"temperature": 0, "max_tokens": 300, "timeout_seconds": 60}),
-        ("character_response", "m5_character_response", {"temperature": 0.2, "max_tokens": 500, "timeout_seconds": 60}),
-        ("technical_c45", "m5_technical_c45", {"temperature": 0, "max_tokens": 300, "timeout_seconds": 30}),
+    for code, bundle, version, parameters in (
+        ("semantic_decision", "m5_semantic_decision", "v2", {"temperature": 0, "max_tokens": 300, "timeout_seconds": 60}),
+        ("character_response", "m5_character_response", "v2", {"temperature": 0.2, "max_tokens": 500, "timeout_seconds": 60}),
+        ("technical_c45", "m5_technical_c45", "v1", {"temperature": 0, "max_tokens": 300, "timeout_seconds": 30}),
     ):
-        _, prompt_ref = _prompt_bundle(bundle)
+        _, prompt_ref = _prompt_bundle(bundle, version)
         operations[code] = {
             "schema_version": 1, "provider": "deepseek",
             "endpoint": provider_contract["endpoint"],
@@ -165,7 +172,8 @@ def execute_frozen_ai_json(*, operation: dict, prompt_bundle: str, input_value: 
     resolved = _gateway_for(operation, gateway)
     if not resolved.enabled:
         raise RuntimeError("M5_AI_GATEWAY_UNAVAILABLE")
-    prompt, prompt_ref = _prompt_bundle(prompt_bundle)
+    prompt_version = str((operation.get("prompt_ref") or {}).get("version") or "v1")
+    prompt, prompt_ref = _prompt_bundle(prompt_bundle, prompt_version)
     if prompt_ref != operation["prompt_ref"]:
         raise RuntimeError("M5_AI_PROMPT_IDENTITY_MISMATCH")
     input_bytes = json.dumps(input_value, ensure_ascii=False, sort_keys=True).encode("utf-8")
@@ -200,15 +208,16 @@ class DeepSeekCharacterAdapter:
     def __init__(self, gateway: DeepSeekGateway | None = None, *, operation: dict | None = None):
         self.operation = operation or build_m5_ai_operations_snapshot()["character_response"]
         self.gateway = _gateway_for(self.operation, gateway)
-        self.prompt, self.prompt_ref = _prompt_bundle("m5_character_response")
+        prompt_version = str((self.operation.get("prompt_ref") or {}).get("version") or "v1")
+        self.prompt, self.prompt_ref = _prompt_bundle("m5_character_response", prompt_version)
         if self.prompt_ref != self.operation["prompt_ref"]:
             raise RuntimeError("M5_AI_PROMPT_IDENTITY_MISMATCH")
 
     def respond(self, *, material: dict, character: dict, text: str, turn_id: str, context: dict) -> CharacterReply:
         if not self.gateway.enabled:
             return CharacterReply("UNKNOWN", None, "deepseek", self.operation["model"], prompt_ref=self.prompt_ref)
-        request = {"character": {"id": character["character_id"], "public_position": character["public_position"]},
-                   "reaction_constraint": material["reaction_rule"], "assessee_turn": text, "context": context}
+        request = {"character": character, "reaction_constraint": material["reaction_rule"],
+                   "assessee_turn": {"turn_id": turn_id, "content": text}, "context": context}
         ai_trace = None
         try:
             raw, ai_trace = _call_with_trace(
@@ -244,7 +253,8 @@ class DeepSeekSemanticAdapter:
     def __init__(self, gateway: DeepSeekGateway | None = None, *, operation: dict | None = None):
         self.operation = operation or build_m5_ai_operations_snapshot()["semantic_decision"]
         self.gateway = _gateway_for(self.operation, gateway)
-        self.prompt, self.prompt_ref = _prompt_bundle("m5_semantic_decision")
+        prompt_version = str((self.operation.get("prompt_ref") or {}).get("version") or "v1")
+        self.prompt, self.prompt_ref = _prompt_bundle("m5_semantic_decision", prompt_version)
         if self.prompt_ref != self.operation["prompt_ref"]:
             raise RuntimeError("M5_AI_PROMPT_IDENTITY_MISMATCH")
 
