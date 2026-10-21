@@ -1556,6 +1556,8 @@ if (adminOrganizationsList) {
       };
       withScreen(loadAdminOrganizations, (module) =>
         module.updateAdminOrganizationProfile(organizationId, {
+          name: String(formData.get('name') || '').trim(),
+          code: String(formData.get('code') || '').trim(),
           profile: String(formData.get('profile') || '').trim() || null,
           founded_year: optionalNumber('founded_year'),
           employee_count: optionalNumber('employee_count'),

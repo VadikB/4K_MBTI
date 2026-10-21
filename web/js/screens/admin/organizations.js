@@ -163,6 +163,25 @@ const escapeHtml = (value) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+const readinessLabel = (status) => ({
+  ready: 'Готово', data_missing: 'Данные не заполнены', draft_unconfirmed: 'Черновик не подтверждён',
+  incomplete: 'Требуется заполнение', not_started: 'Не начато', in_progress: 'Идёт подготовка',
+  idle: 'Не запущено', preparing: 'Идёт подготовка',
+})[status] || 'Не удалось проверить';
+const readinessRow = (title, item, target) => '<li><strong>' + escapeHtml(title) + ': ' +
+  escapeHtml(readinessLabel(item?.status)) + '</strong><span>' +
+  escapeHtml(item?.message || 'Не удалось получить состояние. Повторите открытие раздела.') + '</span>' +
+  (target ? '<button type="button" class="text-button" data-action="show-admin-view" data-view="' +
+    target + '">Перейти</button>' : '') + '</li>';
+const readinessMarkup = (selectedRef, readiness) => '<div class="admin-readiness-panel" data-readiness-status="' +
+  escapeHtml(readiness?.status || 'unavailable') + '"><strong>Готовность выбранной оценки' +
+  (selectedRef ? ' «' + escapeHtml(selectedRef) + '»' : '') + '</strong><ul>' +
+  readinessRow('Ранние сведения', readiness?.early, 'organization-data') +
+  readinessRow('Контекст', readiness?.context, 'organization-data') +
+  readinessRow('Роли участников', readiness?.roles, 'people') +
+  readinessRow('Подготовка', readiness?.preparation, null) + '</ul>' +
+  '<p>Добавлять участников можно до заполнения анкеты. Приглашение, назначение и начало оценки проверяются сервером отдельно.</p></div>';
+
 const setStatus = (message, tone = 'muted') => {
   if (!adminOrganizationsStatus) {
     return;
@@ -289,6 +308,11 @@ export const selectAdminOrganizationAssessment = (organizationId, form, assessme
       restoreFormDraft(organizationId, assessmentForm);
     });
   card?.querySelectorAll('.admin-questionnaire-preview').forEach((preview) => preview.remove());
+  const revision = (questionnaireRevisions.get(organizationKey(organizationId)) || [])
+    .find((item) => String(item.assignment_ref || '').trim() === nextRef);
+  card?.querySelectorAll('.admin-readiness-panel').forEach((panel) => {
+    panel.outerHTML = readinessMarkup(nextRef, revision?.readiness || null);
+  });
 };
 
 export const getSelectedAdminOrganizationAssessment = (organizationId) =>
@@ -861,12 +885,14 @@ export const renderAdminOrganizations = () => {
   const isSuperadmin = Boolean(data?.is_superadmin);
   document.querySelector('[data-admin-area="assessment"]')?.classList.toggle('hidden', isSuperadmin);
   document.getElementById('admin-organization-create-form')?.closest('section')?.classList.toggle(
-    'hidden', !data || (!isSuperadmin && organizations.length > 0),
+    'hidden', !data || !isSuperadmin,
   );
   document.querySelector('.admin-organization-picker')?.classList.toggle('hidden', !isSuperadmin && organizations.length <= 1);
   if (!organizations.length) {
     if (adminOrganizationSelect) adminOrganizationSelect.innerHTML = '<option value="">Нет организаций</option>';
-    adminOrganizationsList.innerHTML = '<p class="report-empty-state">Организации пока не созданы.</p>';
+    adminOrganizationsList.innerHTML = '<p class="report-empty-state">' + (isSuperadmin
+      ? 'Организации пока не созданы.'
+      : 'Закреплённая организация недоступна или доступ отозван. Обратитесь к администратору платформы.') + '</p>';
     return;
   }
   if (!organizations.some((org) => Number(org.id) === Number(selectedOrganizationId))) {
@@ -895,9 +921,8 @@ export const renderAdminOrganizations = () => {
       const selectedRef = selectedAssessmentRefs.get(organizationKey(orgId)) || revisions[0]?.assignment_ref || '';
       const questionnairePreview = questionnairePreviews.get(assessmentKey(orgId, selectedRef));
       const currentRevision = questionnairePreview ||
-        revisions.find((item) => item.assignment_ref === selectedRef) || revisions[0] || null;
-      const confirmedRevision = revisions.find((item) =>
-        item.status === 'confirmed' && item.assignment_ref === selectedRef);
+        (selectedRef ? revisions.find((item) => item.assignment_ref === selectedRef) : revisions[0]) || null;
+      const readiness = currentRevision?.readiness || null;
       const questionnaireValidation = questionnairePreview?.validation_json || {};
       const questionnaireProblems = [...(questionnaireValidation.errors || []).map((item) => item.code),
         ...(questionnaireValidation.missing || [])];
@@ -968,9 +993,11 @@ export const renderAdminOrganizations = () => {
         '</button>' : '') + '</div>' +
         '</div>' +
         renderOrganizationBatchProgress(orgId) +
-        (isSuperadmin ? '<form class="admin-organization-profile-form" data-action="update-profile">' +
+        '<form class="admin-organization-profile-form" data-action="update-profile">' +
         '<div class="admin-organization-profile-heading"><div><p class="section-label accent-label">Профиль</p><h4>Сведения об организации</h4></div>' +
         '<button class="primary-button compact-primary" type="submit">Сохранить карточку</button></div>' +
+        '<label><span>Название</span><input name="name" value="' + escapeHtml(org.name) + '" required></label>' +
+        '<label><span>Код</span><input name="code" value="' + escapeHtml(org.code) + '" required></label>' +
         '<label class="admin-organization-profile-wide"><span>Профиль организации</span><textarea name="profile" placeholder="Кратко опишите организацию, её деятельность и особенности">' + escapeHtml(org.profile || '') + '</textarea></label>' +
         '<label><span>Год основания</span><input name="founded_year" type="number" min="1000" max="2100" value="' + escapeHtml(org.founded_year ?? '') + '" placeholder="Например, 2012"></label>' +
         '<label><span>Численность</span><input name="employee_count" type="number" min="0" value="' + escapeHtml(org.employee_count ?? '') + '" placeholder="Количество сотрудников"></label>' +
@@ -979,7 +1006,7 @@ export const renderAdminOrganizations = () => {
         '<label><span>Штаб-квартира</span><input name="headquarters" type="text" value="' + escapeHtml(org.headquarters || '') + '" placeholder="Город, страна"></label>' +
         '<label class="admin-organization-profile-wide"><span>Прочая существенная информация</span><textarea name="notes" placeholder="Структура, география, культура и другие важные сведения">' + escapeHtml(org.notes || '') + '</textarea></label>' +
         '</form>' +
-        '<div class="admin-organization-columns">' +
+        (isSuperadmin ? '<div class="admin-organization-columns">' +
         '<section><h4>Домены</h4>' +
         renderTagList(org.domains || [], 'Домены не заданы.', 'domain', isSuperadmin ? 'delete-domain' : '') +
         (isSuperadmin ? '<form class="admin-organization-inline-form" data-action="add-domain"><input type="text" placeholder="company.ru"><button class="ghost-button compact-ghost" type="submit">Добавить</button></form>' : '') +
@@ -1009,9 +1036,7 @@ export const renderAdminOrganizations = () => {
         '<button class="ghost-button compact-ghost" type="submit">Импорт</button>' +
         '</form>' +
         '</section>' +
-        '<section class="admin-organization-members-section' + (activeView === 'organization-data' ? '' : ' hidden') + '" data-admin-view="organization-data"><div class="admin-readiness-panel"><strong>Готовность ранних данных</strong><p>' +
-        (confirmedRevision ? 'Можно приглашать участников для оценки «' + escapeHtml(confirmedRevision.assignment_ref) + '». Готовность назначения проверяется отдельно.' : 'Чтобы пригласить участников, заполните и подтвердите сведения для знакомства.') +
-        '</p></div><h4>Данные организации и выбранной оценки</h4>' +
+        '<section class="admin-organization-members-section' + (activeView === 'organization-data' ? '' : ' hidden') + '" data-admin-view="organization-data">' + readinessMarkup(selectedRef, readiness) + '<h4>Данные организации и выбранной оценки</h4>' +
         '<p>Черновик и подтверждение сохраняются в общем версионируемом контуре. Изменение полей не переписывает опубликованную редакцию.</p>' +
         '<form class="admin-organization-early-data-form" data-action="preview-early-data">' +
         '<label><span>Оценка</span><input name="assignment_ref" type="text" value="' + escapeHtml(selectedRef) + '" placeholder="Например, 4К · поток октябрь 2026" required></label>' +
@@ -1029,7 +1054,7 @@ export const renderAdminOrganizations = () => {
         '<label><span>Правила использования названия</span><input name="organization_name_usage_rules" value="' + answer('C17', 'organization_name_usage_rules') + '" required></label>' +
         '<button class="primary-button compact-primary" type="submit">Сохранить черновик и предпросмотр</button></form>' +
         (activeView === 'organization-data' ? previewMarkup : '') + '</section>' +
-        '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') + '" data-admin-view="questionnaire"><div class="admin-readiness-panel"><strong>Анкета</strong><p>Загрузка создаёт только предпросмотр. Подтверждённая версия остаётся неизменной до отдельного подтверждения.</p></div><h4>Корпоративная анкета</h4>' +
+        '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') + '" data-admin-view="questionnaire">' + readinessMarkup(selectedRef, readiness) + '<h4>Корпоративная анкета</h4>' +
         '<p>Скачайте утверждённый UTF-8 CSV-шаблон, загрузите заполненный файл и проверьте ошибки.</p>' +
         '<p><a class="text-link" href="/users/admin/organizations/' + orgId + '/questionnaire/template">Скачать CSV-шаблон</a></p>' +
         '<form class="admin-organization-import-form" data-action="preview-questionnaire">' +

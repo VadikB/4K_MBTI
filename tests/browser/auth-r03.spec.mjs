@@ -56,7 +56,7 @@ const adminOrganization = {
     invitation_delivery_status: 'queued', invitation_link_status: 'active' }],
 };
 
-async function openAdminOrganizations(page, invitationHandler, organization = adminOrganization) {
+async function openAdminOrganizations(page, invitationHandler, organization = adminOrganization, questionnaireResponse = null) {
   await page.route('**/users/**', (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: false });
@@ -71,8 +71,16 @@ async function openAdminOrganizations(page, invitationHandler, organization = ad
       return fulfillJson(route, { is_superadmin: false, items: [organization] });
     }
     if (pathname === '/users/admin/organizations/3/questionnaire') {
-      return fulfillJson(route, { items: [{ id: 11, assignment_ref: 'competencies_4k',
-        status: 'confirmed', channel: 'product_form', validation_json: {}, briefing: {} }] });
+      const fallback = { items: [{ id: 11, assignment_ref: 'competencies_4k',
+        status: 'confirmed', channel: 'product_form', validation_json: {}, briefing: {},
+        readiness: {
+          status: 'incomplete',
+          early: { status: 'ready', message: 'Ранний минимум подтверждён. Участников можно приглашать.' },
+          context: { status: 'ready', message: 'Контекст выбранной оценки подтверждён и закреплён сервером.' },
+          roles: { status: 'incomplete', message: 'Роли готовы у 0 из 1 участников.', ready: 0, total: 1 },
+          preparation: { status: 'idle', message: 'Активной подготовки сейчас нет.' },
+        } }] };
+      return fulfillJson(route, questionnaireResponse?.body || fallback, questionnaireResponse?.status || 200);
     }
     if (pathname === '/users/admin/organizations/3/personal-invitations') return invitationHandler(route);
     return fulfillJson(route, {}, 404);
@@ -208,6 +216,75 @@ test('ADM19-01 exposes three keyboard-operable management blocks without horizon
     }));
     expect(layout.scrollWidth, JSON.stringify(layout.overflow)).toBe(layout.clientWidth);
   }
+});
+
+test('UX-FIX20-04 shows server readiness and routes to missing roles without blocking member add', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
+  const panel = card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel');
+  await expect(panel).toContainText('Ранние сведения: Готово');
+  await expect(panel).toContainText('Контекст: Готово');
+  await expect(panel).toContainText('Роли участников: Требуется заполнение');
+  await panel.getByRole('button', { name: 'Перейти' }).nth(2).click();
+  await expect(card.locator('[data-admin-view="people"]')).toBeVisible();
+  await expect(card.locator('[data-action="add-member"]')).toBeVisible();
+});
+
+test('UX-FIX20-04 org-admin edits the attached card and never sees free tenant creation', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  await expect(page.locator('#admin-organization-create-form')).toBeHidden();
+  const card = page.locator('[data-organization-id="3"]');
+  const profile = card.locator('[data-action="update-profile"]');
+  await expect(profile).toBeVisible();
+  let submitted;
+  await page.route('**/users/admin/organizations/3', async (route) => {
+    if (route.request().method() !== 'PATCH') return route.fallback();
+    submitted = route.request().postDataJSON();
+    return fulfillJson(route, { is_superadmin: false, items: [adminOrganization] });
+  });
+  await profile.locator('[name="name"]').fill('Закреплённая организация');
+  await profile.locator('[name="code"]').fill('attached-org');
+  await profile.getByRole('button', { name: 'Сохранить карточку' }).click();
+  await expect.poll(() => submitted).toMatchObject({ name: 'Закреплённая организация', code: 'attached-org' });
+});
+
+test('UX-FIX20-04 keeps readiness separated when org-admin switches assessment', async ({ page }) => {
+  const readiness = (status, message) => ({
+    status: 'incomplete',
+    early: { status, message },
+    context: { status, message },
+    roles: { status: 'not_started', message: 'Участники ещё не добавлены.', ready: 0, total: 0 },
+    preparation: { status: 'idle', message: 'Активной подготовки сейчас нет.' },
+  });
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), adminOrganization, {
+    body: { items: [
+      { id: 21, assignment_ref: 'assessment-a', status: 'confirmed', channel: 'product_form',
+        validation_json: {}, answers_json: {}, readiness: readiness('ready', 'Контекст A подтверждён.') },
+      { id: 22, assignment_ref: 'assessment-b', status: 'ready_for_confirmation', channel: 'product_form',
+        validation_json: {}, answers_json: {}, readiness: readiness('draft_unconfirmed', 'Черновик B не подтверждён.') },
+    ] },
+  });
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
+  const assignment = card.locator('[data-admin-view="questionnaire"] [name="assignment_ref"]');
+  const panel = card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel');
+  await expect(panel).toContainText('Контекст A подтверждён.');
+  await assignment.fill('assessment-b');
+  await assignment.blur();
+  await expect(panel).toContainText('Черновик B не подтверждён.');
+  await expect(panel).not.toContainText('Контекст A подтверждён.');
+});
+
+test('UX-FIX20-04 never reports ready when readiness request fails', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), adminOrganization, {
+    body: { detail: 'temporary failure' }, status: 503,
+  });
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
+  const panel = card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel');
+  await expect(panel).toContainText('Не удалось проверить');
+  await expect(panel).not.toContainText('Всё готово');
 });
 
 test('UX-FIX20-02 preserves named drafts across all management views', async ({ page }) => {
@@ -804,14 +881,14 @@ test('REL-VERSION-01 shows one build number on auth and common areas, with a saf
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.10');
+  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.11');
   await expect(page.locator('#app-release-badge')).toBeVisible();
   await expect(page.locator('.app-footer-release')).toBeHidden();
   await page.setViewportSize({ width: 360, height: 760 });
   await expect(page.locator('#app-release-badge')).toBeInViewport();
   await page.locator('#auth-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.remove('hidden'));
-  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.10');
+  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.11');
   await expect(page.locator('.app-footer-release')).toBeVisible();
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#chat-panel').evaluate((panel) => panel.classList.remove('hidden'));

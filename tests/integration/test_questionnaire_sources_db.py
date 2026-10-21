@@ -6,7 +6,9 @@ import pytest
 from psycopg.rows import dict_row
 
 from Api.database import ensure_questionnaire_source_schema
-from Api.questionnaire_sources import assignment_readiness, confirm, public_revision, save_preview
+from Api.questionnaire_sources import (
+    admin_assignment_readiness, assignment_readiness, confirm, public_revision, save_preview,
+)
 from Api.m8_report_access import ensure_schema as ensure_report_access_schema
 
 
@@ -22,6 +24,8 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY,full_name TEXT,email TEXT)")
         connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY,is_active BOOLEAN DEFAULT TRUE)")
         connection.execute("CREATE TABLE organization_memberships(organization_id BIGINT,user_id BIGINT,role TEXT)")
+        connection.execute("""CREATE TABLE assessment_preparation_jobs(
+            id BIGSERIAL PRIMARY KEY,user_id BIGINT,status TEXT,created_at TIMESTAMP DEFAULT NOW())""")
         connection.execute("CREATE TABLE m5_cycles(id BIGINT PRIMARY KEY)")
         connection.execute("CREATE TABLE m8_reports(id UUID PRIMARY KEY)")
         connection.execute("INSERT INTO users VALUES(1,'Участник','participant@example.test'),(2,'Администратор','admin@example.test')")
@@ -111,6 +115,19 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
             connection, organization_id=10, assignment_ref="second-assignment",
         )
         assert first_ready["briefing"]["purpose"] != second_ready["briefing"]["purpose"]
+        first_admin = admin_assignment_readiness(
+            connection, organization_id=10, assignment_ref="synthetic-assignment",
+        )
+        second_admin = admin_assignment_readiness(
+            connection, organization_id=10, assignment_ref="second-assignment",
+        )
+        missing_admin = admin_assignment_readiness(
+            connection, organization_id=10, assignment_ref="missing-assignment",
+        )
+        assert first_admin["assignment_ref"] == "synthetic-assignment"
+        assert second_admin["assignment_ref"] == "second-assignment"
+        assert first_admin["early"]["status"] == second_admin["early"]["status"] == "ready"
+        assert missing_admin["early"]["status"] == "data_missing"
 
         with pytest.raises(ValueError, match="QUESTIONNAIRE_REVISION_NOT_FOUND"):
             confirm(
