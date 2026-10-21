@@ -35,6 +35,7 @@ def early_readiness(connection, *, user_id: int) -> dict:
            JOIN users u ON LOWER(u.email)=LOWER(oi.recipient_email)
            WHERE u.id=%s AND oi.organization_id=%s AND oi.purpose='personal_registration'
              AND oi.assignment_ref IS NOT NULL AND oi.revoked_at IS NULL
+             AND oi.created_by_user_id IS DISTINCT FROM u.id
            ORDER BY oi.assignment_ref""",
         (user_id, organization["id"]),
     ).fetchall()

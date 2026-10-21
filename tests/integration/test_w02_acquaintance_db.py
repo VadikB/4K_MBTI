@@ -23,7 +23,7 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
             organization_id BIGINT,user_id BIGINT,role TEXT,UNIQUE(organization_id,user_id))""")
         connection.execute("""CREATE TABLE organization_invitations(
             id BIGSERIAL PRIMARY KEY,organization_id BIGINT,recipient_email TEXT,purpose TEXT,
-            assignment_ref TEXT,revoked_at TIMESTAMP)""")
+            assignment_ref TEXT,created_by_user_id BIGINT,revoked_at TIMESTAMP)""")
         connection.execute("""CREATE TABLE questionnaire_response_revisions(
             id BIGSERIAL PRIMARY KEY,organization_id BIGINT,assignment_ref TEXT,status TEXT,
             briefing_json JSONB,organization_context_version_id BIGINT,confirmed_at TIMESTAMP)""")
@@ -72,6 +72,23 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
         admin_readiness = early_readiness(connection, user_id=2)
         assert admin_readiness["status"] == "waiting_for_assignment"
         assert admin_readiness["reason"] == "assessment_assignment"
+
+        connection.execute("""INSERT INTO organization_invitations(
+            organization_id,recipient_email,purpose,assignment_ref,created_by_user_id)
+            VALUES(10,'admin-a@example.test','personal_registration','assessment-a',2)""")
+        connection.execute("""INSERT INTO questionnaire_response_revisions(
+            organization_id,assignment_ref,status,briefing_json,organization_context_version_id,confirmed_at)
+            VALUES(10,'assessment-a','confirmed',%s::jsonb,1000,NOW())""", (json.dumps(briefing),))
+        assert early_readiness(connection, user_id=2)["status"] == "waiting_for_assignment"
+
+        connection.execute("""INSERT INTO organization_invitations(
+            organization_id,recipient_email,purpose,assignment_ref,created_by_user_id)
+            VALUES(10,'admin-a@example.test','personal_registration','assessment-a',3)""")
+        assert early_readiness(connection, user_id=2)["status"] == "ready"
+
+        connection.execute("""UPDATE organization_invitations SET revoked_at=NOW()
+            WHERE created_by_user_id=3""")
+        assert early_readiness(connection, user_id=2)["status"] == "waiting_for_assignment"
 
         accept_consent(connection, user_id=1, version=2)
         save_answers(connection, user_id=1, answers={"answer_1": "Ответ 1"})
