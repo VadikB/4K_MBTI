@@ -1,5 +1,5 @@
 import pytest
-from scripts.test_stand import admin_params,environment,owned
+from scripts.test_stand import admin_params,drain_browser_orchestration,environment,owned
 from Api.m10_test_gateway import enabled
 
 
@@ -24,6 +24,17 @@ def test_test_gateway_never_falls_back(monkeypatch):
     monkeypatch.setenv('AGENT4K_BROWSER_TEST_GATEWAY','1')
     monkeypatch.delenv('AGENT4K_ISOLATED_STAND',raising=False)
     with pytest.raises(ValueError,match='ISOLATED'):enabled()
+
+
+@pytest.mark.parametrize('state',[
+    {},
+    {'gateway':0,'qa_orchestration':True,'browser_scenario':'acceptance-v1'},
+    {'gateway':1,'qa_orchestration':False,'browser_scenario':'acceptance-v1'},
+    {'gateway':1,'qa_orchestration':True,'browser_scenario':'other'},
+])
+def test_orchestration_drain_rejects_non_browser_stands(state):
+    with pytest.raises(ValueError,match='DRAIN_REQUIRES_ISOLATED_BROWSER_ACCEPTANCE'):
+        drain_browser_orchestration(state)
 
 
 def test_foreign_reset_target_rejected_before_connect(monkeypatch):

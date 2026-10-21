@@ -30,7 +30,7 @@ const test=base.extend({context:async({browser},use)=>{
     const url=`http://127.0.0.1:${port}`;
     await expect.poll(async()=>{try{return (await fetch(url+'/health/ready')).status}catch{return 0}},{timeout:30000}).toBe(200);
     const state=JSON.parse(fs.readFileSync(statePath,'utf8'));
-    await use({url,state,dir});
+    await use({url,state,dir,cli});
   }finally{
     if(server && server.exitCode===null){const ended=new Promise(resolve=>server.once('exit',resolve));server.kill('SIGTERM');await ended;}
     cli('destroy');
@@ -241,7 +241,8 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
  expect(delivered).toBeTruthy();expect(delivered.sequence_no).toBeGreaterThan(dialogue.trace.turns[0].sequence_no);
  expect(JSON.stringify(dialogue)).not.toContain('execution_envelope');
  await page.locator('#interview-finish-button').click();
- await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:100000});
+ stand.cli('drain');
+ await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
  await info.attach('clarification-ui',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  await answer(page,fixture.clarification_answer);
  await expect(page.locator('#interview-finish-button')).toBeEnabled({timeout:30000});
