@@ -70,6 +70,10 @@ def save_revision(connection, *, source_scope: str, organization_id: int,
     ).fetchone() is None:
         raise ValueError("M7_PARAMETER_CONFIGURATION_NOT_ALLOWED")
     normalized = _values(values)
+    current = _published(connection, scope=source_scope, organization_id=organization_id,
+                         configuration_id=assessment_configuration_id)
+    if publish and current and current["values_json"] == normalized:
+        return current
     revision = connection.execute("""SELECT COALESCE(MAX(revision_no),0)+1 AS value
         FROM m7_parameter_revisions WHERE source_scope=%s AND organization_id=%s
           AND assessment_configuration_id IS NOT DISTINCT FROM %s""",

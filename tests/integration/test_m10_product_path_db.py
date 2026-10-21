@@ -281,7 +281,7 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
         as_id=str(started["decision"]["assessment_situation_id"])
         runtime=read_runtime(connection,cycle_id=cycle_id)
         assert runtime["runtime_kind"]=="cycle"
-        assert runtime["return_policy_enabled"] is False
+        assert runtime["return_policy_enabled"] is True
         assert runtime["current_situation"]["assessment_situation_id"]==as_id
         assert runtime["current_situation"]["participant_payload"]
         _add_turn(connection,as_id,"Синтетический ответ S10-A","s10-a-turn")

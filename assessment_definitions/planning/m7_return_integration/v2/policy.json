@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "algorithm": "m7-return-r1",
+  "id": "sales-pilot-return-r1",
+  "version": "2.0",
+  "status": "published",
+  "usage_scope": "assessment",
+  "absence_source": "server_presence_lease",
+  "heartbeat_interval_seconds": 10,
+  "presence_lease_seconds": 120,
+  "resume_mode": "same_assessment_situation",
+  "continue_requires_explicit_command": true,
+  "replacement_policy": "not_applicable",
+  "terminal_branches": [
+    "time_limit_reached"
+  ],
+  "decision_basis": "owner_decision_2026-10-18_sales_pilot_r1"
+}

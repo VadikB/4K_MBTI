@@ -12,11 +12,18 @@ from Api.m5_scenario_runtime import start as start_situation
 from Api.m7_route_replacement import GeneratedCandidateReplacementProvider, mark_presented, replacement_metadata, replace_current
 
 
-POLICY_PATH = Path(__file__).resolve().parents[1] / "assessment_definitions/planning/m7_return_integration/v1/policy.json"
+POLICY_ROOT = Path(__file__).resolve().parents[1] / "assessment_definitions/planning/m7_return_integration"
+POLICY_PATHS = {
+    "qa": POLICY_ROOT / "v1/policy.json",
+    "assessment": POLICY_ROOT / "v2/policy.json",
+}
 TERMINAL_CYCLE = {"collection_closed", "calculation_pending", "calculated", "failed"}
 
 
-def load_policy(path: Path = POLICY_PATH) -> dict:
+def load_policy(path: Path | None = None, *, usage_scope: str = "qa") -> dict:
+    path = path or POLICY_PATHS.get(usage_scope)
+    if path is None:
+        raise ValueError("M7_RETURN_POLICY_SCOPE_MISMATCH")
     policy = json.loads(path.read_text(encoding="utf-8"))
     manifest = json.loads(path.with_name("manifest.json").read_text(encoding="utf-8"))
     if manifest["artifacts"][0]["path"] != path.name or manifest["artifacts"][0]["checksum"] != checksum(policy):
@@ -25,35 +32,43 @@ def load_policy(path: Path = POLICY_PATH) -> dict:
         policy["id"], policy["version"], policy["status"], policy["usage_scope"]
     ):
         raise ValueError("M7_RETURN_POLICY_REF_MISMATCH")
-    return _validate_policy(policy, expected_scope="qa")
+    return _validate_policy(policy, expected_scope=usage_scope)
 
 
 def _validate_policy(policy: object, *, expected_scope: str) -> dict:
     if not isinstance(policy, dict):
         raise ValueError("M7_RETURN_POLICY_INVALID")
-    if policy.get("schema_version") != 1 or policy.get("algorithm") != "m7-return-v1":
+    if policy.get("schema_version") != 1 or policy.get("algorithm") not in {"m7-return-v1", "m7-return-r1"}:
         raise ValueError("M7_RETURN_POLICY_SCHEMA_UNSUPPORTED")
     if policy.get("usage_scope") != expected_scope:
         raise ValueError("M7_RETURN_POLICY_SCOPE_MISMATCH")
-    if (policy.get("status"), expected_scope) != ("draft", "qa"):
+    admitted = {("draft", "qa"), ("published", "assessment")}
+    if (policy.get("status"), expected_scope) not in admitted:
         raise ValueError("M7_RETURN_POLICY_NOT_ADMITTED")
-    for name in ("replacement_threshold_seconds", "heartbeat_interval_seconds",
-                 "presence_lease_seconds", "max_successful_replacements_per_position"):
+    for name in ("heartbeat_interval_seconds", "presence_lease_seconds"):
         if type(policy.get(name)) is not int or int(policy[name]) <= 0:
             raise ValueError("M7_RETURN_POLICY_INVALID")
     if int(policy["heartbeat_interval_seconds"]) >= int(policy["presence_lease_seconds"]):
         raise ValueError("M7_RETURN_POLICY_INVALID")
-    branches = policy.get("terminal_branches")
-    if branches != ["time_limit_reached", "replacement_limit_closed"]:
-        raise ValueError("M7_RETURN_POLICY_BRANCHES_UNSUPPORTED")
+    if policy["algorithm"] == "m7-return-v1":
+        for name in ("replacement_threshold_seconds", "max_successful_replacements_per_position"):
+            if type(policy.get(name)) is not int or int(policy[name]) <= 0:
+                raise ValueError("M7_RETURN_POLICY_INVALID")
+        if policy.get("terminal_branches") != ["time_limit_reached", "replacement_limit_closed"]:
+            raise ValueError("M7_RETURN_POLICY_BRANCHES_UNSUPPORTED")
+    else:
+        if (policy.get("resume_mode"), policy.get("continue_requires_explicit_command"),
+                policy.get("replacement_policy"), policy.get("terminal_branches")) != (
+                "same_assessment_situation", True, "not_applicable", ["time_limit_reached"]):
+            raise ValueError("M7_RETURN_POLICY_INVALID")
     return dict(policy)
 
 
 def policy_snapshot_for_plan(*, usage_scope: str) -> dict | None:
     """Resolve the admitted current package once, before a Cycle can use it."""
-    if usage_scope != "qa":
+    if usage_scope not in POLICY_PATHS:
         return None
-    policy = _validate_policy(load_policy(), expected_scope=usage_scope)
+    policy = _validate_policy(load_policy(usage_scope=usage_scope), expected_scope=usage_scope)
     return {"content": policy, "checksum": checksum(policy)}
 
 
@@ -247,6 +262,7 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
     now = evaluated_at or datetime.now(timezone.utc)
     limit_reached = (cycle["status"] in TERMINAL_CYCLE or timing["remaining_seconds"] <= 0 or
                      bool(timing["calendar_deadline"] and now >= timing["calendar_deadline"]))
+    same_as = policy["algorithm"] == "m7-return-r1"
     if limit_reached:
         action, absence_seconds, event_id = "time_limit_reached", None, str(event["id"]) if event else None
     elif not event:
@@ -254,7 +270,7 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
             WHERE cycle_db_id=%s AND assessment_situation_db_id=%s""",(cycle["id"],situation["id"])).fetchone()["value"]
         if latest and latest<=now and not _open_incident_overlaps(connection,latest):
             absence_seconds=max(0,int((now-latest).total_seconds()))
-            if absence_seconds < policy["replacement_threshold_seconds"]:
+            if same_as or absence_seconds < policy["replacement_threshold_seconds"]:
                 action = "continue_current"
             else:
                 ready = connection.execute("""SELECT 1 FROM m5_equivalent_generation_operations
@@ -267,7 +283,7 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
         event_id = None
     else:
         absence_seconds = max(0, int((now - event["recognized_at"]).total_seconds()))
-        if absence_seconds < policy["replacement_threshold_seconds"]:
+        if same_as or absence_seconds < policy["replacement_threshold_seconds"]:
             action = "continue_current"
         else:
             ready = connection.execute("""SELECT 1 FROM m5_equivalent_generation_operations
@@ -287,10 +303,10 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
             "planned_total": planned_positions is not None,
             "heartbeat_interval_seconds": int(policy["heartbeat_interval_seconds"]),
             "presence_lease_seconds": int(policy["presence_lease_seconds"]),
-            "replacement_threshold_seconds": int(policy["replacement_threshold_seconds"]),
+            "replacement_threshold_seconds": int(policy["replacement_threshold_seconds"]) if not same_as else None,
             "policy_ref": {"id": policy["id"], "version": policy["version"], "checksum": checksum(policy)},
-            "replacement_count": sum(1 for item in next(x for x in route["positions"] if x["position_no"]==position["position_no"])["history"] if item["disposition"]=="replaced"),
-            "replacement_limit": int(policy["max_successful_replacements_per_position"])}
+            "replacement_count": (sum(1 for item in next(x for x in route["positions"] if x["position_no"]==position["position_no"])["history"] if item["disposition"]=="replaced") if not same_as else None),
+            "replacement_limit": int(policy["max_successful_replacements_per_position"]) if not same_as else None}
 
 
 def continue_return(connection, *, cycle_id: str, position_no: int, expected_as_id: str,
@@ -324,7 +340,7 @@ def continue_return(connection, *, cycle_id: str, position_no: int, expected_as_
         raise ValueError("M7_TIME_LIMIT_REACHED")
     now = evaluated_at or datetime.now(timezone.utc)
     elapsed = max(0, int((now - event["recognized_at"]).total_seconds()))
-    if elapsed < int(policy["replacement_threshold_seconds"]):
+    if policy["algorithm"] == "m7-return-r1" or elapsed < int(policy["replacement_threshold_seconds"]):
         current_id, branch = expected_as_id, "continued_current"
         end_blocking_wait(connection, cycle_db_id=cycle["id"], session_db_id=session["id"],
                           operation_ref=f"return:{event['source_ref']}", reason="explicit_return_continue")

@@ -351,6 +351,7 @@ const renderReturnCard = (value) => {
       const continued = await readApiResponse(response, 'Не удалось продолжить оценку.');
       if (continued.status === 'collection_closed') { openProcessing(); return; }
       state.productAssessmentSituationId = continued.assessment_situation_id;
+      await heartbeatProductPresence();
       await loadProductRuntime();
     } catch (error) { status.textContent = error.message; button.disabled = false; }
   });
@@ -362,6 +363,11 @@ const renderReturnCard = (value) => {
 
 const loadReturnState = async () => {
   const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/return-state', { credentials: 'same-origin' });
+  if (response.status === 409) {
+    const blocked = await response.json().catch(() => ({}));
+    if (['M7_RETURN_CURRENT_POSITION_NOT_FOUND', 'M7_RETURN_POLICY_NOT_SNAPSHOTTED'].includes(blocked.detail)) return false;
+    throw new Error(blocked.detail || 'Не удалось проверить состояние возврата.');
+  }
   const value = await readApiResponse(response, 'Не удалось проверить состояние возврата.');
   if (['continue_current', 'replace_current'].includes(value.allowed_action)) { renderReturnCard(value); return true; }
   return false;
@@ -369,6 +375,9 @@ const loadReturnState = async () => {
 
 export const loadProductRuntime = async ({ generation = null } = {}) => {
   if (!state.productCycleId) throw new Error('Cycle runtime не инициализирован.');
+  // Check the server-owned pause before fetching any AS content. Reload/login/GET
+  // never resumes a recognized absence; only the explicit command above does.
+  if (await loadReturnState()) return null;
   const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(state.productCycleId) + '/runtime', {
     credentials: 'same-origin',
   });
@@ -380,7 +389,6 @@ export const loadProductRuntime = async ({ generation = null } = {}) => {
   let presenceContract = null;
   if (saved.return_policy_enabled && saved.current_situation && returnPresenceCycleId !== saved.cycle_id) {
     presenceContract = await heartbeatProductPresence();
-    if (await loadReturnState()) return saved;
     returnPresenceCycleId = saved.cycle_id;
   }
   const snapshot = renderProductRuntime(saved);
