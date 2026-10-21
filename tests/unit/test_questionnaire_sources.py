@@ -3,7 +3,8 @@ from pathlib import Path
 import pytest
 
 from Api.questionnaire_sources import (
-    PARTICIPANT_QUESTIONS, PARTICIPANT_QUESTION_SCHEMA, normalize_answers, parse_csv, public_revision,
+    PARTICIPANT_QUESTIONS, PARTICIPANT_QUESTION_SCHEMA, admin_assignment_readiness,
+    normalize_answers, parse_csv, public_revision,
 )
 
 
@@ -78,3 +79,87 @@ def test_public_preview_has_participant_projection_and_safe_diff():
     }]
     assert "questionnaire_revision_id" not in result["participant_preview"]
     assert "briefing" not in result
+
+
+class _One:
+    def __init__(self, value):
+        self.value = value
+
+    def fetchone(self):
+        return self.value
+
+
+class _ReadinessConnection:
+    def __init__(self, *, confirmed=False, latest=None, total=0, ready=0, in_progress=0):
+        self.confirmed = confirmed
+        self.latest = latest
+        self.total = total
+        self.ready = ready
+        self.in_progress = in_progress
+
+    def execute(self, query, _params=()):
+        if "FROM questionnaire_response_revisions" in query and "briefing_json" in query:
+            return _One({
+                "id": 7, "assignment_ref": "assessment-a", "confirmed_at": "now",
+                "organization_context_version_id": 11,
+                "briefing_json": {"purpose": "Цель", "organizer": "HR", "responsible_contact": "hr@example.test",
+                                  "results_usage": "Развитие", "result_recipients": "Участник"},
+            } if self.confirmed else None)
+        if "SELECT status FROM questionnaire_response_revisions" in query:
+            return _One({"status": self.latest} if self.latest else None)
+        if "SELECT user_id FROM organization_memberships" in query:
+            return _Many([{"user_id": number + 1} for number in range(self.total)])
+        if "participant_acquaintance_confirmations" in query:
+            user_id = int(_params[0])
+            return _One({"personalized_profile_id": user_id} if user_id <= self.ready else None)
+        if "assessment_preparation_jobs" in query:
+            return _One({"in_progress": self.in_progress})
+        raise AssertionError(query)
+
+
+class _Many:
+    def __init__(self, value):
+        self.value = value
+
+    def fetchall(self):
+        return self.value
+
+
+def test_admin_readiness_distinguishes_missing_draft_roles_and_preparation(monkeypatch):
+    def fake_late_readiness(connection, *, user_id, readiness):
+        assert readiness["assignment_ref"] == "assessment-a"
+        return {
+            "status": "ready_to_prepare" if user_id <= connection.ready else "waiting_for_assessment_data",
+        }
+
+    monkeypatch.setattr("Api.acquaintance.late_readiness", fake_late_readiness)
+    missing = admin_assignment_readiness(_ReadinessConnection(), organization_id=3, assignment_ref="assessment-a")
+    assert missing["early"]["status"] == "data_missing"
+    assert missing["roles"]["status"] == "not_started"
+
+    draft = admin_assignment_readiness(
+        _ReadinessConnection(latest="ready_for_confirmation", total=2, ready=1),
+        organization_id=3, assignment_ref="assessment-a",
+    )
+    assert draft["early"]["status"] == "draft_unconfirmed"
+    assert draft["roles"] == {
+        "status": "incomplete", "message": "Роли готовы у 0 из 2 участников. Заполните недостающие роли в списке участников.",
+        "ready": 0, "total": 2,
+    }
+
+    incomplete = admin_assignment_readiness(
+        _ReadinessConnection(confirmed=True, total=2, ready=1),
+        organization_id=3, assignment_ref="assessment-a",
+    )
+    assert incomplete["early"]["status"] == "ready"
+    assert incomplete["roles"]["status"] == "incomplete"
+    assert incomplete["roles"]["ready"] == 1
+
+    ready = admin_assignment_readiness(
+        _ReadinessConnection(confirmed=True, total=2, ready=2, in_progress=1),
+        organization_id=3, assignment_ref="assessment-a",
+    )
+    assert ready["early"]["status"] == "ready"
+    assert ready["context"]["status"] == "ready"
+    assert ready["roles"]["status"] == "ready"
+    assert ready["status"] == "preparing"

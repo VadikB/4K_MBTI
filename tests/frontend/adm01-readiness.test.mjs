@@ -9,7 +9,9 @@ const styles = await readFile('web/styles/screens/admin-organizations.css', 'utf
 test('ADM01 keeps participant invitations bound to the selected assessment', () => {
   assert.match(organizations, /assignment_ref: assessment/);
   assert.match(organizations, /Данные организации/);
-  assert.match(organizations, /Можно приглашать участников/);
+  assert.match(organizations, /Добавлять участников можно до заполнения анкеты/);
+  assert.match(organizations, /currentRevision\?\.readiness/);
+  assert.doesNotMatch(organizations, /confirmedRevision/);
   assert.match(wiring, /getSelectedAdminOrganizationAssessment/);
   assert.doesNotMatch(wiring, /sendAdminOrganizationMemberInvitation\([\s\S]{0,160}querySelector\('input\[name="assignment_ref"\]'/);
 });

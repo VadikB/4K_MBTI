@@ -289,6 +289,94 @@ def assignment_readiness(connection, *, organization_id: int, assignment_ref: st
     }
 
 
+def admin_assignment_readiness(connection, *, organization_id: int, assignment_ref: str) -> dict:
+    """Admin-safe explanation of server-owned gates for one assessment preparation."""
+    normalized_ref = str(assignment_ref or "").strip()
+    early = assignment_readiness(
+        connection, organization_id=organization_id, assignment_ref=normalized_ref,
+    )
+    latest = None
+    if normalized_ref:
+        latest = connection.execute(
+            """SELECT status FROM questionnaire_response_revisions
+               WHERE organization_id=%s AND assignment_ref=%s
+               ORDER BY created_at DESC,id DESC LIMIT 1""",
+            (organization_id, normalized_ref),
+        ).fetchone()
+    if early["status"] == "ready":
+        early_state = "ready"
+        early_message = "Ранний минимум подтверждён. Участников можно приглашать."
+    elif latest is not None:
+        early_state = "draft_unconfirmed"
+        early_message = "Есть черновик, но он не подтверждён. Откройте анкету и подтвердите сведения."
+    else:
+        early_state = "data_missing"
+        early_message = "Для выбранной оценки ещё нет подтверждённых сведений. Заполните данные организации или загрузите анкету."
+
+    member_rows = connection.execute(
+        """SELECT user_id FROM organization_memberships
+           WHERE organization_id=%s AND role='member' ORDER BY user_id""",
+        (organization_id,),
+    ).fetchall()
+    total_roles = len(member_rows)
+    ready_roles = 0
+    if early["status"] == "ready":
+        # Reuse the participant late gate with the selected assignment instead of
+        # reconstructing profile readiness from client-facing fields.
+        from Api.acquaintance import late_readiness
+        selected_readiness = {
+            "status": "ready", "reason": None, "organization_id": organization_id,
+            "assignment_ref": normalized_ref,
+        }
+        ready_roles = sum(
+            late_readiness(
+                connection, user_id=int(row["user_id"]), readiness=selected_readiness,
+            )["status"] == "ready_to_prepare"
+            for row in member_rows
+        )
+    if total_roles == 0:
+        roles_state = "not_started"
+        roles_message = "Участники ещё не добавлены. Их можно добавить до заполнения анкеты."
+    elif ready_roles < total_roles:
+        roles_state = "incomplete"
+        roles_message = f"Роли готовы у {ready_roles} из {total_roles} участников. Заполните недостающие роли в списке участников."
+    else:
+        roles_state = "ready"
+        roles_message = f"Роли подтверждены для всех участников: {ready_roles}."
+
+    preparation = connection.execute(
+        """SELECT COUNT(*) FILTER (WHERE latest.status IN ('queued','running'))::int AS in_progress
+           FROM organization_memberships om
+           LEFT JOIN LATERAL (
+             SELECT status FROM assessment_preparation_jobs
+             WHERE user_id=om.user_id ORDER BY created_at DESC LIMIT 1
+           ) latest ON TRUE
+           WHERE om.organization_id=%s AND om.role='member'""",
+        (organization_id,),
+    ).fetchone() or {"in_progress": 0}
+    in_progress = int(preparation.get("in_progress") or 0)
+    context_state = "ready" if early["status"] == "ready" else early_state
+    context_message = (
+        "Контекст выбранной оценки подтверждён и закреплён сервером."
+        if context_state == "ready" else
+        "Контекст появится после подтверждения раннего минимума для выбранной оценки."
+    )
+    overall = "preparing" if in_progress else (
+        "ready" if early["status"] == "ready" and roles_state == "ready" else "incomplete"
+    )
+    return {
+        "status": overall,
+        "assignment_ref": normalized_ref,
+        "early": {"status": early_state, "message": early_message, "missing": list(early.get("missing") or [])},
+        "context": {"status": context_state, "message": context_message},
+        "roles": {"status": roles_state, "message": roles_message, "ready": ready_roles, "total": total_roles},
+        "preparation": {
+            "status": "in_progress" if in_progress else "idle",
+            "message": f"Идёт подготовка для {in_progress} участников." if in_progress else "Активной подготовки сейчас нет.",
+        },
+    }
+
+
 def template_csv() -> str:
     rows = [(qid, field, "") for qid, fields in FIELDS.items() for field in sorted(fields)]
     output = io.StringIO(); writer = csv.writer(output); writer.writerow(HEADER); writer.writerows(rows)

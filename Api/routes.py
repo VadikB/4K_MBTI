@@ -4778,7 +4778,12 @@ def list_admin_organization_questionnaire_revisions(organization_id: int, reques
         for row in rows:
             key = str(row["assignment_ref"])
             if key not in latest:
-                latest[key] = questionnaire_sources.public_revision(dict(row))
+                latest[key] = {
+                    **questionnaire_sources.public_revision(dict(row)),
+                    "readiness": questionnaire_sources.admin_assignment_readiness(
+                        connection, organization_id=organization_id, assignment_ref=key,
+                    ),
+                }
         return {"items": list(latest.values())}
 
 
@@ -4805,9 +4810,14 @@ def preview_admin_organization_questionnaire(
                 (organization_id, payload.assignment_ref, result["id"]),
             ).fetchone()
             connection.commit()
-            return questionnaire_sources.public_revision(
-                result, confirmed_row=dict(confirmed) if confirmed is not None else None,
-            )
+            return {
+                **questionnaire_sources.public_revision(
+                    result, confirmed_row=dict(confirmed) if confirmed is not None else None,
+                ),
+                "readiness": questionnaire_sources.admin_assignment_readiness(
+                    connection, organization_id=organization_id, assignment_ref=payload.assignment_ref,
+                ),
+            }
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -4836,7 +4846,13 @@ def confirm_admin_organization_questionnaire(
                 recipient_user_ids=list(payload.recipient_user_ids),
             )
             connection.commit()
-            return questionnaire_sources.public_revision(result)
+            return {
+                **questionnaire_sources.public_revision(result),
+                "readiness": questionnaire_sources.admin_assignment_readiness(
+                    connection, organization_id=organization_id,
+                    assignment_ref=str(result["assignment_ref"]),
+                ),
+            }
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
