@@ -11,14 +11,6 @@ import zipfile
 from datetime import date
 from pathlib import Path
 
-from docx import Document
-from docx.enum.section import WD_SECTION
-from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
-from docx.shared import Inches, Pt, RGBColor
-
 ROOT = Path(__file__).resolve().parents[1]
 SALES = ROOT / "assessment_definitions/cases/competencies_4k/sales-pilot/0.1"
 M6_BLIND = ROOT / "tests/fixtures/m6_gc/v1/blind_review"
@@ -241,6 +233,18 @@ def write_scenarios(data: dict, out: Path) -> None:
 
 
 def write_docx(data: dict, out: Path) -> None:
+    # Source collection and unit validation must not require the optional
+    # document-rendering dependency used only to assemble the review ZIP.
+    global Document, Inches, OxmlElement, Pt, qn, RGBColor
+    global WD_ALIGN_PARAGRAPH, WD_CELL_VERTICAL_ALIGNMENT, WD_SECTION
+    from docx import Document
+    from docx.enum.section import WD_SECTION
+    from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    from docx.shared import Inches, Pt, RGBColor
+
     doc = Document()
     style_doc(doc)
     doc.add_heading("Проверка Sales кейсов", 0)
