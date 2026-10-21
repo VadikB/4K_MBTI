@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "task": "SLS07",
+  "base_commit": "61df52f398b1ca7ae4d162995e615e8c299f6070",
+  "release_version": "2.0.7",
+  "scope": "sales-pilot/0.1",
+  "case_count": 9,
+  "cycle_budget_seconds": 7200,
+  "statuses": {
+    "package_integrity": "PASS",
+    "targeted_unit": "PASS",
+    "postgresql_integration_local": "NOT_RUN",
+    "postgresql_integration_ci": "PENDING",
+    "real_provider": "NOT_RUN",
+    "authenticated_visual_smoke": "NOT_RUN",
+    "human_methodology_review": "NOT_RUN",
+    "human_admission": "BLOCKED",
+    "people_pilot_release": "BLOCKED"
+  },
+  "evidence": {
+    "package_manifest_file_count": 34,
+    "source_manifest_sha256": "f81376c9ab62cd27b4f2efaea5a513886c232cf0fd42f1c9d2367ac7146ec8ce",
+    "targeted_unit_tests": 31,
+    "full_unit_tests": 470,
+    "local_database_reason": "TEST_DATABASE_URL is unset",
+    "provider_reason": "No authorized provider configuration or cost limit in the task environment"
+  },
+  "claims": {
+    "synthetic_technical_path": "READY_FOR_CI",
+    "semantic_gc": "NOT_PROVEN",
+    "reliability": "NOT_PROVEN",
+    "admitted": false
+  }
+}
