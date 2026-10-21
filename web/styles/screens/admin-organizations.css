@@ -59,7 +59,7 @@
 .admin-readiness-panel {
     padding: 20px;
     border: 1px solid var(--palette-graphite-200);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: #b3ebef;
 }
 
@@ -217,6 +217,7 @@
     display: grid;
     gap: var(--space-4);
     min-width: 0;
+    border-radius: var(--radius-sm);
 }
 
 .admin-organization-profile-form {
@@ -225,7 +226,7 @@
     gap: var(--space-3);
     padding: var(--space-4);
     border: 1px solid var(--palette-graphite-200);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: #fff;
 }
 
@@ -334,7 +335,7 @@
     display: grid;
     gap: var(--space-2);
     border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.16);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     background: rgb(from var(--palette-cyan-500) r g b / 0.04);
     padding: var(--space-3);
 }
@@ -394,7 +395,7 @@
     gap: var(--space-3);
     padding: var(--space-4);
     border: 1px solid var(--palette-cyan-500);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: var(--palette-cyan-050);
 }
 
@@ -407,7 +408,7 @@
     gap: var(--space-2);
     margin: 0;
     border: 1px solid var(--palette-graphite-200);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: #fff;
     padding: var(--space-3);
 }
@@ -430,7 +431,7 @@
     align-items: start;
     min-width: 0;
     border: 1px solid rgb(from var(--palette-cyan-500) r g b / 0.12);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     background: rgba(255, 255, 255, 0.78);
     padding: var(--space-3);
 }

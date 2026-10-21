@@ -237,6 +237,9 @@ test('UX-FIX20-04 org-admin edits the attached card and never sees free tenant c
   const card = page.locator('[data-organization-id="3"]');
   const profile = card.locator('[data-action="update-profile"]');
   await expect(profile).toBeVisible();
+  await expect(card).toHaveCSS('border-radius', '8px');
+  await expect(profile).toHaveCSS('border-radius', '8px');
+  await expect(card.locator('.admin-organization-member').first()).toHaveCSS('border-radius', '8px');
   let submitted;
   await page.route('**/users/admin/organizations/3', async (route) => {
     if (route.request().method() !== 'PATCH') return route.fallback();
@@ -881,14 +884,14 @@ test('REL-VERSION-01 shows one build number on auth and common areas, with a saf
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.11');
+  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.12');
   await expect(page.locator('#app-release-badge')).toBeVisible();
   await expect(page.locator('.app-footer-release')).toBeHidden();
   await page.setViewportSize({ width: 360, height: 760 });
   await expect(page.locator('#app-release-badge')).toBeInViewport();
   await page.locator('#auth-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.remove('hidden'));
-  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.11');
+  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.12');
   await expect(page.locator('.app-footer-release')).toBeVisible();
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#chat-panel').evaluate((panel) => panel.classList.remove('hidden'));
@@ -1240,7 +1243,8 @@ test('QA19-04 keeps four M8 competency radars readable across mobile and desktop
   await page.getByRole('button', { name: 'Посмотреть результат' }).click();
   await page.evaluate(async () => { await document.fonts.ready; });
 
-  for (const width of [320, 360, 375, 390, 430]) {
+  // 683 CSS px approximates a 1366 px display at 200% browser zoom.
+  for (const width of [320, 360, 375, 390, 430, 683]) {
     await page.setViewportSize({ width, height: 900 });
     for (let groupIndex = 0; groupIndex < groups.length; groupIndex += 1) {
       await page.locator('#m8-report-tab-select').selectOption(`K${groupIndex + 1}`);
@@ -1293,10 +1297,39 @@ test('QA19-04 keeps four M8 competency radars readable across mobile and desktop
 
   for (const width of [768, 1024, 1366, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    await expect(page.locator('.m8-radar-key')).toHaveCount(0);
-    await expect(page.locator('.m8-radar-label')).toHaveCount(groups[0][1].length);
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
-    expect(overflow).toBe(false);
+    if (width <= 960) {
+      await expect(page.locator('.m8-radar-key li')).toHaveCount(groups[0][1].length);
+      await expect(page.locator('.m8-radar-label')).toHaveCount(0);
+    } else {
+      await expect(page.locator('.m8-radar-key')).toHaveCount(0);
+      await expect(page.locator('.m8-radar-label')).toHaveCount(groups[0][1].length);
+    }
+    const geometry = await page.locator('#m8-report-chart').evaluate((node) => {
+      const svg = node.querySelector('svg');
+      const chart = svg.getBoundingClientRect();
+      const scale = chart.width / svg.viewBox.baseVal.width;
+      return {
+        labelFonts: [...svg.querySelectorAll('.m8-radar-label')]
+          .map((item) => parseFloat(getComputedStyle(item).fontSize) * scale),
+        markerFonts: [...svg.querySelectorAll('.m8-radar-marker')]
+          .map((item) => parseFloat(getComputedStyle(item).fontSize) * scale),
+        keyFonts: [...node.querySelectorAll('.m8-radar-key-name')]
+          .map((item) => parseFloat(getComputedStyle(item).fontSize)),
+        tickFonts: [...svg.querySelectorAll('.m8-radar-scale')]
+          .map((item) => parseFloat(getComputedStyle(item).fontSize) * scale),
+        overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      };
+    });
+    const readableNames = geometry.labelFonts.length ? geometry.labelFonts : geometry.keyFonts;
+    expect(readableNames.every((size) => size >= 14), JSON.stringify(geometry)).toBe(true);
+    expect(geometry.markerFonts.every((size) => size >= 12), JSON.stringify(geometry)).toBe(true);
+    expect(geometry.tickFonts.every((size) => size >= 12), JSON.stringify(geometry)).toBe(true);
+    expect(geometry.overflow).toBe(false);
+    if (width === 768 || width === 1024) {
+      await test.info().attach(`qa19-04-radar-${width}`, {
+        body: await page.locator('#m8-report-chart').screenshot(), contentType: 'image/png',
+      });
+    }
   }
   await page.setViewportSize({ width: 390, height: 900 });
   await expect(page.locator('.m8-radar-key li')).toHaveCount(groups[0][1].length);

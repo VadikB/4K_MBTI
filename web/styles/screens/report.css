@@ -1601,7 +1601,7 @@ body.report-info-modal-open {
 
 .m8-radar-label {
     fill: var(--text-main);
-    font-size: 13px;
+    font-size: 15px;
     font-weight: var(--fw-medium);
     line-height: 1.2;
     pointer-events: auto;
@@ -1615,7 +1615,7 @@ body.report-info-modal-open {
 
 .m8-radar-scale {
     fill: var(--text-muted);
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .m8-radar-marker-bg {

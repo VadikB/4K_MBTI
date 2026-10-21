@@ -1549,7 +1549,7 @@ const focusM8Skill = (skillId) => {
 const renderM8Chart = (c67, competencyId) => {
   const node = document.getElementById('m8-report-chart');
   const note = document.getElementById('m8-report-chart-note');
-  const compact = competencyId !== 'all' && window.matchMedia('(max-width: 720px)').matches;
+  const compact = competencyId !== 'all' && window.matchMedia('(max-width: 960px)').matches;
   m8ChartRenderContext = { c67, competencyId, compact };
   const style = window.getComputedStyle(node);
   const contentWidth = node.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
