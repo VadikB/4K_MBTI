@@ -1660,6 +1660,24 @@ if (adminOrganizationsList) {
     }
   });
 
+  adminOrganizationsList.addEventListener('focusin', (event) => {
+    const field = event.target instanceof HTMLInputElement && event.target.name === 'assignment_ref'
+      ? event.target : null;
+    if (field) field.dataset.previousAssessmentRef = field.value;
+  });
+
+  adminOrganizationsList.addEventListener('focusout', (event) => {
+    const field = event.target instanceof HTMLInputElement && event.target.name === 'assignment_ref'
+      ? event.target : null;
+    const form = field?.closest('form[data-action]');
+    const card = field?.closest('[data-organization-id]');
+    const organizationId = Number(card?.getAttribute('data-organization-id'));
+    if (!field || !form || !organizationId) return;
+    withScreen(loadAdminOrganizations, (module) => module.selectAdminOrganizationAssessment(
+      organizationId, form, field.value, field.dataset.previousAssessmentRef || '',
+    ));
+  });
+
   adminOrganizationsList.addEventListener('click', (event) => {
     const button = event.target instanceof Element ? event.target.closest('button[data-action]') : null;
     if (!button) {
