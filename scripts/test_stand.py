@@ -89,9 +89,23 @@ def prepare():
     print('bootstrap ready')
 
 
+def drain_browser_orchestration(state):
+    if (state.get('gateway') != 1 or state.get('qa_orchestration') is not True
+            or state.get('browser_scenario') != 'acceptance-v1'):
+        raise ValueError('DRAIN_REQUIRES_ISOLATED_BROWSER_ACCEPTANCE')
+    from Api import m10_orchestration
+    from Api.m10_test_gateway import BrowserAcceptanceGateway
+    gateway=BrowserAcceptanceGateway();steps=0
+    while steps < 50 and (m10_orchestration.advance_once(gateway=gateway)
+                          or m10_orchestration._run_browser_test_gateway_once()):
+        steps+=1
+    if steps >= 50:raise ValueError('DRAIN_STEP_LIMIT_REACHED')
+    return steps
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action',choices=['create','bootstrap','seed','serve','smoke','destroy','_bootstrap','_seed'])
+    parser.add_argument('action',choices=['create','bootstrap','seed','serve','smoke','drain','destroy','_bootstrap','_seed','_drain'])
     parser.add_argument('--state',type=Path,required=True)
     parser.add_argument('--port',type=int,default=18520)
     parser.add_argument('--gateway',choices=['0','1'],default='0')
@@ -101,9 +115,13 @@ def main():
         with owned(json.loads(path.read_text())):
             pass
         if args.action=='_bootstrap':prepare()
-        else:
+        elif args.action=='_seed':
             from scripts.test_stand_seed import seed
             seed(json.loads(path.read_text()))
+        else:
+            state=json.loads(path.read_text())
+            steps=drain_browser_orchestration(state)
+            print(f'Isolated browser orchestration drained in {steps} steps')
         return
     if args.action=='create':
         import psycopg
@@ -138,6 +156,8 @@ def main():
     env=environment(state)
     if args.action in ('bootstrap','seed'):
         subprocess.run([sys.executable,__file__,'_'+args.action,'--state',str(path)],env=env,cwd=ROOT,check=True)
+    elif args.action=='drain':
+        subprocess.run([sys.executable,__file__,'_drain','--state',str(path)],env=env,cwd=ROOT,check=True)
     elif args.action=='serve':
         check_port(state['port'])
         os.execve(sys.executable,[sys.executable,'-m','uvicorn','main:app','--host','127.0.0.1','--port',str(state['port']),'--no-access-log'],env)
