@@ -19,31 +19,121 @@ const invitationOperationIds = new Map();
 const questionnairePreviews = new Map();
 const questionnaireRevisions = new Map();
 const organizationViews = new Map();
-let managementDraft = null;
+const managementDrafts = new Map();
+const selectedAssessmentRefs = new Map();
 
-const editableManagementFields = () => [...adminOrganizationsPanel.querySelectorAll('input, textarea, select')]
-  .filter((field) => field.type !== 'file' && field.type !== 'hidden');
+const currentIdentityKey = () => String(state.pendingUser?.id || '');
+const organizationKey = (organizationId) => currentIdentityKey() + ':' + Number(organizationId);
+const assessmentKey = (organizationId, assessmentRef = '') =>
+  organizationKey(organizationId) + ':' + String(assessmentRef || '').trim();
+const formDraftKey = (organizationId, form, assessmentRef = '') => {
+  const action = String(form?.dataset?.action || 'unknown');
+  const assessmentActions = new Set(['preview-early-data', 'preview-questionnaire']);
+  return organizationKey(organizationId) + ':' + action + ':' +
+    (assessmentActions.has(action) ? String(assessmentRef || '').trim() : 'organization');
+};
+
+const editableFields = (root) => [...root.querySelectorAll('input, textarea, select')]
+  .filter((field) => field.type !== 'file' && field.type !== 'hidden' && field.name);
+const formSignature = (form) => JSON.stringify(editableFields(form).map((field) => [
+  field.name, field.value, ['checkbox', 'radio'].includes(field.type) ? field.checked : null,
+]));
+
+const captureFormDraft = (organizationId, form, { assessmentRef: assessmentOverride = null, updateSelected = true } = {}) => {
+  const fields = editableFields(form);
+  const assignmentField = form.querySelector('[name="assignment_ref"]');
+  const assignmentRef = assessmentOverride ?? assignmentField?.value ?? '';
+  const view = form.closest('[data-admin-view]');
+  const selectedRef = selectedAssessmentRefs.get(organizationKey(organizationId)) || '';
+  const changedActiveScope = assessmentOverride === null && updateSelected && assignmentRef && selectedRef &&
+    assignmentRef.trim() !== selectedRef && !view?.classList.contains('hidden');
+  const storageRef = changedActiveScope ? selectedRef : assignmentRef;
+  if (updateSelected && assignmentRef && !view?.classList.contains('hidden')) {
+    selectedAssessmentRefs.set(organizationKey(organizationId), assignmentRef.trim());
+  }
+  managementDrafts.set(formDraftKey(organizationId, form, storageRef), {
+    fields: Object.fromEntries(fields.map((field) => [field.name + ':' + field.value,
+      { name: field.name, value: field === assignmentField && (assessmentOverride !== null || changedActiveScope)
+        ? storageRef : field.value, checked: field.checked, type: field.type }])),
+    focusedName: form.contains(document.activeElement) ? document.activeElement?.name || null : null,
+  });
+};
+
+const captureParticipantSelection = (organizationId, card) => {
+  const fields = [...card.querySelectorAll('input[name="invitation_email"]')];
+  managementDrafts.set(organizationKey(organizationId) + ':participant-selection:organization', {
+    fields: Object.fromEntries(fields.map((field) => [field.value, { value: field.value, checked: field.checked }])),
+  });
+};
 
 export const captureAdminOrganizationsDraft = () => {
   if (adminOrganizationsPanel.classList.contains('hidden')) return;
-  const fields = editableManagementFields();
-  managementDraft = {
-    values: fields.map((field) => ({ value: field.value, checked: field.checked })),
-    focusedIndex: fields.indexOf(document.activeElement),
-  };
+  adminOrganizationsList.querySelectorAll('[data-organization-id]').forEach((card) => {
+    const organizationId = Number(card.getAttribute('data-organization-id'));
+    card.querySelectorAll('form[data-action]').forEach((form) => captureFormDraft(organizationId, form));
+    captureParticipantSelection(organizationId, card);
+    const preview = card.querySelector('.admin-questionnaire-preview');
+    if (preview) captureFormDraft(organizationId, preview);
+  });
+};
+
+const restoreFormDraft = (organizationId, form) => {
+  const selectedRef = selectedAssessmentRefs.get(organizationKey(organizationId));
+  const assignmentField = form.querySelector('[name="assignment_ref"]');
+  if (assignmentField && selectedRef) assignmentField.value = selectedRef;
+  const draft = managementDrafts.get(formDraftKey(organizationId, form, assignmentField?.value || ''));
+  if (!draft) return;
+  editableFields(form).forEach((field) => {
+    const candidates = Object.values(draft.fields).filter((item) => item.name === field.name);
+    const saved = ['checkbox', 'radio'].includes(field.type)
+      ? candidates.find((item) => item.value === field.value)
+      : candidates[0];
+    if (!saved) return;
+    if (['checkbox', 'radio'].includes(field.type)) field.checked = saved.checked;
+    else field.value = saved.value;
+  });
+  form.querySelector('[name="' + CSS.escape(draft.focusedName || '') + '"]')?.focus({ preventScroll: true });
 };
 
 const restoreAdminOrganizationsDraft = () => {
-  if (!managementDraft) return;
-  const fields = editableManagementFields();
-  if (fields.length === managementDraft.values.length) {
-    fields.forEach((field, index) => {
-      field.value = managementDraft.values[index].value;
-      if (['checkbox', 'radio'].includes(field.type)) field.checked = managementDraft.values[index].checked;
+  adminOrganizationsList.querySelectorAll('[data-organization-id]').forEach((card) => {
+    const organizationId = Number(card.getAttribute('data-organization-id'));
+    card.querySelectorAll('form[data-action], .admin-questionnaire-preview').forEach((form) =>
+      restoreFormDraft(organizationId, form));
+    const selection = managementDrafts.get(organizationKey(organizationId) + ':participant-selection:organization');
+    card.querySelectorAll('input[name="invitation_email"]').forEach((field) => {
+      if (selection?.fields?.[field.value]) field.checked = selection.fields[field.value].checked;
     });
-    fields[managementDraft.focusedIndex]?.focus({ preventScroll: true });
+  });
+};
+
+const clearAdminOrganizationsSessionState = () => {
+  selectedOrganizationId = null;
+  invitationRequestsInFlight.clear();
+  invitationOperationIds.clear();
+  questionnairePreviews.clear();
+  questionnaireRevisions.clear();
+  organizationViews.clear();
+  managementDrafts.clear();
+  selectedAssessmentRefs.clear();
+};
+
+window.addEventListener('agent4k:assessment-context-cleared', clearAdminOrganizationsSessionState);
+
+const clearInaccessibleOrganizationState = (organizations) => {
+  const allowed = new Set(organizations.map((org) => organizationKey(org.id)));
+  for (const drafts of [managementDrafts, selectedAssessmentRefs, questionnairePreviews, questionnaireRevisions]) {
+    for (const key of drafts.keys()) {
+      const scopedKey = String(key);
+      if (scopedKey.startsWith(currentIdentityKey() + ':') &&
+          ![...allowed].some((allowedKey) => scopedKey === allowedKey || scopedKey.startsWith(allowedKey + ':'))) {
+        drafts.delete(key);
+      }
+    }
   }
-  managementDraft = null;
+  for (const organizationId of organizationViews.keys()) {
+    if (!organizations.some((org) => Number(org.id) === Number(organizationId))) organizationViews.delete(organizationId);
+  }
 };
 
 const escapeHtml = (value) =>
@@ -64,12 +154,15 @@ const setStatus = (message, tone = 'muted') => {
 };
 
 const requestOrganizations = async (url, options, fallbackMessage) => {
+  const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
   const response = await fetch(url, {
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
     ...options,
   });
   const data = await readApiResponse(response, fallbackMessage);
+  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
   state.adminOrganizations = data;
   persistAssessmentContext();
   renderAdminOrganizations();
@@ -91,20 +184,26 @@ const requestOrganizationsImport = async (url, csvText) => {
 };
 
 export const loadAdminOrganizations = async () => {
+  const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
   const data = await requestOrganizations(
     '/users/admin/organizations',
     { method: 'GET', headers: {} },
     'Не удалось загрузить организации.',
   );
+  if (!data || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
   await Promise.all((data.items || []).map(async (org) => {
     const response = await fetch('/users/admin/organizations/' + org.id + '/questionnaire', {
       credentials: 'same-origin',
     });
     if (response.ok) {
       const result = await response.json();
-      questionnaireRevisions.set(Number(org.id), Array.isArray(result.items) ? result.items : []);
+      if (state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey) {
+        questionnaireRevisions.set(organizationKey(org.id), Array.isArray(result.items) ? result.items : []);
+      }
     }
   }));
+  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
   renderAdminOrganizations();
   return data;
 };
@@ -138,13 +237,25 @@ export const createAdminOrganization = async () => {
 };
 
 export const selectAdminOrganization = (organizationId) => {
+  captureAdminOrganizationsDraft();
   selectedOrganizationId = Number(organizationId) || null;
   renderAdminOrganizations();
 };
 
 export const selectAdminOrganizationView = (organizationId, view) => {
+  captureAdminOrganizationsDraft();
   const allowed = new Set(['people', 'organization-data', 'questionnaire']);
   organizationViews.set(Number(organizationId), allowed.has(view) ? view : 'people');
+  renderAdminOrganizations();
+};
+
+export const selectAdminOrganizationAssessment = (organizationId, form, assessmentRef, previousRef = '') => {
+  const nextRef = String(assessmentRef || '').trim();
+  const oldRef = String(previousRef || selectedAssessmentRefs.get(organizationKey(organizationId)) || '').trim();
+  if (oldRef && oldRef !== nextRef) {
+    captureFormDraft(organizationId, form, { assessmentRef: oldRef, updateSelected: false });
+  }
+  selectedAssessmentRefs.set(organizationKey(organizationId), nextRef);
   renderAdminOrganizations();
 };
 
@@ -497,13 +608,29 @@ export const importAdminOrganizationMembers = async (organizationId, csvText) =>
 };
 
 export const previewAdminOrganizationQuestionnaire = async (organizationId, payload) => {
+  const action = payload?.channel === 'csv' ? 'preview-questionnaire' : 'preview-early-data';
+  const submittedForm = adminOrganizationsList.querySelector(
+    '[data-organization-id="' + Number(organizationId) + '"] form[data-action="' + action + '"]',
+  );
+  const submittedSignature = submittedForm ? formSignature(submittedForm) : null;
+  captureAdminOrganizationsDraft();
+  const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
+  const scopeKey = assessmentKey(organizationId, payload?.assignment_ref);
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/preview', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     const preview = await readApiResponse(response, 'Не удалось распознать анкету.');
-    questionnairePreviews.set(Number(organizationId), preview);
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
+    const currentForm = adminOrganizationsList.querySelector(
+      '[data-organization-id="' + Number(organizationId) + '"] form[data-action="' + action + '"]',
+    );
+    const draftKey = organizationKey(organizationId) + ':' + action + ':' + String(payload?.assignment_ref || '').trim();
+    if (currentForm && formSignature(currentForm) !== submittedSignature) captureFormDraft(organizationId, currentForm);
+    else managementDrafts.delete(draftKey);
+    questionnairePreviews.set(scopeKey, preview);
     renderAdminOrganizations();
     setStatus(preview.status === 'ready_for_confirmation'
       ? 'Анкета распознана. Проверьте сведения и подтвердите источник.'
@@ -513,13 +640,19 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
 };
 
 export const confirmAdminOrganizationQuestionnaire = async (organizationId, revisionId, recipients, recipientUserIds = []) => {
+  const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/' + revisionId + '/confirm', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ recipients, recipient_user_ids: recipientUserIds }),
     });
     await readApiResponse(response, 'Не удалось подтвердить анкету.');
-    questionnairePreviews.delete(Number(organizationId));
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
+    const selectedRef = selectedAssessmentRefs.get(organizationKey(organizationId)) || '';
+    questionnairePreviews.delete(assessmentKey(organizationId, selectedRef));
+    managementDrafts.delete(organizationKey(organizationId) + ':preview-early-data:' + selectedRef);
+    managementDrafts.delete(organizationKey(organizationId) + ':preview-questionnaire:' + selectedRef);
     renderAdminOrganizations();
     setStatus('Источник анкеты подтверждён и опубликован новой редакцией.', 'success');
   } catch (error) { setStatus(error.message, 'error'); }
@@ -666,6 +799,7 @@ export const renderAdminOrganizations = () => {
       : 'Три шага подготовки: участники, данные организации и анкета.';
   }
   const organizations = Array.isArray(data?.items) ? data.items : [];
+  clearInaccessibleOrganizationState(organizations);
   const isSuperadmin = Boolean(data?.is_superadmin);
   document.querySelector('[data-admin-area="assessment"]')?.classList.toggle('hidden', isSuperadmin);
   document.getElementById('admin-organization-create-form')?.closest('section')?.classList.toggle(
@@ -699,9 +833,11 @@ export const renderAdminOrganizations = () => {
       const activeBatch = state.adminOrganizationPreparationBatches?.[orgId];
       const batchIsRunning = activeBatch?.status === 'in_progress';
       const actionLabel = Number(org.members_count || 0) || Number(org.reports_count || 0) ? 'Деактивировать' : 'Удалить';
-      const questionnairePreview = questionnairePreviews.get(orgId);
-      const revisions = questionnaireRevisions.get(orgId) || [];
-      const currentRevision = questionnairePreview || revisions[0] || null;
+      const revisions = questionnaireRevisions.get(organizationKey(orgId)) || [];
+      const selectedRef = selectedAssessmentRefs.get(organizationKey(orgId)) || revisions[0]?.assignment_ref || '';
+      const questionnairePreview = questionnairePreviews.get(assessmentKey(orgId, selectedRef));
+      const currentRevision = questionnairePreview ||
+        revisions.find((item) => item.assignment_ref === selectedRef) || revisions[0] || null;
       const confirmedRevision = revisions.find((item) => item.status === 'confirmed');
       const questionnaireValidation = questionnairePreview?.validation_json || {};
       const questionnaireProblems = [...(questionnaireValidation.errors || []).map((item) => item.code),
@@ -796,7 +932,7 @@ export const renderAdminOrganizations = () => {
         '</p></div><h4>Данные организации и выбранной оценки</h4>' +
         '<p>Черновик и подтверждение сохраняются в общем версионируемом контуре. Изменение полей не переписывает опубликованную редакцию.</p>' +
         '<form class="admin-organization-early-data-form" data-action="preview-early-data">' +
-        '<label><span>Оценка</span><input name="assignment_ref" type="text" value="' + escapeHtml(currentRevision?.assignment_ref || '') + '" placeholder="Например, 4К · поток октябрь 2026" required></label>' +
+        '<label><span>Оценка</span><input name="assignment_ref" type="text" value="' + escapeHtml(selectedRef) + '" placeholder="Например, 4К · поток октябрь 2026" required></label>' +
         '<label><span>Автор сведений</span><input name="source_author" type="text" placeholder="Ответственный со стороны заказчика" required></label>' +
         '<label><span>Название организации</span><input name="organization_name" value="' + answer('C01', 'name') + '" required></label>' +
         '<label><span>Тип организации</span><input name="organization_type" value="' + answer('C01', 'organization_type') + '" required></label>' +
@@ -815,7 +951,7 @@ export const renderAdminOrganizations = () => {
         '<p>Скачайте утверждённый UTF-8 CSV-шаблон, загрузите заполненный файл и проверьте ошибки.</p>' +
         '<p><a class="text-link" href="/users/admin/organizations/' + orgId + '/questionnaire/template">Скачать CSV-шаблон</a></p>' +
         '<form class="admin-organization-import-form" data-action="preview-questionnaire">' +
-        '<label><span>Оценка</span><input name="assignment_ref" list="assessment-options-' + orgId + '" type="text" value="' + escapeHtml(currentRevision?.assignment_ref || '') + '" placeholder="Например, 4К · поток октябрь 2026" required></label>' +
+        '<label><span>Оценка</span><input name="assignment_ref" list="assessment-options-' + orgId + '" type="text" value="' + escapeHtml(selectedRef) + '" placeholder="Например, 4К · поток октябрь 2026" required></label>' +
         '<datalist id="assessment-options-' + orgId + '">' + revisions.map((item) => '<option value="' + escapeHtml(item.assignment_ref) + '"></option>').join('') + '</datalist>' +
         '<input name="source_author" type="text" placeholder="Автор сведений со стороны заказчика" required>' +
         '<input name="csv" type="file" accept=".csv,text/csv" required>' +
@@ -826,6 +962,7 @@ export const renderAdminOrganizations = () => {
       );
     })
     .join('');
+  restoreAdminOrganizationsDraft();
 };
 
 export const openAdminOrganizations = async () => {
@@ -845,5 +982,4 @@ export const openAdminOrganizations = async () => {
     return;
   }
   renderAdminOrganizations();
-  restoreAdminOrganizationsDraft();
 };

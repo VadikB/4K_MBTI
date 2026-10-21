@@ -464,6 +464,9 @@ export const clearAssessmentContext = () => {
   state.assessmentSessionId = null;
   state.reportReturnTarget = 'home';
   state.reportInterpretation = null;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('agent4k:assessment-context-cleared'));
+  }
 };
 
 export const restoreAssessmentContextFromParams = (params) => {

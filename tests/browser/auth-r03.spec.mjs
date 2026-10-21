@@ -210,6 +210,149 @@ test('ADM19-01 exposes three keyboard-operable management blocks without horizon
   }
 });
 
+test('UX-FIX20-02 preserves named drafts across all management views', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  const card = page.locator('[data-organization-id="3"]');
+  const memberForm = card.locator('[data-action="add-member"]');
+  await memberForm.locator('[name="email"]').fill('draft.member@example.test');
+  await memberForm.locator('[name="full_name"]').fill('Черновик участника');
+  await card.locator('input[name="invitation_email"]').check();
+
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  const earlyData = card.locator('[data-action="preview-early-data"]');
+  await earlyData.locator('[name="assignment_ref"]').fill('Поток A');
+  await earlyData.locator('[name="purpose"]').fill('Несохранённая цель A');
+
+  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
+  const questionnaire = card.locator('[data-action="preview-questionnaire"]');
+  await expect(questionnaire.locator('[name="assignment_ref"]')).toHaveValue('Поток A');
+  await questionnaire.locator('[name="source_author"]').fill('Автор черновика');
+
+  await card.getByRole('button', { name: 'Организация и участники' }).click();
+  await expect(memberForm.locator('[name="email"]')).toHaveValue('draft.member@example.test');
+  await expect(memberForm.locator('[name="full_name"]')).toHaveValue('Черновик участника');
+  await expect(card.locator('input[name="invitation_email"]')).toBeChecked();
+
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  await expect(earlyData.locator('[name="assignment_ref"]')).toHaveValue('Поток A');
+  await expect(earlyData.locator('[name="purpose"]')).toHaveValue('Несохранённая цель A');
+  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
+  await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('Автор черновика');
+
+  const assignment = questionnaire.locator('[name="assignment_ref"]');
+  await assignment.focus();
+  await assignment.fill('Поток B');
+  await assignment.press('Tab');
+  await card.getByRole('button', { name: 'Организация и участники' }).click();
+  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
+  await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('');
+  await questionnaire.locator('[name="source_author"]').fill('Автор B');
+  await questionnaire.locator('[name="assignment_ref"]').focus();
+  await questionnaire.locator('[name="assignment_ref"]').fill('Поток A');
+  await questionnaire.locator('[name="assignment_ref"]').press('Tab');
+  await card.getByRole('button', { name: 'Организация и участники' }).click();
+  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
+  await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('Автор черновика');
+  await questionnaire.locator('[name="assignment_ref"]').focus();
+  await questionnaire.locator('[name="assignment_ref"]').fill('Поток B');
+  await questionnaire.locator('[name="assignment_ref"]').press('Tab');
+  await card.getByRole('button', { name: 'Организация и участники' }).click();
+  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
+  await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('Автор B');
+});
+
+test('UX-FIX20-02 clears account A drafts and ignores its late preview after account B login', async ({ page }) => {
+  let releasePreview;
+  const previewReleased = new Promise((resolve) => { releasePreview = resolve; });
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  await page.route('**/users/admin/organizations/3/questionnaire/preview', async (route) => {
+    await previewReleased;
+    return fulfillJson(route, {
+      id: 91, assignment_ref: 'Поток A', status: 'ready_for_confirmation',
+      channel: 'product_form', answers_json: { C02a: { participant_text: 'Секрет A' } },
+      validation_json: { errors: [], missing: [] }, briefing: {},
+    });
+  });
+
+  const cardA = page.locator('[data-organization-id="3"]');
+  await cardA.getByRole('button', { name: 'Данные организации' }).click();
+  const formA = cardA.locator('[data-action="preview-early-data"]');
+  const valuesA = {
+    assignment_ref: 'Поток A', source_author: 'Автор A', organization_name: 'Организация A',
+    organization_type: 'Компания', industry: 'ИТ', activity_description: 'Описание A', purpose: 'Секрет A',
+    results_usage: 'Развитие', result_recipients: 'Участник', organizer: 'HR',
+    responsible_contact: 'a@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
+  };
+  for (const [name, value] of Object.entries(valuesA)) await formA.locator(`[name="${name}"]`).fill(value);
+  await formA.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+
+  await page.evaluate(() => document.getElementById('admin-logout-button').click());
+  await expect(page.locator('#auth-panel')).toBeVisible();
+  await page.unroute('**/users/**');
+  const userB = { id: 29, email: 'admin-b@example.test', full_name: 'Admin B' };
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'r03-test' });
+    if (pathname === '/users/auth/email/request-link') return fulfillJson(route, { email: userB.email, auth_mode: 'password' });
+    if (pathname === '/users/auth/email/password-login') return fulfillJson(route, {
+      exists: true, user: userB, is_admin: true,
+      agent: { session_id: 'admin-b', message: '', stage: 'admin', completed: true },
+      admin_dashboard: { metrics: [], insights: [], activity_series: [], competency_average: [] },
+    });
+    if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') {
+      return fulfillJson(route, { is_superadmin: false, items: [{ ...adminOrganization, name: 'Organization B' }] });
+    }
+    if (pathname === '/users/admin/organizations/3/questionnaire') return fulfillJson(route, { items: [] });
+    if (pathname === '/users/session/logout') return fulfillJson(route, {});
+    return fulfillJson(route, {}, 404);
+  });
+  await page.locator('#email-input').fill(userB.email);
+  await page.locator('#request-magic-link-button').click();
+  await page.locator('#magic-token-input').fill('legacy-password');
+  await page.locator('#verify-magic-link-button').click();
+  await page.locator('#admin-open-organizations-button').click();
+  const cardB = page.locator('[data-organization-id="3"]');
+  await cardB.getByRole('button', { name: 'Данные организации' }).click();
+  const formB = cardB.locator('[data-action="preview-early-data"]');
+  await expect(formB.locator('[name="purpose"]')).toHaveValue('');
+  await expect(formB.locator('[name="assignment_ref"]')).toHaveValue('');
+
+  releasePreview();
+  await page.waitForTimeout(100);
+  await expect(formB.locator('[name="purpose"]')).toHaveValue('');
+  await expect(cardB.locator('.admin-questionnaire-preview')).toHaveCount(0);
+});
+
+test('UX-FIX20-02 keeps newer input when an older preview response arrives', async ({ page }) => {
+  let releasePreview;
+  const previewReleased = new Promise((resolve) => { releasePreview = resolve; });
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  await page.route('**/users/admin/organizations/3/questionnaire/preview', async (route) => {
+    const submitted = route.request().postDataJSON();
+    await previewReleased;
+    return fulfillJson(route, {
+      id: 92, assignment_ref: submitted.assignment_ref, status: 'ready_for_confirmation',
+      channel: 'product_form', answers_json: submitted.answers,
+      validation_json: { errors: [], missing: [] }, briefing: {},
+    });
+  });
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  const form = card.locator('[data-action="preview-early-data"]');
+  const values = {
+    assignment_ref: 'Поток late', source_author: 'Автор', organization_name: 'Организация',
+    organization_type: 'Компания', industry: 'ИТ', activity_description: 'Описание', purpose: 'Старая цель',
+    results_usage: 'Развитие', result_recipients: 'Участник', organizer: 'HR',
+    responsible_contact: 'hr@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
+  };
+  for (const [name, value] of Object.entries(values)) await form.locator(`[name="${name}"]`).fill(value);
+  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+  await form.locator('[name="purpose"]').fill('Новая цель после отправки');
+  releasePreview();
+  await expect(card.locator('.admin-questionnaire-preview')).toBeVisible();
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Новая цель после отправки');
+});
+
 test('ADM19-02 routes org-admin own assessment by server journey and preserves management capability', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
   let profileReopens = 0;
@@ -597,14 +740,14 @@ test('REL-VERSION-01 shows one build number on auth and common areas, with a saf
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.8');
+  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.9');
   await expect(page.locator('#app-release-badge')).toBeVisible();
   await expect(page.locator('.app-footer-release')).toBeHidden();
   await page.setViewportSize({ width: 360, height: 760 });
   await expect(page.locator('#app-release-badge')).toBeInViewport();
   await page.locator('#auth-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.remove('hidden'));
-  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.8');
+  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.9');
   await expect(page.locator('.app-footer-release')).toBeVisible();
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#chat-panel').evaluate((panel) => panel.classList.remove('hidden'));
