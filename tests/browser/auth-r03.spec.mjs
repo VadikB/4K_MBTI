@@ -345,7 +345,11 @@ test('UX-FIX20-02 keeps newer input when an older preview response arrives', asy
     results_usage: 'Развитие', result_recipients: 'Участник', organizer: 'HR',
     responsible_contact: 'hr@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
   };
-  for (const [name, value] of Object.entries(values)) await form.locator(`[name="${name}"]`).fill(value);
+  await form.locator('[name="assignment_ref"]').fill(values.assignment_ref);
+  await form.locator('[name="assignment_ref"]').press('Tab');
+  for (const [name, value] of Object.entries(values).filter(([name]) => name !== 'assignment_ref')) {
+    await form.locator(`[name="${name}"]`).fill(value);
+  }
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
   await form.locator('[name="purpose"]').fill('Новая цель после отправки');
   releasePreview();
@@ -465,7 +469,7 @@ test('ADM19-01 saves early organization data through the versioned product form 
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
 
   await expect(card.locator('[data-admin-view="organization-data"] .admin-questionnaire-preview'))
-    .toContainText('ready_for_confirmation');
+    .toContainText('Готово к подтверждению');
   expect(submittedPayload.channel).toBe('product_form');
   expect(submittedPayload.csv_text).toBeNull();
   expect(submittedPayload.answers.C01).toEqual({
@@ -476,6 +480,66 @@ test('ADM19-01 saves early organization data through the versioned product form 
     organizer: values.organizer, responsible_contact: values.responsible_contact,
   });
   expect(submittedPayload.idempotency_key).toBeTruthy();
+});
+
+test('UX-FIX20-03 previews participant text, invalidates stale preview and applies confirmation immediately', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [{ status: 'queued' }] }));
+  let revisionId = 100;
+  await page.route('**/users/admin/organizations/3/questionnaire/preview', async (route) => {
+    const payload = route.request().postDataJSON();
+    revisionId += 1;
+    return fulfillJson(route, {
+      id: revisionId, assignment_ref: payload.assignment_ref, status: 'ready_for_confirmation',
+      channel: payload.channel, answers_json: payload.answers, validation_json: { errors: [], missing: [] },
+      participant_preview: {
+        organization_name: payload.answers.C01.name,
+        purpose: payload.answers.C02a.participant_text,
+        results_usage: payload.answers.C03.participant_text,
+        result_recipients: payload.answers.C04.answer,
+        organizer: payload.answers.C21.organizer,
+        responsible_contact: payload.answers.C21.responsible_contact,
+      },
+      changes: [{ field: 'purpose', before: 'Старая цель', after: payload.answers.C02a.participant_text }],
+      is_first_publication: false, recipient_options: ['participant', 'organization_admin'],
+    });
+  });
+  await page.route('**/users/admin/organizations/3/questionnaire/*/confirm', async (route) => {
+    const card = page.locator('[data-organization-id="3"]');
+    const purpose = await card.locator('[data-action="preview-early-data"] [name="purpose"]').inputValue();
+    return fulfillJson(route, {
+      id: revisionId, assignment_ref: 'Поток B', status: 'confirmed', channel: 'product_form',
+      validation_json: { errors: [], missing: [] }, confirmed_at: '2026-10-21T10:00:00Z',
+      answers_json: { C02a: { participant_text: purpose } }, participant_preview: { purpose }, changes: [],
+    });
+  });
+
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  const form = card.locator('[data-action="preview-early-data"]');
+  const values = {
+    assignment_ref: 'Поток B', source_author: 'Заказчик', organization_name: 'Организация B',
+    organization_type: 'Компания', industry: 'ИТ', activity_description: 'Описание', purpose: 'Новая цель участника',
+    results_usage: 'Для развития', result_recipients: 'Участник', organizer: 'HR',
+    responsible_contact: 'hr@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
+  };
+  for (const [name, value] of Object.entries(values)) await form.locator(`[name="${name}"]`).fill(value);
+  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+  const preview = card.locator('[data-admin-view="organization-data"] .admin-questionnaire-preview');
+  await expect(preview).toContainText('Что увидит участник');
+  await expect(preview).toContainText('Новая цель участника');
+  await expect(preview).toContainText('Старая цель');
+  await preview.locator('[name="questionnaire_recipient"][value="organization_admin"]').check();
+  await expect(preview).toContainText('Обновите предпросмотр перед подтверждением');
+  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
+
+  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toHaveAttribute('data-value', '102');
+  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeEnabled();
+  await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
+  await expect(preview).toHaveCount(0);
+  await expect(card.locator('[data-admin-view="organization-data"] .admin-readiness-panel')).toContainText('Поток B');
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Новая цель участника');
+
 });
 
 test('ADM19-01 adds a participant with only email, name and role', async ({ page }) => {
@@ -740,14 +804,14 @@ test('REL-VERSION-01 shows one build number on auth and common areas, with a saf
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.9');
+  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.10');
   await expect(page.locator('#app-release-badge')).toBeVisible();
   await expect(page.locator('.app-footer-release')).toBeHidden();
   await page.setViewportSize({ width: 360, height: 760 });
   await expect(page.locator('#app-release-badge')).toBeInViewport();
   await page.locator('#auth-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.remove('hidden'));
-  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.9');
+  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.10');
   await expect(page.locator('.app-footer-release')).toBeVisible();
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#chat-panel').evaluate((panel) => panel.classList.remove('hidden'));

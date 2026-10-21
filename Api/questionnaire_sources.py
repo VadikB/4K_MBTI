@@ -158,6 +158,16 @@ def save_preview(connection, *, organization_id: int, assignment_ref: str, chann
 
 def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by: int,
             recipients: list[str], recipient_user_ids: list[int] | None = None) -> dict:
+    candidate = connection.execute(
+        "SELECT assignment_ref FROM questionnaire_response_revisions WHERE id=%s AND organization_id=%s",
+        (revision_id, organization_id),
+    ).fetchone()
+    if candidate is None:
+        raise ValueError("QUESTIONNAIRE_REVISION_NOT_FOUND")
+    connection.execute(
+        "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+        (f"{organization_id}:{candidate['assignment_ref']}",),
+    )
     row = connection.execute(
         "SELECT * FROM questionnaire_response_revisions WHERE id=%s AND organization_id=%s FOR UPDATE",
         (revision_id, organization_id),
@@ -166,6 +176,14 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
         raise ValueError("QUESTIONNAIRE_REVISION_NOT_FOUND")
     if row["status"] == "confirmed":
         return dict(row)
+    newer_confirmed = connection.execute(
+        """SELECT id FROM questionnaire_response_revisions
+           WHERE organization_id=%s AND assignment_ref=%s AND status='confirmed' AND id>%s
+           ORDER BY id DESC LIMIT 1""",
+        (organization_id, row["assignment_ref"], row["id"]),
+    ).fetchone()
+    if newer_confirmed is not None:
+        raise ValueError("QUESTIONNAIRE_REVISION_CONFLICT")
     validation = dict(row["validation_json"] or {})
     if validation.get("errors") or validation.get("missing"):
         raise ValueError("QUESTIONNAIRE_NOT_READY_FOR_CONFIRMATION")
@@ -277,14 +295,43 @@ def template_csv() -> str:
     return output.getvalue()
 
 
-def public_revision(row: dict) -> dict:
+def _participant_projection(answers: dict) -> dict:
+    """Fields that a participant may see before starting an assessment."""
+    return {
+        "organization_name": str(answers.get("C01", {}).get("name") or ""),
+        "organization_type": str(answers.get("C01", {}).get("organization_type") or ""),
+        "industry": str(answers.get("C01", {}).get("industry") or ""),
+        "activity_description": str(answers.get("C01", {}).get("activity_description") or ""),
+        "purpose": str(answers.get("C02a", {}).get("participant_text") or ""),
+        "results_usage": str(answers.get("C03", {}).get("participant_text") or ""),
+        "result_recipients": str(answers.get("C04", {}).get("answer") or ""),
+        "organizer": str(answers.get("C21", {}).get("organizer") or ""),
+        "responsible_contact": str(answers.get("C21", {}).get("responsible_contact") or ""),
+    }
+
+
+def _projection_changes(current: dict, proposed: dict) -> list[dict]:
+    return [
+        {"field": key, "before": str(current.get(key) or ""), "after": str(value or "")}
+        for key, value in proposed.items()
+        if str(current.get(key) or "") != str(value or "")
+    ]
+
+
+def public_revision(row: dict, *, confirmed_row: dict | None = None) -> dict:
     """Admin-safe projection without raw source, checksums or internal request metadata."""
     item = dict(row)
+    answers = dict(item.get("answers_json") or {})
+    participant_preview = _participant_projection(answers)
+    current_projection = _participant_projection(dict((confirmed_row or {}).get("answers_json") or {}))
     return {
         "id": int(item["id"]), "assignment_ref": str(item["assignment_ref"]),
         "status": str(item["status"]), "channel": str(item["channel"]),
         "validation_json": dict(item.get("validation_json") or {}),
-        "answers_json": dict(item.get("answers_json") or {}),
-        "briefing": dict(item.get("briefing_json") or {}),
+        "answers_json": answers,
+        "participant_preview": participant_preview,
+        "changes": _projection_changes(current_projection, participant_preview),
+        "is_first_publication": confirmed_row is None,
+        "recipient_options": ["participant", "organization_admin"],
         "confirmed_at": item.get("confirmed_at"),
     }

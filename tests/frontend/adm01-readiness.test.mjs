@@ -10,7 +10,8 @@ test('ADM01 keeps participant invitations bound to the selected assessment', () 
   assert.match(organizations, /assignment_ref: assessment/);
   assert.match(organizations, /Данные организации/);
   assert.match(organizations, /Можно приглашать участников/);
-  assert.match(wiring, /input\[name="assignment_ref"\]/);
+  assert.match(wiring, /getSelectedAdminOrganizationAssessment/);
+  assert.doesNotMatch(wiring, /sendAdminOrganizationMemberInvitation\([\s\S]{0,160}querySelector\('input\[name="assignment_ref"\]'/);
 });
 
 test('ADM01 admin surface uses the accepted readiness and control colors', () => {

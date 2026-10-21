@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from Api.questionnaire_sources import (
-    PARTICIPANT_QUESTIONS, PARTICIPANT_QUESTION_SCHEMA, normalize_answers, parse_csv,
+    PARTICIPANT_QUESTIONS, PARTICIPANT_QUESTION_SCHEMA, normalize_answers, parse_csv, public_revision,
 )
 
 
@@ -61,3 +61,20 @@ def test_canonical_participant_questions_are_not_customer_authored():
             {"key": "constraints_interactions", "text": PARTICIPANT_QUESTIONS[2]},
         ],
     }
+
+
+def test_public_preview_has_participant_projection_and_safe_diff():
+    current = parse_csv(EXAMPLE.read_text())["answers"]
+    proposed = {**current, "C02a": {"participant_text": "Новая цель"}}
+    row = {"id": 2, "assignment_ref": "assessment-a", "status": "ready_for_confirmation",
+           "channel": "csv", "validation_json": {}, "answers_json": proposed, "confirmed_at": None}
+    confirmed = {"answers_json": current}
+    result = public_revision(row, confirmed_row=confirmed)
+    assert result["participant_preview"]["purpose"] == "Новая цель"
+    assert result["changes"] == [{
+        "field": "purpose",
+        "before": current["C02a"]["participant_text"],
+        "after": "Новая цель",
+    }]
+    assert "questionnaire_revision_id" not in result["participant_preview"]
+    assert "briefing" not in result

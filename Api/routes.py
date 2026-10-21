@@ -4798,8 +4798,16 @@ def preview_admin_organization_questionnaire(
                 raw_text=payload.csv_text, uploaded_by=int(user.id),
                 source_author=payload.source_author, idempotency_key=payload.idempotency_key,
             )
+            confirmed = connection.execute(
+                """SELECT * FROM questionnaire_response_revisions
+                   WHERE organization_id=%s AND assignment_ref=%s AND status='confirmed' AND id<>%s
+                   ORDER BY confirmed_at DESC,id DESC LIMIT 1""",
+                (organization_id, payload.assignment_ref, result["id"]),
+            ).fetchone()
             connection.commit()
-            return questionnaire_sources.public_revision(result)
+            return questionnaire_sources.public_revision(
+                result, confirmed_row=dict(confirmed) if confirmed is not None else None,
+            )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 

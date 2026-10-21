@@ -1543,7 +1543,7 @@ if (adminOrganizationsList) {
         .filter(Boolean);
       withScreen(loadAdminOrganizations, (module) =>
         module.sendAdminOrganizationMemberInvitation(
-          organizationId, emails, card.querySelector('input[name="assignment_ref"]')?.value,
+          organizationId, emails, module.getSelectedAdminOrganizationAssessment(organizationId),
         ),
       );
       return;
@@ -1666,6 +1666,20 @@ if (adminOrganizationsList) {
     if (field) field.dataset.previousAssessmentRef = field.value;
   });
 
+  const markQuestionnairePreviewStale = (event) => {
+    const field = event.target instanceof Element ? event.target : null;
+    const card = field?.closest('[data-organization-id]');
+    const organizationId = Number(card?.getAttribute('data-organization-id'));
+    if (!field || !organizationId || field.getAttribute('name') === 'assignment_ref') return;
+    if (!field.closest('[data-action="preview-early-data"], [data-action="preview-questionnaire"], .admin-questionnaire-preview')) return;
+    const assessmentRef = field.closest('.admin-questionnaire-preview')?.getAttribute('data-assessment-ref') ||
+      card?.querySelector('[data-admin-view]:not(.hidden) [name="assignment_ref"]')?.value || '';
+    withScreen(loadAdminOrganizations, (module) =>
+      module.markAdminOrganizationQuestionnairePreviewStale(organizationId, assessmentRef));
+  };
+  adminOrganizationsList.addEventListener('input', markQuestionnairePreviewStale);
+  adminOrganizationsList.addEventListener('change', markQuestionnairePreviewStale);
+
   adminOrganizationsList.addEventListener('focusout', (event) => {
     const field = event.target instanceof HTMLInputElement && event.target.name === 'assignment_ref'
       ? event.target : null;
@@ -1754,7 +1768,7 @@ if (adminOrganizationsList) {
     }
     if (button.dataset.action === 'send-member-invitation') {
       withScreen(loadAdminOrganizations, (module) => module.sendAdminOrganizationMemberInvitation(
-        organizationId, value, card.querySelector('input[name="assignment_ref"]')?.value,
+        organizationId, value, module.getSelectedAdminOrganizationAssessment(organizationId),
       ));
       return;
     }
