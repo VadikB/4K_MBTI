@@ -57,6 +57,8 @@ S10-A не зависит от планирования фонового пот�
 - Первый PR CI выявил release guard: product change оставался на `2.0.5`.
   Подготовлен patch release `2.0.6`; `check_release_version`, 5 unit-тестов release
   и целевой `REL-VERSION-01` (1 PASS) выполнены успешно, frontend bundle пересобран.
+- Следующий CI выявил оставшееся ожидание `2.0.5` в UI03; ожидание обновлено,
+  полный frontend regression: 65 PASS.
 
 ## Риски и откат
 
