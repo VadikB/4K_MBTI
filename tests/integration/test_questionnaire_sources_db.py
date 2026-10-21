@@ -6,7 +6,7 @@ import pytest
 from psycopg.rows import dict_row
 
 from Api.database import ensure_questionnaire_source_schema
-from Api.questionnaire_sources import assignment_readiness, confirm, save_preview
+from Api.questionnaire_sources import assignment_readiness, confirm, public_revision, save_preview
 from Api.m8_report_access import ensure_schema as ensure_report_access_schema
 
 
@@ -68,6 +68,31 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
             connection, revision_id=preview["id"], organization_id=10,
             confirmed_by=2, recipients=["participant"],
         )["organization_context_version_id"] == confirmed["organization_context_version_id"]
+
+        stale = save_preview(connection, **{
+            **kwargs, "idempotency_key": "preview-stale",
+            "raw_text": EXAMPLE.read_text().replace(
+                "Познакомиться с форматом оценки и получить развивающую обратную связь",
+                "Устаревшая цель",
+            ),
+        })
+        fresh = save_preview(connection, **{
+            **kwargs, "idempotency_key": "preview-fresh",
+            "raw_text": EXAMPLE.read_text().replace(
+                "Познакомиться с форматом оценки и получить развивающую обратную связь",
+                "Новая опубликованная цель",
+            ),
+        })
+        projection = public_revision(fresh, confirmed_row=confirmed)
+        assert projection["participant_preview"]["purpose"] == "Новая опубликованная цель"
+        assert projection["is_first_publication"] is False
+        assert {item["field"] for item in projection["changes"]} == {"purpose"}
+        assert "questionnaire_revision_id" not in projection["participant_preview"]
+        confirm(connection, revision_id=fresh["id"], organization_id=10,
+                confirmed_by=2, recipients=["participant"])
+        with pytest.raises(ValueError, match="QUESTIONNAIRE_REVISION_CONFLICT"):
+            confirm(connection, revision_id=stale["id"], organization_id=10,
+                    confirmed_by=2, recipients=["participant"])
 
         second_kwargs = {
             **kwargs, "assignment_ref": "second-assignment", "idempotency_key": "preview-2",
