@@ -54,6 +54,9 @@ S10-A не зависит от планирования фонового пот�
   6 PASS (два кейса находятся в одном файле). Код по этому сбою не менялся;
 - `tests/unit/test_test_stand.py`: 11 PASS;
 - `py_compile`, `node --check`, `git diff --check`: PASS.
+- Первый PR CI выявил release guard: product change оставался на `2.0.5`.
+  Подготовлен patch release `2.0.6`; `check_release_version`, 5 unit-тестов release
+  и целевой `REL-VERSION-01` (1 PASS) выполнены успешно, frontend bundle пересобран.
 
 ## Риски и откат
 
