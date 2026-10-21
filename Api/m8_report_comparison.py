@@ -14,6 +14,7 @@ REASON_LABELS = {
     "m2_sources_not_confirmed": "Совпадение версий методологии не подтверждено.",
     "m6_rules_not_confirmed": "Совпадение правил расчёта не подтверждено.",
     "assessment_context_not_confirmed": "Сопоставимость условий оценки не подтверждена.",
+    "assessment_conditions_not_confirmed": "Сопоставимость бюджета, календарного окна и правил возврата не подтверждена.",
     "role_requirements_not_confirmed": "Сопоставимость требований роли не подтверждена.",
     "partial_cycle": "Одна из оценок завершена не полностью.",
     "full_score_required": "Для одного из срезов нет полного результата по навыку.",
@@ -41,6 +42,20 @@ def _skill_definition(skill: dict[str, Any]) -> dict[str, Any]:
     )}
 
 
+def _complete_comparison_evidence(value: dict[str, Any]) -> bool:
+    semantic = value.get("semantic_composition") or {}
+    conditions = value.get("assessment_conditions") or {}
+    return (
+        value.get("contract_version") == "m8-comparison-evidence/1.0.0"
+        and bool(semantic.get("full_target_set_checksum"))
+        and type(conditions.get("time_budget_seconds")) is int
+        and conditions["time_budget_seconds"] > 0
+        and type(conditions.get("calendar_window_seconds")) is int
+        and conditions["calendar_window_seconds"] > 0
+        and bool(conditions.get("return_policy_checksum"))
+    )
+
+
 def _global_evidence(current: dict[str, Any], previous: dict[str, Any]) -> tuple[str | None, str | None]:
     if not _same(current.get("role_ref"), previous.get("role_ref")):
         if current.get("role_ref") is not None and previous.get("role_ref") is not None:
@@ -48,8 +63,15 @@ def _global_evidence(current: dict[str, Any], previous: dict[str, Any]) -> tuple
         return "not_confirmed", "role_snapshot_missing"
     current_provenance = current.get("provenance") or {}
     previous_provenance = previous.get("provenance") or {}
+    evidence = current_provenance.get("comparison_evidence") or {}
+    previous_evidence = previous_provenance.get("comparison_evidence") or {}
+    if not _complete_comparison_evidence(evidence) or not _complete_comparison_evidence(previous_evidence):
+        return "not_confirmed", "assessment_conditions_not_confirmed"
+    if not _same(evidence.get("semantic_composition"), previous_evidence.get("semantic_composition")):
+        return "not_confirmed", "m2_composition_not_confirmed"
+    if not _same(evidence.get("assessment_conditions"), previous_evidence.get("assessment_conditions")):
+        return "not_confirmed", "assessment_conditions_not_confirmed"
     for key, reason in (
-        ("composition_checksum", "m2_composition_not_confirmed"),
         ("sources", "m2_sources_not_confirmed"),
         ("algorithm", "m6_rules_not_confirmed"),
     ):

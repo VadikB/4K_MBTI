@@ -42,14 +42,14 @@ def inputs():
 
 def valid_output():
     return {
-        "summary": ["Участник прямо обозначил цель одной из сторон."],
+        "summary": ["Вывод основан на явно названной цели."],
         "claims": [
             {
                 "kind": "explanation",
                 "skill_ids": ["K1.1"],
                 "basis_refs": ["ia-1"],
                 "text": "Вывод основан на явно названной цели.",
-                "limitations": ["Проверка предположений не наблюдалась."],
+                "limitations": ["Проверка гипотез не наблюдалась."],
                 "context_refs": ["user_context.regular_tasks"],
             },
             {
@@ -69,7 +69,7 @@ def test_package_and_grounded_description_are_versioned_and_pii_free():
     gateway = Gateway(valid_output())
     report = generate(results, resolved, gateway=gateway)
 
-    assert load_package()["manifest"]["version"] == "1.0.0"
+    assert load_package()["manifest"]["version"] == "1.1.0"
     assert report["status"] == "ready"
     assert report["claims"][1]["text"] == "Хочет согласовать срок"
     assert "private@example.invalid" not in str(report)
@@ -84,7 +84,7 @@ def test_input_uses_only_selected_frozen_context():
     assert model_input["context"] == [
         {"ref": "user_context.regular_tasks", "text": "Согласование сроков"}
     ]
-    assert allowed["quotes"] == {"Хочет согласовать срок"}
+    assert allowed["quotes"] == {"Хочет согласовать срок": {("ia-1", "K1.1")}}
     assert "email" not in str(model_input)
 
 
@@ -103,9 +103,40 @@ def test_forbidden_advice_and_unverified_references_fail_closed():
     foreign_context = valid_output()
     foreign_context["claims"][0]["context_refs"] = ["user_context.email"]
     cases.append(foreign_context)
+    invented_limitation = valid_output()
+    invented_limitation["claims"][0]["limitations"] = ["Выдуманное ограничение."]
+    cases.append(invented_limitation)
+    empty_basis = valid_output()
+    empty_basis["claims"][0]["basis_refs"] = []
+    cases.append(empty_basis)
+    ungrounded_summary = valid_output()
+    ungrounded_summary["summary"] = ["Новый вывод без проверенного утверждения."]
+    cases.append(ungrounded_summary)
 
     for output in cases:
         report = generate(results, resolved, gateway=Gateway(output))
         assert report["status"] == "failed"
         assert report["claims"] == []
         assert report["failure_reason"] == "DESCRIPTION_GENERATION_FAILED"
+
+
+def test_basis_and_quote_must_belong_to_the_claimed_skill():
+    results, resolved = inputs()
+    other = dict(resolved["projections"][0])
+    other["revision_id"] = "ia-2"
+    other["criterion"] = {**other["criterion"], "skill_id": "K1.2"}
+    other["target"] = {**other["target"], "indicator_id": "K1.2.I1"}
+    other["traces"] = [{"fragments": [{"id": "f-2", "quote": "Другая цитата"}]}]
+    resolved["projections"].append(other)
+    results["results"]["assessed_skill_profile"].append({
+        **results["results"]["assessed_skill_profile"][0],
+        "skill_id": "K1.2",
+    })
+
+    foreign_skill_basis = valid_output()
+    foreign_skill_basis["claims"][0]["basis_refs"] = ["ia-2"]
+    changed_owner = valid_output()
+    changed_owner["claims"][1]["basis_refs"] = ["ia-2"]
+    for output in (foreign_skill_basis, changed_owner):
+        report = generate(results, resolved, gateway=Gateway(output))
+        assert report["status"] == "failed"

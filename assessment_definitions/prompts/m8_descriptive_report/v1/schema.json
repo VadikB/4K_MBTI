@@ -11,10 +11,14 @@
         "type": "object",
         "additionalProperties": false,
         "required": ["kind", "skill_ids", "basis_refs", "text", "limitations", "context_refs"],
+        "allOf": [{
+          "if": {"properties": {"kind": {"enum": ["observation", "explanation", "quote"]}}},
+          "then": {"properties": {"basis_refs": {"minItems": 1}}}
+        }],
         "properties": {
           "kind": {"enum": ["observation", "explanation", "context", "limitation", "quote"]},
           "skill_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1},
-          "basis_refs": {"type": "array", "items": {"type": "string"}},
+          "basis_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
           "text": {"type": "string", "minLength": 1},
           "limitations": {"type": "array", "items": {"type": "string"}},
           "context_refs": {"type": "array", "items": {"type": "string"}}

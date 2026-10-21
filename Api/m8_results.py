@@ -12,7 +12,7 @@ from Api.m8_report_package import load_package as load_report_package
 from Api.typst_pdf_renderer import render_typst_report
 
 RESULTS_VERSION = "m8-results/1.0.0"
-REPORT_TEMPLATE_VERSION = "m8-basic-report/1.4.0"
+REPORT_TEMPLATE_VERSION = "m8-basic-report/1.4.1"
 ALLOWED_AUDIENCES = {"assessee", "customer", "methodology_qa"}
 
 
@@ -156,6 +156,8 @@ def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: di
         limitations.append("Часть результата ограничена техническим сбоем обработки; это не L0 и не содержательный вывод.")
     partial_result = _partial_result_projection(c46, c56, processing, load_report_package()["template"])
     limitations += [x["message"] for x in partial_result["limitation_reasons"]]
+    plan = c46["payload_json"].get("plan") or {}
+    return_policy = plan.get("return_policy_snapshot") or {}
     result = {
         "schema_version": 1, "results_version": RESULTS_VERSION, "cycle_id": str(cycle["cycle_id"]),
         "subject_user_id": cycle["owner_user_id"], "profile_ref": cycle["profile_ref_json"],
@@ -175,6 +177,17 @@ def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: di
         "confidence": c56["confidence"], "reliability": c56["reliability"],
         "limitations": list(dict.fromkeys(limitations)), "processing": processing,
         "partial_result": partial_result,
+        "comparison_evidence": {
+            "contract_version": "m8-comparison-evidence/1.0.0",
+            "semantic_composition": {
+                "full_target_set_checksum": checksum(c56["full_target_set"]),
+            },
+            "assessment_conditions": {
+                "time_budget_seconds": c46["payload_json"]["time"].get("budget_seconds"),
+                "calendar_window_seconds": c46["payload_json"]["time"].get("calendar_window_seconds"),
+                "return_policy_checksum": return_policy.get("checksum"),
+            },
+        },
         "target_profile": target_profile, "sources": c56["sources"], "algorithm": c56["algorithm"],
     }
     if cycle["usage_scope"] == "qa":
@@ -281,7 +294,7 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
             item.pop("components", None)
         skills.append(item)
     admission_summary = [_admission_summary(d) for d in payload.get("admissions", []) if d.get("schema_version") == 2]
-    descriptive = {"contract_version":"m8-descriptive-report/1.0.0", "status":"failed",
+    descriptive = {"contract_version":"m8-descriptive-report/1.1.0", "status":"failed",
                    "failure_reason":"DESCRIPTION_GENERATION_FAILED", "summary":[], "claims":[]}
     try:
         from Api.m8_recommendation_basis import resolve
@@ -300,7 +313,8 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
             "limitations": payload["limitations"], "target_profile": target_profile or payload.get("target_profile"),
             "partial_result": payload.get("partial_result"),
             "provenance": {"composition_checksum": payload["composition_checksum"], "c46_ref": payload["c46_ref"],
-                           "c56_ref": payload["c56_ref"], "sources": payload["sources"], "algorithm": payload["algorithm"]},
+                           "c56_ref": payload["c56_ref"], "sources": payload["sources"], "algorithm": payload["algorithm"],
+                           "comparison_evidence": payload.get("comparison_evidence")},
             "admission_summary": admission_summary, "processing": payload.get("processing", {
                 "contract_version":"m10-processing-recovery/1.0.0","status":"completed",
                 "stage":"substantive_admission","error_code":None,"affected_indicator_ids":[],
@@ -447,10 +461,10 @@ def _present_report(saved: dict) -> dict:
         c67["recommendation_notices"] = []
         c67.pop("recommendation_generation", None)
         c67["recommendation_presentation"] = {
-            "policy_version":"m8-descriptive-report/1.0.0", "status":"historical_hidden",
+            "policy_version":"m8-descriptive-report/1.1.0", "status":"historical_hidden",
             "message":load_report_package()["template"]["states"]["historical"]}
     if "descriptive" not in c67:
-        c67["descriptive"] = {"contract_version":"m8-descriptive-report/1.0.0",
+        c67["descriptive"] = {"contract_version":"m8-descriptive-report/1.1.0",
             "status":"historical", "failure_reason":None, "summary":[], "claims":[]}
     return c67
 
