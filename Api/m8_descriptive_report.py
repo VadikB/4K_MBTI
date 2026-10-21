@@ -10,7 +10,7 @@ from Api.m5_case_runtime import checksum
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "assessment_definitions/prompts/m8_descriptive_report/v1"
-CONTRACT_VERSION = "m8-descriptive-report/1.0.0"
+CONTRACT_VERSION = "m8-descriptive-report/1.1.0"
 FORBIDDEN = re.compile(
     r"\b(рекоменду(?:ем|ется|ю)|совету(?:ем|ю)|попробуйте|вам следует|"
     r"упражнени[ея]|план развития|диагноз|профпригодност)\b", re.IGNORECASE,
@@ -19,7 +19,7 @@ FORBIDDEN = re.compile(
 
 def load_package() -> dict:
     manifest = json.loads((PACKAGE / "manifest.json").read_text(encoding="utf-8"))
-    expected = (1, "m8_descriptive_report", "1.0.0", "draft", "m8_descriptive_report", "PM-06")
+    expected = (1, "m8_descriptive_report", "1.1.0", "draft", "m8_descriptive_report", "PM-06")
     if tuple(manifest.get(k) for k in ("schema_version", "id", "version", "status", "scope", "owner")) != expected:
         raise ValueError("M8_DESCRIPTION_PACKAGE_INVALID")
     artifacts = []
@@ -57,29 +57,40 @@ def build_input(results: dict, resolved: dict) -> tuple[dict, dict]:
         raise ValueError("M8_DESCRIPTION_SCOPE_MISMATCH")
     skills = {item["skill_id"]: item for item in payload["assessed_skill_profile"]}
     bases = []
-    allowed = {"skills": set(skills), "basis": set(), "quotes": set(), "context": set()}
+    allowed = {"skills": set(skills), "basis": set(), "basis_skills": {}, "quotes": {},
+               "context": set(), "limitations": set()}
     for projection in resolved.get("projections", []):
         skill_id = (projection.get("criterion") or {}).get("skill_id")
         if skill_id not in skills:
             raise ValueError("M8_DESCRIPTION_SKILL_MISMATCH")
         ref = str(projection["revision_id"])
         allowed["basis"].add(ref)
+        allowed["basis_skills"][ref] = skill_id
         fragments = []
         for trace in projection.get("traces", []):
             for fragment in trace.get("fragments", []):
                 quote = str(fragment.get("quote") or "").strip()
                 if quote:
                     fragments.append({"ref": str(fragment["id"]), "quote": quote})
-                    allowed["quotes"].add(quote)
+                    allowed["quotes"].setdefault(quote, set()).add((ref, skill_id))
         target = projection["target"]
+        limitations = list(dict.fromkeys((target.get("confidence") or {}).get("limitations", [])
+                                          + (projection.get("bundle") or {}).get("limitations", [])))
+        allowed["limitations"].update(str(item).strip() for item in limitations if str(item).strip())
         bases.append({"ref": ref, "skill_id": skill_id, "indicator_id": target["indicator_id"],
                       "outcome": target.get("outcome"), "rationale": target.get("rationale"),
                       "confirmed_features": (target.get("confidence") or {}).get("confirmed_features", []),
-                      "limitations": list(dict.fromkeys((target.get("confidence") or {}).get("limitations", [])
-                                                        + (projection.get("bundle") or {}).get("limitations", []))),
+                      "limitations": limitations,
                       "fragments": fragments})
     context = _profile_context(payload.get("personalized_profile_snapshot"))
     allowed["context"] = {item["ref"] for item in context}
+    allowed["limitations"].update(str(item).strip() for item in payload.get("limitations", []) if str(item).strip())
+    for skill in skills.values():
+        allowed["limitations"].update(str(item).strip() for item in skill.get("limitations", []) if str(item).strip())
+    for reason in (payload.get("partial_result") or {}).get("limitation_reasons", []):
+        text = str(reason.get("message") or reason.get("text") or "").strip()
+        if text:
+            allowed["limitations"].add(text)
     model_input = {"contract_version": CONTRACT_VERSION, "cycle_id": results["cycle_id"],
                    "results_revision_id": results["revision_id"],
                    "skills": [{k: item.get(k) for k in ("skill_id", "skill_name", "skill_description", "competency_id", "competency_name",
@@ -97,7 +108,7 @@ def _validate(output: dict, allowed: dict) -> dict:
     if not isinstance(output["summary"], list) or len(output["summary"]) > 4:
         raise ValueError("M8_DESCRIPTION_SUMMARY_INVALID")
     for text in output["summary"]:
-        if not str(text).strip() or FORBIDDEN.search(str(text)):
+        if not isinstance(text, str) or not text.strip() or FORBIDDEN.search(text):
             raise ValueError("M8_DESCRIPTION_TEXT_FORBIDDEN")
     claims = output["claims"]
     if not isinstance(claims, list):
@@ -112,15 +123,31 @@ def _validate(output: dict, allowed: dict) -> dict:
             raise ValueError("M8_DESCRIPTION_SKILL_MISMATCH")
         if not set(claim["basis_refs"]).issubset(allowed["basis"]):
             raise ValueError("M8_DESCRIPTION_BASIS_MISMATCH")
+        if claim["kind"] in {"observation", "explanation", "quote"}:
+            if not claim["basis_refs"]:
+                raise ValueError("M8_DESCRIPTION_BASIS_REQUIRED")
+            if any(allowed["basis_skills"].get(ref) not in claim["skill_ids"] for ref in claim["basis_refs"]):
+                raise ValueError("M8_DESCRIPTION_BASIS_MISMATCH")
         if not set(claim["context_refs"]).issubset(allowed["context"]):
+            raise ValueError("M8_DESCRIPTION_CONTEXT_MISMATCH")
+        if claim["kind"] == "context" and not claim["context_refs"]:
             raise ValueError("M8_DESCRIPTION_CONTEXT_MISMATCH")
         text = str(claim["text"]).strip()
         if not text or FORBIDDEN.search(text):
             raise ValueError("M8_DESCRIPTION_TEXT_FORBIDDEN")
-        if claim["kind"] == "quote" and text not in allowed["quotes"]:
-            raise ValueError("M8_DESCRIPTION_QUOTE_MISMATCH")
+        if claim["kind"] == "quote":
+            owners = allowed["quotes"].get(text) or set()
+            if not any((ref, skill_id) in owners for ref in claim["basis_refs"] for skill_id in claim["skill_ids"]):
+                raise ValueError("M8_DESCRIPTION_QUOTE_MISMATCH")
         if not isinstance(claim["limitations"], list):
             raise ValueError("M8_DESCRIPTION_LIMITATIONS_INVALID")
+        if any(str(item).strip() not in allowed["limitations"] for item in claim["limitations"]):
+            raise ValueError("M8_DESCRIPTION_LIMITATIONS_INVALID")
+        if claim["kind"] == "limitation" and text not in allowed["limitations"]:
+            raise ValueError("M8_DESCRIPTION_LIMITATIONS_INVALID")
+    grounded_summary = {claim["text"].strip() for claim in claims if claim["kind"] != "quote"}
+    if any(text.strip() not in grounded_summary for text in output["summary"]):
+        raise ValueError("M8_DESCRIPTION_SUMMARY_INVALID")
     return output
 
 

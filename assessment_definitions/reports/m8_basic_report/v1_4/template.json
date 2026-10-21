@@ -7,7 +7,7 @@
     "derive_competency_score": false,
     "preserve_exact_fraction": true
   },
-  "descriptive_contract_version": "m8-descriptive-report/1.0.0",
+  "descriptive_contract_version": "m8-descriptive-report/1.1.0",
   "outcome_labels": {
     "full_score": "Полный результат со Score",
     "partial_score": "Частный результат со Score",

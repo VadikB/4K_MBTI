@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "m8_basic_report",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "status": "draft",
   "scope": "m8_individual_report",
   "owner": "PM-06",
@@ -12,6 +12,6 @@
     "sections": ["M8.2", "M8.3", "M8.7", "M8.7.1", "M8.7.2"]
   },
   "artifacts": [
-    {"name": "template.json", "sha256": "9d3d773433bc8a3a2368ac7ce83696b232023c3f4db6ba81470b0f8336ea4ed2"}
+    {"name": "template.json", "sha256": "6a941f73e819dca0e5e3bec409b1c378a7cd030f9170a5e22f6bc95fa6077d0e"}
   ]
 }

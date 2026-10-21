@@ -80,7 +80,7 @@ class BrowserAcceptanceGateway:
 
     def chat(self, messages, **_kwargs):
         value = json.loads(messages[1]["content"])
-        if value.get('contract_version') == 'm8-descriptive-report/1.0.0':
+        if value.get('contract_version') == 'm8-descriptive-report/1.1.0':
             claims=[]
             for basis in value.get('bases',[]):
                 limitation=list(basis.get('limitations') or ['Синтетическое основание; не содержательная приёмка.'])

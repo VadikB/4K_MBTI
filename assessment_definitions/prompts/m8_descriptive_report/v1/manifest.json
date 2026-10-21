@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "m8_descriptive_report",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "status": "draft",
   "scope": "m8_descriptive_report",
   "owner": "PM-06",
@@ -14,8 +14,8 @@
   "input_contract": "M8.DescriptiveInput/1",
   "output_contract": "M8.DescriptiveOutput/1",
   "artifacts": [
-    {"name": "prompt.md", "sha256": "b9290628d29db9fc85605f0a7f51169553b8eb8329084736ee2647b874a57bec"},
-    {"name": "schema.json", "sha256": "2ac603501535410eeda17c6406d3264294a1b2c11a24145bcbcbbf9c3feb86fd"}
+    {"name": "prompt.md", "sha256": "b50cec38abeaf209dfc531ef35dc38abae751e7696f9b8bffb79000b4f883873"},
+    {"name": "schema.json", "sha256": "624855c167f3a8e03e9570467aa56f6dfcbd74696d99960ca51b1d88b8640b91"}
   ],
   "execution": {"temperature": 0, "timeout_seconds": 120, "max_tokens": 8000, "max_input_bytes": 160000, "lease_seconds": 300, "max_attempts": 2}
 }
