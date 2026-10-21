@@ -52,5 +52,7 @@ Cycle snapshots не меняются.
 - PASS `npm run build:web`; committed dist соответствует release `2.0.8`.
 - Первый CI PR остановился на обязательном release-gate с версией `2.0.7`;
   кандидат исправлен штатным `prepare_release.py`, проверка повторяется на `2.0.8`.
+- Второй CI прошёл unit/HTTP/integration и frontend, но browser acceptance сохранил
+  ожидание старого build number; адресное ожидание приведено к кандидату `2.0.8`.
 - Одноразовый контейнер удалён. Реальные письма, production-данные и внешние LLM
   не использовались.
