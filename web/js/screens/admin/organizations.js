@@ -20,6 +20,7 @@ const invitationOperationIds = new Map();
 const questionnairePreviews = new Map();
 const questionnaireRevisions = new Map();
 const staleQuestionnairePreviews = new Set();
+const questionnairePreviewRequestGenerations = new Map();
 const organizationViews = new Map();
 const managementDrafts = new Map();
 const selectedAssessmentRefs = new Map();
@@ -41,9 +42,28 @@ const formDraftKey = (organizationId, form, assessmentRef = '') => {
 
 const editableFields = (root) => [...root.querySelectorAll('input, textarea, select')]
   .filter((field) => field.type !== 'file' && field.type !== 'hidden' && field.name);
-const formSignature = (form) => JSON.stringify(editableFields(form).map((field) => [
-  field.name, field.value, ['checkbox', 'radio'].includes(field.type) ? field.checked : null,
-]));
+const formSignature = (form) => JSON.stringify([
+  ...editableFields(form).map((field) => [
+    field.name, field.value, ['checkbox', 'radio'].includes(field.type) ? field.checked : null,
+  ]),
+  ...[...form.querySelectorAll('input[type="file"][name]')].map((field) => [
+    field.name,
+    [...(field.files || [])].map((file) => [file.name, file.size, file.type, file.lastModified]),
+  ]),
+]);
+const questionnaireInputSignature = (organizationId, action, assessmentRef = '') => {
+  const card = adminOrganizationsList.querySelector(
+    '[data-organization-id="' + Number(organizationId) + '"]',
+  );
+  const form = card?.querySelector('form[data-action="' + action + '"]');
+  const preview = [...(card?.querySelectorAll('.admin-questionnaire-preview') || [])]
+    .find((item) => String(item.getAttribute('data-assessment-ref') || '').trim() ===
+      String(assessmentRef || '').trim());
+  return JSON.stringify({
+    form: form ? formSignature(form) : null,
+    recipients: preview ? formSignature(preview) : null,
+  });
+};
 const questionnaireErrorMessage = (error, fallback) => {
   const message = String(error?.message || '');
   if (message.includes('QUESTIONNAIRE_REVISION_CONFLICT')) return 'Эта редакция устарела: уже подтверждена более новая. Обновите предпросмотр.';
@@ -132,6 +152,7 @@ const clearAdminOrganizationsSessionState = () => {
   questionnairePreviews.clear();
   questionnaireRevisions.clear();
   staleQuestionnairePreviews.clear();
+  questionnairePreviewRequestGenerations.clear();
   organizationViews.clear();
   managementDrafts.clear();
   selectedAssessmentRefs.clear();
@@ -141,7 +162,8 @@ window.addEventListener('agent4k:assessment-context-cleared', clearAdminOrganiza
 
 const clearInaccessibleOrganizationState = (organizations) => {
   const allowed = new Set(organizations.map((org) => organizationKey(org.id)));
-  for (const drafts of [managementDrafts, selectedAssessmentRefs, questionnairePreviews, questionnaireRevisions]) {
+  for (const drafts of [managementDrafts, selectedAssessmentRefs, questionnairePreviews, questionnaireRevisions,
+    questionnairePreviewRequestGenerations]) {
     for (const key of drafts.keys()) {
       const scopedKey = String(key);
       if (scopedKey.startsWith(currentIdentityKey() + ':') &&
@@ -703,11 +725,13 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
   const submittedForm = adminOrganizationsList.querySelector(
     '[data-organization-id="' + Number(organizationId) + '"] form[data-action="' + action + '"]',
   );
-  const submittedSignature = submittedForm ? formSignature(submittedForm) : null;
+  const submittedSignature = questionnaireInputSignature(organizationId, action, payload?.assignment_ref);
   captureAdminOrganizationsDraft();
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   const scopeKey = assessmentKey(organizationId, payload?.assignment_ref);
+  const requestGeneration = (questionnairePreviewRequestGenerations.get(scopeKey) || 0) + 1;
+  questionnairePreviewRequestGenerations.set(scopeKey, requestGeneration);
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/preview', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
@@ -715,19 +739,24 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
     });
     const preview = await readApiResponse(response, 'Не удалось распознать анкету.');
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
+    if (questionnairePreviewRequestGenerations.get(scopeKey) !== requestGeneration) return;
     const currentForm = adminOrganizationsList.querySelector(
       '[data-organization-id="' + Number(organizationId) + '"] form[data-action="' + action + '"]',
     );
     const draftKey = organizationKey(organizationId) + ':' + action + ':' + String(payload?.assignment_ref || '').trim();
-    if (currentForm && formSignature(currentForm) !== submittedSignature) captureFormDraft(organizationId, currentForm);
+    const inputChanged = questionnaireInputSignature(organizationId, action, payload?.assignment_ref) !== submittedSignature;
+    if (currentForm && inputChanged) captureFormDraft(organizationId, currentForm);
     else if (!managementDrafts.has(draftKey) && submittedForm) captureFormDraft(organizationId, submittedForm);
     questionnairePreviews.set(scopeKey, preview);
-    staleQuestionnairePreviews.delete(scopeKey);
+    if (inputChanged) staleQuestionnairePreviews.add(scopeKey);
+    else staleQuestionnairePreviews.delete(scopeKey);
     renderAdminOrganizations();
-    setStatus(preview.status === 'ready_for_confirmation'
+    setStatus(inputChanged
+      ? 'Данные изменились во время предпросмотра. Обновите предпросмотр перед подтверждением.'
+      : preview.status === 'ready_for_confirmation'
       ? 'Анкета распознана. Проверьте сведения и подтвердите источник.'
       : 'Черновик сохранён. Исправьте перечисленные ошибки или заполните обязательные поля.',
-    preview.status === 'ready_for_confirmation' ? 'success' : 'error');
+    !inputChanged && preview.status === 'ready_for_confirmation' ? 'success' : 'error');
   } catch (error) { setStatus(questionnaireErrorMessage(error, 'Не удалось распознать анкету.'), 'error'); }
 };
 
