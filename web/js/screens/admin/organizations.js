@@ -178,7 +178,7 @@ const readinessMarkup = (selectedRef, readiness) => '<div class="admin-readiness
   (selectedRef ? ' «' + escapeHtml(selectedRef) + '»' : '') + '</strong><ul>' +
   readinessRow('Ранние сведения', readiness?.early, 'organization-data') +
   readinessRow('Контекст', readiness?.context, 'organization-data') +
-  readinessRow('Роли участников', readiness?.roles, 'people') +
+  readinessRow('Участники', readiness?.roles, readiness?.roles?.action_view || null) +
   readinessRow('Подготовка', readiness?.preparation, null) + '</ul>' +
   '<p>Добавлять участников можно до заполнения анкеты. Приглашение, назначение и начало оценки проверяются сервером отдельно.</p></div>';
 

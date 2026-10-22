@@ -77,7 +77,8 @@ async function openAdminOrganizations(page, invitationHandler, organization = ad
           status: 'incomplete',
           early: { status: 'ready', message: 'Ранний минимум подтверждён. Участников можно приглашать.' },
           context: { status: 'ready', message: 'Контекст выбранной оценки подтверждён и закреплён сервером.' },
-          roles: { status: 'incomplete', message: 'Роли готовы у 0 из 1 участников.', ready: 0, total: 1 },
+          roles: { status: 'incomplete', message: 'Нужно проверить связку профиля и роли: 1.',
+            ready: 0, total: 1, action_view: 'people' },
           preparation: { status: 'idle', message: 'Активной подготовки сейчас нет.' },
         } }] };
       return fulfillJson(route, questionnaireResponse?.body || fallback, questionnaireResponse?.status || 200);
@@ -225,10 +226,33 @@ test('UX-FIX20-04 shows server readiness and routes to missing roles without blo
   const panel = card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel');
   await expect(panel).toContainText('Ранние сведения: Готово');
   await expect(panel).toContainText('Контекст: Готово');
-  await expect(panel).toContainText('Роли участников: Требуется заполнение');
+  await expect(panel).toContainText('Участники: Требуется заполнение');
   await panel.getByRole('button', { name: 'Перейти' }).nth(2).click();
   await expect(card.locator('[data-admin-view="people"]')).toBeVisible();
   await expect(card.locator('[data-action="add-member"]')).toBeVisible();
+});
+
+test('F22-07 explains participant acquaintance wait without a false roles action', async ({ page }) => {
+  const body = { items: [{
+    id: 11, assignment_ref: 'competencies_4k', status: 'confirmed', channel: 'product_form',
+    validation_json: {}, briefing: {}, readiness: {
+      status: 'incomplete',
+      early: { status: 'ready', message: 'Ранний минимум подтверждён.' },
+      context: { status: 'ready', message: 'Контекст подтверждён.' },
+      roles: {
+        status: 'incomplete', ready: 0, total: 1, action_view: null,
+        reasons: { acquaintance_wait: 1 },
+        message: 'К началу готовы 0 из 1. ожидается завершение знакомства: 1.',
+      },
+      preparation: { status: 'idle', message: 'Активной подготовки сейчас нет.' },
+    },
+  }] };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), adminOrganization, { body });
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
+  const participantRow = card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel li').filter({ hasText: 'Участники:' });
+  await expect(participantRow).toContainText('ожидается завершение знакомства: 1');
+  await expect(participantRow.getByRole('button', { name: 'Перейти' })).toHaveCount(0);
 });
 
 test('UX-FIX20-04 org-admin edits the attached card and never sees free tenant creation', async ({ page }) => {
