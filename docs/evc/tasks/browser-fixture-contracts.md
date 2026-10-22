@@ -62,6 +62,10 @@ PASS, `npm run build:web` PASS, `npm run lint:js` PASS, frontend 66 PASS и unit
 gateway 4 PASS. Frontend-регрессия cache-busting теперь сверяется с текущим
 `APP_RELEASE`, а не с прежним номером версии.
 
+Первый CI кандидата `2.0.14`: frontend PASS, pytest FAIL только в browser
+`REL-VERSION-01`, где оставалось отдельное ожидание `2.0.13`. Browser-регрессия
+также переведена на чтение текущего `APP_RELEASE`; это не падение S10-A/fixture routing.
+
 ## Риски и откат
 
 Изменение действует только при guarded `AGENT4K_BROWSER_TEST_GATEWAY=1` на owned
