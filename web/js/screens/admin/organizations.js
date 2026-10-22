@@ -24,6 +24,11 @@ const managementDrafts = new Map();
 const selectedAssessmentRefs = new Map();
 
 const currentIdentityKey = () => String(state.pendingUser?.id || '');
+const captureIdentityGuard = () => {
+  const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
+  return () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey;
+};
 const organizationKey = (organizationId) => currentIdentityKey() + ':' + Number(organizationId);
 const assessmentKey = (organizationId, assessmentRef = '') =>
   organizationKey(organizationId) + ':' + String(assessmentRef || '').trim();
@@ -207,7 +212,7 @@ const requestOrganizations = async (url, options, fallbackMessage) => {
   return data;
 };
 
-const requestOrganizationsImport = async (url, csvText) => {
+const requestOrganizationsImport = async (url, csvText, isCurrentIdentity) => {
   const response = await fetch(url, {
     method: 'POST',
     credentials: 'same-origin',
@@ -215,6 +220,7 @@ const requestOrganizationsImport = async (url, csvText) => {
     body: JSON.stringify({ csv_text: csvText }),
   });
   const data = await readApiResponse(response, 'Не удалось импортировать участников.');
+  if (!isCurrentIdentity()) return null;
   state.adminOrganizations = data.organizations || data;
   persistAssessmentContext();
   renderAdminOrganizations();
@@ -674,11 +680,18 @@ export const importAdminOrganizationMembers = async (organizationId, csvText) =>
     setStatus('Выберите CSV-файл с участниками.', 'error');
     return;
   }
+  const isCurrentIdentity = captureIdentityGuard();
   try {
-    const result = await requestOrganizationsImport('/users/admin/organizations/' + organizationId + '/members/import', text);
+    const result = await requestOrganizationsImport(
+      '/users/admin/organizations/' + organizationId + '/members/import',
+      text,
+      isCurrentIdentity,
+    );
+    if (!result || !isCurrentIdentity()) return;
     const errorsText = Array.isArray(result.errors) && result.errors.length ? ' Ошибки: ' + result.errors.slice(0, 3).join('; ') : '';
     setStatus('Импортировано: ' + Number(result.imported_count || 0) + '. Пропущено: ' + Number(result.skipped_count || 0) + '.' + errorsText, result.skipped_count ? 'error' : 'success');
   } catch (error) {
+    if (!isCurrentIdentity()) return;
     setStatus(error.message || 'Не удалось импортировать участников.', 'error');
   }
 };
