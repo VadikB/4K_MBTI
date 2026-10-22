@@ -57,6 +57,11 @@ worker и UI heartbeat. Эксперимент с общим `drain` в `report(
 Исправление runtime lock ordering и детерминированного завершения scenario transition
 не входит в эту задачу; результат нельзя объявлять полной стабилизацией browser suite.
 
+После первого CI для PR #93 подготовлен PATCH-кандидат `2.0.14`: release check
+PASS, `npm run build:web` PASS, `npm run lint:js` PASS, frontend 66 PASS и unit
+gateway 4 PASS. Frontend-регрессия cache-busting теперь сверяется с текущим
+`APP_RELEASE`, а не с прежним номером версии.
+
 ## Риски и откат
 
 Изменение действует только при guarded `AGENT4K_BROWSER_TEST_GATEWAY=1` на owned
