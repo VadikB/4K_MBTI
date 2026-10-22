@@ -317,13 +317,21 @@ def admin_assignment_readiness(connection, *, organization_id: int, assignment_r
         early_state = "data_missing"
         early_message = "Для выбранной оценки ещё нет подтверждённых сведений. Заполните данные организации или загрузите анкету."
 
-    member_rows = connection.execute(
-        """SELECT user_id FROM organization_memberships
-           WHERE organization_id=%s AND role='member' ORDER BY user_id""",
-        (organization_id,),
+    participant_rows = connection.execute(
+        """SELECT DISTINCT u.id AS user_id
+           FROM organization_invitations oi
+           JOIN users u ON LOWER(u.email)=LOWER(oi.recipient_email)
+           JOIN organization_memberships om
+             ON om.organization_id=oi.organization_id AND om.user_id=u.id
+           WHERE oi.organization_id=%s AND oi.purpose='personal_registration'
+             AND oi.assignment_ref=%s AND oi.revoked_at IS NULL
+             AND oi.created_by_user_id IS DISTINCT FROM u.id
+           ORDER BY u.id""",
+        (organization_id, normalized_ref),
     ).fetchall()
-    total_roles = len(member_rows)
+    total_roles = len(participant_rows)
     ready_roles = 0
+    reason_counts: dict[str, int] = {}
     if early["status"] == "ready":
         # Reuse the participant late gate with the selected assignment instead of
         # reconstructing profile readiness from client-facing fields.
@@ -332,31 +340,67 @@ def admin_assignment_readiness(connection, *, organization_id: int, assignment_r
             "status": "ready", "reason": None, "organization_id": organization_id,
             "assignment_ref": normalized_ref,
         }
-        ready_roles = sum(
-            late_readiness(
+        for row in participant_rows:
+            late = late_readiness(
                 connection, user_id=int(row["user_id"]), readiness=selected_readiness,
-            )["status"] == "ready_to_prepare"
-            for row in member_rows
-        )
+            )
+            if late["status"] == "ready_to_prepare":
+                ready_roles += 1
+                continue
+            reason = str(late.get("reason") or "READINESS_CHECK_FAILED").split(":", 1)[0]
+            category = (
+                "acquaintance_wait" if reason == "W02_ANSWERS_NOT_BOUND" else
+                "profile_binding" if reason.startswith("M4_PROFILE_") else
+                "verification_error"
+            )
+            reason_counts[category] = reason_counts.get(category, 0) + 1
     if total_roles == 0:
         roles_state = "not_started"
-        roles_message = "Участники ещё не добавлены. Их можно добавить до заполнения анкеты."
+        roles_message = "Для выбранной оценки ещё нет назначенных участников."
+        roles_action = "people"
+    elif early["status"] != "ready":
+        roles_state = "incomplete"
+        roles_message = "Готовность участников будет проверена после подтверждения ранних сведений."
+        roles_action = "organization-data"
     elif ready_roles < total_roles:
         roles_state = "incomplete"
-        roles_message = f"Роли готовы у {ready_roles} из {total_roles} участников. Заполните недостающие роли в списке участников."
+        waiting = reason_counts.get("acquaintance_wait", 0)
+        profile = reason_counts.get("profile_binding", 0)
+        verification = reason_counts.get("verification_error", 0)
+        details = []
+        if waiting:
+            details.append(f"ожидается завершение знакомства: {waiting}")
+        if profile:
+            details.append(f"нужно проверить связку профиля и роли: {profile}")
+        if verification:
+            details.append(f"ошибка проверки готовности: {verification}")
+        roles_message = (
+            f"К началу готовы {ready_roles} из {total_roles}. " + "; ".join(details) + "."
+        )
+        roles_action = "people" if profile else None
     else:
         roles_state = "ready"
-        roles_message = f"Роли подтверждены для всех участников: {ready_roles}."
+        roles_message = f"К началу готовы все участники выбранной оценки: {ready_roles}."
+        roles_action = None
 
     preparation = connection.execute(
         """SELECT COUNT(*) FILTER (WHERE latest.status IN ('queued','running'))::int AS in_progress
-           FROM organization_memberships om
+           FROM (
+             SELECT DISTINCT u.id AS user_id
+             FROM organization_invitations oi
+             JOIN users u ON LOWER(u.email)=LOWER(oi.recipient_email)
+             JOIN organization_memberships om
+               ON om.organization_id=oi.organization_id AND om.user_id=u.id
+             WHERE oi.organization_id=%s AND oi.purpose='personal_registration'
+               AND oi.assignment_ref=%s AND oi.revoked_at IS NULL
+               AND oi.created_by_user_id IS DISTINCT FROM u.id
+           ) participant
            LEFT JOIN LATERAL (
              SELECT status FROM assessment_preparation_jobs
-             WHERE user_id=om.user_id ORDER BY created_at DESC LIMIT 1
+             WHERE user_id=participant.user_id ORDER BY created_at DESC LIMIT 1
            ) latest ON TRUE
-           WHERE om.organization_id=%s AND om.role='member'""",
-        (organization_id,),
+           """,
+        (organization_id, normalized_ref),
     ).fetchone() or {"in_progress": 0}
     in_progress = int(preparation.get("in_progress") or 0)
     context_state = "ready" if early["status"] == "ready" else early_state
@@ -373,7 +417,10 @@ def admin_assignment_readiness(connection, *, organization_id: int, assignment_r
         "assignment_ref": normalized_ref,
         "early": {"status": early_state, "message": early_message, "missing": list(early.get("missing") or [])},
         "context": {"status": context_state, "message": context_message},
-        "roles": {"status": roles_state, "message": roles_message, "ready": ready_roles, "total": total_roles},
+        "roles": {
+            "status": roles_state, "message": roles_message, "ready": ready_roles,
+            "total": total_roles, "reasons": reason_counts, "action_view": roles_action,
+        },
         "preparation": {
             "status": "in_progress" if in_progress else "idle",
             "message": f"Идёт подготовка для {in_progress} участников." if in_progress else "Активной подготовки сейчас нет.",
