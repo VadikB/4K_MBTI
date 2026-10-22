@@ -433,8 +433,11 @@ test('UX-FIX20-02 keeps newer input when an older preview response arrives', asy
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
   await form.locator('[name="purpose"]').fill('Новая цель после отправки');
   releasePreview();
-  await expect(card.locator('.admin-questionnaire-preview')).toBeVisible();
+  const stalePreview = card.locator('.admin-questionnaire-preview');
+  await expect(stalePreview).toBeVisible();
   await expect(form.locator('[name="purpose"]')).toHaveValue('Новая цель после отправки');
+  await expect(stalePreview).toContainText('Обновите предпросмотр перед подтверждением');
+  await expect(stalePreview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
 });
 
 test('ADM19-02 routes org-admin own assessment by server journey and preserves management capability', async ({ page }) => {
