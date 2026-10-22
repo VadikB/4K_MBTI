@@ -940,8 +940,14 @@ export const renderAdminOrganizations = () => {
         organizer: 'Организатор', responsible_contact: 'Контакт ответственного' };
       const validationLabels = { C01: 'сведения об организации', C02a: 'цель оценки', C03: 'использование результатов',
         C04: 'получатели результатов', C17: 'правила кейсов', C21: 'организатор и контакт' };
+      const recipientProjections = questionnairePreview?.recipient_projections || {};
       const participantRows = Object.entries(fieldLabels).filter(([key]) => participant[key]).map(([key, label]) =>
-        '<dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(participant[key]) + '</dd>').join('');
+        '<dt>' + escapeHtml(label) + '</dt><dd' + (key === 'result_recipients'
+          ? ' data-questionnaire-recipient-projection data-participant-projection="' +
+            escapeHtml(recipientProjections.participant || participant[key]) + '" data-admin-projection="' +
+            escapeHtml(recipientProjections.organization_admin || participant[key]) + '"'
+          : '') + '>' + escapeHtml(key === 'result_recipients'
+          ? recipientProjections.participant || participant[key] : participant[key]) + '</dd>').join('');
       const changes = Array.isArray(questionnairePreview?.changes) ? questionnairePreview.changes : [];
       const changesMarkup = questionnairePreview?.is_first_publication
         ? '<p><strong>Первая публикация.</strong> Эти сведения станут текущими после подтверждения.</p>'
