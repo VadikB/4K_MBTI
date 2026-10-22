@@ -12,16 +12,49 @@ def acceptance_fixture():
     return json.loads((Path(__file__).resolve().parents[1] / 'tests/browser/fixtures/v1.json').read_text())
 
 
+def acceptance_contracts():
+    directory = Path(__file__).resolve().parents[1] / 'tests/browser/fixtures/contracts'
+    contracts = [json.loads(path.read_text()) for path in sorted(directory.glob('*.json'))]
+    case_ids = [case_ref['id'] for contract in contracts for case_ref in contract['case_refs']]
+    if len(case_ids) != len(set(case_ids)):
+        raise ValueError('DUPLICATE_BROWSER_FIXTURE_CASE_REF')
+    return contracts
+
+
+def _contract_for_turns(turns):
+    contracts = acceptance_contracts()
+    return next((contract for contract in contracts
+                 if any(turn['content'] in contract['accepted_inputs'] for turn in turns)), None)
+
+
+def _acceptance_m7_output(value):
+    case_ref = value.get('case_ref') if isinstance(value.get('case_ref'), dict) else {}
+    case_id = case_ref.get('id')
+    contract = next((item for item in acceptance_contracts()
+                     if any(ref['id'] == case_id for ref in item['case_refs'])), None)
+    if contract is None:
+        raise ValueError(f'UNKNOWN_BROWSER_FIXTURE_CASE:{case_id or "missing"}')
+    actual_ids = set(value.get('indicator_ids') or [])
+    required_ids = set(contract['m7']['required_indicator_ids'])
+    if not required_ids <= actual_ids:
+        missing = ','.join(sorted(required_ids - actual_ids))
+        raise ValueError(f'BROWSER_FIXTURE_INDICATOR_MISMATCH:{contract["id"]}:{missing}')
+    if contract['m7']['expected_status'] != 'ASK':
+        raise ValueError(f'UNSUPPORTED_BROWSER_FIXTURE_M7_STATUS:{contract["m7"]["expected_status"]}')
+    return {'schema_version':1,'admissible':True,'text':contract['m7']['question'],
+            'purpose':'clarify_meaning','indicator_ids':value['indicator_ids'],
+            'resolving_information':['Meaning of the already submitted answer'],'refusal_reason':None}
+
+
 def _acceptance_output(value, fixture):
     if 'uncertainties' in value:
-        return {'schema_version':1,'admissible':True,'text':fixture['character_question'] if 'K2.I10' in value['indicator_ids'] else fixture['question'],
-                'purpose':'clarify_meaning','indicator_ids':value['indicator_ids'],
-                'resolving_information':['Meaning of the already submitted answer'],'refusal_reason':None}
+        return _acceptance_m7_output(value)
     material=value.get('material',value)
     turns=[x for x in material['turns'] if x.get('speaker_type')=='assessee']
     # Exact fixture input only; never attribute a character's reply or arbitrary text to the participant.
-    turn=next((x for x in turns if x['content'] in (fixture['answer'],fixture['clarification_answer'])),None)
-    actions=fixture['actions'] if turn else {}
+    contract=_contract_for_turns(turns)
+    turn=next((x for x in turns if contract and x['content'] in contract['accepted_inputs']),None)
+    actions=contract['actions'] if turn else {}
     if 'evidence_analysis' not in value:
         result={'schema_version':1,'fragments':[],'signals':[],'evidence':[],'attribution_notes':[],
                 'bundles':[]}

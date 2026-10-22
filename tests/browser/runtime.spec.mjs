@@ -431,9 +431,10 @@ test('S10-A character branch: actual character Turn, order and no invented recom
  expect(await characterBubble.evaluate(el=>getComputedStyle(el,'::before').content)).toContain(character.speaker_name);
  expect(character.content_text).toBe(fixture.character_response);expect(character.sequence_no).toBeGreaterThan(own.sequence_no);
  await page.locator('#interview-finish-button').click();
+ stand.cli('drain');
  await expect(page.locator('#interview-messages')).toContainText(fixture.character_question,{timeout:30000});
  await info.attach('character-and-clarification-ui',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
- await answer(page,'Я предложил проверить запрос и остановиться при отличии условий от инструкции.');
+ await answer(page,fixture.character_clarification_answer);
  await expect(page.locator('#interview-finish-button')).toBeEnabled();await page.locator('#interview-finish-button').click();
  const saved=await report(page,stand,info);expect(saved.c67.recommendations).toHaveLength(0);
  expect(['ready','failed']).toContain(saved.c67.descriptive.status);
