@@ -24,6 +24,12 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY,full_name TEXT,email TEXT)")
         connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY,is_active BOOLEAN DEFAULT TRUE)")
         connection.execute("CREATE TABLE organization_memberships(organization_id BIGINT,user_id BIGINT,role TEXT)")
+        connection.execute("""CREATE TABLE organization_invitations(
+            id BIGSERIAL PRIMARY KEY,organization_id BIGINT,recipient_email TEXT,purpose TEXT,
+            assignment_ref TEXT,created_by_user_id BIGINT,revoked_at TIMESTAMP)""")
+        connection.execute("""CREATE TABLE participant_acquaintance_confirmations(
+            id BIGSERIAL PRIMARY KEY,user_id BIGINT,organization_id BIGINT,assignment_ref TEXT,
+            personalized_profile_id BIGINT,confirmed_at TIMESTAMP DEFAULT NOW())""")
         connection.execute("""CREATE TABLE assessment_preparation_jobs(
             id BIGSERIAL PRIMARY KEY,user_id BIGINT,status TEXT,created_at TIMESTAMP DEFAULT NOW())""")
         connection.execute("CREATE TABLE m5_cycles(id BIGINT PRIMARY KEY)")
@@ -41,7 +47,14 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
             created_at TIMESTAMP NOT NULL DEFAULT NOW(),UNIQUE(organization_context_id,version))""")
         ensure_questionnaire_source_schema(connection)
         ensure_report_access_schema(connection)
-        connection.execute("INSERT INTO organization_memberships VALUES(10,2,'admin')")
+        connection.execute("INSERT INTO organization_memberships VALUES(10,1,'member'),(10,2,'admin')")
+        connection.execute("""INSERT INTO organization_invitations(
+            organization_id,recipient_email,purpose,assignment_ref,created_by_user_id,revoked_at)
+            VALUES
+              (10,'participant@example.test','personal_registration','synthetic-assignment',2,NULL),
+              (10,'admin@example.test','personal_registration','synthetic-assignment',1,NULL),
+              (10,'participant@example.test','personal_registration','second-assignment',2,NULL),
+              (10,'admin@example.test','personal_registration','second-assignment',1,NOW())""")
 
         kwargs = dict(
             organization_id=10, assignment_ref="synthetic-assignment", channel="csv",
@@ -126,6 +139,9 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         )
         assert first_admin["assignment_ref"] == "synthetic-assignment"
         assert second_admin["assignment_ref"] == "second-assignment"
+        assert first_admin["roles"]["total"] == 2
+        assert second_admin["roles"]["total"] == 1
+        assert missing_admin["roles"]["total"] == 0
         assert first_admin["early"]["status"] == second_admin["early"]["status"] == "ready"
         assert missing_admin["early"]["status"] == "data_missing"
 
