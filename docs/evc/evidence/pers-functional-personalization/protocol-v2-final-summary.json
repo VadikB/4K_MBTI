@@ -1,0 +1,344 @@
+{
+  "schema_version": 2,
+  "created_at": "2026-10-22T14:30:43.057320+00:00",
+  "protocol": {
+    "id": "m5-functional-personalization-tester",
+    "version": "2.0.0",
+    "checksum": "d921f29c2a644bd4e3229758679cab4f7e67ee95bd738dad7d7e901154389f15"
+  },
+  "matrix_total": 27,
+  "final_status_counts": {
+    "PASS": 25,
+    "TECHNICAL_ERROR": 2
+  },
+  "admitted": 25,
+  "positions": [
+    {
+      "test_id": "PROFILE.01.1",
+      "case_id": "CASE.SPEC.01",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "PASS",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "none",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/tester-v2/profile-01-1.json"
+    },
+    {
+      "test_id": "PROFILE.01.2",
+      "case_id": "CASE.SPEC.01",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-01-2.json"
+    },
+    {
+      "test_id": "PROFILE.01.3",
+      "case_id": "CASE.SPEC.01",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-01-3.json"
+    },
+    {
+      "test_id": "PROFILE.02.1",
+      "case_id": "CASE.SPEC.02",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "PASS",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "none",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/tester-v2/profile-02-1.json"
+    },
+    {
+      "test_id": "PROFILE.02.2",
+      "case_id": "CASE.SPEC.02",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "localized_blocker_repair",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/remediation-v2/tester/profile-02-2.json"
+    },
+    {
+      "test_id": "PROFILE.02.3",
+      "case_id": "CASE.SPEC.02",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "PASS",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "none",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/tester-v2/profile-02-3.json"
+    },
+    {
+      "test_id": "PROFILE.03.1",
+      "case_id": "CASE.SPEC.03",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "PASS",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "none",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/tester-v2/profile-03-1.json"
+    },
+    {
+      "test_id": "PROFILE.03.2",
+      "case_id": "CASE.SPEC.03",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "PASS",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "none",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/tester-v2/profile-03-2.json"
+    },
+    {
+      "test_id": "PROFILE.03.3",
+      "case_id": "CASE.SPEC.03",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "PASS",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "none",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/tester-v2/profile-03-3.json"
+    },
+    {
+      "test_id": "PROFILE.04.1",
+      "case_id": "CASE.SPEC.04",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-04-1.json"
+    },
+    {
+      "test_id": "PROFILE.04.2",
+      "case_id": "CASE.SPEC.04",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-04-2.json"
+    },
+    {
+      "test_id": "PROFILE.04.3",
+      "case_id": "CASE.SPEC.04",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-04-3.json"
+    },
+    {
+      "test_id": "PROFILE.05.1",
+      "case_id": "CASE.SPEC.05",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-05-1.json"
+    },
+    {
+      "test_id": "PROFILE.05.2",
+      "case_id": "CASE.SPEC.05",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-05-2.json"
+    },
+    {
+      "test_id": "PROFILE.05.3",
+      "case_id": "CASE.SPEC.05",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "PASS",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "none",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/tester-v2/profile-05-3.json"
+    },
+    {
+      "test_id": "PROFILE.06.1",
+      "case_id": "CASE.SPEC.06",
+      "original_status": "TECHNICAL_ERROR",
+      "protocol_v2_initial_status": "NOT_RUN",
+      "final_status": "TECHNICAL_ERROR",
+      "admitted": false,
+      "fate": "generation_or_tester_chain_not_completed",
+      "reason": "DeepSeek response was truncated",
+      "error_type": "LlmGatewayError"
+    },
+    {
+      "test_id": "PROFILE.06.2",
+      "case_id": "CASE.SPEC.06",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-06-2.json"
+    },
+    {
+      "test_id": "PROFILE.06.3",
+      "case_id": "CASE.SPEC.06",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-06-3.json"
+    },
+    {
+      "test_id": "PROFILE.07.1",
+      "case_id": "CASE.SPEC.07",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-07-1.json"
+    },
+    {
+      "test_id": "PROFILE.07.2",
+      "case_id": "CASE.SPEC.07",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "PASS",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "none",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/tester-v2/profile-07-2.json"
+    },
+    {
+      "test_id": "PROFILE.07.3",
+      "case_id": "CASE.SPEC.07",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "PASS",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "none",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/tester-v2/profile-07-3.json"
+    },
+    {
+      "test_id": "PROFILE.08.1",
+      "case_id": "CASE.SPEC.08",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-08-1.json"
+    },
+    {
+      "test_id": "PROFILE.08.2",
+      "case_id": "CASE.SPEC.08",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-08-2.json"
+    },
+    {
+      "test_id": "PROFILE.08.3",
+      "case_id": "CASE.SPEC.08",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-08-3.json"
+    },
+    {
+      "test_id": "PROFILE.09.1",
+      "case_id": "CASE.SPEC.09",
+      "original_status": "TECHNICAL_ERROR",
+      "protocol_v2_initial_status": "NOT_RUN",
+      "final_status": "TECHNICAL_ERROR",
+      "admitted": false,
+      "fate": "generation_or_tester_chain_not_completed",
+      "reason": "DeepSeek request timed out",
+      "error_type": "LlmGatewayError"
+    },
+    {
+      "test_id": "PROFILE.09.2",
+      "case_id": "CASE.SPEC.09",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "FAIL",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "known_response_envelope_removed",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/tester/profile-09-2.json"
+    },
+    {
+      "test_id": "PROFILE.09.3",
+      "case_id": "CASE.SPEC.09",
+      "original_status": "FAIL",
+      "protocol_v2_initial_status": "PASS",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "none",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/tester-v2/profile-09-3.json"
+    }
+  ],
+  "resolved_cause_groups": [
+    {
+      "code": "INVALID_NOT_APPLICABLE_AGGREGATION",
+      "affected": 22,
+      "resolution": "Системно неприменимая conditional-проверка больше не считается невыполненной."
+    },
+    {
+      "code": "KNOWN_RESPONSE_ENVELOPE",
+      "affected": 14,
+      "resolution": "Строго опознанный response envelope снят; AS не изменялась; tester v2 повторён."
+    },
+    {
+      "code": "PROFESSIONAL_SUBJECT_MISMATCH",
+      "affected": 1,
+      "test_ids": [
+        "PROFILE.02.2"
+      ],
+      "paths": [
+        "Материалы[0..6].Текст",
+        "Словарь",
+        "IndicatorObservability",
+        "Числовые связи для QA"
+      ],
+      "requirement_refs": [
+        "common.professional_consistency",
+        "common.scenario_executability",
+        "invariant:CASE.SPEC.02.I01"
+      ],
+      "resolution": "Все зависимые фрагменты приведены к одному предмету; повторный tester v2 = PASS."
+    }
+  ],
+  "remaining_blockers": [
+    {
+      "test_id": "PROFILE.06.1",
+      "case_id": "CASE.SPEC.06",
+      "original_status": "TECHNICAL_ERROR",
+      "protocol_v2_initial_status": "NOT_RUN",
+      "final_status": "TECHNICAL_ERROR",
+      "admitted": false,
+      "fate": "generation_or_tester_chain_not_completed",
+      "reason": "DeepSeek response was truncated",
+      "error_type": "LlmGatewayError"
+    },
+    {
+      "test_id": "PROFILE.09.1",
+      "case_id": "CASE.SPEC.09",
+      "original_status": "TECHNICAL_ERROR",
+      "protocol_v2_initial_status": "NOT_RUN",
+      "final_status": "TECHNICAL_ERROR",
+      "admitted": false,
+      "fate": "generation_or_tester_chain_not_completed",
+      "reason": "DeepSeek request timed out",
+      "error_type": "LlmGatewayError"
+    }
+  ]
+}

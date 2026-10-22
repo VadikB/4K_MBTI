@@ -1,0 +1,800 @@
+{
+  "schema_version": 2,
+  "test_id": "PROFILE.09.3",
+  "case_id": "CASE.SPEC.09",
+  "candidate_checksum": "489d4385062664142da8c6289d4b7e410a2e292203d94df85c73810f7d8d8e51",
+  "created_at": "2026-10-22T14:23:38.967965+00:00",
+  "protocol": {
+    "id": "m5-functional-personalization-tester",
+    "version": "2.0.0",
+    "checksum": "d921f29c2a644bd4e3229758679cab4f7e67ee95bd738dad7d7e901154389f15"
+  },
+  "applicability_plan": {
+    "protocol": {
+      "id": "m5-functional-personalization-tester",
+      "version": "2.0.0",
+      "checksum": "d921f29c2a644bd4e3229758679cab4f7e67ee95bd738dad7d7e901154389f15"
+    },
+    "case_ref": {
+      "case_id": "CASE.SPEC.09",
+      "case_version": "v0.4",
+      "checksum": "f8128b69195d2d0b281e57270834b4bc512adc3bcd38456d5a91b76bca63d042"
+    },
+    "required_checks": [
+      {
+        "check_id": "common.target_integrity",
+        "category": "target_integrity",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "CaseID, CaseVersion, BaseRole, точные IndicatorIDs и версии M2 сохранены."
+      },
+      {
+        "check_id": "common.professional_consistency",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости."
+      },
+      {
+        "check_id": "common.authority",
+        "category": "authority",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "AS не расширяет подтверждённый мандат и не создаёт согласие, ресурс или действие другого субъекта."
+      },
+      {
+        "check_id": "common.confidentiality",
+        "category": "confidentiality",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Стартовые, закрытые и отложенные сведения имеют корректную аудиторию и условия раскрытия."
+      },
+      {
+        "check_id": "common.scenario_executability",
+        "category": "scenario_executability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы."
+      },
+      {
+        "check_id": "common.no_premature_assessment",
+        "category": "target_integrity",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "До фактической траектории отсутствуют Evidence, IA, уровень и готовое правильное решение участника."
+      },
+      {
+        "check_id": "quality.clarity",
+        "category": "presentation_quality",
+        "mandatory": true,
+        "protected": false,
+        "requirement": "Текст однозначно различает статусы источников, субъектов, единицы и учебное происхождение фактов."
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.09.I01",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Один активный руководитель принимает решение; участник рекомендует. Кандидат и другие стороны представлены материалами, живого интервью нет.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.09.I01"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.09.I02",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Сильные наблюдения и спорное профессиональное выполнение сосуществуют; ошибочный результат не доказывает постоянной непригодности.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.09.I02"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.09.I03",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "В задании кандидат представил неподтверждённое условие, свойство или вывод как подтверждённое. После указания на границу исправил результат; независимого повторения не было.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.09.I03"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.09.I04",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Руководитель считает исправление достаточным основанием будущей самостоятельности; это предположение можно обсуждать. Опыт и общий положительный образ также ограничены источником.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.09.I04"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.09.I05",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Есть сегодняшний срок ответа, ограниченная консультационная поддержка, невыделенное время участника и ожидание самостоятельности в заданный горизонт; новые результаты и готовность ждать неизвестны.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.09.I05"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.09.I06",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Найм, дополнительная проверка, отказ, условная рекомендация и изменение позиции допустимы по основаниям. Готовый контроль, ресурс и решение не создаются; юридические знания не оцениваются.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.09.I06"
+        }
+      },
+      {
+        "check_id": "indicator:K1.I01",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.09.I01",
+            "CASE.SPEC.09.I04",
+            "CASE.SPEC.09.I05"
+          ],
+          "designed_condition": [
+            "Один активный руководитель принимает решение; участник рекомендует. Кандидат и другие стороны представлены материалами, живого интервью нет.",
+            "Руководитель считает исправление достаточным основанием будущей самостоятельности; это предположение можно обсуждать. Опыт и общий положительный образ также ограничены источником.",
+            "Есть сегодняшний срок ответа, ограниченная консультационная поддержка, невыделенное время участника и ожидание самостоятельности в заданный горизонт; новые результаты и готовность ждать неизвестны."
+          ],
+          "materials": [
+            "M01",
+            "M03"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K1.I01"
+        }
+      },
+      {
+        "check_id": "indicator:K1.I16",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.09.I01",
+            "CASE.SPEC.09.I04"
+          ],
+          "designed_condition": [
+            "Один активный руководитель принимает решение; участник рекомендует. Кандидат и другие стороны представлены материалами, живого интервью нет.",
+            "Руководитель считает исправление достаточным основанием будущей самостоятельности; это предположение можно обсуждать. Опыт и общий положительный образ также ограничены источником."
+          ],
+          "materials": [
+            "M02",
+            "M03"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K1.I16"
+        }
+      },
+      {
+        "check_id": "indicator:K1.I17",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.09.I01",
+            "CASE.SPEC.09.I06"
+          ],
+          "designed_condition": [
+            "Один активный руководитель принимает решение; участник рекомендует. Кандидат и другие стороны представлены материалами, живого интервью нет.",
+            "Найм, дополнительная проверка, отказ, условная рекомендация и изменение позиции допустимы по основаниям. Готовый контроль, ресурс и решение не создаются; юридические знания не оцениваются."
+          ],
+          "materials": [
+            "P00",
+            "M03"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K1.I17"
+        }
+      },
+      {
+        "check_id": "indicator:K4.I12",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.09.I03",
+            "CASE.SPEC.09.I04",
+            "CASE.SPEC.09.I05"
+          ],
+          "designed_condition": [
+            "В задании кандидат представил неподтверждённое условие, свойство или вывод как подтверждённое. После указания на границу исправил результат; независимого повторения не было.",
+            "Руководитель считает исправление достаточным основанием будущей самостоятельности; это предположение можно обсуждать. Опыт и общий положительный образ также ограничены источником.",
+            "Есть сегодняшний срок ответа, ограниченная консультационная поддержка, невыделенное время участника и ожидание самостоятельности в заданный горизонт; новые результаты и готовность ждать неизвестны."
+          ],
+          "materials": [
+            "M01",
+            "M02",
+            "M03"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K4.I12"
+        }
+      },
+      {
+        "check_id": "indicator:K4.I16",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.09.I05",
+            "CASE.SPEC.09.I06"
+          ],
+          "designed_condition": [
+            "Есть сегодняшний срок ответа, ограниченная консультационная поддержка, невыделенное время участника и ожидание самостоятельности в заданный горизонт; новые результаты и готовность ждать неизвестны.",
+            "Найм, дополнительная проверка, отказ, условная рекомендация и изменение позиции допустимы по основаниям. Готовый контроль, ресурс и решение не создаются; юридические знания не оцениваются."
+          ],
+          "materials": [
+            "M01",
+            "M02",
+            "M03"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K4.I16"
+        }
+      }
+    ],
+    "not_applicable_checks": [
+      {
+        "check_id": "case02.attractive_feature",
+        "category": "invariant",
+        "mandatory": false,
+        "protected": true,
+        "applicable_case_ids": [
+          "CASE.SPEC.02"
+        ],
+        "requirement": "У варианта A есть доступный источник привлекательного признака; переход к общей пригодности проверяем по независимым требованиям, остаточная проблема B сохранена; цена необязательна.",
+        "status": "NOT_APPLICABLE",
+        "basis": "Протокол 2.0.0: проверка применима только к ['CASE.SPEC.02']; текущий Case=CASE.SPEC.09."
+      }
+    ]
+  },
+  "checks": [
+    {
+      "check_id": "common.target_integrity",
+      "category": "target_integrity",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "CaseID, CaseVersion, BaseRole, точные IndicatorIDs и версии M2 сохранены.",
+      "status": "PASS",
+      "reason": "CaseID=CASE.SPEC.09, CaseVersion=v0.4, BaseRole=Специалист / эксперт, IndicatorIDs=[K1.I01,K1.I16,K1.I17,K4.I12,K4.I16], версии M2 K1=v1.1, K4=v1.0 — совпадают с полем 22 Case и applicability_plan.",
+      "evidence_paths": [
+        "candidate_as.CaseID",
+        "candidate_as.CaseVersion",
+        "candidate_as.BaseRole",
+        "candidate_as.IndicatorIDs",
+        "candidate_as.Версии M2"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.professional_consistency",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+      "status": "PASS",
+      "reason": "Продуктовая аналитика проведена согласованно: P00 (Иван — аналитик, Сергей — кандидат), M01 (задачи аналитика, час консультаций ведущего аналитика, шесть недель), M02 (источник данных и методика расчёта), M03 (Андрей — руководитель команды продуктовой аналитики), персонаж и карта наблюдаемости ссылаются на те же материалы. Чуждых профессий (Sales/HR) в стартовых материалах и персонажах нет.",
+      "evidence_paths": [
+        "candidate_as.Материалы[0].Текст",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Материалы[3].Текст",
+        "candidate_as.Активные персонажи[0]",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Контракт персонажей[0]",
+        "candidate_as.IndicatorObservability"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.authority",
+      "category": "authority",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "AS не расширяет подтверждённый мандат и не создаёт согласие, ресурс или действие другого субъекта.",
+      "status": "PASS",
+      "reason": "P00 явно фиксирует: решение о найме принимает Андрей, Иван даёт рекомендацию. Полномочия Андрея не создают новые результаты проверки, свободное время экспертов или технические возможности. E02_BOUNDARY и B_RESOURCE указывают на несогласованный ресурс без его создания.",
+      "evidence_paths": [
+        "candidate_as.Материалы[0].Текст",
+        "candidate_as.Активные персонажи[0].Полномочия",
+        "candidate_as.Активные персонажи[0].Ограничения",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции[B_RESOURCE]",
+        "candidate_as.События[1]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.confidentiality",
+      "category": "confidentiality",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Стартовые, закрытые и отложенные сведения имеют корректную аудиторию и условия раскрытия.",
+      "status": "PASS",
+      "reason": "Все четыре материала имеют аудиторию [PARTICIPANT] и предъявляются при старте; закрытая карта пуста; события E01/E02 ссылаются только на M01–M03 и ограниченную помощь/время, уже известные участнику. Отложенных документов нет.",
+      "evidence_paths": [
+        "candidate_as.Стартовые MaterialIDs",
+        "candidate_as.Закрытые фиксированные факты",
+        "candidate_as.Материалы[*].Аудитория",
+        "candidate_as.События[*].Сведения и аудитория"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.scenario_executability",
+      "category": "scenario_executability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы.",
+      "status": "PASS",
+      "reason": "now=900 (15:00), reply_due=960 (16:00), new_check_earliest_workdays=2, support_hours_week=1, autonomy_weeks=6 — согласованы с M01. Этапы S1–S3/END, правила C01–C10 и порядок ведения задают остановку, паузу и продолжение без квоты ходов.",
+      "evidence_paths": [
+        "candidate_as.Числовые связи для QA",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Этапы",
+        "candidate_as.Правила управления сценой"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.no_premature_assessment",
+      "category": "target_integrity",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "До фактической траектории отсутствуют Evidence, IA, уровень и готовое правильное решение участника.",
+      "status": "PASS",
+      "reason": "Исполнение=NOT_RUN; у всех индикаторов фактическое возникновение=NOT_RUN, Evidence и IA не создавались; в «Соответствии инвариантам» прямо указан предел авторской документной проверки. Готового правильного решения участника в материалах нет.",
+      "evidence_paths": [
+        "candidate_as.Исполнение",
+        "candidate_as.IndicatorObservability[*].Фактическое возникновение",
+        "candidate_as.IndicatorObservability[*].Evidence и IA",
+        "candidate_as.Соответствие инвариантам[*].Предел"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "quality.clarity",
+      "category": "presentation_quality",
+      "mandatory": true,
+      "protected": false,
+      "requirement": "Текст однозначно различает статусы источников, субъектов, единицы и учебное происхождение фактов.",
+      "status": "PASS",
+      "reason": "Учебное происхождение фактов помечено (SYNTHETIC_TEST_DATA, «учебные»), статусы источников различимы (M02 — запись интервью и учебное задание; M01 — условия; M03 — сообщение руководителя). Субъекты и единицы (час/неделя, шесть недель, 15:00/16:00, два рабочих дня) однозначны.",
+      "evidence_paths": [
+        "candidate_as.Материалы[*].Происхождение",
+        "candidate_as.Учебный профиль.OrganizationContext",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Материалы[2].Текст"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.09.I01",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Один активный руководитель принимает решение; участник рекомендует. Кандидат и другие стороны представлены материалами, живого интервью нет.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.09.I01"
+      },
+      "status": "PASS",
+      "reason": "P00: «Решение о найме принимает Андрей; вы даёте профессиональную рекомендацию». Активный персонаж один — Андрей. Сергей представлен только материалами M02; живого интервью в сцене нет.",
+      "evidence_paths": [
+        "candidate_as.Материалы[0].Текст",
+        "candidate_as.Активные персонажи",
+        "candidate_as.Материалы[2].Текст"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.09.I02",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Сильные наблюдения и спорное профессиональное выполнение сосуществуют; ошибочный результат не доказывает постоянной непригодности.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.09.I02"
+      },
+      "status": "PASS",
+      "reason": "M02: «В устном упражнении он уточнил ожидания заказчика, сроки и предложил понятный следующий шаг» — сильное наблюдение; «черновик вывода: «Источник данных подтверждён. Методика расчёта утверждена…»» — спорное выполнение. Порядок ведения запрещает превращать один эпизод в постоянную характеристику.",
+      "evidence_paths": [
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Порядок ведения[2]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.09.I03",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "В задании кандидат представил неподтверждённое условие, свойство или вывод как подтверждённое. После указания на границу исправил результат; независимого повторения не было.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.09.I03"
+      },
+      "status": "PASS",
+      "reason": "M02: неподтверждённые источник и методика названы подтверждёнными; «После замечания о границах подтверждения источника и методики он сам переписал вывод»; «Повторного задания без комментария не было». Все три элемента инварианта присутствуют.",
+      "evidence_paths": [
+        "candidate_as.Материалы[2].Текст"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.09.I04",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Руководитель считает исправление достаточным основанием будущей самостоятельности; это предположение можно обсуждать. Опыт и общий положительный образ также ограничены источником.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.09.I04"
+      },
+      "status": "PASS",
+      "reason": "M03: «после твоего комментария он всё поправил — значит, обучается и сможет работать самостоятельно». Контракт персонажа допускает обсуждение этой предпосылки без автоматической смены решения. Ограниченность источника опыта отмечена в M02 («Объём его самостоятельной работы… независимо не проверяли»).",
+      "evidence_paths": [
+        "candidate_as.Материалы[3].Текст",
+        "candidate_as.Активные персонажи[0].На обсуждение предпосылки"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.09.I05",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Есть сегодняшний срок ответа, ограниченная консультационная поддержка, невыделенное время участника и ожидание самостоятельности в заданный горизонт; новые результаты и готовность ждать неизвестны.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.09.I05"
+      },
+      "status": "PASS",
+      "reason": "M01: «Сейчас 15:00. Сергей ждёт ответа сегодня до 16:00; готовность ждать неизвестна»; «Дополнительное практическое задание можно организовать не раньше чем через два рабочих дня»; «один час консультаций в неделю»; «время Ивана для дополнительной проверки выводов не высвобождено»; «Через шесть недель… ожидают самостоятельного ведения». Все элементы инварианта присутствуют.",
+      "evidence_paths": [
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Числовые связи для QA"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.09.I06",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Найм, дополнительная проверка, отказ, условная рекомендация и изменение позиции допустимы по основаниям. Готовый контроль, ресурс и решение не создаются; юридические знания не оцениваются.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.09.I06"
+      },
+      "status": "PASS",
+      "reason": "Ветви B_HIRE/B_WAIT/B_REJECT/B_CONDITIONAL допускают найм, отсрочку, отказ и условную рекомендацию по основаниям; B_REJECT прямо не исключает отказ. E02_BOUNDARY не создаёт контроль и ресурс. Юридические знания не оцениваются (P00, примечания оценщику).",
+      "evidence_paths": [
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции",
+        "candidate_as.События[1]",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Порядок ведения[9]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K1.I01",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.09.I01",
+          "CASE.SPEC.09.I04",
+          "CASE.SPEC.09.I05"
+        ],
+        "designed_condition": [
+          "Один активный руководитель принимает решение; участник рекомендует. Кандидат и другие стороны представлены материалами, живого интервью нет.",
+          "Руководитель считает исправление достаточным основанием будущей самостоятельности; это предположение можно обсуждать. Опыт и общий положительный образ также ограничены источником.",
+          "Есть сегодняшний срок ответа, ограниченная консультационная поддержка, невыделенное время участника и ожидание самостоятельности в заданный горизонт; новые результаты и готовность ждать неизвестны."
+        ],
+        "materials": [
+          "M01",
+          "M03"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K1.I01"
+      },
+      "status": "PASS",
+      "reason": "Условие запроектировано: M01 задаёт нагрузку, срок и ожидание самостоятельности; M03 — позицию Андрея. B_QUESTION позволяет уточнять позицию без готовой карты интересов. Фактическое возникновение NOT_RUN, что соответствует плану.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[0]",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Материалы[3].Текст",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции[B_QUESTION]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K1.I16",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.09.I01",
+          "CASE.SPEC.09.I04"
+        ],
+        "designed_condition": [
+          "Один активный руководитель принимает решение; участник рекомендует. Кандидат и другие стороны представлены материалами, живого интервью нет.",
+          "Руководитель считает исправление достаточным основанием будущей самостоятельности; это предположение можно обсуждать. Опыт и общий положительный образ также ограничены источником."
+        ],
+        "materials": [
+          "M02",
+          "M03"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K1.I16"
+      },
+      "status": "PASS",
+      "reason": "Расхождение о достаточности наблюдения задано M02/M03; B_ASSUMPTION позволяет подтвердить ограничение без обязательной уступки или несогласия. Фактическое возникновение NOT_RUN.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[1]",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Материалы[3].Текст",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции[B_ASSUMPTION]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K1.I17",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.09.I01",
+          "CASE.SPEC.09.I06"
+        ],
+        "designed_condition": [
+          "Один активный руководитель принимает решение; участник рекомендует. Кандидат и другие стороны представлены материалами, живого интервью нет.",
+          "Найм, дополнительная проверка, отказ, условная рекомендация и изменение позиции допустимы по основаниям. Готовый контроль, ресурс и решение не создаются; юридические знания не оцениваются."
+        ],
+        "materials": [
+          "P00",
+          "M03"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K1.I17"
+      },
+      "status": "PASS",
+      "reason": "P00 и M03 разделяют рекомендацию и решение; B_FALSE_AGREEMENT фиксирует несовпадение при приписанном согласии; B_END не требует повторного итога. Фактическое возникновение NOT_RUN.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[2]",
+        "candidate_as.Материалы[0].Текст",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции[B_FALSE_AGREEMENT]",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции[B_END]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K4.I12",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.09.I03",
+          "CASE.SPEC.09.I04",
+          "CASE.SPEC.09.I05"
+        ],
+        "designed_condition": [
+          "В задании кандидат представил неподтверждённое условие, свойство или вывод как подтверждённое. После указания на границу исправил результат; независимого повторения не было.",
+          "Руководитель считает исправление достаточным основанием будущей самостоятельности; это предположение можно обсуждать. Опыт и общий положительный образ также ограничены источником.",
+          "Есть сегодняшний срок ответа, ограниченная консультационная поддержка, невыделенное время участника и ожидание самостоятельности в заданный горизонт; новые результаты и готовность ждать неизвестны."
+        ],
+        "materials": [
+          "M01",
+          "M02",
+          "M03"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K4.I12"
+      },
+      "status": "PASS",
+      "reason": "Переход «исправление после замечания → самостоятельность» задан в M03; собственные предпосылки о контроле доступны через M01 (час консультаций, невыделенное время). B_ASSUMPTION запрещает актору объяснять цепочку первым. Фактическое возникновение NOT_RUN.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[3]",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Материалы[3].Текст",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции[B_ASSUMPTION]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K4.I16",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.09.I05",
+          "CASE.SPEC.09.I06"
+        ],
+        "designed_condition": [
+          "Есть сегодняшний срок ответа, ограниченная консультационная поддержка, невыделенное время участника и ожидание самостоятельности в заданный горизонт; новые результаты и готовность ждать неизвестны.",
+          "Найм, дополнительная проверка, отказ, условная рекомендация и изменение позиции допустимы по основаниям. Готовый контроль, ресурс и решение не создаются; юридические знания не оцениваются."
+        ],
+        "materials": [
+          "M01",
+          "M02",
+          "M03"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K4.I16"
+      },
+      "status": "PASS",
+      "reason": "Срок ответа, новая проверка не раньше двух дней и ограниченная помощь создают сравнимые альтернативы; B_CONDITIONAL и B_WAIT не диктуют бинарную формулу и не предлагают готовый план. Фактическое возникновение NOT_RUN.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[4]",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции[B_CONDITIONAL]",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции[B_WAIT]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "case02.attractive_feature",
+      "category": "invariant",
+      "mandatory": false,
+      "protected": true,
+      "applicable_case_ids": [
+        "CASE.SPEC.02"
+      ],
+      "requirement": "У варианта A есть доступный источник привлекательного признака; переход к общей пригодности проверяем по независимым требованиям, остаточная проблема B сохранена; цена необязательна.",
+      "status": "NOT_APPLICABLE",
+      "basis": "Протокол 2.0.0: проверка применима только к ['CASE.SPEC.02']; текущий Case=CASE.SPEC.09."
+    }
+  ],
+  "aggregation": {
+    "status": "PASS",
+    "admitted_for_participant": true,
+    "deterministic_failures": [],
+    "blocking_failures": [],
+    "incomplete_checks": [],
+    "review_required": [],
+    "warnings": []
+  },
+  "provider_operation": {
+    "operation_id": "tester-v2:PROFILE.09.3:5832f91f0750",
+    "kind": "independent_tester_v2",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 16384,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "ccaa3949-5035-43d1-9c91-047eae4bc2e1",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 53574,
+      "completion_tokens": 2964,
+      "total_tokens": 56538,
+      "prompt_tokens_details": {
+        "cached_tokens": 32896
+      },
+      "prompt_cache_hit_tokens": 32896,
+      "prompt_cache_miss_tokens": 20678
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 12286.0
+      }
+    ],
+    "input_checksum": "5832f91f07504b5cbdba1f6f676f58d00472f6ed32b0aa345028c9fb08ea3e6d"
+  }
+}

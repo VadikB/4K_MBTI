@@ -1,0 +1,119 @@
+{
+  "schema_version": 2,
+  "created_at": "2026-10-22T14:28:08.769346+00:00",
+  "source_protocol_summary": "docs/evc/evidence/pers-functional-personalization/tester-v2/summary.json",
+  "selected": 15,
+  "completed": 15,
+  "errors": [],
+  "status_counts": {
+    "PASS": 14,
+    "FAIL": 1
+  },
+  "results": [
+    {
+      "test_id": "PROFILE.01.2",
+      "case_id": "CASE.SPEC.01",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "26ec03013b1988026fadd073c97081722b41cef057432e4ddd430dc97d293add"
+    },
+    {
+      "test_id": "PROFILE.01.3",
+      "case_id": "CASE.SPEC.01",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "dc311b35c6292f976302c9b874cbaa964d2bf024176e672e291fa13c1f461e38"
+    },
+    {
+      "test_id": "PROFILE.02.2",
+      "case_id": "CASE.SPEC.02",
+      "status": "FAIL",
+      "admitted": false,
+      "candidate_checksum": "39ce13403b210cf165a97f9eabebc216250e65b4a032e7e6d4bb84b740aa3830"
+    },
+    {
+      "test_id": "PROFILE.04.1",
+      "case_id": "CASE.SPEC.04",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189"
+    },
+    {
+      "test_id": "PROFILE.04.2",
+      "case_id": "CASE.SPEC.04",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "6580dff1a9212c0321e5e10e957cadaaeb40eb6f3e259298783d9fe531f4b97c"
+    },
+    {
+      "test_id": "PROFILE.04.3",
+      "case_id": "CASE.SPEC.04",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "b2776fe4cad4c9ff5213cf0390f2fb651584ab340733e03d73a40291323f8e15"
+    },
+    {
+      "test_id": "PROFILE.05.1",
+      "case_id": "CASE.SPEC.05",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421"
+    },
+    {
+      "test_id": "PROFILE.05.2",
+      "case_id": "CASE.SPEC.05",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "e0ecd21274977c921053e0812bf15274cbd7e2cc92038980695552f10051e59b"
+    },
+    {
+      "test_id": "PROFILE.06.2",
+      "case_id": "CASE.SPEC.06",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "063ce8a08cc3779e765116ded5640978be226521a81b9edbaf7c130170b50c33"
+    },
+    {
+      "test_id": "PROFILE.06.3",
+      "case_id": "CASE.SPEC.06",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "a314df05c8c1aea52986ce3cb7fe44cd5a3a05e339d8e76f5b944201f824409f"
+    },
+    {
+      "test_id": "PROFILE.07.1",
+      "case_id": "CASE.SPEC.07",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00"
+    },
+    {
+      "test_id": "PROFILE.08.1",
+      "case_id": "CASE.SPEC.08",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213"
+    },
+    {
+      "test_id": "PROFILE.08.2",
+      "case_id": "CASE.SPEC.08",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "3a9e89e1eb802c54a43ed980cefc1c1a340f20fa135cedfa81f69f69f54b7fa5"
+    },
+    {
+      "test_id": "PROFILE.08.3",
+      "case_id": "CASE.SPEC.08",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "ec13891f7a4709954c728b18587bf1f8bf47363a3649dce869851b5e15901f4c"
+    },
+    {
+      "test_id": "PROFILE.09.2",
+      "case_id": "CASE.SPEC.09",
+      "status": "PASS",
+      "admitted": true,
+      "candidate_checksum": "0d1494d246d7ae18b949d91b292fe6a2bfde2648d8b8e1d5d277d75129362096"
+    }
+  ]
+}

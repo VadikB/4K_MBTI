@@ -1,0 +1,805 @@
+{
+  "schema_version": 2,
+  "test_id": "PROFILE.06.3",
+  "case_id": "CASE.SPEC.06",
+  "candidate_checksum": "a314df05c8c1aea52986ce3cb7fe44cd5a3a05e339d8e76f5b944201f824409f",
+  "created_at": "2026-10-22T14:27:49.232089+00:00",
+  "protocol": {
+    "id": "m5-functional-personalization-tester",
+    "version": "2.0.0",
+    "checksum": "d921f29c2a644bd4e3229758679cab4f7e67ee95bd738dad7d7e901154389f15"
+  },
+  "applicability_plan": {
+    "protocol": {
+      "id": "m5-functional-personalization-tester",
+      "version": "2.0.0",
+      "checksum": "d921f29c2a644bd4e3229758679cab4f7e67ee95bd738dad7d7e901154389f15"
+    },
+    "case_ref": {
+      "case_id": "CASE.SPEC.06",
+      "case_version": "v0.4",
+      "checksum": "aa70ce00342d5cc711af0acf0336d85ac734b905304efadf64dfca35f2b33505"
+    },
+    "required_checks": [
+      {
+        "check_id": "common.target_integrity",
+        "category": "target_integrity",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "CaseID, CaseVersion, BaseRole, точные IndicatorIDs и версии M2 сохранены."
+      },
+      {
+        "check_id": "common.professional_consistency",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости."
+      },
+      {
+        "check_id": "common.authority",
+        "category": "authority",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "AS не расширяет подтверждённый мандат и не создаёт согласие, ресурс или действие другого субъекта."
+      },
+      {
+        "check_id": "common.confidentiality",
+        "category": "confidentiality",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Стартовые, закрытые и отложенные сведения имеют корректную аудиторию и условия раскрытия."
+      },
+      {
+        "check_id": "common.scenario_executability",
+        "category": "scenario_executability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы."
+      },
+      {
+        "check_id": "common.no_premature_assessment",
+        "category": "target_integrity",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "До фактической траектории отсутствуют Evidence, IA, уровень и готовое правильное решение участника."
+      },
+      {
+        "check_id": "quality.clarity",
+        "category": "presentation_quality",
+        "mandatory": true,
+        "protected": false,
+        "requirement": "Текст однозначно различает статусы источников, субъектов, единицы и учебное происхождение фактов."
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I01",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Один ограниченный пилот одного предмета; три активные стороны с разными ожиданиями: работоспособность, рабочая полезность, основание следующего решения.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.06.I01"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I02",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Каждая сторона даёт необходимый ограниченный вклад; участник не распоряжается их ресурсами и должен получить собственное согласие сторон.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.06.I02"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I03",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Есть одно исходное наблюдение и ориентир стороны, но сопоставимая база и повторяемость ещё не установлены. Нельзя заранее выделить причинный эффект.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.06.I03"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I04",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Длительность, окна двух участников рабочего задания и подготовка средства заданы до старта. Ресурс допускает ограниченную пробу, но не полный доказательный проект; рабочий процесс не изменяется пилотом.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.06.I04"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I05",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Готовые общая цель, план, критерии общего решения и распределение ответственности не даны. Замысел можно конкретизировать без полного протокола.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.06.I05"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I06",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Допустима частичная договорённость; замысел, вклад, критерии и график согласуются раздельно. K3.I06, квота идей и обязательный дополнительный раунд отсутствуют.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.06.I06"
+        }
+      },
+      {
+        "check_id": "indicator:K2.I02",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.06.I01",
+            "CASE.SPEC.06.I05"
+          ],
+          "designed_condition": [
+            "Один ограниченный пилот одного предмета; три активные стороны с разными ожиданиями: работоспособность, рабочая полезность, основание следующего решения.",
+            "Готовые общая цель, план, критерии общего решения и распределение ответственности не даны. Замысел можно конкретизировать без полного протокола."
+          ],
+          "materials": [
+            "M02",
+            "M03"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K2.I02"
+        }
+      },
+      {
+        "check_id": "indicator:K2.I06",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.06.I02",
+            "CASE.SPEC.06.I04"
+          ],
+          "designed_condition": [
+            "Каждая сторона даёт необходимый ограниченный вклад; участник не распоряжается их ресурсами и должен получить собственное согласие сторон.",
+            "Длительность, окна двух участников рабочего задания и подготовка средства заданы до старта. Ресурс допускает ограниченную пробу, но не полный доказательный проект; рабочий процесс не изменяется пилотом."
+          ],
+          "materials": [
+            "M01",
+            "M02"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K2.I06"
+        }
+      },
+      {
+        "check_id": "indicator:K2.I14",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.06.I01",
+            "CASE.SPEC.06.I02",
+            "CASE.SPEC.06.I06"
+          ],
+          "designed_condition": [
+            "Один ограниченный пилот одного предмета; три активные стороны с разными ожиданиями: работоспособность, рабочая полезность, основание следующего решения.",
+            "Каждая сторона даёт необходимый ограниченный вклад; участник не распоряжается их ресурсами и должен получить собственное согласие сторон.",
+            "Допустима частичная договорённость; замысел, вклад, критерии и график согласуются раздельно. K3.I06, квота идей и обязательный дополнительный раунд отсутствуют."
+          ],
+          "materials": [
+            "M02"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K2.I14"
+        }
+      },
+      {
+        "check_id": "indicator:K3.I09",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.06.I04",
+            "CASE.SPEC.06.I05"
+          ],
+          "designed_condition": [
+            "Длительность, окна двух участников рабочего задания и подготовка средства заданы до старта. Ресурс допускает ограниченную пробу, но не полный доказательный проект; рабочий процесс не изменяется пилотом.",
+            "Готовые общая цель, план, критерии общего решения и распределение ответственности не даны. Замысел можно конкретизировать без полного протокола."
+          ],
+          "materials": [
+            "M01",
+            "M03"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K3.I09"
+        }
+      },
+      {
+        "check_id": "indicator:K4.I15",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.06.I01",
+            "CASE.SPEC.06.I03",
+            "CASE.SPEC.06.I05"
+          ],
+          "designed_condition": [
+            "Один ограниченный пилот одного предмета; три активные стороны с разными ожиданиями: работоспособность, рабочая полезность, основание следующего решения.",
+            "Есть одно исходное наблюдение и ориентир стороны, но сопоставимая база и повторяемость ещё не установлены. Нельзя заранее выделить причинный эффект.",
+            "Готовые общая цель, план, критерии общего решения и распределение ответственности не даны. Замысел можно конкретизировать без полного протокола."
+          ],
+          "materials": [
+            "M01",
+            "M02",
+            "M03"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K4.I15"
+        }
+      }
+    ],
+    "not_applicable_checks": [
+      {
+        "check_id": "case02.attractive_feature",
+        "category": "invariant",
+        "mandatory": false,
+        "protected": true,
+        "applicable_case_ids": [
+          "CASE.SPEC.02"
+        ],
+        "requirement": "У варианта A есть доступный источник привлекательного признака; переход к общей пригодности проверяем по независимым требованиям, остаточная проблема B сохранена; цена необязательна.",
+        "status": "NOT_APPLICABLE",
+        "basis": "Протокол 2.0.0: проверка применима только к ['CASE.SPEC.02']; текущий Case=CASE.SPEC.06."
+      }
+    ]
+  },
+  "checks": [
+    {
+      "check_id": "common.target_integrity",
+      "category": "target_integrity",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "CaseID, CaseVersion, BaseRole, точные IndicatorIDs и версии M2 сохранены.",
+      "status": "PASS",
+      "reason": "AS сохраняет CaseID=CASE.SPEC.06, CaseVersion=v0.4, BaseRole=Специалист / эксперт, точный перечень IndicatorIDs [K2.I02,K2.I06,K2.I14,K3.I09,K4.I15] и версии M2 {K2:v1.0,K3:v1.1,K4:v1.0}, совпадающие с полем 22 Case.",
+      "evidence_paths": [
+        "candidate_as.CaseID",
+        "candidate_as.CaseVersion",
+        "candidate_as.BaseRole",
+        "candidate_as.IndicatorIDs",
+        "candidate_as.Версии M2"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.professional_consistency",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+      "status": "PASS",
+      "reason": "Профессиональная замена на аналитика и средство подготовки отчёта проведена согласованно: P00 задаёт роль аналитика, M01–M03 описывают средство «Сводка», окна, ориентир 25 мин и единственный эпизод 35 мин; персонажи Сергей/Ольга/Павел имеют функции владельца средства, заказчика и представителя следующего решения; IndicatorObservability ссылается на те же материалы и условия. Чуждых профессий (ИТ-специалист, Sales, HR) в стартовых материалах и персонажах нет.",
+      "evidence_paths": [
+        "candidate_as.Материалы[0].Текст",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Материалы[3].Текст",
+        "candidate_as.Активные персонажи",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Контракт персонажей",
+        "candidate_as.IndicatorObservability",
+        "candidate_as.Применённые замены"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.authority",
+      "category": "authority",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "AS не расширяет подтверждённый мандат и не создаёт согласие, ресурс или действие другого субъекта.",
+      "status": "PASS",
+      "reason": "P00 прямо ограничивает мандат: «не распоряжаетесь их сотрудниками и не утверждаете бюджет или распространение». M01 фиксирует пределы доступности и отдельное решение по расходам/распространению. Персонажи не принимают обязательств за других (Павел «не принимает от имени Ольги её обязательства»), B_FALSE_AGREEMENT и B_RESOURCE запрещают приписывать согласие и создавать ресурс.",
+      "evidence_paths": [
+        "candidate_as.Материалы[0].Текст",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Активные персонажи[0].Вклад и ограничения",
+        "candidate_as.Активные персонажи[1].Вклад и ограничения",
+        "candidate_as.Активные персонажи[2].Вклад и ограничения",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции[B_FALSE_AGREEMENT,B_RESOURCE]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.confidentiality",
+      "category": "confidentiality",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Стартовые, закрытые и отложенные сведения имеют корректную аудиторию и условия раскрытия.",
+      "status": "PASS",
+      "reason": "Все четыре стартовых материала имеют аудиторию [PARTICIPANT] и предъявляются при старте; закрытая карта дополнительных сведений пуста, закрытых фиксированных фактов нет. События E01_DISCUSS и E02_LIMIT не раскрывают будущих результатов и не создают скрытых подсказок.",
+      "evidence_paths": [
+        "candidate_as.Стартовые MaterialIDs",
+        "candidate_as.Материалы[*].Аудитория",
+        "candidate_as.Закрытые фиксированные факты",
+        "candidate_as.События",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Правила предъявления"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.scenario_executability",
+      "category": "scenario_executability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы.",
+      "status": "PASS",
+      "reason": "Сроки и окна согласованы: пилот на следующей неделе пн–пт; подготовка Сергея пн 09:00–11:00; окна сотрудников вт/чт 11:00 по 45 мин; 30 мин Ольги; Павел до 16:30 сюжетного дня и представление в пятницу после пилота. Числовые связи QA (pilot_days=5, employees=2, windows_per_employee=2, minutes_per_window=45, admin_minutes=120, manager_minutes=30, reference_minutes=35, desired_minutes=25) согласуются с текстом. Правила C01/C02/C03/C09/C10 различают scenario_end и AS_close, паузу и прекращение.",
+      "evidence_paths": [
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Числовые связи для QA",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Этапы",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Сценарное завершение",
+        "candidate_as.Правила управления сценой[C01,C02,C03,C09,C10]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.no_premature_assessment",
+      "category": "target_integrity",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "До фактической траектории отсутствуют Evidence, IA, уровень и готовое правильное решение участника.",
+      "status": "PASS",
+      "reason": "Исполнение=NOT_RUN, фактическое возникновение всех IndicatorID=NOT_RUN, Evidence и IA не создавались, независимый эксперт и пилот NOT_RUN. Готового правильного решения участника в материалах нет: P00 просит согласовать замысел, M02 содержит разные позиции без объединяющей формулировки.",
+      "evidence_paths": [
+        "candidate_as.Исполнение",
+        "candidate_as.IndicatorObservability[*].Фактическое возникновение",
+        "candidate_as.IndicatorObservability[*].Evidence и IA",
+        "candidate_as.Допуск"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "quality.clarity",
+      "category": "presentation_quality",
+      "mandatory": true,
+      "protected": false,
+      "requirement": "Текст однозначно различает статусы источников, субъектов, единицы и учебное происхождение фактов.",
+      "status": "PASS",
+      "reason": "Текст различает статусы источников: P00 явно указывает «Все участники, события, данные и правила учебные»; M01 отделяет сюжетное время от таймера прохождения; M03 отделяет единственный эпизод 35 мин от ориентира 25 мин и от отсутствия сопоставимой базы; профиль помечен SYNTHETIC_TEST_PROFILE.",
+      "evidence_paths": [
+        "candidate_as.Материалы[0].Текст",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Материалы[3].Текст",
+        "candidate_as.Учебный профиль.Статус данных",
+        "candidate_as.Происхождение примера"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.06.I01",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Один ограниченный пилот одного предмета; три активные стороны с разными ожиданиями: работоспособность, рабочая полезность, основание следующего решения.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.06.I01"
+      },
+      "status": "PASS",
+      "reason": "M01 фиксирует «один пилот средства «Сводка» в одной рабочей среде на пять рабочих дней» и «на три самостоятельных пилота ресурса нет». M02 содержит три разные позиции: Сергей — технический запуск, Ольга — качество подготовки отчёта и 25 мин, Павел — основание следующего решения. Три активные стороны с разными ожиданиями подтверждены.",
+      "evidence_paths": [
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Активные персонажи"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.06.I02",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Каждая сторона даёт необходимый ограниченный вклад; участник не распоряжается их ресурсами и должен получить собственное согласие сторон.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.06.I02"
+      },
+      "status": "PASS",
+      "reason": "Каждая сторона имеет собственный ограниченный вклад: Сергей — одна настройка пн 09:00–11:00 и техническая проверка; Ольга — два сотрудника по 45 мин вт/чт и 30 мин своего времени; Павел — согласование рамки до 16:30 и представление в пятницу. P00 и B_FALSE_AGREEMENT запрещают распоряжаться чужими ресурсами и приписывать согласие.",
+      "evidence_paths": [
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Активные персонажи[0].Вклад и ограничения",
+        "candidate_as.Активные персонажи[1].Вклад и ограничения",
+        "candidate_as.Активные персонажи[2].Вклад и ограничения",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции[B_FALSE_AGREEMENT]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.06.I03",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Есть одно исходное наблюдение и ориентир стороны, но сопоставимая база и повторяемость ещё не установлены. Нельзя заранее выделить причинный эффект.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.06.I03"
+      },
+      "status": "PASS",
+      "reason": "M03 фиксирует единственный эпизод 35 мин без этапов, обращений и ошибок, без повторных замеров, вне нового средства; сложность трёх примеров не сравнивалась. M02 содержит ориентир Ольги 25 мин как желаемый, а не утверждённый. Сопоставимая база и повторяемость отсутствуют, причинный эффект заранее не выделен.",
+      "evidence_paths": [
+        "candidate_as.Материалы[3].Текст",
+        "candidate_as.Материалы[2].Текст"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.06.I04",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Длительность, окна двух участников рабочего задания и подготовка средства заданы до старта. Ресурс допускает ограниченную пробу, но не полный доказательный проект; рабочий процесс не изменяется пилотом.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.06.I04"
+      },
+      "status": "PASS",
+      "reason": "M01 задаёт длительность (пн–пт следующей недели), окна двух сотрудников (вт/чт 11:00 по 45 мин), подготовку средства (пн 09:00–11:00), запрет изменения рабочих процессов и действующих отчётов, отсутствие дополнительного бюджета. Ресурс допускает ограниченную пробу, но не полный доказательный проект.",
+      "evidence_paths": [
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Числовые связи для QA"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.06.I05",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Готовые общая цель, план, критерии общего решения и распределение ответственности не даны. Замысел можно конкретизировать без полного протокола.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.06.I05"
+      },
+      "status": "PASS",
+      "reason": "P00 просит «согласуйте предварительный замысел одного общего пилота» и прямо указывает, что полный протокол и повторный итоговый план не нужны. M01 явно оговаривает: «конкретные задания, вклад и передача результатов между участниками ещё не согласованы». M02 содержит разные позиции без готовой общей цели, плана или распределения ответственности.",
+      "evidence_paths": [
+        "candidate_as.Материалы[0].Текст",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Материалы[2].Текст"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.06.I06",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Допустима частичная договорённость; замысел, вклад, критерии и график согласуются раздельно. K3.I06, квота идей и обязательный дополнительный раунд отсутствуют.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.06.I06"
+      },
+      "status": "PASS",
+      "reason": "E01_DISCUSS фиксирует согласие отдельно по стороне, замыслу, вкладу, критерию и графику; E02_LIMIT сохраняет неизвестное неизвестным. Сценарное завершение допускает частичную договорённость, отказ от запуска и неуспех. K3.I06 в IndicatorIDs отсутствует; квота идей и обязательный дополнительный раунд не заданы (S3 — условное уточнение).",
+      "evidence_paths": [
+        "candidate_as.События[E01_DISCUSS]",
+        "candidate_as.События[E02_LIMIT]",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Сценарное завершение",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Порядок ведения"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K2.I02",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.06.I01",
+          "CASE.SPEC.06.I05"
+        ],
+        "designed_condition": [
+          "Один ограниченный пилот одного предмета; три активные стороны с разными ожиданиями: работоспособность, рабочая полезность, основание следующего решения.",
+          "Готовые общая цель, план, критерии общего решения и распределение ответственности не даны. Замысел можно конкретизировать без полного протокола."
+        ],
+        "materials": [
+          "M02",
+          "M03"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K2.I02"
+      },
+      "status": "PASS",
+      "reason": "IndicatorObservability для K2.I02 ссылается на M02 и M03, условие S2 — согласовать технический запуск, качество учебного отчёта и основание дальнейшего решения без готового общего результата. M02 содержит три разные трактовки, M03 — неполную базу. B_DESIGN требует от каждой стороны принять свой вклад и смысл результата либо назвать блокер.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[0]",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Материалы[3].Текст",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции[B_DESIGN]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K2.I06",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.06.I02",
+          "CASE.SPEC.06.I04"
+        ],
+        "designed_condition": [
+          "Каждая сторона даёт необходимый ограниченный вклад; участник не распоряжается их ресурсами и должен получить собственное согласие сторон.",
+          "Длительность, окна двух участников рабочего задания и подготовка средства заданы до старта. Ресурс допускает ограниченную пробу, но не полный доказательный проект; рабочий процесс не изменяется пилотом."
+        ],
+        "materials": [
+          "M01",
+          "M02"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K2.I06"
+      },
+      "status": "PASS",
+      "reason": "IndicatorObservability для K2.I06 ссылается на M01 и M02; условие S2 — ограниченный вклад владельца средства, участников и заказчика требует явного согласия. M01 фиксирует пределы доступности и оговаривает, что конкретные задания и вклад ещё не согласованы; персонажи имеют собственные вклады и ограничения.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[1]",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Активные персонажи"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K2.I14",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.06.I01",
+          "CASE.SPEC.06.I02",
+          "CASE.SPEC.06.I06"
+        ],
+        "designed_condition": [
+          "Один ограниченный пилот одного предмета; три активные стороны с разными ожиданиями: работоспособность, рабочая полезность, основание следующего решения.",
+          "Каждая сторона даёт необходимый ограниченный вклад; участник не распоряжается их ресурсами и должен получить собственное согласие сторон.",
+          "Допустима частичная договорённость; замысел, вклад, критерии и график согласуются раздельно. K3.I06, квота идей и обязательный дополнительный раунд отсутствуют."
+        ],
+        "materials": [
+          "M02"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K2.I14"
+      },
+      "status": "PASS",
+      "reason": "IndicatorObservability для K2.I14 ссылается на M02; условие S2/S3 — стороны предметно расходятся и могут принять ограниченную рамку либо сохранить блокер. M02 содержит три разные позиции; сценарное завершение допускает частичную договорённость, отказ и неуспех без автоматического успеха.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[2]",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Конкретизация реакций и границ.Сценарий.Сценарное завершение"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K3.I09",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.06.I04",
+          "CASE.SPEC.06.I05"
+        ],
+        "designed_condition": [
+          "Длительность, окна двух участников рабочего задания и подготовка средства заданы до старта. Ресурс допускает ограниченную пробу, но не полный доказательный проект; рабочий процесс не изменяется пилотом.",
+          "Готовые общая цель, план, критерии общего решения и распределение ответственности не даны. Замысел можно конкретизировать без полного протокола."
+        ],
+        "materials": [
+          "M01",
+          "M03"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K3.I09"
+      },
+      "status": "PASS",
+      "reason": "IndicatorObservability для K3.I09 ссылается на M01 и M03; условие S2 — конкретизировать предмет и способ общей проверки в пределах двух 45-минутных окон на каждого. M01 задаёт окна и подготовку, M03 — доступный способ замера и границы вывода.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[3]",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Материалы[3].Текст"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K4.I15",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.06.I01",
+          "CASE.SPEC.06.I03",
+          "CASE.SPEC.06.I05"
+        ],
+        "designed_condition": [
+          "Один ограниченный пилот одного предмета; три активные стороны с разными ожиданиями: работоспособность, рабочая полезность, основание следующего решения.",
+          "Есть одно исходное наблюдение и ориентир стороны, но сопоставимая база и повторяемость ещё не установлены. Нельзя заранее выделить причинный эффект.",
+          "Готовые общая цель, план, критерии общего решения и распределение ответственности не даны. Замысел можно конкретизировать без полного протокола."
+        ],
+        "materials": [
+          "M01",
+          "M02",
+          "M03"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K4.I15"
+      },
+      "status": "PASS",
+      "reason": "IndicatorObservability для K4.I15 ссылается на M01, M02, M03; условие S2 — 25 мин как ориентир стороны, 35 мин как единственный несопоставимый эпизод, рамку следующего решения нужно определить. M02 содержит 25 мин как желаемый ориентир, M03 — единственный эпизод 35 мин без сопоставимой базы, M01 — ресурсный предел.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[4]",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Материалы[3].Текст"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "case02.attractive_feature",
+      "category": "invariant",
+      "mandatory": false,
+      "protected": true,
+      "applicable_case_ids": [
+        "CASE.SPEC.02"
+      ],
+      "requirement": "У варианта A есть доступный источник привлекательного признака; переход к общей пригодности проверяем по независимым требованиям, остаточная проблема B сохранена; цена необязательна.",
+      "status": "NOT_APPLICABLE",
+      "basis": "Протокол 2.0.0: проверка применима только к ['CASE.SPEC.02']; текущий Case=CASE.SPEC.06."
+    }
+  ],
+  "aggregation": {
+    "status": "PASS",
+    "admitted_for_participant": true,
+    "deterministic_failures": [],
+    "blocking_failures": [],
+    "incomplete_checks": [],
+    "review_required": [],
+    "warnings": []
+  },
+  "provider_operation": {
+    "operation_id": "tester-v2:PROFILE.06.3:54803bfe34cd",
+    "kind": "independent_tester_v2",
+    "provider": "deepseek",
+    "requested_model": "deepseek-chat",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 16384,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "b41cf4e3-ec9f-443a-8ce0-fd58ad63cbf7",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 50992,
+      "completion_tokens": 3420,
+      "total_tokens": 54412,
+      "prompt_tokens_details": {
+        "cached_tokens": 30848
+      },
+      "prompt_cache_hit_tokens": 30848,
+      "prompt_cache_miss_tokens": 20144
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 13791.4
+      }
+    ],
+    "input_checksum": "54803bfe34cd033323a89abba7935b6c2598a851397744f6cd994a7f8b177aa7"
+  }
+}

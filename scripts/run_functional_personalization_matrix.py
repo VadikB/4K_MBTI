@@ -137,6 +137,20 @@ def deterministic_checks(inputs: dict[str, Any], candidate: Any) -> dict[str, An
     return {"status": "PASS" if all(c["result"] == "PASS" for c in checks) else "FAIL", "checks": checks}
 
 
+def extract_candidate_as(response_json: Any) -> tuple[Any, int]:
+    """Снять только известный технический конверт ответа, не изменяя AS."""
+    candidate, depth = response_json, 0
+    while (
+        isinstance(candidate, dict)
+        and "CaseID" not in candidate
+        and isinstance(candidate.get("candidate_as"), dict)
+        and set(candidate) <= {"profile", "candidate_as", "tester_conclusion", "repair_constraints"}
+    ):
+        candidate = candidate["candidate_as"]
+        depth += 1
+    return candidate, depth
+
+
 def _provider_record(response: Any, *, operation_id: str, kind: str, input_checksum: str) -> dict[str, Any]:
     sent = response.sent
     provider = response.provider
@@ -191,7 +205,7 @@ def generate_one(row: dict[str, Any], gateway: DeepSeekGateway) -> dict[str, Any
         messages, temperature=0.2, timeout_seconds=300, max_tokens=32768,
         routing_key=operation_id, response_format={"type": "json_object"},
     )
-    candidate = json.loads(response.content)
+    candidate, envelope_depth = extract_candidate_as(json.loads(response.content))
     deterministic = deterministic_checks(inputs, candidate)
     return {
         "schema_version": 1,
@@ -203,6 +217,7 @@ def generate_one(row: dict[str, Any], gateway: DeepSeekGateway) -> dict[str, Any
         "profile": inputs["profile"],
         "candidate_as": candidate,
         "candidate_checksum": digest(candidate),
+        "response_envelope_depth": envelope_depth,
         "deterministic_validation": deterministic,
         "provider_operation": _provider_record(response, operation_id=operation_id, kind="generation", input_checksum=input_checksum),
     }
@@ -274,7 +289,7 @@ def repair_one(generation: dict[str, Any], tested: dict[str, Any], gateway: Deep
         messages, temperature=0.1, timeout_seconds=300, max_tokens=32768,
         routing_key=operation_id, response_format={"type": "json_object"},
     )
-    candidate = json.loads(response.content)
+    candidate, envelope_depth = extract_candidate_as(json.loads(response.content))
     inputs = load_inputs({
         "TestID": generation["test_id"], "CaseID": generation["case_id"],
         "BaseRole": "specialist_expert",
@@ -296,6 +311,7 @@ def repair_one(generation: dict[str, Any], tested: dict[str, Any], gateway: Deep
         "created_at": datetime.now(timezone.utc).isoformat(),
         "candidate_as": candidate,
         "candidate_checksum": digest(candidate),
+        "response_envelope_depth": envelope_depth,
         "deterministic_validation": deterministic_checks(inputs, candidate),
         "provider_operation": _provider_record(response, operation_id=operation_id, kind="repair", input_checksum=input_checksum),
         "repair_history": history,

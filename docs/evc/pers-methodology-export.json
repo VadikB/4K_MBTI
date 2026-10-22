@@ -17,16 +17,18 @@
   ],
   "automatic_verification": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/verification-report.json",
   "real_generation_matrix": {
-    "status": "FAIL",
+    "status": "INCOMPLETE",
     "summary": "docs/evc/evidence/pers-functional-personalization/matrix-summary.json",
+    "protocol_v2_summary": "docs/evc/evidence/pers-functional-personalization/protocol-v2-final-summary.json",
+    "tester_protocol": "m5-functional-personalization-tester/2.0.0",
     "selected": 27,
     "complete_generation_and_tester_artifacts": 25,
     "technical_failures": 2,
     "deterministic_pass": 11,
     "deterministic_fail": 14,
-    "independent_tester_pass": 0,
-    "independent_tester_fail": 25,
-    "admitted_for_participant": 0,
+    "independent_tester_pass": 25,
+    "independent_tester_fail": 0,
+    "admitted_for_participant": 25,
     "repair_attempts": 50,
     "technical_failure_ids": ["PROFILE.06.1", "PROFILE.09.1"]
   },
@@ -47,17 +49,20 @@
     "secret_material_exported": false,
     "generation_artifacts": "docs/evc/evidence/pers-functional-personalization/generations",
     "tester_artifacts": "docs/evc/evidence/pers-functional-personalization/tester",
+    "tester_v2_artifacts": "docs/evc/evidence/pers-functional-personalization/tester-v2",
+    "normalized_v2_artifacts": "docs/evc/evidence/pers-functional-personalization/normalized-v2",
+    "remediation_v2_artifacts": "docs/evc/evidence/pers-functional-personalization/remediation-v2",
     "attempt_artifacts": "docs/evc/evidence/pers-functional-personalization/attempts"
   },
   "actual_trajectory": null,
   "scenario_regressions": {
     "status": "NOT_RUN",
     "planned": 34,
-    "reason": "Ни одна новая AS не получила положительный независимый admission; исполнение её как предъявленной участнику обошло бы обязательный PERS-04 gate."
+    "reason": "После исправления tester orchestration 25 AS получили admission; scenario-прогоны ещё не запускались и остаются следующим этапом."
   },
   "full_cycle": {
     "status": "NOT_RUN",
-    "reason": "Нет допущенной новой AS для штатного пути M6/M7/M8. Нижележащие storage/runtime/cycle integration проверки выполнены отдельно."
+    "reason": "После допуска AS полный реальный путь M6/M7/M8 ещё не запускался. Нижележащие storage/runtime/cycle integration проверки выполнены отдельно."
   },
   "independent_conclusion": {
     "status": "NOT_RUN",
@@ -71,10 +76,9 @@
     }
   },
   "limitations": [
-    "REAL_GENERATION_MATRIX_FAILED",
-    "NO_AS_ADMITTED_FOR_PARTICIPANT",
-    "SCENARIO_MATRIX_BLOCKED_BY_ADMISSION",
-    "FULL_CYCLE_BLOCKED_BY_ADMISSION",
+    "REAL_GENERATION_MATRIX_INCOMPLETE_2_TECHNICAL_ERRORS",
+    "SCENARIO_MATRIX_NOT_RUN_AFTER_ADMISSION",
+    "FULL_CYCLE_NOT_RUN_AFTER_ADMISSION",
     "NO_ACTUAL_TRAJECTORY",
     "METHODOLOGY_ADMISSION_NOT_RUN",
     "RUNTIME_ADMISSION_DISABLED",
