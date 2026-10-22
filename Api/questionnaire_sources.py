@@ -204,14 +204,28 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     definition.update(answers["C01"])
     definition.update({key: value for key, value in answers["C17"].items()
                        if key in {"case_reality_level", "organization_name_usage_rules", "restrictions"}})
+    authorized_recipients = []
+    if selected_users:
+        recipient_rows = connection.execute("""SELECT u.id,u.full_name,u.email
+            FROM organization_memberships om JOIN users u ON u.id=om.user_id
+            JOIN organizations o ON o.id=om.organization_id
+            WHERE om.organization_id=%s AND om.role='admin' AND o.is_active=TRUE AND u.id=ANY(%s)
+            ORDER BY LOWER(u.email)""", (organization_id, selected_users)).fetchall()
+        if {int(item["id"]) for item in recipient_rows} != set(selected_users):
+            raise ValueError("REPORT_RECIPIENT_SCOPE_CONFLICT")
+        authorized_recipients = [
+            {"user_id": int(item["id"]), "name": item["full_name"], "email": item["email"]}
+            for item in recipient_rows
+        ]
+    access_projection = recipient_access_projection(mapped)
     participant_briefing = {
         "purpose": answers["C02a"]["participant_text"],
         "customer_question": answers["C02b"].get("answer", ""),
         "organizer": answers["C21"]["organizer"],
         "responsible_contact": answers["C21"]["responsible_contact"],
         "results_usage": answers["C03"]["participant_text"],
-        "result_recipients": answers["C04"]["answer"],
-        "recipient_mapping": mapped,
+        "result_recipients": access_projection["result_recipients"],
+        "recipient_mapping": access_projection["recipient_mapping"],
         "organization_type": answers["C01"]["organization_type"],
         "provided_participant_fields": PROVIDED_PARTICIPANT_FIELDS,
         "participant_questions": PARTICIPANT_QUESTIONS,
@@ -221,18 +235,8 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
         "questionnaire_revision_id": int(row["id"]),
         "assignment_ref": str(row["assignment_ref"]),
     }
-    if selected_users:
-        recipient_rows = connection.execute("""SELECT u.id,u.full_name,u.email
-            FROM organization_memberships om JOIN users u ON u.id=om.user_id
-            JOIN organizations o ON o.id=om.organization_id
-            WHERE om.organization_id=%s AND om.role='admin' AND o.is_active=TRUE AND u.id=ANY(%s)
-            ORDER BY LOWER(u.email)""", (organization_id, selected_users)).fetchall()
-        if {int(item["id"]) for item in recipient_rows} != set(selected_users):
-            raise ValueError("REPORT_RECIPIENT_SCOPE_CONFLICT")
-        participant_briefing["authorized_recipients"] = [
-            {"user_id": int(item["id"]), "name": item["full_name"], "email": item["email"]}
-            for item in recipient_rows
-        ]
+    if authorized_recipients:
+        participant_briefing["authorized_recipients"] = authorized_recipients
     definition.pop("participant_briefing", None)
     version_id = create_organization_context_draft(
         connection, organization_id=organization_id, definition=definition,
@@ -383,8 +387,22 @@ def template_csv() -> str:
     return output.getvalue()
 
 
-def _participant_projection(answers: dict) -> dict:
+def recipient_access_projection(recipient_mapping: list[str] | None = None) -> dict:
+    """Participant-safe explanation derived only from the effective access mapping."""
+    mapped = sorted(set(recipient_mapping or ["participant"]))
+    return {
+        "recipient_mapping": mapped,
+        "result_recipients": (
+            "Результаты доступны участнику и выбранным представителям заказчика."
+            if "organization_admin" in mapped else
+            "Результаты доступны только участнику."
+        ),
+    }
+
+
+def _participant_projection(answers: dict, *, recipient_mapping: list[str] | None = None) -> dict:
     """Fields that a participant may see before starting an assessment."""
+    access = recipient_access_projection(recipient_mapping)
     return {
         "organization_name": str(answers.get("C01", {}).get("name") or ""),
         "organization_type": str(answers.get("C01", {}).get("organization_type") or ""),
@@ -392,7 +410,7 @@ def _participant_projection(answers: dict) -> dict:
         "activity_description": str(answers.get("C01", {}).get("activity_description") or ""),
         "purpose": str(answers.get("C02a", {}).get("participant_text") or ""),
         "results_usage": str(answers.get("C03", {}).get("participant_text") or ""),
-        "result_recipients": str(answers.get("C04", {}).get("answer") or ""),
+        "result_recipients": access["result_recipients"],
         "organizer": str(answers.get("C21", {}).get("organizer") or ""),
         "responsible_contact": str(answers.get("C21", {}).get("responsible_contact") or ""),
     }
@@ -410,8 +428,12 @@ def public_revision(row: dict, *, confirmed_row: dict | None = None) -> dict:
     """Admin-safe projection without raw source, checksums or internal request metadata."""
     item = dict(row)
     answers = dict(item.get("answers_json") or {})
-    participant_preview = _participant_projection(answers)
-    current_projection = _participant_projection(dict((confirmed_row or {}).get("answers_json") or {}))
+    recipient_mapping = list(item.get("recipient_mapping_json") or ["participant"])
+    current_mapping = list((confirmed_row or {}).get("recipient_mapping_json") or ["participant"])
+    participant_preview = _participant_projection(answers, recipient_mapping=recipient_mapping)
+    current_projection = _participant_projection(
+        dict((confirmed_row or {}).get("answers_json") or {}), recipient_mapping=current_mapping,
+    )
     return {
         "id": int(item["id"]), "assignment_ref": str(item["assignment_ref"]),
         "status": str(item["status"]), "channel": str(item["channel"]),
@@ -421,5 +443,11 @@ def public_revision(row: dict, *, confirmed_row: dict | None = None) -> dict:
         "changes": _projection_changes(current_projection, participant_preview),
         "is_first_publication": confirmed_row is None,
         "recipient_options": ["participant", "organization_admin"],
+        "recipient_projections": {
+            "participant": recipient_access_projection(["participant"])["result_recipients"],
+            "organization_admin": recipient_access_projection(
+                ["participant", "organization_admin"],
+            )["result_recipients"],
+        },
         "confirmed_at": item.get("confirmed_at"),
     }

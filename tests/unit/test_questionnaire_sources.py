@@ -4,7 +4,7 @@ import pytest
 
 from Api.questionnaire_sources import (
     PARTICIPANT_QUESTIONS, PARTICIPANT_QUESTION_SCHEMA, admin_assignment_readiness,
-    normalize_answers, parse_csv, public_revision,
+    normalize_answers, parse_csv, public_revision, recipient_access_projection,
 )
 
 
@@ -79,6 +79,21 @@ def test_public_preview_has_participant_projection_and_safe_diff():
     }]
     assert "questionnaire_revision_id" not in result["participant_preview"]
     assert "briefing" not in result
+
+
+def test_recipient_projection_ignores_contradictory_free_text():
+    answers = parse_csv(EXAMPLE.read_text())["answers"]
+    answers["C04"]["answer"] = "Результаты увидит только участник"
+    row = {"id": 3, "assignment_ref": "assessment-a", "status": "ready_for_confirmation",
+           "channel": "csv", "validation_json": {}, "answers_json": answers, "confirmed_at": None,
+           "recipient_mapping_json": ["participant", "organization_admin"]}
+    result = public_revision(row)
+    assert result["participant_preview"]["result_recipients"] == (
+        "Результаты доступны участнику и выбранным представителям заказчика."
+    )
+    assert recipient_access_projection(["participant"])["result_recipients"] == (
+        "Результаты доступны только участнику."
+    )
 
 
 class _One:

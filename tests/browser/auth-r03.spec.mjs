@@ -587,6 +587,10 @@ test('UX-FIX20-03 previews participant text, invalidates stale preview and appli
       },
       changes: [{ field: 'purpose', before: 'Старая цель', after: payload.answers.C02a.participant_text }],
       is_first_publication: false, recipient_options: ['participant', 'organization_admin'],
+      recipient_projections: {
+        participant: 'Результаты доступны только участнику.',
+        organization_admin: 'Результаты доступны участнику и выбранным представителям заказчика.',
+      },
     });
   });
   await page.route('**/users/admin/organizations/3/questionnaire/*/confirm', async (route) => {
@@ -614,7 +618,11 @@ test('UX-FIX20-03 previews participant text, invalidates stale preview and appli
   await expect(preview).toContainText('Что увидит участник');
   await expect(preview).toContainText('Новая цель участника');
   await expect(preview).toContainText('Старая цель');
+  await expect(preview.locator('[data-questionnaire-recipient-projection]'))
+    .toHaveText('Результаты доступны только участнику.');
   await preview.locator('[name="questionnaire_recipient"][value="organization_admin"]').check();
+  await expect(preview.locator('[data-questionnaire-recipient-projection]'))
+    .toHaveText('Результаты доступны участнику и выбранным представителям заказчика.');
   await expect(preview).toContainText('Обновите предпросмотр перед подтверждением');
   await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
 

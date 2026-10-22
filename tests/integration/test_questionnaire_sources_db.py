@@ -66,6 +66,13 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         assert version["status"] == "published"
         assert "participant_briefing" not in version["definition_json"]
         assert confirmed["briefing_json"]["purpose"]
+        assert confirmed["briefing_json"]["result_recipients"] == (
+            "Результаты доступны участнику и выбранным представителям заказчика."
+        )
+        assert confirmed["briefing_json"]["recipient_mapping"] == ["organization_admin", "participant"]
+        assert confirmed["briefing_json"]["authorized_recipients"] == [{
+            "user_id": 2, "name": "Администратор", "email": "admin@example.test",
+        }]
         assert confirmed["briefing_json"]["assignment_ref"] == "synthetic-assignment"
         assert version["source_manifest_json"]["questionnaire_revision_id"] == preview["id"]
         assert confirm(
