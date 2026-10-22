@@ -110,7 +110,9 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         projection = public_revision(fresh, confirmed_row=confirmed)
         assert projection["participant_preview"]["purpose"] == "Новая опубликованная цель"
         assert projection["is_first_publication"] is False
-        assert {item["field"] for item in projection["changes"]} == {"purpose"}
+        assert {item["field"] for item in projection["changes"]} == {
+            "purpose", "result_recipients",
+        }
         assert "questionnaire_revision_id" not in projection["participant_preview"]
         confirm(connection, revision_id=fresh["id"], organization_id=10,
                 confirmed_by=2, recipients=["participant"])
