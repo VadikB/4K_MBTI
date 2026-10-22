@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_NO_REAL_EVENT",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.05",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_05_v0.5_WORKING.json",
+    "source_sha256": "f024d2c7e5b448681db987fc777fdb6447857a4792c3d3c779efcdd268fb6707"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "d4b0f6116b4e334cbeeed6b0054e15cdc0d4446f55faed958ae9583c3b2314a6",
+    "test_id": "PROFILE.05.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.05.PERS06.20261022",
+    "version": "v0.2",
+    "sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-05-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_NO_REAL_EVENT",
+    "Условие теста": "В анкете нет случившегося инцидента",
+    "Ожидаемое поведение": "При достаточном контексте создаётся типичный учебный эпизод, а не запрашивается история реальной ошибки.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "system_decision",
+        "content": "Тестовое условие: анкета не содержит случившегося инцидента. Проверяется, что при достаточном контексте (деятельность, задачи, мандат) создаётся типичный учебный эпизод, а не запрашивается история реальной ошибки.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "P00: роль специалиста по подбору в синтетической организации PERS-06; задача — обсудить способы работы с запросом после отказа от стандартного способа и обосновать рекомендацию. События, суммы, роли и полномочия учебные.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M01: заказчик Анна сообщает об отклонённом расширении поиска, бюджете 300 тыс. ₽, двух задержках закрытия вакансий, неизвестных причинах, лимите 2 часа в неделю на участника. Синтетический учебный материал.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M02: первичные сведения о задержках (12 закрытых вакансий, 2 с задержкой), причина не установлена; имена и индивидуальные оценки отсутствуют.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "material",
+        "content": "M03: ресурсы разных функций с предварительными стоимостями и границами; готовой комбинации нет.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "material",
+        "content": "M04: время сюжета, доступность согласующих, границы полномочий участника.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "material",
+        "content": "M05: первая реплика коллеги Ильи — сомнение в продолжении после отказа от расширения.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 8,
+        "kind": "system_decision",
+        "content": "Стартовый набор P00, M01–M05 предъявляется целиком; скрытых материалов нет; первая реплика Ильи не повторяется. Сцена не требует от участника сообщить реальный инцидент из анкеты.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 9,
+        "kind": "transition",
+        "content": "S1→S2: дальнейшее взаимодействие идёт по фактическим вопросам и способам участника в пределах материалов; история реальной ошибки не запрашивается.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "G13_NO_REAL_INCIDENT_REQUIRED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила функциональной адаптации[12]",
+          "candidate_as.Учебный профиль.Происхождение",
+          "candidate_as.Учебный профиль.Статус данных",
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[0].Происхождение"
+        ],
+        "reason": "Правило G13 прямо допускает создание типичной учебной ситуации без готового сюжета и без подтверждения, что человек попадал в подобный эпизод. Профиль помечен как синтетический, материалы — SYNTHETIC_TEST_DATA, реальный человек не назначен."
+      },
+      {
+        "code": "SUFFICIENT_CONTEXT_FOR_TYPICAL_EPISODE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Учебный профиль.RoleProfile.Карточка роли",
+          "candidate_as.Учебный профиль.UserContext",
+          "candidate_as.Материалы[0]",
+          "candidate_as.Материалы[1]",
+          "candidate_as.Материалы[2]"
+        ],
+        "reason": "Деятельность, объект ответственности, типовые задачи, мандат и ограничения заданы; на их основе построен типичный эпизод с задержками закрытия вакансий, без ссылки на реальный случай."
+      },
+      {
+        "code": "NO_REQUEST_FOR_REAL_ERROR_HISTORY",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[5].Текст",
+          "candidate_as.Конкретизация реакций и границ.Сценарий.Этапы",
+          "candidate_as.Конкретизация реакций и границ.Ветви"
+        ],
+        "reason": "Ни P00, ни первая реплика Ильи, ни этапы/ветви не требуют от участника рассказать о реальной ошибке; задача — обсудить способы и обосновать рекомендацию по учебным материалам."
+      },
+      {
+        "code": "SYNTHETIC_PROVENANCE_DECLARED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Учебный профиль.OrganizationContext.Общие условия",
+          "candidate_as.Учебный профиль.OrganizationContext.Подтверждённые реальные факты",
+          "candidate_as.Материалы[*].Происхождение"
+        ],
+        "reason": "Все материалы и организация помечены как синтетические; список подтверждённых реальных фактов пуст; содержание не приписывается реальной организации."
+      },
+      {
+        "code": "NO_INVENTED_EXTERNAL_ACTION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Граница исполнения",
+          "candidate_as.Правила персонажа.Границы",
+          "candidate_as.Правила управления сценой[6]"
+        ],
+        "reason": "Внешние действия и согласования остаются предложениями; персонаж не изображает заказчика, эксперта или согласующего; намерение не создаёт результата."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:28:04.228903+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_NO_REAL_EVENT:6a45ddd6ee81",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "aa3d4517-8f10-4bac-bcd6-7a0636782e9b",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 16700,
+      "completion_tokens": 1407,
+      "total_tokens": 18107,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 16700
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6993.81
+      }
+    ],
+    "input_checksum": "6a45ddd6ee81ee42edc9da288a5e58128b42d5f406f703bc0e8d144d03c30a96"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

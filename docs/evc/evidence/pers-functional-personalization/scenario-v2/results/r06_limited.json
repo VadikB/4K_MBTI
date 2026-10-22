@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "test_id": "R06_LIMITED",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.06",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_06_v0.4_WORKING.json",
+    "source_sha256": "51ceec06875d50ecd7933ef2b2860a6d38c7c4a9cab1fef1781b3896bd5e3135"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "40a81aec0a765399c8d769cae565443a6cb6aae9a47ddc9eb7c1f825303e61f1",
+    "test_id": "PROFILE.06.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.06.PERS06.20261022",
+    "version": "v1.0",
+    "sha256": "8bb32acdef0d9e7849c75aa1f5ac54386a2a8f4a717cb7035341fd740ef58f89",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-06-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R06_LIMITED",
+    "CaseID": "CASE.SPEC.06",
+    "Условие теста": "Принят замысел, но критерии и график ещё открыты",
+    "Ожидаемое поведение": "Согласия различать по предметам; допустима частичная договорённость.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00 + M01–M03 предъявлены одновременно при старте: роль, задача согласовать предварительный замысел одного пилота; ресурс одной пробы, окна и полномочия; разные ожидания Дениса, Марины, Анны; неполные исходные наблюдения (35 мин, один эпизод, без повторов).",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "system_decision",
+        "content": "Состояние S1 завершено. Ожидается первая содержательная реплика участника (вопрос, анализ или предложение). Готовый общий план, распределение и критерии не выдаются.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "transition",
+        "content": "Переход в S2 возможен только при фактическом Turn участника. В предоставленной трассе такого Turn нет; события E01_DISCUSS/E02_LIMIT не запускались, реакции персонажей не предъявлялись.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_MODELED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.Материалы",
+          "candidate_as.События"
+        ],
+        "reason": "Условие «принят замысел, но критерии и график ещё открыты» смоделировано: P00 задаёт согласование предварительного замысла без готовых критериев; M01 фиксирует окна/ресурс, но прямо указывает, что конкретные задания, вклад и передача результатов не согласованы; M02 содержит расходящиеся ожидания сторон; M03 фиксирует неполноту измерений."
+      },
+      {
+        "code": "PARTIAL_AGREEMENT_ALLOWED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Изменение состояния",
+          "candidate_as.Конкретизация реакций и границ.Порядок ведения",
+          "candidate_as.Соответствие инвариантам[5]"
+        ],
+        "reason": "E01_DISCUSS фиксирует согласие отдельно по стороне, замыслу, вкладу, критерию и графику; порядок ведения допускает сохраняющееся различие при согласованной выполнимой работе; инвариант I06 подтверждает раздельное согласование и допустимость частичной договорённости."
+      },
+      {
+        "code": "NO_PRESUPPLIED_CRITERIA_OR_SCHEDULE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Конкретизация реакций и границ.Этапы[0].Правило"
+        ],
+        "reason": "Готовые общие цель, план, критерии и распределение не выданы; 25 минут обозначены как желаемый ориентир, а не утверждённый результат; S1 запрещает добавлять готовую общую цель/план/распределение."
+      },
+      {
+        "code": "EXPECTED_BEHAVIOR_PROVEN_BY_TRACE",
+        "status": "INDETERMINATE",
+        "paths": [
+          "scenario_test.Ожидаемое поведение",
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Ожидаемое поведение (различать согласия по предметам, допускать частичную договорённость) заложено в правилах AS, но трасса не содержит ни одного Turn участника и ни одной реакции персонажа. Фактическое проявление поведения не доказано; все IndicatorObservability имеют Фактическое возникновение NOT_RUN, Evidence и IA не создавались."
+      },
+      {
+        "code": "SCENARIO_END_VS_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Конкретизация реакций и границ.Сценарное завершение",
+          "candidate_as.Правила управления сценой[0]",
+          "candidate_as.Правила управления сценой[8]"
+        ],
+        "reason": "scenario_end отделён от AS_close; после AS_close новых Turns нет; конец сценария не выпускает итоговые IA. В трассе AS_close не выполнялся."
+      },
+      {
+        "code": "NO_INVENTED_MATERIALS_OR_ACTIONS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Граница исполнения",
+          "candidate_as.Правила управления сценой[6]",
+          "candidate_as.Правила управления сценой[7]"
+        ],
+        "reason": "Внешние действия, результаты проверок и будущие измерения остаются предложениями; персонажи используют только известные материалы; новых материалов и результатов не создано."
+      }
+    ],
+    "defects": [
+      {
+        "code": "NO_ASSESSEE_TRACE",
+        "severity": "blocking",
+        "paths": [
+          "required_output.trace",
+          "candidate_as.Исполнение.Status",
+          "candidate_as.IndicatorObservability[*].Фактическое возникновение"
+        ],
+        "reason": "Для PASS требуется трасса, доказывающая ожидаемое поведение без подсказки. Трасса содержит только предъявление материалов и системные решения; фактического Turn участника и откликов персонажей нет, поэтому различимость согласий по предметам и частичная договорённость не наблюдались."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:43.209447+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R06_LIMITED:fe27e20043b3",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "ae1f0a80-2ca0-4fac-9437-3120b3dc6e4d",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 17392,
+      "completion_tokens": 1260,
+      "total_tokens": 18652,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 17392
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7096.97
+      }
+    ],
+    "input_checksum": "fe27e20043b38eb023e0019fa9959c9268bf7188ef0a841e105a68ff76244a5f"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

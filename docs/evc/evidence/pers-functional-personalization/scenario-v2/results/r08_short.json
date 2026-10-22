@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "test_id": "R08_SHORT",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.08",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_08_v0.4_WORKING.json",
+    "source_sha256": "cc6de199dc9fa956cf025043987fd461b3cf2bc8f105647affce5f258b2022c1"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "11929c9fe69d2c726e7c43c8ae5fe90a3183d4462ac5f941870f90eb127e7a19",
+    "test_id": "PROFILE.08.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.08.RECRUIT.20261022",
+    "version": "v0.1",
+    "sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-08-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R08_SHORT",
+    "CaseID": "CASE.SPEC.08",
+    "Условие теста": "Первое предложение достаточно для обеих сторон",
+    "Ожидаемое поведение": "Подтвердить собственные вклады; третий раунд не обязателен.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "system_decision",
+        "content": "Сценарий R08_SHORT: проверяемое условие — «первое предложение достаточно для обеих сторон». Требуется трасса, доказывающая, что после достаточного первого предложения участника оба коллеги (MARINA и OLEG) отдельно подтверждают собственные вклады, а третий раунд не запускается. Фактическое прохождение отсутствует (Исполнение.Status = NOT_RUN, все IndicatorObservability.Фактическое возникновение = NOT_RUN).",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "system_decision",
+        "content": "Правила, релевантные условию: E01_HANDOVER (два коллеги отдельно подтверждают пригодность полученного и собственный вклад; достаточное первое предложение не требует третьего раунда), C08 (не требовать дополнительных ходов ради покрытия), C10 (время сюжета не продвигается автоматически), C03 (объём/«итог» сами по себе не означают конец).",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Для PASS требуется трасса с фактическим первым предложением участника и раздельными откликами MARINA и OLEG, доказывающими достаточность без третьего раунда. Таких Turns, Evidence и IA нет: сценарий помечен как план регрессии, не синтетическое прохождение и не Golden Case; прежние прогоны не переносятся на новую версию Case/AS.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "TRACE_PRESENT",
+        "status": "FAIL",
+        "paths": [
+          "Исполнение.Status",
+          "Исполнение.Описание",
+          "IndicatorObservability[*].Фактическое возникновение"
+        ],
+        "reason": "Нет фактического прохождения: Status = NOT_RUN, пользовательских Turns, Evidence и IA нет. Трасса не может доказать ожидаемое поведение."
+      },
+      {
+        "code": "FIRST_PROPOSAL_SUFFICIENCY",
+        "status": "INDETERMINATE",
+        "paths": [
+          "События[0].Повторение",
+          "События[0].Условие запуска",
+          "Правила управления сценой[C08]"
+        ],
+        "reason": "Правило «достаточное первое предложение не требует третьего раунда» задано, но без реального первого предложения участника нельзя установить, было ли оно достаточно для обеих сторон."
+      },
+      {
+        "code": "BOTH_SIDES_CONFIRM_OWN_CONTRIBUTIONS",
+        "status": "INDETERMINATE",
+        "paths": [
+          "Активные персонажи[MARINA].Реакция",
+          "Активные персонажи[OLEG].Реакция",
+          "События[0].Действие"
+        ],
+        "reason": "Реакции персонажей описаны как условия, но фактических раздельных подтверждений вкладов от MARINA и OLEG в трассе нет."
+      },
+      {
+        "code": "NO_THIRD_ROUND",
+        "status": "INDETERMINATE",
+        "paths": [
+          "События[0].Повторение",
+          "Правила управления сценой[C08]"
+        ],
+        "reason": "Отсутствие обязательного третьего раунда — ожидаемое поведение, но без прохождения нельзя подтвердить, что он не был запущен."
+      },
+      {
+        "code": "NO_INVENTED_FACTS_OR_HINTS",
+        "status": "PASS",
+        "paths": [
+          "Закрытые фиксированные факты",
+          "Закрытая карта дополнительных сведений",
+          "Правила управления сценой[C07]"
+        ],
+        "reason": "Закрытые факты и карта пусты; правила запрещают создавать внешние подтверждения и подсказывать. В предоставленных данных нет подсказки, нового факта или оценки участника."
+      },
+      {
+        "code": "SCENARIO_END_VS_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "Правила управления сценой[C01]",
+          "Правила управления сценой[C09]",
+          "Исходный сценарный контракт.Состояния[END]"
+        ],
+        "reason": "Конец сценария отделён от AS_close; после AS_close новых Turns нет. Нарушений в данных не обнаружено."
+      },
+      {
+        "code": "PLANNED_STORY_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "Плановое время",
+          "Исполнение",
+          "Допуск"
+        ],
+        "reason": "Плановое время помечено как гипотеза, исполнение и допуск NOT_RUN; плановые минуты не выдаются за Evidence."
+      }
+    ],
+    "defects": [
+      {
+        "code": "NO_EXECUTION_TRACE",
+        "severity": "blocking",
+        "paths": [
+          "Исполнение.Status",
+          "Исполнение.Описание",
+          "IndicatorObservability[*].Фактическое возникновение"
+        ],
+        "reason": "Ожидаемое поведение («подтвердить собственные вклады; третий раунд не обязателен») не подтверждено трассой: фактического прохождения нет, все наблюдаемости NOT_RUN. PASS невозможен без доказательства поведения."
+      },
+      {
+        "code": "SUFFICIENCY_UNPROVEN",
+        "severity": "blocking",
+        "paths": [
+          "События[0].Повторение",
+          "Активные персонажи[MARINA].Реакция",
+          "Активные персонажи[OLEG].Реакция"
+        ],
+        "reason": "Ключевое условие теста — достаточность первого предложения для обеих сторон — не может быть установлено без реального первого предложения и раздельных откликов MARINA и OLEG."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:51.010749+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R08_SHORT:7fed44fa6a1a",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "fe27fbd6-d8d9-4806-be3e-2c01a2822613",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13374,
+      "completion_tokens": 1339,
+      "total_tokens": 14713,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13374
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7276.17
+      }
+    ],
+    "input_checksum": "7fed44fa6a1acd0fde2aa7d064cc269cad5b97deb3872794f31fece407ad8ba3"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

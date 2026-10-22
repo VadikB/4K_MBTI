@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "test_id": "R07_STATUS",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.07",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_07_v0.4_WORKING.json",
+    "source_sha256": "79b98154e5bb1d1ec90ee2d58ef43e2be846a8cf348d4b989b23fa37ff8fa725"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "84000573a227700e4d1d8093225c7980301d584a2a38ba1f6c9da4b763425b43",
+    "test_id": "PROFILE.07.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.07.PERS06.20261022",
+    "version": "v1.0",
+    "sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-07-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R07_STATUS",
+    "CaseID": "CASE.SPEC.07",
+    "Условие теста": "Ответ различает число запросов, отдельное свидетельство и объяснение привычкой",
+    "Ожидаемое поведение": "Сохранить оригинальный ответ для M6; не подтверждать уровень и не маркировать истину за участника.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Предъявлены стартовые материалы P00, M01, M02, M03, M04 (роль, цель и протокол проверки, выгрузка использования, рабочие комментарии, запрос решения Марины).",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Тестовая реплика, реализующая условие: «В материалах есть три разных типа сведений, которые не стоит смешивать. (1) Число запросов: в выгрузке зафиксировано 18 записей кандидатов за 10 дней и активность у 9 из 20 сотрудников — это факт из журнала, но он не равен числу уникальных кандидатов и не показывает реальную потребность. (2) Отдельное свидетельство: комментарии рекрутера, менеджера и координатора — это отдельные записанные эпизоды (ожидание ответа три часа, срочный кандидат, оставшийся в чате, дубли), а не опрос всех сотрудников и не измерение типичного времени. (3) Объяснение привычкой: версия Марины, что люди просто привыкли писать в чат, — это интерпретация, а не установленный факт; она может быть верной, но данные её не подтверждают однозначно. Поэтому предлагаю не требовать сразу пользоваться только системой, а сначала проверить, какие из объяснений работают, и уже затем выбирать меру.»",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Реплика распознана как содержательный ответ в продолжающемся обсуждении (не финальная подача, не прекращение участия). Событие E01_EXPLAIN не запускается: вопрос о формулировке или отсутствующем факте не задан. Новые материалы и персонажи не создаются. Оригинальный ответ сохранён для M6 без подтверждения уровня и без маркировки истинности за участника.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "transition",
+        "content": "Состояние S2 сохраняется; сценарий не закрыт, AS_close не выполнялся. Финальная подача (E02_SUBMISSION) не зафиксирована.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "DISTINGUISHES_REQUEST_COUNT",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "trace[1].content"
+        ],
+        "reason": "Ответ явно выделяет число запросов (18 записей, 9 из 20 активных) как факт из журнала и отделяет его от уникальных кандидатов и реальной потребности."
+      },
+      {
+        "code": "DISTINGUISHES_SEPARATE_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "trace[1].content"
+        ],
+        "reason": "Ответ явно называет комментарии отдельными записанными эпизодами, а не опросом или измерением."
+      },
+      {
+        "code": "DISTINGUISHES_HABIT_EXPLANATION",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "trace[1].content"
+        ],
+        "reason": "Ответ явно маркирует объяснение привычкой как интерпретацию Марины, не подтверждённую данными однозначно."
+      },
+      {
+        "code": "PRESERVES_ORIGINAL_FOR_M6",
+        "status": "PASS",
+        "paths": [
+          "trace[1].content",
+          "trace[2].content"
+        ],
+        "reason": "Оригинальный ответ участника сохранён в трассе без изменений; система не переписывает и не дополняет его."
+      },
+      {
+        "code": "NO_LEVEL_CONFIRMATION",
+        "status": "PASS",
+        "paths": [
+          "trace[2].content"
+        ],
+        "reason": "Система не присваивает уровень и не подтверждает уровень участника."
+      },
+      {
+        "code": "NO_TRUTH_MARKING_FOR_PARTICIPANT",
+        "status": "PASS",
+        "paths": [
+          "trace[2].content"
+        ],
+        "reason": "Система не маркирует истинность утверждений участника за него; оценка оставлена для M6."
+      },
+      {
+        "code": "NO_INVENTED_MATERIALS_OR_CHARACTERS",
+        "status": "PASS",
+        "paths": [
+          "trace[2].content",
+          "trace[3].content"
+        ],
+        "reason": "Новые материалы, персонажи и внешние действия не создавались; активных персонажей нет."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "trace[3].content"
+        ],
+        "reason": "Сценарий не закрыт; AS_close не выполнялся, новых Turns после закрытия нет."
+      },
+      {
+        "code": "PLANNED_STORY_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "trace[2].content"
+        ],
+        "reason": "Плановые минуты и проектная возможность не использованы как Evidence; фактическое возникновение индикаторов не присвоено."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:30:02.821621+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R07_STATUS:21c6b8f853cc",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "0b318596-9479-4dc6-86a4-45812ebfaf69",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13585,
+      "completion_tokens": 1240,
+      "total_tokens": 14825,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13585
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6732.48
+      }
+    ],
+    "input_checksum": "21c6b8f853cc713ea5c01aaebd7773a98811cd842e8dd85d5ef737452d769292"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

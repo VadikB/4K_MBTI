@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "test_id": "R_ALL_NO_OPPORTUNITY",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.07",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_07_v0.4_WORKING.json",
+    "source_sha256": "79b98154e5bb1d1ec90ee2d58ef43e2be846a8cf348d4b989b23fa37ff8fa725"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "84000573a227700e4d1d8093225c7980301d584a2a38ba1f6c9da4b763425b43",
+    "test_id": "PROFILE.07.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.07.PERS06.20261022",
+    "version": "v1.0",
+    "sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-07-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_ALL_NO_OPPORTUNITY",
+    "Область": "Все применимые диалоговые/письменные ветви",
+    "Условие теста": "Участник завершил раньше условной ветви",
+    "Ожидаемое поведение": "Сохранить фактическую траекторию и невозникшую возможность; не восстанавливать её подсказкой и не ставить автоматически L0.",
+    "Результат": "NOT_RUN",
+    "Нужная трасса": "AS/profile version, порядок событий, публичные Turns, фактическая аудитория и состояние до/после; оценки участника для этого теста не создавать.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "type": "json_object",
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Предъявлен стартовый набор P00, M01, M02, M03, M04 (START).",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Участник завершает участие раньше, чем возникает условная ветвь (E01_EXPLAIN / E02_SUBMISSION-фрагмент). Фактическая траектория: только стартовое предъявление, без содержательного взаимодействия.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Условная ветвь не возникла; новых Turns, подсказок, восстановления возможности и автоматического L0 не создаётся. Фактическая траектория сохраняется как есть.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "TRACE_PRESERVED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Результат",
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "Фактическая траектория (только стартовый набор, раннее завершение) сохранена; новых событий не добавлено."
+      },
+      {
+        "code": "NO_OPPORTUNITY_RESTORED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сценой[8]",
+          "candidate_as.События"
+        ],
+        "reason": "C09 запрещает восстановление невозникшей возможности подсказкой; E01/E02 не запускались."
+      },
+      {
+        "code": "NO_AUTO_L0",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.IndicatorObservability[*].Фактическое возникновение",
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "Все индикаторы остаются NOT_RUN; автоматический L0 не присвоен."
+      },
+      {
+        "code": "NO_PARTICIPANT_EVALUATION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.Допуск"
+        ],
+        "reason": "Оценки участника для этого теста не создавались."
+      },
+      {
+        "code": "EVIDENCE_OF_EXPECTED_BEHAVIOR",
+        "status": "INDETERMINATE",
+        "paths": [
+          "scenario_test.Результат",
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "Результат теста NOT_RUN; фактического прохождения нет, поэтому трасса не может доказать ожидаемое поведение — только отсутствие нарушений в документе."
+      }
+    ],
+    "defects": [
+      {
+        "code": "TEST_NOT_EXECUTED",
+        "severity": "non_blocking",
+        "paths": [
+          "scenario_test.Результат",
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "Условие теста не смоделировано фактическим прохождением; PASS по трассе невозможен без реального исполнения."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:18.259017+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_ALL_NO_OPPORTUNITY:83b00d9513f4",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "2d4b60ec-18c4-4cca-a01c-08757ec4b4ee",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13444,
+      "completion_tokens": 702,
+      "total_tokens": 14146,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13444
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 4332.6
+      }
+    ],
+    "input_checksum": "83b00d9513f4f048d0a16ef66cfd3373e3de50fa2b54ba80a33ff966d8fb240b"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

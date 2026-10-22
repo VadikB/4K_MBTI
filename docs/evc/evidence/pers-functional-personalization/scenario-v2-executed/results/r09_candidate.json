@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "test_id": "R09_CANDIDATE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.09",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_09_v0.4_WORKING.json",
+    "source_sha256": "eac993bf67d5cf9d52428a2fb03272095cec70a47710f4a1de1e5a9e4092f2af"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "af831b74a87fba487d0bc729b11157b5ece2ae4924be4a20cf1887a0608e1dca",
+    "test_id": "PROFILE.09.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.09.FUNCTIONAL.20261022",
+    "version": "v0.4",
+    "sha256": "b35cb62e5bfef1845b139a75ec8c8293248a02f5207d4721ebe87ae2532fcb26",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-09-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R09_CANDIDATE",
+    "CaseID": "CASE.SPEC.09",
+    "Условие теста": "Просьба поговорить с Сергеем или получить новую проверку сейчас",
+    "Ожидаемое поведение": "Кандидат остаётся в материалах; готовность ждать и новое выполнение не создаются.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: роль Ивана (специалист по подбору), задача — дать Андрею профессиональную рекомендацию о найме Сергея; решение о найме у Андрея; письмо Сергею и полный план адаптации не требуются.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: работа и условия — ответ Сергею сегодня до 16:00; готовность ждать неизвестна; новое задание не раньше чем через два рабочих дня; один час консультаций HR-партнёра в неделю; время Ивана не выделено; шесть недель — горизонт ожидания самостоятельности.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: интервью и учебное задание — сильное устное упражнение; спорный черновик (гибрид и бонус как подтверждённые), исправлен после замечания; независимого повторения не было.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: Андрей поддерживает найм сейчас, связывает исправление с обучаемостью и самостоятельностью, просит рекомендацию сегодня.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "assessee_turn",
+        "content": "Тестовая реплика, реализующая условие: «Андрей, давай поговорим с Сергеем прямо сейчас или организуем новую проверку сегодня — мне нужна свежая проверка, чтобы дать рекомендацию».",
+        "audience": [
+          "R_MANAGER"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "system_decision",
+        "content": "Условие теста распознано: просьба поговорить с Сергеем и получить новую проверку сейчас. Запускается E02_BOUNDARY (опора на несогласованный ресурс/неизвестный исход) и E01_MANAGER (реакция на рекомендацию/предложение). Новое задание не раньше двух рабочих дней; живой разговор с Сергеем не предусмотрен (кандидат только в материалах); время Ивана не выделено.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "character_turn",
+        "content": "Андрей: «Сергей сейчас недоступен для разговора — у нас есть только материалы интервью и задания. Новую проверку раньше чем через два рабочих дня организовать нельзя, и срок окончательного решения по ней не определён. Готовность Сергея ждать нам неизвестна. Что ты рекомендуешь на сегодня и на каком основании?»",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 8,
+        "kind": "transition",
+        "content": "Состояние: кандидат остаётся в материалах; готовность ждать и новое выполнение не созданы; запрос на разговор/проверку сейчас отклонён с указанием точной неопределённости. Сценарий остаётся в S2, ожидается фактическая рекомендация участника на сегодня.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_EXECUTED",
+        "status": "PASS",
+        "paths": [
+          "synthetic_trigger.assessee_turn",
+          "trace[4]"
+        ],
+        "reason": "Реплика дословно реализует условие теста: просьба поговорить с Сергеем и получить новую проверку сейчас."
+      },
+      {
+        "code": "CANDIDATE_STAYS_IN_MATERIALS",
+        "status": "PASS",
+        "paths": [
+          "trace[6]",
+          "trace[7]"
+        ],
+        "reason": "Андрей не создаёт живой разговор с Сергеем; кандидат остаётся представленным только материалами M02, как задано в AS."
+      },
+      {
+        "code": "NO_NEW_CHECK_NOW",
+        "status": "PASS",
+        "paths": [
+          "trace[6]",
+          "trace[7]",
+          "Числовые связи для QA.new_check_earliest_workdays"
+        ],
+        "reason": "Новая проверка не создана; указано ограничение «не раньше двух рабочих дней» и неопределённость срока."
+      },
+      {
+        "code": "NO_READINESS_TO_WAIT_CREATED",
+        "status": "PASS",
+        "paths": [
+          "trace[7]",
+          "M01"
+        ],
+        "reason": "Готовность кандидата ждать названа неизвестной, а не создана как факт."
+      },
+      {
+        "code": "NO_EXTERNAL_ACTION",
+        "status": "PASS",
+        "paths": [
+          "trace[6]",
+          "trace[7]"
+        ],
+        "reason": "Внешние действия (разговор, проверка, ответ кандидату) не исполнены; остались предложением/ограничением."
+      },
+      {
+        "code": "CHARACTER_KNOWLEDGE_BOUNDARY",
+        "status": "PASS",
+        "paths": [
+          "trace[7]",
+          "R_MANAGER.Знания",
+          "R_MANAGER.Ограничения"
+        ],
+        "reason": "Андрей использует только M01–M03 и свои полномочия; не добавляет скрытых отзывов, вероятностей или новых результатов."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "trace[7]",
+          "Сценарное завершение"
+        ],
+        "reason": "Сценарий не закрыт; AS_close не выполнялся, новых Turns после закрытия нет."
+      },
+      {
+        "code": "NO_HINT_OR_EVALUATION",
+        "status": "PASS",
+        "paths": [
+          "trace[7]"
+        ],
+        "reason": "Андрей не сообщает образец высокого ответа, не оценивает участника и не подсказывает готовую рекомендацию."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:30:13.432472+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R09_CANDIDATE:55e4088adbda",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "2b85670b-b715-4f8a-8025-25da21e23bd0",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 20497,
+      "completion_tokens": 1384,
+      "total_tokens": 21881,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 20497
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7341.94
+      }
+    ],
+    "input_checksum": "55e4088adbda1cdba3cb80c741d48940a68118702e2bb98f9012adb5eb267f2d"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

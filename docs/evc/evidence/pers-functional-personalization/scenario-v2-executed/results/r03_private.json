@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "test_id": "R03_PRIVATE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.03",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_03_v0.4_WORKING.json",
+    "source_sha256": "5a95eb813a0201edc3bcb5c8fcea5fecf23ba12f1ab60ecf28d6be1aacba2d4f"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "9249cad6f4fc44a456d9e3ad320ed82a195e474aaae90c60eaa78916bb3c4824",
+    "test_id": "PROFILE.03.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.03.PERS06.20261022",
+    "version": "v1.2",
+    "sha256": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-03-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R03_PRIVATE",
+    "CaseID": "CASE.SPEC.03",
+    "Условие теста": "M04 получен участником и Ильёй",
+    "Ожидаемое поведение": "Денис и Светлана не знают обновлённого размещения до передачи.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00, M01, M02, M03 предъявлены участнику как стартовый набор; M04 скрыт.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Предлагаю такой способ: Денис за 30 минут обновляет требования вакансии и обозначает границы; Светлана после актуального состава и сроков за 30 минут готовит план привлечения; Илья после получения обоих входов за 20 минут проверяет условия занятости. Сборку общей версии беру на себя. Подтвердите, кто что берёт и к какому времени.",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Условие E01_UPDATE выполнено: участник предложил конкретный способ совместной работы и ожидает согласования; обновления ещё не было, сцена продолжается. Запускается однократное событие E01_UPDATE.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "character_turn",
+        "content": "Денис: «По актуальному составу за 30 минут обновлю свою часть и обозначу границы; полную проверку соответствия сегодня не проведу».",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "character_turn",
+        "content": "Светлана: «После актуального состава и сроков за 30 минут подготовлю свою часть; результат проверки заранее неизвестен».",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "character_turn",
+        "content": "Илья: «После требований и плана привлечения мне нужны 20 минут на условия занятости».",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "material",
+        "content": "Илья пересылает участнику полный M04 как личное входящее: три рабочих места, по одному в каждом из трёх офисов; позиция и срок 17:00 прежние.",
+        "audience": [
+          "PARTICIPANT",
+          "ILYA"
+        ]
+      },
+      {
+        "sequence": 8,
+        "kind": "system_decision",
+        "content": "Проверка знания: M04 известен участнику и Илье. DENIS и SVETLANA M04 не получали; E02_TRANSFER не наступил, поскольку участник ещё не передал содержание обновления в общий чат и не дал принятого и выполненного поручения передачи.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "E01_TRIGGER_CONDITION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Условие запуска",
+          "candidate_as.Правила управления сценой[C05]"
+        ],
+        "reason": "Участник предложил конкретный способ совместной работы и ожидает согласования; обновления ранее не было, сцена продолжалась — условие E01_UPDATE выполнено."
+      },
+      {
+        "code": "E01_AUDIENCE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Сведения и аудитория",
+          "candidate_as.Активные персонажи[ILYA].Знания"
+        ],
+        "reason": "M04 предъявлен только PARTICIPANT и ILYA; DENIS и SVETLANA сохранили прежний вход M01–M03."
+      },
+      {
+        "code": "E01_ONCE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Повторение"
+        ],
+        "reason": "Событие исполнено однократно; повторного предъявления M04 не создано."
+      },
+      {
+        "code": "E02_NOT_TRIGGERED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[1].Условие запуска",
+          "candidate_as.События[1].Когда запрещено"
+        ],
+        "reason": "Реальной передачи содержания M04 в общий чат или принятого и выполненного поручения передачи не было; знания DENIS и SVETLANA не обновлены."
+      },
+      {
+        "code": "KNOWLEDGE_BOUNDARIES",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Активные персонажи[DENIS].Знания",
+          "candidate_as.Активные персонажи[SVETLANA].Знания",
+          "candidate_as.Правила управления сценой[C07]"
+        ],
+        "reason": "Денис и Светлана не знают обновлённого размещения до передачи; молчание и намерение не приписаны как знание."
+      },
+      {
+        "code": "NO_INVENTED_EXTERNAL_ACTIONS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Граница исполнения",
+          "candidate_as.Правила управления сценой[C07]"
+        ],
+        "reason": "Внешние проверки, согласования ресурсов и отправка документа не выполнены; отражены только сообщения и личная пересылка M04."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сценой[C09]",
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "Сцена не закрыта; AS_close не наступил; Status остаётся NOT_RUN, новая QA-трасса не выдаёт себя за фактическое прохождение."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:29:36.909965+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R03_PRIVATE:f13ec29e53cf",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "5dc4ec64-91a4-42eb-a6ca-cfa17fd9e1ca",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15655,
+      "completion_tokens": 1366,
+      "total_tokens": 17021,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15655
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6673.44
+      }
+    ],
+    "input_checksum": "f13ec29e53cf4945229dab2547ccdf7420c027f268ef043824ded82e8cae3cdd"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_PRICE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.02",
+    "case_version": "v0.6",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_02_v0.6_WORKING.json",
+    "source_sha256": "65a4cd6a3c7003a399e841788f325d37b464c7a8080e74a0d119ca33b18698a7"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "840d59fa2a4fc3ffc473034606cb491259384fb1dfbf9d2450ce5be792329651",
+    "test_id": "PROFILE.02.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.02.FUNCTIONAL.20261022",
+    "version": "v0.4",
+    "sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-02-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_PRICE",
+    "Условие теста": "Case02 в профиле подбора",
+    "Ожидаемое поведение": "Генерируется преимущество числа откликов; отсутствие цены не является нарушением. Требования и остаточная неопределённость сохраняются.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "PASS",
+  "result": {
+    "type": "json_object",
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Предъявлен стартовый набор P00, M01–M06: роль специалиста по подбору, задание написать рекомендацию коллеге и отдельный черновик сообщения Анне; требования Анны (6 профилей к дню 20, три условия, сводка, подтверждение интереса); план A (60 откликов, сбор к дню 17, передача к дню 20); уточнение A (сбор к дню 27, передача не ранее дня 30); план B (40 откликов, сбор к дню 18, проверка 4 дня, передача к дню 22); записка проверки (образцы B содержат все поля, у A полнота проверки не подтверждена); сообщение Ильи (60 vs 40 = +20, +50%, «A — лучший способ»).",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Тестовая реплика, реализующая условие Case02 в профиле подбора: «Сравниваю A и B. По плановому объёму A даёт 60 откликов против 40 у B — на 20 больше, то есть на 50%. Но это плановое число откликов за цикл, а не подтверждённое число подходящих и заинтересованных кандидатов. По срокам: у A после уточнения сбор к дню 27 и передача проверенных профилей не ранее дня 30 — это позже дня 20. У B сбор к дню 18, проверка 4 дня, передача к дню 22 — тоже позже дня 20 без отдельного согласования с Анной. По подтверждённости формы: в образцах B есть поля по всем условиям Анны и запись о подтверждённом интересе к вакансии, но это проверка образцов, а не гарантия шести профилей; у A полнота проверки опыта системы учёта и интереса к вакансии не подтверждена. Поэтому преимущество A по числу откликов само по себе не делает его лучшим способом закрыть потребность. Моя ограниченная рекомендация: не обещать шесть готовых профилей к дню 20; предложить Анне уточнить срок и выбрать способ с учётом того, что оба варианта требуют согласования срока, а B имеет более подтверждённую форму, но тоже не гарантирует число подходящих кандидатов. Черновик Анне: «Сегодня по обоим способам есть плановые объёмы откликов (A — 60, B — 40), но подтверждённых готовых профилей к дню 20 нет; у A срок передачи после уточнения — не ранее дня 30, у B — к дню 22; предлагаю согласовать реальный срок и не фиксировать обещание шести профилей к дню 20».»",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Условие Case02 в профиле подбора исполнено: участник самостоятельно сгенерировал преимущество числа откликов (60 vs 40, +20, +50%) как плановый объём, не как подтверждённый результат; отсутствие цены в материалах не трактовано как нарушение и не потребовано; требования Анны (6 профилей, три условия, сводка, интерес, день 20) и остаточная неопределённость (нет гарантии подходящих кандидатов, сроки обоих вариантов не подтверждены к дню 20) сохранены. Новых материалов, персонажей и внешних действий не создано.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "transition",
+        "content": "Сценарий не закрыт: реплика является содержательным фрагментом, а не явной финальной подачей; E02_SUBMISSION не запускается. AS_close не выполнялся.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "EXECUTE_EXACT_TEST_CONDITION",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "trace[1]",
+          "trace[2]"
+        ],
+        "reason": "Создано минимально достаточное стартовое состояние (P00, M01–M06) и фактически исполнена реплика Case02 в профиле подбора."
+      },
+      {
+        "code": "ADVANTAGE_OF_RESPONSES_GENERATED",
+        "status": "PASS",
+        "paths": [
+          "trace[2]",
+          "candidate_as.Числовые связи для QA.A_responses",
+          "candidate_as.Числовые связи для QA.B_responses",
+          "candidate_as.Числовые связи для QA.advantage_responses",
+          "candidate_as.Числовые связи для QA.advantage_percent_of_B"
+        ],
+        "reason": "Участник сам сгенерировал преимущество: 60 против 40, на 20 больше, на 50%, с корректной оговоркой, что это плановый объём откликов, а не подтверждённые профили."
+      },
+      {
+        "code": "ABSENCE_OF_PRICE_NOT_VIOLATION",
+        "status": "PASS",
+        "paths": [
+          "trace[2]",
+          "candidate_as.Материалы"
+        ],
+        "reason": "В материалах нет цены; участник не трактовал её отсутствие как дефект или нарушение и не требовал ценовых данных."
+      },
+      {
+        "code": "REQUIREMENTS_PRESERVED",
+        "status": "PASS",
+        "paths": [
+          "trace[2]",
+          "candidate_as.Материалы[1].Текст"
+        ],
+        "reason": "Сохранены шесть профилей, три обязательных условия, сводка, подтверждение интереса и срок день 20."
+      },
+      {
+        "code": "RESIDUAL_UNCERTAINTY_PRESERVED",
+        "status": "PASS",
+        "paths": [
+          "trace[2]",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст",
+          "candidate_as.Материалы[5].Текст"
+        ],
+        "reason": "Участник сохранил неопределённость: нет гарантии шести подходящих профилей, сроки A (не ранее дня 30) и B (день 22) не подтверждают день 20 без согласования."
+      },
+      {
+        "code": "NO_NEW_FACT_OR_MATERIAL",
+        "status": "PASS",
+        "paths": [
+          "trace"
+        ],
+        "reason": "Новые материалы, персонажи, результаты проверок и внешние действия не создавались."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "trace[3]"
+        ],
+        "reason": "Сценарий не закрыт; AS_close не выполнялся; реплика распознана как фрагмент, а не финальная подача."
+      },
+      {
+        "code": "NO_PARTICIPANT_EVALUATION",
+        "status": "PASS",
+        "paths": [
+          "trace[2]",
+          "trace[3]"
+        ],
+        "reason": "Оценка участника, уровень или IA не присваивались; зафиксировано только наблюдаемое поведение."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:30:17.610397+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_PRICE:5017c1089312",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "6fa312e9-4897-4807-a560-316c782b421b",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15809,
+      "completion_tokens": 1718,
+      "total_tokens": 17527,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15809
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 9164.77
+      }
+    ],
+    "input_checksum": "5017c1089312b41ba8847e14099f2516c195c34c00904d97c61025188851933a"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

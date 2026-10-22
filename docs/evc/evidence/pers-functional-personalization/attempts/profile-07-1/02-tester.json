@@ -1,0 +1,441 @@
+{
+  "schema_version": 1,
+  "test_id": "PROFILE.07.1",
+  "case_id": "CASE.SPEC.07",
+  "candidate_checksum": "2bf868292bb2f20c488a933a41b6d45d9e17c41249877a6fcbf57274073f8421",
+  "created_at": "2026-10-22T13:29:48.662676+00:00",
+  "structurally_valid": true,
+  "conclusion": {
+    "type": "json_object",
+    "status": "FAIL",
+    "checks": [
+      {
+        "rule_id": "G02",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Профессиональная область",
+          "candidate_as.Учебный профиль.RoleProfile.Карточка роли.Объект ответственности",
+          "candidate_as.Материалы[0].Текст"
+        ],
+        "reason": "Деятельность — подбор персонала, объект — использование системы учёта кандидатов; задача анализа использования и рекомендации соответствует роли специалиста. Белого списка профессий нет."
+      },
+      {
+        "rule_id": "G06",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[*].Текст",
+          "candidate_as.Словарь",
+          "candidate_as.Числовые связи для QA"
+        ],
+        "reason": "Профессиональные замены согласованы: P00, M01–M04, словарь и числовые связи используют один предмет (система учёта кандидатов, чат, почта, воронка). Чуждых профессий деталей не обнаружено."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.I01",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст"
+        ],
+        "reason": "M01: 12 сценариев проверены двумя администраторами на учебных записях, реальный рабочий день не входил; целевой результат (видеть всех кандидатов и статус) отличается от факта проверки функций."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.I02",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Числовые связи для QA"
+        ],
+        "reason": "M02: 20 аккаунтов, 9 активных, 18 записей; уникальные кандидаты, дубли и число сотрудников с реальной потребностью не посчитаны. Числитель и круг пользователей известны, потребность и полный объём неизвестны."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.I03",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "M02/M03: чат и почта сохраняются, единого реестра нет, дубли не сопоставляли, повторы возможны. Параллельный способ и неполнота картины подтверждены."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.I04",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст"
+        ],
+        "reason": "M03 содержит отдельные эпизоды (ожидание ответа, срочный кандидат, дубли), M04 — авторское объяснение привычкой и меру «потребовать пользоваться только системой». Истинность не размечена; эпизоды дают материал для альтернатив."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.I05",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[4].Текст"
+        ],
+        "reason": "P00 просит описать возможные подходы и основания; M04 содержит лишь авторскую версию, не установленную причину. Готового меню решений и установленной причины нет."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.I06",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Активные персонажи",
+          "candidate_as.События",
+          "candidate_as.Правила управления сценой"
+        ],
+        "reason": "Письменный режим, все материалы на старте, активных персонажей 0. E01 запрещает разыгрывать опрос/новый результат; P00 и M04 фиксируют, что правила, закрытие каналов и бюджет требуют согласования."
+      },
+      {
+        "rule_id": "K4.I02",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[0]",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст"
+        ],
+        "reason": "Условие возникновения запроектировано: M03 отделяет записанные эпизоды и мнения от измерения, M04 — сообщение владельца с трактовкой. Система не размечает статусы за участника."
+      },
+      {
+        "rule_id": "K4.I06",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[1]",
+          "candidate_as.Материалы[2].Текст"
+        ],
+        "reason": "M02 прямо перечисляет отсутствующие данные: общий реестр, дубли, уникальные кандидаты, число сотрудников с задачей, время прохождения. Пробел доступен для выявления участником."
+      },
+      {
+        "rule_id": "K4.I07",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[2]",
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[2].Текст"
+        ],
+        "reason": "Проверка кнопок (M01), активность (M02) и цель видеть воронку не тождественны; проблема не сформулирована за участника."
+      },
+      {
+        "rule_id": "K4.I10",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[3]",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст"
+        ],
+        "reason": "Механизм «привычка» проверяем аналитически: эпизод ожидания три часа, срочность и неясность переноса дают альтернативные объяснения. Эксперимент не требуется."
+      },
+      {
+        "rule_id": "K3.I02",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[4]",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Неполнота статистики и разные эпизоды допускают несколько трактовок; готового окончательного диагноза нет."
+      },
+      {
+        "rule_id": "K3.I06",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[5]",
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[4].Текст"
+        ],
+        "reason": "Открыты разные способы организации работы; бюджет и внедрение не согласованы; готового набора решений нет."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.Критические запреты",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[4].Текст",
+          "candidate_as.События[0]",
+          "candidate_as.Правила управления сценой"
+        ],
+        "reason": "Неактивные аккаунты не объявлены отказом; M04 не подписан «ошибочной гипотезой»; E01 запрещает выдавать новый опрос; скрытых подсказок в P00/M01–M04 не обнаружено."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.Правила управления C01–C10",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Правила управления сценой",
+          "candidate_as.События"
+        ],
+        "reason": "Правила прекращения, паузы, распознавания финала и запрета новых событий после AS_close присутствуют и согласованы с E01/E02. Квоты ходов нет."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.Объём и нагрузка",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Объём стартового предъявления",
+          "candidate_as.Плановое время"
+        ],
+        "reason": "354 слова стартовых материалов, 12–16 минут планового времени; новый сложный экзамен не введён, число активных персонажей 0, скрытых материалов нет."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.Открытый исход",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[4].Текст"
+        ],
+        "reason": "Принятие одной меры и сохранение внедрения не предопределены; допустимы разные направления, частичный результат не блокируется."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.Предел реакции",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.События[0]",
+          "candidate_as.Правила управления сценой[0]",
+          "candidate_as.Правила управления сценой[1]"
+        ],
+        "reason": "E01 ограничивает ответы фиксированными знаниями; C01/C02 фиксируют приоритет прекращения и сохранение состояния при паузе; новые результаты не создаются."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.Намеренное расхождение источников",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст"
+        ],
+        "reason": "Расхождение между успешной проверкой функций (M01) и фактическим использованием (M03/M04) сохранено как содержательное, не исправлено как ошибка."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.Связанные единицы и сроки",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Числовые связи для QA",
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[2].Текст"
+        ],
+        "reason": "20 аккаунтов, 9 активных, 18 записей, 10 дней, 12 сценариев, 2 проверяющих согласованы между M01, M02 и QA-связями."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.Источник привлекательного признака",
+        "result": "NOT_RUN",
+        "evidence_paths": [
+          "candidate_as.Материалы[*]"
+        ],
+        "reason": "В данной AS нет отдельного привлекательного признака из CASE02, который требовал бы проверки источника, сопоставимости и статуса. Проверка неприменима к этому тексту; это не PASS."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.Собственный вклад сторон и запрет административного мандата",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[4].Текст",
+          "candidate_as.Учебный профиль.RoleProfile.Карточка роли.Ограничения роли"
+        ],
+        "reason": "P00 и M04 фиксируют, что участник рекомендует и инициирует проработку, но не вводит правила, не закрывает каналы, не выделяет бюджет; администратор участвует только в предварительной проработке. Административный мандат не приписан."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.Скрытые факты и отложенные документы",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Закрытые фиксированные факты",
+          "candidate_as.События"
+        ],
+        "reason": "Закрытая карта пуста; отложенных документов нет; E01/E02 однократны по смыслу и не создают новых фактов."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.Публичные подсказки",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[4].Текст"
+        ],
+        "reason": "В P00 и M04 нет правильного решения, причинного вывода, готовой сравнительной таблицы или оценки истинности; M04 содержит лишь авторскую версию, помеченную как мнение владельца."
+      },
+      {
+        "rule_id": "CASE.SPEC.07.Допустимость частичного результата",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Правила управления сценой[3]",
+          "candidate_as.События[1]"
+        ],
+        "reason": "C04 и E02 фиксируют, что финальный, в том числе неполный, ответ завершает сцену без просьбы дописать; обязательного провала нет."
+      },
+      {
+        "rule_id": "deterministic_validation.top_level_contract",
+        "result": "FAIL",
+        "evidence_paths": [
+          "candidate_as"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по top_level_contract: верхнеуровневый набор полей AS не соответствует контракту. Требуется привести структуру к ожидаемому контракту без изменения содержания."
+      },
+      {
+        "rule_id": "deterministic_validation.case_identity",
+        "result": "FAIL",
+        "evidence_paths": [
+          "candidate_as.CaseID",
+          "candidate_as.CaseVersion"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по case_identity. Требуется проверить и согласовать CaseID/CaseVersion с CASE.SPEC.07 v0.4."
+      },
+      {
+        "rule_id": "deterministic_validation.base_role",
+        "result": "FAIL",
+        "evidence_paths": [
+          "candidate_as.BaseRole"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по base_role. Требуется привести BaseRole к specialist_expert в ожидаемом формате."
+      },
+      {
+        "rule_id": "deterministic_validation.indicator_targets",
+        "result": "FAIL",
+        "evidence_paths": [
+          "candidate_as.IndicatorIDs"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по indicator_targets. Требуется согласовать перечень IndicatorIDs с точным перечнем Case."
+      },
+      {
+        "rule_id": "deterministic_validation.m2_versions",
+        "result": "FAIL",
+        "evidence_paths": [
+          "candidate_as.Версии M2"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по m2_versions. Требуется привести версии M2 к K4 v1.0 и K3 v1.1 в ожидаемом формате."
+      },
+      {
+        "rule_id": "deterministic_validation.character_count",
+        "result": "FAIL",
+        "evidence_paths": [
+          "candidate_as.Активные персонажи"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по character_count. Требуется подтвердить число активных персонажей 0 в ожидаемом поле."
+      },
+      {
+        "rule_id": "deterministic_validation.start_material_refs",
+        "result": "FAIL",
+        "evidence_paths": [
+          "candidate_as.Стартовые MaterialIDs",
+          "candidate_as.Материалы"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по start_material_refs. Требуется согласовать ссылки стартовых материалов с фактическими MaterialID."
+      },
+      {
+        "rule_id": "deterministic_validation.events_present",
+        "result": "FAIL",
+        "evidence_paths": [
+          "candidate_as.События"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по events_present. Требуется привести события к ожидаемому контракту."
+      }
+    ],
+    "defects": [
+      {
+        "code": "DETERMINISTIC_TOP_LEVEL_CONTRACT",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по top_level_contract: набор верхнеуровневых полей AS не соответствует контракту. Содержательная проверка инвариантов пройдена, но AS не может быть допущена до участника без исправления структуры."
+      },
+      {
+        "code": "DETERMINISTIC_CASE_IDENTITY",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.CaseID",
+          "candidate_as.CaseVersion"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по case_identity. Требуется согласовать идентичность Case с CASE.SPEC.07 v0.4."
+      },
+      {
+        "code": "DETERMINISTIC_BASE_ROLE",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.BaseRole"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по base_role. Требуется привести BaseRole к specialist_expert в ожидаемом формате."
+      },
+      {
+        "code": "DETERMINISTIC_INDICATOR_TARGETS",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.IndicatorIDs"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по indicator_targets. Требуется согласовать перечень IndicatorIDs с точным перечнем Case."
+      },
+      {
+        "code": "DETERMINISTIC_M2_VERSIONS",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Версии M2"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по m2_versions. Требуется привести версии M2 к K4 v1.0 и K3 v1.1 в ожидаемом формате."
+      },
+      {
+        "code": "DETERMINISTIC_CHARACTER_COUNT",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Активные персонажи"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по character_count. Требуется подтвердить число активных персонажей 0 в ожидаемом поле."
+      },
+      {
+        "code": "DETERMINISTIC_START_MATERIAL_REFS",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Стартовые MaterialIDs",
+          "candidate_as.Материалы"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по start_material_refs. Требуется согласовать ссылки стартовых материалов с фактическими MaterialID."
+      },
+      {
+        "code": "DETERMINISTIC_EVENTS_PRESENT",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.События"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по events_present. Требуется привести события к ожидаемому контракту."
+      }
+    ],
+    "admitted_for_participant": false
+  },
+  "provider_operation": {
+    "operation_id": "tester:PROFILE.07.1:71f39d744b58",
+    "kind": "independent_tester",
+    "provider": "deepseek",
+    "requested_model": "deepseek-chat",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 8192,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "9ac30252-8acc-4355-9463-1d7391893d53",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 47739,
+      "completion_tokens": 4344,
+      "total_tokens": 52083,
+      "prompt_tokens_details": {
+        "cached_tokens": 30720
+      },
+      "prompt_cache_hit_tokens": 30720,
+      "prompt_cache_miss_tokens": 17019
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 13267.45
+      }
+    ],
+    "input_checksum": "71f39d744b58dcf6d0c6e0626194d6b7be0239032b46a3e2cbda63504cbe3ed9"
+  }
+}

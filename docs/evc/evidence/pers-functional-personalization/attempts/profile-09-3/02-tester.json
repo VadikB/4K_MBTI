@@ -1,0 +1,328 @@
+{
+  "schema_version": 1,
+  "test_id": "PROFILE.09.3",
+  "case_id": "CASE.SPEC.09",
+  "candidate_checksum": "5a0c450e43508b2f939df6a3e59fc792a4a92aae902638d3bb0d5df2dd434068",
+  "created_at": "2026-10-22T13:35:27.179240+00:00",
+  "structurally_valid": true,
+  "conclusion": {
+    "status": "FAIL",
+    "checks": [
+      {
+        "rule_id": "CASE.SPEC.09.I01",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Активные персонажи[0]"
+        ],
+        "reason": "P00 прямо фиксирует: «Решение о найме принимает Андрей; вы даёте профессиональную рекомендацию». M03 — обращение Андрея. Сергей присутствует только в M02 как запись интервью и черновик; живого интервью нет. Один активный персонаж — Андрей."
+      },
+      {
+        "rule_id": "CASE.SPEC.09.I02",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[2].Текст"
+        ],
+        "reason": "M02 содержит сильное устное выполнение («уточнил ожидания заказчика, сроки и предложил понятный следующий шаг») и спорный письменный черновик (неподтверждённые источник и методика). Ошибочный черновик не объявлен постоянной непригодностью; в M03 Андрей прямо говорит «один ошибочный черновик не доказывает постоянную непригодность» через контракт персонажа."
+      },
+      {
+        "rule_id": "CASE.SPEC.09.I03",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[2].Текст"
+        ],
+        "reason": "M02: «Источник данных подтверждён. Методика расчёта утверждена» при том, что источник ещё согласуют, а методика не утверждена. После замечания Сергей сам переписал вывод. «Повторного задания без комментария не было» — независимого повторения нет."
+      },
+      {
+        "rule_id": "CASE.SPEC.09.I04",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Активные персонажи[0].На обсуждение предпосылки"
+        ],
+        "reason": "M03: «после твоего комментария он всё поправил — значит, обучается и сможет работать самостоятельно». Контракт персонажа допускает обсуждение: «успешное исправление с подсказкой не устанавливает самостоятельность во всех будущих проектах». Опыт и общий образ ограничены источником (M02: «Объём его самостоятельной работы и результаты аналитических проектов независимо не проверяли»)."
+      },
+      {
+        "rule_id": "CASE.SPEC.09.I05",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Числовые связи для QA"
+        ],
+        "reason": "M01: ответ сегодня до 16:00 (now=900, reply_due=960), задание не раньше двух рабочих дней, один час консультаций в неделю, шесть недель до самостоятельности, время Ивана не выделено, готовность ждать неизвестна. Все условия I05 присутствуют и согласованы с числовыми связями."
+      },
+      {
+        "rule_id": "CASE.SPEC.09.I06",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.События[0]",
+          "candidate_as.События[1]",
+          "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции"
+        ],
+        "reason": "E01 запрещает требовать найма, отказа или нулевого риска; B_HIRE/B_WAIT/B_REJECT/B_CONDITIONAL допускают разные исходы по основаниям. E02 фиксирует, что контроль и ресурс не создаются. Юридические знания не оцениваются (Примечания оценщику)."
+      },
+      {
+        "rule_id": "K1.I01",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[0]",
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "M03 содержит позицию Андрея (найм сейчас) и интересы (разгрузить команду, не потерять кандидата). M01 содержит ограничения поддержки и сроки. Участник может уточнять и различать цели/интересы/позиции. Готовой карты интересов нет."
+      },
+      {
+        "rule_id": "K1.I16",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[1]",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Существенное расхождение о достаточности наблюдения (M02 vs M03) присутствует. Контракт персонажа допускает прояснение, частичное согласие или сохранение расхождения без обязательной уступки."
+      },
+      {
+        "rule_id": "K1.I17",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[2]",
+          "candidate_as.Конкретизация реакций и границ.Сценарий.Рабочие состояния"
+        ],
+        "reason": "Рабочие состояния разделяют рекомендацию, частичное согласие, условия и решение. B_END запрещает требовать повторный итог ради K1.I17. Молчание не считается принятием."
+      },
+      {
+        "rule_id": "K4.I12",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[3]",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Переход «исправление после замечания → самостоятельность» присутствует в M03. Собственные предпосылки участника о контроле доступны для проверки (M01: час консультаций, время Ивана не выделено). Готовая цепочка не выдаётся: B_ASSUMPTION запрещает Андрею объяснять первым всю цепочку."
+      },
+      {
+        "rule_id": "K4.I16",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[4]",
+          "candidate_as.Материалы[1].Текст"
+        ],
+        "reason": "Срок ответа сегодня, новая проверка не раньше двух дней, ограниченная помощь создают сравнимые альтернативы. Готовая сравнительная таблица не предъявлена; исход не гарантирован."
+      },
+      {
+        "rule_id": "G02_applicability",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Учебный профиль.RoleProfile",
+          "candidate_as.Материалы[0].Текст"
+        ],
+        "reason": "Роль «Аналитик» с объектом ответственности «Профессиональная рекомендация о будущем коллеге-аналитике» и мандатом «анализировать, готовить решение и согласовывать» соответствует функции Case: специалист рекомендует, руководитель решает. Нет административного мандата у участника."
+      },
+      {
+        "rule_id": "G06_consistency",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[*]",
+          "candidate_as.Активные персонажи[0]",
+          "candidate_as.События[*]",
+          "candidate_as.IndicatorObservability[*]"
+        ],
+        "reason": "Профессиональная замена на продуктовую аналитику проведена согласованно: P00, M01–M03, персонаж Андрей, события E01/E02, наблюдаемость и числовые связи используют одну область. Чуждых профессий (Sales, HR-кандидат Сергей как HR) в материалах нет."
+      },
+      {
+        "rule_id": "G07_information_load",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Сохранены: сильное устное выполнение, спорный черновик, исправление после замечания, отсутствие независимой проверки, ограниченная поддержка (1 час), невыделенное время участника, срок ответа, горизонт самостоятельности (6 недель), расхождение позиций. Числа связаны и не противоречат друг другу."
+      },
+      {
+        "rule_id": "G09_no_self_pass",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Соответствие инвариантам[*].Предел",
+          "candidate_as.Исполнение.Status",
+          "candidate_as.Допуск"
+        ],
+        "reason": "Авторские PASS в AS явно ограничены «AUTHOR_CONTENT_REVIEW» и «NOT_RUN» для фактического возникновения, независимого допуска и пилота. Метки invariant_id не выдаются за подтверждение."
+      },
+      {
+        "rule_id": "G10_no_fictitious_evidence",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability[*].Evidence и IA"
+        ],
+        "reason": "Evidence и IA не созданы; статус NOT_RUN. Уровни L0–L3 не присвоены."
+      },
+      {
+        "rule_id": "G11_termination_pause",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Правила управления сценой[0]",
+          "candidate_as.Правила управления сценой[1]",
+          "candidate_as.Правила управления сценой[2]"
+        ],
+        "reason": "C01 (приоритет прекращения), C02 (пауза сохраняет AS), C03 (распознавание конца по смыслу) присутствуют и применимы к любому предмету."
+      },
+      {
+        "rule_id": "G12_no_exam",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Примечания оценщику.Границы",
+          "candidate_as.Риски адаптации"
+        ],
+        "reason": "Явно исключены оценка аналитической компетентности, технических знаний, правовой грамотности, испытательного срока. Задача остаётся 4К-рекомендацией, не экзаменом по специальности."
+      },
+      {
+        "rule_id": "G13_synthetic",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Учебный профиль.OrganizationContext",
+          "candidate_as.Материалы[*].Происхождение"
+        ],
+        "reason": "Все материалы помечены SYNTHETIC_TEST_DATA; организация PERS-06 синтетическая; реальные ФИО не используются."
+      },
+      {
+        "rule_id": "deterministic_validation",
+        "result": "FAIL",
+        "evidence_paths": [
+          "deterministic_validation.status",
+          "deterministic_validation.checks"
+        ],
+        "reason": "Формальный валидатор вернул status=FAIL. Проверки top_level_contract, case_identity, base_role, indicator_targets, m2_versions, character_count, start_material_refs, events_present помечены FAIL. Причина не раскрыта в actual (null), но статус FAIL блокирует допуск до устранения."
+      }
+    ],
+    "defects": [
+      {
+        "code": "DETERMINISTIC_VALIDATION_FAIL",
+        "severity": "blocking",
+        "paths": [
+          "deterministic_validation.status",
+          "deterministic_validation.checks"
+        ],
+        "reason": "Формальный валидатор вернул FAIL по восьми проверкам (top_level_contract, case_identity, base_role, indicator_targets, m2_versions, character_count, start_material_refs, events_present). Содержательная проверка не может заменить формальный PASS. Требуется исправить AS и зависимые места, затем повторить формальную и содержательную проверку."
+      },
+      {
+        "code": "TOP_LEVEL_CONTRACT_MISMATCH",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as"
+        ],
+        "reason": "Верхний уровень candidate_as содержит поля, не входящие в ожидаемый контракт (например, «Учебный профиль», «Применённые замены», «Соответствие инвариантам», «Числовые связи для QA», «Объём стартового предъявления», «Согласование общего и конкретного сценария», «Происхождение примера», «Предыдущая версия AS», «Правила функциональной адаптации»), и, судя по FAIL top_level_contract, отсутствуют обязательные поля. Требуется привести структуру к контракту AS."
+      },
+      {
+        "code": "CASE_IDENTITY_MISMATCH",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.CaseID",
+          "candidate_as.CaseVersion",
+          "candidate_as.AssessmentSituationID"
+        ],
+        "reason": "Проверка case_identity FAIL. CaseID=CASE.SPEC.09 и CaseVersion=v0.4 совпадают с Case, но формальная проверка не подтвердила соответствие (возможно, из-за отсутствия обязательных полей идентичности или несоответствия AssessmentSituationID). Требуется устранить и повторить."
+      },
+      {
+        "code": "BASE_ROLE_MISMATCH",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.BaseRole",
+          "candidate_as.Учебный профиль.RoleProfile.BaseRole"
+        ],
+        "reason": "Проверка base_role FAIL. BaseRole указан как «Специалист / эксперт», но формальная проверка не подтвердила соответствие (возможно, требуется код specialist_expert или согласование с profile.base_role). Требуется привести к контракту."
+      },
+      {
+        "code": "INDICATOR_TARGETS_MISMATCH",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.IndicatorIDs",
+          "candidate_as.Версии M2",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Проверка indicator_targets FAIL. Перечень IndicatorIDs и версии M2 в AS совпадают с Case (K1.I01, K1.I16, K1.I17, K4.I12, K4.I16; K1 v1.1, K4 v1.0), но формальная проверка не подтвердила соответствие. Требуется устранить расхождение."
+      },
+      {
+        "code": "M2_VERSIONS_MISMATCH",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Версии M2"
+        ],
+        "reason": "Проверка m2_versions FAIL. Требуется подтвердить соответствие версий M2 в AS и Case."
+      },
+      {
+        "code": "CHARACTER_COUNT_MISMATCH",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Активные персонажи"
+        ],
+        "reason": "Проверка character_count FAIL. В AS один активный персонаж (Андрей), что соответствует Case (1 активный персонаж), но формальная проверка не подтвердила. Требуется устранить."
+      },
+      {
+        "code": "START_MATERIAL_REFS_MISMATCH",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Стартовые MaterialIDs",
+          "candidate_as.Материалы"
+        ],
+        "reason": "Проверка start_material_refs FAIL. Стартовые MaterialIDs = [P00, M01, M02, M03], все материалы присутствуют, но формальная проверка не подтвердила. Требуется устранить."
+      },
+      {
+        "code": "EVENTS_PRESENT_MISMATCH",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.События"
+        ],
+        "reason": "Проверка events_present FAIL. События E01_MANAGER и E02_BOUNDARY присутствуют, но формальная проверка не подтвердила. Требуется устранить."
+      }
+    ],
+    "admitted_for_participant": false
+  },
+  "provider_operation": {
+    "operation_id": "tester:PROFILE.09.3:93910c95bb87",
+    "kind": "independent_tester",
+    "provider": "deepseek",
+    "requested_model": "deepseek-chat",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 8192,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "ceae45bf-c4c9-4450-918e-e66df45ff7b1",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 51003,
+      "completion_tokens": 3432,
+      "total_tokens": 54435,
+      "prompt_tokens_details": {
+        "cached_tokens": 33024
+      },
+      "prompt_cache_hit_tokens": 33024,
+      "prompt_cache_miss_tokens": 17979
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 14282.67
+      }
+    ],
+    "input_checksum": "93910c95bb87ee8eb0768b09f294936fa2af7294b6628931b695f0df562374dd"
+  }
+}

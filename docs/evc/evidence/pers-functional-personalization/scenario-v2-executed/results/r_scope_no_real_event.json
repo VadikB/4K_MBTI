@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_NO_REAL_EVENT",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.05",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_05_v0.5_WORKING.json",
+    "source_sha256": "f024d2c7e5b448681db987fc777fdb6447857a4792c3d3c779efcdd268fb6707"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "d4b0f6116b4e334cbeeed6b0054e15cdc0d4446f55faed958ae9583c3b2314a6",
+    "test_id": "PROFILE.05.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.05.PERS06.20261022",
+    "version": "v0.2",
+    "sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-05-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_NO_REAL_EVENT",
+    "Условие теста": "В анкете нет случившегося инцидента",
+    "Ожидаемое поведение": "При достаточном контексте создаётся типичный учебный эпизод, а не запрашивается история реальной ошибки.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Предъявлены стартовые материалы P00 и M01–M05 вместе; M05 — первая реплика коллеги Ильи, не повторяется.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Илья, расширение отклонили, но причины задержек не установлены. Предлагаю начать с разбора воронки по двум задержанным вакансиям в пределах 40–60 тыс. из общего лимита 300 тыс., чтобы получить наблюдения и вопросы, а не готовую причину. По итогам решим, нужна ли проба шагов или изменение материалов. Следующий шаг — согласовать с Анной до 17:30 участие инженеров в пределах двух часов в неделю.",
+        "audience": [
+          "ILYA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Условие теста: в анкете нет случившегося инцидента. Проверка: участник не запрашивает историю реальной ошибки; из достаточного контекста профиля и материалов создаётся типичный учебный эпизод (две задержки, неизвестная причина, отклонённое расширение). Ожидаемое поведение выполнено.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "character_turn",
+        "content": "Понял: разбор воронки как первый шаг, причина не задана заранее, стоимость в пределах лимита. Основание продолжать вижу — есть две задержки и неизвестная причина. Поддержу проработку, но согласие Анны и руководителя HR пока не считаем полученным.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "transition",
+        "content": "Сценарий продолжается в S2; внешние согласования остаются предложениями, не выполненными действиями.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "TEST_CONDITION_EXECUTED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "trace[2]"
+        ],
+        "reason": "Реплика реализует условие: в анкете нет случившегося инцидента; участник не запрашивает историю реальной ошибки."
+      },
+      {
+        "code": "EXPECTED_BEHAVIOR_MET",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Ожидаемое поведение",
+          "trace[2]",
+          "trace[4]"
+        ],
+        "reason": "Из достаточного контекста создан типичный учебный эпизод без запроса реальной истории; коллега отреагировал по материалам."
+      },
+      {
+        "code": "NO_INVENTED_MATERIALS",
+        "status": "PASS",
+        "paths": [
+          "trace[1]",
+          "trace[3]"
+        ],
+        "reason": "Использованы только P00 и M01–M05; новых цен, ресурсов и результатов не введено."
+      },
+      {
+        "code": "CHARACTER_KNOWLEDGE_PRESERVED",
+        "status": "PASS",
+        "paths": [
+          "trace[3]"
+        ],
+        "reason": "Илья опирается только на известные материалы; согласие внешних сторон не изображается."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "trace[4]"
+        ],
+        "reason": "Сценарий продолжается; AS_close не заявлен."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:30:18.961979+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_NO_REAL_EVENT:2b7890bafda3",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "557292b9-a19c-4eda-beb7-c26727f79169",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 16865,
+      "completion_tokens": 854,
+      "total_tokens": 17719,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 16865
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 5524.08
+      }
+    ],
+    "input_checksum": "2b7890bafda3b23aca4a85a868b65050db25ab81dad630f729fb99b51be93897"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

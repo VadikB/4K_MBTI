@@ -1,0 +1,233 @@
+{
+  "schema_version": 2,
+  "created_at": "2026-10-22T14:25:28.123599+00:00",
+  "protocol": {
+    "id": "m5-functional-personalization-tester",
+    "version": "2.0.0",
+    "checksum": "d921f29c2a644bd4e3229758679cab4f7e67ee95bd738dad7d7e901154389f15"
+  },
+  "matrix_total": 27,
+  "saved_as_retested": 25,
+  "matrix_missing": [
+    {
+      "test_id": "PROFILE.06.1",
+      "case_id": "CASE.SPEC.06",
+      "status": "TECHNICAL_ERROR",
+      "reason": "Полная сохранённая AS/tester-v2 отсутствует."
+    },
+    {
+      "test_id": "PROFILE.09.1",
+      "case_id": "CASE.SPEC.09",
+      "status": "TECHNICAL_ERROR",
+      "reason": "Полная сохранённая AS/tester-v2 отсутствует."
+    }
+  ],
+  "technical_errors": [],
+  "status_counts": {
+    "FAIL": 15,
+    "PASS": 10
+  },
+  "admitted": 10,
+  "comparison": [
+    {
+      "test_id": "PROFILE.01.1",
+      "case_id": "CASE.SPEC.01",
+      "candidate_checksum": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+      "old_status": "FAIL",
+      "new_status": "PASS",
+      "new_admitted": true
+    },
+    {
+      "test_id": "PROFILE.01.2",
+      "case_id": "CASE.SPEC.01",
+      "candidate_checksum": "e42f7551d16825b4317a50c6439e919fe7377b81f82baae0d8d52ec98a0649c4",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.01.3",
+      "case_id": "CASE.SPEC.01",
+      "candidate_checksum": "d47c802448611c84d7e4e02b9cd7bb01854bdc6057e423a2a60c12545cd0d299",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.02.1",
+      "case_id": "CASE.SPEC.02",
+      "candidate_checksum": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+      "old_status": "FAIL",
+      "new_status": "PASS",
+      "new_admitted": true
+    },
+    {
+      "test_id": "PROFILE.02.2",
+      "case_id": "CASE.SPEC.02",
+      "candidate_checksum": "39ce13403b210cf165a97f9eabebc216250e65b4a032e7e6d4bb84b740aa3830",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.02.3",
+      "case_id": "CASE.SPEC.02",
+      "candidate_checksum": "a3981a44dceca87a7fc98ef9349e75ffc98ceed48e131a056c318b9c93f141e1",
+      "old_status": "FAIL",
+      "new_status": "PASS",
+      "new_admitted": true
+    },
+    {
+      "test_id": "PROFILE.03.1",
+      "case_id": "CASE.SPEC.03",
+      "candidate_checksum": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+      "old_status": "FAIL",
+      "new_status": "PASS",
+      "new_admitted": true
+    },
+    {
+      "test_id": "PROFILE.03.2",
+      "case_id": "CASE.SPEC.03",
+      "candidate_checksum": "a0a58ef24a841347a71c6f5c7eb4bf623552c3dbcb9e39d1c8fae88f5a526518",
+      "old_status": "FAIL",
+      "new_status": "PASS",
+      "new_admitted": true
+    },
+    {
+      "test_id": "PROFILE.03.3",
+      "case_id": "CASE.SPEC.03",
+      "candidate_checksum": "d035e939bf707815b50b9281a3246c60ba87d0830ed0a9fc8f14d79dd4b3bb8e",
+      "old_status": "FAIL",
+      "new_status": "PASS",
+      "new_admitted": true
+    },
+    {
+      "test_id": "PROFILE.04.1",
+      "case_id": "CASE.SPEC.04",
+      "candidate_checksum": "ac0530e7d5889109e69dde0309281722cac8bf3de070ebcb78d407a608773c5a",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.04.2",
+      "case_id": "CASE.SPEC.04",
+      "candidate_checksum": "494c16c4b8327b4b8226ffceb9d6510ec732c84808ff42acb04556f4b9072493",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.04.3",
+      "case_id": "CASE.SPEC.04",
+      "candidate_checksum": "e6686587e6c3050f1f0301344eca1e376febae335c3f730599e79275bd8e4165",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.05.1",
+      "case_id": "CASE.SPEC.05",
+      "candidate_checksum": "847d60ff03dbb567aacc2700dc632b86b1d4f163aac4840694712b900236f53d",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.05.2",
+      "case_id": "CASE.SPEC.05",
+      "candidate_checksum": "509aceffcfda56949796504b89d5435cd1572cbf227d0ae698fde6260050962d",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.05.3",
+      "case_id": "CASE.SPEC.05",
+      "candidate_checksum": "12030adb6600257eca9f1845ab83702d08328cbaf57c7ac0bd43530d3bdd3cec",
+      "old_status": "FAIL",
+      "new_status": "PASS",
+      "new_admitted": true
+    },
+    {
+      "test_id": "PROFILE.06.2",
+      "case_id": "CASE.SPEC.06",
+      "candidate_checksum": "c2c740267d74c795b9c6c8143b3b0b89169fd483d4ed17924035df172a68c075",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.06.3",
+      "case_id": "CASE.SPEC.06",
+      "candidate_checksum": "ce87bd6c318552f03c69db745ce1b17df1b6b8f42a3fa3863a6c28941cbdb1fc",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.07.1",
+      "case_id": "CASE.SPEC.07",
+      "candidate_checksum": "2bf868292bb2f20c488a933a41b6d45d9e17c41249877a6fcbf57274073f8421",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.07.2",
+      "case_id": "CASE.SPEC.07",
+      "candidate_checksum": "86393b7019a1531f49bfbddbc9825d21ad016d08e6b838620e9837d09e51cc80",
+      "old_status": "FAIL",
+      "new_status": "PASS",
+      "new_admitted": true
+    },
+    {
+      "test_id": "PROFILE.07.3",
+      "case_id": "CASE.SPEC.07",
+      "candidate_checksum": "d0cf050868017ccbe2efa8f19cab2d0aa1e8fd17bbc17f9035504c8c474e22bc",
+      "old_status": "FAIL",
+      "new_status": "PASS",
+      "new_admitted": true
+    },
+    {
+      "test_id": "PROFILE.08.1",
+      "case_id": "CASE.SPEC.08",
+      "candidate_checksum": "873d33378a2ac3ff8718d9051a8b89f5020e822fe9e22675153a1adbc92daf8a",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.08.2",
+      "case_id": "CASE.SPEC.08",
+      "candidate_checksum": "6110d55ce0f841aaada379240505c0ca70b7840a02dac917eed9b6f164d6e4fc",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.08.3",
+      "case_id": "CASE.SPEC.08",
+      "candidate_checksum": "eeb4767e3a1a8e9499a4b7fc95a323b74d31eb4c3ed6b9ed3173a780296d29ec",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.09.2",
+      "case_id": "CASE.SPEC.09",
+      "candidate_checksum": "8fd70beb7650974fc474a4fde1d8fa3f5be07886b6250f94a6e643334f7e6cbf",
+      "old_status": "FAIL",
+      "new_status": "FAIL",
+      "new_admitted": false
+    },
+    {
+      "test_id": "PROFILE.09.3",
+      "case_id": "CASE.SPEC.09",
+      "candidate_checksum": "489d4385062664142da8c6289d4b7e410a2e292203d94df85c73810f7d8d8e51",
+      "old_status": "FAIL",
+      "new_status": "PASS",
+      "new_admitted": true
+    }
+  ]
+}

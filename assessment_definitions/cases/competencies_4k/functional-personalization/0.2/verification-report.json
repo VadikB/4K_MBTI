@@ -1,0 +1,24 @@
+{
+  "assessment_situation_count": 9,
+  "case_count": 9,
+  "character_counts": {
+    "CASE.SPEC.01": 1,
+    "CASE.SPEC.02": 0,
+    "CASE.SPEC.03": 3,
+    "CASE.SPEC.04": 1,
+    "CASE.SPEC.05": 1,
+    "CASE.SPEC.06": 3,
+    "CASE.SPEC.07": 0,
+    "CASE.SPEC.08": 2,
+    "CASE.SPEC.09": 1
+  },
+  "full_cycle": "NOT_RUN",
+  "indicator_target_count": 55,
+  "methodology_admission": "NOT_RUN",
+  "package_checksum": "dce5f87832b12b6347a0836123359fcbc7c87b4a1f9a9105adf3f32bb0187b14",
+  "real_llm_matrix": "NOT_RUN",
+  "result": "PASS",
+  "runtime_admission": "DISABLED",
+  "schema_version": 1,
+  "scope": "static_functional_package"
+}

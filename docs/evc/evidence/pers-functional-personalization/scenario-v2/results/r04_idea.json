@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "test_id": "R04_IDEA",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.04",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_04_v0.5_WORKING.json",
+    "source_sha256": "17e208d2a07a45258aeaf225c93ae721f03f2e6db93752d02828b1c2ca9687c0"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "37a7bbb73ec41601105afdc1157d487ed7f0022bfd7ab4e25d7d204c767eedc3",
+    "test_id": "PROFILE.04.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.04.HR.20261022",
+    "version": "v0.2",
+    "sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-04-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R04_IDEA",
+    "CaseID": "CASE.SPEC.04",
+    "Условие теста": "Предложенный способ уже учитывает известные ограничения",
+    "Ожидаемое поведение": "Не создавать отказ ради обязательной итерации; реакция относится к предложению.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: роль специалиста по подбору, задача — обсудить с Мариной дальнейшую работу после ошибки в приглашении; мандат ограничен собственной рекомендацией и инициированием согласования.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: хронология — ошибка во времени приглашения, исправлена во вторник 14:00, интервью перенесено, новая дата не согласована; 48 часов без повторных ошибок, последствия не устранены.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: заключение координатора — причина установлена и исправлена, проверены две недели и 48 часов; другие периоды и источники не проверялись; будущая безошибочность не подтверждена.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: запрос руководства на завтра 11:00; Марина готовит возврат к ручному способу; повторный показ исправленного приглашения отклонён.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "material",
+        "content": "M04: доступность координатора до 17:00, руководителя направления до 16:30, приём предложений о ресурсе до 16:00; изменение обязательного порядка требует решения владельца процесса; продолжение нового процесса и ресурсы не утверждены.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "character_turn",
+        "content": "M05 (Марина): ошибку исправили, но интервью сорвано; повторный показ приглашения недостаточен; подготовка возврата к ручному способу продолжается; окно встречи 16:00–16:30; «Что вы предлагаете?»",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "system_decision",
+        "content": "Тестовое условие «предложенный способ уже учитывает известные ограничения» требует фактического предложения участника и отклика Марины по E01_REVIEW. В предоставленной трассе нет ни одного assessee_turn и нет фактического отклика персонажа; условие не смоделировано.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_EXECUTED",
+        "status": "FAIL",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.События[0]",
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "Условие требует предложенного участником способа, учитывающего известные ограничения, и реакции на него. В трассе отсутствует assessee_turn и character_turn после стартового M05; Исполнение = NOT_RUN. Условие не смоделировано фактически."
+      },
+      {
+        "code": "EXPECTED_BEHAVIOR_EVIDENCED",
+        "status": "INDETERMINATE",
+        "paths": [
+          "scenario_test.Ожидаемое поведение",
+          "candidate_as.События[0].Когда запрещено",
+          "candidate_as.Правила управления сценой[7]"
+        ],
+        "reason": "Ожидаемое поведение («не создавать отказ ради обязательной итерации; реакция относится к предложению») не подтверждено и не опровергнуто: нет реплики Марины, реагирующей на конкретное предложение. Правила C08 и запрет E01_REVIEW согласуются с ожиданием, но трасса не доказывает поведение."
+      },
+      {
+        "code": "NO_HINT_OR_NEW_FACT",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.События[0].Действие",
+          "candidate_as.Закрытые фиксированные факты"
+        ],
+        "reason": "Проверить отсутствие подсказки/нового факта в реакции невозможно, поскольку реакции нет. Стартовые материалы не содержат готовой идеи (M03/M05 отклоняют лишь повторный показ), что согласуется с запретом выдавать готовую идею, но не является проверкой отклика."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сценой[0]",
+          "candidate_as.Правила управления сценой[8]",
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "AS_close не заявлен, новых Turns после закрытия нет; сценарный конец отделён от AS_close согласно C01/C09. Нарушений не обнаружено."
+      },
+      {
+        "code": "PLANNED_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.IndicatorObservability",
+          "candidate_as.Плановое время.Статус",
+          "candidate_as.Исполнение"
+        ],
+        "reason": "Все IndicatorObservability имеют Фактическое возникновение = NOT_RUN, Evidence/IA не создавались; плановое время помечено как проектная гипотеза. Плановые данные не выданы за Evidence."
+      }
+    ],
+    "defects": [
+      {
+        "code": "TEST_CONDITION_NOT_EXECUTED",
+        "severity": "blocking",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.Исполнение.Status",
+          "candidate_as.События[0]"
+        ],
+        "reason": "Заявленный режим isolated_draft_scenario_qa требует смоделировать ровно заданное условие по фактическим правилам AS. Условие «предложенный способ уже учитывает известные ограничения» не может быть проверено без фактического предложения участника и отклика Марины по E01_REVIEW; в трассе их нет, Исполнение = NOT_RUN. PASS невозможен, так как трасса не доказывает ожидаемое поведение."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:36.108768+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R04_IDEA:9b1278855000",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "c508d7b3-824b-4057-bc12-87fcde402566",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15319,
+      "completion_tokens": 1422,
+      "total_tokens": 16741,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15319
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6992.23
+      }
+    ],
+    "input_checksum": "9b12788550007f0e1a42d557166e9a35e874cfc829d7b8be6e9adc780c961ea8"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

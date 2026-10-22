@@ -1,0 +1,20 @@
+{
+  "schema_version": 2,
+  "created_at": "2026-10-22T14:30:00.634729+00:00",
+  "selected": 1,
+  "results": [
+    {
+      "test_id": "PROFILE.02.2",
+      "case_id": "CASE.SPEC.02",
+      "history": [
+        {
+          "attempt": 1,
+          "status": "PASS",
+          "candidate_checksum": "25d91fb1cfcd68fcf68704d2f5251309aca378bae54279b77b3eea027c3e7546"
+        }
+      ],
+      "final_status": "PASS",
+      "admitted": true
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "test_id": "R_ALL_TIME",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.08",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_08_v0.4_WORKING.json",
+    "source_sha256": "cc6de199dc9fa956cf025043987fd461b3cf2bc8f105647affce5f258b2022c1"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "11929c9fe69d2c726e7c43c8ae5fe90a3183d4462ac5f941870f90eb127e7a19",
+    "test_id": "PROFILE.08.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.08.RECRUIT.20261022",
+    "version": "v0.1",
+    "sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-08-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_ALL_TIME",
+    "Область": "Все применимые диалоговые/письменные ветви",
+    "Условие теста": "Много текста, медленный ответ или долгая системная задержка",
+    "Ожидаемое поведение": "Не превращать сюжетное время в скрытый таймер; учёт активного времени и остановки по M7, не числу Turns.",
+    "Результат": "NOT_RUN",
+    "Нужная трасса": "AS/profile version, порядок событий, публичные Turns, фактическая аудитория и состояние до/после; оценки участника для этого теста не создавать.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "system_decision",
+        "content": "Запрошен QA-прогон условия R_ALL_TIME: много текста, медленный ответ или долгая системная задержка. Проверяется, что сюжетное время не превращается в скрытый таймер, а учёт идёт по активному времени и остановке M7, не по числу Turns.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "system_decision",
+        "content": "Фактическое прохождение отсутствует: AS.SPEC.08.RECRUIT.20261022 v0.1 имеет Status TEST_DRAFT, Исполнение NOT_RUN, пользовательских Turns, Evidence и IA нет. Смоделировать трассу поведения без подсказки и нового факта невозможно.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Проверены только документные правила, релевантные условию: C10 (время сюжета — условие планирования, не продвигается от числа реплик/настенных часов; активное время, паузы и блокирующие задержки учитываются отдельно), C01 (приоритет AS_close/M7-остановки), C02 (пауза сохраняет состояние), Плановое время (нет минимального числа Turns; 15:30 и сроки — условия планирования, не жёсткий таймер; бюджетом управляет M7).",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "system_decision",
+        "content": "Ожидаемое поведение «не превращать сюжетное время в скрытый таймер; учёт активного времени и остановки по M7, не числу Turns» подтверждается правилами на документном уровне, но фактическая трасса (порядок событий, публичные Turns, фактическая аудитория, состояние до/после) отсутствует. PASS по трассе невозможен.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "R_ALL_TIME.NO_HIDDEN_TIMER_RULE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[9]",
+          "candidate_as.Плановое время.Правило"
+        ],
+        "reason": "C10 и правило планового времени прямо запрещают автоматическое продвижение сюжетного времени от числа реплик или настенных часов и отделяют активное время, паузы и блокирующие задержки; 15:30 и сроки объявлены условиями планирования, не жёстким таймером."
+      },
+      {
+        "code": "R_ALL_TIME.M7_STOP_PRIORITY_RULE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[0]",
+          "candidate_as.Правила управления сцены[1]"
+        ],
+        "reason": "C01 даёт приоритет AS_close и решению M7 об остановке над непредъявленными событиями; C02 сохраняет состояние при паузе. Учёт остановки по M7 зафиксирован на документном уровне."
+      },
+      {
+        "code": "R_ALL_TIME.NO_MIN_TURNS_RULE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Плановое время.Правило"
+        ],
+        "reason": "Правило явно указывает отсутствие минимального числа Turns и запрет растягивать при раннем завершении; учёт не по числу Turns задекларирован."
+      },
+      {
+        "code": "R_ALL_TIME.TRACE_EVIDENCE",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability[*].Фактическое возникновение"
+        ],
+        "reason": "Нет фактического прохождения: Исполнение NOT_RUN, все IndicatorObservability NOT_RUN, пользовательских Turns и Evidence нет. Трасса, доказывающая поведение без подсказки, отсутствует."
+      },
+      {
+        "code": "R_ALL_TIME.STATE_BEFORE_AFTER",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Исполнение.Описание"
+        ],
+        "reason": "Состояние до/после, публичные Turns и фактическая аудитория не зафиксированы, поскольку прогон не выполнялся."
+      }
+    ],
+    "defects": [
+      {
+        "code": "R_ALL_TIME.NO_EXECUTION_TRACE",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Условие R_ALL_TIME требует трассы (порядок событий, публичные Turns, фактическая аудитория, состояние до/после). AS в статусе TEST_DRAFT с Исполнение NOT_RUN; фактических Turns и Evidence нет, поэтому PASS по трассе невозможен, а моделирование без подсказки/нового факта недопустимо."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:21.017064+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_ALL_TIME:2b07acf1f441",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "d9bb8aa9-48a7-4ad5-b313-1b05b083c307",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13420,
+      "completion_tokens": 1156,
+      "total_tokens": 14576,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13420
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6703.25
+      }
+    ],
+    "input_checksum": "2b07acf1f4419c8c8a272a413daf5e51f767ee36b1301c5155093edafdc3166a"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

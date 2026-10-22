@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "test_id": "R05_COMBINE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.05",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_05_v0.5_WORKING.json",
+    "source_sha256": "f024d2c7e5b448681db987fc777fdb6447857a4792c3d3c779efcdd268fb6707"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "d4b0f6116b4e334cbeeed6b0054e15cdc0d4446f55faed958ae9583c3b2314a6",
+    "test_id": "PROFILE.05.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.05.PERS06.20261022",
+    "version": "v0.2",
+    "sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-05-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R05_COMBINE",
+    "CaseID": "CASE.SPEC.05",
+    "Условие теста": "Участник соединяет несколько функций ресурсов",
+    "Ожидаемое поведение": "Илья оценивает реальную связь и границы; не требует готового авторского пакета.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "type": "json_object",
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: роль специалиста по подбору, задача — обсудить способы работы с запросом после отказа от расширения поиска и обосновать рекомендацию; готовый план/письмо не требуются.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: расширение за 500 тыс. отклонено; общий бюджет 300 тыс.; две вакансии закрыты с задержкой 1 и 3 дня; причина не установлена; ≤2 ч/неделю на сотрудника; подход и шаг нужны к 17:30.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: 12 закрытых вакансий, 2 с задержкой; разбор причин не проводился; 4 из 8 инженеров проходили проверку знаний в прошлом году; инструкции по 2 этапам есть, обращение к ним не отмечено.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: ресурсы разных функций — разбор воронки 40–60; проба шагов 60–100 за группу; консультации 80–120; изменение материалов 40–60; общий лимит 300; результат не подтверждён.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "material",
+        "content": "M04: 15:20; эксперт до 16:00, руководитель HR до 17:00, Анна до 17:30; самостоятельно обещать цену/срок/участие/изменение процесса нельзя.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "character_turn",
+        "content": "Илья (M05): расширение отклонено; другой состав не просчитывали; опасается потери времени; пока за закрытие запроса; просит объяснить основание продолжать.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "assessee_turn",
+        "content": "Соединяю функции ресурсов так: (1) разбор воронки — диагностика, чтобы установить, где именно возникают задержки, а не гадать о причине; (2) по итогам разбора — проба отдельных шагов на одной группе до 4 инженеров, чтобы проверить гипотезу на ограниченном участке; (3) консультации — сопровождение по текущим вакансиям, чтобы не останавливать работу, пока идёт разбор; (4) изменение рабочих материалов — закрепление того, что подтвердится, по 2 типам этапов, с утверждением порядка у Анны. Связь такая: разбор даёт основание, проба проверяет, консультации страхуют текущие вакансии, изменение материалов фиксирует результат. По деньгам: разбор 40–60 + одна группа пробы 60–100 + консультации 80–120 + изменение материалов 40–60 = от 220 до 340 тыс.; чтобы уложиться в 300, беру одну группу пробы и нижнюю границу консультаций, а точную стоимость подтверждает руководитель HR до 17:00. Нагрузка: интервью по 30 минут, до 4 — это 2 часа на инженера, в пределах недельного лимита; подготовку и встречи считаю отдельно и не обещаю сверх лимита. Причину задержек пока не называю установленной. Предлагаю как следующий шаг: до 16:00 обсудить с экспертом Людмилой рамку разбора, до 17:00 согласовать состав и стоимость с руководителем HR, до 17:30 согласовать участие инженеров и изменение порядка с Анной. Если до 17:00 решения HR нет — сегодня согласование не обещаю.",
+        "audience": [
+          "ILYA"
+        ]
+      },
+      {
+        "sequence": 8,
+        "kind": "system_decision",
+        "content": "Условие теста выполнено: участник соединил несколько функций ресурсов (диагностика → проба → сопровождение → закрепление) и явно обозначил связи и границы. Запускается E01_COLLEAGUE (есть способ и сочетание в продолжающейся сцене). E02_PROMISE не запускается: твёрдых неподтверждённых обещаний нет, стоимость и участие обусловлены согласованием.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 9,
+        "kind": "character_turn",
+        "content": "Илья: понял связь — разбор даёт основание, проба проверяет на одной группе, консультации держат текущие вакансии, изменение материалов закрепляет. Существенное неподтверждённое предположение здесь — что разбор воронки действительно выявит причину задержек; сейчас причина не установлена. На чём основано, что разбор окупится в пределах 300 тыс. и двух часов? Если ответ по стоимости и участию будет до 17:00, поддержу проработку; согласие Анны и HR за меня не считаю.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 10,
+        "kind": "transition",
+        "content": "Сцена в S2 продолжается; внешние согласования не выполнены, новых фактов не введено. Scenario_end не зафиксирован, AS_close не выполнялся.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_EXECUTED",
+        "status": "PASS",
+        "paths": [
+          "synthetic_trigger.assessee_turn",
+          "trace[6]"
+        ],
+        "reason": "Реплика реализует условие: соединены несколько функций ресурсов (диагностика, проба, сопровождение, закрепление) с явными связями."
+      },
+      {
+        "code": "EXPECTED_BEHAVIOR_REAL_LINK_AND_BOUNDS",
+        "status": "PASS",
+        "paths": [
+          "trace[6]",
+          "trace[8]"
+        ],
+        "reason": "Илья оценивает реальную связь функций и границы (лимит 300, единицы за группу, 2 ч/неделю, сроки 16:00/17:00/17:30), не требуя готового авторского пакета."
+      },
+      {
+        "code": "NO_READY_AUTHOR_PACKAGE_REQUIRED",
+        "status": "PASS",
+        "paths": [
+          "trace[8]",
+          "trace[9]"
+        ],
+        "reason": "Отклик коллеги не требует готового плана/письма; запрашивает основание существенного предположения, что соответствует B_APPROACH."
+      },
+      {
+        "code": "NO_NEW_FACT_OR_HIDDEN_INFO",
+        "status": "PASS",
+        "paths": [
+          "trace[8]",
+          "trace[9]"
+        ],
+        "reason": "Илья использует только P00 и M01–M05; новых цен, ресурсов, согласий и результатов не введено."
+      },
+      {
+        "code": "NO_PARTICIPANT_EVALUATION",
+        "status": "PASS",
+        "paths": [
+          "trace[8]",
+          "trace[9]"
+        ],
+        "reason": "Нет оценки участника, уровня или L; фиксируется только позиция коллеги и неподтверждённое предположение."
+      },
+      {
+        "code": "PROMISE_EVENT_NOT_FALSELY_TRIGGERED",
+        "status": "PASS",
+        "paths": [
+          "trace[6]",
+          "trace[8]"
+        ],
+        "reason": "Стоимость и участие сформулированы условно с указанием согласующих; E02_PROMISE не запускается."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "trace[9]"
+        ],
+        "reason": "Сцена в S2, scenario_end не зафиксирован, AS_close не выполнялся; новых Turns после закрытия нет."
+      },
+      {
+        "code": "PLANNED_STORY_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "trace"
+        ],
+        "reason": "Трасса содержит только фактические сообщения и решения в текущем чате; плановые минуты и IndicatorObservability не использованы как Evidence."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:29:50.412610+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R05_COMBINE:1a19209cefb1",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "ff42ddca-ea97-4833-a8ba-5184d2eeaca6",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 16904,
+      "completion_tokens": 1954,
+      "total_tokens": 18858,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 16904
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 9597.69
+      }
+    ],
+    "input_checksum": "1a19209cefb1893c50481a854458d07259bbd663177d4c99a5c33b1c0157cfbf"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

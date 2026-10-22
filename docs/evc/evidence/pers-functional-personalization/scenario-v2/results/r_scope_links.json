@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_LINKS",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.07",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_07_v0.4_WORKING.json",
+    "source_sha256": "79b98154e5bb1d1ec90ee2d58ef43e2be846a8cf348d4b989b23fa37ff8fa725"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "84000573a227700e4d1d8093225c7980301d584a2a38ba1f6c9da4b763425b43",
+    "test_id": "PROFILE.07.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.07.PERS06.20261022",
+    "version": "v1.0",
+    "sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-07-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_LINKS",
+    "Условие теста": "Критерий A/B заменён, но старый аргумент или единицы остались в одном документе",
+    "Ожидаемое поведение": "Тестер находит связанный дефект; AS не предъявляется до исправления.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "system_decision",
+        "content": "Тест R_SCOPE_LINKS требует смоделировать условие: критерий A/B заменён, но старый аргумент или единицы остались в одном документе. Проверяется, находит ли тестер связанный дефект и не предъявляется ли AS до исправления.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "system_decision",
+        "content": "В переданном пакете нет определения критериев A/B, нет карты связанных документов и нет правила трассировки замены критерия на аргументы/единицы. Материалы P00–M04, события E01/E02 и правила C01–C10 не содержат объекта «критерий A/B» и не задают процедуру поиска связанного дефекта.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Фактический LLM-вызов не выполняется (Результат: NOT_RUN, тип — план проверки). Трасса не может доказать ожидаемое поведение тестера без подсказки: нет ни входного документа с заменённым критерием, ни правила, по которому связанный дефект признаётся дефектом.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "transition",
+        "content": "Сценарий не предъявляется: условие теста не воспроизводимо по фактическим правилам AS в этом пакете. PASS невозможен; фиксируется INDETERMINATE без создания Evidence, IA или уровня.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_REPRODUCIBLE",
+        "status": "FAIL",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.Материалы",
+          "candidate_as.События",
+          "candidate_as.Правила управления сценой"
+        ],
+        "reason": "Ни один материал или правило не определяет критерий A/B, его замену и связанные аргументы/единицы. Условие теста не может быть смоделировано по фактическим правилам AS."
+      },
+      {
+        "code": "EXPECTED_BEHAVIOR_DEFINED",
+        "status": "INDETERMINATE",
+        "paths": [
+          "scenario_test.Ожидаемое поведение",
+          "candidate_as.Границы распознавания",
+          "candidate_as.Правила управления сценой"
+        ],
+        "reason": "Ожидаемое поведение («тестер находит связанный дефект; AS не предъявляется до исправления») не привязано к конкретному правилу AS или событию. Нет критерия, по которому связанный дефект распознаётся."
+      },
+      {
+        "code": "NO_HINT_OR_NEW_FACT",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.События",
+          "candidate_as.Граница исполнения"
+        ],
+        "reason": "Без входного документа с заменённым критерием нельзя проверить, что тестер найдёт дефект без подсказки; трасса не содержит assessee_turn."
+      },
+      {
+        "code": "AS_NOT_PRESENTED_BEFORE_FIX",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Статус",
+          "candidate_as.Исполнение"
+        ],
+        "reason": "Статус TEST_DRAFT и Исполнение NOT_RUN согласуются с непредъявлением, но это не доказывает срабатывание правила «не предъявлять до исправления» — отсутствует сам дефект и процедура его фиксации."
+      },
+      {
+        "code": "SCENARIO_END_VS_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сценой",
+          "candidate_as.Исходный сценарный контракт.Состояния"
+        ],
+        "reason": "Правила C01/C09 и состояние END отделяют конец сценария от AS_close; это соблюдено в трассе (нет AS_close)."
+      },
+      {
+        "code": "PLANNED_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Результат",
+          "candidate_as.Исполнение",
+          "candidate_as.Плановое время"
+        ],
+        "reason": "Плановые минуты и NOT_RUN не использованы как Evidence или уровень; Evidence/IA не создавались."
+      }
+    ],
+    "defects": [
+      {
+        "code": "MISSING_TEST_OBJECT",
+        "severity": "blocking",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.Материалы"
+        ],
+        "reason": "В пакете отсутствует документ с заменённым критерием A/B и старым аргументом/единицами — объект теста не существует, условие невоспроизводимо."
+      },
+      {
+        "code": "MISSING_LINKAGE_RULE",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Правила управления сценой",
+          "candidate_as.Границы распознавания"
+        ],
+        "reason": "Нет правила AS, определяющего, как связанный дефект (старый аргумент/единицы после замены критерия) обнаруживается и блокирует предъявление AS."
+      },
+      {
+        "code": "NO_TRACE_EVIDENCE",
+        "severity": "non_blocking",
+        "paths": [
+          "scenario_test.Результат"
+        ],
+        "reason": "Результат NOT_RUN и отсутствие LLM-вызова означают, что трасса не может доказать ожидаемое поведение; PASS недопустим."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:28:11.281274+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_LINKS:0a2c149d08a5",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "a47a8735-b81b-4fe5-9aae-30aff8b2a2be",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13357,
+      "completion_tokens": 1303,
+      "total_tokens": 14660,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13357
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7048.82
+      }
+    ],
+    "input_checksum": "0a2c149d08a571b6303e6d1dd071cc63330c87cdaadd1f2365ad6c14756dadde"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

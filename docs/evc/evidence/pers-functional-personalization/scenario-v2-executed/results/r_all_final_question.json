@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "test_id": "R_ALL_FINAL_QUESTION",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.03",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_03_v0.4_WORKING.json",
+    "source_sha256": "5a95eb813a0201edc3bcb5c8fcea5fecf23ba12f1ab60ecf28d6be1aacba2d4f"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "9249cad6f4fc44a456d9e3ad320ed82a195e474aaae90c60eaa78916bb3c4824",
+    "test_id": "PROFILE.03.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.03.PERS06.20261022",
+    "version": "v1.2",
+    "sha256": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-03-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_ALL_FINAL_QUESTION",
+    "Область": "Все применимые диалоговые/письменные ветви",
+    "Условие теста": "Явное завершение и встроенный вопрос в одной реплике",
+    "Ожидаемое поведение": "Явное намерение завершить сильнее вопроса; не продлевать сцену по ключевому слову.",
+    "Результат": "NOT_RUN",
+    "Нужная трасса": "AS/profile version, порядок событий, публичные Turns, фактическая аудитория и состояние до/после; оценки участника для этого теста не создавать.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "type": "json_object",
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: роль, общий чат, задача договориться; Денис, Илья, Светлана не подчиняются; подтверждать их части нельзя; документ после обсуждения.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: запрос Анны — предварительное предложение к 17:00, два рабочих места, гибкий график и выход за две недели проверить; непроверенное можно обозначить предварительным.",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: план привлечения отсутствует, Светлана не подтверждала; требования v2 на одно место; сборка не распределена.",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: Денис против старой версии, обновит за 30 мин; Илья предлагает отправить как есть, 20 мин после требований и плана; Светлана не подтверждает, 30 мин после состава и сроков; все доступны до 16:30.",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "assessee_turn",
+        "content": "Спасибо всем, на этом моё участие в обсуждении завершаю. Напоследок один вопрос: успеем ли мы при текущих вводных собрать предварительное предложение к 17:00?",
+        "audience": [
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "system_decision",
+        "content": "Распознано явное окончательное прекращение участия, усиленное встроенным вопросом. По C03 явное завершение сильнее встроенного вопроса; по C01 прекращение имеет приоритет над ещё не предъявленным E01_UPDATE. Сцена завершается (END), новых Turns персонажей нет, E01_UPDATE не предъявляется.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "transition",
+        "content": "Состояние: scenario_end зафиксирован отдельно от AS_close. AS_close не выполнялся. Знания и материалы не изменялись; M04 не раскрыт. Новые события не создаются.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "EXPLICIT_TERMINATION_OVER_EMBEDDED_QUESTION",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.Правила управления сцены[2]",
+          "trace[4]",
+          "trace[5]"
+        ],
+        "reason": "Реплика содержит явное окончательное прекращение участия и встроенный вопрос; система распознала приоритет прекращения и не продлила сцену ради вопроса."
+      },
+      {
+        "code": "NO_SCENE_EXTENSION_BY_KEYWORD",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[2]",
+          "trace[5]",
+          "trace[6]"
+        ],
+        "reason": "Вопрос не запустил новый Turn персонажа и не активировал E01_UPDATE; сцена завершена без продления по ключевому слову."
+      },
+      {
+        "code": "TERMINATION_PRIORITY_OVER_PENDING_EVENT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[0]",
+          "candidate_as.События[0].Когда запрещено",
+          "trace[5]"
+        ],
+        "reason": "E01_UPDATE не предъявлен, поскольку прекращение участия имеет приоритет над ещё не предъявленным событием."
+      },
+      {
+        "code": "NO_NEW_TURNS_AFTER_TERMINATION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[0]",
+          "trace[5]",
+          "trace[6]"
+        ],
+        "reason": "После прекращения не создано ни одного Turn персонажа; зафиксирован только переход состояния."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[8]",
+          "trace[6]"
+        ],
+        "reason": "Сценарный конец зафиксирован отдельно от AS_close; AS_close не выполнялся."
+      },
+      {
+        "code": "CLOSED_INFORMATION_PRESERVED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0]",
+          "candidate_as.События[1]",
+          "trace[6]"
+        ],
+        "reason": "M04 не раскрыт, знания персонажей не изменены, E02_TRANSFER не активирован."
+      },
+      {
+        "code": "NO_PARTICIPANT_EVALUATION_CREATED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Нужная трасса",
+          "candidate_as.Исполнение",
+          "trace"
+        ],
+        "reason": "Оценки участника, Evidence и IA не создавались; трасса содержит только события и решение системы."
+      },
+      {
+        "code": "NO_INVENTED_MATERIALS_OR_EXTERNAL_ACTIONS",
+        "status": "PASS",
+        "paths": [
+          "constraints.do_not_invent_materials_or_external_actions",
+          "trace"
+        ],
+        "reason": "Использованы только стартовые материалы; внешние действия и новые документы не создавались."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:29:14.474384+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_ALL_FINAL_QUESTION:9ee4c9228d7d",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "ffe24dd7-6c81-4317-9a16-cd5b3b01fd18",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15696,
+      "completion_tokens": 1338,
+      "total_tokens": 17034,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15696
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7135.43
+      }
+    ],
+    "input_checksum": "9ee4c9228d7db221b946f7202681256ec4d1ec812fabc973840f4789340fac91"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

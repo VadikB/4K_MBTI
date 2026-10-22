@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-22T16:25:39.215713+00:00",
+  "known_response_envelopes": [
+    {
+      "test_id": "PROFILE.01.2",
+      "depth": 1,
+      "extracted_sha256": "26ec03013b1988026fadd073c97081722b41cef057432e4ddd430dc97d293add",
+      "normalized_sha256": "26ec03013b1988026fadd073c97081722b41cef057432e4ddd430dc97d293add",
+      "content_identical": true
+    },
+    {
+      "test_id": "PROFILE.01.3",
+      "depth": 1,
+      "extracted_sha256": "dc311b35c6292f976302c9b874cbaa964d2bf024176e672e291fa13c1f461e38",
+      "normalized_sha256": "dc311b35c6292f976302c9b874cbaa964d2bf024176e672e291fa13c1f461e38",
+      "content_identical": true
+    },
+    {
+      "test_id": "PROFILE.04.1",
+      "depth": 1,
+      "extracted_sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+      "normalized_sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+      "content_identical": true
+    },
+    {
+      "test_id": "PROFILE.04.2",
+      "depth": 1,
+      "extracted_sha256": "6580dff1a9212c0321e5e10e957cadaaeb40eb6f3e259298783d9fe531f4b97c",
+      "normalized_sha256": "6580dff1a9212c0321e5e10e957cadaaeb40eb6f3e259298783d9fe531f4b97c",
+      "content_identical": true
+    },
+    {
+      "test_id": "PROFILE.04.3",
+      "depth": 1,
+      "extracted_sha256": "b2776fe4cad4c9ff5213cf0390f2fb651584ab340733e03d73a40291323f8e15",
+      "normalized_sha256": "b2776fe4cad4c9ff5213cf0390f2fb651584ab340733e03d73a40291323f8e15",
+      "content_identical": true
+    },
+    {
+      "test_id": "PROFILE.05.1",
+      "depth": 1,
+      "extracted_sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+      "normalized_sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+      "content_identical": true
+    },
+    {
+      "test_id": "PROFILE.05.2",
+      "depth": 1,
+      "extracted_sha256": "e0ecd21274977c921053e0812bf15274cbd7e2cc92038980695552f10051e59b",
+      "normalized_sha256": "e0ecd21274977c921053e0812bf15274cbd7e2cc92038980695552f10051e59b",
+      "content_identical": true
+    },
+    {
+      "test_id": "PROFILE.06.2",
+      "depth": 1,
+      "extracted_sha256": "063ce8a08cc3779e765116ded5640978be226521a81b9edbaf7c130170b50c33",
+      "normalized_sha256": "063ce8a08cc3779e765116ded5640978be226521a81b9edbaf7c130170b50c33",
+      "content_identical": true
+    },
+    {
+      "test_id": "PROFILE.06.3",
+      "depth": 1,
+      "extracted_sha256": "a314df05c8c1aea52986ce3cb7fe44cd5a3a05e339d8e76f5b944201f824409f",
+      "normalized_sha256": "a314df05c8c1aea52986ce3cb7fe44cd5a3a05e339d8e76f5b944201f824409f",
+      "content_identical": true
+    },
+    {
+      "test_id": "PROFILE.07.1",
+      "depth": 1,
+      "extracted_sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+      "normalized_sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+      "content_identical": true
+    },
+    {
+      "test_id": "PROFILE.08.1",
+      "depth": 2,
+      "extracted_sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+      "normalized_sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+      "content_identical": true
+    },
+    {
+      "test_id": "PROFILE.08.2",
+      "depth": 2,
+      "extracted_sha256": "3a9e89e1eb802c54a43ed980cefc1c1a340f20fa135cedfa81f69f69f54b7fa5",
+      "normalized_sha256": "3a9e89e1eb802c54a43ed980cefc1c1a340f20fa135cedfa81f69f69f54b7fa5",
+      "content_identical": true
+    },
+    {
+      "test_id": "PROFILE.08.3",
+      "depth": 1,
+      "extracted_sha256": "ec13891f7a4709954c728b18587bf1f8bf47363a3649dce869851b5e15901f4c",
+      "normalized_sha256": "ec13891f7a4709954c728b18587bf1f8bf47363a3649dce869851b5e15901f4c",
+      "content_identical": true
+    },
+    {
+      "test_id": "PROFILE.09.2",
+      "depth": 2,
+      "extracted_sha256": "0d1494d246d7ae18b949d91b292fe6a2bfde2648d8b8e1d5d277d75129362096",
+      "normalized_sha256": "0d1494d246d7ae18b949d91b292fe6a2bfde2648d8b8e1d5d277d75129362096",
+      "content_identical": true
+    }
+  ],
+  "unknown_structure_policy": "preserve_and_fail_downstream_validation",
+  "profile_02_2": {
+    "before_sha256": "39ce13403b210cf165a97f9eabebc216250e65b4a032e7e6d4bb84b740aa3830",
+    "after_sha256": "25d91fb1cfcd68fcf68704d2f5251309aca378bae54279b77b3eea027c3e7546",
+    "changed_paths": [
+      "$.IndicatorObservability[0].Конкретное условие",
+      "$.IndicatorObservability[0].Что сохранить при адаптации",
+      "$.IndicatorObservability[1].Конкретное условие",
+      "$.IndicatorObservability[1].Что сохранить при адаптации",
+      "$.IndicatorObservability[2].Дефект потери",
+      "$.IndicatorObservability[2].Конкретное условие",
+      "$.IndicatorObservability[2].Что сохранить при адаптации",
+      "$.IndicatorObservability[3].Конкретное условие",
+      "$.IndicatorObservability[3].Что сохранить при адаптации",
+      "$.IndicatorObservability[4].Конкретное условие",
+      "$.IndicatorObservability[4].Что сохранить при адаптации",
+      "$.IndicatorObservability[6].Конкретное условие",
+      "$.IndicatorObservability[6].Что сохранить при адаптации",
+      "$.IndicatorObservability[7].Конкретное условие",
+      "$.IndicatorObservability[7].Что сохранить при адаптации",
+      "$.IndicatorObservability[8].Конкретное условие",
+      "$.IndicatorObservability[8].Что сохранить при адаптации",
+      "$.Version",
+      "$.Материалы[1].Текст",
+      "$.Материалы[2].Текст",
+      "$.Материалы[3].Текст",
+      "$.Материалы[4].Текст",
+      "$.Материалы[5].Автор",
+      "$.Материалы[5].Текст",
+      "$.Материалы[6].Текст",
+      "$.Словарь.Готовая площадка",
+      "$.Словарь.Готовый профиль",
+      "$.Словарь.Контакт",
+      "$.Словарь.Отклик",
+      "$.Соответствие инвариантам[0].Подтверждение в конкретном примере",
+      "$.Соответствие инвариантам[1].Подтверждение в конкретном примере",
+      "$.Соответствие инвариантам[2].Подтверждение в конкретном примере",
+      "$.Соответствие инвариантам[4].Подтверждение в конкретном примере",
+      "$.Числовые связи для QA.A_contacts",
+      "$.Числовые связи для QA.A_responses",
+      "$.Числовые связи для QA.B_contacts",
+      "$.Числовые связи для QA.B_responses",
+      "$.Числовые связи для QA.advantage_contacts",
+      "$.Числовые связи для QA.advantage_responses",
+      "$.Числовые связи для QA.required_platforms",
+      "$.Числовые связи для QA.required_profiles"
+    ],
+    "dependent_area_coverage": {
+      "$.Материалы": true,
+      "$.Словарь": true,
+      "$.IndicatorObservability": true,
+      "$.Числовые связи для QA": true
+    },
+    "repair_attempt_limit": 2,
+    "attempts_used": 1,
+    "final_deterministic_status": "PASS",
+    "final_semantic_status": "PASS"
+  }
+}

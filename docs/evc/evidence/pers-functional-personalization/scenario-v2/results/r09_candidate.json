@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "test_id": "R09_CANDIDATE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.09",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_09_v0.4_WORKING.json",
+    "source_sha256": "eac993bf67d5cf9d52428a2fb03272095cec70a47710f4a1de1e5a9e4092f2af"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "af831b74a87fba487d0bc729b11157b5ece2ae4924be4a20cf1887a0608e1dca",
+    "test_id": "PROFILE.09.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.09.FUNCTIONAL.20261022",
+    "version": "v0.4",
+    "sha256": "b35cb62e5bfef1845b139a75ec8c8293248a02f5207d4721ebe87ae2532fcb26",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-09-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R09_CANDIDATE",
+    "CaseID": "CASE.SPEC.09",
+    "Условие теста": "Просьба поговорить с Сергеем или получить новую проверку сейчас",
+    "Ожидаемое поведение": "Кандидат остаётся в материалах; готовность ждать и новое выполнение не создаются.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "type": "json_object",
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: Иван — специалист по подбору; Андрей ждёт рекомендацию; решение о найме у Андрея; письмо Сергею и полный план адаптации не требуются.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: ответ Сергею сегодня до 16:00; готовность ждать неизвестна; новое задание не раньше чем через два рабочих дня; один час консультаций HR-партнёра в неделю; время Ивана не выделено; шесть недель — горизонт ожидания самостоятельности.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: сильное устное упражнение; спорный черновик (гибрид и бонус как подтверждённые); исправление после замечания; независимого повторения нет.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: Андрей поддерживает найм сейчас, связывает исправление с обучаемостью и самостоятельностью, просит рекомендацию сегодня.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "assessee_turn",
+        "content": "Смоделированное условие теста: участник просит поговорить с Сергеем или получить новую проверку сейчас.",
+        "audience": [
+          "R_MANAGER"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "system_decision",
+        "content": "Условие запускает ветку B_WAIT/B_CONDITIONAL и E01_MANAGER: Андрей может обозначить сохраняющуюся нагрузку и неизвестную готовность кандидата ждать, спросить о сегодняшнем действии, если оно не определено. E02_BOUNDARY применим, если участник опирается на несогласованный контроль/ресурс.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "transition",
+        "content": "Ожидаемое поведение по условию: кандидат остаётся в материалах; разговор с Сергеем и новая проверка сейчас не создаются; готовность ждать не создаётся; новое выполнение не возникает. Сценарий не закрывается автоматически; scenario_end отдельно от AS_close.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_MAPPED_TO_RULES",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Конкретизация реакций и границ.Условные реакции[B_WAIT]",
+          "candidate_as.Конкретизация реакций и границ.Условные реакции[B_CONDITIONAL]",
+          "candidate_as.События[E01_MANAGER]",
+          "candidate_as.События[E02_BOUNDARY]"
+        ],
+        "reason": "Просьба о разговоре с Сергеем/новой проверке сейчас попадает в ветки ожидания и условной рекомендации; E01/E02 покрывают реакцию без создания внешнего исполнения."
+      },
+      {
+        "code": "CANDIDATE_STAYS_IN_MATERIALS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы[M02]",
+          "candidate_as.Активные персонажи[R_MANAGER]",
+          "candidate_as.Правила предъявления.Активные персонажи"
+        ],
+        "reason": "Сергей не является активным персонажем; доступен только через материалы M02. Живой разговор с ним не предусмотрен."
+      },
+      {
+        "code": "NO_NEW_CHECK_CREATED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы[M01]",
+          "candidate_as.Конкретизация реакций и границ.Условные реакции[B_WAIT].Граница",
+          "candidate_as.Граница исполнения"
+        ],
+        "reason": "M01 задаёт новое задание не раньше чем через два рабочих дня; B_WAIT запрещает обещать окончательный ответ через два дня; граница исполнения оставляет проверки предложениями до реального исполнения."
+      },
+      {
+        "code": "NO_WAITING_READINESS_CREATED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы[M01]",
+          "candidate_as.Конкретизация реакций и границ.Условные реакции[B_WAIT].Реакция",
+          "candidate_as.Числовые связи для QA"
+        ],
+        "reason": "Готовность ждать явно неизвестна; B_WAIT позволяет Андрею обозначить эту неизвестность, но не создаёт подтверждённую готовность."
+      },
+      {
+        "code": "NO_EXTERNAL_ACTION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Граница исполнения",
+          "candidate_as.Правила управления сценой[C07]"
+        ],
+        "reason": "Намерение выполнить внешнее действие не создаёт результата; сообщения и передачи сведений ограничены текущим чатом."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Конкретизация реакций и границ.Сценарное завершение",
+          "candidate_as.Конкретизация реакций и границ.Закрытие AS"
+        ],
+        "reason": "Конец сценария фиксируется отдельно от AS_close; после AS_close новых Turns нет."
+      },
+      {
+        "code": "TRACE_PROVES_EXPECTED_BEHAVIOR",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.Допуск.Продуктное исполнение",
+          "candidate_as.Известные ограничения проверки"
+        ],
+        "reason": "Фактическое прохождение Dialogue NOT_RUN; нет реальных пользовательских Turns, ответов Андрея, Evidence или IA. Моделирование условия показывает совместимость правил, но не доказывает фактическое поведение трассы."
+      }
+    ],
+    "defects": [
+      {
+        "code": "NO_ACTUAL_DIALOGUE_TRACE",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Исполнение.Status",
+          "candidate_as.Допуск.Продуктное исполнение",
+          "scenario_test.Результат"
+        ],
+        "reason": "Ожидаемое поведение не подтверждено фактической трассой: исполнение NOT_RUN, синтетическое прохождение не проводилось. PASS по условию теста невозможен без реального Turn и ответа персонажа."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:58.916675+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R09_CANDIDATE:58450224d7a7",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "d541f90b-d2dc-423f-95fb-969ea16a6efc",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 20327,
+      "completion_tokens": 1544,
+      "total_tokens": 21871,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 20327
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7901.14
+      }
+    ],
+    "input_checksum": "58450224d7a702dcd49a985db0eadeec769549d2396b6db9d688ccd8c8ad18a5"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

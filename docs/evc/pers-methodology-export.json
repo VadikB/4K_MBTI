@@ -1,0 +1,95 @@
+{
+  "schema_version": 2,
+  "exported_at": "2026-10-22",
+  "product_version": "2.0.14",
+  "package_ref": {
+    "id": "m5-functional-personalization-cases",
+    "version": "0.2",
+    "status": "draft",
+    "runtime_enabled": false
+  },
+  "case_sources": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases",
+  "open_assessment_situations": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/participant-preview.json",
+  "closed_materials_and_mapping": [
+    "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/case-package.json",
+    "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/mapping-report.json",
+    "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/execution-rules.json"
+  ],
+  "automatic_verification": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/verification-report.json",
+  "real_generation_matrix": {
+    "status": "PASS",
+    "summary": "docs/evc/evidence/pers-functional-personalization/matrix-summary.json",
+    "protocol_v2_summary": "docs/evc/evidence/pers-functional-personalization/protocol-v2-final-summary.json",
+    "tester_protocol": "m5-functional-personalization-tester/2.0.0",
+    "selected": 27,
+    "complete_generation_and_tester_artifacts": 27,
+    "technical_failures": 0,
+    "historical_deterministic_pass": 11,
+    "historical_deterministic_fail": 14,
+    "final_deterministic_pass": 27,
+    "final_deterministic_fail": 0,
+    "independent_tester_pass": 27,
+    "independent_tester_fail": 0,
+    "admitted_for_participant": 27,
+    "repair_attempts": 50,
+    "recovered_technical_failure_ids": ["PROFILE.06.1", "PROFILE.09.1"],
+    "technical_recovery": "docs/evc/evidence/pers-functional-personalization/technical-recovery-v2/summary.json"
+  },
+  "negative_matrix": {
+    "status": "PASS",
+    "summary": "docs/evc/evidence/pers-functional-personalization/negative/summary.json",
+    "selected": 27,
+    "completed": 27,
+    "passed": 27,
+    "failed": 0
+  },
+  "provider_operations": {
+    "provider": "deepseek",
+    "requested_model_from_local_configuration": "deepseek-chat",
+    "actual_provider_model": "deepseek-flash",
+    "repository_contract_model": "deepseek-flash",
+    "historical_configuration_identity_result": "FAIL",
+    "current_configuration_identity_result": "PASS",
+    "secret_material_exported": false,
+    "generation_artifacts": "docs/evc/evidence/pers-functional-personalization/generations",
+    "tester_artifacts": "docs/evc/evidence/pers-functional-personalization/tester",
+    "tester_v2_artifacts": "docs/evc/evidence/pers-functional-personalization/tester-v2",
+    "normalized_v2_artifacts": "docs/evc/evidence/pers-functional-personalization/normalized-v2",
+    "remediation_v2_artifacts": "docs/evc/evidence/pers-functional-personalization/remediation-v2",
+    "attempt_artifacts": "docs/evc/evidence/pers-functional-personalization/attempts",
+    "current_control_operations": "docs/evc/evidence/pers-functional-personalization/technical-recovery-v2"
+  },
+  "actual_trajectory": "docs/evc/evidence/pers-functional-personalization/full-cycle-real-final.json",
+  "scenario_regressions": {
+    "status": "PASS",
+    "planned": 34,
+    "completed": 34,
+    "passed": 34,
+    "failed": 0,
+    "summary": "docs/evc/evidence/pers-functional-personalization/scenario-v2-executed/summary.json"
+  },
+  "full_cycle": {
+    "status": "PASS",
+    "reason": "Два архивированных изолированных Cycle прошли штатные M5/M6/M7/M8 сервисы с реальным DeepSeek. Невалидная первая AI-попытка сохраняется и не принимается; ограниченный второй вызов допускается только после строгой проверки. M8 явно показывает неполный результат и не выводит низкий уровень из отсутствия наблюдения.",
+    "final_evidence": "docs/evc/evidence/pers-functional-personalization/full-cycle-real-final.json",
+    "repeat_evidence": "docs/evc/evidence/pers-functional-personalization/full-cycle-real-repeat.json",
+    "historical_evidence_failure": "docs/evc/evidence/pers-functional-personalization/full-cycle-real.failure.json",
+    "historical_assessment_failure": "docs/evc/evidence/pers-functional-personalization/full-cycle-real-assessment.failure.json",
+    "isolated_db_mechanics": "PASS: 11 tests"
+  },
+  "independent_conclusion": {
+    "status": "NOT_RUN",
+    "form": {
+      "reviewer": null,
+      "reviewed_at": null,
+      "case_id": null,
+      "as_id": null,
+      "decision": null,
+      "findings": []
+    }
+  },
+  "limitations": [
+    "METHODOLOGY_ADMISSION_NOT_RUN",
+    "RUNTIME_ADMISSION_DISABLED"
+  ]
+}

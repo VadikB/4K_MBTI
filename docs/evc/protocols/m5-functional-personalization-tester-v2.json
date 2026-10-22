@@ -1,0 +1,78 @@
+{
+  "schema_version": 2,
+  "id": "m5-functional-personalization-tester",
+  "version": "2.0.0",
+  "status": "draft",
+  "result_statuses": ["PASS", "FAIL", "NOT_APPLICABLE", "NOT_RUN", "INDETERMINATE", "TECHNICAL_ERROR"],
+  "aggregate_statuses": ["PASS", "PASS_WITH_WARNINGS", "FAIL", "INCOMPLETE", "REVIEW_REQUIRED"],
+  "common_checks": [
+    {
+      "check_id": "common.target_integrity",
+      "category": "target_integrity",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "CaseID, CaseVersion, BaseRole, точные IndicatorIDs и версии M2 сохранены."
+    },
+    {
+      "check_id": "common.professional_consistency",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости."
+    },
+    {
+      "check_id": "common.authority",
+      "category": "authority",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "AS не расширяет подтверждённый мандат и не создаёт согласие, ресурс или действие другого субъекта."
+    },
+    {
+      "check_id": "common.confidentiality",
+      "category": "confidentiality",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Стартовые, закрытые и отложенные сведения имеют корректную аудиторию и условия раскрытия."
+    },
+    {
+      "check_id": "common.scenario_executability",
+      "category": "scenario_executability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы."
+    },
+    {
+      "check_id": "common.no_premature_assessment",
+      "category": "target_integrity",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "До фактической траектории отсутствуют Evidence, IA, уровень и готовое правильное решение участника."
+    },
+    {
+      "check_id": "quality.clarity",
+      "category": "presentation_quality",
+      "mandatory": true,
+      "protected": false,
+      "requirement": "Текст однозначно различает статусы источников, субъектов, единицы и учебное происхождение фактов."
+    }
+  ],
+  "conditional_checks": [
+    {
+      "check_id": "case02.attractive_feature",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "applicable_case_ids": ["CASE.SPEC.02"],
+      "requirement": "У варианта A есть доступный источник привлекательного признака; переход к общей пригодности проверяем по независимым требованиям, остаточная проблема B сохранена; цена необязательна."
+    }
+  ],
+  "aggregation": {
+    "deterministic_fail": "FAIL",
+    "blocking_fail": "FAIL",
+    "mandatory_not_run_or_indeterminate_or_technical_error": "INCOMPLETE",
+    "mandatory_not_applicable": "INCOMPLETE",
+    "protected_non_blocking_finding": "REVIEW_REQUIRED",
+    "only_unprotected_non_blocking_findings": "PASS_WITH_WARNINGS",
+    "all_required_pass": "PASS"
+  }
+}

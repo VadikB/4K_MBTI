@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "test_id": "R08_RECEIPT",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.08",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_08_v0.4_WORKING.json",
+    "source_sha256": "cc6de199dc9fa956cf025043987fd461b3cf2bc8f105647affce5f258b2022c1"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "11929c9fe69d2c726e7c43c8ae5fe90a3183d4462ac5f941870f90eb127e7a19",
+    "test_id": "PROFILE.08.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.08.RECRUIT.20261022",
+    "version": "v0.1",
+    "sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-08-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R08_RECEIPT",
+    "CaseID": "CASE.SPEC.08",
+    "Условие теста": "Светлана получила актуальные условия, но допуск открыт",
+    "Ожидаемое поведение": "Получение и достаточность для подготовки не означают принятия выезда в исполнение.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Стартовое предъявление P00, M01, M02, M03 один раз; скрытых материалов нет.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Участник передаёт Олегу актуальные условия текущего объекта (фрагмент v3, открытые статусы бюджета и даты) в чате.",
+        "audience": [
+          "MARINA",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "character_turn",
+        "content": "Олег подтверждает получение и достаточность для подготовки; отмечает, что получение не означает принятия выезда/запуска в исполнение, так как бюджет и дата открыты.",
+        "audience": [
+          "PARTICIPANT",
+          "MARINA"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "system_decision",
+        "content": "E01_HANDOVER: различаются получение, достаточность для подготовки и готовность к исполнению; E03_PENDING сохраняет открытые статусы без внешнего подтверждения.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_MODELED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.События[0]",
+          "candidate_as.Активные персонажи[1].Реакция"
+        ],
+        "reason": "Условие «получены актуальные условия, допуск открыт» моделируется через E01_HANDOVER и E03_PENDING: получение и достаточность для подготовки отделены от готовности к исполнению."
+      },
+      {
+        "code": "EXPECTED_BEHAVIOR_SUPPORTED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Активные персонажи[1].Реакция",
+          "candidate_as.События[0].Изменение состояния",
+          "candidate_as.Соответствие инвариантам[5]"
+        ],
+        "reason": "Правила AS прямо требуют, чтобы получение уведомления не объявлялось принятием заявки в исполнение, и различают получение, достаточность и готовность."
+      },
+      {
+        "code": "NO_HINT_OR_NEW_FACT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Когда запрещено",
+          "candidate_as.Правила управления сценой[6]",
+          "candidate_as.Граница исполнения"
+        ],
+        "reason": "Трасса не вводит новых фактов, внешних подтверждений или подсказок; открытые статусы остаются открытыми."
+      },
+      {
+        "code": "TRACE_PROVES_BEHAVIOR",
+        "status": "INDETERMINATE",
+        "paths": [
+          "scenario_test.Результат",
+          "candidate_as.Исполнение.Status",
+          "candidate_as.IndicatorObservability[*].Фактическое возникновение"
+        ],
+        "reason": "Фактического прохождения нет: Result=NOT_RUN, Исполнение=NOT_RUN, все IndicatorObservability=NOT_RUN. Смоделированная трасса является плановой иллюстрацией, а не Evidence; PASS по трассе без реального прогона недопустим."
+      }
+    ],
+    "defects": [
+      {
+        "code": "NO_ACTUAL_RUN",
+        "severity": "non_blocking",
+        "paths": [
+          "scenario_test.Результат",
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "Ожидаемое поведение согласовано правилами AS, но не подтверждено фактическим прохождением; статус остаётся INDETERMINATE до реального прогона."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:51.074776+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R08_RECEIPT:526f68b9a41f",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "cd337d2f-4f17-4be1-a80b-07cecbcaf192",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13385,
+      "completion_tokens": 862,
+      "total_tokens": 14247,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13385
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 4862.0
+      }
+    ],
+    "input_checksum": "526f68b9a41f3fee8ce956df987012fdbf95aa85b3a5670879413ecf38a6e98f"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

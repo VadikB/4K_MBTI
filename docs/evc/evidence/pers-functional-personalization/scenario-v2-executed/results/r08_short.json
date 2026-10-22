@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "test_id": "R08_SHORT",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.08",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_08_v0.4_WORKING.json",
+    "source_sha256": "cc6de199dc9fa956cf025043987fd461b3cf2bc8f105647affce5f258b2022c1"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "11929c9fe69d2c726e7c43c8ae5fe90a3183d4462ac5f941870f90eb127e7a19",
+    "test_id": "PROFILE.08.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.08.RECRUIT.20261022",
+    "version": "v0.1",
+    "sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-08-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R08_SHORT",
+    "CaseID": "CASE.SPEC.08",
+    "Условие теста": "Первое предложение достаточно для обеих сторон",
+    "Ожидаемое поведение": "Подтвердить собственные вклады; третий раунд не обязателен.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "type": "json_object",
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Предъявлены стартовые материалы P00, M01, M02, M03 (роль, история потерь, текущий профиль v3 и карточка v2, позиции коллег).",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Передаю для подготовки поиска: актуальный профиль — v3, в нём две позиции («Менеджер по продажам» и «Старший менеджер по продажам»), по одному кандидату на каждую; окно поиска 20:00–22:00. Проверены требования к опыту и запуск на учебном стенде; условия на рабочих площадках полностью не проверялись. Карточка пока на v2 с одной позицией — обновлю её сам. Бюджет на вторую позицию не подтверждён, дата запуска не согласована; ответ Анны по бюджету ещё не получен. Марина, подтверди, что фрагмент v3 актуален и что тебе достаточно передать его как есть; Олег, подтверди, достаточно ли этого для предварительного планирования к 15:30.",
+        "audience": [
+          "MARINA",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "character_turn",
+        "content": "Марина: подтверждаю, фрагмент v3 актуален, две позиции и окно 20:00–22:00 верны. Мой вклад — сам профиль v3 в папке; переписывать его в новую форму не буду, времени до 15:00 мало. Запись в карточку сделать не могу — это твоя часть.",
+        "audience": [
+          "PARTICIPANT",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "character_turn",
+        "content": "Олег: полученное получил. Для предварительного планирования к 15:30 этого достаточно: вижу актуальные условия и открытые статусы. Бюджет на вторую позицию и дата запуска остаются неподтверждёнными — это не готовность к исполнению, а только основа для подготовки. Уведомление об изменениях после передачи мне нужно, чтобы не проверять папку перед каждым действием.",
+        "audience": [
+          "PARTICIPANT",
+          "MARINA"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "system_decision",
+        "content": "E01_HANDOVER отработано: оба коллеги отдельно подтвердили пригодность полученного и собственный вклад. Достаточное первое предложение — третий раунд не требуется. E02_CORRECT не запускалось (искажения нет). E03_PENDING: статусы бюджета и даты остаются открытыми, внешнее подтверждение не создаётся.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "transition",
+        "content": "Сценарий в состоянии S3/END-кандидат: рабочая договорённость о способе передачи достигнута; сценарный конец фиксируется отдельно от AS_close, новых Turns не требуется.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "TEST_CONDITION_EXECUTED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "synthetic_trigger.assessee_turn"
+        ],
+        "reason": "Первое предложение участника содержало актуальный фрагмент v3, открытые статусы и запрос подтверждения — достаточно для обеих сторон без третьего раунда."
+      },
+      {
+        "code": "E01_HANDOVER_TWO_SEPARATE_CONFIRMATIONS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0]",
+          "trace[2]",
+          "trace[3]"
+        ],
+        "reason": "Марина и Олег подтвердили отдельно: пригодность полученного и собственный вклад/ограничение."
+      },
+      {
+        "code": "NO_THIRD_ROUND",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Повторение"
+        ],
+        "reason": "Достаточное первое предложение не потребовало дополнительного раунда."
+      },
+      {
+        "code": "E02_NOT_TRIGGERED_WITHOUT_DISTORTION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[1]"
+        ],
+        "reason": "Искажения не возникло; E02_CORRECT не предъявлялось, ошибка не придумывалась."
+      },
+      {
+        "code": "E03_PENDING_STATUS_PRESERVED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[2]",
+          "trace[3]"
+        ],
+        "reason": "Бюджет и дата названы открытыми; внешнее подтверждение не создано, получение не объявлено готовностью к исполнению."
+      },
+      {
+        "code": "CHARACTER_KNOWLEDGE_AND_AUTHORITY",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Активные персонажи",
+          "candidate_as.Правила управления сцены[6]"
+        ],
+        "reason": "Марина говорит только о профиле и своём ресурсе, Олег — о подготовке; карточку редактирует только участник."
+      },
+      {
+        "code": "NO_INVENTED_MATERIALS_OR_EXTERNAL_ACTIONS",
+        "status": "PASS",
+        "paths": [
+          "constraints.do_not_invent_materials_or_external_actions"
+        ],
+        "reason": "Использованы только P00–M03; реальных изменений системы, файлов и отправок не выполнено."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "constraints.scenario_end_is_not_as_close",
+          "candidate_as.Правила управления сцены[8]"
+        ],
+        "reason": "Сценарный конец зафиксирован отдельно; AS_close не объявлялся."
+      },
+      {
+        "code": "PLANNED_STORY_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "constraints.planned_story_is_not_evidence",
+          "candidate_as.Исполнение"
+        ],
+        "reason": "Плановые минуты и IndicatorObservability не использованы как Evidence; IA/уровни не создавались."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:30:06.085657+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R08_SHORT:10ecf5df3027",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "95045f7c-0aec-4a90-ab08-9f4e2db6aad6",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13535,
+      "completion_tokens": 1485,
+      "total_tokens": 15020,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13535
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7720.82
+      }
+    ],
+    "input_checksum": "10ecf5df30271ea1b3e3647c080f548d739368fec0f40971667525c35cc0e7b2"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

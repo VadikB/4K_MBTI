@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "test_id": "R04_IDEA",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.04",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_04_v0.5_WORKING.json",
+    "source_sha256": "17e208d2a07a45258aeaf225c93ae721f03f2e6db93752d02828b1c2ca9687c0"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "37a7bbb73ec41601105afdc1157d487ed7f0022bfd7ab4e25d7d204c767eedc3",
+    "test_id": "PROFILE.04.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.04.HR.20261022",
+    "version": "v0.2",
+    "sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-04-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R04_IDEA",
+    "CaseID": "CASE.SPEC.04",
+    "Условие теста": "Предложенный способ уже учитывает известные ограничения",
+    "Ожидаемое поведение": "Не создавать отказ ради обязательной итерации; реакция относится к предложению.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "type": "json_object",
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: роль специалиста по подбору, задача — обсудить с Мариной дальнейшую работу после ошибки в приглашении; мандат: рекомендация и согласование, без распоряжения чужими ресурсами.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: хронология — ошибка во времени (11:00 вместо 14:00), исправлена во вторник 14:00, интервью перенесено, новая дата не согласована; за 48 часов повторов нет, последствия не устранены.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: заключение — причина установлена и исправлена; проверены контрольные списки и сверка за две недели; повторений за 48 часов нет; другие периоды не проверялись; отсутствие будущих ошибок не подтверждено.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: запрос руководства — завтра 11:00 обсуждение последствий; Марина готовит возврат к ручному способу; повторный показ исправленного приглашения отклонён.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "material",
+        "content": "M04: ресурсы — координатор до 17:00, руководитель направления до 16:30, приём предложений о ресурсе до 16:00, статус завтра до 09:30; изменение порядка приглашений требует решения владельца процесса.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "material",
+        "content": "M05: Марина — исправление не отменяет срыва интервью; повторный показ приглашения недостаточен; окно встречи 16:00–16:30; вопрос «Что вы предлагаете?».",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "assessee_turn",
+        "content": "Предлагаю к завтрашнему обсуждению зафиксировать не только исправление ошибки, но и то, что уже проверено и что осталось открытым: по M02 проверены контрольные списки и сверка за две недели, повторений за 48 часов нет, но другие периоды и все источники расхождений не проверялись, а сорванное интервью не восстановлено. Предлагаю сегодня до 16:00 направить руководителю направления запрос на согласование ограниченной дополнительной сверки по оставшимся периодам и на согласование нового слота интервью с кандидатом; статус будет известен завтра до 09:30, и я не считаю его одобрением. Возврат к ручному способу — решение владельца процесса, не моё и не ваше; к завтрашней встрече предлагаю подготовить вашу позицию с этими границами. Если удобно, обсудим это сегодня в 16:00–16:30.",
+        "audience": [
+          "MARINA"
+        ]
+      },
+      {
+        "sequence": 8,
+        "kind": "system_decision",
+        "content": "E01_REVIEW запускается: участник предложил конкретный способ дальнейшей работы. E03_FACT не требуется: F03 (окно встречи) и F04 (неизвестность решения руководства) уже отражены в M04/M05 и в предложении участника; новых фактов не раскрывается. E02_REVISION не запускается: отклик ещё не выявил нового ограничения.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 9,
+        "kind": "character_turn",
+        "content": "Марина: «Способ понятен: не выдавать исправление за восстановление, а к завтрашнему разговору зафиксировать проверенное и открытое и отдельно запросить сверку и новый слот. Это я могу взять в свою позицию. Возврат к ручному способу я пока готовлю, окончательного решения нет; если вы предлагаете не выдавать это за решённое — согласна. В 16:00–16:30 сегодня могу обсудить формулировку, других участников не подтверждаю. Доверие это само по себе не восстанавливает, но для следующего шага способ годится.»",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 10,
+        "kind": "transition",
+        "content": "Состояние S2 продолжается: содержательный отклик на предложение получен; сценарий не закрыт, AS_close не выполнялся.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "TEST_CONDITION_EXECUTED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "trace[7]"
+        ],
+        "reason": "Реплика реализует условие: предложенный способ уже учитывает известные ограничения (границы M02, неизвестность решения руководства по M04/F04, окно встречи по M05/F03, мандат роли)."
+      },
+      {
+        "code": "NO_FORCED_REFUSAL_FOR_ITERATION",
+        "status": "PASS",
+        "paths": [
+          "trace[9]",
+          "candidate_as.События[0].Когда запрещено",
+          "candidate_as.Правила управления сценой[C08]"
+        ],
+        "reason": "Марина не создаёт отказа ради обязательной итерации: она принимает способ как пригодный для следующего шага, при этом не гарантирует восстановление доверия и не утверждает ресурсы/решение."
+      },
+      {
+        "code": "REACTION_TO_PROPOSAL",
+        "status": "PASS",
+        "paths": [
+          "trace[9]",
+          "candidate_as.Активные персонажи[0].Реакция"
+        ],
+        "reason": "Отклик относится именно к предложенному способу и его предположениям, а не к участнику или к оценке."
+      },
+      {
+        "code": "NO_NEW_FACT_OR_HINT",
+        "status": "PASS",
+        "paths": [
+          "trace[8]",
+          "trace[9]",
+          "candidate_as.Закрытые фиксированные факты"
+        ],
+        "reason": "Новых фактов не введено; F01/F02/F05 не раскрывались, F03/F04 уже были в стартовых материалах; готовая идея не выдавалась."
+      },
+      {
+        "code": "CHARACTER_KNOWLEDGE_AND_MANDATE",
+        "status": "PASS",
+        "paths": [
+          "trace[9]",
+          "candidate_as.Правила управления сценой[C07]",
+          "candidate_as.Активные персонажи[0].Полномочия и ограничения"
+        ],
+        "reason": "Марина использует только M01–M05 и свои полномочия; не утверждает ресурсы и не решает за владельца процесса."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "trace[10]",
+          "candidate_as.Правила управления сценой[C09]"
+        ],
+        "reason": "Сценарий не закрыт; AS_close не выполнялся; новых Turns после закрытия нет."
+      },
+      {
+        "code": "NO_EVIDENCE_OR_IA_CREATED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "QA-трасса не создаёт Evidence, IA или уровни; плановые возможности остаются NOT_RUN."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:29:44.377736+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R04_IDEA:f8fc535d362c",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "c21eaaab-49cb-42d6-83d0-999a6bf0fd98",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15482,
+      "completion_tokens": 1794,
+      "total_tokens": 17276,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15482
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 9204.55
+      }
+    ],
+    "input_checksum": "f8fc535d362c8f4e2bc43ce3c40695595fde95e4e90798d2491ae81404c80c5c"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

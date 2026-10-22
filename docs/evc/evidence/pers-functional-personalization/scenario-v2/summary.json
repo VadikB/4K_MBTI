@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-22T16:28:19.288304+00:00",
+  "planned": 34,
+  "completed": 34,
+  "errors": [],
+  "status_counts": {
+    "FAIL": 29,
+    "PASS": 5
+  },
+  "results": [
+    {
+      "test_id": "R01_DOC",
+      "case_id": "CASE.SPEC.01",
+      "as_sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+      "status": "PASS",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r01_doc.json"
+    },
+    {
+      "test_id": "R01_HIDDEN",
+      "case_id": "CASE.SPEC.01",
+      "as_sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r01_hidden.json"
+    },
+    {
+      "test_id": "R02_FINAL",
+      "case_id": "CASE.SPEC.02",
+      "as_sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r02_final.json"
+    },
+    {
+      "test_id": "R02_PARTIAL",
+      "case_id": "CASE.SPEC.02",
+      "as_sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r02_partial.json"
+    },
+    {
+      "test_id": "R03_FORWARD",
+      "case_id": "CASE.SPEC.03",
+      "as_sha256": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r03_forward.json"
+    },
+    {
+      "test_id": "R03_PRIVATE",
+      "case_id": "CASE.SPEC.03",
+      "as_sha256": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+      "status": "PASS",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r03_private.json"
+    },
+    {
+      "test_id": "R04_IDEA",
+      "case_id": "CASE.SPEC.04",
+      "as_sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r04_idea.json"
+    },
+    {
+      "test_id": "R04_REVISE",
+      "case_id": "CASE.SPEC.04",
+      "as_sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r04_revise.json"
+    },
+    {
+      "test_id": "R05_COMBINE",
+      "case_id": "CASE.SPEC.05",
+      "as_sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r05_combine.json"
+    },
+    {
+      "test_id": "R05_UNITS",
+      "case_id": "CASE.SPEC.05",
+      "as_sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r05_units.json"
+    },
+    {
+      "test_id": "R06_CAUSE",
+      "case_id": "CASE.SPEC.06",
+      "as_sha256": "8bb32acdef0d9e7849c75aa1f5ac54386a2a8f4a717cb7035341fd740ef58f89",
+      "status": "PASS",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r06_cause.json"
+    },
+    {
+      "test_id": "R06_LIMITED",
+      "case_id": "CASE.SPEC.06",
+      "as_sha256": "8bb32acdef0d9e7849c75aa1f5ac54386a2a8f4a717cb7035341fd740ef58f89",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r06_limited.json"
+    },
+    {
+      "test_id": "R07_REQUEST",
+      "case_id": "CASE.SPEC.07",
+      "as_sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+      "status": "PASS",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r07_request.json"
+    },
+    {
+      "test_id": "R07_STATUS",
+      "case_id": "CASE.SPEC.07",
+      "as_sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r07_status.json"
+    },
+    {
+      "test_id": "R08_RECEIPT",
+      "case_id": "CASE.SPEC.08",
+      "as_sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r08_receipt.json"
+    },
+    {
+      "test_id": "R08_SHORT",
+      "case_id": "CASE.SPEC.08",
+      "as_sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r08_short.json"
+    },
+    {
+      "test_id": "R09_CANDIDATE",
+      "case_id": "CASE.SPEC.09",
+      "as_sha256": "b35cb62e5bfef1845b139a75ec8c8293248a02f5207d4721ebe87ae2532fcb26",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r09_candidate.json"
+    },
+    {
+      "test_id": "R09_CHANGED",
+      "case_id": "CASE.SPEC.09",
+      "as_sha256": "b35cb62e5bfef1845b139a75ec8c8293248a02f5207d4721ebe87ae2532fcb26",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r09_changed.json"
+    },
+    {
+      "test_id": "R_ALL_AUTHORITY",
+      "case_id": "CASE.SPEC.05",
+      "as_sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_all_authority.json"
+    },
+    {
+      "test_id": "R_ALL_FINAL_QUESTION",
+      "case_id": "CASE.SPEC.03",
+      "as_sha256": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_all_final_question.json"
+    },
+    {
+      "test_id": "R_ALL_NO_OPPORTUNITY",
+      "case_id": "CASE.SPEC.07",
+      "as_sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_all_no_opportunity.json"
+    },
+    {
+      "test_id": "R_ALL_PAUSE",
+      "case_id": "CASE.SPEC.02",
+      "as_sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_all_pause.json"
+    },
+    {
+      "test_id": "R_ALL_SENSE",
+      "case_id": "CASE.SPEC.04",
+      "as_sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_all_sense.json"
+    },
+    {
+      "test_id": "R_ALL_STOP",
+      "case_id": "CASE.SPEC.01",
+      "as_sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_all_stop.json"
+    },
+    {
+      "test_id": "R_ALL_TIME",
+      "case_id": "CASE.SPEC.08",
+      "as_sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_all_time.json"
+    },
+    {
+      "test_id": "R_ALL_VALID_OTHER",
+      "case_id": "CASE.SPEC.06",
+      "as_sha256": "8bb32acdef0d9e7849c75aa1f5ac54386a2a8f4a717cb7035341fd740ef58f89",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_all_valid_other.json"
+    },
+    {
+      "test_id": "R_SCOPE_BUDGET",
+      "case_id": "CASE.SPEC.01",
+      "as_sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_scope_budget.json"
+    },
+    {
+      "test_id": "R_SCOPE_INVARIANT",
+      "case_id": "CASE.SPEC.02",
+      "as_sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_scope_invariant.json"
+    },
+    {
+      "test_id": "R_SCOPE_LINKS",
+      "case_id": "CASE.SPEC.07",
+      "as_sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_scope_links.json"
+    },
+    {
+      "test_id": "R_SCOPE_NEW_PROFESSION",
+      "case_id": "CASE.SPEC.04",
+      "as_sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_scope_new_profession.json"
+    },
+    {
+      "test_id": "R_SCOPE_NO_REAL_EVENT",
+      "case_id": "CASE.SPEC.05",
+      "as_sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+      "status": "PASS",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_scope_no_real_event.json"
+    },
+    {
+      "test_id": "R_SCOPE_NO_ROLE",
+      "case_id": "CASE.SPEC.06",
+      "as_sha256": "8bb32acdef0d9e7849c75aa1f5ac54386a2a8f4a717cb7035341fd740ef58f89",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_scope_no_role.json"
+    },
+    {
+      "test_id": "R_SCOPE_PAUSE",
+      "case_id": "CASE.SPEC.08",
+      "as_sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_scope_pause.json"
+    },
+    {
+      "test_id": "R_SCOPE_PRICE",
+      "case_id": "CASE.SPEC.03",
+      "as_sha256": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+      "status": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/scenario-v2/results/r_scope_price.json"
+    }
+  ]
+}

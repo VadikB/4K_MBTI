@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "test_id": "R07_REQUEST",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.07",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_07_v0.4_WORKING.json",
+    "source_sha256": "79b98154e5bb1d1ec90ee2d58ef43e2be846a8cf348d4b989b23fa37ff8fa725"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "84000573a227700e4d1d8093225c7980301d584a2a38ba1f6c9da4b763425b43",
+    "test_id": "PROFILE.07.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.07.PERS06.20261022",
+    "version": "v1.0",
+    "sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-07-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R07_REQUEST",
+    "CaseID": "CASE.SPEC.07",
+    "Условие теста": "Запрошены отсутствующие результаты опроса",
+    "Ожидаемое поведение": "Сообщить отсутствие новых данных; не становиться Анной и не проводить исследование.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "assessee_turn",
+        "content": "Запрос отсутствующих результатов опроса: участник просит предоставить результаты опроса сотрудников, которых в пакете нет.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "system_decision",
+        "content": "Событие E01_EXPLAIN: условие запуска выполнено — есть вопрос об отсутствующем факте. Действие: прямо назвать отсутствие данных в границах пакета; новых исследовательских результатов нет.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "character_turn",
+        "content": "Сообщение ведущего: результаты опроса отсутствуют; в материалах есть только отдельные записанные эпизоды (M03), ограниченная выгрузка (M02) и протокол проверки функций (M01). Новых данных не будет; опрос не проводился и не будет разыгран.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "transition",
+        "content": "Состояние сохраняется: исходная информационная база не меняется, закрытая карта пуста, новых материалов не добавляется. Сцена не закрывается; участник может продолжить анализ или дать финальный ответ.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "E01_TRIGGER_MATCH",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Условие запуска",
+          "candidate_as.События[0].Действие"
+        ],
+        "reason": "Запрос отсутствующих результатов опроса соответствует условию E01_EXPLAIN (вопрос об отсутствующем факте); действие — прямо назвать отсутствие данных."
+      },
+      {
+        "code": "NO_NEW_RESEARCH_RESULTS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Сведения и аудитория",
+          "candidate_as.События[0].Когда запрещено",
+          "candidate_as.Граница исполнения"
+        ],
+        "reason": "E01 запрещает разыгрывать исследование, опрос и новый результат; ответ ограничен P00 и M01–M04, новых результатов не создаётся."
+      },
+      {
+        "code": "NO_CHARACTER_ANNA",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Активные персонажи",
+          "candidate_as.Правила управления сценой[3]",
+          "candidate_as.События[0].Когда запрещено"
+        ],
+        "reason": "Активных персонажей нет; C04 запрещает создавать персонажей из авторов документов; E01 запрещает разыгрывать автора. Ведущий не становится Анной и не ведёт исследование."
+      },
+      {
+        "code": "CLOSED_INFORMATION_PRESERVED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Закрытая карта дополнительных сведений",
+          "candidate_as.События[0].Изменение состояния"
+        ],
+        "reason": "Закрытая карта пуста; изменение состояния — сохранение исходной информационной базы, новых фактов не вводится."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сценой[8]",
+          "candidate_as.Исходный сценарный контракт.Состояния"
+        ],
+        "reason": "Запрос отсутствующих данных не является финальной подачей или прекращением; сцена остаётся в S2, AS_close не наступает."
+      },
+      {
+        "code": "NO_PLANNED_STORY_AS_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Фактическое возникновение индикаторов остаётся NOT_RUN; трасса не создаёт Evidence, IA или уровни."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:27:46.209171+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R07_REQUEST:6cbec38664e0",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "7ae166cb-423d-4516-8bb3-4e3be2cde1f5",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13399,
+      "completion_tokens": 928,
+      "total_tokens": 14327,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13399
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 4946.37
+      }
+    ],
+    "input_checksum": "6cbec38664e0de324b89f6c6bc4ff27cc3d4bb8f99d7f8b06cf125674d1bef8c"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

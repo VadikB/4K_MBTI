@@ -1,0 +1,720 @@
+{
+  "schema_version": 2,
+  "test_id": "PROFILE.08.3",
+  "case_id": "CASE.SPEC.08",
+  "candidate_checksum": "ec13891f7a4709954c728b18587bf1f8bf47363a3649dce869851b5e15901f4c",
+  "created_at": "2026-10-22T14:27:58.337426+00:00",
+  "protocol": {
+    "id": "m5-functional-personalization-tester",
+    "version": "2.0.0",
+    "checksum": "d921f29c2a644bd4e3229758679cab4f7e67ee95bd738dad7d7e901154389f15"
+  },
+  "applicability_plan": {
+    "protocol": {
+      "id": "m5-functional-personalization-tester",
+      "version": "2.0.0",
+      "checksum": "d921f29c2a644bd4e3229758679cab4f7e67ee95bd738dad7d7e901154389f15"
+    },
+    "case_ref": {
+      "case_id": "CASE.SPEC.08",
+      "case_version": "v0.4",
+      "checksum": "f2814b8e51a4fd3487a564a8ad0982ce04907f7ab9fb6e9d7b2765d3cb410768"
+    },
+    "required_checks": [
+      {
+        "check_id": "common.target_integrity",
+        "category": "target_integrity",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "CaseID, CaseVersion, BaseRole, точные IndicatorIDs и версии M2 сохранены."
+      },
+      {
+        "check_id": "common.professional_consistency",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости."
+      },
+      {
+        "check_id": "common.authority",
+        "category": "authority",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "AS не расширяет подтверждённый мандат и не создаёт согласие, ресурс или действие другого субъекта."
+      },
+      {
+        "check_id": "common.confidentiality",
+        "category": "confidentiality",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Стартовые, закрытые и отложенные сведения имеют корректную аудиторию и условия раскрытия."
+      },
+      {
+        "check_id": "common.scenario_executability",
+        "category": "scenario_executability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы."
+      },
+      {
+        "check_id": "common.no_premature_assessment",
+        "category": "target_integrity",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "До фактической траектории отсутствуют Evidence, IA, уровень и готовое правильное решение участника."
+      },
+      {
+        "check_id": "quality.clarity",
+        "category": "presentation_quality",
+        "mandatory": true,
+        "protected": false,
+        "requirement": "Текст однозначно различает статусы источников, субъектов, единицы и учебное происхождение фактов."
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.08.I01",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Три функции передачи: участник ведёт рабочие статусы и общую карточку, первый коллега — профильное содержание, второй — подготовку следующего действия; активны два коллеги.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.08.I01"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.08.I02",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "История содержит три различимых потери: существенного условия, смысла/границ проверки и версии. Текущий документный фрагмент доступен в полном необходимом объёме.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.08.I02"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.08.I03",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Есть актуальный документ и отстающая карточка, неподтверждённое внешнее условие и несогласованный момент следующего действия.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.08.I03"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.08.I04",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Доступы неравны: только участник редактирует общую карточку, первый коллега может обновлять свой материал, второй читает. Временные ресурсы ограничены.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.08.I04"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.08.I05",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Коллеги предметно расходятся; участник не руководит ими. Формат, канал, версия и уведомление не заданы единственно правильным шаблоном.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.08.I05"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.08.I06",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Получение информации, её достаточность для подготовки и готовность к исполнению различаются. Нет обязательного третьего раунда, K3.I06 и нового скрытого события.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.4",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.08.I06"
+        }
+      },
+      {
+        "check_id": "indicator:K2.I07",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.08.I01",
+            "CASE.SPEC.08.I04"
+          ],
+          "designed_condition": [
+            "Три функции передачи: участник ведёт рабочие статусы и общую карточку, первый коллега — профильное содержание, второй — подготовку следующего действия; активны два коллеги.",
+            "Доступы неравны: только участник редактирует общую карточку, первый коллега может обновлять свой материал, второй читает. Временные ресурсы ограничены."
+          ],
+          "materials": [
+            "M02",
+            "M03"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K2.I07"
+        }
+      },
+      {
+        "check_id": "indicator:K2.I08",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.08.I01",
+            "CASE.SPEC.08.I02",
+            "CASE.SPEC.08.I03"
+          ],
+          "designed_condition": [
+            "Три функции передачи: участник ведёт рабочие статусы и общую карточку, первый коллега — профильное содержание, второй — подготовку следующего действия; активны два коллеги.",
+            "История содержит три различимых потери: существенного условия, смысла/границ проверки и версии. Текущий документный фрагмент доступен в полном необходимом объёме.",
+            "Есть актуальный документ и отстающая карточка, неподтверждённое внешнее условие и несогласованный момент следующего действия."
+          ],
+          "materials": [
+            "M01",
+            "M02"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K2.I08"
+        }
+      },
+      {
+        "check_id": "indicator:K2.I14",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.08.I04",
+            "CASE.SPEC.08.I05"
+          ],
+          "designed_condition": [
+            "Доступы неравны: только участник редактирует общую карточку, первый коллега может обновлять свой материал, второй читает. Временные ресурсы ограничены.",
+            "Коллеги предметно расходятся; участник не руководит ими. Формат, канал, версия и уведомление не заданы единственно правильным шаблоном."
+          ],
+          "materials": [
+            "M03"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K2.I14"
+        }
+      },
+      {
+        "check_id": "indicator:K1.I11",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.08.I02",
+            "CASE.SPEC.08.I06"
+          ],
+          "designed_condition": [
+            "История содержит три различимых потери: существенного условия, смысла/границ проверки и версии. Текущий документный фрагмент доступен в полном необходимом объёме.",
+            "Получение информации, её достаточность для подготовки и готовность к исполнению различаются. Нет обязательного третьего раунда, K3.I06 и нового скрытого события."
+          ],
+          "materials": [
+            "M01",
+            "M02"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.4",
+          "field": "22",
+          "indicator_id": "K1.I11"
+        }
+      }
+    ],
+    "not_applicable_checks": [
+      {
+        "check_id": "case02.attractive_feature",
+        "category": "invariant",
+        "mandatory": false,
+        "protected": true,
+        "applicable_case_ids": [
+          "CASE.SPEC.02"
+        ],
+        "requirement": "У варианта A есть доступный источник привлекательного признака; переход к общей пригодности проверяем по независимым требованиям, остаточная проблема B сохранена; цена необязательна.",
+        "status": "NOT_APPLICABLE",
+        "basis": "Протокол 2.0.0: проверка применима только к ['CASE.SPEC.02']; текущий Case=CASE.SPEC.08."
+      }
+    ]
+  },
+  "checks": [
+    {
+      "check_id": "common.target_integrity",
+      "category": "target_integrity",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "CaseID, CaseVersion, BaseRole, точные IndicatorIDs и версии M2 сохранены.",
+      "status": "PASS",
+      "reason": "CaseID=CASE.SPEC.08, CaseVersion=v0.4, BaseRole=Специалист / эксперт, IndicatorIDs=[K2.I07,K2.I08,K2.I14,K1.I11], версии M2 K2=v1.0/K1=v1.1 совпадают с паспортом Case.",
+      "evidence_paths": [
+        "candidate_as.CaseID",
+        "candidate_as.CaseVersion",
+        "candidate_as.BaseRole",
+        "candidate_as.IndicatorIDs",
+        "candidate_as.Версии M2"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.professional_consistency",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+      "status": "PASS",
+      "reason": "Профессиональная замена «подготовка производства» согласована: P00 задаёт роль специалиста по подготовке производства, M02 содержит приложение v3, карточку, допуск и дату, персонажи Денис (проектировщик) и Светлана (планировщик) описаны с знаниями и ограничениями, словарь объясняет термины, карта наблюдаемости ссылается на те же материалы.",
+      "evidence_paths": [
+        "candidate_as.Материалы[0].Текст",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Активные персонажи",
+        "candidate_as.Словарь",
+        "candidate_as.IndicatorObservability"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.authority",
+      "category": "authority",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "AS не расширяет подтверждённый мандат и не создаёт согласие, ресурс или действие другого субъекта.",
+      "status": "PASS",
+      "reason": "Мандат не расширен: только участник редактирует карточку, Денис пишет в папку, Светлана читает; внешнее подтверждение допуска и даты не создаётся, C07 запрещает приписывать согласие и результат внешнего действия.",
+      "evidence_paths": [
+        "candidate_as.Материалы[0].Текст",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Активные персонажи[0].Полномочия и ограничения",
+        "candidate_as.Активные персонажи[1].Полномочия и ограничения",
+        "candidate_as.Правила управления сценой[C07]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.confidentiality",
+      "category": "confidentiality",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Стартовые, закрытые и отложенные сведения имеют корректную аудиторию и условия раскрытия.",
+      "status": "PASS",
+      "reason": "Все стартовые материалы имеют аудиторию PARTICIPANT/DENIS/SVETLANA, закрытая карта фактов пуста, отложенных документов нет; условия раскрытия не нарушены.",
+      "evidence_paths": [
+        "candidate_as.Материалы[*].Аудитория",
+        "candidate_as.Закрытые фиксированные факты",
+        "candidate_as.Стартовые MaterialIDs"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.scenario_executability",
+      "category": "scenario_executability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы.",
+      "status": "PASS",
+      "reason": "Сроки согласованы: now=870 (14:30), Денис до 900 (15:00) с 15 минутами, план к 930 (15:30), окно работ 1200–1320; события E01–E03 исполнимы в чате, C01/C02/C10 задают остановку, паузу и независимость времени сюжета от часов.",
+      "evidence_paths": [
+        "candidate_as.Числовые связи для QA",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.События",
+        "candidate_as.Правила управления сценой[C01,C02,C10]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.no_premature_assessment",
+      "category": "target_integrity",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "До фактической траектории отсутствуют Evidence, IA, уровень и готовое правильное решение участника.",
+      "status": "PASS",
+      "reason": "Исполнение NOT_RUN, Evidence и IA не создавались, уровень не присвоен; готового правильного решения в стартовых материалах нет.",
+      "evidence_paths": [
+        "candidate_as.Исполнение",
+        "candidate_as.IndicatorObservability[*].Evidence и IA",
+        "candidate_as.Допуск"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "quality.clarity",
+      "category": "presentation_quality",
+      "mandatory": true,
+      "protected": false,
+      "requirement": "Текст однозначно различает статусы источников, субъектов, единицы и учебное происхождение фактов.",
+      "status": "PASS",
+      "reason": "Статусы источников, учебное происхождение фактов, субъекты и единицы различены: материалы помечены как учебные, происхождение SYNTHETIC_TEST_DATA, словарь объясняет «предварительное планирование» и «проверен запуск».",
+      "evidence_paths": [
+        "candidate_as.Материалы[*].Статус",
+        "candidate_as.Материалы[*].Происхождение",
+        "candidate_as.Словарь",
+        "candidate_as.Учебный профиль.Статус данных"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.08.I01",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Три функции передачи: участник ведёт рабочие статусы и общую карточку, первый коллега — профильное содержание, второй — подготовку следующего действия; активны два коллеги.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.08.I01"
+      },
+      "status": "PASS",
+      "reason": "P00: участник ведёт карточку и получает подтверждения, Денис готовит приложение, Светлана планирует; активны два коллеги (DENIS, SVETLANA). Три функции передачи подтверждены конкретными фрагментами.",
+      "evidence_paths": [
+        "candidate_as.Материалы[0].Текст",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Активные персонажи"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.08.I02",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "История содержит три различимых потери: существенного условия, смысла/границ проверки и версии. Текущий документный фрагмент доступен в полном необходимом объёме.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.08.I02"
+      },
+      "status": "PASS",
+      "reason": "M01 содержит три различимые потери: «Север» — окно 20:00–22:00, «Вектор» — смысл проверки стенда, «Орион» — старая версия; M02 содержит доступный фрагмент v3 в полном необходимом объёме.",
+      "evidence_paths": [
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Материалы[2].Текст"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.08.I03",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Есть актуальный документ и отстающая карточка, неподтверждённое внешнее условие и несогласованный момент следующего действия.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.08.I03"
+      },
+      "status": "PASS",
+      "reason": "M02: приложение v3 с двумя площадками, карточка с одной площадкой и ссылкой на v2, допуск на вторую площадку не подтверждён, дата выезда не согласована.",
+      "evidence_paths": [
+        "candidate_as.Материалы[2].Текст"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.08.I04",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Доступы неравны: только участник редактирует общую карточку, первый коллега может обновлять свой материал, второй читает. Временные ресурсы ограничены.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.08.I04"
+      },
+      "status": "PASS",
+      "reason": "M02: только у участника право редактировать карточку, у Дениса запись в папку, у Светланы чтение; Денис доступен до 15:00 с 15 минутами, план к 15:30 — временные ресурсы ограничены.",
+      "evidence_paths": [
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Активные персонажи"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.08.I05",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Коллеги предметно расходятся; участник не руководит ими. Формат, канал, версия и уведомление не заданы единственно правильным шаблоном.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.08.I05"
+      },
+      "status": "PASS",
+      "reason": "M03: Денис предлагает всю переписку и папку, Светлана требует актуальные условия и статус; участник не руководит ими (P00), готовый шаблон не задан, E01 запрещает навязывать шаблон.",
+      "evidence_paths": [
+        "candidate_as.Материалы[3].Текст",
+        "candidate_as.Активные персонажи",
+        "candidate_as.События[E01_HANDOVER]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.08.I06",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Получение информации, её достаточность для подготовки и готовность к исполнению различаются. Нет обязательного третьего раунда, K3.I06 и нового скрытого события.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.08.I06"
+      },
+      "status": "PASS",
+      "reason": "E01 различает получение, достаточность для подготовки и готовность к исполнению; реакция Светланы отделяет получение уведомления от принятия заявки; обязательного третьего раунда и K3.I06 нет.",
+      "evidence_paths": [
+        "candidate_as.События",
+        "candidate_as.Активные персонажи[1].Реакция",
+        "candidate_as.Правила управления сценой[C08]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K2.I07",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.08.I01",
+          "CASE.SPEC.08.I04"
+        ],
+        "designed_condition": [
+          "Три функции передачи: участник ведёт рабочие статусы и общую карточку, первый коллега — профильное содержание, второй — подготовку следующего действия; активны два коллеги.",
+          "Доступы неравны: только участник редактирует общую карточку, первый коллега может обновлять свой материал, второй читает. Временные ресурсы ограничены."
+        ],
+        "materials": [
+          "M02",
+          "M03"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K2.I07"
+      },
+      "status": "PASS",
+      "reason": "Условие запроектировано: M02 и M03 содержат связанные действия специалиста, проектировщика и планировщика с разными доступами и временем; форма проявления описана без образца правильного ответа.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[0]",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.Материалы[3].Текст"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K2.I08",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.08.I01",
+          "CASE.SPEC.08.I02",
+          "CASE.SPEC.08.I03"
+        ],
+        "designed_condition": [
+          "Три функции передачи: участник ведёт рабочие статусы и общую карточку, первый коллега — профильное содержание, второй — подготовку следующего действия; активны два коллеги.",
+          "История содержит три различимых потери: существенного условия, смысла/границ проверки и версии. Текущий документный фрагмент доступен в полном необходимом объёме.",
+          "Есть актуальный документ и отстающая карточка, неподтверждённое внешнее условие и несогласованный момент следующего действия."
+        ],
+        "materials": [
+          "M01",
+          "M02"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K2.I08"
+      },
+      "status": "PASS",
+      "reason": "M01 и M02 содержат три прошлые потери, фрагмент v3 и открытые статусы, которые можно реально передать в чате; условие запроектировано.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[1]",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Материалы[2].Текст"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K2.I14",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.08.I04",
+          "CASE.SPEC.08.I05"
+        ],
+        "designed_condition": [
+          "Доступы неравны: только участник редактирует общую карточку, первый коллега может обновлять свой материал, второй читает. Временные ресурсы ограничены.",
+          "Коллеги предметно расходятся; участник не руководит ими. Формат, канал, версия и уведомление не заданы единственно правильным шаблоном."
+        ],
+        "materials": [
+          "M03"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K2.I14"
+      },
+      "status": "PASS",
+      "reason": "M03 содержит две обоснованные позиции Дениса и Светланы; условие допускает договорённость или явный нерешённый вопрос, автоматический компромисс не задан.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[2]",
+        "candidate_as.Материалы[3].Текст"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K1.I11",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.08.I02",
+          "CASE.SPEC.08.I06"
+        ],
+        "designed_condition": [
+          "История содержит три различимых потери: существенного условия, смысла/границ проверки и версии. Текущий документный фрагмент доступен в полном необходимом объёме.",
+          "Получение информации, её достаточность для подготовки и готовность к исполнению различаются. Нет обязательного третьего раунда, K3.I06 и нового скрытого события."
+        ],
+        "materials": [
+          "M01",
+          "M02"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "field": "22",
+        "indicator_id": "K1.I11"
+      },
+      "status": "PASS",
+      "reason": "M01 содержит превращение проверки стенда в «решение проверено», M02 содержит риск неподтверждённого допуска; E02_CORRECT запускается только при фактическом искажении, искусственная ошибка запрещена.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[3]",
+        "candidate_as.Материалы[1].Текст",
+        "candidate_as.Материалы[2].Текст",
+        "candidate_as.События[E02_CORRECT]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "case02.attractive_feature",
+      "category": "invariant",
+      "mandatory": false,
+      "protected": true,
+      "applicable_case_ids": [
+        "CASE.SPEC.02"
+      ],
+      "requirement": "У варианта A есть доступный источник привлекательного признака; переход к общей пригодности проверяем по независимым требованиям, остаточная проблема B сохранена; цена необязательна.",
+      "status": "NOT_APPLICABLE",
+      "basis": "Протокол 2.0.0: проверка применима только к ['CASE.SPEC.02']; текущий Case=CASE.SPEC.08."
+    }
+  ],
+  "aggregation": {
+    "status": "PASS",
+    "admitted_for_participant": true,
+    "deterministic_failures": [],
+    "blocking_failures": [],
+    "incomplete_checks": [],
+    "review_required": [],
+    "warnings": []
+  },
+  "provider_operation": {
+    "operation_id": "tester-v2:PROFILE.08.3:edf56d7416e2",
+    "kind": "independent_tester_v2",
+    "provider": "deepseek",
+    "requested_model": "deepseek-chat",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 16384,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "56ced8dc-fafd-4b7a-918b-6883e29b24ee",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 47281,
+      "completion_tokens": 2223,
+      "total_tokens": 49504,
+      "prompt_tokens_details": {
+        "cached_tokens": 31232
+      },
+      "prompt_cache_hit_tokens": 31232,
+      "prompt_cache_miss_tokens": 16049
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 9082.56
+      }
+    ],
+    "input_checksum": "edf56d7416e2da8e559051dba27ac6d8321db1b3a0b879d02849e147ec243b8f"
+  }
+}

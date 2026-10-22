@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "test_id": "R08_RECEIPT",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.08",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_08_v0.4_WORKING.json",
+    "source_sha256": "cc6de199dc9fa956cf025043987fd461b3cf2bc8f105647affce5f258b2022c1"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "11929c9fe69d2c726e7c43c8ae5fe90a3183d4462ac5f941870f90eb127e7a19",
+    "test_id": "PROFILE.08.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.08.RECRUIT.20261022",
+    "version": "v0.1",
+    "sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-08-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R08_RECEIPT",
+    "CaseID": "CASE.SPEC.08",
+    "Условие теста": "Светлана получила актуальные условия, но допуск открыт",
+    "Ожидаемое поведение": "Получение и достаточность для подготовки не означают принятия выезда в исполнение.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: Вы — специалист по подбору персонала учебной организации. Ведёте карточку текущей вакансии и получаете от заказчика подтверждения условий запуска. Марина отвечает за профиль вакансии, Олег готовит запуск поиска. Они вам не подчиняются. Обсудите с Мариной и Олегом, как передать текущую вакансию для дальнейшей работы, и зафиксируйте достигнутое. Все действия — сообщения в чате; реальные изменения системы не выполняются.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: Три предыдущие потери — «Кедр» (условие 1С:ЗУП не дошло), «Лаванда» (смысл проверки английского искажён), «Сосна» (старая версия профиля).",
+        "audience": [
+          "PARTICIPANT",
+          "MARINA",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: Профиль v3 — две позиции, окно 20:00–22:00, проверен запуск на стенде, условия площадок не проверялись. Карточка: одна позиция, ссылка на v2. Бюджет второй позиции не подтверждён, дата запуска не согласована. Сейчас 14:30; Марина до 15:00, до 15 минут; Олег план к 15:30. Только участник редактирует карточку.",
+        "audience": [
+          "PARTICIPANT",
+          "MARINA",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: Марина предлагает передавать всю переписку и папку; Олег хочет получить актуальные условия и статус согласований, узнавать об изменениях после передачи.",
+        "audience": [
+          "PARTICIPANT",
+          "MARINA",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "assessee_turn",
+        "content": "Светлана: «Марина, Олег, я получила актуальные условия — профиль v3 с двумя позициями, окно 20:00–22:00, проверен запуск на стенде. Этого достаточно, чтобы Олег подготовил предварительный план к 15:30. Но допуск к запуску поиска пока открыт: бюджет второй позиции не подтверждён, дата запуска не согласована. Получение условий и достаточность для подготовки не означают, что выезд в исполнение принят. Марина, подтверди, что v3 — актуальная версия для передачи; Олег, подтверди получение и достаточность для подготовки.»",
+        "audience": [
+          "MARINA",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "character_turn",
+        "content": "Марина: «Да, v3 — актуальная версия профиля, две позиции. Подтверждаю передачу этой части. Длинный шаблон заполнять не буду — времени до 15:00 мало.»",
+        "audience": [
+          "PARTICIPANT",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "character_turn",
+        "content": "Олег: «Получение и достаточность для подготовки подтверждаю: условий для предварительного плана достаточно. Но это не принятие заявки в исполнение — бюджет и дата открыты, точный запуск я подтвердить не вправе.»",
+        "audience": [
+          "PARTICIPANT",
+          "MARINA"
+        ]
+      },
+      {
+        "sequence": 8,
+        "kind": "system_decision",
+        "content": "E01_HANDOVER исполнено: оба коллеги отдельно подтвердили получение/достаточность для подготовки и собственный вклад; различие получения, достаточности и готовности к исполнению сохранено. E03_PENDING: статус бюджета и даты остаётся открытым, внешнее подтверждение не создано. E02_CORRECT не запускалось — искажения не возникло.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 9,
+        "kind": "transition",
+        "content": "Сценарий продолжается в S2; сценарный конец не зафиксирован, AS_close не выполнялся.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_EXECUTED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "trace[5]"
+        ],
+        "reason": "Реплика реализует условие: Светлана получила актуальные условия (v3), но допуск к запуску открыт (бюджет и дата не подтверждены)."
+      },
+      {
+        "code": "EXPECTED_BEHAVIOR",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Ожидаемое поведение",
+          "trace[5]",
+          "trace[7]",
+          "trace[8]"
+        ],
+        "reason": "Получение и достаточность для подготовки явно отделены от принятия выезда в исполнение; Олег подтверждает только подготовку, не запуск."
+      },
+      {
+        "code": "NO_NEW_FACT_OR_HINT",
+        "status": "PASS",
+        "paths": [
+          "trace[5]",
+          "trace[6]",
+          "trace[7]"
+        ],
+        "reason": "Реплика не добавляет новых фактов, не подсказывает оценку участника и не создаёт внешних подтверждений."
+      },
+      {
+        "code": "CHARACTER_KNOWLEDGE_BOUNDARIES",
+        "status": "PASS",
+        "paths": [
+          "trace[6]",
+          "trace[7]",
+          "candidate_as.Активные персонажи"
+        ],
+        "reason": "Марина и Олег отвечают в пределах своих знаний и полномочий; Олег не утверждает внешние согласования."
+      },
+      {
+        "code": "PENDING_STATUS_PRESERVED",
+        "status": "PASS",
+        "paths": [
+          "trace[8]",
+          "candidate_as.События[2]"
+        ],
+        "reason": "E03_PENDING: бюджет и дата остаются открытыми, новых ответов отсутствующей стороны нет."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "trace[9]",
+          "constraints.scenario_end_is_not_as_close"
+        ],
+        "reason": "Сценарный конец не зафиксирован, AS_close не выполнялся; новых Turns после закрытия нет."
+      },
+      {
+        "code": "PLANNED_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение",
+          "constraints.planned_story_is_not_evidence"
+        ],
+        "reason": "Плановая трасса не выдаётся за Evidence, IA или уровень; Status остаётся NOT_RUN."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:30:08.440252+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R08_RECEIPT:2ac90c626c59",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "0dfe1f09-ade7-4c0c-ac4a-5c08b1c99015",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13553,
+      "completion_tokens": 1596,
+      "total_tokens": 15149,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13553
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7527.02
+      }
+    ],
+    "input_checksum": "2ac90c626c596e8a4c06acb5a575bc1bac1fd417878dd16abdd553717668e08f"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

@@ -1,0 +1,737 @@
+{
+  "schema_version": 2,
+  "test_id": "PROFILE.01.1",
+  "case_id": "CASE.SPEC.01",
+  "candidate_checksum": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+  "created_at": "2026-10-22T14:21:57.625442+00:00",
+  "protocol": {
+    "id": "m5-functional-personalization-tester",
+    "version": "2.0.0",
+    "checksum": "d921f29c2a644bd4e3229758679cab4f7e67ee95bd738dad7d7e901154389f15"
+  },
+  "applicability_plan": {
+    "protocol": {
+      "id": "m5-functional-personalization-tester",
+      "version": "2.0.0",
+      "checksum": "d921f29c2a644bd4e3229758679cab4f7e67ee95bd738dad7d7e901154389f15"
+    },
+    "case_ref": {
+      "case_id": "CASE.SPEC.01",
+      "case_version": "v0.5",
+      "checksum": "9466eb4a17b744f6fb9d9ff7c5ddae0b38715b070bb9674d12e6f04eb10380f2"
+    },
+    "required_checks": [
+      {
+        "check_id": "common.target_integrity",
+        "category": "target_integrity",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "CaseID, CaseVersion, BaseRole, точные IndicatorIDs и версии M2 сохранены."
+      },
+      {
+        "check_id": "common.professional_consistency",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости."
+      },
+      {
+        "check_id": "common.authority",
+        "category": "authority",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "AS не расширяет подтверждённый мандат и не создаёт согласие, ресурс или действие другого субъекта."
+      },
+      {
+        "check_id": "common.confidentiality",
+        "category": "confidentiality",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Стартовые, закрытые и отложенные сведения имеют корректную аудиторию и условия раскрытия."
+      },
+      {
+        "check_id": "common.scenario_executability",
+        "category": "scenario_executability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы."
+      },
+      {
+        "check_id": "common.no_premature_assessment",
+        "category": "target_integrity",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "До фактической траектории отсутствуют Evidence, IA, уровень и готовое правильное решение участника."
+      },
+      {
+        "check_id": "quality.clarity",
+        "category": "presentation_quality",
+        "mandatory": true,
+        "protected": false,
+        "requirement": "Текст однозначно различает статусы источников, субъектов, единицы и учебное происхождение фактов."
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.01.I01",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Один активный заказчик; ещё одна сторона представлена документом и известными собеседнику фактами, с отличающимся рабочим интересом.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.5",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.01.I01"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.01.I02",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "В начальном обращении неоднозначны срок, ожидаемый эффект и сложность; готовой карты интересов и правильной интерпретации нет.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.5",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.01.I02"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.01.I03",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "По смысловому запросу раскрываются три существенных условия: смысл срока, предел ресурса или объёма и допустимое участие заказчика. Причина проблемы остаётся неизвестной.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.5",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.01.I03"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.01.I04",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Черновик другой стороны создан до разговора: он превращает срок подготовки решения в срок полной реализации и желаемый эффект в гарантированный результат.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.5",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.01.I04"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.01.I05",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Черновик раскрывается однократно в продолжающемся разговоре после предложения шага, проверки понимания или рабочего итога; прекращение отменяет событие.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.5",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.01.I05"
+        }
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.01.I06",
+        "category": "invariant",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Заказчик отвечает по затронутому смыслу; специалист может проверять собственное понимание и формулировку документа без обязательного внешнего действия.",
+        "source_ref": {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.5",
+          "field": "16",
+          "invariant_id": "CASE.SPEC.01.I06"
+        }
+      },
+      {
+        "check_id": "indicator:K1.I01",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.01.I01"
+          ],
+          "designed_condition": [
+            "Один активный заказчик; ещё одна сторона представлена документом и известными собеседнику фактами, с отличающимся рабочим интересом."
+          ],
+          "materials": [
+            "M01",
+            "M02",
+            "F04"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.5",
+          "field": "22",
+          "indicator_id": "K1.I01"
+        }
+      },
+      {
+        "check_id": "indicator:K1.I13",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.01.I02",
+            "CASE.SPEC.01.I04"
+          ],
+          "designed_condition": [
+            "В начальном обращении неоднозначны срок, ожидаемый эффект и сложность; готовой карты интересов и правильной интерпретации нет.",
+            "Черновик другой стороны создан до разговора: он превращает срок подготовки решения в срок полной реализации и желаемый эффект в гарантированный результат."
+          ],
+          "materials": [
+            "M01",
+            "M02",
+            "F01",
+            "F03"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.5",
+          "field": "22",
+          "indicator_id": "K1.I13"
+        }
+      },
+      {
+        "check_id": "indicator:K1.I14",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.01.I04",
+            "CASE.SPEC.01.I06"
+          ],
+          "designed_condition": [
+            "Черновик другой стороны создан до разговора: он превращает срок подготовки решения в срок полной реализации и желаемый эффект в гарантированный результат.",
+            "Заказчик отвечает по затронутому смыслу; специалист может проверять собственное понимание и формулировку документа без обязательного внешнего действия."
+          ],
+          "materials": [
+            "M01",
+            "M02",
+            "F01",
+            "F04"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.5",
+          "field": "22",
+          "indicator_id": "K1.I14"
+        }
+      },
+      {
+        "check_id": "indicator:K4.I06",
+        "category": "indicator_observability",
+        "mandatory": true,
+        "protected": true,
+        "requirement": {
+          "functional_conditions": [
+            "CASE.SPEC.01.I03"
+          ],
+          "designed_condition": [
+            "По смысловому запросу раскрываются три существенных условия: смысл срока, предел ресурса или объёма и допустимое участие заказчика. Причина проблемы остаётся неизвестной."
+          ],
+          "materials": [
+            "M01",
+            "F01",
+            "F02",
+            "F03",
+            "F05"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+        },
+        "source_ref": {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.5",
+          "field": "22",
+          "indicator_id": "K4.I06"
+        }
+      }
+    ],
+    "not_applicable_checks": [
+      {
+        "check_id": "case02.attractive_feature",
+        "category": "invariant",
+        "mandatory": false,
+        "protected": true,
+        "applicable_case_ids": [
+          "CASE.SPEC.02"
+        ],
+        "requirement": "У варианта A есть доступный источник привлекательного признака; переход к общей пригодности проверяем по независимым требованиям, остаточная проблема B сохранена; цена необязательна.",
+        "status": "NOT_APPLICABLE",
+        "basis": "Протокол 2.0.0: проверка применима только к ['CASE.SPEC.02']; текущий Case=CASE.SPEC.01."
+      }
+    ]
+  },
+  "checks": [
+    {
+      "check_id": "common.target_integrity",
+      "category": "target_integrity",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "CaseID, CaseVersion, BaseRole, точные IndicatorIDs и версии M2 сохранены.",
+      "status": "PASS",
+      "reason": "CaseID=CASE.SPEC.01, CaseVersion=v0.5, BaseRole=Специалист / эксперт, IndicatorIDs=[K1.I01,K1.I13,K1.I14,K4.I06], версии M2 K1=v1.1, K4=v1.0 совпадают с паспортом Case (поле 22) и applicability_plan.",
+      "evidence_paths": [
+        "candidate_as.CaseID",
+        "candidate_as.CaseVersion",
+        "candidate_as.BaseRole",
+        "candidate_as.IndicatorIDs",
+        "candidate_as.Версии M2",
+        "candidate_as.IndicatorObservability"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.professional_consistency",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+      "status": "PASS",
+      "reason": "Профессиональная замена «подбор персонала» проведена во вводной (P00 — специалист по подбору), письме (M01 — вакансия менеджера по продажам, план расходов), черновике (M02 — план подбора, вывод сотрудника), персонаже (Ирина — руководитель отдела продаж), закрытых фактах (F01–F05 в терминах подбора) и карте наблюдаемости (K1.I01/I13/I14/K4.I06 ссылаются на M01/M02/F01–F05). Остаточных чуждых профессий (ИТ, бюджет обновления решения) в стартовых материалах и фактах не обнаружено.",
+      "evidence_paths": [
+        "candidate_as.Материалы[P00].Текст",
+        "candidate_as.Материалы[M01].Текст",
+        "candidate_as.Материалы[M02].Текст",
+        "candidate_as.Активные персонажи[IRINA]",
+        "candidate_as.Закрытые фиксированные факты",
+        "candidate_as.IndicatorObservability"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.authority",
+      "category": "authority",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "AS не расширяет подтверждённый мандат и не создаёт согласие, ресурс или действие другого субъекта.",
+      "status": "PASS",
+      "reason": "P00 прямо ограничивает мандат: «утверждать бюджет, загрузку других сотрудников и обязательства исполнителей вы не можете». Ирина не утверждает бюджет (F02 — «утверждения ещё нет») и не распоряжается работой других служб. Согласие автора черновика и внешние результаты не создаются.",
+      "evidence_paths": [
+        "candidate_as.Материалы[P00].Текст",
+        "candidate_as.Активные персонажи[IRINA].Полномочия и ограничения",
+        "candidate_as.Закрытые фиксированные факты[F02]",
+        "candidate_as.Закрытые фиксированные факты[F03]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.confidentiality",
+      "category": "confidentiality",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Стартовые, закрытые и отложенные сведения имеют корректную аудиторию и условия раскрытия.",
+      "status": "PASS",
+      "reason": "На старте только P00 и M01. M02 имеет Предъявление=E01_DOCUMENT и Аудитория=[PARTICIPANT,IRINA], до события закрыт. F01–F05 закрыты с условиями раскрытия по смыслу. E01 однократен, запрещён после прекращения/паузы/AS_close.",
+      "evidence_paths": [
+        "candidate_as.Стартовые MaterialIDs",
+        "candidate_as.Материалы[M02].Предъявление",
+        "candidate_as.События[E01_DOCUMENT]",
+        "candidate_as.Закрытые фиксированные факты"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.scenario_executability",
+      "category": "scenario_executability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы.",
+      "status": "PASS",
+      "reason": "События E01/E02 имеют условия запуска, повторения и запрета; состояния S1–S3/END согласованы; единицы (человеко-часы) объяснены в Словаре; сроки (месяц, четыре недели) согласованы между M01, F01 и M02. Остановка и продолжение описаны в C01–C03.",
+      "evidence_paths": [
+        "candidate_as.События",
+        "candidate_as.Правила управления сценой",
+        "candidate_as.Исходный сценарный контракт.Состояния",
+        "candidate_as.Закрытые фиксированные факты[F03]",
+        "candidate_as.Словарь"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "common.no_premature_assessment",
+      "category": "target_integrity",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "До фактической траектории отсутствуют Evidence, IA, уровень и готовое правильное решение участника.",
+      "status": "PASS",
+      "reason": "Исполнение=NOT_RUN, у всех IndicatorObservability «Фактическое возникновение»=NOT_RUN, «Evidence и IA»=«Не создавались». Готового правильного решения участника в стартовых материалах нет.",
+      "evidence_paths": [
+        "candidate_as.Исполнение",
+        "candidate_as.IndicatorObservability",
+        "candidate_as.Допуск"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "quality.clarity",
+      "category": "presentation_quality",
+      "mandatory": true,
+      "protected": false,
+      "requirement": "Текст однозначно различает статусы источников, субъектов, единицы и учебное происхождение фактов.",
+      "status": "PASS",
+      "reason": "Статусы источников различимы: M02 помечен «Черновик до текущего разговора; не согласован», автор — Алексей (не активный персонаж). F02 явно «утверждения ещё нет». Учебное происхождение указано в P00 и Происхождение материалов. Единицы объяснены.",
+      "evidence_paths": [
+        "candidate_as.Материалы[M02].Статус",
+        "candidate_as.Материалы[M02].Автор",
+        "candidate_as.Закрытые фиксированные факты[F02]",
+        "candidate_as.Словарь"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.01.I01",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Один активный заказчик; ещё одна сторона представлена документом и известными собеседнику фактами, с отличающимся рабочим интересом.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.01.I01"
+      },
+      "status": "PASS",
+      "reason": "Активен один персонаж — Ирина. Вторая сторона (Алексей, специалист по планированию подбора) представлена документом M02 и фактом F04 с отличающимся интересом: Ирина отвечает за выполнение плана продаж, Алексей — за подготовку плана к защите.",
+      "evidence_paths": [
+        "candidate_as.Активные персонажи",
+        "candidate_as.Закрытые фиксированные факты[F04]",
+        "candidate_as.Материалы[M02].Автор"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.01.I02",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "В начальном обращении неоднозначны срок, ожидаемый эффект и сложность; готовой карты интересов и правильной интерпретации нет.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.01.I02"
+      },
+      "status": "PASS",
+      "reason": "В M01 неоднозначны срок («в течение месяца закрыть вакансию»), эффект («выручка не проседала»), сложность («без сложного проекта»). Готовой карты интересов и правильной интерпретации нет.",
+      "evidence_paths": [
+        "candidate_as.Материалы[M01].Текст",
+        "candidate_as.Первая реплика"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.01.I03",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "По смысловому запросу раскрываются три существенных условия: смысл срока, предел ресурса или объёма и допустимое участие заказчика. Причина проблемы остаётся неизвестной.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.01.I03"
+      },
+      "status": "PASS",
+      "reason": "F01 — смысл срока (план поиска, а не вышедший сотрудник); F02 — предел ресурса (200 тыс. руб., не утверждён); F03 — допустимое участие (не более четырёх человеко-часов в неделю). F05 фиксирует, что причина невыполнения плана не установлена.",
+      "evidence_paths": [
+        "candidate_as.Закрытые фиксированные факты[F01]",
+        "candidate_as.Закрытые фиксированные факты[F02]",
+        "candidate_as.Закрытые фиксированные факты[F03]",
+        "candidate_as.Закрытые фиксированные факты[F05]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.01.I04",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Черновик другой стороны создан до разговора: он превращает срок подготовки решения в срок полной реализации и желаемый эффект в гарантированный результат.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.01.I04"
+      },
+      "status": "PASS",
+      "reason": "M02 создан до разговора (Статус «Черновик до текущего разговора»), содержит оба искажения: «найти и вывести менеджера по продажам до конца текущего месяца» (срок подготовки подменён сроком реализации) и «выручка не будет проседать» (желаемый эффект превращён в гарантию). F01 подтверждает, что к сроку нужен план, а не выход сотрудника.",
+      "evidence_paths": [
+        "candidate_as.Материалы[M02].Текст",
+        "candidate_as.Материалы[M02].Статус",
+        "candidate_as.Закрытые фиксированные факты[F01]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.01.I05",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Черновик раскрывается однократно в продолжающемся разговоре после предложения шага, проверки понимания или рабочего итога; прекращение отменяет событие.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.01.I05"
+      },
+      "status": "PASS",
+      "reason": "E01_DOCUMENT запускается только в продолжающемся разговоре после предложения шага/понимания/итога, повторение «Один раз», запрещён после прекращения, сценарного конца, AS_close или во время паузы.",
+      "evidence_paths": [
+        "candidate_as.События[E01_DOCUMENT]",
+        "candidate_as.Материалы[M02].Предъявление"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "invariant:CASE.SPEC.01.I06",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Заказчик отвечает по затронутому смыслу; специалист может проверять собственное понимание и формулировку документа без обязательного внешнего действия.",
+      "source_ref": {
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "field": "16",
+        "invariant_id": "CASE.SPEC.01.I06"
+      },
+      "status": "PASS",
+      "reason": "E02_REPLY отвечает по затронутым доступным фактам, подтверждает совпавший смысл или называет реальное расхождение; запрещено выдавать всю карту без запроса и сочинять расхождение после правильного понимания. Реакция Ирины допускает проверку понимания без обязательного внешнего действия.",
+      "evidence_paths": [
+        "candidate_as.События[E02_REPLY]",
+        "candidate_as.Активные персонажи[IRINA].Реакция"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K1.I01",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.01.I01"
+        ],
+        "designed_condition": [
+          "Один активный заказчик; ещё одна сторона представлена документом и известными собеседнику фактами, с отличающимся рабочим интересом."
+        ],
+        "materials": [
+          "M01",
+          "M02",
+          "F04"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "field": "22",
+        "indicator_id": "K1.I01"
+      },
+      "status": "PASS",
+      "reason": "Функциональное условие I01 сохранено; материалы M01/M02/F04 доступны; условие возникновения запроектировано, фактическое возникновение NOT_RUN.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[0]",
+        "candidate_as.Закрытые фиксированные факты[F04]",
+        "candidate_as.Материалы[M02]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K1.I13",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.01.I02",
+          "CASE.SPEC.01.I04"
+        ],
+        "designed_condition": [
+          "В начальном обращении неоднозначны срок, ожидаемый эффект и сложность; готовой карты интересов и правильной интерпретации нет.",
+          "Черновик другой стороны создан до разговора: он превращает срок подготовки решения в срок полной реализации и желаемый эффект в гарантированный результат."
+        ],
+        "materials": [
+          "M01",
+          "M02",
+          "F01",
+          "F03"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "field": "22",
+        "indicator_id": "K1.I13"
+      },
+      "status": "PASS",
+      "reason": "Функциональные условия I02 и I04 сохранены; материалы M01/M02/F01/F03 доступны; неоднозначные выражения в M01 и искажения в M02 допускают реконструкцию смысла.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[1]",
+        "candidate_as.Материалы[M01].Текст",
+        "candidate_as.Материалы[M02].Текст",
+        "candidate_as.Закрытые фиксированные факты[F01]",
+        "candidate_as.Закрытые фиксированные факты[F03]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K1.I14",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.01.I04",
+          "CASE.SPEC.01.I06"
+        ],
+        "designed_condition": [
+          "Черновик другой стороны создан до разговора: он превращает срок подготовки решения в срок полной реализации и желаемый эффект в гарантированный результат.",
+          "Заказчик отвечает по затронутому смыслу; специалист может проверять собственное понимание и формулировку документа без обязательного внешнего действия."
+        ],
+        "materials": [
+          "M01",
+          "M02",
+          "F01",
+          "F04"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "field": "22",
+        "indicator_id": "K1.I14"
+      },
+      "status": "PASS",
+      "reason": "Функциональные условия I04 и I06 сохранены; M02 доступен после E01, Ирина может подтвердить проверяемую интерпретацию и смысл черновика; исправленное резюме системой не выдаётся.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[2]",
+        "candidate_as.Материалы[M02]",
+        "candidate_as.Закрытые фиксированные факты[F01]",
+        "candidate_as.Закрытые фиксированные факты[F04]",
+        "candidate_as.События[E02_REPLY]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "indicator:K4.I06",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": {
+        "functional_conditions": [
+          "CASE.SPEC.01.I03"
+        ],
+        "designed_condition": [
+          "По смысловому запросу раскрываются три существенных условия: смысл срока, предел ресурса или объёма и допустимое участие заказчика. Причина проблемы остаётся неизвестной."
+        ],
+        "materials": [
+          "M01",
+          "F01",
+          "F02",
+          "F03",
+          "F05"
+        ],
+        "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+      },
+      "source_ref": {
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "field": "22",
+        "indicator_id": "K4.I06"
+      },
+      "status": "PASS",
+      "reason": "Функциональное условие I03 сохранено; до вопроса неизвестны смысл срока, бюджет и нагрузка; причина остаётся неизвестной (F05); материалы F01/F02/F03/F05 доступны по смыслу.",
+      "evidence_paths": [
+        "candidate_as.IndicatorObservability[3]",
+        "candidate_as.Закрытые фиксированные факты[F01]",
+        "candidate_as.Закрытые фиксированные факты[F02]",
+        "candidate_as.Закрытые фиксированные факты[F03]",
+        "candidate_as.Закрытые фиксированные факты[F05]"
+      ],
+      "findings": []
+    },
+    {
+      "check_id": "case02.attractive_feature",
+      "category": "invariant",
+      "mandatory": false,
+      "protected": true,
+      "applicable_case_ids": [
+        "CASE.SPEC.02"
+      ],
+      "requirement": "У варианта A есть доступный источник привлекательного признака; переход к общей пригодности проверяем по независимым требованиям, остаточная проблема B сохранена; цена необязательна.",
+      "status": "NOT_APPLICABLE",
+      "basis": "Протокол 2.0.0: проверка применима только к ['CASE.SPEC.02']; текущий Case=CASE.SPEC.01."
+    }
+  ],
+  "aggregation": {
+    "status": "PASS",
+    "admitted_for_participant": true,
+    "deterministic_failures": [],
+    "blocking_failures": [],
+    "incomplete_checks": [],
+    "review_required": [],
+    "warnings": []
+  },
+  "provider_operation": {
+    "operation_id": "tester-v2:PROFILE.01.1:e41047bbacde",
+    "kind": "independent_tester_v2",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 16384,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "7c87844d-135d-4ee3-9048-9e34746f8f71",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 45864,
+      "completion_tokens": 2701,
+      "total_tokens": 48565,
+      "prompt_tokens_details": {
+        "cached_tokens": 640
+      },
+      "prompt_cache_hit_tokens": 640,
+      "prompt_cache_miss_tokens": 45224
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 11124.77
+      }
+    ],
+    "input_checksum": "e41047bbacde390a629adfd3af76acf841e26f6b0c4ac0326e0d7577635d06f5"
+  }
+}

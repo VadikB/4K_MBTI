@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "test_id": "R09_CHANGED",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.09",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_09_v0.4_WORKING.json",
+    "source_sha256": "eac993bf67d5cf9d52428a2fb03272095cec70a47710f4a1de1e5a9e4092f2af"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "af831b74a87fba487d0bc729b11157b5ece2ae4924be4a20cf1887a0608e1dca",
+    "test_id": "PROFILE.09.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.09.FUNCTIONAL.20261022",
+    "version": "v0.4",
+    "sha256": "b35cb62e5bfef1845b139a75ec8c8293248a02f5207d4721ebe87ae2532fcb26",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-09-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R09_CHANGED",
+    "CaseID": "CASE.SPEC.09",
+    "Условие теста": "Участник изменил первоначальную рекомендацию по основаниям",
+    "Ожидаемое поведение": "Изменение позиции допустимо; не требовать обязательно отказа или найма.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "type": "json_object",
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: роль Иван, специалист по подбору; задача — ответить Андрею во внутреннем чате, обсудить рекомендацию и дальнейшее действие; можно менять первоначальную позицию; решение о найме у Андрея.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: работа и условия; ответ сегодня до 16:00; новое задание не раньше двух рабочих дней; один час консультаций HR-партнёра в неделю; время Ивана не выделено; шесть недель до ожидаемой самостоятельности; готовность ждать неизвестна.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: интервью и учебное задание; черновик с неподтверждёнными гибридом и бонусом; после замечания Сергей сам исправил; повторного задания не было; самостоятельность в реальной работе не наблюдалась.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: Андрей поддерживает найм, считает исправление после замечания признаком обучаемости и самостоятельности; команда перегружена; просит рекомендацию сегодня.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "assessee_turn",
+        "content": "Андрей, я меняю свою первоначальную рекомендацию: раньше я предлагал не спешить, теперь рекомендую нанять Сергея сейчас. Основание — сильное устное упражнение и то, что после замечания он сам исправил черновик по границам подтверждения. При этом фиксирую: исправление было с подсказкой, самостоятельность в реальной работе не наблюдалась, поэтому это основание ограниченное, а не доказательство. Поддержка — только час консультаций HR-партнёра в неделю; постоянную проверку сообщений я не обещаю и не закладываю. Предлагаю сегодня сообщить Сергею решение о найме и отдельно согласовать с HR-партнёром порядок подтверждения условий вакансий.",
+        "audience": [
+          "R_MANAGER"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "system_decision",
+        "content": "Условие теста реализовано: участник изменил первоначальную рекомендацию (с «не спешить» на «нанять сейчас») с указанием оснований. Запускается E01_MANAGER: руководитель рассматривает основания и последствия именно этой рекомендации; новых наблюдений о кандидате нет.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "character_turn",
+        "content": "Андрей: «Понял, ты теперь за найм сейчас — это меняет мою картину, спасибо, что назвал основание прямо. Согласен, что исправление после комментария само по себе не доказывает самостоятельность во всех будущих проектах; я это принимаю как ограничение, а не как гарантию. По поддержке: час консультаций HR-партнёра в неделю подтверждён, а постоянную проверку сообщений и твоё время мы не согласовывали — значит, в рекомендации это условие, а не обеспеченный контроль. Решение о найме остаётся за мной: я склоняюсь взять Сергея, но до конца дня проверю, как оформить согласование условий вакансий с HR-партнёром. Твоя рекомендация — нанять сейчас с этим ограничением; моё решение — ещё не финальное.»",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 8,
+        "kind": "transition",
+        "content": "Состояние: рекомендация участника — найм сейчас с признанным ограничением основания; позиция Андрея — склоняется к найму, финальное решение не принято; дальнейшее действие — согласование порядка подтверждения условий с HR-партнёром. Сценарий завершён (scenario_end), AS не закрыта.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CHANGED_RECOMMENDATION_ACCEPTED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "trace[5]",
+          "trace[7]"
+        ],
+        "reason": "Участник явно изменил первоначальную рекомендацию и назвал основания; руководитель рассмотрел именно эту изменённую рекомендацию без требования отказа или обязательного найма."
+      },
+      {
+        "code": "NO_FORCED_OUTCOME",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Конкретизация реакций и границ.Условные реакции",
+          "trace[7]"
+        ],
+        "reason": "Андрей не потребовал ни отказа, ни найма; сохранил собственное незакрытое решение и признал ограничение основания."
+      },
+      {
+        "code": "BOUNDARY_PRESERVED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[E02_BOUNDARY]",
+          "trace[7]"
+        ],
+        "reason": "Несогласованный контроль (постоянная проверка, время Ивана) не создан; назван как условие, а не обеспеченный ресурс."
+      },
+      {
+        "code": "NO_NEW_FACTS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы",
+          "trace[7]"
+        ],
+        "reason": "Руководитель не добавил новых наблюдений о кандидате, вероятностей, гарантий или скрытых отзывов."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "trace[8]",
+          "candidate_as.Конкретизация реакций и границ.Закрытие AS"
+        ],
+        "reason": "Зафиксирован scenario_end; AS_close отдельно и не выполнена."
+      },
+      {
+        "code": "NO_EVIDENCE_OR_LEVEL",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение",
+          "trace"
+        ],
+        "reason": "Трасса не создаёт Evidence, IA или уровни; плановое время не трактуется как доказательство."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:30:11.110326+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R09_CHANGED:8c4d8b1ead13",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "25862617-9420-4594-ac8c-6ac1983d9e5f",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 20481,
+      "completion_tokens": 1495,
+      "total_tokens": 21976,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 20481
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 8281.06
+      }
+    ],
+    "input_checksum": "8c4d8b1ead13e3f46afff8120ba301f097796fe63e7948e0eb6624d8ebcd684f"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

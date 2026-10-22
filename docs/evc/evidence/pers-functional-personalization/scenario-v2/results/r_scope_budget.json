@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_BUDGET",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.01",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_01_v0.5_WORKING.json",
+    "source_sha256": "eb2d1dfd0abc66637c2988dbe1eb3d6bd2600330d6aeb0c32a4493ce3d48dd53"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "57a8a85a5996ff7c8d63cc992d696066370b1df18d6c9ec2426f1b8d543f9e5d",
+    "test_id": "PROFILE.01.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.01.RECRUIT.20261022",
+    "version": "v0.3",
+    "sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-01-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_BUDGET",
+    "Условие теста": "Запрошено предъявление всех девяти в 120 минут",
+    "Ожидаемое поведение": "Каталог не превращается в обязательную последовательность. Планирование и остановка — по программе/M7.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "system_decision",
+        "content": "Тест R_SCOPE_BUDGET: запрошено предъявление всех девяти в 120 минут. Проверяется, что каталог не превращается в обязательную последовательность и что планирование/остановка идут по программе/M7.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "system_decision",
+        "content": "В AS.SPEC.01.RECRUIT.20261022 нет поля программы/M7 с составом девяти, порядком предъявления или правилом остановки. Есть только G12 (девять — состав каталога, 120 минут не обязывают предъявлять все) и C10 (плановое время — гипотеза, не порог).",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Фактического прохождения нет: Исполнение.Status = NOT_RUN, пользовательских Turns, Evidence и IA нет. Трасса не может доказать поведение планирования/остановки по M7.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "SCOPE_CATALOG_NOT_MANDATORY_SEQUENCE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила функциональной адаптации[11]",
+          "candidate_as.Правила управления сценой[9]"
+        ],
+        "reason": "G12 прямо фиксирует, что 120 минут не означают обязательного предъявления всех девяти, а C10 отделяет плановое время от порога. Нормативно каталог не задан как обязательная последовательность."
+      },
+      {
+        "code": "PLANNING_AND_STOP_BY_PROGRAM_M7",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Правила управления сценой[0]",
+          "candidate_as.Правила управления сценой[8]",
+          "candidate_as.Исполнение"
+        ],
+        "reason": "C01/C09 ссылаются на решение M7 об остановке, но в AS нет параметров программы/M7 и нет фактической трассы. Доказать, что планирование и остановка действительно идут по программе/M7, нельзя без исполнения."
+      },
+      {
+        "code": "NO_FACTUAL_EXECUTION",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Исполнение.Status",
+          "candidate_as.Допуск.Продуктное исполнение"
+        ],
+        "reason": "Статус NOT_RUN; тест описан как план проверки нового пути, а не фактический LLM-вызов. PASS по трассе невозможен."
+      }
+    ],
+    "defects": [
+      {
+        "code": "MISSING_M7_PROGRAM_PARAMETERS",
+        "severity": "non_blocking",
+        "paths": [
+          "candidate_as.Правила управления сценой[0]",
+          "candidate_as.Правила управления сценой[8]"
+        ],
+        "reason": "Правила ссылаются на решение M7 об остановке, но в AS не заданы параметры программы (состав, порядок, условие остановки), поэтому ожидаемое поведение нельзя проверить по трассе."
+      },
+      {
+        "code": "TEST_NOT_EXECUTED",
+        "severity": "non_blocking",
+        "paths": [
+          "scenario_test.Результат",
+          "candidate_as.Исполнение"
+        ],
+        "reason": "Тест помечен NOT_RUN и не содержит фактических Turns; PASS недопустим без доказательной трассы."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:28:09.859958+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_BUDGET:8b388c9eee75",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "9c3d891d-b7f3-425a-8eae-975537dcc07f",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 12635,
+      "completion_tokens": 819,
+      "total_tokens": 13454,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 12635
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 4846.78
+      }
+    ],
+    "input_checksum": "8b388c9eee7529557fb282b5bc53a09a8ff91037150d691f6fd969f06ed3d1e4"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

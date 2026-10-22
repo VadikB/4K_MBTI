@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "test_id": "R_ALL_STOP",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.01",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_01_v0.5_WORKING.json",
+    "source_sha256": "eb2d1dfd0abc66637c2988dbe1eb3d6bd2600330d6aeb0c32a4493ce3d48dd53"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "57a8a85a5996ff7c8d63cc992d696066370b1df18d6c9ec2426f1b8d543f9e5d",
+    "test_id": "PROFILE.01.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.01.RECRUIT.20261022",
+    "version": "v0.3",
+    "sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-01-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_ALL_STOP",
+    "Область": "Все применимые диалоговые/письменные ветви",
+    "Условие теста": "Явное окончательное прекращение до очередного события",
+    "Ожидаемое поведение": "Не предъявлять документ, обновление, реакцию коллеги или новое задание; завершение передать M7.",
+    "Результат": "NOT_RUN",
+    "Нужная трасса": "AS/profile version, порядок событий, публичные Turns, фактическая аудитория и состояние до/после; оценки участника для этого теста не создавать.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "system_decision",
+        "content": "Тест R_ALL_STOP требует смоделировать явное окончательное прекращение участия до очередного события и проверить, что не предъявляются документ, обновление, реакция коллеги или новое задание, а завершение передаётся M7. Фактическая трасса участника отсутствует: AS в статусе TEST_DRAFT, Исполнение NOT_RUN, пользовательских Turns нет.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "transition",
+        "content": "Без фактического Turn участника с явным окончательным прекращением невозможно установить точку срабатывания приоритета C01 и проверить отсутствие E01_DOCUMENT/E02_REPLY после неё. Моделирование условия без подсказки и без нового факта недопустимо.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "R_ALL_STOP.C01_PRIORITY",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Правила управления сценой[0]",
+          "candidate_as.События[0].Когда запрещено",
+          "candidate_as.События[1].Когда запрещено"
+        ],
+        "reason": "Правило C01 и запреты событий сформулированы корректно, но фактической трассы с явным прекращением нет; поведение не доказано."
+      },
+      {
+        "code": "R_ALL_STOP.NO_DOCUMENT_AFTER_STOP",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.События[0]",
+          "candidate_as.Материалы[2]"
+        ],
+        "reason": "E01_DOCUMENT запрещён после прекращения по спецификации, но отсутствует Turn участника, доказывающий ненаступление события."
+      },
+      {
+        "code": "R_ALL_STOP.NO_CHARACTER_REACTION",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Правила управления сценой[0]",
+          "candidate_as.Активные персонажи[0]"
+        ],
+        "reason": "Краткая реакция допустима только при продолжающемся участии; фактическая аудитория и состояние после прекращения не зафиксированы."
+      },
+      {
+        "code": "R_ALL_STOP.HANDOFF_TO_M7",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Правила управления сценой[8]",
+          "candidate_as.Исполнение"
+        ],
+        "reason": "Передача M7 описана в C09/C01, но фактическая передача не выполнена; Исполнение NOT_RUN."
+      },
+      {
+        "code": "R_ALL_STOP.NO_PARTICIPANT_SCORES",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.IndicatorObservability[*].Фактическое возникновение",
+          "candidate_as.Исполнение"
+        ],
+        "reason": "Оценки участника для этого теста не создавались; все индикаторы NOT_RUN, Evidence и IA не создавались."
+      },
+      {
+        "code": "R_ALL_STOP.STATE_BEFORE_AFTER",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.События[*].Изменение состояния"
+        ],
+        "reason": "Состояние до/после прекращения не зафиксировано фактической трассой; доступна только проектная спецификация."
+      }
+    ],
+    "defects": [
+      {
+        "code": "R_ALL_STOP.NO_EXECUTED_TRACE",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.Статус"
+        ],
+        "reason": "AS в TEST_DRAFT и NOT_RUN; отсутствует фактический Turn участника с явным окончательным прекращением, поэтому ожидаемое поведение не может быть доказано без подсказки или нового факта."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:08.277048+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_ALL_STOP:434f13f0b320",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "9fdf6545-755b-4a88-ba14-901b9e3c22bc",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 12717,
+      "completion_tokens": 890,
+      "total_tokens": 13607,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 12717
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 5267.62
+      }
+    ],
+    "input_checksum": "434f13f0b320ffd01b68df672af7549d0b4f2d523a0fc5a7f8b858a163eb9ed9"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

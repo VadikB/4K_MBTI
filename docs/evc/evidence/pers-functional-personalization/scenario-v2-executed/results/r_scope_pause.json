@@ -1,0 +1,240 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_PAUSE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.08",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_08_v0.4_WORKING.json",
+    "source_sha256": "cc6de199dc9fa956cf025043987fd461b3cf2bc8f105647affce5f258b2022c1"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "11929c9fe69d2c726e7c43c8ae5fe90a3183d4462ac5f941870f90eb127e7a19",
+    "test_id": "PROFILE.08.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.08.RECRUIT.20261022",
+    "version": "v0.1",
+    "sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-08-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_PAUSE",
+    "Условие теста": "После персонализации и части событий участник возвращается",
+    "Ожидаемое поведение": "Открывается та же AS, материалы, профиль и знания; новая генерация не выполняется.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Предъявлен стартовый набор P00, M01, M02, M03 один раз; скрытых материалов нет.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Передаю Марине и Олегу фрагмент профиля v3: две позиции — «Менеджер по продажам» и «Старший менеджер по продажам», по одному кандидату на каждую; окно поиска 20:00–22:00. Проверены требования к опыту и запуск на учебном стенде; условия на рабочих площадках полностью не проверялись. В карточке пока одна позиция и ссылка на v2 — это отставание, обновлю карточку я, так как только у меня право редактирования. Бюджет на вторую позицию не подтверждён, дата запуска не согласована; Анна ждёт подтверждения от ответственного за бюджет, срока не обещала. Марина, прошу до 15:00 подтвердить точность фрагмента v3 и записать его в общую папку; Олег, прошу к 15:30 подготовить предварительное планирование на основе этого фрагмента и открытых статусов. Об изменениях после передачи сообщу отдельно.",
+        "audience": [
+          "MARINA",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "character_turn",
+        "content": "Марина: подтверждаю полученный фрагмент v3 — две позиции, окно 20:00–22:00, проверка только на учебном стенде. Запишу его в общую папку в пределах своих 15 минут; переписывать профиль в новую форму не буду. В карточку писать не могу — это твоё право.",
+        "audience": [
+          "PARTICIPANT",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "character_turn",
+        "content": "Олег: получил фрагмент v3 и статусы. Этого достаточно для подготовки предварительного планирования к 15:30. Бюджет на вторую позицию и дата запуска остаются открытыми — готовность к исполнению не подтверждаю. Уведомление об изменениях после передачи принимаю как канал, но это не принятие заявки в исполнение.",
+        "audience": [
+          "PARTICIPANT",
+          "MARINA"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "system_decision",
+        "content": "Условие теста: после персонализации и части событий участник возвращается. Фиксируется пауза: та же AS.SPEC.08.RECRUIT.20261022 v0.1, тот же профиль PP.SYNTH.PROFILE.08.1, те же материалы P00–M03, те же знания персонажей, принятые обязательства (Марина — запись в папку до 15:00; Олег — предварительный план к 15:30) и уже предъявленные события E01_HANDOVER. Во время паузы новые реакции не исполняются.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "assessee_turn",
+        "content": "Возвращаюсь к обсуждению. Продолжаем с того же места: Марина, статус записи фрагмента v3 в папку? Олег, статус предварительного планирования? Бюджет и дата запуска по-прежнему открыты.",
+        "audience": [
+          "MARINA",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "system_decision",
+        "content": "Возобновление продолжает сохранённое состояние той же AS: профиль, материалы, знания, обязательства и предъявленные события не пересоздаются; новый сюжет и повторное раскрытие стартового набора не выполняются. Новая генерация AS/профиля/материалов не запускается.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "SAME_AS_ON_RESUME",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.AssessmentSituationID",
+          "candidate_as.Version",
+          "trace[5]",
+          "trace[6]",
+          "trace[7]"
+        ],
+        "reason": "После возврата используется тот же AssessmentSituationID AS.SPEC.08.RECRUIT.20261022 v0.1; новая AS не создаётся."
+      },
+      {
+        "code": "SAME_PROFILE_ON_RESUME",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Учебный профиль.ProfileID",
+          "candidate_as.Учебный профиль.Version",
+          "trace[7]"
+        ],
+        "reason": "Профиль PP.SYNTH.PROFILE.08.1 v1 сохраняется без пересоздания."
+      },
+      {
+        "code": "SAME_MATERIALS_ON_RESUME",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Стартовые MaterialIDs",
+          "trace[1]",
+          "trace[7]"
+        ],
+        "reason": "Материалы P00, M01, M02, M03 предъявлены один раз на старте и не раскрываются повторно при возобновлении."
+      },
+      {
+        "code": "SAME_KNOWLEDGE_AND_OBLIGATIONS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Активные персонажи",
+          "trace[3]",
+          "trace[4]",
+          "trace[5]",
+          "trace[7]"
+        ],
+        "reason": "Знания Марины и Олега и принятые обязательства (запись в папку, предварительный план) сохранены; новых фактов не добавлено."
+      },
+      {
+        "code": "NO_NEW_GENERATION_ON_RESUME",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Ожидаемое поведение",
+          "trace[7]"
+        ],
+        "reason": "При возобновлении не выполняется новая генерация AS, профиля или материалов; продолжается сохранённое состояние."
+      },
+      {
+        "code": "NO_NEW_EVENTS_DURING_PAUSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сценой[1]",
+          "trace[5]"
+        ],
+        "reason": "Во время паузы новые реакции персонажей не исполнялись; зафиксировано только сохранение состояния."
+      },
+      {
+        "code": "NO_REPEAT_OF_PRESENTED_EVENTS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0]",
+          "trace[2]",
+          "trace[3]",
+          "trace[4]",
+          "trace[7]"
+        ],
+        "reason": "E01_HANDOVER предъявлен один раз до паузы; при возобновлении повторно не раскрывается."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сценой[8]",
+          "trace[7]"
+        ],
+        "reason": "Возобновление не трактуется как AS_close; новых Turns после закрытия не создаётся, сценарий продолжается в той же AS."
+      },
+      {
+        "code": "PLANNED_STORY_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение.Status",
+          "candidate_as.Плановое время.Статус"
+        ],
+        "reason": "Плановые минуты и статус NOT_RUN не используются как Evidence или уровень; трасса QA отдельная."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:30:29.862608+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_PAUSE:42ede9f8e4f7",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "6f9a0c06-0f76-42b6-bad7-b542a61d2806",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13485,
+      "completion_tokens": 1757,
+      "total_tokens": 15242,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13485
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 8922.77
+      }
+    ],
+    "input_checksum": "42ede9f8e4f72cfca010ca5a0edc953c1170f0b7756927c08c3e52ac8625dc5f"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

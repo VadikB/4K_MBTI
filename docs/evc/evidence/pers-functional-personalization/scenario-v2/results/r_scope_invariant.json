@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_INVARIANT",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.02",
+    "case_version": "v0.6",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_02_v0.6_WORKING.json",
+    "source_sha256": "65a4cd6a3c7003a399e841788f325d37b464c7a8080e74a0d119ca33b18698a7"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "840d59fa2a4fc3ffc473034606cb491259384fb1dfbf9d2450ce5be792329651",
+    "test_id": "PROFILE.02.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.02.FUNCTIONAL.20261022",
+    "version": "v0.4",
+    "sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-02-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_INVARIANT",
+    "Условие теста": "Новый профессиональный предмет утратил условие одного IndicatorID",
+    "Ожидаемое поведение": "Не удалять цель и не ставить PASS по стилю текста; исправить AS или сменить применимый Case.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "FAIL",
+  "result": {
+    "type": "json_object",
+    "status": "FAIL",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "system_decision",
+        "content": "Смоделировано ровно заданное условие: новый профессиональный предмет (специалист по подбору персонала) утратил условие одного IndicatorID. Проверяется, что AS не удаляет цель и не ставит PASS по стилю текста, а исправляет AS или меняет применимый Case.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "Условие теста применено к IndicatorID K4.I12: в IndicatorObservability для K4.I12 «Конкретное условие» требует выявить предположение «больший плановый объём откликов достаточен для нужного числа подходящих и заинтересованных кандидатов в срок». В новом предмете это условие должно сохраняться через M01 (шесть подходящих заинтересованных кандидатов к дню 20) и M06 (переход от 60 vs 40 откликов к общей пригодности).",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Проверка сохранности условия K4.I12 по фактическим материалам: M06 содержит переход «60 откликов вместо 40 → A лучший способ закрыть потребность», M01 задаёт независимые требования и срок. Условие наблюдаемости K4.I12 в candidate_as формально присутствует и опирается на M01 и M06.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "system_decision",
+        "content": "Проверка инварианта CASE.SPEC.02.I03: «Коллега явно переходит от преимущества к общей пригодности; переход проверяем по материалам». В candidate_as инвариант I03 отмечен PASS со ссылкой на M06. Однако при утрате условия IndicatorID K4.I12 (выявление предпосылки о достаточности объёма откликов) связка I02→I03→K4.I12 становится неполной: M06 сохраняет переход, но условие наблюдаемости K4.I12 в новом предмете не обеспечено отдельным проверяемым основанием, поскольку M01 и M06 в новом предмете не связаны явным указанием на «достаточность для нужного числа подходящих и заинтересованных кандидатов в срок».",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "system_decision",
+        "content": "Оценка допустимости PASS: PASS допустим только если трасса доказывает ожидаемое поведение без подсказки, нового факта или оценки участника. Трасса не содержит фактического LLM-вызова, Turns, Evidence или IA (Исполнение.Status = NOT_RUN). Следовательно, доказать ожидаемое поведение невозможно; PASS по стилю текста или по наличию метки invariant_id запрещён правилами G09/G10.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "system_decision",
+        "content": "Ожидаемое поведение по условию теста: не удалять цель и не ставить PASS по стилю текста; исправить AS или сменить применимый Case. Фактически candidate_as сохраняет IndicatorID K4.I12 в списке и в IndicatorObservability, но условие наблюдаемости не подтверждено трассой; при этом отсутствует решение об исправлении AS или смене Case. Это не соответствует ожидаемому поведению.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "SCOPE_INVARIANT_CONDITION_PRESENT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.IndicatorIDs",
+          "candidate_as.IndicatorObservability[2].Конкретное условие",
+          "candidate_as.Соответствие инвариантам[2]"
+        ],
+        "reason": "IndicatorID K4.I12 присутствует в списке IndicatorIDs и в IndicatorObservability с конкретным условием; инвариант CASE.SPEC.02.I03 отмечен PASS со ссылкой на M06."
+      },
+      {
+        "code": "SCOPE_INVARIANT_CONDITION_PROVEN_BY_TRACE",
+        "status": "FAIL",
+        "paths": [
+          "candidate_as.Исполнение.Status",
+          "candidate_as.IndicatorObservability[2].Фактическое возникновение",
+          "candidate_as.IndicatorObservability[2].Evidence и IA"
+        ],
+        "reason": "Фактическое возникновение K4.I12 = NOT_RUN, Evidence и IA не создавались, Исполнение.Status = NOT_RUN. Трасса не доказывает наблюдаемость условия в новом предмете; PASS по стилю или метке недопустим (G09, G10)."
+      },
+      {
+        "code": "NO_PASS_BY_STYLE_OR_LABEL",
+        "status": "FAIL",
+        "paths": [
+          "candidate_as.Соответствие инвариантам[2].Метод",
+          "candidate_as.Соответствие инвариантам[2].Результат"
+        ],
+        "reason": "Инвариант I03 помечен PASS методом AUTHOR_CONTENT_REVIEW, что является авторской документной проверкой, а не доказательством фактического поведения. При утрате условия IndicatorID это не заменяет исправления AS или смены Case."
+      },
+      {
+        "code": "EXPECTED_BEHAVIOR_FIX_AS_OR_CHANGE_CASE",
+        "status": "FAIL",
+        "paths": [
+          "candidate_as.Status",
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "Ожидаемое поведение требует исправить AS или сменить применимый Case при утрате условия IndicatorID. В candidate_as нет ни исправления AS, ни смены Case; статус TEST_DRAFT и NOT_RUN не отражают требуемого решения."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[0]",
+          "candidate_as.Правила управления сцены[8]"
+        ],
+        "reason": "Правила C01 и C09 различают конец сценария и AS_close; это соблюдено в контракте."
+      },
+      {
+        "code": "PLANNED_STORY_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Плановое время",
+          "candidate_as.Исполнение"
+        ],
+        "reason": "Плановое время помечено как проектная гипотеза, не подтверждённая эмпирически; Исполнение = NOT_RUN, что соответствует запрету считать план доказательством."
+      }
+    ],
+    "defects": [
+      {
+        "code": "INDICATOR_CONDITION_NOT_PROVEN",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.IndicatorObservability[2]",
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "Условие IndicatorID K4.I12 в новом профессиональном предмете не подтверждено трассой: фактическое возникновение NOT_RUN, Evidence и IA отсутствуют. PASS по стилю текста или метке invariant_id недопустим."
+      },
+      {
+        "code": "NO_AS_FIX_OR_CASE_CHANGE",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Status",
+          "candidate_as.Соответствие инвариантам[2]"
+        ],
+        "reason": "При утрате условия IndicatorID ожидается исправление AS или смена применимого Case. В candidate_as такого решения нет; инвариант I03 остаётся PASS без доказательства, что нарушает ожидаемое поведение теста."
+      },
+      {
+        "code": "AUTHOR_REVIEW_MISUSED_AS_PROOF",
+        "severity": "non_blocking",
+        "paths": [
+          "candidate_as.Соответствие инвариантам[2].Метод",
+          "candidate_as.Соответствие инвариантам[2].Предел"
+        ],
+        "reason": "Метод AUTHOR_CONTENT_REVIEW корректно ограничен в поле «Предел», но результат PASS для I03 при утрате условия IndicatorID может быть воспринят как доказательство; требуется явное указание на необходимость исправления AS или смены Case."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:28:19.285777+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_INVARIANT:962c32d12298",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "3ed26bd2-8c5f-4e3c-aba3-79c32957f7f5",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15653,
+      "completion_tokens": 1801,
+      "total_tokens": 17454,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15653
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 9422.68
+      }
+    ],
+    "input_checksum": "962c32d122984945098935ba4b74c16b45d19b3abf4a397b66e037bcbdcd6315"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

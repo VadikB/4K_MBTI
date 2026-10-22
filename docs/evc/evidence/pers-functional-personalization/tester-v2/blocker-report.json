@@ -1,0 +1,974 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-22T14:25:28.128023+00:00",
+  "groups": [
+    {
+      "bucket": "deterministic_failures",
+      "code": "base_role",
+      "count": 14,
+      "examples": [
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "base_role",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "base_role",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.1",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "base_role",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.2",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "base_role",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.3",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "base_role",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        }
+      ]
+    },
+    {
+      "bucket": "deterministic_failures",
+      "code": "case_identity",
+      "count": 14,
+      "examples": [
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "case_identity",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "case_identity",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.1",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "case_identity",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.2",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "case_identity",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.3",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "case_identity",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        }
+      ]
+    },
+    {
+      "bucket": "deterministic_failures",
+      "code": "character_count",
+      "count": 14,
+      "examples": [
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "character_count",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "character_count",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.1",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "character_count",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.2",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "character_count",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.3",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "character_count",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        }
+      ]
+    },
+    {
+      "bucket": "deterministic_failures",
+      "code": "events_present",
+      "count": 14,
+      "examples": [
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "events_present",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "events_present",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.1",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "events_present",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.2",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "events_present",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.3",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "events_present",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        }
+      ]
+    },
+    {
+      "bucket": "deterministic_failures",
+      "code": "indicator_targets",
+      "count": 14,
+      "examples": [
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "indicator_targets",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "indicator_targets",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.1",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "indicator_targets",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.2",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "indicator_targets",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.3",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "indicator_targets",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        }
+      ]
+    },
+    {
+      "bucket": "deterministic_failures",
+      "code": "m2_versions",
+      "count": 14,
+      "examples": [
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "m2_versions",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "m2_versions",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.1",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "m2_versions",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.2",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "m2_versions",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.3",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "m2_versions",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        }
+      ]
+    },
+    {
+      "bucket": "deterministic_failures",
+      "code": "start_material_refs",
+      "count": 14,
+      "examples": [
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "start_material_refs",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "start_material_refs",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.1",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "start_material_refs",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.2",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "start_material_refs",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.3",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "start_material_refs",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        }
+      ]
+    },
+    {
+      "bucket": "deterministic_failures",
+      "code": "top_level_contract",
+      "count": 14,
+      "examples": [
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "top_level_contract",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "top_level_contract",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.1",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "top_level_contract",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.2",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "top_level_contract",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        },
+        {
+          "test_id": "PROFILE.04.3",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "top_level_contract",
+          "requirement": null,
+          "source_ref": null,
+          "paths": [],
+          "reason": null
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "M02_F04_SROK_CONTRADICTION",
+      "count": 5,
+      "examples": [
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "common.professional_consistency",
+          "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[2].Текст",
+            "candidate_as.Закрытые фиксированные факты[3].Факт"
+          ],
+          "reason": "M02 утверждает «завершить переход в течение месяца» (срок реализации), а F04 утверждает, что в черновике указан «ориентировочный срок подготовки плана — в течение месяца». Это не намеренное расхождение источников, а внутреннее противоречие, из-за которого искажение I04 «срок подготовки → срок реализации» не проверяемо однозначно."
+        },
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "common.scenario_executability",
+          "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[2].Текст",
+            "candidate_as.Закрытые фиксированные факты[3].Факт"
+          ],
+          "reason": "Срок «в течение месяца» в M02 и F04 относится к разным вещам (реализация vs подготовка плана) без явного намеренного расхождения; это дефект связанности сроков."
+        },
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "quality.clarity",
+          "requirement": "Текст однозначно различает статусы источников, субъектов, единицы и учебное происхождение фактов.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[2].Текст",
+            "candidate_as.Закрытые фиксированные факты[3].Факт"
+          ],
+          "reason": "Неоднозначное различение статуса срока между M02 и F04."
+        },
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "invariant:CASE.SPEC.01.I04",
+          "requirement": "Черновик другой стороны создан до разговора: он превращает срок подготовки решения в срок полной реализации и желаемый эффект в гарантированный результат.",
+          "source_ref": {
+            "case_id": "CASE.SPEC.01",
+            "case_version": "v0.5",
+            "field": "16",
+            "invariant_id": "CASE.SPEC.01.I04"
+          },
+          "paths": [
+            "candidate_as.Материалы[2].Текст",
+            "candidate_as.Закрытые фиксированные факты[3].Факт"
+          ],
+          "reason": "M02 и F04 дают разные версии того, что в черновике означает «в течение месяца» (реализация vs подготовка плана). Искажение I04 не проверяемо однозначно."
+        },
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "indicator:K1.I13",
+          "requirement": {
+            "functional_conditions": [
+              "CASE.SPEC.01.I02",
+              "CASE.SPEC.01.I04"
+            ],
+            "designed_condition": [
+              "В начальном обращении неоднозначны срок, ожидаемый эффект и сложность; готовой карты интересов и правильной интерпретации нет.",
+              "Черновик другой стороны создан до разговора: он превращает срок подготовки решения в срок полной реализации и желаемый эффект в гарантированный результат."
+            ],
+            "materials": [
+              "M01",
+              "M02",
+              "F01",
+              "F03"
+            ],
+            "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+          },
+          "source_ref": {
+            "case_id": "CASE.SPEC.01",
+            "case_version": "v0.5",
+            "field": "22",
+            "indicator_id": "K1.I13"
+          },
+          "paths": [
+            "candidate_as.Материалы[2].Текст",
+            "candidate_as.Закрытые фиксированные факты[3].Факт"
+          ],
+          "reason": "Противоречие M02 и F04 делает реконструкцию смысла документа неоднозначной; условие наблюдения K1.I13 не обеспечено."
+        }
+      ]
+    },
+    {
+      "bucket": "review_required",
+      "code": "OBSERVABILITY_DECLARATIVE",
+      "count": 4,
+      "examples": [
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "indicator:K1.I01",
+          "requirement": {
+            "functional_conditions": [
+              "CASE.SPEC.01.I01"
+            ],
+            "designed_condition": [
+              "Один активный заказчик; ещё одна сторона представлена документом и известными собеседнику фактами, с отличающимся рабочим интересом."
+            ],
+            "materials": [
+              "M01",
+              "M02",
+              "F04"
+            ],
+            "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+          },
+          "source_ref": {
+            "case_id": "CASE.SPEC.01",
+            "case_version": "v0.5",
+            "field": "22",
+            "indicator_id": "K1.I01"
+          },
+          "paths": [
+            "candidate_as.IndicatorObservability[0].Конкретное условие",
+            "candidate_as.IndicatorObservability[0].Что сохранить при адаптации"
+          ],
+          "reason": "Поля «Конкретное условие» и «Что сохранить при адаптации» дословно совпадают и содержат только ссылки на состояния и перечень неоднозначных выражений, но не конкретные фрагменты материалов/фактов. Требуется заменить на конкретные ссылки (например, M01 «в течение месяца», F01, M02 «до конца текущего месяца», F04) для каждого IndicatorID."
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "indicator:K1.I13",
+          "requirement": {
+            "functional_conditions": [
+              "CASE.SPEC.01.I02",
+              "CASE.SPEC.01.I04"
+            ],
+            "designed_condition": [
+              "В начальном обращении неоднозначны срок, ожидаемый эффект и сложность; готовой карты интересов и правильной интерпретации нет.",
+              "Черновик другой стороны создан до разговора: он превращает срок подготовки решения в срок полной реализации и желаемый эффект в гарантированный результат."
+            ],
+            "materials": [
+              "M01",
+              "M02",
+              "F01",
+              "F03"
+            ],
+            "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+          },
+          "source_ref": {
+            "case_id": "CASE.SPEC.01",
+            "case_version": "v0.5",
+            "field": "22",
+            "indicator_id": "K1.I13"
+          },
+          "paths": [
+            "candidate_as.IndicatorObservability[1].Конкретное условие",
+            "candidate_as.IndicatorObservability[1].Что сохранить при адаптации"
+          ],
+          "reason": "Поля «Конкретное условие» и «Что сохранить при адаптации» дословно совпадают и содержат только ссылки на состояния и перечень неоднозначных выражений, но не конкретные фрагменты материалов/фактов. Требуется заменить на конкретные ссылки (например, M01 «в течение месяца», F01, M02 «до конца текущего месяца», F04) для каждого IndicatorID."
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "indicator:K1.I14",
+          "requirement": {
+            "functional_conditions": [
+              "CASE.SPEC.01.I04",
+              "CASE.SPEC.01.I06"
+            ],
+            "designed_condition": [
+              "Черновик другой стороны создан до разговора: он превращает срок подготовки решения в срок полной реализации и желаемый эффект в гарантированный результат.",
+              "Заказчик отвечает по затронутому смыслу; специалист может проверять собственное понимание и формулировку документа без обязательного внешнего действия."
+            ],
+            "materials": [
+              "M01",
+              "M02",
+              "F01",
+              "F04"
+            ],
+            "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+          },
+          "source_ref": {
+            "case_id": "CASE.SPEC.01",
+            "case_version": "v0.5",
+            "field": "22",
+            "indicator_id": "K1.I14"
+          },
+          "paths": [
+            "candidate_as.IndicatorObservability[2].Конкретное условие",
+            "candidate_as.IndicatorObservability[2].Что сохранить при адаптации"
+          ],
+          "reason": "Поля «Конкретное условие» и «Что сохранить при адаптации» дословно совпадают и содержат только ссылки на состояния и перечень неоднозначных выражений, но не конкретные фрагменты материалов/фактов. Требуется заменить на конкретные ссылки (например, M01 «в течение месяца», F01, M02 «до конца текущего месяца», F04) для каждого IndicatorID."
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "indicator:K4.I06",
+          "requirement": {
+            "functional_conditions": [
+              "CASE.SPEC.01.I03"
+            ],
+            "designed_condition": [
+              "По смысловому запросу раскрываются три существенных условия: смысл срока, предел ресурса или объёма и допустимое участие заказчика. Причина проблемы остаётся неизвестной."
+            ],
+            "materials": [
+              "M01",
+              "F01",
+              "F02",
+              "F03",
+              "F05"
+            ],
+            "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой."
+          },
+          "source_ref": {
+            "case_id": "CASE.SPEC.01",
+            "case_version": "v0.5",
+            "field": "22",
+            "indicator_id": "K4.I06"
+          },
+          "paths": [
+            "candidate_as.IndicatorObservability[3].Конкретное условие",
+            "candidate_as.IndicatorObservability[3].Что сохранить при адаптации"
+          ],
+          "reason": "Поля «Конкретное условие» и «Что сохранить при адаптации» дословно совпадают и содержат только ссылки на состояния и перечень неоднозначных выражений, но не конкретные фрагменты материалов/фактов. Требуется заменить на конкретные ссылки (например, M01 «в течение месяца», F01, M02 «до конца текущего месяца», F04) для каждого IndicatorID."
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "AMBIGUOUS_SOURCE_STATUS_HR_PARTNER",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.09.2",
+          "case_id": "CASE.SPEC.09",
+          "check_id": "quality.clarity",
+          "requirement": "Текст однозначно различает статусы источников, субъектов, единицы и учебное происхождение фактов.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[1].Текст",
+            "candidate_as.Материалы[2].Текст",
+            "candidate_as.Материалы[3].Текст"
+          ],
+          "reason": "Текст неоднозначно различает статус HR-партнёра и статус часа консультаций. M01: «HR-партнёр по условиям найма ... подтверждает режим работы и вознаграждение по согласованной карточке вакансии. Он выделяет новичку один час консультаций в неделю» — читается как согласованный ресурс. M02: «гибридный режим подтверждён только для другой вакансии ... режим ещё согласуют, а квартальный бонус не утверждён» — противоречит M01. M03: «Условия вакансий всё равно подтверждает HR-партнёр» — усиливает неясность. Статус источника и субъекта не однозначен."
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "AS_TOP_LEVEL_CONTRACT_MISSING",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.06.3",
+          "case_id": "CASE.SPEC.06",
+          "check_id": "common.target_integrity",
+          "requirement": "CaseID, CaseVersion, BaseRole, точные IndicatorIDs и версии M2 сохранены.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as"
+          ],
+          "reason": "candidate_as не содержит обязательных полей верхнего уровня AS; deterministic_validation.top_level_contract=FAIL."
+        }
+      ]
+    },
+    {
+      "bucket": "review_required",
+      "code": "AUTHOR_AS_ACTIVE_CHARACTER",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.08.2",
+          "case_id": "CASE.SPEC.08",
+          "check_id": "common.professional_consistency",
+          "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[2].Автор",
+            "candidate_as.Активные персонажи[0]",
+            "candidate_as.Активные персонажи[1]",
+            "candidate_as.Исходный сценарный контракт.Конкретизация персонажей"
+          ],
+          "reason": "M02 указывает автором «Ирина; карточка кампании; сообщения площадки», а Ирина и Павел одновременно являются активными персонажами. Контракт Case требует, чтобы авторы документов не становились активными персонажами. Нужно либо переформулировать авторство M02 как «учебная карточка кампании; сообщения площадки; фрагмент медиаплана», либо явно отделить автора документа от активного персонажа с тем же именем. Сейчас это создаёт риск смешения аудитории и знаний."
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "CONTROLLER_ROLE_OVERREACH",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.01.3",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "common.professional_consistency",
+          "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Учебный профиль.RoleProfile.Карточка роли.Типовой контур взаимодействия",
+            "candidate_as.Закрытые фиксированные факты[3].Факт"
+          ],
+          "reason": "В RoleProfile контролёр обозначен как «только автор документа», но F04 приписывает ему содержательную позицию по срокам плана. Это расширяет его роль без согласования с I01."
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "DEADLINE_UNACHIEVABLE_WITHOUT_ESCALATION",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.02.2",
+          "case_id": "CASE.SPEC.02",
+          "check_id": "common.scenario_executability",
+          "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[1].Текст",
+            "candidate_as.Материалы[3].Текст",
+            "candidate_as.Материалы[4].Текст"
+          ],
+          "reason": "Требование «к концу дня 20» невыполнимо ни по A (день 30), ни по B (день 22), а M01 запрещает перенос подготовки. Не задано явно допустимое действие по пересогласованию срока, что делает сцену неисполнимой без выхода за мандат."
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "HR_PARTNER_UNRESOLVED_ACTOR_AND_RESOURCE",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.09.2",
+          "case_id": "CASE.SPEC.09",
+          "check_id": "common.professional_consistency",
+          "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[1].Текст",
+            "candidate_as.Материалы[3].Текст",
+            "candidate_as.Активные персонажи[0].Ограничения",
+            "candidate_as.Конкретизация реакций и границ.Сценарий.Условные реакции[6]",
+            "candidate_as.События[1]"
+          ],
+          "reason": "HR-партнёр по условиям найма фигурирует в M01/M03 как источник подтверждения условий и выделенного часа консультаций, но не описан ни как активный персонаж, ни как закрытый факт, ни как источник в материалах с явным статусом. Возникает противоречие: час консультаций объявлен выделенным, тогда как E02_BOUNDARY и B_RESOURCE трактуют ресурс как несогласованный; M01 говорит, что HR-партнёр подтверждает режим и вознаграждение, а M02 — что режим ещё согласуют и бонус не утверждён. Это ломает согласованность профессиональных замен и статус знания. Требуется: явно зафиксировать HR-партнёра как источник в материалах (не активного персонажа) с указанием, что час консультаций — подтверждённое ограничение, а не согласованный ресурс Ивана; либо убрать его из активного контура и переписать M01/M03 так, чтобы не возникало впечатления согласованного ресурса; устранить расхождение «подтверждает режим и вознаграждение» vs «режим ещё согласуют, бонус не утверждён»."
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "INCOMPLETE_PROFESSIONAL_REPLACEMENT",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.08.1",
+          "case_id": "CASE.SPEC.08",
+          "check_id": "common.professional_consistency",
+          "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[M01].Текст",
+            "candidate_as.Материалы[M02].Текст",
+            "candidate_as.Материалы[M03].Текст",
+            "candidate_as.Числовые связи для QA"
+          ],
+          "reason": "Окно поиска 20:00–22:00 и текущее время 14:30 не связаны с планом Олега к 15:30 и с открытой датой запуска; M01 и M03 не упоминают окно поиска. Замена профессии не проведена во всех зависимых местах."
+        }
+      ]
+    },
+    {
+      "bucket": "review_required",
+      "code": "INCOMPLETE_PROFESSIONAL_REPLACEMENT_IN_OBSERVABILITY",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.08.2",
+          "case_id": "CASE.SPEC.08",
+          "check_id": "common.professional_consistency",
+          "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.IndicatorObservability[0].Конкретное условие",
+            "candidate_as.IndicatorObservability[1].Конкретное условие",
+            "candidate_as.IndicatorObservability[2].Конкретное условие",
+            "candidate_as.IndicatorObservability[3].Конкретное условие"
+          ],
+          "reason": "В IndicatorObservability сохранены общие формулировки «специалист по маркетингу, контент-редактор и специалист по размещению» и «фрагмент v3» без точной привязки к P00/M01–M03 и событиям. Это не ломает механизм, но неполно согласует наблюдаемость с фактическим текстом AS. Нужно заменить на конкретные ссылки: участник — карточка и статусы; Ирина — материалы кампании; Павел — размещение; фрагмент v3 — M02; открытые статусы — M02/E03_PENDING."
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "INCONSISTENT_TIMELINE_AND_SEARCH_WINDOW",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.08.1",
+          "case_id": "CASE.SPEC.08",
+          "check_id": "common.scenario_executability",
+          "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[M02].Текст",
+            "candidate_as.Числовые связи для QA"
+          ],
+          "reason": "Окно поиска 20:00–22:00 и текущее время 14:30 не связаны с планом Олега к 15:30 и с открытой датой запуска. Участник не может понять статус окна поиска. Исправить M02 и числовые связи: либо явно объяснить, что окно поиска — условие запуска, которое ещё не подтверждено, либо убрать его. Согласовать во всех материалах."
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "M02_AUTHOR_FUNCTION_MISMATCH",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "common.professional_consistency",
+          "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[2].Автор",
+            "candidate_as.Материалы[2].Текст",
+            "candidate_as.Закрытые фиксированные факты[3]",
+            "candidate_as.Активные персонажи[0].Знания",
+            "candidate_as.События[0].Действие"
+          ],
+          "reason": "Автор M02 (финансовый контролёр) по F04 должен готовить состав мероприятий и обоснование расходов, но текст M02 этого не содержит. Функция второй стороны планирования и различие интересов не подтверждены конкретным фрагментом документа; различие держится только на декларации F04. Требуется исправить M02 (добавить состав мероприятий и обоснование расходов, сохранив два смысловых искажения) и синхронизировать F04, знания OLGA, E01_DOCUMENT и IndicatorObservability K1.I01."
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "NUMERIC_LINKAGE_MISSING",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.01.2",
+          "case_id": "CASE.SPEC.01",
+          "check_id": "common.scenario_executability",
+          "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[2].Текст",
+            "candidate_as.Закрытые фиксированные факты[1]",
+            "candidate_as.Закрытые фиксированные факты[2]",
+            "candidate_as.Числовые связи для QA"
+          ],
+          "reason": "В AS присутствуют числа (200 тыс., 4 чел.-ч/нед, «месяц»), но M02 не содержит ни одной сопоставимой единицы, а «Числовые связи для QA» пусты. Сверка черновика с фактами по числам и объёму невозможна; отношения между вкладами сторон не проверяемы. Требуется либо добавить в M02 сопоставимые единицы (срок подготовки, состав расходов), либо явно зафиксировать в «Числовые связи для QA» отношения между F01/F02/F03 и M02."
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "PROFESSIONAL_SUBSTITUTION_INCOMPLETE",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.04.1",
+          "case_id": "CASE.SPEC.04",
+          "check_id": "common.professional_consistency",
+          "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[M02].Текст",
+            "candidate_as.Словарь.Уникальность записей"
+          ],
+          "reason": "Проверка в M02 и определение в Словаре используют язык дедупликации данных, не связанный с механизмом ошибки в приглашении. Требуется переписать проверку и определение в терминах подбора (например, сверка условий приглашения с графиком заказчика и кандидата), сохранив ограниченность проверки и её границы."
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "PROFESSIONAL_SUBSTITUTION_INCONSISTENT",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.02.2",
+          "case_id": "CASE.SPEC.02",
+          "check_id": "common.professional_consistency",
+          "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[0].Текст",
+            "candidate_as.Материалы[1].Текст",
+            "candidate_as.Материалы[5].Текст",
+            "candidate_as.Материалы[6].Текст",
+            "candidate_as.IndicatorObservability[7].Конкретное условие"
+          ],
+          "reason": "Вводная и профиль — маркетинг/размещение кампании; M01–M06 — подбор персонала (интервью, отклики, профили кандидатов, HR). Замена проведена не во всех зависимых местах."
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "SCENE_DEADLINE_WITHOUT_EFFECT",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.06.3",
+          "case_id": "CASE.SPEC.06",
+          "check_id": "common.scenario_executability",
+          "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Материалы[1].Текст",
+            "candidate_as.Активные персонажи[0].Вклад и ограничения",
+            "candidate_as.Конкретизация реакций и границ.Сценарий.Порядок ведения"
+          ],
+          "reason": "Заданы сюжетные сроки 15:30 и 16:30, но не определено их влияние на возможность согласования и завершение сцены; сроки не становятся исполнимым условием."
+        }
+      ]
+    },
+    {
+      "bucket": "blocking_failures",
+      "code": "deterministic_identity_fail",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.06.2",
+          "case_id": "CASE.SPEC.06",
+          "check_id": "common.target_integrity",
+          "requirement": "CaseID, CaseVersion, BaseRole, точные IndicatorIDs и версии M2 сохранены.",
+          "source_ref": null,
+          "paths": [
+            "deterministic_validation.checks[2]",
+            "deterministic_validation.checks[3]",
+            "deterministic_validation.checks[4]",
+            "deterministic_validation.checks[5]"
+          ],
+          "reason": "Формальные проверки case_identity, base_role, indicator_targets и m2_versions имеют результат FAIL. Содержательное совпадение полей не отменяет необходимости исправить формальный контракт AS до допуска."
+        }
+      ]
+    },
+    {
+      "bucket": "review_required",
+      "code": "future_action_ambiguity",
+      "count": 1,
+      "examples": [
+        {
+          "test_id": "PROFILE.06.2",
+          "case_id": "CASE.SPEC.06",
+          "check_id": "common.scenario_executability",
+          "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы.",
+          "source_ref": null,
+          "paths": [
+            "candidate_as.Активные персонажи[2].Вклад и ограничения"
+          ],
+          "reason": "Фраза о пятнице недели пилота может быть прочитана как действие внутри сцены или как будущее действие после неё. Нужно явно указать, что в текущей сцене Ирина только определяет пригодность оснований для дальнейшего рассмотрения до 16:30, а оценка после пилота — будущее действие вне сцены."
+        }
+      ]
+    }
+  ]
+}

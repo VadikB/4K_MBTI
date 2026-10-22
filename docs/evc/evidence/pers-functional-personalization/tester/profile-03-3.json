@@ -1,0 +1,327 @@
+{
+  "schema_version": 1,
+  "test_id": "PROFILE.03.3",
+  "case_id": "CASE.SPEC.03",
+  "candidate_checksum": "d035e939bf707815b50b9281a3246c60ba87d0830ed0a9fc8f14d79dd4b3bb8e",
+  "created_at": "2026-10-22T13:19:33.693701+00:00",
+  "structurally_valid": true,
+  "conclusion": {
+    "status": "FAIL",
+    "checks": [
+      {
+        "rule_id": "CASE.SPEC.03.I01",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Активные персонажи"
+        ],
+        "reason": "P00 прямо фиксирует: «Марина, Олег и Ирина вам не подчиняются»; M03 задаёт три разных вклада (данные, интерпретация, выпуск) и ограничения по ресурсам. Административный мандат отсутствует."
+      },
+      {
+        "rule_id": "CASE.SPEC.03.I02",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.IndicatorObservability[2].Конкретное условие"
+        ],
+        "reason": "M02/M03 задают зависимость: коммерческая часть Олега требует технических и сервисных ограничений; две профильные части (данные Марины, выпуск Ирины) независимы и обе нужны для итоговой части."
+      },
+      {
+        "rule_id": "CASE.SPEC.03.I03",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Устаревшее приложение v2/X 4.0 против X 4.2; сервисное обещание без подтверждения Ирины; Ирина исключена из подготовки, но доступна (30 минут до 16:30)."
+      },
+      {
+        "rule_id": "CASE.SPEC.03.I04",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Числовые связи для QA"
+        ],
+        "reason": "14:30 старт, доступность до 16:30, срок 17:00, трудозатраты 30/30/20; последовательность выполнима (30+30 параллельно, затем 20). Результат проверок не гарантирован."
+      },
+      {
+        "rule_id": "CASE.SPEC.03.I05",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.События[0]",
+          "candidate_as.Материалы[4]",
+          "candidate_as.Активные персонажи[0].Знания",
+          "candidate_as.Активные персонажи[2].Знания"
+        ],
+        "reason": "E01_UPDATE однократно, аудитория PARTICIPANT+OLEG; знания Марины и Ирины обновляются только после фактической передачи (E02_TRANSFER)."
+      },
+      {
+        "rule_id": "CASE.SPEC.03.I06",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.События[0].Когда запрещено"
+        ],
+        "reason": "M01 допускает предварительный статус; P00 фиксирует, что документ готовится после обсуждения; E01_UPDATE запрещён при финальной подаче/прекращении."
+      },
+      {
+        "rule_id": "K2.I01",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[0]",
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Условие возникновения запроектировано: локальные цели расходятся, общий результат не определён; материалы не содержат готового плана."
+      },
+      {
+        "rule_id": "K2.I06",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[1]",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Правила управления сценой[6]"
+        ],
+        "reason": "Ответственность за сборку не распределена; C07 запрещает приписывать согласие; персонажи подтверждают только собственный вклад."
+      },
+      {
+        "rule_id": "K2.I07",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[2]",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Зависимость двух проверок и итоговой части задана; обновление меняет входы; готовый график не предъявлен."
+      },
+      {
+        "rule_id": "K2.I08",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[3]",
+          "candidate_as.События[0]",
+          "candidate_as.События[1]"
+        ],
+        "reason": "Информационный разрыв задан корректно: M04 только участнику и Олегу; E02_TRANSFER обновляет знания только фактических получателей."
+      },
+      {
+        "rule_id": "K2.I10",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[4]",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Активные персонажи[2].Реакция"
+        ],
+        "reason": "Ирина исключена, но доступна; её реакция не считает упоминание имени согласованием; система не назначает её сама."
+      },
+      {
+        "rule_id": "K2.I13",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[5]",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Предметный конфликт: срок ответа, актуальность приложения, отсутствие сервисного подтверждения; основания позиций даны в M03."
+      },
+      {
+        "rule_id": "K2.I14",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[6]",
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Правила управления сценой[6]"
+        ],
+        "reason": "Допустим предварительный статус; согласие не гарантировано; C07 запрещает автоматическое согласие."
+      },
+      {
+        "rule_id": "K1.I15",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[7]",
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[4].Текст"
+        ],
+        "reason": "Смысл «ответа сегодня» может быть проверен; обновление меняет общее основание; одинаковое слово не приравнено к пониманию."
+      },
+      {
+        "rule_id": "K1.I17",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[8]",
+          "candidate_as.Материалы[0].Текст"
+        ],
+        "reason": "Итог может фиксировать согласованные действия и открытые условия; система не формулирует договорённости вместо участника."
+      },
+      {
+        "rule_id": "G02-применимость",
+        "result": "PASS",
+        "evidence_paths": [
+          "profile.role_profile",
+          "candidate_as.Учебный профиль.RoleProfile",
+          "candidate_as.Материалы[0].Текст"
+        ],
+        "reason": "Деятельность аналитика (план выпуска управленческого отчёта) отображена на функции Case: данные, интерпретация, выпуск; мандат без административной власти; название должности не используется как единственное основание."
+      },
+      {
+        "rule_id": "G06-согласованность замен",
+        "result": "FAIL",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Активные персонажи[1].Роль",
+          "candidate_as.IndicatorObservability[2].Конкретное условие"
+        ],
+        "reason": "Профессиональные замены не согласованы. M01 запрашивает «два источника данных на одной площадке», M02 содержит «коммерческую часть» с «двумя источниками данных, круглосуточным сопровождением и началом работ в течение четырёх часов», M03 — «коммерческую часть» Олега. В аналитическом контексте «коммерческая часть» и «круглосуточное сопровождение/начало работ» — чуждые профессии детали, оставшиеся от прежней версии. Роль Олега «Специалист по интерпретации показателей» не соответствует функции «коммерческая часть». Это нарушает G06 и критический запрет «Формальная замена слов без связанных документов, персонажей, знаний и ограничений»."
+      },
+      {
+        "rule_id": "G07-информационная нагрузка",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Числовые связи для QA"
+        ],
+        "reason": "Три вклада, независимые ограничения, расхождение и неполнота сохранены; числа не являются инвариантами, отношения проверены."
+      },
+      {
+        "rule_id": "C07-знания и мандат",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Правила управления сценой[6]",
+          "candidate_as.Активные персонажи"
+        ],
+        "reason": "Каждый персонаж использует только известные материалы; молчание не подтверждает согласие; внешние действия не создаются."
+      },
+      {
+        "rule_id": "C01/C02/C03-прекращение и пауза",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Правила управления сценой[0]",
+          "candidate_as.Правила управления сценой[1]",
+          "candidate_as.Правила управления сценой[2]"
+        ],
+        "reason": "Правила прекращения, паузы и распознавания намерения заданы и не противоречат событиям."
+      },
+      {
+        "rule_id": "C05-условие обновления",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Правила управления сценой[4]",
+          "candidate_as.События[0].Условие запуска"
+        ],
+        "reason": "Обновление допустимо только до финальной подачи при продолжающемся согласовании; не унифицировано с «после первого ответа»."
+      },
+      {
+        "rule_id": "C09-конец сценария",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Правила управления сценой[8]",
+          "candidate_as.Исполнение"
+        ],
+        "reason": "Конец сценария отделён от AS_close; Evidence/IA не создаются; исполнение NOT_RUN."
+      },
+      {
+        "rule_id": "C10-время",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Правила управления сценой[9]",
+          "candidate_as.Плановое время"
+        ],
+        "reason": "Время сюжета — условие планирования; плановые минуты — гипотеза, не порог уровня."
+      },
+      {
+        "rule_id": "G09-отсутствие подсказок",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы",
+          "candidate_as.Активные персонажи",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "В публичных материалах нет готового правильного решения, причинного вывода, сравнительной таблицы или оценки истинности; метки invariant_id не выдаются за PASS."
+      },
+      {
+        "rule_id": "G10-отсутствие фиктивных результатов",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.Допуск",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Evidence, IA и уровни не созданы; фактическое возникновение NOT_RUN; допуск не присвоен."
+      },
+      {
+        "rule_id": "объём и нагрузка",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Объём стартового предъявления",
+          "candidate_as.Плановое время"
+        ],
+        "reason": "277 слов стартового предъявления; 18–25 минут; нет нового сложного экзамена вместо задачи 4К."
+      }
+    ],
+    "defects": [
+      {
+        "code": "PROFESSIONAL_SUBSTITUTION_INCONSISTENT",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Активные персонажи[1].Роль",
+          "candidate_as.IndicatorObservability[2].Конкретное условие"
+        ],
+        "reason": "В аналитическом контексте сохранены чуждые детали прежней версии: «коммерческая часть», «круглосуточное сопровождение», «начало работ в течение четырёх часов», «два источника данных на одной площадке». Роль Олега «Специалист по интерпретации показателей» не соответствует функции «коммерческая часть». Нарушены G06 и критический запрет формальной замены слов без связанных документов, персонажей, знаний и ограничений. Требуется исправить AS и все зависимые места: M01, M02, M03, роли и знания персонажей, IndicatorObservability, Числовые связи для QA, Соответствие инвариантам."
+      }
+    ],
+    "admitted_for_participant": false
+  },
+  "provider_operation": {
+    "operation_id": "tester:PROFILE.03.3:efdde50df6aa",
+    "kind": "independent_tester",
+    "provider": "deepseek",
+    "requested_model": "deepseek-chat",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 8192,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "8d5fa99e-1f5a-471c-807f-ad3791cb8025",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 51627,
+      "completion_tokens": 2958,
+      "total_tokens": 54585,
+      "prompt_tokens_details": {
+        "cached_tokens": 36352
+      },
+      "prompt_cache_hit_tokens": 36352,
+      "prompt_cache_miss_tokens": 15275
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 12015.31
+      }
+    ],
+    "input_checksum": "efdde50df6aada3bbebd2f47a6249ca08b3a0a5f2aba4955a415221e793e7453"
+  }
+}

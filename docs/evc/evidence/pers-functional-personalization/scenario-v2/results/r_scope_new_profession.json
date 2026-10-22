@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_NEW_PROFESSION",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.04",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_04_v0.5_WORKING.json",
+    "source_sha256": "17e208d2a07a45258aeaf225c93ae721f03f2e6db93752d02828b1c2ca9687c0"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "37a7bbb73ec41601105afdc1157d487ed7f0022bfd7ab4e25d7d204c767eedc3",
+    "test_id": "PROFILE.04.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.04.HR.20261022",
+    "version": "v0.2",
+    "sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-04-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_NEW_PROFESSION",
+    "Условие теста": "Профессия вне трёх авторских иллюстраций, но с подходящей деятельностью",
+    "Ожидаемое поведение": "Функции отображаются на контекст; отказ только по названию профессии запрещён.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "system_decision",
+        "content": "Тест R_SCOPE_NEW_PROFESSION: проверка правила G02 — профессия вне трёх авторских иллюстраций, но деятельность подходит. Требуется смоделировать отображение функций Case на контекст и убедиться, что отказ только по названию профессии запрещён. Фактический LLM-вызов не выполняется (Результат=NOT_RUN).",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "system_decision",
+        "content": "Проверка применимости: BaseRole='Специалист / эксперт', Профессиональная область='Подбор персонала'. Деятельность (организация подбора, подготовка приглашений, сопровождение взаимодействия с руководителем-заказчиком, ответственность за собственный профессиональный результат) соответствует объекту ответственности Case (последствия ошибочных условий в приглашении) и мандату (собственная рекомендация, согласование без распоряжения чужими ресурсами).",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Проверка G02: название должности 'Специалист по подбору персонала' не входит в три авторские иллюстрации, но функции Case отображаются на подтверждённые задачи роли (RoleProfile.Карточка роли.Типовые задачи, Объект ответственности). Отказ только по названию профессии не применяется.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "system_decision",
+        "content": "Проверка G04: сохранены CT (CT01, CT12, CT14), точные IndicatorIDs (K3.I03, K3.I06, K3.I09, K3.I10, K3.I11, K1.I16, K4.I18), формат и число активных персонажей (один — MARINA), границы знания (M01–M05, F01–F05), источник противоречия (исправление механизма vs готовность продолжать) и открытость исхода (решение руководства завтра неизвестно).",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "system_decision",
+        "content": "Проверка G06: замена профессии проведена во всех зависимых местах — P00, M01–M05, персонаж MARINA, закрытые факты F01–F05, полномочия (M04), события E01–E03, IndicatorObservability, инварианты I01–I06. Чуждые профессии детали не сохранены.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "system_decision",
+        "content": "Проверка G07: информационная нагрузка сохранена — расхождение (M02 vs M05), неполнота (M02 границы проверки, M04 сроки ответа не обещание одобрения), необходимость собственного решения (M03, M05), независимые ограничения (M04 мандат, F04 неизвестное решение).",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "system_decision",
+        "content": "Проверка G08: функциональное обобщение не превращено в произвольный новый сюжет; обязательные условия наблюдения (S2/E01_REVIEW, S2/E02_REVISION, S2/E03_FACT) сохранены.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 8,
+        "kind": "system_decision",
+        "content": "Ограничение: фактическое прохождение Dialogue, пользовательские Turns, Evidence, IA и уровень отсутствуют (Исполнение.Status=NOT_RUN). PASS по трассе невозможен, так как трасса не содержит фактического поведения участника, доказывающего отображение функций без подсказки. Тест остаётся планом проверки нового пути.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "SCOPE_PROFESSION_NOT_IN_ILLUSTRATIONS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Профессиональная область",
+          "candidate_as.Учебный профиль.RoleProfile.Карточка роли.Типовые задачи",
+          "candidate_as.Учебный профиль.RoleProfile.Карточка роли.Объект ответственности"
+        ],
+        "reason": "Профессия 'Подбор персонала' вне трёх авторских иллюстраций, но деятельность (подготовка приглашений, сопровождение заказчика, ответственность за последствия ошибочных условий) соответствует функциям Case."
+      },
+      {
+        "code": "FUNCTIONS_MAPPED_TO_CONTEXT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы",
+          "candidate_as.Активные персонажи",
+          "candidate_as.Закрытые фиксированные факты",
+          "candidate_as.События",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Функции материалов (P00–M05), персонажа (MARINA), фактов (F01–F05) и событий (E01–E03) отображены на контекст подбора персонала без потери обязательных условий наблюдения."
+      },
+      {
+        "code": "NO_REFUSAL_BY_PROFESSION_NAME_ONLY",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила функциональной адаптации[1]",
+          "candidate_as.Происхождение примера.Предел"
+        ],
+        "reason": "Правило G02 и поле «Предел» явно запрещают отказ только по названию профессии; AS не содержит отказа по названию."
+      },
+      {
+        "code": "INVARIANTS_PRESERVED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Соответствие инвариантам"
+        ],
+        "reason": "Инварианты I01–I06 подтверждены авторской документной проверкой (AUTHOR_CONTENT_REVIEW, PASS) с указанием предела: фактическое возникновение в Dialogue и независимый допуск NOT_RUN."
+      },
+      {
+        "code": "TRACE_PROVES_EXPECTED_BEHAVIOR",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Исполнение",
+          "scenario_test.Результат"
+        ],
+        "reason": "Трасса содержит только системные решения QA-моделирования; фактического поведения участника, доказывающего отображение функций без подсказки, нет. PASS по трассе невозможен."
+      },
+      {
+        "code": "NO_FABRICATED_EVIDENCE_OR_IA",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение.Status",
+          "candidate_as.IndicatorObservability[*].Фактическое возникновение"
+        ],
+        "reason": "Все IndicatorObservability имеют Фактическое возникновение=NOT_RUN, Evidence и IA не создавались; фиктивное прохождение не создано."
+      }
+    ],
+    "defects": [
+      {
+        "code": "NO_ACTUAL_EXECUTION_TRACE",
+        "severity": "non_blocking",
+        "paths": [
+          "candidate_as.Исполнение",
+          "scenario_test.Результат"
+        ],
+        "reason": "Тест является планом проверки нового пути; фактический LLM-вызов и пользовательские Turns отсутствуют, поэтому трасса не может доказать ожидаемое поведение. Это ограничение объёма теста, а не дефект AS."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:28:04.909177+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_NEW_PROFESSION:e8ed9e6c610d",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "66e8f3cb-2a1c-45b7-85a4-c0be2a1add31",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15281,
+      "completion_tokens": 1737,
+      "total_tokens": 17018,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15281
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 8230.63
+      }
+    ],
+    "input_checksum": "e8ed9e6c610d4205c007e57ec22a6d03ab22c9fcff8f09973f755ac22993c008"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

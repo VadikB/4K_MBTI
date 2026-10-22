@@ -1,0 +1,292 @@
+{
+  "schema_version": 1,
+  "test_id": "PROFILE.03.1",
+  "case_id": "CASE.SPEC.03",
+  "candidate_checksum": "bdc84c11e9370f36194b76064b0dde84ff30b5bc5fd15c9e9dead171cae672aa",
+  "created_at": "2026-10-22T13:16:53.354721+00:00",
+  "structurally_valid": true,
+  "conclusion": {
+    "status": "FAIL",
+    "checks": [
+      {
+        "rule_id": "CASE.SPEC.03.I01",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Активные персонажи"
+        ],
+        "reason": "P00 прямо фиксирует, что Денис, Илья и Светлана не подчиняются участнику и подтверждать их части за них нельзя. M03 даёт три разные функции (требования вакансии, условия занятости, привлечение) с собственными ограничениями. Административного мандата нет."
+      },
+      {
+        "rule_id": "CASE.SPEC.03.I02",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[2].Текст"
+        ],
+        "reason": "Илья явно ставит условия занятости после требований и плана привлечения; M02 фиксирует, что план привлечения отсутствует и не подтверждён. Две профильные части (требования вакансии, план привлечения) дают независимые основания третьей (условия занятости). Названия профессий не фиксированы в Case."
+      },
+      {
+        "rule_id": "CASE.SPEC.03.I03",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "M02: требования вакансии v2 устарели (одно рабочее место, без гибкого графика); план привлечения обещан без Светланы и ею не подтверждён. M03: Светлана исключена из подготовки, но доступна (30 минут до 16:30) и её вклад необходим."
+      },
+      {
+        "rule_id": "CASE.SPEC.03.I04",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Числовые связи для QA"
+        ],
+        "reason": "Позиции расходятся (Денис против отправки, Илья за отправку сейчас, Светлана оспаривает обещание). Ресурсы: 30/30/20 минут, доступность до 16:30, срок 17:00. Последовательность выполнима: 14:30 + 30 (Денис) + 30 (Светлана параллельно) + 20 (Илья) = 15:50 < 16:30 < 17:00. Результаты проверок не гарантированы (M03)."
+      },
+      {
+        "rule_id": "CASE.SPEC.03.I05",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.События[0]",
+          "candidate_as.Материалы[4]",
+          "candidate_as.Активные персонажи[1]",
+          "candidate_as.Активные персонажи[0]",
+          "candidate_as.Активные персонажи[2]"
+        ],
+        "reason": "E01_UPDATE запускается только при продолжающемся согласовании конкретного способа работы; M04 аудитория PARTICIPANT и ILYA; Денис и Светлана получают M04 только после фактической передачи (E02_TRANSFER). Однократность и запрет при прекращении/паузе/scenario_end/AS_close заданы."
+      },
+      {
+        "rule_id": "CASE.SPEC.03.I06",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.События[0].Когда запрещено",
+          "candidate_as.Правила управления сценой[0]"
+        ],
+        "reason": "M01 допускает предварительный статус; P00 фиксирует, что документ готовится после обсуждения. E01_UPDATE запрещён при окончательной подаче без ожидания ответа, прекращении, паузе, scenario_end, AS_close. Внешняя отправка в сцене не выполняется."
+      },
+      {
+        "rule_id": "K2.I01",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[0]",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Условие запроектировано: локальные цели расходятся, общий результат не определён. Форма проявления не предписывает образец ответа. Фактическое возникновение NOT_RUN — не маскируется как PASS."
+      },
+      {
+        "rule_id": "K2.I06",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[1]",
+          "candidate_as.Материалы[2].Текст"
+        ],
+        "reason": "Ответственность за сборку не распределена (M02), входы и собственный вклад требуют согласования. Дефект потери (система подтверждает назначения) явно назван."
+      },
+      {
+        "rule_id": "K2.I07",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[2]",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Зависимость двух проверок перед условиями занятости и влияние обновления на входы заданы. Готовый график не выдан."
+      },
+      {
+        "rule_id": "K2.I08",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[3]",
+          "candidate_as.События[0]",
+          "candidate_as.События[1]"
+        ],
+        "reason": "Информационный разрыв по M04 задан; E02_TRANSFER меняет знания только фактических получателей; намерение «позже отправлю» не считается передачей."
+      },
+      {
+        "rule_id": "K2.I10",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[4]",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Светлана исключена, но доступна и необходима; система не назначает её сама; форма проявления — включение с содержательным вкладом."
+      },
+      {
+        "rule_id": "K2.I13",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[5]",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Предметный конфликт (срок, актуальность требований, отсутствие подтверждения плана) задан; сведение к характерам запрещено."
+      },
+      {
+        "rule_id": "K2.I14",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[6]",
+          "candidate_as.Материалы[1].Текст"
+        ],
+        "reason": "Допустим предварительный статус; согласие не гарантировано; автоматическое принятие команды участника названо дефектом."
+      },
+      {
+        "rule_id": "K1.I15",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[7]",
+          "candidate_as.Материалы[4]"
+        ],
+        "reason": "Общий смысл «ответа сегодня» проверяем; обновление меняет основание; одинаковое слово «готово» не считается достаточным."
+      },
+      {
+        "rule_id": "K1.I17",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.IndicatorObservability[8]",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Итог фиксирует согласованные действия и открытые условия; короткая форма допустима; система не формулирует договорённости вместо участника."
+      },
+      {
+        "rule_id": "G02_applicability",
+        "result": "PASS",
+        "evidence_paths": [
+          "profile.role_profile",
+          "candidate_as.Учебный профиль.RoleProfile.Карточка роли",
+          "candidate_as.Материалы[0].Текст"
+        ],
+        "reason": "Профиль «Подбор персонала» с объектом «Предложение по запуску подбора» отображён на функции Case: требования вакансии, условия занятости, план привлечения. Мандат — согласование без распоряжения чужими ресурсами. Белого списка профессий нет; примеры в Case помечены как иллюстрации."
+      },
+      {
+        "rule_id": "G06_consistency",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы",
+          "candidate_as.Активные персонажи",
+          "candidate_as.События",
+          "candidate_as.IndicatorObservability",
+          "candidate_as.Применённые замены"
+        ],
+        "reason": "Профессиональные замены согласованы: P00, M01–M04, персонажи, знания, полномочия, события, наблюдаемость и QA используют один предмет (подбор персонала). Чуждых профессий (технический/сервисный/коммерческий) в стартовых материалах и персонажах не осталось."
+      },
+      {
+        "rule_id": "G07_load",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Числовые связи для QA",
+          "candidate_as.Материалы[3].Текст"
+        ],
+        "reason": "Три независимых вклада, два независимых ограничения (срок, доступность), расхождение, неполнота (результат проверки неизвестен) и необходимость собственного решения сохранены. Числа не являются инвариантами."
+      },
+      {
+        "rule_id": "hidden_facts_audience",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.События[0]",
+          "candidate_as.Материалы[4].Аудитория",
+          "candidate_as.Активные персонажи"
+        ],
+        "reason": "M04 аудитория PARTICIPANT и ILYA; Денис и Светлана получают только после фактической передачи. Однократность и смысловые триггеры заданы. Намеренное расхождение M01 (два рабочих места) и M04 (три рабочих места) не исправлено как ошибка — это источник обновления."
+      },
+      {
+        "rule_id": "no_ready_answer_in_public",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Исходный сценарный контракт.Границы распознавания"
+        ],
+        "reason": "В публичных материалах нет готового плана, сравнительной таблицы, причинного вывода или оценки истинности. Персонажи обозначают собственные ограничения, а не подсказывают решение."
+      },
+      {
+        "rule_id": "open_outcome",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Исходный сценарный контракт.Границы распознавания",
+          "candidate_as.Правила управления сценой[9]",
+          "candidate_as.Материалы[1].Текст"
+        ],
+        "reason": "Допустим предварительный статус, фиксация разногласия, эскалация; единственный правильный ответ не задан. Квоты ходов нет; C10 отделяет плановые минуты от порога уровня."
+      },
+      {
+        "rule_id": "stop_pause_limit",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Правила управления сценой[0]",
+          "candidate_as.Правила управления сценой[1]",
+          "candidate_as.Правила управления сценой[2]",
+          "candidate_as.События[0].Когда запрещено"
+        ],
+        "reason": "C01 приоритет прекращения/AS_close; C02 пауза сохраняет состояние; C03 отличает «итог» от завершения; E01_UPDATE запрещён при прекращении/паузе/scenario_end/AS_close. Фиксированные знания и неизвестные внешние решения заданы."
+      },
+      {
+        "rule_id": "volume_and_load",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Объём стартового предъявления",
+          "candidate_as.Плановое время"
+        ],
+        "reason": "Стартовое предъявление 277 слов без метаданных; плановое время 18–25 минут. Новый сложный экзамен не введён; профессиональная нагрузка соответствует задаче 4К."
+      },
+      {
+        "rule_id": "deterministic_validation",
+        "result": "PASS",
+        "evidence_paths": [
+          "deterministic_validation"
+        ],
+        "reason": "Формальные проверки PASS; содержательная проверка не заменяет независимый допуск и не создаёт Evidence/IA."
+      }
+    ],
+    "defects": [],
+    "admitted_for_participant": false
+  },
+  "provider_operation": {
+    "operation_id": "tester:PROFILE.03.1:393b84b4e1a6",
+    "kind": "independent_tester",
+    "provider": "deepseek",
+    "requested_model": "deepseek-chat",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 8192,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "22e4de75-7e37-487c-b8b7-0eb38d519d74",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 51631,
+      "completion_tokens": 2795,
+      "total_tokens": 54426,
+      "prompt_tokens_details": {
+        "cached_tokens": 36352
+      },
+      "prompt_cache_hit_tokens": 36352,
+      "prompt_cache_miss_tokens": 15279
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 11807.57
+      }
+    ],
+    "input_checksum": "393b84b4e1a67d1437d0126af8b139136c4ba3ff1a2b9593d6f2c62426859e24"
+  }
+}
