@@ -208,6 +208,8 @@ const requestOrganizations = async (url, options, fallbackMessage) => {
 };
 
 const requestOrganizationsImport = async (url, csvText) => {
+  const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
   const response = await fetch(url, {
     method: 'POST',
     credentials: 'same-origin',
@@ -215,6 +217,7 @@ const requestOrganizationsImport = async (url, csvText) => {
     body: JSON.stringify({ csv_text: csvText }),
   });
   const data = await readApiResponse(response, 'Не удалось импортировать участников.');
+  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
   state.adminOrganizations = data.organizations || data;
   persistAssessmentContext();
   renderAdminOrganizations();
@@ -674,12 +677,18 @@ export const importAdminOrganizationMembers = async (organizationId, csvText) =>
     setStatus('Выберите CSV-файл с участниками.', 'error');
     return;
   }
+  const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
   try {
     const result = await requestOrganizationsImport('/users/admin/organizations/' + organizationId + '/members/import', text);
+    if (!result || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
     const errorsText = Array.isArray(result.errors) && result.errors.length ? ' Ошибки: ' + result.errors.slice(0, 3).join('; ') : '';
     setStatus('Импортировано: ' + Number(result.imported_count || 0) + '. Пропущено: ' + Number(result.skipped_count || 0) + '.' + errorsText, result.skipped_count ? 'error' : 'success');
+    return result;
   } catch (error) {
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
     setStatus(error.message || 'Не удалось импортировать участников.', 'error');
+    return null;
   }
 };
 
