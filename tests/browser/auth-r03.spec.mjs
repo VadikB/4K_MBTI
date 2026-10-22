@@ -106,6 +106,48 @@ test('QA19-03 keeps the participant section available with no members', async ({
   await expect(page.locator('.admin-organization-members-section').first()).toBeVisible();
 });
 
+test('F22-01 ignores a late member import after the authenticated identity changes', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  let finishImport;
+  let markImportStarted;
+  const importStarted = new Promise((resolve) => { markImportStarted = resolve; });
+  await page.route('**/users/admin/organizations/3/members/import', (route) => {
+    finishImport = () => fulfillJson(route, {
+      imported_count: 1,
+      skipped_count: 0,
+      organizations: {
+        is_superadmin: false,
+        items: [{ ...adminOrganization, members: [{ ...adminOrganization.members[0], email: 'private-a@example.test' }] }],
+      },
+    });
+    markImportStarted();
+  });
+
+  await page.evaluate(() => {
+    window.__lateOrganizationImport = import('/web/js/screens/admin/organizations.js')
+      .then((module) => module.importAdminOrganizationMembers(3, 'email\nprivate-a@example.test'));
+  });
+  await importStarted;
+  await page.evaluate(async () => {
+    const [{ clearAssessmentContext, state }] = await Promise.all([import('/web/js/state.js')]);
+    clearAssessmentContext();
+    state.pendingUser = { id: 19, email: 'admin-b@example.test', full_name: 'Admin B' };
+    state.adminOrganizations = { is_superadmin: false, items: [{ id: 4, code: 'b', name: 'Organization B', members: [] }] };
+    const status = document.getElementById('admin-organizations-status');
+    status.textContent = 'Сессия B';
+    status.classList.remove('hidden');
+  });
+  finishImport();
+  await page.evaluate(() => window.__lateOrganizationImport);
+
+  expect(await page.evaluate(async () => {
+    const { state } = await import('/web/js/state.js');
+    return { userId: state.pendingUser?.id, organizationId: state.adminOrganizations?.items?.[0]?.id };
+  })).toEqual({ userId: 19, organizationId: 4 });
+  await expect(page.locator('#admin-organizations-status')).toHaveText('Сессия B');
+  await expect(page.locator('body')).not.toContainText('private-a@example.test');
+});
+
 test('QA19-03 keeps long participant rows readable and actions associated after view changes', async ({ page }) => {
   const longEmail = 'very.long.participant.name.for.layout.regression@example.invalid';
   const organization = {
@@ -884,14 +926,14 @@ test('REL-VERSION-01 shows one build number on auth and common areas, with a saf
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.13');
+  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.14');
   await expect(page.locator('#app-release-badge')).toBeVisible();
   await expect(page.locator('.app-footer-release')).toBeHidden();
   await page.setViewportSize({ width: 360, height: 760 });
   await expect(page.locator('#app-release-badge')).toBeInViewport();
   await page.locator('#auth-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.remove('hidden'));
-  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.13');
+  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.14');
   await expect(page.locator('.app-footer-release')).toBeVisible();
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#chat-panel').evaluate((panel) => panel.classList.remove('hidden'));

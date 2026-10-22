@@ -306,7 +306,9 @@ test('S10-B interruption and Additional Session preserve Cycle and deadline',asy
  expect(second.status.remaining_seconds).toBeLessThanOrEqual(first.status.remaining_seconds);
  expect(second.current_situation.assessment_situation_id).not.toBe(first.current_situation.assessment_situation_id);
  expect(second.trace.turns).toHaveLength(0);
- await answer(page,'Синтетический ответ второй ситуации: уточняю условия и предлагаю согласовать следующий шаг.');
+ // The isolated gateway asks a clarification only for the versioned fixture answer.
+ // Keep this input aligned with the asserted deterministic question.
+ await answer(page,fixture.answer);
  await page.locator('#interview-finish-button').click();
  await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
  await answer(page,'Уточняю смысл своего предыдущего ответа: сначала проверить условия передачи.');
