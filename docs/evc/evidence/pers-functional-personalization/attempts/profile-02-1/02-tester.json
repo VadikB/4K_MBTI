@@ -1,0 +1,365 @@
+{
+  "schema_version": 1,
+  "test_id": "PROFILE.02.1",
+  "case_id": "CASE.SPEC.02",
+  "candidate_checksum": "d64ea07af9883fbde693b5bd472236a72812d5cc2278d45a69bb08d89a56a59f",
+  "created_at": "2026-10-22T13:11:01.688243+00:00",
+  "structurally_valid": true,
+  "conclusion": {
+    "status": "FAIL",
+    "checks": [
+      {
+        "rule_id": "CASE.SPEC.02.I01",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст",
+          "candidate_as.Материалы[5].Текст"
+        ],
+        "reason": "M01 задаёт несколько независимых требований (шесть профилей, три условия, сводка, интерес, день 20). M02/M03 и M04 дают два варианта с разными условиями и сроками. M06 сводит всё к одному признаку (60 vs 40 откликов). Один признак не равен общей пригодности — это проверяемо."
+      },
+      {
+        "rule_id": "CASE.SPEC.02.I02",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[4].Текст",
+          "candidate_as.Материалы[6].Текст"
+        ],
+        "reason": "M02 явно обозначает 60 откликов как плановый объём за один цикл, не гарантию подходящих. M04 — 40 откликов за сопоставимый цикл. M06 корректно считает разницу 20 = 50% от B. Единицы, период и статус (план, не факт) заданы."
+      },
+      {
+        "rule_id": "CASE.SPEC.02.I03",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[6].Текст"
+        ],
+        "reason": "M06 содержит явный переход: «Чем больше откликов, тем лучше закроем потребность Анны. Поэтому A — лучший способ». Переход проверяем по M01/M02/M03/M04/M05."
+      },
+      {
+        "rule_id": "CASE.SPEC.02.I04",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы"
+        ],
+        "reason": "Шесть источников M01–M06 присутствуют, у каждого есть Автор, Версия, Статус. Все в Стартовые MaterialIDs. Функции соответствуют паспорту."
+      },
+      {
+        "rule_id": "CASE.SPEC.02.I05",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст",
+          "candidate_as.Материалы[5].Текст"
+        ],
+        "reason": "A: v1 → v2 меняет сроки сбора (17→27) и передачи (20→30) — содержательное расхождение. B: M04/M05 показывают, что B тоже не укладывается в день 20 (передача к 22) и нет гарантии шести профилей. Безусловно правильного варианта нет."
+      },
+      {
+        "rule_id": "CASE.SPEC.02.I06",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[1].Текст"
+        ],
+        "reason": "P00 требует рекомендацию коллеге с основаниями и отдельный короткий черновик Анне. M01 явно допускает ограниченную позицию («обещать результат без оснований не прошу»). Отказ от твёрдого обязательства допустим."
+      },
+      {
+        "rule_id": "CASE.SPEC.02.I07",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Активные персонажи",
+          "candidate_as.События",
+          "candidate_as.Правила управления сценой[3]"
+        ],
+        "reason": "Активных персонажей 0. E01/E02 не создают новых результатов. C04 фиксирует: неполный финальный ответ завершает сцену без просьбы дописать."
+      },
+      {
+        "rule_id": "K4.I03",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст",
+          "candidate_as.Материалы[5].Текст"
+        ],
+        "reason": "M02/M03 различают план и уточнение; M05 явно ограничивает предмет проверки («проверка содержания образцов, не проверка будущих кандидатов»). Участник может оценить достоверность каждого источника."
+      },
+      {
+        "rule_id": "K4.I05",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст",
+          "candidate_as.Материалы[5].Текст"
+        ],
+        "reason": "Требования M01, две версии A, B и границы проверки M05 доступны одновременно; сопоставление возможно без готовой таблицы."
+      },
+      {
+        "rule_id": "K4.I12",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[6].Текст"
+        ],
+        "reason": "M06 предполагает, что больше откликов = лучше закроет потребность; M01 требует шесть подходящих заинтересованных профилей. Допущение проверяемо."
+      },
+      {
+        "rule_id": "K4.I13",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[6].Текст",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст"
+        ],
+        "reason": "Переход «60 vs 40 → лучший способ» проверяем: A переносит передачу на день 30, B — на день 22; оба не укладываются в день 20 без согласования."
+      },
+      {
+        "rule_id": "K4.I14",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст",
+          "candidate_as.Материалы[5].Текст"
+        ],
+        "reason": "Достаточно данных для ограниченной рекомендации; M05 явно указывает, что ни один вариант не подтверждает передачу к дню 20."
+      },
+      {
+        "rule_id": "K4.I16",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст",
+          "candidate_as.Материалы[5].Текст"
+        ],
+        "reason": "Варианты различаются по объёму, срокам и подтверждённости; критерии восстановимы из M01. Готовой таблицы нет."
+      },
+      {
+        "rule_id": "K4.I17",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст"
+        ],
+        "reason": "Последствия поздних/неподходящих профилей и обещания результата на основании одного объёма откликов выводимы; численные вероятности не требуются."
+      },
+      {
+        "rule_id": "K1.I06",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[1].Текст"
+        ],
+        "reason": "P00 требует отдельный короткий черновик Анне; M01 задаёт, что ей нужно. Отбор содержания возможен без перечня обязательных фраз."
+      },
+      {
+        "rule_id": "K1.I09",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Словарь",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст",
+          "candidate_as.Материалы[5].Текст"
+        ],
+        "reason": "Словарь различает «отклик» и «готовый профиль»; M03/M04/M05 различают сбор и завершение проверки, план и подтверждение."
+      },
+      {
+        "rule_id": "G02_applicability",
+        "result": "PASS",
+        "evidence_paths": [
+          "profile.role_profile",
+          "candidate_as.Учебный профиль.RoleProfile.Карточка роли",
+          "candidate_as.Материалы[0].Текст"
+        ],
+        "reason": "Деятельность — подбор персонала; объект ответственности — рекомендация по способу привлечения; мандат — рекомендовать без подтверждения чужих обязательств. Функции Case отображены на подтверждённые задачи без белого списка профессий."
+      },
+      {
+        "rule_id": "G06_consistency_of_substitutions",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы",
+          "candidate_as.Словарь",
+          "candidate_as.Числовые связи для QA",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Профессиональные замены согласованы: подбор персонала, отклики, профили, сроки в рабочих днях; числа в QA-связях совпадают с текстами (60/40/20/50%/6/20/17/20/27/30/18/4/22)."
+      },
+      {
+        "rule_id": "G07_information_load",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы",
+          "candidate_as.Числовые связи для QA"
+        ],
+        "reason": "Два варианта, шесть источников, независимые требования, расхождение версий A, остаточная неопределённость B, необходимость собственного решения — сохранены."
+      },
+      {
+        "rule_id": "hidden_facts_and_deferred_documents",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Закрытые фиксированные факты",
+          "candidate_as.События",
+          "candidate_as.Правила управления сценой"
+        ],
+        "reason": "Закрытых фактов нет; отложенных документов нет; E01/E02 не создают новых результатов; M05 явно фиксирует, что дополнительный разбор возможен с дня 2, но результата сегодня нет."
+      },
+      {
+        "rule_id": "no_ready_answer_in_public_hints",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы",
+          "candidate_as.Словарь",
+          "candidate_as.События"
+        ],
+        "reason": "В материалах нет готовой сравнительной таблицы, правильного выбора или оценки истинности аргумента коллеги. M06 — аргумент, а не подсказка."
+      },
+      {
+        "rule_id": "linked_units_and_deadlines",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст",
+          "candidate_as.Материалы[5].Текст",
+          "candidate_as.Числовые связи для QA"
+        ],
+        "reason": "Все сроки в рабочих днях; сбор и передача различаются; B: сбор 18 + 4 дня проверки = 22; A: 27/30. Намеренное расхождение версий A не исправлено как ошибка."
+      },
+      {
+        "rule_id": "open_outcome_and_partial_result",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[5].Текст",
+          "candidate_as.Правила управления сценой[3]"
+        ],
+        "reason": "Безусловно правильного варианта нет; частичный результат допустим; квоты ходов нет; обязательного провала нет."
+      },
+      {
+        "rule_id": "reaction_limit",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.События",
+          "candidate_as.Правила управления сценой"
+        ],
+        "reason": "E01/E02 ограничены фиксированными знаниями; C01/C02/C03/C09 фиксируют приоритет прекращения, паузу и запрет новых событий после AS_close."
+      },
+      {
+        "rule_id": "volume_and_load",
+        "result": "PASS",
+        "evidence_paths": [
+          "candidate_as.Объём стартового предъявления",
+          "candidate_as.Плановое время"
+        ],
+        "reason": "595 слов, 18 минут — в пределах ориентира 550–650 слов и 15–18 минут. Нового сложного экзамена нет."
+      }
+    ],
+    "defects": [
+      {
+        "code": "INDICATOR_MATERIALS_MISMATCH",
+        "severity": "non_blocking",
+        "paths": [
+          "candidate_as.IndicatorObservability[4].Материалы и факты",
+          "candidate_as.IndicatorObservability[5].Материалы и факты",
+          "candidate_as.IndicatorObservability[6].Материалы и факты",
+          "candidate_as.IndicatorObservability[7].Материалы и факты",
+          "candidate_as.IndicatorObservability[8].Материалы и факты",
+          "candidate_as.IndicatorObservability[0].Материалы и факты"
+        ],
+        "reason": "В IndicatorObservability для K4.I14 указаны M01,M03,M04,M05 (без M02/M06), для K4.I16 — M02,M03,M04,M05 (без M01), для K4.I17 — M01,M03,M04 (без M05), для K1.I06 — P00,M01,M06 (без M05), для K1.I09 — M01,M03,M04,M05 (без M02), для K4.I03 — M02,M03,M04,M05 (без M01). В паспорте поля 22 «Материалы и факты по функции» для тех же IndicatorID перечислены шире (например, K4.I14: M01–M06; K4.I16: M01–M05; K4.I17: M01,M03,M04,M05; K1.I06: P00,M01,M05,M06; K1.I09: M01–M05; K4.I03: M02–M05). Расхождение между паспортом и AS по составу материалов, на которых должна возникать возможность, может привести к тому, что часть условий наблюдения не будет реализована в конкретной траектории. Требуется согласовать перечень материалов в IndicatorObservability с полем 22 паспорта либо обосновать сокращение."
+      },
+      {
+        "code": "OBSERVABILITY_CONDITION_DRIFT",
+        "severity": "non_blocking",
+        "paths": [
+          "candidate_as.IndicatorObservability[0].Конкретное условие",
+          "candidate_as.IndicatorObservability[1].Конкретное условие",
+          "candidate_as.IndicatorObservability[2].Конкретное условие",
+          "candidate_as.IndicatorObservability[3].Конкретное условие",
+          "candidate_as.IndicatorObservability[4].Конкретное условие",
+          "candidate_as.IndicatorObservability[5].Конкретное условие",
+          "candidate_as.IndicatorObservability[6].Конкретное условие",
+          "candidate_as.IndicatorObservability[7].Конкретное условие",
+          "candidate_as.IndicatorObservability[8].Конкретное условие"
+        ],
+        "reason": "Поле «Конкретное условие» в IndicatorObservability содержит содержательные формулировки, но не совпадает дословно с «Проектное условие» в поле 22 паспорта (например, K4.I03 в паспорте — «A имеет содержательное расхождение между версиями; B остаётся частично неподтверждённым…», в AS — «Сопоставить источник планового объёма откликов, уточнение графика и ограниченную проверку образцов…»). Это не дефект функции, но снижает прослеживаемость: содержательный тестер не может однозначно сопоставить условие AS с условием паспорта без дополнительной интерпретации. Рекомендуется либо явно указать, что «Конкретное условие» — это операционализация проектного условия, либо привести формулировки к согласованному виду."
+      },
+      {
+        "code": "PROFILE_AS_ROLE_MISMATCH",
+        "severity": "non_blocking",
+        "paths": [
+          "profile.role_profile.position_or_status",
+          "candidate_as.Учебный профиль.RoleProfile.Название роли",
+          "candidate_as.Профессиональная область"
+        ],
+        "reason": "В profile.role_profile.position_or_status указано «Подбор персонала» (название деятельности), в AS — «Специалист по подбору персонала». Содержательно совместимо, но формально поле профиля не является названием роли. Не блокирует, но при фиксации реального профиля требует согласования."
+      },
+      {
+        "code": "CASE_PASSPORT_INDICATOR_MATERIALS_DRIFT",
+        "severity": "non_blocking",
+        "paths": [
+          "case.22 IndicatorIDs.Проектные условия[0].Материалы и факты по функции",
+          "case.22 IndicatorIDs.Проектные условия[4].Материалы и факты по функции",
+          "case.22 IndicatorIDs.Проектные условия[5].Материалы и факты по функции",
+          "case.22 IndicatorIDs.Проектные условия[6].Материалы и факты по функции",
+          "case.22 IndicatorIDs.Проектные условия[7].Материалы и факты по функции",
+          "case.22 IndicatorIDs.Проектные условия[8].Материалы и факты по функции"
+        ],
+        "reason": "В паспорте поля 22 «Материалы и факты по функции» для K4.I03 указаны M02,M03,M04,M05; для K4.I14 — M01–M06; для K4.I16 — M01–M05; для K4.I17 — M01,M03,M04,M05; для K1.I06 — P00,M01,M05,M06; для K1.I09 — M01–M05. В AS IndicatorObservability перечни уже (см. дефект INDICATOR_MATERIALS_MISMATCH). Это расхождение между паспортом и AS, а не внутренний дефект паспорта; фиксируется для прослеживаемости."
+      }
+    ],
+    "admitted_for_participant": false
+  },
+  "provider_operation": {
+    "operation_id": "tester:PROFILE.02.1:3ae632eda9be",
+    "kind": "independent_tester",
+    "provider": "deepseek",
+    "requested_model": "deepseek-chat",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 8192,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "64c174d1-8f43-4130-bb42-ff78d9608a61",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 53871,
+      "completion_tokens": 4071,
+      "total_tokens": 57942,
+      "prompt_tokens_details": {
+        "cached_tokens": 38400
+      },
+      "prompt_cache_hit_tokens": 38400,
+      "prompt_cache_miss_tokens": 15471
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 16073.06
+      }
+    ],
+    "input_checksum": "3ae632eda9bec568462a94539a79dd276675dd2917edaf68ea24bd5bf41690d1"
+  }
+}

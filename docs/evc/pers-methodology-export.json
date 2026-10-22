@@ -1,5 +1,7 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "exported_at": "2026-10-22",
+  "product_version": "2.0.14",
   "package_ref": {
     "id": "m5-functional-personalization-cases",
     "version": "0.2",
@@ -14,9 +16,49 @@
     "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/execution-rules.json"
   ],
   "automatic_verification": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/verification-report.json",
-  "professional_profile": null,
-  "provider_operations": [],
+  "real_generation_matrix": {
+    "status": "FAIL",
+    "summary": "docs/evc/evidence/pers-functional-personalization/matrix-summary.json",
+    "selected": 27,
+    "complete_generation_and_tester_artifacts": 25,
+    "technical_failures": 2,
+    "deterministic_pass": 11,
+    "deterministic_fail": 14,
+    "independent_tester_pass": 0,
+    "independent_tester_fail": 25,
+    "admitted_for_participant": 0,
+    "repair_attempts": 50,
+    "technical_failure_ids": ["PROFILE.06.1", "PROFILE.09.1"]
+  },
+  "negative_matrix": {
+    "status": "PASS",
+    "summary": "docs/evc/evidence/pers-functional-personalization/negative/summary.json",
+    "selected": 27,
+    "completed": 27,
+    "passed": 27,
+    "failed": 0
+  },
+  "provider_operations": {
+    "provider": "deepseek",
+    "requested_model_from_local_configuration": "deepseek-chat",
+    "actual_provider_model": "deepseek-flash",
+    "repository_contract_model": "deepseek-flash",
+    "configuration_identity_result": "FAIL",
+    "secret_material_exported": false,
+    "generation_artifacts": "docs/evc/evidence/pers-functional-personalization/generations",
+    "tester_artifacts": "docs/evc/evidence/pers-functional-personalization/tester",
+    "attempt_artifacts": "docs/evc/evidence/pers-functional-personalization/attempts"
+  },
   "actual_trajectory": null,
+  "scenario_regressions": {
+    "status": "NOT_RUN",
+    "planned": 34,
+    "reason": "Ни одна новая AS не получила положительный независимый admission; исполнение её как предъявленной участнику обошло бы обязательный PERS-04 gate."
+  },
+  "full_cycle": {
+    "status": "NOT_RUN",
+    "reason": "Нет допущенной новой AS для штатного пути M6/M7/M8. Нижележащие storage/runtime/cycle integration проверки выполнены отдельно."
+  },
   "independent_conclusion": {
     "status": "NOT_RUN",
     "form": {
@@ -29,9 +71,13 @@
     }
   },
   "limitations": [
-    "REAL_LLM_MATRIX_NOT_RUN",
-    "FULL_CYCLE_NOT_RUN",
+    "REAL_GENERATION_MATRIX_FAILED",
+    "NO_AS_ADMITTED_FOR_PARTICIPANT",
+    "SCENARIO_MATRIX_BLOCKED_BY_ADMISSION",
+    "FULL_CYCLE_BLOCKED_BY_ADMISSION",
     "NO_ACTUAL_TRAJECTORY",
-    "METHODOLOGY_ADMISSION_NOT_RUN"
+    "METHODOLOGY_ADMISSION_NOT_RUN",
+    "RUNTIME_ADMISSION_DISABLED",
+    "LOCAL_DEEPSEEK_MODEL_DOES_NOT_MATCH_PROVIDER_CONTRACT"
   ]
 }
