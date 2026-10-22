@@ -20,6 +20,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from Api.llm.deepseek_gateway import DeepSeekGateway
+from Api.m5_functional_personalization import extract_candidate_as
 
 
 PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.2"
@@ -135,20 +136,6 @@ def deterministic_checks(inputs: dict[str, Any], candidate: Any) -> dict[str, An
         return set()
     check("no_premature_assessment", not (keys(candidate) & forbidden_keys), sorted(keys(candidate) & forbidden_keys))
     return {"status": "PASS" if all(c["result"] == "PASS" for c in checks) else "FAIL", "checks": checks}
-
-
-def extract_candidate_as(response_json: Any) -> tuple[Any, int]:
-    """Снять только известный технический конверт ответа, не изменяя AS."""
-    candidate, depth = response_json, 0
-    while (
-        isinstance(candidate, dict)
-        and "CaseID" not in candidate
-        and isinstance(candidate.get("candidate_as"), dict)
-        and set(candidate) <= {"profile", "candidate_as", "tester_conclusion", "repair_constraints"}
-    ):
-        candidate = candidate["candidate_as"]
-        depth += 1
-    return candidate, depth
 
 
 def _provider_record(response: Any, *, operation_id: str, kind: str, input_checksum: str) -> dict[str, Any]:

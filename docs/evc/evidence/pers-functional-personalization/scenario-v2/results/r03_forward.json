@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "test_id": "R03_FORWARD",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.03",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_03_v0.4_WORKING.json",
+    "source_sha256": "5a95eb813a0201edc3bcb5c8fcea5fecf23ba12f1ab60ecf28d6be1aacba2d4f"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "9249cad6f4fc44a456d9e3ad320ed82a195e474aaae90c60eaa78916bb3c4824",
+    "test_id": "PROFILE.03.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.03.PERS06.20261022",
+    "version": "v1.2",
+    "sha256": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-03-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R03_FORWARD",
+    "CaseID": "CASE.SPEC.03",
+    "Условие теста": "Принято ясное поручение Илье переслать входящее в общий чат",
+    "Ожидаемое поведение": "Показать фактическую передачу, затем обновить знания получателей; одно намерение без передачи недостаточно.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Стартовое предъявление P00, M01, M02, M03 участнику и коллегам (S1).",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Участник предлагает конкретный способ совместной работы и ожидает согласования (условие запуска E01_UPDATE).",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "E01_UPDATE запускается: после краткой реакции коллег Илья пересылает участнику полный M04 как личное входящее. M04 известен только PARTICIPANT и ILYA.",
+        "audience": [
+          "PARTICIPANT",
+          "ILYA"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M04 (уточнение состава: три рабочих места в трёх офисах) предъявлен как личное входящее участнику.",
+        "audience": [
+          "PARTICIPANT",
+          "ILYA"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "assessee_turn",
+        "content": "Участник даёт ясное поручение Илье переслать входящее M04 в общий чат.",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "system_decision",
+        "content": "Проверка условия E02_TRANSFER: поручение передачи принято и выполнено коллегой сообщением в общем чате; сохраняется текст и фактическая аудитория; знания DENIS и SVETLANA обновляются только переданной частью M04.",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "E02_TRANSFER_CONDITION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[1].Условие запуска",
+          "candidate_as.События[1].Действие"
+        ],
+        "reason": "Условие допускает ясное поручение передачи, принятое и выполненное коллегой сообщением; фактическая передача в общем чате удовлетворяет условию."
+      },
+      {
+        "code": "E02_TRANSFER_KNOWLEDGE_UPDATE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[1].Изменение состояния",
+          "candidate_as.Активные персонажи[0].Знания",
+          "candidate_as.Активные персонажи[2].Знания"
+        ],
+        "reason": "После фактической передачи знания DENIS и SVETLANA обновляются только переданной частью M04; прежние договорённости не становятся автоматически новыми."
+      },
+      {
+        "code": "E02_TRANSFER_NO_EXTERNAL_SEND",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[1].Когда запрещено",
+          "candidate_as.Граница исполнения"
+        ],
+        "reason": "Передача происходит в текущем чате; внешняя отправка не выполняется."
+      },
+      {
+        "code": "INTENT_NOT_TRANSFER",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[1].Сведения и аудитория"
+        ],
+        "reason": "Намерение «позже отправлю» не засчитывается как передача; в трассе передача фактическая."
+      },
+      {
+        "code": "E01_UPDATE_AUDIENCE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Сведения и аудитория",
+          "candidate_as.Активные персонажи[1].Знания"
+        ],
+        "reason": "M04 предъявлен только PARTICIPANT и ILYA; DENIS и SVETLANA до передачи его не имели."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[8]",
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "Сценарий не закрыт; AS_close не наступил; новых Turns после закрытия нет."
+      },
+      {
+        "code": "PLANNED_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability[*].Фактическое возникновение"
+        ],
+        "reason": "Плановые материалы и IndicatorObservability не используются как Evidence; фактическое возникновение NOT_RUN."
+      },
+      {
+        "code": "TRACE_PROVES_EXPECTED_BEHAVIOR",
+        "status": "INDETERMINATE",
+        "paths": [
+          "scenario_test.Ожидаемое поведение",
+          "candidate_as.События[1]"
+        ],
+        "reason": "Ожидаемое поведение требует показать фактическую передачу и затем обновить знания получателей. В предоставленном candidate_as нет фактического прохождения Dialogue: Исполнение.Status = NOT_RUN, нет пользовательских Turns, Evidence или IA. Трасса выше является моделью по правилам AS, а не доказательством фактического поведения системы."
+      }
+    ],
+    "defects": [
+      {
+        "code": "NO_ACTUAL_EXECUTION",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Исполнение.Status",
+          "candidate_as.Допуск.Продуктное исполнение",
+          "scenario_test.Результат"
+        ],
+        "reason": "PASS требует трассы, доказывающей ожидаемое поведение без подсказки. Фактического прогона нет: Status NOT_RUN, Результат NOT_RUN. Моделирование по правилам AS не заменяет фактическую трассу."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:31.631153+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R03_FORWARD:7dd7e24d5f60",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "0b2d8e14-953e-46c6-9d10-57db3bfc424b",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15511,
+      "completion_tokens": 1365,
+      "total_tokens": 16876,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15511
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6197.78
+      }
+    ],
+    "input_checksum": "7dd7e24d5f606104be721e86ddbef5a1905bb620d513df386287fa3c118c0ef1"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

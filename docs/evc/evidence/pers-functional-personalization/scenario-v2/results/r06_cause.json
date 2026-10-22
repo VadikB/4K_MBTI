@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "test_id": "R06_CAUSE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.06",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_06_v0.4_WORKING.json",
+    "source_sha256": "51ceec06875d50ecd7933ef2b2860a6d38c7c4a9cab1fef1781b3896bd5e3135"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "40a81aec0a765399c8d769cae565443a6cb6aae9a47ddc9eb7c1f825303e61f1",
+    "test_id": "PROFILE.06.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.06.PERS06.20261022",
+    "version": "v1.0",
+    "sha256": "8bb32acdef0d9e7849c75aa1f5ac54386a2a8f4a717cb7035341fd740ef58f89",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-06-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R06_CAUSE",
+    "CaseID": "CASE.SPEC.06",
+    "Условие теста": "Предполагаемый эффект подан как уже измеренный или причинно доказанный",
+    "Ожидаемое поведение": "Указать соответствующую границу M03; пилот не проводить и новых измерений не создавать.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00, M01, M02, M03 предъявлены одновременно при старте; готового общего плана, распределения или критериев нет.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Участник формулирует предполагаемый эффект как уже измеренный/причинно доказанный: например, что пилот «ускорит самостоятельную работу с заявками» или что «35 минут доказывают, что маршрут сокращает время до 25 минут».",
+        "audience": [
+          "R_IT",
+          "R_BUSINESS",
+          "R_PROCUREMENT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Срабатывает E02_LIMIT: приписан эффект/причинная связь без основания. Затронутая сторона указывает конкретный пробел и запрашивает основание, не диктуя правильный ответ.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "character_turn",
+        "content": "Марина/Анна нейтрально: «На чём основан этот вывод?» — с опорой на M03: единственный эпизод 35 минут вне нового маршрута, этапы/ошибки/обращения не записаны, повторных замеров нет, сложность примеров не сравнивалась; 25 минут — ориентир, а не утверждённый результат.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "transition",
+        "content": "Неизвестное остаётся неизвестным; реальная поправка фиксируется. Пилот не проводится, новых измерений не создаётся, отсутствие эффекта не объявляется доказательством его отсутствия.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "M03_BOUNDARY_APPLIED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.События[1]",
+          "candidate_as.Конкретизация реакций и границ.Условные реакции[2]"
+        ],
+        "reason": "M03 фиксирует единственный несопоставимый эпизод 35 минут вне маршрута, отсутствие этапов/ошибок/повторов и несравнённую сложность; E02_LIMIT и B_CAUSAL_CLAIM предписывают указать пробел и запросить основание без диктовки ответа."
+      },
+      {
+        "code": "NO_PILOT_NO_NEW_MEASUREMENT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Когда запрещено",
+          "candidate_as.Граница исполнения",
+          "candidate_as.Конкретизация реакций и границ.Порядок ведения[5]"
+        ],
+        "reason": "Пилот в сцене не проводится; ведущий не изобретает новые замеры, одобрения или ресурсы; внешние действия остаются предложениями."
+      },
+      {
+        "code": "NO_HINT_OR_NEW_FACT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[1].Действие",
+          "candidate_as.Конкретизация реакций и границ.Условные реакции[2].Реакция"
+        ],
+        "reason": "Реакция — нейтральный вопрос «На чём основан этот вывод?» без подсказки правильной оговорки, сравнения или формулировки."
+      },
+      {
+        "code": "NO_FALSE_ABSENCE_PROOF",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[1].Когда запрещено"
+        ],
+        "reason": "Запрещено объявлять отсутствие установленного эффекта доказательством его отсутствия и требовать отказа от пилота."
+      },
+      {
+        "code": "NO_EVALUATION_OF_PARTICIPANT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.Допуск"
+        ],
+        "reason": "Фактическое прохождение, Evidence, IA и уровень NOT_RUN; сцена не оценивает участника и не присваивает L."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Конкретизация реакций и границ.Сценарное завершение",
+          "candidate_as.Правила управления сценой[0]"
+        ],
+        "reason": "scenario_end отделён от AS_close; после AS_close новых Turns нет; правило C01 приоритетно."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:27:43.731384+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R06_CAUSE:ed34be726c83",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "b01b939b-dd01-4d0a-998b-8559d51196a0",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 17398,
+      "completion_tokens": 1097,
+      "total_tokens": 18495,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 17398
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 5914.49
+      }
+    ],
+    "input_checksum": "ed34be726c8364b6e62201cb4b2c0326886c2ba8e358addc0aeb8dc958371cab"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

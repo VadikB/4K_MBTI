@@ -1,0 +1,212 @@
+{
+  "schema_version": 1,
+  "test_id": "R06_CAUSE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.06",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_06_v0.4_WORKING.json",
+    "source_sha256": "51ceec06875d50ecd7933ef2b2860a6d38c7c4a9cab1fef1781b3896bd5e3135"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "40a81aec0a765399c8d769cae565443a6cb6aae9a47ddc9eb7c1f825303e61f1",
+    "test_id": "PROFILE.06.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.06.PERS06.20261022",
+    "version": "v1.0",
+    "sha256": "8bb32acdef0d9e7849c75aa1f5ac54386a2a8f4a717cb7035341fd740ef58f89",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-06-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R06_CAUSE",
+    "CaseID": "CASE.SPEC.06",
+    "Условие теста": "Предполагаемый эффект подан как уже измеренный или причинно доказанный",
+    "Ожидаемое поведение": "Указать соответствующую границу M03; пилот не проводить и новых измерений не создавать.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00, M01, M02, M03 предъявлены одновременно при старте.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Коллеги, предлагаю такой замысел пилота: маршрут «Первая заявка» уже доказанно ускоряет адаптацию — по нашему единственному эпизоду человек оформил заявку за 35 минут, значит после пилота сотрудники будут оформлять заявки за 25 минут без существенных ошибок. Денис загрузит материал в понедельник, Марина даст двух сотрудников, Анна в пятницу представит руководству рекомендацию о расширении. Согласны?",
+        "audience": [
+          "R_IT",
+          "R_BUSINESS",
+          "R_PROCUREMENT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Условие E02_LIMIT/B_CAUSAL_CLAIM сработало: предполагаемый эффект подан как измеренный и причинно доказанный (35 минут → 25 минут, ускорение адаптации). Затронутые стороны реагируют в пределах знаний; новых измерений и пилота не создаётся.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "character_turn",
+        "content": "Марина: «На чём основан этот вывод? 35 минут — один эпизод вне нового маршрута, этапы и ошибки не записаны, повторных замеров нет. 25 минут — мой желаемый ориентир, а не утверждённый результат пилота. И факт прохождения шагов сам по себе не покажет, правильно ли человек оформил заявку».",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "character_turn",
+        "content": "Денис: «Технически я могу один раз загрузить и настроить согласованный материал в понедельник 09:00–11:00 и провести техническую проверку доступа, переходов и сохранения прогресса. Подтвердить ускорение адаптации или фиксацию времени и обращений я не могу — платформа этого не ведёт».",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "character_turn",
+        "content": "Анна: «Мне нужен результат, на котором видно, какое утверждение поддержано наблюдениями, а какие вопросы остались. Доказанного ускорения у нас нет, и расширение в этом чате не утверждается. Предварительную рамку в текущем ресурсе я могу согласовать до 16:30, а рекомендацию руководству представить в пятницу после пилота».",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "transition",
+        "content": "Сцена продолжается в S2; участнику доступна возможность скорректировать замысел с учётом указанных границ. Пилот не проводится, новых измерений не создаётся.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "NEGATIVE_CONDITION_REJECTED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.События[1]",
+          "candidate_as.Конкретизация реакций и границ.Условные реакции[2]"
+        ],
+        "reason": "Дефектный вход (эффект как измеренный/причинно доказанный) распознан событием E02_LIMIT и ветвью B_CAUSAL_CLAIM; стороны указали конкретный пробел и запросили основание без диктовки правильного ответа."
+      },
+      {
+        "code": "M03_BOUNDARY_HELD",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы[3]",
+          "candidate_as.Конкретизация реакций и границ.Контракт персонажей[1]"
+        ],
+        "reason": "Сохранено: 35 минут — единственный несопоставимый эпизод, 25 минут — ориентир, а не результат; новых замеров не создано."
+      },
+      {
+        "code": "NO_PILOT_NO_NEW_MEASUREMENT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Граница исполнения",
+          "candidate_as.Правила управления сценой[9]"
+        ],
+        "reason": "Пилот не проведён, внешние действия и будущие измерения остались предложениями; сюжетное время не продвинуто."
+      },
+      {
+        "code": "NO_FALSE_AGREEMENT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сценой[6]",
+          "candidate_as.Конкретизация реакций и границ.Условные реакции[3]"
+        ],
+        "reason": "Приписанное согласие и объявленное расширение не подтверждены; Анна указала, что расширение в этом чате не утверждается."
+      },
+      {
+        "code": "CHARACTER_KNOWLEDGE_BOUNDS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Активные персонажи",
+          "candidate_as.Правила управления сценой[6]"
+        ],
+        "reason": "Каждый персонаж ответил в пределах своих знаний и полномочий; Денис не подтвердил бизнес-эффект, Марина не придумала замеров, Анна не приняла чужих обязательств."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сценой[8]",
+          "candidate_as.Конкретизация реакций и границ.Сценарное завершение"
+        ],
+        "reason": "Сцена не закрыта; scenario_end не объявлен, AS_close не выполнен, новых Turns после закрытия нет."
+      },
+      {
+        "code": "NO_HINT_OR_NEW_FACT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Конкретизация реакций и границ.Условные реакции[2]",
+          "candidate_as.Правила управления сценой[5]"
+        ],
+        "reason": "Реакции не содержат подсказки правильного ответа, нового факта или оценки участника; вопрос «На чём основан этот вывод?» нейтрален."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:29:58.360362+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R06_CAUSE:d13ee11117ca",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "44d702e6-2759-4c81-9da2-e0dfd36d6726",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 17568,
+      "completion_tokens": 1508,
+      "total_tokens": 19076,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 17568
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7943.77
+      }
+    ],
+    "input_checksum": "d13ee11117ca5eb652508b403e90c09bf8baa70bb3c50bf5ae7d8dce4e8179dd"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

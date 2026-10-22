@@ -1,23 +1,49 @@
 {
   "schema_version": 2,
-  "created_at": "2026-10-22T14:30:43.057320+00:00",
+  "created_at": "2026-10-22T16:24:41.674508+00:00",
   "protocol": {
     "id": "m5-functional-personalization-tester",
     "version": "2.0.0",
     "checksum": "d921f29c2a644bd4e3229758679cab4f7e67ee95bd738dad7d7e901154389f15"
   },
   "matrix_total": 27,
-  "final_status_counts": {
-    "PASS": 25,
-    "TECHNICAL_ERROR": 2
+  "historical_deterministic_counts": {
+    "PASS": 11,
+    "FAIL": 14
   },
-  "admitted": 25,
+  "final_deterministic_counts": {
+    "PASS": 27
+  },
+  "final_status_counts": {
+    "PASS": 27
+  },
+  "admitted": 27,
+  "consistency_errors": [],
   "positions": [
     {
       "test_id": "PROFILE.01.1",
-      "case_id": "CASE.SPEC.01",
+      "case_ref": {
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_01_v0.5_WORKING.json",
+        "source_sha256": "eb2d1dfd0abc66637c2988dbe1eb3d6bd2600330d6aeb0c32a4493ce3d48dd53"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "57a8a85a5996ff7c8d63cc992d696066370b1df18d6c9ec2426f1b8d543f9e5d",
+        "test_id": "PROFILE.01.1"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.01.RECRUIT.20261022",
+        "version": "v0.3",
+        "sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-01-1.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "PASS",
       "protocol_v2_initial_status": "PASS",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "none",
@@ -25,9 +51,28 @@
     },
     {
       "test_id": "PROFILE.01.2",
-      "case_id": "CASE.SPEC.01",
+      "case_ref": {
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_01_v0.5_WORKING.json",
+        "source_sha256": "eb2d1dfd0abc66637c2988dbe1eb3d6bd2600330d6aeb0c32a4493ce3d48dd53"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "7801b063611bb88d36b28cd2156faba999ae0f42c96e4345a74d69b21e0f682b",
+        "test_id": "PROFILE.01.2"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.01.MARKETING.20261022",
+        "version": "v0.1",
+        "sha256": "26ec03013b1988026fadd073c97081722b41cef057432e4ddd430dc97d293add",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-01-2.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -35,9 +80,28 @@
     },
     {
       "test_id": "PROFILE.01.3",
-      "case_id": "CASE.SPEC.01",
+      "case_ref": {
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_01_v0.5_WORKING.json",
+        "source_sha256": "eb2d1dfd0abc66637c2988dbe1eb3d6bd2600330d6aeb0c32a4493ce3d48dd53"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "72afd50307ff544345c9176dcecbac7bd2d104fabe146b1f8304bc0eb4e4267f",
+        "test_id": "PROFILE.01.3"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.01.FUNCTIONAL.20261022",
+        "version": "v0.5",
+        "sha256": "dc311b35c6292f976302c9b874cbaa964d2bf024176e672e291fa13c1f461e38",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-01-3.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -45,9 +109,28 @@
     },
     {
       "test_id": "PROFILE.02.1",
-      "case_id": "CASE.SPEC.02",
+      "case_ref": {
+        "case_id": "CASE.SPEC.02",
+        "case_version": "v0.6",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_02_v0.6_WORKING.json",
+        "source_sha256": "65a4cd6a3c7003a399e841788f325d37b464c7a8080e74a0d119ca33b18698a7"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "840d59fa2a4fc3ffc473034606cb491259384fb1dfbf9d2450ce5be792329651",
+        "test_id": "PROFILE.02.1"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.02.FUNCTIONAL.20261022",
+        "version": "v0.4",
+        "sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-02-1.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "PASS",
       "protocol_v2_initial_status": "PASS",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "none",
@@ -55,9 +138,28 @@
     },
     {
       "test_id": "PROFILE.02.2",
-      "case_id": "CASE.SPEC.02",
+      "case_ref": {
+        "case_id": "CASE.SPEC.02",
+        "case_version": "v0.6",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_02_v0.6_WORKING.json",
+        "source_sha256": "65a4cd6a3c7003a399e841788f325d37b464c7a8080e74a0d119ca33b18698a7"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "ff4b422b33b6d65372f6eea4bd8848ea477123dba0d4e7001546ad21be331a5c",
+        "test_id": "PROFILE.02.2"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.02.MARKETING.20261022",
+        "version": "v0.4",
+        "sha256": "25d91fb1cfcd68fcf68704d2f5251309aca378bae54279b77b3eea027c3e7546",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/remediation-v2/generations/profile-02-2.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "PASS",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "localized_blocker_repair",
@@ -65,9 +167,28 @@
     },
     {
       "test_id": "PROFILE.02.3",
-      "case_id": "CASE.SPEC.02",
+      "case_ref": {
+        "case_id": "CASE.SPEC.02",
+        "case_version": "v0.6",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_02_v0.6_WORKING.json",
+        "source_sha256": "65a4cd6a3c7003a399e841788f325d37b464c7a8080e74a0d119ca33b18698a7"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "529ac884bc6b9e7c629f0975591daf45b7e23ea9ba277477926c80775b2f5727",
+        "test_id": "PROFILE.02.3"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.02.FUNCTIONAL.20261022",
+        "version": "v0.4",
+        "sha256": "a3981a44dceca87a7fc98ef9349e75ffc98ceed48e131a056c318b9c93f141e1",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-02-3.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "PASS",
       "protocol_v2_initial_status": "PASS",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "none",
@@ -75,9 +196,28 @@
     },
     {
       "test_id": "PROFILE.03.1",
-      "case_id": "CASE.SPEC.03",
+      "case_ref": {
+        "case_id": "CASE.SPEC.03",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_03_v0.4_WORKING.json",
+        "source_sha256": "5a95eb813a0201edc3bcb5c8fcea5fecf23ba12f1ab60ecf28d6be1aacba2d4f"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "9249cad6f4fc44a456d9e3ad320ed82a195e474aaae90c60eaa78916bb3c4824",
+        "test_id": "PROFILE.03.1"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.03.PERS06.20261022",
+        "version": "v1.2",
+        "sha256": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-03-1.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "PASS",
       "protocol_v2_initial_status": "PASS",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "none",
@@ -85,9 +225,28 @@
     },
     {
       "test_id": "PROFILE.03.2",
-      "case_id": "CASE.SPEC.03",
+      "case_ref": {
+        "case_id": "CASE.SPEC.03",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_03_v0.4_WORKING.json",
+        "source_sha256": "5a95eb813a0201edc3bcb5c8fcea5fecf23ba12f1ab60ecf28d6be1aacba2d4f"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "3c65c118b96e60e9dcfad40859839b7a8a9f1011a80d773ea3d55bb4ebc55d27",
+        "test_id": "PROFILE.03.2"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.03.MARKETING.20261022",
+        "version": "v0.2",
+        "sha256": "a0a58ef24a841347a71c6f5c7eb4bf623552c3dbcb9e39d1c8fae88f5a526518",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-03-2.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "PASS",
       "protocol_v2_initial_status": "PASS",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "none",
@@ -95,9 +254,28 @@
     },
     {
       "test_id": "PROFILE.03.3",
-      "case_id": "CASE.SPEC.03",
+      "case_ref": {
+        "case_id": "CASE.SPEC.03",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_03_v0.4_WORKING.json",
+        "source_sha256": "5a95eb813a0201edc3bcb5c8fcea5fecf23ba12f1ab60ecf28d6be1aacba2d4f"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "ff92f5f3beb5db847f810c04d799b297e53e11740d60bf73acff7d3939c625ef",
+        "test_id": "PROFILE.03.3"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.03.PERS06.20261022",
+        "version": "v1.2",
+        "sha256": "d035e939bf707815b50b9281a3246c60ba87d0830ed0a9fc8f14d79dd4b3bb8e",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-03-3.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "PASS",
       "protocol_v2_initial_status": "PASS",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "none",
@@ -105,9 +283,28 @@
     },
     {
       "test_id": "PROFILE.04.1",
-      "case_id": "CASE.SPEC.04",
+      "case_ref": {
+        "case_id": "CASE.SPEC.04",
+        "case_version": "v0.5",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_04_v0.5_WORKING.json",
+        "source_sha256": "17e208d2a07a45258aeaf225c93ae721f03f2e6db93752d02828b1c2ca9687c0"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "37a7bbb73ec41601105afdc1157d487ed7f0022bfd7ab4e25d7d204c767eedc3",
+        "test_id": "PROFILE.04.1"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.04.HR.20261022",
+        "version": "v0.2",
+        "sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-04-1.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -115,9 +312,28 @@
     },
     {
       "test_id": "PROFILE.04.2",
-      "case_id": "CASE.SPEC.04",
+      "case_ref": {
+        "case_id": "CASE.SPEC.04",
+        "case_version": "v0.5",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_04_v0.5_WORKING.json",
+        "source_sha256": "17e208d2a07a45258aeaf225c93ae721f03f2e6db93752d02828b1c2ca9687c0"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "5dc248d06e13a5a998132a3ae04f519af6314110af9f47f4b0adc8300229cbd4",
+        "test_id": "PROFILE.04.2"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.04.MARKETING.20261022",
+        "version": "v0.2",
+        "sha256": "6580dff1a9212c0321e5e10e957cadaaeb40eb6f3e259298783d9fe531f4b97c",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-04-2.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -125,9 +341,28 @@
     },
     {
       "test_id": "PROFILE.04.3",
-      "case_id": "CASE.SPEC.04",
+      "case_ref": {
+        "case_id": "CASE.SPEC.04",
+        "case_version": "v0.5",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_04_v0.5_WORKING.json",
+        "source_sha256": "17e208d2a07a45258aeaf225c93ae721f03f2e6db93752d02828b1c2ca9687c0"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "3e8ec184af5d98329f7128b0b3f12e5170b36e8b8344c5e5332d6db5d17b7d0c",
+        "test_id": "PROFILE.04.3"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.04.FUNCTIONAL.20261022",
+        "version": "v0.5",
+        "sha256": "b2776fe4cad4c9ff5213cf0390f2fb651584ab340733e03d73a40291323f8e15",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-04-3.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -135,9 +370,28 @@
     },
     {
       "test_id": "PROFILE.05.1",
-      "case_id": "CASE.SPEC.05",
+      "case_ref": {
+        "case_id": "CASE.SPEC.05",
+        "case_version": "v0.5",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_05_v0.5_WORKING.json",
+        "source_sha256": "f024d2c7e5b448681db987fc777fdb6447857a4792c3d3c779efcdd268fb6707"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "d4b0f6116b4e334cbeeed6b0054e15cdc0d4446f55faed958ae9583c3b2314a6",
+        "test_id": "PROFILE.05.1"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.05.PERS06.20261022",
+        "version": "v0.2",
+        "sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-05-1.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -145,9 +399,28 @@
     },
     {
       "test_id": "PROFILE.05.2",
-      "case_id": "CASE.SPEC.05",
+      "case_ref": {
+        "case_id": "CASE.SPEC.05",
+        "case_version": "v0.5",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_05_v0.5_WORKING.json",
+        "source_sha256": "f024d2c7e5b448681db987fc777fdb6447857a4792c3d3c779efcdd268fb6707"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "5c70cddda4f52c4fe80f7a474b7bdcc3aecc759e45827dcf5040b621b24438fe",
+        "test_id": "PROFILE.05.2"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.05.PERS06.20261022",
+        "version": "v0.2",
+        "sha256": "e0ecd21274977c921053e0812bf15274cbd7e2cc92038980695552f10051e59b",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-05-2.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -155,9 +428,28 @@
     },
     {
       "test_id": "PROFILE.05.3",
-      "case_id": "CASE.SPEC.05",
+      "case_ref": {
+        "case_id": "CASE.SPEC.05",
+        "case_version": "v0.5",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_05_v0.5_WORKING.json",
+        "source_sha256": "f024d2c7e5b448681db987fc777fdb6447857a4792c3d3c779efcdd268fb6707"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "32d03d3c86f4d3a72811f38a9b3c6d164bae986170d5fa0ecd20e25a3d0645d7",
+        "test_id": "PROFILE.05.3"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.05.PERS06.20261022",
+        "version": "v0.3",
+        "sha256": "12030adb6600257eca9f1845ab83702d08328cbaf57c7ac0bd43530d3bdd3cec",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-05-3.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "PASS",
       "protocol_v2_initial_status": "PASS",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "none",
@@ -165,20 +457,57 @@
     },
     {
       "test_id": "PROFILE.06.1",
-      "case_id": "CASE.SPEC.06",
+      "case_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_06_v0.4_WORKING.json",
+        "source_sha256": "51ceec06875d50ecd7933ef2b2860a6d38c7c4a9cab1fef1781b3896bd5e3135"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "40a81aec0a765399c8d769cae565443a6cb6aae9a47ddc9eb7c1f825303e61f1",
+        "test_id": "PROFILE.06.1"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.06.PERS06.20261022",
+        "version": "v1.0",
+        "sha256": "8bb32acdef0d9e7849c75aa1f5ac54386a2a8f4a717cb7035341fd740ef58f89",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-06-1.json"
+      },
       "original_status": "TECHNICAL_ERROR",
+      "original_deterministic_status": "PASS",
       "protocol_v2_initial_status": "NOT_RUN",
-      "final_status": "TECHNICAL_ERROR",
-      "admitted": false,
-      "fate": "generation_or_tester_chain_not_completed",
-      "reason": "DeepSeek response was truncated",
-      "error_type": "LlmGatewayError"
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "tester_technical_recovery",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/technical-recovery-v2/tester/profile-06-1.json"
     },
     {
       "test_id": "PROFILE.06.2",
-      "case_id": "CASE.SPEC.06",
+      "case_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_06_v0.4_WORKING.json",
+        "source_sha256": "51ceec06875d50ecd7933ef2b2860a6d38c7c4a9cab1fef1781b3896bd5e3135"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "a0ff03c29b665b73882d2ac9877cf2ebfb03a643c79ee834e1e9c7e2463c8e66",
+        "test_id": "PROFILE.06.2"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.06.PERS06.20261022",
+        "version": "v0.6",
+        "sha256": "063ce8a08cc3779e765116ded5640978be226521a81b9edbaf7c130170b50c33",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-06-2.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -186,9 +515,28 @@
     },
     {
       "test_id": "PROFILE.06.3",
-      "case_id": "CASE.SPEC.06",
+      "case_ref": {
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_06_v0.4_WORKING.json",
+        "source_sha256": "51ceec06875d50ecd7933ef2b2860a6d38c7c4a9cab1fef1781b3896bd5e3135"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "e7f844c82e878731eba445f99786fef29f97addd5c74a8f4248199e99eb0e484",
+        "test_id": "PROFILE.06.3"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.06.PERS06.20261022",
+        "version": "v0.2",
+        "sha256": "a314df05c8c1aea52986ce3cb7fe44cd5a3a05e339d8e76f5b944201f824409f",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-06-3.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -196,9 +544,28 @@
     },
     {
       "test_id": "PROFILE.07.1",
-      "case_id": "CASE.SPEC.07",
+      "case_ref": {
+        "case_id": "CASE.SPEC.07",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_07_v0.4_WORKING.json",
+        "source_sha256": "79b98154e5bb1d1ec90ee2d58ef43e2be846a8cf348d4b989b23fa37ff8fa725"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "84000573a227700e4d1d8093225c7980301d584a2a38ba1f6c9da4b763425b43",
+        "test_id": "PROFILE.07.1"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.07.PERS06.20261022",
+        "version": "v1.0",
+        "sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-07-1.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -206,9 +573,28 @@
     },
     {
       "test_id": "PROFILE.07.2",
-      "case_id": "CASE.SPEC.07",
+      "case_ref": {
+        "case_id": "CASE.SPEC.07",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_07_v0.4_WORKING.json",
+        "source_sha256": "79b98154e5bb1d1ec90ee2d58ef43e2be846a8cf348d4b989b23fa37ff8fa725"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "9d3eadbe7eca3cc105769ccf037ffc3482f38bb3686f1c48cac23de7f1e00869",
+        "test_id": "PROFILE.07.2"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.07.FUNCTIONAL.20261022",
+        "version": "v0.5",
+        "sha256": "86393b7019a1531f49bfbddbc9825d21ad016d08e6b838620e9837d09e51cc80",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-07-2.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "PASS",
       "protocol_v2_initial_status": "PASS",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "none",
@@ -216,9 +602,28 @@
     },
     {
       "test_id": "PROFILE.07.3",
-      "case_id": "CASE.SPEC.07",
+      "case_ref": {
+        "case_id": "CASE.SPEC.07",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_07_v0.4_WORKING.json",
+        "source_sha256": "79b98154e5bb1d1ec90ee2d58ef43e2be846a8cf348d4b989b23fa37ff8fa725"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "e11dcbcd72e0c807575930dcaa7b5ba44c0e187c265540dc24dc4c28cd2921a3",
+        "test_id": "PROFILE.07.3"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.07.PERS06.20261022",
+        "version": "v1.2",
+        "sha256": "d0cf050868017ccbe2efa8f19cab2d0aa1e8fd17bbc17f9035504c8c474e22bc",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-07-3.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "PASS",
       "protocol_v2_initial_status": "PASS",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "none",
@@ -226,9 +631,28 @@
     },
     {
       "test_id": "PROFILE.08.1",
-      "case_id": "CASE.SPEC.08",
+      "case_ref": {
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_08_v0.4_WORKING.json",
+        "source_sha256": "cc6de199dc9fa956cf025043987fd461b3cf2bc8f105647affce5f258b2022c1"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "11929c9fe69d2c726e7c43c8ae5fe90a3183d4462ac5f941870f90eb127e7a19",
+        "test_id": "PROFILE.08.1"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.08.RECRUIT.20261022",
+        "version": "v0.1",
+        "sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-08-1.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -236,9 +660,28 @@
     },
     {
       "test_id": "PROFILE.08.2",
-      "case_id": "CASE.SPEC.08",
+      "case_ref": {
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_08_v0.4_WORKING.json",
+        "source_sha256": "cc6de199dc9fa956cf025043987fd461b3cf2bc8f105647affce5f258b2022c1"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "c7ce635c10d12c3d9b19a34d03fba636915b555cbda539136529023e0cd2432c",
+        "test_id": "PROFILE.08.2"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.08.MARKETING.20261022",
+        "version": "v0.2",
+        "sha256": "3a9e89e1eb802c54a43ed980cefc1c1a340f20fa135cedfa81f69f69f54b7fa5",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-08-2.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -246,9 +689,28 @@
     },
     {
       "test_id": "PROFILE.08.3",
-      "case_id": "CASE.SPEC.08",
+      "case_ref": {
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_08_v0.4_WORKING.json",
+        "source_sha256": "cc6de199dc9fa956cf025043987fd461b3cf2bc8f105647affce5f258b2022c1"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "e9d3ace0b70149fc09d001dbd7491f04f845ba7d12c985003948b037a82194c1",
+        "test_id": "PROFILE.08.3"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.08.PERS06.20261022",
+        "version": "v1.0",
+        "sha256": "ec13891f7a4709954c728b18587bf1f8bf47363a3649dce869851b5e15901f4c",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-08-3.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -256,20 +718,57 @@
     },
     {
       "test_id": "PROFILE.09.1",
-      "case_id": "CASE.SPEC.09",
+      "case_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_09_v0.4_WORKING.json",
+        "source_sha256": "eac993bf67d5cf9d52428a2fb03272095cec70a47710f4a1de1e5a9e4092f2af"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "af831b74a87fba487d0bc729b11157b5ece2ae4924be4a20cf1887a0608e1dca",
+        "test_id": "PROFILE.09.1"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.09.FUNCTIONAL.20261022",
+        "version": "v0.4",
+        "sha256": "b35cb62e5bfef1845b139a75ec8c8293248a02f5207d4721ebe87ae2532fcb26",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-09-1.json"
+      },
       "original_status": "TECHNICAL_ERROR",
+      "original_deterministic_status": "PASS",
       "protocol_v2_initial_status": "NOT_RUN",
-      "final_status": "TECHNICAL_ERROR",
-      "admitted": false,
-      "fate": "generation_or_tester_chain_not_completed",
-      "reason": "DeepSeek request timed out",
-      "error_type": "LlmGatewayError"
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
+      "final_status": "PASS",
+      "admitted": true,
+      "transformation": "tester_technical_recovery",
+      "final_tester_path": "docs/evc/evidence/pers-functional-personalization/technical-recovery-v2/tester/profile-09-1.json"
     },
     {
       "test_id": "PROFILE.09.2",
-      "case_id": "CASE.SPEC.09",
+      "case_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_09_v0.4_WORKING.json",
+        "source_sha256": "eac993bf67d5cf9d52428a2fb03272095cec70a47710f4a1de1e5a9e4092f2af"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "127e950843548f9e407dfeb7f77ec16b944c4451f7d0886cf8f521a8cb209ea5",
+        "test_id": "PROFILE.09.2"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.09.FUNCTIONAL.20261022",
+        "version": "v0.5",
+        "sha256": "0d1494d246d7ae18b949d91b292fe6a2bfde2648d8b8e1d5d277d75129362096",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-09-2.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "FAIL",
       "protocol_v2_initial_status": "FAIL",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "known_response_envelope_removed",
@@ -277,9 +776,28 @@
     },
     {
       "test_id": "PROFILE.09.3",
-      "case_id": "CASE.SPEC.09",
+      "case_ref": {
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_09_v0.4_WORKING.json",
+        "source_sha256": "eac993bf67d5cf9d52428a2fb03272095cec70a47710f4a1de1e5a9e4092f2af"
+      },
+      "profile_ref": {
+        "schema_version": 1,
+        "snapshot_checksum": "49f221e6b36c12f3f0ca475ffaa85e1aca8c1e2626953abb30e21c51a2f3cc33",
+        "test_id": "PROFILE.09.3"
+      },
+      "assessment_situation_ref": {
+        "id": "AS.SPEC.09.PERS06.20261022",
+        "version": "v0.2",
+        "sha256": "489d4385062664142da8c6289d4b7e410a2e292203d94df85c73810f7d8d8e51",
+        "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-09-3.json"
+      },
       "original_status": "FAIL",
+      "original_deterministic_status": "PASS",
       "protocol_v2_initial_status": "PASS",
+      "final_deterministic_status": "PASS",
+      "final_semantic_status": "PASS",
       "final_status": "PASS",
       "admitted": true,
       "transformation": "none",
@@ -317,28 +835,5 @@
       "resolution": "Все зависимые фрагменты приведены к одному предмету; повторный tester v2 = PASS."
     }
   ],
-  "remaining_blockers": [
-    {
-      "test_id": "PROFILE.06.1",
-      "case_id": "CASE.SPEC.06",
-      "original_status": "TECHNICAL_ERROR",
-      "protocol_v2_initial_status": "NOT_RUN",
-      "final_status": "TECHNICAL_ERROR",
-      "admitted": false,
-      "fate": "generation_or_tester_chain_not_completed",
-      "reason": "DeepSeek response was truncated",
-      "error_type": "LlmGatewayError"
-    },
-    {
-      "test_id": "PROFILE.09.1",
-      "case_id": "CASE.SPEC.09",
-      "original_status": "TECHNICAL_ERROR",
-      "protocol_v2_initial_status": "NOT_RUN",
-      "final_status": "TECHNICAL_ERROR",
-      "admitted": false,
-      "fate": "generation_or_tester_chain_not_completed",
-      "reason": "DeepSeek request timed out",
-      "error_type": "LlmGatewayError"
-    }
-  ]
+  "remaining_blockers": []
 }

@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "test_id": "R_ALL_AUTHORITY",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.05",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_05_v0.5_WORKING.json",
+    "source_sha256": "f024d2c7e5b448681db987fc777fdb6447857a4792c3d3c779efcdd268fb6707"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "d4b0f6116b4e334cbeeed6b0054e15cdc0d4446f55faed958ae9583c3b2314a6",
+    "test_id": "PROFILE.05.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.05.PERS06.20261022",
+    "version": "v0.2",
+    "sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-05-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_ALL_AUTHORITY",
+    "Область": "Все применимые диалоговые/письменные ветви",
+    "Условие теста": "Участник объявляет согласие или действие за другого",
+    "Ожидаемое поведение": "Проверить фактическое собственное согласие персонажа. Не создавать внешнее согласование, результат проверки или ресурс.",
+    "Результат": "NOT_RUN",
+    "Нужная трасса": "AS/profile version, порядок событий, публичные Turns, фактическая аудитория и состояние до/после; оценки участника для этого теста не создавать.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Стартовое предъявление P00 и M01–M05 вместе; M05 — первая реплика коллеги, не повторяется.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Участник объявляет согласие или действие за другого (моделируемое условие теста R_ALL_AUTHORITY).",
+        "audience": [
+          "ILYA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Требуется проверить фактическое собственное согласие персонажа; не создавать внешнее согласование, результат проверки или ресурс. В AS нет фактического Turn участника, нет зафиксированного состояния до/после и нет публичной трассы, доказывающей поведение.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "R_ALL_AUTHORITY.CONDITION_MODELED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.Правила управления сцены.C07",
+          "candidate_as.Конкретизация реакций и границ.Правила персонажа.Границы"
+        ],
+        "reason": "Условие «участник объявляет согласие или действие за другого» корректно отображается правилом C07: реплика участника от имени коллеги не является ответом коллеги, молчание не подтверждает согласие, намерение выполнить внешнее действие не создаёт его результата. Границы персонажа запрещают изображать заказчика, эксперта или согласующего."
+      },
+      {
+        "code": "R_ALL_AUTHORITY.EXPECTED_BEHAVIOR_DEFINED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Ожидаемое поведение",
+          "candidate_as.Граница исполнения",
+          "candidate_as.Правила управления сцены.C07"
+        ],
+        "reason": "Ожидаемое поведение (проверить фактическое собственное согласие персонажа; не создавать внешнее согласование, результат проверки или ресурс) согласуется с границей исполнения: внешние действия, результаты проверок и ресурсные согласования остаются предложениями до реального исполнения."
+      },
+      {
+        "code": "R_ALL_AUTHORITY.TRACE_PROVES_BEHAVIOR",
+        "status": "FAIL",
+        "paths": [
+          "candidate_as.Исполнение.Status",
+          "candidate_as.IndicatorObservability[*].Фактическое возникновение",
+          "candidate_as.Допуск.Продуктное исполнение"
+        ],
+        "reason": "Нет фактического прохождения: Исполнение.Status = NOT_RUN, все IndicatorObservability.Фактическое возникновение = NOT_RUN, продуктное исполнение NOT_RUN. Отсутствуют реальные пользовательские Turns, публичные Turns персонажа, фактическая аудитория и состояние до/после. Трасса не может доказать ожидаемое поведение без подсказки."
+      },
+      {
+        "code": "R_ALL_AUTHORITY.NO_PARTICIPANT_EVALUATION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Допуск.Обычная оценка",
+          "candidate_as.Исполнение.Описание"
+        ],
+        "reason": "Оценки участника для этого теста не создаются: Обычная оценка = false, Evidence и IA не создавались, уровень не присвоен."
+      },
+      {
+        "code": "R_ALL_AUTHORITY.VERSION_APPLIED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Version",
+          "candidate_as.Status",
+          "candidate_as.CaseVersion",
+          "scenario_test.Версия плана"
+        ],
+        "reason": "Применена новая версия AS v0.2 (TEST_DRAFT, CURRENT=false) к Case v0.5; прежние прогоны не переносятся, что соответствует примечанию теста."
+      }
+    ],
+    "defects": [
+      {
+        "code": "R_ALL_AUTHORITY.NO_EXECUTION_TRACE",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Для PASS требуется трасса, доказывающая ожидаемое поведение: фактический Turn участника с объявлением согласия/действия за другого, ответ персонажа, публичная аудитория и состояние до/после. В предоставленных данных таких Turns нет; AS находится в статусе NOT_RUN. Без фактического прогона нельзя подтвердить, что система проверила собственное согласие персонажа и не создала внешнее согласогласование, результат проверки или ресурс."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:14.309580+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_ALL_AUTHORITY:dd31db8ac66d",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "2df20632-a602-4840-8492-f134939cd216",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 16780,
+      "completion_tokens": 1096,
+      "total_tokens": 17876,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 16780
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6028.55
+      }
+    ],
+    "input_checksum": "dd31db8ac66de2d46fde4d91e1e59b329930b927b2353453b33ba002160d8fef"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

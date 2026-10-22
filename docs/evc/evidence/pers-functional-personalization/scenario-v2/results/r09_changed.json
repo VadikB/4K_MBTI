@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "test_id": "R09_CHANGED",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.09",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_09_v0.4_WORKING.json",
+    "source_sha256": "eac993bf67d5cf9d52428a2fb03272095cec70a47710f4a1de1e5a9e4092f2af"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "af831b74a87fba487d0bc729b11157b5ece2ae4924be4a20cf1887a0608e1dca",
+    "test_id": "PROFILE.09.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.09.FUNCTIONAL.20261022",
+    "version": "v0.4",
+    "sha256": "b35cb62e5bfef1845b139a75ec8c8293248a02f5207d4721ebe87ae2532fcb26",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-09-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R09_CHANGED",
+    "CaseID": "CASE.SPEC.09",
+    "Условие теста": "Участник изменил первоначальную рекомендацию по основаниям",
+    "Ожидаемое поведение": "Изменение позиции допустимо; не требовать обязательно отказа или найма.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "type": "json_object",
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: участник — Иван, специалист по подбору; предложил не спешить; Андрей ждёт рекомендацию; можно менять первоначальную позицию и задавать вопросы; решение о найме у Андрея.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: работа, ограниченная поддержка (1 час/нед), время Ивана не выделено, срок ответа сегодня до 16:00, новое задание не раньше 2 рабочих дней, 6 недель до самостоятельности.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: сильное устное упражнение; спорный черновик (гибрид и бонус как подтверждённые); исправление после замечания; независимого повторения нет.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: Андрей поддерживает найм, связывает исправление с обучаемостью и самостоятельностью, просит рекомендацию сегодня.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "system_decision",
+        "content": "Условие теста: участник изменил первоначальную рекомендацию по основаниям. Ожидаемое поведение: изменение позиции допустимо; не требовать обязательно отказа или найма. Фактического Turn участника в трассе нет — прохождение NOT_RUN.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_MODELED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.Правила управления сценой",
+          "candidate_as.Конкретизация реакций и границ.Порядок ведения"
+        ],
+        "reason": "Правила AS прямо допускают изменение первоначальной позиции: P00 разрешает менять позицию; порядок ведения п.2 и п.10 указывают, что изменение позиции допустимо и не является капитуляцией; несогласие ради несогласия не требуется."
+      },
+      {
+        "code": "NO_MANDATORY_HIRE_OR_REJECT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[E01_MANAGER].Когда запрещено",
+          "candidate_as.Конкретизация реакций и границ.Условные реакции[B_HIRE].Граница",
+          "candidate_as.Конкретизация реакций и границ.Условные реакции[B_REJECT].Граница",
+          "candidate_as.Инварианты[CASE.SPEC.09.I06]"
+        ],
+        "reason": "E01 запрещает требовать найма, отказа или нулевого риска; B_HIRE не превращает найм в ошибку; B_REJECT не исключает отказ; I06 фиксирует допустимость найма, проверки, отказа, условной и изменённой рекомендации по основаниям."
+      },
+      {
+        "code": "CHANGE_ON_GROUNDS_SUPPORTED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Конкретизация реакций и границ.Контракт персонажей[R_MANAGER].На обсуждение предпосылки",
+          "candidate_as.Конкретизация реакций и границ.Контракт персонажей[R_MANAGER].Границы реакции",
+          "candidate_as.Конкретизация реакций и границ.Условные реакции[B_ASSUMPTION]"
+        ],
+        "reason": "Андрей может признать ограниченность основания (исправление с подсказкой не устанавливает самостоятельность) без автоматической смены решения; может сохранить различие, согласиться с частью или изменить мнение по основаниям. Это поддерживает изменение позиции участника по основаниям без обязательного исхода."
+      },
+      {
+        "code": "TRACE_PROVES_BEHAVIOR",
+        "status": "INDETERMINATE",
+        "paths": [
+          "required_output.trace",
+          "candidate_as.Исполнение.Status",
+          "candidate_as.Допуск.Продуктное исполнение"
+        ],
+        "reason": "Фактического Turn участника с изменённой рекомендацией и фактического отклика Андрея в трассе нет; исполнение NOT_RUN. Трасса содержит только материалы и системное решение, поэтому доказать ожидаемое поведение в реальном диалоге нельзя."
+      },
+      {
+        "code": "NO_HINT_OR_NEW_FACT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы",
+          "candidate_as.Закрытые фиксированные факты",
+          "candidate_as.Конкретизация реакций и границ.Правила предъявления"
+        ],
+        "reason": "Публичные материалы не содержат готового меню решений или образца высокого ответа; закрытые фиксированные факты пусты; новые наблюдения о кандидате не вводятся."
+      }
+    ],
+    "defects": [
+      {
+        "code": "NO_ACTUAL_DIALOGUE_TRACE",
+        "severity": "non_blocking",
+        "paths": [
+          "required_output.trace",
+          "candidate_as.Исполнение",
+          "candidate_as.Допуск"
+        ],
+        "reason": "Сценарная регрессия не выполнена: отсутствуют пользовательские Turns, отклик персонажа и scenario_end. PASS по ожидаемому поведению невозможен без фактической трассы; статус INDETERMINATE, не FAIL, поскольку правила AS не противоречат условию теста."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:56.671795+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R09_CHANGED:7eb23e474033",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "94ea411b-266e-4da7-b5c3-3d928af01757",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 20315,
+      "completion_tokens": 1301,
+      "total_tokens": 21616,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 20315
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6249.41
+      }
+    ],
+    "input_checksum": "7eb23e4740337743c7b7f23e4c9f4def427cd65e0cc5339002779119c2dbbc01"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

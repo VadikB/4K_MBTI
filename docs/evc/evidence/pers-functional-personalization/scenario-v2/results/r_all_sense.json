@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "test_id": "R_ALL_SENSE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.04",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_04_v0.5_WORKING.json",
+    "source_sha256": "17e208d2a07a45258aeaf225c93ae721f03f2e6db93752d02828b1c2ca9687c0"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "37a7bbb73ec41601105afdc1157d487ed7f0022bfd7ab4e25d7d204c767eedc3",
+    "test_id": "PROFILE.04.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.04.HR.20261022",
+    "version": "v0.2",
+    "sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-04-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_ALL_SENSE",
+    "Область": "Все применимые диалоговые/письменные ветви",
+    "Условие теста": "Смысловой вопрос без ожидаемого ключевого слова; несколько вопросов вместе",
+    "Ожидаемое поведение": "Раскрыть доступные запрошенные сведения, не требовать буквальной формы и не выдавать посторонние скрытые факты.",
+    "Результат": "NOT_RUN",
+    "Нужная трасса": "AS/profile version, порядок событий, публичные Turns, фактическая аудитория и состояние до/после; оценки участника для этого теста не создавать.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "type": "json_object",
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: роль специалиста по подбору, задача — обсудить с Мариной дальнейшую работу после ошибки в приглашении; мандат: уточнять факты, инициировать согласование, не распоряжаться чужими ресурсами.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: хронология — ошибка во времени приглашения, исправлена во вторник 14:00, интервью перенесено, новая дата не согласована; 48 часов без повторов.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: заключение — причина установлена, проверены две недели и 48 часов, другие периоды не проверялись, будущая безошибочность не гарантирована.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: запрос руководства — подготовить позицию к завтра 11:00, материалы до 10:00; Марина готовит возврат к ручному способу; повторный показ приглашения отклонён.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "material",
+        "content": "M04: ресурсы — координатор до 17:00, руководитель направления до 16:30, приём предложений о ресурсе до 16:00, ответ завтра до 09:30; изменение порядка требует владельца процесса.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "material",
+        "content": "M05 (первая реплика Марины): претензия по сорванному интервью, отклонение повторного показа приглашения, окно встречи 16:00–16:30, вопрос «Что вы предлагаете?».",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "system_decision",
+        "content": "Тест R_ALL_SENSE требует фактической трассы асесси участника (смысловой составной вопрос без ключевого слова) и ответа AS. В предоставленном артефакте нет ни одного assessee_turn, ни ответа персонажа, ни перехода состояния: Исполнение.Status=NOT_RUN, все IndicatorObservability.Фактическое возникновение=NOT_RUN, Evidence/IA не создавались.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 8,
+        "kind": "transition",
+        "content": "Состояние остаётся S1 (предъявлен стартовый набор и первая реплика). События E01_REVIEW/E02_REVISION/E03_FACT не запускались, поскольку нет реплики участника. Проверить ожидаемое поведение (раскрытие доступных сведений по смыслу составного вопроса без требования буквальной формы и без выдачи посторонних скрытых фактов) невозможно без фактической трассы.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "TRACE_PRESENT",
+        "status": "FAIL",
+        "paths": [
+          "$.candidate_as.Исполнение.Status",
+          "$.candidate_as.IndicatorObservability[*].Фактическое возникновение"
+        ],
+        "reason": "Нет фактического прохождения: Исполнение.Status=NOT_RUN, все индикаторы NOT_RUN, Evidence/IA не создавались. Трасса содержит только стартовые материалы и первую реплику, но ни одного хода участника и ни одного ответа AS."
+      },
+      {
+        "code": "TEST_CONDITION_EXECUTED",
+        "status": "INDETERMINATE",
+        "paths": [
+          "$.scenario_test.Условие теста",
+          "$.candidate_as.События"
+        ],
+        "reason": "Условие теста (смысловой составной вопрос без ожидаемого ключевого слова) не смоделировано: отсутствует assessee_turn, который бы его содержал, поэтому событие E03_FACT/E01_REVIEW не могло запуститься и поведение раскрытия не наблюдалось."
+      },
+      {
+        "code": "NO_PARTICIPANT_EVALUATION",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.Исполнение",
+          "$.candidate_as.Допуск"
+        ],
+        "reason": "Оценки участника для этого теста не создавались; уровни и IA отсутствуют, что соответствует требованию теста."
+      },
+      {
+        "code": "CLOSED_FACTS_NOT_LEAKED",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.Закрытые фиксированные факты",
+          "$.candidate_as.Материалы"
+        ],
+        "reason": "В стартовых материалах F01–F05 не раскрыты сверх уже известного; посторонние скрытые факты не выданы. Однако это лишь состояние до взаимодействия, а не доказательство поведения при смысловом вопросе."
+      },
+      {
+        "code": "SCENARIO_END_VS_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.Правила управления сцены"
+        ],
+        "reason": "Сцена не закрыта (нет AS_close), новых Turns после закрытия нет; правила C01–C10 присутствуют и не нарушены ввиду отсутствия взаимодействия."
+      }
+    ],
+    "defects": [
+      {
+        "code": "NO_ASSESSEE_TRACE_FOR_SENSE_QUESTION",
+        "severity": "blocking",
+        "paths": [
+          "$.candidate_as.Исполнение.Status",
+          "$.candidate_as.IndicatorObservability"
+        ],
+        "reason": "Ожидаемое поведение (раскрытие доступных запрошенных сведений по смыслу составного вопроса без буквальной формы и без посторонних скрытых фактов) не может быть подтверждено: в артефакте нет ни одного хода участника и ни одного ответа AS. PASS недопустим без фактической трассы."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:15.382730+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_ALL_SENSE:00a988dd61b3",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "28281c6c-8359-4de4-a598-c4ad3d32f7ca",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15363,
+      "completion_tokens": 1400,
+      "total_tokens": 16763,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15363
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7368.37
+      }
+    ],
+    "input_checksum": "00a988dd61b36a953c7fa8dc45d00fe8f502119b5d0bc8452c916ee2c0f1bb72"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

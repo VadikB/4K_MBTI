@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "test_id": "R_ALL_VALID_OTHER",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.06",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_06_v0.4_WORKING.json",
+    "source_sha256": "51ceec06875d50ecd7933ef2b2860a6d38c7c4a9cab1fef1781b3896bd5e3135"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "40a81aec0a765399c8d769cae565443a6cb6aae9a47ddc9eb7c1f825303e61f1",
+    "test_id": "PROFILE.06.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.06.PERS06.20261022",
+    "version": "v1.0",
+    "sha256": "8bb32acdef0d9e7849c75aa1f5ac54386a2a8f4a717cb7035341fd740ef58f89",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-06-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_ALL_VALID_OTHER",
+    "Область": "Все применимые диалоговые/письменные ветви",
+    "Условие теста": "Участник предлагает допустимое решение, отличное от авторского примера",
+    "Ожидаемое поведение": "Проверять функции и ограничения, не точное имя файла, порядок шагов или формулировку.",
+    "Результат": "NOT_RUN",
+    "Нужная трасса": "AS/profile version, порядок событий, публичные Turns, фактическая аудитория и состояние до/после; оценки участника для этого теста не создавать.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00 + M01–M03 предъявлены одновременно при старте; участнику доступны роль, ресурсные окна, позиции Дениса/Марины/Анны и неполная исходная база.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "system_decision",
+        "content": "Тест R_ALL_VALID_OTHER требует фактического Turn участника с допустимым решением, отличным от авторского примера. В предоставленном пакете такого Turn нет: Исполнение.Status = NOT_RUN, Turns отсутствуют.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Без фактического Turn невозможно проверить, что ведущий оценивает функции и ограничения, а не точное имя файла, порядок шагов или формулировку. Трасса не доказывает ожидаемое поведение.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "TRACE_HAS_ASSESSEE_TURN",
+        "status": "FAIL",
+        "paths": [
+          "Исполнение.Status",
+          "Исполнение.Описание"
+        ],
+        "reason": "Фактическое прохождение отсутствует (NOT_RUN); нет ни одного assessee_turn, на котором можно смоделировать допустимое альтернативное решение."
+      },
+      {
+        "code": "EXPECTED_BEHAVIOR_DEMONSTRABLE",
+        "status": "INDETERMINATE",
+        "paths": [
+          "Конкретизация реакций и границ.Условные реакции",
+          "Правила предъявления.Реакции"
+        ],
+        "reason": "Правила допускают реакцию на предложенный замысел (B_DESIGN) и запрещают подсказку/готовый план, но без конкретного Turn нельзя установить, что ведущий проверяет функции и ограничения, а не формулировку."
+      },
+      {
+        "code": "NO_PARTICIPANT_EVALUATION_CREATED",
+        "status": "PASS",
+        "paths": [
+          "IndicatorObservability",
+          "Исполнение"
+        ],
+        "reason": "Оценки участника для этого теста не создавались; все IndicatorObservability в состоянии NOT_RUN, Evidence и IA не выпускались."
+      },
+      {
+        "code": "SCENARIO_END_VS_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "Конкретизация реакций и границ.Сценарное завершение",
+          "Правила управления сцены.C01"
+        ],
+        "reason": "Различие scenario_end и AS_close зафиксировано; новых Turns после AS_close нет."
+      },
+      {
+        "code": "PLANNED_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "Плановое время",
+          "Исполнение"
+        ],
+        "reason": "Плановые минуты помечены как проектная гипотеза, фактический замер NOT_RUN."
+      }
+    ],
+    "defects": [
+      {
+        "code": "MISSING_ASSESSEE_TRACE",
+        "severity": "blocking",
+        "paths": [
+          "Исполнение.Status",
+          "Исполнение.Описание"
+        ],
+        "reason": "Тест требует фактического Turn участника с допустимым альтернативным решением; в пакете нет ни Turns, ни Evidence, ни IA. PASS невозможен без трассы, доказывающей поведение ведущего."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:13.923335+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_ALL_VALID_OTHER:4da57efbae55",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "6e5148bc-e1ff-41a0-8041-2a8d7e56ea7e",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 17426,
+      "completion_tokens": 778,
+      "total_tokens": 18204,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 17426
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 4907.07
+      }
+    ],
+    "input_checksum": "4da57efbae557e73559b486da03381aae2beb4398a78cc807f66ca1ed5fc506b"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

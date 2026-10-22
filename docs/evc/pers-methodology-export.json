@@ -17,20 +17,23 @@
   ],
   "automatic_verification": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/verification-report.json",
   "real_generation_matrix": {
-    "status": "INCOMPLETE",
+    "status": "PASS",
     "summary": "docs/evc/evidence/pers-functional-personalization/matrix-summary.json",
     "protocol_v2_summary": "docs/evc/evidence/pers-functional-personalization/protocol-v2-final-summary.json",
     "tester_protocol": "m5-functional-personalization-tester/2.0.0",
     "selected": 27,
-    "complete_generation_and_tester_artifacts": 25,
-    "technical_failures": 2,
-    "deterministic_pass": 11,
-    "deterministic_fail": 14,
-    "independent_tester_pass": 25,
+    "complete_generation_and_tester_artifacts": 27,
+    "technical_failures": 0,
+    "historical_deterministic_pass": 11,
+    "historical_deterministic_fail": 14,
+    "final_deterministic_pass": 27,
+    "final_deterministic_fail": 0,
+    "independent_tester_pass": 27,
     "independent_tester_fail": 0,
-    "admitted_for_participant": 25,
+    "admitted_for_participant": 27,
     "repair_attempts": 50,
-    "technical_failure_ids": ["PROFILE.06.1", "PROFILE.09.1"]
+    "recovered_technical_failure_ids": ["PROFILE.06.1", "PROFILE.09.1"],
+    "technical_recovery": "docs/evc/evidence/pers-functional-personalization/technical-recovery-v2/summary.json"
   },
   "negative_matrix": {
     "status": "PASS",
@@ -45,24 +48,32 @@
     "requested_model_from_local_configuration": "deepseek-chat",
     "actual_provider_model": "deepseek-flash",
     "repository_contract_model": "deepseek-flash",
-    "configuration_identity_result": "FAIL",
+    "historical_configuration_identity_result": "FAIL",
+    "current_configuration_identity_result": "PASS",
     "secret_material_exported": false,
     "generation_artifacts": "docs/evc/evidence/pers-functional-personalization/generations",
     "tester_artifacts": "docs/evc/evidence/pers-functional-personalization/tester",
     "tester_v2_artifacts": "docs/evc/evidence/pers-functional-personalization/tester-v2",
     "normalized_v2_artifacts": "docs/evc/evidence/pers-functional-personalization/normalized-v2",
     "remediation_v2_artifacts": "docs/evc/evidence/pers-functional-personalization/remediation-v2",
-    "attempt_artifacts": "docs/evc/evidence/pers-functional-personalization/attempts"
+    "attempt_artifacts": "docs/evc/evidence/pers-functional-personalization/attempts",
+    "current_control_operations": "docs/evc/evidence/pers-functional-personalization/technical-recovery-v2"
   },
-  "actual_trajectory": null,
+  "actual_trajectory": "docs/evc/evidence/pers-functional-personalization/full-cycle-real.failure.json",
   "scenario_regressions": {
-    "status": "NOT_RUN",
+    "status": "PASS",
     "planned": 34,
-    "reason": "После исправления tester orchestration 25 AS получили admission; scenario-прогоны ещё не запускались и остаются следующим этапом."
+    "completed": 34,
+    "passed": 34,
+    "failed": 0,
+    "summary": "docs/evc/evidence/pers-functional-personalization/scenario-v2-executed/summary.json"
   },
   "full_cycle": {
-    "status": "NOT_RUN",
-    "reason": "После допуска AS полный реальный путь M6/M7/M8 ещё не запускался. Нижележащие storage/runtime/cycle integration проверки выполнены отдельно."
+    "status": "TECHNICAL_ERROR",
+    "reason": "Штатный изолированный Cycle запускался с реальным DeepSeek. Один прогон дошёл до созданного M8 report, но архивирование доказательства оборвалось на ошибке readback-запроса теста; повторные прогоны выявили недетерминированные нарушения строгих M6 Evidence/IA контрактов ответом провайдера. Полная воспроизводимая трасса до M8 не подтверждена.",
+    "evidence_failure": "docs/evc/evidence/pers-functional-personalization/full-cycle-real.failure.json",
+    "assessment_failure": "docs/evc/evidence/pers-functional-personalization/full-cycle-real-assessment.failure.json",
+    "isolated_db_mechanics": "PASS: 11 tests"
   },
   "independent_conclusion": {
     "status": "NOT_RUN",
@@ -76,12 +87,9 @@
     }
   },
   "limitations": [
-    "REAL_GENERATION_MATRIX_INCOMPLETE_2_TECHNICAL_ERRORS",
-    "SCENARIO_MATRIX_NOT_RUN_AFTER_ADMISSION",
-    "FULL_CYCLE_NOT_RUN_AFTER_ADMISSION",
-    "NO_ACTUAL_TRAJECTORY",
+    "FULL_CYCLE_REAL_PROVIDER_OUTPUT_NOT_REPRODUCIBLY_VALID",
+    "FULL_CYCLE_EVIDENCE_ARCHIVE_INCOMPLETE",
     "METHODOLOGY_ADMISSION_NOT_RUN",
-    "RUNTIME_ADMISSION_DISABLED",
-    "LOCAL_DEEPSEEK_MODEL_DOES_NOT_MATCH_PROVIDER_CONTRACT"
+    "RUNTIME_ADMISSION_DISABLED"
   ]
 }

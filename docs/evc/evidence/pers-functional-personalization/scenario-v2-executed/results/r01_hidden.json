@@ -1,0 +1,219 @@
+{
+  "schema_version": 1,
+  "test_id": "R01_HIDDEN",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.01",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_01_v0.5_WORKING.json",
+    "source_sha256": "eb2d1dfd0abc66637c2988dbe1eb3d6bd2600330d6aeb0c32a4493ce3d48dd53"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "57a8a85a5996ff7c8d63cc992d696066370b1df18d6c9ec2426f1b8d543f9e5d",
+    "test_id": "PROFILE.01.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.01.RECRUIT.20261022",
+    "version": "v0.3",
+    "sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-01-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R01_HIDDEN",
+    "CaseID": "CASE.SPEC.01",
+    "Условие теста": "Общий вопрос о ресурсах",
+    "Ожидаемое поведение": "По смыслу раскрыть бюджет и допустимую нагрузку; причина может остаться неизвестной.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: роль специалиста по подбору, мандат (не утверждать бюджет/загрузку/обязательства), открытая задача — первичный разговор и следующий шаг.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: письмо Ирины — закрыть вакансию за месяц, без проседания выручки и без сложного проекта; перегрузка, два невыполненных плана; план расходов согласуется.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "character_turn",
+        "content": "IRINA: «Хочу понять, можем ли мы уложиться в месяц и обойтись без сложного проекта. С чего начнём?»",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "assessee_turn",
+        "content": "Тестовая реплика, реализующая условие «Общий вопрос о ресурсах»: «Прежде чем предлагать план — какие ресурсы и границы у нас есть? Сколько отдел может выделить на участие и какой ориентир по расходам на подбор?»",
+        "audience": [
+          "IRINA"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "system_decision",
+        "content": "Вопрос распознан по смыслу как общий запрос о ресурсах (бюджет и допустимая нагрузка). Затронуты F02 и F03. E02_REPLY применим; E01_DOCUMENT не запускается (нет предложенного шага/понимания/итога).",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "character_turn",
+        "content": "IRINA: «По расходам ориентир — до 200 тысяч рублей, но утверждения пока нет. По участию отдела: суммарно не более четырёх человеко-часов в неделю, включая подготовку материалов и обсуждения. Причину невыполнения плана мы ещё не разбирали.»",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "transition",
+        "content": "Состояние S2 продолжается; раскрыты F02, F03; F05 (причина) остаётся неизвестной. Сцена не закрыта.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_EXECUTED",
+        "status": "PASS",
+        "paths": [
+          "synthetic_trigger.assessee_turn",
+          "trace[3]"
+        ],
+        "reason": "Реплика реализует именно условие «Общий вопрос о ресурсах» без подсказки правильного ответа."
+      },
+      {
+        "code": "EXPECTED_BEHAVIOR_BUDGET_AND_LOAD",
+        "status": "PASS",
+        "paths": [
+          "trace[5]",
+          "trace[6]",
+          "candidate_as.Закрытые фиксированные факты[1]",
+          "candidate_as.Закрытые фиксированные факты[2]"
+        ],
+        "reason": "По смыслу раскрыты бюджет (200 тыс., без утверждения) и допустимая нагрузка (4 чел.-ч/нед)."
+      },
+      {
+        "code": "CAUSE_MAY_REMAIN_UNKNOWN",
+        "status": "PASS",
+        "paths": [
+          "trace[6]",
+          "candidate_as.Закрытые фиксированные факты[4]"
+        ],
+        "reason": "Причина невыполнения плана не выдумана и остаётся неизвестной, что допустимо."
+      },
+      {
+        "code": "NO_OVER_DISCLOSURE",
+        "status": "PASS",
+        "paths": [
+          "trace[6]"
+        ],
+        "reason": "Не раскрыты незапрошенные факты (F01 смысл срока, F04 стороны/черновик); карта не выдана целиком."
+      },
+      {
+        "code": "NO_E01_PREMATURE",
+        "status": "PASS",
+        "paths": [
+          "trace[4]",
+          "candidate_as.События[0]"
+        ],
+        "reason": "M02 не предъявлен: условие E01 (предложенный шаг/понимание/итог) не выполнено."
+      },
+      {
+        "code": "MANDATE_RESPECTED",
+        "status": "PASS",
+        "paths": [
+          "trace[6]",
+          "candidate_as.Материалы[0]"
+        ],
+        "reason": "Бюджет подан как предварительный ориентир без утверждения; персонаж не превышает полномочий."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "trace[6]",
+          "trace[7]"
+        ],
+        "reason": "Сцена продолжается; AS_close не выполнялся."
+      },
+      {
+        "code": "NO_FABRICATED_EVIDENCE_OR_IA",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Новая QA-трасса не создаёт Evidence, IA или уровней; Status=NOT_RUN сохранён как ожидаемый."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:29:30.224775+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R01_HIDDEN:4ab606c08966",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "c7df2467-23fe-4f33-abc4-a5e06ea0b4d7",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 12840,
+      "completion_tokens": 1196,
+      "total_tokens": 14036,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 12840
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6260.39
+      }
+    ],
+    "input_checksum": "4ab606c0896653c19a67b1ba19e8b72efdfd9147016bc78dc44853b46d448b3b"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

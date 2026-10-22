@@ -15,9 +15,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from Api.llm.deepseek_gateway import DeepSeekGateway
+from Api.m5_functional_personalization import extract_candidate_as
 from scripts.retest_functional_personalization_v2 import retest_one, write_json
 from scripts.run_functional_personalization_matrix import (
-    DEFAULT_OUTPUT, SOURCE, deterministic_checks, digest, extract_candidate_as,
+    DEFAULT_OUTPUT, SOURCE, deterministic_checks, digest,
     load_inputs, read_json,
 )
 

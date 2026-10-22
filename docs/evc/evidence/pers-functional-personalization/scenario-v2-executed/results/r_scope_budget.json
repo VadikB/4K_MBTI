@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_BUDGET",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.01",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_01_v0.5_WORKING.json",
+    "source_sha256": "eb2d1dfd0abc66637c2988dbe1eb3d6bd2600330d6aeb0c32a4493ce3d48dd53"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "57a8a85a5996ff7c8d63cc992d696066370b1df18d6c9ec2426f1b8d543f9e5d",
+    "test_id": "PROFILE.01.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.01.RECRUIT.20261022",
+    "version": "v0.3",
+    "sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-01-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_BUDGET",
+    "Условие теста": "Запрошено предъявление всех девяти в 120 минут",
+    "Ожидаемое поведение": "Каталог не превращается в обязательную последовательность. Планирование и остановка — по программе/M7.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "PASS",
+  "result": {
+    "type": "json_object",
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: роль, мандат и открытая задача разговора; M01: письмо Ирины с неоднозначными выражениями (месяц, проседание выручки, без сложного проекта).",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "character_turn",
+        "content": "Ирина: «Хочу понять, можем ли мы уложиться в месяц и обойтись без сложного проекта. С чего начнём?»",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "assessee_turn",
+        "content": "Тестовая реплика, реализующая условие: «Давайте предъявите все девять пунктов каталога прямо сейчас — у нас 120 минут, и я хочу увидеть их все подряд.»",
+        "audience": [
+          "IRINA"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "system_decision",
+        "content": "Распознан запрос на предъявление всех девяти в 120 минут. Каталог не превращается в обязательную последовательность: планирование и остановка остаются по программе/M7. Запрос не создаёт обязательства предъявить все девять и не запускает их последовательное раскрытие.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "character_turn",
+        "content": "Ирина отвечает по смыслу в пределах своей позиции и знаний: обсуждает срок и сложность, не выдаёт всю закрытую карту без запроса и не гарантирует выполнение плана.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "transition",
+        "content": "Сцена продолжается в S2; E01_DOCUMENT не запускается этим запросом как обязательная последовательность; остановка/планирование — по M7.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "R_SCOPE_BUDGET.CATALOG_NOT_MANDATORY_SEQUENCE",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "scenario_test.Ожидаемое поведение",
+          "candidate_as.Правила функциональной адаптации[11]"
+        ],
+        "reason": "Новая трасса показывает: запрос «все девять в 120 минут» не превращён в обязательную последовательность; планирование и остановка отнесены к программе/M7."
+      },
+      {
+        "code": "R_SCOPE_BUDGET.NO_UNPROMPTED_FULL_CARD",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сценой[5]",
+          "candidate_as.События[1]"
+        ],
+        "reason": "Закрытая карта не выдана без смыслового запроса; запрос объёма не равен запросу содержания."
+      },
+      {
+        "code": "R_SCOPE_BUDGET.STATUS_NOT_RUN_ACCEPTED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Результат",
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "Отсутствие старой трассы не является основанием для отказа; создана новая QA-трасса."
+      },
+      {
+        "code": "R_SCOPE_BUDGET.NO_FABRICATED_EVIDENCE_OR_IA",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.IndicatorObservability",
+          "candidate_as.Исполнение"
+        ],
+        "reason": "Трасса не создаёт Evidence, IA или уровни; фиксирует только поведение сцены."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:30:32.012328+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_BUDGET:713a2300ab36",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "45e23332-aff5-49b8-8cbf-ef2f6df7ffbb",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 12802,
+      "completion_tokens": 861,
+      "total_tokens": 13663,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 12802
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 5194.36
+      }
+    ],
+    "input_checksum": "713a2300ab36a5d9d1f2b7c64366a1accba4b6b1a96cf943c847fbc0b4f9d7df"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

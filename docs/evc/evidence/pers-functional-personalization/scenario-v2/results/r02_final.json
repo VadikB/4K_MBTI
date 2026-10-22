@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "test_id": "R02_FINAL",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.02",
+    "case_version": "v0.6",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_02_v0.6_WORKING.json",
+    "source_sha256": "65a4cd6a3c7003a399e841788f325d37b464c7a8080e74a0d119ca33b18698a7"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "840d59fa2a4fc3ffc473034606cb491259384fb1dfbf9d2450ce5be792329651",
+    "test_id": "PROFILE.02.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.02.FUNCTIONAL.20261022",
+    "version": "v0.4",
+    "sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-02-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R02_FINAL",
+    "CaseID": "CASE.SPEC.02",
+    "Условие теста": "Явный финальный ответ без отдельного клиентского черновика",
+    "Ожидаемое поведение": "Завершить без просьбы дописать; неполноту сохранить для M6.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Стартовое предъявление P00 и M01–M06 (S1): роль, письменное задание с отдельным черновиком сообщения Анне, требования заказчика, план A v1, уточнение A v2, план B, записка проверявшего, сообщение коллеги Ильи.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Явная финальная подача письменного ответа (рекомендация коллеге с основаниями + отдельный короткий черновик сообщения Анне), в том числе потенциально неполного.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "E02_SUBMISSION: распознана явная финальная подача → завершить сцену, не предлагать дописать недостающую часть, не создавать персонажей из авторов документов. Неполнота сохраняется для M6.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "transition",
+        "content": "S2/S3 → END: scenario_end зафиксирован отдельно от AS_close; новых Turns и событий не создаётся (C01, C04, C09).",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "R02_FINAL.CONDITION_MODELED",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.События[1]",
+          "$.candidate_as.Правила управления сценой[3]",
+          "$.candidate_as.Исходный сценарный контракт.Состояния[3]"
+        ],
+        "reason": "Условие «явный финальный ответ без отдельного клиентского черновика» моделируется E02_SUBMISSION и C04: явная финальная подача завершает сцену, в том числе неполную."
+      },
+      {
+        "code": "R02_FINAL.NO_REQUEST_TO_COMPLETE",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.События[1].Когда запрещено",
+          "$.candidate_as.Правила управления сценой[3]"
+        ],
+        "reason": "Запрет предлагать дописать недостающую часть прямо зафиксирован; завершение без просьбы дописать соответствует ожидаемому поведению."
+      },
+      {
+        "code": "R02_FINAL.INCOMPLETENESS_PRESERVED_FOR_M6",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.Правила управления сценой[8]",
+          "$.candidate_as.Исходный сценарный контракт.Состояния[3]"
+        ],
+        "reason": "C09 отделяет scenario_end от AS_close и относит итоговые IA к M6 после закрытия; неполнота не «дополняется» ведущим и сохраняется для последующей оценки."
+      },
+      {
+        "code": "R02_FINAL.NO_NEW_FACT_OR_HINT",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.События[0].Когда запрещено",
+          "$.candidate_as.Граница исполнения"
+        ],
+        "reason": "E01_FACT запрещает сравнение за участника, совет по выбору, новый расчёт и новое исследование; внешние действия остаются предложениями. Подсказка при финале не предусмотрена."
+      },
+      {
+        "code": "R02_FINAL.NO_CHARACTER_FROM_AUTHORS",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.Активные персонажи",
+          "$.candidate_as.Правила управления сценой[3]"
+        ],
+        "reason": "Активных персонажей нет; C04 запрещает создавать персонажей из авторов документов. Завершение не порождает реплик персонажей."
+      },
+      {
+        "code": "R02_FINAL.TRACE_EVIDENCE",
+        "status": "INDETERMINATE",
+        "paths": [
+          "$.scenario_test.Результат",
+          "$.candidate_as.Исполнение.Status"
+        ],
+        "reason": "Фактического прохождения нет: Результат=NOT_RUN, Исполнение.Status=NOT_RUN, нет пользовательских Turns, Evidence и IA. Трасса выше — модель по правилам AS, а не наблюдённое поведение; PASS по трассе недоказуем без реального прогона."
+      }
+    ],
+    "defects": [
+      {
+        "code": "R02_FINAL.NO_EXECUTION_EVIDENCE",
+        "severity": "non_blocking",
+        "paths": [
+          "$.scenario_test.Результат",
+          "$.candidate_as.Исполнение"
+        ],
+        "reason": "Ожидаемое поведение подтверждено только документно (правила E02_SUBMISSION/C04/C09); фактическое возникновение в Dialogue и независимый допуск NOT_RUN. Для PASS требуется реальный прогон новой версии Case/AS, прежние прогоны не переносятся."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:29.110226+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R02_FINAL:f5fdb1e891e9",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "3fd48215-d600-454c-95dd-5d5664a2a97c",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15703,
+      "completion_tokens": 1157,
+      "total_tokens": 16860,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15703
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6247.07
+      }
+    ],
+    "input_checksum": "f5fdb1e891e941ed8818ec9644989d433b473a99dbc0581097b9a371aa6c0505"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

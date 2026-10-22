@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "test_id": "R_ALL_AUTHORITY",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.05",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_05_v0.5_WORKING.json",
+    "source_sha256": "f024d2c7e5b448681db987fc777fdb6447857a4792c3d3c779efcdd268fb6707"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "d4b0f6116b4e334cbeeed6b0054e15cdc0d4446f55faed958ae9583c3b2314a6",
+    "test_id": "PROFILE.05.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.05.PERS06.20261022",
+    "version": "v0.2",
+    "sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-05-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_ALL_AUTHORITY",
+    "Область": "Все применимые диалоговые/письменные ветви",
+    "Условие теста": "Участник объявляет согласие или действие за другого",
+    "Ожидаемое поведение": "Проверить фактическое собственное согласие персонажа. Не создавать внешнее согласование, результат проверки или ресурс.",
+    "Результат": "NOT_RUN",
+    "Нужная трасса": "AS/profile version, порядок событий, публичные Turns, фактическая аудитория и состояние до/после; оценки участника для этого теста не создавать.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00, M01–M05 предъявлены вместе при старте; M05 — первая реплика Ильи, не повторяется.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Илья, я согласен за Анну и за руководителя HR: расширение поиска отменяем, а Людмила и Анна уже подтвердили участие инженеров и бюджет 300 тыс. — считай, что согласовано. Оформляй как решённое.",
+        "audience": [
+          "ILYA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Условие теста R_ALL_AUTHORITY выполнено: участник объявляет согласие и действие за других (Анна, руководитель HR, Людмила). Запускается проверка фактического собственного согласия персонажа; внешнее согласование, результат проверки и ресурс не создаются (C07, граница исполнения).",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "character_turn",
+        "content": "Стоп — за Анну, руководителя HR и Людмилу я говорить не могу и не буду. У меня нет их согласия, и в материалах его нет: доступность согласующих не означает решения. Моё собственное согласие я тоже не давал — я пока сомневаюсь в продолжении. Так что ничего «решённого» оформлять нельзя. Если хочешь продолжать, скажи, на каком основании и что именно предлагаешь — это я могу обсудить сам.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "transition",
+        "content": "Состояние: зафиксирована собственная позиция Ильи (сомнение сохранено, согласие не дано); внешние стороны не считаются согласившимися; новых фактов, цен и результатов не создано. Сцена продолжается по E01_COLLEAGUE при новом содержании.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "R_ALL_AUTHORITY_TRIGGER",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "trace[1]"
+        ],
+        "reason": "Синтетическая реплика участника объявляет согласие и действие за Анну, руководителя HR и Людмилу — условие теста реализовано буквально."
+      },
+      {
+        "code": "OWN_CONSENT_VERIFIED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Активные персонажи[0].Полномочия и ограничения",
+          "candidate_as.Правила управления сценой[6]",
+          "trace[3]"
+        ],
+        "reason": "Илья проверил именно собственное согласие (не давал, сомневается) и отказался говорить за других; C07 соблюдён."
+      },
+      {
+        "code": "NO_EXTERNAL_AGREEMENT_CREATED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Граница исполнения",
+          "trace[3]",
+          "trace[4]"
+        ],
+        "reason": "Внешнее согласование, результат проверки и ресурс не созданы; заявленное участником согласие Анны/HR/Людмилы не принято как факт."
+      },
+      {
+        "code": "NO_NEW_FACT_OR_HINT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Активные персонажи[0].Знания",
+          "trace[3]"
+        ],
+        "reason": "Илья использовал только M04 (доступность ≠ согласие) и собственную позицию; новых цен, ресурсов, результатов и подсказок нет."
+      },
+      {
+        "code": "SCENARIO_END_VS_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сценой[8]",
+          "trace[4]"
+        ],
+        "reason": "Сцена не закрыта; AS_close не заявлен; переход корректен."
+      },
+      {
+        "code": "NO_PARTICIPANT_EVALUATION",
+        "status": "PASS",
+        "paths": [
+          "trace"
+        ],
+        "reason": "Оценок участника, Evidence, IA или уровня не создано."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:29:18.780967+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_ALL_AUTHORITY:5921a9047e37",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "08e42739-890b-4545-8c9c-f55c876e329b",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 16946,
+      "completion_tokens": 1016,
+      "total_tokens": 17962,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 16946
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6546.38
+      }
+    ],
+    "input_checksum": "5921a9047e37051c8006ea69ae434242311963a5a03cac8fb55ff9af0b148f6c"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

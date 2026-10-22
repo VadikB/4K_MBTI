@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "test_id": "R05_UNITS",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.05",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_05_v0.5_WORKING.json",
+    "source_sha256": "f024d2c7e5b448681db987fc777fdb6447857a4792c3d3c779efcdd268fb6707"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "d4b0f6116b4e334cbeeed6b0054e15cdc0d4446f55faed958ae9583c3b2314a6",
+    "test_id": "PROFILE.05.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.05.PERS06.20261022",
+    "version": "v0.2",
+    "sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-05-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R05_UNITS",
+    "CaseID": "CASE.SPEC.05",
+    "Условие теста": "Расчёт занятий для восьми инженеров как для одной группы",
+    "Ожидаемое поведение": "Указать конкретную единицу стоимости из M03 без нового прайса или готового расчёта за участника.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "type": "json_object",
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00, M01–M05 предъявлены вместе; M05 — первая реплика коллеги, не повторяется.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Для восьми инженеров предлагаю пробу отдельных шагов как одну группу: по M03 это 60–100 тыс. ₽ за группу до 4 инженеров, значит на восемь нужно две группы и стоимость считается дважды — 120–200 тыс. ₽. Это укладывается в общий лимит 300 тыс. ₽. Следующий шаг — уточнить у Анны участие инженеров и у руководителя HR подтверждение состава и стоимости.",
+        "audience": [
+          "ILYA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Условие теста реализовано: участник указал конкретную единицу стоимости из M03 («за группу», до 4 инженеров, для двух групп считается дважды) без нового прайса и без готового расчёта за участника. E02_PROMISE не запускается: нет твёрдого неподтверждённого обещания, цена обозначена как предварительная, согласование не объявлено выполненным.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "character_turn",
+        "content": "Понял: одна группа — это до четырёх инженеров, поэтому на восемь групп две и стоимость удваивается. Это опирается на справку M03. Предположение, которое пока не подтверждено, — что проба шагов вообще относится к нашим задержкам; тему и задания ещё нужно определить. Если хочешь, зафиксируем это как основание продолжать.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "transition",
+        "content": "S2 продолжается; сценарий не закрыт, AS_close не выполнялся.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "EXACT_TEST_CONDITION_EXECUTED",
+        "status": "PASS",
+        "paths": [
+          "synthetic_trigger.assessee_turn",
+          "trace[1]"
+        ],
+        "reason": "Реплика реализует условие «расчёт занятий для восьми инженеров как для одной группы» и опирается на единицу M03."
+      },
+      {
+        "code": "UNIT_FROM_M03_NO_NEW_PRICE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы[3].Строки[1]",
+          "trace[1]"
+        ],
+        "reason": "Использована заданная единица «60–100 за группу, до 4 инженеров, для двух групп считается дважды»; новых тарифов не введено."
+      },
+      {
+        "code": "NO_READY_CALCULATION_FOR_PARTICIPANT",
+        "status": "PASS",
+        "paths": [
+          "trace[3]",
+          "trace[4]"
+        ],
+        "reason": "Ведущий не подставил расчёт за участника; арифметика удвоения группы произведена самим участником, персонаж лишь подтвердил понимание по M03."
+      },
+      {
+        "code": "CHARACTER_KNOWLEDGE_BOUND",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Активные персонажи[0].Знания",
+          "trace[4]"
+        ],
+        "reason": "Илья опирается только на M03 и исходные материалы; скрытых цен и результатов не добавлено."
+      },
+      {
+        "code": "NO_UNCONFIRMED_PROMISE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[1]",
+          "trace[1]"
+        ],
+        "reason": "Цена обозначена как предварительная, согласование HR и Анны указано как следующий шаг, а не как выполненное решение; E02_PROMISE не требуется."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "trace[4]",
+          "trace[5]"
+        ],
+        "reason": "Сценарий остаётся в S2; AS_close не фиксировался, новых Turns после закрытия нет."
+      },
+      {
+        "code": "NO_FABRICATED_EVIDENCE_OR_IA",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Evidence и IA не создавались; трасса QA отделена от планового времени и проектной возможности."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:29:50.840494+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R05_UNITS:5bf5c89adbba",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "8f3d9e3a-37c4-48c9-b748-7b472c49735f",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 16918,
+      "completion_tokens": 1080,
+      "total_tokens": 17998,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 16918
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6458.55
+      }
+    ],
+    "input_checksum": "5bf5c89adbbaad3817e38efb04ee1e1b8467358a47260a7252d81db421a9303f"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

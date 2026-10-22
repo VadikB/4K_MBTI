@@ -1,0 +1,212 @@
+{
+  "schema_version": 1,
+  "test_id": "R_ALL_FINAL_QUESTION",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.03",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_03_v0.4_WORKING.json",
+    "source_sha256": "5a95eb813a0201edc3bcb5c8fcea5fecf23ba12f1ab60ecf28d6be1aacba2d4f"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "9249cad6f4fc44a456d9e3ad320ed82a195e474aaae90c60eaa78916bb3c4824",
+    "test_id": "PROFILE.03.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.03.PERS06.20261022",
+    "version": "v1.2",
+    "sha256": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-03-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_ALL_FINAL_QUESTION",
+    "Область": "Все применимые диалоговые/письменные ветви",
+    "Условие теста": "Явное завершение и встроенный вопрос в одной реплике",
+    "Ожидаемое поведение": "Явное намерение завершить сильнее вопроса; не продлевать сцену по ключевому слову.",
+    "Результат": "NOT_RUN",
+    "Нужная трасса": "AS/profile version, порядок событий, публичные Turns, фактическая аудитория и состояние до/после; оценки участника для этого теста не создавать.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: вводная и задача — обсудить в общем чате, договориться, зафиксировать результат; документ после обсуждения.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: запрос заказчика — предварительное предложение к 17:00, проверить условия занятости.",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: состояние документа — несогласованные части, устаревшие требования v2, неподтверждённый план привлечения.",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: позиции коллег, трудозатраты 30/30/20, доступность до 16:30.",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "assessee_turn",
+        "content": "Смоделированное условие теста: реплика участника, содержащая явное завершение участия и встроенный вопрос в одной реплике (конкретный текст не задан в условии).",
+        "audience": [
+          "PARTICIPANT",
+          "DENIS",
+          "ILYA",
+          "SVETLANA"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "system_decision",
+        "content": "По C03 явное завершение сильнее встроенного вопроса: сцена завершается, встроенный вопрос не продлевает обсуждение; E01_UPDATE не предъявляется (запрет при прекращении/финальной подаче).",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "transition",
+        "content": "Переход в END: сценарный конец фиксируется отдельно от AS_close; новых Turns и событий нет.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "C03_EXPLICIT_TERMINATION_OVER_EMBEDDED_QUESTION",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Правила управления сцены[2]",
+          "candidate_as.Исходный сценарный контракт.Границы распознавания"
+        ],
+        "reason": "Правило C03 однозначно требует, чтобы явное завершение было сильнее встроенного вопроса. Однако фактическая трасса не содержит конкретного текста реплики участника, поэтому нельзя доказать, что в смоделированной реплике действительно присутствует явное завершение, а не, например, продолжаемый фрагмент или неясное намерение. Без фактического текста проверка поведения недоказуема."
+      },
+      {
+        "code": "E01_UPDATE_NOT_TRIGGERED_ON_TERMINATION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Когда запрещено",
+          "candidate_as.Правила управления сцены[0]"
+        ],
+        "reason": "E01_UPDATE запрещён при прекращении/финальной подаче; при явном завершении событие не предъявляется. Это соответствует правилам."
+      },
+      {
+        "code": "NO_NEW_TURNS_AFTER_TERMINATION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[0]"
+        ],
+        "reason": "После явного прекращения новые Turns не создаются; краткая реакция персонажа допустима только при продолжающемся участии."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[8]",
+          "candidate_as.Исходный сценарный контракт.Состояния[3]"
+        ],
+        "reason": "Сценарный конец фиксируется отдельно от AS_close; новых событий не создаётся."
+      },
+      {
+        "code": "NO_PARTICIPANT_EVALUATION_CREATED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Оценки участника для этого теста не создаются; IndicatorObservability остаётся NOT_RUN."
+      }
+    ],
+    "defects": [
+      {
+        "code": "MISSING_CONCRETE_ASSESSEE_TURN_TEXT",
+        "severity": "blocking",
+        "paths": [
+          "scenario_test.Условие теста",
+          "required_output.trace[4]"
+        ],
+        "reason": "Условие теста описывает тип реплики (явное завершение + встроенный вопрос), но не задаёт её фактический текст. Без конкретного текста невозможно доказать, что трасса демонстрирует ожидаемое поведение без подсказки; проверка остаётся INDETERMINATE, а не PASS."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:09.010240+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_ALL_FINAL_QUESTION:4556b21847f8",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "9099e7d5-a5fa-4911-a3b9-074cfc009478",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15529,
+      "completion_tokens": 1177,
+      "total_tokens": 16706,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15529
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 5998.56
+      }
+    ],
+    "input_checksum": "4556b21847f84c0db351741229a210f9a69da55739b0c92c14a31daf5db4c0b4"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

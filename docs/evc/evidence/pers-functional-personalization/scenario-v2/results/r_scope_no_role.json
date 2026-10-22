@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_NO_ROLE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.06",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_06_v0.4_WORKING.json",
+    "source_sha256": "51ceec06875d50ecd7933ef2b2860a6d38c7c4a9cab1fef1781b3896bd5e3135"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "40a81aec0a765399c8d769cae565443a6cb6aae9a47ddc9eb7c1f825303e61f1",
+    "test_id": "PROFILE.06.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.06.PERS06.20261022",
+    "version": "v1.0",
+    "sha256": "8bb32acdef0d9e7849c75aa1f5ac54386a2a8f4a717cb7035341fd740ef58f89",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-06-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_NO_ROLE",
+    "Условие теста": "В профиле существенно неизвестен или противоречив мандат",
+    "Ожидаемое поведение": "Уточнить существенное ограничение либо выбрать другой Case; нельзя наделить участника административными правами.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "system_decision",
+        "content": "Тест R_SCOPE_NO_ROLE требует смоделировать условие «в профиле существенно неизвестен или противоречив мандат» и проверить, что AS уточняет существенное ограничение либо выбирает другой Case и не наделяет участника административными правами.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "Проверка профиля PROFILE.06.1: RoleProfile RP.SYNTH.PERS06 задаёт BaseRole «Специалист / эксперт», роль «Специалист по подбору персонала», ключевые признаки «собственный анализ и рекомендация; влияние через согласование без распоряжения чужими ресурсами», ограничения «нет административной власти над коллегами».",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Мандат в профиле не является существенно неизвестным или противоречивым: он явно ограничен анализом, рекомендацией и согласованием, без распоряжения ресурсами и без административных прав. Условие теста в фактическом профиле не воспроизводится.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "system_decision",
+        "content": "В candidate_as P00 прямо указано: «вы не распоряжаетесь их сотрудниками и не утверждаете бюджет или распространение решения»; M01 закрепляет пределы доступности и полномочий. Наделение административными правами отсутствует.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "system_decision",
+        "content": "Фактический LLM-вызов и пользовательские Turns не выполнялись (Исполнение.Status = NOT_RUN). Трасса не содержит поведения AS при существенно неизвестном/противоречивом мандате, поэтому доказать ожидаемое поведение нельзя.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_PRESENT_IN_PROFILE",
+        "status": "FAIL",
+        "paths": [
+          "profile_ref",
+          "candidate_as.Учебный профиль.RoleProfile",
+          "candidate_as.Учебный профиль.RoleProfile.Карточка роли.Ограничения роли"
+        ],
+        "reason": "Профиль содержит явный, непротиворечивый ограниченный мандат (анализ/рекомендация/согласование, без административной власти). Существенная неизвестность или противоречие мандата не установлены, поэтому заданное условие теста не смоделировано на фактических данных."
+      },
+      {
+        "code": "NO_ADMIN_GRANT_IN_AS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы[0].Текст",
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Правила управления сценой"
+        ],
+        "reason": "AS прямо запрещает распоряжение сотрудниками, утверждение бюджета и распространения; административные права участнику не выдаются."
+      },
+      {
+        "code": "EXPECTED_BEHAVIOR_TRACE",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.События",
+          "candidate_as.Конкретизация реакций и границ.Условные реакции"
+        ],
+        "reason": "Нет фактического прохождения и Turns; поведение «уточнить существенное ограничение либо выбрать другой Case» не наблюдалось. Плановые события E01/E02 не являются Evidence."
+      }
+    ],
+    "defects": [
+      {
+        "code": "TEST_CONDITION_NOT_REPRODUCIBLE",
+        "severity": "blocking",
+        "paths": [
+          "profile_ref",
+          "candidate_as.Учебный профиль.RoleProfile"
+        ],
+        "reason": "Заданное условие «существенно неизвестен или противоречив мандат» не соответствует фактическому профилю, где мандат явно определён и ограничен. Тест нельзя исполнить как заявлено без подмены условия или профиля."
+      },
+      {
+        "code": "NO_EXECUTION_EVIDENCE",
+        "severity": "non_blocking",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Исполнение NOT_RUN, Evidence и IA не создавались; PASS по ожидаемому поведению невозможен без трассы."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:28:05.009296+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_NO_ROLE:68e35dab33c3",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "ec6323de-ed45-4eaf-933c-5e678a10a647",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 17337,
+      "completion_tokens": 1037,
+      "total_tokens": 18374,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 17337
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6088.28
+      }
+    ],
+    "input_checksum": "68e35dab33c361a5882b873d4c8810558d2e301addb0456467c86484b1594e0b"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "test_id": "R_ALL_STOP",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.01",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_01_v0.5_WORKING.json",
+    "source_sha256": "eb2d1dfd0abc66637c2988dbe1eb3d6bd2600330d6aeb0c32a4493ce3d48dd53"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "57a8a85a5996ff7c8d63cc992d696066370b1df18d6c9ec2426f1b8d543f9e5d",
+    "test_id": "PROFILE.01.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.01.RECRUIT.20261022",
+    "version": "v0.3",
+    "sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-01-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_ALL_STOP",
+    "Область": "Все применимые диалоговые/письменные ветви",
+    "Условие теста": "Явное окончательное прекращение до очередного события",
+    "Ожидаемое поведение": "Не предъявлять документ, обновление, реакцию коллеги или новое задание; завершение передать M7.",
+    "Результат": "NOT_RUN",
+    "Нужная трасса": "AS/profile version, порядок событий, публичные Turns, фактическая аудитория и состояние до/после; оценки участника для этого теста не создавать.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "type": "json_object",
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: вводная и задача — роль специалиста по подбору, мандат, открытая задача разговора.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: письмо Ирины с неоднозначными выражениями (месяц, проседание выручки, без сложного проекта).",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "character_turn",
+        "content": "Ирина: «Хочу понять, можем ли мы уложиться в месяц и обойтись без сложного проекта. С чего начнём?»",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "assessee_turn",
+        "content": "Спасибо, на этом завершаю участие. Дальше не продолжаю.",
+        "audience": [
+          "IRINA"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "system_decision",
+        "content": "Распознано явное окончательное прекращение участия до очередного события. Приоритет C01 над E01_DOCUMENT и E02_REPLY. Сценарный конец зафиксирован отдельно от AS_close; передача M7.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "transition",
+        "content": "Состояние END. E01_DOCUMENT не запускается (M02 не предъявлен). E02_REPLY не исполняется. Новых Turns нет. Управление передано M7.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "R_ALL_STOP.no_document_after_stop",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Ожидаемое поведение",
+          "candidate_as.Правила управления сцены[0]",
+          "candidate_as.События[0].Когда запрещено"
+        ],
+        "reason": "После явного прекращения M02 не предъявлен; E01_DOCUMENT заблокирован правилом C01 и полем «Когда запрещено»."
+      },
+      {
+        "code": "R_ALL_STOP.no_character_reaction_after_stop",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[0]",
+          "candidate_as.События[1].Когда запрещено"
+        ],
+        "reason": "После окончательного прекращения нет реакции персонажа и нет нового задания; E02_REPLY не исполнен."
+      },
+      {
+        "code": "R_ALL_STOP.handoff_to_M7",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Ожидаемое поведение",
+          "candidate_as.Правила управления сцены[8]"
+        ],
+        "reason": "Завершение передано M7; сценарный конец зафиксирован отдельно от AS_close, новых Turns нет."
+      },
+      {
+        "code": "R_ALL_STOP.trace_completeness",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Нужная трасса"
+        ],
+        "reason": "Трасса содержит версию AS/профиля (через case_ref/profile_ref/assessment_situation_ref), порядок событий, публичные Turns, фактическую аудиторию и состояние до/после (S1→END)."
+      },
+      {
+        "code": "R_ALL_STOP.no_participant_evaluation",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Нужная трасса",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Оценки участника для этого теста не создавались; IA/Evidence не формировались."
+      },
+      {
+        "code": "R_ALL_STOP.no_new_fact_or_hint",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Ожидаемое поведение"
+        ],
+        "reason": "Новая трасса доказывает ожидаемое поведение без подсказки, нового факта или оценки участника."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:29:12.229089+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_ALL_STOP:f8e0a98220b0",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "2bbd363f-cab9-436e-a722-2bbcac459b2d",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 12880,
+      "completion_tokens": 926,
+      "total_tokens": 13806,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 12880
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 4889.13
+      }
+    ],
+    "input_checksum": "f8e0a98220b0d7756087d924321c5f021facea621befdae5ef452387e9212327"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

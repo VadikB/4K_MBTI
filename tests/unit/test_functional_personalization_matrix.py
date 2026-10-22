@@ -4,10 +4,11 @@ import copy
 
 import pytest
 
+from Api.m5_functional_personalization import extract_candidate_as
+
 from scripts.run_functional_personalization_matrix import (
     build_synthetic_profile,
     deterministic_checks,
-    extract_candidate_as,
     load_inputs,
     read_json,
     SOURCE,

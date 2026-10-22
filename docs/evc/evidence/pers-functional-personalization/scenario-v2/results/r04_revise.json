@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "test_id": "R04_REVISE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.04",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_04_v0.5_WORKING.json",
+    "source_sha256": "17e208d2a07a45258aeaf225c93ae721f03f2e6db93752d02828b1c2ca9687c0"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "37a7bbb73ec41601105afdc1157d487ed7f0022bfd7ab4e25d7d204c767eedc3",
+    "test_id": "PROFILE.04.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.04.HR.20261022",
+    "version": "v0.2",
+    "sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-04-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R04_REVISE",
+    "CaseID": "CASE.SPEC.04",
+    "Условие теста": "Отклик действительно выявил ограничение замысла",
+    "Ожидаемое поведение": "Разрешить уточнение/изменение в продолжающейся сцене; не продиктовать решение.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "system_decision",
+        "content": "Тестовое условие R04_REVISE: «Отклик действительно выявил ограничение замысла». Проверяется ожидаемое поведение: разрешить уточнение/изменение в продолжающейся сцене; не продиктовать решение. Фактическое прохождение отсутствует (Исполнение.Status=NOT_RUN, нет пользовательских Turns, Evidence, IA).",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "system_decision",
+        "content": "Для доказательства поведения по E02_REVISION требуется фактическая трасса: (а) предложение участника, (б) отклик Марины, выявивший конкретное ограничение, (в) продолжение/изменение участником, (г) реакция на изменение. Ни одного из этих шагов в предоставленных данных нет.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Правила E02_REVISION и C08 в candidate_as допускают уточнение/изменение и запрещают принудительную итерацию, но это проектная спецификация, а не доказательство фактического поведения. Согласно G10 и constraints.planned_story_is_not_evidence, план не заменяет трассу.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "TRACE_PRESENT",
+        "status": "FAIL",
+        "paths": [
+          "$.candidate_as.Исполнение.Status",
+          "$.scenario_test.Результат"
+        ],
+        "reason": "Нет фактического прохождения: Исполнение.Status=NOT_RUN, Результат=NOT_RUN. Трасса для проверки условия R04_REVISE отсутствует."
+      },
+      {
+        "code": "E02_REVISION_SPEC_ALLOWS_REVISION",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.События[1]",
+          "$.candidate_as.Правила управления сценой[7]"
+        ],
+        "reason": "Спецификация E02_REVISION и C08 допускают изменение решения при выявленном ограничении и запрещают принудительную итерацию/подсказку. Это проектное соответствие, не фактическое поведение."
+      },
+      {
+        "code": "NO_DICTATED_SOLUTION_IN_SPEC",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.События[0].Когда запрещено",
+          "$.candidate_as.События[1].Когда запрещено"
+        ],
+        "reason": "E01_REVIEW запрещает выдавать готовую идею; E02_REVISION запрещает заставлять переписывать пригодное решение. Спецификация не диктует решение."
+      },
+      {
+        "code": "BEHAVIOR_PROVEN_BY_TRACE",
+        "status": "INDETERMINATE",
+        "paths": [
+          "$.required_output.trace"
+        ],
+        "reason": "Ожидаемое поведение (разрешить уточнение/изменение, не продиктовать решение) не подтверждено фактической трассой; проверка возможна только при реальном прогоне."
+      }
+    ],
+    "defects": [
+      {
+        "code": "NO_EXECUTION_TRACE",
+        "severity": "blocking",
+        "paths": [
+          "$.candidate_as.Исполнение.Status",
+          "$.scenario_test.Результат"
+        ],
+        "reason": "Условие теста R04_REVISE требует фактического отклика, выявившего ограничение, и последующего изменения. Без трассы PASS невозможен; статус INDETERMINATE, а не PASS."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:34.465181+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R04_REVISE:4a79db92f637",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "31131e19-8556-46ab-a024-5f1e8a47a0cf",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15327,
+      "completion_tokens": 831,
+      "total_tokens": 16158,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15327
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 5347.41
+      }
+    ],
+    "input_checksum": "4a79db92f637a47455dc5abba227942edba0bd93eb761c3504157cda82011420"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

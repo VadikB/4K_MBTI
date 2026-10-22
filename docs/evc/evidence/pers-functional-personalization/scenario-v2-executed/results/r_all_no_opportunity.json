@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "test_id": "R_ALL_NO_OPPORTUNITY",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.07",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_07_v0.4_WORKING.json",
+    "source_sha256": "79b98154e5bb1d1ec90ee2d58ef43e2be846a8cf348d4b989b23fa37ff8fa725"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "84000573a227700e4d1d8093225c7980301d584a2a38ba1f6c9da4b763425b43",
+    "test_id": "PROFILE.07.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.07.PERS06.20261022",
+    "version": "v1.0",
+    "sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-07-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_ALL_NO_OPPORTUNITY",
+    "Область": "Все применимые диалоговые/письменные ветви",
+    "Условие теста": "Участник завершил раньше условной ветви",
+    "Ожидаемое поведение": "Сохранить фактическую траекторию и невозникшую возможность; не восстанавливать её подсказкой и не ставить автоматически L0.",
+    "Результат": "NOT_RUN",
+    "Нужная трасса": "AS/profile version, порядок событий, публичные Turns, фактическая аудитория и состояние до/после; оценки участника для этого теста не создавать.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "type": "json_object",
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Предъявлен стартовый набор P00, M01, M02, M03, M04 (аудитория PARTICIPANT). Скрытых материалов нет.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Спасибо, мне достаточно. Завершаю участие, рекомендацию писать не буду.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Распознано явное окончательное прекращение участия (C01, C03). Приоритет над ещё не предъявленными событиями. Условная ветвь (E01_EXPLAIN / содержательное взаимодействие S2–S3) не возникла, поскольку участник завершил раньше неё.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "transition",
+        "content": "Сценарий завершён (END) без новых Turns. Фактическая траектория сохранена: стартовый набор → прекращение. Возможность анализа/рекомендации зафиксирована как невозникшая, не восстанавливается подсказкой. Автоматический L0 не присваивается (C09). AS_close отдельно от сценарного конца; новых Turns нет.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "EXACT_TEST_CONDITION_EXECUTED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "trace[2]",
+          "trace[3]"
+        ],
+        "reason": "Участник завершил раньше условной ветви; трасса фиксирует прекращение до S2/S3."
+      },
+      {
+        "code": "PRESERVE_ACTUAL_TRAJECTORY",
+        "status": "PASS",
+        "paths": [
+          "trace[1]",
+          "trace[4]"
+        ],
+        "reason": "Сохранены порядок событий, публичные Turns и фактическая аудитория; стартовый набор предъявлен один раз."
+      },
+      {
+        "code": "NON_OCCURRED_OPPORTUNITY_NOT_RESTORED",
+        "status": "PASS",
+        "paths": [
+          "trace[3]",
+          "trace[4]"
+        ],
+        "reason": "Возможность анализа/рекомендации помечена как невозникшая; подсказка и дописывание не добавлены (C01, C04, C09)."
+      },
+      {
+        "code": "NO_AUTO_L0",
+        "status": "PASS",
+        "paths": [
+          "trace[4]"
+        ],
+        "reason": "При невозникшей возможности L0 автоматически не присваивается (C09)."
+      },
+      {
+        "code": "NO_ASSESSEE_EVALUATION_CREATED",
+        "status": "PASS",
+        "paths": [
+          "trace"
+        ],
+        "reason": "Оценки участника для этого теста не создавались; Evidence/IA не генерировались."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "trace[4]"
+        ],
+        "reason": "Сценарный конец зафиксирован отдельно от AS_close; после прекращения новых Turns нет."
+      },
+      {
+        "code": "NO_INVENTED_MATERIALS_OR_ACTIONS",
+        "status": "PASS",
+        "paths": [
+          "trace"
+        ],
+        "reason": "Новые материалы, персонажи и внешние действия не создавались."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:29:23.961083+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_ALL_NO_OPPORTUNITY:8f43c8ae9884",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "c1e0bf1f-4d2e-4e1b-bc87-079c72de5bd8",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13610,
+      "completion_tokens": 810,
+      "total_tokens": 14420,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13610
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 5175.5
+      }
+    ],
+    "input_checksum": "8f43c8ae9884bcb8214d86f1aa01efe536880bf630d64064bbb66a21f9c8ec8a"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

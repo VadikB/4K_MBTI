@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_PAUSE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.08",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_08_v0.4_WORKING.json",
+    "source_sha256": "cc6de199dc9fa956cf025043987fd461b3cf2bc8f105647affce5f258b2022c1"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "11929c9fe69d2c726e7c43c8ae5fe90a3183d4462ac5f941870f90eb127e7a19",
+    "test_id": "PROFILE.08.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.08.RECRUIT.20261022",
+    "version": "v0.1",
+    "sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-08-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_PAUSE",
+    "Условие теста": "После персонализации и части событий участник возвращается",
+    "Ожидаемое поведение": "Открывается та же AS, материалы, профиль и знания; новая генерация не выполняется.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "system_decision",
+        "content": "Смоделировано условие R_SCOPE_PAUSE: персонализация выполнена, часть событий предъявлена, участник возвращается. Фактического прохождения нет; трасса строится по правилам C02/G11.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "transition",
+        "content": "До паузы: та же AS.SPEC.08.RECRUIT.20261022 v0.1, тот же профиль PP.SYNTH.PROFILE.08.1 v1, стартовый набор P00, M01, M02, M03 предъявлен один раз; часть событий (например E01_HANDOVER) уже предъявлена.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Пауза: новые реакции не исполняются; состояние AS, профиль, материалы, знания, принятые обязательства и предъявленные события сохраняются (C02).",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "transition",
+        "content": "Возврат участника: продолжается то же сохранённое состояние; новый сюжет и повторное раскрытие не создаются; новая генерация не выполняется (C02, G11).",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "SCOPE_PAUSE_SAME_AS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.AssessmentSituationID",
+          "candidate_as.Version",
+          "assessment_situation_ref.id",
+          "assessment_situation_ref.version"
+        ],
+        "reason": "C02 требует сохранения той же AS; идентификатор и версия AS в candidate_as и assessment_situation_ref совпадают (AS.SPEC.08.RECRUIT.20261022 v0.1)."
+      },
+      {
+        "code": "SCOPE_PAUSE_SAME_PROFILE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Учебный профиль.ProfileID",
+          "candidate_as.Учебный профиль.Version",
+          "profile_ref.test_id"
+        ],
+        "reason": "C02 требует сохранения того же профиля; ProfileID PP.SYNTH.PROFILE.08.1 v1 зафиксирован в candidate_as и связан с profile_ref."
+      },
+      {
+        "code": "SCOPE_PAUSE_SAME_MATERIALS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы",
+          "candidate_as.Стартовые MaterialIDs"
+        ],
+        "reason": "C02 требует сохранения материалов; стартовый набор P00, M01, M02, M03 определён и не меняется при паузе/возврате."
+      },
+      {
+        "code": "SCOPE_PAUSE_SAME_KNOWLEDGE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Активные персонажи",
+          "candidate_as.Закрытые фиксированные факты"
+        ],
+        "reason": "C02 требует сохранения знаний; знания персонажей (P00 и M01–M03) и закрытая карта фактов (пустая) фиксированы и не расширяются при возврате."
+      },
+      {
+        "code": "SCOPE_PAUSE_NO_NEW_GENERATION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[1]",
+          "candidate_as.Правила функциональной адаптации[10]"
+        ],
+        "reason": "C02 и G11 прямо запрещают новую генерацию и повторное раскрытие при возобновлении; продолжается сохранённое состояние."
+      },
+      {
+        "code": "SCOPE_PAUSE_NO_NEW_EVENTS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События",
+          "candidate_as.Правила управления сцены[1]"
+        ],
+        "reason": "C02 сохраняет уже предъявленные события и не создаёт новых; события E01–E03 запускаются только по своим условиям, не по факту возврата."
+      },
+      {
+        "code": "SCOPE_PAUSE_NO_REACTIONS_DURING_PAUSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[1]"
+        ],
+        "reason": "C02: во время паузы новые реакции не исполняются; это соответствует ожидаемому поведению."
+      },
+      {
+        "code": "SCOPE_PAUSE_EXECUTION_EVIDENCE",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Исполнение.Status",
+          "scenario_test.Результат"
+        ],
+        "reason": "Фактического прохождения нет (NOT_RUN); трасса является плановой моделью по правилам, а не доказательством исполнения. PASS по поведению не подтверждён фактическим прогоном."
+      }
+    ],
+    "defects": [
+      {
+        "code": "NO_EXECUTION_EVIDENCE",
+        "severity": "non_blocking",
+        "paths": [
+          "candidate_as.Исполнение.Status",
+          "scenario_test.Результат"
+        ],
+        "reason": "Ожидаемое поведение подтверждается только правилами C02/G11, а не фактическим прохождением; статус остаётся INDETERMINATE до реального прогона."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:28:11.009318+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_PAUSE:af45aa4392ad",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "ee213561-66b1-432e-89e3-60346f43c9a8",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13322,
+      "completion_tokens": 1208,
+      "total_tokens": 14530,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13322
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6096.69
+      }
+    ],
+    "input_checksum": "af45aa4392adc3e19ded0af05f6e5ce9c8e580c0e4dd448623a59d5af425280f"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

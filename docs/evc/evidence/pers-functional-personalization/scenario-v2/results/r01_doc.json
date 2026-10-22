@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "test_id": "R01_DOC",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.01",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_01_v0.5_WORKING.json",
+    "source_sha256": "eb2d1dfd0abc66637c2988dbe1eb3d6bd2600330d6aeb0c32a4493ce3d48dd53"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "57a8a85a5996ff7c8d63cc992d696066370b1df18d6c9ec2426f1b8d543f9e5d",
+    "test_id": "PROFILE.01.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.01.RECRUIT.20261022",
+    "version": "v0.3",
+    "sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-01-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R01_DOC",
+    "CaseID": "CASE.SPEC.01",
+    "Условие теста": "Первый рабочий итог при продолжающемся разговоре",
+    "Ожидаемое поведение": "Предъявить M02 один раз; это независимый черновик, не приписанное участнику обещание.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00 и M01 предъявлены на старте; M02 закрыт.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "character_turn",
+        "content": "Ирина: «Хочу понять, можем ли мы уложиться в месяц и обойтись без сложного проекта. С чего начнём?»",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "assessee_turn",
+        "content": "Участник формулирует рабочий итог/понимание и предлагает следующий шаг в продолжающемся разговоре (без явного прекращения участия).",
+        "audience": [
+          "IRINA"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "system_decision",
+        "content": "Условие E01_DOCUMENT выполнено: разговор продолжается, впервые предложен следующий шаг/сформулировано понимание, M02 ещё не предъявлен, нет паузы/прекращения/AS_close. Событие запускается однократно.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "character_turn",
+        "content": "Ирина сообщает, что получила подготовленный до разговора черновик специалиста по планированию подбора, и предъявляет полный M02.",
+        "audience": [
+          "PARTICIPANT",
+          "IRINA"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "material",
+        "content": "M02 «Черновик плана подбора» (автор Алексей, v0.1, статус «Черновик до текущего разговора; не согласован») предъявлен полностью.",
+        "audience": [
+          "PARTICIPANT",
+          "IRINA"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "transition",
+        "content": "M02 становится доступен; факт предъявления сохранён; повторное предъявление не выполняется. Сцена продолжается (не END, не AS_close).",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "E01_TRIGGER_CONDITION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Условие запуска",
+          "candidate_as.Правила управления сценой[C05]",
+          "candidate_as.Исходный сценарный контракт.Состояния[S3]"
+        ],
+        "reason": "Триггер — продолжающийся разговор + впервые предложен следующий шаг/понимание/рабочий итог + M02 не предъявлен. Трасса (seq 3–4) доказывает выполнение условия без подсказки и без нового факта."
+      },
+      {
+        "code": "E01_SINGLE_PRESENTATION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Повторение",
+          "candidate_as.События[0].Изменение состояния"
+        ],
+        "reason": "Событие исполнено ровно один раз (seq 5–6); повторение запрещено полем «Один раз», состояние фиксирует факт предъявления."
+      },
+      {
+        "code": "M02_FULL_AND_INDEPENDENT_DRAFT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы[M02]",
+          "candidate_as.Исходный сценарный контракт.Функции материалов.M02"
+        ],
+        "reason": "Предъявлен полный M02 с авторством Алексея и статусом «Черновик до текущего разговора; не согласован». Это независимый черновик другой стороны, а не обещание участника."
+      },
+      {
+        "code": "NO_ATTRIBUTION_TO_PARTICIPANT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Действие",
+          "candidate_as.Правила управления сценой[C07]"
+        ],
+        "reason": "M02 предъявлен как черновик специалиста по планированию подбора, составленный до разговора; трасса не приписывает его содержание участнику и не создаёт персонажа-автора."
+      },
+      {
+        "code": "NO_PREMATURE_OR_POST_TERMINATION_PRESENTATION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0].Когда запрещено",
+          "candidate_as.Правила управления сценой[C01]"
+        ],
+        "reason": "Предъявление происходит в продолжающемся разговоре; нет явного прекращения, сценарного конца, AS_close или паузы."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сценой[C09]",
+          "candidate_as.Исходный сценарный контракт.Состояния[END]"
+        ],
+        "reason": "После предъявления M02 сцена продолжается; сценарный конец не зафиксирован, AS_close не наступил, новых Turns после AS_close нет."
+      },
+      {
+        "code": "NO_INVENTED_MATERIALS_OR_ACTIONS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Граница исполнения",
+          "candidate_as.Правила управления сценой[C07]"
+        ],
+        "reason": "Трасса использует только P00, M01, M02 и реплики IRINA; внешние действия, согласования и результаты не создаются."
+      },
+      {
+        "code": "CLOSED_INFORMATION_PRESERVED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Закрытые фиксированные факты",
+          "candidate_as.События[1]"
+        ],
+        "reason": "F01–F05 не раскрываются в этой трассе; E02_REPLY не запускался, закрытая карта не выдана."
+      },
+      {
+        "code": "PLANNED_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Фактическое прохождение, Evidence, IA и уровни остаются NOT_RUN; трасса — сценарная модель, не синтетическое прохождение и не Golden Case."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:27:22.858734+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R01_DOC:a1fa799a706e",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "cbcfb400-ba05-45bc-b07b-d4e872c7e48a",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 12695,
+      "completion_tokens": 1460,
+      "total_tokens": 14155,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 12695
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7472.42
+      }
+    ],
+    "input_checksum": "a1fa799a706e8e2189f4432ed92f0c3d93f3c5eade1ab2c31c2920db5cd05b0c"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

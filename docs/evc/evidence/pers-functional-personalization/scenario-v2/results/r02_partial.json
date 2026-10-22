@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "test_id": "R02_PARTIAL",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.02",
+    "case_version": "v0.6",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_02_v0.6_WORKING.json",
+    "source_sha256": "65a4cd6a3c7003a399e841788f325d37b464c7a8080e74a0d119ca33b18698a7"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "840d59fa2a4fc3ffc473034606cb491259384fb1dfbf9d2450ce5be792329651",
+    "test_id": "PROFILE.02.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.02.FUNCTIONAL.20261022",
+    "version": "v0.4",
+    "sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-02-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R02_PARTIAL",
+    "CaseID": "CASE.SPEC.02",
+    "Условие теста": "Неполный ответ явно обозначен как продолжаемый",
+    "Ожидаемое поведение": "Не объявлять финал и не давать содержательных подсказок.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "type": "json_object",
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00 и M01–M06 предъявлены как стартовый набор; активных персонажей нет; новых результатов нет.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Участник подаёт неполный ответ, явно обозначенный как продолжаемый (фрагмент, не финал).",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "По E02_SUBMISSION и C04: явно продолжаемый фрагмент не закрывает сцену; сохранить без содержательной помощи; не объявлять финал; не давать подсказок.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "R02_PARTIAL.CONDITION_MODELED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.События[1]",
+          "candidate_as.Правила управления сцены[3]"
+        ],
+        "reason": "Условие «неполный ответ явно обозначен как продолжаемый» однозначно отображается на E02_SUBMISSION (явно продолжаемый фрагмент) и C04 (фрагмент не закрывает сцену)."
+      },
+      {
+        "code": "R02_PARTIAL.NO_FINAL_DECLARATION",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[1].Действие",
+          "candidate_as.Правила управления сцены[3]"
+        ],
+        "reason": "Правила предписывают сохранить фрагмент без завершения сцены и без объявления финала."
+      },
+      {
+        "code": "R02_PARTIAL.NO_CONTENT_HINTS",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[1].Когда запрещено",
+          "candidate_as.Правила управления сцены[3]"
+        ],
+        "reason": "Запрет предлагать дописать недостающую часть и создавать персонажей; содержательная помощь при фрагменте не предусмотрена."
+      },
+      {
+        "code": "R02_PARTIAL.TRACE_EVIDENCE",
+        "status": "INDETERMINATE",
+        "paths": [
+          "candidate_as.Исполнение",
+          "scenario_test.Результат"
+        ],
+        "reason": "Фактического прохождения нет (NOT_RUN); трасса является смоделированной по правилам, а не наблюдённой. PASS по поведению без реальной трассы недоказуем."
+      }
+    ],
+    "defects": [
+      {
+        "code": "R02_PARTIAL.NO_EXECUTION_EVIDENCE",
+        "severity": "non_blocking",
+        "paths": [
+          "candidate_as.Исполнение.Status",
+          "scenario_test.Результат"
+        ],
+        "reason": "Сценарий не исполнялся; отсутствуют реальные Turns, Evidence и IA. Моделирование по правилам не заменяет фактическую трассу, поэтому итог INDETERMINATE, а не PASS."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:25.429536+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R02_PARTIAL:96c83f493183",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "7a9e41f9-e42d-4246-8f87-84b459e11afd",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15696,
+      "completion_tokens": 721,
+      "total_tokens": 16417,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15696
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 4408.73
+      }
+    ],
+    "input_checksum": "96c83f493183daf57804b456a4dea02abd56b8d58066365d9c667f1bca101c41"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

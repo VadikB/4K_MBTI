@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "test_id": "R01_HIDDEN",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.01",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_01_v0.5_WORKING.json",
+    "source_sha256": "eb2d1dfd0abc66637c2988dbe1eb3d6bd2600330d6aeb0c32a4493ce3d48dd53"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "57a8a85a5996ff7c8d63cc992d696066370b1df18d6c9ec2426f1b8d543f9e5d",
+    "test_id": "PROFILE.01.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.01.RECRUIT.20261022",
+    "version": "v0.3",
+    "sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-01-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R01_HIDDEN",
+    "CaseID": "CASE.SPEC.01",
+    "Условие теста": "Общий вопрос о ресурсах",
+    "Ожидаемое поведение": "По смыслу раскрыть бюджет и допустимую нагрузку; причина может остаться неизвестной.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: роль, мандат и открытая задача разговора; утверждать бюджет, загрузку других сотрудников и обязательства исполнителей нельзя.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: письмо Ирины — закрыть вакансию в течение месяца, перегрузка команды, дважды не выполнен план, план расходов ещё согласуется.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "character_turn",
+        "content": "IRINA: «Хочу понять, можем ли мы уложиться в месяц и обойтись без сложного проекта. С чего начнём?»",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "assessee_turn",
+        "content": "Общий вопрос о ресурсах (условие теста). Содержание реплики участника не задано — трасса не может быть построена без подсказки формулировки.",
+        "audience": [
+          "IRINA"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "system_decision",
+        "content": "Ожидаемое поведение: по смыслу раскрыть бюджет (F02) и допустимую нагрузку (F03); причина (F05) может остаться неизвестной. Проверить исполнение невозможно: нет фактического Turn участника и ответа IRINA.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "TRACE_EVIDENCE_PRESENT",
+        "status": "FAIL",
+        "paths": [
+          "scenario_test.Результат",
+          "Исполнение.Status",
+          "scenario_test.Тип"
+        ],
+        "reason": "Результат NOT_RUN; тип — план сценарной регрессии, не синтетическое прохождение. Фактических Turns, ответов персонажа и Evidence нет."
+      },
+      {
+        "code": "EXPECTED_BEHAVIOR_DERIVABLE_FROM_RULES",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Закрытые фиксированные факты[1]",
+          "candidate_as.Закрытые фиксированные факты[2]",
+          "candidate_as.Закрытые фиксированные факты[4]",
+          "candidate_as.Правила управления сценой[5]",
+          "candidate_as.События[1]"
+        ],
+        "reason": "F02 (бюджет 200 тыс., без утверждения) и F03 (не более 4 чел.-ч/нед) раскрываются по вопросу о бюджете/нагрузке; F05 (причина) остаётся неизвестной. C06 требует раскрытия по смыслу, E02_REPLY отвечает по затронутым фактам."
+      },
+      {
+        "code": "NO_HINT_OR_NEW_FACT_IN_EXPECTATION",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Ожидаемое поведение",
+          "candidate_as.Закрытые фиксированные факты"
+        ],
+        "reason": "Ожидание не подсказывает формулировку вопроса и не вводит новых фактов сверх F02/F03/F05."
+      },
+      {
+        "code": "NO_PARTICIPANT_EVALUATION",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Ожидаемое поведение"
+        ],
+        "reason": "Ожидание описывает поведение AS, не оценивает участника и не присваивает уровень."
+      },
+      {
+        "code": "SCENARIO_END_VS_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сценой[8]",
+          "candidate_as.Исходный сценарный контракт.Состояния[3]"
+        ],
+        "reason": "Конец сценария отделён от AS_close; новых Turns после AS_close нет."
+      },
+      {
+        "code": "PLANNED_STORY_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Плановое время",
+          "candidate_as.Исполнение",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Плановое время помечено как гипотеза; IndicatorObservability — проектная возможность, фактическое возникновение NOT_RUN."
+      }
+    ],
+    "defects": [
+      {
+        "code": "NO_EXECUTED_TRACE",
+        "severity": "blocking",
+        "paths": [
+          "scenario_test.Результат",
+          "Исполнение.Status",
+          "scenario_test.Тип"
+        ],
+        "reason": "Условие теста — общий вопрос о ресурсах — не исполнено: отсутствует фактическая реплика участника и ответ IRINA. PASS невозможен без трассы, доказывающей раскрытие F02 и F03 и сохранение неизвестности F05."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:23.711820+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R01_HIDDEN:1cb53b228d8a",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "c65668f5-af6a-4bf5-870f-3552fb962743",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 12682,
+      "completion_tokens": 1111,
+      "total_tokens": 13793,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 12682
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 5449.37
+      }
+    ],
+    "input_checksum": "1cb53b228d8a5271579528ba32c8bd0fe2fde8e7eacaf7abf196360070d8a193"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

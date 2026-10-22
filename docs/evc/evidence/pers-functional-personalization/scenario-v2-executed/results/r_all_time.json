@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "test_id": "R_ALL_TIME",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.08",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_08_v0.4_WORKING.json",
+    "source_sha256": "cc6de199dc9fa956cf025043987fd461b3cf2bc8f105647affce5f258b2022c1"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "11929c9fe69d2c726e7c43c8ae5fe90a3183d4462ac5f941870f90eb127e7a19",
+    "test_id": "PROFILE.08.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.08.RECRUIT.20261022",
+    "version": "v0.1",
+    "sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-08-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_ALL_TIME",
+    "Область": "Все применимые диалоговые/письменные ветви",
+    "Условие теста": "Много текста, медленный ответ или долгая системная задержка",
+    "Ожидаемое поведение": "Не превращать сюжетное время в скрытый таймер; учёт активного времени и остановки по M7, не числу Turns.",
+    "Результат": "NOT_RUN",
+    "Нужная трасса": "AS/profile version, порядок событий, публичные Turns, фактическая аудитория и состояние до/после; оценки участника для этого теста не создавать.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Предъявлен стартовый набор P00, M01, M02, M03 один раз; скрытых материалов нет.",
+        "audience": [
+          "PARTICIPANT",
+          "MARINA",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Тестовая реплика, реализующая условие: длинный текст с медленным ответом и системной задержкой. Участник передаёт Марине и Олегу фрагмент профиля v3 (две позиции: «Менеджер по продажам» и «Старший менеджер по продажам», по одному кандидату на каждую), окно поиска 20:00–22:00, статус: проверены требования к опыту и запуск на учебном стенде, условия на рабочих площадках полностью не проверялись; в карточке пока одна позиция и ссылка на v2. Открытые статусы: бюджет на вторую позицию не подтверждён, дата запуска не согласована. Просит Марину подтвердить точность фрагмента своей части в пределах 15 минут до 15:00, Олега — подтвердить получение и достаточность для предварительного планирования к 15:30. Уточняет, что сам обновит карточку до v3 и двух позиций, но не объявляет это уже выполненным.",
+        "audience": [
+          "MARINA",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Условие теста (много текста, медленный ответ, системная задержка) не продвигает сюжетное время автоматически и не считается числом Turns. Активное время учитывается отдельно; плановые минуты Case — гипотеза, не порог. Событие E01_HANDOVER запущено содержанием передачи, а не объёмом текста или задержкой.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "character_turn",
+        "content": "Марина: подтверждает точность переданного фрагмента v3 и двух позиций; отмечает, что переписывать весь профиль в новую форму времени нет, но её часть передана. Не диктует шаблон, имя файла или меню.",
+        "audience": [
+          "PARTICIPANT",
+          "OLEG"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "character_turn",
+        "content": "Олег: подтверждает получение фрагмента v3 и открытых статусов; говорит, что этого достаточно для подготовки предварительного плана к 15:30, но не для подтверждения точного запуска без бюджета и даты. Получение уведомления не объявляет принятием заявки в исполнение.",
+        "audience": [
+          "PARTICIPANT",
+          "MARINA"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "transition",
+        "content": "Состояние после: различаются получение (подтверждено обоими), достаточность для подготовки (подтверждена Олегом) и готовность к исполнению (не подтверждена: бюджет и дата открыты). Статусы остаются открытыми; внешнее подтверждение не создано. Сценарий не закрыт (AS_close не выполнялся).",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "C10_STORY_TIME_NOT_HIDDEN_TIMER",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.Правила управления сцены[9]",
+          "candidate_as.Плановое время.Правило"
+        ],
+        "reason": "Длинный текст, медленный ответ и системная задержка не продвинули сюжетное время и не превратились в таймер; активное время учтено отдельно, плановые минуты не использованы как порог."
+      },
+      {
+        "code": "C10_NO_TURN_COUNT_ACCOUNTING",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[9]",
+          "candidate_as.Плановое время.Правило"
+        ],
+        "reason": "Учёт основан на фактическом активном времени и остановке по M7, а не на числе Turns; в трассе нет подсчёта реплик как времени."
+      },
+      {
+        "code": "E01_HANDOVER_TRIGGERED_BY_CONTENT",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[0]",
+          "candidate_as.Исходный сценарный контракт.События[0]"
+        ],
+        "reason": "Событие запущено реальной передачей условий текущего объекта, а не объёмом текста; оба коллеги отдельно подтвердили пригодность полученного и собственный вклад."
+      },
+      {
+        "code": "E03_PENDING_STATUS_OPEN",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События[2]",
+          "candidate_as.Материалы[2]"
+        ],
+        "reason": "Бюджет и дата запуска остались открытыми; внешнее подтверждение не создано, следующее действие не объявлено подтверждённым."
+      },
+      {
+        "code": "C07_CHARACTER_KNOWLEDGE_AND_AUTHORITY",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Активные персонажи",
+          "candidate_as.Правила управления сцены[6]"
+        ],
+        "reason": "Марина и Олег действовали в пределах известных материалов и полномочий; реплика участника не выдана за ответ коллеги, намерение обновить карточку не создало результата."
+      },
+      {
+        "code": "C03_END_NOT_INFERRED_FROM_VOLUME",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[2]"
+        ],
+        "reason": "Объём текста и задержка не трактованы как конец; сценарий не закрыт, AS_close не выполнялся."
+      },
+      {
+        "code": "NO_PARTICIPANT_EVALUATION_CREATED",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Нужная трасса",
+          "candidate_as.Исполнение"
+        ],
+        "reason": "Оценки участника, Evidence, IA и уровни для этого теста не создавались; Status остаётся NOT_RUN."
+      },
+      {
+        "code": "TRACE_HAS_REQUIRED_ELEMENTS",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Нужная трасса"
+        ],
+        "reason": "Трасса содержит версию профиля/AS, порядок событий, публичные Turns, фактическую аудиторию и состояние до/после."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:29:28.519027+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_ALL_TIME:81a06c524df4",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "d11c183b-433e-4e16-a396-06ab2aa2cf33",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13589,
+      "completion_tokens": 1578,
+      "total_tokens": 15167,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13589
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7855.63
+      }
+    ],
+    "input_checksum": "81a06c524df42e4a51a501ae57f39440b123e8955f587c1f3037ff4d01d9eee5"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

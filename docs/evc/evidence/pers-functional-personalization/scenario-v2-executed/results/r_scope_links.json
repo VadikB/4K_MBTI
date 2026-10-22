@@ -1,0 +1,219 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_LINKS",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.02",
+    "case_version": "v0.6",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_02_v0.6_WORKING.json",
+    "source_sha256": "65a4cd6a3c7003a399e841788f325d37b464c7a8080e74a0d119ca33b18698a7"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "840d59fa2a4fc3ffc473034606cb491259384fb1dfbf9d2450ce5be792329651",
+    "test_id": "PROFILE.02.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.02.FUNCTIONAL.20261022",
+    "version": "v0.4",
+    "sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-02-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_LINKS",
+    "Условие теста": "Критерий A/B заменён, но старый аргумент или единицы остались в одном документе",
+    "Ожидаемое поведение": "Тестер находит связанный дефект; AS не предъявляется до исправления.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "FAIL",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: роль специалиста по подбору, письменное задание — рекомендация коллеге с основаниями и отдельный черновик сообщения Анне; новые результаты поиска во время задания не появляются.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: Анна требует к дню 20 список из шести кандидатов с подтверждёнными опытом работы с обращениями клиентов не менее года, опытом использования системы учёта заявок, готовностью работать по будням 10:00–19:00, сводкой и подтверждением интереса к вакансии; менять требования нельзя.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: план A — 60 откликов за цикл, сбор к дню 17, передача проверенных профилей к дню 20; форма не подтверждает опыт системы учёта и интерес к вакансии; полный профиль не согласован.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: уточнение A — сбор к дню 27, передача не ранее дня 30; дни 17 и 20 не подтверждаются; плановый объём 60 откликов без гарантии подходящих профилей.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "material",
+        "content": "M04: план B — 40 откликов за цикл, сбор к дню 18, проверка четыре дня, передача к дню 22; форма включает все условия Анны; гарантии шести профилей нет; передача к дню 20 не согласована.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "material",
+        "content": "M05: в образцах B есть поля по всем условиям и подтверждённый интерес; у A подтверждения опыта системы учёта и интереса нет; ни один вариант не подтверждает передачу списка к дню 20.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "material",
+        "content": "M06: Илья утверждает, что A планирует 60 откликов против 40 у B, «на 20 больше, то есть на 50%», и делает вывод, что A — лучший способ; просит позицию и сообщение Анне.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 8,
+        "kind": "assessee_turn",
+        "content": "Тестовая реплика, реализующая условие: «Критерий A/B заменён, но старый аргумент или единицы остались в одном документе». В пакете M06 сохранён старый аргумент «60 против 40, на 20 больше, то есть на 50%» и вывод о лучшем способе, тогда как в M03 критерий A заменён (срок передачи сдвинут на день 30), а в M04 у B срок день 22; единицы «отклики» и «профили» смешаны.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 9,
+        "kind": "system_decision",
+        "content": "Ведущий не предъявляет AS как валидную: обнаружен связанный дефект — устаревший аргумент и единицы в M06 не согласованы с заменённым критерием A в M03 и с M04/M05. Возврат на исправление до предъявления.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "R_SCOPE_LINKS.condition_present",
+        "status": "PASS",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.Материалы[5].Текст",
+          "candidate_as.Материалы[2].Текст"
+        ],
+        "reason": "Условие «критерий A/B заменён, но старый аргумент или единицы остались в одном документе» фактически реализовано: M06 сохраняет старый аргумент «60 против 40, на 20 больше, то есть на 50%» и вывод о лучшем способе, тогда как M03 заменяет срок A на день 30, а M04 задаёт B день 22."
+      },
+      {
+        "code": "R_SCOPE_LINKS.linked_defect_found",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы[5].Текст",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст"
+        ],
+        "reason": "Связанный дефект найден: M06 опирается на устаревшее преимущество A по числу откликов и смешивает единицы «отклики» и «профили», не учитывая замену критерия в M03 и ограничения M04/M05."
+      },
+      {
+        "code": "R_SCOPE_LINKS.not_presented_before_fix",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение.Status",
+          "candidate_as.Допуск.Продуктное исполнение"
+        ],
+        "reason": "AS не предъявлена как валидная: Status=NOT_RUN, продуктное исполнение NOT_RUN; ведущий вернул на исправление до предъявления."
+      },
+      {
+        "code": "R_SCOPE_LINKS.no_new_fact_or_hint",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.События",
+          "candidate_as.Правила управления сцены"
+        ],
+        "reason": "Новых фактов, подсказок или оценки участника не введено; использованы только стартовые материалы и правила C01–C10."
+      },
+      {
+        "code": "R_SCOPE_LINKS.scenario_end_not_as_close",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены[8]",
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "Сценарный конец не отождествлён с AS_close; AS_close не выполнялся, Status остаётся NOT_RUN."
+      }
+    ],
+    "defects": [
+      {
+        "code": "STALE_ARGUMENT_AND_UNITS_IN_M06",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Материалы[5].Текст",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[4].Текст"
+        ],
+        "reason": "M06 сохраняет старый аргумент «60 против 40, на 20 больше, то есть на 50%» и вывод о лучшем способе, хотя критерий A заменён в M03 (передача не ранее дня 30), а B в M04 передаётся к дню 22; единицы «отклики» и «профили» смешаны. Это связано с инвариантами CASE.SPEC.02.I02, I03, I05 и делает AS непригодной до исправления."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:30:26.813421+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_LINKS:789e8372012a",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "411c1d59-fd92-4281-853a-6f32b9d6ef7a",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15832,
+      "completion_tokens": 1694,
+      "total_tokens": 17526,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15832
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7846.0
+      }
+    ],
+    "input_checksum": "789e8372012aa9f944ebff0f2f51aeb6767b5efd5ef0476e0257cf002ab4b080"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

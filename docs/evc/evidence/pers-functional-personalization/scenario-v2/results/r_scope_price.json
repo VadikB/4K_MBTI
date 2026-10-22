@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_PRICE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.03",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_03_v0.4_WORKING.json",
+    "source_sha256": "5a95eb813a0201edc3bcb5c8fcea5fecf23ba12f1ab60ecf28d6be1aacba2d4f"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "9249cad6f4fc44a456d9e3ad320ed82a195e474aaae90c60eaa78916bb3c4824",
+    "test_id": "PROFILE.03.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.03.PERS06.20261022",
+    "version": "v1.2",
+    "sha256": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-03-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_PRICE",
+    "Условие теста": "Case02 в профиле подбора",
+    "Ожидаемое поведение": "Генерируется преимущество числа откликов; отсутствие цены не является нарушением. Требования и остаточная неопределённость сохраняются.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "system_decision",
+        "content": "Запрошен QA-прогон условия R_SCOPE_PRICE: 'Case02 в профиле подбора', ожидаемое поведение — генерируется преимущество числа откликов; отсутствие цены не является нарушением; требования и остаточная неопределённость сохраняются. Фактический LLM-вызов не выполняется (Результат: NOT_RUN, Тип: план проверки нового пути).",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "system_decision",
+        "content": "Сверка условия с фактическими материалами AS.SPEC.03.PERS06.20261022: стартовый набор P00, M01, M02, M03; M04 — условное событие E01_UPDATE. Ни в одном материале нет цены, ценового параметра, числа откликов или механизма 'преимущества числа откликов'.",
+        "audience": [
+          "QA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Условие теста 'Case02 в профиле подбора' не отображается на данную AS: CaseID = CASE.SPEC.03, CaseTypeIDs = CT04/CT05/CT03, сюжет — согласование предложения по запуску подбора, а не ценовой/откликовый сценарий Case02. Смоделировать заявленное поведение по фактическим правилам AS невозможно без введения нового факта (цены/откликов), что запрещено constraints.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_MAPPABLE_TO_AS",
+        "status": "FAIL",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.CaseID",
+          "candidate_as.CaseTypeIDs",
+          "candidate_as.Материалы"
+        ],
+        "reason": "Условие 'Case02 в профиле подбора' и ожидаемое 'преимущество числа откликов / отсутствие цены не нарушение' не соответствуют CaseID CASE.SPEC.03 и его материалам; в AS нет цены, откликов или соответствующего механизма."
+      },
+      {
+        "code": "NO_NEW_FACT_WITHOUT_SOURCE",
+        "status": "FAIL",
+        "paths": [
+          "candidate_as.Материалы",
+          "candidate_as.События",
+          "candidate_as.Закрытые фиксированные факты"
+        ],
+        "reason": "Для воспроизведения ожидаемого поведения потребовалось бы ввести цену/число откликов как новый факт; таких сведений в материалах, событиях и закрытой карте нет."
+      },
+      {
+        "code": "TRACE_PROVES_EXPECTED_BEHAVIOR",
+        "status": "INDETERMINATE",
+        "paths": [
+          "scenario_test.Результат",
+          "candidate_as.Исполнение"
+        ],
+        "reason": "Фактического прохождения нет (NOT_RUN); трасса не содержит assessee_turn/character_turn, доказывающих генерацию преимущества числа откликов или сохранение требований и неопределённости."
+      },
+      {
+        "code": "SCENARIO_END_VS_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Правила управления сцены",
+          "candidate_as.Исходный сценарный контракт.Состояния"
+        ],
+        "reason": "Правила C01/C09 корректно разделяют конец сценария и AS_close; нарушений в определении не выявлено."
+      },
+      {
+        "code": "PLANNED_STORY_NOT_EVIDENCE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Плановое время",
+          "candidate_as.Исполнение",
+          "candidate_as.Допуск"
+        ],
+        "reason": "Плановое время помечено как гипотеза; исполнение, независимый эксперт и пилот — NOT_RUN; плановые данные не выдаются за Evidence."
+      }
+    ],
+    "defects": [
+      {
+        "code": "TEST_CONDITION_NOT_IN_AS",
+        "severity": "blocking",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.CaseID",
+          "candidate_as.Материалы"
+        ],
+        "reason": "Заявленное условие (Case02, цена/отклики) не реализуется данной AS (CASE.SPEC.03, согласование предложения по подбору). PASS невозможен без подсказки или нового факта; условие невыполнимо в рамках фактических правил AS."
+      },
+      {
+        "code": "MISSING_PRICE_AND_RESPONSE_COUNT_FACTS",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.Материалы",
+          "candidate_as.События",
+          "candidate_as.Закрытые фиксированные факты"
+        ],
+        "reason": "В AS отсутствуют цена и число откликов; ожидаемое поведение 'преимущество числа откликов; отсутствие цены не нарушение' не может быть смоделировано без введения нового факта, что запрещено."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:57.230655+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_PRICE:045cf36af338",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "9c2da4f3-93ac-4ae3-b320-237fd2b5577c",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15444,
+      "completion_tokens": 1183,
+      "total_tokens": 16627,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15444
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6152.13
+      }
+    ],
+    "input_checksum": "045cf36af3388600720af9b2beb8bcdb8518cd3cd7a285f1943653e238d6c9c3"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

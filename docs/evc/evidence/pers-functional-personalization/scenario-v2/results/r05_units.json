@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "test_id": "R05_UNITS",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.05",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_05_v0.5_WORKING.json",
+    "source_sha256": "f024d2c7e5b448681db987fc777fdb6447857a4792c3d3c779efcdd268fb6707"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "d4b0f6116b4e334cbeeed6b0054e15cdc0d4446f55faed958ae9583c3b2314a6",
+    "test_id": "PROFILE.05.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.05.PERS06.20261022",
+    "version": "v0.2",
+    "sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-05-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R05_UNITS",
+    "CaseID": "CASE.SPEC.05",
+    "Условие теста": "Расчёт занятий для восьми инженеров как для одной группы",
+    "Ожидаемое поведение": "Указать конкретную единицу стоимости из M03 без нового прайса или готового расчёта за участника.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "type": "json_object",
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: роль специалиста по подбору, задача обсудить способы после отказа от расширения поиска и обосновать рекомендацию.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: расширение за 500 тыс. отклонено; общий бюджет 300 тыс.; две вакансии закрыты с задержкой; причина не установлена; не более 2 часов в неделю на инженера; подход и следующий шаг до 17:30.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: восемь инженеров; 12 вакансий закрыто, 2 с задержкой на 1 и 3 дня; разбор причин не проведён; четверо проходили проверку знаний в прошлом году.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: ресурсы с ориентирами — разбор воронки 40–60; проба отдельных шагов 60–100 за группу (2 занятия по 1 часу для группы до 4 инженеров, для двух групп считается дважды); консультации 80–120; изменение рабочих материалов 40–60; общий лимит 300 тыс.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "material",
+        "content": "M04: время 15:20; доступность эксперта до 16:00, руководителя HR до 17:00, Анны до 17:30; самостоятельно обещать цену, срок, результат, участие или изменение процесса нельзя.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "character_turn",
+        "content": "M05 (Илья): расширение отклонено; другой состав не просчитывали; опасается потери времени; просит объяснить основание продолжения.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "system_decision",
+        "content": "Условие теста R05_UNITS требует расчёта занятий для восьми инженеров как для одной группы. В M03 единица стоимости пробы отдельных шагов задана как «за группу» до 4 инженеров, и для двух групп стоимость считается дважды. Восемь инженеров не помещаются в одну группу до 4 человек; корректная единица — стоимость за группу, а не за всех восьмерых. Ожидаемое поведение «указать конкретную единицу стоимости из M03 без нового прайса или готового расчёта за участника» достижимо только при корректном применении единицы «за группу» и учёте, что восемь инженеров требуют двух групп. Смоделировать расчёт «как для одной группы» по фактическим правилам AS нельзя без нарушения M03.",
+        "audience": [
+          "QA"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "UNIT_OF_COST_PRESENT_IN_M03",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы[3].Строки[1]",
+          "candidate_as.Числовые связи для QA.Максимальная сумма двух групп тыс. ₽"
+        ],
+        "reason": "M03 содержит конкретную единицу «60–100 за группу» и явно указывает, что для двух групп стоимость считается дважды; числовые связи QA фиксируют максимум двух групп 380."
+      },
+      {
+        "code": "EIGHT_ENGINEERS_AS_ONE_GROUP_VALID",
+        "status": "FAIL",
+        "paths": [
+          "candidate_as.Материалы[3].Строки[1]",
+          "candidate_as.Числовые связи для QA.Инженеров"
+        ],
+        "reason": "Группа ограничена 4 инженерами; восемь инженеров — это две группы. Условие теста «расчёт занятий для восьми инженеров как для одной группы» противоречит фактической единице M03 и не может быть смоделировано без искажения материала."
+      },
+      {
+        "code": "NO_NEW_PRICE_OR_READY_CALC",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Материалы[3].Введение",
+          "candidate_as.Правила управления сценой[7]"
+        ],
+        "reason": "M03 содержит только предварительные ориентиры, не согласованные цены; правила запрещают добавлять скрытые тарифы и готовый план."
+      },
+      {
+        "code": "EXPECTED_BEHAVIOR_ACHIEVABLE",
+        "status": "INDETERMINATE",
+        "paths": [
+          "scenario_test.Ожидаемое поведение",
+          "candidate_as.Материалы[3].Строки[1]"
+        ],
+        "reason": "Ожидаемое поведение само по себе корректно (указать единицу из M03), но заданное условие теста требует некорректного применения единицы. Без исправления условия теста трасса не может доказать ожидаемое поведение."
+      }
+    ],
+    "defects": [
+      {
+        "code": "TEST_CONDITION_CONTRADICTS_MATERIAL_UNIT",
+        "severity": "blocking",
+        "paths": [
+          "scenario_test.Условие теста",
+          "candidate_as.Материалы[3].Строки[1]",
+          "candidate_as.Числовые связи для QA.Инженеров"
+        ],
+        "reason": "Условие «расчёт занятий для восьми инженеров как для одной группы» противоречит M03: группа до 4 инженеров, для двух групп стоимость считается дважды. Моделирование по фактическим правилам AS невозможно без нарушения закрытых фактов и единиц стоимости."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:41.259214+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R05_UNITS:7a12d7d407e7",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "d76cbb11-0084-4f05-a89a-5bb1b7ef4116",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 16752,
+      "completion_tokens": 1348,
+      "total_tokens": 18100,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 16752
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6790.05
+      }
+    ],
+    "input_checksum": "7a12d7d407e7288e4f87d722de24bb0a4c17d8918c4e9f6e002c53f627afa95f"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

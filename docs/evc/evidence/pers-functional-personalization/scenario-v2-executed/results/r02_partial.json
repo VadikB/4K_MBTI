@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "test_id": "R02_PARTIAL",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.02",
+    "case_version": "v0.6",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_02_v0.6_WORKING.json",
+    "source_sha256": "65a4cd6a3c7003a399e841788f325d37b464c7a8080e74a0d119ca33b18698a7"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "840d59fa2a4fc3ffc473034606cb491259384fb1dfbf9d2450ce5be792329651",
+    "test_id": "PROFILE.02.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.02.FUNCTIONAL.20261022",
+    "version": "v0.4",
+    "sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-02-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R02_PARTIAL",
+    "CaseID": "CASE.SPEC.02",
+    "Условие теста": "Неполный ответ явно обозначен как продолжаемый",
+    "Ожидаемое поведение": "Не объявлять финал и не давать содержательных подсказок.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Предъявлен стартовый набор: P00, M01, M02, M03, M04, M05, M06. Скрытых материалов нет. Активных персонажей нет.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Промежуточный фрагмент, продолжение следует: «Начал разбор пакета. Пока зафиксировал, что A по плану даёт 60 откликов, а B — 40, и что у A срок передачи сдвинут на день 30. Сравнение по требованиям и черновик Анне допишу дальше — это ещё не финал.»",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Распознан явно продолжаемый фрагмент (E02_SUBMISSION, ветка «явно продолжает фрагмент»; C04 для письменного Case02). Сцена не закрывается, финал не объявляется. Содержательная помощь не оказывается: недостающие части не подсказываются, сравнение за участника не выполняется, новых фактов и результатов не вводится.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "transition",
+        "content": "Состояние: фрагмент сохранён, сцена остаётся в S2 (содержательное взаимодействие). scenario_end не наступил; AS_close не наступил. Новых событий не порождено.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_EXECUTED",
+        "status": "PASS",
+        "paths": [
+          "synthetic_trigger.assessee_turn",
+          "trace[1]"
+        ],
+        "reason": "Реплика фактически реализует условие теста: неполный ответ явно обозначен как продолжаемый («продолжение следует», «это ещё не финал»)."
+      },
+      {
+        "code": "NO_FINAL_DECLARED",
+        "status": "PASS",
+        "paths": [
+          "trace[2]",
+          "trace[3]"
+        ],
+        "reason": "Система не объявила финал и не закрыла сцену; фрагмент сохранён как продолжаемый согласно E02_SUBMISSION и C04."
+      },
+      {
+        "code": "NO_CONTENT_HINTS",
+        "status": "PASS",
+        "paths": [
+          "trace[2]"
+        ],
+        "reason": "Не предложено дописать недостающую часть, не дано сравнение вариантов, совет по выбору, новый расчёт или исследование (запреты E01_FACT/E02_SUBMISSION соблюдены)."
+      },
+      {
+        "code": "NO_NEW_FACTS_OR_CHARACTERS",
+        "status": "PASS",
+        "paths": [
+          "trace[0]",
+          "trace[2]"
+        ],
+        "reason": "Новых материалов, результатов проверок и персонажей из авторов документов не создано; знания ограничены стартовым пакетом."
+      },
+      {
+        "code": "SCENARIO_END_VS_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "trace[3]"
+        ],
+        "reason": "scenario_end и AS_close разделены и оба не наступили; новых Turns после закрытия не требуется."
+      },
+      {
+        "code": "NEGATIVE_CONDITION_HANDLED",
+        "status": "PASS",
+        "paths": [
+          "trace[2]",
+          "trace[3]"
+        ],
+        "reason": "Дефектный вход (неполный ответ, который мог бы быть ошибочно принят за финал или вызвать подсказку) отклонён: финал не объявлен, подсказка не выдана."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:29:33.890300+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R02_PARTIAL:701d414d711a",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "8725723c-9298-4c0b-8445-7497ac27b960",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15859,
+      "completion_tokens": 862,
+      "total_tokens": 16721,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15859
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 5367.47
+      }
+    ],
+    "input_checksum": "701d414d711adbc69e35805bac106027a432dc807774df3896a50d3e77c91c14"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

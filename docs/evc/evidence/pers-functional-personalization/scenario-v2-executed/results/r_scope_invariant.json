@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "test_id": "R_SCOPE_INVARIANT",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.02",
+    "case_version": "v0.6",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_02_v0.6_WORKING.json",
+    "source_sha256": "65a4cd6a3c7003a399e841788f325d37b464c7a8080e74a0d119ca33b18698a7"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "840d59fa2a4fc3ffc473034606cb491259384fb1dfbf9d2450ce5be792329651",
+    "test_id": "PROFILE.02.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.02.FUNCTIONAL.20261022",
+    "version": "v0.4",
+    "sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/generations/profile-02-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R_SCOPE_INVARIANT",
+    "Условие теста": "Новый профессиональный предмет утратил условие одного IndicatorID",
+    "Ожидаемое поведение": "Не удалять цель и не ставить PASS по стилю текста; исправить AS или сменить применимый Case.",
+    "Результат": "NOT_RUN",
+    "Тип": "План проверки нового пути; не фактический LLM-вызов."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "FAIL",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "P00: роль специалиста по подбору, письменное задание — рекомендация коллеге с основаниями и отдельный черновик сообщения Анне; новые результаты поиска во время задания не появляются.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "material",
+        "content": "M01: требования Анны — шесть готовых профилей к дню 20, три обязательных условия, сводка и подтверждение интереса; менять требования нельзя.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "material",
+        "content": "M02: план A — 60 откликов за цикл, сбор к дню 17, передача к дню 20; полнота формы по системе учёта и интересу не подтверждена.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "material",
+        "content": "M03: уточнение A — сбор к дню 27, передача не ранее дня 30; дни 17 и 20 не подтверждаются.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "material",
+        "content": "M04: план B — 40 откликов, сбор к дню 18, проверка 4 дня, передача к дню 22; форма включает все условия, но шесть профилей не гарантированы.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 6,
+        "kind": "material",
+        "content": "M05: проверка образцов B подтверждает поля формы и интерес, но не будущих кандидатов; у A полнота проверки не подтверждена; ни один вариант не подтверждает день 20.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 7,
+        "kind": "material",
+        "content": "M06: Илья выводит из 60 против 40 откликов (на 20 больше, на 50%) общую пригодность A и предлагает рекомендовать A.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 8,
+        "kind": "assessee_turn",
+        "content": "Синтетическая реплика, реализующая условие теста: «Новый профессиональный предмет утратил условие одного IndicatorID» — то есть в предъявленном наборе отсутствует условие наблюдения для одного из IndicatorIDs (например, K4.I03: сопоставление источника планового объёма, уточнения графика и ограниченной проверки образцов).",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 9,
+        "kind": "system_decision",
+        "content": "Проверка условия R_SCOPE_INVARIANT: новый профессиональный предмет утратил условие одного IndicatorID. Ожидаемое поведение — не удалять цель и не ставить PASS по стилю текста; исправить AS или сменить применимый Case. Фактически: в candidate_as.IndicatorObservability для K4.I03 условие присутствует (материалы M02–M05, конкретное условие о сопоставлении источника объёма, уточнения графика и ограниченной проверки). Однако в «Конкретизация реакций и границ» пусто, активных персонажей нет, а сценарный контракт не содержит отдельного события, которое бы предъявляло это условие в ходе взаимодействия. Следовательно, условие IndicatorID K4.I03 не обеспечено исполняемым путём в новой трассе.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 10,
+        "kind": "transition",
+        "content": "Сценарий не может быть исполнен до устранения дефекта: отсутствует событие/переход, предъявляющий условие K4.I03. Статус NOT_RUN сохраняется; PASS по стилю текста не ставится.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "R_SCOPE_INVARIANT_CONDITION_PRESENT",
+        "status": "FAIL",
+        "paths": [
+          "candidate_as.IndicatorObservability[0].Конкретное условие",
+          "candidate_as.События",
+          "candidate_as.Конкретизация реакций и границ"
+        ],
+        "reason": "Условие K4.I03 описано в IndicatorObservability, но не реализовано ни одним событием или переходом сценарного контракта; «Конкретизация реакций и границ» пуста. Новый профессиональный предмет утратил исполняемое условие IndicatorID."
+      },
+      {
+        "code": "NO_PASS_BY_STYLE",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Исполнение.Status"
+        ],
+        "reason": "Статус NOT_RUN сохранён; PASS по стилю текста не выставлен."
+      },
+      {
+        "code": "DO_NOT_DELETE_GOAL",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.IndicatorIDs",
+          "candidate_as.IndicatorObservability"
+        ],
+        "reason": "Цель K4.I03 не удалена из IndicatorIDs и IndicatorObservability; дефект зафиксирован как потеря исполняемого условия, а не удаление цели."
+      },
+      {
+        "code": "FIX_AS_OR_CHANGE_CASE",
+        "status": "FAIL",
+        "paths": [
+          "candidate_as.События",
+          "candidate_as.Исходный сценарный контракт.Состояния"
+        ],
+        "reason": "AS не исправлена и применимый Case не сменён: событие, предъявляющее условие K4.I03, отсутствует."
+      }
+    ],
+    "defects": [
+      {
+        "code": "MISSING_INDICATOR_CONDITION_EVENT",
+        "severity": "blocking",
+        "paths": [
+          "candidate_as.IndicatorObservability[0]",
+          "candidate_as.События",
+          "candidate_as.Конкретизация реакций и границ"
+        ],
+        "reason": "Для IndicatorID K4.I03 условие наблюдения не обеспечено событием/переходом; сценарный контракт не предъявляет сопоставление источника планового объёма, уточнения графика и ограниченной проверки образцов. Требуется исправить AS (добавить событие/переход) или сменить применимый Case."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:30:35.168434+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R_SCOPE_INVARIANT:b508e4ee1840",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "4e4aa86c-1c69-48d4-8981-aa2db4d884dc",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 15819,
+      "completion_tokens": 1461,
+      "total_tokens": 17280,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 15819
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 7884.77
+      }
+    ],
+    "input_checksum": "b508e4ee184042b457d50be0e6355a0ddfad354bfe2fad12faa479778d22ef22"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

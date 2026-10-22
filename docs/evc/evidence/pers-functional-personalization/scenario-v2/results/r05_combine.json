@@ -1,0 +1,189 @@
+{
+  "schema_version": 1,
+  "test_id": "R05_COMBINE",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.05",
+    "case_version": "v0.5",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_05_v0.5_WORKING.json",
+    "source_sha256": "f024d2c7e5b448681db987fc777fdb6447857a4792c3d3c779efcdd268fb6707"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "d4b0f6116b4e334cbeeed6b0054e15cdc0d4446f55faed958ae9583c3b2314a6",
+    "test_id": "PROFILE.05.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.05.PERS06.20261022",
+    "version": "v0.2",
+    "sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-05-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R05_COMBINE",
+    "CaseID": "CASE.SPEC.05",
+    "Условие теста": "Участник соединяет несколько функций ресурсов",
+    "Ожидаемое поведение": "Илья оценивает реальную связь и границы; не требует готового авторского пакета.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "FAIL",
+  "result": {
+    "status": "INDETERMINATE",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Стартовое предъявление P00 и M01–M05 вместе; M05 — первая реплика Ильи, не повторяется.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Участник соединяет несколько функций ресурсов (например, разбор воронки + проба шагов + изменение материалов) в связку с указанием границ.",
+        "audience": [
+          "ILYA"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Срабатывает ветвь B_APPROACH: Илья сообщает, что именно понял, и называет существенное неподтверждённое предположение предложенной связки; альтернативу не генерирует.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "character_turn",
+        "content": "Илья оценивает фактическое основание связи функций и её границы (лимит 300 тыс., единицы стоимости за группу, 2 часа/неделю, полномочия согласования), может поддержать проработку или сохранить обоснованное сомнение без нового препятствия.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 5,
+        "kind": "transition",
+        "content": "Сцена продолжается или завершается по фактическому намерению участника; scenario_end фиксируется отдельно от AS_close.",
+        "audience": [
+          "SYSTEM"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "CONDITION_MODELED",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.Конкретизация реакций и границ.Ветви[?(@.BranchID=='B_APPROACH')]",
+          "$.candidate_as.Конкретизация реакций и границ.Правила персонажа.Отклик"
+        ],
+        "reason": "Условие «участник соединяет несколько функций ресурсов» покрыто ветвью B_APPROACH: Илья разбирает предложенную связку и её существенное предположение, не создавая альтернатив."
+      },
+      {
+        "code": "NO_AUTHOR_PACKAGE_REQUIRED",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.Материалы[?(@.MaterialID=='P00')].Текст",
+          "$.candidate_as.Исходный сценарный контракт.Состояния[?(@.State=='S3')]",
+          "$.candidate_as.Конкретизация реакций и границ.Сценарий.Этапы[?(@.StageID=='S3')]"
+        ],
+        "reason": "P00 прямо указывает, что готовый план подбора и письмо не требуются; S3 требует лишь краткую позицию Ильи, отдельный документ не нужен."
+      },
+      {
+        "code": "REAL_LINK_AND_BOUNDARIES_EVALUATED",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.Конкретизация реакций и границ.Ветви[?(@.BranchID=='B_BUDGET')]",
+          "$.candidate_as.Конкретизация реакций и границ.Ветви[?(@.BranchID=='B_WORKABLE')]",
+          "$.candidate_as.Числовые связи для QA"
+        ],
+        "reason": "Ветви B_BUDGET и B_WORKABLE задают оценку фактической связи и границ (лимит, единицы стоимости, нагрузка, мандат) без введения новых цен или отказа эксперта."
+      },
+      {
+        "code": "NO_HINT_OR_NEW_FACT",
+        "status": "PASS",
+        "paths": [
+          "$.candidate_as.Конкретизация реакций и границ.Приоритеты ведения",
+          "$.candidate_as.Правила управления сценой[?(@.RuleID=='C08')]",
+          "$.candidate_as.Правила управления сценой[?(@.RuleID=='C07')]"
+        ],
+        "reason": "Приоритеты ведения запрещают подсказывать комбинацию и вводить препятствия; C07/C08 ограничивают знания и не создают новых фактов."
+      },
+      {
+        "code": "TRACE_PROVES_BEHAVIOR",
+        "status": "INDETERMINATE",
+        "paths": [
+          "$.scenario_test.Результат",
+          "$.candidate_as.Исполнение.Status",
+          "$.candidate_as.IndicatorObservability[*].Фактическое возникновение"
+        ],
+        "reason": "Фактического прохождения нет: Результат=NOT_RUN, Исполнение=NOT_RUN, все IndicatorObservability=NOT_RUN. Смоделированная трасса является плановой, а не доказательством поведения; PASS по трассе невозможен без реального Turn участника и отклика Ильи."
+      }
+    ],
+    "defects": [
+      {
+        "code": "NO_EXECUTED_TRACE",
+        "severity": "non_blocking",
+        "paths": [
+          "$.scenario_test.Результат",
+          "$.candidate_as.Исполнение.Status"
+        ],
+        "reason": "Ожидаемое поведение описано контрактом, но не подтверждено фактическим Dialogue; статус остаётся INDETERMINATE, а не PASS."
+      }
+    ]
+  },
+  "created_at": "2026-10-22T16:27:37.812455+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R05_COMBINE:9b0cba9e0c0a",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "ca76e5c2-c785-45e6-9706-27f591808175",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 16743,
+      "completion_tokens": 1209,
+      "total_tokens": 17952,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 16743
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 6176.85
+      }
+    ],
+    "input_checksum": "9b0cba9e0c0a95142b36407f2d1302bed78257a0054a9d1a711d9937186998a4"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}

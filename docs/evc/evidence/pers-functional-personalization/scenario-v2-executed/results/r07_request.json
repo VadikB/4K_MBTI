@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "test_id": "R07_REQUEST",
+  "plan_version": "v0.2",
+  "case_ref": {
+    "case_id": "CASE.SPEC.07",
+    "case_version": "v0.4",
+    "source_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases/Case_SPEC_07_v0.4_WORKING.json",
+    "source_sha256": "79b98154e5bb1d1ec90ee2d58ef43e2be846a8cf348d4b989b23fa37ff8fa725"
+  },
+  "profile_ref": {
+    "schema_version": 1,
+    "snapshot_checksum": "84000573a227700e4d1d8093225c7980301d584a2a38ba1f6c9da4b763425b43",
+    "test_id": "PROFILE.07.1"
+  },
+  "assessment_situation_ref": {
+    "id": "AS.SPEC.07.PERS06.20261022",
+    "version": "v1.0",
+    "sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+    "artifact_path": "docs/evc/evidence/pers-functional-personalization/normalized-v2/generations/profile-07-1.json"
+  },
+  "scenario_test": {
+    "TestID": "R07_REQUEST",
+    "CaseID": "CASE.SPEC.07",
+    "Условие теста": "Запрошены отсутствующие результаты опроса",
+    "Ожидаемое поведение": "Сообщить отсутствие новых данных; не становиться Анной и не проводить исследование.",
+    "Результат": "NOT_RUN",
+    "Тип": "План сценарной регрессии, не синтетическое прохождение и не Golden Case.",
+    "Версия плана": "v0.2",
+    "Примечание": "Применить к новой версии Case/AS; прежние прогоны не переносятся."
+  },
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "trace": [
+      {
+        "sequence": 1,
+        "kind": "material",
+        "content": "Предъявлен стартовый набор P00, M01, M02, M03, M04 (роль, задача, протокол проверки, выгрузка использования, рабочие комментарии, запрос решения).",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      },
+      {
+        "sequence": 2,
+        "kind": "assessee_turn",
+        "content": "Покажите, пожалуйста, результаты опроса сотрудников о том, почему они продолжают писать в чат вместо системы.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 3,
+        "kind": "system_decision",
+        "content": "Распознан вопрос об отсутствующем факте (результаты опроса). Срабатывает E01_EXPLAIN: разъяснить в границах пакета и прямо назвать отсутствие данных. Запрещено разыгрывать автора, исследование, опрос и новый результат; не становиться Анной и не проводить исследование.",
+        "audience": [
+          "SYSTEM"
+        ]
+      },
+      {
+        "sequence": 4,
+        "kind": "transition",
+        "content": "Ответ по E01_EXPLAIN в границах P00 и M01–M04: результаты опроса сотрудников в материалах отсутствуют; есть только отдельные записанные эпизоды бесед (M03), которые не являются опросом всех сотрудников и не измеряют типичное время. Новых данных не появляется; информационная база сохраняется. Сценарий не закрывается, персонажи не создаются.",
+        "audience": [
+          "PARTICIPANT"
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "code": "TRIGGER_MATCHES_CONDITION",
+        "status": "PASS",
+        "paths": [
+          "synthetic_trigger.assessee_turn",
+          "scenario_test.Условие теста"
+        ],
+        "reason": "Реплика прямо запрашивает отсутствующие результаты опроса, что соответствует условию «Запрошены отсутствующие результаты опроса»."
+      },
+      {
+        "code": "ABSENCE_STATED_WITHOUT_NEW_DATA",
+        "status": "PASS",
+        "paths": [
+          "trace[3].content",
+          "candidate_as.События[0].Действие",
+          "candidate_as.События[0].Когда запрещено"
+        ],
+        "reason": "Отсутствие результатов опроса названо прямо; новых исследовательских результатов, опроса или данных не создано."
+      },
+      {
+        "code": "NO_IMPERSONATION_OF_ANNA",
+        "status": "PASS",
+        "paths": [
+          "trace[3].content",
+          "candidate_as.Активные персонажи",
+          "candidate_as.Правила управления сценой[6]"
+        ],
+        "reason": "Активных персонажей нет; ответ не разыгрывает Анну и не говорит от её имени. Авторы документов не превращены в персонажей."
+      },
+      {
+        "code": "NO_RESEARCH_CONDUCTED",
+        "status": "PASS",
+        "paths": [
+          "trace[3].content",
+          "candidate_as.События[0].Когда запрещено",
+          "candidate_as.Граница исполнения"
+        ],
+        "reason": "Исследование не проводилось; внешние действия и результаты проверок остаются предложениями и не создаются."
+      },
+      {
+        "code": "CLOSED_INFORMATION_PRESERVED",
+        "status": "PASS",
+        "paths": [
+          "candidate_as.Закрытая карта дополнительных сведений",
+          "candidate_as.События[0].Изменение состояния"
+        ],
+        "reason": "Закрытая карта пуста; состояние информационной базы сохранено, скрытые сведения не раскрыты."
+      },
+      {
+        "code": "SCENARIO_END_NOT_AS_CLOSE",
+        "status": "PASS",
+        "paths": [
+          "trace[4].kind",
+          "candidate_as.Правила управления сценой[8]"
+        ],
+        "reason": "Переход не является AS_close; сценарий остаётся открытым для продолжения, новых Turns после закрытия не вводилось."
+      },
+      {
+        "code": "NEGATIVE_CONDITION_REJECTED",
+        "status": "PASS",
+        "paths": [
+          "trace[3].content",
+          "scenario_test.Ожидаемое поведение"
+        ],
+        "reason": "Дефектный вход (запрос несуществующих результатов опроса) отклонён: данные не предъявлены, отсутствие сообщено, роль Анны и исследование не исполнены."
+      }
+    ],
+    "defects": []
+  },
+  "created_at": "2026-10-22T16:29:56.085375+00:00",
+  "provider_operation": {
+    "operation_id": "scenario-v2:R07_REQUEST:747e919b5c03",
+    "kind": "isolated_scenario_qa",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "actual_model": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "parameters": {
+      "temperature": 0,
+      "timeout_seconds": 300,
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "disabled"
+      },
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "gateway_version": "deepseek-product-gateway/1",
+    "provider_contract": {
+      "version": "1.0.0",
+      "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+    },
+    "provider_request_id": "7d83d236-3587-4d8c-b66e-156b3d49ece2",
+    "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 13561,
+      "completion_tokens": 1010,
+      "total_tokens": 14571,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 13561
+    },
+    "transport_attempts": [
+      {
+        "attempt": 1,
+        "outcome": "completed",
+        "duration_ms": 5239.86
+      }
+    ],
+    "input_checksum": "747e919b5c0313784f19dc9d98984b5f6ddd256c54992d94cddfa77d27aa8b31"
+  },
+  "limitations": [
+    "isolated semantic scenario QA; DB runtime mechanics are verified separately"
+  ]
+}
