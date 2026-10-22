@@ -12,6 +12,7 @@ import {
 } from '../../dom.js';
 import { hideAllPanels, syncUrlState } from '../../router.js';
 import { persistAssessmentContext, setCurrentScreen, state } from '../../state.js';
+import { createAdminOrganizationDraftKey } from './organization-draft-key.js';
 
 let selectedOrganizationId = null;
 const invitationRequestsInFlight = new Set();
@@ -28,10 +29,14 @@ const organizationKey = (organizationId) => currentIdentityKey() + ':' + Number(
 const assessmentKey = (organizationId, assessmentRef = '') =>
   organizationKey(organizationId) + ':' + String(assessmentRef || '').trim();
 const formDraftKey = (organizationId, form, assessmentRef = '') => {
-  const action = String(form?.dataset?.action || 'unknown');
-  const assessmentActions = new Set(['preview-early-data', 'preview-questionnaire']);
-  return organizationKey(organizationId) + ':' + action + ':' +
-    (assessmentActions.has(action) ? String(assessmentRef || '').trim() : 'organization');
+  const action = String(form?.dataset?.draftAction || form?.dataset?.action || 'unknown');
+  return createAdminOrganizationDraftKey({
+    identityKey: currentIdentityKey(),
+    organizationId,
+    action,
+    assessmentRef,
+    revisionId: form?.dataset?.questionnaireRevisionId || '',
+  });
 };
 
 const editableFields = (root) => [...root.querySelectorAll('input, textarea, select')]
@@ -54,7 +59,7 @@ const questionnaireErrorMessage = (error, fallback) => {
 const captureFormDraft = (organizationId, form, { assessmentRef: assessmentOverride = null, updateSelected = true } = {}) => {
   const fields = editableFields(form);
   const assignmentField = form.querySelector('[name="assignment_ref"]');
-  const assignmentRef = assessmentOverride ?? assignmentField?.value ?? '';
+  const assignmentRef = assessmentOverride ?? assignmentField?.value ?? form?.dataset?.assessmentRef ?? '';
   const view = form.closest('[data-admin-view]');
   const selectedRef = selectedAssessmentRefs.get(organizationKey(organizationId)) || '';
   const changedActiveScope = assessmentOverride === null && updateSelected && assignmentRef && selectedRef &&
@@ -93,7 +98,8 @@ const restoreFormDraft = (organizationId, form) => {
   const selectedRef = selectedAssessmentRefs.get(organizationKey(organizationId));
   const assignmentField = form.querySelector('[name="assignment_ref"]');
   if (assignmentField && selectedRef) assignmentField.value = selectedRef;
-  const draft = managementDrafts.get(formDraftKey(organizationId, form, assignmentField?.value || ''));
+  const assessmentRef = assignmentField?.value || form?.dataset?.assessmentRef || '';
+  const draft = managementDrafts.get(formDraftKey(organizationId, form, assessmentRef));
   if (!draft) return;
   editableFields(form).forEach((field) => {
     const candidates = Object.values(draft.fields).filter((item) => item.name === field.name);
@@ -951,8 +957,8 @@ export const renderAdminOrganizations = () => {
           '<p>Изменений относительно текущей подтверждённой редакции нет.</p>');
       const humanProblems = questionnaireProblems.map((item) => validationLabels[item] ||
         (String(item).includes('duplicate') ? 'повторяющиеся поля' : 'некорректно заполненные поля'));
-      const previewMarkup = questionnairePreview ? '<div class="admin-questionnaire-preview" role="status" data-assessment-ref="' +
-        escapeHtml(selectedRef) + '"><strong>' +
+      const previewMarkup = questionnairePreview ? '<div class="admin-questionnaire-preview" role="status" data-draft-action="questionnaire-preview" data-assessment-ref="' +
+        escapeHtml(selectedRef) + '" data-questionnaire-revision-id="' + Number(questionnairePreview.id) + '"><strong>' +
         (questionnairePreview.status === 'ready_for_confirmation' ? 'Готово к подтверждению' : 'Нужно исправить анкету') + '</strong>' +
         (previewIsStale ? '<p class="form-status error">Данные или получатели изменились. Обновите предпросмотр перед подтверждением.</p>' : '') +
         (humanProblems.length ? '<p>Проверьте: ' + escapeHtml([...new Set(humanProblems)].join(', ')) + '.</p>' :
