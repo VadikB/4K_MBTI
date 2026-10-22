@@ -628,6 +628,56 @@ test('UX-FIX20-03 previews participant text, invalidates stale preview and appli
 
 });
 
+test('F22-04 keeps a newer confirmed revision and input entered after confirm started', async ({ page }) => {
+  let releaseConfirm;
+  const confirmReleased = new Promise((resolve) => { releaseConfirm = resolve; });
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  await page.route('**/users/admin/organizations/3/questionnaire/preview', (route) => {
+    const payload = route.request().postDataJSON();
+    return fulfillJson(route, {
+      id: 12, assignment_ref: payload.assignment_ref, status: 'ready_for_confirmation',
+      channel: 'product_form', answers_json: payload.answers,
+      validation_json: { errors: [], missing: [] }, participant_preview: { purpose: 'Older confirmed 12' },
+      changes: [], recipient_options: ['participant'],
+    });
+  });
+  await page.route('**/users/admin/organizations/3/questionnaire/*/confirm', async (route) => {
+    await confirmReleased;
+    return fulfillJson(route, {
+      id: 12, assignment_ref: 'Поток order', status: 'confirmed', channel: 'product_form',
+      confirmed_at: '2026-10-21T10:00:00Z', validation_json: { errors: [], missing: [] },
+      answers_json: { C02a: { participant_text: 'Older confirmed 12' } },
+    });
+  });
+  await page.route('**/users/admin/organizations/3/questionnaire', (route) => fulfillJson(route, {
+    items: [{
+      id: 13, assignment_ref: 'Поток order', status: 'confirmed', channel: 'product_form',
+      confirmed_at: '2026-10-21T10:01:00Z', validation_json: { errors: [], missing: [] },
+      answers_json: { C02a: { participant_text: 'Newer confirmed 13' } },
+    }],
+  }));
+
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  const form = card.locator('[data-action="preview-early-data"]');
+  const values = {
+    assignment_ref: 'Поток order', source_author: 'Заказчик', organization_name: 'Организация',
+    organization_type: 'Компания', industry: 'ИТ', activity_description: 'Описание', purpose: 'Older confirmed 12',
+    results_usage: 'Развитие', result_recipients: 'Участник', organizer: 'HR',
+    responsible_contact: 'hr@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
+  };
+  for (const [name, value] of Object.entries(values)) await form.locator(`[name="${name}"]`).fill(value);
+  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+  await card.locator('.admin-questionnaire-preview').getByRole('button', { name: 'Подтвердить сведения' }).click();
+  await form.locator('[name="purpose"]').fill('Draft after confirm');
+  await card.getByRole('button', { name: 'Участники' }).click();
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  releaseConfirm();
+
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Draft after confirm');
+  await expect(page.locator('#admin-organizations-status')).toContainText('более новая серверная редакция');
+});
+
 test('ADM19-01 adds a participant with only email, name and role', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
   let submittedPayload;

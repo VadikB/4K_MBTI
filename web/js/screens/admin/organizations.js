@@ -24,6 +24,7 @@ const questionnairePreviewRequestGenerations = new Map();
 const organizationViews = new Map();
 const managementDrafts = new Map();
 const selectedAssessmentRefs = new Map();
+const questionnaireConfirmRequestGenerations = new Map();
 
 const currentIdentityKey = () => String(state.pendingUser?.id || '');
 const organizationKey = (organizationId) => currentIdentityKey() + ':' + Number(organizationId);
@@ -63,6 +64,14 @@ const questionnaireInputSignature = (organizationId, action, assessmentRef = '')
     form: form ? formSignature(form) : null,
     recipients: preview ? formSignature(preview) : null,
   });
+};
+const isQuestionnaireRevisionNewer = (candidate, reference) => {
+  const candidateId = Number(candidate?.id || 0);
+  const referenceId = Number(reference?.id || 0);
+  if (candidateId && referenceId && candidateId !== referenceId) return candidateId > referenceId;
+  const candidateTime = Date.parse(candidate?.confirmed_at || candidate?.created_at || '') || 0;
+  const referenceTime = Date.parse(reference?.confirmed_at || reference?.created_at || '') || 0;
+  return candidateTime > referenceTime;
 };
 const questionnaireErrorMessage = (error, fallback) => {
   const message = String(error?.message || '');
@@ -156,6 +165,7 @@ const clearAdminOrganizationsSessionState = () => {
   organizationViews.clear();
   managementDrafts.clear();
   selectedAssessmentRefs.clear();
+  questionnaireConfirmRequestGenerations.clear();
 };
 
 window.addEventListener('agent4k:assessment-context-cleared', clearAdminOrganizationsSessionState);
@@ -763,6 +773,16 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
 export const confirmAdminOrganizationQuestionnaire = async (organizationId, revisionId, recipients, recipientUserIds = []) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
+  const card = adminOrganizationsList.querySelector('[data-organization-id="' + Number(organizationId) + '"]');
+  const confirmButton = card?.querySelector('[data-action="confirm-questionnaire"][data-value="' + Number(revisionId) + '"]');
+  const submittedRef = String(confirmButton?.closest('.admin-questionnaire-preview')?.getAttribute('data-assessment-ref') || '').trim();
+  const submittedForms = new Map([...card?.querySelectorAll(
+    'form[data-action="preview-early-data"], form[data-action="preview-questionnaire"]',
+  ) || []].map((form) => [String(form.dataset.action), { form, signature: formSignature(form) }]));
+  captureAdminOrganizationsDraft();
+  const requestKey = assessmentKey(organizationId, submittedRef);
+  const requestGeneration = (questionnaireConfirmRequestGenerations.get(requestKey) || 0) + 1;
+  questionnaireConfirmRequestGenerations.set(requestKey, requestGeneration);
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/' + revisionId + '/confirm', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
@@ -771,14 +791,53 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
     const confirmed = await readApiResponse(response, 'Не удалось подтвердить анкету.');
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
     const confirmedRef = String(confirmed?.assignment_ref || '').trim();
+    const confirmedKey = assessmentKey(organizationId, confirmedRef);
+    if (questionnaireConfirmRequestGenerations.get(requestKey) !== requestGeneration) return;
+    let authoritativeRevisions = null;
+    try {
+      const revisionsResponse = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire', {
+        credentials: 'same-origin',
+      });
+      const revisionsPayload = await readApiResponse(revisionsResponse, 'Не удалось обновить список редакций.');
+      authoritativeRevisions = Array.isArray(revisionsPayload?.items) ? revisionsPayload.items : null;
+    } catch {
+      authoritativeRevisions = null;
+    }
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
+    if (questionnaireConfirmRequestGenerations.get(requestKey) !== requestGeneration) return;
+    const changedActions = new Set();
+    const currentCard = adminOrganizationsList.querySelector(
+      '[data-organization-id="' + Number(organizationId) + '"]',
+    );
+    submittedForms.forEach(({ signature }, action) => {
+      const form = currentCard?.querySelector('form[data-action="' + action + '"]');
+      if (!form || formSignature(form) === signature) return;
+      changedActions.add(action);
+      captureFormDraft(organizationId, form);
+    });
     const revisionsKey = organizationKey(organizationId);
     const revisions = questionnaireRevisions.get(revisionsKey) || [];
-    questionnaireRevisions.set(revisionsKey, [confirmed,
-      ...revisions.filter((item) => String(item.assignment_ref || '').trim() !== confirmedRef)]);
-    questionnairePreviews.delete(assessmentKey(organizationId, confirmedRef));
-    staleQuestionnairePreviews.delete(assessmentKey(organizationId, confirmedRef));
-    managementDrafts.delete(organizationKey(organizationId) + ':preview-early-data:' + confirmedRef);
-    managementDrafts.delete(organizationKey(organizationId) + ':preview-questionnaire:' + confirmedRef);
+    const authoritativeRevision = authoritativeRevisions?.find((item) =>
+      String(item.assignment_ref || '').trim() === confirmedRef);
+    const cachedRevision = revisions.find((item) => String(item.assignment_ref || '').trim() === confirmedRef);
+    const currentRevision = authoritativeRevision || cachedRevision;
+    if (currentRevision && isQuestionnaireRevisionNewer(currentRevision, confirmed)) {
+      if (authoritativeRevisions) questionnaireRevisions.set(revisionsKey, authoritativeRevisions);
+      renderAdminOrganizations();
+      setStatus('Подтверждение завершено. Показана более новая серверная редакция.', 'success');
+      return;
+    }
+    questionnaireRevisions.set(revisionsKey, authoritativeRevisions?.some((item) =>
+      String(item.assignment_ref || '').trim() === confirmedRef)
+      ? authoritativeRevisions
+      : [confirmed, ...revisions.filter((item) => String(item.assignment_ref || '').trim() !== confirmedRef)]);
+    questionnairePreviews.delete(confirmedKey);
+    staleQuestionnairePreviews.delete(confirmedKey);
+    for (const action of ['preview-early-data', 'preview-questionnaire']) {
+      if (!changedActions.has(action)) {
+        managementDrafts.delete(organizationKey(organizationId) + ':' + action + ':' + confirmedRef);
+      }
+    }
     renderAdminOrganizations();
     setStatus('Источник анкеты подтверждён и опубликован новой редакцией.', 'success');
   } catch (error) { setStatus(questionnaireErrorMessage(error, 'Не удалось подтвердить анкету.'), 'error'); }
