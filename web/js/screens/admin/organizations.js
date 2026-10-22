@@ -94,7 +94,7 @@ const restoreFormDraft = (organizationId, form) => {
   const assignmentField = form.querySelector('[name="assignment_ref"]');
   if (assignmentField && selectedRef) assignmentField.value = selectedRef;
   const draft = managementDrafts.get(formDraftKey(organizationId, form, assignmentField?.value || ''));
-  if (!draft) return;
+  if (!draft) return false;
   editableFields(form).forEach((field) => {
     const candidates = Object.values(draft.fields).filter((item) => item.name === field.name);
     const saved = ['checkbox', 'radio'].includes(field.type)
@@ -105,6 +105,33 @@ const restoreFormDraft = (organizationId, form) => {
     else field.value = saved.value;
   });
   form.querySelector('[name="' + CSS.escape(draft.focusedName || '') + '"]')?.focus({ preventScroll: true });
+  return true;
+};
+
+const restoreConfirmedRevisionForm = (form, revision) => {
+  if (form?.dataset?.action !== 'preview-early-data' || revision?.status !== 'confirmed') return false;
+  const answers = revision.answers_json || {};
+  const values = {
+    organization_name: answers.C01?.name,
+    organization_type: answers.C01?.organization_type,
+    industry: answers.C01?.industry,
+    activity_description: answers.C01?.activity_description,
+    purpose: answers.C02a?.participant_text,
+    results_usage: answers.C03?.participant_text,
+    result_recipients: answers.C04?.answer,
+    organizer: answers.C21?.organizer,
+    responsible_contact: answers.C21?.responsible_contact,
+    case_reality_level: answers.C17?.case_reality_level,
+    organization_name_usage_rules: answers.C17?.organization_name_usage_rules,
+  };
+  let restored = false;
+  Object.entries(values).forEach(([name, value]) => {
+    const field = form.querySelector('[name="' + name + '"]');
+    if (!field || value === undefined || value === null) return;
+    field.value = String(value);
+    restored = true;
+  });
+  return restored;
 };
 
 const restoreAdminOrganizationsDraft = () => {
@@ -295,6 +322,8 @@ export const selectAdminOrganizationAssessment = (organizationId, form, assessme
   }
   selectedAssessmentRefs.set(organizationKey(organizationId), nextRef);
   const card = form.closest('[data-organization-id]');
+  const revision = (questionnaireRevisions.get(organizationKey(organizationId)) || [])
+    .find((item) => String(item.assignment_ref || '').trim() === nextRef);
   card?.querySelectorAll('form[data-action="preview-early-data"], form[data-action="preview-questionnaire"]')
     .forEach((assessmentForm) => {
       const assignmentField = assessmentForm.querySelector('[name="assignment_ref"]');
@@ -305,11 +334,10 @@ export const selectAdminOrganizationAssessment = (organizationId, form, assessme
         if (['checkbox', 'radio'].includes(field.type)) field.checked = false;
         else field.value = '';
       });
-      restoreFormDraft(organizationId, assessmentForm);
+      const restoredDraft = restoreFormDraft(organizationId, assessmentForm);
+      if (!restoredDraft) restoreConfirmedRevisionForm(assessmentForm, revision);
     });
   card?.querySelectorAll('.admin-questionnaire-preview').forEach((preview) => preview.remove());
-  const revision = (questionnaireRevisions.get(organizationKey(organizationId)) || [])
-    .find((item) => String(item.assignment_ref || '').trim() === nextRef);
   card?.querySelectorAll('.admin-readiness-panel').forEach((panel) => {
     panel.outerHTML = readinessMarkup(nextRef, revision?.readiness || null);
   });

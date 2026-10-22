@@ -290,6 +290,41 @@ test('UX-FIX20-04 never reports ready when readiness request fails', async ({ pa
   await expect(panel).not.toContainText('Всё готово');
 });
 
+test('F22-06 restores confirmed fields when the selected assessment has no local draft', async ({ page }) => {
+  const revision = (id, assignmentRef, purpose) => ({
+    id, assignment_ref: assignmentRef, status: 'confirmed', channel: 'product_form',
+    validation_json: {}, answers_json: {
+      C01: { name: `Организация ${assignmentRef}`, organization_type: 'Компания', industry: 'ИТ',
+        activity_description: `Описание ${assignmentRef}` },
+      C02a: { participant_text: purpose }, C03: { participant_text: `Использование ${assignmentRef}` },
+      C04: { answer: 'Участник' }, C17: { case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено' },
+      C21: { organizer: 'HR', responsible_contact: `${assignmentRef}@example.test` },
+    },
+    readiness: { status: 'ready', early: { status: 'ready', message: 'Готово' },
+      context: { status: 'ready', message: 'Готово' }, roles: { status: 'ready', message: 'Готово' },
+      preparation: { status: 'idle', message: 'Нет подготовки' } },
+  });
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), adminOrganization, {
+    body: { items: [revision(31, 'A', 'Published A'), revision(32, 'B', 'Published B')] },
+  });
+
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  const form = card.locator('[data-action="preview-early-data"]');
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Published A');
+  const assignment = form.locator('[name="assignment_ref"]');
+  await assignment.focus();
+  await assignment.fill('B');
+  await assignment.press('Tab');
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Published B');
+  await expect(form.locator('[name="organization_name"]')).toHaveValue('Организация B');
+
+  await form.locator('[name="purpose"]').fill('Draft B');
+  await card.getByRole('button', { name: 'Участники' }).click();
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Draft B');
+});
+
 test('UX-FIX20-02 preserves named drafts across all management views', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
   const card = page.locator('[data-organization-id="3"]');
