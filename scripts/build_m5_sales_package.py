@@ -263,7 +263,9 @@ def _build_case(case_entry: dict, as_entry: dict, m2: dict[str, tuple[str, str]]
                           "participant_visible_initially": _visibility(item), "content": item,
                           "source": _ref(as_entry["path"].name, as_entry["sha256"],
                                          "Материалы" if "Материалы" in situation else "Материалы участника", source_key)})
-    scenario_root_key = "Сценарий"
+    scenario_root_key = "Сценарий" if "Сценарий" in situation else "События"
+    if scenario_root_key not in situation:
+        raise ValueError(f"Required scenario/events field is absent: {case_id}")
     scenario_value = situation[scenario_root_key]
     if isinstance(scenario_value, dict) and "Этапы" in scenario_value:
         scenario_value = scenario_value["Этапы"]
@@ -272,15 +274,16 @@ def _build_case(case_entry: dict, as_entry: dict, m2: dict[str, tuple[str, str]]
         scenario_parts = (scenario_root_key,)
     scenario = []
     for order, (source_key, item) in enumerate(_list_or_dict_items(scenario_value), 1):
-        step_id = str(_first(item, "StageID", "StepID", default=f"AS-STAGE-{order}"))
+        step_id = str(_first(item, "StageID", "StepID", "EventID", default=f"AS-STAGE-{order}"))
         scenario.append({"step_id": step_id, "order": order, "content": item,
                          "source": _ref(as_entry["path"].name, as_entry["sha256"], *scenario_parts, source_key)})
-    characters_value = _first(situation, "Участники", default=[])
+    characters_root_key = "Участники" if "Участники" in situation else "Активные персонажи"
+    characters_value = _first(situation, characters_root_key, default=[])
     characters = []
     for order, (source_key, item) in enumerate(_list_or_dict_items(characters_value), 1):
         character_id = str(_first(item, "CharacterID", default=f"AS-CHARACTER-{order}"))
         characters.append({"character_id": character_id, "order": order, "content": item,
-                           "source": _ref(as_entry["path"].name, as_entry["sha256"], "Участники", source_key)})
+                           "source": _ref(as_entry["path"].name, as_entry["sha256"], characters_root_key, source_key)})
     planned = _first(situation, "Плановое время", "Плановое время минут")
     planned_min, planned_max = _minutes(planned)
     passport_sources = {key: _ref(case_entry["path"].name, case_entry["sha256"], "Паспорт", key) for key in passport}
@@ -345,15 +348,18 @@ def build_execution_rules(cases: list[dict]) -> dict:
         materials = []
         for step in sorted(case["scenario"], key=lambda item: item["order"]):
             content = step["content"]
-            event = content.get("Событие")
-            occurrence = content.get("Условие возникновения")
-            constraints = content.get("Условия")
+            event = content.get("Событие") or "author_event"
+            occurrence = content.get("Условие возникновения") or content.get("Условие запуска")
+            constraints = content.get("Условия") or content.get("Когда запрещено")
             stages.append({
                 "step_id": step["step_id"], "order": step["order"], "event": event,
-                "condition": occurrence or constraints,
+                "condition": occurrence or constraints, "action": content.get("Действие"),
+                "state_change": content.get("Изменение состояния"),
+                "audience_rule": content.get("Сведения и аудитория"),
+                "repeat_rule": content.get("Повторение"), "forbidden_when": constraints,
                 "source": step["source"],
             })
-            if event == "character_response":
+            if event == "character_response" or step["step_id"].endswith("_REPLY"):
                 for character in case["characters"]:
                     materials.append({
                         "material_id": f"CHARACTER.{character['character_id']}",

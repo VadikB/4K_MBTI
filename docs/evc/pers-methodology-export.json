@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "package_ref": {
+    "id": "m5-functional-personalization-cases",
+    "version": "0.2",
+    "status": "draft",
+    "runtime_enabled": false
+  },
+  "case_sources": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/sources/functional-v0.2/02_cases",
+  "open_assessment_situations": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/participant-preview.json",
+  "closed_materials_and_mapping": [
+    "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/case-package.json",
+    "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/mapping-report.json",
+    "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/execution-rules.json"
+  ],
+  "automatic_verification": "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/verification-report.json",
+  "professional_profile": null,
+  "provider_operations": [],
+  "actual_trajectory": null,
+  "independent_conclusion": {
+    "status": "NOT_RUN",
+    "form": {
+      "reviewer": null,
+      "reviewed_at": null,
+      "case_id": null,
+      "as_id": null,
+      "decision": null,
+      "findings": []
+    }
+  },
+  "limitations": [
+    "REAL_LLM_MATRIX_NOT_RUN",
+    "FULL_CYCLE_NOT_RUN",
+    "NO_ACTUAL_TRAJECTORY",
+    "METHODOLOGY_ADMISSION_NOT_RUN"
+  ]
+}
