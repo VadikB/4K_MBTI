@@ -37,10 +37,15 @@
 
 ## Проверки
 
-Требуются: адресные unit и browser-регрессии, полный `npm run test:backend`,
-`node --test tests/frontend/*.test.mjs`, `npm run lint:js`, `npm run build:web`,
-`git diff --check`. HTTP/integration проверяется обязательным CI; локальная
-integration допустима только на изолированной БД с `test`/`pytest` в имени.
+- `npm run test:backend` — PASS, 486.
+- `node --test tests/frontend/*.test.mjs` — PASS, 66.
+- Адресные Playwright-регрессии — PASS, 2.
+- `npm run lint:js`, `npm run build:web`, `git diff --check` — PASS.
+- Адресный PostgreSQL 16 integration на одноразовой БД `f22_07_pytest` — PASS, 1;
+  контейнер и тестовые данные удалены после прогона.
+- Первый CI head `37b3494`: integration FAIL из-за неполной тестовой схемы — fixture
+  не создавала `organization_invitations`. Fixture дополнена назначениями двух
+  оценок, включая независимое назначение администратора и отозванную запись.
 
 ## Риски и откат
 
@@ -50,6 +55,6 @@ integration допустима только на изолированной БД
 ## Состояние
 
 - Ветка: `codex/f22-07-readiness-reasons`.
-- Текущий шаг: реализация и адресные проверки.
-- Следующий шаг: полный локальный минимум, commit, draft PR.
+- Текущий шаг: CI-remediation после первого head PR #100.
+- Следующий шаг: commit, push и обязательный CI нового head.
 - Открытые блокеры: нет.
