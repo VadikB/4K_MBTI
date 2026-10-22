@@ -4,7 +4,7 @@ import pytest
 
 from Api.questionnaire_sources import (
     PARTICIPANT_QUESTIONS, PARTICIPANT_QUESTION_SCHEMA, admin_assignment_readiness,
-    normalize_answers, parse_csv, public_revision,
+    normalize_answers, parse_csv, public_revision, recipient_access_projection,
 )
 
 
@@ -81,6 +81,21 @@ def test_public_preview_has_participant_projection_and_safe_diff():
     assert "briefing" not in result
 
 
+def test_recipient_projection_ignores_contradictory_free_text():
+    answers = parse_csv(EXAMPLE.read_text())["answers"]
+    answers["C04"]["answer"] = "Результаты увидит только участник"
+    row = {"id": 3, "assignment_ref": "assessment-a", "status": "ready_for_confirmation",
+           "channel": "csv", "validation_json": {}, "answers_json": answers, "confirmed_at": None,
+           "recipient_mapping_json": ["participant", "organization_admin"]}
+    result = public_revision(row)
+    assert result["participant_preview"]["result_recipients"] == (
+        "Результаты доступны участнику и выбранным представителям заказчика."
+    )
+    assert recipient_access_projection(["participant"])["result_recipients"] == (
+        "Результаты доступны только участнику."
+    )
+
+
 class _One:
     def __init__(self, value):
         self.value = value
@@ -107,13 +122,15 @@ class _ReadinessConnection:
             } if self.confirmed else None)
         if "SELECT status FROM questionnaire_response_revisions" in query:
             return _One({"status": self.latest} if self.latest else None)
-        if "SELECT user_id FROM organization_memberships" in query:
+        if "assessment_preparation_jobs" in query:
+            assert _params == (3, "assessment-a")
+            return _One({"in_progress": self.in_progress})
+        if "SELECT DISTINCT u.id AS user_id" in query:
+            assert _params == (3, "assessment-a")
             return _Many([{"user_id": number + 1} for number in range(self.total)])
         if "participant_acquaintance_confirmations" in query:
             user_id = int(_params[0])
             return _One({"personalized_profile_id": user_id} if user_id <= self.ready else None)
-        if "assessment_preparation_jobs" in query:
-            return _One({"in_progress": self.in_progress})
         raise AssertionError(query)
 
 
@@ -130,6 +147,7 @@ def test_admin_readiness_distinguishes_missing_draft_roles_and_preparation(monke
         assert readiness["assignment_ref"] == "assessment-a"
         return {
             "status": "ready_to_prepare" if user_id <= connection.ready else "waiting_for_assessment_data",
+            "reason": None if user_id <= connection.ready else "W02_ANSWERS_NOT_BOUND",
         }
 
     monkeypatch.setattr("Api.acquaintance.late_readiness", fake_late_readiness)
@@ -143,8 +161,8 @@ def test_admin_readiness_distinguishes_missing_draft_roles_and_preparation(monke
     )
     assert draft["early"]["status"] == "draft_unconfirmed"
     assert draft["roles"] == {
-        "status": "incomplete", "message": "Роли готовы у 0 из 2 участников. Заполните недостающие роли в списке участников.",
-        "ready": 0, "total": 2,
+        "status": "incomplete", "message": "Готовность участников будет проверена после подтверждения ранних сведений.",
+        "ready": 0, "total": 2, "reasons": {}, "action_view": "organization-data",
     }
 
     incomplete = admin_assignment_readiness(
@@ -163,3 +181,30 @@ def test_admin_readiness_distinguishes_missing_draft_roles_and_preparation(monke
     assert ready["context"]["status"] == "ready"
     assert ready["roles"]["status"] == "ready"
     assert ready["status"] == "preparing"
+
+
+def test_admin_readiness_preserves_late_reasons_and_actions(monkeypatch):
+    reasons = {
+        1: "W02_ANSWERS_NOT_BOUND",
+        2: "M4_PROFILE_SCOPE_MISMATCH: stale",
+        3: "M4_CHECKSUM_MISMATCH: invalid",
+    }
+
+    def fake_late_readiness(_connection, *, user_id, readiness):
+        assert readiness["assignment_ref"] == "assessment-a"
+        return {"status": "waiting_for_assessment_data", "reason": reasons[user_id]}
+
+    monkeypatch.setattr("Api.acquaintance.late_readiness", fake_late_readiness)
+    result = admin_assignment_readiness(
+        _ReadinessConnection(confirmed=True, total=3),
+        organization_id=3, assignment_ref="assessment-a",
+    )
+    assert result["roles"]["reasons"] == {
+        "acquaintance_wait": 1,
+        "profile_binding": 1,
+        "verification_error": 1,
+    }
+    assert result["roles"]["action_view"] == "people"
+    assert "ожидается завершение знакомства: 1" in result["roles"]["message"]
+    assert "связку профиля и роли: 1" in result["roles"]["message"]
+    assert "ошибка проверки готовности: 1" in result["roles"]["message"]

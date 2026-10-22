@@ -6,6 +6,9 @@ import path from 'node:path';
 const root = process.cwd();
 const port = 18764;
 const base = `http://127.0.0.1:${port}`;
+const appRelease = (await fs.readFile(path.join(root, 'web/js/config.js'), 'utf8'))
+  .match(/APP_RELEASE = "([^"]+)";/)?.[1];
+if (!appRelease) throw new Error('web/js/config.js must define APP_RELEASE');
 let server;
 
 test.beforeAll(async () => {
@@ -77,7 +80,8 @@ async function openAdminOrganizations(page, invitationHandler, organization = ad
           status: 'incomplete',
           early: { status: 'ready', message: 'Ранний минимум подтверждён. Участников можно приглашать.' },
           context: { status: 'ready', message: 'Контекст выбранной оценки подтверждён и закреплён сервером.' },
-          roles: { status: 'incomplete', message: 'Роли готовы у 0 из 1 участников.', ready: 0, total: 1 },
+          roles: { status: 'incomplete', message: 'Нужно проверить связку профиля и роли: 1.',
+            ready: 0, total: 1, action_view: 'people' },
           preparation: { status: 'idle', message: 'Активной подготовки сейчас нет.' },
         } }] };
       return fulfillJson(route, questionnaireResponse?.body || fallback, questionnaireResponse?.status || 200);
@@ -225,10 +229,33 @@ test('UX-FIX20-04 shows server readiness and routes to missing roles without blo
   const panel = card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel');
   await expect(panel).toContainText('Ранние сведения: Готово');
   await expect(panel).toContainText('Контекст: Готово');
-  await expect(panel).toContainText('Роли участников: Требуется заполнение');
+  await expect(panel).toContainText('Участники: Требуется заполнение');
   await panel.getByRole('button', { name: 'Перейти' }).nth(2).click();
   await expect(card.locator('[data-admin-view="people"]')).toBeVisible();
   await expect(card.locator('[data-action="add-member"]')).toBeVisible();
+});
+
+test('F22-07 explains participant acquaintance wait without a false roles action', async ({ page }) => {
+  const body = { items: [{
+    id: 11, assignment_ref: 'competencies_4k', status: 'confirmed', channel: 'product_form',
+    validation_json: {}, briefing: {}, readiness: {
+      status: 'incomplete',
+      early: { status: 'ready', message: 'Ранний минимум подтверждён.' },
+      context: { status: 'ready', message: 'Контекст подтверждён.' },
+      roles: {
+        status: 'incomplete', ready: 0, total: 1, action_view: null,
+        reasons: { acquaintance_wait: 1 },
+        message: 'К началу готовы 0 из 1. ожидается завершение знакомства: 1.',
+      },
+      preparation: { status: 'idle', message: 'Активной подготовки сейчас нет.' },
+    },
+  }] };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), adminOrganization, { body });
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
+  const participantRow = card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel li').filter({ hasText: 'Участники:' });
+  await expect(participantRow).toContainText('ожидается завершение знакомства: 1');
+  await expect(participantRow.getByRole('button', { name: 'Перейти' })).toHaveCount(0);
 });
 
 test('UX-FIX20-04 org-admin edits the attached card and never sees free tenant creation', async ({ page }) => {
@@ -288,6 +315,41 @@ test('UX-FIX20-04 never reports ready when readiness request fails', async ({ pa
   const panel = card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel');
   await expect(panel).toContainText('Не удалось проверить');
   await expect(panel).not.toContainText('Всё готово');
+});
+
+test('F22-06 restores confirmed fields when the selected assessment has no local draft', async ({ page }) => {
+  const revision = (id, assignmentRef, purpose) => ({
+    id, assignment_ref: assignmentRef, status: 'confirmed', channel: 'product_form',
+    validation_json: {}, answers_json: {
+      C01: { name: `Организация ${assignmentRef}`, organization_type: 'Компания', industry: 'ИТ',
+        activity_description: `Описание ${assignmentRef}` },
+      C02a: { participant_text: purpose }, C03: { participant_text: `Использование ${assignmentRef}` },
+      C04: { answer: 'Участник' }, C17: { case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено' },
+      C21: { organizer: 'HR', responsible_contact: `${assignmentRef}@example.test` },
+    },
+    readiness: { status: 'ready', early: { status: 'ready', message: 'Готово' },
+      context: { status: 'ready', message: 'Готово' }, roles: { status: 'ready', message: 'Готово' },
+      preparation: { status: 'idle', message: 'Нет подготовки' } },
+  });
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), adminOrganization, {
+    body: { items: [revision(31, 'A', 'Published A'), revision(32, 'B', 'Published B')] },
+  });
+
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  const form = card.locator('[data-action="preview-early-data"]');
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Published A');
+  const assignment = form.locator('[name="assignment_ref"]');
+  await assignment.focus();
+  await assignment.fill('B');
+  await assignment.press('Tab');
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Published B');
+  await expect(form.locator('[name="organization_name"]')).toHaveValue('Организация B');
+
+  await form.locator('[name="purpose"]').fill('Draft B');
+  await card.getByRole('button', { name: 'Участники' }).click();
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Draft B');
 });
 
 test('UX-FIX20-02 preserves named drafts across all management views', async ({ page }) => {
@@ -433,8 +495,11 @@ test('UX-FIX20-02 keeps newer input when an older preview response arrives', asy
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
   await form.locator('[name="purpose"]').fill('Новая цель после отправки');
   releasePreview();
-  await expect(card.locator('.admin-questionnaire-preview')).toBeVisible();
+  const stalePreview = card.locator('.admin-questionnaire-preview');
+  await expect(stalePreview).toBeVisible();
   await expect(form.locator('[name="purpose"]')).toHaveValue('Новая цель после отправки');
+  await expect(stalePreview).toContainText('Обновите предпросмотр перед подтверждением');
+  await expect(stalePreview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
 });
 
 test('ADM19-02 routes org-admin own assessment by server journey and preserves management capability', async ({ page }) => {
@@ -581,6 +646,10 @@ test('UX-FIX20-03 previews participant text, invalidates stale preview and appli
       },
       changes: [{ field: 'purpose', before: 'Старая цель', after: payload.answers.C02a.participant_text }],
       is_first_publication: false, recipient_options: ['participant', 'organization_admin'],
+      recipient_projections: {
+        participant: 'Результаты доступны только участнику.',
+        organization_admin: 'Результаты доступны участнику и выбранным представителям заказчика.',
+      },
     });
   });
   await page.route('**/users/admin/organizations/3/questionnaire/*/confirm', async (route) => {
@@ -608,7 +677,11 @@ test('UX-FIX20-03 previews participant text, invalidates stale preview and appli
   await expect(preview).toContainText('Что увидит участник');
   await expect(preview).toContainText('Новая цель участника');
   await expect(preview).toContainText('Старая цель');
+  await expect(preview.locator('[data-questionnaire-recipient-projection]'))
+    .toHaveText('Результаты доступны только участнику.');
   await preview.locator('[name="questionnaire_recipient"][value="organization_admin"]').check();
+  await expect(preview.locator('[data-questionnaire-recipient-projection]'))
+    .toHaveText('Результаты доступны участнику и выбранным представителям заказчика.');
   await expect(preview).toContainText('Обновите предпросмотр перед подтверждением');
   await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
 
@@ -620,6 +693,56 @@ test('UX-FIX20-03 previews participant text, invalidates stale preview and appli
   await expect(card.locator('[data-admin-view="organization-data"] .admin-readiness-panel')).toContainText('Поток B');
   await expect(form.locator('[name="purpose"]')).toHaveValue('Новая цель участника');
 
+});
+
+test('F22-04 keeps a newer confirmed revision and input entered after confirm started', async ({ page }) => {
+  let releaseConfirm;
+  const confirmReleased = new Promise((resolve) => { releaseConfirm = resolve; });
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  await page.route('**/users/admin/organizations/3/questionnaire/preview', (route) => {
+    const payload = route.request().postDataJSON();
+    return fulfillJson(route, {
+      id: 12, assignment_ref: payload.assignment_ref, status: 'ready_for_confirmation',
+      channel: 'product_form', answers_json: payload.answers,
+      validation_json: { errors: [], missing: [] }, participant_preview: { purpose: 'Older confirmed 12' },
+      changes: [], recipient_options: ['participant'],
+    });
+  });
+  await page.route('**/users/admin/organizations/3/questionnaire/*/confirm', async (route) => {
+    await confirmReleased;
+    return fulfillJson(route, {
+      id: 12, assignment_ref: 'Поток order', status: 'confirmed', channel: 'product_form',
+      confirmed_at: '2026-10-21T10:00:00Z', validation_json: { errors: [], missing: [] },
+      answers_json: { C02a: { participant_text: 'Older confirmed 12' } },
+    });
+  });
+  await page.route('**/users/admin/organizations/3/questionnaire', (route) => fulfillJson(route, {
+    items: [{
+      id: 13, assignment_ref: 'Поток order', status: 'confirmed', channel: 'product_form',
+      confirmed_at: '2026-10-21T10:01:00Z', validation_json: { errors: [], missing: [] },
+      answers_json: { C02a: { participant_text: 'Newer confirmed 13' } },
+    }],
+  }));
+
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  const form = card.locator('[data-action="preview-early-data"]');
+  const values = {
+    assignment_ref: 'Поток order', source_author: 'Заказчик', organization_name: 'Организация',
+    organization_type: 'Компания', industry: 'ИТ', activity_description: 'Описание', purpose: 'Older confirmed 12',
+    results_usage: 'Развитие', result_recipients: 'Участник', organizer: 'HR',
+    responsible_contact: 'hr@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
+  };
+  for (const [name, value] of Object.entries(values)) await form.locator(`[name="${name}"]`).fill(value);
+  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+  await card.locator('.admin-questionnaire-preview').getByRole('button', { name: 'Подтвердить сведения' }).click();
+  await form.locator('[name="purpose"]').fill('Draft after confirm');
+  await card.getByRole('button', { name: 'Участники' }).click();
+  await card.getByRole('button', { name: 'Данные организации' }).click();
+  releaseConfirm();
+
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Draft after confirm');
+  await expect(page.locator('#admin-organizations-status')).toContainText('более новая серверная редакция');
 });
 
 test('ADM19-01 adds a participant with only email, name and role', async ({ page }) => {
@@ -884,14 +1007,14 @@ test('REL-VERSION-01 shows one build number on auth and common areas, with a saf
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('#app-release-badge')).toHaveText('Версия 2.0.13');
+  await expect(page.locator('#app-release-badge')).toHaveText(`Версия ${appRelease}`);
   await expect(page.locator('#app-release-badge')).toBeVisible();
   await expect(page.locator('.app-footer-release')).toBeHidden();
   await page.setViewportSize({ width: 360, height: 760 });
   await expect(page.locator('#app-release-badge')).toBeInViewport();
   await page.locator('#auth-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.remove('hidden'));
-  await expect(page.locator('.app-footer-release')).toHaveText('Версия 2.0.13');
+  await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
   await expect(page.locator('.app-footer-release')).toBeVisible();
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#chat-panel').evaluate((panel) => panel.classList.remove('hidden'));

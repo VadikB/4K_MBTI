@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "browser-character-dialogue-v1",
+  "version": "1.0.0",
+  "scope": "synthetic browser acceptance; not GC",
+  "case_refs": [
+    {"id": "CASE-BROWSER-CHARACTER-01", "version": "synthetic-v1"}
+  ],
+  "accepted_inputs": [
+    "Нина, сначала проверьте один запрос вместе с Асей. Если условия не совпадают с инструкцией, остановитесь и передайте вопрос Виктору. Объясните, что сделаете сами и где остановитесь.",
+    "Я предложил проверить запрос и остановиться при отличии условий от инструкции."
+  ],
+  "actions": {},
+  "m7": {
+    "expected_status": "ASK",
+    "required_indicator_ids": ["K2.I10"],
+    "question": "Что вы имели в виду под проверкой одного запроса в своём ответе?"
+  }
+}

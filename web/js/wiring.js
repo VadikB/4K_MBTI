@@ -1674,6 +1674,16 @@ if (adminOrganizationsList) {
     const organizationId = Number(card?.getAttribute('data-organization-id'));
     if (!field || !organizationId || field.getAttribute('name') === 'assignment_ref') return;
     if (!field.closest('[data-action="preview-early-data"], [data-action="preview-questionnaire"], .admin-questionnaire-preview')) return;
+    const preview = field.closest('.admin-questionnaire-preview');
+    if (preview && ['questionnaire_recipient', 'questionnaire_recipient_user'].includes(field.getAttribute('name'))) {
+      const projection = preview.querySelector('[data-questionnaire-recipient-projection]');
+      const includesAdmin = Boolean(
+        preview.querySelector('input[name="questionnaire_recipient"][value="organization_admin"]:checked') ||
+        preview.querySelector('input[name="questionnaire_recipient_user"]:checked'),
+      );
+      if (projection) projection.textContent = includesAdmin
+        ? projection.dataset.adminProjection : projection.dataset.participantProjection;
+    }
     const assessmentRef = field.closest('.admin-questionnaire-preview')?.getAttribute('data-assessment-ref') ||
       card?.querySelector('[data-admin-view]:not(.hidden) [name="assignment_ref"]')?.value || '';
     withScreen(loadAdminOrganizations, (module) =>

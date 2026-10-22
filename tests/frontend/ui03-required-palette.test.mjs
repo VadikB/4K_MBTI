@@ -5,6 +5,8 @@ import test from 'node:test';
 const tokens = readFileSync('web/styles/tokens.css', 'utf8').toLowerCase();
 const components = readFileSync('web/styles/components.css', 'utf8').toLowerCase();
 const markup = readFileSync('web/index.html', 'utf8').toLowerCase();
+const appRelease = readFileSync('web/js/config.js', 'utf8')
+  .match(/APP_RELEASE = "([^"]+)";/)?.[1];
 const allowedHex = new Set([
   '#222c30', '#68777c', '#d6e2e5', '#f7f9fb',
   '#ff563d', '#ff9d8e', '#ffc2b8', '#ffe5e0',
@@ -96,6 +98,8 @@ test('UI03 keeps embedded SVG fills inside the owner palette', () => {
 });
 
 test('UI03 invalidates cached CSS and JavaScript entrypoints', () => {
-  assert.match(markup, /styles\/screens\/auth\.css\?v=2\.0\.13/);
-  assert.match(markup, /web\/dist\/main\.js\?v=2\.0\.13/);
+  assert.ok(appRelease, 'web/js/config.js must define APP_RELEASE');
+  const escapedRelease = appRelease.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  assert.match(markup, new RegExp(`styles/screens/auth\\.css\\?v=${escapedRelease}`));
+  assert.match(markup, new RegExp(`web/dist/main\\.js\\?v=${escapedRelease}`));
 });

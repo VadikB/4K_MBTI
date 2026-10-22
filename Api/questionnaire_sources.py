@@ -204,14 +204,28 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     definition.update(answers["C01"])
     definition.update({key: value for key, value in answers["C17"].items()
                        if key in {"case_reality_level", "organization_name_usage_rules", "restrictions"}})
+    authorized_recipients = []
+    if selected_users:
+        recipient_rows = connection.execute("""SELECT u.id,u.full_name,u.email
+            FROM organization_memberships om JOIN users u ON u.id=om.user_id
+            JOIN organizations o ON o.id=om.organization_id
+            WHERE om.organization_id=%s AND om.role='admin' AND o.is_active=TRUE AND u.id=ANY(%s)
+            ORDER BY LOWER(u.email)""", (organization_id, selected_users)).fetchall()
+        if {int(item["id"]) for item in recipient_rows} != set(selected_users):
+            raise ValueError("REPORT_RECIPIENT_SCOPE_CONFLICT")
+        authorized_recipients = [
+            {"user_id": int(item["id"]), "name": item["full_name"], "email": item["email"]}
+            for item in recipient_rows
+        ]
+    access_projection = recipient_access_projection(mapped)
     participant_briefing = {
         "purpose": answers["C02a"]["participant_text"],
         "customer_question": answers["C02b"].get("answer", ""),
         "organizer": answers["C21"]["organizer"],
         "responsible_contact": answers["C21"]["responsible_contact"],
         "results_usage": answers["C03"]["participant_text"],
-        "result_recipients": answers["C04"]["answer"],
-        "recipient_mapping": mapped,
+        "result_recipients": access_projection["result_recipients"],
+        "recipient_mapping": access_projection["recipient_mapping"],
         "organization_type": answers["C01"]["organization_type"],
         "provided_participant_fields": PROVIDED_PARTICIPANT_FIELDS,
         "participant_questions": PARTICIPANT_QUESTIONS,
@@ -221,18 +235,8 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
         "questionnaire_revision_id": int(row["id"]),
         "assignment_ref": str(row["assignment_ref"]),
     }
-    if selected_users:
-        recipient_rows = connection.execute("""SELECT u.id,u.full_name,u.email
-            FROM organization_memberships om JOIN users u ON u.id=om.user_id
-            JOIN organizations o ON o.id=om.organization_id
-            WHERE om.organization_id=%s AND om.role='admin' AND o.is_active=TRUE AND u.id=ANY(%s)
-            ORDER BY LOWER(u.email)""", (organization_id, selected_users)).fetchall()
-        if {int(item["id"]) for item in recipient_rows} != set(selected_users):
-            raise ValueError("REPORT_RECIPIENT_SCOPE_CONFLICT")
-        participant_briefing["authorized_recipients"] = [
-            {"user_id": int(item["id"]), "name": item["full_name"], "email": item["email"]}
-            for item in recipient_rows
-        ]
+    if authorized_recipients:
+        participant_briefing["authorized_recipients"] = authorized_recipients
     definition.pop("participant_briefing", None)
     version_id = create_organization_context_draft(
         connection, organization_id=organization_id, definition=definition,
@@ -313,13 +317,21 @@ def admin_assignment_readiness(connection, *, organization_id: int, assignment_r
         early_state = "data_missing"
         early_message = "Для выбранной оценки ещё нет подтверждённых сведений. Заполните данные организации или загрузите анкету."
 
-    member_rows = connection.execute(
-        """SELECT user_id FROM organization_memberships
-           WHERE organization_id=%s AND role='member' ORDER BY user_id""",
-        (organization_id,),
+    participant_rows = connection.execute(
+        """SELECT DISTINCT u.id AS user_id
+           FROM organization_invitations oi
+           JOIN users u ON LOWER(u.email)=LOWER(oi.recipient_email)
+           JOIN organization_memberships om
+             ON om.organization_id=oi.organization_id AND om.user_id=u.id
+           WHERE oi.organization_id=%s AND oi.purpose='personal_registration'
+             AND oi.assignment_ref=%s AND oi.revoked_at IS NULL
+             AND oi.created_by_user_id IS DISTINCT FROM u.id
+           ORDER BY u.id""",
+        (organization_id, normalized_ref),
     ).fetchall()
-    total_roles = len(member_rows)
+    total_roles = len(participant_rows)
     ready_roles = 0
+    reason_counts: dict[str, int] = {}
     if early["status"] == "ready":
         # Reuse the participant late gate with the selected assignment instead of
         # reconstructing profile readiness from client-facing fields.
@@ -328,31 +340,67 @@ def admin_assignment_readiness(connection, *, organization_id: int, assignment_r
             "status": "ready", "reason": None, "organization_id": organization_id,
             "assignment_ref": normalized_ref,
         }
-        ready_roles = sum(
-            late_readiness(
+        for row in participant_rows:
+            late = late_readiness(
                 connection, user_id=int(row["user_id"]), readiness=selected_readiness,
-            )["status"] == "ready_to_prepare"
-            for row in member_rows
-        )
+            )
+            if late["status"] == "ready_to_prepare":
+                ready_roles += 1
+                continue
+            reason = str(late.get("reason") or "READINESS_CHECK_FAILED").split(":", 1)[0]
+            category = (
+                "acquaintance_wait" if reason == "W02_ANSWERS_NOT_BOUND" else
+                "profile_binding" if reason.startswith("M4_PROFILE_") else
+                "verification_error"
+            )
+            reason_counts[category] = reason_counts.get(category, 0) + 1
     if total_roles == 0:
         roles_state = "not_started"
-        roles_message = "Участники ещё не добавлены. Их можно добавить до заполнения анкеты."
+        roles_message = "Для выбранной оценки ещё нет назначенных участников."
+        roles_action = "people"
+    elif early["status"] != "ready":
+        roles_state = "incomplete"
+        roles_message = "Готовность участников будет проверена после подтверждения ранних сведений."
+        roles_action = "organization-data"
     elif ready_roles < total_roles:
         roles_state = "incomplete"
-        roles_message = f"Роли готовы у {ready_roles} из {total_roles} участников. Заполните недостающие роли в списке участников."
+        waiting = reason_counts.get("acquaintance_wait", 0)
+        profile = reason_counts.get("profile_binding", 0)
+        verification = reason_counts.get("verification_error", 0)
+        details = []
+        if waiting:
+            details.append(f"ожидается завершение знакомства: {waiting}")
+        if profile:
+            details.append(f"нужно проверить связку профиля и роли: {profile}")
+        if verification:
+            details.append(f"ошибка проверки готовности: {verification}")
+        roles_message = (
+            f"К началу готовы {ready_roles} из {total_roles}. " + "; ".join(details) + "."
+        )
+        roles_action = "people" if profile else None
     else:
         roles_state = "ready"
-        roles_message = f"Роли подтверждены для всех участников: {ready_roles}."
+        roles_message = f"К началу готовы все участники выбранной оценки: {ready_roles}."
+        roles_action = None
 
     preparation = connection.execute(
         """SELECT COUNT(*) FILTER (WHERE latest.status IN ('queued','running'))::int AS in_progress
-           FROM organization_memberships om
+           FROM (
+             SELECT DISTINCT u.id AS user_id
+             FROM organization_invitations oi
+             JOIN users u ON LOWER(u.email)=LOWER(oi.recipient_email)
+             JOIN organization_memberships om
+               ON om.organization_id=oi.organization_id AND om.user_id=u.id
+             WHERE oi.organization_id=%s AND oi.purpose='personal_registration'
+               AND oi.assignment_ref=%s AND oi.revoked_at IS NULL
+               AND oi.created_by_user_id IS DISTINCT FROM u.id
+           ) participant
            LEFT JOIN LATERAL (
              SELECT status FROM assessment_preparation_jobs
-             WHERE user_id=om.user_id ORDER BY created_at DESC LIMIT 1
+             WHERE user_id=participant.user_id ORDER BY created_at DESC LIMIT 1
            ) latest ON TRUE
-           WHERE om.organization_id=%s AND om.role='member'""",
-        (organization_id,),
+           """,
+        (organization_id, normalized_ref),
     ).fetchone() or {"in_progress": 0}
     in_progress = int(preparation.get("in_progress") or 0)
     context_state = "ready" if early["status"] == "ready" else early_state
@@ -369,7 +417,10 @@ def admin_assignment_readiness(connection, *, organization_id: int, assignment_r
         "assignment_ref": normalized_ref,
         "early": {"status": early_state, "message": early_message, "missing": list(early.get("missing") or [])},
         "context": {"status": context_state, "message": context_message},
-        "roles": {"status": roles_state, "message": roles_message, "ready": ready_roles, "total": total_roles},
+        "roles": {
+            "status": roles_state, "message": roles_message, "ready": ready_roles,
+            "total": total_roles, "reasons": reason_counts, "action_view": roles_action,
+        },
         "preparation": {
             "status": "in_progress" if in_progress else "idle",
             "message": f"Идёт подготовка для {in_progress} участников." if in_progress else "Активной подготовки сейчас нет.",
@@ -383,8 +434,22 @@ def template_csv() -> str:
     return output.getvalue()
 
 
-def _participant_projection(answers: dict) -> dict:
+def recipient_access_projection(recipient_mapping: list[str] | None = None) -> dict:
+    """Participant-safe explanation derived only from the effective access mapping."""
+    mapped = sorted(set(recipient_mapping or ["participant"]))
+    return {
+        "recipient_mapping": mapped,
+        "result_recipients": (
+            "Результаты доступны участнику и выбранным представителям заказчика."
+            if "organization_admin" in mapped else
+            "Результаты доступны только участнику."
+        ),
+    }
+
+
+def _participant_projection(answers: dict, *, recipient_mapping: list[str] | None = None) -> dict:
     """Fields that a participant may see before starting an assessment."""
+    access = recipient_access_projection(recipient_mapping)
     return {
         "organization_name": str(answers.get("C01", {}).get("name") or ""),
         "organization_type": str(answers.get("C01", {}).get("organization_type") or ""),
@@ -392,7 +457,7 @@ def _participant_projection(answers: dict) -> dict:
         "activity_description": str(answers.get("C01", {}).get("activity_description") or ""),
         "purpose": str(answers.get("C02a", {}).get("participant_text") or ""),
         "results_usage": str(answers.get("C03", {}).get("participant_text") or ""),
-        "result_recipients": str(answers.get("C04", {}).get("answer") or ""),
+        "result_recipients": access["result_recipients"],
         "organizer": str(answers.get("C21", {}).get("organizer") or ""),
         "responsible_contact": str(answers.get("C21", {}).get("responsible_contact") or ""),
     }
@@ -410,8 +475,12 @@ def public_revision(row: dict, *, confirmed_row: dict | None = None) -> dict:
     """Admin-safe projection without raw source, checksums or internal request metadata."""
     item = dict(row)
     answers = dict(item.get("answers_json") or {})
-    participant_preview = _participant_projection(answers)
-    current_projection = _participant_projection(dict((confirmed_row or {}).get("answers_json") or {}))
+    recipient_mapping = list(item.get("recipient_mapping_json") or ["participant"])
+    current_mapping = list((confirmed_row or {}).get("recipient_mapping_json") or ["participant"])
+    participant_preview = _participant_projection(answers, recipient_mapping=recipient_mapping)
+    current_projection = _participant_projection(
+        dict((confirmed_row or {}).get("answers_json") or {}), recipient_mapping=current_mapping,
+    )
     return {
         "id": int(item["id"]), "assignment_ref": str(item["assignment_ref"]),
         "status": str(item["status"]), "channel": str(item["channel"]),
@@ -421,5 +490,11 @@ def public_revision(row: dict, *, confirmed_row: dict | None = None) -> dict:
         "changes": _projection_changes(current_projection, participant_preview),
         "is_first_publication": confirmed_row is None,
         "recipient_options": ["participant", "organization_admin"],
+        "recipient_projections": {
+            "participant": recipient_access_projection(["participant"])["result_recipients"],
+            "organization_admin": recipient_access_projection(
+                ["participant", "organization_admin"],
+            )["result_recipients"],
+        },
         "confirmed_at": item.get("confirmed_at"),
     }
