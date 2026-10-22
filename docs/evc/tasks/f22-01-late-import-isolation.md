@@ -34,5 +34,6 @@
 
 - Ветка: `codex/f22-01-late-import-isolation`.
 - Завершено: guard для data/DOM/success/error; Node 67/67 PASS; Playwright `auth-r03` 46/46 PASS; pytest 485 PASS, 214 deselected; ESLint, build, `git diff --check` PASS.
+- CI-диагностика: `pull_request`-запуск полностью PASS; параллельный `push`-запуск выявил флейк S10-B — произвольный тестовый ответ не соответствовал условию детерминированного gateway, хотя тест безусловно ожидал fixture-уточнение. Тестовый вход синхронизирован с версионированным fixture; runtime не изменён. Целевой S10-B на изолированной PostgreSQL test-БД — 1/1 PASS.
 - Активный шаг: commit и push.
 - Следующий шаг: PR, обязательный CI и решение владельца о merge.
