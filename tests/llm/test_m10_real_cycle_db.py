@@ -12,8 +12,8 @@ from Api.llm.deepseek_gateway import DeepSeekGateway
 from Api.m10_product_flow import read_runtime, start_or_resume
 from Api.m5_cycle_runtime import transition_session
 from Api.m7_completion import complete
-from Api.m6_worker import run_request as run_evidence
-from Api.m6_assessment_worker import run_request as run_assessment
+from Api.m6_worker_v2 import run_request as run_evidence
+from Api.m6_assessment_worker_v2 import run_request as run_assessment
 from Api.m8_results import read_latest_report
 from tests.integration.test_m10_product_path_db import product_db
 

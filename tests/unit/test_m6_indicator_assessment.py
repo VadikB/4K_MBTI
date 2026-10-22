@@ -112,3 +112,30 @@ def test_package_snapshot_and_gateway_validation():
             return json.dumps(output,ensure_ascii=False)
     result,trace=evaluate(value,mechanism,digest,gateway=Gateway())
     assert result["mode"]=="final" and trace["identity_status"]=="sent_matches_snapshot"
+
+
+def test_current_mechanism_requires_no_assessment_reason():
+    from Api.m6_assessment_package_v2 import load_mechanism as load_current
+    mechanism = load_current()
+    assert mechanism["manifest"]["version"] == "1.0.1"
+    assert mechanism["manifest"]["supersedes"] == "m6_indicator_assessment/1.0.0"
+    assert "NO_ASSESSMENT" in mechanism["prompt"] and "uncertainty" in mechanism["prompt"]
+    verify_mechanism(mechanism, definition_checksum(mechanism))
+
+
+def test_current_mechanism_retries_rejected_json_without_coercion():
+    from Api.m6_assessment_package_v2 import load_mechanism as load_current
+    from Api.m6_assessment_service_v2 import evaluate as evaluate_current
+    value = assessment_input()
+    expected = final_output(value)
+    mechanism = load_current()
+    class Gateway:
+        enabled = True
+        calls = 0
+        def chat(self, messages, **kwargs):
+            self.calls += 1
+            return "{" if self.calls == 1 else json.dumps(expected, ensure_ascii=False)
+    gateway = Gateway()
+    result, trace = evaluate_current(value, mechanism, definition_checksum(mechanism), gateway=gateway)
+    assert result["mode"] == "final" and gateway.calls == 2
+    assert [x["status"] for x in trace["validation_attempts"]] == ["rejected", "accepted"]

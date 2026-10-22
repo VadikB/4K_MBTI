@@ -2,8 +2,8 @@
   "schema_version": 1,
   "date": "2026-10-22",
   "scope": "isolated pytest database; standard M5/M6/M7/M8 services; real DeepSeek provider",
-  "final_status": "TECHNICAL_ERROR",
-  "merge_blocking": true,
+  "final_status": "PASS",
+  "merge_blocking": false,
   "draft_runtime_policy": {
     "package_runtime_enabled": false,
     "global_enablement_changed": false,
@@ -17,7 +17,8 @@
     "m6_real_provider_invoked": true,
     "m7_standard_orchestration_invoked": true,
     "m8_report_observed_in_one_attempt": true,
-    "complete_reproducible_archived_trace_to_m8": false
+    "complete_reproducible_archived_trace_to_m8": true,
+    "m8_incomplete_result_explicit": true
   },
   "attempt_history": [
     {
@@ -49,11 +50,29 @@
       "stage": "M6 Evidence",
       "result": "TECHNICAL_ERROR",
       "reason": "latest repeat again failed strict semantic validation; complete Cycle did not reach an archived M8 result"
+    },
+    {
+      "stage": "M5 to M8 full Cycle",
+      "result": "PASS",
+      "reason": "versioned M6 mechanisms 1.0.1 passed strict validation; pipeline reached report_ready and archived the actual trajectory and M8 report"
+    },
+    {
+      "stage": "M5 to M8 full Cycle repeat",
+      "result": "PASS",
+      "reason": "bounded validation retry preserved the rejected attempt and accepted only a second strictly valid provider response"
+    },
+    {
+      "stage": "M8 descriptive projection",
+      "result": "PASS",
+      "reason": "no interpretable basis produces an empty ready description without invented claims; partial_result remains explicitly incomplete"
     }
   ],
   "primary_traces": [
     "docs/evc/evidence/pers-functional-personalization/full-cycle-real.failure.json",
-    "docs/evc/evidence/pers-functional-personalization/full-cycle-real-assessment.failure.json"
+    "docs/evc/evidence/pers-functional-personalization/full-cycle-real-assessment.failure.json",
+    "docs/evc/evidence/pers-functional-personalization/full-cycle-real.json",
+    "docs/evc/evidence/pers-functional-personalization/full-cycle-real-repeat.json",
+    "docs/evc/evidence/pers-functional-personalization/full-cycle-real-final.json"
   ],
   "non_llm_cycle_regression": {
     "status": "PASS",

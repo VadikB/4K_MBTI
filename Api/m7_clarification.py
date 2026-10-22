@@ -12,6 +12,17 @@ from Api.m7_clarification_service import generate
 from Api import m7_clarification_repository as repo
 
 def _source(connection,c54_revision_id:str,lock=False):
+    if lock:
+        # Keep the global M7 mutation lock order: Cycle -> Assessment Situation.
+        # Runtime presence reconciliation already uses this order.  Clarification
+        # writes used to lock the AS first and could deadlock with a concurrent
+        # runtime poll after an answer was submitted.
+        owner=connection.execute("""SELECT s.cycle_db_id FROM m6_c54_revisions c
+            JOIN m5_assessment_situations s ON s.id=c.as_db_id WHERE c.id=%s""",
+            (UUID(c54_revision_id),)).fetchone()
+        if not owner:raise ValueError('M7_C54_NOT_FOUND')
+        connection.execute("SELECT id FROM m5_cycles WHERE id=%s FOR UPDATE",
+                           (owner['cycle_db_id'],)).fetchone()
     suffix=' FOR UPDATE OF s' if lock else ''
     row=connection.execute("""SELECT c.id AS c54_id,c.payload_json,c.payload_hash,c.mode,c.handoff_id,
         a.id AS assessment_revision_id,r.input_json,s.*,h.boundary_sequence,h.envelope_checksum

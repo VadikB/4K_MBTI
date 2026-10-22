@@ -2,8 +2,9 @@
 
 Статус: **не готово к merge**. Все 27 конечных AS получили детерминированный и
 смысловой PASS на одной и той же версии; 34/34 сценарных регрессии исполнены.
-Обязательный полный Cycle с реальным провайдером пока не имеет воспроизводимо
-успешной сохранённой трассы до M8, поэтому CI/review и итоговое слияние не начинаются.
+Обязательный полный Cycle с реальным провайдером имеет сохранённые успешные
+трассы до M8. Локальная матрица, включая полный browser runtime, закрыта; до merge
+остаются evidence-архив, полный CI и итоговый review.
 
 ## Реализовано
 
@@ -26,12 +27,16 @@
   `1,0,3,1,1,3,0,2,1`.
 - unit functional + Sales regression: PASS, 15 tests.
 - integration functional import/readback: PASS, 1 test; Sales regression: PASS, 2 tests.
-- full non-LLM unit: PASS, `497 passed`; HTTP e2e: PASS, `66 passed`.
-- full integration: PASS после явного `STAND_ADMIN_URL=.../postgres`: `140 passed` в основном
-  прогоне и `6 passed` в повторе пяти stand-падений с корректной maintenance DB;
-  первичные FAIL были конфигурационными, не дефектом кода.
-- frontend lint/build: PASS. Browser: 48 PASS; 14 runtime `NOT_RUN` из-за отсутствия
-  внешнего `STAND_ADMIN_URL` в Playwright-контуре.
+- full non-LLM unit: PASS, `580 passed, 150 deselected`; HTTP e2e: PASS,
+  `66 passed, 11 deselected`.
+- full integration на изолированной БД: PASS, `145 passed, 1 skipped,
+  584 deselected`; skip — отдельно запускаемый real-provider тест. После исправления
+  конкурентного пути M7 узкая DB-регрессия повторена: `2 passed`.
+- frontend JS lint/build: PASS. Полный browser с явным
+  `STAND_ADMIN_URL=.../postgres`: PASS, `62 passed`. В `S10-B` был воспроизведён
+  deadlock между runtime poll и записью clarification из-за обратного порядка
+  блокировок; порядок унифицирован как `Cycle → Assessment Situation`, после чего
+  отдельно `S10-B` и затем весь browser-набор прошли.
 - новый matrix runner: unit PASS, `3 passed`; совместно с package — `9 passed`.
 - исходные реальные generation/tester: 27 запущено; 25 полных цепочек, 2 технических FAIL
   (`PROFILE.06.1` truncated, `PROFILE.09.1` timeout); исторически детерминированно 11 PASS / 14 FAIL;
@@ -58,25 +63,28 @@
   считаются PASS только при обнаруженном дефекте и явном запрете предъявления.
 - текущая конфигурация `deepseek-flash` подтверждена двумя новыми tester-операциями:
   requested model совпал с actual provider model; исторический identity FAIL сохранён.
-- полный real-provider Cycle запускался неоднократно. Один прогон фактически создал
-  M8 report, но тест упал при последующем readback из-за неверного имени колонки и не
-  сохранил полный evidence-файл. Повторные прогоны получили строгие технические FAIL:
+- ранние real-provider Cycle получили строгие технические FAIL:
   лишнее поле Evidence, неверный fragment span и `NO_ASSESSMENT` без обязательной
-  причины. Это не содержательный FAIL AS, но обязательная воспроизводимая трасса
-  `profile → Case → AS → M6 → M7 → M8` пока не доказана.
-- полный unit при локальном `.env`: FAIL, `3 failed / 256 passed`, потому что
-  `DEEPSEEK_MODEL=deepseek-chat` не совпадает с provider contract `deepseek-flash`;
-  контрольный прогон с `DEEPSEEK_MODEL=deepseek-flash`: PASS, `259 passed`.
+  причины. Ошибки сохранены и не интерпретированы как содержательный результат.
+- созданы новые неизменяемые draft-механизмы `m6_evidence/1.0.1` и
+  `m6_indicator_assessment/1.0.1`: они уточняют существующие структурные инварианты,
+  не меняя методологических норм. Ограниченный validation retry делает не более двух
+  реальных вызовов, хранит отклонённую трассу и никогда не исправляет JSON локально.
+- два последующих real-provider Cycle прошли до `report_ready`; финальная трасса
+  содержит профиль, Case/AS checksums, фактический Turn, M6 Evidence/IA, M7 и M8.
+  M8 корректно показывает `partial_result.is_incomplete=true`, не присваивает низкий
+  уровень при отсутствии достаточного наблюдения и формирует пустое ready-описание
+  без вымышленных утверждений.
+- `npm run lint:dead`: FAIL на существующем общем наборе неиспользуемых
+  devDependencies/unlisted binaries/exports; изменённые M6/M7/M8 модули не названы
+  причиной. Этот анализатор не входит в обязательную локальную матрицу текущего
+  изменения; результат сохранён как неблокирующее наблюдение для отдельной очистки.
 
 ## Не выполнено
 
-- Полный Cycle с реальным LLM через M6/M7/M8: `TECHNICAL_ERROR`; сохранены реальные
-  provider traces и причины строгой валидации, но нет одного воспроизводимо успешного
-  и полностью архивированного прогона.
-- 14 stand-dependent browser runtime и CI: `NOT_RUN`.
-- итоговый review и evidence-архив: `NOT_RUN`, так как обязательный full Cycle остаётся
-  техническим блокером.
+- CI: `NOT_RUN` до публикации коммита/PR.
+- итоговый review и evidence-архив: `NOT_RUN`.
 
-Пока full Cycle, CI и review не закрыты, версия продукта не повышается, PR/merge в
+Пока evidence-архив, CI и review не закрыты, версия продукта не повышается, PR/merge в
 `main` не выполняются. Draft-пакет остаётся `runtime_enabled=false`; технический
 допуск AS не является методологической публикацией или разрешением пилота на людях.

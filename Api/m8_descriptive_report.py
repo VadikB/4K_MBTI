@@ -157,6 +157,8 @@ def generate(results: dict, resolved: dict, *, gateway=None) -> dict:
     metadata = {"contract_version": CONTRACT_VERSION, "mechanism": {"id": package["manifest"]["id"],
                 "version": package["manifest"]["version"], "checksum": package["package_checksum"]},
                 "input": model_input, "input_checksum": checksum(model_input)}
+    if not model_input["bases"]:
+        return {**metadata, "status": "ready", "failure_reason": None, "summary": [], "claims": []}
     try:
         if gateway is None:
             from Api.llm.deepseek_gateway import DeepSeekGateway

@@ -88,6 +88,16 @@ def test_input_uses_only_selected_frozen_context():
     assert "email" not in str(model_input)
 
 
+def test_no_interpretable_basis_returns_empty_ready_description_without_provider_call():
+    results, resolved = inputs()
+    resolved["projections"] = []
+    gateway = Gateway({"summary": ["must not be used"], "claims": []})
+    report = generate(results, resolved, gateway=gateway)
+    assert report["status"] == "ready"
+    assert report["summary"] == [] and report["claims"] == []
+    assert gateway.calls == []
+
+
 def test_forbidden_advice_and_unverified_references_fail_closed():
     results, resolved = inputs()
     cases = []

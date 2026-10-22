@@ -110,6 +110,31 @@ def test_snapshot_prompt_and_no_numeric_assessment(tmp_path):
     with pytest.raises(ValueError): verify_mechanism(changed,h)
 
 
+def test_current_mechanism_is_new_immutable_draft():
+    from Api.m6_package_v2 import load_mechanism as load_current
+    mechanism = load_current()
+    assert mechanism['manifest']['version'] == '1.0.1'
+    assert mechanism['manifest']['supersedes'] == 'm6_evidence/1.0.0'
+    assert 'quote == turn.content[start:end]' in mechanism['prompt']
+    verify_mechanism(mechanism, definition_checksum(mechanism))
+
+
+def test_current_mechanism_retries_rejected_json_without_coercion():
+    from Api.m6_evidence_service_v2 import evaluate as evaluate_current
+    from Api.m6_package_v2 import load_mechanism as load_current
+    mechanism = load_current()
+    class Gateway:
+        enabled = True
+        calls = 0
+        def chat(self, messages, **kwargs):
+            self.calls += 1
+            return 'not json' if self.calls == 1 else json.dumps(output(True))
+    gateway = Gateway()
+    result, trace = evaluate_current(material(), mechanism, definition_checksum(mechanism), gateway=gateway)
+    assert result['evidence'] == [] and gateway.calls == 2
+    assert [x['status'] for x in trace['validation_attempts']] == ['rejected', 'accepted']
+
+
 def test_invalid_json_keeps_trace():
     mechanism=load_mechanism('m6_evidence/1.0.0')
     class Gateway:

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "m6_indicator_assessment",
+  "version": "1.0.1",
+  "status": "draft",
+  "scope": "m6_indicator_assessment_qa",
+  "owner": "PM-05",
+  "source": {
+    "id": "M6",
+    "version": "1.8",
+    "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+    "sections": ["M6.6.1–6.6.9", "M6.8.1–8.3"],
+    "m2": "exact frozen criteria in M6-A input"
+  },
+  "input_contract": "M6.IndicatorAssessmentInput/1",
+  "output_contract": "M6.IndicatorAssessment/1",
+  "supersedes": "m6_indicator_assessment/1.0.0",
+  "change_reason": "Clarify the existing mandatory uncertainty for INSUFFICIENT_EVIDENCE and NO_ASSESSMENT after a real-provider validation failure; no methodology rule changed.",
+  "artifacts": [{"name": "prompt.md", "sha256": "5d6ba755c4a6a9f682ac4b404b33720cda355d1f5dd978b7efbefbd6d77f248b"}],
+  "execution": {"temperature": 0, "timeout_seconds": 120, "max_tokens": 12000, "max_input_bytes": 300000, "lease_seconds": 300, "validation_attempts": 2}
+}

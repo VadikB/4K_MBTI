@@ -59,7 +59,7 @@
     "attempt_artifacts": "docs/evc/evidence/pers-functional-personalization/attempts",
     "current_control_operations": "docs/evc/evidence/pers-functional-personalization/technical-recovery-v2"
   },
-  "actual_trajectory": "docs/evc/evidence/pers-functional-personalization/full-cycle-real.failure.json",
+  "actual_trajectory": "docs/evc/evidence/pers-functional-personalization/full-cycle-real-final.json",
   "scenario_regressions": {
     "status": "PASS",
     "planned": 34,
@@ -69,10 +69,12 @@
     "summary": "docs/evc/evidence/pers-functional-personalization/scenario-v2-executed/summary.json"
   },
   "full_cycle": {
-    "status": "TECHNICAL_ERROR",
-    "reason": "Штатный изолированный Cycle запускался с реальным DeepSeek. Один прогон дошёл до созданного M8 report, но архивирование доказательства оборвалось на ошибке readback-запроса теста; повторные прогоны выявили недетерминированные нарушения строгих M6 Evidence/IA контрактов ответом провайдера. Полная воспроизводимая трасса до M8 не подтверждена.",
-    "evidence_failure": "docs/evc/evidence/pers-functional-personalization/full-cycle-real.failure.json",
-    "assessment_failure": "docs/evc/evidence/pers-functional-personalization/full-cycle-real-assessment.failure.json",
+    "status": "PASS",
+    "reason": "Два архивированных изолированных Cycle прошли штатные M5/M6/M7/M8 сервисы с реальным DeepSeek. Невалидная первая AI-попытка сохраняется и не принимается; ограниченный второй вызов допускается только после строгой проверки. M8 явно показывает неполный результат и не выводит низкий уровень из отсутствия наблюдения.",
+    "final_evidence": "docs/evc/evidence/pers-functional-personalization/full-cycle-real-final.json",
+    "repeat_evidence": "docs/evc/evidence/pers-functional-personalization/full-cycle-real-repeat.json",
+    "historical_evidence_failure": "docs/evc/evidence/pers-functional-personalization/full-cycle-real.failure.json",
+    "historical_assessment_failure": "docs/evc/evidence/pers-functional-personalization/full-cycle-real-assessment.failure.json",
     "isolated_db_mechanics": "PASS: 11 tests"
   },
   "independent_conclusion": {
@@ -87,8 +89,6 @@
     }
   },
   "limitations": [
-    "FULL_CYCLE_REAL_PROVIDER_OUTPUT_NOT_REPRODUCIBLY_VALID",
-    "FULL_CYCLE_EVIDENCE_ARCHIVE_INCOMPLETE",
     "METHODOLOGY_ADMISSION_NOT_RUN",
     "RUNTIME_ADMISSION_DISABLED"
   ]
