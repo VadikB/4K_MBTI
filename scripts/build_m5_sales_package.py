@@ -213,9 +213,14 @@ def _list_or_dict_items(value: Any) -> list[tuple[str | int, dict[str, Any]]]:
     return []
 
 
-def _build_case(case_entry: dict, as_entry: dict, m2: dict[str, tuple[str, str]]) -> dict:
-    case = json.loads(case_entry["path"].read_text())
-    situation = json.loads(as_entry["path"].read_text())
+def compile_case_values(*, case: dict, situation: dict, case_source_name: str,
+                        case_source_checksum: str, as_source_name: str,
+                        as_source_checksum: str,
+                        m2: dict[str, tuple[str, str]] | None = None) -> dict:
+    """Compile one immutable author/generated full AS into the runtime Case contract."""
+    case_entry = {"path": Path(case_source_name), "sha256": case_source_checksum}
+    as_entry = {"path": Path(as_source_name), "sha256": as_source_checksum}
+    m2 = m2 or _m2_index()
     passport = case["Паспорт"]
     case_id = str(_first(case, "CaseID", default=passport.get("1 CaseID")))
     version = str(_first(case, "Version", "Версия", default=passport.get("7 Version")))
@@ -304,6 +309,16 @@ def _build_case(case_entry: dict, as_entry: dict, m2: dict[str, tuple[str, str]]
         unresolved_decisions=unresolved,
     )
     return result.model_dump()
+
+
+def _build_case(case_entry: dict, as_entry: dict, m2: dict[str, tuple[str, str]]) -> dict:
+    case = json.loads(case_entry["path"].read_text())
+    situation = json.loads(as_entry["path"].read_text())
+    return compile_case_values(
+        case=case, situation=situation,
+        case_source_name=case_entry["path"].name, case_source_checksum=case_entry["sha256"],
+        as_source_name=as_entry["path"].name, as_source_checksum=as_entry["sha256"], m2=m2,
+    )
 
 
 def build_package(source_root: Path) -> tuple[dict, dict, list[dict], list[dict]]:

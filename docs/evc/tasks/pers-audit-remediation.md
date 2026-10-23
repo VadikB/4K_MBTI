@@ -74,6 +74,14 @@
   повторный независимый tester: 18 checks, `PASS`, `admitted=true`, 0 incomplete,
   0 blocking/review/warnings, `finish_reason=stop`, 0 parse failures. Это
   технический smoke одного профиля, не методологический допуск всей матрицы.
+- Допущенный полный generated AS теперь компилируется тем же JSON-native
+  builder’ом, что author package, в `CaseVersionV3` и execution rules; source ref
+  привязан к checksum именно generated AS. Недопущенный результат не получает
+  compiled runtime payload. Адресная регрессия builder/service: 29 PASS.
+- Выявленная зависимость F01→F05: текущий ordinary Cycle выбирает legacy
+  `CASE-TDISC-*`, тогда как functional generator работает с `CASE.SPEC.*`.
+  Смешивать идентичности запрещено; перед финальным подключением очереди нужен
+  отдельный versioned functional catalog/plan и его admission evidence.
 - Следующий шаг: подключить planner к profile→applicability→generation→tester→snapshot;
   затем F04/F05 и итоговая отчётность F07.
 - Ветка: `codex/pers-audit-remediation`.

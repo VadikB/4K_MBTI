@@ -43,6 +43,9 @@ def test_shared_service_admits_only_after_deterministic_and_independent_checks()
     assert gateway.generation_requirements[0]["omit_empty_required_fields"] is False
     assert result_a["tester"]["aggregation"]["status"] == "PASS"
     assert gateway.tester_payloads[0]["required_output"]["checks"][0]["check_id"].startswith("exact id")
+    assert result_a["compiled_case"]["author_assessment_situation"] == result_a["candidate_as"]
+    assert result_a["compiled_case"]["author_as_source"]["sha256"] == result_a["candidate_checksum"]
+    assert set(result_a["execution_rules"]["cases"]) == {"CASE.SPEC.01"}
 
 
 def test_shared_service_closes_admission_when_tester_omits_required_checks():
@@ -55,6 +58,7 @@ def test_shared_service_closes_admission_when_tester_omits_required_checks():
     result = service.prepare(snapshot, EmptyTester())
     assert result["admitted_for_participant"] is False
     assert result["tester"]["aggregation"]["status"] == "INCOMPLETE"
+    assert result["compiled_case"] is None and result["execution_rules"] is None
 
 
 def test_malformed_provider_json_is_retried_once_without_salvaging_fragments():

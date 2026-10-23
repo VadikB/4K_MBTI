@@ -14,6 +14,7 @@ from typing import Any
 
 from Api.m5_functional_personalization import extract_candidate_as
 from Api.m5_functional_tester import aggregate, build_applicability_plan, normalize_results
+from scripts.build_m5_sales_package import build_execution_rules, compile_case_values
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.2"
@@ -189,8 +190,20 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
 def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
     generation = generate(snapshot, gateway)
     tested = test_candidate(snapshot, generation, gateway)
+    compiled_case = None
+    execution_rules = None
+    if tested["aggregation"]["admitted_for_participant"]:
+        compiled_case = compile_case_values(
+            case=snapshot["case"], situation=generation["candidate_as"],
+            case_source_name=Path(snapshot["refs"]["case"]["path"]).name,
+            case_source_checksum=snapshot["refs"]["case"]["sha256"],
+            as_source_name=f"generated-{generation['candidate_checksum']}.json",
+            as_source_checksum=generation["candidate_checksum"],
+        )
+        execution_rules = build_execution_rules([compiled_case])
     return {"schema_version": 1, "input_snapshot_checksum": checksum(snapshot),
             "candidate_as": generation["candidate_as"], "candidate_checksum": generation["candidate_checksum"],
             "deterministic_validation": generation["deterministic_validation"],
             "generation_operation": generation["provider_operation"], "tester": tested,
-            "admitted_for_participant": tested["aggregation"]["admitted_for_participant"]}
+            "admitted_for_participant": tested["aggregation"]["admitted_for_participant"],
+            "compiled_case": compiled_case, "execution_rules": execution_rules}
