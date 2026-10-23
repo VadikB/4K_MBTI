@@ -339,7 +339,7 @@ def build_package(source_root: Path) -> tuple[dict, dict, list[dict], list[dict]
     return package, source_manifest, mapping, preview
 
 
-def build_execution_rules(cases: list[dict]) -> dict:
+def build_execution_rules(cases: list[dict], event_bindings: dict | None = None) -> dict:
     """Структурирует только явно заданные автором события; не добавляет продуктовых эвристик."""
     result: dict[str, dict] = {}
     for case in cases:
@@ -359,16 +359,23 @@ def build_execution_rules(cases: list[dict]) -> dict:
                 "repeat_rule": content.get("Повторение"), "forbidden_when": constraints,
                 "source": step["source"],
             })
-            if event == "character_response" or step["step_id"].endswith("_REPLY"):
-                for character in case["characters"]:
+            explicit = ((event_bindings or {}).get("case_bindings") or {}).get(case["case_id"], {}).get("events", {}).get(step["step_id"])
+            reaction_speakers = (explicit or {}).get("speaker_ids", [])
+            legacy_reaction = event == "character_response" or step["step_id"].endswith("_REPLY")
+            if (explicit or {}).get("function") == "character_reaction" or (explicit is None and legacy_reaction):
+                selected = [item for item in case["characters"]
+                            if not reaction_speakers or item["character_id"] in reaction_speakers]
+                for character in selected:
                     materials.append({
-                        "material_id": f"CHARACTER.{character['character_id']}",
+                        "material_id": (f"CHARACTER.{character['character_id']}.{step['step_id']}"
+                                        if explicit is not None else f"CHARACTER.{character['character_id']}"),
                         "kind": "character_reaction", "speaker_id": character["character_id"],
                         "participant_payload": None,
                         "disclosure_condition": {"type": "never"},
-                        "event_condition": {"type": "semantic_author_condition", "text": constraints,
+                        "event_condition": {"type": "semantic_author_condition", "text": occurrence,
                                             "source": step["source"]},
-                        "reaction_rule": constraints,
+                        "reaction_rule": content.get("Действие"),
+                        "forbidden_when": constraints,
                         "result_check": "Персонаж отвечает только за собственную позицию и полномочия.",
                     })
         for material in sorted(case["materials"], key=lambda item: item["order"]):

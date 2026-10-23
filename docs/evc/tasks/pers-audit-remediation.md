@@ -42,12 +42,21 @@
   tester protocol закрывается, каждый M8 skill требует собственного основания.
   Сохранённые 27 AS повторно агрегированы: 27 PASS; пограничные воспроизведения
   теперь отклонены. Адресные unit 22 PASS, полный non-LLM backend 519 PASS.
-- Активный шаг: F02 — определить совместимое версионирование исполнимых правил.
-- Следующий шаг: F02 — версия исполнимых правил и runtime-регрессия девяти Case;
-  затем F01/F04/F05 и итоговая отчётность F07.
+- Завершено: F02 получил отдельный draft runtime-артефакт `1.0.0`, привязанный
+  к неизменяемым Case по id/version/checksum. Добавлены expand-only таблицы,
+  неизменяемые версии/привязки, совместимый legacy fallback и явный выбор версии
+  для QA/каталога. PostgreSQL-регрессия фактически провела все 9 Case через
+  `submit_turn`: 2 PASS; CASE02/07 без вызовов персонажей. Полный non-LLM backend:
+  522 PASS, 217 deselected.
+- Активный шаг: F01 — единый продуктовый сервис подготовки персонализированной AS.
+- Следующий шаг: подключить planner к profile→applicability→generation→tester→snapshot;
+  затем F04/F05 и итоговая отчётность F07.
 - Ветка: `codex/pers-audit-remediation`.
 - Изменённые файлы первого шага: `Api/m5_functional_tester.py`,
   `Api/m8_descriptive_report.py`, соответствующие unit-тесты и эта карточка.
+- Изменённые файлы второго шага: `Api/m5_runtime_rules.py`, `Api/database.py`,
+  `Api/m5_storage.py`, `Api/m5_catalog_integrity.py`, builder execution rules,
+  runtime package `functional-personalization-runtime/1.0.0` и unit/integration tests.
 - Откат: revert единого исправляющего PR; draft остаётся runtime-disabled,
   исторические AS и tester traces не переписываются.
 

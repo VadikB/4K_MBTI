@@ -9,6 +9,7 @@ from Api.assessment_case_contracts import AssessmentSituationV2, validate_case_v
 from Api.assessment_contexts import build_personalized_profile, canonical_json, context_checksum
 from Api.m5_case_runtime import build_assessment_situation, checksum
 from Api.m5_rule_engine import build_m5_ai_operations_snapshot
+from Api.m5_runtime_rules import resolve_runtime_rules
 from Api.m5_catalog_integrity import case_admission, resolve_profile_base_role
 
 
@@ -332,7 +333,8 @@ def save_assessment_situation(connection, *, situation: dict, execution_payload:
 def prepare_assessment_situation(connection, *, assessment_situation_id: str, case_id: str, case_version: str,
                                  personalized_profile_id: int, cycle_db_id: int, session_db_id: int,
                                  substitutions: list[dict], policy: dict,
-                                 usage_scope: str = "assessment", qa_authorized_by: int | None = None) -> dict:
+                                 usage_scope: str = "assessment", qa_authorized_by: int | None = None,
+                                 runtime_rule_version_id: int | None = None) -> dict:
     case_row = connection.execute(
         "SELECT cv.id,cv.content_json, p.manifest_json, p.runtime_rules_json FROM m5_case_versions cv JOIN m5_packages p ON p.id=cv.package_id WHERE cv.case_id=%s AND cv.case_version=%s",
         (case_id, case_version),
@@ -399,7 +401,11 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
         substitutions=substitutions, qa_evidence=evidence, policy=policy,
         ai_operations=build_m5_ai_operations_snapshot(),
     )
-    runtime_rules = case_row["runtime_rules_json"] or {}
+    runtime_rules, runtime_rule_ref = resolve_runtime_rules(
+        connection, case_version_id=int(case_row["id"]), case_id=case_id,
+        legacy_rules=case_row["runtime_rules_json"] or {}, catalog_db_id=catalog_db_id,
+        runtime_rule_version_id=runtime_rule_version_id,
+    )
     if int(case_row["content_json"].get("schema_version", 2)) == 3:
         case_rules = (runtime_rules.get("cases") or {}).get(case_id)
         if not isinstance(case_rules, dict) or str(case_rules.get("case_version")) != str(case_version):
@@ -425,6 +431,7 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
         execution["initial_materials"] = situation["participant_payload"].get("initial_materials", [])
         execution["runtime_schema_version"] = 3
         execution["runtime_rules"] = case_rules
+        execution["runtime_rule_ref"] = runtime_rule_ref
     else:
         execution["runtime_rules"] = runtime_rules
     situation["execution_payload_ref"]["checksum"] = checksum(execution)

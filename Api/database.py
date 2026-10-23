@@ -3256,6 +3256,44 @@ def ensure_m5_runtime_schema(connection) -> None:
             PRIMARY KEY (case_version_id, indicator_id)
         )
     """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_runtime_rule_versions (
+            id BIGSERIAL PRIMARY KEY,
+            artifact_id TEXT NOT NULL,
+            artifact_version TEXT NOT NULL,
+            schema_version INTEGER NOT NULL,
+            status TEXT NOT NULL CHECK (status IN ('draft','published','retired')),
+            owner TEXT NOT NULL,
+            manifest_json JSONB NOT NULL,
+            manifest_checksum TEXT NOT NULL UNIQUE,
+            rules_json JSONB NOT NULL,
+            rules_checksum TEXT NOT NULL UNIQUE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (artifact_id,artifact_version)
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_runtime_rule_case_bindings (
+            runtime_rule_version_id BIGINT NOT NULL REFERENCES m5_runtime_rule_versions(id) ON DELETE RESTRICT,
+            case_version_id BIGINT NOT NULL REFERENCES m5_case_versions(id) ON DELETE RESTRICT,
+            binding_json JSONB NOT NULL,
+            binding_checksum TEXT NOT NULL,
+            PRIMARY KEY (runtime_rule_version_id,case_version_id)
+        )
+    """)
+    connection.execute("""
+        CREATE OR REPLACE FUNCTION prevent_m5_runtime_rule_change()
+        RETURNS trigger AS $$ BEGIN
+            RAISE EXCEPTION 'Versioned M5 runtime rules are immutable';
+        END; $$ LANGUAGE plpgsql
+    """)
+    for table in ("m5_runtime_rule_versions", "m5_runtime_rule_case_bindings"):
+        trigger = "immutable_" + table
+        connection.execute(f"DROP TRIGGER IF EXISTS {trigger} ON {table}")
+        connection.execute(
+            f"CREATE TRIGGER {trigger} BEFORE UPDATE OR DELETE ON {table} "
+            "FOR EACH ROW EXECUTE FUNCTION prevent_m5_runtime_rule_change()"
+        )
     for table, key in (("m5_case_characters", "character_id"), ("m5_case_materials", "material_id"), ("m5_case_scenario_steps", "step_id")):
         connection.execute(f"""
             CREATE TABLE IF NOT EXISTS {table} (
@@ -3303,9 +3341,11 @@ def ensure_m5_runtime_schema(connection) -> None:
         CREATE TABLE IF NOT EXISTS m5_catalog_case_versions (
             catalog_db_id BIGINT NOT NULL REFERENCES m5_catalogs(id) ON DELETE RESTRICT,
             case_version_id BIGINT NOT NULL REFERENCES m5_case_versions(id) ON DELETE RESTRICT,
+            runtime_rule_version_id BIGINT REFERENCES m5_runtime_rule_versions(id) ON DELETE RESTRICT,
             PRIMARY KEY (catalog_db_id,case_version_id)
         )
     """)
+    connection.execute("ALTER TABLE m5_catalog_case_versions ADD COLUMN IF NOT EXISTS runtime_rule_version_id BIGINT REFERENCES m5_runtime_rule_versions(id) ON DELETE RESTRICT")
     connection.execute("""
         CREATE OR REPLACE FUNCTION prevent_published_m5_catalog_change()
         RETURNS trigger AS $$ BEGIN
