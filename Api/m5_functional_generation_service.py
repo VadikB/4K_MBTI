@@ -41,11 +41,14 @@ def _unique(pattern: str, code: str) -> Path:
 
 
 def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id: str,
-                         synthetic: bool = False) -> dict[str, Any]:
+                         synthetic: bool = False, case_value: dict[str, Any] | None = None,
+                         author_as_example: dict[str, Any] | None = None) -> dict[str, Any]:
     number = case_id.rsplit(".", 1)[-1]
     case_path = _unique(f"02_cases/Case_SPEC_{number}_*.json", f"PERS_CASE_SOURCE_NOT_UNIQUE:{case_id}")
     example_path = _unique(f"04_as/AS_SPEC_{number}_FUNCTIONAL_*.json", f"PERS_AS_SOURCE_NOT_UNIQUE:{case_id}")
-    case, example = _read(case_path), _read(example_path)
+    source_case, source_example = _read(case_path), _read(example_path)
+    case = json.loads(json.dumps(case_value if case_value is not None else source_case, ensure_ascii=False))
+    example = json.loads(json.dumps(author_as_example if author_as_example is not None else source_example, ensure_ascii=False))
     if case.get("CaseID") != case_id or example.get("CaseID") != case_id:
         raise ValueError("M5_FUNCTIONAL_SOURCE_IDENTITY_MISMATCH")
     clean_profile = json.loads(json.dumps(profile, ensure_ascii=False))

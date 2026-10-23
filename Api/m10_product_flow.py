@@ -66,18 +66,19 @@ def _present_next(connection, *, plan: dict, user_id: int, key: str) -> dict:
             "decision": decision, "presentation": presentation}
 
 
-def _prepare_next(connection, *, plan: dict, user_id: int, key: str) -> dict:
+def _prepare_next(connection, *, plan: dict, user_id: int, key: str, defer_as: bool = False) -> dict:
     """Prepare an admitted AS without presenting it or starting M7 time."""
     decision = m7_cycle_planner.choose_next(
         connection, cycle_id=str(plan["cycle_id"]), expected_plan_revision_id=str(plan["revision_id"]),
-        key=key, created_by=user_id, policy=_policy(),
+        key=key, created_by=user_id, policy=_policy(), prepare_selected=not defer_as,
     )
     return {"plan": m7_cycle_planner.read_plan(connection, str(plan["cycle_id"])),
             "decision": decision, "presentation": None}
 
 
 def prepare(connection, *, user_id: int, key: str,
-            selected_skills: list[str] | None = None, profile_id: int | None = None) -> dict:
+            selected_skills: list[str] | None = None, profile_id: int | None = None,
+            defer_as: bool = False) -> dict:
     """Create/reuse one prepared Cycle; never start its Session or calendar window."""
     connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(user_id),))
     organization_id = participant_profile.active_organization(connection, user_id)
@@ -100,7 +101,7 @@ def prepare(connection, *, user_id: int, key: str,
         if not situation:
             result = _prepare_next(
                 connection, plan=current, user_id=user_id,
-                key=f"product-prepared:{key}",
+                key=f"product-prepared:{key}", defer_as=defer_as,
             )
             return {"resumed": True, **result}
         return {"resumed": True, "plan": current,
@@ -113,7 +114,7 @@ def prepare(connection, *, user_id: int, key: str,
     )
     if plan["plan"]["status"] == "NO_ROUTE":
         raise ValueError('M7_NO_ADMISSIBLE_CASE: Профиль готов. Ответственный специалист должен подготовить допустимые кейсы для выбранной роли и конфигурации.')
-    result = _prepare_next(connection, plan=plan, user_id=user_id, key=f"product-prepared:{key}")
+    result = _prepare_next(connection, plan=plan, user_id=user_id, key=f"product-prepared:{key}", defer_as=defer_as)
     return {"resumed": False, **result}
 
 

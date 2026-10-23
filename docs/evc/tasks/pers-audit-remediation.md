@@ -48,7 +48,8 @@
   для QA/каталога. PostgreSQL-регрессия фактически провела все 9 Case через
   `submit_turn`: 2 PASS; CASE02/07 без вызовов персонажей. Полный non-LLM backend:
   522 PASS, 217 deselected.
-- Активный шаг: F01 — единый продуктовый сервис подготовки персонализированной AS.
+- Активный шаг: F04/F05 — отрицательные и сквозные runtime-сценарии после
+  завершения продуктового подключения F01.
 - Выполнена инфраструктурная часть F01: `/assessment/cycles/prepare` теперь
   создаёт отдельную durable product-operation и отвечает `202`; оба UI-пути
   ожидают её завершения и получают Cycle только после committed `admitted` AS.
@@ -90,8 +91,19 @@
   репозиторный WORKING/draft пакет. Исправлен обнаруженный trigger: непривязанный
   CaseVersion теперь может перейти в новый статус, но после создания AS изменение
   по-прежнему блокируется как `Referenced M5 CaseVersion content is immutable`.
-- Следующий шаг: подключить planner к profile→applicability→generation→tester→snapshot;
-  затем F04/F05 и итоговая отчётность F07.
+- Planner и durable product-operation подключены к единой трёхфазной цепочке:
+  короткая транзакция фиксирует профиль, Case и route decision; DeepSeek
+  generator/tester вызываются без удержания DB-соединения; допущенный результат
+  компилируется и атомарно прикрепляется к decision. Runtime snapshot содержит
+  полный trace независимого tester и checksum generated AS. Legacy-схема без
+  `assessment_configurations.catalog_version_id` продолжает прежний путь.
+  Изолированная PostgreSQL-регрессия: целевой functional Cycle — 1 PASS; полный
+  `test_m10_product_path_db.py` — 10 PASS; адресные unit — 23 PASS; `py_compile`
+  и `git diff --check` — PASS. Провайдер в integration заменён детерминированной
+  фикстурой; повторный real-LLM вызов на этом шаге не выполнялся, поскольку
+  контракт провайдера уже подтверждён отдельным smoke и стандартная регрессия
+  не должна зависеть от внешней модели.
+- Следующий шаг: F04/F05 runtime/negative контуры и итоговая отчётность F07.
 - Ветка: `codex/pers-audit-remediation`.
 - Изменённые файлы первого шага: `Api/m5_functional_tester.py`,
   `Api/m8_descriptive_report.py`, соответствующие unit-тесты и эта карточка.
@@ -103,11 +115,11 @@
 
 ## Критерии приёмки
 
-- [ ] Blocking finding под любым declared status запрещает допуск; пустой или
+- [x] Blocking finding под любым declared status запрещает допуск; пустой или
   некорректный обязательный протокол не допускается и не выдаётся за дефект AS.
-- [ ] Каждый заявленный M8 skill имеет собственное основание; лишний skill закрыт.
-- [ ] Все девять Case проходят runtime-проверку; CASE02/07 остаются actorless.
-- [ ] Продуктовый путь использует единый сервис profile→applicability→generation→
+- [x] Каждый заявленный M8 skill имеет собственное основание; лишний skill закрыт.
+- [x] Все девять Case проходят runtime-проверку; CASE02/07 остаются actorless.
+- [x] Продуктовый путь использует единый сервис profile→applicability→generation→
   tester→immutable AS, а матрицы вызывают тот же сервис.
 - [ ] Negative-тесты проверяют мутированную AS без подсказанного диагноза;
   34 runtime-сценария проверяют события, видимость, состояние и idempotency.

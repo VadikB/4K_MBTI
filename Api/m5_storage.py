@@ -334,7 +334,10 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
                                  personalized_profile_id: int, cycle_db_id: int, session_db_id: int,
                                  substitutions: list[dict], policy: dict,
                                  usage_scope: str = "assessment", qa_authorized_by: int | None = None,
-                                 runtime_rule_version_id: int | None = None) -> dict:
+                                 runtime_rule_version_id: int | None = None,
+                                 case_value_override: dict | None = None,
+                                 runtime_rules_override: dict | None = None,
+                                 generation_trace: dict | None = None) -> dict:
     case_row = connection.execute(
         "SELECT cv.id,cv.content_json, p.manifest_json, p.runtime_rules_json FROM m5_case_versions cv JOIN m5_packages p ON p.id=cv.package_id WHERE cv.case_id=%s AND cv.case_version=%s",
         (case_id, case_version),
@@ -391,22 +394,34 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
         raise ValueError("M5_CASE_NOT_ADMITTED:" + ",".join(admission["reasons"]))
     evidence = [{key:item[key] for key in ("scope","result","artifact_ref","checksum")}
                 for item in admission["evidence"]]
+    case_value = case_value_override or case_row["content_json"]
+    if case_value.get("case_id") != case_id or case_value.get("version") != case_version:
+        raise ValueError("M5_GENERATED_CASE_IDENTITY_MISMATCH")
+    ai_operations = build_m5_ai_operations_snapshot()
+    if generation_trace is not None:
+        ai_operations["functional_personalization"] = generation_trace
     situation, execution = build_assessment_situation(
-        assessment_situation_id=assessment_situation_id, case_value=case_row["content_json"],
+        assessment_situation_id=assessment_situation_id, case_value=case_value,
         cycle_ref={"id": str(cycle_db_id), "version": "1", "checksum": checksum({"cycle_id": str(cycle["cycle_id"]), "target_set_checksum": cycle["target_set_checksum"]})},
         session_ref={"id": str(session_db_id), "version": "1", "checksum": checksum({"session_id": str(session["session_id"]), "cycle_id": str(cycle["cycle_id"]), "ordinal": session["ordinal"]})},
         profile_ref={"id": f"assessment_personalized_profiles:{profile_row['id']}", "version": "1",
                      "checksum": profile_row["checksum"]},
         profile_snapshot={**profile, "base_role": base_role}, methodology_refs=refs,
         substitutions=substitutions, qa_evidence=evidence, policy=policy,
-        ai_operations=build_m5_ai_operations_snapshot(),
+        ai_operations=ai_operations,
     )
-    runtime_rules, runtime_rule_ref = resolve_runtime_rules(
-        connection, case_version_id=int(case_row["id"]), case_id=case_id,
-        legacy_rules=case_row["runtime_rules_json"] or {}, catalog_db_id=catalog_db_id,
-        runtime_rule_version_id=runtime_rule_version_id,
-    )
-    if int(case_row["content_json"].get("schema_version", 2)) == 3:
+    if runtime_rules_override is None:
+        runtime_rules, runtime_rule_ref = resolve_runtime_rules(
+            connection, case_version_id=int(case_row["id"]), case_id=case_id,
+            legacy_rules=case_row["runtime_rules_json"] or {}, catalog_db_id=catalog_db_id,
+            runtime_rule_version_id=runtime_rule_version_id,
+        )
+    else:
+        if generation_trace is None or not generation_trace.get("candidate_checksum"):
+            raise ValueError("M5_GENERATED_RUNTIME_TRACE_REQUIRED")
+        runtime_rules, runtime_rule_ref = runtime_rules_override, {
+            "source": "functional_generation", "candidate_checksum": generation_trace.get("candidate_checksum")}
+    if int(case_value.get("schema_version", 2)) == 3:
         case_rules = (runtime_rules.get("cases") or {}).get(case_id)
         if not isinstance(case_rules, dict) or str(case_rules.get("case_version")) != str(case_version):
             raise ValueError("M5_SALES_RUNTIME_RULES_UNAVAILABLE")

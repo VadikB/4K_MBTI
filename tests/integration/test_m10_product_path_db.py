@@ -2,6 +2,7 @@ from contextlib import contextmanager
 import copy
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from uuid import uuid4
 
 import psycopg
@@ -253,7 +254,7 @@ def test_product_cycle_preparation_operation_returns_only_committed_admitted_cyc
                       request={**request, "selected_skills": ["K1"]})
 
 
-def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(product_db):
+def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(product_db, monkeypatch):
     with product_db() as connection:
         package = json.loads((FUNCTIONAL_OUTPUT / "case-package.json").read_text())
         manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_text())
@@ -264,6 +265,7 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         fixture_bindings = copy.deepcopy(loaded)
         for case in fixture_package["cases"]:
             case["status"] = "FROZEN"
+            case["author_case"]["Status"] = "FROZEN"
             fixture_bindings["bindings"]["case_bindings"][case["case_id"]]["case_checksum"] = checksum(case)
         # Only the isolated fixture simulates completed human admission. Repository
         # package/runtime artifacts remain unchanged WORKING/draft sources.
@@ -308,19 +310,55 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
             selection=PersonalizedProfileSelection(organization_context_version_id=organization_context,
                 role_profile_version_id=specialist_role, assessment_configuration_id=1),
             full_name='Synthetic specialist', position='', duties='')
-        prepared = prepare(connection, user_id=99, key="functional-cycle", profile_id=specialist_profile["id"])
+        connection.execute("""CREATE TABLE product_cycle_preparation_operations (
+            id BIGSERIAL PRIMARY KEY,operation_id TEXT UNIQUE,user_id BIGINT,request_json JSONB,request_checksum TEXT,
+            status TEXT DEFAULT 'queued',attempts INTEGER DEFAULT 0,result_json JSONB,error_code TEXT,error_message TEXT,
+            worker_id TEXT,locked_at TIMESTAMP,created_at TIMESTAMP DEFAULT NOW(),updated_at TIMESTAMP DEFAULT NOW(),completed_at TIMESTAMP)""")
+        connection.commit()
+
+    class FunctionalGateway:
+        enabled = True
+        def chat_with_trace(self, messages, **kwargs):
+            payload = json.loads(next(item["content"] for item in reversed(messages) if item["role"] == "user"))
+            if ":generation:" in kwargs["routing_key"]:
+                content = json.dumps(payload["author_as_example"], ensure_ascii=False)
+            else:
+                content = json.dumps({"checks": [{"check_id": item["check_id"], "status": "PASS",
+                    "reason": "isolated functional Cycle fixture", "evidence_paths": [], "findings": []}
+                    for item in payload["applicability_plan"]["required_checks"]]}, ensure_ascii=False)
+            return SimpleNamespace(content=content, sent={}, provider={"finish_reason": "stop"})
+
+    monkeypatch.setattr("Api.product_cycle_preparation_queue.get_connection", product_db)
+    monkeypatch.setattr("Api.llm.deepseek_gateway.DeepSeekGateway", FunctionalGateway)
+    queue = ProductCyclePreparationQueue()
+    request = {"personalized_profile_id": specialist_profile["id"], "idempotency_key": "functional-cycle",
+               "selected_skills": ["K1", "K2", "K3", "K4"]}
+    queue.enqueue(operation_id="functional-cycle", user_id=99, request=request)
+    queue._process(queue._claim())
+    operation = queue.get_status("functional-cycle")
+    assert operation["status"] == "completed", operation
+    prepared = operation["result_json"]
+    with product_db() as connection:
         route_ids = [item["case_id"] for item in prepared["plan"]["plan"]["route"]]
         assert route_ids
         assert all(case_id.startswith("CASE.SPEC.") for case_id in route_ids)
         assert not any(case_id.startswith("CASE-TDISC-") for case_id in route_ids)
-        assert prepared["decision"]["selected_case_id"].startswith("CASE.SPEC.")
+        decision = connection.execute("""SELECT d.* FROM m7_route_decisions d
+            JOIN m5_cycles c ON c.id=d.cycle_db_id WHERE c.cycle_id=%s ORDER BY d.created_at DESC LIMIT 1""",
+            (prepared["plan"]["cycle_id"],)).fetchone()
+        assert decision["selected_case_id"].startswith("CASE.SPEC.")
         situation = connection.execute("""SELECT s.snapshot_json,s.execution_payload_json
-            FROM m5_assessment_situations s WHERE s.id=%s""",
-            (prepared["decision"]["assigned_as_db_id"],)).fetchone()
+            FROM m5_assessment_situations s JOIN m7_route_assignments a ON a.assessment_situation_db_id=s.id
+            WHERE a.decision_id=%s""", (decision["id"],)).fetchone()
         assert situation["snapshot_json"]["case_ref"]["id"].startswith("CASE.SPEC.")
-        assert situation["execution_payload_json"]["runtime_rule_ref"]["version"] == "1.0.0"
+        generated_ref = situation["execution_payload_json"]["runtime_rule_ref"]
+        generated_trace = situation["execution_payload_json"]["ai_operations"]["functional_personalization"]
+        assert generated_ref == {"source": "functional_generation",
+                                 "candidate_checksum": generated_trace["candidate_checksum"]}
+        assert generated_trace["admitted_for_participant"] is True
         selected_case = connection.execute("SELECT case_version_id FROM m5_assessment_situations WHERE id=%s",
-                                           (prepared["decision"]["assigned_as_db_id"],)).fetchone()
+            (connection.execute("SELECT assessment_situation_db_id FROM m7_route_assignments WHERE decision_id=%s",
+                                (decision["id"],)).fetchone()["assessment_situation_db_id"],)).fetchone()
         with pytest.raises(psycopg.Error, match="Referenced M5 CaseVersion content is immutable"):
             with connection.transaction():
                 connection.execute("UPDATE m5_case_versions SET status='WORKING' WHERE id=%s",

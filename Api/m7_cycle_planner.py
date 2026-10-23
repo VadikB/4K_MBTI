@@ -165,7 +165,8 @@ def _facts(connection, cycle_db_id:int, target_ids:set[str]) -> dict:
             "aggregate_contribution_coverage":"NOT_CALCULATED","component_score_coverage":"NOT_CALCULATED"}
 
 
-def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:str, created_by:int, policy:dict) -> dict:
+def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:str, created_by:int, policy:dict,
+                prepare_selected:bool=True) -> dict:
     plan=repo.read_plan(connection,cycle_id)
     connection.execute("SELECT id FROM m5_cycles WHERE id=%s FOR UPDATE",(plan["cycle_db_id"],)).fetchone()
     connection.execute("""UPDATE m7_route_positions p SET state='completed',updated_at=NOW()
@@ -210,7 +211,7 @@ def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:
             decision.update(status="SELECTED",selected_case_id=selected["case_id"],selected_case_version=selected["case_version"],
                             expected_targets=selected["contribution"],explanation={"code":"M7_NEXT_AS_SELECTED","algorithm":plan["rules_json"]["algorithm_version"]})
     saved=repo.save_decision(connection,plan=plan,session_db_id=session["id"],key=key,request_hash=request_hash,decision=decision)
-    if decision["status"]=="SELECTED":
+    if decision["status"]=="SELECTED" and prepare_selected:
         profile_id=connection.execute("SELECT personalized_profile_id FROM m5_cycles WHERE id=%s",(plan["cycle_db_id"],)).fetchone()["personalized_profile_id"]
         usage_scope=connection.execute("SELECT usage_scope FROM m5_cycles WHERE id=%s",(plan["cycle_db_id"],)).fetchone()["usage_scope"]
         prepared=prepare_assessment_situation(connection,assessment_situation_id=str(uuid4()),case_id=decision["selected_case_id"],
@@ -220,6 +221,33 @@ def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:
         if prepared["snapshot"]["admission"]["admitted"] is not True:raise ValueError("AS_NOT_ADMITTED")
         repo.attach_prepared_as(connection,saved["id"],prepared["id"])
     return repo.read_decision(connection,saved["id"])
+
+
+def attach_functional_generated_as(connection, *, decision_id: str, prepared_result: dict,
+                                   generation_trace: dict, created_by: int, policy: dict) -> dict:
+    """Atomically persist and attach an independently admitted generated AS."""
+    decision = repo.read_decision(connection, decision_id)
+    connection.execute("SELECT id FROM m7_route_decisions WHERE id=%s FOR UPDATE", (decision_id,)).fetchone()
+    if decision["status"] != "SELECTED": raise ValueError("M7_DECISION_NOT_SELECTED")
+    if decision.get("assigned_as_db_id"): return decision
+    if not prepared_result.get("admitted_for_participant"): raise ValueError("AS_NOT_ADMITTED")
+    if not isinstance(prepared_result.get("compiled_case"), dict) or not isinstance(prepared_result.get("execution_rules"), dict):
+        raise ValueError("M5_FUNCTIONAL_COMPILED_RESULT_REQUIRED")
+    cycle = connection.execute("SELECT personalized_profile_id,usage_scope FROM m5_cycles WHERE id=%s",
+                               (decision["cycle_db_id"],)).fetchone()
+    runtime_rules = prepared_result["execution_rules"]
+    prepared = prepare_assessment_situation(
+        connection, assessment_situation_id=str(uuid4()), case_id=decision["selected_case_id"],
+        case_version=decision["selected_case_version"], personalized_profile_id=cycle["personalized_profile_id"],
+        cycle_db_id=decision["cycle_db_id"], session_db_id=decision["session_db_id"], substitutions=[],
+        policy=policy, usage_scope=cycle["usage_scope"],
+        qa_authorized_by=created_by if cycle["usage_scope"] == "qa" else None,
+        case_value_override=prepared_result["compiled_case"], runtime_rules_override=runtime_rules,
+        generation_trace=generation_trace,
+    )
+    if prepared["snapshot"]["admission"]["admitted"] is not True: raise ValueError("AS_NOT_ADMITTED")
+    repo.attach_prepared_as(connection, decision_id, prepared["id"])
+    return repo.read_decision(connection, decision_id)
 
 
 def present(connection, *, decision_id:str, expected_revision:int) -> dict:
