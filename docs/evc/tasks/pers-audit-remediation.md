@@ -68,6 +68,12 @@
   `tester=FAIL`, `admitted=false`) из-за отсутствующего обязательного поля
   `Предыдущая версия AS`. Секреты не читались и не сохранялись. Следующий шаг —
   исправление/repair этого подтверждённого дефекта без ослабления контракта.
+- Исправление подтверждено тем же реальным профилем: точный список обязательных
+  полей теперь вычисляется из versioned author example, после чего generation
+  прошла `PASS`. Точная выходная схема tester v2 восстановлена в общем сервисе;
+  повторный независимый tester: 18 checks, `PASS`, `admitted=true`, 0 incomplete,
+  0 blocking/review/warnings, `finish_reason=stop`, 0 parse failures. Это
+  технический smoke одного профиля, не методологический допуск всей матрицы.
 - Следующий шаг: подключить planner к profile→applicability→generation→tester→snapshot;
   затем F04/F05 и итоговая отчётность F07.
 - Ветка: `codex/pers-audit-remediation`.

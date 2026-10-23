@@ -6,13 +6,15 @@ from Api import m5_functional_generation_service as service
 
 class Gateway:
     enabled = True
-    def __init__(self): self.profiles = []
+    def __init__(self): self.profiles = []; self.generation_requirements = []; self.tester_payloads = []
     def chat_with_trace(self, messages, **kwargs):
         payload = json.loads(next(item["content"] for item in reversed(messages) if item["role"] == "user"))
         if ":generation:" in kwargs["routing_key"]:
             self.profiles.append(payload["profile"])
+            self.generation_requirements.append(payload["requirements"])
             content = json.dumps(payload["author_as_example"], ensure_ascii=False)
         else:
+            self.tester_payloads.append(payload)
             checks = [{"check_id": item["check_id"], "status": "PASS", "reason": "fixture", "findings": []}
                       for item in payload["applicability_plan"]["required_checks"]]
             content = json.dumps({"checks": checks}, ensure_ascii=False)
@@ -37,7 +39,10 @@ def test_shared_service_admits_only_after_deterministic_and_independent_checks()
     assert result_b["admitted_for_participant"] is True
     assert result_a["input_snapshot_checksum"] != result_b["input_snapshot_checksum"]
     assert gateway.profiles[0]["user_context"]["regular_tasks"] != gateway.profiles[1]["user_context"]["regular_tasks"]
+    assert "Предыдущая версия AS" in gateway.generation_requirements[0]["required_top_level_fields_exact"]
+    assert gateway.generation_requirements[0]["omit_empty_required_fields"] is False
     assert result_a["tester"]["aggregation"]["status"] == "PASS"
+    assert gateway.tester_payloads[0]["required_output"]["checks"][0]["check_id"].startswith("exact id")
 
 
 def test_shared_service_closes_admission_when_tester_omits_required_checks():

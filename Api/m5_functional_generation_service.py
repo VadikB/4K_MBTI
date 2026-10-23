@@ -131,6 +131,8 @@ def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
     payload = {"profile": snapshot["profile"], "case": snapshot["case"],
                "author_as_example": snapshot["author_as_example"], "requirements": {
                    "output": "Верни только один JSON-объект полной AS с теми же верхнеуровневыми полями, что у author_as_example.",
+                   "required_top_level_fields_exact": list(snapshot["author_as_example"].keys()),
+                   "omit_empty_required_fields": False,
                    "status": "TEST_DRAFT", "current": False, "synthetic": snapshot["synthetic"],
                    "must_adapt_all_dependent_parts": True, "must_not_create_evidence_or_scores": True,
                    "compact_json": True, "do_not_expand_or_duplicate_author_content": True,
@@ -160,9 +162,17 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                  "llm_must_not_change_applicability": True,
                  "missing_required_material_or_condition_is_fail_not_not_applicable": True,
                  "allowed_statuses": ["PASS", "FAIL", "NOT_RUN", "INDETERMINATE", "TECHNICAL_ERROR"],
-                 "do_not_return_overall_status": True}}
+                 "do_not_return_overall_status": True},
+               "required_output": {"checks": [{
+                   "check_id": "exact id from applicability_plan.required_checks",
+                   "status": "PASS|FAIL|NOT_RUN|INDETERMINATE|TECHNICAL_ERROR",
+                   "evidence_paths": ["JSON path"], "reason": "string",
+                   "findings": [{"code": "string", "severity": "blocking|non_blocking",
+                                 "paths": ["JSON path"], "reason": "string",
+                                 "requirement_ref": "check_id/source_ref"}],
+               }]}}
     messages = [{"role": "system", "content": (SOURCE / "07_generation/Tester_instruction_v0.2.txt").read_text(encoding="utf-8")},
-                {"role": "system", "content": "Следуй applicability_plan. Не добавляй проверки и не вычисляй общий статус."},
+                {"role": "system", "content": "Верни один JSON-объект с единственным верхнеуровневым полем checks. Следуй applicability_plan, используй точные check_id каждого required_checks ровно один раз. Не добавляй проверки и не вычисляй общий статус."},
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
     input_checksum = checksum(messages)
     operation_id = f"{snapshot['operation_id']}:tester:{input_checksum[:12]}"
