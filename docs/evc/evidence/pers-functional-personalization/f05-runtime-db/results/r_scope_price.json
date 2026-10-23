@@ -1,0 +1,1603 @@
+{
+  "test_id": "R_SCOPE_PRICE",
+  "case_id": "CASE.SPEC.02",
+  "cycle_id": "765a4115-7c2c-4f0c-9fbc-4c64ce0cf3a1",
+  "assessment_situation_id": "00599c58-f444-4fd2-b015-bbb9e9b5136c",
+  "request": {
+    "request_id": "f05-26-r_scope_price-turn",
+    "turn_id": "241d64ac-951b-4315-a8fa-71a48d3e24fb",
+    "content": "F05: Case02 в профиле подбора"
+  },
+  "response": {
+    "turn": {
+      "id": 35,
+      "assessment_situation_db_id": 27,
+      "turn_id": "241d64ac-951b-4315-a8fa-71a48d3e24fb",
+      "sequence_no": 8,
+      "speaker_type": "assessee",
+      "speaker_id": "assessee",
+      "content_text": "F05: Case02 в профиле подбора",
+      "request_id": "f05-26-r_scope_price-turn",
+      "created_at": "2026-10-23 08:58:32.571829+00:00"
+    },
+    "events": [
+      {
+        "id": 188,
+        "assessment_situation_db_id": 27,
+        "event_id": "fdf55dc8-0c03-45b7-b103-42487a82417f",
+        "event_type": "stage_transitioned",
+        "event_key": "stage:E01_FACT:E02_SUBMISSION",
+        "cause_json": {
+          "rule_id": "CASE.SPEC.02:E01_FACT:completion",
+          "turn_id": "241d64ac-951b-4315-a8fa-71a48d3e24fb",
+          "decision_id": "451c537e-153d-4c59-896c-dea503ebfd9f"
+        },
+        "material_id": null,
+        "payload_json": {
+          "to": "E02_SUBMISSION",
+          "from": "E01_FACT"
+        },
+        "sequence_no": 9,
+        "created_at": "2026-10-23 08:58:32.571829+00:00"
+      }
+    ],
+    "idempotent": false
+  },
+  "events": [
+    {
+      "id": 181,
+      "assessment_situation_db_id": 27,
+      "event_id": "b2c5154e-d181-4992-a336-a933d2b3b1ea",
+      "event_type": "scenario_started",
+      "event_key": "scenario_started",
+      "cause_json": {
+        "type": "C-34",
+        "scope": "assessment"
+      },
+      "material_id": null,
+      "payload_json": {
+        "execution_envelope": {
+          "admitted": true,
+          "contract": "C-34",
+          "usage_scope": "assessment",
+          "indicator_ids": [
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17",
+            "K1.I06",
+            "K1.I09"
+          ],
+          "schema_version": 1,
+          "qa_override_ref": null,
+          "admission_unchanged": true,
+          "execution_payload_ref": {
+            "id": "00599c58-f444-4fd2-b015-bbb9e9b5136c:execution",
+            "version": "1",
+            "checksum": "0dd04b51ec3712f258ac92a4c5189f1e253990a6bbeacd190c1c1ad0680e9bde"
+          },
+          "assessment_situation_ref": {
+            "id": "00599c58-f444-4fd2-b015-bbb9e9b5136c",
+            "version": "1",
+            "checksum": "75717af640894f4813459645236b7286173cf21f2176c650ada1cdbafdea432f"
+          },
+          "participant_payload_checksum": "8c8d009bd926eb1cc899a75592fb1f60484285725214e6725a70973b9f50a1d7"
+        }
+      },
+      "sequence_no": 1,
+      "created_at": "2026-10-23 08:58:32.571829+00:00"
+    },
+    {
+      "id": 182,
+      "assessment_situation_db_id": 27,
+      "event_id": "c1dae26e-51ea-4dcb-9e6c-e756150e0335",
+      "event_type": "material_disclosed",
+      "event_key": "initial-material:M01",
+      "cause_json": {
+        "type": "initial_presentation"
+      },
+      "material_id": "M01",
+      "payload_json": {
+        "content": {
+          "text": "К концу дня 20 нужен список из шести кандидатов, которых можно пригласить на профессиональное интервью. В каждом профиле должны быть подтверждены опыт работы с обращениями клиентов не менее года, опыт использования системы учёта заявок и готовность работать по будням с 10:00 до 19:00. Нужны краткая сводка по этим условиям и подтверждение интереса человека именно к нашей вакансии.\nИнтервью запланированы после получения списка. Разрешения менять обязательные требования или переносить подготовку списка пока нет. Отдельные отклики без проверки условий не считаем готовыми профилями для интервью. Сегодня нужен предлагаемый способ привлечения и понятный статус условий; обещать результат без оснований не прошу.\nРесурс для рассмотрения обоих способов в заданном объёме предусмотрен. Дополнительную проверку вне описанного процесса отдельно не согласовывали.",
+          "title": "Запрос руководителя группы",
+          "source": {
+            "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+            "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+            "pointer": "/Материалы/1"
+          },
+          "material_id": "M01"
+        },
+        "recipient": "assessee"
+      },
+      "sequence_no": 2,
+      "created_at": "2026-10-23 08:58:32.571829+00:00"
+    },
+    {
+      "id": 183,
+      "assessment_situation_db_id": 27,
+      "event_id": "a7673bd7-ca4e-4153-a141-008ca72b124f",
+      "event_type": "material_disclosed",
+      "event_key": "initial-material:M02",
+      "cause_json": {
+        "type": "initial_presentation"
+      },
+      "material_id": "M02",
+      "payload_json": {
+        "content": {
+          "text": "По размещению в нашем профессиональном сообществе планируем получить 60 откликов за один цикл публикации. Это предварительный план числа откликов на данную вакансию, а не гарантированное число подходящих кандидатов. Сбор хотим завершить к дню 17 и к дню 20 передать проверенные профили со сводкой.\nПредварительная форма содержит вопросы об опыте и графике. Проверяем, достаточно ли её для подтверждения работы с системой учёта заявок и интереса именно к этой вакансии. Образец полного профиля пока не согласован. План основан на оценке размещения; фактического результата нового цикла ещё нет.",
+          "title": "Первоначальный план A",
+          "source": {
+            "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+            "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+            "pointer": "/Материалы/2"
+          },
+          "material_id": "M02"
+        },
+        "recipient": "assessee"
+      },
+      "sequence_no": 3,
+      "created_at": "2026-10-23 08:58:32.571829+00:00"
+    },
+    {
+      "id": 184,
+      "assessment_situation_db_id": 27,
+      "event_id": "08388a41-00dd-4748-bcd5-cb3e6f78f773",
+      "event_type": "material_disclosed",
+      "event_key": "initial-material:M03",
+      "cause_json": {
+        "type": "initial_presentation"
+      },
+      "material_id": "M03",
+      "payload_json": {
+        "content": {
+          "text": "После сверки графика публикаций уточняем план v1: сбор откликов возможен к дню 27, передача проверенных профилей со сводкой — не ранее дня 30. Дни 17 и 20 для текущего размещения больше не подтверждаем. Плановый объём остаётся 60 откликов на эту вакансию за один цикл; гарантии числа подходящих профилей нет.\nСтатус формы по опыту работы с системой и интересу к вакансии не изменился. Возможность ускоренного размещения не проверяли. Сегодня нового подтверждённого графика ускорения не будет.",
+          "title": "Уточнение плана A",
+          "source": {
+            "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+            "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+            "pointer": "/Материалы/3"
+          },
+          "material_id": "M03"
+        },
+        "recipient": "assessee"
+      },
+      "sequence_no": 4,
+      "created_at": "2026-10-23 08:58:32.571829+00:00"
+    },
+    {
+      "id": 185,
+      "assessment_situation_db_id": 27,
+      "event_id": "9e5c9039-1f31-4c88-9cc4-1da5d3595f47",
+      "event_type": "material_disclosed",
+      "event_key": "initial-material:M04",
+      "cause_json": {
+        "type": "initial_presentation"
+      },
+      "material_id": "M04",
+      "payload_json": {
+        "content": {
+          "text": "Для той же вакансии за один цикл размещения планируем 40 откликов. Это сопоставимый по единице предварительный объём, а не результат уже проведённого поиска. Собрать отклики планируем к дню 18. Проверка условий и интереса занимает ещё четыре рабочих дня после сбора; полный список со сводкой по текущему графику передаём к дню 22.\nФорма включает все перечисленные Анной условия. Переданы два обезличенных образца заполненного профиля из прежней работы, чтобы можно было проверить полноту формы. Нужное число подходящих кандидатов в новом цикле заранее не подтверждено. Передачу полного списка к дню 20 отдельно не согласовывали.",
+          "title": "План B",
+          "source": {
+            "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+            "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+            "pointer": "/Материалы/4"
+          },
+          "material_id": "M04"
+        },
+        "recipient": "assessee"
+      },
+      "sequence_no": 5,
+      "created_at": "2026-10-23 08:58:32.571829+00:00"
+    },
+    {
+      "id": 186,
+      "assessment_situation_db_id": 27,
+      "event_id": "6ce92dd8-35a5-4500-8326-4b9d31131992",
+      "event_type": "material_disclosed",
+      "event_key": "initial-material:M05",
+      "cause_json": {
+        "type": "initial_presentation"
+      },
+      "material_id": "M05",
+      "payload_json": {
+        "content": {
+          "text": "В двух образцах B есть отдельные поля для всех условий Анны и запись о подтверждённом интересе к конкретной вакансии. Это проверка содержания образцов, не проверка будущих кандидатов и не гарантия шести профилей.\nУ A представлен только пример первичной анкеты. Опыт общения с клиентами и график отмечены; подтверждения опыта системы учёта и интереса именно к вакансии в этом примере нет. Это не доказательство невозможности такой проверки, но её полнота пока не подтверждена. Дополнительный разбор форм возможен с дня 2; результата сегодня нет. Срок передачи итогового списка эта записка не подтверждает.",
+          "title": "Записка проверявшего материалы специалиста",
+          "source": {
+            "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+            "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+            "pointer": "/Материалы/5"
+          },
+          "material_id": "M05"
+        },
+        "recipient": "assessee"
+      },
+      "sequence_no": 6,
+      "created_at": "2026-10-23 08:58:32.571829+00:00"
+    },
+    {
+      "id": 187,
+      "assessment_situation_db_id": 27,
+      "event_id": "45b3705d-b71b-46e9-8c03-da52f1b2240c",
+      "event_type": "material_disclosed",
+      "event_key": "initial-material:M06",
+      "cause_json": {
+        "type": "initial_presentation"
+      },
+      "material_id": "M06",
+      "payload_json": {
+        "content": {
+          "text": "A планирует 60 откликов, B — 40: на 20 больше, то есть на 50%. Чем больше откликов, тем лучше закроем потребность Анны. Поэтому A — лучший способ, предлагаю сегодня рекомендовать его. Напиши свою позицию и подготовь сообщение Анне.",
+          "title": "Сообщение коллеги",
+          "source": {
+            "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+            "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+            "pointer": "/Материалы/6"
+          },
+          "material_id": "M06"
+        },
+        "recipient": "assessee"
+      },
+      "sequence_no": 7,
+      "created_at": "2026-10-23 08:58:32.571829+00:00"
+    },
+    {
+      "id": 188,
+      "assessment_situation_db_id": 27,
+      "event_id": "fdf55dc8-0c03-45b7-b103-42487a82417f",
+      "event_type": "stage_transitioned",
+      "event_key": "stage:E01_FACT:E02_SUBMISSION",
+      "cause_json": {
+        "rule_id": "CASE.SPEC.02:E01_FACT:completion",
+        "turn_id": "241d64ac-951b-4315-a8fa-71a48d3e24fb",
+        "decision_id": "451c537e-153d-4c59-896c-dea503ebfd9f"
+      },
+      "material_id": null,
+      "payload_json": {
+        "to": "E02_SUBMISSION",
+        "from": "E01_FACT"
+      },
+      "sequence_no": 9,
+      "created_at": "2026-10-23 08:58:32.571829+00:00"
+    },
+    {
+      "id": 189,
+      "assessment_situation_db_id": 27,
+      "event_id": "164fc441-fd6a-4ba4-9c4b-38944d640ddf",
+      "event_type": "stage_transitioned",
+      "event_key": "stage:E02_SUBMISSION:ready_for_scenario_end",
+      "cause_json": {
+        "rule_id": "CASE.SPEC.02:E02_SUBMISSION:completion",
+        "turn_id": "241d64ac-951b-4315-a8fa-71a48d3e24fb",
+        "decision_id": "fa694e16-e65d-478c-9ced-591b29278437"
+      },
+      "material_id": null,
+      "payload_json": {
+        "to": "ready_for_scenario_end",
+        "from": "E02_SUBMISSION"
+      },
+      "sequence_no": 10,
+      "created_at": "2026-10-23 08:58:32.571829+00:00"
+    }
+  ],
+  "state": {
+    "status": "active",
+    "current_stage": "ready_for_scenario_end",
+    "applied_effects": [],
+    "opened_branches": [],
+    "disclosed_materials": [
+      "M01",
+      "M02",
+      "M03",
+      "M04",
+      "M05",
+      "M06"
+    ],
+    "not_opened_branches": []
+  },
+  "readback": {
+    "runtime_kind": "cycle",
+    "cycle_id": "765a4115-7c2c-4f0c-9fbc-4c64ce0cf3a1",
+    "plan": {
+      "cycle_id": "765a4115-7c2c-4f0c-9fbc-4c64ce0cf3a1",
+      "cycle_status": "active",
+      "plan_id": "6e1d6853-c21a-4d52-9b2a-ea0e9c1febdc",
+      "revision_id": "cc8fa30f-8005-4c35-9db2-484e7d62e484",
+      "revision_no": 1,
+      "plan": {
+        "goal": {
+          "kind": "skills",
+          "selected_skills": [
+            "K1",
+            "K2",
+            "K3",
+            "K4"
+          ]
+        },
+        "route": [
+          {
+            "case_id": "CASE.SPEC.02",
+            "reasons": [],
+            "eligible": true,
+            "base_role": "specialist_expert",
+            "target_ids": [
+              "K4.I03",
+              "K4.I05",
+              "K4.I12",
+              "K4.I13",
+              "K4.I14",
+              "K4.I16",
+              "K4.I17",
+              "K1.I06",
+              "K1.I09"
+            ],
+            "conditional": true,
+            "reserve_for": [],
+            "case_version": "v0.6",
+            "duration_source": "M5 CaseVersion planned range",
+            "purpose_target_ids": [
+              "K1.I06",
+              "K1.I09",
+              "K4.I03",
+              "K4.I05",
+              "K4.I12",
+              "K4.I13",
+              "K4.I14",
+              "K4.I16",
+              "K4.I17"
+            ],
+            "planned_max_minutes": 18,
+            "planned_min_minutes": 15,
+            "contribution_target_ids": [
+              "K1.I06",
+              "K1.I09",
+              "K4.I03",
+              "K4.I05",
+              "K4.I12",
+              "K4.I13",
+              "K4.I14",
+              "K4.I16",
+              "K4.I17"
+            ]
+          }
+        ],
+        "status": "LIMITED",
+        "catalog": [
+          {
+            "case_id": "CASE.SPEC.02",
+            "reasons": [],
+            "eligible": true,
+            "base_role": "specialist_expert",
+            "target_ids": [
+              "K4.I03",
+              "K4.I05",
+              "K4.I12",
+              "K4.I13",
+              "K4.I14",
+              "K4.I16",
+              "K4.I17",
+              "K1.I06",
+              "K1.I09"
+            ],
+            "case_version": "v0.6",
+            "planned_max_minutes": 18,
+            "planned_min_minutes": 15,
+            "contribution_target_ids": [
+              "K1.I06",
+              "K1.I09",
+              "K4.I03",
+              "K4.I05",
+              "K4.I12",
+              "K4.I13",
+              "K4.I14",
+              "K4.I16",
+              "K4.I17"
+            ]
+          }
+        ],
+        "reserves": [],
+        "catalog_ref": {
+          "id": "f05-26",
+          "version": "1.0",
+          "checksum": "c59d2037ac147656202e053aa5968ef44107414525b6c4015e711492ba641f61",
+          "m2_checksum": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+          "package_checksum": "ff08cf149ce983a6e969e06aa5c461f6adde68d1d7aa6f52e32c1d1d89c7fe25"
+        },
+        "schema_version": 1,
+        "full_target_set": [
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C01",
+            "indicator_id": "K1.I01"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C01",
+            "indicator_id": "K1.I02"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C01",
+            "indicator_id": "K1.I03"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C02",
+            "indicator_id": "K1.I04"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C02",
+            "indicator_id": "K1.I05"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C03",
+            "indicator_id": "K1.I06"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C03",
+            "indicator_id": "K1.I07"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C04",
+            "indicator_id": "K1.I08"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C04",
+            "indicator_id": "K1.I09"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C05",
+            "indicator_id": "K1.I10"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C05",
+            "indicator_id": "K1.I11"
+          },
+          {
+            "skill_id": "K1.3",
+            "m2_version": "v1.1",
+            "component_id": "K1.C06",
+            "indicator_id": "K1.I12"
+          },
+          {
+            "skill_id": "K1.3",
+            "m2_version": "v1.1",
+            "component_id": "K1.C07",
+            "indicator_id": "K1.I13"
+          },
+          {
+            "skill_id": "K1.3",
+            "m2_version": "v1.1",
+            "component_id": "K1.C07",
+            "indicator_id": "K1.I14"
+          },
+          {
+            "skill_id": "K1.4",
+            "m2_version": "v1.1",
+            "component_id": "K1.C08",
+            "indicator_id": "K1.I15"
+          },
+          {
+            "skill_id": "K1.4",
+            "m2_version": "v1.1",
+            "component_id": "K1.C09",
+            "indicator_id": "K1.I16"
+          },
+          {
+            "skill_id": "K1.4",
+            "m2_version": "v1.1",
+            "component_id": "K1.C09",
+            "indicator_id": "K1.I17"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C01",
+            "indicator_id": "K2.I01"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C01",
+            "indicator_id": "K2.I02"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C02",
+            "indicator_id": "K2.I03"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C02",
+            "indicator_id": "K2.I04"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C03",
+            "indicator_id": "K2.I05"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C03",
+            "indicator_id": "K2.I06"
+          },
+          {
+            "skill_id": "K2.2",
+            "m2_version": "v1.0",
+            "component_id": "K2.C04",
+            "indicator_id": "K2.I07"
+          },
+          {
+            "skill_id": "K2.2",
+            "m2_version": "v1.0",
+            "component_id": "K2.C05",
+            "indicator_id": "K2.I08"
+          },
+          {
+            "skill_id": "K2.2",
+            "m2_version": "v1.0",
+            "component_id": "K2.C06",
+            "indicator_id": "K2.I09"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C07",
+            "indicator_id": "K2.I10"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C07",
+            "indicator_id": "K2.I11"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C08",
+            "indicator_id": "K2.I12"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C09",
+            "indicator_id": "K2.I13"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C09",
+            "indicator_id": "K2.I14"
+          },
+          {
+            "skill_id": "K3.1",
+            "m2_version": "v1.1",
+            "component_id": "K3.C01",
+            "indicator_id": "K3.I01"
+          },
+          {
+            "skill_id": "K3.1",
+            "m2_version": "v1.1",
+            "component_id": "K3.C01",
+            "indicator_id": "K3.I02"
+          },
+          {
+            "skill_id": "K3.1",
+            "m2_version": "v1.1",
+            "component_id": "K3.C02",
+            "indicator_id": "K3.I03"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C03",
+            "indicator_id": "K3.I04"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C03",
+            "indicator_id": "K3.I05"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C03",
+            "indicator_id": "K3.I06"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C05",
+            "indicator_id": "K3.I07"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C05",
+            "indicator_id": "K3.I08"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C06",
+            "indicator_id": "K3.I09"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C07",
+            "indicator_id": "K3.I10"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C08",
+            "indicator_id": "K3.I11"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C08",
+            "indicator_id": "K3.I12"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C01",
+            "indicator_id": "K4.I01"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C01",
+            "indicator_id": "K4.I02"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C02",
+            "indicator_id": "K4.I03"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C02",
+            "indicator_id": "K4.I04"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C03",
+            "indicator_id": "K4.I05"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C03",
+            "indicator_id": "K4.I06"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C04",
+            "indicator_id": "K4.I07"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C04",
+            "indicator_id": "K4.I08"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C05",
+            "indicator_id": "K4.I09"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C05",
+            "indicator_id": "K4.I10"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C06",
+            "indicator_id": "K4.I11"
+          },
+          {
+            "skill_id": "K4.3",
+            "m2_version": "v1.0",
+            "component_id": "K4.C07",
+            "indicator_id": "K4.I12"
+          },
+          {
+            "skill_id": "K4.3",
+            "m2_version": "v1.0",
+            "component_id": "K4.C07",
+            "indicator_id": "K4.I13"
+          },
+          {
+            "skill_id": "K4.3",
+            "m2_version": "v1.0",
+            "component_id": "K4.C08",
+            "indicator_id": "K4.I14"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C09",
+            "indicator_id": "K4.I15"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C10",
+            "indicator_id": "K4.I16"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C10",
+            "indicator_id": "K4.I17"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C10",
+            "indicator_id": "K4.I18"
+          }
+        ],
+        "algorithm_version": "m7-greedy-coverage/1",
+        "known_limitations": [
+          "Cases are conditional opportunities; not guaranteed Evidence"
+        ],
+        "parameter_sources": {
+          "time_budget_seconds": {
+            "kind": "method_default",
+            "version": "1.0.0",
+            "checksum": "9e4f5a3c0b6838407bbb16174f7f37b10f1022242b3d1088c51df31f014bd0ef",
+            "artifact_id": "m7_cycle_plan"
+          },
+          "calendar_window_seconds": {
+            "kind": "method_default",
+            "version": "1.0.0",
+            "checksum": "9e4f5a3c0b6838407bbb16174f7f37b10f1022242b3d1088c51df31f014bd0ef",
+            "artifact_id": "m7_cycle_plan"
+          }
+        },
+        "duration_semantics": "planned case durations do not constrain selection; the Cycle budget limits actual elapsed collection time",
+        "planned_target_set": [
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C01",
+            "indicator_id": "K1.I01"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C01",
+            "indicator_id": "K1.I02"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C01",
+            "indicator_id": "K1.I03"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C02",
+            "indicator_id": "K1.I04"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C02",
+            "indicator_id": "K1.I05"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C03",
+            "indicator_id": "K1.I06"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C03",
+            "indicator_id": "K1.I07"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C04",
+            "indicator_id": "K1.I08"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C04",
+            "indicator_id": "K1.I09"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C05",
+            "indicator_id": "K1.I10"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C05",
+            "indicator_id": "K1.I11"
+          },
+          {
+            "skill_id": "K1.3",
+            "m2_version": "v1.1",
+            "component_id": "K1.C06",
+            "indicator_id": "K1.I12"
+          },
+          {
+            "skill_id": "K1.3",
+            "m2_version": "v1.1",
+            "component_id": "K1.C07",
+            "indicator_id": "K1.I13"
+          },
+          {
+            "skill_id": "K1.3",
+            "m2_version": "v1.1",
+            "component_id": "K1.C07",
+            "indicator_id": "K1.I14"
+          },
+          {
+            "skill_id": "K1.4",
+            "m2_version": "v1.1",
+            "component_id": "K1.C08",
+            "indicator_id": "K1.I15"
+          },
+          {
+            "skill_id": "K1.4",
+            "m2_version": "v1.1",
+            "component_id": "K1.C09",
+            "indicator_id": "K1.I16"
+          },
+          {
+            "skill_id": "K1.4",
+            "m2_version": "v1.1",
+            "component_id": "K1.C09",
+            "indicator_id": "K1.I17"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C01",
+            "indicator_id": "K2.I01"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C01",
+            "indicator_id": "K2.I02"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C02",
+            "indicator_id": "K2.I03"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C02",
+            "indicator_id": "K2.I04"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C03",
+            "indicator_id": "K2.I05"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C03",
+            "indicator_id": "K2.I06"
+          },
+          {
+            "skill_id": "K2.2",
+            "m2_version": "v1.0",
+            "component_id": "K2.C04",
+            "indicator_id": "K2.I07"
+          },
+          {
+            "skill_id": "K2.2",
+            "m2_version": "v1.0",
+            "component_id": "K2.C05",
+            "indicator_id": "K2.I08"
+          },
+          {
+            "skill_id": "K2.2",
+            "m2_version": "v1.0",
+            "component_id": "K2.C06",
+            "indicator_id": "K2.I09"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C07",
+            "indicator_id": "K2.I10"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C07",
+            "indicator_id": "K2.I11"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C08",
+            "indicator_id": "K2.I12"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C09",
+            "indicator_id": "K2.I13"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C09",
+            "indicator_id": "K2.I14"
+          },
+          {
+            "skill_id": "K3.1",
+            "m2_version": "v1.1",
+            "component_id": "K3.C01",
+            "indicator_id": "K3.I01"
+          },
+          {
+            "skill_id": "K3.1",
+            "m2_version": "v1.1",
+            "component_id": "K3.C01",
+            "indicator_id": "K3.I02"
+          },
+          {
+            "skill_id": "K3.1",
+            "m2_version": "v1.1",
+            "component_id": "K3.C02",
+            "indicator_id": "K3.I03"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C03",
+            "indicator_id": "K3.I04"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C03",
+            "indicator_id": "K3.I05"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C03",
+            "indicator_id": "K3.I06"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C05",
+            "indicator_id": "K3.I07"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C05",
+            "indicator_id": "K3.I08"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C06",
+            "indicator_id": "K3.I09"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C07",
+            "indicator_id": "K3.I10"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C08",
+            "indicator_id": "K3.I11"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C08",
+            "indicator_id": "K3.I12"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C01",
+            "indicator_id": "K4.I01"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C01",
+            "indicator_id": "K4.I02"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C02",
+            "indicator_id": "K4.I03"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C02",
+            "indicator_id": "K4.I04"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C03",
+            "indicator_id": "K4.I05"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C03",
+            "indicator_id": "K4.I06"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C04",
+            "indicator_id": "K4.I07"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C04",
+            "indicator_id": "K4.I08"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C05",
+            "indicator_id": "K4.I09"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C05",
+            "indicator_id": "K4.I10"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C06",
+            "indicator_id": "K4.I11"
+          },
+          {
+            "skill_id": "K4.3",
+            "m2_version": "v1.0",
+            "component_id": "K4.C07",
+            "indicator_id": "K4.I12"
+          },
+          {
+            "skill_id": "K4.3",
+            "m2_version": "v1.0",
+            "component_id": "K4.C07",
+            "indicator_id": "K4.I13"
+          },
+          {
+            "skill_id": "K4.3",
+            "m2_version": "v1.0",
+            "component_id": "K4.C08",
+            "indicator_id": "K4.I14"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C09",
+            "indicator_id": "K4.I15"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C10",
+            "indicator_id": "K4.I16"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C10",
+            "indicator_id": "K4.I17"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C10",
+            "indicator_id": "K4.I18"
+          }
+        ],
+        "planned_max_seconds": 1080,
+        "time_budget_seconds": 3600,
+        "uncovered_target_ids": [
+          "K1.I01",
+          "K1.I02",
+          "K1.I03",
+          "K1.I04",
+          "K1.I05",
+          "K1.I07",
+          "K1.I08",
+          "K1.I10",
+          "K1.I11",
+          "K1.I12",
+          "K1.I13",
+          "K1.I14",
+          "K1.I15",
+          "K1.I16",
+          "K1.I17",
+          "K2.I01",
+          "K2.I02",
+          "K2.I03",
+          "K2.I04",
+          "K2.I05",
+          "K2.I06",
+          "K2.I07",
+          "K2.I08",
+          "K2.I09",
+          "K2.I10",
+          "K2.I11",
+          "K2.I12",
+          "K2.I13",
+          "K2.I14",
+          "K3.I01",
+          "K3.I02",
+          "K3.I03",
+          "K3.I04",
+          "K3.I05",
+          "K3.I06",
+          "K3.I07",
+          "K3.I08",
+          "K3.I09",
+          "K3.I10",
+          "K3.I11",
+          "K3.I12",
+          "K4.I01",
+          "K4.I02",
+          "K4.I04",
+          "K4.I06",
+          "K4.I07",
+          "K4.I08",
+          "K4.I09",
+          "K4.I10",
+          "K4.I11",
+          "K4.I15",
+          "K4.I18"
+        ],
+        "return_policy_snapshot": {
+          "content": {
+            "id": "sales-pilot-return-r1",
+            "status": "published",
+            "version": "2.0",
+            "algorithm": "m7-return-r1",
+            "resume_mode": "same_assessment_situation",
+            "usage_scope": "assessment",
+            "absence_source": "server_presence_lease",
+            "decision_basis": "owner_decision_2026-10-18_sales_pilot_r1",
+            "schema_version": 1,
+            "terminal_branches": [
+              "time_limit_reached"
+            ],
+            "replacement_policy": "not_applicable",
+            "presence_lease_seconds": 120,
+            "heartbeat_interval_seconds": 10,
+            "continue_requires_explicit_command": true
+          },
+          "checksum": "1121db8c84b6997ee427264a589b5db088588e134734d8ae0dbc0d2220a36f14"
+        },
+        "calendar_window_seconds": 259200,
+        "parameter_resolution_checksum": "bff9d4d6679cfd40d70d08cb26cf9d3765be159f9ec0df3fa7fbbb2487b7eb06"
+      },
+      "profile_ref": {
+        "id": "assessment_personalized_profiles:28",
+        "version": "1",
+        "checksum": "1f82ed9b03564203b6104bb0035a41eb7f51f94a85d26696dd871cde7399ef1b"
+      },
+      "rules_ref": {
+        "checksum": "9e4f5a3c0b6838407bbb16174f7f37b10f1022242b3d1088c51df31f014bd0ef",
+        "algorithm_version": "m7-greedy-coverage/1"
+      },
+      "decisions": [
+        {
+          "id": "cc4d7981-2254-439e-b1bf-fb88470b2900",
+          "cycle_db_id": 27,
+          "session_db_id": 27,
+          "plan_revision_id": "cc8fa30f-8005-4c35-9db2-484e7d62e484",
+          "revision_no": 1,
+          "status": "SELECTED",
+          "trigger_json": {
+            "kind": "next_as_request",
+            "created_by": 99
+          },
+          "facts_json": {
+            "pending_target_ids": [],
+            "final_ia_target_ids": [],
+            "opportunity_target_ids": [],
+            "component_score_coverage": "NOT_CALCULATED",
+            "technical_failure_target_ids": [],
+            "aggregate_contribution_coverage": "NOT_CALCULATED"
+          },
+          "considered_json": [
+            {
+              "case_id": "CASE.SPEC.02",
+              "reasons": [],
+              "case_version": "v0.6",
+              "contribution": [
+                "K1.I06",
+                "K1.I09",
+                "K4.I03",
+                "K4.I05",
+                "K4.I12",
+                "K4.I13",
+                "K4.I14",
+                "K4.I16",
+                "K4.I17"
+              ]
+            }
+          ],
+          "selected_case_id": "CASE.SPEC.02",
+          "selected_case_version": "v0.6",
+          "expected_targets_json": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "explanation_json": {
+            "code": "M7_NEXT_AS_SELECTED",
+            "algorithm": "m7-greedy-coverage/1"
+          },
+          "created_at": "2026-10-23 08:58:31.946670+00:00",
+          "assigned_as_db_id": 27,
+          "assignment_presented_at": "2026-10-23 08:58:32.571829+00:00",
+          "assessment_situation_id": "00599c58-f444-4fd2-b015-bbb9e9b5136c",
+          "assessment_situation_status": "active"
+        }
+      ]
+    },
+    "status": {
+      "cycle_id": "765a4115-7c2c-4f0c-9fbc-4c64ce0cf3a1",
+      "collection_status": "active",
+      "processing_status": "active",
+      "remaining_seconds": 3600,
+      "calendar_deadline": "2026-10-26 08:58:32.571829+00:00",
+      "close_reason": null,
+      "c46_status": null,
+      "can_continue": true,
+      "route_progress": {
+        "completed": 0,
+        "total": 1
+      }
+    },
+    "between_situations": false,
+    "return_policy_enabled": true,
+    "route": {
+      "schema_version": 1,
+      "positions": [
+        {
+          "position_id": "d7fc8812-ed0a-4937-aac6-546d16b3ce40",
+          "position_no": 1,
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.6",
+          "state": "in_progress",
+          "current_assessment_situation_id": "00599c58-f444-4fd2-b015-bbb9e9b5136c",
+          "expected_targets": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "history": [
+            {
+              "ordinal": 1,
+              "assessment_situation_id": "00599c58-f444-4fd2-b015-bbb9e9b5136c",
+              "disposition": "current",
+              "exclusion_reason": null,
+              "replacement_operation_id": null
+            }
+          ]
+        }
+      ],
+      "progress": {
+        "total_positions": 1,
+        "completed_positions": 0
+      }
+    },
+    "situations": [
+      {
+        "assessment_situation_id": "00599c58-f444-4fd2-b015-bbb9e9b5136c",
+        "status": "active"
+      }
+    ],
+    "current_situation": {
+      "assessment_situation_id": "00599c58-f444-4fd2-b015-bbb9e9b5136c",
+      "status": "active",
+      "participant_payload": {
+        "title": "Выбор профессионального предложения при расхождении сведений",
+        "source": {
+          "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+          "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+          "pointer": ""
+        },
+        "case_id": "CASE.SPEC.02",
+        "trigger": "До установленного момента нужно подготовить рекомендацию коллеге и отдельный текст адресату на основании имеющегося пакета.",
+        "version": "v0.2",
+        "case_version": "v0.6",
+        "introduction": "Вы — специалист по подбору персонала учебной организации. Сегодня день 1; все последующие дни в материалах — рабочие дни одной ситуации. Руководитель сервисной группы Анна ждёт вашу рекомендацию по двум способам привлечения кандидатов на одну вакансию. Вы можете рекомендовать и инициировать уточнение, но не менять требования и не подтверждать результаты будущего поиска за исполнителей.\nИзучите пакет и напишите коллеге свою рекомендацию с основаниями. Отдельно подготовьте короткий черновик сообщения Анне: что можно сообщить ей сегодня. Все необходимые исходные материалы ниже. Вопросы о формулировках задавайте здесь; новых результатов поиска, проверок и согласований во время задания не будет. Реальная отправка сообщений не требуется. Все данные учебные.",
+        "assessee_task": "Изучите материалы, подготовьте свою рекомендацию коллеге с основаниями и отдельный короткий черновик сообщения заказчику. Вопросы о формулировках задавайте здесь.",
+        "substitutions": [],
+        "assessee_position": "Специалист сопоставляет доступные способы, инструменты, источники или предложения и готовит обоснованную рекомендацию внутреннему либо внешнему заказчику. Оцениваемый действует в пределах своей ответственности; дополнительные полномочия из названия должности не выводятся.",
+        "initial_materials": [
+          {
+            "text": "К концу дня 20 нужен список из шести кандидатов, которых можно пригласить на профессиональное интервью. В каждом профиле должны быть подтверждены опыт работы с обращениями клиентов не менее года, опыт использования системы учёта заявок и готовность работать по будням с 10:00 до 19:00. Нужны краткая сводка по этим условиям и подтверждение интереса человека именно к нашей вакансии.\nИнтервью запланированы после получения списка. Разрешения менять обязательные требования или переносить подготовку списка пока нет. Отдельные отклики без проверки условий не считаем готовыми профилями для интервью. Сегодня нужен предлагаемый способ привлечения и понятный статус условий; обещать результат без оснований не прошу.\nРесурс для рассмотрения обоих способов в заданном объёме предусмотрен. Дополнительную проверку вне описанного процесса отдельно не согласовывали.",
+            "title": "Запрос руководителя группы",
+            "source": {
+              "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+              "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+              "pointer": "/Материалы/1"
+            },
+            "material_id": "M01"
+          },
+          {
+            "text": "По размещению в нашем профессиональном сообществе планируем получить 60 откликов за один цикл публикации. Это предварительный план числа откликов на данную вакансию, а не гарантированное число подходящих кандидатов. Сбор хотим завершить к дню 17 и к дню 20 передать проверенные профили со сводкой.\nПредварительная форма содержит вопросы об опыте и графике. Проверяем, достаточно ли её для подтверждения работы с системой учёта заявок и интереса именно к этой вакансии. Образец полного профиля пока не согласован. План основан на оценке размещения; фактического результата нового цикла ещё нет.",
+            "title": "Первоначальный план A",
+            "source": {
+              "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+              "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+              "pointer": "/Материалы/2"
+            },
+            "material_id": "M02"
+          },
+          {
+            "text": "После сверки графика публикаций уточняем план v1: сбор откликов возможен к дню 27, передача проверенных профилей со сводкой — не ранее дня 30. Дни 17 и 20 для текущего размещения больше не подтверждаем. Плановый объём остаётся 60 откликов на эту вакансию за один цикл; гарантии числа подходящих профилей нет.\nСтатус формы по опыту работы с системой и интересу к вакансии не изменился. Возможность ускоренного размещения не проверяли. Сегодня нового подтверждённого графика ускорения не будет.",
+            "title": "Уточнение плана A",
+            "source": {
+              "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+              "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+              "pointer": "/Материалы/3"
+            },
+            "material_id": "M03"
+          },
+          {
+            "text": "Для той же вакансии за один цикл размещения планируем 40 откликов. Это сопоставимый по единице предварительный объём, а не результат уже проведённого поиска. Собрать отклики планируем к дню 18. Проверка условий и интереса занимает ещё четыре рабочих дня после сбора; полный список со сводкой по текущему графику передаём к дню 22.\nФорма включает все перечисленные Анной условия. Переданы два обезличенных образца заполненного профиля из прежней работы, чтобы можно было проверить полноту формы. Нужное число подходящих кандидатов в новом цикле заранее не подтверждено. Передачу полного списка к дню 20 отдельно не согласовывали.",
+            "title": "План B",
+            "source": {
+              "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+              "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+              "pointer": "/Материалы/4"
+            },
+            "material_id": "M04"
+          },
+          {
+            "text": "В двух образцах B есть отдельные поля для всех условий Анны и запись о подтверждённом интересе к конкретной вакансии. Это проверка содержания образцов, не проверка будущих кандидатов и не гарантия шести профилей.\nУ A представлен только пример первичной анкеты. Опыт общения с клиентами и график отмечены; подтверждения опыта системы учёта и интереса именно к вакансии в этом примере нет. Это не доказательство невозможности такой проверки, но её полнота пока не подтверждена. Дополнительный разбор форм возможен с дня 2; результата сегодня нет. Срок передачи итогового списка эта записка не подтверждает.",
+            "title": "Записка проверявшего материалы специалиста",
+            "source": {
+              "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+              "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+              "pointer": "/Материалы/5"
+            },
+            "material_id": "M05"
+          },
+          {
+            "text": "A планирует 60 откликов, B — 40: на 20 больше, то есть на 50%. Чем больше откликов, тем лучше закроем потребность Анны. Поэтому A — лучший способ, предлагаю сегодня рекомендовать его. Напиши свою позицию и подготовь сообщение Анне.",
+            "title": "Сообщение коллеги",
+            "source": {
+              "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+              "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+              "pointer": "/Материалы/6"
+            },
+            "material_id": "M06"
+          }
+        ],
+        "initial_situation": "Два варианта решения имеют разные преимущества и ограничения. По A поступило уточнение, меняющее существенное условие первоначального предложения. По B есть частичная проверка, но остаётся существенная неопределённость или несоответствие. Коллега рекомендует A по одному привлекательному признаку.",
+        "assessment_situation_id": "AS.SPEC.02.FUNCTIONAL.20261022",
+        "conditions_and_constraints": "{'Язык': 'Профессиональное содержание узнаваемо по деятельности; необходимые термины объяснены. Поиск в интернете и знание скрытой отраслевой формулы не требуются.', 'Мандат': 'Собственная профессиональная рекомендация и вклад; чужие ресурсы, обязательства и внешние подтверждения требуют согласования.', 'Ресурсы': 'Конкретные единицы, доступность, трудозатраты, горизонты и согласующие заданы в AS до старта. Сохраняются отношения из инвариантов; деньги, ИТ и точные часы прежних примеров не обязательны.', 'Информация': {'На старте': ['P00', 'M01', 'M02', 'M03', 'M04', 'M05', 'M06'], 'Функции материалов': {'M01': 'Независимые требования и срок результата', 'M02': 'Первоначальные условия A с привлекательным признаком', 'M03': 'Уточнение A, меняющее существенное условие', 'M04': 'Условия B с остаточным ограничением', 'M05': 'Профильная проверка с явно ограниченным предметом', 'M06': 'Аргумент коллеги от одного преимущества к общей пригодности', 'P00': 'Роль, письменное задание и отдельное сообщение адресату'}}, 'Исполнение': 'Разговор и работа с документами в текущем текстовом интерфейсе; реальные встречи, отправки, изменения систем и проверки за пределами сцены не требуются.', 'Неизвестное': 'Непроверенные причины, будущие результаты и решения не создавать по запросу участника; фиксированные сведения и их раскрытие описать до старта.'}",
+        "participants_and_positions": "[{'Функция': 'Заказчик', 'Конкретизация': 'Имя, профессиональная принадлежность, фиксированные знания и мандат определяются в AS; число активных персонажей сохраняется.', 'Позиция и вклад': 'Задаёт несколько независимых требований'}, {'Функция': 'Два владельца вариантов', 'Конкретизация': 'Имя, профессиональная принадлежность, фиксированные знания и мандат определяются в AS; число активных персонажей сохраняется.', 'Позиция и вклад': 'Представлены документами; сообщают условия и статусы'}, {'Функция': 'Профильный проверяющий', 'Конкретизация': 'Имя, профессиональная принадлежность, фиксированные знания и мандат определяются в AS; число активных персонажей сохраняется.', 'Позиция и вклад': 'Фиксирует только границы выполненной проверки'}, {'Функция': 'Коллега', 'Конкретизация': 'Имя, профессиональная принадлежность, фиксированные знания и мандат определяются в AS; число активных персонажей сохраняется.', 'Позиция и вклад': 'Предъявляет проверяемое рассуждение в документе'}]"
+      }
+    },
+    "trace": {
+      "assessment_situation_id": "00599c58-f444-4fd2-b015-bbb9e9b5136c",
+      "status": "active",
+      "turns": [
+        {
+          "turn_id": "241d64ac-951b-4315-a8fa-71a48d3e24fb",
+          "sequence_no": 8,
+          "speaker_type": "assessee",
+          "speaker_id": "assessee",
+          "content_text": "F05: Case02 в профиле подбора",
+          "speaker_name": null
+        }
+      ],
+      "events": [
+        {
+          "event_id": "c1dae26e-51ea-4dcb-9e6c-e756150e0335",
+          "event_type": "material_disclosed",
+          "sequence_no": 2,
+          "material_id": "M01",
+          "payload_json": {
+            "content": {
+              "text": "К концу дня 20 нужен список из шести кандидатов, которых можно пригласить на профессиональное интервью. В каждом профиле должны быть подтверждены опыт работы с обращениями клиентов не менее года, опыт использования системы учёта заявок и готовность работать по будням с 10:00 до 19:00. Нужны краткая сводка по этим условиям и подтверждение интереса человека именно к нашей вакансии.\nИнтервью запланированы после получения списка. Разрешения менять обязательные требования или переносить подготовку списка пока нет. Отдельные отклики без проверки условий не считаем готовыми профилями для интервью. Сегодня нужен предлагаемый способ привлечения и понятный статус условий; обещать результат без оснований не прошу.\nРесурс для рассмотрения обоих способов в заданном объёме предусмотрен. Дополнительную проверку вне описанного процесса отдельно не согласовывали.",
+              "title": "Запрос руководителя группы",
+              "source": {
+                "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+                "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+                "pointer": "/Материалы/1"
+              },
+              "material_id": "M01"
+            },
+            "recipient": "assessee"
+          }
+        },
+        {
+          "event_id": "a7673bd7-ca4e-4153-a141-008ca72b124f",
+          "event_type": "material_disclosed",
+          "sequence_no": 3,
+          "material_id": "M02",
+          "payload_json": {
+            "content": {
+              "text": "По размещению в нашем профессиональном сообществе планируем получить 60 откликов за один цикл публикации. Это предварительный план числа откликов на данную вакансию, а не гарантированное число подходящих кандидатов. Сбор хотим завершить к дню 17 и к дню 20 передать проверенные профили со сводкой.\nПредварительная форма содержит вопросы об опыте и графике. Проверяем, достаточно ли её для подтверждения работы с системой учёта заявок и интереса именно к этой вакансии. Образец полного профиля пока не согласован. План основан на оценке размещения; фактического результата нового цикла ещё нет.",
+              "title": "Первоначальный план A",
+              "source": {
+                "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+                "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+                "pointer": "/Материалы/2"
+              },
+              "material_id": "M02"
+            },
+            "recipient": "assessee"
+          }
+        },
+        {
+          "event_id": "08388a41-00dd-4748-bcd5-cb3e6f78f773",
+          "event_type": "material_disclosed",
+          "sequence_no": 4,
+          "material_id": "M03",
+          "payload_json": {
+            "content": {
+              "text": "После сверки графика публикаций уточняем план v1: сбор откликов возможен к дню 27, передача проверенных профилей со сводкой — не ранее дня 30. Дни 17 и 20 для текущего размещения больше не подтверждаем. Плановый объём остаётся 60 откликов на эту вакансию за один цикл; гарантии числа подходящих профилей нет.\nСтатус формы по опыту работы с системой и интересу к вакансии не изменился. Возможность ускоренного размещения не проверяли. Сегодня нового подтверждённого графика ускорения не будет.",
+              "title": "Уточнение плана A",
+              "source": {
+                "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+                "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+                "pointer": "/Материалы/3"
+              },
+              "material_id": "M03"
+            },
+            "recipient": "assessee"
+          }
+        },
+        {
+          "event_id": "9e5c9039-1f31-4c88-9cc4-1da5d3595f47",
+          "event_type": "material_disclosed",
+          "sequence_no": 5,
+          "material_id": "M04",
+          "payload_json": {
+            "content": {
+              "text": "Для той же вакансии за один цикл размещения планируем 40 откликов. Это сопоставимый по единице предварительный объём, а не результат уже проведённого поиска. Собрать отклики планируем к дню 18. Проверка условий и интереса занимает ещё четыре рабочих дня после сбора; полный список со сводкой по текущему графику передаём к дню 22.\nФорма включает все перечисленные Анной условия. Переданы два обезличенных образца заполненного профиля из прежней работы, чтобы можно было проверить полноту формы. Нужное число подходящих кандидатов в новом цикле заранее не подтверждено. Передачу полного списка к дню 20 отдельно не согласовывали.",
+              "title": "План B",
+              "source": {
+                "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+                "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+                "pointer": "/Материалы/4"
+              },
+              "material_id": "M04"
+            },
+            "recipient": "assessee"
+          }
+        },
+        {
+          "event_id": "6ce92dd8-35a5-4500-8326-4b9d31131992",
+          "event_type": "material_disclosed",
+          "sequence_no": 6,
+          "material_id": "M05",
+          "payload_json": {
+            "content": {
+              "text": "В двух образцах B есть отдельные поля для всех условий Анны и запись о подтверждённом интересе к конкретной вакансии. Это проверка содержания образцов, не проверка будущих кандидатов и не гарантия шести профилей.\nУ A представлен только пример первичной анкеты. Опыт общения с клиентами и график отмечены; подтверждения опыта системы учёта и интереса именно к вакансии в этом примере нет. Это не доказательство невозможности такой проверки, но её полнота пока не подтверждена. Дополнительный разбор форм возможен с дня 2; результата сегодня нет. Срок передачи итогового списка эта записка не подтверждает.",
+              "title": "Записка проверявшего материалы специалиста",
+              "source": {
+                "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+                "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+                "pointer": "/Материалы/5"
+              },
+              "material_id": "M05"
+            },
+            "recipient": "assessee"
+          }
+        },
+        {
+          "event_id": "45b3705d-b71b-46e9-8c03-da52f1b2240c",
+          "event_type": "material_disclosed",
+          "sequence_no": 7,
+          "material_id": "M06",
+          "payload_json": {
+            "content": {
+              "text": "A планирует 60 откликов, B — 40: на 20 больше, то есть на 50%. Чем больше откликов, тем лучше закроем потребность Анны. Поэтому A — лучший способ, предлагаю сегодня рекомендовать его. Напиши свою позицию и подготовь сообщение Анне.",
+              "title": "Сообщение коллеги",
+              "source": {
+                "file": "sources/generated-77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948.json",
+                "sha256": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+                "pointer": "/Материалы/6"
+              },
+              "material_id": "M06"
+            },
+            "recipient": "assessee"
+          }
+        }
+      ]
+    },
+    "clarification": null,
+    "continuation": null,
+    "pipeline": null
+  },
+  "snapshot": {
+    "candidate_checksum": "77018e6a7696c56ab36df7de19a5a9eafc259389baeb140e8875f52f40367948",
+    "input_snapshot_checksum": "980fd33a2298399476ad548e3b369f520cc138504baa77bdf5a21ce56ba3c25b",
+    "tester_input_checksum": "b4ac82a1974117c5e232b8dd48fdc9279de900e4cbb8849e4f01d8f4f7f97f23"
+  }
+}

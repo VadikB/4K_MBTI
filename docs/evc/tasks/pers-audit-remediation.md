@@ -49,6 +49,44 @@
   `submit_turn`: 2 PASS; CASE02/07 без вызовов персонажей. Полный non-LLM backend:
   522 PASS, 217 deselected.
 - Активный шаг: F05 — 34 сквозных runtime-сценария после завершения F04.
+- F05 начат от `7f96ea6abc04061c2e1c0333473085cc9c9a02c8`. Первичная
+  трасса выявила два prerequisite-разрыва A01/A02: runtime сохранял только
+  checksum принятой generated AS без её неизменяемого содержания и проверяемой
+  связи со входом tester; planner ошибочно ограничивал подбор суммой плановых
+  длительностей Case. Исправление хранит полный PM-03→PM-04 hand-off (author
+  example, accepted AS, refs и checksums tester/compiled runtime) в закрытом
+  execution snapshot и проверяет его перед attach. Профиль повторно не
+  копируется, сохраняется ссылка/checksum его неизменяемой версии. Плановые
+  длительности теперь информационные; 7200 секунд ограничивают фактическое
+  прохождение Cycle. Предметное содержание и артефакты F04 не изменены.
+- F05 DB runtime выполнен на изолированной PostgreSQL: 34/34 позиций versioned
+  `Scenario_regression_plan_v0.2.json` получили отдельные configuration/profile/
+  Cycle и прошли штатные `prepare → generator/tester → attach → start →
+  submit_turn → events/state/readback`; прямых INSERT Turn нет. Сохранены 34
+  первичных JSON и summary; semantic/character adapters контролируемые, поэтому
+  результат доказывает runtime-контракт, но не полную предметную приёмку
+  CASE.SPEC.01–09. Два functional Cycle дополнительно дошли до M8: раннее
+  прекращение сохранило partial/no-result, R09_CHANGED — непустые обоснованные
+  partial scores; downstream provider в этих двух трассах контролируемый.
+- Устранён проявившийся на первом `start` A01-разрыв композиции: source
+  CaseVersion checksum и checksum допущенного compiled generated Case теперь
+  различаются и проверяются отдельно. Устранён A02-разрыв C45→M6: стартовые
+  материалы присутствовали в событиях, но отсутствовали в закрытом execution
+  snapshot; теперь они сохранены как `initial_material` и разрешаются M6.
+- Real-provider попытки выполнялись отдельно. Подтверждены успешные generation,
+  tester/admission и runtime до C45. Один прогон завершился сетевым timeout на
+  tester, следующие дошли до M6, где processing завершился техническим
+  `ValueError` и не создал assessment-request; это `TECHNICAL_ERROR`, не
+  недостаточные данные и не содержательный FAIL AS. Реальный positive M8 пока
+  `NOT_RUN` из-за этого незакрытого provider-processing ограничения. A03/A04/A07
+  не переопределялись и остаются отдельными зависимостями; F05 не присваивает им
+  статус методологического допуска.
+- Итоговый review выявил незакрытый A01 для multi-case Cycle: первый Case готовит
+  durable functional queue, но обычный `next_situation` для последующих route
+  positions всё ещё вызывает синхронный legacy prepare без generator/tester.
+  34 одно-Case Cycle этот разрыв не маскируют. Зависимые multi-case acceptance,
+  итоговый PR/merge и присвоение F05 статуса «завершён» запрещены до единого
+  async functional prepare для каждой следующей позиции и его регрессии.
 - Выполнена инфраструктурная часть F01: `/assessment/cycles/prepare` теперь
   создаёт отдельную durable product-operation и отвечает `202`; оба UI-пути
   ожидают её завершения и получают Cycle только после committed `admitted` AS.

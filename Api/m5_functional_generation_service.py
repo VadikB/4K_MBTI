@@ -14,6 +14,7 @@ from typing import Any
 
 from Api.m5_functional_personalization import extract_candidate_as
 from Api.m5_functional_tester import aggregate, build_applicability_plan, normalize_results
+from Api.m5_case_runtime import checksum as runtime_checksum
 from scripts.build_m5_sales_package import build_execution_rules, compile_case_values
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,7 +43,9 @@ def _unique(pattern: str, code: str) -> Path:
 
 def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id: str,
                          synthetic: bool = False, case_value: dict[str, Any] | None = None,
-                         author_as_example: dict[str, Any] | None = None) -> dict[str, Any]:
+                         author_as_example: dict[str, Any] | None = None,
+                         profile_checksum: str | None = None,
+                         case_version_checksum: str | None = None) -> dict[str, Any]:
     number = case_id.rsplit(".", 1)[-1]
     case_path = _unique(f"02_cases/Case_SPEC_{number}_*.json", f"PERS_CASE_SOURCE_NOT_UNIQUE:{case_id}")
     example_path = _unique(f"04_as/AS_SPEC_{number}_FUNCTIONAL_*.json", f"PERS_AS_SOURCE_NOT_UNIQUE:{case_id}")
@@ -52,7 +55,7 @@ def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id:
     if case.get("CaseID") != case_id or example.get("CaseID") != case_id:
         raise ValueError("M5_FUNCTIONAL_SOURCE_IDENTITY_MISMATCH")
     clean_profile = json.loads(json.dumps(profile, ensure_ascii=False))
-    profile_checksum = checksum(clean_profile)
+    profile_checksum = profile_checksum or checksum(clean_profile)
     return {
         "schema_version": 1,
         "operation_id": operation_id,
@@ -62,7 +65,8 @@ def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id:
         "author_as_example": example,
         "profile": clean_profile,
         "refs": {
-            "case": {"path": str(case_path.relative_to(ROOT)), "sha256": checksum(case_path.read_bytes())},
+            "case": {"path": str(case_path.relative_to(ROOT)), "sha256": checksum(case_path.read_bytes()),
+                     "case_version_checksum": case_version_checksum or checksum(case)},
             "author_as_example": {"path": str(example_path.relative_to(ROOT)), "sha256": checksum(example_path.read_bytes())},
             "profile": {"sha256": profile_checksum},
         },
@@ -259,3 +263,34 @@ def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
             "generation_operation": generation["provider_operation"], "tester": tested,
             "admitted_for_participant": tested["aggregation"]["admitted_for_participant"],
             "compiled_case": compiled_case, "execution_rules": execution_rules}
+
+
+def build_persistence_trace(snapshot: dict[str, Any], prepared: dict[str, Any]) -> dict[str, Any]:
+    """Build the immutable PM-03 -> PM-04 hand-off kept in the AS snapshot."""
+    if checksum(snapshot) != prepared.get("input_snapshot_checksum"):
+        raise ValueError("M5_FUNCTIONAL_INPUT_SNAPSHOT_MISMATCH")
+    candidate = prepared.get("candidate_as")
+    if not isinstance(candidate, dict) or checksum(candidate) != prepared.get("candidate_checksum"):
+        raise ValueError("M5_FUNCTIONAL_CANDIDATE_SNAPSHOT_MISMATCH")
+    tester = prepared.get("tester") or {}
+    if not isinstance(tester.get("provider_operation", {}).get("input_checksum"), str):
+        raise ValueError("M5_FUNCTIONAL_TESTER_INPUT_TRACE_REQUIRED")
+    return {
+        "schema_version": 2,
+        "input_snapshot_checksum": prepared["input_snapshot_checksum"],
+        "source_snapshot": {
+            "case": snapshot["case"],
+            "author_as_example": snapshot["author_as_example"],
+            "refs": snapshot["refs"],
+            "profile_checksum": snapshot["refs"]["profile"]["sha256"],
+        },
+        "accepted_as": candidate,
+        "candidate_checksum": prepared["candidate_checksum"],
+        "compiled_case_checksum": runtime_checksum(prepared["compiled_case"]),
+        "execution_rules_checksum": runtime_checksum(prepared["execution_rules"]),
+        "deterministic_validation": prepared["deterministic_validation"],
+        "generation_operation": prepared["generation_operation"],
+        "tester": tester,
+        "tester_input_checksum": tester["provider_operation"]["input_checksum"],
+        "admitted_for_participant": prepared["admitted_for_participant"],
+    }

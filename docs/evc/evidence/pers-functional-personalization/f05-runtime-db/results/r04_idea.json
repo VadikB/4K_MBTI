@@ -1,0 +1,1531 @@
+{
+  "test_id": "R04_IDEA",
+  "case_id": "CASE.SPEC.04",
+  "cycle_id": "c863b7af-c5da-4605-af6f-655a26d4b14e",
+  "assessment_situation_id": "7205519f-8e19-4cc9-a923-1148f4f6c504",
+  "request": {
+    "request_id": "f05-14-r04_idea-turn",
+    "turn_id": "f1714fce-986f-459d-b6bd-808fb7dd2ff1",
+    "content": "F05: Предложенный способ уже учитывает известные ограничения"
+  },
+  "response": {
+    "turn": {
+      "id": 23,
+      "assessment_situation_db_id": 15,
+      "turn_id": "f1714fce-986f-459d-b6bd-808fb7dd2ff1",
+      "sequence_no": 7,
+      "speaker_type": "assessee",
+      "speaker_id": "assessee",
+      "content_text": "F05: Предложенный способ уже учитывает известные ограничения",
+      "request_id": "f05-14-r04_idea-turn",
+      "created_at": "2026-10-23 08:58:16.753348+00:00"
+    },
+    "events": [
+      {
+        "id": 107,
+        "assessment_situation_db_id": 15,
+        "event_id": "a7d6a184-5f7e-4c8a-8570-2e07afe0a27c",
+        "event_type": "stage_transitioned",
+        "event_key": "stage:E01_REVIEW:E02_REVISION",
+        "cause_json": {
+          "rule_id": "CASE.SPEC.04:E01_REVIEW:completion",
+          "turn_id": "f1714fce-986f-459d-b6bd-808fb7dd2ff1",
+          "decision_id": "52e6b148-3042-4b41-9e3b-fec9ac075774"
+        },
+        "material_id": null,
+        "payload_json": {
+          "to": "E02_REVISION",
+          "from": "E01_REVIEW"
+        },
+        "sequence_no": 8,
+        "created_at": "2026-10-23 08:58:16.753348+00:00"
+      }
+    ],
+    "idempotent": false
+  },
+  "events": [
+    {
+      "id": 101,
+      "assessment_situation_db_id": 15,
+      "event_id": "a41d0f4f-5c6c-4680-be13-e2526a9f1612",
+      "event_type": "scenario_started",
+      "event_key": "scenario_started",
+      "cause_json": {
+        "type": "C-34",
+        "scope": "assessment"
+      },
+      "material_id": null,
+      "payload_json": {
+        "execution_envelope": {
+          "admitted": true,
+          "contract": "C-34",
+          "usage_scope": "assessment",
+          "indicator_ids": [
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K1.I16",
+            "K4.I18"
+          ],
+          "schema_version": 1,
+          "qa_override_ref": null,
+          "admission_unchanged": true,
+          "execution_payload_ref": {
+            "id": "7205519f-8e19-4cc9-a923-1148f4f6c504:execution",
+            "version": "1",
+            "checksum": "dda9c150f8c5ec9a7da75cf32c5a38a9ebf0dfb4f12dfa126dd98f77f77199f2"
+          },
+          "assessment_situation_ref": {
+            "id": "7205519f-8e19-4cc9-a923-1148f4f6c504",
+            "version": "1",
+            "checksum": "ff0877dbfbd7b082a33ec2a9d9ef4f944b424d3512bd70e41a5e99f19925704d"
+          },
+          "participant_payload_checksum": "11e1576783e2010c247cac2cdeefe3579258944b096a0804afbe9d100ddeec6c"
+        }
+      },
+      "sequence_no": 1,
+      "created_at": "2026-10-23 08:58:16.753348+00:00"
+    },
+    {
+      "id": 102,
+      "assessment_situation_db_id": 15,
+      "event_id": "3e725698-67c9-4398-8402-2d909ed3a346",
+      "event_type": "material_disclosed",
+      "event_key": "initial-material:M01",
+      "cause_json": {
+        "type": "initial_presentation"
+      },
+      "material_id": "M01",
+      "payload_json": {
+        "content": {
+          "text": "Вторник, 10:00 — опубликована недельная сводка. Из-за ошибочного правила объединения часть заказов учтена дважды.\nВторник, 10:15 — зарегистрировано сообщение регионального отдела о расхождении.\nВторник, 14:00 — правило исправлено, сводка пересчитана и заменена. Обсуждение регионального плана, назначенное на вторник, перенесено; новую дату не согласовали.\nЧетверг, 14:00 — за 48 часов наблюдений то же дублирование не обнаружено. Последствия переноса обсуждения ещё не устранены.",
+          "title": "Хронология",
+          "source": {
+            "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+            "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+            "pointer": "/Материалы/1"
+          },
+          "material_id": "M01"
+        },
+        "recipient": "assessee"
+      },
+      "sequence_no": 2,
+      "created_at": "2026-10-23 08:58:16.753348+00:00"
+    },
+    {
+      "id": 103,
+      "assessment_situation_db_id": 15,
+      "event_id": "7b7fdc02-3cc0-441c-932d-a73774201ee8",
+      "event_type": "material_disclosed",
+      "event_key": "initial-material:M02",
+      "cause_json": {
+        "type": "initial_presentation"
+      },
+      "material_id": "M02",
+      "payload_json": {
+        "content": {
+          "text": "Причина установленного дублирования — неверное правило объединения заказов. Оно исправлено. Проверены контрольные суммы и уникальность записей на наборе двух последних недель. Повторения установленной ошибки за 48 часов не обнаружено. Другие периоды и все возможные источники расхождений не проверялись. Заключение не подтверждает отсутствие любых будущих ошибок и не восстанавливает сорванное обсуждение плана.",
+          "title": "Заключение по исправлению",
+          "source": {
+            "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+            "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+            "pointer": "/Материалы/2"
+          },
+          "material_id": "M02"
+        },
+        "recipient": "assessee"
+      },
+      "sequence_no": 3,
+      "created_at": "2026-10-23 08:58:16.753348+00:00"
+    },
+    {
+      "id": 104,
+      "assessment_situation_db_id": 15,
+      "event_id": "bb6eb07b-9788-4110-9d8e-57cd885378d7",
+      "event_type": "material_disclosed",
+      "event_key": "initial-material:M03",
+      "cause_json": {
+        "type": "initial_presentation"
+      },
+      "material_id": "M03",
+      "payload_json": {
+        "content": {
+          "text": "Завтра в 11:00 обсудим последствия срыва планирования и дальнейший порядок работы с аналитикой. Подготовь позицию и основания; материалы нужны до 10:00.\nАлексей ранее обосновывал использование новой сводки. После ошибки он сообщил о подготовке возврата к прежнему ручному способу. Предложение просто повторно показать исправленный отчёт он отклонил.",
+          "title": "Запрос руководства",
+          "source": {
+            "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+            "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+            "pointer": "/Материалы/3"
+          },
+          "material_id": "M03"
+        },
+        "recipient": "assessee"
+      },
+      "sequence_no": 4,
+      "created_at": "2026-10-23 08:58:16.753348+00:00"
+    },
+    {
+      "id": 105,
+      "assessment_situation_db_id": 15,
+      "event_id": "e0ad0ebd-bf6a-4f2f-9cd1-22e6186c11a1",
+      "event_type": "material_disclosed",
+      "event_key": "initial-material:M04",
+      "cause_json": {
+        "type": "initial_presentation"
+      },
+      "material_id": "M04",
+      "payload_json": {
+        "content": {
+          "text": "Инженер данных доступен сегодня до 17:00 для уточнения выполненных проверок. Руководитель аналитики доступен до 16:30 и может подтвердить работы в пределах текущей загрузки; новые постоянные проверки и дополнительные часы не утверждает.\nРуководитель направления принимает предложения о дополнительном ресурсе до 16:00; статус рассмотрения сообщит завтра до 09:30. Это срок ответа, а не обещание одобрения. Изменение обязательного порядка отчётности требует решения владельца процесса.\nВы можете готовить предложения и запросы на согласование. Продолжение использования сводки и новые ресурсы ещё не утверждены. Время относится к сюжету, а не к таймеру ответа.",
+          "title": "Ресурсы и полномочия",
+          "source": {
+            "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+            "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+            "pointer": "/Материалы/4"
+          },
+          "material_id": "M04"
+        },
+        "recipient": "assessee"
+      },
+      "sequence_no": 5,
+      "created_at": "2026-10-23 08:58:16.753348+00:00"
+    },
+    {
+      "id": 106,
+      "assessment_situation_db_id": 15,
+      "event_id": "346da7b0-1eac-49a8-90e5-570f6794f926",
+      "event_type": "material_disclosed",
+      "event_key": "initial-material:M05",
+      "cause_json": {
+        "type": "initial_presentation"
+      },
+      "material_id": "M05",
+      "payload_json": {
+        "content": {
+          "text": "Вы пишете, что ошибку исправили. А обсуждение плана сорвано, и завтра объяснять это мне. Я убеждал коллег перейти на вашу сводку. Просто показать мне её ещё раз недостаточно; подготовку возврата к прежнему способу продолжаю. Для отдельной встречи сегодня есть только 16:00–16:30. Что вы предлагаете?",
+          "title": "Сообщение заказчика",
+          "source": {
+            "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+            "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+            "pointer": "/Материалы/5"
+          },
+          "material_id": "M05"
+        },
+        "recipient": "assessee"
+      },
+      "sequence_no": 6,
+      "created_at": "2026-10-23 08:58:16.753348+00:00"
+    },
+    {
+      "id": 107,
+      "assessment_situation_db_id": 15,
+      "event_id": "a7d6a184-5f7e-4c8a-8570-2e07afe0a27c",
+      "event_type": "stage_transitioned",
+      "event_key": "stage:E01_REVIEW:E02_REVISION",
+      "cause_json": {
+        "rule_id": "CASE.SPEC.04:E01_REVIEW:completion",
+        "turn_id": "f1714fce-986f-459d-b6bd-808fb7dd2ff1",
+        "decision_id": "52e6b148-3042-4b41-9e3b-fec9ac075774"
+      },
+      "material_id": null,
+      "payload_json": {
+        "to": "E02_REVISION",
+        "from": "E01_REVIEW"
+      },
+      "sequence_no": 8,
+      "created_at": "2026-10-23 08:58:16.753348+00:00"
+    },
+    {
+      "id": 108,
+      "assessment_situation_db_id": 15,
+      "event_id": "de81f02e-cb88-49ec-a834-09240089b1aa",
+      "event_type": "stage_transitioned",
+      "event_key": "stage:E02_REVISION:E03_FACT",
+      "cause_json": {
+        "rule_id": "CASE.SPEC.04:E02_REVISION:completion",
+        "turn_id": "f1714fce-986f-459d-b6bd-808fb7dd2ff1",
+        "decision_id": "6ee9635f-682e-4daf-af3d-94779071ae50"
+      },
+      "material_id": null,
+      "payload_json": {
+        "to": "E03_FACT",
+        "from": "E02_REVISION"
+      },
+      "sequence_no": 9,
+      "created_at": "2026-10-23 08:58:16.753348+00:00"
+    }
+  ],
+  "state": {
+    "status": "active",
+    "current_stage": "E03_FACT",
+    "applied_effects": [],
+    "opened_branches": [],
+    "disclosed_materials": [
+      "M01",
+      "M02",
+      "M03",
+      "M04",
+      "M05"
+    ],
+    "not_opened_branches": []
+  },
+  "readback": {
+    "runtime_kind": "cycle",
+    "cycle_id": "c863b7af-c5da-4605-af6f-655a26d4b14e",
+    "plan": {
+      "cycle_id": "c863b7af-c5da-4605-af6f-655a26d4b14e",
+      "cycle_status": "active",
+      "plan_id": "1f18f2e6-b6e4-4ad1-b294-077cc5b6f4f1",
+      "revision_id": "1242b7bb-ea2a-4ba9-857a-fe3836c68400",
+      "revision_no": 1,
+      "plan": {
+        "goal": {
+          "kind": "skills",
+          "selected_skills": [
+            "K1",
+            "K2",
+            "K3",
+            "K4"
+          ]
+        },
+        "route": [
+          {
+            "case_id": "CASE.SPEC.04",
+            "reasons": [],
+            "eligible": true,
+            "base_role": "specialist_expert",
+            "target_ids": [
+              "K3.I03",
+              "K3.I06",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K1.I16",
+              "K4.I18"
+            ],
+            "conditional": true,
+            "reserve_for": [],
+            "case_version": "v0.5",
+            "duration_source": "M5 CaseVersion planned range",
+            "purpose_target_ids": [
+              "K1.I16",
+              "K3.I03",
+              "K3.I06",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K4.I18"
+            ],
+            "planned_max_minutes": 20,
+            "planned_min_minutes": 15,
+            "contribution_target_ids": [
+              "K1.I16",
+              "K3.I03",
+              "K3.I06",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K4.I18"
+            ]
+          }
+        ],
+        "status": "LIMITED",
+        "catalog": [
+          {
+            "case_id": "CASE.SPEC.04",
+            "reasons": [],
+            "eligible": true,
+            "base_role": "specialist_expert",
+            "target_ids": [
+              "K3.I03",
+              "K3.I06",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K1.I16",
+              "K4.I18"
+            ],
+            "case_version": "v0.5",
+            "planned_max_minutes": 20,
+            "planned_min_minutes": 15,
+            "contribution_target_ids": [
+              "K1.I16",
+              "K3.I03",
+              "K3.I06",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K4.I18"
+            ]
+          }
+        ],
+        "reserves": [],
+        "catalog_ref": {
+          "id": "f05-14",
+          "version": "1.0",
+          "checksum": "f0c00eb408e3a811762021c19737492864ca6011e24ea309a956a04ff9d32e98",
+          "m2_checksum": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+          "package_checksum": "ff08cf149ce983a6e969e06aa5c461f6adde68d1d7aa6f52e32c1d1d89c7fe25"
+        },
+        "schema_version": 1,
+        "full_target_set": [
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C01",
+            "indicator_id": "K1.I01"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C01",
+            "indicator_id": "K1.I02"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C01",
+            "indicator_id": "K1.I03"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C02",
+            "indicator_id": "K1.I04"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C02",
+            "indicator_id": "K1.I05"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C03",
+            "indicator_id": "K1.I06"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C03",
+            "indicator_id": "K1.I07"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C04",
+            "indicator_id": "K1.I08"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C04",
+            "indicator_id": "K1.I09"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C05",
+            "indicator_id": "K1.I10"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C05",
+            "indicator_id": "K1.I11"
+          },
+          {
+            "skill_id": "K1.3",
+            "m2_version": "v1.1",
+            "component_id": "K1.C06",
+            "indicator_id": "K1.I12"
+          },
+          {
+            "skill_id": "K1.3",
+            "m2_version": "v1.1",
+            "component_id": "K1.C07",
+            "indicator_id": "K1.I13"
+          },
+          {
+            "skill_id": "K1.3",
+            "m2_version": "v1.1",
+            "component_id": "K1.C07",
+            "indicator_id": "K1.I14"
+          },
+          {
+            "skill_id": "K1.4",
+            "m2_version": "v1.1",
+            "component_id": "K1.C08",
+            "indicator_id": "K1.I15"
+          },
+          {
+            "skill_id": "K1.4",
+            "m2_version": "v1.1",
+            "component_id": "K1.C09",
+            "indicator_id": "K1.I16"
+          },
+          {
+            "skill_id": "K1.4",
+            "m2_version": "v1.1",
+            "component_id": "K1.C09",
+            "indicator_id": "K1.I17"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C01",
+            "indicator_id": "K2.I01"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C01",
+            "indicator_id": "K2.I02"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C02",
+            "indicator_id": "K2.I03"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C02",
+            "indicator_id": "K2.I04"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C03",
+            "indicator_id": "K2.I05"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C03",
+            "indicator_id": "K2.I06"
+          },
+          {
+            "skill_id": "K2.2",
+            "m2_version": "v1.0",
+            "component_id": "K2.C04",
+            "indicator_id": "K2.I07"
+          },
+          {
+            "skill_id": "K2.2",
+            "m2_version": "v1.0",
+            "component_id": "K2.C05",
+            "indicator_id": "K2.I08"
+          },
+          {
+            "skill_id": "K2.2",
+            "m2_version": "v1.0",
+            "component_id": "K2.C06",
+            "indicator_id": "K2.I09"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C07",
+            "indicator_id": "K2.I10"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C07",
+            "indicator_id": "K2.I11"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C08",
+            "indicator_id": "K2.I12"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C09",
+            "indicator_id": "K2.I13"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C09",
+            "indicator_id": "K2.I14"
+          },
+          {
+            "skill_id": "K3.1",
+            "m2_version": "v1.1",
+            "component_id": "K3.C01",
+            "indicator_id": "K3.I01"
+          },
+          {
+            "skill_id": "K3.1",
+            "m2_version": "v1.1",
+            "component_id": "K3.C01",
+            "indicator_id": "K3.I02"
+          },
+          {
+            "skill_id": "K3.1",
+            "m2_version": "v1.1",
+            "component_id": "K3.C02",
+            "indicator_id": "K3.I03"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C03",
+            "indicator_id": "K3.I04"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C03",
+            "indicator_id": "K3.I05"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C03",
+            "indicator_id": "K3.I06"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C05",
+            "indicator_id": "K3.I07"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C05",
+            "indicator_id": "K3.I08"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C06",
+            "indicator_id": "K3.I09"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C07",
+            "indicator_id": "K3.I10"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C08",
+            "indicator_id": "K3.I11"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C08",
+            "indicator_id": "K3.I12"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C01",
+            "indicator_id": "K4.I01"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C01",
+            "indicator_id": "K4.I02"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C02",
+            "indicator_id": "K4.I03"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C02",
+            "indicator_id": "K4.I04"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C03",
+            "indicator_id": "K4.I05"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C03",
+            "indicator_id": "K4.I06"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C04",
+            "indicator_id": "K4.I07"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C04",
+            "indicator_id": "K4.I08"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C05",
+            "indicator_id": "K4.I09"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C05",
+            "indicator_id": "K4.I10"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C06",
+            "indicator_id": "K4.I11"
+          },
+          {
+            "skill_id": "K4.3",
+            "m2_version": "v1.0",
+            "component_id": "K4.C07",
+            "indicator_id": "K4.I12"
+          },
+          {
+            "skill_id": "K4.3",
+            "m2_version": "v1.0",
+            "component_id": "K4.C07",
+            "indicator_id": "K4.I13"
+          },
+          {
+            "skill_id": "K4.3",
+            "m2_version": "v1.0",
+            "component_id": "K4.C08",
+            "indicator_id": "K4.I14"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C09",
+            "indicator_id": "K4.I15"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C10",
+            "indicator_id": "K4.I16"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C10",
+            "indicator_id": "K4.I17"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C10",
+            "indicator_id": "K4.I18"
+          }
+        ],
+        "algorithm_version": "m7-greedy-coverage/1",
+        "known_limitations": [
+          "Cases are conditional opportunities; not guaranteed Evidence"
+        ],
+        "parameter_sources": {
+          "time_budget_seconds": {
+            "kind": "method_default",
+            "version": "1.0.0",
+            "checksum": "9e4f5a3c0b6838407bbb16174f7f37b10f1022242b3d1088c51df31f014bd0ef",
+            "artifact_id": "m7_cycle_plan"
+          },
+          "calendar_window_seconds": {
+            "kind": "method_default",
+            "version": "1.0.0",
+            "checksum": "9e4f5a3c0b6838407bbb16174f7f37b10f1022242b3d1088c51df31f014bd0ef",
+            "artifact_id": "m7_cycle_plan"
+          }
+        },
+        "duration_semantics": "planned case durations do not constrain selection; the Cycle budget limits actual elapsed collection time",
+        "planned_target_set": [
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C01",
+            "indicator_id": "K1.I01"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C01",
+            "indicator_id": "K1.I02"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C01",
+            "indicator_id": "K1.I03"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C02",
+            "indicator_id": "K1.I04"
+          },
+          {
+            "skill_id": "K1.1",
+            "m2_version": "v1.1",
+            "component_id": "K1.C02",
+            "indicator_id": "K1.I05"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C03",
+            "indicator_id": "K1.I06"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C03",
+            "indicator_id": "K1.I07"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C04",
+            "indicator_id": "K1.I08"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C04",
+            "indicator_id": "K1.I09"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C05",
+            "indicator_id": "K1.I10"
+          },
+          {
+            "skill_id": "K1.2",
+            "m2_version": "v1.1",
+            "component_id": "K1.C05",
+            "indicator_id": "K1.I11"
+          },
+          {
+            "skill_id": "K1.3",
+            "m2_version": "v1.1",
+            "component_id": "K1.C06",
+            "indicator_id": "K1.I12"
+          },
+          {
+            "skill_id": "K1.3",
+            "m2_version": "v1.1",
+            "component_id": "K1.C07",
+            "indicator_id": "K1.I13"
+          },
+          {
+            "skill_id": "K1.3",
+            "m2_version": "v1.1",
+            "component_id": "K1.C07",
+            "indicator_id": "K1.I14"
+          },
+          {
+            "skill_id": "K1.4",
+            "m2_version": "v1.1",
+            "component_id": "K1.C08",
+            "indicator_id": "K1.I15"
+          },
+          {
+            "skill_id": "K1.4",
+            "m2_version": "v1.1",
+            "component_id": "K1.C09",
+            "indicator_id": "K1.I16"
+          },
+          {
+            "skill_id": "K1.4",
+            "m2_version": "v1.1",
+            "component_id": "K1.C09",
+            "indicator_id": "K1.I17"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C01",
+            "indicator_id": "K2.I01"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C01",
+            "indicator_id": "K2.I02"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C02",
+            "indicator_id": "K2.I03"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C02",
+            "indicator_id": "K2.I04"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C03",
+            "indicator_id": "K2.I05"
+          },
+          {
+            "skill_id": "K2.1",
+            "m2_version": "v1.0",
+            "component_id": "K2.C03",
+            "indicator_id": "K2.I06"
+          },
+          {
+            "skill_id": "K2.2",
+            "m2_version": "v1.0",
+            "component_id": "K2.C04",
+            "indicator_id": "K2.I07"
+          },
+          {
+            "skill_id": "K2.2",
+            "m2_version": "v1.0",
+            "component_id": "K2.C05",
+            "indicator_id": "K2.I08"
+          },
+          {
+            "skill_id": "K2.2",
+            "m2_version": "v1.0",
+            "component_id": "K2.C06",
+            "indicator_id": "K2.I09"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C07",
+            "indicator_id": "K2.I10"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C07",
+            "indicator_id": "K2.I11"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C08",
+            "indicator_id": "K2.I12"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C09",
+            "indicator_id": "K2.I13"
+          },
+          {
+            "skill_id": "K2.3",
+            "m2_version": "v1.0",
+            "component_id": "K2.C09",
+            "indicator_id": "K2.I14"
+          },
+          {
+            "skill_id": "K3.1",
+            "m2_version": "v1.1",
+            "component_id": "K3.C01",
+            "indicator_id": "K3.I01"
+          },
+          {
+            "skill_id": "K3.1",
+            "m2_version": "v1.1",
+            "component_id": "K3.C01",
+            "indicator_id": "K3.I02"
+          },
+          {
+            "skill_id": "K3.1",
+            "m2_version": "v1.1",
+            "component_id": "K3.C02",
+            "indicator_id": "K3.I03"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C03",
+            "indicator_id": "K3.I04"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C03",
+            "indicator_id": "K3.I05"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C03",
+            "indicator_id": "K3.I06"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C05",
+            "indicator_id": "K3.I07"
+          },
+          {
+            "skill_id": "K3.2",
+            "m2_version": "v1.1",
+            "component_id": "K3.C05",
+            "indicator_id": "K3.I08"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C06",
+            "indicator_id": "K3.I09"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C07",
+            "indicator_id": "K3.I10"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C08",
+            "indicator_id": "K3.I11"
+          },
+          {
+            "skill_id": "K3.3",
+            "m2_version": "v1.1",
+            "component_id": "K3.C08",
+            "indicator_id": "K3.I12"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C01",
+            "indicator_id": "K4.I01"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C01",
+            "indicator_id": "K4.I02"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C02",
+            "indicator_id": "K4.I03"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C02",
+            "indicator_id": "K4.I04"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C03",
+            "indicator_id": "K4.I05"
+          },
+          {
+            "skill_id": "K4.1",
+            "m2_version": "v1.0",
+            "component_id": "K4.C03",
+            "indicator_id": "K4.I06"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C04",
+            "indicator_id": "K4.I07"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C04",
+            "indicator_id": "K4.I08"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C05",
+            "indicator_id": "K4.I09"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C05",
+            "indicator_id": "K4.I10"
+          },
+          {
+            "skill_id": "K4.2",
+            "m2_version": "v1.0",
+            "component_id": "K4.C06",
+            "indicator_id": "K4.I11"
+          },
+          {
+            "skill_id": "K4.3",
+            "m2_version": "v1.0",
+            "component_id": "K4.C07",
+            "indicator_id": "K4.I12"
+          },
+          {
+            "skill_id": "K4.3",
+            "m2_version": "v1.0",
+            "component_id": "K4.C07",
+            "indicator_id": "K4.I13"
+          },
+          {
+            "skill_id": "K4.3",
+            "m2_version": "v1.0",
+            "component_id": "K4.C08",
+            "indicator_id": "K4.I14"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C09",
+            "indicator_id": "K4.I15"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C10",
+            "indicator_id": "K4.I16"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C10",
+            "indicator_id": "K4.I17"
+          },
+          {
+            "skill_id": "K4.4",
+            "m2_version": "v1.0",
+            "component_id": "K4.C10",
+            "indicator_id": "K4.I18"
+          }
+        ],
+        "planned_max_seconds": 1200,
+        "time_budget_seconds": 3600,
+        "uncovered_target_ids": [
+          "K1.I01",
+          "K1.I02",
+          "K1.I03",
+          "K1.I04",
+          "K1.I05",
+          "K1.I06",
+          "K1.I07",
+          "K1.I08",
+          "K1.I09",
+          "K1.I10",
+          "K1.I11",
+          "K1.I12",
+          "K1.I13",
+          "K1.I14",
+          "K1.I15",
+          "K1.I17",
+          "K2.I01",
+          "K2.I02",
+          "K2.I03",
+          "K2.I04",
+          "K2.I05",
+          "K2.I06",
+          "K2.I07",
+          "K2.I08",
+          "K2.I09",
+          "K2.I10",
+          "K2.I11",
+          "K2.I12",
+          "K2.I13",
+          "K2.I14",
+          "K3.I01",
+          "K3.I02",
+          "K3.I04",
+          "K3.I05",
+          "K3.I07",
+          "K3.I08",
+          "K3.I12",
+          "K4.I01",
+          "K4.I02",
+          "K4.I03",
+          "K4.I04",
+          "K4.I05",
+          "K4.I06",
+          "K4.I07",
+          "K4.I08",
+          "K4.I09",
+          "K4.I10",
+          "K4.I11",
+          "K4.I12",
+          "K4.I13",
+          "K4.I14",
+          "K4.I15",
+          "K4.I16",
+          "K4.I17"
+        ],
+        "return_policy_snapshot": {
+          "content": {
+            "id": "sales-pilot-return-r1",
+            "status": "published",
+            "version": "2.0",
+            "algorithm": "m7-return-r1",
+            "resume_mode": "same_assessment_situation",
+            "usage_scope": "assessment",
+            "absence_source": "server_presence_lease",
+            "decision_basis": "owner_decision_2026-10-18_sales_pilot_r1",
+            "schema_version": 1,
+            "terminal_branches": [
+              "time_limit_reached"
+            ],
+            "replacement_policy": "not_applicable",
+            "presence_lease_seconds": 120,
+            "heartbeat_interval_seconds": 10,
+            "continue_requires_explicit_command": true
+          },
+          "checksum": "1121db8c84b6997ee427264a589b5db088588e134734d8ae0dbc0d2220a36f14"
+        },
+        "calendar_window_seconds": 259200,
+        "parameter_resolution_checksum": "bff9d4d6679cfd40d70d08cb26cf9d3765be159f9ec0df3fa7fbbb2487b7eb06"
+      },
+      "profile_ref": {
+        "id": "assessment_personalized_profiles:16",
+        "version": "1",
+        "checksum": "4c326e003c889e10454bb28cb74f7eb8fc470dcd0fac9386eb10d51466ab22ce"
+      },
+      "rules_ref": {
+        "checksum": "9e4f5a3c0b6838407bbb16174f7f37b10f1022242b3d1088c51df31f014bd0ef",
+        "algorithm_version": "m7-greedy-coverage/1"
+      },
+      "decisions": [
+        {
+          "id": "369753f4-df2f-4e84-82d2-687904151e04",
+          "cycle_db_id": 15,
+          "session_db_id": 15,
+          "plan_revision_id": "1242b7bb-ea2a-4ba9-857a-fe3836c68400",
+          "revision_no": 1,
+          "status": "SELECTED",
+          "trigger_json": {
+            "kind": "next_as_request",
+            "created_by": 99
+          },
+          "facts_json": {
+            "pending_target_ids": [],
+            "final_ia_target_ids": [],
+            "opportunity_target_ids": [],
+            "component_score_coverage": "NOT_CALCULATED",
+            "technical_failure_target_ids": [],
+            "aggregate_contribution_coverage": "NOT_CALCULATED"
+          },
+          "considered_json": [
+            {
+              "case_id": "CASE.SPEC.04",
+              "reasons": [],
+              "case_version": "v0.5",
+              "contribution": [
+                "K1.I16",
+                "K3.I03",
+                "K3.I06",
+                "K3.I09",
+                "K3.I10",
+                "K3.I11",
+                "K4.I18"
+              ]
+            }
+          ],
+          "selected_case_id": "CASE.SPEC.04",
+          "selected_case_version": "v0.5",
+          "expected_targets_json": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "explanation_json": {
+            "code": "M7_NEXT_AS_SELECTED",
+            "algorithm": "m7-greedy-coverage/1"
+          },
+          "created_at": "2026-10-23 08:58:16.193184+00:00",
+          "assigned_as_db_id": 15,
+          "assignment_presented_at": "2026-10-23 08:58:16.753348+00:00",
+          "assessment_situation_id": "7205519f-8e19-4cc9-a923-1148f4f6c504",
+          "assessment_situation_status": "active"
+        }
+      ]
+    },
+    "status": {
+      "cycle_id": "c863b7af-c5da-4605-af6f-655a26d4b14e",
+      "collection_status": "active",
+      "processing_status": "active",
+      "remaining_seconds": 3600,
+      "calendar_deadline": "2026-10-26 08:58:16.753348+00:00",
+      "close_reason": null,
+      "c46_status": null,
+      "can_continue": true,
+      "route_progress": {
+        "completed": 0,
+        "total": 1
+      }
+    },
+    "between_situations": false,
+    "return_policy_enabled": true,
+    "route": {
+      "schema_version": 1,
+      "positions": [
+        {
+          "position_id": "472613a5-c18a-4df5-9803-0caca633c71c",
+          "position_no": 1,
+          "case_id": "CASE.SPEC.04",
+          "case_version": "v0.5",
+          "state": "in_progress",
+          "current_assessment_situation_id": "7205519f-8e19-4cc9-a923-1148f4f6c504",
+          "expected_targets": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "history": [
+            {
+              "ordinal": 1,
+              "assessment_situation_id": "7205519f-8e19-4cc9-a923-1148f4f6c504",
+              "disposition": "current",
+              "exclusion_reason": null,
+              "replacement_operation_id": null
+            }
+          ]
+        }
+      ],
+      "progress": {
+        "total_positions": 1,
+        "completed_positions": 0
+      }
+    },
+    "situations": [
+      {
+        "assessment_situation_id": "7205519f-8e19-4cc9-a923-1148f4f6c504",
+        "status": "active"
+      }
+    ],
+    "current_situation": {
+      "assessment_situation_id": "7205519f-8e19-4cc9-a923-1148f4f6c504",
+      "status": "active",
+      "participant_payload": {
+        "title": "Ошибка исправлена но последствия и сомнения остались",
+        "source": {
+          "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+          "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+          "pointer": ""
+        },
+        "case_id": "CASE.SPEC.04",
+        "trigger": "Заказчик предъявляет претензию и запрашивает дальнейшие действия перед обсуждением с руководством.",
+        "version": "v0.2",
+        "case_version": "v0.5",
+        "introduction": "Вы — аналитик управленческой отчётности учебной организации. Обсуждаете с Алексеем, руководителем регионального отдела, дальнейшую работу после ошибки в сводном отчёте. Сейчас четверг, 15:20. Вы отвечаете за собственную рекомендацию, можете уточнять факты и инициировать согласование; распоряжаться чужими ресурсами и утверждать новые обязательства не вправе.\nИзучите материалы и обсудите с Алексеем, что предлагаете делать дальше. Способ и форму предложения выберите сами; выразить его можно в чате. Отдельный документ и реальная встреча не требуются. Все условия и события учебные.",
+        "assessee_task": "Обсудите с заказчиком возможный подход к дальнейшей работе после случившегося и определите следующее действие.",
+        "substitutions": [],
+        "assessee_position": "Специалист обсуждает последствия ошибки своего профессионального результата с внутренним или внешним заказчиком. Оцениваемый действует в пределах своей ответственности; дополнительные полномочия из названия должности не выводятся.",
+        "initial_materials": [
+          {
+            "text": "Вторник, 10:00 — опубликована недельная сводка. Из-за ошибочного правила объединения часть заказов учтена дважды.\nВторник, 10:15 — зарегистрировано сообщение регионального отдела о расхождении.\nВторник, 14:00 — правило исправлено, сводка пересчитана и заменена. Обсуждение регионального плана, назначенное на вторник, перенесено; новую дату не согласовали.\nЧетверг, 14:00 — за 48 часов наблюдений то же дублирование не обнаружено. Последствия переноса обсуждения ещё не устранены.",
+            "title": "Хронология",
+            "source": {
+              "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+              "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+              "pointer": "/Материалы/1"
+            },
+            "material_id": "M01"
+          },
+          {
+            "text": "Причина установленного дублирования — неверное правило объединения заказов. Оно исправлено. Проверены контрольные суммы и уникальность записей на наборе двух последних недель. Повторения установленной ошибки за 48 часов не обнаружено. Другие периоды и все возможные источники расхождений не проверялись. Заключение не подтверждает отсутствие любых будущих ошибок и не восстанавливает сорванное обсуждение плана.",
+            "title": "Заключение по исправлению",
+            "source": {
+              "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+              "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+              "pointer": "/Материалы/2"
+            },
+            "material_id": "M02"
+          },
+          {
+            "text": "Завтра в 11:00 обсудим последствия срыва планирования и дальнейший порядок работы с аналитикой. Подготовь позицию и основания; материалы нужны до 10:00.\nАлексей ранее обосновывал использование новой сводки. После ошибки он сообщил о подготовке возврата к прежнему ручному способу. Предложение просто повторно показать исправленный отчёт он отклонил.",
+            "title": "Запрос руководства",
+            "source": {
+              "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+              "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+              "pointer": "/Материалы/3"
+            },
+            "material_id": "M03"
+          },
+          {
+            "text": "Инженер данных доступен сегодня до 17:00 для уточнения выполненных проверок. Руководитель аналитики доступен до 16:30 и может подтвердить работы в пределах текущей загрузки; новые постоянные проверки и дополнительные часы не утверждает.\nРуководитель направления принимает предложения о дополнительном ресурсе до 16:00; статус рассмотрения сообщит завтра до 09:30. Это срок ответа, а не обещание одобрения. Изменение обязательного порядка отчётности требует решения владельца процесса.\nВы можете готовить предложения и запросы на согласование. Продолжение использования сводки и новые ресурсы ещё не утверждены. Время относится к сюжету, а не к таймеру ответа.",
+            "title": "Ресурсы и полномочия",
+            "source": {
+              "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+              "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+              "pointer": "/Материалы/4"
+            },
+            "material_id": "M04"
+          },
+          {
+            "text": "Вы пишете, что ошибку исправили. А обсуждение плана сорвано, и завтра объяснять это мне. Я убеждал коллег перейти на вашу сводку. Просто показать мне её ещё раз недостаточно; подготовку возврата к прежнему способу продолжаю. Для отдельной встречи сегодня есть только 16:00–16:30. Что вы предлагаете?",
+            "title": "Сообщение заказчика",
+            "source": {
+              "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+              "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+              "pointer": "/Материалы/5"
+            },
+            "material_id": "M05"
+          }
+        ],
+        "initial_situation": "Конкретная ошибка устранена и это подтверждено ограниченной проверкой. Значимое действие заказчика сорвано, последствия не устранены; он сомневается в продолжении прежнего взаимодействия и готовит изменение способа работы.",
+        "assessment_situation_id": "AS.SPEC.04.FUNCTIONAL.20261022",
+        "conditions_and_constraints": "{'Язык': 'Профессиональное содержание узнаваемо по деятельности; необходимые термины объяснены. Поиск в интернете и знание скрытой отраслевой формулы не требуются.', 'Мандат': 'Собственная профессиональная рекомендация и вклад; чужие ресурсы, обязательства и внешние подтверждения требуют согласования.', 'Ресурсы': 'Конкретные единицы, доступность, трудозатраты, горизонты и согласующие заданы в AS до старта. Сохраняются отношения из инвариантов; деньги, ИТ и точные часы прежних примеров не обязательны.', 'Информация': {'На старте': ['P00', 'M01', 'M02', 'M03', 'M04', 'M05'], 'Функции материалов': {'M01': 'Хронология ошибки, исправления и последствий', 'M02': 'Заключение с предметом и границами проверки', 'M03': 'Запрос руководства и статус альтернативы дальнейшей работы', 'M04': 'Ресурсы, доступность, полномочия и сроки ответа согласующих', 'M05': 'Первая реплика заказчика с обоснованной претензией', 'P00': 'Роль и задача дальнейшей работы'}}, 'Исполнение': 'Разговор и работа с документами в текущем текстовом интерфейсе; реальные встречи, отправки, изменения систем и проверки за пределами сцены не требуются.', 'Неизвестное': 'Непроверенные причины, будущие результаты и решения не создавать по запросу участника; фиксированные сведения и их раскрытие описать до старта.'}",
+        "participants_and_positions": "[{'Функция': 'Заказчик', 'Конкретизация': 'Имя, профессиональная принадлежность, фиксированные знания и мандат определяются в AS; число активных персонажей сохраняется.', 'Позиция и вклад': 'Предъявляет обоснованную претензию и рассматривает предложенный способ'}, {'Функция': 'Эксперты и согласующие', 'Конкретизация': 'Имя, профессиональная принадлежность, фиксированные знания и мандат определяются в AS; число активных персонажей сохраняется.', 'Позиция и вклад': 'Источники материалов и будущих согласований; не активные персонажи'}]"
+      }
+    },
+    "trace": {
+      "assessment_situation_id": "7205519f-8e19-4cc9-a923-1148f4f6c504",
+      "status": "active",
+      "turns": [
+        {
+          "turn_id": "f1714fce-986f-459d-b6bd-808fb7dd2ff1",
+          "sequence_no": 7,
+          "speaker_type": "assessee",
+          "speaker_id": "assessee",
+          "content_text": "F05: Предложенный способ уже учитывает известные ограничения",
+          "speaker_name": null
+        }
+      ],
+      "events": [
+        {
+          "event_id": "3e725698-67c9-4398-8402-2d909ed3a346",
+          "event_type": "material_disclosed",
+          "sequence_no": 2,
+          "material_id": "M01",
+          "payload_json": {
+            "content": {
+              "text": "Вторник, 10:00 — опубликована недельная сводка. Из-за ошибочного правила объединения часть заказов учтена дважды.\nВторник, 10:15 — зарегистрировано сообщение регионального отдела о расхождении.\nВторник, 14:00 — правило исправлено, сводка пересчитана и заменена. Обсуждение регионального плана, назначенное на вторник, перенесено; новую дату не согласовали.\nЧетверг, 14:00 — за 48 часов наблюдений то же дублирование не обнаружено. Последствия переноса обсуждения ещё не устранены.",
+              "title": "Хронология",
+              "source": {
+                "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+                "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+                "pointer": "/Материалы/1"
+              },
+              "material_id": "M01"
+            },
+            "recipient": "assessee"
+          }
+        },
+        {
+          "event_id": "7b7fdc02-3cc0-441c-932d-a73774201ee8",
+          "event_type": "material_disclosed",
+          "sequence_no": 3,
+          "material_id": "M02",
+          "payload_json": {
+            "content": {
+              "text": "Причина установленного дублирования — неверное правило объединения заказов. Оно исправлено. Проверены контрольные суммы и уникальность записей на наборе двух последних недель. Повторения установленной ошибки за 48 часов не обнаружено. Другие периоды и все возможные источники расхождений не проверялись. Заключение не подтверждает отсутствие любых будущих ошибок и не восстанавливает сорванное обсуждение плана.",
+              "title": "Заключение по исправлению",
+              "source": {
+                "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+                "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+                "pointer": "/Материалы/2"
+              },
+              "material_id": "M02"
+            },
+            "recipient": "assessee"
+          }
+        },
+        {
+          "event_id": "bb6eb07b-9788-4110-9d8e-57cd885378d7",
+          "event_type": "material_disclosed",
+          "sequence_no": 4,
+          "material_id": "M03",
+          "payload_json": {
+            "content": {
+              "text": "Завтра в 11:00 обсудим последствия срыва планирования и дальнейший порядок работы с аналитикой. Подготовь позицию и основания; материалы нужны до 10:00.\nАлексей ранее обосновывал использование новой сводки. После ошибки он сообщил о подготовке возврата к прежнему ручному способу. Предложение просто повторно показать исправленный отчёт он отклонил.",
+              "title": "Запрос руководства",
+              "source": {
+                "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+                "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+                "pointer": "/Материалы/3"
+              },
+              "material_id": "M03"
+            },
+            "recipient": "assessee"
+          }
+        },
+        {
+          "event_id": "e0ad0ebd-bf6a-4f2f-9cd1-22e6186c11a1",
+          "event_type": "material_disclosed",
+          "sequence_no": 5,
+          "material_id": "M04",
+          "payload_json": {
+            "content": {
+              "text": "Инженер данных доступен сегодня до 17:00 для уточнения выполненных проверок. Руководитель аналитики доступен до 16:30 и может подтвердить работы в пределах текущей загрузки; новые постоянные проверки и дополнительные часы не утверждает.\nРуководитель направления принимает предложения о дополнительном ресурсе до 16:00; статус рассмотрения сообщит завтра до 09:30. Это срок ответа, а не обещание одобрения. Изменение обязательного порядка отчётности требует решения владельца процесса.\nВы можете готовить предложения и запросы на согласование. Продолжение использования сводки и новые ресурсы ещё не утверждены. Время относится к сюжету, а не к таймеру ответа.",
+              "title": "Ресурсы и полномочия",
+              "source": {
+                "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+                "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+                "pointer": "/Материалы/4"
+              },
+              "material_id": "M04"
+            },
+            "recipient": "assessee"
+          }
+        },
+        {
+          "event_id": "346da7b0-1eac-49a8-90e5-570f6794f926",
+          "event_type": "material_disclosed",
+          "sequence_no": 6,
+          "material_id": "M05",
+          "payload_json": {
+            "content": {
+              "text": "Вы пишете, что ошибку исправили. А обсуждение плана сорвано, и завтра объяснять это мне. Я убеждал коллег перейти на вашу сводку. Просто показать мне её ещё раз недостаточно; подготовку возврата к прежнему способу продолжаю. Для отдельной встречи сегодня есть только 16:00–16:30. Что вы предлагаете?",
+              "title": "Сообщение заказчика",
+              "source": {
+                "file": "sources/generated-5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6.json",
+                "sha256": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+                "pointer": "/Материалы/5"
+              },
+              "material_id": "M05"
+            },
+            "recipient": "assessee"
+          }
+        }
+      ]
+    },
+    "clarification": null,
+    "continuation": null,
+    "pipeline": null
+  },
+  "snapshot": {
+    "candidate_checksum": "5846990d08a39aeb038000baf97ad83415b0f3dae8957b843bc0a0332b2fc8f6",
+    "input_snapshot_checksum": "f0b0e925a91cdf4825ce684dc8ed215203a7d980d769c0a59f7309e168c26a21",
+    "tester_input_checksum": "f62c7d205996c547923cca0548bc52a144fdaf7f65d095317fcefe9fb70cf547"
+  }
+}

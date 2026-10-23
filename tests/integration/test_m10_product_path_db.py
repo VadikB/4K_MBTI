@@ -14,6 +14,7 @@ from Api.assessment_role_profiles import publish_base_roles
 from Api import assessment_contexts as contexts, participant_profile
 from Api.schemas import PersonalizedProfileSelection
 from Api.m5_case_runtime import checksum
+from Api.m5_functional_generation_service import checksum as functional_checksum
 from Api.m5_scenario_runtime import transition
 from Api.m5_storage import import_package
 from Api.m7_completion import complete, finish_current_situation
@@ -358,6 +359,12 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         assert generated_ref == {"source": "functional_generation",
                                  "candidate_checksum": generated_trace["candidate_checksum"]}
         assert generated_trace["admitted_for_participant"] is True
+        assert generated_trace["schema_version"] == 2
+        assert functional_checksum(generated_trace["accepted_as"]) == generated_trace["candidate_checksum"]
+        assert generated_trace["tester_input_checksum"] == generated_trace["tester"]["provider_operation"]["input_checksum"]
+        assert generated_trace["source_snapshot"]["author_as_example"]["CaseID"] == decision["selected_case_id"]
+        assert generated_trace["source_snapshot"]["profile_checksum"] == situation["snapshot_json"]["profile_ref"]["checksum"]
+        assert "planned case durations do not constrain selection" in prepared["plan"]["plan"]["duration_semantics"]
         selected_case = connection.execute("SELECT case_version_id FROM m5_assessment_situations WHERE id=%s",
             (connection.execute("SELECT assessment_situation_db_id FROM m7_route_assignments WHERE decision_id=%s",
                                 (decision["id"],)).fetchone()["assessment_situation_db_id"],)).fetchone()

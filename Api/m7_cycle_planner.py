@@ -130,7 +130,7 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
         catalog_ref={key:catalog_ref[key] for key in ("id","version","checksum","package_checksum","m2_checksum","db_id")})
     session=create_session(connection,cycle_id=str(cycle["cycle_id"]),created_by=created_by)
     total=sum(x["planned_max_minutes"]*60 for x in route)
-    status="READY" if not uncovered and total<=budget else ("LIMITED" if route else "NO_ROUTE")
+    status="READY" if not uncovered else ("LIMITED" if route else "NO_ROUTE")
     requirements=[{"indicator_id":x["indicator_id"],"m2_version":x["m2_version"],"required_final_ia_count":1,
                    "distinct_as_required":1} for x in targets]
     content={"schema_version":1,"status":status,"goal":{"kind":"skills","selected_skills":request["selected_skills"]},
@@ -140,8 +140,9 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
         "parameter_resolution_checksum":resolved["resolved_checksum"],
         "return_policy_snapshot": policy_snapshot_for_plan(usage_scope=usage_scope),
         "catalog_ref":{key:catalog_ref[key] for key in ("id","version","checksum","package_checksum","m2_checksum")},
-        "known_limitations":["Cases are conditional opportunities; not guaranteed Evidence"]+
-            (["Route exceeds time budget"] if total>budget else []),"catalog":catalog,"algorithm_version":rules["algorithm_version"]}
+        "known_limitations":["Cases are conditional opportunities; not guaranteed Evidence"],
+        "duration_semantics":"planned case durations do not constrain selection; the Cycle budget limits actual elapsed collection time",
+        "catalog":catalog,"algorithm_version":rules["algorithm_version"]}
     repo.save_plan(connection,cycle=cycle,profile_ref=profile_ref,full_targets=targets,planned_targets=targets,
                    requirements=requirements,rules=rules,content=content,created_by=created_by,key=key,request_hash=request_hash)
     return read_plan(connection,str(cycle["cycle_id"]))
@@ -200,8 +201,6 @@ def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:
             contribution=sorted(set(item["purpose_target_ids"])&needed)
             if item["case_id"] in used:reasons.append("CASE_ALREADY_USED_IN_CYCLE")
             if not contribution:reasons.append("REQUIREMENT_ALREADY_MET")
-            required=item["planned_max_minutes"]*60
-            if cycle["started_at"] and required>cycle["remaining_seconds"]:reasons.append("DOES_NOT_FIT_REMAINING_TIME")
             candidates.append({"case_id":item["case_id"],"case_version":item["case_version"],"contribution":contribution,"reasons":reasons})
         decision["considered"]=candidates
         selected=next((x for x in candidates if not x["reasons"]),None)
@@ -233,6 +232,14 @@ def attach_functional_generated_as(connection, *, decision_id: str, prepared_res
     if not prepared_result.get("admitted_for_participant"): raise ValueError("AS_NOT_ADMITTED")
     if not isinstance(prepared_result.get("compiled_case"), dict) or not isinstance(prepared_result.get("execution_rules"), dict):
         raise ValueError("M5_FUNCTIONAL_COMPILED_RESULT_REQUIRED")
+    from Api.m5_functional_generation_service import checksum as functional_checksum
+    from Api.m5_case_runtime import checksum as runtime_checksum
+    if (generation_trace.get("schema_version") != 2
+            or generation_trace.get("candidate_checksum") != prepared_result.get("candidate_checksum")
+            or functional_checksum(generation_trace.get("accepted_as")) != prepared_result.get("candidate_checksum")
+            or generation_trace.get("compiled_case_checksum") != runtime_checksum(prepared_result["compiled_case"])
+            or generation_trace.get("execution_rules_checksum") != runtime_checksum(prepared_result["execution_rules"])):
+        raise ValueError("M5_FUNCTIONAL_HANDOFF_INTEGRITY_MISMATCH")
     cycle = connection.execute("SELECT personalized_profile_id,usage_scope FROM m5_cycles WHERE id=%s",
                                (decision["cycle_db_id"],)).fetchone()
     runtime_rules = prepared_result["execution_rules"]

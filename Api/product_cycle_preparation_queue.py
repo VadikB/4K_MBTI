@@ -133,7 +133,7 @@ class ProductCyclePreparationQueue:
             with get_connection() as connection:
                 profile_id = request.get("personalized_profile_id")
                 profile = connection.execute(
-                    "SELECT content_json,assessment_configuration_id FROM assessment_personalized_profiles WHERE id=%s AND user_id=%s",
+                    "SELECT content_json,assessment_configuration_id,checksum FROM assessment_personalized_profiles WHERE id=%s AND user_id=%s",
                     (profile_id, job["user_id"]),
                 ).fetchone() if profile_id else None
                 catalog_column = connection.execute("""SELECT EXISTS (
@@ -157,10 +157,12 @@ class ProductCyclePreparationQueue:
                 frozen_profile = dict(profile["content_json"]) if functional else None
                 frozen_case = None
                 if functional:
-                    frozen_case = dict(connection.execute(
-                        "SELECT content_json FROM m5_case_versions WHERE case_id=%s AND case_version=%s",
+                    frozen_case_row = connection.execute(
+                        "SELECT content_json,content_checksum FROM m5_case_versions WHERE case_id=%s AND case_version=%s",
                         (result["decision"]["selected_case_id"], result["decision"]["selected_case_version"]),
-                    ).fetchone()["content_json"])
+                    ).fetchone()
+                    frozen_case = dict(frozen_case_row["content_json"])
+                    frozen_case_checksum = frozen_case_row["content_checksum"]
             if functional:
                 decision = result["decision"]
                 snapshot = m5_functional_generation_service.build_input_snapshot(
@@ -168,13 +170,13 @@ class ProductCyclePreparationQueue:
                     operation_id=str(job["operation_id"]), synthetic=False,
                     case_value=frozen_case["author_case"],
                     author_as_example=frozen_case["author_assessment_situation"],
+                    profile_checksum=profile["checksum"],
+                    case_version_checksum=frozen_case_checksum,
                 )
                 generated = m5_functional_generation_service.prepare(snapshot, DeepSeekGateway())
                 if not generated["admitted_for_participant"]:
                     raise ValueError("M5_FUNCTIONAL_AS_NOT_ADMITTED:" + generated["tester"]["aggregation"]["status"])
-                trace = {key: generated[key] for key in (
-                    "input_snapshot_checksum", "candidate_checksum", "deterministic_validation",
-                    "generation_operation", "tester", "admitted_for_participant")}
+                trace = m5_functional_generation_service.build_persistence_trace(snapshot, generated)
                 with get_connection() as connection:
                     attached = m7_cycle_planner.attach_functional_generated_as(
                         connection, decision_id=str(decision["id"]), prepared_result=generated,

@@ -436,7 +436,13 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
             },
             "closed_card": item["content"], "source": item["source"],
         } for item in case_rules.get("characters", [])]
-        execution["materials"] = case_rules.get("materials", [])
+        initial_runtime_materials = [{
+            "material_id": item["material_id"], "kind": "initial_material", "speaker_id": None,
+            "participant_payload": item, "disclosure_condition": {"type": "initial_presentation"},
+            "event_condition": {"type": "scenario_start"}, "reaction_rule": None,
+            "result_check": "Initial participant material is available from scenario start.",
+        } for item in situation["participant_payload"].get("initial_materials", [])]
+        execution["materials"] = initial_runtime_materials + case_rules.get("materials", [])
         execution["scenario"] = [{
             "step_id": item["step_id"], "order": item["order"],
             "title": item.get("event") or item["step_id"],
