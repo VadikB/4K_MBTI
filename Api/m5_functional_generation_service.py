@@ -18,7 +18,7 @@ from Api.m5_case_runtime import checksum as runtime_checksum
 from scripts.build_m5_sales_package import build_execution_rules, compile_case_values
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.2"
+PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.3"
 SOURCE = PACKAGE / "sources/functional-v0.2"
 REPAIR_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_repair/v1"
 
@@ -102,6 +102,29 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
     check("base_role", candidate.get("BaseRole") == expected.get("BaseRole"), candidate.get("BaseRole"))
     check("indicator_targets", candidate.get("IndicatorIDs") == expected.get("IndicatorIDs"), candidate.get("IndicatorIDs"))
     check("m2_versions", candidate.get("Версии M2") == expected.get("Версии M2"))
+    protected_target_fields = (
+        "IndicatorID", "SkillID", "ComponentID", "Название", "Версия M2",
+        "Нормативный источник", "Материалы и факты", "Конкретное условие",
+        "Что сохранить при адаптации", "Дефект потери", "Форма проявления",
+        "Проектная возможность", "Фактическое возникновение", "Evidence и IA",
+        "Связанные инварианты",
+    )
+    expected_targets = expected.get("IndicatorObservability")
+    candidate_targets = candidate.get("IndicatorObservability")
+    expected_by_id = ({item.get("IndicatorID"): item for item in expected_targets}
+                      if isinstance(expected_targets, list) else {})
+    candidate_by_id = ({item.get("IndicatorID"): item for item in candidate_targets}
+                       if isinstance(candidate_targets, list) else {})
+    check("indicator_content_target_set", bool(expected_by_id)
+          and set(candidate_by_id) == set(expected_by_id), sorted(candidate_by_id))
+    differences = []
+    if set(candidate_by_id) == set(expected_by_id):
+        for indicator_id, source_target in expected_by_id.items():
+            candidate_target = candidate_by_id[indicator_id]
+            for field in protected_target_fields:
+                if candidate_target.get(field) != source_target.get(field):
+                    differences.append({"indicator_id": indicator_id, "field": field})
+    check("indicator_author_content_preserved", not differences, differences)
     characters = candidate.get("Активные персонажи")
     check("character_count", isinstance(characters, list) and len(characters) == len(expected.get("Активные персонажи", [])))
     materials = candidate.get("Материалы")
@@ -324,6 +347,7 @@ def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
             case_source_checksum=snapshot["refs"]["case"]["sha256"],
             as_source_name=f"generated-{generation['candidate_checksum']}.json",
             as_source_checksum=generation["candidate_checksum"],
+            source_schema_profile="functional-personalization-indicator-v1",
         )
         execution_rules = build_execution_rules([compiled_case])
     return {"schema_version": 1, "input_snapshot_checksum": checksum(snapshot),

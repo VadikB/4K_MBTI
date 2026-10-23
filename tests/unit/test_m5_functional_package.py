@@ -7,6 +7,7 @@ import pytest
 
 from Api.assessment_case_contracts import CaseVersionV3
 from Api.m5_package import verify_package_directory
+from Api.m5_functional_generation_service import build_input_snapshot, deterministic_checks
 from scripts.build_m5_functional_package import OUTPUT, build
 
 pytestmark = pytest.mark.unit
@@ -30,6 +31,72 @@ def test_functional_package_keeps_all_nine_current_passports_and_full_fields():
         CaseVersionV3.model_validate(case)
         keys = set(case["passport"])
         assert all(any(key.startswith(prefix) for key in keys) for prefix in required)
+
+
+def test_all_55_indicator_targets_preserve_author_content_exactly():
+    package = _package()
+    rows = 0
+    for case in package["cases"]:
+        compiled = {item["indicator_id"]: item for item in case["indicator_targets"]}
+        for source in case["author_assessment_situation"]["IndicatorObservability"]:
+            target = compiled[source["IndicatorID"]]
+            assert target["author_title"] == source["Название"]
+            assert target["normative_source"] == source["Нормативный источник"]
+            assert target["material_refs"] == source["Материалы и факты"]
+            assert target["observation_condition"] == source["Конкретное условие"]
+            assert target["adaptation_constraints"] == source["Что сохранить при адаптации"]
+            assert target["validity_risk"] == source["Дефект потери"]
+            assert target["observable_action"] == source["Форма проявления"]
+            assert target["design_opportunity"] == source["Проектная возможность"]
+            assert target["actual_occurrence"] == source["Фактическое возникновение"]
+            assert target["evidence_status"] == source["Evidence и IA"]
+            assert target["invariant_refs"] == source["Связанные инварианты"]
+            assert target["branch_condition"] is None
+            assert target["event_condition"] is None
+            assert target["condition_absence_reason"] == "SOURCE_HAS_NO_SEPARATE_BRANCH_OR_EVENT_PREDICATE"
+            rows += 1
+    assert rows == 55
+    report = json.loads((OUTPUT / "content-preservation-report.json").read_text())
+    assert report["result"] == "PASS"
+    assert report["target_count"] == len(report["targets"]) == 55
+
+
+@pytest.mark.parametrize("field", ["Конкретное условие", "Материалы и факты", "Что сохранить при адаптации"])
+def test_builder_rejects_corrupted_required_indicator_content(tmp_path, field):
+    source = OUTPUT.parent / "0.2/sources/functional-v0.2"
+    copied = tmp_path / "source"
+    for path in source.rglob("*"):
+        if path.is_file():
+            target = copied / path.relative_to(source)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(path.read_bytes())
+    as_path = copied / "04_as/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json"
+    value = json.loads(as_path.read_text())
+    del value["IndicatorObservability"][0][field]
+    as_path.write_text(json.dumps(value, ensure_ascii=False))
+    index = json.loads((copied / "Package_index_v0.2.json").read_text())
+    changed = next(item for item in index["Cases"] if item["CaseID"] == "CASE.SPEC.01")
+    from Api.m5_package import digest
+    changed["AS"]["SHA256"] = digest(as_path.read_bytes())
+    (copied / "Package_index_v0.2.json").write_text(json.dumps(index, ensure_ascii=False))
+    with pytest.raises(ValueError, match="Unsupported functional IndicatorObservability schema"):
+        build(copied)
+
+
+@pytest.mark.parametrize("field", ["Конкретное условие", "Материалы и факты", "Что сохранить при адаптации"])
+def test_pre_admission_check_rejects_changed_author_indicator_content(field):
+    case = _package()["cases"][0]
+    snapshot = build_input_snapshot(
+        case_id=case["case_id"], profile={"base_role": "specialist_expert"},
+        operation_id="a01-negative", case_value=case["author_case"],
+        author_as_example=case["author_assessment_situation"],
+    )
+    candidate = copy.deepcopy(snapshot["author_as_example"])
+    candidate["IndicatorObservability"][0][field] = [] if field == "Материалы и факты" else "искажено"
+    result = deterministic_checks(snapshot, candidate)
+    assert result["status"] == "FAIL"
+    failed = {item["code"] for item in result["checks"] if item["result"] == "FAIL"}
+    assert "indicator_author_content_preserved" in failed
 
 
 def test_functional_character_counts_and_actorless_cases_are_exact():

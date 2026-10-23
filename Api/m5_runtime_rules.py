@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -15,8 +16,10 @@ ALLOWED_FUNCTIONS = {"character_reaction", "material_update", "facilitator_actio
 def load_runtime_rule_package(directory: Path, cases: list[dict[str, Any]]) -> dict[str, Any]:
     manifest_raw = (directory / "manifest.json").read_bytes()
     manifest = json.loads(manifest_raw)
-    expected = (1, "m5-functional-personalization-runtime", "1.0.0", "draft", "PM-04")
-    if tuple(manifest.get(key) for key in ("schema_version", "id", "version", "status", "owner")) != expected:
+    identity = tuple(manifest.get(key) for key in ("schema_version", "id", "status", "owner"))
+    if identity != (1, "m5-functional-personalization-runtime", "draft", "PM-04") or not re.fullmatch(
+        r"\d+\.\d+\.\d+", str(manifest.get("version", ""))
+    ):
         raise ValueError("M5_RUNTIME_RULE_MANIFEST_INVALID")
     artifacts = manifest.get("artifacts")
     if not isinstance(artifacts, list) or len(artifacts) != 1 or artifacts[0].get("name") != "event-bindings.json":
@@ -24,7 +27,7 @@ def load_runtime_rule_package(directory: Path, cases: list[dict[str, Any]]) -> d
     artifact_path = directory / artifacts[0]["name"]
     if hashlib.sha256(artifact_path.read_bytes()).hexdigest() != artifacts[0].get("sha256"):
         raise ValueError("M5_RUNTIME_RULE_ARTIFACT_CHECKSUM_MISMATCH")
-    bindings = load_event_bindings(artifact_path, cases)
+    bindings = load_event_bindings(artifact_path, cases, expected_version=manifest["version"])
     return {
         "manifest": manifest,
         "manifest_checksum": hashlib.sha256(manifest_raw).hexdigest(),
@@ -32,12 +35,14 @@ def load_runtime_rule_package(directory: Path, cases: list[dict[str, Any]]) -> d
     }
 
 
-def load_event_bindings(path: Path, cases: list[dict[str, Any]]) -> dict[str, Any]:
+def load_event_bindings(path: Path, cases: list[dict[str, Any]], *, expected_version: str | None = None) -> dict[str, Any]:
     raw = path.read_bytes()
     value = json.loads(raw)
-    if tuple(value.get(key) for key in ("schema_version", "id", "version", "status", "owner")) != (
-        1, "m5-functional-personalization-runtime", "1.0.0", "draft", "PM-04"
-    ):
+    identity = tuple(value.get(key) for key in ("schema_version", "id", "status", "owner"))
+    version = str(value.get("version", ""))
+    if (identity != (1, "m5-functional-personalization-runtime", "draft", "PM-04")
+            or not re.fullmatch(r"\d+\.\d+\.\d+", version)
+            or (expected_version is not None and version != expected_version)):
         raise ValueError("M5_RUNTIME_RULE_ARTIFACT_INVALID")
     expected = {case["case_id"]: case for case in cases}
     bindings = value.get("case_bindings")
