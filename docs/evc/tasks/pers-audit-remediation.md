@@ -57,6 +57,14 @@
   успешное завершение, идемпотентный replay и закрытие конфликта ключа. Следующая
   зависимая часть — разнести snapshot/provider/commit и включить общий
   functional generator/tester между claim и сохранением AS.
+- Добавлен общий pure-сервис PM-03 для functional AS: версионированные Case и
+  author example входят в snapshot с checksum, generator возвращает полную AS,
+  tester v2 получает серверный applicability plan, а допуск вычисляется только
+  программной агрегацией. Матричный runner переключён на тот же сервис; отдельной
+  лабораторной логики допуска больше нет. Два профиля дают разные frozen-входы,
+  неполный tester закрывает допуск. Real DeepSeek smoke: `NOT_RUN` — внешний
+  вызов заблокирован защитным контуром до отдельного явного разрешения на
+  передачу Case/prompt/profile payload провайдеру; секреты не читались.
 - Следующий шаг: подключить planner к profile→applicability→generation→tester→snapshot;
   затем F04/F05 и итоговая отчётность F07.
 - Ветка: `codex/pers-audit-remediation`.

@@ -21,6 +21,7 @@ if str(ROOT) not in sys.path:
 
 from Api.llm.deepseek_gateway import DeepSeekGateway
 from Api.m5_functional_personalization import extract_candidate_as
+from Api import m5_functional_generation_service as functional_service
 
 
 PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.2"
@@ -162,38 +163,10 @@ def _provider_record(response: Any, *, operation_id: str, kind: str, input_check
 
 def generate_one(row: dict[str, Any], gateway: DeepSeekGateway) -> dict[str, Any]:
     inputs = load_inputs(row)
-    instruction_path = SOURCE / "07_generation/Generator_instruction_v0.2.txt"
-    contract_path = SOURCE / "07_generation/Generation_contract_v0.2.json"
-    compact_example_size = len(canonical(inputs["author_as_example"]))
-    payload = {
-        "profile": inputs["profile"],
-        "case": inputs["case"],
-        "author_as_example": inputs["author_as_example"],
-        "requirements": {
-            "output": "Верни только один JSON-объект полной AS с теми же верхнеуровневыми полями, что у author_as_example.",
-            "status": "TEST_DRAFT",
-            "current": False,
-            "synthetic": True,
-            "must_adapt_all_dependent_parts": True,
-            "must_not_create_evidence_or_scores": True,
-            "compact_json": True,
-            "do_not_expand_or_duplicate_author_content": True,
-            "maximum_output_characters": int(compact_example_size * 1.15),
-        },
-    }
-    messages = [
-        {"role": "system", "content": instruction_path.read_text(encoding="utf-8")},
-        {"role": "system", "content": "Содержательный контракт:\n" + contract_path.read_text(encoding="utf-8")},
-        {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
-    ]
-    input_checksum = digest(messages)
-    operation_id = f"generation:{row['TestID']}:{input_checksum[:12]}"
-    response = gateway.chat_with_trace(
-        messages, temperature=0.2, timeout_seconds=300, max_tokens=32768,
-        routing_key=operation_id, response_format={"type": "json_object"},
+    snapshot = functional_service.build_input_snapshot(
+        case_id=row["CaseID"], profile=inputs["profile"], operation_id=row["TestID"], synthetic=True,
     )
-    candidate, envelope_depth = extract_candidate_as(json.loads(response.content))
-    deterministic = deterministic_checks(inputs, candidate)
+    generated = functional_service.generate(snapshot, gateway)
     return {
         "schema_version": 1,
         "test_id": row["TestID"],
@@ -202,51 +175,34 @@ def generate_one(row: dict[str, Any], gateway: DeepSeekGateway) -> dict[str, Any
         "created_at": datetime.now(timezone.utc).isoformat(),
         "input_refs": inputs["refs"],
         "profile": inputs["profile"],
-        "candidate_as": candidate,
-        "candidate_checksum": digest(candidate),
-        "response_envelope_depth": envelope_depth,
-        "deterministic_validation": deterministic,
-        "provider_operation": _provider_record(response, operation_id=operation_id, kind="generation", input_checksum=input_checksum),
+        "candidate_as": generated["candidate_as"],
+        "candidate_checksum": generated["candidate_checksum"],
+        "response_envelope_depth": generated["response_envelope_depth"],
+        "deterministic_validation": generated["deterministic_validation"],
+        "provider_operation": generated["provider_operation"],
     }
 
 
 def test_one(generation: dict[str, Any], gateway: DeepSeekGateway) -> dict[str, Any]:
-    instruction = (SOURCE / "07_generation/Tester_instruction_v0.2.txt").read_text(encoding="utf-8")
-    case = read_json(_case_source(generation["case_id"]))
-    payload = {
-        "case": case,
-        "profile": generation["profile"],
-        "candidate_as": generation["candidate_as"],
-        "deterministic_validation": generation["deterministic_validation"],
-        "required_output": {
-            "status": "PASS|FAIL|INDETERMINATE",
-            "checks": [{"rule_id": "string", "result": "PASS|FAIL|INDETERMINATE", "evidence_paths": ["JSON path"], "reason": "string"}],
-            "defects": [{"code": "string", "severity": "blocking|non_blocking", "paths": ["JSON path"], "reason": "string"}],
-            "admitted_for_participant": "boolean; true only on PASS",
-        },
-    }
-    messages = [{"role": "system", "content": instruction}, {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
-    input_checksum = digest(messages)
-    operation_id = f"tester:{generation['test_id']}:{input_checksum[:12]}"
-    response = gateway.chat_with_trace(
-        messages, temperature=0, timeout_seconds=300, max_tokens=8192,
-        routing_key=operation_id, response_format={"type": "json_object"},
+    snapshot = functional_service.build_input_snapshot(
+        case_id=generation["case_id"], profile=generation["profile"],
+        operation_id=generation["test_id"], synthetic=True,
     )
-    conclusion = json.loads(response.content)
-    status = conclusion.get("status")
-    checks = conclusion.get("checks")
-    structurally_valid = status in {"PASS", "FAIL", "INDETERMINATE"} and isinstance(checks, list) and bool(checks)
-    if status != "PASS":
-        conclusion["admitted_for_participant"] = False
+    tested = functional_service.test_candidate(snapshot, generation, gateway)
+    aggregation = tested["aggregation"]
+    conclusion = {"status": aggregation["status"], "checks": tested["checks"],
+                  "defects": aggregation["blocking_failures"] + aggregation["review_required"],
+                  "admitted_for_participant": aggregation["admitted_for_participant"]}
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "test_id": generation["test_id"],
         "case_id": generation["case_id"],
         "candidate_checksum": generation["candidate_checksum"],
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "structurally_valid": structurally_valid,
+        "structurally_valid": aggregation["status"] not in {"INCOMPLETE"},
         "conclusion": conclusion,
-        "provider_operation": _provider_record(response, operation_id=operation_id, kind="independent_tester", input_checksum=input_checksum),
+        "aggregation": aggregation,
+        "provider_operation": tested["provider_operation"],
     }
 
 
