@@ -49,6 +49,14 @@
   `submit_turn`: 2 PASS; CASE02/07 без вызовов персонажей. Полный non-LLM backend:
   522 PASS, 217 deselected.
 - Активный шаг: F01 — единый продуктовый сервис подготовки персонализированной AS.
+- Выполнена инфраструктурная часть F01: `/assessment/cycles/prepare` теперь
+  создаёт отдельную durable product-operation и отвечает `202`; оба UI-пути
+  ожидают её завершения и получают Cycle только после committed `admitted` AS.
+  Старый assessment queue не переиспользован из-за другого контракта и владения.
+  PostgreSQL integration подтверждает отсутствие преждевременного результата,
+  успешное завершение, идемпотентный replay и закрытие конфликта ключа. Следующая
+  зависимая часть — разнести snapshot/provider/commit и включить общий
+  functional generator/tester между claim и сохранением AS.
 - Следующий шаг: подключить planner к profile→applicability→generation→tester→snapshot;
   затем F04/F05 и итоговая отчётность F07.
 - Ветка: `codex/pers-audit-remediation`.

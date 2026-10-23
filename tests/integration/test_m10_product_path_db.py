@@ -19,6 +19,7 @@ from Api.m7_completion import create_additional_session
 from Api.m5_cycle_runtime import read_cycle
 from Api.m10_product_flow import prepare, start_prepared, start_or_resume, read_runtime
 from Api.m10_product_flow import next_situation
+from Api.product_cycle_preparation_queue import ProductCyclePreparationQueue
 from Api.m7_cycle_planner import create_plan
 from tests.m6_admission_fixture import RecordedAdmissionGateway
 from Api import m10_orchestration
@@ -211,6 +212,40 @@ def test_prepare_does_not_start_time_and_explicit_start_presents_same_situation(
             "SELECT status FROM m5_assessment_situations WHERE assessment_situation_id=%s", (candidate_id,)
         ).fetchone()["status"]
         assert candidate_status == "admitted"
+
+
+def test_product_cycle_preparation_operation_returns_only_committed_admitted_cycle(product_db, monkeypatch):
+    factory = product_db
+    with factory() as connection:
+        connection.execute("""CREATE TABLE product_cycle_preparation_operations (
+            id BIGSERIAL PRIMARY KEY, operation_id TEXT NOT NULL UNIQUE,
+            user_id BIGINT NOT NULL REFERENCES users(id), request_json JSONB NOT NULL,
+            request_checksum TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued',
+            attempts INTEGER NOT NULL DEFAULT 0, result_json JSONB, error_code TEXT,
+            error_message TEXT, worker_id TEXT, locked_at TIMESTAMP,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            completed_at TIMESTAMP)
+        """)
+        connection.commit()
+    monkeypatch.setattr("Api.product_cycle_preparation_queue.get_connection", factory)
+    queue = ProductCyclePreparationQueue()
+    request = {"personalized_profile_id": factory.profile_id, "idempotency_key": "async-product-01",
+               "selected_skills": ["K1", "K2", "K3", "K4"]}
+    accepted = queue.enqueue(operation_id="async-product-01", user_id=99, request=request)
+    assert accepted["status"] == "queued"
+    job = queue._claim()
+    assert job is not None
+    assert queue.get_status("async-product-01")["result_json"] is None
+    queue._process(job)
+    completed = queue.get_status("async-product-01")
+    assert completed["status"] == "completed"
+    assert completed["result_json"]["plan"]["cycle_id"]
+    assert completed["result_json"]["runtime"]["current_situation"]["status"] == "admitted"
+    replay = queue.enqueue(operation_id="async-product-01", user_id=99, request=request)
+    assert replay["status"] == "completed"
+    with pytest.raises(ValueError, match="IDEMPOTENCY_CONFLICT"):
+        queue.enqueue(operation_id="async-product-01", user_id=99,
+                      request={**request, "selected_skills": ["K1"]})
 
 
 def test_inter_case_break_closes_only_current_as_and_resumes_on_explicit_next(product_db):

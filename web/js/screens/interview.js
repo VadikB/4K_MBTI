@@ -46,6 +46,7 @@ import {
 import { openPrechat } from './ai-welcome.js';
 import { openProcessing } from './processing.js';
 import { recoverProfileCompletionForAssessment, shouldRecoverProfileOnAssessmentError } from './profile-recovery.js';
+import { prepareProductCycle } from '../product-cycle-preparation.js';
 
 const interviewCaseContextByKey = new Map();
 const PRODUCT_RUNTIME_POLL_MS = 1200;
@@ -1278,11 +1279,10 @@ const startAssessmentInterview = async () => {
   showError(interviewError, '');
 
   try {
-    const prepareResponse = await fetch('/users/assessment/cycles/prepare', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ personalized_profile_id: state.dashboard?.personalized_profile_id || null, idempotency_key: createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'] }),
+    const prepared = await prepareProductCycle({
+      personalized_profile_id: state.dashboard?.personalized_profile_id || null,
+      idempotency_key: createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'],
     });
-    const prepared = await readApiResponse(prepareResponse, 'Не удалось подготовить план оценки.');
     state.assessmentRuntimeKind = 'cycle';
     state.productCycleId = prepared.plan.cycle_id;
     persistAssessmentContext();

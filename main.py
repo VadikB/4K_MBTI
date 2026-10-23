@@ -16,6 +16,7 @@ from starlette.middleware.gzip import GZipMiddleware
 from Api.database import ensure_core_schema, get_connection, get_connection_pool_stats
 from Api.routes import router as users_router
 from Api.assessment_preparation_queue import assessment_preparation_queue
+from Api.product_cycle_preparation_queue import product_cycle_preparation_queue
 from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.system_logging import configure_application_logging, configure_database_logging, write_system_log
 from Api.web_session_service import web_session_service
@@ -55,6 +56,7 @@ if os.getenv("AGENT4K_ENABLE_SCREEN_PREVIEWS") == "1":
 @app.on_event("startup")
 def start_background_workers() -> None:
     assessment_preparation_queue.start()
+    product_cycle_preparation_queue.start()
     assessment_analysis_queue.start()
     from Api import m6_worker_v2 as m6_worker
     from Api.m10_test_gateway import enabled as browser_test_gateway_enabled
@@ -69,6 +71,7 @@ def start_background_workers() -> None:
 @app.on_event("shutdown")
 def stop_background_workers() -> None:
     assessment_preparation_queue.stop()
+    product_cycle_preparation_queue.stop()
     assessment_analysis_queue.stop()
     from Api import m6_worker_v2 as m6_worker
     m6_worker.stop()

@@ -4137,6 +4137,35 @@ def ensure_core_schema() -> None:
         connection.execute("ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS execution_snapshot_json JSONB")
         connection.execute("ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS execution_checksum TEXT")
         connection.execute("ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS error_code TEXT")
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS product_cycle_preparation_operations (
+                id BIGSERIAL PRIMARY KEY,
+                operation_id TEXT NOT NULL UNIQUE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                request_json JSONB NOT NULL,
+                request_checksum TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'queued'
+                    CHECK (status IN ('queued', 'running', 'completed', 'failed')),
+                attempts INTEGER NOT NULL DEFAULT 0,
+                result_json JSONB,
+                error_code TEXT,
+                error_message TEXT,
+                worker_id TEXT,
+                locked_at TIMESTAMP,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                completed_at TIMESTAMP
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_product_cycle_preparation_active_user
+            ON product_cycle_preparation_operations(user_id)
+            WHERE status IN ('queued', 'running')
+            """
+        )
         ensure_execution_snapshot_guards(connection)
         connection.execute(
             """
