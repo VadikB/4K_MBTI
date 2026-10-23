@@ -19,6 +19,7 @@
 - Основание: запрос владельца от 2026-10-23 и пакет
   `P4K_Case_AS_Cycle_Plan_2026-10-23.zip`, редакция 2.0.
 - База: `f4af7beb0d09374153bf0e16c6edb5c0dabe1cec`, приложение `2.0.16`, PR #102.
+  Кандидат результата: приложение `2.0.17`, PR #103.
 - Значимые точки входа: `POST /users/assessment/cycles/prepare`,
   `POST /users/assessment/m7/cycles/{cycle_id}/next`,
   `GET /users/assessment/cycles/preparation/{operation_id}`.
@@ -113,13 +114,20 @@ checksum; активные операции одного пользовател�
 - `pytest -m e2e tests/e2e -q` → 68 passed, 11 deselected.
 - адресный integration-тест на PostgreSQL 16 `fix_b01_b02_pytest` → 1 passed.
 - `git diff --check` → PASS; `py_compile` изменённых Python-файлов → PASS.
+- `prepare_release.py patch --dry-run` → `2.0.16 → 2.0.17`; кандидат
+  `2.0.17` подготовлен штатным скриптом.
+- `npm run build:web` → PASS; `npm run lint:js` → PASS;
+  `node --test tests/frontend/*.test.mjs` → 74 passed.
 
 ### Непроверенное
 
 - Полный integration-набор: первый прогон остановился на конфигурации
   clean-bootstrap maintenance DB; повтор с `STAND_ADMIN_URL=.../postgres` не
   вернул итоговую сводку в доступное окно. Адресная DB-регрессия выполнена.
-- CI, PR, human review и merge — ожидают фиксации точного commit.
+- Первый CI head `4e7b8cd` подтвердил обязательность release bump и ожидаемо
+  остановил frontend: `Product changed but release version remains 2.0.16`.
+  Исправление готовится отдельным commit в том же PR; pytest и итоговый CI
+  ожидают нового точного head. Human review и merge не выполнены.
 
 ### Риски и откат
 
