@@ -245,7 +245,9 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
  const delivered=dialogue.trace.events.find(x=>x.event_type==='mandatory_update');
  expect(delivered).toBeTruthy();expect(delivered.sequence_no).toBeGreaterThan(dialogue.trace.turns[0].sequence_no);
  expect(JSON.stringify(dialogue)).not.toContain('execution_envelope');
+ const scenarioEnd=page.waitForResponse(response=>response.request().method()==='POST' && new URL(response.url()).pathname.endsWith('/transitions'));
  await page.locator('#interview-finish-button').click();
+ expect((await scenarioEnd).ok()).toBeTruthy();
  stand.cli('drain');
  await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
  await info.attach('clarification-ui',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
@@ -435,7 +437,9 @@ test('S10-A character branch: actual character Turn, order and no invented recom
  await expect(characterBubble).toHaveAttribute('data-speaker-label',character.speaker_name);
  expect(await characterBubble.evaluate(el=>getComputedStyle(el,'::before').content)).toContain(character.speaker_name);
  expect(character.content_text).toBe(fixture.character_response);expect(character.sequence_no).toBeGreaterThan(own.sequence_no);
+ const scenarioEnd=page.waitForResponse(response=>response.request().method()==='POST' && new URL(response.url()).pathname.endsWith('/transitions'));
  await page.locator('#interview-finish-button').click();
+ expect((await scenarioEnd).ok()).toBeTruthy();
  stand.cli('drain');
  await expect(page.locator('#interview-messages')).toContainText(fixture.character_question,{timeout:30000});
  await info.attach('character-and-clarification-ui',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
