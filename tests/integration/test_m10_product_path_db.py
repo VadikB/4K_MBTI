@@ -225,6 +225,7 @@ def test_prepare_does_not_start_time_and_explicit_start_presents_same_situation(
 def test_product_cycle_preparation_operation_returns_only_committed_admitted_cycle(product_db, monkeypatch):
     factory = product_db
     with factory() as connection:
+        connection.execute("INSERT INTO users VALUES(100)")
         connection.execute("""CREATE TABLE product_cycle_preparation_operations (
             id BIGSERIAL PRIMARY KEY, operation_id TEXT NOT NULL UNIQUE,
             user_id BIGINT NOT NULL REFERENCES users(id), request_json JSONB NOT NULL,
@@ -254,6 +255,20 @@ def test_product_cycle_preparation_operation_returns_only_committed_admitted_cyc
     with pytest.raises(ValueError, match="IDEMPOTENCY_CONFLICT"):
         queue.enqueue(operation_id="async-product-01", user_id=99,
                       request={**request, "selected_skills": ["K1"]})
+    with pytest.raises(PermissionError, match="OPERATION_NOT_OWNED"):
+        queue.enqueue(operation_id="async-product-01", user_id=100, request=request)
+    assert queue.get_owned_status("async-product-01", 100) is None
+
+    active = queue.enqueue(operation_id="async-product-02", user_id=99,
+                           request={**request, "idempotency_key": "async-product-02"})
+    separate = queue.enqueue(operation_id="async-product-03", user_id=99,
+                             request={**request, "idempotency_key": "async-product-03",
+                                      "selected_skills": ["K1"]})
+    duplicate_scope = queue.enqueue(operation_id="async-product-04", user_id=99,
+                                    request={**request, "idempotency_key": "async-product-02"})
+    assert active["operation_id"] == "async-product-02"
+    assert separate["operation_id"] == "async-product-03"
+    assert duplicate_scope["operation_id"] == "async-product-02"
 
 
 def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(product_db, monkeypatch):

@@ -68,6 +68,95 @@ def test_product_route_checks_owner_and_admission_gate(client):
     }
 
 
+def test_cycle_preparation_api_exposes_only_participant_safe_projection(client):
+    http, monkeypatch, _ = client
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "owner")
+    marker = "CLOSED-CANDIDATE-MARKER"
+    internal = {
+        "operation_id": "safe-projection-01",
+        "user_id": 7,
+        "status": "failed",
+        "attempts": 3,
+        "result_json": {
+            "stage": "functional_tester_admission",
+            "generated": {
+                "candidate_as": {"hidden_facts": marker},
+                "tester": {"messages": [marker], "criteria": [marker]},
+            },
+        },
+        "error_code": "ProviderRejected",
+        "error_message": f"raw provider failure {marker}",
+    }
+    monkeypatch.setattr(
+        routes.product_cycle_preparation_queue,
+        "get_owned_status",
+        lambda operation_id, user_id: internal if operation_id == "safe-projection-01" and user_id == 7 else None,
+    )
+    response = http.get("/users/assessment/cycles/preparation/safe-projection-01")
+    assert response.status_code == 200
+    assert response.json() == {
+        "operation_id": "safe-projection-01",
+        "status": "failed",
+        "error": {
+            "code": "ASSESSMENT_CYCLE_PREPARATION_FAILED",
+            "message": "Не удалось подготовить оценочный цикл. Повторите попытку.",
+        },
+    }
+    assert marker not in response.text
+    assert "error_message" not in response.text
+    assert "result_json" not in response.text
+
+    completed = {
+        "operation_id": "safe-projection-02",
+        "status": "completed",
+        "result_json": {"plan": {"cycle_id": "cycle-01"}, "runtime": {"status": "prepared"}},
+    }
+    monkeypatch.setattr(routes.product_cycle_preparation_queue, "enqueue", lambda **_kwargs: completed)
+    prepared = http.post("/users/assessment/cycles/prepare", json={
+        "idempotency_key": "safe-projection-02",
+        "selected_skills": ["K1", "K2", "K3", "K4"],
+    })
+    assert prepared.status_code == 202
+    assert prepared.json() == {
+        "operation_id": "safe-projection-02",
+        "status": "completed",
+        "result": completed["result_json"],
+    }
+
+
+def test_cycle_preparation_api_rejects_foreign_or_reused_operation_key(client):
+    http, monkeypatch, _ = client
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "owner")
+
+    monkeypatch.setattr(
+        routes.product_cycle_preparation_queue,
+        "enqueue",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            PermissionError("PRODUCT_CYCLE_PREPARATION_OPERATION_NOT_OWNED")
+        ),
+    )
+    foreign = http.post("/users/assessment/cycles/prepare", json={
+        "idempotency_key": "known-foreign-key",
+        "selected_skills": ["K1"],
+    })
+    assert foreign.status_code == 403
+    assert foreign.json() == {"detail": "Нет доступа к операции подготовки Cycle."}
+
+    monkeypatch.setattr(
+        routes.product_cycle_preparation_queue,
+        "enqueue",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            ValueError("PRODUCT_CYCLE_PREPARATION_IDEMPOTENCY_CONFLICT")
+        ),
+    )
+    conflict = http.post("/users/assessment/cycles/prepare", json={
+        "idempotency_key": "reused-own-key",
+        "selected_skills": ["K2"],
+    })
+    assert conflict.status_code == 409
+    assert conflict.json() == {"detail": "Ключ операции уже использован для другого запроса."}
+
+
 def test_product_turn_and_transition_use_runtime_without_exposing_execution_snapshot(client):
     http, monkeypatch, _ = client
     http.cookies.set(routes.SESSION_COOKIE_NAME, "owner")
