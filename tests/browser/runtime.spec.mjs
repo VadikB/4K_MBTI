@@ -253,7 +253,10 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
  await info.attach('clarification-ui',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  await answer(page,fixture.clarification_answer);
  await expect(page.locator('#interview-finish-button')).toBeEnabled({timeout:30000});
+ const situationFinish=page.waitForResponse(response=>response.request().method()==='POST' && new URL(response.url()).pathname.endsWith('/finish-situation'));
  await page.locator('#interview-finish-button').click();
+ expect((await situationFinish).ok()).toBeTruthy();
+ stand.cli('drain');
  const saved=await report(page,stand,info);
  const resultResponse=await page.request.get(`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/results`);
  expect(resultResponse.ok()).toBeTruthy();const results=await resultResponse.json();
@@ -444,7 +447,11 @@ test('S10-A character branch: actual character Turn, order and no invented recom
  await expect(page.locator('#interview-messages')).toContainText(fixture.character_question,{timeout:30000});
  await info.attach('character-and-clarification-ui',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  await answer(page,fixture.character_clarification_answer);
- await expect(page.locator('#interview-finish-button')).toBeEnabled();await page.locator('#interview-finish-button').click();
+ await expect(page.locator('#interview-finish-button')).toBeEnabled();
+ const situationFinish=page.waitForResponse(response=>response.request().method()==='POST' && new URL(response.url()).pathname.endsWith('/finish-situation'));
+ await page.locator('#interview-finish-button').click();
+ expect((await situationFinish).ok()).toBeTruthy();
+ stand.cli('drain');
  const saved=await report(page,stand,info);expect(saved.c67.recommendations).toHaveLength(0);
  expect(['ready','failed']).toContain(saved.c67.descriptive.status);
 });
