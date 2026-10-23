@@ -126,12 +126,24 @@ class ProductCyclePreparationQueue:
         from Api.llm.deepseek_gateway import DeepSeekGateway
         from Api import m5_functional_generation_service
 
+        failure_result = None
         try:
             request = dict(job["request_json"])
             if hashlib.sha256(_canonical(request).encode()).hexdigest() != job["request_checksum"]:
                 raise ValueError("PRODUCT_CYCLE_PREPARATION_SNAPSHOT_MISMATCH")
             with get_connection() as connection:
-                profile_id = request.get("personalized_profile_id")
+                next_cycle_id = request.get("cycle_id") if request.get("kind") == "next" else None
+                if next_cycle_id:
+                    cycle = connection.execute(
+                        """SELECT personalized_profile_id FROM m5_cycles
+                           WHERE cycle_id=%s AND owner_user_id=%s""",
+                        (next_cycle_id, job["user_id"]),
+                    ).fetchone()
+                    if not cycle:
+                        raise ValueError("M7_CYCLE_NOT_FOUND")
+                    profile_id = cycle["personalized_profile_id"]
+                else:
+                    profile_id = request.get("personalized_profile_id")
                 profile = connection.execute(
                     "SELECT content_json,assessment_configuration_id,checksum FROM assessment_personalized_profiles WHERE id=%s AND user_id=%s",
                     (profile_id, job["user_id"]),
@@ -146,14 +158,17 @@ class ProductCyclePreparationQueue:
                     JOIN m5_case_versions cv ON cv.id=member.case_version_id
                     WHERE c.id=%s AND cv.case_id LIKE 'CASE.SPEC.%%' LIMIT 1""",
                     (profile["assessment_configuration_id"],)).fetchone())
-                result = m10_product_flow.prepare(
-                    connection,
-                    user_id=int(job["user_id"]),
-                    key=str(request["idempotency_key"]),
-                    selected_skills=list(request["selected_skills"]),
-                    profile_id=profile_id,
-                    defer_as=functional,
-                )
+                if next_cycle_id:
+                    result = m10_product_flow.prepare_next_situation(
+                        connection, cycle_id=str(next_cycle_id), user_id=int(job["user_id"]),
+                        key=str(request["idempotency_key"]), defer_as=functional,
+                    )
+                else:
+                    result = m10_product_flow.prepare(
+                        connection, user_id=int(job["user_id"]), key=str(request["idempotency_key"]),
+                        selected_skills=list(request["selected_skills"]), profile_id=profile_id,
+                        defer_as=functional,
+                    )
                 frozen_profile = dict(profile["content_json"]) if functional else None
                 frozen_case = None
                 if functional:
@@ -175,6 +190,10 @@ class ProductCyclePreparationQueue:
                 )
                 generated = m5_functional_generation_service.prepare(snapshot, DeepSeekGateway())
                 if not generated["admitted_for_participant"]:
+                    failure_result = {
+                        "stage": "functional_tester_admission",
+                        "generated": generated,
+                    }
                     raise ValueError("M5_FUNCTIONAL_AS_NOT_ADMITTED:" + generated["tester"]["aggregation"]["status"])
                 trace = m5_functional_generation_service.build_persistence_trace(snapshot, generated)
                 with get_connection() as connection:
@@ -184,6 +203,9 @@ class ProductCyclePreparationQueue:
                     )
                     result["decision"] = attached
                     result["plan"] = m7_cycle_planner.read_plan(connection, str(result["plan"]["cycle_id"]))
+            if next_cycle_id and result["decision"]["status"] == "SELECTED":
+                with get_connection() as connection:
+                    result = m10_product_flow.present_prepared_next(connection, result=result)
             with get_connection() as connection:
                 runtime = m10_product_flow.read_runtime(connection, cycle_id=str(result["plan"]["cycle_id"]))
                 participant_result = {**m10_product_flow.participant_presentation(result), "runtime": runtime}
@@ -198,9 +220,11 @@ class ProductCyclePreparationQueue:
             with get_connection() as connection:
                 connection.execute(
                     """UPDATE product_cycle_preparation_operations
-                       SET status='failed',error_code=%s,error_message=%s,completed_at=NOW(),updated_at=NOW(),locked_at=NULL
+                       SET status='failed',result_json=%s::jsonb,error_code=%s,error_message=%s,
+                           completed_at=NOW(),updated_at=NOW(),locked_at=NULL
                        WHERE id=%s AND status='running'""",
-                    (type(exc).__name__, str(exc)[:2000], job["id"]),
+                    (json.dumps(jsonable_encoder(failure_result), ensure_ascii=False) if failure_result else None,
+                     type(exc).__name__, str(exc)[:2000], job["id"]),
                 )
 
 

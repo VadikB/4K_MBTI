@@ -20,6 +20,7 @@ from scripts.build_m5_sales_package import build_execution_rules, compile_case_v
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.2"
 SOURCE = PACKAGE / "sources/functional-v0.2"
+REPAIR_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_repair/v1"
 
 
 def canonical(value: Any) -> bytes:
@@ -39,6 +40,20 @@ def _unique(pattern: str, code: str) -> Path:
     if len(paths) != 1:
         raise ValueError(code)
     return paths[0]
+
+
+def _load_repair_instruction() -> tuple[str, dict[str, str]]:
+    manifest = _read(REPAIR_PACKAGE / "manifest.json")
+    artifacts = manifest.get("artifacts") or []
+    registered = next((item for item in artifacts if item.get("name") == "prompt.md"), None)
+    prompt = (REPAIR_PACKAGE / "prompt.md").read_bytes()
+    if (manifest.get("id") != "m5_functional_repair" or manifest.get("version") != "1.0.0"
+            or manifest.get("status") != "draft" or not registered
+            or registered.get("sha256") != checksum(prompt)):
+        raise ValueError("M5_FUNCTIONAL_REPAIR_PACKAGE_INVALID")
+    return prompt.decode("utf-8"), {
+        "id": manifest["id"], "version": manifest["version"], "checksum": checksum(prompt),
+    }
 
 
 def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id: str,
@@ -243,9 +258,63 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                                      "parse_failures": challenge_failures}}
 
 
+def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], tested: dict[str, Any],
+                     gateway: Any) -> dict[str, Any]:
+    """Ask PM-03 for one complete corrected AS; never patch or admit it server-side."""
+    instruction = (SOURCE / "07_generation/Generator_instruction_v0.2.txt").read_text(encoding="utf-8")
+    repair_instruction, repair_prompt_ref = _load_repair_instruction()
+    payload = {
+        "profile": snapshot["profile"], "case": snapshot["case"],
+        "author_as_example": snapshot["author_as_example"],
+        "rejected_candidate_as": generation["candidate_as"],
+        "blocking_failures": tested["aggregation"]["blocking_failures"],
+        "deterministic_failures": tested["aggregation"]["deterministic_failures"],
+        "requirements": {
+            "output_contract": "full_as_json",
+            "preserve_case_identity_and_indicator_targets": True,
+            "fix_every_listed_failure_in_all_dependent_fields": True,
+            "do_not_weaken_or_remove_observation_conditions": True,
+            "must_not_create_evidence_or_scores": True,
+            "status": "TEST_DRAFT", "current": False,
+        },
+    }
+    messages = [
+        {"role": "system", "content": instruction},
+        {"role": "system", "content": repair_instruction},
+        {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+    ]
+    input_checksum = checksum(messages)
+    operation_id = f"{snapshot['operation_id']}:generation:repair:{input_checksum[:12]}"
+    raw, response, parse_failures = _strict_json_call(
+        gateway, messages, operation_id=operation_id, max_tokens=32768, temperature=0.1,
+    )
+    candidate, depth = extract_candidate_as(raw)
+    return {"candidate_as": candidate, "candidate_checksum": checksum(candidate),
+            "response_envelope_depth": depth,
+            "deterministic_validation": deterministic_checks(snapshot, candidate),
+            "provider_operation": {**_trace(response, operation_id=operation_id, kind="generation_repair",
+                                              input_checksum=input_checksum),
+                                   "prompt_ref": repair_prompt_ref,
+                                   "parse_failures": parse_failures}}
+
+
 def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
     generation = generate(snapshot, gateway)
     tested = test_candidate(snapshot, generation, gateway)
+    repair = None
+    if (not tested["aggregation"]["admitted_for_participant"]
+            and (tested["aggregation"]["blocking_failures"]
+                 or tested["aggregation"]["deterministic_failures"])):
+        repaired = repair_candidate(snapshot, generation, tested, gateway)
+        retested = test_candidate(snapshot, repaired, gateway)
+        repair = {
+            "original_candidate_checksum": generation["candidate_checksum"],
+            "original_deterministic_validation": generation["deterministic_validation"],
+            "original_generation_operation": generation["provider_operation"],
+            "original_tester": tested,
+            "repair_generation_operation": repaired["provider_operation"],
+        }
+        generation, tested = repaired, retested
     compiled_case = None
     execution_rules = None
     if tested["aggregation"]["admitted_for_participant"]:
@@ -261,6 +330,7 @@ def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
             "candidate_as": generation["candidate_as"], "candidate_checksum": generation["candidate_checksum"],
             "deterministic_validation": generation["deterministic_validation"],
             "generation_operation": generation["provider_operation"], "tester": tested,
+            "repair": repair,
             "admitted_for_participant": tested["aggregation"]["admitted_for_participant"],
             "compiled_case": compiled_case, "execution_rules": execution_rules}
 
@@ -290,6 +360,7 @@ def build_persistence_trace(snapshot: dict[str, Any], prepared: dict[str, Any]) 
         "execution_rules_checksum": runtime_checksum(prepared["execution_rules"]),
         "deterministic_validation": prepared["deterministic_validation"],
         "generation_operation": prepared["generation_operation"],
+        "repair": prepared.get("repair"),
         "tester": tester,
         "tester_input_checksum": tester["provider_operation"]["input_checksum"],
         "admitted_for_participant": prepared["admitted_for_participant"],

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from Api.assessment_configuration import definition_checksum
-from Api.config import settings
+from Api.llm.provider_contract import load_provider_contract
 from Api.m6_admission_contracts import Individual, Joint
 
 PACKAGE = Path(__file__).resolve().parents[1] / "assessment_definitions/prompts/m6_substantive_admission/v2"
@@ -31,6 +31,7 @@ def load_mechanism(ref: str, directory: Path = PACKAGE) -> dict:
     if hashlib.sha256((root / registered["path"]).read_bytes()).hexdigest() != source["sha256"]:
         raise ValueError("SOURCE_UNRESOLVED")
     config = manifest["execution"]
+    provider = load_provider_contract()
     for key in ("timeout_seconds", "max_tokens", "max_input_bytes", "lease_seconds"):
         if type(config.get(key)) is not int or config[key] <= 0:
             raise ValueError("M6_ADMISSION_PACKAGE_INVALID")
@@ -39,11 +40,12 @@ def load_mechanism(ref: str, directory: Path = PACKAGE) -> dict:
     return {
         "ref": ref, "manifest": manifest, "prompt": prompt.decode(),
         "schema": {"individual": Individual.model_json_schema(), "joint": Joint.model_json_schema()}, "handler": "m6-substantive-admission/2",
-        "operation": {"provider": "deepseek", "endpoint": str(settings.deepseek_base_url).rstrip("/") + "/chat/completions",
-            "model": str(settings.deepseek_model),
+        "operation": {"provider": provider["provider"], "endpoint": provider["endpoint"],
+            "model": provider["model"],
             "parameters": {k: config[k] for k in ("temperature", "timeout_seconds", "max_tokens")},
             "prompt_ref": {"id": manifest["id"], "version": manifest["version"], "checksum": hashlib.sha256(prompt).hexdigest()},
-            "response_format": "json_object"},
+            "response_format": "json_object", "thinking": provider["thinking"],
+            "provider_contract": {"version": provider["version"], "checksum": provider["checksum"]}},
         "max_input_bytes": config["max_input_bytes"], "lease_seconds": config["lease_seconds"],
     }
 

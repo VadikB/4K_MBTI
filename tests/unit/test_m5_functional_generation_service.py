@@ -77,3 +77,37 @@ def test_malformed_provider_json_is_retried_once_without_salvaging_fragments():
     assert result["admitted_for_participant"] is True
     assert result["generation_operation"]["parse_failures"][0]["code"] == "PROVIDER_JSON_INVALID"
     assert gateway.calls == 4  # generation failure + generation retry + tester + challenger
+
+
+def test_blocking_tester_failure_triggers_one_full_repair_and_retest():
+    class RepairingGateway(Gateway):
+        def __init__(self): super().__init__(); self.tester_calls = 0
+        def chat_with_trace(self, messages, **kwargs):
+            if ":tester:" in kwargs["routing_key"]:
+                self.tester_calls += 1
+                if self.tester_calls == 1:
+                    payload = json.loads(next(x["content"] for x in reversed(messages) if x["role"] == "user"))
+                    required = payload["applicability_plan"]["required_checks"]
+                    checks = []
+                    for item in required:
+                        failed = item["check_id"] == "common.professional_consistency"
+                        checks.append({"check_id": item["check_id"], "status": "FAIL" if failed else "PASS",
+                            "reason": "fixture blocking mismatch" if failed else "fixture pass",
+                            "findings": ([{"code": "ROLE_MISMATCH", "severity": "blocking",
+                                "paths": ["candidate_as.role"], "reason": "fixture",
+                                "requirement_ref": item["check_id"]}] if failed else []),
+                            "adversarial_review": {"candidate_conflicts": [], "resolution": "fixture"}})
+                    return SimpleNamespace(content=json.dumps({"checks": checks}), sent={},
+                                           provider={"finish_reason": "stop"})
+            return super().chat_with_trace(messages, **kwargs)
+
+    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"), operation_id="op-repair")
+    result = service.prepare(snapshot, RepairingGateway())
+    assert result["admitted_for_participant"] is True
+    assert result["repair"]["original_tester"]["aggregation"]["status"] == "FAIL"
+    assert result["repair"]["repair_generation_operation"]["kind"] == "generation_repair"
+    assert result["repair"]["repair_generation_operation"]["prompt_ref"] == {
+        "id": "m5_functional_repair", "version": "1.0.0",
+        "checksum": "d0b424cbff9000dfd3aa55341f89c63f20964c254a0077dc65cf95d90c77ccf0",
+    }
+    assert result["tester"]["aggregation"]["status"] == "PASS"

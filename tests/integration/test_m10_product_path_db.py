@@ -15,7 +15,8 @@ from Api import assessment_contexts as contexts, participant_profile
 from Api.schemas import PersonalizedProfileSelection
 from Api.m5_case_runtime import checksum
 from Api.m5_functional_generation_service import checksum as functional_checksum
-from Api.m5_scenario_runtime import transition
+from Api.m5_scenario_runtime import submit_turn, transition
+from Api.m5_rule_engine import CharacterReply, Decision, RuleOutcome
 from Api.m5_storage import import_package
 from Api.m7_completion import complete, finish_current_situation
 from Api.m7_completion import create_additional_session
@@ -372,6 +373,47 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
             with connection.transaction():
                 connection.execute("UPDATE m5_case_versions SET status='WORKING' WHERE id=%s",
                                    (selected_case["case_version_id"],))
+
+    class Semantic:
+        def decide(self, *, rule, text, turn_id, context):
+            return Decision(RuleOutcome.UNKNOWN, "REGRESSION", "controlled regression", (turn_id,),
+                            adapter="controlled", controlled_test=True)
+
+    class Character:
+        def respond(self, *, material, character, text, turn_id, context):
+            return CharacterReply("UNKNOWN", None, "controlled", controlled_test=True)
+
+    cycle_id = str(prepared["plan"]["cycle_id"])
+    first_as = str(prepared["decision"]["assessment_situation_id"])
+    with product_db() as connection:
+        start_prepared(connection, user_id=99, cycle_id=cycle_id, key="functional-cycle-start")
+        submit_turn(connection, assessment_situation_id=first_as,
+                    request_id="functional-cycle-turn", turn_id=str(uuid4()),
+                    content="Контролируемый ответ для перехода ко второй ситуации.",
+                    semantic_adapter=Semantic(), character_adapter=Character())
+        transition(connection, assessment_situation_id=first_as, action="scenario_end",
+                   reason="regression", request_id="functional-cycle-end")
+        finish_current_situation(connection, cycle_id=cycle_id, key="functional-cycle-finish", initiated_by=99)
+        connection.commit()
+
+    second_operation = "functional-cycle-next"
+    queue.enqueue(operation_id=second_operation, user_id=99, request={
+        "kind": "next", "cycle_id": cycle_id, "idempotency_key": second_operation,
+    })
+    queue._process(queue._claim())
+    second = queue.get_status(second_operation)
+    assert second["status"] == "completed", second
+    assert second["result_json"]["decision"]["assessment_situation_id"] != first_as
+    with product_db() as connection:
+        second_payload = connection.execute(
+            "SELECT execution_payload_json FROM m5_assessment_situations WHERE assessment_situation_id=%s",
+            (second["result_json"]["decision"]["assessment_situation_id"],),
+        ).fetchone()["execution_payload_json"]
+        second_trace = second_payload["ai_operations"]["functional_personalization"]
+        assert second_trace["schema_version"] == 2
+        assert functional_checksum(second_trace["accepted_as"]) == second_trace["candidate_checksum"]
+        assert second_trace["source_snapshot"]["author_as_example"]["CaseID"] == \
+            second["result_json"]["decision"]["selected_case_id"]
 
 
 def test_inter_case_break_closes_only_current_as_and_resumes_on_explicit_next(product_db):

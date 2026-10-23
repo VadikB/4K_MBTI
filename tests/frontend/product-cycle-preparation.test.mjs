@@ -15,3 +15,9 @@ test('product Cycle preparation polls the operation and exposes only completed r
   assert.doesNotMatch(onboarding, /fetch\('\/users\/assessment\/cycles\/prepare'/);
   assert.doesNotMatch(interview, /fetch\('\/users\/assessment\/cycles\/prepare'/);
 });
+
+test('functional next situation waits for durable generation and admission', () => {
+  assert.match(interview, /fetch\('\/users\/assessment\/m7\/cycles\/' \+ encodeURIComponent\(state\.productCycleId\) \+ '\/next'/);
+  assert.match(interview, /accepted\.operation_id \? await waitForProductCyclePreparation\(accepted\) : accepted/);
+  assert.match(interview, /if \(accepted\.operation_id\) await waitForProductCyclePreparation\(accepted\)/);
+});

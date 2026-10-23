@@ -2,12 +2,7 @@ import { readApiResponse } from './api.js';
 
 const POLL_INTERVAL_MS = 1500;
 
-export const prepareProductCycle = async (payload) => {
-  const response = await fetch('/users/assessment/cycles/prepare', {
-    method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  const accepted = await readApiResponse(response, 'Не удалось поставить подготовку плана оценки в очередь.');
+export const waitForProductCyclePreparation = async (accepted) => {
   if (accepted.status === 'completed' && accepted.result) return accepted.result;
   const operationId = accepted.operation_id;
   if (!operationId) throw new Error('Сервер не вернул идентификатор подготовки плана оценки.');
@@ -26,4 +21,13 @@ export const prepareProductCycle = async (payload) => {
       throw new Error(operation.error_message || 'Не удалось подготовить план оценки.');
     }
   }
+};
+
+export const prepareProductCycle = async (payload) => {
+  const response = await fetch('/users/assessment/cycles/prepare', {
+    method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const accepted = await readApiResponse(response, 'Не удалось поставить подготовку плана оценки в очередь.');
+  return waitForProductCyclePreparation(accepted);
 };

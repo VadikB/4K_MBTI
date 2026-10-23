@@ -48,7 +48,7 @@
   для QA/каталога. PostgreSQL-регрессия фактически провела все 9 Case через
   `submit_turn`: 2 PASS; CASE02/07 без вызовов персонажей. Полный non-LLM backend:
   522 PASS, 217 deselected.
-- Активный шаг: F05 — 34 сквозных runtime-сценария после завершения F04.
+- Активный шаг: F05 реализован и проверяется перед единым итоговым PR/merge.
 - F05 начат от `7f96ea6abc04061c2e1c0333473085cc9c9a02c8`. Первичная
   трасса выявила два prerequisite-разрыва A01/A02: runtime сохранял только
   checksum принятой generated AS без её неизменяемого содержания и проверяемой
@@ -73,20 +73,35 @@
   различаются и проверяются отдельно. Устранён A02-разрыв C45→M6: стартовые
   материалы присутствовали в событиях, но отсутствовали в закрытом execution
   snapshot; теперь они сохранены как `initial_material` и разрешаются M6.
-- Real-provider попытки выполнялись отдельно. Подтверждены успешные generation,
-  tester/admission и runtime до C45. Один прогон завершился сетевым timeout на
-  tester, следующие дошли до M6, где processing завершился техническим
-  `ValueError` и не создал assessment-request; это `TECHNICAL_ERROR`, не
-  недостаточные данные и не содержательный FAIL AS. Реальный positive M8 пока
-  `NOT_RUN` из-за этого незакрытого provider-processing ограничения. A03/A04/A07
-  не переопределялись и остаются отдельными зависимостями; F05 не присваивает им
-  статус методологического допуска.
-- Итоговый review выявил незакрытый A01 для multi-case Cycle: первый Case готовит
-  durable functional queue, но обычный `next_situation` для последующих route
-  positions всё ещё вызывает синхронный legacy prepare без generator/tester.
-  34 одно-Case Cycle этот разрыв не маскируют. Зависимые multi-case acceptance,
-  итоговый PR/merge и присвоение F05 статуса «завершён» запрещены до единого
-  async functional prepare для каждой следующей позиции и его регрессии.
+- Разрыв A02 для multi-case Cycle закрыт: `/next` для второго и последующих
+  `CASE.SPEC.*` создаёт ту же durable product-operation, фиксирует профиль и
+  CaseVersion, запускает functional generator, полный tester/challenger и только
+  после программного допуска прикрепляет и предъявляет AS. PostgreSQL-регрессия
+  проходит две позиции без ручной вставки Turn и подтверждает checksum цепочки
+  `author source → tester input → accepted AS → compiled runtime` для второй AS.
+  A01 (сохранность авторского содержания до M6) подтверждён execution snapshot и
+  readback именно принятой AS; уже исправленное содержание F04 не менялось.
+- Причина технического M6 `ValueError` установлена и исходная ошибка сохранена
+  точным кодом `DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED`: frozen operation
+  собиралась из изменяемых `.env` model/endpoint и расходилась с неизменяемым
+  provider contract исполнителя. Пакеты evidence/assessment/admission теперь
+  фиксируют version/checksum provider contract. Регрессии проверяют совпадение
+  identity и сохранение безопасного предметного error code вместо общего
+  `ValueError`.
+- Real-provider positive завершён до M8: functional generation сначала получила
+  содержательный блокирующий FAIL tester из-за профессиональной несогласованности;
+  одна полная repair-генерация сохранила исходный кандидат и findings, затем
+  прошла весь tester/challenger, runtime, M6 evidence/assessment/admission и дала
+  непустой обоснованный C67. Отдельный controlled-AS real-provider прогон также
+  дошёл до M8. Промежуточные `M6_FRAGMENT_SPAN` и
+  `M6_ATTRIBUTION_MISMATCH` сохранены как технические отказы строгой валидации,
+  устранены повторным полным ответом провайдера с точной обратной связью и не
+  классифицируются как недостаточность данных или содержательный FAIL AS.
+- A03/A04/A07 не переопределялись и остаются отдельными зависимостями. A03 требует
+  методологического подтверждения различения L0/IE/отсутствия IA; A04 — полного
+  набора завершений/пауз/уточнений в UI и real-provider; A07 — полного набора
+  временных race-сценариев. F05 доказывает только затронутые технические контракты,
+  не присваивает CURRENT/FROZEN и не заменяет методологический допуск.
 - Выполнена инфраструктурная часть F01: `/assessment/cycles/prepare` теперь
   создаёт отдельную durable product-operation и отвечает `202`; оба UI-пути
   ожидают её завершения и получают Cycle только после committed `admitted` AS.
@@ -140,7 +155,8 @@
   фикстурой; повторный real-LLM вызов на этом шаге не выполнялся, поскольку
   контракт провайдера уже подтверждён отдельным smoke и стандартная регрессия
   не должна зависеть от внешней модели.
-- Следующий шаг: F04/F05 runtime/negative контуры и итоговая отчётность F07.
+- Следующий шаг: зафиксировать точный head, пройти обязательный CI и review,
+  затем выполнить единый squash merge по правилам репозитория.
 - F04 negative-контур больше не передаёт tester известный диагноз: отдельный
   mutator создаёт полную AS, исходная AS проходит тем же tester как positive
   control, а независимый verifier подтверждает материальность мутации. Старые
@@ -183,11 +199,11 @@
 - [x] Все девять Case проходят runtime-проверку; CASE02/07 остаются actorless.
 - [x] Продуктовый путь использует единый сервис profile→applicability→generation→
   tester→immutable AS, а матрицы вызывают тот же сервис.
-- [ ] Negative-тесты проверяют мутированную AS без подсказанного диагноза;
+- [x] Negative-тесты проверяют мутированную AS без подсказанного диагноза;
   34 runtime-сценария проверяют события, видимость, состояние и idempotency.
-- [ ] Новый Cycle проходит штатный API/runtime до M8 с цепочкой идентификаторов;
+- [x] Новый Cycle проходит штатный API/runtime до M8 с цепочкой идентификаторов;
   недостаточные данные остаются отдельным отрицательным сценарием.
-- [ ] Новое предметное содержание не встроено в код; исторические артефакты неизменны.
+- [x] Новое предметное содержание не встроено в код; исторические артефакты неизменны.
 
 ## План проверки
 
@@ -196,3 +212,23 @@
 - Frontend/lint/build при затронутом пользовательском пути; browser на локальном
   изолированном stand. Real-provider помечается `llm` и запускается отдельно.
 - `git diff --check`; package checksum/verify; полный GitHub CI перед merge.
+
+## Фактическая проверка remediation
+
+- Адресная PostgreSQL-регрессия multi-case и controlled F05: `11 PASS`, включая
+  все 34 позиции матрицы и второй Case через durable generator/tester/admission.
+- Полный backend non-LLM: `535 PASS`, `220 deselected`; HTTP/e2e: `66 PASS`,
+  `11 deselected`; полный integration: `149 PASS`, `1 SKIP`, `605 deselected`.
+  Единственный SKIP — explicit real-provider тест, запущенный отдельно.
+- Real-provider F05 на текущем head: `1 PASS` за 209.87 s; pipeline
+  `report_ready`, непустой C67.
+  Первичные JSON и SHA-256 перечислены в
+  `docs/evc/evidence/pers-functional-personalization/f05-remediation-2026-10-23/README.md`.
+- Frontend unit: `74 PASS`; ESLint и `py_compile`: PASS; web build и release
+  consistency для `2.0.16`: PASS.
+- Первый полный Playwright: 61 product assertions PASS и один teardown timeout;
+  упавший P10.5 отдельно повторён: `1 PASS` за 35.1 s. Причина — fixture ожидала
+  SIGTERM без границы; shutdown ограничен 5 секундами с SIGKILL fallback.
+  Финальный полный повтор после исправления: `62 PASS` за 12.4 min.
+- Не выполнено и не заявляется: человеческая методологическая приёмка Case,
+  присвоение CURRENT/FROZEN и расширенная приёмка A03/A04/A07.

@@ -116,6 +116,8 @@ def test_current_mechanism_is_new_immutable_draft():
     assert mechanism['manifest']['version'] == '1.0.1'
     assert mechanism['manifest']['supersedes'] == 'm6_evidence/1.0.0'
     assert 'quote == turn.content[start:end]' in mechanism['prompt']
+    assert mechanism['operation']['provider_contract']['version'] == '1.0.0'
+    assert mechanism['operation']['thinking'] == {'type': 'disabled'}
     verify_mechanism(mechanism, definition_checksum(mechanism))
 
 
@@ -133,6 +135,70 @@ def test_current_mechanism_retries_rejected_json_without_coercion():
     result, trace = evaluate_current(material(), mechanism, definition_checksum(mechanism), gateway=gateway)
     assert result['evidence'] == [] and gateway.calls == 2
     assert [x['status'] for x in trace['validation_attempts']] == ['rejected', 'accepted']
+
+
+def test_current_mechanism_preserves_domain_validation_error_in_trace():
+    from Api.m6_evidence_service_v2 import evaluate as evaluate_current
+    from Api.m6_package_v2 import load_mechanism as load_current
+    mechanism = load_current()
+    invalid = output(True)
+    invalid['bundles'][0]['evidence_ids'] = ['missing-evidence']
+
+    class Gateway:
+        enabled = True
+        def chat(self, messages, **kwargs):
+            return json.dumps(invalid)
+
+    with pytest.raises(ValueError, match='M6_BUNDLE_REFERENCE') as failure:
+        evaluate_current(material(), mechanism, definition_checksum(mechanism), gateway=Gateway())
+    attempts = failure.value.ai_trace['validation_attempts']
+    assert attempts[-1]['error_code'] == 'M6_BUNDLE_REFERENCE'
+
+
+def test_fragment_span_retry_explains_exact_unicode_invariant():
+    from Api.m6_validation_retry import call_and_validate
+    calls = []
+
+    class Gateway:
+        enabled = True
+        def chat(self, messages, **kwargs):
+            calls.append(messages)
+            return json.dumps({'attempt': len(calls)})
+
+    def reject(_value):
+        raise ValueError('M6_FRAGMENT_SPAN')
+
+    with pytest.raises(ValueError, match='M6_FRAGMENT_SPAN'):
+        call_and_validate(gateway=Gateway(), messages=[{'role': 'user', 'content': '{}'}],
+                          operation={'provider': 'deepseek', 'endpoint': 'https://api.deepseek.com/chat/completions',
+                                     'model': 'deepseek-flash', 'parameters': {}, 'response_format': 'text'},
+                          routing_key='span', validate=reject, max_attempts=2)
+    feedback = calls[1][-1]['content']
+    assert 'end-start' in feedback and 'content[start:end]' in feedback and 'Unicode' in feedback
+
+
+def test_fragment_span_retry_supplies_only_unambiguous_deterministic_offsets():
+    from Api.m6_validation_retry import _fragment_span_hints
+    original = {'turns': [{'turn_id': 't1', 'content': 'До 🙂 после'}]}
+    candidate = {'fragments': [{'id': 'f1', 'turn_id': 't1', 'start': 0, 'end': 99, 'quote': '🙂'}]}
+    hints = _fragment_span_hints(json.dumps(candidate, ensure_ascii=False),
+                                 [{'role': 'user', 'content': json.dumps(original, ensure_ascii=False)}])
+    assert hints == ' Проверенные подсказки для однозначно найденных дословных цитат: f1: start=3, end=4.'
+
+
+def test_retry_repeats_exact_attribution_mapping_without_interpretation():
+    from Api.m6_validation_retry import _attribution_hints
+    hints = _attribution_hints([{'role': 'user', 'content': json.dumps(material(), ensure_ascii=False)}])
+    assert 'дословной копией' in hints
+    assert '"K1.I01"' in hints and '"boundaries":"b"' in hints
+
+
+def test_current_worker_keeps_safe_domain_error_code():
+    from Api.m6_worker_v2 import _error_code
+    assert _error_code(ValueError('M6_CONTEXT_REFERENCE')) == 'M6_CONTEXT_REFERENCE'
+    assert (_error_code(ValueError('DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED'))
+            == 'DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED')
+    assert _error_code(ValueError('provider returned sensitive arbitrary text')) == 'ValueError'
 
 
 def test_invalid_json_keeps_trace():

@@ -176,7 +176,9 @@ def test_f05_all_34_scenarios_use_generated_as_and_runtime_apis(product_db, monk
 
     class RoutedGateway(FunctionalGateway):
         def chat_with_trace(self, messages, **kwargs):
-            if real_index is not None and kwargs.get("routing_key", "").startswith(f"f05-{real_index:02d}-"):
+            real_generation = os.getenv("RUN_F05_REAL_GENERATION", "1") == "1"
+            if (real_index is not None and real_generation
+                    and kwargs.get("routing_key", "").startswith(f"f05-{real_index:02d}-")):
                 return real_gateway.chat_with_trace(messages, **kwargs)
             return super().chat_with_trace(messages, **kwargs)
 
@@ -279,12 +281,19 @@ def test_f05_all_34_scenarios_use_generated_as_and_runtime_apis(product_db, monk
             controlled_m8.append({"test_id": test_id, "cycle_id": cycle_id,
                                   "pipeline": _jsonable(pipeline), "report": _jsonable(report)})
         if index == real_index:
-            assert m10_orchestration.advance_once(connection_factory=product_db, gateway=real_gateway)
+            from Api.llm.provider_contract import load_provider_contract
+            provider = load_provider_contract()
+            m6_gateway = type(real_gateway)(
+                api_keys=real_gateway.api_keys,
+                base_url=provider["endpoint"].removesuffix("/chat/completions"),
+                model=provider["model"],
+            )
+            assert m10_orchestration.advance_once(connection_factory=product_db, gateway=m6_gateway)
             with product_db() as connection:
                 evidence_request = connection.execute(
                     "SELECT id FROM m6_processing_requests ORDER BY created_at DESC LIMIT 1").fetchone()
-            run_evidence(evidence_request["id"], connection_factory=product_db, gateway=real_gateway)
-            assert m10_orchestration.advance_once(connection_factory=product_db, gateway=real_gateway)
+            run_evidence(evidence_request["id"], connection_factory=product_db, gateway=m6_gateway)
+            assert m10_orchestration.advance_once(connection_factory=product_db, gateway=m6_gateway)
             with product_db() as connection:
                 assessment_request = connection.execute(
                     "SELECT id FROM m6_assessment_requests ORDER BY created_at DESC LIMIT 1").fetchone()
@@ -293,19 +302,29 @@ def test_f05_all_34_scenarios_use_generated_as_and_runtime_apis(product_db, monk
                         FROM m6_processing_requests r LEFT JOIN m6_processing_attempts a ON a.request_id=r.id
                         ORDER BY a.attempt_no DESC LIMIT 1""").fetchone()
                     path = Path(os.environ["F05_EVIDENCE_DIR"]) / "real-provider-processing-error.json"
+                    path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_text(json.dumps(_jsonable(diagnostics), ensure_ascii=False, indent=2) + "\n")
             assert assessment_request is not None
-            run_assessment(assessment_request["id"], connection_factory=product_db, gateway=real_gateway)
-            assert m10_orchestration.advance_once(connection_factory=product_db, gateway=real_gateway)
+            run_assessment(assessment_request["id"], connection_factory=product_db, gateway=m6_gateway)
+            assert m10_orchestration.advance_once(connection_factory=product_db, gateway=m6_gateway)
             with product_db() as connection:
                 report = read_latest_report(connection, cycle_id, "assessee")
                 pipeline = connection.execute("SELECT status,stage,error_code FROM m10_pipeline_runs WHERE cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s)",
                                               (cycle_id,)).fetchone()
                 attempts = connection.execute("SELECT action_key,action_type,outcome,input_checksum,intended_json,sent_json,provider_json,response_json,validation_json FROM m5_ai_attempts ORDER BY id").fetchall()
-            assert pipeline == {"status": "ready", "stage": "report_ready", "error_code": None}
+                assessment_diagnostics = connection.execute("""SELECT r.status,a.status AS attempt_status,a.error_code,a.trace_json
+                    FROM m6_assessment_requests r LEFT JOIN m6_assessment_attempts a ON a.request_id=r.id
+                    ORDER BY a.attempt_no DESC LIMIT 1""").fetchone()
+                if pipeline["status"] != "ready" and os.environ.get("F05_EVIDENCE_DIR"):
+                    path = Path(os.environ["F05_EVIDENCE_DIR"]) / "real-provider-assessment-error.json"
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(json.dumps(_jsonable(assessment_diagnostics), ensure_ascii=False, indent=2) + "\n")
+                assert pipeline == {"status": "ready", "stage": "report_ready", "error_code": None}, assessment_diagnostics
             assert report["c67"]["contract"] == "C-67"
             assert report["c67"]["skills"]
             real_provider_evidence = {"cycle_id": cycle_id, "test_id": test_id,
+                "functional_personalization": _jsonable(generated),
+                "runtime": _jsonable(results[-1]),
                 "pipeline": _jsonable(pipeline), "runtime_ai_attempts": _jsonable(attempts),
                 "report": _jsonable(report), "limitations": [
                     "single real-provider functional trajectory", "human methodological approval NOT_RUN"]}

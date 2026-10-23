@@ -32,7 +32,12 @@ const test=base.extend({context:async({browser},use)=>{
     const state=JSON.parse(fs.readFileSync(statePath,'utf8'));
     await use({url,state,dir,cli});
   }finally{
-    if(server && server.exitCode===null){const ended=new Promise(resolve=>server.once('exit',resolve));server.kill('SIGTERM');await ended;}
+    if(server && server.exitCode===null){
+      const ended=new Promise(resolve=>server.once('exit',resolve));
+      server.kill('SIGTERM');
+      await Promise.race([ended,new Promise(resolve=>setTimeout(resolve,5000))]);
+      if(server.exitCode===null){server.kill('SIGKILL');await ended;}
+    }
     cli('destroy');
     await info.attach('server-log',{path:path.join(dir,'app.log'),contentType:'text/plain'});
   }

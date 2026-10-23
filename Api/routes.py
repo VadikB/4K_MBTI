@@ -6248,6 +6248,14 @@ def next_owned_assessment_situation(cycle_id:UUID,payload:ProductNextRequest,req
     user=_m7_owned_cycle(request,str(cycle_id))
     try:
         with get_connection() as connection:
+            if m10_product_flow.uses_functional_generation(connection,cycle_id=str(cycle_id)):
+                operation=product_cycle_preparation_queue.enqueue(
+                    operation_id=payload.idempotency_key,user_id=int(user.id),request={
+                        'kind':'next','cycle_id':str(cycle_id),'idempotency_key':payload.idempotency_key,
+                    })
+                if operation['status']=='completed' and operation.get('result_json'):
+                    return {'operation_id':operation['operation_id'],'status':'completed','result':operation['result_json']}
+                return {'operation_id':operation['operation_id'],'status':operation['status']}
             result=m10_product_flow.next_situation(connection,cycle_id=str(cycle_id),user_id=int(user.id),
                 key=payload.idempotency_key);connection.commit();return m10_product_flow.participant_presentation(result)
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
