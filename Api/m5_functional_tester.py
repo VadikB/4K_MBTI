@@ -43,7 +43,11 @@ def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | No
     version = str(case.get("Version") or "")
     invariants = passport.get("16 Инвариантное ядро")
     indicators = passport.get("22 IndicatorIDs", {}).get("Проектные условия")
-    if not case_id or not version or not isinstance(invariants, list) or not isinstance(indicators, list):
+    personalization = passport.get("18 Правила персонализации и ролевой адаптации")
+    prohibitions = personalization.get("Критические запреты") if isinstance(personalization, dict) else None
+    if (not case_id or not version or not isinstance(invariants, list)
+            or not isinstance(indicators, list) or not isinstance(prohibitions, list)
+            or not prohibitions or not all(isinstance(item, str) and item.strip() for item in prohibitions)):
         raise ValueError("M5_FUNCTIONAL_CASE_CHECK_SOURCES_REQUIRED")
     checks = [deepcopy(item) for item in protocol["common_checks"]]
     checks.extend({
@@ -62,6 +66,13 @@ def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | No
         },
         "source_ref": {"case_id": case_id, "case_version": version, "field": "22", "indicator_id": item["IndicatorID"]},
     } for item in indicators)
+    checks.extend({
+        "check_id": f"critical_prohibition:{index:02d}",
+        "category": "invariant", "mandatory": True, "protected": True,
+        "requirement": "AS не реализует критически запрещённую конструкцию: " + prohibition,
+        "source_ref": {"case_id": case_id, "case_version": version, "field": "18",
+                       "critical_prohibition_index": index},
+    } for index, prohibition in enumerate(prohibitions, start=1))
     not_applicable = []
     for item in protocol["conditional_checks"]:
         if case_id in item["applicable_case_ids"]:

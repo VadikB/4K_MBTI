@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "created_at": "2026-10-23T07:04:13.719414+00:00",
+  "created_at": "2026-10-23T08:00:31.359695+00:00",
   "selected": 1,
   "completed": 1,
   "status_counts": {
@@ -8,10 +8,10 @@
   },
   "results": [
     {
-      "negative_id": "NEG07.1.V02",
-      "case_id": "CASE.SPEC.07",
+      "negative_id": "NEG01.2.V02",
+      "case_id": "CASE.SPEC.01",
       "result": "PASS",
-      "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg07-1-v02.json"
+      "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg01-2-v02.json"
     }
   ],
   "errors": []

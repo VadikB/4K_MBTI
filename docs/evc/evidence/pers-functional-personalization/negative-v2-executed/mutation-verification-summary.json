@@ -1,15 +1,13 @@
 {
   "schema_version": 1,
-  "created_at": "2026-10-23T07:04:53.465676+00:00",
+  "created_at": "2026-10-23T08:09:34.137013+00:00",
   "selected": 27,
-  "completed": 26,
+  "completed": 27,
   "mutation_status_counts": {
-    "APPLIED": 17,
-    "NOT_APPLIED": 9
+    "APPLIED": 27
   },
   "result_counts": {
-    "PASS": 17,
-    "TECHNICAL_ERROR": 9
+    "PASS": 27
   },
   "results": [
     {
@@ -22,8 +20,8 @@
     {
       "negative_id": "NEG01.2.V02",
       "case_id": "CASE.SPEC.01",
-      "mutation_status": "NOT_APPLIED",
-      "result": "TECHNICAL_ERROR",
+      "mutation_status": "APPLIED",
+      "result": "PASS",
       "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg01-2-v02.json"
     },
     {
@@ -34,17 +32,24 @@
       "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg01-3-v02.json"
     },
     {
+      "negative_id": "NEG02.1.V02",
+      "case_id": "CASE.SPEC.02",
+      "mutation_status": "APPLIED",
+      "result": "PASS",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg02-1-v02.json"
+    },
+    {
       "negative_id": "NEG02.2.V02",
       "case_id": "CASE.SPEC.02",
-      "mutation_status": "NOT_APPLIED",
-      "result": "TECHNICAL_ERROR",
+      "mutation_status": "APPLIED",
+      "result": "PASS",
       "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg02-2-v02.json"
     },
     {
       "negative_id": "NEG02.3.V02",
       "case_id": "CASE.SPEC.02",
-      "mutation_status": "NOT_APPLIED",
-      "result": "TECHNICAL_ERROR",
+      "mutation_status": "APPLIED",
+      "result": "PASS",
       "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg02-3-v02.json"
     },
     {
@@ -92,15 +97,15 @@
     {
       "negative_id": "NEG05.1.V02",
       "case_id": "CASE.SPEC.05",
-      "mutation_status": "NOT_APPLIED",
-      "result": "TECHNICAL_ERROR",
+      "mutation_status": "APPLIED",
+      "result": "PASS",
       "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg05-1-v02.json"
     },
     {
       "negative_id": "NEG05.2.V02",
       "case_id": "CASE.SPEC.05",
-      "mutation_status": "NOT_APPLIED",
-      "result": "TECHNICAL_ERROR",
+      "mutation_status": "APPLIED",
+      "result": "PASS",
       "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg05-2-v02.json"
     },
     {
@@ -113,8 +118,8 @@
     {
       "negative_id": "NEG06.1.V02",
       "case_id": "CASE.SPEC.06",
-      "mutation_status": "NOT_APPLIED",
-      "result": "TECHNICAL_ERROR",
+      "mutation_status": "APPLIED",
+      "result": "PASS",
       "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg06-1-v02.json"
     },
     {
@@ -127,8 +132,8 @@
     {
       "negative_id": "NEG06.3.V02",
       "case_id": "CASE.SPEC.06",
-      "mutation_status": "NOT_APPLIED",
-      "result": "TECHNICAL_ERROR",
+      "mutation_status": "APPLIED",
+      "result": "PASS",
       "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg06-3-v02.json"
     },
     {
@@ -176,8 +181,8 @@
     {
       "negative_id": "NEG09.1.V02",
       "case_id": "CASE.SPEC.09",
-      "mutation_status": "NOT_APPLIED",
-      "result": "TECHNICAL_ERROR",
+      "mutation_status": "APPLIED",
+      "result": "PASS",
       "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg09-1-v02.json"
     },
     {
@@ -190,13 +195,11 @@
     {
       "negative_id": "NEG09.3.V02",
       "case_id": "CASE.SPEC.09",
-      "mutation_status": "NOT_APPLIED",
-      "result": "TECHNICAL_ERROR",
+      "mutation_status": "APPLIED",
+      "result": "PASS",
       "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg09-3-v02.json"
     }
   ],
   "errors": [],
-  "missing_negative_ids": [
-    "NEG02.1.V02"
-  ]
+  "missing_negative_ids": []
 }

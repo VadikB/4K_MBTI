@@ -131,6 +131,13 @@ def test_case_specific_applicability_is_derived_and_llm_cannot_override_it():
     excluded = next(item for item in plan03["not_applicable_checks"] if item["check_id"] == "case02.attractive_feature")
     assert excluded["status"] == "NOT_APPLICABLE" and excluded["basis"]
     assert excluded["mandatory"] is False
+    prohibition_checks = [item for item in plan03["required_checks"]
+                          if item["check_id"].startswith("critical_prohibition:")]
+    expected_prohibitions = load_inputs(case03_row)["case"]["Паспорт"][
+        "18 Правила персонализации и ролевой адаптации"]["Критические запреты"]
+    assert len(prohibition_checks) == len(expected_prohibitions)
+    assert all(item["mandatory"] and item["protected"] for item in prohibition_checks)
+    assert prohibition_checks[0]["source_ref"]["field"] == "18"
     all_pass = [{"check_id": item["check_id"], "status": "PASS", "reason": "ok", "findings": [],
                  "adversarial_review": {"candidate_conflicts": [], "resolution": "none"}}
                 for item in plan03["required_checks"]]

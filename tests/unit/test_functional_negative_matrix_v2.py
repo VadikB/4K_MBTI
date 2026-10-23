@@ -3,6 +3,7 @@ import json
 from types import SimpleNamespace
 
 from scripts import run_functional_negative_matrix_v2 as runner
+from scripts import repair_functional_negative_fixtures as repair
 
 
 class BlindGateway:
@@ -10,10 +11,12 @@ class BlindGateway:
 
     def __init__(self):
         self.tester_payloads = []
+        self.mutation_payloads = []
 
     def chat_with_trace(self, messages, **kwargs):
         payload = json.loads(next(item["content"] for item in reversed(messages) if item["role"] == "user"))
         if ":mutation:" in kwargs["routing_key"]:
+            self.mutation_payloads.append(payload)
             candidate = copy.deepcopy(payload["assessment_situation"])
             candidate.pop("Предыдущая версия AS")
             content = json.dumps(candidate, ensure_ascii=False)
@@ -52,3 +55,27 @@ def test_full_negative_as_is_rejected_without_leaking_expected_diagnosis_to_test
     assert not ({"NegativeID", "negative_id", "Нарушенный инвариант", "Почему отклонить",
                  "Ожидаемый результат валидатора", "expected_violated_invariant"}
                 & keys(gateway.tester_payloads))
+
+
+def test_mutator_repair_receives_verifier_feedback_without_expected_diagnosis():
+    row = runner.read_json(runner.NEGATIVES)[0]
+    position = next(item for item in runner.read_json(runner.FINAL)["positions"]
+                    if item["case_ref"]["case_id"] == row["CaseID"])
+    original = runner.read_json(runner.ROOT / position["assessment_situation_ref"]["artifact_path"])["candidate_as"]
+    gateway = BlindGateway()
+
+    runner.mutate_full_as(row=row, original=original, gateway=gateway,
+                          verification_feedback="Не изменён материал M02")
+
+    # Mutator may receive the independent quality feedback, but not the QA diagnosis.
+    assert not gateway.tester_payloads
+    assert gateway.mutation_payloads[0]["previous_verification_feedback"] == "Не изменён материал M02"
+    assert "Нарушенный инвариант" not in gateway.mutation_payloads[0]
+
+
+def test_verification_feedback_is_extracted_only_from_conclusion_reason():
+    assert repair.verification_feedback(None) is None
+    assert repair.verification_feedback({"mutation_verification": {
+        "conclusion": {"reason": "Нужно изменить событие"},
+        "expected_violated_invariant": "must not leak",
+    }}) == "Нужно изменить событие"

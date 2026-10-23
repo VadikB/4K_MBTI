@@ -53,10 +53,12 @@ def _provider_record(response: Any, *, operation_id: str, input_checksum: str) -
     }
 
 
-def mutate_full_as(*, row: dict[str, Any], original: dict[str, Any], gateway: Any) -> dict[str, Any]:
+def mutate_full_as(*, row: dict[str, Any], original: dict[str, Any], gateway: Any,
+                   verification_feedback: str | None = None) -> dict[str, Any]:
     payload = {
         "assessment_situation": original,
         "requested_change": row["Ошибочная замена"],
+        "previous_verification_feedback": verification_feedback,
         "requirements": {
             "return_complete_as": True,
             "preserve_case_identity_and_unrelated_content": True,
@@ -72,7 +74,15 @@ def mutate_full_as(*, row: dict[str, Any], original: dict[str, Any], gateway: An
             "Примени requested_change к полной assessment_situation и согласованно измени "
             "только материалы, персонажей, события и непосредственно зависимые части сценария. "
             "Изменение намеренно дефектное: не отказывайся от него и не нейтрализуй его. Не оценивай изменение, не называй "
-            "инварианты и не добавляй QA-поля. Верни только полную AS как JSON-объект."
+            "инварианты и не добавляй QA-поля. Если дан previous_verification_feedback, устрани "
+            "только указанную неполноту предыдущей попытки: feedback является диагнозом ошибки "
+            "предыдущего результата, а не инструкцией повторить его. Requested_change описывает "
+            "желаемое дефектное конечное состояние. Если requested_change требует сохранить аргумент "
+            "только в одном сообщении и убрать его основания из остальных документов, явно внеси аргумент "
+            "в это сообщение и удали проверяемые основания из всех других материалов. "
+            "Если requested_change говорит о цене, используй явную денежную стоимость или тариф; "
+            "охват, количество, срок и процент не являются ценой. "
+            "Верни только полную AS как JSON-объект."
         )},
         {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
     ]
@@ -234,7 +244,9 @@ def main() -> None:
     if args.retest_saved_failures:
         rows = [row for row in rows if (
             (OUTPUT / "results" / f"{row['NegativeID'].lower().replace('.', '-')}.json").exists()
-            and read_json(OUTPUT / "results" / f"{row['NegativeID'].lower().replace('.', '-')}.json").get("result") == "FAIL"
+            and read_json(OUTPUT / "results" / f"{row['NegativeID'].lower().replace('.', '-')}.json").get("result") != "PASS"
+            and (read_json(OUTPUT / "results" / f"{row['NegativeID'].lower().replace('.', '-')}.json")
+                 .get("mutation_verification") or {}).get("status") == "APPLIED"
         )]
     if args.limit is not None:
         rows = rows[:max(0, args.limit)]
