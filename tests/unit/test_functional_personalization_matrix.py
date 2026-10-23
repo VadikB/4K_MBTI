@@ -79,6 +79,31 @@ def test_deterministic_failure_always_blocks_admission():
     assert result["admitted_for_participant"] is False
 
 
+def test_declared_deterministic_failure_without_checks_blocks_admission():
+    result = aggregate({"status": "FAIL", "checks": []}, [_check("PASS")])
+    assert result["status"] == "FAIL"
+    assert result["admitted_for_participant"] is False
+
+
+def test_empty_deterministic_protocol_is_incomplete_and_not_admitted():
+    result = aggregate({"status": "PASS", "checks": []}, [_check("PASS")])
+    assert result["status"] == "INCOMPLETE"
+    assert result["admitted_for_participant"] is False
+    assert result["deterministic_protocol_errors"][0]["code"] == "DETERMINISTIC_PROTOCOL_EMPTY"
+
+
+def test_blocking_finding_cannot_hide_under_declared_pass():
+    result = aggregate(_deterministic(), [_check("PASS", severity="blocking")])
+    assert result["status"] == "FAIL"
+    assert result["admitted_for_participant"] is False
+
+
+def test_unknown_finding_severity_is_incomplete_and_not_admitted():
+    result = aggregate(_deterministic(), [_check("PASS", severity="unknown")])
+    assert result["status"] == "INCOMPLETE"
+    assert result["admitted_for_participant"] is False
+
+
 def test_known_response_envelope_is_removed_without_changing_as():
     candidate = {"CaseID": "CASE.SPEC.01", "Материалы": []}
     extracted, depth = extract_candidate_as({"profile": {}, "candidate_as": {"candidate_as": candidate}})
@@ -102,7 +127,7 @@ def test_case_specific_applicability_is_derived_and_llm_cannot_override_it():
     assert excluded["mandatory"] is False
     all_pass = [{"check_id": item["check_id"], "status": "PASS", "reason": "ok", "findings": []}
                 for item in plan03["required_checks"]]
-    assert aggregate({"checks": []}, normalize_results(plan03, all_pass))["status"] == "PASS"
+    assert aggregate(_deterministic(), normalize_results(plan03, all_pass))["status"] == "PASS"
     raw = [{"check_id": item["check_id"], "status": "PASS", "reason": "ok", "findings": []}
            for item in plan02["required_checks"]]
     raw[-1]["status"] = "NOT_APPLICABLE"

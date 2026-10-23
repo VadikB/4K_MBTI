@@ -117,9 +117,21 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any) -> list[dict[str, A
 
 
 def aggregate(deterministic_validation: dict[str, Any], checks: list[dict[str, Any]]) -> dict[str, Any]:
-    deterministic_failures = [
-        item for item in deterministic_validation.get("checks", []) if item.get("result") != "PASS"
-    ]
+    deterministic_checks = deterministic_validation.get("checks")
+    deterministic_protocol_errors = []
+    if not isinstance(deterministic_checks, list) or not deterministic_checks:
+        deterministic_protocol_errors.append({
+            "code": "DETERMINISTIC_PROTOCOL_EMPTY",
+            "reason": "Обязательный детерминированный протокол отсутствует или пуст.",
+        })
+        deterministic_checks = []
+    deterministic_failures = [item for item in deterministic_checks if item.get("result") != "PASS"]
+    if deterministic_validation.get("status") == "FAIL" and not deterministic_failures:
+        deterministic_failures.append({
+            "code": "DETERMINISTIC_STATUS_FAIL",
+            "result": "FAIL",
+            "reason": "Детерминированная валидация объявила FAIL без локализованной проверки.",
+        })
     blocking_failures, incomplete, review, warnings = [], [], [], []
     for item in checks:
         status = item.get("status")
@@ -127,23 +139,28 @@ def aggregate(deterministic_validation: dict[str, Any], checks: list[dict[str, A
             if item.get("mandatory") or not str(item.get("basis") or "").strip():
                 incomplete.append(item)
             continue
+        findings = item.get("findings") or []
+        severities = {finding.get("severity") for finding in findings}
+        if severities - {"blocking", "non_blocking"}:
+            incomplete.append({**item, "aggregation_error": "UNKNOWN_FINDING_SEVERITY"})
+            continue
+        has_blocking = "blocking" in severities
+        if has_blocking:
+            blocking_failures.append(item)
+            continue
         if item.get("mandatory") and status in {"NOT_RUN", "INDETERMINATE", "TECHNICAL_ERROR"}:
             incomplete.append(item)
             continue
         if status != "FAIL":
             continue
-        findings = item.get("findings") or []
-        has_blocking = any(finding.get("severity") == "blocking" for finding in findings)
         protected = bool(item.get("protected") or item.get("category") in PROTECTED_CATEGORIES)
-        if has_blocking:
-            blocking_failures.append(item)
-        elif protected:
+        if protected:
             review.append(item)
         else:
             warnings.append(item)
     if deterministic_failures or blocking_failures:
         status = "FAIL"
-    elif incomplete:
+    elif deterministic_protocol_errors or incomplete:
         status = "INCOMPLETE"
     elif review:
         status = "REVIEW_REQUIRED"
@@ -155,6 +172,7 @@ def aggregate(deterministic_validation: dict[str, Any], checks: list[dict[str, A
         "status": status,
         "admitted_for_participant": status in {"PASS", "PASS_WITH_WARNINGS"},
         "deterministic_failures": deterministic_failures,
+        "deterministic_protocol_errors": deterministic_protocol_errors,
         "blocking_failures": blocking_failures,
         "incomplete_checks": incomplete,
         "review_required": review,
