@@ -10,6 +10,9 @@ test('product Cycle preparation polls the operation and exposes only completed r
   assert.match(helper, /\/assessment\/cycles\/preparation\//);
   assert.match(helper, /operation\.status === 'completed'/);
   assert.match(helper, /operation\.status === 'failed'/);
+  assert.match(helper, /return operation\.result/);
+  assert.match(helper, /operation\.error\?\.message/);
+  assert.doesNotMatch(helper, /result_json|error_message/);
   assert.match(onboarding, /prepareProductCycle\(/);
   assert.match(interview, /prepareProductCycle\(/);
   assert.doesNotMatch(onboarding, /fetch\('\/users\/assessment\/cycles\/prepare'/);

@@ -103,6 +103,9 @@ checksum; активные операции одного пользовател�
 - `Api/product_cycle_preparation_queue.py` — owner-bound idempotency, глобальная
   advisory-блокировка ключа, owned read и публичная проекция.
 - `Api/routes.py` — применение публичной проекции и контролируемые HTTP 403/409.
+- `web/js/product-cycle-preparation.js` — клиент читает только новый безопасный
+  контракт `result` / `error.message`, без внутренних `result_json` и
+  `error_message`.
 - `tests/unit/test_product_cycle_preparation_projection.py` — whitelist статусов.
 - `tests/e2e/test_m5_runtime_http.py` — отсутствие закрытых маркеров и HTTP права.
 - `tests/integration/test_m10_product_path_db.py` — replay/conflict/owner/scope в PostgreSQL.
@@ -131,10 +134,10 @@ checksum; активные операции одного пользовател�
   остановил frontend: `Product changed but release version remains 2.0.16`.
   Следующий head `346f791` прошёл release check, но остановился на новой
   advisory для `zod`; lockfile-исправление подготовлено в том же PR. Полный
-  browser runtime локально не запускался без обязательного изолированного
-  `STAND_ADMIN_URL`; 48 независимых browser-тестов прошли, 14 stand-тестов
-  остановлены до выполнения сценария. Итоговый CI, human review и merge ожидают
-  точного нового head.
+  browser CI на `bec8001` выявил несовместимость клиента с новой публичной
+  проекцией: polling продолжал читать внутреннее `result_json`. Клиент переведён
+  на `result` / `error.message`; точный повтор browser и итоговый CI ожидаются.
+  Human review и merge не выполнены.
 
 ### Риски и откат
 

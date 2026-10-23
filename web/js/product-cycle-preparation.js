@@ -14,11 +14,11 @@ export const waitForProductCyclePreparation = async (accepted) => {
     );
     const operation = await readApiResponse(statusResponse, 'Не удалось получить статус подготовки плана оценки.');
     if (operation.status === 'completed') {
-      if (!operation.result_json) throw new Error('Подготовка завершена без готового плана оценки.');
-      return operation.result_json;
+      if (!operation.result) throw new Error('Подготовка завершена без готового плана оценки.');
+      return operation.result;
     }
     if (operation.status === 'failed') {
-      throw new Error(operation.error_message || 'Не удалось подготовить план оценки.');
+      throw new Error(operation.error?.message || 'Не удалось подготовить план оценки.');
     }
   }
 };
