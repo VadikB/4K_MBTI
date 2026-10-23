@@ -131,10 +131,12 @@ def test_case_specific_applicability_is_derived_and_llm_cannot_override_it():
     excluded = next(item for item in plan03["not_applicable_checks"] if item["check_id"] == "case02.attractive_feature")
     assert excluded["status"] == "NOT_APPLICABLE" and excluded["basis"]
     assert excluded["mandatory"] is False
-    all_pass = [{"check_id": item["check_id"], "status": "PASS", "reason": "ok", "findings": []}
+    all_pass = [{"check_id": item["check_id"], "status": "PASS", "reason": "ok", "findings": [],
+                 "adversarial_review": {"candidate_conflicts": [], "resolution": "none"}}
                 for item in plan03["required_checks"]]
     assert aggregate(_deterministic(), normalize_results(plan03, all_pass))["status"] == "PASS"
-    raw = [{"check_id": item["check_id"], "status": "PASS", "reason": "ok", "findings": []}
+    raw = [{"check_id": item["check_id"], "status": "PASS", "reason": "ok", "findings": [],
+            "adversarial_review": {"candidate_conflicts": [], "resolution": "none"}}
            for item in plan02["required_checks"]]
     raw[-1]["status"] = "NOT_APPLICABLE"
     normalized = normalize_results(plan02, raw)

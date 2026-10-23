@@ -15,8 +15,10 @@ class Gateway:
             content = json.dumps(payload["author_as_example"], ensure_ascii=False)
         else:
             self.tester_payloads.append(payload)
-            checks = [{"check_id": item["check_id"], "status": "PASS", "reason": "fixture", "findings": []}
-                      for item in payload["applicability_plan"]["required_checks"]]
+            required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
+            checks = [{"check_id": item["check_id"], "status": "PASS", "reason": "fixture", "findings": [],
+                       "adversarial_review": {"candidate_conflicts": [], "resolution": "no conflict"}}
+                      for item in required]
             content = json.dumps({"checks": checks}, ensure_ascii=False)
         return SimpleNamespace(content=content, sent={"parameters": kwargs},
                                provider={"finish_reason": "stop", "request_id": kwargs["routing_key"]})
@@ -74,4 +76,4 @@ def test_malformed_provider_json_is_retried_once_without_salvaging_fragments():
     result = service.prepare(snapshot, gateway)
     assert result["admitted_for_participant"] is True
     assert result["generation_operation"]["parse_failures"][0]["code"] == "PROVIDER_JSON_INVALID"
-    assert gateway.calls == 3  # generation failure + generation retry + tester
+    assert gateway.calls == 4  # generation failure + generation retry + tester + challenger

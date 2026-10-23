@@ -107,10 +107,19 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any) -> list[dict[str, A
         findings = item.get("findings") if isinstance(item.get("findings"), list) else []
         if status == "FAIL" and not findings:
             status, reason = "TECHNICAL_ERROR", "FAIL без локализованной находки и серьёзности не может быть агрегирован."
+        protected = bool(definition.get("protected") or definition.get("category") in PROTECTED_CATEGORIES)
+        adversarial = item.get("adversarial_review") if isinstance(item.get("adversarial_review"), dict) else None
+        if status == "PASS" and definition.get("mandatory") and protected and (
+            adversarial is None
+            or not isinstance(adversarial.get("candidate_conflicts"), list)
+            or not str(adversarial.get("resolution") or "").strip()
+        ):
+            status, reason = "TECHNICAL_ERROR", "PASS защищённой проверки без adversarial review не допускается."
         normalized.append({
             **deepcopy(definition), "status": status, "reason": reason,
             "evidence_paths": item.get("evidence_paths") if isinstance(item.get("evidence_paths"), list) else [],
             "findings": [finding for finding in findings if isinstance(finding, dict)],
+            "adversarial_review": adversarial,
         })
     normalized.extend(deepcopy(plan["not_applicable_checks"]))
     return normalized

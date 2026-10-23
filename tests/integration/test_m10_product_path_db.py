@@ -323,9 +323,11 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
             if ":generation:" in kwargs["routing_key"]:
                 content = json.dumps(payload["author_as_example"], ensure_ascii=False)
             else:
+                required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
                 content = json.dumps({"checks": [{"check_id": item["check_id"], "status": "PASS",
-                    "reason": "isolated functional Cycle fixture", "evidence_paths": [], "findings": []}
-                    for item in payload["applicability_plan"]["required_checks"]]}, ensure_ascii=False)
+                        "reason": "isolated functional Cycle fixture", "evidence_paths": [], "findings": [],
+                        "adversarial_review": {"candidate_conflicts": [], "resolution": "fixture"}}
+                        for item in required]}, ensure_ascii=False)
             return SimpleNamespace(content=content, sent={}, provider={"finish_reason": "stop"})
 
     monkeypatch.setattr("Api.product_cycle_preparation_queue.get_connection", product_db)

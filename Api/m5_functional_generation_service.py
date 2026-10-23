@@ -171,12 +171,14 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                    "check_id": "exact id from applicability_plan.required_checks",
                    "status": "PASS|FAIL|NOT_RUN|INDETERMINATE|TECHNICAL_ERROR",
                    "evidence_paths": ["JSON path"], "reason": "string",
+                   "adversarial_review": {"candidate_conflicts": ["JSON path потенциального противоречия"],
+                                          "resolution": "Почему каждый конфликт не нарушает требование; для FAIL — пустая строка допустима"},
                    "findings": [{"code": "string", "severity": "blocking|non_blocking",
                                  "paths": ["JSON path"], "reason": "string",
                                  "requirement_ref": "check_id/source_ref"}],
                }]}}
     messages = [{"role": "system", "content": (SOURCE / "07_generation/Tester_instruction_v0.2.txt").read_text(encoding="utf-8")},
-                {"role": "system", "content": "Верни один JSON-объект с единственным верхнеуровневым полем checks. Следуй applicability_plan, используй точные check_id каждого required_checks ровно один раз. Не добавляй проверки и не вычисляй общий статус."},
+                {"role": "system", "content": "Верни один JSON-объект с единственным верхнеуровневым полем checks. Следуй applicability_plan, используй точные check_id каждого required_checks ровно один раз. Не добавляй проверки и не вычисляй общий статус. Для каждой защищённой проверки сначала найди в candidate_as пути, которые могут противоречить requirement. PASS допустим только после явного разрешения каждого такого конфликта в adversarial_review. Не считай разные названия разными функциями без различия содержания; не превращай готовое утверждение в полезную гипотезу только потому, что участник мог бы его оспорить; атрибуция готовой классификации журналу, документу или автору не делает её неопределённой, если материал сообщает её как факт; не игнорируй преждевременно подтверждённое внешнее условие из-за наличия другого ограничения."},
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
     input_checksum = checksum(messages)
     operation_id = f"{snapshot['operation_id']}:tester:{input_checksum[:12]}"
@@ -184,10 +186,57 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
     )
     checks = normalize_results(plan, raw.get("checks"))
+    protected = [item for item in plan["required_checks"] if item.get("protected")]
+    challenge_payload = {
+        "case": snapshot["case"], "author_as_example": snapshot["author_as_example"],
+        "candidate_as": generation["candidate_as"],
+        "protected_checks": protected,
+        "required_output": payload["required_output"],
+        "rules": {
+            "purpose": "Ищи опровержение PASS, не подтверждение.",
+            "inspect_entire_candidate": True,
+            "direct_statement_is_not_uncertain_merely_because_it_has_a_source": True,
+            "different_labels_require_different_substance": True,
+            "inspect_new_assertions_and_removed_constraints_against_author_example": True,
+            "return_each_protected_check_once": True,
+        },
+    }
+    challenge_messages = [
+        {"role": "system", "content": (
+            "Ты независимый adversarial challenger. Для каждой protected_check найди во всей candidate_as "
+            "хотя бы один путь, способный нарушить requirement. FAIL ставь при неразрешённом конфликте и "
+            "локализуй blocking finding. PASS допустим только если найденные конфликты явно разрешены. "
+            "Не считай готовое утверждение неопределённым лишь из-за указания его автора/журнала/документа. "
+            "Не считай разные названия разными функциями без различия содержания. Отдельно сравни candidate_as "
+            "с author_as_example: проверь каждое новое утверждение и каждое снятое ограничение против requirements. "
+            "Верни только JSON checks."
+        )},
+        {"role": "user", "content": json.dumps(challenge_payload, ensure_ascii=False)},
+    ]
+    challenge_checksum = checksum(challenge_messages)
+    challenge_operation_id = f"{snapshot['operation_id']}:challenger:{challenge_checksum[:12]}"
+    challenge_raw, challenge_response, challenge_failures = _strict_json_call(
+        gateway, challenge_messages, operation_id=challenge_operation_id, max_tokens=16384, temperature=0,
+    )
+    challenge_checks = normalize_results(plan, challenge_raw.get("checks"))
+    challenge_by_id = {item["check_id"]: item for item in challenge_checks
+                       if item.get("status") != "NOT_APPLICABLE"}
+    merged_checks = []
+    for item in checks:
+        challenged = challenge_by_id.get(item["check_id"])
+        if challenged is not None and item.get("protected") and challenged.get("status") != "PASS":
+            merged_checks.append(challenged)
+        else:
+            merged_checks.append(item)
+    checks = merged_checks
     aggregation = aggregate(generation["deterministic_validation"], checks)
     return {"protocol": plan["protocol"], "checks": checks, "aggregation": aggregation,
             "provider_operation": {**_trace(response, operation_id=operation_id, kind="independent_tester_v2", input_checksum=input_checksum),
-                                   "parse_failures": parse_failures}}
+                                   "parse_failures": parse_failures},
+            "challenger_operation": {**_trace(challenge_response, operation_id=challenge_operation_id,
+                                                kind="independent_tester_v2_challenger",
+                                                input_checksum=challenge_checksum),
+                                     "parse_failures": challenge_failures}}
 
 
 def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:

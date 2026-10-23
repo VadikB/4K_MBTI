@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-23T06:54:05.742558+00:00",
+  "selected": 3,
+  "completed": 2,
+  "status_counts": {
+    "FAIL": 2
+  },
+  "results": [
+    {
+      "negative_id": "NEG06.3.V02",
+      "case_id": "CASE.SPEC.06",
+      "result": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg06-3-v02.json"
+    },
+    {
+      "negative_id": "NEG09.3.V02",
+      "case_id": "CASE.SPEC.09",
+      "result": "FAIL",
+      "artifact": "docs/evc/evidence/pers-functional-personalization/negative-v2-executed/results/neg09-3-v02.json"
+    }
+  ],
+  "errors": [
+    {
+      "negative_id": "NEG02.1.V02",
+      "case_id": "CASE.SPEC.02",
+      "error_type": "ValueError",
+      "error": "NEGATIVE_MUTATION_INVALID:[{\"attempt\": 1, \"code\": \"NEGATIVE_MUTATION_NOT_APPLIED\", \"candidate_checksum\": \"be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf\"}, {\"attempt\": 2, \"code\": \"NEGATIVE_MUTATION_NOT_APPLIED\", \"candidate_checksum\": \"be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf\"}]"
+    }
+  ]
+}
