@@ -3636,7 +3636,7 @@ def ensure_m5_runtime_schema(connection) -> None:
             IF referenced THEN
                 RAISE EXCEPTION 'Referenced M5 CaseVersion content is immutable';
             END IF;
-            RETURN OLD;
+            RETURN NEW;
         END; $$ LANGUAGE plpgsql
     """)
     for table in ("m5_case_versions", "m5_case_targets", "m5_case_characters", "m5_case_materials", "m5_case_scenario_steps"):

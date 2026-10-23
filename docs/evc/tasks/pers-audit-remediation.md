@@ -82,6 +82,14 @@
   `CASE-TDISC-*`, тогда как functional generator работает с `CASE.SPEC.*`.
   Смешивать идентичности запрещено; перед финальным подключением очереди нужен
   отдельный versioned functional catalog/plan и его admission evidence.
+- F05 wiring подтверждён PostgreSQL integration: отдельный assessment catalog
+  из девяти синтетически допущенных FROZEN-копий `CASE.SPEC.*` привязан к новой
+  конфигурации и профилю `specialist_expert`; новый Cycle не содержит
+  `CASE-TDISC-*`, выбранная AS использует versioned runtime rules `1.0.0`.
+  Полный `test_m10_product_path_db.py`: 10 PASS. Fixture не меняет и не допускает
+  репозиторный WORKING/draft пакет. Исправлен обнаруженный trigger: непривязанный
+  CaseVersion теперь может перейти в новый статус, но после создания AS изменение
+  по-прежнему блокируется как `Referenced M5 CaseVersion content is immutable`.
 - Следующий шаг: подключить planner к profile→applicability→generation→tester→snapshot;
   затем F04/F05 и итоговая отчётность F07.
 - Ветка: `codex/pers-audit-remediation`.
