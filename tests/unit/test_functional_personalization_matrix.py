@@ -11,11 +11,17 @@ from scripts.run_functional_personalization_matrix import (
     deterministic_checks,
     load_inputs,
     read_json,
+    report_path,
     SOURCE,
 )
 from Api.m5_functional_tester import aggregate, build_applicability_plan, normalize_results
 
 pytestmark = pytest.mark.unit
+
+
+def test_external_smoke_evidence_path_does_not_break_summary(tmp_path):
+    external = tmp_path / "generation.json"
+    assert report_path(external) == str(external)
 
 
 def _row():

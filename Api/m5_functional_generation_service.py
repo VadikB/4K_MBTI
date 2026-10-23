@@ -101,6 +101,30 @@ def _trace(response: Any, *, operation_id: str, kind: str, input_checksum: str) 
             "sent": response.sent, "provider": response.provider}
 
 
+def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation_id: str,
+                      max_tokens: int, temperature: float) -> tuple[Any, Any, list[dict[str, Any]]]:
+    """Retry one malformed provider envelope; never salvage or merge partial JSON."""
+    failures: list[dict[str, Any]] = []
+    current = list(messages)
+    for attempt in (1, 2):
+        response = gateway.chat_with_trace(
+            current, temperature=temperature, timeout_seconds=300, max_tokens=max_tokens,
+            routing_key=operation_id if attempt == 1 else f"{operation_id}:json-retry",
+            response_format={"type": "json_object"},
+        )
+        try:
+            return json.loads(response.content), response, failures
+        except json.JSONDecodeError as exc:
+            failures.append({"attempt": attempt, "code": "PROVIDER_JSON_INVALID",
+                             "position": exc.pos, "response_characters": len(response.content),
+                             "finish_reason": response.provider.get("finish_reason")})
+            if attempt == 2:
+                raise ValueError("M5_FUNCTIONAL_PROVIDER_JSON_INVALID") from exc
+            current = [*messages, {"role": "system", "content":
+                "Предыдущий ответ не был одним корректным JSON-объектом. Повтори ответ целиком: ровно один JSON-объект, без второго объекта, пояснений и Markdown."}]
+    raise AssertionError("unreachable")
+
+
 def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
     instruction = (SOURCE / "07_generation/Generator_instruction_v0.2.txt").read_text(encoding="utf-8")
     contract = (SOURCE / "07_generation/Generation_contract_v0.2.json").read_text(encoding="utf-8")
@@ -116,12 +140,14 @@ def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
     input_checksum = checksum(messages)
     operation_id = f"{snapshot['operation_id']}:generation:{input_checksum[:12]}"
-    response = gateway.chat_with_trace(messages, temperature=0.2, timeout_seconds=300, max_tokens=32768,
-                                       routing_key=operation_id, response_format={"type": "json_object"})
-    candidate, depth = extract_candidate_as(json.loads(response.content))
+    raw, response, parse_failures = _strict_json_call(
+        gateway, messages, operation_id=operation_id, max_tokens=32768, temperature=0.2,
+    )
+    candidate, depth = extract_candidate_as(raw)
     return {"candidate_as": candidate, "candidate_checksum": checksum(candidate),
             "response_envelope_depth": depth, "deterministic_validation": deterministic_checks(snapshot, candidate),
-            "provider_operation": _trace(response, operation_id=operation_id, kind="generation", input_checksum=input_checksum)}
+            "provider_operation": {**_trace(response, operation_id=operation_id, kind="generation", input_checksum=input_checksum),
+                                   "parse_failures": parse_failures}}
 
 
 def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway: Any) -> dict[str, Any]:
@@ -140,13 +166,14 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
     input_checksum = checksum(messages)
     operation_id = f"{snapshot['operation_id']}:tester:{input_checksum[:12]}"
-    response = gateway.chat_with_trace(messages, temperature=0, timeout_seconds=300, max_tokens=16384,
-                                       routing_key=operation_id, response_format={"type": "json_object"})
-    raw = json.loads(response.content)
+    raw, response, parse_failures = _strict_json_call(
+        gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
+    )
     checks = normalize_results(plan, raw.get("checks"))
     aggregation = aggregate(generation["deterministic_validation"], checks)
     return {"protocol": plan["protocol"], "checks": checks, "aggregation": aggregation,
-            "provider_operation": _trace(response, operation_id=operation_id, kind="independent_tester_v2", input_checksum=input_checksum)}
+            "provider_operation": {**_trace(response, operation_id=operation_id, kind="independent_tester_v2", input_checksum=input_checksum),
+                                   "parse_failures": parse_failures}}
 
 
 def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:

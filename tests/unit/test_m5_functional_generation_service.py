@@ -8,7 +8,7 @@ class Gateway:
     enabled = True
     def __init__(self): self.profiles = []
     def chat_with_trace(self, messages, **kwargs):
-        payload = json.loads(messages[-1]["content"])
+        payload = json.loads(next(item["content"] for item in reversed(messages) if item["role"] == "user"))
         if ":generation:" in kwargs["routing_key"]:
             self.profiles.append(payload["profile"])
             content = json.dumps(payload["author_as_example"], ensure_ascii=False)
@@ -50,3 +50,19 @@ def test_shared_service_closes_admission_when_tester_omits_required_checks():
     result = service.prepare(snapshot, EmptyTester())
     assert result["admitted_for_participant"] is False
     assert result["tester"]["aggregation"]["status"] == "INCOMPLETE"
+
+
+def test_malformed_provider_json_is_retried_once_without_salvaging_fragments():
+    class MalformedOnce(Gateway):
+        def __init__(self): super().__init__(); self.calls = 0
+        def chat_with_trace(self, messages, **kwargs):
+            self.calls += 1
+            response = super().chat_with_trace(messages, **kwargs)
+            if self.calls == 1: response.content += '{"second":"object"}'
+            return response
+    gateway = MalformedOnce()
+    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"), operation_id="op-r")
+    result = service.prepare(snapshot, gateway)
+    assert result["admitted_for_participant"] is True
+    assert result["generation_operation"]["parse_failures"][0]["code"] == "PROVIDER_JSON_INVALID"
+    assert gateway.calls == 3  # generation failure + generation retry + tester

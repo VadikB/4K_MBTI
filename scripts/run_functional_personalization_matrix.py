@@ -266,6 +266,14 @@ def write_json(path: Path, value: Any) -> None:
     os.replace(temporary, path)
 
 
+def report_path(path: Path) -> str:
+    """Keep repository evidence relative and external smoke evidence explicit."""
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
 def summarize_existing(rows: list[dict[str, Any]], output: Path, errors: list[dict[str, str]] | None = None) -> dict[str, Any]:
     results = []
     known_errors = {item["test_id"]: item for item in (errors or [])}
@@ -289,8 +297,8 @@ def summarize_existing(rows: list[dict[str, Any]], output: Path, errors: list[di
             "tester": tested["conclusion"].get("status", "INDETERMINATE"),
             "admitted_for_participant": bool(tested["structurally_valid"] and tested["conclusion"].get("status") == "PASS" and tested["conclusion"].get("admitted_for_participant") is True),
             "repair_attempts": len(generation.get("repair_history", [])),
-            "generation_path": str(generated_path.relative_to(ROOT)),
-            "tester_path": str(tested_path.relative_to(ROOT)),
+            "generation_path": report_path(generated_path),
+            "tester_path": report_path(tested_path),
             "candidate_checksum": generation["candidate_checksum"],
         })
         known_errors.pop(row["TestID"], None)
@@ -326,8 +334,8 @@ def run_profile(row: dict[str, Any], output: Path, gateway: DeepSeekGateway, for
         "generation": generation["deterministic_validation"]["status"],
         "tester": tested["conclusion"].get("status", "INDETERMINATE"),
         "admitted_for_participant": bool(tested["structurally_valid"] and tested["conclusion"].get("status") == "PASS" and tested["conclusion"].get("admitted_for_participant") is True),
-        "generation_path": str(generated_path.relative_to(ROOT)),
-        "tester_path": str(tested_path.relative_to(ROOT)),
+        "generation_path": report_path(generated_path),
+        "tester_path": report_path(tested_path),
         "candidate_checksum": generation["candidate_checksum"],
     }
 
