@@ -1,5 +1,6 @@
 """Dispatcher preserving legacy 1.0.0 and executing current M6 mechanisms."""
 import logging
+import re
 import threading
 
 from Api.assessment_configuration import definition_checksum
@@ -9,6 +10,14 @@ from Api.m6_evidence_service_v2 import evaluate
 _stop = threading.Event()
 _thread = None
 _lock = threading.Lock()
+
+
+def _error_code(exc: Exception) -> str:
+    """Keep stable domain codes while never persisting arbitrary provider content."""
+    message = str(exc).strip()
+    if isinstance(exc, ValueError) and re.fullmatch(r"[A-Z][A-Z0-9_:-]{2,199}", message):
+        return message
+    return type(exc).__name__
 
 
 def run_request(request_id, *, connection_factory=None, gateway=None):
@@ -28,7 +37,7 @@ def run_request(request_id, *, connection_factory=None, gateway=None):
     except Exception as exc:
         output = None
         trace = getattr(exc, "ai_trace", {})
-        error = type(exc).__name__
+        error = _error_code(exc)
     else:
         error = None
     with connection_factory() as connection:

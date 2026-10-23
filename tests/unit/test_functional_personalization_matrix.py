@@ -11,11 +11,17 @@ from scripts.run_functional_personalization_matrix import (
     deterministic_checks,
     load_inputs,
     read_json,
+    report_path,
     SOURCE,
 )
 from Api.m5_functional_tester import aggregate, build_applicability_plan, normalize_results
 
 pytestmark = pytest.mark.unit
+
+
+def test_external_smoke_evidence_path_does_not_break_summary(tmp_path):
+    external = tmp_path / "generation.json"
+    assert report_path(external) == str(external)
 
 
 def _row():
@@ -79,6 +85,31 @@ def test_deterministic_failure_always_blocks_admission():
     assert result["admitted_for_participant"] is False
 
 
+def test_declared_deterministic_failure_without_checks_blocks_admission():
+    result = aggregate({"status": "FAIL", "checks": []}, [_check("PASS")])
+    assert result["status"] == "FAIL"
+    assert result["admitted_for_participant"] is False
+
+
+def test_empty_deterministic_protocol_is_incomplete_and_not_admitted():
+    result = aggregate({"status": "PASS", "checks": []}, [_check("PASS")])
+    assert result["status"] == "INCOMPLETE"
+    assert result["admitted_for_participant"] is False
+    assert result["deterministic_protocol_errors"][0]["code"] == "DETERMINISTIC_PROTOCOL_EMPTY"
+
+
+def test_blocking_finding_cannot_hide_under_declared_pass():
+    result = aggregate(_deterministic(), [_check("PASS", severity="blocking")])
+    assert result["status"] == "FAIL"
+    assert result["admitted_for_participant"] is False
+
+
+def test_unknown_finding_severity_is_incomplete_and_not_admitted():
+    result = aggregate(_deterministic(), [_check("PASS", severity="unknown")])
+    assert result["status"] == "INCOMPLETE"
+    assert result["admitted_for_participant"] is False
+
+
 def test_known_response_envelope_is_removed_without_changing_as():
     candidate = {"CaseID": "CASE.SPEC.01", "Материалы": []}
     extracted, depth = extract_candidate_as({"profile": {}, "candidate_as": {"candidate_as": candidate}})
@@ -100,10 +131,19 @@ def test_case_specific_applicability_is_derived_and_llm_cannot_override_it():
     excluded = next(item for item in plan03["not_applicable_checks"] if item["check_id"] == "case02.attractive_feature")
     assert excluded["status"] == "NOT_APPLICABLE" and excluded["basis"]
     assert excluded["mandatory"] is False
-    all_pass = [{"check_id": item["check_id"], "status": "PASS", "reason": "ok", "findings": []}
+    prohibition_checks = [item for item in plan03["required_checks"]
+                          if item["check_id"].startswith("critical_prohibition:")]
+    expected_prohibitions = load_inputs(case03_row)["case"]["Паспорт"][
+        "18 Правила персонализации и ролевой адаптации"]["Критические запреты"]
+    assert len(prohibition_checks) == len(expected_prohibitions)
+    assert all(item["mandatory"] and item["protected"] for item in prohibition_checks)
+    assert prohibition_checks[0]["source_ref"]["field"] == "18"
+    all_pass = [{"check_id": item["check_id"], "status": "PASS", "reason": "ok", "findings": [],
+                 "adversarial_review": {"candidate_conflicts": [], "resolution": "none"}}
                 for item in plan03["required_checks"]]
-    assert aggregate({"checks": []}, normalize_results(plan03, all_pass))["status"] == "PASS"
-    raw = [{"check_id": item["check_id"], "status": "PASS", "reason": "ok", "findings": []}
+    assert aggregate(_deterministic(), normalize_results(plan03, all_pass))["status"] == "PASS"
+    raw = [{"check_id": item["check_id"], "status": "PASS", "reason": "ok", "findings": [],
+            "adversarial_review": {"candidate_conflicts": [], "resolution": "none"}}
            for item in plan02["required_checks"]]
     raw[-1]["status"] = "NOT_APPLICABLE"
     normalized = normalize_results(plan02, raw)

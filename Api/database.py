@@ -3256,6 +3256,44 @@ def ensure_m5_runtime_schema(connection) -> None:
             PRIMARY KEY (case_version_id, indicator_id)
         )
     """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_runtime_rule_versions (
+            id BIGSERIAL PRIMARY KEY,
+            artifact_id TEXT NOT NULL,
+            artifact_version TEXT NOT NULL,
+            schema_version INTEGER NOT NULL,
+            status TEXT NOT NULL CHECK (status IN ('draft','published','retired')),
+            owner TEXT NOT NULL,
+            manifest_json JSONB NOT NULL,
+            manifest_checksum TEXT NOT NULL UNIQUE,
+            rules_json JSONB NOT NULL,
+            rules_checksum TEXT NOT NULL UNIQUE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (artifact_id,artifact_version)
+        )
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_runtime_rule_case_bindings (
+            runtime_rule_version_id BIGINT NOT NULL REFERENCES m5_runtime_rule_versions(id) ON DELETE RESTRICT,
+            case_version_id BIGINT NOT NULL REFERENCES m5_case_versions(id) ON DELETE RESTRICT,
+            binding_json JSONB NOT NULL,
+            binding_checksum TEXT NOT NULL,
+            PRIMARY KEY (runtime_rule_version_id,case_version_id)
+        )
+    """)
+    connection.execute("""
+        CREATE OR REPLACE FUNCTION prevent_m5_runtime_rule_change()
+        RETURNS trigger AS $$ BEGIN
+            RAISE EXCEPTION 'Versioned M5 runtime rules are immutable';
+        END; $$ LANGUAGE plpgsql
+    """)
+    for table in ("m5_runtime_rule_versions", "m5_runtime_rule_case_bindings"):
+        trigger = "immutable_" + table
+        connection.execute(f"DROP TRIGGER IF EXISTS {trigger} ON {table}")
+        connection.execute(
+            f"CREATE TRIGGER {trigger} BEFORE UPDATE OR DELETE ON {table} "
+            "FOR EACH ROW EXECUTE FUNCTION prevent_m5_runtime_rule_change()"
+        )
     for table, key in (("m5_case_characters", "character_id"), ("m5_case_materials", "material_id"), ("m5_case_scenario_steps", "step_id")):
         connection.execute(f"""
             CREATE TABLE IF NOT EXISTS {table} (
@@ -3303,9 +3341,11 @@ def ensure_m5_runtime_schema(connection) -> None:
         CREATE TABLE IF NOT EXISTS m5_catalog_case_versions (
             catalog_db_id BIGINT NOT NULL REFERENCES m5_catalogs(id) ON DELETE RESTRICT,
             case_version_id BIGINT NOT NULL REFERENCES m5_case_versions(id) ON DELETE RESTRICT,
+            runtime_rule_version_id BIGINT REFERENCES m5_runtime_rule_versions(id) ON DELETE RESTRICT,
             PRIMARY KEY (catalog_db_id,case_version_id)
         )
     """)
+    connection.execute("ALTER TABLE m5_catalog_case_versions ADD COLUMN IF NOT EXISTS runtime_rule_version_id BIGINT REFERENCES m5_runtime_rule_versions(id) ON DELETE RESTRICT")
     connection.execute("""
         CREATE OR REPLACE FUNCTION prevent_published_m5_catalog_change()
         RETURNS trigger AS $$ BEGIN
@@ -3596,7 +3636,7 @@ def ensure_m5_runtime_schema(connection) -> None:
             IF referenced THEN
                 RAISE EXCEPTION 'Referenced M5 CaseVersion content is immutable';
             END IF;
-            RETURN OLD;
+            RETURN NEW;
         END; $$ LANGUAGE plpgsql
     """)
     for table in ("m5_case_versions", "m5_case_targets", "m5_case_characters", "m5_case_materials", "m5_case_scenario_steps"):
@@ -4097,6 +4137,35 @@ def ensure_core_schema() -> None:
         connection.execute("ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS execution_snapshot_json JSONB")
         connection.execute("ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS execution_checksum TEXT")
         connection.execute("ALTER TABLE assessment_preparation_jobs ADD COLUMN IF NOT EXISTS error_code TEXT")
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS product_cycle_preparation_operations (
+                id BIGSERIAL PRIMARY KEY,
+                operation_id TEXT NOT NULL UNIQUE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                request_json JSONB NOT NULL,
+                request_checksum TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'queued'
+                    CHECK (status IN ('queued', 'running', 'completed', 'failed')),
+                attempts INTEGER NOT NULL DEFAULT 0,
+                result_json JSONB,
+                error_code TEXT,
+                error_message TEXT,
+                worker_id TEXT,
+                locked_at TIMESTAMP,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                completed_at TIMESTAMP
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_product_cycle_preparation_active_user
+            ON product_cycle_preparation_operations(user_id)
+            WHERE status IN ('queued', 'running')
+            """
+        )
         ensure_execution_snapshot_guards(connection)
         connection.execute(
             """

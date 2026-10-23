@@ -127,10 +127,17 @@ def _as_row(connection, assessment_situation_id: str, *, lock: bool = False):
         raise SnapshotIntegrityError(SNAPSHOT_DEPENDENCY_UNAVAILABLE, "M5 AS dependency is unavailable.")
     case_ref = snapshot.get("case_ref") or {}
     profile_ref = snapshot.get("profile_ref") or {}
+    functional = ((execution_payload.get("ai_operations") or {}).get("functional_personalization") or {})
+    functional_case_ok = bool(functional) and (
+        functional.get("schema_version") == 2
+        and case_ref.get("checksum") == functional.get("compiled_case_checksum")
+        and ((functional.get("source_snapshot") or {}).get("refs") or {}).get("case", {}).get(
+            "case_version_checksum") == dependencies["content_checksum"]
+    )
     if (
         case_ref.get("id") != dependencies["case_id"]
         or str(case_ref.get("version")) != str(dependencies["case_version"])
-        or case_ref.get("checksum") != dependencies["content_checksum"]
+        or (case_ref.get("checksum") != dependencies["content_checksum"] and not functional_case_ok)
         or profile_ref.get("checksum") != dependencies["profile_checksum"]
         or profile_ref.get("id") != f"assessment_personalized_profiles:{row['personalized_profile_id']}"
     ):

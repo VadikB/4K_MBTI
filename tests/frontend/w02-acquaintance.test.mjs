@@ -5,6 +5,7 @@ import test from 'node:test';
 const onboarding = fs.readFileSync('web/js/screens/onboarding.js', 'utf8');
 const interview = fs.readFileSync('web/js/screens/interview.js', 'utf8');
 const router = fs.readFileSync('web/js/router.js', 'utf8');
+const productPreparation = fs.readFileSync('web/js/product-cycle-preparation.js', 'utf8');
 
 test('W02 uses server briefing, saves each answer and confirms all three before 4K', () => {
   assert.match(onboarding, /readiness\.briefing/);
@@ -12,7 +13,8 @@ test('W02 uses server briefing, saves each answer and confirms all three before 
   assert.match(onboarding, /confirm: false/);
   assert.match(onboarding, /confirm: true/);
   assert.match(onboarding, /Что показывает оценка 4К/);
-  assert.match(onboarding, /assessment\/cycles\/prepare/);
+  assert.match(onboarding, /prepareProductCycle/);
+  assert.match(productPreparation, /assessment\/cycles\/prepare/);
 });
 
 test('W02 keeps preparation separate from explicit assessment start', () => {

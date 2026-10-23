@@ -1,0 +1,8 @@
+{
+  "status": "failed",
+  "attempt_status": "failed",
+  "error_code": "ValueError",
+  "trace_json": {},
+  "classification": "TECHNICAL_ERROR",
+  "note": "Real provider M6 processing did not create an assessment request; this is not classified as insufficient participant data."
+}

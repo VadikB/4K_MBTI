@@ -150,3 +150,26 @@ def test_basis_and_quote_must_belong_to_the_claimed_skill():
     for output in (foreign_skill_basis, changed_owner):
         report = generate(results, resolved, gateway=Gateway(output))
         assert report["status"] == "failed"
+
+
+def test_each_claimed_skill_requires_its_own_basis_and_quote_ownership():
+    results, resolved = inputs()
+    other = dict(resolved["projections"][0])
+    other["revision_id"] = "ia-2"
+    other["criterion"] = {**other["criterion"], "skill_id": "K1.2"}
+    other["target"] = {**other["target"], "indicator_id": "K1.2.I1"}
+    other["traces"] = [{"fragments": [{"id": "f-2", "quote": "Другая цитата"}]}]
+    resolved["projections"].append(other)
+    results["results"]["assessed_skill_profile"].append({
+        **results["results"]["assessed_skill_profile"][0],
+        "skill_id": "K1.2",
+    })
+
+    unsupported_skill = valid_output()
+    unsupported_skill["claims"][0]["skill_ids"] = ["K1.1", "K1.2"]
+    unsupported_quote = valid_output()
+    unsupported_quote["claims"][1]["skill_ids"] = ["K1.1", "K1.2"]
+    for output in (unsupported_skill, unsupported_quote):
+        report = generate(results, resolved, gateway=Gateway(output))
+        assert report["status"] == "failed"
+        assert report["failure_reason"] == "DESCRIPTION_GENERATION_FAILED"

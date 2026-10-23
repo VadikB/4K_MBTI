@@ -15,6 +15,7 @@ import { hideAllPanels, syncUrlState } from '../router.js';
 import { openAiWelcome } from './ai-welcome.js';
 import { readApiResponse } from '../api.js';
 import { createOperationId } from '../api.js';
+import { prepareProductCycle } from '../product-cycle-preparation.js';
 
 let onboardingReviewMode = false;
 let acquaintanceModel = null;
@@ -273,12 +274,10 @@ export const initOnboarding = () => {
       await readApiResponse(response, 'Не удалось подтвердить ответы.');
       await loadAcquaintance();
       if (acquaintanceModel.late_readiness?.status === 'ready_to_prepare' && !state.productCycleId) {
-        const prepare = await fetch('/users/assessment/cycles/prepare', {
-          method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ personalized_profile_id: acquaintanceModel.late_readiness.personalized_profile_id,
-            idempotency_key: createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'] }),
+        const prepared = await prepareProductCycle({
+          personalized_profile_id: acquaintanceModel.late_readiness.personalized_profile_id,
+          idempotency_key: createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'],
         });
-        const prepared = await readApiResponse(prepare, 'Не удалось подготовить план оценки.');
         state.assessmentRuntimeKind = 'cycle'; state.productCycleId = prepared.plan.cycle_id;
         acquaintanceModel.prepared_plan = {
           cycle_id: prepared.plan.cycle_id,

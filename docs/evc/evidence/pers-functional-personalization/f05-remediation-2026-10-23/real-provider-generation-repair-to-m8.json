@@ -1,0 +1,3243 @@
+{
+  "cycle_id": "de49588c-3a6b-4274-b646-cacf67801a92",
+  "test_id": "R09_CHANGED",
+  "pipeline": {
+    "status": "ready",
+    "stage": "report_ready",
+    "error_code": null
+  },
+  "runtime_ai_attempts": [
+    {
+      "action_key": "f05-24-r09_changed-turn:CASE.SPEC.09:E01_MANAGER:completion",
+      "action_type": "semantic_decision",
+      "outcome": "accepted",
+      "input_checksum": "43cdc0dc93f7b1142cd9b820b0afc841215056e481080606f6ff5b451355ea15",
+      "intended_json": {
+        "model": "deepseek-flash",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "provider": "deepseek",
+        "thinking": {
+          "type": "disabled"
+        },
+        "parameters": {
+          "max_tokens": 300,
+          "temperature": 0,
+          "timeout_seconds": 60
+        },
+        "prompt_ref": {
+          "id": "m5_semantic_decision",
+          "version": "v2",
+          "checksum": "4773023ad4e7208b20b4a71f99d9d71d7091a8c76b3b37f6f1ee29bc892ff95b"
+        },
+        "response_format": "json_object",
+        "provider_contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        }
+      },
+      "sent_json": {
+        "model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Ты — ограниченный классификатор одного условия сценария M5.\n\nПроверяй только переданное авторское условие относительно фактической реплики,\nсохранённой истории и событий. Не вводи словарь ключевых слов как норму и не\nсчитай любой первый ответ, `ok` или активный этап содержательным действием.\nНе добавляй факты, ветви, цели, оценки, уровни или эффекты. Верни только JSON с\nполями `code` и `basis`; `code` обязан входить в `allowed_codes`. Если условие\nнельзя уверенно подтвердить или опровергнуть по переданным данным, верни\n`UNKNOWN`. Учитывай отрицание, цитирование, адресата и смысл высказывания.\n"
+          },
+          {
+            "role": "user",
+            "content": "{\"condition\": {\"stage\": \"author_event\", \"rules\": [\"Задан вопрос, дана рекомендация или обсуждается предпосылка в продолжающемся диалоге.\"]}, \"allowed_codes\": [\"MATCH\", \"NO_MATCH\", \"UNKNOWN\"], \"message\": \"Изначально я рекомендовал немедленно закрепить Сергея за задачей. После проверки журнала испытаний выяснилось, что новая сборка дала два сбоя из пяти, а Сергей не участвовал в этом контуре. Поэтому меняю рекомендацию: сначала назначаю повторную проверку на десяти запусках с заранее заданным критерием — не более одного сбоя; Сергею передаю только анализ причин, решение о внедрении принимаю после результатов.\", \"factual_context\": {\"state\": {\"status\": \"active\", \"current_stage\": \"E01_MANAGER\", \"applied_effects\": [], \"opened_branches\": [], \"disclosed_materials\": [\"M01\", \"M02\", \"M03\"], \"not_opened_branches\": [], \"dialogue_history\": [{\"turn_id\": \"85f4e192-9347-45d5-92fe-2c3da49b0f05\", \"sequence_no\": 5, \"speaker_type\": \"assessee\", \"speaker_id\": \"assessee\", \"content_text\": \"Изначально я рекомендовал немедленно закрепить Сергея за задачей. После проверки журнала испытаний выяснилось, что новая сборка дала два сбоя из пяти, а Сергей не участвовал в этом контуре. Поэтому меняю рекомендацию: сначала назначаю повторную проверку на десяти запусках с заранее заданным критерием — не более одного сбоя; Сергею передаю только анализ причин, решение о внедрении принимаю после результатов.\"}], \"events\": [{\"event_id\": \"4996abd3-84e6-45f0-ad9f-671f1a778ee7\", \"sequence_no\": 1, \"event_type\": \"scenario_started\", \"material_id\": null}, {\"event_id\": \"21ecd870-3be0-46a7-ad0d-14927b3089ec\", \"sequence_no\": 2, \"event_type\": \"material_disclosed\", \"material_id\": \"M01\"}, {\"event_id\": \"ff3cd495-709b-4dff-8c1f-ad11617aab0e\", \"sequence_no\": 3, \"event_type\": \"material_disclosed\", \"material_id\": \"M02\"}, {\"event_id\": \"9025fe02-f939-42d0-a352-c378dbb1bde6\", \"sequence_no\": 4, \"event_type\": \"material_disclosed\", \"material_id\": \"M03\"}]}, \"data\": {}}}"
+          }
+        ],
+        "provider": "deepseek",
+        "parameters": {
+          "thinking": {
+            "type": "disabled"
+          },
+          "max_tokens": 300,
+          "temperature": 0,
+          "response_format": {
+            "type": "json_object"
+          },
+          "timeout_seconds": 60
+        },
+        "gateway_version": "deepseek-product-gateway/1"
+      },
+      "provider_json": {
+        "model": "deepseek-flash",
+        "usage": {
+          "total_tokens": 981,
+          "prompt_tokens": 856,
+          "completion_tokens": 125,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "prompt_cache_hit_tokens": 256,
+          "prompt_cache_miss_tokens": 600
+        },
+        "revision": "e72d3c7f663d3e1383b00b3884cb4501",
+        "request_id": "ed154180-a493-4fa0-a6d7-ede2601715ea",
+        "finish_reason": "stop",
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 1676.03
+          }
+        ]
+      },
+      "response_json": {
+        "content": "{\"code\": \"MATCH\", \"basis\": \"Реплика содержит развёрнутую рекомендацию с обоснованием и изменением прежней рекомендации в продолжающемся диалоге (turn 5): описана предпосылка (сбои сборки, неучастие Сергея), дана новая рекомендация (повторная проверка на 10 запусках с критерием, передача Сергею анализа причин, решение после результатов). Это соответствует условию «дана рекомендация / обсуждается предпосылка».\"}",
+        "checksum": "155cdb17e96da4f111a61e25680bd7a43cfd4ef5f536fab2b1004235ff04081f"
+      },
+      "validation_json": {
+        "code": "VALIDATED",
+        "identity_status": "sent_matches_snapshot"
+      }
+    }
+  ],
+  "report": {
+    "id": "b6b421cd-770a-4936-b062-ed4b6666c2cc",
+    "revision_no": 1,
+    "audience": "assessee",
+    "status": "ready",
+    "cycle_id": "de49588c-3a6b-4274-b646-cacf67801a92",
+    "owner_user_id": 99,
+    "results_revision_id": "788a22b4-f06a-4937-914e-598d56d25d97",
+    "created_at": "2026-10-23 10:23:05.886151+00:00",
+    "c67": {
+      "goal": {
+        "kind": "skills",
+        "selected_skills": [
+          "K1",
+          "K2",
+          "K3",
+          "K4"
+        ]
+      },
+      "time": {
+        "deadline": "2026-10-26T10:22:17.598744+00:00",
+        "intervals": [
+          {
+            "type": "collecting",
+            "reason": "session_started",
+            "ended_at": "2026-10-23T10:22:17.598744+00:00",
+            "started_at": "2026-10-23T10:22:17.598744+00:00",
+            "session_db_id": 1
+          }
+        ],
+        "started_at": "2026-10-23T10:22:17.598744+00:00",
+        "budget_seconds": 3600,
+        "consumed_seconds": 0,
+        "parameter_sources": {
+          "time_budget": {
+            "kind": "method_default",
+            "version": "1.0.0",
+            "checksum": "9e4f5a3c0b6838407bbb16174f7f37b10f1022242b3d1088c51df31f014bd0ef",
+            "artifact_id": "m7_cycle_plan"
+          },
+          "calendar_window": {
+            "kind": "method_default",
+            "version": "1.0.0",
+            "checksum": "9e4f5a3c0b6838407bbb16174f7f37b10f1022242b3d1088c51df31f014bd0ef",
+            "artifact_id": "m7_cycle_plan"
+          },
+          "resolution_checksum": "bff9d4d6679cfd40d70d08cb26cf9d3765be159f9ec0df3fa7fbbb2487b7eb06"
+        },
+        "calendar_window_seconds": 259200
+      },
+      "owner": "PM-06",
+      "skills": [
+        {
+          "score": {
+            "value": 1.0,
+            "numerator": 1,
+            "denominator": 1
+          },
+          "outcome": "partial_score",
+          "skill_id": "K1.1",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Ориентация и проектирование коммуникации",
+          "competency_id": "K1",
+          "competency_name": "Коммуникация",
+          "skill_description": "Сформировать достаточное представление о коммуникативной ситуации и на его основе выбрать способ коммуникативного действия.",
+          "skill_result_exists": true
+        },
+        {
+          "outcome": "no_result",
+          "skill_id": "K1.2",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Передача смысла",
+          "competency_id": "K1",
+          "competency_name": "Коммуникация",
+          "skill_description": "Сформировать, закодировать и передать сообщение таким образом, чтобы конкретный адресат в заданном контексте мог восстановить существенный для коммуникативной задачи смысл с приемлемым риском искажения.",
+          "skill_result_exists": false
+        },
+        {
+          "outcome": "no_result",
+          "skill_id": "K1.3",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Слушание, реконструкция и верификация смысла другого",
+          "competency_id": "K1",
+          "competency_name": "Коммуникация",
+          "skill_description": "Восстанавливать существенный смысл сообщения другого и проверять корректность собственного понимания.",
+          "skill_result_exists": false
+        },
+        {
+          "score": {
+            "value": 1.0,
+            "numerator": 1,
+            "denominator": 1
+          },
+          "outcome": "partial_score",
+          "skill_id": "K1.4",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Согласование смыслов и позиций",
+          "competency_id": "K1",
+          "competency_name": "Коммуникация",
+          "skill_description": "Формировать общее смысловое основание взаимодействия, делать явными существенные расхождения и переводить их в состояние, позволяющее продолжать взаимодействие.",
+          "skill_result_exists": true
+        },
+        {
+          "outcome": "no_result",
+          "skill_id": "K2.1",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Организация совместной работы",
+          "competency_id": "K2",
+          "competency_name": "Командная работа",
+          "skill_description": "Задать устройство совместной деятельности, необходимое для достижения общего результата.",
+          "skill_result_exists": false
+        },
+        {
+          "outcome": "no_result",
+          "skill_id": "K2.2",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Координация совместных действий",
+          "competency_id": "K2",
+          "competency_name": "Командная работа",
+          "skill_description": "Обеспечивать согласованность взаимозависимых действий участников в ходе совместной работы.",
+          "skill_result_exists": false
+        },
+        {
+          "outcome": "no_result",
+          "skill_id": "K2.3",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Поддержание продуктивного командного взаимодействия",
+          "competency_id": "K2",
+          "competency_name": "Командная работа",
+          "skill_description": "Поддерживать способность участников вносить необходимый вклад и продолжать совместную работу при различиях возможностей, затруднениях и конфликтах.",
+          "skill_result_exists": false
+        },
+        {
+          "outcome": "no_result",
+          "skill_id": "K3.1",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Исследование пространства возможностей",
+          "competency_id": "K3",
+          "competency_name": "Креативность",
+          "skill_description": "Сохранять и расширять пространство возможных интерпретаций и направлений поиска, не фиксируя решение преждевременно и изменяя рамку рассмотрения задачи, когда исходная рамка ограничивает поиск.",
+          "skill_result_exists": false
+        },
+        {
+          "outcome": "no_result",
+          "skill_id": "K3.2",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Создание новых идей и решений",
+          "competency_id": "K3",
+          "competency_name": "Креативность",
+          "skill_description": "Создавать и преобразовывать содержательно различные варианты решения через развитие нетипичных направлений, варьирование, создание содержательно различных способов достижения результата, новые сочетания и переносы между контекстами.",
+          "skill_result_exists": false
+        },
+        {
+          "outcome": "no_result",
+          "skill_id": "K3.3",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Развитие и доведение нового решения",
+          "competency_id": "K3",
+          "competency_name": "Креативность",
+          "skill_description": "Преобразовывать перспективную идею в конкретное проверяемое решение, получать данные о его работе, изменять его на основании этих данных и интегрировать развитые элементы в целостную применимую форму.",
+          "skill_result_exists": false
+        },
+        {
+          "outcome": "no_result",
+          "skill_id": "K4.1",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Анализ и оценка информации",
+          "competency_id": "K4",
+          "competency_name": "Критическое мышление",
+          "skill_description": "Выделять существенную для рассматриваемого вопроса информацию, различать статус утверждений, оценивать достоверность и актуальность сведений, сопоставлять их между собой и выявлять существенные информационные пробелы.",
+          "skill_result_exists": false
+        },
+        {
+          "outcome": "no_result",
+          "skill_id": "K4.2",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Постановка и анализ проблемы",
+          "competency_id": "K4",
+          "competency_name": "Критическое мышление",
+          "skill_description": "Выявлять и формулировать предмет проблемы, определять её предметные и понятийные границы и существенные условия, выявлять существенные факторы, проверять причинные связи и анализировать систему зависимостей и динамику проблемы.",
+          "skill_result_exists": false
+        },
+        {
+          "score": {
+            "value": 1.0,
+            "numerator": 1,
+            "denominator": 1
+          },
+          "outcome": "partial_score",
+          "skill_id": "K4.3",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Рассуждение, аргументация и проверка выводов",
+          "competency_id": "K4",
+          "competency_name": "Критическое мышление",
+          "skill_description": "Выявлять существенные предпосылки и допущения, проверять связность, внутреннюю непротиворечивость и понятийную согласованность рассуждения и формировать итоговый вывод на релевантных и достаточных основаниях.",
+          "skill_result_exists": true
+        },
+        {
+          "score": {
+            "value": 1.0,
+            "numerator": 1,
+            "denominator": 1
+          },
+          "outcome": "partial_score",
+          "skill_id": "K4.4",
+          "comparison": {
+            "status": "NO_TARGET_REQUIREMENT"
+          },
+          "skill_name": "Принятие решений",
+          "competency_id": "K4",
+          "competency_name": "Критическое мышление",
+          "skill_description": "Формировать рамку выбора, сравнивать альтернативы по существенным критериям и ограничениям, оценивать значимые риски и последствия альтернатив и делать обоснованный выбор.",
+          "skill_result_exists": true
+        }
+      ],
+      "audience": "assessee",
+      "consumer": "PM-07",
+      "contract": "C-67",
+      "coverage": {
+        "full_m2": {
+          "scope": "full_m2",
+          "opportunities": {
+            "ratio": 0.08196721311475409,
+            "numerator": 5,
+            "denominator": 61,
+            "missing_ids": [
+              "K1.I02",
+              "K1.I03",
+              "K1.I04",
+              "K1.I05",
+              "K1.I06",
+              "K1.I07",
+              "K1.I08",
+              "K1.I09",
+              "K1.I10",
+              "K1.I11",
+              "K1.I12",
+              "K1.I13",
+              "K1.I14",
+              "K1.I15",
+              "K2.I01",
+              "K2.I02",
+              "K2.I03",
+              "K2.I04",
+              "K2.I05",
+              "K2.I06",
+              "K2.I07",
+              "K2.I08",
+              "K2.I09",
+              "K2.I10",
+              "K2.I11",
+              "K2.I12",
+              "K2.I13",
+              "K2.I14",
+              "K3.I01",
+              "K3.I02",
+              "K3.I03",
+              "K3.I04",
+              "K3.I05",
+              "K3.I06",
+              "K3.I07",
+              "K3.I08",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K3.I12",
+              "K4.I01",
+              "K4.I02",
+              "K4.I03",
+              "K4.I04",
+              "K4.I05",
+              "K4.I06",
+              "K4.I07",
+              "K4.I08",
+              "K4.I09",
+              "K4.I10",
+              "K4.I11",
+              "K4.I13",
+              "K4.I14",
+              "K4.I15",
+              "K4.I17",
+              "K4.I18"
+            ],
+            "included_ids": [
+              "K1.I01",
+              "K1.I16",
+              "K1.I17",
+              "K4.I12",
+              "K4.I16"
+            ],
+            "missing_reasons": {
+              "K1.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I17": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I18": "NO_JUSTIFIED_FINAL_IA"
+            },
+            "composition_version": "e556568988db7258b240eab253a4173f035f1d944b4ca30fc70a3d30e021614d"
+          },
+          "complete_components": {
+            "ratio": 0.02857142857142857,
+            "numerator": 1,
+            "denominator": 35,
+            "missing_ids": [
+              "K1.C01",
+              "K1.C02",
+              "K1.C03",
+              "K1.C04",
+              "K1.C05",
+              "K1.C06",
+              "K1.C07",
+              "K1.C08",
+              "K2.C01",
+              "K2.C02",
+              "K2.C03",
+              "K2.C04",
+              "K2.C05",
+              "K2.C06",
+              "K2.C07",
+              "K2.C08",
+              "K2.C09",
+              "K3.C01",
+              "K3.C02",
+              "K3.C03",
+              "K3.C05",
+              "K3.C06",
+              "K3.C07",
+              "K3.C08",
+              "K4.C01",
+              "K4.C02",
+              "K4.C03",
+              "K4.C04",
+              "K4.C05",
+              "K4.C06",
+              "K4.C07",
+              "K4.C08",
+              "K4.C09",
+              "K4.C10"
+            ],
+            "included_ids": [
+              "K1.C09"
+            ],
+            "missing_reasons": {
+              "K1.C01": "NOT_AVAILABLE",
+              "K1.C02": "NOT_AVAILABLE",
+              "K1.C03": "NOT_AVAILABLE",
+              "K1.C04": "NOT_AVAILABLE",
+              "K1.C05": "NOT_AVAILABLE",
+              "K1.C06": "NOT_AVAILABLE",
+              "K1.C07": "NOT_AVAILABLE",
+              "K1.C08": "NOT_AVAILABLE",
+              "K2.C01": "NOT_AVAILABLE",
+              "K2.C02": "NOT_AVAILABLE",
+              "K2.C03": "NOT_AVAILABLE",
+              "K2.C04": "NOT_AVAILABLE",
+              "K2.C05": "NOT_AVAILABLE",
+              "K2.C06": "NOT_AVAILABLE",
+              "K2.C07": "NOT_AVAILABLE",
+              "K2.C08": "NOT_AVAILABLE",
+              "K2.C09": "NOT_AVAILABLE",
+              "K3.C01": "NOT_AVAILABLE",
+              "K3.C02": "NOT_AVAILABLE",
+              "K3.C03": "NOT_AVAILABLE",
+              "K3.C05": "NOT_AVAILABLE",
+              "K3.C06": "NOT_AVAILABLE",
+              "K3.C07": "NOT_AVAILABLE",
+              "K3.C08": "NOT_AVAILABLE",
+              "K4.C01": "NOT_AVAILABLE",
+              "K4.C02": "NOT_AVAILABLE",
+              "K4.C03": "NOT_AVAILABLE",
+              "K4.C04": "NOT_AVAILABLE",
+              "K4.C05": "NOT_AVAILABLE",
+              "K4.C06": "NOT_AVAILABLE",
+              "K4.C07": "NOT_AVAILABLE",
+              "K4.C08": "NOT_AVAILABLE",
+              "K4.C09": "NOT_AVAILABLE",
+              "K4.C10": "NOT_AVAILABLE"
+            },
+            "composition_version": "e556568988db7258b240eab253a4173f035f1d944b4ca30fc70a3d30e021614d"
+          },
+          "components_with_score": {
+            "ratio": 0.11428571428571428,
+            "numerator": 4,
+            "denominator": 35,
+            "missing_ids": [
+              "K1.C02",
+              "K1.C03",
+              "K1.C04",
+              "K1.C05",
+              "K1.C06",
+              "K1.C07",
+              "K1.C08",
+              "K2.C01",
+              "K2.C02",
+              "K2.C03",
+              "K2.C04",
+              "K2.C05",
+              "K2.C06",
+              "K2.C07",
+              "K2.C08",
+              "K2.C09",
+              "K3.C01",
+              "K3.C02",
+              "K3.C03",
+              "K3.C05",
+              "K3.C06",
+              "K3.C07",
+              "K3.C08",
+              "K4.C01",
+              "K4.C02",
+              "K4.C03",
+              "K4.C04",
+              "K4.C05",
+              "K4.C06",
+              "K4.C08",
+              "K4.C09"
+            ],
+            "included_ids": [
+              "K1.C01",
+              "K1.C09",
+              "K4.C07",
+              "K4.C10"
+            ],
+            "missing_reasons": {
+              "K1.C02": "NOT_AVAILABLE",
+              "K1.C03": "NOT_AVAILABLE",
+              "K1.C04": "NOT_AVAILABLE",
+              "K1.C05": "NOT_AVAILABLE",
+              "K1.C06": "NOT_AVAILABLE",
+              "K1.C07": "NOT_AVAILABLE",
+              "K1.C08": "NOT_AVAILABLE",
+              "K2.C01": "NOT_AVAILABLE",
+              "K2.C02": "NOT_AVAILABLE",
+              "K2.C03": "NOT_AVAILABLE",
+              "K2.C04": "NOT_AVAILABLE",
+              "K2.C05": "NOT_AVAILABLE",
+              "K2.C06": "NOT_AVAILABLE",
+              "K2.C07": "NOT_AVAILABLE",
+              "K2.C08": "NOT_AVAILABLE",
+              "K2.C09": "NOT_AVAILABLE",
+              "K3.C01": "NOT_AVAILABLE",
+              "K3.C02": "NOT_AVAILABLE",
+              "K3.C03": "NOT_AVAILABLE",
+              "K3.C05": "NOT_AVAILABLE",
+              "K3.C06": "NOT_AVAILABLE",
+              "K3.C07": "NOT_AVAILABLE",
+              "K3.C08": "NOT_AVAILABLE",
+              "K4.C01": "NOT_AVAILABLE",
+              "K4.C02": "NOT_AVAILABLE",
+              "K4.C03": "NOT_AVAILABLE",
+              "K4.C04": "NOT_AVAILABLE",
+              "K4.C05": "NOT_AVAILABLE",
+              "K4.C06": "NOT_AVAILABLE",
+              "K4.C08": "NOT_AVAILABLE",
+              "K4.C09": "NOT_AVAILABLE"
+            },
+            "composition_version": "e556568988db7258b240eab253a4173f035f1d944b4ca30fc70a3d30e021614d"
+          },
+          "indicator_assessments": {
+            "ratio": 0.08196721311475409,
+            "numerator": 5,
+            "denominator": 61,
+            "missing_ids": [
+              "K1.I02",
+              "K1.I03",
+              "K1.I04",
+              "K1.I05",
+              "K1.I06",
+              "K1.I07",
+              "K1.I08",
+              "K1.I09",
+              "K1.I10",
+              "K1.I11",
+              "K1.I12",
+              "K1.I13",
+              "K1.I14",
+              "K1.I15",
+              "K2.I01",
+              "K2.I02",
+              "K2.I03",
+              "K2.I04",
+              "K2.I05",
+              "K2.I06",
+              "K2.I07",
+              "K2.I08",
+              "K2.I09",
+              "K2.I10",
+              "K2.I11",
+              "K2.I12",
+              "K2.I13",
+              "K2.I14",
+              "K3.I01",
+              "K3.I02",
+              "K3.I03",
+              "K3.I04",
+              "K3.I05",
+              "K3.I06",
+              "K3.I07",
+              "K3.I08",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K3.I12",
+              "K4.I01",
+              "K4.I02",
+              "K4.I03",
+              "K4.I04",
+              "K4.I05",
+              "K4.I06",
+              "K4.I07",
+              "K4.I08",
+              "K4.I09",
+              "K4.I10",
+              "K4.I11",
+              "K4.I13",
+              "K4.I14",
+              "K4.I15",
+              "K4.I17",
+              "K4.I18"
+            ],
+            "included_ids": [
+              "K1.I01",
+              "K1.I16",
+              "K1.I17",
+              "K4.I12",
+              "K4.I16"
+            ],
+            "missing_reasons": {
+              "K1.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I17": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I18": "NO_JUSTIFIED_FINAL_IA"
+            },
+            "composition_version": "e556568988db7258b240eab253a4173f035f1d944b4ca30fc70a3d30e021614d"
+          },
+          "admissible_contributions": {
+            "ratio": 0.08196721311475409,
+            "numerator": 5,
+            "denominator": 61,
+            "missing_ids": [
+              "K1.I02",
+              "K1.I03",
+              "K1.I04",
+              "K1.I05",
+              "K1.I06",
+              "K1.I07",
+              "K1.I08",
+              "K1.I09",
+              "K1.I10",
+              "K1.I11",
+              "K1.I12",
+              "K1.I13",
+              "K1.I14",
+              "K1.I15",
+              "K2.I01",
+              "K2.I02",
+              "K2.I03",
+              "K2.I04",
+              "K2.I05",
+              "K2.I06",
+              "K2.I07",
+              "K2.I08",
+              "K2.I09",
+              "K2.I10",
+              "K2.I11",
+              "K2.I12",
+              "K2.I13",
+              "K2.I14",
+              "K3.I01",
+              "K3.I02",
+              "K3.I03",
+              "K3.I04",
+              "K3.I05",
+              "K3.I06",
+              "K3.I07",
+              "K3.I08",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K3.I12",
+              "K4.I01",
+              "K4.I02",
+              "K4.I03",
+              "K4.I04",
+              "K4.I05",
+              "K4.I06",
+              "K4.I07",
+              "K4.I08",
+              "K4.I09",
+              "K4.I10",
+              "K4.I11",
+              "K4.I13",
+              "K4.I14",
+              "K4.I15",
+              "K4.I17",
+              "K4.I18"
+            ],
+            "included_ids": [
+              "K1.I01",
+              "K1.I16",
+              "K1.I17",
+              "K4.I12",
+              "K4.I16"
+            ],
+            "missing_reasons": {
+              "K1.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I17": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I18": "NO_JUSTIFIED_FINAL_IA"
+            },
+            "composition_version": "e556568988db7258b240eab253a4173f035f1d944b4ca30fc70a3d30e021614d"
+          }
+        },
+        "cycle_plan": {
+          "scope": "cycle_plan",
+          "opportunities": {
+            "ratio": 0.08196721311475409,
+            "numerator": 5,
+            "denominator": 61,
+            "missing_ids": [
+              "K1.I02",
+              "K1.I03",
+              "K1.I04",
+              "K1.I05",
+              "K1.I06",
+              "K1.I07",
+              "K1.I08",
+              "K1.I09",
+              "K1.I10",
+              "K1.I11",
+              "K1.I12",
+              "K1.I13",
+              "K1.I14",
+              "K1.I15",
+              "K2.I01",
+              "K2.I02",
+              "K2.I03",
+              "K2.I04",
+              "K2.I05",
+              "K2.I06",
+              "K2.I07",
+              "K2.I08",
+              "K2.I09",
+              "K2.I10",
+              "K2.I11",
+              "K2.I12",
+              "K2.I13",
+              "K2.I14",
+              "K3.I01",
+              "K3.I02",
+              "K3.I03",
+              "K3.I04",
+              "K3.I05",
+              "K3.I06",
+              "K3.I07",
+              "K3.I08",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K3.I12",
+              "K4.I01",
+              "K4.I02",
+              "K4.I03",
+              "K4.I04",
+              "K4.I05",
+              "K4.I06",
+              "K4.I07",
+              "K4.I08",
+              "K4.I09",
+              "K4.I10",
+              "K4.I11",
+              "K4.I13",
+              "K4.I14",
+              "K4.I15",
+              "K4.I17",
+              "K4.I18"
+            ],
+            "included_ids": [
+              "K1.I01",
+              "K1.I16",
+              "K1.I17",
+              "K4.I12",
+              "K4.I16"
+            ],
+            "missing_reasons": {
+              "K1.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I17": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I18": "NO_JUSTIFIED_FINAL_IA"
+            },
+            "composition_version": "e556568988db7258b240eab253a4173f035f1d944b4ca30fc70a3d30e021614d"
+          },
+          "complete_components": {
+            "ratio": 0.02857142857142857,
+            "numerator": 1,
+            "denominator": 35,
+            "missing_ids": [
+              "K1.C01",
+              "K1.C02",
+              "K1.C03",
+              "K1.C04",
+              "K1.C05",
+              "K1.C06",
+              "K1.C07",
+              "K1.C08",
+              "K2.C01",
+              "K2.C02",
+              "K2.C03",
+              "K2.C04",
+              "K2.C05",
+              "K2.C06",
+              "K2.C07",
+              "K2.C08",
+              "K2.C09",
+              "K3.C01",
+              "K3.C02",
+              "K3.C03",
+              "K3.C05",
+              "K3.C06",
+              "K3.C07",
+              "K3.C08",
+              "K4.C01",
+              "K4.C02",
+              "K4.C03",
+              "K4.C04",
+              "K4.C05",
+              "K4.C06",
+              "K4.C07",
+              "K4.C08",
+              "K4.C09",
+              "K4.C10"
+            ],
+            "included_ids": [
+              "K1.C09"
+            ],
+            "missing_reasons": {
+              "K1.C01": "NOT_AVAILABLE",
+              "K1.C02": "NOT_AVAILABLE",
+              "K1.C03": "NOT_AVAILABLE",
+              "K1.C04": "NOT_AVAILABLE",
+              "K1.C05": "NOT_AVAILABLE",
+              "K1.C06": "NOT_AVAILABLE",
+              "K1.C07": "NOT_AVAILABLE",
+              "K1.C08": "NOT_AVAILABLE",
+              "K2.C01": "NOT_AVAILABLE",
+              "K2.C02": "NOT_AVAILABLE",
+              "K2.C03": "NOT_AVAILABLE",
+              "K2.C04": "NOT_AVAILABLE",
+              "K2.C05": "NOT_AVAILABLE",
+              "K2.C06": "NOT_AVAILABLE",
+              "K2.C07": "NOT_AVAILABLE",
+              "K2.C08": "NOT_AVAILABLE",
+              "K2.C09": "NOT_AVAILABLE",
+              "K3.C01": "NOT_AVAILABLE",
+              "K3.C02": "NOT_AVAILABLE",
+              "K3.C03": "NOT_AVAILABLE",
+              "K3.C05": "NOT_AVAILABLE",
+              "K3.C06": "NOT_AVAILABLE",
+              "K3.C07": "NOT_AVAILABLE",
+              "K3.C08": "NOT_AVAILABLE",
+              "K4.C01": "NOT_AVAILABLE",
+              "K4.C02": "NOT_AVAILABLE",
+              "K4.C03": "NOT_AVAILABLE",
+              "K4.C04": "NOT_AVAILABLE",
+              "K4.C05": "NOT_AVAILABLE",
+              "K4.C06": "NOT_AVAILABLE",
+              "K4.C07": "NOT_AVAILABLE",
+              "K4.C08": "NOT_AVAILABLE",
+              "K4.C09": "NOT_AVAILABLE",
+              "K4.C10": "NOT_AVAILABLE"
+            },
+            "composition_version": "e556568988db7258b240eab253a4173f035f1d944b4ca30fc70a3d30e021614d"
+          },
+          "components_with_score": {
+            "ratio": 0.11428571428571428,
+            "numerator": 4,
+            "denominator": 35,
+            "missing_ids": [
+              "K1.C02",
+              "K1.C03",
+              "K1.C04",
+              "K1.C05",
+              "K1.C06",
+              "K1.C07",
+              "K1.C08",
+              "K2.C01",
+              "K2.C02",
+              "K2.C03",
+              "K2.C04",
+              "K2.C05",
+              "K2.C06",
+              "K2.C07",
+              "K2.C08",
+              "K2.C09",
+              "K3.C01",
+              "K3.C02",
+              "K3.C03",
+              "K3.C05",
+              "K3.C06",
+              "K3.C07",
+              "K3.C08",
+              "K4.C01",
+              "K4.C02",
+              "K4.C03",
+              "K4.C04",
+              "K4.C05",
+              "K4.C06",
+              "K4.C08",
+              "K4.C09"
+            ],
+            "included_ids": [
+              "K1.C01",
+              "K1.C09",
+              "K4.C07",
+              "K4.C10"
+            ],
+            "missing_reasons": {
+              "K1.C02": "NOT_AVAILABLE",
+              "K1.C03": "NOT_AVAILABLE",
+              "K1.C04": "NOT_AVAILABLE",
+              "K1.C05": "NOT_AVAILABLE",
+              "K1.C06": "NOT_AVAILABLE",
+              "K1.C07": "NOT_AVAILABLE",
+              "K1.C08": "NOT_AVAILABLE",
+              "K2.C01": "NOT_AVAILABLE",
+              "K2.C02": "NOT_AVAILABLE",
+              "K2.C03": "NOT_AVAILABLE",
+              "K2.C04": "NOT_AVAILABLE",
+              "K2.C05": "NOT_AVAILABLE",
+              "K2.C06": "NOT_AVAILABLE",
+              "K2.C07": "NOT_AVAILABLE",
+              "K2.C08": "NOT_AVAILABLE",
+              "K2.C09": "NOT_AVAILABLE",
+              "K3.C01": "NOT_AVAILABLE",
+              "K3.C02": "NOT_AVAILABLE",
+              "K3.C03": "NOT_AVAILABLE",
+              "K3.C05": "NOT_AVAILABLE",
+              "K3.C06": "NOT_AVAILABLE",
+              "K3.C07": "NOT_AVAILABLE",
+              "K3.C08": "NOT_AVAILABLE",
+              "K4.C01": "NOT_AVAILABLE",
+              "K4.C02": "NOT_AVAILABLE",
+              "K4.C03": "NOT_AVAILABLE",
+              "K4.C04": "NOT_AVAILABLE",
+              "K4.C05": "NOT_AVAILABLE",
+              "K4.C06": "NOT_AVAILABLE",
+              "K4.C08": "NOT_AVAILABLE",
+              "K4.C09": "NOT_AVAILABLE"
+            },
+            "composition_version": "e556568988db7258b240eab253a4173f035f1d944b4ca30fc70a3d30e021614d"
+          },
+          "indicator_assessments": {
+            "ratio": 0.08196721311475409,
+            "numerator": 5,
+            "denominator": 61,
+            "missing_ids": [
+              "K1.I02",
+              "K1.I03",
+              "K1.I04",
+              "K1.I05",
+              "K1.I06",
+              "K1.I07",
+              "K1.I08",
+              "K1.I09",
+              "K1.I10",
+              "K1.I11",
+              "K1.I12",
+              "K1.I13",
+              "K1.I14",
+              "K1.I15",
+              "K2.I01",
+              "K2.I02",
+              "K2.I03",
+              "K2.I04",
+              "K2.I05",
+              "K2.I06",
+              "K2.I07",
+              "K2.I08",
+              "K2.I09",
+              "K2.I10",
+              "K2.I11",
+              "K2.I12",
+              "K2.I13",
+              "K2.I14",
+              "K3.I01",
+              "K3.I02",
+              "K3.I03",
+              "K3.I04",
+              "K3.I05",
+              "K3.I06",
+              "K3.I07",
+              "K3.I08",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K3.I12",
+              "K4.I01",
+              "K4.I02",
+              "K4.I03",
+              "K4.I04",
+              "K4.I05",
+              "K4.I06",
+              "K4.I07",
+              "K4.I08",
+              "K4.I09",
+              "K4.I10",
+              "K4.I11",
+              "K4.I13",
+              "K4.I14",
+              "K4.I15",
+              "K4.I17",
+              "K4.I18"
+            ],
+            "included_ids": [
+              "K1.I01",
+              "K1.I16",
+              "K1.I17",
+              "K4.I12",
+              "K4.I16"
+            ],
+            "missing_reasons": {
+              "K1.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I17": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I18": "NO_JUSTIFIED_FINAL_IA"
+            },
+            "composition_version": "e556568988db7258b240eab253a4173f035f1d944b4ca30fc70a3d30e021614d"
+          },
+          "admissible_contributions": {
+            "ratio": 0.08196721311475409,
+            "numerator": 5,
+            "denominator": 61,
+            "missing_ids": [
+              "K1.I02",
+              "K1.I03",
+              "K1.I04",
+              "K1.I05",
+              "K1.I06",
+              "K1.I07",
+              "K1.I08",
+              "K1.I09",
+              "K1.I10",
+              "K1.I11",
+              "K1.I12",
+              "K1.I13",
+              "K1.I14",
+              "K1.I15",
+              "K2.I01",
+              "K2.I02",
+              "K2.I03",
+              "K2.I04",
+              "K2.I05",
+              "K2.I06",
+              "K2.I07",
+              "K2.I08",
+              "K2.I09",
+              "K2.I10",
+              "K2.I11",
+              "K2.I12",
+              "K2.I13",
+              "K2.I14",
+              "K3.I01",
+              "K3.I02",
+              "K3.I03",
+              "K3.I04",
+              "K3.I05",
+              "K3.I06",
+              "K3.I07",
+              "K3.I08",
+              "K3.I09",
+              "K3.I10",
+              "K3.I11",
+              "K3.I12",
+              "K4.I01",
+              "K4.I02",
+              "K4.I03",
+              "K4.I04",
+              "K4.I05",
+              "K4.I06",
+              "K4.I07",
+              "K4.I08",
+              "K4.I09",
+              "K4.I10",
+              "K4.I11",
+              "K4.I13",
+              "K4.I14",
+              "K4.I15",
+              "K4.I17",
+              "K4.I18"
+            ],
+            "included_ids": [
+              "K1.I01",
+              "K1.I16",
+              "K1.I17",
+              "K4.I12",
+              "K4.I16"
+            ],
+            "missing_reasons": {
+              "K1.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K1.I15": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K2.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K3.I12": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I01": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I02": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I03": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I04": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I05": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I06": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I07": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I08": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I09": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I10": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I11": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I13": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I14": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I15": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I17": "NO_JUSTIFIED_FINAL_IA",
+              "K4.I18": "NO_JUSTIFIED_FINAL_IA"
+            },
+            "composition_version": "e556568988db7258b240eab253a4173f035f1d944b4ca30fc70a3d30e021614d"
+          }
+        }
+      },
+      "cycle_id": "de49588c-3a6b-4274-b646-cacf67801a92",
+      "role_ref": {
+        "id": "2",
+        "code": "specialist_expert",
+        "version": "1",
+        "checksum": "c5c2234f9fdd237e14024ea6939e3bc5561fd27bf4fac416a52196dec79cbe8f"
+      },
+      "sessions": [
+        {
+          "status": "completed",
+          "ordinal": 1,
+          "ended_at": "2026-10-23T10:22:17.598744+00:00",
+          "session_id": "822ed3d6-6294-426c-9c62-dcb7dff7cc13",
+          "started_at": "2026-10-23T10:22:17.598744+00:00",
+          "close_reason": "f05_real_provider_path"
+        }
+      ],
+      "report_id": "b6b421cd-770a-4936-b062-ed4b6666c2cc",
+      "collection": {
+        "reason": "f05_real_provider_path",
+        "status": "collection_closed",
+        "closed_at": "2026-10-23T10:22:17.598744+00:00"
+      },
+      "confidence": {
+        "kind": "qualitative",
+        "ia_bases_preserved": true
+      },
+      "disclosure": "personal",
+      "processing": {
+        "stage": "substantive_admission",
+        "status": "completed",
+        "message": "Обработка завершена.",
+        "error_code": null,
+        "allowed_actions": [],
+        "contract_version": "m10-processing-recovery/1.0.0",
+        "affected_indicator_ids": []
+      },
+      "provenance": {
+        "c46_ref": {
+          "id": "bdaa3818-5bc7-43da-b5c7-43ed98039c9b",
+          "checksum": "22fdd2797c08788f2211fb22dd2ea65d6b25507de985287538e2fde76ae27c71",
+          "revision_no": 2
+        },
+        "c56_ref": {
+          "revision_no": 1,
+          "calculation_id": "6a5086b4-cc8e-43ba-a029-43081befeea4"
+        },
+        "sources": {
+          "M2": "competencies_4k/1.1",
+          "M6": "1.8",
+          "M7": "1.3",
+          "source_set": "2026-10-01"
+        },
+        "algorithm": {
+          "version": "1.0.0",
+          "rules_hash": "405ba4113a4cd2f0bd3e2757a6abd3afc55b96e9cacfbceb103a37ad401e7e62"
+        },
+        "comparison_evidence": {
+          "contract_version": "m8-comparison-evidence/1.0.0",
+          "semantic_composition": {
+            "full_target_set_checksum": "7ad15072f4ad4c9532060a1342720ec76a709b2cfdf1995198092b0f815694ee"
+          },
+          "assessment_conditions": {
+            "time_budget_seconds": 3600,
+            "return_policy_checksum": "1121db8c84b6997ee427264a589b5db088588e134734d8ae0dbc0d2220a36f14",
+            "calendar_window_seconds": 259200
+          }
+        },
+        "composition_checksum": "e556568988db7258b240eab253a4173f035f1d944b4ca30fc70a3d30e021614d"
+      },
+      "results_id": "6b8c2717-9515-48e2-9c23-8833e699667d",
+      "descriptive": {
+        "input": {
+          "bases": [
+            {
+              "ref": "c755ef8c-dc03-4177-89e2-50dd18173ad7",
+              "outcome": "L1",
+              "skill_id": "K1.1",
+              "fragments": [],
+              "rationale": "Оцениваемый различает позицию руководителя (немедленно брать Сергея) и собственную профессиональную позицию (сначала проверить), а также отделяет участие Сергея в контуре от результатов сборки. Однако цели и интересы участников (Андрея, Сергея, команды) прямо не формулируются и не уточняются; работа опирается на явно данную информацию. Это соответствует L1: выделяет очевидные/прямо заявленные позиции, но ограниченно различает цели, интересы и позиции.",
+              "limitations": [
+                "Интересы и цели участников не сформулированы явно",
+                "Нет уточняющих вопросов к Андрею",
+                "Интересы и цели участников не сформулированы явно.",
+                "Нет уточняющих вопросов к Андрею."
+              ],
+              "indicator_id": "K1.I01",
+              "confirmed_features": [
+                "Различение позиции руководителя и собственной позиции",
+                "Отделение участия Сергея в контуре от результатов сборки"
+              ]
+            },
+            {
+              "ref": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326",
+              "outcome": "L1",
+              "skill_id": "K1.4",
+              "fragments": [],
+              "rationale": "Оцениваемый делает расхождение с руководителем предметом коммуникации: обозначает свою изменённую позицию, приводит основание (данные журнала) и предлагает способ работы — повторную проверку с критерием и ограничение роли Сергея. Это простой шаг для снятия расхождения по его очевидной формулировке, без прояснения позиции и оснований руководителя и без подтверждённого согласования. Соответствует L1.",
+              "limitations": [
+                "Реакция Андрея и итоговое согласование не представлены",
+                "Расхождение обработано в одностороннем сообщении",
+                "Реакция Андрея и итоговое согласование не представлены."
+              ],
+              "indicator_id": "K1.I16",
+              "confirmed_features": [
+                "Обозначение расхождения",
+                "Приведение основания для изменения позиции",
+                "Предложение способа работы с различием"
+              ]
+            },
+            {
+              "ref": "6b90360e-caf4-457b-be11-2baf72b83f1f",
+              "outcome": "L1",
+              "skill_id": "K1.4",
+              "fragments": [],
+              "rationale": "Оцениваемый фиксирует итоговое состояние: изменённую рекомендацию, условие проверки (десять запусков, критерий не более одного сбоя), ограничение роли Сергея анализом причин и условие принятия решения после результатов. При этом упущены существенные условия: сроки проверки, момент ответа Сергею до 16:00, и итоговая формулировка не проверена с Андреем. Это частичная фиксация с упущением существенных условий — L1.",
+              "limitations": [
+                "Не зафиксированы сроки повторной проверки и ответ Сергею до 16:00",
+                "Итоговая формулировка не проверена с Андреем",
+                "Не зафиксированы сроки проверки и ответ Сергею до 16:00.",
+                "Формулировка не проверена с Андреем."
+              ],
+              "indicator_id": "K1.I17",
+              "confirmed_features": [
+                "Зафиксирована изменённая рекомендация",
+                "Зафиксировано условие проверки и критерий",
+                "Зафиксировано ограничение роли Сергея и условие решения"
+              ]
+            },
+            {
+              "ref": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc",
+              "outcome": "L1",
+              "skill_id": "K4.3",
+              "fragments": [],
+              "rationale": "Оцениваемый явно квалифицирует данные журнала испытаний как основание для пересмотра вывода и показывает зависимость рекомендации от них: два сбоя из пяти и неучастие Сергея в контуре меняют прежнюю рекомендацию. Однако другие существенные допущения (репрезентативность выборки, готовность Сергея ждать) не выявлены. Это выявление очевидного основания с упущением неявных предпосылок — L1.",
+              "limitations": [
+                "Неявные допущения не выявлены",
+                "Зависимость вывода показана только для одного основания",
+                "Неявные допущения не выявлены."
+              ],
+              "indicator_id": "K4.I12",
+              "confirmed_features": [
+                "Явная квалификация данных журнала как основания",
+                "Показана зависимость вывода от этого основания"
+              ]
+            },
+            {
+              "ref": "68c59d6a-4cd6-4e94-a066-644823ae718f",
+              "outcome": "L1",
+              "skill_id": "K4.4",
+              "fragments": [],
+              "rationale": "Оцениваемый сопоставляет две альтернативы — немедленно закрепить Сергея за задачей и сначала провести повторную проверку — и приводит основание для предпочтения второй: данные журнала и неучастие Сергея в контуре. Сравнение выполнено по одному основанию, без явной единой системы критериев и trade-offs (сроки, риск потери кандидата). Это неполное сравнение по нескольким очевидным критериям — L1.",
+              "limitations": [
+                "Сравнение по одному основанию, без единой системы критериев и trade-offs",
+                "Не учтены сроки и риск потери кандидата",
+                "Сравнение по одному основанию, без trade-offs."
+              ],
+              "indicator_id": "K4.I16",
+              "confirmed_features": [
+                "Сопоставлены две альтернативы",
+                "Приведено основание предпочтения"
+              ]
+            }
+          ],
+          "skills": [
+            {
+              "score": {
+                "value": 1.0,
+                "numerator": 1,
+                "denominator": 1
+              },
+              "outcome": "partial_score",
+              "skill_id": "K1.1",
+              "skill_name": "Ориентация и проектирование коммуникации",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K1",
+              "competency_name": "Коммуникация",
+              "skill_description": "Сформировать достаточное представление о коммуникативной ситуации и на его основе выбрать способ коммуникативного действия."
+            },
+            {
+              "score": null,
+              "outcome": "no_result",
+              "skill_id": "K1.2",
+              "skill_name": "Передача смысла",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K1",
+              "competency_name": "Коммуникация",
+              "skill_description": "Сформировать, закодировать и передать сообщение таким образом, чтобы конкретный адресат в заданном контексте мог восстановить существенный для коммуникативной задачи смысл с приемлемым риском искажения."
+            },
+            {
+              "score": null,
+              "outcome": "no_result",
+              "skill_id": "K1.3",
+              "skill_name": "Слушание, реконструкция и верификация смысла другого",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K1",
+              "competency_name": "Коммуникация",
+              "skill_description": "Восстанавливать существенный смысл сообщения другого и проверять корректность собственного понимания."
+            },
+            {
+              "score": {
+                "value": 1.0,
+                "numerator": 1,
+                "denominator": 1
+              },
+              "outcome": "partial_score",
+              "skill_id": "K1.4",
+              "skill_name": "Согласование смыслов и позиций",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K1",
+              "competency_name": "Коммуникация",
+              "skill_description": "Формировать общее смысловое основание взаимодействия, делать явными существенные расхождения и переводить их в состояние, позволяющее продолжать взаимодействие."
+            },
+            {
+              "score": null,
+              "outcome": "no_result",
+              "skill_id": "K2.1",
+              "skill_name": "Организация совместной работы",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K2",
+              "competency_name": "Командная работа",
+              "skill_description": "Задать устройство совместной деятельности, необходимое для достижения общего результата."
+            },
+            {
+              "score": null,
+              "outcome": "no_result",
+              "skill_id": "K2.2",
+              "skill_name": "Координация совместных действий",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K2",
+              "competency_name": "Командная работа",
+              "skill_description": "Обеспечивать согласованность взаимозависимых действий участников в ходе совместной работы."
+            },
+            {
+              "score": null,
+              "outcome": "no_result",
+              "skill_id": "K2.3",
+              "skill_name": "Поддержание продуктивного командного взаимодействия",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K2",
+              "competency_name": "Командная работа",
+              "skill_description": "Поддерживать способность участников вносить необходимый вклад и продолжать совместную работу при различиях возможностей, затруднениях и конфликтах."
+            },
+            {
+              "score": null,
+              "outcome": "no_result",
+              "skill_id": "K3.1",
+              "skill_name": "Исследование пространства возможностей",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K3",
+              "competency_name": "Креативность",
+              "skill_description": "Сохранять и расширять пространство возможных интерпретаций и направлений поиска, не фиксируя решение преждевременно и изменяя рамку рассмотрения задачи, когда исходная рамка ограничивает поиск."
+            },
+            {
+              "score": null,
+              "outcome": "no_result",
+              "skill_id": "K3.2",
+              "skill_name": "Создание новых идей и решений",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K3",
+              "competency_name": "Креативность",
+              "skill_description": "Создавать и преобразовывать содержательно различные варианты решения через развитие нетипичных направлений, варьирование, создание содержательно различных способов достижения результата, новые сочетания и переносы между контекстами."
+            },
+            {
+              "score": null,
+              "outcome": "no_result",
+              "skill_id": "K3.3",
+              "skill_name": "Развитие и доведение нового решения",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K3",
+              "competency_name": "Креативность",
+              "skill_description": "Преобразовывать перспективную идею в конкретное проверяемое решение, получать данные о его работе, изменять его на основании этих данных и интегрировать развитые элементы в целостную применимую форму."
+            },
+            {
+              "score": null,
+              "outcome": "no_result",
+              "skill_id": "K4.1",
+              "skill_name": "Анализ и оценка информации",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K4",
+              "competency_name": "Критическое мышление",
+              "skill_description": "Выделять существенную для рассматриваемого вопроса информацию, различать статус утверждений, оценивать достоверность и актуальность сведений, сопоставлять их между собой и выявлять существенные информационные пробелы."
+            },
+            {
+              "score": null,
+              "outcome": "no_result",
+              "skill_id": "K4.2",
+              "skill_name": "Постановка и анализ проблемы",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K4",
+              "competency_name": "Критическое мышление",
+              "skill_description": "Выявлять и формулировать предмет проблемы, определять её предметные и понятийные границы и существенные условия, выявлять существенные факторы, проверять причинные связи и анализировать систему зависимостей и динамику проблемы."
+            },
+            {
+              "score": {
+                "value": 1.0,
+                "numerator": 1,
+                "denominator": 1
+              },
+              "outcome": "partial_score",
+              "skill_id": "K4.3",
+              "skill_name": "Рассуждение, аргументация и проверка выводов",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K4",
+              "competency_name": "Критическое мышление",
+              "skill_description": "Выявлять существенные предпосылки и допущения, проверять связность, внутреннюю непротиворечивость и понятийную согласованность рассуждения и формировать итоговый вывод на релевантных и достаточных основаниях."
+            },
+            {
+              "score": {
+                "value": 1.0,
+                "numerator": 1,
+                "denominator": 1
+              },
+              "outcome": "partial_score",
+              "skill_id": "K4.4",
+              "skill_name": "Принятие решений",
+              "limitations": null,
+              "completeness": null,
+              "competency_id": "K4",
+              "competency_name": "Критическое мышление",
+              "skill_description": "Формировать рамку выбора, сравнивать альтернативы по существенным критериям и ограничениям, оценивать значимые риски и последствия альтернатив и делать обоснованный выбор."
+            }
+          ],
+          "context": [
+            {
+              "ref": "user_context.regular_tasks",
+              "text": "CTX01: разбираю неоднозначные рабочие задачи"
+            },
+            {
+              "ref": "user_context.decision_situations",
+              "text": "CTX01: принимаю решения при неполных данных"
+            },
+            {
+              "ref": "user_context.constraints_and_interactions",
+              "text": "CTX01: согласую ограничения с командами"
+            },
+            {
+              "ref": "role_profile.card.typical_tasks",
+              "text": "Уточнение профессиональной проблемы, границ анализа и критериев результата.\nСбор, проверка и интерпретация данных из нескольких источников.\nФормирование гипотез и выбор подходящего метода анализа или проектирования.\nРазработка вариантов решения и оценка их ограничений, рисков и последствий.\nПодготовка экспертного заключения, модели, проекта решения, прототипа или рекомендации.\nПроверка качества решений и материалов других участников.\nОбъяснение сложных выводов стейкхолдерам с разным уровнем подготовки.\nНаставничество и передача профессиональных практик без обязательного управления исполнением."
+            },
+            {
+              "ref": "organization_context.activity_description",
+              "text": "Разработка программ"
+            }
+          ],
+          "cycle_id": "de49588c-3a6b-4274-b646-cacf67801a92",
+          "partial_result": {
+            "messages": {
+              "title": "Оценка не завершена полностью",
+              "confirmed": "Показаны только подтверждённые результаты по фактически принятому материалу.",
+              "not_inferred": "Общий уровень компетенции и результаты по непокрытым элементам не выводятся."
+            },
+            "progress": {
+              "formula": "completed AS with final handoff / immutable accepted plan route",
+              "planned": 1,
+              "completed": 1,
+              "presented": 1,
+              "interrupted": 0,
+              "not_presented": 0
+            },
+            "close_reason": "f05_real_provider_path",
+            "is_incomplete": true,
+            "contract_version": "m8-partial-result/1.0.0",
+            "plan_revision_id": "16bdaaf3-af51-413e-81a6-d81ba3b92deb",
+            "limitation_reasons": [
+              {
+                "code": "observation_missing",
+                "message": "Для части целей не возникло достаточной возможности наблюдения или данных."
+              },
+              {
+                "code": "context_limited",
+                "message": "Организационный или индивидуальный контекст неполон либо противоречив."
+              }
+            ]
+          },
+          "contract_version": "m8-descriptive-report/1.1.0",
+          "global_limitations": [
+            "K1.I01: Интересы и цели участников не сформулированы и не уточнены.",
+            "K1.I01: Нет уточняющих вопросов к Андрею.",
+            "K1.I01: Оценка ограничена одним ходом оцениваемого и предъявленными материалами M01–M03.",
+            "K1.I01: Рассмотрена одна interpretation-admitted revision; сопоставление ограничено ею.",
+            "K1.I01: Интересы и цели участников в материалах даны как условия, а не как сформулированные участниками цели; это ограничивает верхнюю границу, но не отменяет L1.",
+            "K1.I01: Оцениваемый не задавал уточняющих вопросов Андрею, что подтверждает отсутствие L2, но не влияет на допустимость L1.",
+            "K1.I16: Реакция Андрея на предложение и итоговое согласование в EB не представлены.",
+            "K1.I16: Расхождение обработано в одностороннем сообщении без прояснения позиции руководителя.",
+            "K1.I16: Оценка ограничена одним ходом оцениваемого; Reliability/GC не оценивались.",
+            "K1.I16: Рассмотрена одна interpretation-admitted revision; вывод о сопоставимости не опирается на множественность случаев.",
+            "K1.I16: Реакция Андрея и итоговое согласование отсутствуют в EB, поэтому верхние уровни не проверяемы.",
+            "K1.I16: Reliability и GC не оценивались; вывод ограничен обоснованностью сохранённого L1.",
+            "K1.I17: Оценка опирается на единственный ход оцениваемого; реакция Андрея и итоговое согласование в материале отсутствуют.",
+            "K1.I17: Не оцениваются Reliability и GC.",
+            "K1.I17: Уровень IA не пересматривается и не назначается заново; проверена только обоснованность сохранённого L1.",
+            "K1.I17: Рассмотрена только одна interpretation-admitted revision; межrevision-вариативность не оценивалась.",
+            "K1.I17: Реакция Андрея на изменённую рекомендацию в материале отсутствует, поэтому итоговое согласование не подтверждено.",
+            "K1.I17: Оценка ограничена K1.I17; другие Indicator не пересматривались.",
+            "K4.I12: Оценка основана на единственном ходе оцениваемого; другие ветви диалога не предъявлены.",
+            "K4.I12: Неявные допущения не выявлены — это ограничение исполнения, а не отсутствие возможности.",
+            "K4.I12: Reliability и GC не оценивались.",
+            "K4.I12: Рассмотрена одна revision; совместная сопоставимость ограничена этим объёмом.",
+            "K4.I12: Неявные предпосылки (репрезентативность выборки, готовность Сергея ждать) в ходе не обозначены — это ограничение уровня, а не основание для пересмотра.",
+            "K4.I16: Применён один критерий сравнения, а не несколько очевидных, как буквально описывает L1; обоснованность L1 частичная.",
+            "K4.I16: Не учтены сроки, риск потери кандидата и перегрузка команды как критерии сравнения.",
+            "K4.I16: Реакция Андрея на изменённую рекомендацию в материале отсутствует; сравнение одностороннее.",
+            "K4.I16: Оценка ограничена единственным ходом оцениваемого; других проявлений сравнения в EB нет.",
+            "K4.I16: Рассмотрена одна interpretation-admitted ревизия; совместное сравнение ограничено ею.",
+            "K4.I16: Уровень L1 пограничен с L0 при строгом прочтении «нескольких очевидных критериев»: фактически применён один критерий плюс ограничение роли.",
+            "K4.I16: Не assessed: Reliability/GC, а также другие индикаторы и ревизии вне данного контекста.",
+            "K4.I16: Непредъявленные ветви (реакция Андрея, итоговое согласование) не домысливаются.",
+            "Skill Level is not derived from numeric Score",
+            "Для части целей не возникло достаточной возможности наблюдения или данных.",
+            "Организационный или индивидуальный контекст неполон либо противоречив."
+          ],
+          "results_revision_id": "788a22b4-f06a-4937-914e-598d56d25d97"
+        },
+        "claims": [],
+        "status": "failed",
+        "summary": [],
+        "mechanism": {
+          "id": "m8_descriptive_report",
+          "version": "1.1.0",
+          "checksum": "c5f68493e6b236282045fa9bbcf0ac3183243cbab2ba9b38d8a63c13e86453d2"
+        },
+        "failure_reason": "DESCRIPTION_GENERATION_FAILED",
+        "input_checksum": "955a3a923a2e4a6b8a71ded0dd39f42b5dbcc1c111ee69ac0fdf02bfdb0ba49f",
+        "contract_version": "m8-descriptive-report/1.1.0"
+      },
+      "limitations": [
+        "K1.I01: Интересы и цели участников не сформулированы и не уточнены.",
+        "K1.I01: Нет уточняющих вопросов к Андрею.",
+        "K1.I01: Оценка ограничена одним ходом оцениваемого и предъявленными материалами M01–M03.",
+        "K1.I01: Рассмотрена одна interpretation-admitted revision; сопоставление ограничено ею.",
+        "K1.I01: Интересы и цели участников в материалах даны как условия, а не как сформулированные участниками цели; это ограничивает верхнюю границу, но не отменяет L1.",
+        "K1.I01: Оцениваемый не задавал уточняющих вопросов Андрею, что подтверждает отсутствие L2, но не влияет на допустимость L1.",
+        "K1.I16: Реакция Андрея на предложение и итоговое согласование в EB не представлены.",
+        "K1.I16: Расхождение обработано в одностороннем сообщении без прояснения позиции руководителя.",
+        "K1.I16: Оценка ограничена одним ходом оцениваемого; Reliability/GC не оценивались.",
+        "K1.I16: Рассмотрена одна interpretation-admitted revision; вывод о сопоставимости не опирается на множественность случаев.",
+        "K1.I16: Реакция Андрея и итоговое согласование отсутствуют в EB, поэтому верхние уровни не проверяемы.",
+        "K1.I16: Reliability и GC не оценивались; вывод ограничен обоснованностью сохранённого L1.",
+        "K1.I17: Оценка опирается на единственный ход оцениваемого; реакция Андрея и итоговое согласование в материале отсутствуют.",
+        "K1.I17: Не оцениваются Reliability и GC.",
+        "K1.I17: Уровень IA не пересматривается и не назначается заново; проверена только обоснованность сохранённого L1.",
+        "K1.I17: Рассмотрена только одна interpretation-admitted revision; межrevision-вариативность не оценивалась.",
+        "K1.I17: Реакция Андрея на изменённую рекомендацию в материале отсутствует, поэтому итоговое согласование не подтверждено.",
+        "K1.I17: Оценка ограничена K1.I17; другие Indicator не пересматривались.",
+        "K4.I12: Оценка основана на единственном ходе оцениваемого; другие ветви диалога не предъявлены.",
+        "K4.I12: Неявные допущения не выявлены — это ограничение исполнения, а не отсутствие возможности.",
+        "K4.I12: Reliability и GC не оценивались.",
+        "K4.I12: Рассмотрена одна revision; совместная сопоставимость ограничена этим объёмом.",
+        "K4.I12: Неявные предпосылки (репрезентативность выборки, готовность Сергея ждать) в ходе не обозначены — это ограничение уровня, а не основание для пересмотра.",
+        "K4.I16: Применён один критерий сравнения, а не несколько очевидных, как буквально описывает L1; обоснованность L1 частичная.",
+        "K4.I16: Не учтены сроки, риск потери кандидата и перегрузка команды как критерии сравнения.",
+        "K4.I16: Реакция Андрея на изменённую рекомендацию в материале отсутствует; сравнение одностороннее.",
+        "K4.I16: Оценка ограничена единственным ходом оцениваемого; других проявлений сравнения в EB нет.",
+        "K4.I16: Рассмотрена одна interpretation-admitted ревизия; совместное сравнение ограничено ею.",
+        "K4.I16: Уровень L1 пограничен с L0 при строгом прочтении «нескольких очевидных критериев»: фактически применён один критерий плюс ограничение роли.",
+        "K4.I16: Не assessed: Reliability/GC, а также другие индикаторы и ревизии вне данного контекста.",
+        "K4.I16: Непредъявленные ветви (реакция Андрея, итоговое согласование) не домысливаются.",
+        "Skill Level is not derived from numeric Score",
+        "Для части целей не возникло достаточной возможности наблюдения или данных.",
+        "Организационный или индивидуальный контекст неполон либо противоречив."
+      ],
+      "profile_ref": {
+        "id": "assessment_personalized_profiles:26",
+        "version": "1",
+        "checksum": "15884c14d838083677c8292b83fdc199b4d944f88a6184730317f3bee089a859"
+      },
+      "reliability": {
+        "status": "not_verified",
+        "protocol_ref": null
+      },
+      "competencies": [
+        {
+          "score": null,
+          "skill_ids": [
+            "K1.1",
+            "K1.2",
+            "K1.3",
+            "K1.4"
+          ],
+          "competency_id": "K1",
+          "competency_name": "Коммуникация"
+        },
+        {
+          "score": null,
+          "skill_ids": [
+            "K2.1",
+            "K2.2",
+            "K2.3"
+          ],
+          "competency_id": "K2",
+          "competency_name": "Командная работа"
+        },
+        {
+          "score": null,
+          "skill_ids": [
+            "K3.1",
+            "K3.2",
+            "K3.3"
+          ],
+          "competency_id": "K3",
+          "competency_name": "Креативность"
+        },
+        {
+          "score": null,
+          "skill_ids": [
+            "K4.1",
+            "K4.2",
+            "K4.3",
+            "K4.4"
+          ],
+          "competency_id": "K4",
+          "competency_name": "Критическое мышление"
+        }
+      ],
+      "partial_result": {
+        "messages": {
+          "title": "Оценка не завершена полностью",
+          "confirmed": "Показаны только подтверждённые результаты по фактически принятому материалу.",
+          "not_inferred": "Общий уровень компетенции и результаты по непокрытым элементам не выводятся."
+        },
+        "progress": {
+          "formula": "completed AS with final handoff / immutable accepted plan route",
+          "planned": 1,
+          "completed": 1,
+          "presented": 1,
+          "interrupted": 0,
+          "not_presented": 0
+        },
+        "close_reason": "f05_real_provider_path",
+        "is_incomplete": true,
+        "contract_version": "m8-partial-result/1.0.0",
+        "plan_revision_id": "16bdaaf3-af51-413e-81a6-d81ba3b92deb",
+        "limitation_reasons": [
+          {
+            "code": "observation_missing",
+            "message": "Для части целей не возникло достаточной возможности наблюдения или данных."
+          },
+          {
+            "code": "context_limited",
+            "message": "Организационный или индивидуальный контекст неполон либо противоречив."
+          }
+        ]
+      },
+      "schema_version": 1,
+      "target_profile": null,
+      "message_version": "1.1",
+      "recommendations": [],
+      "report_mechanism": {
+        "id": "m8_basic_report",
+        "version": "1.4.1",
+        "checksum": "6a941f73e819dca0e5e3bec409b1c378a7cd030f9170a5e22f6bc95fa6077d0e"
+      },
+      "template_version": "m8-basic-report/1.4.1",
+      "admission_summary": [
+        {
+          "joint": {
+            "status": "COMPARABLE",
+            "rationale": "Единственная interpretation-admitted revision (c755ef8c) по K1.I01 проверена по всему EB и Dialogue. Сохранённый L1 соответствует дескриптору: оцениваемый различает собственную позицию и позицию руководителя, отделяет участие Сергея в контуре от результатов сборки, но не формулирует и не уточняет цели и интересы участников, опираясь на явно данную информацию. L2 не достигается из-за отсутствия целенаправленных уточнений критичных элементов. Условия задачи и материалы восстановимы, нерешённых существенных противоречий нет. Совокупность условий не препятствует общему выводу, поэтому статус COMPARABLE при одной рассмотренной ревизии; достаточность L1 проверена отдельно.",
+            "conditions": {
+              "refs": [
+                {
+                  "id": "M01",
+                  "kind": "material",
+                  "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                },
+                {
+                  "id": "M02",
+                  "kind": "material",
+                  "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                },
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                },
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                }
+              ],
+              "feature": "Условия задачи, полномочия, доступная информация и материалы, предъявленные к моменту хода",
+              "analysis": "К моменту ответа оцениваемого предъявлены M01 (условия работы, срок ответа Сергею до 16:00, ограниченная поддержка HR-партнёра, перегрузка команды, невозможность практического задания раньше двух дней), M02 (ограниченные наблюдения по Сергею, исправление после замечания, отсутствие независимой повторной проверки) и M03 (позиция Андрея за немедленный найм, требование рекомендации сегодня). Полномочия: оцениваемый даёт профессиональную рекомендацию, решение о найме принимает Андрей; дополнительные полномочия не выводятся. Доступная информация позволяет выявлять позиции Андрея и собственную, а также интересы (срок, риск потери кандидата, перегрузка команды), но эти интересы в материалах даны как явные условия, а не как сформулированные цели участников. Возможность уточнения у Андрея в ходе присутствует (он задаёт вопрос «как поступим и на чём будем основывать»), но оцениваемый уточняющих вопросов не задаёт. Условия для оценки K1.I01 восстановимы и не препятствуют выводу об уровне.",
+              "consequence": "Условия не создают оснований для NOT_COMPARABLE или INSUFFICIENT_MATERIAL; они поддерживают сохранённый L1 и не позволяют поднять его до L2 без уточнений."
+            },
+            "limitations": [
+              "Рассмотрена одна interpretation-admitted revision; сопоставление ограничено ею.",
+              "Интересы и цели участников в материалах даны как условия, а не как сформулированные участниками цели; это ограничивает верхнюю границу, но не отменяет L1.",
+              "Оцениваемый не задавал уточняющих вопросов Андрею, что подтверждает отсутствие L2, но не влияет на допустимость L1."
+            ],
+            "contradictions": {
+              "refs": [
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                },
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                }
+              ],
+              "feature": "Проверка противоречий в сохранённом основании IA",
+              "analysis": "В ходе оцениваемого нет несовместимых проявлений по объекту K1.I01: он последовательно меняет рекомендацию на основании данных журнала и не приписывает участникам неподтверждённых целей. Расхождение с позицией Андрея (немедленный найм против проверки) является предметом работы, а не противоречием внутри основания IA. В bundle contradictions пуст, и по исходному материалу нерешённого существенного противоречия, влияющего на уровень K1.I01, не обнаружено. Проверенный участок: turn 85f4e192 и материалы M01–M03.",
+              "consequence": "Противоречий, препятствующих допуску сохранённого L1, нет."
+            },
+            "input_checksum": "429ebb8d41eff8901baddeff2e690878d2348155684ea3426efa7c866512ef05",
+            "normative_meaning": {
+              "refs": [
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                },
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                },
+                {
+                  "id": "E1",
+                  "kind": "evidence",
+                  "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                }
+              ],
+              "feature": "Нормативное содержание M2 для K1.I01 и обоснованность сохранённого L1",
+              "analysis": "Критерий K1.I01 требует выявлять и различать цели, интересы и позиции значимых участников. L1 — выделяет очевидные/прямо заявленные цели и позиции, но ограниченно различает цели, интересы и позиции и преимущественно опирается на явно данную информацию. В единственном ходе оцениваемого (turn 85f4e192) он противопоставляет свою прежнюю рекомендацию немедленного закрепления и изменённую рекомендацию после данных журнала, отделяет участие Сергея в контуре от результатов сборки. Это различение собственной позиции и позиции руководителя (M03: Андрей за немедленный найм) и отделение факта неучастия Сергея от результатов сборки. Однако цели и интересы участников (Андрея — срок/риск потери кандидата, команды — перегрузка, Сергея — ожидание ответа) прямо не формулируются и не уточняются; работа опирается на явно данную информацию. Это укладывается в дескриптор L1 и не достигает L2, который требует самостоятельного выявления существенных целей/интересов и целенаправленного уточнения критичных элементов при недостатке информации. Признаков L0 (смешение позиций, неподтверждённые приписывания) в ходе нет. Сохранённый уровень L1 обоснован именно наблюдаемым содержанием хода.",
+              "consequence": "Сохранённый L1 допустим как обоснованный уровень для K1.I01; пересмотр IA не требуется."
+            },
+            "considered_revision_ids": [
+              "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+            ]
+          },
+          "source": {
+            "id": "M6",
+            "m2": "exact frozen criteria in M6-A input",
+            "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+            "version": "1.8",
+            "sections": [
+              "M6.2",
+              "M6.5",
+              "M6.6.4",
+              "M6.6.8",
+              "M6.7.1-6.7.4",
+              "M6.8.1-6.8.3"
+            ]
+          },
+          "cycle_id": "de49588c-3a6b-4274-b646-cacf67801a92",
+          "individual": [
+            {
+              "status": "ADMITTED",
+              "rationale": "Сохранённая итоговая IA revision для K1.I01 = L1 обоснована по M2 v1.1: в EB есть различение прямо заявленной позиции Андрея и собственной профессиональной позиции, но нет формулирования и уточнения целей/интересов участников, что соответствует L1, а не L2. Возможность присутствует, самостоятельность не подрывается, уточнений нет, существенных противоречий не выявлено.",
+              "limitations": [
+                "Интересы и цели участников не сформулированы и не уточнены.",
+                "Нет уточняющих вопросов к Андрею.",
+                "Оценка ограничена одним ходом оцениваемого и предъявленными материалами M01–M03."
+              ],
+              "opportunity": {
+                "refs": [
+                  {
+                    "id": "e21d5218-6eca-412e-b568-a7f4980af81e",
+                    "kind": "as_snapshot",
+                    "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                  },
+                  {
+                    "id": "M01",
+                    "kind": "material",
+                    "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                  }
+                ],
+                "feature": "Наличие задачи, полномочий, реальной возможности и доступной информации для выявления и различения позиций участников",
+                "analysis": "Задача задана в initial_presentation: дать Андрею профессиональную рекомендацию и обсудить дальнейшее действие; решение о найме принимает Андрей, оцениваемый даёт рекомендацию. В доступных материалах (M01, M02, M03) предъявлены позиция Андрея за немедленный найм с аргументами, ограниченные наблюдения о Сергее и условия работы. Этого достаточно, чтобы выделять и различать позиции; уточнение интересов было возможно в рамках ответа Андрею. Полномочия не выходят за пределы профессиональной рекомендации.",
+                "consequence": "Возможность для K1.I01 присутствует; отсутствие уточнений относится к качеству действия, а не к недоступности условий."
+              },
+              "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7",
+              "independence": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                  }
+                ],
+                "feature": "Самостоятельность формулирования позиций и оснований в ходе оцениваемого",
+                "analysis": "В ходе 85f4e192 оцениваемый сам формулирует изменённую рекомендацию, приводит основание (данные журнала испытаний) и отделяет участие Сергея в контуре от результатов сборки. Эти формулировки не являются повторением сообщённого кем-то способа: в M03 Андрей, наоборот, продвигает немедленный найм. Позиция Андрея в M03 предъявлена как материал, а не как подсказка решения.",
+                "consequence": "Самостоятельность для сохранённого L1 не подрывается."
+              },
+              "clarification": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                  }
+                ],
+                "feature": "Наличие уточнений и их влияние на основание уровня",
+                "analysis": "clarification_history пуст; в ходе нет уточняющих вопросов к Андрею. Уточнений смысла или сообщения готового способа/критерия, которые могли бы повлиять на основание L1, не зафиксировано.",
+                "consequence": "Уточнения не отменяют и не повышают сохранённый уровень; основание L1 остаётся."
+              },
+              "contradictions": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                  }
+                ],
+                "feature": "Проверка несовместимых проявлений в EB относительно позиций участников",
+                "analysis": "Проверен участок: ход 85f4e192 и материалы M01–M03. Оцениваемый последовательно описывает прежнюю рекомендацию и её изменение; позиция Андрея в M03 (за немедленный найм) не приписывается оцениваемому как собственная. Несовместимых проявлений одного объекта/признака, влияющих на K1.I01, не обнаружено.",
+                "consequence": "Нерешённого существенного противоречия нет; статус не меняется."
+              },
+              "input_checksum": "12e18b3164c5144a155846e4c65d4e1548ec1c0122b5b3399c6f535b2a07f021",
+              "normative_basis": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                  },
+                  {
+                    "id": "M02",
+                    "kind": "material",
+                    "revision_id": "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+                  }
+                ],
+                "feature": "Определяющий признак L1 для K1.I01: выделение очевидных/прямо заявленных позиций при ограниченном различении целей, интересов и позиций и опоре на явно данную информацию",
+                "analysis": "Сохранённый уровень L1 опирается на то, что оцениваемый в единственном ходе различает позицию Андрея (немедленно брать Сергея, M03) и собственную профессиональную позицию (сначала проверить), а также отделяет участие Сергея в контуре от результатов сборки. Это прямо заявленные элементы, доступные из M03 и M02. При этом цели и интересы участников (Андрей, Сергей, команда) не формулируются и не уточняются, уточняющих вопросов нет. Такое сочетание соответствует именно L1: очевидные позиции выделены, но различение целей/интересов ограничено и работа опирается на явно данную информацию. Признаки L2 (целенаправленное уточнение критичных элементов, отделение установленного от предположений) в EB не наблюдаются; L0 не подходит, поскольку позиции не смешиваются и не строятся на неподтверждённых приписываниях.",
+                "consequence": "Сохранённый L1 обоснован по M2; пересмотр уровня IA не требуется."
+              }
+            }
+          ],
+          "reason_code": "ADMITTED",
+          "sufficiency": {
+            "met": true,
+            "requirement": {
+              "m2_version": "v1.1",
+              "indicator_id": "K1.I01",
+              "distinct_as_required": 1,
+              "required_final_ia_count": 1
+            },
+            "distinct_as_count": 1
+          },
+          "indicator_id": "K1.I01",
+          "mechanism_ref": {
+            "ref": "m6_substantive_admission/2.0.0",
+            "checksum": "e408149e3d9106234a9fedc0497e2a2459a2bf6f9de8a81f544afb2aaa335948"
+          },
+          "schema_version": 2,
+          "processing_status": "completed",
+          "numeric_admissible": true,
+          "excluded_revision_ids": [],
+          "included_revision_ids": [
+            "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+          ],
+          "considered_revision_ids": [
+            "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+          ],
+          "interpretation_admissible": true,
+          "interpretable_revision_ids": [
+            "c755ef8c-dc03-4177-89e2-50dd18173ad7"
+          ]
+        },
+        {
+          "joint": {
+            "status": "COMPARABLE",
+            "rationale": "Единственная interpretation-admitted revision (e4cbd4d5) по K1.I16 проверена по всему EB и Dialogue. Сохранённый L1 обоснован: оцениваемый реагирует на явно выраженное расхождение с Андреем, обозначает изменение позиции, приводит основание и предлагает простой способ снятия различия, но не проясняет позицию и значимые основания руководителя, не определяет область согласования и не подтверждает рабочий результат. L2 не достигается, L0 исключён. Условия задачи, полномочия и материалы восстановимы; нерешённых существенных противоречий нет. Поскольку рассмотрена одна revision, joint-сопоставимость по данному Indicator устанавливается как COMPARABLE без введения порогов или весов; достаточность проверена отдельно по плану.",
+            "conditions": {
+              "refs": [
+                {
+                  "id": "M01",
+                  "kind": "material",
+                  "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                },
+                {
+                  "id": "M02",
+                  "kind": "material",
+                  "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                },
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                },
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                },
+                {
+                  "id": "93f76df9-061c-4478-8dab-ff9b6d52434a",
+                  "kind": "event",
+                  "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                }
+              ],
+              "feature": "Условия задачи, полномочия, доступная информация и материалы, предъявленные к моменту хода",
+              "analysis": "К моменту хода оцениваемого предъявлены M01 (sequence 2), M02 (sequence 3), M03 (sequence 4); ход — sequence 5. M01 задаёт: неподтверждённые условия вакансии требуют согласования, необходимость согласования HR-специалист определяет сам; HR-партнёр подтверждает режим и вознаграждение, даёт час консультаций в неделю, но не проверяет каждое сообщение; время Ивана на доп. проверку не высвобождено, порядок не согласован; Сергей ждёт ответа до 16:00, готовность ждать неизвестна; доп. задание возможно не раньше чем через два рабочих дня, срок решения не определён. M02 фиксирует ограниченные наблюдения: сильное устное упражнение, спорный черновик, самостоятельное исправление после замечания, отсутствие независимой повторной проверки. M03 задаёт позицию и мандат Андрея (решение о найме за ним, от оцениваемого — рекомендация). Полномочия оцениваемого — профессиональная рекомендация, не кадровое решение. Возможность действовать в отношении расхождения присутствует: Андрей прямо просит рекомендацию и основания. Информация о реакции Андрея и о согласовании недоступна, поскольку взаимодействие завершено после единственного хода (события stage_transitioned и interaction_terminated, sequence 6–9). Условия восстановимы и не препятствуют выводу об обоснованности L1.",
+              "consequence": "Условия достаточны для проверки обоснованности L1; отсутствие реакции Андрея ограничивает вывод снизу, но не делает материал недостаточным."
+            },
+            "limitations": [
+              "Рассмотрена одна interpretation-admitted revision; вывод о сопоставимости не опирается на множественность случаев.",
+              "Реакция Андрея и итоговое согласование отсутствуют в EB, поэтому верхние уровни не проверяемы.",
+              "Reliability и GC не оценивались; вывод ограничен обоснованностью сохранённого L1."
+            ],
+            "contradictions": {
+              "refs": [
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                },
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                }
+              ],
+              "feature": "Проверка на несовместимые проявления в EB и Dialogue относительно K1.I16",
+              "analysis": "Проверен участок: M03 (позиция Андрея за немедленный найм, требование рекомендации сегодня) и единственный ход оцениваемого 85f4e192 (изменённая рекомендация с проверкой). Между ними нет несовместимости: оцениваемый не приписывает Андрею иных оснований, чем заявленные, и не утверждает достигнутого согласования. Внутри хода оцениваемого нет противоречия: прежняя рекомендация явно обозначена как изменённая, основание изменения приведено. В evidence_analysis для K1.I16 contradictions пуст, что согласуется с исходным материалом. Нерешённого существенного противоречия, влияющего на IA, не обнаружено.",
+              "consequence": "Противоречия не влияют на обоснованность сохранённого L1."
+            },
+            "input_checksum": "1b54c634dec729cdf31e683d13c209f8bdc2c6741d2b6de3430628a7fc518c46",
+            "normative_meaning": {
+              "refs": [
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                },
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                },
+                {
+                  "id": "M01",
+                  "kind": "material",
+                  "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                }
+              ],
+              "feature": "Нормативное содержание M2 для K1.I16 и границы обоснованности сохранённого L1",
+              "analysis": "Сохранённая revision относит K1.I16 к L1: «реагирует на явно выраженное расхождение и предпринимает простой шаг для его снятия или согласования, но преимущественно работает с очевидной формулировкой разногласия». Проверка по исходному материалу: в M03 Андрей прямо заявляет позицию за немедленный найм, приводит основания (знает подбор, хорошо говорит с соискателями, исправился после комментария, условия подтверждает HR-партнёр), указывает ограничение (перегрузка команды, риск потерять кандидата) и просит рекомендацию сегодня с указанием, на чём её основывать. В единственном ходе оцениваемого (turn 85f4e192) он обозначает изменение своей рекомендации, приводит основание (два сбоя из пяти, Сергей не участвовал в контуре), предлагает повторную проверку на десяти запусках с критерием не более одного сбоя, ограничивает роль Сергея анализом причин и откладывает решение о внедрении до результатов. Это реальный простой шаг в отношении явно выраженного расхождения: различие обозначено, предложен способ его снятия. При этом позиция и значимые основания Андрея (перегрузка команды, риск потери кандидата, срок ответа Сергею до 16:00) не проясняются, область согласования не определяется, рабочий результат (согласование либо ясно зафиксированное сохраняющееся расхождение) не подтверждён — реакции Андрея в EB нет. Это соответствует именно L1 и не достигает L2, который требует прояснения позиций сторон и значимых оснований различия, определения области согласования и перевода взаимодействия к рабочему результату. L0 исключён: расхождение не игнорируется. Таким образом сохранённый уровень L1 обоснован по определяющему признаку M2.",
+              "consequence": "Сохранённый L1 подтверждается как обоснованный; пересмотр IA не требуется. Ограничение: согласование с Андреем не подтверждено, поэтому верхние уровни не обоснованы."
+            },
+            "considered_revision_ids": [
+              "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+            ]
+          },
+          "source": {
+            "id": "M6",
+            "m2": "exact frozen criteria in M6-A input",
+            "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+            "version": "1.8",
+            "sections": [
+              "M6.2",
+              "M6.5",
+              "M6.6.4",
+              "M6.6.8",
+              "M6.7.1-6.7.4",
+              "M6.8.1-6.8.3"
+            ]
+          },
+          "cycle_id": "de49588c-3a6b-4274-b646-cacf67801a92",
+          "individual": [
+            {
+              "status": "ADMITTED",
+              "rationale": "Сохранённая итоговая IA revision e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326 для K1.I16 допускается на уровне L1: в EB есть реальное действие оцениваемого — обозначение расхождения с руководителем, приведение основания изменения позиции и предложение простого способа работы с различием; при этом отсутствуют прояснение позиции и значимых оснований Андрея и подтверждённое согласование, что удерживает результат в границах L1 и не позволяет обосновать L2. Возможность, самостоятельность и отсутствие уточнений подтверждены; нерешённых существенных противоречий нет. Новый уровень IA не назначается.",
+              "limitations": [
+                "Реакция Андрея на предложение и итоговое согласование в EB не представлены.",
+                "Расхождение обработано в одностороннем сообщении без прояснения позиции руководителя.",
+                "Оценка ограничена одним ходом оцениваемого; Reliability/GC не оценивались."
+              ],
+              "opportunity": {
+                "refs": [
+                  {
+                    "id": "e21d5218-6eca-412e-b568-a7f4980af81e",
+                    "kind": "as_snapshot",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  },
+                  {
+                    "id": "M01",
+                    "kind": "material",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  },
+                  {
+                    "id": "M02",
+                    "kind": "material",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  },
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  }
+                ],
+                "feature": "Наличие задачи, полномочий, реальной возможности и доступной информации для работы с расхождением",
+                "analysis": "Задача задана в initial_presentation: ответить Андрею и обсудить рекомендацию и дальнейшее действие на сегодня; решение о найме принимает Андрей, оцениваемый даёт профессиональную рекомендацию — то есть полномочия на выражение и обоснование своей позиции есть, а на одностороннее решение о найме нет. Реальная возможность: M03 (available_sequence 4) предъявлен до хода оцениваемого (sequence_no 5), содержит прямо выраженную противоположную позицию и прямой запрос «как поступим и на чём её будем основывать?». Доступная информация: M01 (условия, сроки, ограниченная поддержка HR-партнёра), M02 (наблюдения по Сергею, исправление после замечания, отсутствие независимой повторной проверки), M03 (позиция и аргументы Андрея). Этого достаточно для обозначения различия и простого шага; для L2-прояснения позиции Андрея информация тоже доступна (его аргументы в M03), но не использована — это ограничение исполнения, а не отсутствия возможности.",
+                "consequence": "Возможность для работы с расхождением присутствует; отсутствие прояснения позиции Андрея относится к исполнению, а не к недостатку условий."
+              },
+              "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326",
+              "independence": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  }
+                ],
+                "feature": "Самостоятельность действия оцениваемого в ходе",
+                "analysis": "Ход 85f4e192-9347-45d5-92fe-2c3da49b0f05 принадлежит assessee (speaker_type assessee), является единственным ходом оцениваемого и не содержит указаний на подсказку, готовый способ или критерий, сообщённый извне. clarification_history пуст; в EB нет реплик, где способ работы (повторная проверка с критерием, ограничение роли Сергея) был бы предварительно сообщён оцениваемому. Предложение процедуры и её критерий сформулированы в самом ходе.",
+                "consequence": "Действие самостоятельно; оснований для пересмотра IA по независимости нет."
+              },
+              "clarification": {
+                "refs": [
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  },
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  }
+                ],
+                "feature": "Наличие и роль уточнений в адрес оцениваемого",
+                "analysis": "clarification_history пуст. В предъявленных материалах M01–M03 нет сообщений, уточняющих смысл задачи или сообщающих готовый способ/критерий оцениваемому; M03 — это позиция и запрос руководителя, а не подсказка. Последующего объяснения, которое могло бы задним числом обосновать более раннее действие, в EB нет.",
+                "consequence": "Уточнений, влияющих на самостоятельность или на уровень, не выявлено."
+              },
+              "contradictions": {
+                "refs": [
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  },
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  }
+                ],
+                "feature": "Проверка на несовместимые проявления в сохранённом основании",
+                "analysis": "Проверенный участок: M03 (позиция Андрея за немедленный найм и запрос рекомендации сегодня) и ход 85f4e192-9347-45d5-92fe-2c3da49b0f05 (изменённая рекомендация с основанием и процедурой). Противоречий нет: изменение собственной рекомендации оцениваемого после проверки журнала — это самостоятельная коррекция, а не несовместимое проявление; расхождение с Андреем является предметом работы, а не противоречием в основании IA. Реакция Андрея и итоговое согласование не представлены, но это ограничение материала, а не нерешённое существенное противоречие.",
+                "consequence": "Противоречий, препятствующих допуску сохранённого L1, нет."
+              },
+              "input_checksum": "214cb26b88e3daf923c6a024dc2854dd83523281660ffd682142caf1920b816c",
+              "normative_basis": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  },
+                  {
+                    "id": "E2",
+                    "kind": "evidence",
+                    "revision_id": "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+                  }
+                ],
+                "feature": "Определяющий признак L1 для K1.I16: реакция на явно выраженное расхождение и простой шаг к его снятию при работе с очевидной формулировкой разногласия",
+                "analysis": "Сохранённый уровень L1 опирается на реально наблюдаемое действие: в единственном ходе оцениваемого (sequence_no 5) он обозначает различие своей изменённой рекомендации с позицией Андрея (M03: «я за то, чтобы брать Сергея», «мне сегодня нужна твоя рекомендация»), приводит основание изменения (данные журнала: два сбоя из пяти, Сергей не участвовал в контуре) и предлагает способ работы с различием — повторную проверку на десяти запусках с критерием не более одного сбоя и ограничение роли Сергея анализом причин. Это соответствует именно L1: расхождение взято в его очевидной формулировке (нанимать сейчас vs проверить), сделан простой шаг (сообщение своей позиции и предложение процедуры), но нет прояснения позиции и значимых оснований Андрея (его аргументы об обучаемости, перегрузке команды, риске потери кандидата не разобраны, вопросов к нему нет) и нет подтверждённого согласования. L2 требует самостоятельного прояснения позиций сторон и значимых оснований различия и перевода к рабочему результату — согласованию либо ясно определённому сохраняющемуся расхождению; ни прояснения, ни зафиксированного результата в EB нет. L0 исключён, поскольку расхождение не игнорируется. Таким образом сохранённый L1 обоснован границами реально совершённых действий, а не декларативным флагом.",
+                "consequence": "Уровень L1 подтверждается как обоснованный; повышение до L2 не следует из EB, поскольку прояснение позиции руководителя и рабочий результат отсутствуют."
+              }
+            }
+          ],
+          "reason_code": "ADMITTED",
+          "sufficiency": {
+            "met": true,
+            "requirement": {
+              "m2_version": "v1.1",
+              "indicator_id": "K1.I16",
+              "distinct_as_required": 1,
+              "required_final_ia_count": 1
+            },
+            "distinct_as_count": 1
+          },
+          "indicator_id": "K1.I16",
+          "mechanism_ref": {
+            "ref": "m6_substantive_admission/2.0.0",
+            "checksum": "e408149e3d9106234a9fedc0497e2a2459a2bf6f9de8a81f544afb2aaa335948"
+          },
+          "schema_version": 2,
+          "processing_status": "completed",
+          "numeric_admissible": true,
+          "excluded_revision_ids": [],
+          "included_revision_ids": [
+            "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+          ],
+          "considered_revision_ids": [
+            "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+          ],
+          "interpretation_admissible": true,
+          "interpretable_revision_ids": [
+            "e4cbd4d5-1be7-4ab0-a2da-04bc4ce66326"
+          ]
+        },
+        {
+          "joint": {
+            "status": "COMPARABLE",
+            "rationale": "Единственная interpretation-admitted revision (6b90360e) по K1.I17 рассмотрена один раз. Нормативное содержание M2 v1.1 для L1 подтверждается исходным материалом: результат зафиксирован частично, существенные условия (срок ответа Сергею до 16:00, сроки проверки, сохраняющееся расхождение с Андреем) упущены. Условия задачи, полномочия и материалы предъявлены до хода и восстановимы. Противоречий нет. Поскольку рассмотрена одна revision, joint-сопоставимость по нескольким revision не требуется; статус COMPARABLE отражает, что нормативное содержание и условия для данного Indicator восстановимы и согласованы.",
+            "conditions": {
+              "refs": [
+                {
+                  "id": "M01",
+                  "kind": "material",
+                  "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                },
+                {
+                  "id": "M02",
+                  "kind": "material",
+                  "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                },
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                },
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                }
+              ],
+              "feature": "Условия задачи, полномочия, доступная информация и материалы, предъявленные к моменту хода",
+              "analysis": "К моменту хода 85f4e192 (sequence_no 5) предъявлены: M01 (sequence_no 2) — работа будущего коллегии, ограниченная поддержка, сроки (ответ Сергею до 16:00, дополнительное задание не раньше двух рабочих дней, срок окончательного решения не определён); M02 (sequence_no 3) — ограниченные наблюдения о Сергее, исходное задание и исправление после замечания; M03 (sequence_no 4) — позиция Андрея за немедленный найм и требование рекомендации сегодня. Полномочия оцениваемого: собственная профессиональная рекомендация, решение о найме принимает Андрей (initial_presentation). Доступная информация включает все три материала; непредъявленных ветвей нет. Задача — дать рекомендацию и обсудить дальнейшее действие на сегодня. Оцениваемый имел реальную возможность зафиксировать срок ответа Сергею до 16:00 и обозначить сохраняющееся расхождение с Андреем, поскольку эти условия были предъявлены до его хода. Уточнений от Андрея после хода нет — взаимодействие завершено (sequence_no 6–9).",
+              "consequence": "Условия для оценки K1.I17 восстановимы и предъявлены до хода; упущение срока ответа Сергею и незафиксированное расхождение с Андреем являются реальными упущениями, а не отсутствием возможности. Это подтверждает L1, а не L2/L3."
+            },
+            "limitations": [
+              "Рассмотрена только одна interpretation-admitted revision; межrevision-вариативность не оценивалась.",
+              "Реакция Андрея на изменённую рекомендацию в материале отсутствует, поэтому итоговое согласование не подтверждено.",
+              "Оценка ограничена K1.I17; другие Indicator не пересматривались."
+            ],
+            "contradictions": {
+              "refs": [
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                },
+                {
+                  "id": "M01",
+                  "kind": "material",
+                  "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                },
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                }
+              ],
+              "feature": "Проверка противоречий в сохранённой revision и материале",
+              "analysis": "В сохранённой revision contradictions пуст. Проверен участок: ход 85f4e192 против M01 и M03. Оцениваемый меняет рекомендацию с немедленного закрепления на повторную проверку — это самостоятельная коррекция на основании данных журнала, а не нерешённое противоречие. Позиция Андрея (M03) за немедленный найм и позиция оцениваемого за проверку образуют расхождение, но оно не является противоречием внутри IA: оцениваемый обозначает свою изменённую позицию и основание. Незафиксированность реакции Андрея — это упущение фиксации (учтено в K1.I17), а не противоречие. Несовместимых проявлений одного объекта/признака в материале не обнаружено.",
+              "consequence": "Существенных нерешённых противоречий нет; они не влияют на IA и не требуют пересмотра уровня."
+            },
+            "input_checksum": "aa4a62a98369132dcee37729222c19916b58e3ff55999f5680259dd48303c067",
+            "normative_meaning": {
+              "refs": [
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                },
+                {
+                  "id": "M01",
+                  "kind": "material",
+                  "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                },
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                },
+                {
+                  "id": "E3",
+                  "kind": "evidence",
+                  "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                }
+              ],
+              "feature": "Нормативное содержание M2 для K1.I17 и границы обоснованности сохранённого L1",
+              "analysis": "Сохранённая revision относит единственный ход оцениваемого (85f4e192) к K1.I17 и присваивает L1. По M2 v1.1 L1 требует: обозначен очевидный итог или основной следующий шаг, но результат зафиксирован частично, с возможным упущением существенных условий, ограничений, сохраняющихся различий или открытых вопросов. Фактически в ходе зафиксированы: изменённая рекомендация (повторная проверка на десяти запусках с критерием не более одного сбоя), ограничение роли Сергея анализом причин, условие принятия решения после результатов. Это именно обозначение очевидного итога и основного следующего шага. Одновременно упущены существенные условия, предъявленные в M01: срок ответа Сергею до 16:00 (сейчас 15:00), невозможность организовать дополнительное задание раньше двух рабочих дней, неопределённость срока окончательного решения, а также не зафиксировано сохраняющееся расхождение с позицией Андрея (M03) и не проверена итоговая формулировка с ним. Для L2 требовалась бы фиксация существенных договорённостей, сохраняющихся различий, открытых вопросов и дальнейших действий в объёме, необходимом для продолжения взаимодействия — упущение срока ответа Сергею и незафиксированное расхождение с руководителем этому препятствуют. Для L3 дополнительно требуется интеграция распределённых результатов и проверка формулировки с участниками — в материале отсутствует. L0 исключён, поскольку существенный результат явно определён. Таким образом определяющий признак L1 (частичная фиксация с упущением существенных условий) подтверждается исходным материалом, а не только декларативным флагом.",
+              "consequence": "Сохранённый уровень L1 обоснован по M2 v1.1: результат зафиксирован частично, существенные условия (срок ответа Сергею до 16:00, сроки проверки, сохраняющееся расхождение с Андреем) упущены. Пересмотр IA не требуется; уровень остаётся L1."
+            },
+            "considered_revision_ids": [
+              "6b90360e-caf4-457b-be11-2baf72b83f1f"
+            ]
+          },
+          "source": {
+            "id": "M6",
+            "m2": "exact frozen criteria in M6-A input",
+            "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+            "version": "1.8",
+            "sections": [
+              "M6.2",
+              "M6.5",
+              "M6.6.4",
+              "M6.6.8",
+              "M6.7.1-6.7.4",
+              "M6.8.1-6.8.3"
+            ]
+          },
+          "cycle_id": "de49588c-3a6b-4274-b646-cacf67801a92",
+          "individual": [
+            {
+              "status": "ADMITTED",
+              "rationale": "Сохранённый уровень L1 для K1.I17 обоснован по определяющему признаку: итог взаимодействия и основной следующий шаг обозначены явно, но результат зафиксирован частично — упущены срок ответа Сергею до 16:00 и сроки проверки/решения, итоговая формулировка не проверена с Андреем. L0 исключён наличием явного результата; L2/L3 не достигаются из-за упущения существенных условий и отсутствия проверки формулировки с участниками. Возможность, самостоятельность и отсутствие уточнений подтверждены по исходному материалу. Существенных противоречий нет. Уровень IA не назначается заново; фиксируется допустимость именно сохранённого L1.",
+              "limitations": [
+                "Оценка опирается на единственный ход оцениваемого; реакция Андрея и итоговое согласование в материале отсутствуют.",
+                "Не оцениваются Reliability и GC.",
+                "Уровень IA не пересматривается и не назначается заново; проверена только обоснованность сохранённого L1."
+              ],
+              "opportunity": {
+                "refs": [
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                  },
+                  {
+                    "id": "M01",
+                    "kind": "material",
+                    "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                  },
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                  }
+                ],
+                "feature": "Наличие задачи, полномочий, реальной возможности и доступной информации для фиксации коммуникативного результата.",
+                "analysis": "Задача задана P00: дать Андрею профессиональную рекомендацию и обсудить дальнейшее действие на сегодня; решение о найме за Андреем, оцениваемый даёт рекомендацию в пределах своей ответственности. Реальная возможность есть: M03 — прямое обращение Андрея с запросом рекомендации, ответ оцениваемого является завершающим сообщением сцены (stage_transitioned после хода). Доступная информация включает M01 (срок ответа Сергею до 16:00, ограничения по срокам проверки), M02 (наблюдения по кандидату) и M03 (позиция руководителя). Оцениваемый фактически использовал эту возможность, сформулировав итог.",
+                "consequence": "Возможность для действия присутствует; отсутствие фиксации сроков не объясняется недостатком возможности."
+              },
+              "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f",
+              "independence": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                  }
+                ],
+                "feature": "Самостоятельность формулировки итогового результата.",
+                "analysis": "Итоговая рекомендация сформулирована самим оцениваемым в его единственном ходе; в материалах нет предъявленного готового способа или критерия, который он бы воспроизвёл. Критерий «не более одного сбоя» и ограничение роли Сергея введены в его собственной формулировке. Уточнений от Андрея, задающих способ, в доступных материалах нет.",
+                "consequence": "Самостоятельность не препятствует сохранению L1."
+              },
+              "clarification": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                  }
+                ],
+                "feature": "Наличие уточнений, влияющих на оценку фиксации результата.",
+                "analysis": "clarification_history пуст; в доступных материалах нет уточняющих вопросов или сообщений готового способа/критерия со стороны участников. Разрешённая информация по запросу отсутствует, поскольку запросов не было.",
+                "consequence": "Уточнения не влияют на уровень; основание L1 сохраняется."
+              },
+              "contradictions": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                  }
+                ],
+                "feature": "Проверка на несовместимые проявления в зафиксированном результате.",
+                "analysis": "Проверен участок: ход sequence_no 5 и материалы M01, M03. В ходе нет внутренне несовместимых утверждений: изменённая рекомендация согласуется с приведённым основанием (данные журнала), ограничение роли Сергея не противоречит условию решения после результатов. Расхождение с позицией Андрея (M03) — это предмет работы K1.I16, а не нерешённое противоречие внутри фиксации результата. Существенных несовместимых проявлений, влияющих на IA, не обнаружено.",
+                "consequence": "Противоречия не требуют пересмотра IA."
+              },
+              "input_checksum": "d95f661e24858f06fa03046801fdb25e8fedf0ac653a40e16ae01496347b5728",
+              "normative_basis": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                  },
+                  {
+                    "id": "M01",
+                    "kind": "material",
+                    "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "6b90360e-caf4-457b-be11-2baf72b83f1f"
+                  }
+                ],
+                "feature": "Определяющий признак L1 для K1.I17: обозначен очевидный итог/основной следующий шаг, но результат зафиксирован частично с упущением существенных условий, ограничений, сохраняющихся различий или открытых вопросов.",
+                "analysis": "Сохранённый уровень L1 опирается на единственный ход оцениваемого (sequence_no 5). В нём явно обозначен итог: изменённая рекомендация (повторная проверка на десяти запусках с критерием «не более одного сбоя»), ограничение роли Сергея анализом причин и условие принятия решения о внедрении после результатов. Это очевидный итог и основной следующий шаг, то есть нижняя граница L1 выполнена. Одновременно в ходе не зафиксированы существенные условия из M01: срок ответа Сергею до 16:00 (сейчас 15:00) и неопределённость сроков проверки/решения; итоговая формулировка не проверена с Андреем, хотя M03 прямо требует рекомендацию «на чём её будем основывать». Это частичная фиксация с упущением существенных условий — ровно признак L1. L0 не подходит, поскольку существенный результат явно определён; L2 требует фиксации сохраняющихся различий, открытых вопросов и дальнейших действий в необходимом объёме, а сроки и ответ Сергею упущены; L3 дополнительно требует проверки итоговой формулировки с участниками, чего нет. Таким образом сохранённый L1 обоснован именно по определяющему признаку, а не по наличию роли/refs.",
+                "consequence": "Уровень L1 подтверждается как обоснованный; пересмотр IA не требуется."
+              }
+            }
+          ],
+          "reason_code": "ADMITTED",
+          "sufficiency": {
+            "met": true,
+            "requirement": {
+              "m2_version": "v1.1",
+              "indicator_id": "K1.I17",
+              "distinct_as_required": 1,
+              "required_final_ia_count": 1
+            },
+            "distinct_as_count": 1
+          },
+          "indicator_id": "K1.I17",
+          "mechanism_ref": {
+            "ref": "m6_substantive_admission/2.0.0",
+            "checksum": "e408149e3d9106234a9fedc0497e2a2459a2bf6f9de8a81f544afb2aaa335948"
+          },
+          "schema_version": 2,
+          "processing_status": "completed",
+          "numeric_admissible": true,
+          "excluded_revision_ids": [],
+          "included_revision_ids": [
+            "6b90360e-caf4-457b-be11-2baf72b83f1f"
+          ],
+          "considered_revision_ids": [
+            "6b90360e-caf4-457b-be11-2baf72b83f1f"
+          ],
+          "interpretation_admissible": true,
+          "interpretable_revision_ids": [
+            "6b90360e-caf4-457b-be11-2baf72b83f1f"
+          ]
+        },
+        {
+          "joint": {
+            "status": "COMPARABLE",
+            "rationale": "Единственная interpretation-admitted revision 417f09a3-67f0-4c2c-911f-fdc5ed1805cc рассмотрена один раз. Нормативное содержание M2 для K4.I12 сопоставлено с реальным ходом seq 5: оцениваемый явно квалифицирует данные журнала как основание пересмотра и показывает зависимость вывода, но не выявляет неявные существенные предпосылки. Это точно соответствует L1 и не обосновывает L2; L0 исключён. Условия задачи и доступные материалы восстановимы, нерешённых существенных противоречий нет. Статус COMPARABLE: для одной revision сопоставимость не требует дополнительных AS, а достаточность обоснования L1 проверена по плану.",
+            "conditions": {
+              "refs": [
+                {
+                  "id": "M01",
+                  "kind": "material",
+                  "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                },
+                {
+                  "id": "M02",
+                  "kind": "material",
+                  "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                },
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                },
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                }
+              ],
+              "feature": "Условия задачи, полномочия, доступная информация и материалы, релевантные для K4.I12",
+              "analysis": "Задача — дать профессиональную рекомендацию руководителю; решение о найме принимает Андрей, оцениваемый даёт рекомендацию. Материалы M01–M03 предъявлены до хода (available_sequence 2, 3, 4; ход seq 5). M01 содержит ограничения по срокам (ответ Сергею до 16:00, готовность ждать неизвестна, повторное задание не раньше двух рабочих дней, срок решения не определён) — это как раз те условия, которые образуют неявные предпосылки отложенной проверки. M02 содержит ограниченные наблюдения о кандидате и отсутствие независимой проверки. M03 содержит позицию Андрея за немедленный найм и требование рекомендации сегодня. Оцениваемый имел доступ к этим материалам и полномочия дать рекомендацию; уточнений у Андрея он не запрашивал. Условия для оценки K4.I12 восстановимы: видно, какое положение использовано как основание и какие доступные предпосылки не обозначены.",
+              "consequence": "Условия не препятствуют выводу: доступная информация позволяла выявить неявные предпосылки, но их отсутствие в ходе согласуется с L1, а не с L2."
+            },
+            "limitations": [
+              "Рассмотрена одна revision; совместная сопоставимость ограничена этим объёмом.",
+              "Неявные предпосылки (репрезентативность выборки, готовность Сергея ждать) в ходе не обозначены — это ограничение уровня, а не основание для пересмотра.",
+              "Reliability и GC не оценивались."
+            ],
+            "contradictions": {
+              "refs": [
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                },
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                }
+              ],
+              "feature": "Проверка противоречий в сохранённом основании IA",
+              "analysis": "Проверен весь EB и Dialogue: единственный ход оцениваемого seq 5, материалы M01–M03, события seq 1–9. В ходе нет несовместимых проявлений относительно квалификации основания: данные журнала последовательно используются как причина пересмотра, новая рекомендация согласуется с приведённым основанием. Уточнений и clarification_history нет. Расхождение с позицией Андрея (M03) — это предмет задачи, а не противоречие в основании IA. Нерешённого существенного противоречия, влияющего на K4.I12, не обнаружено.",
+              "consequence": "Противоречия не влияют на IA; сохранённый L1 остаётся допустимым."
+            },
+            "input_checksum": "7559243195110d95c43eee309249287ee97f751082bc411ddcaa1dc9282bfb34",
+            "normative_meaning": {
+              "refs": [
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                },
+                {
+                  "id": "E4",
+                  "kind": "evidence",
+                  "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                },
+                {
+                  "id": "e21d5218-6eca-412e-b568-a7f4980af81e",
+                  "kind": "as_snapshot",
+                  "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                }
+              ],
+              "feature": "Нормативное содержание M2 для K4.I12 и границы обоснованности сохранённого L1",
+              "analysis": "Критерий K4.I12 требует выявлять явные и неявные существенные предпосылки и допущения и показывать, как от них зависит рассуждение или вывод. L1 допускает выявление очевидных/явно сформулированных допущений с упущением неявных предпосылок. В единственном ходе оцениваемого (seq 5) он явно квалифицирует данные журнала испытаний (два сбоя из пяти, неучастие Сергея в контуре) как основание пересмотра прежней рекомендации и показывает зависимость новой рекомендации от этого основания. Это соответствует определяющему признаку L1: очевидное основание выявлено и его роль в выводе показана, но неявные существенные предпосылки (репрезентативность выборки из пяти запусков, готовность Сергея ждать до результатов проверки, допустимость отложенного решения) не обозначены. Сохранённый L1 не завышен относительно наблюдаемого и не занижен: L2 потребовал бы самостоятельного выявления неявных существенных предпосылок, чего в ходе нет; L0 исключён, поскольку основание не подаётся как самоочевидный факт без зависимости вывода.",
+              "consequence": "Сохранённый уровень L1 обоснован по определяющему признаку M2; пересмотр IA не требуется."
+            },
+            "considered_revision_ids": [
+              "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+            ]
+          },
+          "source": {
+            "id": "M6",
+            "m2": "exact frozen criteria in M6-A input",
+            "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+            "version": "1.8",
+            "sections": [
+              "M6.2",
+              "M6.5",
+              "M6.6.4",
+              "M6.6.8",
+              "M6.7.1-6.7.4",
+              "M6.8.1-6.8.3"
+            ]
+          },
+          "cycle_id": "de49588c-3a6b-4274-b646-cacf67801a92",
+          "individual": [
+            {
+              "status": "ADMITTED",
+              "rationale": "Сохранённая IA revision для K4.I12 = L1 подтверждается по всему EB и Dialogue. Определяющий признак M2 выполнен: данные журнала явно квалифицированы как основание пересмотра, и показана зависимость новой рекомендации от них. Границы L1 также подтверждены: неявные существенные предпосылки (репрезентативность выборки, готовность Сергея ждать, доступность десяти запусков) не выявлены, поэтому L2 не достигается, а L0 исключён наличием прослеживаемой зависимости вывода. Возможность присутствует, квалификация самостоятельна, уточнений нет, нерешённых противоречий нет. Уровень IA не переназначается.",
+              "limitations": [
+                "Оценка основана на единственном ходе оцениваемого; другие ветви диалога не предъявлены.",
+                "Неявные допущения не выявлены — это ограничение исполнения, а не отсутствие возможности.",
+                "Reliability и GC не оценивались."
+              ],
+              "opportunity": {
+                "refs": [
+                  {
+                    "id": "M01",
+                    "kind": "material",
+                    "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                  },
+                  {
+                    "id": "M02",
+                    "kind": "material",
+                    "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                  },
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                  }
+                ],
+                "feature": "Наличие задачи, полномочий, реальной возможности и доступной информации для выявления предпосылок",
+                "analysis": "Задача задана: дать Андрею профессиональную рекомендацию и обосновать её (M03, P00). Полномочия — собственная профессиональная рекомендация в пределах ответственности, без вывода дополнительных полномочий из должности. Реальная возможность есть: в ходе seq 5 оцениваемый уже формулирует основание пересмотра, то есть мог обозначить и другие допущения. Доступная информация включает M01 (сроки, неизвестная готовность Сергея ждать, ограниченная поддержка), M02 (непроверенные результаты, исправление после замечания, отсутствие повторного задания) и M03 (позиция и предположение Андрея) — этого достаточно, чтобы заметить неявные предпосылки. Возможность реализована частично.",
+                "consequence": "Возможность для демонстрации навыка присутствует; ограничение уровня связано с исполнением, а не с отсутствием условий."
+              },
+              "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc",
+              "independence": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                  }
+                ],
+                "feature": "Авторство и самостоятельность квалификации основания",
+                "analysis": "Квалификация данных журнала как основания пересмотра и формулировка новой рекомендации содержатся в ходе оцениваемого (speaker_type assessee, seq 5). В предъявленных материалах M01–M03 нет готового указания считать журнал основанием пересмотра или готового критерия проверки; Андрей в M03, наоборот, продвигает немедленный найм. Значит, основание и зависимость вывода сформулированы самостоятельно, а не повторены за подсказкой.",
+                "consequence": "Самостоятельность не препятствует допуску; уровень не завышается и не занижается по этому признаку."
+              },
+              "clarification": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                  }
+                ],
+                "feature": "Наличие уточнений и их влияние на квалификацию",
+                "analysis": "clarification_history пуст; в сохранённом материале нет реплик-уточнений, сообщающих готовый способ или критерий. Единственный ход оцениваемого — итоговое сообщение, а не ответ на подсказку. Уточнять нечего.",
+                "consequence": "Уточнения не влияют на обоснованность L1."
+              },
+              "contradictions": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                  }
+                ],
+                "feature": "Проверка на несовместимые проявления в сохранённом материале",
+                "analysis": "Проверен весь EB: единственный ход seq 5, материалы M01–M03, события seq 1–9. В ходе нет внутренне несовместимых утверждений: прежняя рекомендация и её пересмотр разведены по времени и основанию, критерий проверки и ограничение роли Сергея согласованы между собой. Расхождение с позицией Андрея (M03) — это предмет обсуждения, а не противоречие в рассуждении оцениваемого. Нерешённых существенных противоречий, влияющих на IA, не обнаружено.",
+                "consequence": "Противоречия не препятствуют допуску сохранённого уровня."
+              },
+              "input_checksum": "54c6450d9e60eb9c013e5c6d458e8263225590dd34eacaa26c0516c69062b88f",
+              "normative_basis": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                  },
+                  {
+                    "id": "E4",
+                    "kind": "evidence",
+                    "revision_id": "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+                  }
+                ],
+                "feature": "Определяющий признак M2 для K4.I12: положение, роль которого в рассуждении явно квалифицирована как предпосылка/допущение/установленное основание, и прослеживаемая зависимость вывода от него",
+                "analysis": "Сохранённый уровень L1 опирается на единственный ход оцениваемого (seq 5). В нём данные журнала испытаний (два сбоя из пяти, неучастие Сергея в контуре) прямо названы основанием пересмотра прежней рекомендации, и показано, как от них зависит новый вывод: повторная проверка на десяти запусках с критерием не более одного сбоя, ограничение роли Сергея анализом причин, решение после результатов. Это соответствует признаку M2: положение используется как установленное основание, и зависимость вывода от него прослеживается. Одновременно в ходе не обозначены иные существенные допущения (репрезентативность выборки из пяти запусков, готовность Сергея ждать, доступность десяти запусков), хотя они влияют на вывод. Это ровно граница L1 по M2: очевидное/явно сформулированное основание выявлено, неявные существенные предпосылки упущены. L0 не подходит, поскольку основание не подаётся как самоочевидный факт без зависимости вывода; L2 не достигается, так как неявные предпосылки не выявлены и их роль не показана. Сохранённый L1 обоснован именно наблюдаемым материалом.",
+                "consequence": "Уровень L1 подтверждается как обоснованный; пересмотр IA не требуется."
+              }
+            }
+          ],
+          "reason_code": "ADMITTED",
+          "sufficiency": {
+            "met": true,
+            "requirement": {
+              "m2_version": "v1.0",
+              "indicator_id": "K4.I12",
+              "distinct_as_required": 1,
+              "required_final_ia_count": 1
+            },
+            "distinct_as_count": 1
+          },
+          "indicator_id": "K4.I12",
+          "mechanism_ref": {
+            "ref": "m6_substantive_admission/2.0.0",
+            "checksum": "e408149e3d9106234a9fedc0497e2a2459a2bf6f9de8a81f544afb2aaa335948"
+          },
+          "schema_version": 2,
+          "processing_status": "completed",
+          "numeric_admissible": true,
+          "excluded_revision_ids": [],
+          "included_revision_ids": [
+            "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+          ],
+          "considered_revision_ids": [
+            "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+          ],
+          "interpretation_admissible": true,
+          "interpretable_revision_ids": [
+            "417f09a3-67f0-4c2c-911f-fdc5ed1805cc"
+          ]
+        },
+        {
+          "joint": {
+            "status": "COMPARABLE",
+            "rationale": "Единственная interpretation-admitted ревизия 68c59d6a для K4.I16 рассмотрена. Нормативное содержание M2 v1.0 для K4.I16 сопоставлено с фактическим материалом: в turn 85f4e192 реально сопоставлены две альтернативы (немедленный найм против повторной проверки) по общему основанию (данные журнала и неучастие Сергея в контуре), с ограниченным показом компромиссов и без единой системы критериев и trade-offs. Это соответствует L1 и не дотягивает до L2; L0 исключён наличием содержательного сравнения. Условия задачи (срок ответа до 16:00, недоступность задания раньше двух дней, риск потери кандидата, перегрузка команды) были доступны, но не учтены, что подтверждает ограниченность сравнения. Противоречий нет. Сохранённый L1 обоснован; статус COMPARABLE, поскольку рассмотрена одна ревизия и условий, препятствующих общему выводу, нет.",
+            "conditions": {
+              "refs": [
+                {
+                  "id": "M01",
+                  "kind": "material",
+                  "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                },
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                },
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                },
+                {
+                  "id": "e21d5218-6eca-412e-b568-a7f4980af81e",
+                  "kind": "as_snapshot",
+                  "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                }
+              ],
+              "feature": "Условия задачи, полномочия, доступные материалы и ограничения, влияющие на сравнение альтернатив",
+              "analysis": "Исходные условия (M01, sequence 2): срок ответа Сергею до 16:00, готовность ждать неизвестна; дополнительное задание возможно не раньше чем через два рабочих дня; срок окончательного решения не определён; продолжительность нового поиска неизвестна; команда перегружена, время Ивана для проверки не высвобождено. Позиция Андрея (M03, sequence 4): за немедленный найм, аргументы — знает подбор, обучается, условия подтверждает HR-партнёр; риск потери кандидата при затягивании; требует рекомендацию сегодня и основания. Полномочия: решение о найме принимает Андрей, оцениваемый даёт профессиональную рекомендацию (initial_presentation). Доступные материалы: M01, M02, M03 предъявлены до хода оцениваемого. Оцениваемый в turn 85f4e192 предлагает повторную проверку на десяти запусках, но не соотносит её со сроком ответа Сергею до 16:00 и с невозможностью организовать дополнительное задание раньше двух рабочих дней; не учитывает риск потери кандидата и перегрузку команды, поднятые Андреем. Это ограничивает полноту сравнения, но не отменяет его содержательности. Условия для сравнения были доступны и восстановимы.",
+              "consequence": "Условия не препятствуют выводу о допустимости L1: сравнение проведено в доступной рамке, но без учёта сроков и риска потери кандидата, что соответствует ограниченному показу компромиссов (L1), а не полной системе критериев (L2)."
+            },
+            "limitations": [
+              "Рассмотрена одна interpretation-admitted ревизия; совместное сравнение ограничено ею.",
+              "Уровень L1 пограничен с L0 при строгом прочтении «нескольких очевидных критериев»: фактически применён один критерий плюс ограничение роли.",
+              "Не assessed: Reliability/GC, а также другие индикаторы и ревизии вне данного контекста.",
+              "Непредъявленные ветви (реакция Андрея, итоговое согласование) не домысливаются."
+            ],
+            "contradictions": {
+              "refs": [
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                },
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                },
+                {
+                  "id": "E5",
+                  "kind": "evidence",
+                  "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                }
+              ],
+              "feature": "Проверка противоречий в сохранённой ревизии и материале",
+              "analysis": "В сохранённой ревизии contradictions пуст. Проверен участок: turn 85f4e192, материалы M01, M02, M03, evidence E5. Оцениваемый последовательно: сообщает о прежней рекомендации, приводит новые данные журнала, меняет рекомендацию на повторную проверку с критерием и ограничивает роль Сергея. Несовместимых проявлений одного объекта/признака не обнаружено: изменение рекомендации объяснено новыми данными, а не противоречием. Расхождение с Андреем (M03) — это позиционное различие участников, а не внутреннее противоречие оцениваемого. Существенного нерешённого противоречия, влияющего на IA, нет.",
+              "consequence": "Противоречий, отменяющих или изменяющих сохранённый L1, не выявлено; результат остаётся в силе."
+            },
+            "input_checksum": "372ffc392150567fb4dc57002446b92080b74d28c4f03b9c6638e0f4cc98b67f",
+            "normative_meaning": {
+              "refs": [
+                {
+                  "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                  "kind": "turn",
+                  "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                },
+                {
+                  "id": "M03",
+                  "kind": "material",
+                  "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                },
+                {
+                  "id": "M01",
+                  "kind": "material",
+                  "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                },
+                {
+                  "id": "E5",
+                  "kind": "evidence",
+                  "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                }
+              ],
+              "feature": "Нормативное содержание M2 для K4.I16 (сравнение альтернатив по критериям) в сохранённой ревизии",
+              "analysis": "Сохранённая ревизия относит K4.I16 к M2 v1.0 и оценивает её как L1. Определяющий признак L1 по M2: сравнение альтернатив по нескольким очевидным критериям с неполным/неравномерным применением и ограниченным показом компромиссов. L2 требует единой системы критериев и ограничений с существенными преимуществами, недостатками и trade-offs каждого варианта; L0 — отсутствие содержательного сравнения или несопоставимые основания. В единственном ходе оцениваемого (turn 85f4e192) реально сопоставлены две альтернативы: прежняя рекомендация немедленно закрепить Сергея и новая — сначала повторная проверка на десяти запусках с критерием не более одного сбоя, с ограничением роли Сергея анализом причин. Основание предпочтения указано: данные журнала (два сбоя из пяти) и неучастие Сергея в контуре. Это содержательное сравнение по одному основанию (надёжность/подтверждённость работы Сергея в контуре), без единой рамки критериев и без trade-offs (сроки, риск потери кандидата, перегрузка команды, срок ответа Сергею до 16:00 из M01). Такое сравнение не дотягивает до L2, но и не является L0, поскольку альтернативы сопоставлены по общему основанию. Однако формулировка L1 требует «нескольких очевидных критериев»; фактически применён один критерий, что ближе к границе L0/L1. Сохранённый уровень L1 опирается на наличие содержательного сравнения и основания предпочтения, но не подтверждается применением нескольких критериев. Уровень L1 остаётся обоснованным как минимально содержательное сравнение по общему основанию с ограниченным показом компромиссов, при условии, что «несколько критериев» трактуются как основание плюс ограничение роли; при строгом прочтении это пограничный случай. Существенных противоречий, отменяющих L1, не выявлено.",
+              "consequence": "Сохранённый L1 допустим как обоснованный: сравнение альтернатив по общему основанию присутствует, компромиссы показаны ограниченно. Уровень не повышается до L2 из-за отсутствия единой системы критериев и trade-offs; не понижается до L0, поскольку содержательное сравнение есть. Ограничение: пограничность между L0 и L1 при строгом прочтении «нескольких критериев»."
+            },
+            "considered_revision_ids": [
+              "68c59d6a-4cd6-4e94-a066-644823ae718f"
+            ]
+          },
+          "source": {
+            "id": "M6",
+            "m2": "exact frozen criteria in M6-A input",
+            "sha256": "2e5f60a5f1c430458a253ec0bb4638555de1bec704ea02f1e5c2127a3abd39b4",
+            "version": "1.8",
+            "sections": [
+              "M6.2",
+              "M6.5",
+              "M6.6.4",
+              "M6.6.8",
+              "M6.7.1-6.7.4",
+              "M6.8.1-6.8.3"
+            ]
+          },
+          "cycle_id": "de49588c-3a6b-4274-b646-cacf67801a92",
+          "individual": [
+            {
+              "status": "ADMITTED",
+              "rationale": "Сохранённый L1 по K4.I16 обоснован частично: в ходе 85f4e192 есть содержательное сравнение двух альтернатив по общему основанию (данные журнала и неучастие Сергея в контуре), что исключает L0, но применён один критерий без единой системы и trade-offs, что не достигает L2. Промежуточного уровня между L0 и L1 нет, поэтому L1 остаётся ближайшим обоснованным уровнем в рамках шкалы. Возможность, самостоятельность и отсутствие уточнений подтверждены; нерешённых противоречий нет. Уровень IA не переназначается.",
+              "limitations": [
+                "Применён один критерий сравнения, а не несколько очевидных, как буквально описывает L1; обоснованность L1 частичная.",
+                "Не учтены сроки, риск потери кандидата и перегрузка команды как критерии сравнения.",
+                "Реакция Андрея на изменённую рекомендацию в материале отсутствует; сравнение одностороннее.",
+                "Оценка ограничена единственным ходом оцениваемого; других проявлений сравнения в EB нет."
+              ],
+              "opportunity": {
+                "refs": [
+                  {
+                    "id": "M01",
+                    "kind": "material",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  },
+                  {
+                    "id": "M02",
+                    "kind": "material",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  },
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  }
+                ],
+                "feature": "Задача, полномочия, реальная возможность и доступная информация для сравнения альтернатив",
+                "analysis": "Задача оцениваемого — дать профессиональную рекомендацию руководителю о кандидате и дальнейшем действии на сегодня (initial_presentation, assessee_task). Полномочия: собственная профессиональная рекомендация; решение о найме принимает Андрей. В M03 Андрей прямо просит рекомендацию «как поступим и на чём её будем основывать», то есть требует обоснования выбора между вариантами. В M01 и M03 предъявлены условия, релевантные сравнению: срок ответа Сергею до 16:00, неизвестная готовность ждать, перегрузка команды, риск потери кандидата, возможность дополнительного задания не раньше двух рабочих дней. В M02 — ограниченные наблюдения о кандидате. Таким образом, реальная возможность сравнить альтернативы по нескольким критериям была доступна на момент хода.",
+                "consequence": "Возможность присутствует; неполнота сравнения (один критерий, отсутствие trade-offs) относится к исполнению, а не к отсутствию возможности."
+              },
+              "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f",
+              "independence": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  }
+                ],
+                "feature": "Авторство и самостоятельность сравнения",
+                "analysis": "Сравнение и его основание сформулированы самим оцениваемым в его единственном ходе: он сам указывает прежнюю рекомендацию, сам приводит данные журнала и сам меняет вывод. В M03 Андрей высказывает противоположную позицию (за немедленный найм) и свои аргументы, но не предлагает способа сравнения и не формулирует критериев. Уточнений от ведущего или готового способа сравнения в материалах нет; clarification_history пуст.",
+                "consequence": "Сравнение самостоятельно; независимость не препятствует допуску."
+              },
+              "clarification": {
+                "refs": [
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  },
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  }
+                ],
+                "feature": "Наличие уточнений и их влияние на сравнение",
+                "analysis": "В контексте clarification_history пуст, отдельных уточняющих вопросов или сообщения готового способа/критерия сравнения не зафиксировано. Позиция Андрея в M03 — это исходное предъявленное условие, а не подсказка способа сравнения.",
+                "consequence": "Уточнений, влияющих на оценку сравнения, нет."
+              },
+              "contradictions": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  }
+                ],
+                "feature": "Проверка противоречий в сохранённом основании",
+                "analysis": "Проверен участок: единственный ход оцениваемого (85f4e192) и предъявленные материалы M01–M03. В ходе нет внутренне несовместимых утверждений: прежняя рекомендация и её изменение согласованы, основание изменения приведено. Расхождение с позицией Андрея (M03) — это предмет обсуждения, а не противоречие в материале оцениваемого. Нерешённых существенных противоречий, влияющих на IA, не обнаружено.",
+                "consequence": "Противоречий, препятствующих допуску, нет."
+              },
+              "input_checksum": "9845264c5101310773ae51a67e6d7faa4c99490772d388ade37e918a6ba564e0",
+              "normative_basis": {
+                "refs": [
+                  {
+                    "id": "85f4e192-9347-45d5-92fe-2c3da49b0f05",
+                    "kind": "turn",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  },
+                  {
+                    "id": "M03",
+                    "kind": "material",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  },
+                  {
+                    "id": "M01",
+                    "kind": "material",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  },
+                  {
+                    "id": "E5",
+                    "kind": "evidence",
+                    "revision_id": "68c59d6a-4cd6-4e94-a066-644823ae718f"
+                  }
+                ],
+                "feature": "Определяющий признак M2 для K4.I16 и границы обоснованности сохранённого L1",
+                "analysis": "Сохранённый уровень L1 требует, чтобы субъект сравнивал альтернативы по нескольким очевидным критериям, применял их неполно/неравномерно и ограниченно показывал компромиссы. В единственном ходе оцениваемого (85f4e192) сопоставлены две альтернативы: прежняя рекомендация немедленно закрепить Сергея за задачей и новая — сначала провести повторную проверку на десяти запусках с критерием не более одного сбоя. Основание предпочтения указано: данные журнала испытаний (два сбоя из пяти) и неучастие Сергея в этом контуре. Это содержательное сравнение по одному основанию (надёжность/подтверждённость результата), без единой системы критериев и без trade-offs (сроки, риск потери кандидата, перегрузка команды, упомянутые в M01 и M03). Такое сравнение не достигает L2 (единая система критериев и ограничений с преимуществами, недостатками и trade-offs каждого варианта), но и не является L0, поскольку альтернативы сопоставлены по общему основанию, а не по несопоставимым. Формулировка дескриптора L1 говорит о «нескольких очевидных критериях»; фактически применён один критерий, что ниже буквального объёма L1, однако L0 исключён наличием содержательного сравнения по общему основанию, а промежуточного уровня между L0 и L1 нет. Сохранённый L1 остаётся наиболее близким обоснованным уровнем в рамках имеющейся шкалы, но его обоснованность ограничена: полнота «нескольких критериев» не подтверждена.",
+                "consequence": "Сохранённый L1 допустим как ближайший обоснованный уровень при наличии содержательного сравнения по общему основанию; ограничение — применён один критерий, а не несколько, поэтому обоснованность L1 частичная и не распространяется на L2."
+              }
+            }
+          ],
+          "reason_code": "ADMITTED",
+          "sufficiency": {
+            "met": true,
+            "requirement": {
+              "m2_version": "v1.0",
+              "indicator_id": "K4.I16",
+              "distinct_as_required": 1,
+              "required_final_ia_count": 1
+            },
+            "distinct_as_count": 1
+          },
+          "indicator_id": "K4.I16",
+          "mechanism_ref": {
+            "ref": "m6_substantive_admission/2.0.0",
+            "checksum": "e408149e3d9106234a9fedc0497e2a2459a2bf6f9de8a81f544afb2aaa335948"
+          },
+          "schema_version": 2,
+          "processing_status": "completed",
+          "numeric_admissible": true,
+          "excluded_revision_ids": [],
+          "included_revision_ids": [
+            "68c59d6a-4cd6-4e94-a066-644823ae718f"
+          ],
+          "considered_revision_ids": [
+            "68c59d6a-4cd6-4e94-a066-644823ae718f"
+          ],
+          "interpretation_admissible": true,
+          "interpretable_revision_ids": [
+            "68c59d6a-4cd6-4e94-a066-644823ae718f"
+          ]
+        }
+      ],
+      "report_revision_no": 1,
+      "results_revision_id": "788a22b4-f06a-4937-914e-598d56d25d97",
+      "results_revision_no": 1,
+      "assessment_situations": [
+        {
+          "status": "closed",
+          "case_ref": {
+            "id": "CASE.SPEC.09",
+            "version": "v0.4",
+            "checksum": "e3e4212011b6135390f2db73832d76b954c33d9a7d5428f0ab8cd8784c1efe02"
+          },
+          "handoff_id": "86d7bd30-9c8f-4790-88cd-d874ebf4a128",
+          "session_db_id": 1,
+          "handoff_checksum": "ea988800976d4a43bf0388f67722e7dc3894e156e8c410baef9082b3b3ffef5f",
+          "boundary_sequence": 9,
+          "route_disposition": "current",
+          "assessment_situation_id": "e21d5218-6eca-412e-b568-a7f4980af81e"
+        }
+      ],
+      "recommendation_notices": []
+    }
+  },
+  "limitations": [
+    "single real-provider functional trajectory",
+    "human methodological approval NOT_RUN"
+  ]
+}

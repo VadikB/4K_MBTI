@@ -197,7 +197,7 @@ def resolve_configuration_catalog(connection, *, configuration_id: int, usage_sc
 
 def publication_plan(
     connection, *, package_db_id: int, case_version_ids: list[int], usage_scope: str,
-    organization_id: int | None = None,
+    organization_id: int | None = None, runtime_rule_version_id: int | None = None,
 ) -> dict[str, Any]:
     package = connection.execute("SELECT * FROM m5_packages WHERE id=%s", (package_db_id,)).fetchone()
     if package is None:
@@ -209,12 +209,21 @@ def publication_plan(
     ).fetchall() if selected else []
     if len(cases) != len(selected):
         raise ValueError("M5_CATALOG_CASE_OUTSIDE_PACKAGE")
+    if runtime_rule_version_id is not None:
+        covered = connection.execute(
+            "SELECT case_version_id FROM m5_runtime_rule_case_bindings "
+            "WHERE runtime_rule_version_id=%s AND case_version_id=ANY(%s)",
+            (runtime_rule_version_id, selected),
+        ).fetchall()
+        if {int(item["case_version_id"]) for item in covered} != set(selected):
+            raise ValueError("M5_RUNTIME_RULE_CASE_SET_MISMATCH")
     decisions = [case_admission(connection, case_version_id=value, usage_scope=usage_scope) for value in selected]
     return {
         "package_db_id": package_db_id, "package_id": package["package_id"],
         "package_version": package["package_version"], "package_checksum": package["package_checksum"],
         "m2_checksum": package["manifest_json"]["dependencies"]["m2"],
         "organization_id": organization_id, "usage_scope": usage_scope,
+        "runtime_rule_version_id": runtime_rule_version_id,
         "case_version_ids": selected, "decisions": [
             {"case_id": item["case"]["case_id"], "case_version": item["case"]["case_version"],
              "admitted": item["admitted"], "reasons": item["reasons"]} for item in decisions
@@ -227,11 +236,13 @@ def publish_catalog(
     connection, *, catalog_id: str, catalog_version: str, package_db_id: int,
     case_version_ids: list[int], usage_scope: str, published_by: int, decision_basis: str,
     idempotency_key: str, organization_id: int | None = None, dry_run: bool = False,
+    runtime_rule_version_id: int | None = None,
 ) -> dict[str, Any]:
     if not str(decision_basis or "").strip():
         raise ValueError("M5_CATALOG_DECISION_BASIS_REQUIRED")
     plan = publication_plan(connection, package_db_id=package_db_id, case_version_ids=case_version_ids,
-                            usage_scope=usage_scope, organization_id=organization_id)
+                            usage_scope=usage_scope, organization_id=organization_id,
+                            runtime_rule_version_id=runtime_rule_version_id)
     request = {**plan, "catalog_id": catalog_id, "catalog_version": catalog_version,
                "published_by": published_by, "decision_basis": decision_basis.strip()}
     request_hash = checksum(request)
@@ -253,6 +264,14 @@ def publish_catalog(
                                 "checksum": plan["package_checksum"]},
                 "m2_checksum": plan["m2_checksum"], "organization_id": organization_id,
                 "usage_scope": usage_scope, "case_version_ids": plan["case_version_ids"]}
+    if runtime_rule_version_id is not None:
+        runtime = connection.execute(
+            "SELECT artifact_id,artifact_version,manifest_checksum,rules_checksum "
+            "FROM m5_runtime_rule_versions WHERE id=%s", (runtime_rule_version_id,)
+        ).fetchone()
+        if runtime is None:
+            raise ValueError("M5_RUNTIME_RULE_BINDING_UNAVAILABLE")
+        manifest["runtime_rule_ref"] = dict(runtime)
     manifest_checksum = checksum(manifest)
     row = connection.execute(
         """INSERT INTO m5_catalogs
@@ -264,8 +283,10 @@ def publish_catalog(
          decision_basis.strip(), idempotency_key, request_hash),
     ).fetchone()
     for case_version_id in plan["case_version_ids"]:
-        connection.execute("INSERT INTO m5_catalog_case_versions VALUES (%s,%s)",
-                           (row["id"], case_version_id))
+        connection.execute(
+            "INSERT INTO m5_catalog_case_versions (catalog_db_id,case_version_id,runtime_rule_version_id) VALUES (%s,%s,%s)",
+            (row["id"], case_version_id, runtime_rule_version_id),
+        )
     return {"dry_run": False, "idempotent": False, "catalog_db_id": int(row["id"]),
             "manifest_checksum": manifest_checksum}
 

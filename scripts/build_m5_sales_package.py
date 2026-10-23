@@ -213,9 +213,14 @@ def _list_or_dict_items(value: Any) -> list[tuple[str | int, dict[str, Any]]]:
     return []
 
 
-def _build_case(case_entry: dict, as_entry: dict, m2: dict[str, tuple[str, str]]) -> dict:
-    case = json.loads(case_entry["path"].read_text())
-    situation = json.loads(as_entry["path"].read_text())
+def compile_case_values(*, case: dict, situation: dict, case_source_name: str,
+                        case_source_checksum: str, as_source_name: str,
+                        as_source_checksum: str,
+                        m2: dict[str, tuple[str, str]] | None = None) -> dict:
+    """Compile one immutable author/generated full AS into the runtime Case contract."""
+    case_entry = {"path": Path(case_source_name), "sha256": case_source_checksum}
+    as_entry = {"path": Path(as_source_name), "sha256": as_source_checksum}
+    m2 = m2 or _m2_index()
     passport = case["Паспорт"]
     case_id = str(_first(case, "CaseID", default=passport.get("1 CaseID")))
     version = str(_first(case, "Version", "Версия", default=passport.get("7 Version")))
@@ -306,6 +311,16 @@ def _build_case(case_entry: dict, as_entry: dict, m2: dict[str, tuple[str, str]]
     return result.model_dump()
 
 
+def _build_case(case_entry: dict, as_entry: dict, m2: dict[str, tuple[str, str]]) -> dict:
+    case = json.loads(case_entry["path"].read_text())
+    situation = json.loads(as_entry["path"].read_text())
+    return compile_case_values(
+        case=case, situation=situation,
+        case_source_name=case_entry["path"].name, case_source_checksum=case_entry["sha256"],
+        as_source_name=as_entry["path"].name, as_source_checksum=as_entry["sha256"], m2=m2,
+    )
+
+
 def build_package(source_root: Path) -> tuple[dict, dict, list[dict], list[dict]]:
     source_manifest, entries = _source_entries(source_root)
     m2 = _m2_index()
@@ -339,7 +354,7 @@ def build_package(source_root: Path) -> tuple[dict, dict, list[dict], list[dict]
     return package, source_manifest, mapping, preview
 
 
-def build_execution_rules(cases: list[dict]) -> dict:
+def build_execution_rules(cases: list[dict], event_bindings: dict | None = None) -> dict:
     """Структурирует только явно заданные автором события; не добавляет продуктовых эвристик."""
     result: dict[str, dict] = {}
     for case in cases:
@@ -359,16 +374,23 @@ def build_execution_rules(cases: list[dict]) -> dict:
                 "repeat_rule": content.get("Повторение"), "forbidden_when": constraints,
                 "source": step["source"],
             })
-            if event == "character_response" or step["step_id"].endswith("_REPLY"):
-                for character in case["characters"]:
+            explicit = ((event_bindings or {}).get("case_bindings") or {}).get(case["case_id"], {}).get("events", {}).get(step["step_id"])
+            reaction_speakers = (explicit or {}).get("speaker_ids", [])
+            legacy_reaction = event == "character_response" or step["step_id"].endswith("_REPLY")
+            if (explicit or {}).get("function") == "character_reaction" or (explicit is None and legacy_reaction):
+                selected = [item for item in case["characters"]
+                            if not reaction_speakers or item["character_id"] in reaction_speakers]
+                for character in selected:
                     materials.append({
-                        "material_id": f"CHARACTER.{character['character_id']}",
+                        "material_id": (f"CHARACTER.{character['character_id']}.{step['step_id']}"
+                                        if explicit is not None else f"CHARACTER.{character['character_id']}"),
                         "kind": "character_reaction", "speaker_id": character["character_id"],
                         "participant_payload": None,
                         "disclosure_condition": {"type": "never"},
-                        "event_condition": {"type": "semantic_author_condition", "text": constraints,
+                        "event_condition": {"type": "semantic_author_condition", "text": occurrence,
                                             "source": step["source"]},
-                        "reaction_rule": constraints,
+                        "reaction_rule": content.get("Действие"),
+                        "forbidden_when": constraints,
                         "result_check": "Персонаж отвечает только за собственную позицию и полномочия.",
                     })
         for material in sorted(case["materials"], key=lambda item: item["order"]):

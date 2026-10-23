@@ -35,10 +35,14 @@ def _current_cycle(connection, user_id: int, organization_id: int, configuration
 
 
 def _present_next(connection, *, plan: dict, user_id: int, key: str) -> dict:
-    decision = m7_cycle_planner.choose_next(
-        connection, cycle_id=str(plan["cycle_id"]), expected_plan_revision_id=str(plan["revision_id"]),
-        key=key, created_by=user_id, policy=_policy(),
-    )
+    prepared = _prepare_next(connection, plan=plan, user_id=user_id, key=key)
+    return present_prepared_next(connection, result=prepared)
+
+
+def present_prepared_next(connection, *, result: dict) -> dict:
+    """Present only an AS already attached to the selected route decision."""
+    plan = result["plan"]
+    decision = result["decision"]
     presentation = None
     if decision["status"] == "SELECTED":
         cycle = connection.execute(
@@ -66,18 +70,19 @@ def _present_next(connection, *, plan: dict, user_id: int, key: str) -> dict:
             "decision": decision, "presentation": presentation}
 
 
-def _prepare_next(connection, *, plan: dict, user_id: int, key: str) -> dict:
+def _prepare_next(connection, *, plan: dict, user_id: int, key: str, defer_as: bool = False) -> dict:
     """Prepare an admitted AS without presenting it or starting M7 time."""
     decision = m7_cycle_planner.choose_next(
         connection, cycle_id=str(plan["cycle_id"]), expected_plan_revision_id=str(plan["revision_id"]),
-        key=key, created_by=user_id, policy=_policy(),
+        key=key, created_by=user_id, policy=_policy(), prepare_selected=not defer_as,
     )
     return {"plan": m7_cycle_planner.read_plan(connection, str(plan["cycle_id"])),
             "decision": decision, "presentation": None}
 
 
 def prepare(connection, *, user_id: int, key: str,
-            selected_skills: list[str] | None = None, profile_id: int | None = None) -> dict:
+            selected_skills: list[str] | None = None, profile_id: int | None = None,
+            defer_as: bool = False) -> dict:
     """Create/reuse one prepared Cycle; never start its Session or calendar window."""
     connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(user_id),))
     organization_id = participant_profile.active_organization(connection, user_id)
@@ -100,7 +105,7 @@ def prepare(connection, *, user_id: int, key: str,
         if not situation:
             result = _prepare_next(
                 connection, plan=current, user_id=user_id,
-                key=f"product-prepared:{key}",
+                key=f"product-prepared:{key}", defer_as=defer_as,
             )
             return {"resumed": True, **result}
         return {"resumed": True, "plan": current,
@@ -113,7 +118,7 @@ def prepare(connection, *, user_id: int, key: str,
     )
     if plan["plan"]["status"] == "NO_ROUTE":
         raise ValueError('M7_NO_ADMISSIBLE_CASE: Профиль готов. Ответственный специалист должен подготовить допустимые кейсы для выбранной роли и конфигурации.')
-    result = _prepare_next(connection, plan=plan, user_id=user_id, key=f"product-prepared:{key}")
+    result = _prepare_next(connection, plan=plan, user_id=user_id, key=f"product-prepared:{key}", defer_as=defer_as)
     return {"resumed": False, **result}
 
 
@@ -198,6 +203,30 @@ def start_or_resume(connection, *, user_id: int, key: str,
 def next_situation(connection, *, cycle_id: str, user_id: int, key: str) -> dict:
     plan = m7_cycle_planner.read_plan(connection, cycle_id)
     return _present_next(connection, plan=plan, user_id=user_id, key=f"product-next:{key}")
+
+
+def prepare_next_situation(connection, *, cycle_id: str, user_id: int, key: str,
+                           defer_as: bool = False) -> dict:
+    """Select the next Case without bypassing deferred functional AS preparation."""
+    cycle = connection.execute(
+        "SELECT owner_user_id FROM m5_cycles WHERE cycle_id=%s FOR UPDATE", (cycle_id,),
+    ).fetchone()
+    if not cycle or int(cycle["owner_user_id"]) != int(user_id):
+        raise ValueError("M7_CYCLE_NOT_FOUND")
+    plan = m7_cycle_planner.read_plan(connection, cycle_id)
+    return _prepare_next(
+        connection, plan=plan, user_id=user_id, key=f"product-next:{key}", defer_as=defer_as,
+    )
+
+
+def uses_functional_generation(connection, *, cycle_id: str) -> bool:
+    """Return whether the frozen Cycle route contains functional CASE.SPEC CaseVersions."""
+    return bool(connection.execute(
+        """SELECT 1 FROM m5_cycles cycle
+           JOIN m7_route_positions position ON position.cycle_db_id=cycle.id
+           WHERE cycle.cycle_id=%s AND position.case_id LIKE 'CASE.SPEC.%%' LIMIT 1""",
+        (cycle_id,),
+    ).fetchone())
 
 
 def read_runtime(connection, *, cycle_id: str) -> dict:

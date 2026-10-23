@@ -130,7 +130,7 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
         catalog_ref={key:catalog_ref[key] for key in ("id","version","checksum","package_checksum","m2_checksum","db_id")})
     session=create_session(connection,cycle_id=str(cycle["cycle_id"]),created_by=created_by)
     total=sum(x["planned_max_minutes"]*60 for x in route)
-    status="READY" if not uncovered and total<=budget else ("LIMITED" if route else "NO_ROUTE")
+    status="READY" if not uncovered else ("LIMITED" if route else "NO_ROUTE")
     requirements=[{"indicator_id":x["indicator_id"],"m2_version":x["m2_version"],"required_final_ia_count":1,
                    "distinct_as_required":1} for x in targets]
     content={"schema_version":1,"status":status,"goal":{"kind":"skills","selected_skills":request["selected_skills"]},
@@ -140,8 +140,9 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
         "parameter_resolution_checksum":resolved["resolved_checksum"],
         "return_policy_snapshot": policy_snapshot_for_plan(usage_scope=usage_scope),
         "catalog_ref":{key:catalog_ref[key] for key in ("id","version","checksum","package_checksum","m2_checksum")},
-        "known_limitations":["Cases are conditional opportunities; not guaranteed Evidence"]+
-            (["Route exceeds time budget"] if total>budget else []),"catalog":catalog,"algorithm_version":rules["algorithm_version"]}
+        "known_limitations":["Cases are conditional opportunities; not guaranteed Evidence"],
+        "duration_semantics":"planned case durations do not constrain selection; the Cycle budget limits actual elapsed collection time",
+        "catalog":catalog,"algorithm_version":rules["algorithm_version"]}
     repo.save_plan(connection,cycle=cycle,profile_ref=profile_ref,full_targets=targets,planned_targets=targets,
                    requirements=requirements,rules=rules,content=content,created_by=created_by,key=key,request_hash=request_hash)
     return read_plan(connection,str(cycle["cycle_id"]))
@@ -165,7 +166,8 @@ def _facts(connection, cycle_db_id:int, target_ids:set[str]) -> dict:
             "aggregate_contribution_coverage":"NOT_CALCULATED","component_score_coverage":"NOT_CALCULATED"}
 
 
-def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:str, created_by:int, policy:dict) -> dict:
+def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:str, created_by:int, policy:dict,
+                prepare_selected:bool=True) -> dict:
     plan=repo.read_plan(connection,cycle_id)
     connection.execute("SELECT id FROM m5_cycles WHERE id=%s FOR UPDATE",(plan["cycle_db_id"],)).fetchone()
     connection.execute("""UPDATE m7_route_positions p SET state='completed',updated_at=NOW()
@@ -199,8 +201,6 @@ def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:
             contribution=sorted(set(item["purpose_target_ids"])&needed)
             if item["case_id"] in used:reasons.append("CASE_ALREADY_USED_IN_CYCLE")
             if not contribution:reasons.append("REQUIREMENT_ALREADY_MET")
-            required=item["planned_max_minutes"]*60
-            if cycle["started_at"] and required>cycle["remaining_seconds"]:reasons.append("DOES_NOT_FIT_REMAINING_TIME")
             candidates.append({"case_id":item["case_id"],"case_version":item["case_version"],"contribution":contribution,"reasons":reasons})
         decision["considered"]=candidates
         selected=next((x for x in candidates if not x["reasons"]),None)
@@ -210,7 +210,7 @@ def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:
             decision.update(status="SELECTED",selected_case_id=selected["case_id"],selected_case_version=selected["case_version"],
                             expected_targets=selected["contribution"],explanation={"code":"M7_NEXT_AS_SELECTED","algorithm":plan["rules_json"]["algorithm_version"]})
     saved=repo.save_decision(connection,plan=plan,session_db_id=session["id"],key=key,request_hash=request_hash,decision=decision)
-    if decision["status"]=="SELECTED":
+    if decision["status"]=="SELECTED" and prepare_selected:
         profile_id=connection.execute("SELECT personalized_profile_id FROM m5_cycles WHERE id=%s",(plan["cycle_db_id"],)).fetchone()["personalized_profile_id"]
         usage_scope=connection.execute("SELECT usage_scope FROM m5_cycles WHERE id=%s",(plan["cycle_db_id"],)).fetchone()["usage_scope"]
         prepared=prepare_assessment_situation(connection,assessment_situation_id=str(uuid4()),case_id=decision["selected_case_id"],
@@ -220,6 +220,41 @@ def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:
         if prepared["snapshot"]["admission"]["admitted"] is not True:raise ValueError("AS_NOT_ADMITTED")
         repo.attach_prepared_as(connection,saved["id"],prepared["id"])
     return repo.read_decision(connection,saved["id"])
+
+
+def attach_functional_generated_as(connection, *, decision_id: str, prepared_result: dict,
+                                   generation_trace: dict, created_by: int, policy: dict) -> dict:
+    """Atomically persist and attach an independently admitted generated AS."""
+    decision = repo.read_decision(connection, decision_id)
+    connection.execute("SELECT id FROM m7_route_decisions WHERE id=%s FOR UPDATE", (decision_id,)).fetchone()
+    if decision["status"] != "SELECTED": raise ValueError("M7_DECISION_NOT_SELECTED")
+    if decision.get("assigned_as_db_id"): return decision
+    if not prepared_result.get("admitted_for_participant"): raise ValueError("AS_NOT_ADMITTED")
+    if not isinstance(prepared_result.get("compiled_case"), dict) or not isinstance(prepared_result.get("execution_rules"), dict):
+        raise ValueError("M5_FUNCTIONAL_COMPILED_RESULT_REQUIRED")
+    from Api.m5_functional_generation_service import checksum as functional_checksum
+    from Api.m5_case_runtime import checksum as runtime_checksum
+    if (generation_trace.get("schema_version") != 2
+            or generation_trace.get("candidate_checksum") != prepared_result.get("candidate_checksum")
+            or functional_checksum(generation_trace.get("accepted_as")) != prepared_result.get("candidate_checksum")
+            or generation_trace.get("compiled_case_checksum") != runtime_checksum(prepared_result["compiled_case"])
+            or generation_trace.get("execution_rules_checksum") != runtime_checksum(prepared_result["execution_rules"])):
+        raise ValueError("M5_FUNCTIONAL_HANDOFF_INTEGRITY_MISMATCH")
+    cycle = connection.execute("SELECT personalized_profile_id,usage_scope FROM m5_cycles WHERE id=%s",
+                               (decision["cycle_db_id"],)).fetchone()
+    runtime_rules = prepared_result["execution_rules"]
+    prepared = prepare_assessment_situation(
+        connection, assessment_situation_id=str(uuid4()), case_id=decision["selected_case_id"],
+        case_version=decision["selected_case_version"], personalized_profile_id=cycle["personalized_profile_id"],
+        cycle_db_id=decision["cycle_db_id"], session_db_id=decision["session_db_id"], substitutions=[],
+        policy=policy, usage_scope=cycle["usage_scope"],
+        qa_authorized_by=created_by if cycle["usage_scope"] == "qa" else None,
+        case_value_override=prepared_result["compiled_case"], runtime_rules_override=runtime_rules,
+        generation_trace=generation_trace,
+    )
+    if prepared["snapshot"]["admission"]["admitted"] is not True: raise ValueError("AS_NOT_ADMITTED")
+    repo.attach_prepared_as(connection, decision_id, prepared["id"])
+    return repo.read_decision(connection, decision_id)
 
 
 def present(connection, *, decision_id:str, expected_revision:int) -> dict:

@@ -60,6 +60,7 @@ from Api.assessment_role_profiles import (
     select_role_profile_for_user,
 )
 from Api.assessment_preparation_queue import assessment_preparation_queue
+from Api.product_cycle_preparation_queue import product_cycle_preparation_queue
 from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.assessment_authoring_service import assessment_authoring_service, ENTITY_CONFIG
 from Api.assessment_methodology_publication import publish_m2_qa_configuration
@@ -6189,17 +6190,29 @@ def get_owned_m5_trace(assessment_situation_id: UUID, request: Request) -> dict:
         return m10_product_flow.participant_trace(m5_scenario_runtime.trace(connection, str(assessment_situation_id)))
 
 
-@router.post('/assessment/cycles/prepare', status_code=201)
+@router.post('/assessment/cycles/prepare', status_code=202)
 def prepare_owned_assessment_cycle(payload: ProductCycleStartRequest, request: Request):
     token=request.cookies.get(SESSION_COOKIE_NAME);user=web_session_service.get_user_by_token(token) if token else None
     if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
-    try:
-        with get_connection() as connection:
-            result=m10_product_flow.prepare(connection,user_id=int(user.id),key=payload.idempotency_key,
-                selected_skills=list(payload.selected_skills), profile_id=payload.personalized_profile_id)
-            runtime=m10_product_flow.read_runtime(connection,cycle_id=str(result['plan']['cycle_id']))
-            connection.commit();return {**m10_product_flow.participant_presentation(result),'runtime':runtime}
-    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+    operation = product_cycle_preparation_queue.enqueue(
+        operation_id=payload.idempotency_key,
+        user_id=int(user.id),
+        request=payload.model_dump(mode='json'),
+    )
+    if operation['status'] == 'completed' and operation.get('result_json'):
+        return {'operation_id': operation['operation_id'], 'status': 'completed', 'result': operation['result_json']}
+    return {'operation_id': operation['operation_id'], 'status': operation['status']}
+
+
+@router.get('/assessment/cycles/preparation/{operation_id}')
+def read_owned_assessment_cycle_preparation(operation_id: str, request: Request):
+    token=request.cookies.get(SESSION_COOKIE_NAME);user=web_session_service.get_user_by_token(token) if token else None
+    if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
+    operation=product_cycle_preparation_queue.get_status(operation_id)
+    if operation is None:raise HTTPException(status_code=404,detail='Операция подготовки Cycle не найдена.')
+    if int(operation['user_id']) != int(user.id):raise HTTPException(status_code=403,detail='Нет доступа к чужой подготовке Cycle.')
+    operation.pop('user_id',None)
+    return operation
 
 
 @router.post('/assessment/cycles/start', status_code=201)
@@ -6235,6 +6248,14 @@ def next_owned_assessment_situation(cycle_id:UUID,payload:ProductNextRequest,req
     user=_m7_owned_cycle(request,str(cycle_id))
     try:
         with get_connection() as connection:
+            if m10_product_flow.uses_functional_generation(connection,cycle_id=str(cycle_id)):
+                operation=product_cycle_preparation_queue.enqueue(
+                    operation_id=payload.idempotency_key,user_id=int(user.id),request={
+                        'kind':'next','cycle_id':str(cycle_id),'idempotency_key':payload.idempotency_key,
+                    })
+                if operation['status']=='completed' and operation.get('result_json'):
+                    return {'operation_id':operation['operation_id'],'status':'completed','result':operation['result_json']}
+                return {'operation_id':operation['operation_id'],'status':operation['status']}
             result=m10_product_flow.next_situation(connection,cycle_id=str(cycle_id),user_id=int(user.id),
                 key=payload.idempotency_key);connection.commit();return m10_product_flow.participant_presentation(result)
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc

@@ -32,7 +32,12 @@ const test=base.extend({context:async({browser},use)=>{
     const state=JSON.parse(fs.readFileSync(statePath,'utf8'));
     await use({url,state,dir,cli});
   }finally{
-    if(server && server.exitCode===null){const ended=new Promise(resolve=>server.once('exit',resolve));server.kill('SIGTERM');await ended;}
+    if(server && server.exitCode===null){
+      const ended=new Promise(resolve=>server.once('exit',resolve));
+      server.kill('SIGTERM');
+      await Promise.race([ended,new Promise(resolve=>setTimeout(resolve,5000))]);
+      if(server.exitCode===null){server.kill('SIGKILL');await ended;}
+    }
     cli('destroy');
     await info.attach('server-log',{path:path.join(dir,'app.log'),contentType:'text/plain'});
   }
@@ -240,13 +245,18 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
  const delivered=dialogue.trace.events.find(x=>x.event_type==='mandatory_update');
  expect(delivered).toBeTruthy();expect(delivered.sequence_no).toBeGreaterThan(dialogue.trace.turns[0].sequence_no);
  expect(JSON.stringify(dialogue)).not.toContain('execution_envelope');
+ const scenarioEnd=page.waitForResponse(response=>response.request().method()==='POST' && new URL(response.url()).pathname.endsWith('/transitions'));
  await page.locator('#interview-finish-button').click();
+ expect((await scenarioEnd).ok()).toBeTruthy();
  stand.cli('drain');
  await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
  await info.attach('clarification-ui',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  await answer(page,fixture.clarification_answer);
  await expect(page.locator('#interview-finish-button')).toBeEnabled({timeout:30000});
+ const situationFinish=page.waitForResponse(response=>response.request().method()==='POST' && new URL(response.url()).pathname.endsWith('/finish-situation'));
  await page.locator('#interview-finish-button').click();
+ expect((await situationFinish).ok()).toBeTruthy();
+ stand.cli('drain');
  const saved=await report(page,stand,info);
  const resultResponse=await page.request.get(`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/results`);
  expect(resultResponse.ok()).toBeTruthy();const results=await resultResponse.json();
@@ -430,12 +440,18 @@ test('S10-A character branch: actual character Turn, order and no invented recom
  await expect(characterBubble).toHaveAttribute('data-speaker-label',character.speaker_name);
  expect(await characterBubble.evaluate(el=>getComputedStyle(el,'::before').content)).toContain(character.speaker_name);
  expect(character.content_text).toBe(fixture.character_response);expect(character.sequence_no).toBeGreaterThan(own.sequence_no);
+ const scenarioEnd=page.waitForResponse(response=>response.request().method()==='POST' && new URL(response.url()).pathname.endsWith('/transitions'));
  await page.locator('#interview-finish-button').click();
+ expect((await scenarioEnd).ok()).toBeTruthy();
  stand.cli('drain');
  await expect(page.locator('#interview-messages')).toContainText(fixture.character_question,{timeout:30000});
  await info.attach('character-and-clarification-ui',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  await answer(page,fixture.character_clarification_answer);
- await expect(page.locator('#interview-finish-button')).toBeEnabled();await page.locator('#interview-finish-button').click();
+ await expect(page.locator('#interview-finish-button')).toBeEnabled();
+ const situationFinish=page.waitForResponse(response=>response.request().method()==='POST' && new URL(response.url()).pathname.endsWith('/finish-situation'));
+ await page.locator('#interview-finish-button').click();
+ expect((await situationFinish).ok()).toBeTruthy();
+ stand.cli('drain');
  const saved=await report(page,stand,info);expect(saved.c67.recommendations).toHaveLength(0);
  expect(['ready','failed']).toContain(saved.c67.descriptive.status);
 });

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "m5_functional_repair",
+  "version": "1.0.0",
+  "status": "draft",
+  "scope": "functional_personalization",
+  "owner": "PM-03",
+  "source": "docs/evc/tasks/pers-audit-remediation.md#план-и-состояние",
+  "artifacts": [
+    {
+      "name": "prompt.md",
+      "sha256": "d0b424cbff9000dfd3aa55341f89c63f20964c254a0077dc65cf95d90c77ccf0"
+    }
+  ]
+}

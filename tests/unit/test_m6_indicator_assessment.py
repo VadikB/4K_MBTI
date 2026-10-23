@@ -120,6 +120,8 @@ def test_current_mechanism_requires_no_assessment_reason():
     assert mechanism["manifest"]["version"] == "1.0.1"
     assert mechanism["manifest"]["supersedes"] == "m6_indicator_assessment/1.0.0"
     assert "NO_ASSESSMENT" in mechanism["prompt"] and "uncertainty" in mechanism["prompt"]
+    assert mechanism["operation"]["provider_contract"]["version"] == "1.0.0"
+    assert mechanism["operation"]["thinking"] == {"type": "disabled"}
     verify_mechanism(mechanism, definition_checksum(mechanism))
 
 

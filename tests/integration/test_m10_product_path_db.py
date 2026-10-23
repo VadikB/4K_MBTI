@@ -1,6 +1,8 @@
 from contextlib import contextmanager
+import copy
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from uuid import uuid4
 
 import psycopg
@@ -12,13 +14,16 @@ from Api.assessment_role_profiles import publish_base_roles
 from Api import assessment_contexts as contexts, participant_profile
 from Api.schemas import PersonalizedProfileSelection
 from Api.m5_case_runtime import checksum
-from Api.m5_scenario_runtime import transition
+from Api.m5_functional_generation_service import checksum as functional_checksum
+from Api.m5_scenario_runtime import submit_turn, transition
+from Api.m5_rule_engine import CharacterReply, Decision, RuleOutcome
 from Api.m5_storage import import_package
 from Api.m7_completion import complete, finish_current_situation
 from Api.m7_completion import create_additional_session
 from Api.m5_cycle_runtime import read_cycle
 from Api.m10_product_flow import prepare, start_prepared, start_or_resume, read_runtime
 from Api.m10_product_flow import next_situation
+from Api.product_cycle_preparation_queue import ProductCyclePreparationQueue
 from Api.m7_cycle_planner import create_plan
 from tests.m6_admission_fixture import RecordedAdmissionGateway
 from Api import m10_orchestration
@@ -30,6 +35,10 @@ from Api import m6_cycle_aggregation_repository
 from Api.m8_results import create_results, create_report, read_report
 from Api.m7_completion import read_c46
 from scripts.build_m5_case_package import OUTPUT
+from scripts.build_m5_functional_package import OUTPUT as FUNCTIONAL_OUTPUT
+from scripts.build_m5_sales_package import build_execution_rules
+from Api.m5_runtime_rules import import_runtime_rule_version, load_runtime_rule_package
+from Api.m5_catalog_integrity import publication_plan, publish_catalog
 
 pytestmark = pytest.mark.integration
 
@@ -211,6 +220,200 @@ def test_prepare_does_not_start_time_and_explicit_start_presents_same_situation(
             "SELECT status FROM m5_assessment_situations WHERE assessment_situation_id=%s", (candidate_id,)
         ).fetchone()["status"]
         assert candidate_status == "admitted"
+
+
+def test_product_cycle_preparation_operation_returns_only_committed_admitted_cycle(product_db, monkeypatch):
+    factory = product_db
+    with factory() as connection:
+        connection.execute("""CREATE TABLE product_cycle_preparation_operations (
+            id BIGSERIAL PRIMARY KEY, operation_id TEXT NOT NULL UNIQUE,
+            user_id BIGINT NOT NULL REFERENCES users(id), request_json JSONB NOT NULL,
+            request_checksum TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued',
+            attempts INTEGER NOT NULL DEFAULT 0, result_json JSONB, error_code TEXT,
+            error_message TEXT, worker_id TEXT, locked_at TIMESTAMP,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            completed_at TIMESTAMP)
+        """)
+        connection.commit()
+    monkeypatch.setattr("Api.product_cycle_preparation_queue.get_connection", factory)
+    queue = ProductCyclePreparationQueue()
+    request = {"personalized_profile_id": factory.profile_id, "idempotency_key": "async-product-01",
+               "selected_skills": ["K1", "K2", "K3", "K4"]}
+    accepted = queue.enqueue(operation_id="async-product-01", user_id=99, request=request)
+    assert accepted["status"] == "queued"
+    job = queue._claim()
+    assert job is not None
+    assert queue.get_status("async-product-01")["result_json"] is None
+    queue._process(job)
+    completed = queue.get_status("async-product-01")
+    assert completed["status"] == "completed"
+    assert completed["result_json"]["plan"]["cycle_id"]
+    assert completed["result_json"]["runtime"]["current_situation"]["status"] == "admitted"
+    replay = queue.enqueue(operation_id="async-product-01", user_id=99, request=request)
+    assert replay["status"] == "completed"
+    with pytest.raises(ValueError, match="IDEMPOTENCY_CONFLICT"):
+        queue.enqueue(operation_id="async-product-01", user_id=99,
+                      request={**request, "selected_skills": ["K1"]})
+
+
+def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(product_db, monkeypatch):
+    with product_db() as connection:
+        package = json.loads((FUNCTIONAL_OUTPUT / "case-package.json").read_text())
+        manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_text())
+        legacy_rules = json.loads((FUNCTIONAL_OUTPUT / "execution-rules.json").read_text())
+        runtime_package = FUNCTIONAL_OUTPUT.parent.parent / "functional-personalization-runtime/1.0.0"
+        loaded = load_runtime_rule_package(runtime_package, package["cases"])
+        fixture_package = copy.deepcopy(package)
+        fixture_bindings = copy.deepcopy(loaded)
+        for case in fixture_package["cases"]:
+            case["status"] = "FROZEN"
+            case["author_case"]["Status"] = "FROZEN"
+            fixture_bindings["bindings"]["case_bindings"][case["case_id"]]["case_checksum"] = checksum(case)
+        # Only the isolated fixture simulates completed human admission. Repository
+        # package/runtime artifacts remain unchanged WORKING/draft sources.
+        imported = import_package(connection, package=fixture_package, manifest=manifest, execution_rules=legacy_rules)
+        runtime = import_runtime_rule_version(connection, fixture_bindings,
+            build_execution_rules(fixture_package["cases"], fixture_bindings["bindings"]))
+        cases = connection.execute(
+            "SELECT * FROM m5_case_versions WHERE package_id=%s ORDER BY case_id", (imported["package_db_id"],)
+        ).fetchall()
+        assert len(cases) == 9 and {row["status"] for row in cases} == {"FROZEN"}
+        for case in cases:
+            for scope in ("case_format", "case_dialogue", "assessment_situation"):
+                evidence = {"schema_version": 1, "eligibility": "user_admission", "scope": scope,
+                    "result": "PASS", "case_ref": {"id": case["case_id"], "version": case["case_version"],
+                    "checksum": case["content_checksum"]}, "base_role": case["base_role"],
+                    "usage_scopes": ["assessment"],
+                    "origin": {"type": "human_review", "actor_ref": "review:functional-cycle-fixture"}}
+                connection.execute("""INSERT INTO m5_qa_evidence
+                    (case_version_id,scope,result,evidence_json,evidence_checksum)
+                    VALUES(%s,%s,'PASS',%s::jsonb,%s)""",
+                    (case["id"], scope, json.dumps(evidence, ensure_ascii=False), checksum(evidence)))
+        catalog_plan = publication_plan(connection, package_db_id=imported["package_db_id"],
+            case_version_ids=[int(case["id"]) for case in cases], usage_scope="assessment",
+            organization_id=10, runtime_rule_version_id=runtime["id"])
+        assert catalog_plan["publishable"] is True, catalog_plan["decisions"]
+        catalog = publish_catalog(connection, catalog_id="functional-cycle-fixture", catalog_version="1.0",
+            package_db_id=imported["package_db_id"], case_version_ids=[int(case["id"]) for case in cases],
+            usage_scope="assessment", organization_id=10, published_by=99,
+            decision_basis="isolated regression of functional Cycle wiring",
+            idempotency_key="functional-cycle-catalog", runtime_rule_version_id=runtime["id"])
+        connection.execute("ALTER TABLE assessment_configurations ADD COLUMN catalog_version_id BIGINT REFERENCES m5_catalogs(id)")
+        connection.execute("ALTER TABLE assessment_configurations ADD COLUMN is_default BOOLEAN NOT NULL DEFAULT TRUE")
+        connection.execute("UPDATE assessment_configurations SET catalog_version_id=%s WHERE id=1",
+                           (catalog["catalog_db_id"],))
+        specialist_role = connection.execute("""SELECT v.id FROM assessment_role_profile_versions v
+            JOIN assessment_role_profiles r ON r.id=v.role_profile_id
+            WHERE r.code='specialist_expert' AND v.status='published'""").fetchone()["id"]
+        organization_context = connection.execute("""SELECT v.id FROM assessment_organization_context_versions v
+            JOIN assessment_organization_contexts c ON c.id=v.organization_context_id
+            WHERE c.organization_id=10 AND v.status='published'""").fetchone()["id"]
+        specialist_profile = participant_profile.confirm(connection, user_id=99,
+            selection=PersonalizedProfileSelection(organization_context_version_id=organization_context,
+                role_profile_version_id=specialist_role, assessment_configuration_id=1),
+            full_name='Synthetic specialist', position='', duties='')
+        connection.execute("""CREATE TABLE product_cycle_preparation_operations (
+            id BIGSERIAL PRIMARY KEY,operation_id TEXT UNIQUE,user_id BIGINT,request_json JSONB,request_checksum TEXT,
+            status TEXT DEFAULT 'queued',attempts INTEGER DEFAULT 0,result_json JSONB,error_code TEXT,error_message TEXT,
+            worker_id TEXT,locked_at TIMESTAMP,created_at TIMESTAMP DEFAULT NOW(),updated_at TIMESTAMP DEFAULT NOW(),completed_at TIMESTAMP)""")
+        connection.commit()
+
+    class FunctionalGateway:
+        enabled = True
+        def chat_with_trace(self, messages, **kwargs):
+            payload = json.loads(next(item["content"] for item in reversed(messages) if item["role"] == "user"))
+            if ":generation:" in kwargs["routing_key"]:
+                content = json.dumps(payload["author_as_example"], ensure_ascii=False)
+            else:
+                required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
+                content = json.dumps({"checks": [{"check_id": item["check_id"], "status": "PASS",
+                        "reason": "isolated functional Cycle fixture", "evidence_paths": [], "findings": [],
+                        "adversarial_review": {"candidate_conflicts": [], "resolution": "fixture"}}
+                        for item in required]}, ensure_ascii=False)
+            return SimpleNamespace(content=content, sent={}, provider={"finish_reason": "stop"})
+
+    monkeypatch.setattr("Api.product_cycle_preparation_queue.get_connection", product_db)
+    monkeypatch.setattr("Api.llm.deepseek_gateway.DeepSeekGateway", FunctionalGateway)
+    queue = ProductCyclePreparationQueue()
+    request = {"personalized_profile_id": specialist_profile["id"], "idempotency_key": "functional-cycle",
+               "selected_skills": ["K1", "K2", "K3", "K4"]}
+    queue.enqueue(operation_id="functional-cycle", user_id=99, request=request)
+    queue._process(queue._claim())
+    operation = queue.get_status("functional-cycle")
+    assert operation["status"] == "completed", operation
+    prepared = operation["result_json"]
+    with product_db() as connection:
+        route_ids = [item["case_id"] for item in prepared["plan"]["plan"]["route"]]
+        assert route_ids
+        assert all(case_id.startswith("CASE.SPEC.") for case_id in route_ids)
+        assert not any(case_id.startswith("CASE-TDISC-") for case_id in route_ids)
+        decision = connection.execute("""SELECT d.* FROM m7_route_decisions d
+            JOIN m5_cycles c ON c.id=d.cycle_db_id WHERE c.cycle_id=%s ORDER BY d.created_at DESC LIMIT 1""",
+            (prepared["plan"]["cycle_id"],)).fetchone()
+        assert decision["selected_case_id"].startswith("CASE.SPEC.")
+        situation = connection.execute("""SELECT s.snapshot_json,s.execution_payload_json
+            FROM m5_assessment_situations s JOIN m7_route_assignments a ON a.assessment_situation_db_id=s.id
+            WHERE a.decision_id=%s""", (decision["id"],)).fetchone()
+        assert situation["snapshot_json"]["case_ref"]["id"].startswith("CASE.SPEC.")
+        generated_ref = situation["execution_payload_json"]["runtime_rule_ref"]
+        generated_trace = situation["execution_payload_json"]["ai_operations"]["functional_personalization"]
+        assert generated_ref == {"source": "functional_generation",
+                                 "candidate_checksum": generated_trace["candidate_checksum"]}
+        assert generated_trace["admitted_for_participant"] is True
+        assert generated_trace["schema_version"] == 2
+        assert functional_checksum(generated_trace["accepted_as"]) == generated_trace["candidate_checksum"]
+        assert generated_trace["tester_input_checksum"] == generated_trace["tester"]["provider_operation"]["input_checksum"]
+        assert generated_trace["source_snapshot"]["author_as_example"]["CaseID"] == decision["selected_case_id"]
+        assert generated_trace["source_snapshot"]["profile_checksum"] == situation["snapshot_json"]["profile_ref"]["checksum"]
+        assert "planned case durations do not constrain selection" in prepared["plan"]["plan"]["duration_semantics"]
+        selected_case = connection.execute("SELECT case_version_id FROM m5_assessment_situations WHERE id=%s",
+            (connection.execute("SELECT assessment_situation_db_id FROM m7_route_assignments WHERE decision_id=%s",
+                                (decision["id"],)).fetchone()["assessment_situation_db_id"],)).fetchone()
+        with pytest.raises(psycopg.Error, match="Referenced M5 CaseVersion content is immutable"):
+            with connection.transaction():
+                connection.execute("UPDATE m5_case_versions SET status='WORKING' WHERE id=%s",
+                                   (selected_case["case_version_id"],))
+
+    class Semantic:
+        def decide(self, *, rule, text, turn_id, context):
+            return Decision(RuleOutcome.UNKNOWN, "REGRESSION", "controlled regression", (turn_id,),
+                            adapter="controlled", controlled_test=True)
+
+    class Character:
+        def respond(self, *, material, character, text, turn_id, context):
+            return CharacterReply("UNKNOWN", None, "controlled", controlled_test=True)
+
+    cycle_id = str(prepared["plan"]["cycle_id"])
+    first_as = str(prepared["decision"]["assessment_situation_id"])
+    with product_db() as connection:
+        start_prepared(connection, user_id=99, cycle_id=cycle_id, key="functional-cycle-start")
+        submit_turn(connection, assessment_situation_id=first_as,
+                    request_id="functional-cycle-turn", turn_id=str(uuid4()),
+                    content="Контролируемый ответ для перехода ко второй ситуации.",
+                    semantic_adapter=Semantic(), character_adapter=Character())
+        transition(connection, assessment_situation_id=first_as, action="scenario_end",
+                   reason="regression", request_id="functional-cycle-end")
+        finish_current_situation(connection, cycle_id=cycle_id, key="functional-cycle-finish", initiated_by=99)
+        connection.commit()
+
+    second_operation = "functional-cycle-next"
+    queue.enqueue(operation_id=second_operation, user_id=99, request={
+        "kind": "next", "cycle_id": cycle_id, "idempotency_key": second_operation,
+    })
+    queue._process(queue._claim())
+    second = queue.get_status(second_operation)
+    assert second["status"] == "completed", second
+    assert second["result_json"]["decision"]["assessment_situation_id"] != first_as
+    with product_db() as connection:
+        second_payload = connection.execute(
+            "SELECT execution_payload_json FROM m5_assessment_situations WHERE assessment_situation_id=%s",
+            (second["result_json"]["decision"]["assessment_situation_id"],),
+        ).fetchone()["execution_payload_json"]
+        second_trace = second_payload["ai_operations"]["functional_personalization"]
+        assert second_trace["schema_version"] == 2
+        assert functional_checksum(second_trace["accepted_as"]) == second_trace["candidate_checksum"]
+        assert second_trace["source_snapshot"]["author_as_example"]["CaseID"] == \
+            second["result_json"]["decision"]["selected_case_id"]
 
 
 def test_inter_case_break_closes_only_current_as_and_resumes_on_explicit_next(product_db):

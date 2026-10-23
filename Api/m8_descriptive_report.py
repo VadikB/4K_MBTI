@@ -128,6 +128,9 @@ def _validate(output: dict, allowed: dict) -> dict:
                 raise ValueError("M8_DESCRIPTION_BASIS_REQUIRED")
             if any(allowed["basis_skills"].get(ref) not in claim["skill_ids"] for ref in claim["basis_refs"]):
                 raise ValueError("M8_DESCRIPTION_BASIS_MISMATCH")
+            grounded_skills = {allowed["basis_skills"].get(ref) for ref in claim["basis_refs"]}
+            if not set(claim["skill_ids"]).issubset(grounded_skills):
+                raise ValueError("M8_DESCRIPTION_SKILL_BASIS_REQUIRED")
         if not set(claim["context_refs"]).issubset(allowed["context"]):
             raise ValueError("M8_DESCRIPTION_CONTEXT_MISMATCH")
         if claim["kind"] == "context" and not claim["context_refs"]:
@@ -137,7 +140,8 @@ def _validate(output: dict, allowed: dict) -> dict:
             raise ValueError("M8_DESCRIPTION_TEXT_FORBIDDEN")
         if claim["kind"] == "quote":
             owners = allowed["quotes"].get(text) or set()
-            if not any((ref, skill_id) in owners for ref in claim["basis_refs"] for skill_id in claim["skill_ids"]):
+            if any(not any((ref, skill_id) in owners for ref in claim["basis_refs"])
+                   for skill_id in claim["skill_ids"]):
                 raise ValueError("M8_DESCRIPTION_QUOTE_MISMATCH")
         if not isinstance(claim["limitations"], list):
             raise ValueError("M8_DESCRIPTION_LIMITATIONS_INVALID")

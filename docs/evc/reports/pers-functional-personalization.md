@@ -1,10 +1,11 @@
 # Отчёт PERS-01–PERS-06
 
-Статус: **не готово к merge**. Все 27 конечных AS получили детерминированный и
-смысловой PASS на одной и той же версии; 34/34 сценарных регрессии исполнены.
-Обязательный полный Cycle с реальным провайдером имеет сохранённые успешные
-трассы до M8. Локальная матрица, включая полный browser runtime, закрыта; до merge
-остаются evidence-архив, полный CI и итоговый review.
+Статус: **F05 технически выполнен, итоговая интеграция не разрешена**. Все 27
+результатов F04 сохранены. Новые 34/34 F05-трассы исполнены через PostgreSQL
+runtime, но controlled semantic adapters не дают права объявлять полную предметную
+приёмку CASE.SPEC.01–09. Утверждение ниже о прежних успешных real-provider Cycle
+относится к историческому legacy-пути; новый functional path до M8 реальным
+provider пока не завершён и учитывается как `NOT_RUN/TECHNICAL_ERROR`.
 
 ## Реализовано
 
@@ -84,6 +85,36 @@
 
 - CI: `NOT_RUN` до публикации коммита/PR.
 - итоговый review и evidence-архив: `NOT_RUN`.
+
+## Дополнение F05 от 23.10.2026
+
+- База: ветка `codex/pers-audit-remediation`, исходный commit
+  `7f96ea6abc04061c2e1c0333473085cc9c9a02c8`; source plan v0.2, checksum
+  `bee5ca5a001a47f9651239589ab2f90a0058a4186e85ce573f19bb3d7c474f29`.
+- 34/34 отдельных Cycle прошли штатные API без прямого INSERT Turn; сохранены
+  requests, responses, events, states, readback и AS/tester checksums в
+  `docs/evc/evidence/pers-functional-personalization/f05-runtime-db/`.
+- A01/A02: сохранён полный immutable hand-off author source → tester input →
+  accepted generated AS → compiled runtime; profile и source CaseVersion
+  проверяются собственными version checksums. Стартовые материалы восстановлены
+  в execution snapshot, поэтому C45→M6 больше не теряет provenance.
+- Пилотное решение 120 минут реализовано: это фактический elapsed budget Cycle;
+  сумма плановых длительностей не блокирует план и выбор следующего Case.
+- Два controlled downstream functional Cycle дошли до `report_ready`: раннее
+  прекращение сохранило ограничения/no-result, содержательный R09_CHANGED дал
+  непустые partial scores. Это техническая проверка M8, не real-provider допуск.
+- Real-provider: зафиксирован timeout tester; отдельные повторы успешно прошли
+  generation/tester/admission/runtime/C45, но M6 processing завершился
+  `ValueError` без assessment-request. Поэтому real-provider positive M8 —
+  `NOT_RUN`; ошибка сохранена как `TECHNICAL_ERROR`, не как дефект AS и не как
+  «недостаточные данные».
+- Проверки: non-LLM unit/backend `595 passed`; полный PostgreSQL integration
+  `144 passed, 5 failed` при ошибочном `STAND_ADMIN_URL`, затем все пять stand
+  проверок повторены с maintenance DB — `6 passed`; адресная F05 PostgreSQL —
+  PASS, 34/34 и два M8-пути. A03/A04/A07 остаются отдельными зависимостями.
+- Review-blocker: multi-case `next_situation` после первой позиции пока обходит
+  functional generator/tester и использует legacy synchronous prepare. Поэтому
+  единый новый functional Cycle целиком не доказан; merge в `main` не выполнен.
 
 Пока evidence-архив, CI и review не закрыты, версия продукта не повышается, PR/merge в
 `main` не выполняются. Draft-пакет остаётся `runtime_enabled=false`; технический

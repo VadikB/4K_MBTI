@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "checkpoint": "7ac6eea95b948c8cef09029b3bd3d8947ab58041",
+  "stage": "m6_evidence_processing",
+  "error_type": "ValueError",
+  "error_code": "DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED",
+  "assessment_request_created": false,
+  "classification": "TECHNICAL_ERROR",
+  "insufficient_data": false,
+  "content_defect_proven": false,
+  "cause": "Frozen M6 operation used mutable environment model/endpoint instead of the immutable provider contract enforced by the executor.",
+  "preservation": "Reconstructed metadata from the captured diagnostic after the original failed run; no provider payload or secret is retained.",
+  "regression_refs": [
+    "tests/unit/test_m6_evidence.py::test_current_mechanism_is_new_immutable_draft",
+    "tests/unit/test_m6_evidence.py::test_current_worker_keeps_safe_domain_error_code"
+  ]
+}

@@ -46,6 +46,7 @@ import {
 import { openPrechat } from './ai-welcome.js';
 import { openProcessing } from './processing.js';
 import { recoverProfileCompletionForAssessment, shouldRecoverProfileOnAssessmentError } from './profile-recovery.js';
+import { prepareProductCycle, waitForProductCyclePreparation } from '../product-cycle-preparation.js';
 
 const interviewCaseContextByKey = new Map();
 const PRODUCT_RUNTIME_POLL_MS = 1200;
@@ -221,7 +222,8 @@ const renderProductRuntime = (snapshot) => {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ idempotency_key: createOperationId() }),
         });
-        const next = await readApiResponse(response, 'Не удалось перейти к следующей ситуации.');
+        const accepted = await readApiResponse(response, 'Не удалось перейти к следующей ситуации.');
+        const next = accepted.operation_id ? await waitForProductCyclePreparation(accepted) : accepted;
         if (next.decision?.status === 'SELECTED') { await loadProductRuntime(); return; }
         if (['NO_ADMISSIBLE_CASE', 'OUT_OF_TIME'].includes(next.decision?.status)) {
           await completeProductCycle(); return;
@@ -491,7 +493,8 @@ export const createProductAdditionalSession = async () => {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ idempotency_key: createOperationId() }),
   });
-  await readApiResponse(nextResponse, 'Не удалось выбрать следующую Assessment Situation.');
+  const accepted = await readApiResponse(nextResponse, 'Не удалось выбрать следующую Assessment Situation.');
+  if (accepted.operation_id) await waitForProductCyclePreparation(accepted);
   await loadProductRuntime();
 };
 
@@ -1278,11 +1281,10 @@ const startAssessmentInterview = async () => {
   showError(interviewError, '');
 
   try {
-    const prepareResponse = await fetch('/users/assessment/cycles/prepare', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ personalized_profile_id: state.dashboard?.personalized_profile_id || null, idempotency_key: createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'] }),
+    const prepared = await prepareProductCycle({
+      personalized_profile_id: state.dashboard?.personalized_profile_id || null,
+      idempotency_key: createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'],
     });
-    const prepared = await readApiResponse(prepareResponse, 'Не удалось подготовить план оценки.');
     state.assessmentRuntimeKind = 'cycle';
     state.productCycleId = prepared.plan.cycle_id;
     persistAssessmentContext();
