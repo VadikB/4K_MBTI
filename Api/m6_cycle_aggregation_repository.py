@@ -8,6 +8,7 @@ from Api.assessment_configuration import definition_checksum
 from Api import m7_completion
 from Api.m6_aggregation_package import hierarchy_for, load_package
 from Api.m6_cycle_aggregation import calculate
+from Api.cycle_execution_manifest import resolve_cycle_dependency
 
 
 def ensure_schema(connection):
@@ -72,14 +73,17 @@ def _inputs(connection, cycle_id: str, expected_composition_checksum: str):
                 "refs": target["refs"], "confidence": target["confidence"], "contradictions": target["contradictions"]})
         processing.append({"assessment_situation_id": str(situation["assessment_situation_id"]), "status": revision["payload_json"]["status"],
             "assessment_revision_id": str(revision["id"]), "c54_revision_id": str(revision["c54_id"])})
-    package = load_package()
+    aggregation_package = resolve_cycle_dependency(cycle, "m6_cycle_aggregation")
+    methodology_package = resolve_cycle_dependency(cycle, "m2_methodology")
+    source_set = resolve_cycle_dependency(cycle, "source_set")
+    package = load_package(aggregation_package, source_set / "manifest.json")
     value = {"schema_version": 1, "cycle_id": str(cycle["cycle_id"]), "composition": identity,
         "composition_checksum": actual, "source_versions": package["rules"]["source_versions"],
         "algorithm": {"version": package["manifest"]["version"], "rules_hash": package["rules_hash"]},
         "cycle_context": {"cycle": c46["payload_json"]["cycle"], "goal": c46["payload_json"].get("goal"),
             "sessions": c46["payload_json"]["sessions"], "assessment_situations": c46["payload_json"]["assessment_situations"]},
         "full_target_set": full_targets, "planned_target_set": planned, "processing": processing,
-        "observations": observations, "hierarchy": hierarchy_for(target_ids)}
+        "observations": observations, "hierarchy": hierarchy_for(target_ids, methodology_package)}
     return cycle, c46, value
 
 
@@ -151,8 +155,12 @@ def create_substantive(connection, *, cycle_id: str, key: str, expected_composit
                 or saved['c56']['observations'] != value['observations']):
             raise ValueError('IDEMPOTENCY_CONFLICT')
         return saved
-    mechanism, decisions, limitations = decide(connection, cycle_id=cycle_id,
-                                              observations=value['observations'], gateway=gateway)
+    mechanism, decisions, limitations = decide(
+        connection, cycle_id=cycle_id, observations=value['observations'], gateway=gateway,
+        mechanism_directory=resolve_cycle_dependency(cycle, "m6_substantive_admission"),
+        source_set=resolve_cycle_dependency(cycle, "source_set") / "manifest.json",
+        provider_contract=resolve_cycle_dependency(cycle, "provider_contract"),
+    )
     return create(connection, cycle_id=cycle_id, key=key,
                   expected_composition_checksum=expected_composition_checksum,
                   admission_mechanism_version=mechanism, decisions=decisions,

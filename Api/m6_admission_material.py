@@ -54,16 +54,15 @@ def resolve(connection, *, cycle_id: str, observations: list[dict]) -> list[dict
         material, analysis, target = row['material_json'], row['evidence_json'], row['content_json']
         if checksum(row['snapshot_json']) != row['snapshot_checksum']:
             raise ValueError('M6_ADMISSION_SNAPSHOT_CHECKSUM')
-        from Api.m6_input_resolver import load_criteria
-        if row['material_json']['criteria'] != load_criteria(row['snapshot_json']):
-            raise ValueError('M6_ADMISSION_M2_UNVERIFIED')
         if row['usage_scope'] == 'assessment':
             from Api.m10_input_resolver import resolve as resolve_handoff
         else:
-            from Api.m6_input_resolver import resolve as resolve_handoff
+            from Api.m6_input_resolver_v2 import resolve as resolve_handoff
         _, original_material = resolve_handoff(connection, material['handoff_ref']['id'])
         if original_material != material:
             raise ValueError('M6_ADMISSION_MATERIAL_SNAPSHOT_MISMATCH')
+        if row['material_json']['criteria'] != original_material['criteria']:
+            raise ValueError('M6_ADMISSION_M2_UNVERIFIED')
         if row['input_json']['mode'] != 'final' or material['mode'] != 'final_as':
             raise ValueError('M6_ADMISSION_FINAL_REQUIRED')
 

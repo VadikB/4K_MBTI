@@ -10,7 +10,8 @@ from Api.m6_contracts import EvidenceAnalysis
 PACKAGE = Path(__file__).resolve().parents[1] / "assessment_definitions/prompts/m6_evidence/v1.0.1"
 
 
-def load_mechanism(ref: str = "m6_evidence/1.0.1", directory: Path = PACKAGE) -> dict:
+def load_mechanism(ref: str = "m6_evidence/1.0.1", directory: Path = PACKAGE,
+                   source_set: Path | None = None, provider_contract: Path | None = None) -> dict:
     if ref != "m6_evidence/1.0.1":
         raise ValueError("M6_MECHANISM_UNSUPPORTED")
     manifest = json.loads((directory / "manifest.json").read_bytes())
@@ -23,12 +24,12 @@ def load_mechanism(ref: str = "m6_evidence/1.0.1", directory: Path = PACKAGE) ->
         raise ValueError("CHECKSUM_MISMATCH")
     root = Path(__file__).resolve().parents[1]
     source = manifest.get("source") or {}
-    entries = json.loads((root / "docs/methodology/source-sets/2026-10-01/manifest.json").read_bytes())["entries"]
+    entries = json.loads((source_set or root / "docs/methodology/source-sets/2026-10-01/manifest.json").read_bytes())["entries"]
     registered = next((x for x in entries if x["id"] == source.get("id") and x["version"] == source.get("version")), None)
     if not registered or registered["sha256"] != source.get("sha256") or hashlib.sha256((root / registered["path"]).read_bytes()).hexdigest() != source.get("sha256"):
         raise ValueError("SOURCE_UNRESOLVED")
     config = manifest.get("execution") or {}
-    provider = load_provider_contract()
+    provider = load_provider_contract((provider_contract / "manifest.json") if provider_contract else None)
     for key in ("timeout_seconds", "max_tokens", "max_input_bytes", "lease_seconds", "validation_attempts"):
         if type(config.get(key)) is not int or config[key] <= 0:
             raise ValueError("M6_PACKAGE_INVALID")

@@ -17,19 +17,19 @@ FORBIDDEN = re.compile(
 )
 
 
-def load_package() -> dict:
-    manifest = json.loads((PACKAGE / "manifest.json").read_text(encoding="utf-8"))
+def load_package(package: Path = PACKAGE) -> dict:
+    manifest = json.loads((package / "manifest.json").read_text(encoding="utf-8"))
     expected = (1, "m8_descriptive_report", "1.1.0", "draft", "m8_descriptive_report", "PM-06")
     if tuple(manifest.get(k) for k in ("schema_version", "id", "version", "status", "scope", "owner")) != expected:
         raise ValueError("M8_DESCRIPTION_PACKAGE_INVALID")
     artifacts = []
     for name in ("prompt.md", "schema.json"):
-        raw = (PACKAGE / name).read_bytes()
+        raw = (package / name).read_bytes()
         artifacts.append({"name": name, "sha256": hashlib.sha256(raw).hexdigest()})
     if manifest.get("artifacts") != artifacts:
         raise ValueError("CHECKSUM_MISMATCH")
-    return {"manifest": manifest, "prompt": (PACKAGE / "prompt.md").read_text(encoding="utf-8"),
-            "schema": json.loads((PACKAGE / "schema.json").read_text(encoding="utf-8")),
+    return {"manifest": manifest, "prompt": (package / "prompt.md").read_text(encoding="utf-8"),
+            "schema": json.loads((package / "schema.json").read_text(encoding="utf-8")),
             "package_checksum": checksum({"manifest": manifest, "artifacts": artifacts})}
 
 
@@ -155,8 +155,8 @@ def _validate(output: dict, allowed: dict) -> dict:
     return output
 
 
-def generate(results: dict, resolved: dict, *, gateway=None) -> dict:
-    package = load_package()
+def generate(results: dict, resolved: dict, *, gateway=None, package_path: Path = PACKAGE) -> dict:
+    package = load_package(package_path)
     model_input, allowed = build_input(results, resolved)
     metadata = {"contract_version": CONTRACT_VERSION, "mechanism": {"id": package["manifest"]["id"],
                 "version": package["manifest"]["version"], "checksum": package["package_checksum"]},

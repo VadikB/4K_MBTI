@@ -3170,6 +3170,8 @@ def ensure_m5_runtime_schema(connection) -> None:
             time_budget_seconds INTEGER NOT NULL CHECK (time_budget_seconds > 0),
             calendar_window_seconds INTEGER NOT NULL CHECK (calendar_window_seconds > 0),
             parameter_sources_json JSONB NOT NULL,
+            execution_manifest_json JSONB,
+            execution_manifest_checksum TEXT,
             usage_scope TEXT NOT NULL CHECK (usage_scope IN ('assessment','qa')),
             status TEXT NOT NULL CHECK (status IN ('prepared','active','paused','interrupted','collection_closed','calculation_pending','calculated','failed')),
             created_by BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
@@ -3180,6 +3182,15 @@ def ensure_m5_runtime_schema(connection) -> None:
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     """)
+    connection.execute("ALTER TABLE m5_cycles ADD COLUMN IF NOT EXISTS execution_manifest_json JSONB")
+    connection.execute("ALTER TABLE m5_cycles ADD COLUMN IF NOT EXISTS execution_manifest_checksum TEXT")
+    connection.execute("""DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='ck_m5_cycle_execution_manifest_pair'
+                       AND conrelid='m5_cycles'::regclass) THEN
+            ALTER TABLE m5_cycles ADD CONSTRAINT ck_m5_cycle_execution_manifest_pair CHECK
+                ((execution_manifest_json IS NULL) = (execution_manifest_checksum IS NULL));
+        END IF;
+    END $$""")
     connection.execute("""
         CREATE TABLE IF NOT EXISTS m5_cycle_sessions (
             id BIGSERIAL PRIMARY KEY,

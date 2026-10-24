@@ -184,6 +184,7 @@ class ProductCyclePreparationQueue:
         from Api import m10_product_flow, m7_cycle_planner
         from Api.llm.deepseek_gateway import DeepSeekGateway
         from Api import m5_functional_generation_service
+        from Api.cycle_execution_manifest import resolve_cycle_dependency
 
         failure_result = None
         try:
@@ -252,6 +253,12 @@ class ProductCyclePreparationQueue:
                         raise ValueError("M5_FUNCTIONAL_CASE_VERSION_NOT_FOUND")
                     frozen_case = dict(frozen_case_row["content_json"])
                     frozen_case_checksum = frozen_case_row["content_checksum"]
+                    frozen_cycle = connection.execute(
+                        "SELECT * FROM m5_cycles WHERE cycle_id=%s", (str(result["plan"]["cycle_id"]),)
+                    ).fetchone()
+                    functional_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_package")
+                    repair_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_repair")
+                    protocol_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_protocol")
             if needs_generation:
                 snapshot = m5_functional_generation_service.build_input_snapshot(
                     case_id=decision["selected_case_id"], profile=frozen_profile,
@@ -260,6 +267,9 @@ class ProductCyclePreparationQueue:
                     author_as_example=frozen_case["author_assessment_situation"],
                     profile_checksum=profile["checksum"],
                     case_version_checksum=frozen_case_checksum,
+                    source_root=functional_package / "sources/functional-v0.2",
+                    repair_package=repair_package,
+                    protocol_package=protocol_package,
                 )
                 generated = m5_functional_generation_service.prepare(snapshot, DeepSeekGateway())
                 if not generated["admitted_for_participant"]:

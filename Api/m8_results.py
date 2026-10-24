@@ -10,10 +10,19 @@ from Api import m7_completion
 from Api import m6_cycle_aggregation_repository as calculations
 from Api.m8_report_package import load_package as load_report_package
 from Api.typst_pdf_renderer import render_typst_report
+from Api.cycle_execution_manifest import resolve_cycle_dependency
 
 RESULTS_VERSION = "m8-results/1.0.0"
 REPORT_TEMPLATE_VERSION = "m8-basic-report/1.4.1"
 ALLOWED_AUDIENCES = {"assessee", "customer", "methodology_qa"}
+
+
+def _cycle_report_packages(connection, cycle_id: str):
+    cycle = m7_completion._cycle(connection, cycle_id, lock=False)
+    report = resolve_cycle_dependency(cycle, "m8_report_projection")
+    descriptive = resolve_cycle_dependency(cycle, "m8_descriptive_report")
+    source_set = resolve_cycle_dependency(cycle, "source_set")
+    return cycle, report, descriptive, source_set
 
 
 def ensure_schema(connection) -> None:
@@ -114,7 +123,7 @@ def _partial_result_projection(c46: dict, c56: dict, processing: dict, template:
 
 
 def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: dict | None,
-                   profile_snapshot: dict | None) -> dict:
+                   profile_snapshot: dict | None, report_template: dict | None = None) -> dict:
     c56 = calculation["c56"]
     if c56.get("contract") != "C-56" or c56.get("readiness") != "ready_for_pm06":
         raise ValueError("M8_INPUT_NOT_READY")
@@ -154,7 +163,10 @@ def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: di
     limitations = list(c56.get("limitations") or []) + ["Skill Level is not derived from numeric Score"]
     if failed_admissions:
         limitations.append("Часть результата ограничена техническим сбоем обработки; это не L0 и не содержательный вывод.")
-    partial_result = _partial_result_projection(c46, c56, processing, load_report_package()["template"])
+    partial_result = _partial_result_projection(
+        c46, c56, processing,
+        report_template if report_template is not None else load_report_package()["template"],
+    )
     limitations += [x["message"] for x in partial_result["limitation_reasons"]]
     plan = c46["payload_json"].get("plan") or {}
     return_policy = plan.get("return_policy_snapshot") or {}
@@ -218,7 +230,10 @@ def create_results(connection, *, cycle_id: str, calculation_id: str, key: str,
     if not profile_row or profile_row["checksum"] != cycle["profile_ref_json"].get("checksum"):
         raise ValueError("CHECKSUM_MISMATCH")
     profile_snapshot = {"ref": cycle["profile_ref_json"], "content": profile_row["content_json"]}
-    payload = _build_payload(cycle, c46, calculation, target_profile, profile_snapshot)
+    report_path = resolve_cycle_dependency(cycle, "m8_report_projection")
+    source_set = resolve_cycle_dependency(cycle, "source_set")
+    report_template = load_report_package(report_path, source_set / "manifest.json")["template"]
+    payload = _build_payload(cycle, c46, calculation, target_profile, profile_snapshot, report_template)
     logical = connection.execute("SELECT * FROM m8_results WHERE cycle_db_id=%s FOR UPDATE", (cycle["id"],)).fetchone()
     if not logical:
         results_id = uuid4()
@@ -280,7 +295,14 @@ def _admission_summary(decision: dict) -> dict:
 
 
 def _report_content(results: dict, audience: str, target_profile: dict | None, *, connection=None, gateway=None) -> dict:
-    package = load_report_package()
+    if connection is None:
+        # Pure projection support for unit consumers; persisted report creation always
+        # supplies a connection and therefore must resolve the frozen Cycle manifest.
+        package = load_report_package()
+        descriptive_path = None
+    else:
+        _, report_path, descriptive_path, source_set = _cycle_report_packages(connection, results["cycle_id"])
+        package = load_report_package(report_path, source_set / "manifest.json")
     payload = results["results"]
     if audience not in ALLOWED_AUDIENCES:
         raise ValueError("M8_AUDIENCE_INVALID")
@@ -299,7 +321,10 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
     try:
         from Api.m8_recommendation_basis import resolve
         from Api.m8_descriptive_report import generate
-        descriptive = generate(results, resolve(connection, results), gateway=gateway)
+        kwargs = {"gateway": gateway}
+        if descriptive_path is not None:
+            kwargs["package_path"] = descriptive_path
+        descriptive = generate(results, resolve(connection, results), **kwargs)
     except (ValueError, KeyError, OSError):
         pass
     report = {"schema_version": 1, "contract": "C-67", "message_version": "1.1", "owner": "PM-06", "consumer": "PM-07",

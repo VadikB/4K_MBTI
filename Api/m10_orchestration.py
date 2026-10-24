@@ -14,6 +14,7 @@ from Api.m10_input_resolver import resolve
 from Api.m10_product_queue import enqueue_assessment, enqueue_evidence
 from Api.m6_package_v2 import load_mechanism as load_evidence_mechanism
 from Api.qa_orchestration import sql_scope
+from Api.cycle_execution_manifest import resolve_cycle_dependency
 
 logger = logging.getLogger(__name__)
 PROCESSING_CONTRACT_VERSION = "m10-processing-recovery/1.0.0"
@@ -108,9 +109,17 @@ def _processing_failure(calculation: dict) -> dict | None:
 
 def enqueue_handoff(connection, *, handoff_id: str, created_by: int) -> dict:
     as_db_id, material = resolve(connection, handoff_id)
+    cycle = connection.execute("SELECT * FROM m5_cycles WHERE id=(SELECT cycle_db_id FROM m5_assessment_situations WHERE id=%s)",
+                               (as_db_id,)).fetchone()
+    cycle = dict(cycle)
     request = enqueue_evidence(
         connection, as_db_id=as_db_id, handoff_id=handoff_id, key=f"product-evidence:{handoff_id}",
-        material=material, mechanism=load_evidence_mechanism("m6_evidence/1.0.1"), created_by=created_by,
+        material=material, mechanism=load_evidence_mechanism(
+            "m6_evidence/1.0.1",
+            resolve_cycle_dependency(cycle, "m6_evidence"),
+            resolve_cycle_dependency(cycle, "source_set") / "manifest.json",
+            resolve_cycle_dependency(cycle, "provider_contract"),
+        ), created_by=created_by,
     )
     cycle = connection.execute("SELECT cycle_db_id FROM m5_assessment_situations WHERE id=%s", (as_db_id,)).fetchone()
     _set_state(connection, int(cycle["cycle_db_id"]), status="processing", stage="evidence_queued")
@@ -149,9 +158,16 @@ def _queue_assessment(connection) -> bool:
         ORDER BY a.created_at FOR UPDATE OF c SKIP LOCKED LIMIT 1""").fetchone()
     if not row:
         return False
+    cycle = connection.execute("SELECT * FROM m5_cycles WHERE id=%s", (row["cycle_db_id"],)).fetchone()
+    cycle = dict(cycle)
     request = enqueue_assessment(
         connection, evidence_revision_id=str(row["id"]), key=f"product-assessment:{row['id']}",
-        mechanism=load_assessment_mechanism("m6_indicator_assessment/1.0.1"), created_by=int(row["created_by"]),
+        mechanism=load_assessment_mechanism(
+            "m6_indicator_assessment/1.0.1",
+            resolve_cycle_dependency(cycle, "m6_indicator_assessment"),
+            resolve_cycle_dependency(cycle, "source_set") / "manifest.json",
+            resolve_cycle_dependency(cycle, "provider_contract"),
+        ), created_by=int(row["created_by"]),
     )
     _set_state(connection, int(row["cycle_db_id"]), status="processing", stage="assessment_queued")
     return bool(request)
