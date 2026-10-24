@@ -47,7 +47,7 @@ def test_cycle_session_membership_freeze_and_collection_boundary(test_database_u
         )
         saved = read_cycle(connection, str(cycle["cycle_id"]))
         validate_manifest(cycle["execution_manifest_json"], cycle["execution_manifest_checksum"])
-        assert cycle["execution_manifest_json"]["application_version"] == "2.0.22"
+        assert cycle["execution_manifest_json"]["application_version"] == "2.0.23"
         assert resolve_cycle_dependency(cycle, "m7_cycle_plan").name == "v1"
         assert saved["time_budget_seconds"] == 2700
         assert saved["calendar_window_seconds"] == 172800

@@ -1609,6 +1609,11 @@ const coverageLabel = (cut) => {
   return `${cut.numerator}/${cut.denominator} · ${(cut.ratio * 100).toFixed(1)}%`;
 };
 
+const coverageContextLabel = (cut) => {
+  if (!cut || cut.denominator == null) return 'не передано';
+  return `${cut.numerator}/${cut.denominator}`;
+};
+
 const comparisonReasonLabels = {
   different_role: 'Роли в оценках различаются.',
   role_snapshot_missing: 'Не сохранено достаточное подтверждение роли.',
@@ -1822,7 +1827,13 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAcces
   }
   setupM8CompetencyNavigation(c67);
   const coverage = document.getElementById('m8-report-coverage');
-  coverage.innerHTML = `<details><summary>Как получен результат</summary>` + Object.entries(c67.coverage || {}).map(([scope, cuts]) => `<section><h4>${escapeHtml(scope === 'full_m2' ? 'Полный состав методологии' : 'План этой оценки')}</h4>` +
+  const context = c67.coverage_context || {};
+  const scopeSummary = context.contract_version
+    ? `<p><strong>Возможность каталога в выбранном составе:</strong> ${escapeHtml(coverageContextLabel(context.catalog_possibility))}. ` +
+      `<strong>Состав плана Cycle:</strong> ${escapeHtml(coverageContextLabel(context.cycle_plan))}.</p>` +
+      `<p>Эти значения не являются баллом и не гарантируют возникновение возможности, получение Evidence или допустимого вклада.</p>`
+    : '';
+  coverage.innerHTML = `<details><summary>Как получен результат</summary>${scopeSummary}` + Object.entries(c67.coverage || {}).map(([scope, cuts]) => `<section><h4>${escapeHtml(scope === 'full_m2' ? 'Нормативный состав M2' : 'План этого Cycle')}</h4>` +
     Object.entries(cuts).map(([name, cut]) => `<p><strong>${escapeHtml(coverageLabels[name] || 'Неизвестный разрез покрытия')}</strong>: ${escapeHtml(coverageLabel(cut))}</p>`).join('') + '</section>').join('') +
     `<p><strong>Проверка механизма:</strong> ${c67.reliability?.status === 'verified' ? 'проверена в указанной области' : c67.reliability?.status === 'not_verified' ? 'нормативная проверка ещё не подтверждена' : 'сведения о проверке отсутствуют'}.</p></details>`;
   document.getElementById('m8-report-limitations').innerHTML = (c67.limitations || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('');

@@ -1,5 +1,5 @@
 from Api import m8_results
-from Api.m8_results import _comparison, _partial_result_projection, _report_content
+from Api.m8_results import _comparison, _coverage_context, _partial_result_projection, _report_content
 from Api.m8_report_package import load_package
 
 
@@ -81,6 +81,39 @@ def test_technical_failure_is_not_collection_incomplete():
            "limitations":[]}
     result = _partial_result_projection(c46, c56, {"status":"failed"}, load_package()["template"])
     assert [x["code"] for x in result["limitation_reasons"]] == ["technical_failure"]
+
+
+def test_coverage_context_keeps_catalog_plan_facts_and_result_separate():
+    cut = lambda numerator, denominator: {
+        "numerator": numerator, "denominator": denominator,
+        "ratio": numerator / denominator if denominator else None,
+    }
+    c46 = {"payload_json": {"plan": {"untraversed_route": [
+        {"purpose_target_ids": ["I1", "I2"]},
+        {"purpose_target_ids": ["I2", "I3", "OUTSIDE"]},
+    ]}}}
+    c56 = {
+        "full_target_set": [{"indicator_id": value} for value in ("I1", "I2", "I3", "I4")],
+        "planned_target_set": [{"indicator_id": value} for value in ("I1", "I2")],
+        "coverage": {"full_m2": {
+            "opportunities": cut(2, 4),
+            "indicator_assessments": cut(1, 4),
+            "admissible_contributions": cut(1, 4),
+        }},
+        "skill_outcomes": [{"skill_id": "K1.S1", "outcome": "partial_score", "score": {"value": 1}}],
+    }
+    result = _coverage_context(c46, c56)
+    assert result["not_a_score"] is True
+    assert result["catalog_possibility"] == {
+        "numerator": 3, "denominator": 4, "ratio": .75,
+        "meaning": "IndicatorID addressable by the immutable accepted Cycle route",
+    }
+    assert result["cycle_plan"]["numerator"] == 2
+    assert result["actual_trajectory"]["opportunities"]["numerator"] == 2
+    assert result["actual_trajectory"]["indicator_assessments"]["numerator"] == 1
+    assert result["result_sufficiency"]["skill_outcomes"] == [
+        {"skill_id": "K1.S1", "outcome": "partial_score"}
+    ]
 
 
 def test_pdf_renderer_is_bound_to_saved_report_template(monkeypatch):

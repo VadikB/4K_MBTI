@@ -43,3 +43,12 @@ test('REP01 keeps exact report binding and handles PDF failure locally', () => {
   assert.match(styles, /@media \(max-width: 720px\)[\s\S]*report-tab-select/);
   assert.match(styles, /min-height:\s*48px/);
 });
+
+test('A05 separates catalog, Cycle plan and factual coverage from the score', () => {
+  assert.match(report, /Возможность каталога в выбранном составе/);
+  assert.match(report, /Состав плана Cycle/);
+  assert.match(report, /не являются баллом/);
+  assert.match(report, /не гарантируют возникновение возможности, получение Evidence или допустимого вклада/);
+  assert.match(report, /Нормативный состав M2/);
+  assert.match(report, /План этого Cycle/);
+});

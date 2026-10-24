@@ -122,6 +122,52 @@ def _partial_result_projection(c46: dict, c56: dict, processing: dict, template:
     return result
 
 
+def _coverage_context(c46: dict, c56: dict) -> dict:
+    """Describe coverage scopes without turning them into an assessment score."""
+    full_ids = {str(item["indicator_id"]) for item in c56.get("full_target_set") or []}
+    planned_ids = {str(item["indicator_id"]) for item in c56.get("planned_target_set") or []}
+    plan = c46.get("payload_json", {}).get("plan") or {}
+    catalog_ids = {
+        str(indicator_id)
+        for route_item in plan.get("untraversed_route") or []
+        for indicator_id in route_item.get("purpose_target_ids") or []
+    } & full_ids
+    full_coverage = c56.get("coverage", {}).get("full_m2", {})
+
+    def cut(ids: set[str], denominator: int) -> dict:
+        return {
+            "numerator": len(ids),
+            "denominator": denominator,
+            "ratio": (len(ids) / denominator) if denominator else None,
+        }
+
+    return {
+        "contract_version": "m8-coverage-context/1.0.0",
+        "not_a_score": True,
+        "catalog_possibility": {
+            **cut(catalog_ids, len(full_ids)),
+            "meaning": "IndicatorID addressable by the immutable accepted Cycle route",
+        },
+        "cycle_plan": {
+            **cut(planned_ids, len(full_ids)),
+            "meaning": "IndicatorID selected for this Cycle; it does not guarantee an opportunity or Evidence",
+        },
+        "actual_trajectory": {
+            "opportunities": full_coverage.get("opportunities"),
+            "indicator_assessments": full_coverage.get("indicator_assessments"),
+            "admissible_contributions": full_coverage.get("admissible_contributions"),
+            "meaning": "Observed opportunities, final IA and admitted contributions are separate facts",
+        },
+        "result_sufficiency": {
+            "skill_outcomes": [
+                {"skill_id": item.get("skill_id"), "outcome": item.get("outcome")}
+                for item in c56.get("skill_outcomes") or []
+            ],
+            "meaning": "Result sufficiency is determined by M6/M8 rules, not by catalog or plan coverage",
+        },
+    }
+
+
 def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: dict | None,
                    profile_snapshot: dict | None, report_template: dict | None = None) -> dict:
     c56 = calculation["c56"]
@@ -185,7 +231,8 @@ def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: di
         "assessed_skill_profile": skills,
         "competencies": [{"competency_id": key[0], "competency_name": key[1], "skill_ids": value,
                           "score": None} for key, value in sorted(competencies.items())],
-        "coverage": c56["coverage"], "admissions": c56["admissions"], "observations": c56["observations"],
+        "coverage": c56["coverage"], "coverage_context": _coverage_context(c46, c56),
+        "admissions": c56["admissions"], "observations": c56["observations"],
         "confidence": c56["confidence"], "reliability": c56["reliability"],
         "limitations": list(dict.fromkeys(limitations)), "processing": processing,
         "partial_result": partial_result,
@@ -334,6 +381,7 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
             "goal": payload["goal"], "time": payload["time"], "collection": payload["collection"],
             "sessions": payload["sessions"], "assessment_situations": payload["assessment_situations"],
             "skills": skills, "competencies": payload["competencies"], "coverage": payload["coverage"],
+            "coverage_context": payload.get("coverage_context"),
             "confidence": payload["confidence"], "reliability": payload["reliability"],
             "limitations": payload["limitations"], "target_profile": target_profile or payload.get("target_profile"),
             "partial_result": payload.get("partial_result"),
