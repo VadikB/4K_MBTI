@@ -81,6 +81,32 @@ def test_identical_published_program_revision_is_idempotent(db):
     assert db.execute("SELECT count(*) AS n FROM m7_parameter_revisions WHERE source_scope='program'").fetchone()['n']==1
 
 
+def test_pilot_120_program_revision_is_resolved_and_frozen_in_new_cycle(db):
+    revision=save_revision(db,source_scope='program',organization_id=10,assessment_configuration_id=100,
+        values={'time_budget_seconds':7200,'calendar_window_seconds':259200},created_by=99)
+    resolved=resolve(db,personalized_profile_id=1,usage_scope='assessment')
+    assert resolved['values']=={'time_budget_seconds':7200,'calendar_window_seconds':259200}
+    assert resolved['sources']['time_budget_seconds']['kind']=='program'
+    assert resolved['sources']['time_budget_seconds']['revision_id']==str(revision['id'])
+    display=resolve_display_timing(db,personalized_profile_id=1)
+    assert display['time_budget_seconds']==7200
+    assert display['calendar_window_seconds']==259200
+
+    cycle=create_cycle(db,personalized_profile_id=1,selected_role_ref={'id':'r','version':'1','checksum':'x'},
+        target_set=[{'indicator_id':'K1.I1','m2_version':'1'}],created_by=7,usage_scope='assessment')
+    row=db.execute("SELECT time_budget_seconds,calendar_window_seconds,parameter_sources_json "
+        "FROM m5_cycles WHERE id=%s",(cycle['id'],)).fetchone()
+    assert row['time_budget_seconds']==7200
+    assert row['calendar_window_seconds']==259200
+    assert row['parameter_sources_json']['time_budget']['kind']=='program'
+
+    save_revision(db,source_scope='program',organization_id=10,assessment_configuration_id=100,
+        values={'time_budget_seconds':7300,'calendar_window_seconds':259200},created_by=99)
+    frozen=db.execute("SELECT time_budget_seconds,calendar_window_seconds,parameter_sources_json "
+        "FROM m5_cycles WHERE id=%s",(cycle['id'],)).fetchone()
+    assert frozen==row
+
+
 def test_invalid_values_and_client_override_are_not_defaults(db):
     assert resolve(db,personalized_profile_id=1,usage_scope='assessment')['values']['time_budget_seconds']==3600
     for value in (0,-1,'3600',True):
