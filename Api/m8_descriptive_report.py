@@ -9,8 +9,8 @@ from pathlib import Path
 from Api.m5_case_runtime import checksum
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "assessment_definitions/prompts/m8_descriptive_report/v1"
-CONTRACT_VERSION = "m8-descriptive-report/1.1.0"
+PACKAGE = ROOT / "assessment_definitions/prompts/m8_descriptive_report/v2"
+CONTRACT_VERSION = "m8-descriptive-report/1.2.0"
 FORBIDDEN = re.compile(
     r"\b(рекоменду(?:ем|ется|ю)|совету(?:ем|ю)|попробуйте|вам следует|"
     r"упражнени[ея]|план развития|диагноз|профпригодност)\b", re.IGNORECASE,
@@ -19,16 +19,26 @@ FORBIDDEN = re.compile(
 
 def load_package(package: Path = PACKAGE) -> dict:
     manifest = json.loads((package / "manifest.json").read_text(encoding="utf-8"))
-    expected = (1, "m8_descriptive_report", "1.1.0", "draft", "m8_descriptive_report", "PM-06")
-    if tuple(manifest.get(k) for k in ("schema_version", "id", "version", "status", "scope", "owner")) != expected:
+    identity = tuple(manifest.get(k) for k in ("schema_version", "id", "status", "scope", "owner"))
+    if identity != (1, "m8_descriptive_report", "draft", "m8_descriptive_report", "PM-06"):
+        raise ValueError("M8_DESCRIPTION_PACKAGE_INVALID")
+    version = manifest.get("version")
+    artifact_names = {
+        "1.1.0": ("prompt.md", "schema.json"),
+        "1.2.0": ("prompt.md", "schema.json", "validator_prompt.md", "validator_schema.json"),
+    }.get(version)
+    if artifact_names is None:
         raise ValueError("M8_DESCRIPTION_PACKAGE_INVALID")
     artifacts = []
-    for name in ("prompt.md", "schema.json"):
+    for name in artifact_names:
         raw = (package / name).read_bytes()
         artifacts.append({"name": name, "sha256": hashlib.sha256(raw).hexdigest()})
     if manifest.get("artifacts") != artifacts:
         raise ValueError("CHECKSUM_MISMATCH")
+    validator_prompt = ((package / "validator_prompt.md").read_text(encoding="utf-8")
+                        if version == "1.2.0" else None)
     return {"manifest": manifest, "prompt": (package / "prompt.md").read_text(encoding="utf-8"),
+            "validator_prompt": validator_prompt,
             "schema": json.loads((package / "schema.json").read_text(encoding="utf-8")),
             "package_checksum": checksum({"manifest": manifest, "artifacts": artifacts})}
 
@@ -51,7 +61,7 @@ def _profile_context(snapshot: dict | None) -> list[dict]:
     return values
 
 
-def build_input(results: dict, resolved: dict) -> tuple[dict, dict]:
+def build_input(results: dict, resolved: dict, *, contract_version: str = CONTRACT_VERSION) -> tuple[dict, dict]:
     payload = results["results"]
     if resolved.get("cycle_id") != results["cycle_id"] or resolved.get("results_revision_id") != results["revision_id"]:
         raise ValueError("M8_DESCRIPTION_SCOPE_MISMATCH")
@@ -91,7 +101,7 @@ def build_input(results: dict, resolved: dict) -> tuple[dict, dict]:
         text = str(reason.get("message") or reason.get("text") or "").strip()
         if text:
             allowed["limitations"].add(text)
-    model_input = {"contract_version": CONTRACT_VERSION, "cycle_id": results["cycle_id"],
+    model_input = {"contract_version": contract_version, "cycle_id": results["cycle_id"],
                    "results_revision_id": results["revision_id"],
                    "skills": [{k: item.get(k) for k in ("skill_id", "skill_name", "skill_description", "competency_id", "competency_name",
                                                          "outcome", "score", "completeness", "limitations")}
@@ -155,10 +165,34 @@ def _validate(output: dict, allowed: dict) -> dict:
     return output
 
 
+def _validate_semantic_decision(decision: dict, output: dict) -> dict:
+    if not isinstance(decision, dict) or set(decision) != {"status", "claim_decisions", "summary_decisions"}:
+        raise ValueError("M8_DESCRIPTION_SEMANTIC_OUTPUT_INVALID")
+    if decision["status"] not in {"accepted", "rejected"}:
+        raise ValueError("M8_DESCRIPTION_SEMANTIC_STATUS_INVALID")
+    claims = decision["claim_decisions"]
+    summaries = decision["summary_decisions"]
+    if not isinstance(claims, list) or not isinstance(summaries, list):
+        raise ValueError("M8_DESCRIPTION_SEMANTIC_DECISIONS_INVALID")
+    allowed_decisions = {"supported", "contradicted", "insufficient"}
+    required = {"index", "decision", "reason_code"}
+    for items, expected_count in ((claims, len(output["claims"])), (summaries, len(output["summary"]))):
+        if len(items) != expected_count or {item.get("index") for item in items if isinstance(item, dict)} != set(range(expected_count)):
+            raise ValueError("M8_DESCRIPTION_SEMANTIC_COVERAGE_INVALID")
+        for item in items:
+            if set(item) != required or item["decision"] not in allowed_decisions or not str(item["reason_code"]).strip():
+                raise ValueError("M8_DESCRIPTION_SEMANTIC_DECISION_INVALID")
+    all_supported = all(item["decision"] == "supported" for item in claims + summaries)
+    if (decision["status"] == "accepted") != all_supported:
+        raise ValueError("M8_DESCRIPTION_SEMANTIC_STATUS_MISMATCH")
+    return decision
+
+
 def generate(results: dict, resolved: dict, *, gateway=None, package_path: Path = PACKAGE) -> dict:
     package = load_package(package_path)
-    model_input, allowed = build_input(results, resolved)
-    metadata = {"contract_version": CONTRACT_VERSION, "mechanism": {"id": package["manifest"]["id"],
+    contract_version = f"m8-descriptive-report/{package['manifest']['version']}"
+    model_input, allowed = build_input(results, resolved, contract_version=contract_version)
+    metadata = {"contract_version": contract_version, "mechanism": {"id": package["manifest"]["id"],
                 "version": package["manifest"]["version"], "checksum": package["package_checksum"]},
                 "input": model_input, "input_checksum": checksum(model_input)}
     if not model_input["bases"]:
@@ -175,7 +209,21 @@ def generate(results: dict, resolved: dict, *, gateway=None, package_path: Path 
                            max_tokens=package["manifest"]["execution"]["max_tokens"],
                            routing_key=f"m8-description:{results['revision_id']}", response_format={"type": "json_object"})
         output = _validate(json.loads(raw), allowed)
-        return {**metadata, "status": "ready", "failure_reason": None, **output}
+        if package["validator_prompt"] is None:
+            return {**metadata, "status": "ready", "failure_reason": None, **output}
+        semantic_input = {"contract_version": contract_version, "evidence": model_input, "candidate": output}
+        semantic_raw = gateway.chat(
+            [{"role": "system", "content": package["validator_prompt"]},
+             {"role": "user", "content": json.dumps(semantic_input, ensure_ascii=False)}],
+            temperature=0, timeout_seconds=package["manifest"]["execution"]["timeout_seconds"],
+            max_tokens=package["manifest"]["execution"]["max_tokens"],
+            routing_key=f"m8-description-validation:{results['revision_id']}", response_format={"type": "json_object"})
+        semantic = _validate_semantic_decision(json.loads(semantic_raw), output)
+        if semantic["status"] != "accepted":
+            return {**metadata, "status": "failed", "failure_reason": "DESCRIPTION_SEMANTIC_REJECTED",
+                    "semantic_validation": semantic, "summary": [], "claims": []}
+        return {**metadata, "status": "ready", "failure_reason": None,
+                "semantic_validation": semantic, **output}
     except (RuntimeError, ValueError, KeyError, TypeError, json.JSONDecodeError):
         return {**metadata, "status": "failed", "failure_reason": "DESCRIPTION_GENERATION_FAILED",
                 "summary": [], "claims": []}

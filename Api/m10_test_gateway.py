@@ -113,7 +113,12 @@ class BrowserAcceptanceGateway:
 
     def chat(self, messages, **_kwargs):
         value = json.loads(messages[1]["content"])
-        if value.get('contract_version') == 'm8-descriptive-report/1.1.0':
+        if value.get('contract_version') == 'm8-descriptive-report/1.2.0' and 'candidate' in value:
+            candidate=value['candidate']
+            return json.dumps({'status':'accepted',
+                'claim_decisions':[{'index':i,'decision':'supported','reason_code':'SUPPORTED_FIXTURE'} for i,_ in enumerate(candidate['claims'])],
+                'summary_decisions':[{'index':i,'decision':'supported','reason_code':'SUPPORTED_FIXTURE'} for i,_ in enumerate(candidate['summary'])]},ensure_ascii=False)
+        if value.get('contract_version') == 'm8-descriptive-report/1.2.0':
             claims=[]
             for basis in value.get('bases',[]):
                 limitation=list(basis.get('limitations') or ['Синтетическое основание; не содержательная приёмка.'])

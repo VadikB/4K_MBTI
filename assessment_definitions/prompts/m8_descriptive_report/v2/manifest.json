@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "m8_descriptive_report",
+  "version": "1.2.0",
+  "status": "draft",
+  "scope": "m8_descriptive_report",
+  "owner": "PM-06",
+  "source": {
+    "id": "M8",
+    "version": "1.2",
+    "sha256": "a61909c996f66e88668c4cf713fb91129f3ab778ed843d0e796c7d4e226b73fa",
+    "sections": ["M8.2", "M8.3", "M8.7", "M8.7.1", "M8.7.2"]
+  },
+  "input_contract": "M8.DescriptiveInput/1",
+  "output_contract": "M8.DescriptiveOutput/1",
+  "semantic_validation_contract": "M8.SemanticGroundingDecision/1",
+  "artifacts": [
+    {"name": "prompt.md", "sha256": "83be765b378dd4043982db9d8a4713b2b748efce722cafec26f32a37892bc647"},
+    {"name": "schema.json", "sha256": "624855c167f3a8e03e9570467aa56f6dfcbd74696d99960ca51b1d88b8640b91"},
+    {"name": "validator_prompt.md", "sha256": "d6c5ec96126174a33a9fa70c141508d4ce93e58a92429a0fb3a99328363161df"},
+    {"name": "validator_schema.json", "sha256": "fc8d28c2ccce1cdf6d5f1ace75476cf272bf4750bb63a6a75ccc286098472141"}
+  ],
+  "execution": {"temperature": 0, "timeout_seconds": 120, "max_tokens": 8000, "max_input_bytes": 160000, "lease_seconds": 300, "max_attempts": 2}
+}

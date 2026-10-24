@@ -1,4 +1,7 @@
 import json
+from pathlib import Path
+
+import pytest
 
 from Api.m8_descriptive_report import build_input, generate, load_package
 from test_m8_recommendations import fixture
@@ -13,6 +16,20 @@ class Gateway:
 
     def chat(self, messages, **kwargs):
         self.calls.append((messages, kwargs))
+        value = json.loads(messages[1]["content"])
+        if "candidate" in value:
+            candidate = value["candidate"]
+            return json.dumps({
+                "status": "accepted",
+                "claim_decisions": [
+                    {"index": index, "decision": "supported", "reason_code": "SUPPORTED_FIXTURE"}
+                    for index, _ in enumerate(candidate["claims"])
+                ],
+                "summary_decisions": [
+                    {"index": index, "decision": "supported", "reason_code": "SUPPORTED_FIXTURE"}
+                    for index, _ in enumerate(candidate["summary"])
+                ],
+            }, ensure_ascii=False)
         return json.dumps(self.output, ensure_ascii=False)
 
 
@@ -69,12 +86,70 @@ def test_package_and_grounded_description_are_versioned_and_pii_free():
     gateway = Gateway(valid_output())
     report = generate(results, resolved, gateway=gateway)
 
-    assert load_package()["manifest"]["version"] == "1.1.0"
+    assert load_package()["manifest"]["version"] == "1.2.0"
     assert report["status"] == "ready"
     assert report["claims"][1]["text"] == "Хочет согласовать срок"
     assert "private@example.invalid" not in str(report)
     assert gateway.calls[0][1]["temperature"] == 0
     assert gateway.calls[0][1]["response_format"] == {"type": "json_object"}
+    assert gateway.calls[1][1]["routing_key"] == "m8-description-validation:r1"
+
+
+def test_v1_package_keeps_frozen_single_pass_behavior():
+    results, resolved = inputs()
+    gateway = Gateway(valid_output())
+    package = Path(__file__).resolve().parents[2] / "assessment_definitions/prompts/m8_descriptive_report/v1"
+
+    report = generate(results, resolved, gateway=gateway, package_path=package)
+
+    assert report["status"] == "ready"
+    assert report["contract_version"] == "m8-descriptive-report/1.1.0"
+    assert len(gateway.calls) == 1
+
+
+class RejectingSemanticGateway(Gateway):
+    def __init__(self, output, reason_code="OPPOSITE_MEANING"):
+        super().__init__(output)
+        self.reason_code = reason_code
+
+    def chat(self, messages, **kwargs):
+        self.calls.append((messages, kwargs))
+        value = json.loads(messages[1]["content"])
+        if "candidate" not in value:
+            return json.dumps(self.output, ensure_ascii=False)
+        candidate = value["candidate"]
+        return json.dumps({
+            "status": "rejected",
+            "claim_decisions": [
+                {"index": index, "decision": "contradicted" if index == 0 else "supported",
+                 "reason_code": self.reason_code if index == 0 else "SUPPORTED_QUOTE"}
+                for index, _ in enumerate(candidate["claims"])
+            ],
+            "summary_decisions": [
+                {"index": index, "decision": "contradicted", "reason_code": self.reason_code}
+                for index, _ in enumerate(candidate["summary"])
+            ],
+        }, ensure_ascii=False)
+
+
+@pytest.mark.parametrize("reason_code", [
+    "OPPOSITE_MEANING",
+    "UNSUPPORTED_GENERALIZATION",
+    "UNSUPPORTED_CAUSALITY",
+    "WRONG_CONTEXT",
+    "INSUFFICIENT_EVIDENCE",
+])
+def test_semantically_invalid_description_is_rejected_and_not_exposed_as_ready(reason_code):
+    results, resolved = inputs()
+    opposite = valid_output()
+    opposite["summary"] = ["Участник не обозначил цель коммуникации."]
+    opposite["claims"][0]["text"] = "Участник не обозначил цель коммуникации."
+    report = generate(results, resolved, gateway=RejectingSemanticGateway(opposite, reason_code))
+
+    assert report["status"] == "failed"
+    assert report["failure_reason"] == "DESCRIPTION_SEMANTIC_REJECTED"
+    assert report["summary"] == [] and report["claims"] == []
+    assert report["semantic_validation"]["claim_decisions"][0]["reason_code"] == reason_code
 
 
 def test_input_uses_only_selected_frozen_context():
