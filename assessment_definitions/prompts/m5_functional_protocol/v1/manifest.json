@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "m5_functional_protocol",
+  "version": "1.0.0",
+  "status": "draft",
+  "scope": "functional-personalization-generation",
+  "owner": "PM-03",
+  "artifacts": [
+    {"name": "challenger.md", "sha256": "4ca1b634617b65b83f5b17a7d0913ebadc6b2ec52eaffbaf51e6987acc525486"},
+    {"name": "json-retry.md", "sha256": "f7e5914203ec462e6279d4e6a9f2a3f8f2ddff640cb1991e676d587e66d6a077"},
+    {"name": "tester-addendum.md", "sha256": "abea1c2e7e474b5791d227f40e343653689702963acbc969e74d5b14e4abb365"}
+  ]
+}

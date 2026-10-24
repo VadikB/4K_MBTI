@@ -13,7 +13,8 @@ CONTRACT_PATH = (
 GATEWAY_VERSION = "deepseek-product-gateway/1"
 
 
-def load_provider_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
+def load_provider_contract(path: Path | None = CONTRACT_PATH) -> dict[str, Any]:
+    path = path or CONTRACT_PATH
     raw = path.read_bytes()
     value = json.loads(raw)
     expected = (1, "deepseek_product_gateway", "1.0.0", "draft", "deepseek", "deepseek-flash")

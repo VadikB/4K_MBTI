@@ -45,8 +45,9 @@ def _failure(exc):
     return code if (code.startswith('M6_') or code in {'CHECKSUM_MISMATCH', 'SOURCE_UNRESOLVED', 'TARGET_SET_MISMATCH'}) and code.replace('_', '').isalnum() else type(exc).__name__
 
 
-def decide(connection, *, cycle_id: str, observations: list[dict], gateway=None) -> tuple[str, list[dict], list[str]]:
-    mechanism = load_mechanism(VERSION)
+def decide(connection, *, cycle_id: str, observations: list[dict], gateway=None,
+           mechanism_directory=None, source_set=None, provider_contract=None) -> tuple[str, list[dict], list[str]]:
+    mechanism = load_mechanism(VERSION, mechanism_directory, source_set, provider_contract)
     by_indicator = defaultdict(list)
     seen = set()
     for item in observations:

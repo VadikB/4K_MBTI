@@ -6,6 +6,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from Api.m5_case_runtime import checksum
+from Api.cycle_execution_manifest import build_manifest
 
 
 def _profile_row(connection, personalized_profile_id: int) -> dict[str, Any]:
@@ -63,6 +64,14 @@ def create_cycle(
     if parameter_sources is None:
         raise ValueError("M7_PARAMETER_PROVENANCE_REQUIRED")
     sources = parameter_sources
+    target_set_checksum = checksum(normalized_targets)
+    execution_manifest, execution_manifest_checksum = build_manifest(
+        profile_ref=profile_ref,
+        selected_role_ref=selected_role_ref,
+        target_set_checksum=target_set_checksum,
+        parameter_sources=sources,
+        catalog_ref=catalog_ref,
+    )
     value = {
         "cycle_id": str(cycle_id),
         "profile_ref": profile_ref,
@@ -79,8 +88,9 @@ def create_cycle(
         INSERT INTO m5_cycles
             (cycle_id,owner_user_id,organization_id,personalized_profile_id,profile_ref_json,
              selected_role_ref_json,target_set_json,target_set_checksum,time_budget_seconds,
-             calendar_window_seconds,parameter_sources_json,usage_scope,catalog_ref_json,status,created_by)
-        VALUES (%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s,%s,%s,%s::jsonb,%s,%s::jsonb,'prepared',%s)
+             calendar_window_seconds,parameter_sources_json,execution_manifest_json,
+             execution_manifest_checksum,usage_scope,catalog_ref_json,status,created_by)
+        VALUES (%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s,%s,%s,%s::jsonb,%s::jsonb,%s,%s,%s::jsonb,'prepared',%s)
         RETURNING *
         """,
         (
@@ -91,10 +101,12 @@ def create_cycle(
             json.dumps(profile_ref),
             json.dumps(selected_role_ref),
             json.dumps(normalized_targets),
-            checksum(normalized_targets),
+            target_set_checksum,
             time_budget_seconds,
             calendar_window_seconds,
             json.dumps(sources),
+            json.dumps(execution_manifest),
+            execution_manifest_checksum,
             usage_scope,
             json.dumps(catalog_ref) if catalog_ref else None,
             created_by,

@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.3"
 SOURCE = PACKAGE / "sources/functional-v0.2"
 REPAIR_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_repair/v1"
+PROTOCOL_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_protocol/v1"
 
 
 def canonical(value: Any) -> bytes:
@@ -42,11 +43,11 @@ def _unique(pattern: str, code: str, *, source_root: Path = SOURCE) -> Path:
     return paths[0]
 
 
-def _load_repair_instruction() -> tuple[str, dict[str, str]]:
-    manifest = _read(REPAIR_PACKAGE / "manifest.json")
+def _load_repair_instruction(repair_package: Path = REPAIR_PACKAGE) -> tuple[str, dict[str, str]]:
+    manifest = _read(repair_package / "manifest.json")
     artifacts = manifest.get("artifacts") or []
     registered = next((item for item in artifacts if item.get("name") == "prompt.md"), None)
-    prompt = (REPAIR_PACKAGE / "prompt.md").read_bytes()
+    prompt = (repair_package / "prompt.md").read_bytes()
     if (manifest.get("id") != "m5_functional_repair" or manifest.get("version") != "1.0.0"
             or manifest.get("status") != "draft" or not registered
             or registered.get("sha256") != checksum(prompt)):
@@ -61,7 +62,9 @@ def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id:
                          author_as_example: dict[str, Any] | None = None,
                          profile_checksum: str | None = None,
                          case_version_checksum: str | None = None,
-                         source_root: Path = SOURCE) -> dict[str, Any]:
+                         source_root: Path = SOURCE,
+                         repair_package: Path = REPAIR_PACKAGE,
+                         protocol_package: Path = PROTOCOL_PACKAGE) -> dict[str, Any]:
     number = case_id.rsplit(".", 1)[-1]
     case_path = _unique(f"02_cases/Case_SPEC_{number}_*.json", f"PERS_CASE_SOURCE_NOT_UNIQUE:{case_id}", source_root=source_root)
     example_path = _unique(f"04_as/AS_SPEC_{number}_FUNCTIONAL_*.json", f"PERS_AS_SOURCE_NOT_UNIQUE:{case_id}", source_root=source_root)
@@ -88,8 +91,32 @@ def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id:
                      "case_version_checksum": case_version_checksum or checksum(case)},
             "author_as_example": {"path": str(example_path.relative_to(ROOT)), "sha256": checksum(example_path.read_bytes())},
             "profile": {"sha256": profile_checksum},
+            "generator_prompt": {"path": str((source_root / "07_generation/Generator_instruction_v0.2.txt").relative_to(ROOT)),
+                                 "sha256": checksum((source_root / "07_generation/Generator_instruction_v0.2.txt").read_bytes())},
+            "tester_prompt": {"path": str((source_root / "07_generation/Tester_instruction_v0.2.txt").relative_to(ROOT)),
+                              "sha256": checksum((source_root / "07_generation/Tester_instruction_v0.2.txt").read_bytes())},
+            "generation_contract": {"path": str((source_root / "07_generation/Generation_contract_v0.2.json").relative_to(ROOT)),
+                                    "sha256": checksum((source_root / "07_generation/Generation_contract_v0.2.json").read_bytes())},
+            "repair_package": {"path": str(repair_package.relative_to(ROOT))},
+            **{
+                f"protocol_{name.replace('-', '_')}": {
+                    "path": str((protocol_package / f"{name}.md").relative_to(ROOT)),
+                    "sha256": checksum((protocol_package / f"{name}.md").read_bytes()),
+                }
+                for name in ("json-retry", "tester-addendum", "challenger")
+            },
         },
     }
+
+
+def _frozen_file(snapshot: dict[str, Any], ref_name: str) -> Path:
+    ref = snapshot["refs"][ref_name]
+    path = ROOT / ref["path"]
+    if not path.is_file():
+        raise ValueError(f"CYCLE_DEPENDENCY_UNAVAILABLE:{ref_name}")
+    if checksum(path.read_bytes()) != ref["sha256"]:
+        raise ValueError(f"CYCLE_DEPENDENCY_CHECKSUM_MISMATCH:{ref_name}")
+    return path
 
 
 def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, Any]:
@@ -155,7 +182,8 @@ def _trace(response: Any, *, operation_id: str, kind: str, input_checksum: str) 
 
 
 def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation_id: str,
-                      max_tokens: int, temperature: float) -> tuple[Any, Any, list[dict[str, Any]]]:
+                      max_tokens: int, temperature: float,
+                      retry_instruction: str) -> tuple[Any, Any, list[dict[str, Any]]]:
     """Retry one malformed provider envelope; never salvage or merge partial JSON."""
     failures: list[dict[str, Any]] = []
     current = list(messages)
@@ -173,14 +201,13 @@ def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation
                              "finish_reason": response.provider.get("finish_reason")})
             if attempt == 2:
                 raise ValueError("M5_FUNCTIONAL_PROVIDER_JSON_INVALID") from exc
-            current = [*messages, {"role": "system", "content":
-                "Предыдущий ответ не был одним корректным JSON-объектом. Повтори ответ целиком: ровно один JSON-объект, без второго объекта, пояснений и Markdown."}]
+            current = [*messages, {"role": "system", "content": retry_instruction}]
     raise AssertionError("unreachable")
 
 
 def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
-    instruction = (SOURCE / "07_generation/Generator_instruction_v0.2.txt").read_text(encoding="utf-8")
-    contract = (SOURCE / "07_generation/Generation_contract_v0.2.json").read_text(encoding="utf-8")
+    instruction = _frozen_file(snapshot, "generator_prompt").read_text(encoding="utf-8")
+    contract = _frozen_file(snapshot, "generation_contract").read_text(encoding="utf-8")
     payload = {"profile": snapshot["profile"], "case": snapshot["case"],
                "author_as_example": snapshot["author_as_example"], "requirements": {
                    "output": "Верни только один JSON-объект полной AS с теми же верхнеуровневыми полями, что у author_as_example.",
@@ -197,6 +224,7 @@ def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
     operation_id = f"{snapshot['operation_id']}:generation:{input_checksum[:12]}"
     raw, response, parse_failures = _strict_json_call(
         gateway, messages, operation_id=operation_id, max_tokens=32768, temperature=0.2,
+        retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
     )
     candidate, depth = extract_candidate_as(raw)
     return {"candidate_as": candidate, "candidate_checksum": checksum(candidate),
@@ -226,13 +254,14 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                                  "paths": ["JSON path"], "reason": "string",
                                  "requirement_ref": "check_id/source_ref"}],
                }]}}
-    messages = [{"role": "system", "content": (SOURCE / "07_generation/Tester_instruction_v0.2.txt").read_text(encoding="utf-8")},
-                {"role": "system", "content": "Верни один JSON-объект с единственным верхнеуровневым полем checks. Следуй applicability_plan, используй точные check_id каждого required_checks ровно один раз. Не добавляй проверки и не вычисляй общий статус. Для каждой защищённой проверки сначала найди в candidate_as пути, которые могут противоречить requirement. PASS допустим только после явного разрешения каждого такого конфликта в adversarial_review. Не считай разные названия разными функциями без различия содержания; не превращай готовое утверждение в полезную гипотезу только потому, что участник мог бы его оспорить; атрибуция готовой классификации журналу, документу или автору не делает её неопределённой, если материал сообщает её как факт; не игнорируй преждевременно подтверждённое внешнее условие из-за наличия другого ограничения."},
+    messages = [{"role": "system", "content": _frozen_file(snapshot, "tester_prompt").read_text(encoding="utf-8")},
+                {"role": "system", "content": _frozen_file(snapshot, "protocol_tester_addendum").read_text(encoding="utf-8")},
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
     input_checksum = checksum(messages)
     operation_id = f"{snapshot['operation_id']}:tester:{input_checksum[:12]}"
     raw, response, parse_failures = _strict_json_call(
         gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
+        retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
     )
     checks = normalize_results(plan, raw.get("checks"))
     protected = [item for item in plan["required_checks"] if item.get("protected")]
@@ -251,21 +280,14 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         },
     }
     challenge_messages = [
-        {"role": "system", "content": (
-            "Ты независимый adversarial challenger. Для каждой protected_check найди во всей candidate_as "
-            "хотя бы один путь, способный нарушить requirement. FAIL ставь при неразрешённом конфликте и "
-            "локализуй blocking finding. PASS допустим только если найденные конфликты явно разрешены. "
-            "Не считай готовое утверждение неопределённым лишь из-за указания его автора/журнала/документа. "
-            "Не считай разные названия разными функциями без различия содержания. Отдельно сравни candidate_as "
-            "с author_as_example: проверь каждое новое утверждение и каждое снятое ограничение против requirements. "
-            "Верни только JSON checks."
-        )},
+        {"role": "system", "content": _frozen_file(snapshot, "protocol_challenger").read_text(encoding="utf-8")},
         {"role": "user", "content": json.dumps(challenge_payload, ensure_ascii=False)},
     ]
     challenge_checksum = checksum(challenge_messages)
     challenge_operation_id = f"{snapshot['operation_id']}:challenger:{challenge_checksum[:12]}"
     challenge_raw, challenge_response, challenge_failures = _strict_json_call(
         gateway, challenge_messages, operation_id=challenge_operation_id, max_tokens=16384, temperature=0,
+        retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
     )
     challenge_checks = normalize_results(plan, challenge_raw.get("checks"))
     challenge_by_id = {item["check_id"]: item for item in challenge_checks
@@ -291,8 +313,8 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
 def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], tested: dict[str, Any],
                      gateway: Any) -> dict[str, Any]:
     """Ask PM-03 for one complete corrected AS; never patch or admit it server-side."""
-    instruction = (SOURCE / "07_generation/Generator_instruction_v0.2.txt").read_text(encoding="utf-8")
-    repair_instruction, repair_prompt_ref = _load_repair_instruction()
+    instruction = _frozen_file(snapshot, "generator_prompt").read_text(encoding="utf-8")
+    repair_instruction, repair_prompt_ref = _load_repair_instruction(ROOT / snapshot["refs"]["repair_package"]["path"])
     payload = {
         "profile": snapshot["profile"], "case": snapshot["case"],
         "author_as_example": snapshot["author_as_example"],
@@ -317,6 +339,7 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
     operation_id = f"{snapshot['operation_id']}:generation:repair:{input_checksum[:12]}"
     raw, response, parse_failures = _strict_json_call(
         gateway, messages, operation_id=operation_id, max_tokens=32768, temperature=0.1,
+        retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
     )
     candidate, depth = extract_candidate_as(raw)
     return {"candidate_as": candidate, "candidate_checksum": checksum(candidate),

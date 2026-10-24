@@ -11,7 +11,9 @@ from Api.m6_admission_contracts import Individual, Joint
 PACKAGE = Path(__file__).resolve().parents[1] / "assessment_definitions/prompts/m6_substantive_admission/v2"
 
 
-def load_mechanism(ref: str, directory: Path = PACKAGE) -> dict:
+def load_mechanism(ref: str, directory: Path = PACKAGE,
+                   source_set: Path | None = None, provider_contract: Path | None = None) -> dict:
+    directory = directory or PACKAGE
     if ref != "m6_substantive_admission/2.0.0":
         raise ValueError("M6_ADMISSION_MECHANISM_UNSUPPORTED")
     manifest = json.loads((directory / "manifest.json").read_bytes())
@@ -24,14 +26,14 @@ def load_mechanism(ref: str, directory: Path = PACKAGE) -> dict:
         raise ValueError("CHECKSUM_MISMATCH")
     source = manifest["source"]
     root = Path(__file__).resolve().parents[1]
-    entries = json.loads((root / "docs/methodology/source-sets/2026-10-01/manifest.json").read_bytes())["entries"]
+    entries = json.loads((source_set or root / "docs/methodology/source-sets/2026-10-01/manifest.json").read_bytes())["entries"]
     registered = next((x for x in entries if x["id"] == source["id"] and x["version"] == source["version"]), None)
     if not registered or registered["sha256"] != source["sha256"]:
         raise ValueError("SOURCE_UNRESOLVED")
     if hashlib.sha256((root / registered["path"]).read_bytes()).hexdigest() != source["sha256"]:
         raise ValueError("SOURCE_UNRESOLVED")
     config = manifest["execution"]
-    provider = load_provider_contract()
+    provider = load_provider_contract((provider_contract / "manifest.json") if provider_contract else None)
     for key in ("timeout_seconds", "max_tokens", "max_input_bytes", "lease_seconds"):
         if type(config.get(key)) is not int or config[key] <= 0:
             raise ValueError("M6_ADMISSION_PACKAGE_INVALID")

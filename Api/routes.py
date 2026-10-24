@@ -8050,7 +8050,7 @@ def download_skill_assessment_pdf(user_id: int, session_id: int, request: Reques
 
 
 # PM-05: restricted QA evidence processing. Never produces IA or a user report.
-from Api import m6_repository, m6_input_resolver, m6_package, m6_worker
+from Api import m6_repository, m6_input_resolver_v2 as m6_input_resolver, m6_package, m6_worker
 from Api.m6_contracts import CreateEvidenceRequest
 from fastapi import BackgroundTasks
 
