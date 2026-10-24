@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "claim_decisions", "summary_decisions"],
+  "properties": {
+    "status": {"enum": ["accepted", "rejected"]},
+    "claim_decisions": {"type": "array", "items": {"$ref": "#/$defs/decision"}},
+    "summary_decisions": {"type": "array", "items": {"$ref": "#/$defs/decision"}}
+  },
+  "$defs": {
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "decision", "reason_code"],
+      "properties": {
+        "index": {"type": "integer", "minimum": 0},
+        "decision": {"enum": ["supported", "contradicted", "insufficient"]},
+        "reason_code": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

@@ -32,7 +32,7 @@ DEFAULT_DEPENDENCIES: dict[str, str] = {
     "m6_cycle_aggregation": "assessment_definitions/aggregation/m6_cycle_aggregation/v1",
     "m7_cycle_plan": "assessment_definitions/planning/m7_cycle_plan/v1",
     "m7_return_integration": "assessment_definitions/planning/m7_return_integration/v2",
-    "m8_descriptive_report": "assessment_definitions/prompts/m8_descriptive_report/v1",
+    "m8_descriptive_report": "assessment_definitions/prompts/m8_descriptive_report/v2",
     "m8_report_projection": "assessment_definitions/reports/m8_basic_report/v1_4",
     "m8_recommendations": "assessment_definitions/recommendations/m8/v1_2",
     "provider_contract": "assessment_definitions/providers/deepseek/v1",

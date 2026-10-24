@@ -316,7 +316,7 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
             item.pop("components", None)
         skills.append(item)
     admission_summary = [_admission_summary(d) for d in payload.get("admissions", []) if d.get("schema_version") == 2]
-    descriptive = {"contract_version":"m8-descriptive-report/1.1.0", "status":"failed",
+    descriptive = {"contract_version":"m8-descriptive-report/1.2.0", "status":"failed",
                    "failure_reason":"DESCRIPTION_GENERATION_FAILED", "summary":[], "claims":[]}
     try:
         from Api.m8_recommendation_basis import resolve
