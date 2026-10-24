@@ -60,7 +60,7 @@ from Api.assessment_role_profiles import (
     select_role_profile_for_user,
 )
 from Api.assessment_preparation_queue import assessment_preparation_queue
-from Api.product_cycle_preparation_queue import product_cycle_preparation_queue
+from Api.product_cycle_preparation_queue import product_cycle_preparation_queue, public_operation
 from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.assessment_authoring_service import assessment_authoring_service, ENTITY_CONFIG
 from Api.assessment_methodology_publication import publish_m2_qa_configuration
@@ -6194,25 +6194,28 @@ def get_owned_m5_trace(assessment_situation_id: UUID, request: Request) -> dict:
 def prepare_owned_assessment_cycle(payload: ProductCycleStartRequest, request: Request):
     token=request.cookies.get(SESSION_COOKIE_NAME);user=web_session_service.get_user_by_token(token) if token else None
     if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
-    operation = product_cycle_preparation_queue.enqueue(
-        operation_id=payload.idempotency_key,
-        user_id=int(user.id),
-        request=payload.model_dump(mode='json'),
-    )
-    if operation['status'] == 'completed' and operation.get('result_json'):
-        return {'operation_id': operation['operation_id'], 'status': 'completed', 'result': operation['result_json']}
-    return {'operation_id': operation['operation_id'], 'status': operation['status']}
+    try:
+        operation = product_cycle_preparation_queue.enqueue(
+            operation_id=payload.idempotency_key,
+            user_id=int(user.id),
+            request=payload.model_dump(mode='json'),
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail='Нет доступа к операции подготовки Cycle.') from exc
+    except ValueError as exc:
+        if str(exc) == 'PRODUCT_CYCLE_PREPARATION_IDEMPOTENCY_CONFLICT':
+            raise HTTPException(status_code=409, detail='Ключ операции уже использован для другого запроса.') from exc
+        raise
+    return public_operation(operation)
 
 
 @router.get('/assessment/cycles/preparation/{operation_id}')
 def read_owned_assessment_cycle_preparation(operation_id: str, request: Request):
     token=request.cookies.get(SESSION_COOKIE_NAME);user=web_session_service.get_user_by_token(token) if token else None
     if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
-    operation=product_cycle_preparation_queue.get_status(operation_id)
+    operation=product_cycle_preparation_queue.get_owned_status(operation_id, int(user.id))
     if operation is None:raise HTTPException(status_code=404,detail='Операция подготовки Cycle не найдена.')
-    if int(operation['user_id']) != int(user.id):raise HTTPException(status_code=403,detail='Нет доступа к чужой подготовке Cycle.')
-    operation.pop('user_id',None)
-    return operation
+    return public_operation(operation)
 
 
 @router.post('/assessment/cycles/start', status_code=201)
@@ -6249,13 +6252,18 @@ def next_owned_assessment_situation(cycle_id:UUID,payload:ProductNextRequest,req
     try:
         with get_connection() as connection:
             if m10_product_flow.uses_functional_generation(connection,cycle_id=str(cycle_id)):
-                operation=product_cycle_preparation_queue.enqueue(
-                    operation_id=payload.idempotency_key,user_id=int(user.id),request={
-                        'kind':'next','cycle_id':str(cycle_id),'idempotency_key':payload.idempotency_key,
-                    })
-                if operation['status']=='completed' and operation.get('result_json'):
-                    return {'operation_id':operation['operation_id'],'status':'completed','result':operation['result_json']}
-                return {'operation_id':operation['operation_id'],'status':operation['status']}
+                try:
+                    operation=product_cycle_preparation_queue.enqueue(
+                        operation_id=payload.idempotency_key,user_id=int(user.id),request={
+                            'kind':'next','cycle_id':str(cycle_id),'idempotency_key':payload.idempotency_key,
+                        })
+                except PermissionError as exc:
+                    raise HTTPException(status_code=403,detail='Нет доступа к операции подготовки Cycle.') from exc
+                except ValueError as exc:
+                    if str(exc)=='PRODUCT_CYCLE_PREPARATION_IDEMPOTENCY_CONFLICT':
+                        raise HTTPException(status_code=409,detail='Ключ операции уже использован для другого запроса.') from exc
+                    raise
+                return public_operation(operation)
             result=m10_product_flow.next_situation(connection,cycle_id=str(cycle_id),user_id=int(user.id),
                 key=payload.idempotency_key);connection.commit();return m10_product_flow.participant_presentation(result)
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc

@@ -24,6 +24,29 @@ def _canonical(value: dict) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
+def _operation_lock_key(operation_id: str) -> int:
+    return int.from_bytes(hashlib.sha256(operation_id.encode()).digest()[:8], "big", signed=True)
+
+
+PUBLIC_FAILURE = {
+    "code": "ASSESSMENT_CYCLE_PREPARATION_FAILED",
+    "message": "Не удалось подготовить оценочный цикл. Повторите попытку.",
+}
+
+
+def public_operation(operation: dict) -> dict:
+    """Return the participant-safe projection of an orchestration operation."""
+    payload = {
+        "operation_id": str(operation["operation_id"]),
+        "status": str(operation["status"]),
+    }
+    if operation["status"] == "completed" and operation.get("result_json") is not None:
+        payload["result"] = operation["result_json"]
+    elif operation["status"] == "failed":
+        payload["error"] = dict(PUBLIC_FAILURE)
+    return payload
+
+
 class ProductCyclePreparationQueue:
     def __init__(self) -> None:
         self._stop = threading.Event()
@@ -52,18 +75,33 @@ class ProductCyclePreparationQueue:
         request_text = _canonical(request)
         request_checksum = hashlib.sha256(request_text.encode()).hexdigest()
         with get_connection() as connection:
+            connection.execute("SELECT pg_advisory_xact_lock(%s)", (_operation_lock_key(operation_id),))
             connection.execute("SELECT pg_advisory_xact_lock(%s, %s)", (771105, user_id))
+            operation_row = connection.execute(
+                """SELECT operation_id,user_id,status,result_json,error_code,error_message,
+                          request_checksum,created_at,updated_at,completed_at
+                   FROM product_cycle_preparation_operations
+                   WHERE operation_id=%s""",
+                (operation_id,),
+            ).fetchone()
+            if operation_row:
+                result = dict(operation_row)
+                if int(result["user_id"]) != int(user_id):
+                    raise PermissionError("PRODUCT_CYCLE_PREPARATION_OPERATION_NOT_OWNED")
+                if result["request_checksum"] != request_checksum:
+                    raise ValueError("PRODUCT_CYCLE_PREPARATION_IDEMPOTENCY_CONFLICT")
+                result.pop("request_checksum", None)
+                result.pop("user_id", None)
+                return result
             existing = connection.execute(
                 """SELECT operation_id,status,result_json,error_code,error_message,request_checksum,created_at,updated_at,completed_at
                    FROM product_cycle_preparation_operations
-                   WHERE operation_id=%s OR (user_id=%s AND status IN ('queued','running'))
-                   ORDER BY (operation_id=%s) DESC,created_at DESC LIMIT 1""",
-                (operation_id, user_id, operation_id),
+                   WHERE user_id=%s AND status IN ('queued','running') AND request_checksum=%s
+                   ORDER BY created_at DESC LIMIT 1""",
+                (user_id, request_checksum),
             ).fetchone()
             if existing:
                 result = dict(existing)
-                if result["operation_id"] == operation_id and result["request_checksum"] != request_checksum:
-                    raise ValueError("PRODUCT_CYCLE_PREPARATION_IDEMPOTENCY_CONFLICT")
                 result.pop("request_checksum", None)
                 return result
             row = connection.execute(
@@ -83,6 +121,17 @@ class ProductCyclePreparationQueue:
                           created_at,updated_at,completed_at
                    FROM product_cycle_preparation_operations WHERE operation_id=%s""",
                 (operation_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def get_owned_status(self, operation_id: str, user_id: int) -> dict | None:
+        with get_connection() as connection:
+            row = connection.execute(
+                """SELECT operation_id,user_id,status,attempts,result_json,error_code,error_message,
+                          created_at,updated_at,completed_at
+                   FROM product_cycle_preparation_operations
+                   WHERE operation_id=%s AND user_id=%s""",
+                (operation_id, user_id),
             ).fetchone()
         return dict(row) if row else None
 
