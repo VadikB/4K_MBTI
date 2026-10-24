@@ -271,7 +271,9 @@ def test_product_cycle_preparation_operation_returns_only_committed_admitted_cyc
     assert duplicate_scope["operation_id"] == "async-product-02"
 
 
-def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(product_db, monkeypatch):
+@pytest.mark.parametrize("explicit_profile", [True, False])
+def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(
+        product_db, monkeypatch, explicit_profile):
     with product_db() as connection:
         package = json.loads((FUNCTIONAL_OUTPUT / "case-package.json").read_text())
         manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_text())
@@ -331,11 +333,23 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
             id BIGSERIAL PRIMARY KEY,operation_id TEXT UNIQUE,user_id BIGINT,request_json JSONB,request_checksum TEXT,
             status TEXT DEFAULT 'queued',attempts INTEGER DEFAULT 0,result_json JSONB,error_code TEXT,error_message TEXT,
             worker_id TEXT,locked_at TIMESTAMP,created_at TIMESTAMP DEFAULT NOW(),updated_at TIMESTAMP DEFAULT NOW(),completed_at TIMESTAMP)""")
+        with pytest.raises(ValueError, match="M5_FUNCTIONAL_PREPARATION_REQUIRED"):
+            start_or_resume(
+                connection,
+                user_id=99,
+                key="functional-compatibility-start",
+                profile_id=specialist_profile["id"] if explicit_profile else None,
+            )
+        assert connection.execute(
+            "SELECT 1 FROM m5_cycles WHERE owner_user_id=99"
+        ).fetchone() is None
         connection.commit()
 
     class FunctionalGateway:
         enabled = True
+        call_count = 0
         def chat_with_trace(self, messages, **kwargs):
+            type(self).call_count += 1
             payload = json.loads(next(item["content"] for item in reversed(messages) if item["role"] == "user"))
             if ":generation:" in kwargs["routing_key"]:
                 content = json.dumps(payload["author_as_example"], ensure_ascii=False)
@@ -350,8 +364,10 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
     monkeypatch.setattr("Api.product_cycle_preparation_queue.get_connection", product_db)
     monkeypatch.setattr("Api.llm.deepseek_gateway.DeepSeekGateway", FunctionalGateway)
     queue = ProductCyclePreparationQueue()
-    request = {"personalized_profile_id": specialist_profile["id"], "idempotency_key": "functional-cycle",
+    request = {"idempotency_key": "functional-cycle",
                "selected_skills": ["K1", "K2", "K3", "K4"]}
+    if explicit_profile:
+        request["personalized_profile_id"] = specialist_profile["id"]
     queue.enqueue(operation_id="functional-cycle", user_id=99, request=request)
     queue._process(queue._claim())
     operation = queue.get_status("functional-cycle")
@@ -400,6 +416,30 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
 
     cycle_id = str(prepared["plan"]["cycle_id"])
     first_as = str(prepared["decision"]["assessment_situation_id"])
+    generation_calls = FunctionalGateway.call_count
+
+    # Refresh/retry and an explicit next while the current AS is still open reuse
+    # persisted state. Neither path may call generator/tester again.
+    replay_operation = "functional-cycle-replay"
+    queue.enqueue(operation_id=replay_operation, user_id=99, request={
+        **request, "idempotency_key": replay_operation,
+    })
+    queue._process(queue._claim())
+    replay = queue.get_status(replay_operation)
+    assert replay["status"] == "completed"
+    assert replay["result_json"]["decision"]["assessment_situation_id"] == first_as
+    assert FunctionalGateway.call_count == generation_calls
+
+    waiting_operation = "functional-cycle-waiting"
+    queue.enqueue(operation_id=waiting_operation, user_id=99, request={
+        "kind": "next", "cycle_id": cycle_id, "idempotency_key": waiting_operation,
+    })
+    queue._process(queue._claim())
+    waiting = queue.get_status(waiting_operation)
+    assert waiting["status"] == "completed", waiting
+    assert waiting["result_json"]["decision"]["status"] == "WAITING_CURRENT_AS"
+    assert FunctionalGateway.call_count == generation_calls
+
     with product_db() as connection:
         start_prepared(connection, user_id=99, cycle_id=cycle_id, key="functional-cycle-start")
         submit_turn(connection, assessment_situation_id=first_as,
@@ -409,6 +449,9 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         transition(connection, assessment_situation_id=first_as, action="scenario_end",
                    reason="regression", request_id="functional-cycle-end")
         finish_current_situation(connection, cycle_id=cycle_id, key="functional-cycle-finish", initiated_by=99)
+        # The started Cycle keeps its frozen CASE.SPEC route even when the mutable
+        # configuration pointer changes before the next position is prepared.
+        connection.execute("UPDATE assessment_configurations SET catalog_version_id=NULL WHERE id=1")
         connection.commit()
 
     second_operation = "functional-cycle-next"
@@ -418,6 +461,7 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
     queue._process(queue._claim())
     second = queue.get_status(second_operation)
     assert second["status"] == "completed", second
+    assert FunctionalGateway.call_count > generation_calls
     assert second["result_json"]["decision"]["assessment_situation_id"] != first_as
     with product_db() as connection:
         second_payload = connection.execute(
