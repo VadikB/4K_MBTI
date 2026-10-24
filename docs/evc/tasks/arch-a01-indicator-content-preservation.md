@@ -57,8 +57,10 @@ snapshot `0.3` всегда включают строгую проверку с�
 - адресные compiler/runtime/generation/compatibility регрессии: 24 passed;
 - backend без integration/e2e/llm: 546 passed, 222 deselected;
 - HTTP/e2e: 68 passed, 11 deselected;
-- PostgreSQL: импорт package, исполнение всех девяти Case и путь
-  `accepted AS → execution → C-45 → M6 input`: 2 passed;
+- полный PostgreSQL integration-набор: 149 passed, 1 skipped
+  (`explicit real-provider acceptance run`), 618 deselected; включает импорт
+  package, исполнение всех девяти Case и путь
+  `accepted AS → execution → C-45 → M6 input`;
 - frontend regression: 74 passed; lint и audit: PASS, 0 vulnerabilities;
 - release candidate: `2.0.19`, проверка относительно `origin/main`: PASS;
 - `git diff --check`: PASS.
