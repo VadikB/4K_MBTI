@@ -102,7 +102,7 @@ def test_f05_all_34_scenarios_use_generated_as_and_runtime_apis(product_db, monk
         package = json.loads((FUNCTIONAL_OUTPUT / "case-package.json").read_text())
         manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_text())
         legacy_rules = json.loads((FUNCTIONAL_OUTPUT / "execution-rules.json").read_text())
-        runtime_package = FUNCTIONAL_OUTPUT.parent.parent / "functional-personalization-runtime/1.0.0"
+        runtime_package = FUNCTIONAL_OUTPUT.parent.parent / "functional-personalization-runtime/1.1.0"
         fixture_package = copy.deepcopy(package)
         bindings = copy.deepcopy(load_runtime_rule_package(runtime_package, package["cases"]))
         for case in fixture_package["cases"]:
