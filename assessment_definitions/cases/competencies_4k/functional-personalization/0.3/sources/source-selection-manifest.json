@@ -1,0 +1,132 @@
+{
+  "files": [
+    {
+      "bytes": 188438,
+      "case_id": "CASE.SPEC.01",
+      "file": "sources/Case_SPEC_01_v0.5_WORKING.json",
+      "kind": "case",
+      "sha256": "eb2d1dfd0abc66637c2988dbe1eb3d6bd2600330d6aeb0c32a4493ce3d48dd53"
+    },
+    {
+      "bytes": 66483,
+      "case_id": "CASE.SPEC.01",
+      "file": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+      "kind": "sales_as",
+      "sha256": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
+    },
+    {
+      "bytes": 234143,
+      "case_id": "CASE.SPEC.02",
+      "file": "sources/Case_SPEC_02_v0.6_WORKING.json",
+      "kind": "case",
+      "sha256": "65a4cd6a3c7003a399e841788f325d37b464c7a8080e74a0d119ca33b18698a7"
+    },
+    {
+      "bytes": 83311,
+      "case_id": "CASE.SPEC.02",
+      "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+      "kind": "sales_as",
+      "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
+    },
+    {
+      "bytes": 219024,
+      "case_id": "CASE.SPEC.03",
+      "file": "sources/Case_SPEC_03_v0.4_WORKING.json",
+      "kind": "case",
+      "sha256": "5a95eb813a0201edc3bcb5c8fcea5fecf23ba12f1ab60ecf28d6be1aacba2d4f"
+    },
+    {
+      "bytes": 82461,
+      "case_id": "CASE.SPEC.03",
+      "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+      "kind": "sales_as",
+      "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
+    },
+    {
+      "bytes": 198400,
+      "case_id": "CASE.SPEC.04",
+      "file": "sources/Case_SPEC_04_v0.5_WORKING.json",
+      "kind": "case",
+      "sha256": "17e208d2a07a45258aeaf225c93ae721f03f2e6db93752d02828b1c2ca9687c0"
+    },
+    {
+      "bytes": 81956,
+      "case_id": "CASE.SPEC.04",
+      "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+      "kind": "sales_as",
+      "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
+    },
+    {
+      "bytes": 188843,
+      "case_id": "CASE.SPEC.05",
+      "file": "sources/Case_SPEC_05_v0.5_WORKING.json",
+      "kind": "case",
+      "sha256": "f024d2c7e5b448681db987fc777fdb6447857a4792c3d3c779efcdd268fb6707"
+    },
+    {
+      "bytes": 89683,
+      "case_id": "CASE.SPEC.05",
+      "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+      "kind": "sales_as",
+      "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
+    },
+    {
+      "bytes": 185561,
+      "case_id": "CASE.SPEC.06",
+      "file": "sources/Case_SPEC_06_v0.4_WORKING.json",
+      "kind": "case",
+      "sha256": "51ceec06875d50ecd7933ef2b2860a6d38c7c4a9cab1fef1781b3896bd5e3135"
+    },
+    {
+      "bytes": 97664,
+      "case_id": "CASE.SPEC.06",
+      "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+      "kind": "sales_as",
+      "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
+    },
+    {
+      "bytes": 185788,
+      "case_id": "CASE.SPEC.07",
+      "file": "sources/Case_SPEC_07_v0.4_WORKING.json",
+      "kind": "case",
+      "sha256": "79b98154e5bb1d1ec90ee2d58ef43e2be846a8cf348d4b989b23fa37ff8fa725"
+    },
+    {
+      "bytes": 70206,
+      "case_id": "CASE.SPEC.07",
+      "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+      "kind": "sales_as",
+      "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
+    },
+    {
+      "bytes": 189489,
+      "case_id": "CASE.SPEC.08",
+      "file": "sources/Case_SPEC_08_v0.4_WORKING.json",
+      "kind": "case",
+      "sha256": "cc6de199dc9fa956cf025043987fd461b3cf2bc8f105647affce5f258b2022c1"
+    },
+    {
+      "bytes": 72137,
+      "case_id": "CASE.SPEC.08",
+      "file": "sources/AS_SPEC_08_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+      "kind": "sales_as",
+      "sha256": "e875e9cbaddc4b4166f500658291d12a8f6237cb0e26380b1c215e642540f29f"
+    },
+    {
+      "bytes": 203341,
+      "case_id": "CASE.SPEC.09",
+      "file": "sources/Case_SPEC_09_v0.4_WORKING.json",
+      "kind": "case",
+      "sha256": "eac993bf67d5cf9d52428a2fb03272095cec70a47710f4a1de1e5a9e4092f2af"
+    },
+    {
+      "bytes": 101247,
+      "case_id": "CASE.SPEC.09",
+      "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+      "kind": "sales_as",
+      "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
+    }
+  ],
+  "handoff_revision": "functional-personalization-v0.3-2026-10-24",
+  "reference_main": "d54dbba"
+}

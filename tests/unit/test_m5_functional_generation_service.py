@@ -40,6 +40,15 @@ def test_shared_service_admits_only_after_deterministic_and_independent_checks()
     assert result_a["admitted_for_participant"] is True
     assert result_b["admitted_for_participant"] is True
     assert result_a["input_snapshot_checksum"] != result_b["input_snapshot_checksum"]
+    assert first["refs"]["package"] == {
+        "id": "m5-functional-personalization-cases",
+        "version": "0.3",
+        "compiler": {
+            "id": "m5-functional-json-compiler",
+            "version": "0.3.0",
+            "source_schema_profile": "functional-personalization-indicator-v1",
+        },
+    }
     assert gateway.profiles[0]["user_context"]["regular_tasks"] != gateway.profiles[1]["user_context"]["regular_tasks"]
     assert "Предыдущая версия AS" in gateway.generation_requirements[0]["required_top_level_fields_exact"]
     assert gateway.generation_requirements[0]["omit_empty_required_fields"] is False

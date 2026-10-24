@@ -1,0 +1,559 @@
+{
+  "compiler_version": "0.3.0",
+  "result": "PASS",
+  "schema_version": 1,
+  "source_schema_profile": "functional-personalization-indicator-v1",
+  "target_count": 55,
+  "targets": [
+    {
+      "case_id": "CASE.SPEC.01",
+      "indicator_id": "K1.I01",
+      "preserved_sha256": "e4f377939b284dd9650f0f698693e66040a6aeac1357e4e3746ac16a13ef66c0",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/0",
+        "sha256": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.01",
+      "indicator_id": "K1.I13",
+      "preserved_sha256": "05b47fda3b36af7968c7cf9497bcb987a70970939e37f0bdd3e4fc22eae487ab",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/1",
+        "sha256": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.01",
+      "indicator_id": "K1.I14",
+      "preserved_sha256": "66d11edcdf2eec9f9a477f551544356c1036a45c9d7304febd93cfc925c01772",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/2",
+        "sha256": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.01",
+      "indicator_id": "K4.I06",
+      "preserved_sha256": "19be5c59a3d19d8645903aa133cb718d222c31d054dafa67924a4b4b49f29e7a",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/3",
+        "sha256": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "indicator_id": "K4.I03",
+      "preserved_sha256": "6be51450c127b89e43e7d7ba7e634308ed73f2e503326bf9c9afbcd9261b7ea6",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/0",
+        "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "indicator_id": "K4.I05",
+      "preserved_sha256": "39e5ef8c2fffb5f808397965df5b0b34d413fe089c95908639c4248018246022",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/1",
+        "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "indicator_id": "K4.I12",
+      "preserved_sha256": "c3e12ab92f41ee3d9928639227513ae290ad2d381ca0bedf8331a336cc3ec54c",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/2",
+        "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "indicator_id": "K4.I13",
+      "preserved_sha256": "4858b3c8a46babb109f8b5be5af0f1fcda864d9b80d7e42ee308c5fa73568439",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/3",
+        "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "indicator_id": "K4.I14",
+      "preserved_sha256": "33967be382642d6a560bc4a76d468ee44a3b796995e51a28e2155ff8622d0885",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/4",
+        "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "indicator_id": "K4.I16",
+      "preserved_sha256": "0647bf0c64fa00013e3c3deefbc0cc3f4a41c514121e92223891b162c66d1bbe",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/5",
+        "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "indicator_id": "K4.I17",
+      "preserved_sha256": "177f5368f0c88fc3372a11ce0c3224acc4c2e163992f7fa7bfecbc53d324a00e",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/6",
+        "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "indicator_id": "K1.I06",
+      "preserved_sha256": "0c8e3e72228682c5aea707c5131289c44914633e21eabdbcfe87224fb07de8ae",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/7",
+        "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "indicator_id": "K1.I09",
+      "preserved_sha256": "d15e8e1e830c0aa85ad7e4ddfd716485d91fc91a1634445b277b709b4be902c5",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/8",
+        "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "indicator_id": "K2.I01",
+      "preserved_sha256": "b61c1db0e194fc3cadcb6b4e5f1654c1b0c4b1587765c7486b16135f709c1928",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/0",
+        "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "indicator_id": "K2.I06",
+      "preserved_sha256": "9ce3f969f558138983249e9ce7b91df6b67a8cdddf5a9bae4fa24abcddc834a6",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/1",
+        "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "indicator_id": "K2.I07",
+      "preserved_sha256": "bf0679628a99f0ff759c39fd6cd8952da5c3d48036d4a6ae25d69acad4be9574",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/2",
+        "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "indicator_id": "K2.I08",
+      "preserved_sha256": "3aa1c3957df3e984ba7c19179406b071c4bb7edae5ec709040bdc6a926081eee",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/3",
+        "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "indicator_id": "K2.I10",
+      "preserved_sha256": "9cbf345185b525adf42ee8a606d4a3973abd829e33947f1c3d821c16e35a2e1c",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/4",
+        "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "indicator_id": "K2.I13",
+      "preserved_sha256": "23efa775714f30193e6d74e3fbd7cc8883a827a67cf9ac9e8fe22bbf99da7dcc",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/5",
+        "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "indicator_id": "K2.I14",
+      "preserved_sha256": "d05815cf1da1f8fbdb50ed778b86881346ef8db6f850f28bb840823ddc1ad5ba",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/6",
+        "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "indicator_id": "K1.I15",
+      "preserved_sha256": "964edf8e4c6a9e04871a374d769614cd8947328ef955630d4e918193e23745af",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/7",
+        "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "indicator_id": "K1.I17",
+      "preserved_sha256": "82b88f3a9c3156bea0f57d0bd299827e3a18342f609df567e17141d8e3cf2112",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/8",
+        "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "indicator_id": "K3.I03",
+      "preserved_sha256": "d22be0e4ed026c9f24a132ff798667f2240367df6e92ebac6636acc503f19168",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/0",
+        "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "indicator_id": "K3.I06",
+      "preserved_sha256": "d4d787ee1385e820ad10c07d5373b09f5c71bab4a81563edf53420bf3ebed974",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/1",
+        "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "indicator_id": "K3.I09",
+      "preserved_sha256": "74dccd64979d505d477bfe631543a616b1a3a16c55e2a605d35f449bbad44e92",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/2",
+        "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "indicator_id": "K3.I10",
+      "preserved_sha256": "5732bebf54161771dd8abbf1e068cffcafb6f1cff65c2d62fbf1fce592d6c252",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/3",
+        "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "indicator_id": "K3.I11",
+      "preserved_sha256": "e5df0a52a16c08381d43420d5431e290f2232eece63ab705ccd6767495ad8f58",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/4",
+        "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "indicator_id": "K1.I16",
+      "preserved_sha256": "854ec457491eabe39bb1dd2cee8c9ae38d29ab77163d405561f059c9b3ef95b0",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/5",
+        "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "indicator_id": "K4.I18",
+      "preserved_sha256": "211362a62305212e52ce959fb0d08b862cf63bd4254737eb48134a05f41279c9",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/6",
+        "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "indicator_id": "K3.I01",
+      "preserved_sha256": "01d7b5cf80c2703c9a179df32b19dc728c95b837493234a21535af8846f7bb72",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/0",
+        "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "indicator_id": "K3.I03",
+      "preserved_sha256": "b442b741868b9eef8ea492aa9e11508e6820508f1b6d74d2e497c2ce0fb04c78",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/1",
+        "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "indicator_id": "K3.I06",
+      "preserved_sha256": "e7f8b1e5447ea42f1219497255d84ef769ed7d0fbebf8fdfbf5735ab25b2c101",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/2",
+        "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "indicator_id": "K3.I07",
+      "preserved_sha256": "e38075e31fcb191197d161e1276222663d54614803f40399e32ac64acbab8554",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/3",
+        "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "indicator_id": "K4.I07",
+      "preserved_sha256": "d8b6089c90dc13bfd6c2cc9d0cb8eef437a1184c280454f2711aecb11a50a36e",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/4",
+        "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "indicator_id": "K4.I08",
+      "preserved_sha256": "09095f9a90b4ff3befaed4e1a42d5c0b2dae4624042e569d4518e67a8e778a82",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/5",
+        "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "indicator_id": "K2.I02",
+      "preserved_sha256": "af7dae3904cd2b188013628216ead41692a361e15c1397eeb814021f71f7f689",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/0",
+        "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "indicator_id": "K2.I06",
+      "preserved_sha256": "e626c281c237a15a9a29b8eeac10fc95e1c093b6c3189b212f9c77c8e0640f18",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/1",
+        "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "indicator_id": "K2.I14",
+      "preserved_sha256": "b11374043be211badbb67ce825f46ec4d0bcc57615f7dd74537df3e182117670",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/2",
+        "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "indicator_id": "K3.I09",
+      "preserved_sha256": "81ee8bfe857207317cb08914bc93d318ce7cd84ec0a8ecb5a90702a9c4eb08e8",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/3",
+        "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "indicator_id": "K4.I15",
+      "preserved_sha256": "abba518cbbcf38d1d0e76537908ca49dadf14dca4141a61fc50ac6c15580754e",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/4",
+        "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "indicator_id": "K4.I02",
+      "preserved_sha256": "4b3f7761eae8d489b2e77ac3307689ff4bcb0b7e16b8e3dc7d5a16d12980c36b",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/0",
+        "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "indicator_id": "K4.I06",
+      "preserved_sha256": "9611244a7cdc770dfb90d6110c2496a95e55b292caeae97208e84a272ad92c9d",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/1",
+        "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "indicator_id": "K4.I07",
+      "preserved_sha256": "00b51d3451cdddb69fe31ae01a0180164ef4806701e09fd4873e54a0a75b6d1e",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/2",
+        "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "indicator_id": "K4.I10",
+      "preserved_sha256": "c37590625c08504bf1f4267b1a6f073f0356d2f16aa3cd6f0bf96a21ea6ee4f9",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/3",
+        "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "indicator_id": "K3.I02",
+      "preserved_sha256": "56d146eab432625f7e82c87010fce50109a371e65383cd135870b694d0679a47",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/4",
+        "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "indicator_id": "K3.I06",
+      "preserved_sha256": "58889637606bca8f3d02ed7b1a3d7d9d7118ddedc7ff1f1dc3f8154e26390373",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/5",
+        "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "indicator_id": "K2.I07",
+      "preserved_sha256": "949a763ee610bdb8203bd9e509fdc0c5bf0f64ed7f2b55b65b22489950f76183",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_08_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/0",
+        "sha256": "e875e9cbaddc4b4166f500658291d12a8f6237cb0e26380b1c215e642540f29f"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "indicator_id": "K2.I08",
+      "preserved_sha256": "e5334a533f035042753fc4fd42b75d63621ba5e472020b77527e823fecbf1090",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_08_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/1",
+        "sha256": "e875e9cbaddc4b4166f500658291d12a8f6237cb0e26380b1c215e642540f29f"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "indicator_id": "K2.I14",
+      "preserved_sha256": "120f7df74cc5ff0d90823438c3fdde1f110d7fc29ff9975086be9cb9777155fe",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_08_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/2",
+        "sha256": "e875e9cbaddc4b4166f500658291d12a8f6237cb0e26380b1c215e642540f29f"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "indicator_id": "K1.I11",
+      "preserved_sha256": "131223981a035f72f4b1e72d9d45e7cd4781ea99dc8d946306ff980daa35e23d",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_08_FUNCTIONAL_v0.2_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/3",
+        "sha256": "e875e9cbaddc4b4166f500658291d12a8f6237cb0e26380b1c215e642540f29f"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "indicator_id": "K1.I01",
+      "preserved_sha256": "cbd56f533bdd8589c73f77e49f6e899ad005af3e133ff59aab9afc80dc40d4a1",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/0",
+        "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "indicator_id": "K1.I16",
+      "preserved_sha256": "ac805cf1ed04b02958cb7708bb3ef76e01f9069a1e04cfb051a3196bf50c14ab",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/1",
+        "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "indicator_id": "K1.I17",
+      "preserved_sha256": "dd8b14668e5635ea5d6ca3cee4a84ed092f9ed0dbbb374825e0771e5522f2f78",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/2",
+        "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "indicator_id": "K4.I12",
+      "preserved_sha256": "b0d11ef49372419bff73c128e003ae1a79788af987a5f67262c889ba7302be31",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/3",
+        "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "indicator_id": "K4.I16",
+      "preserved_sha256": "42de1b0f3c4c175a7d1ce3d4f1dd0e7511cb5527a926614b2fc7c0a4a988642c",
+      "source_pointer": {
+        "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
+        "pointer": "/IndicatorObservability/4",
+        "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
+      }
+    }
+  ]
+}

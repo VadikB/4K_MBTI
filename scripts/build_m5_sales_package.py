@@ -216,7 +216,8 @@ def _list_or_dict_items(value: Any) -> list[tuple[str | int, dict[str, Any]]]:
 def compile_case_values(*, case: dict, situation: dict, case_source_name: str,
                         case_source_checksum: str, as_source_name: str,
                         as_source_checksum: str,
-                        m2: dict[str, tuple[str, str]] | None = None) -> dict:
+                        m2: dict[str, tuple[str, str]] | None = None,
+                        source_schema_profile: str = "sales-author-json-v1") -> dict:
     """Compile one immutable author/generated full AS into the runtime Case contract."""
     case_entry = {"path": Path(case_source_name), "sha256": case_source_checksum}
     as_entry = {"path": Path(as_source_name), "sha256": as_source_checksum}
@@ -240,19 +241,57 @@ def compile_case_values(*, case: dict, situation: dict, case_source_name: str,
         component_id = str(_first(item, "component_id", "ComponentID"))
         if m2.get(indicator_id) != (skill_id, component_id):
             raise ValueError(f"M2 hierarchy mismatch: {case_id} {indicator_id}")
-        targets.append({
+        target = {
             "indicator_id": indicator_id,
             "m2_version": str(_first(item, "version", "Версия M2")),
             "skill_id": skill_id,
             "component_id": component_id,
-            "observation_condition": str(_first(item, "Условие возникновения", "Проектные условия наблюдения", "Проектное условие", "Проектные условия")),
-            "scenario_locations": [str(_first(item, "Место", "Место или ветвь", default="SOURCE_NOT_SPECIFIED"))],
-            "branch_condition": str(_first(item, "Условие возникновения", "Проектные условия наблюдения", "Проектное условие", "Проектные условия")),
-            "event_condition": str(_first(item, "Событие возникновения", "Условие возникновения", "Проектное условие", default="SOURCE_NOT_SPECIFIED")),
-            "observable_action": str(_first(item, "Доступная форма проявления", "Доступная форма", default="SOURCE_NOT_SPECIFIED")),
-            "validity_risk": str(_first(item, "Риск и правило реализации", "Риск потери условий", "Риск реализации", "Риск", default="SOURCE_NOT_SPECIFIED")),
             "source": _ref(as_entry["path"].name, as_entry["sha256"], "IndicatorObservability", index),
-        })
+        }
+        if source_schema_profile == "functional-personalization-indicator-v1":
+            expected_keys = {
+                "IndicatorID", "SkillID", "ComponentID", "Название", "Версия M2",
+                "Нормативный источник", "Материалы и факты", "Конкретное условие",
+                "Что сохранить при адаптации", "Дефект потери", "Форма проявления",
+                "Проектная возможность", "Фактическое возникновение", "Evidence и IA",
+                "Связанные инварианты",
+            }
+            if set(item) != expected_keys:
+                raise ValueError(
+                    f"Unsupported functional IndicatorObservability schema: {case_id} {indicator_id} "
+                    f"missing={sorted(expected_keys - set(item))} extra={sorted(set(item) - expected_keys)}"
+                )
+            condition = item["Конкретное условие"]
+            locations = list(dict.fromkeys(re.findall(r"\bS\d+\b", condition)))
+            target.update({
+                "observation_condition": condition,
+                "scenario_locations": locations,
+                "branch_condition": None,
+                "event_condition": None,
+                "observable_action": item["Форма проявления"],
+                "validity_risk": item["Дефект потери"],
+                "author_title": item["Название"],
+                "normative_source": item["Нормативный источник"],
+                "material_refs": item["Материалы и факты"],
+                "adaptation_constraints": item["Что сохранить при адаптации"],
+                "design_opportunity": item["Проектная возможность"],
+                "actual_occurrence": item["Фактическое возникновение"],
+                "evidence_status": item["Evidence и IA"],
+                "invariant_refs": item["Связанные инварианты"],
+                "condition_absence_reason": "SOURCE_HAS_NO_SEPARATE_BRANCH_OR_EVENT_PREDICATE",
+            })
+        elif source_schema_profile == "sales-author-json-v1":
+            target.update({
+                "observation_condition": str(_first(item, "Условие возникновения", "Проектные условия наблюдения", "Проектное условие", "Проектные условия")),
+                "scenario_locations": [str(_first(item, "Место", "Место или ветвь", default="SOURCE_NOT_SPECIFIED"))],
+                "branch_condition": str(_first(item, "Условие возникновения", "Проектные условия наблюдения", "Проектное условие", "Проектные условия")),
+                "event_condition": str(_first(item, "Событие возникновения", "Условие возникновения", "Проектное условие", default="SOURCE_NOT_SPECIFIED")),
+                "observable_action": str(_first(item, "Доступная форма проявления", "Доступная форма", default="SOURCE_NOT_SPECIFIED")),
+                "validity_risk": str(_first(item, "Риск и правило реализации", "Риск потери условий", "Риск реализации", "Риск", default="SOURCE_NOT_SPECIFIED")),
+            })
+        else:
+            raise ValueError(f"Unsupported source schema profile: {source_schema_profile}")
+        targets.append(target)
     exact_value = _first(situation, "IndicatorIDs")
     raw_exact_ids = (list(exact_value) if isinstance(exact_value, list) else
                      re.findall(r"K[1-4]\.I\d{2}", json.dumps(passport["22 IndicatorIDs"], ensure_ascii=False)))
@@ -311,21 +350,24 @@ def compile_case_values(*, case: dict, situation: dict, case_source_name: str,
     return result.model_dump()
 
 
-def _build_case(case_entry: dict, as_entry: dict, m2: dict[str, tuple[str, str]]) -> dict:
+def _build_case(case_entry: dict, as_entry: dict, m2: dict[str, tuple[str, str]],
+                source_schema_profile: str) -> dict:
     case = json.loads(case_entry["path"].read_text())
     situation = json.loads(as_entry["path"].read_text())
     return compile_case_values(
         case=case, situation=situation,
         case_source_name=case_entry["path"].name, case_source_checksum=case_entry["sha256"],
         as_source_name=as_entry["path"].name, as_source_checksum=as_entry["sha256"], m2=m2,
+        source_schema_profile=source_schema_profile,
     )
 
 
-def build_package(source_root: Path) -> tuple[dict, dict, list[dict], list[dict]]:
+def build_package(source_root: Path, *, source_schema_profile: str = "sales-author-json-v1") -> tuple[dict, dict, list[dict], list[dict]]:
     source_manifest, entries = _source_entries(source_root)
     m2 = _m2_index()
     cases = [_build_case(entries[(f"CASE.SPEC.{number:02d}", "case")],
-                         entries[(f"CASE.SPEC.{number:02d}", "sales_as")], m2)
+                         entries[(f"CASE.SPEC.{number:02d}", "sales_as")], m2,
+                         source_schema_profile)
              for number in range(1, 10)]
     mapping = [{
         "case_id": case["case_id"], "case_version": case["version"],

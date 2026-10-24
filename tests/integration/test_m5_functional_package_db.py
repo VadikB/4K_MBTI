@@ -14,11 +14,12 @@ from Api.m5_storage import prepare_assessment_situation
 from Api.m5_cycle_runtime import create_cycle_session_for_case
 from Api.m5_rule_engine import ControlledCharacterAdapter, ControlledSemanticAdapter
 from Api.m5_runtime_rules import import_runtime_rule_version, load_runtime_rule_package
-from Api.m5_scenario_runtime import start, submit_turn
+from Api.m5_scenario_runtime import build_c45, start, submit_turn, transition
+from Api.m6_input_resolver import resolve as resolve_m6_input
 from scripts.build_m5_sales_package import build_execution_rules
 from scripts.build_m5_functional_package import OUTPUT
 
-RUNTIME_PACKAGE = OUTPUT.parent.parent / "functional-personalization-runtime/1.0.0"
+RUNTIME_PACKAGE = OUTPUT.parent.parent / "functional-personalization-runtime/1.1.0"
 
 
 @pytest.mark.integration
@@ -115,7 +116,7 @@ def test_versioned_runtime_rules_execute_all_nine_functional_cases(test_database
                 usage_scope="qa", qa_authorized_by=99,
                 runtime_rule_version_id=imported_rules["id"],
             )
-            assert prepared["execution_payload"]["runtime_rule_ref"]["version"] == "1.0.0"
+            assert prepared["execution_payload"]["runtime_rule_ref"]["version"] == "1.1.0"
             reactions = [item for item in prepared["execution_payload"]["materials"]
                          if item["kind"] == "character_reaction"]
             decisions = {f"{item['material_id']}:character_reaction": "TRUE" for item in reactions}
@@ -131,4 +132,22 @@ def test_versioned_runtime_rules_execute_all_nine_functional_cases(test_database
             assert len(calls) == expected_calls[case_id]
             if case_id in {"CASE.SPEC.02", "CASE.SPEC.07"}:
                 assert calls == []
+            if case_id == "CASE.SPEC.01":
+                transition(connection, assessment_situation_id=prepared["assessment_situation_id"],
+                           action="scenario_end", reason="A01 preservation", request_id="a01-end")
+                transition(connection, assessment_situation_id=prepared["assessment_situation_id"],
+                           action="close", reason="A01 preservation", request_id="a01-close")
+                handoff = build_c45(connection, prepared["assessment_situation_id"])
+                _, m6_input = resolve_m6_input(connection, str(handoff["handoff_id"]))
+                source_targets = {
+                    item["IndicatorID"]: item
+                    for item in case["author_assessment_situation"]["IndicatorObservability"]
+                }
+                assert len(m6_input["indicator_targets"]) == len(source_targets)
+                for target in m6_input["indicator_targets"]:
+                    source = source_targets[target["indicator_id"]]
+                    assert target["observation_condition"] == source["Конкретное условие"]
+                    assert target["material_refs"] == source["Материалы и факты"]
+                    assert target["adaptation_constraints"] == source["Что сохранить при адаптации"]
+                    assert target["invariant_refs"] == source["Связанные инварианты"]
         connection.rollback()

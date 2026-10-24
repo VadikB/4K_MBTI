@@ -14,6 +14,8 @@ ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.2/case-package.json"
 RUNTIME_PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.0.0"
 BINDINGS = RUNTIME_PACKAGE / "event-bindings.json"
+PACKAGE_03 = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.3/case-package.json"
+RUNTIME_PACKAGE_11 = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.1.0"
 
 
 def _cases():
@@ -26,6 +28,13 @@ def test_runtime_artifact_covers_exact_case_event_and_content_versions():
     assert loaded["manifest_checksum"]
     assert bindings["artifact_checksum"]
     assert set(bindings["case_bindings"]) == {f"CASE.SPEC.{number:02d}" for number in range(1, 10)}
+
+
+def test_runtime_artifact_1_1_binds_new_content_preserving_package():
+    cases = json.loads(PACKAGE_03.read_text())["cases"]
+    loaded = load_runtime_rule_package(RUNTIME_PACKAGE_11, cases)
+    assert loaded["manifest"]["version"] == "1.1.0"
+    assert loaded["manifest"]["source"]["case_package_version"] == "0.3"
 
 
 def test_explicit_event_functions_compile_all_interactive_cases_without_actorless_calls():

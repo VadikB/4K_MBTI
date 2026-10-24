@@ -18,7 +18,7 @@ from Api.m5_case_runtime import checksum as runtime_checksum
 from scripts.build_m5_sales_package import build_execution_rules, compile_case_values
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.2"
+PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.3"
 SOURCE = PACKAGE / "sources/functional-v0.2"
 REPAIR_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_repair/v1"
 
@@ -35,8 +35,8 @@ def _read(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _unique(pattern: str, code: str) -> Path:
-    paths = sorted(SOURCE.glob(pattern))
+def _unique(pattern: str, code: str, *, source_root: Path = SOURCE) -> Path:
+    paths = sorted(source_root.glob(pattern))
     if len(paths) != 1:
         raise ValueError(code)
     return paths[0]
@@ -60,10 +60,12 @@ def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id:
                          synthetic: bool = False, case_value: dict[str, Any] | None = None,
                          author_as_example: dict[str, Any] | None = None,
                          profile_checksum: str | None = None,
-                         case_version_checksum: str | None = None) -> dict[str, Any]:
+                         case_version_checksum: str | None = None,
+                         source_root: Path = SOURCE) -> dict[str, Any]:
     number = case_id.rsplit(".", 1)[-1]
-    case_path = _unique(f"02_cases/Case_SPEC_{number}_*.json", f"PERS_CASE_SOURCE_NOT_UNIQUE:{case_id}")
-    example_path = _unique(f"04_as/AS_SPEC_{number}_FUNCTIONAL_*.json", f"PERS_AS_SOURCE_NOT_UNIQUE:{case_id}")
+    case_path = _unique(f"02_cases/Case_SPEC_{number}_*.json", f"PERS_CASE_SOURCE_NOT_UNIQUE:{case_id}", source_root=source_root)
+    example_path = _unique(f"04_as/AS_SPEC_{number}_FUNCTIONAL_*.json", f"PERS_AS_SOURCE_NOT_UNIQUE:{case_id}", source_root=source_root)
+    package_manifest = _read(source_root.parents[1] / "manifest.json")
     source_case, source_example = _read(case_path), _read(example_path)
     case = json.loads(json.dumps(case_value if case_value is not None else source_case, ensure_ascii=False))
     example = json.loads(json.dumps(author_as_example if author_as_example is not None else source_example, ensure_ascii=False))
@@ -80,6 +82,8 @@ def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id:
         "author_as_example": example,
         "profile": clean_profile,
         "refs": {
+            "package": {"id": package_manifest["id"], "version": package_manifest["version"],
+                        "compiler": package_manifest.get("compiler")},
             "case": {"path": str(case_path.relative_to(ROOT)), "sha256": checksum(case_path.read_bytes()),
                      "case_version_checksum": case_version_checksum or checksum(case)},
             "author_as_example": {"path": str(example_path.relative_to(ROOT)), "sha256": checksum(example_path.read_bytes())},
@@ -102,6 +106,32 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
     check("base_role", candidate.get("BaseRole") == expected.get("BaseRole"), candidate.get("BaseRole"))
     check("indicator_targets", candidate.get("IndicatorIDs") == expected.get("IndicatorIDs"), candidate.get("IndicatorIDs"))
     check("m2_versions", candidate.get("Версии M2") == expected.get("Версии M2"))
+    protected_target_fields = (
+        "IndicatorID", "SkillID", "ComponentID", "Название", "Версия M2",
+        "Нормативный источник", "Материалы и факты", "Конкретное условие",
+        "Что сохранить при адаптации", "Дефект потери", "Форма проявления",
+        "Проектная возможность", "Фактическое возникновение", "Evidence и IA",
+        "Связанные инварианты",
+    )
+    package_ref = (snapshot.get("refs") or {}).get("package") or {}
+    compiler = package_ref.get("compiler") or {}
+    if compiler.get("source_schema_profile") == "functional-personalization-indicator-v1":
+        expected_targets = expected.get("IndicatorObservability")
+        candidate_targets = candidate.get("IndicatorObservability")
+        expected_by_id = ({item.get("IndicatorID"): item for item in expected_targets}
+                          if isinstance(expected_targets, list) else {})
+        candidate_by_id = ({item.get("IndicatorID"): item for item in candidate_targets}
+                           if isinstance(candidate_targets, list) else {})
+        check("indicator_content_target_set", bool(expected_by_id)
+              and set(candidate_by_id) == set(expected_by_id), sorted(candidate_by_id))
+        differences = []
+        if set(candidate_by_id) == set(expected_by_id):
+            for indicator_id, source_target in expected_by_id.items():
+                candidate_target = candidate_by_id[indicator_id]
+                for field in protected_target_fields:
+                    if candidate_target.get(field) != source_target.get(field):
+                        differences.append({"indicator_id": indicator_id, "field": field})
+        check("indicator_author_content_preserved", not differences, differences)
     characters = candidate.get("Активные персонажи")
     check("character_count", isinstance(characters, list) and len(characters) == len(expected.get("Активные персонажи", [])))
     materials = candidate.get("Материалы")
@@ -324,6 +354,7 @@ def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
             case_source_checksum=snapshot["refs"]["case"]["sha256"],
             as_source_name=f"generated-{generation['candidate_checksum']}.json",
             as_source_checksum=generation["candidate_checksum"],
+            source_schema_profile="functional-personalization-indicator-v1",
         )
         execution_rules = build_execution_rules([compiled_case])
     return {"schema_version": 1, "input_snapshot_checksum": checksum(snapshot),

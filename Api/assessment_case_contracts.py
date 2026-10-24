@@ -132,10 +132,19 @@ class IndicatorTargetV3(Contract):
     component_id: Annotated[str, Field(pattern=r"^K[1-4]\.C\d{2}$")]
     observation_condition: Text
     scenario_locations: list[Text]
-    branch_condition: Text
-    event_condition: Text
+    branch_condition: Text | None
+    event_condition: Text | None
     observable_action: Text
     validity_risk: Text
+    author_title: Text | None = None
+    normative_source: dict[str, Any] | None = None
+    material_refs: list[Text] = Field(default_factory=list)
+    adaptation_constraints: Text | None = None
+    design_opportunity: Text | None = None
+    actual_occurrence: Text | None = None
+    evidence_status: Text | None = None
+    invariant_refs: list[Text] = Field(default_factory=list)
+    condition_absence_reason: Text | None = None
     source: JsonSourceRefV3
 
 class CaseCharacterV3(Contract):
