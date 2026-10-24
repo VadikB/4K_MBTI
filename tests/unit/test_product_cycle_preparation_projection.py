@@ -1,4 +1,6 @@
-from Api.product_cycle_preparation_queue import public_operation
+import pytest
+
+from Api.product_cycle_preparation_queue import needs_functional_generation, public_operation
 
 
 def test_public_operation_whitelists_each_status() -> None:
@@ -41,3 +43,24 @@ def test_public_operation_keeps_only_committed_participant_result() -> None:
         "status": "completed",
         "result": result,
     }
+
+
+@pytest.mark.parametrize(
+    "status",
+    ["WAITING_CURRENT_AS", "OUT_OF_TIME", "COLLECTION_CLOSED", "NO_ADMISSIBLE_CASE"],
+)
+def test_functional_generation_is_skipped_for_normal_nonselected_decisions(status: str) -> None:
+    assert needs_functional_generation(
+        functional=True,
+        decision={"status": status, "explanation": {"code": f"M7_{status}"}},
+    ) is False
+
+
+def test_functional_generation_runs_only_for_unassigned_selected_decision() -> None:
+    selected = {"status": "SELECTED", "assigned_as_db_id": None}
+    assert needs_functional_generation(functional=True, decision=selected) is True
+    assert needs_functional_generation(
+        functional=True,
+        decision={**selected, "assigned_as_db_id": 42},
+    ) is False
+    assert needs_functional_generation(functional=False, decision=selected) is False

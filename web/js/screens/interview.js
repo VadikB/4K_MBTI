@@ -225,8 +225,16 @@ const renderProductRuntime = (snapshot) => {
         const accepted = await readApiResponse(response, 'Не удалось перейти к следующей ситуации.');
         const next = accepted.operation_id ? await waitForProductCyclePreparation(accepted) : accepted;
         if (next.decision?.status === 'SELECTED') { await loadProductRuntime(); return; }
+        if (next.decision?.status === 'WAITING_CURRENT_AS') {
+          status.textContent = 'Текущая ситуация ещё не завершена. Возвращаем сохранённое состояние…';
+          await loadProductRuntime(); return;
+        }
         if (['NO_ADMISSIBLE_CASE', 'OUT_OF_TIME'].includes(next.decision?.status)) {
           await completeProductCycle(); return;
+        }
+        if (next.decision?.status === 'COLLECTION_CLOSED') {
+          status.textContent = 'Сбор ответов завершён. Загружаем состояние обработки…';
+          await loadProductRuntime(); return;
         }
         status.textContent = 'Следующая ситуация ещё не готова. Попробуйте ещё раз.';
         button.disabled = false;

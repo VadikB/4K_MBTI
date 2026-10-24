@@ -23,4 +23,7 @@ test('functional next situation waits for durable generation and admission', () 
   assert.match(interview, /fetch\('\/users\/assessment\/m7\/cycles\/' \+ encodeURIComponent\(state\.productCycleId\) \+ '\/next'/);
   assert.match(interview, /accepted\.operation_id \? await waitForProductCyclePreparation\(accepted\) : accepted/);
   assert.match(interview, /if \(accepted\.operation_id\) await waitForProductCyclePreparation\(accepted\)/);
+  assert.match(interview, /next\.decision\?\.status === 'WAITING_CURRENT_AS'/);
+  assert.match(interview, /next\.decision\?\.status === 'COLLECTION_CLOSED'/);
+  assert.match(interview, /\['NO_ADMISSIBLE_CASE', 'OUT_OF_TIME'\]/);
 });

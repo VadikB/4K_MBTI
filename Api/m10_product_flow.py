@@ -184,6 +184,11 @@ def start_or_resume(connection, *, user_id: int, key: str,
             'SELECT 1 FROM m5_assessment_situations WHERE cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s)',
             (current['cycle_id'],),
         ).fetchone():
+            if uses_functional_generation(connection, cycle_id=str(current["cycle_id"])):
+                raise ValueError(
+                    "M5_FUNCTIONAL_PREPARATION_REQUIRED: "
+                    "Подготовьте функциональную ситуацию через /assessment/cycles/prepare."
+                )
             return {'resumed':True,**_present_next(connection,plan=current,user_id=user_id,key=f'product-prepared:{key}')}
         return {"resumed": True, "plan": current, "decision": None,
                 "presentation": dict(open_as) if open_as else None}
@@ -196,6 +201,11 @@ def start_or_resume(connection, *, user_id: int, key: str,
         )
         if plan['plan']['status'] == 'NO_ROUTE':
             raise ValueError('M7_NO_ADMISSIBLE_CASE: Профиль готов. Ответственный специалист должен подготовить допустимые кейсы для выбранной роли и конфигурации.')
+        if uses_functional_generation(connection, cycle_id=str(plan["cycle_id"])):
+            raise ValueError(
+                "M5_FUNCTIONAL_PREPARATION_REQUIRED: "
+                "Подготовьте функциональную ситуацию через /assessment/cycles/prepare."
+            )
         result = _present_next(connection, plan=plan, user_id=user_id, key=f"product-next:{key}:1")
         return {"resumed": False, **result}
 
@@ -221,12 +231,11 @@ def prepare_next_situation(connection, *, cycle_id: str, user_id: int, key: str,
 
 def uses_functional_generation(connection, *, cycle_id: str) -> bool:
     """Return whether the frozen Cycle route contains functional CASE.SPEC CaseVersions."""
-    return bool(connection.execute(
-        """SELECT 1 FROM m5_cycles cycle
-           JOIN m7_route_positions position ON position.cycle_db_id=cycle.id
-           WHERE cycle.cycle_id=%s AND position.case_id LIKE 'CASE.SPEC.%%' LIMIT 1""",
-        (cycle_id,),
-    ).fetchone())
+    plan = m7_cycle_planner.read_plan(connection, cycle_id)
+    return any(
+        str(position.get("case_id", "")).startswith("CASE.SPEC.")
+        for position in plan["plan"].get("route", [])
+    )
 
 
 def read_runtime(connection, *, cycle_id: str) -> dict:

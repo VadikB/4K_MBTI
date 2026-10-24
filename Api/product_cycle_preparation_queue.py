@@ -47,6 +47,16 @@ def public_operation(operation: dict) -> dict:
     return payload
 
 
+def needs_functional_generation(*, functional: bool, decision: dict | None) -> bool:
+    """Generate only for a newly selected Case that has no persisted assignment."""
+    return bool(
+        functional
+        and decision
+        and decision.get("status") == "SELECTED"
+        and not decision.get("assigned_as_db_id")
+    )
+
+
 class ProductCyclePreparationQueue:
     def __init__(self) -> None:
         self._stop = threading.Event()
@@ -191,22 +201,30 @@ class ProductCyclePreparationQueue:
                     if not cycle:
                         raise ValueError("M7_CYCLE_NOT_FOUND")
                     profile_id = cycle["personalized_profile_id"]
+                    functional = m10_product_flow.uses_functional_generation(
+                        connection, cycle_id=str(next_cycle_id),
+                    )
                 else:
-                    profile_id = request.get("personalized_profile_id")
+                    profile_id = m10_product_flow._owned_profile(
+                        connection,
+                        int(job["user_id"]),
+                        request.get("personalized_profile_id"),
+                    )
                 profile = connection.execute(
                     "SELECT content_json,assessment_configuration_id,checksum FROM assessment_personalized_profiles WHERE id=%s AND user_id=%s",
                     (profile_id, job["user_id"]),
                 ).fetchone() if profile_id else None
-                catalog_column = connection.execute("""SELECT EXISTS (
-                    SELECT 1 FROM information_schema.columns
-                    WHERE table_schema=current_schema() AND table_name='assessment_configurations'
-                      AND column_name='catalog_version_id') AS available""").fetchone()["available"]
-                functional = bool(profile and catalog_column and connection.execute("""SELECT 1 FROM assessment_configurations c
-                    JOIN m5_catalogs catalog ON catalog.id=c.catalog_version_id
-                    JOIN m5_catalog_case_versions member ON member.catalog_db_id=catalog.id
-                    JOIN m5_case_versions cv ON cv.id=member.case_version_id
-                    WHERE c.id=%s AND cv.case_id LIKE 'CASE.SPEC.%%' LIMIT 1""",
-                    (profile["assessment_configuration_id"],)).fetchone())
+                if not next_cycle_id:
+                    catalog_column = connection.execute("""SELECT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_schema=current_schema() AND table_name='assessment_configurations'
+                          AND column_name='catalog_version_id') AS available""").fetchone()["available"]
+                    functional = bool(profile and catalog_column and connection.execute("""SELECT 1 FROM assessment_configurations c
+                        JOIN m5_catalogs catalog ON catalog.id=c.catalog_version_id
+                        JOIN m5_catalog_case_versions member ON member.catalog_db_id=catalog.id
+                        JOIN m5_case_versions cv ON cv.id=member.case_version_id
+                        WHERE c.id=%s AND cv.case_id LIKE 'CASE.SPEC.%%' LIMIT 1""",
+                        (profile["assessment_configuration_id"],)).fetchone())
                 if next_cycle_id:
                     result = m10_product_flow.prepare_next_situation(
                         connection, cycle_id=str(next_cycle_id), user_id=int(job["user_id"]),
@@ -218,17 +236,23 @@ class ProductCyclePreparationQueue:
                         selected_skills=list(request["selected_skills"]), profile_id=profile_id,
                         defer_as=functional,
                     )
-                frozen_profile = dict(profile["content_json"]) if functional else None
+                decision = result["decision"]
+                needs_generation = needs_functional_generation(
+                    functional=functional,
+                    decision=decision,
+                )
+                frozen_profile = dict(profile["content_json"]) if needs_generation else None
                 frozen_case = None
-                if functional:
+                if needs_generation:
                     frozen_case_row = connection.execute(
                         "SELECT content_json,content_checksum FROM m5_case_versions WHERE case_id=%s AND case_version=%s",
-                        (result["decision"]["selected_case_id"], result["decision"]["selected_case_version"]),
+                        (decision["selected_case_id"], decision["selected_case_version"]),
                     ).fetchone()
+                    if not frozen_case_row:
+                        raise ValueError("M5_FUNCTIONAL_CASE_VERSION_NOT_FOUND")
                     frozen_case = dict(frozen_case_row["content_json"])
                     frozen_case_checksum = frozen_case_row["content_checksum"]
-            if functional:
-                decision = result["decision"]
+            if needs_generation:
                 snapshot = m5_functional_generation_service.build_input_snapshot(
                     case_id=decision["selected_case_id"], profile=frozen_profile,
                     operation_id=str(job["operation_id"]), synthetic=False,
