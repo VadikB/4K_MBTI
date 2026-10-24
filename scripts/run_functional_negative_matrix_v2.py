@@ -36,6 +36,11 @@ IMMUTABLE_VALIDATION_SECTIONS = (
 )
 
 
+def _source_root(position: dict[str, Any]) -> Path:
+    case_source = ROOT / position["case_ref"]["source_path"]
+    return case_source.parents[1]
+
+
 def write_json(path: Path, value: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
@@ -174,6 +179,7 @@ def retest_saved_failure(row: dict[str, Any], position: dict[str, Any], existing
     snapshot = service.build_input_snapshot(
         case_id=row["CaseID"], profile=saved["profile"],
         operation_id=f"negative-v2-retest:{row['NegativeID']}", synthetic=True,
+        source_root=_source_root(position),
     )
     negative = _test(snapshot, candidate, gateway)
     result = copy.deepcopy(existing)
@@ -196,6 +202,7 @@ def run_one(row: dict[str, Any], position: dict[str, Any], gateway: Any) -> dict
     snapshot = service.build_input_snapshot(
         case_id=row["CaseID"], profile=saved["profile"],
         operation_id=f"negative-v2:{row['NegativeID']}", synthetic=True,
+        source_root=_source_root(position),
     )
     positive = _test(snapshot, original, gateway)
     mutation = mutate_full_as(row=row, original=original, gateway=gateway)

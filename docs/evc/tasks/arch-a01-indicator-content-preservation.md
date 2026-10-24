@@ -43,18 +43,24 @@ AssessmentSituation snapshot/execution payload → C-45 → `m6_input_resolver`
 `content-preservation-report.json` фиксирует source pointer и checksum
 сохранённого содержания каждой из 55 целей.
 
+Snapshot явно сохраняет версию Case package и compiler profile. Исторический
+negative-matrix runner восстанавливает зафиксированный `0.2` по `source_path`,
+поэтому доказанные результаты не переоцениваются контрактом `0.3`; новые
+snapshot `0.3` всегда включают строгую проверку сохранности содержания.
+
 ## Проверки
 
 - сборка package `0.3`: PASS, 9 Case / 55 targets;
 - независимое source-based сравнение всех содержательных полей: 55/55 PASS;
 - отрицательные удаления условия, material refs и adaptation constraint:
   отклоняются до сборки и pre-admission принятия generated AS;
-- адресные unit компилятора/runtime: 19 passed, затем 14 passed;
-- адресные generation/pre-admission регрессии: 23 passed;
-- backend без integration/e2e/llm: 539 passed, 220 deselected;
-- HTTP/e2e: 66 passed, 11 deselected;
+- адресные compiler/runtime/generation/compatibility регрессии: 24 passed;
+- backend без integration/e2e/llm: 546 passed, 222 deselected;
+- HTTP/e2e: 68 passed, 11 deselected;
 - PostgreSQL: импорт package, исполнение всех девяти Case и путь
   `accepted AS → execution → C-45 → M6 input`: 2 passed;
+- frontend regression: 74 passed; lint и audit: PASS, 0 vulnerabilities;
+- release candidate: `2.0.19`, проверка относительно `origin/main`: PASS;
 - `git diff --check`: PASS.
 
 ## Непроверенное и стоп-условия
@@ -62,8 +68,8 @@ AssessmentSituation snapshot/execution payload → C-45 → `m6_input_resolver`
 - Реальный provider не запускается в ARCH-A01; он относится к сквозной A06.
 - Методологическая приёмка, Reliability и runtime admission не присваиваются;
   новые пакеты остаются `draft`/`runtime_enabled=false`.
-- Ветка создана от base до слияния FIX-B01/B02. Перед PR обязательны обновление
-  от нового `main`, release preparation, повторный полный локальный минимум и CI.
+- Ветка обновлена на `main@90b08c67f6be373130abdd32497fdba65a3066a4`
+  после FIX-B01/B02 и FIX-M10. Перед слиянием обязателен CI точного head.
 
 ## Откат
 
