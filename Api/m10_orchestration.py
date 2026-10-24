@@ -118,11 +118,13 @@ def enqueue_handoff(connection, *, handoff_id: str, created_by: int) -> dict:
 
 
 def _queue_outbox(connection) -> bool:
+    # Product mutations use the global Cycle -> Assessment Situation lock order.
+    # Claim the owning Cycle here; enqueue_handoff locks the AS afterwards.
     row = connection.execute(f"""SELECT o.*,c.created_by,c.id AS cycle_db_id FROM m7_finalization_outbox o
         JOIN m5_assessment_situations s ON s.id=o.assessment_situation_db_id
         JOIN m5_cycles c ON c.id=s.cycle_db_id
         WHERE o.status='pending' AND {sql_scope('c')} ORDER BY o.created_at
-        FOR UPDATE OF o SKIP LOCKED LIMIT 1""").fetchone()
+        FOR UPDATE OF c SKIP LOCKED LIMIT 1""").fetchone()
     if not row:
         return False
     try:
@@ -138,12 +140,13 @@ def _queue_outbox(connection) -> bool:
 
 
 def _queue_assessment(connection) -> bool:
+    # Claim the owning Cycle before enqueue_assessment locks the AS.
     row = connection.execute(f"""SELECT a.id,a.as_db_id,r.created_by,s.cycle_db_id FROM m6_analysis_revisions a
         JOIN m6_processing_requests r ON r.id=a.request_id
         JOIN m5_assessment_situations s ON s.id=a.as_db_id JOIN m5_cycles c ON c.id=s.cycle_db_id
         WHERE {sql_scope('c')} AND NOT EXISTS(
           SELECT 1 FROM m6_assessment_requests q WHERE q.evidence_revision_id=a.id)
-        ORDER BY a.created_at FOR UPDATE OF s SKIP LOCKED LIMIT 1""").fetchone()
+        ORDER BY a.created_at FOR UPDATE OF c SKIP LOCKED LIMIT 1""").fetchone()
     if not row:
         return False
     request = enqueue_assessment(
@@ -155,6 +158,8 @@ def _queue_assessment(connection) -> bool:
 
 
 def _clarify_interim(connection, gateway=None) -> bool:
+    # m7_clarification.decide/present recheck and lock Cycle -> AS.  Claiming the
+    # AS here first used to deadlock with runtime presence/closure transactions.
     if gateway is None:
         from Api.m10_test_gateway import acceptance_fixture, BrowserAcceptanceGateway
         if acceptance_fixture():
@@ -163,7 +168,7 @@ def _clarify_interim(connection, gateway=None) -> bool:
         JOIN m5_assessment_situations s ON s.id=c.as_db_id JOIN m5_cycles cy ON cy.id=s.cycle_db_id
         WHERE c.mode='interim' AND {sql_scope('cy')} AND NOT EXISTS(
           SELECT 1 FROM m7_clarification_decisions d WHERE d.c54_revision_id=c.id)
-        ORDER BY c.created_at FOR UPDATE OF s SKIP LOCKED LIMIT 1""").fetchone()
+        ORDER BY c.created_at FOR UPDATE OF cy SKIP LOCKED LIMIT 1""").fetchone()
     if not row:
         return False
     decision = m7_clarification.decide(connection, c54_revision_id=str(row["id"]),
