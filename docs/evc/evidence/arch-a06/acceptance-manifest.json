@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "matrix_id": "ARCH-A06-CASE-FUNCTION",
-  "commit": "c9c7c5a488c34003cb2fb8f55e54b630f25c0506",
-  "application_version": "2.0.23",
+  "commit": "cfb72ae3545642e95d153cf14f3a372e6f035adc",
+  "application_version": "2.0.24",
   "synthetic_test_data": true,
   "required_evidence": [
     "generation",
