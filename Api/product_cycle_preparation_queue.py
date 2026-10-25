@@ -11,6 +11,7 @@ import logging
 import os
 import socket
 import threading
+from contextlib import contextmanager
 from uuid import uuid4
 
 from fastapi.encoders import jsonable_encoder
@@ -18,6 +19,7 @@ from fastapi.encoders import jsonable_encoder
 from Api.database import get_connection
 
 logger = logging.getLogger("agent4k.product_cycle_preparation")
+HEARTBEAT_INTERVAL_SECONDS = 30.0
 
 
 def _canonical(value: dict) -> str:
@@ -162,7 +164,7 @@ class ProductCyclePreparationQueue:
         with get_connection() as connection:
             connection.execute(
                 """UPDATE product_cycle_preparation_operations
-                   SET status='queued',worker_id=NULL,locked_at=NULL,updated_at=NOW()
+                   SET status='queued',worker_id=NULL,attempt_token=NULL,locked_at=NULL,updated_at=NOW()
                    WHERE status='running' AND locked_at < NOW() - INTERVAL '10 minutes'"""
             )
             row = connection.execute(
@@ -172,15 +174,88 @@ class ProductCyclePreparationQueue:
             ).fetchone()
             if not row:
                 return None
+            attempt_token = uuid4()
             claimed = connection.execute(
                 """UPDATE product_cycle_preparation_operations
-                   SET status='running',attempts=attempts+1,worker_id=%s,locked_at=NOW(),updated_at=NOW()
-                   WHERE id=%s RETURNING id,operation_id,user_id,request_json,request_checksum""",
-                (self._worker_id, row["id"]),
+                   SET status='running',attempts=attempts+1,worker_id=%s,attempt_token=%s,
+                       locked_at=NOW(),updated_at=NOW()
+                   WHERE id=%s
+                   RETURNING id,operation_id,user_id,request_json,request_checksum,attempt_token""",
+                (self._worker_id, attempt_token, row["id"]),
             ).fetchone()
         return dict(claimed)
 
+    @staticmethod
+    def _assert_current_attempt(connection, job: dict, *, lock: bool = False) -> None:
+        suffix = " FOR UPDATE" if lock else ""
+        row = connection.execute(
+            "SELECT status,attempt_token FROM product_cycle_preparation_operations "
+            f"WHERE id=%s{suffix}",
+            (job["id"],),
+        ).fetchone()
+        if not row or row["status"] != "running" or row["attempt_token"] != job["attempt_token"]:
+            raise RuntimeError("PRODUCT_CYCLE_PREPARATION_ATTEMPT_STALE")
+
+    @contextmanager
+    def _lease_heartbeat(self, job: dict):
+        stop = threading.Event()
+
+        def heartbeat() -> None:
+            while not stop.wait(HEARTBEAT_INTERVAL_SECONDS):
+                try:
+                    with get_connection() as connection:
+                        connection.execute(
+                            """UPDATE product_cycle_preparation_operations
+                               SET locked_at=NOW(),updated_at=NOW()
+                               WHERE id=%s AND status='running' AND attempt_token=%s""",
+                            (job["id"], job["attempt_token"]),
+                        )
+                except Exception:
+                    logger.exception(
+                        "Product Cycle preparation heartbeat failed operation_id=%s",
+                        job["operation_id"],
+                    )
+
+        thread = threading.Thread(
+            target=heartbeat,
+            name=f"product-cycle-preparation-heartbeat-{job['id']}",
+            daemon=True,
+        )
+        thread.start()
+        try:
+            yield
+        finally:
+            stop.set()
+            thread.join(timeout=1.0)
+
     def _process(self, job: dict) -> None:
+        from Api import m10_product_flow, m7_cycle_planner
+        from Api.llm.deepseek_gateway import DeepSeekGateway
+        from Api import m5_functional_generation_service
+        from Api.cycle_execution_manifest import resolve_cycle_dependency
+
+        failure_result = None
+        try:
+            with self._lease_heartbeat(job):
+                self._process_current_attempt(job)
+            return
+        except Exception as exc:
+            if str(exc) == "PRODUCT_CYCLE_PREPARATION_ATTEMPT_STALE":
+                logger.info("Discarded stale Product Cycle preparation attempt operation_id=%s", job["operation_id"])
+                return
+            logger.exception("Product Cycle preparation failed operation_id=%s", job["operation_id"])
+            with get_connection() as connection:
+                connection.execute(
+                    """UPDATE product_cycle_preparation_operations
+                       SET status='failed',result_json=%s::jsonb,error_code=%s,error_message=%s,
+                           completed_at=NOW(),updated_at=NOW(),locked_at=NULL,attempt_token=NULL
+                       WHERE id=%s AND status='running' AND attempt_token=%s""",
+                    (json.dumps(jsonable_encoder(getattr(exc, "failure_result", None)), ensure_ascii=False)
+                     if getattr(exc, "failure_result", None) else None,
+                     type(exc).__name__, str(exc)[:2000], job["id"], job["attempt_token"]),
+                )
+
+    def _process_current_attempt(self, job: dict) -> None:
         from Api import m10_product_flow, m7_cycle_planner
         from Api.llm.deepseek_gateway import DeepSeekGateway
         from Api import m5_functional_generation_service
@@ -260,6 +335,8 @@ class ProductCyclePreparationQueue:
                     repair_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_repair")
                     protocol_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_protocol")
             if needs_generation:
+                with get_connection() as connection:
+                    self._assert_current_attempt(connection, job)
                 snapshot = m5_functional_generation_service.build_input_snapshot(
                     case_id=decision["selected_case_id"], profile=frozen_profile,
                     operation_id=str(job["operation_id"]), synthetic=False,
@@ -280,6 +357,7 @@ class ProductCyclePreparationQueue:
                     raise ValueError("M5_FUNCTIONAL_AS_NOT_ADMITTED:" + generated["tester"]["aggregation"]["status"])
                 trace = m5_functional_generation_service.build_persistence_trace(snapshot, generated)
                 with get_connection() as connection:
+                    self._assert_current_attempt(connection, job, lock=True)
                     attached = m7_cycle_planner.attach_functional_generated_as(
                         connection, decision_id=str(decision["id"]), prepared_result=generated,
                         generation_trace=trace, created_by=int(job["user_id"]), policy=m10_product_flow._policy(),
@@ -290,25 +368,21 @@ class ProductCyclePreparationQueue:
                 with get_connection() as connection:
                     result = m10_product_flow.present_prepared_next(connection, result=result)
             with get_connection() as connection:
+                self._assert_current_attempt(connection, job, lock=True)
                 runtime = m10_product_flow.read_runtime(connection, cycle_id=str(result["plan"]["cycle_id"]))
                 participant_result = {**m10_product_flow.participant_presentation(result), "runtime": runtime}
                 connection.execute(
                     """UPDATE product_cycle_preparation_operations
-                       SET status='completed',result_json=%s::jsonb,completed_at=NOW(),updated_at=NOW(),locked_at=NULL
-                       WHERE id=%s AND status='running'""",
-                    (json.dumps(jsonable_encoder(participant_result), ensure_ascii=False), job["id"]),
+                       SET status='completed',result_json=%s::jsonb,completed_at=NOW(),updated_at=NOW(),
+                           locked_at=NULL,attempt_token=NULL
+                       WHERE id=%s AND status='running' AND attempt_token=%s""",
+                    (json.dumps(jsonable_encoder(participant_result), ensure_ascii=False),
+                     job["id"], job["attempt_token"]),
                 )
         except Exception as exc:
-            logger.exception("Product Cycle preparation failed operation_id=%s", job["operation_id"])
-            with get_connection() as connection:
-                connection.execute(
-                    """UPDATE product_cycle_preparation_operations
-                       SET status='failed',result_json=%s::jsonb,error_code=%s,error_message=%s,
-                           completed_at=NOW(),updated_at=NOW(),locked_at=NULL
-                       WHERE id=%s AND status='running'""",
-                    (json.dumps(jsonable_encoder(failure_result), ensure_ascii=False) if failure_result else None,
-                     type(exc).__name__, str(exc)[:2000], job["id"]),
-                )
+            if failure_result is not None:
+                setattr(exc, "failure_result", failure_result)
+            raise
 
 
 product_cycle_preparation_queue = ProductCyclePreparationQueue()

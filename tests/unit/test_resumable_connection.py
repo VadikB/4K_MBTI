@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from psycopg.pq import TransactionStatus
 
 from Api import database
 
@@ -11,6 +12,7 @@ class FakeConnection:
         self.commits = 0
         self.rollbacks = 0
         self.executed: list[tuple] = []
+        self.info = type("Info", (), {"transaction_status": TransactionStatus.IDLE})()
 
     def execute(self, *args, **kwargs):
         self.executed.append(args)
@@ -74,5 +76,20 @@ def test_external_io_pauses_every_active_connection(monkeypatch) -> None:
     with database.get_connection():
         with database.get_connection():
             assert database.pause_thread_connections_for_external_io() == 2
-            assert all(connection.commits == 1 for connection in pool.connections)
+            assert all(connection.commits == 0 for connection in pool.connections)
+            assert all(connection.rollbacks == 1 for connection in pool.connections)
             assert database.pause_thread_connections_for_external_io() == 0
+
+
+@pytest.mark.unit
+def test_external_io_rejects_caller_owned_transaction(monkeypatch) -> None:
+    pool = FakePool()
+    monkeypatch.setattr(database, "_connection_pool", pool)
+
+    with database.get_connection():
+        pool.connections[0].info.transaction_status = TransactionStatus.INTRANS
+        with pytest.raises(RuntimeError, match="REQUIRES_CLOSED_DATABASE_TRANSACTION"):
+            database.pause_thread_connections_for_external_io()
+
+    assert pool.connections[0].commits == 0
+    assert pool.connections[0].rollbacks == 0

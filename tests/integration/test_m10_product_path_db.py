@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import copy
 import json
+import time
 from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
@@ -231,7 +232,7 @@ def test_product_cycle_preparation_operation_returns_only_committed_admitted_cyc
             user_id BIGINT NOT NULL REFERENCES users(id), request_json JSONB NOT NULL,
             request_checksum TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued',
             attempts INTEGER NOT NULL DEFAULT 0, result_json JSONB, error_code TEXT,
-            error_message TEXT, worker_id TEXT, locked_at TIMESTAMP,
+            error_message TEXT, worker_id TEXT, attempt_token UUID, locked_at TIMESTAMP,
             created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
             completed_at TIMESTAMP)
         """)
@@ -259,6 +260,77 @@ def test_product_cycle_preparation_operation_returns_only_committed_admitted_cyc
         queue.enqueue(operation_id="async-product-01", user_id=100, request=request)
     assert queue.get_owned_status("async-product-01", 100) is None
 
+
+@pytest.mark.integration
+def test_product_cycle_preparation_reclaim_fences_late_worker(product_db, monkeypatch):
+    factory = product_db
+    with factory() as connection:
+        connection.execute("INSERT INTO users VALUES(100)")
+        connection.execute("""CREATE TABLE product_cycle_preparation_operations (
+            id BIGSERIAL PRIMARY KEY, operation_id TEXT NOT NULL UNIQUE,
+            user_id BIGINT NOT NULL REFERENCES users(id), request_json JSONB NOT NULL,
+            request_checksum TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued',
+            attempts INTEGER NOT NULL DEFAULT 0, result_json JSONB, error_code TEXT,
+            error_message TEXT, worker_id TEXT, attempt_token UUID, locked_at TIMESTAMP,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            completed_at TIMESTAMP)
+        """)
+        connection.commit()
+    monkeypatch.setattr("Api.product_cycle_preparation_queue.get_connection", factory)
+    queue = ProductCyclePreparationQueue()
+    request = {
+        "personalized_profile_id": factory.profile_id,
+        "idempotency_key": "fenced-product-01",
+        "selected_skills": ["K1", "K2", "K3", "K4"],
+    }
+    queue.enqueue(operation_id="fenced-product-01", user_id=99, request=request)
+    first = queue._claim()
+    assert first is not None
+
+    with factory() as connection:
+        connection.execute(
+            """UPDATE product_cycle_preparation_operations
+               SET status='queued',worker_id=NULL,attempt_token=NULL,locked_at=NULL
+               WHERE id=%s""",
+            (first["id"],),
+        )
+    second = queue._claim()
+    assert second is not None
+    assert second["attempt_token"] != first["attempt_token"]
+
+    monkeypatch.setattr(
+        "Api.product_cycle_preparation_queue.HEARTBEAT_INTERVAL_SECONDS",
+        0.02,
+    )
+    with queue._lease_heartbeat(second):
+        with factory() as connection:
+            connection.execute(
+                """UPDATE product_cycle_preparation_operations
+                   SET locked_at=NOW() - INTERVAL '11 minutes' WHERE id=%s""",
+                (second["id"],),
+            )
+        time.sleep(0.08)
+        assert queue._claim() is None
+
+    with factory() as connection:
+        with pytest.raises(RuntimeError, match="ATTEMPT_STALE"):
+            queue._assert_current_attempt(connection, first, lock=True)
+        queue._assert_current_attempt(connection, second, lock=True)
+        stale_update = connection.execute(
+            """UPDATE product_cycle_preparation_operations
+               SET status='completed',result_json='{}'::jsonb
+               WHERE id=%s AND status='running' AND attempt_token=%s""",
+            (first["id"], first["attempt_token"]),
+        )
+        assert stale_update.rowcount == 0
+        current = connection.execute(
+            "SELECT status,attempt_token,result_json FROM product_cycle_preparation_operations WHERE id=%s",
+            (second["id"],),
+        ).fetchone()
+        assert current["status"] == "running"
+        assert current["attempt_token"] == second["attempt_token"]
+        assert current["result_json"] is None
+
     active = queue.enqueue(operation_id="async-product-02", user_id=99,
                            request={**request, "idempotency_key": "async-product-02"})
     separate = queue.enqueue(operation_id="async-product-03", user_id=99,
@@ -271,9 +343,19 @@ def test_product_cycle_preparation_operation_returns_only_committed_admitted_cyc
     assert duplicate_scope["operation_id"] == "async-product-02"
 
 
-@pytest.mark.parametrize("explicit_profile", [True, False])
+@pytest.mark.parametrize(
+    ("explicit_profile", "close_during_provider", "crash_phase"),
+    [
+        (True, False, None),
+        (False, False, None),
+        (True, True, None),
+        (True, False, "before_provider"),
+        (True, False, "after_provider"),
+        (True, False, "after_attach"),
+    ],
+)
 def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(
-        product_db, monkeypatch, explicit_profile):
+        product_db, monkeypatch, explicit_profile, close_during_provider, crash_phase):
     with product_db() as connection:
         package = json.loads((FUNCTIONAL_OUTPUT / "case-package.json").read_text())
         manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_text())
@@ -332,7 +414,7 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         connection.execute("""CREATE TABLE product_cycle_preparation_operations (
             id BIGSERIAL PRIMARY KEY,operation_id TEXT UNIQUE,user_id BIGINT,request_json JSONB,request_checksum TEXT,
             status TEXT DEFAULT 'queued',attempts INTEGER DEFAULT 0,result_json JSONB,error_code TEXT,error_message TEXT,
-            worker_id TEXT,locked_at TIMESTAMP,created_at TIMESTAMP DEFAULT NOW(),updated_at TIMESTAMP DEFAULT NOW(),completed_at TIMESTAMP)""")
+            worker_id TEXT,attempt_token UUID,locked_at TIMESTAMP,created_at TIMESTAMP DEFAULT NOW(),updated_at TIMESTAMP DEFAULT NOW(),completed_at TIMESTAMP)""")
         with pytest.raises(ValueError, match="M5_FUNCTIONAL_PREPARATION_REQUIRED"):
             start_or_resume(
                 connection,
@@ -348,10 +430,43 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
     class FunctionalGateway:
         enabled = True
         call_count = 0
+        transaction_probes = []
+        cycle_closed = False
+        crash_injected = False
         def chat_with_trace(self, messages, **kwargs):
             type(self).call_count += 1
+            with product_db() as probe:
+                probe_pid = probe.execute("SELECT pg_backend_pid() AS pid").fetchone()["pid"]
+                observed_at = probe.execute("SELECT clock_timestamp() AS value").fetchone()["value"]
+                # The provider boundary must not inherit a transaction or a row lock
+                # from PM-03. NOWAIT turns a leaked lock into a deterministic failure.
+                probe.execute(
+                    """SELECT id FROM product_cycle_preparation_operations
+                       WHERE operation_id='functional-cycle' FOR UPDATE NOWAIT"""
+                ).fetchone()
+                idle_in_transaction = probe.execute(
+                    """SELECT count(*) AS value FROM pg_stat_activity
+                       WHERE datname=current_database() AND pid<>%s
+                         AND state='idle in transaction'""",
+                    (probe_pid,),
+                ).fetchone()["value"]
+                type(self).transaction_probes.append({
+                    "observed_at": observed_at,
+                    "idle_in_transaction": idle_in_transaction,
+                })
+            if crash_phase == "before_provider" and not type(self).crash_injected:
+                type(self).crash_injected = True
+                raise SystemExit("controlled crash before provider response")
             payload = json.loads(next(item["content"] for item in reversed(messages) if item["role"] == "user"))
             if ":generation:" in kwargs["routing_key"]:
+                if close_during_provider and not type(self).cycle_closed:
+                    with product_db() as closer:
+                        closer.execute(
+                            """UPDATE m5_cycles SET status='collection_closed',updated_at=NOW()
+                               WHERE id=(SELECT id FROM m5_cycles WHERE owner_user_id=99
+                                         ORDER BY created_at DESC LIMIT 1)"""
+                        )
+                    type(self).cycle_closed = True
                 content = json.dumps(payload["author_as_example"], ensure_ascii=False)
             else:
                 required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
@@ -363,14 +478,72 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
 
     monkeypatch.setattr("Api.product_cycle_preparation_queue.get_connection", product_db)
     monkeypatch.setattr("Api.llm.deepseek_gateway.DeepSeekGateway", FunctionalGateway)
+    crash_state = {"after_provider": False, "after_attach": False}
+    if crash_phase == "after_provider":
+        from Api import m5_functional_generation_service as generation_service
+        original_prepare = generation_service.prepare
+
+        def crash_after_provider(*args, **kwargs):
+            result = original_prepare(*args, **kwargs)
+            if not crash_state["after_provider"]:
+                crash_state["after_provider"] = True
+                raise SystemExit("controlled crash after provider response")
+            return result
+
+        monkeypatch.setattr(generation_service, "prepare", crash_after_provider)
+    if crash_phase == "after_attach":
+        from Api import m7_cycle_planner as cycle_planner
+        original_attach = cycle_planner.attach_functional_generated_as
+
+        def crash_after_attach(connection, **kwargs):
+            result = original_attach(connection, **kwargs)
+            if not crash_state["after_attach"]:
+                connection.commit()
+                crash_state["after_attach"] = True
+                raise SystemExit("controlled crash after committed attach")
+            return result
+
+        monkeypatch.setattr(cycle_planner, "attach_functional_generated_as", crash_after_attach)
     queue = ProductCyclePreparationQueue()
     request = {"idempotency_key": "functional-cycle",
                "selected_skills": ["K1", "K2", "K3", "K4"]}
     if explicit_profile:
         request["personalized_profile_id"] = specialist_profile["id"]
     queue.enqueue(operation_id="functional-cycle", user_id=99, request=request)
-    queue._process(queue._claim())
+    first_claim = queue._claim()
+    if crash_phase:
+        with pytest.raises(SystemExit, match="controlled crash"):
+            queue._process(first_claim)
+        crashed = queue.get_status("functional-cycle")
+        assert crashed["status"] == "running"
+        with product_db() as connection:
+            connection.execute(
+                """UPDATE product_cycle_preparation_operations
+                   SET locked_at=NOW() - INTERVAL '11 minutes' WHERE id=%s""",
+                (first_claim["id"],),
+            )
+        recovered_claim = queue._claim()
+        assert recovered_claim is not None
+        assert recovered_claim["attempt_token"] != first_claim["attempt_token"]
+        queue._process(recovered_claim)
+    else:
+        queue._process(first_claim)
     operation = queue.get_status("functional-cycle")
+    assert FunctionalGateway.transaction_probes
+    assert all(item["observed_at"] for item in FunctionalGateway.transaction_probes)
+    assert all(item["idle_in_transaction"] == 0 for item in FunctionalGateway.transaction_probes)
+    if close_during_provider:
+        assert operation["status"] == "failed", operation
+        assert operation["error_message"] == "M7_COLLECTION_CLOSED"
+        with product_db() as connection:
+            assignment = connection.execute(
+                """SELECT a.assessment_situation_db_id FROM m7_route_decisions d
+                   JOIN m5_cycles c ON c.id=d.cycle_db_id
+                   LEFT JOIN m7_route_assignments a ON a.decision_id=d.id
+                   WHERE c.owner_user_id=99 ORDER BY d.created_at DESC LIMIT 1"""
+            ).fetchone()
+            assert assignment["assessment_situation_db_id"] is None
+        return
     assert operation["status"] == "completed", operation
     prepared = operation["result_json"]
     with product_db() as connection:
@@ -385,6 +558,11 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         situation = connection.execute("""SELECT s.snapshot_json,s.execution_payload_json
             FROM m5_assessment_situations s JOIN m7_route_assignments a ON a.assessment_situation_db_id=s.id
             WHERE a.decision_id=%s""", (decision["id"],)).fetchone()
+        assignment_count = connection.execute(
+            "SELECT count(*) AS value FROM m7_route_assignments WHERE decision_id=%s",
+            (decision["id"],),
+        ).fetchone()["value"]
+        assert assignment_count == 1
         assert situation["snapshot_json"]["case_ref"]["id"].startswith("CASE.SPEC.")
         generated_ref = situation["execution_payload_json"]["runtime_rule_ref"]
         generated_trace = situation["execution_payload_json"]["ai_operations"]["functional_personalization"]

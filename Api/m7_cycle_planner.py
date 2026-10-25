@@ -225,8 +225,8 @@ def choose_next(connection, *, cycle_id:str, expected_plan_revision_id:str, key:
 def attach_functional_generated_as(connection, *, decision_id: str, prepared_result: dict,
                                    generation_trace: dict, created_by: int, policy: dict) -> dict:
     """Atomically persist and attach an independently admitted generated AS."""
-    decision = repo.read_decision(connection, decision_id)
     connection.execute("SELECT id FROM m7_route_decisions WHERE id=%s FOR UPDATE", (decision_id,)).fetchone()
+    decision = repo.read_decision(connection, decision_id)
     if decision["status"] != "SELECTED": raise ValueError("M7_DECISION_NOT_SELECTED")
     if decision.get("assigned_as_db_id"): return decision
     if not prepared_result.get("admitted_for_participant"): raise ValueError("AS_NOT_ADMITTED")
@@ -240,8 +240,18 @@ def attach_functional_generated_as(connection, *, decision_id: str, prepared_res
             or generation_trace.get("compiled_case_checksum") != runtime_checksum(prepared_result["compiled_case"])
             or generation_trace.get("execution_rules_checksum") != runtime_checksum(prepared_result["execution_rules"])):
         raise ValueError("M5_FUNCTIONAL_HANDOFF_INTEGRITY_MISMATCH")
-    cycle = connection.execute("SELECT personalized_profile_id,usage_scope FROM m5_cycles WHERE id=%s",
-                               (decision["cycle_db_id"],)).fetchone()
+    cycle = connection.execute(
+        "SELECT cycle_id,personalized_profile_id,usage_scope,status "
+        "FROM m5_cycles WHERE id=%s FOR UPDATE",
+        (decision["cycle_db_id"],),
+    ).fetchone()
+    if cycle["status"] in {"collection_closed", "calculation_pending", "calculated", "failed"}:
+        raise ValueError("M7_COLLECTION_CLOSED")
+    current_cycle = read_cycle(connection, str(cycle["cycle_id"]))
+    if current_cycle["calendar_deadline"] is not None:
+        if (current_cycle["remaining_seconds"] <= 0
+                or datetime.now(timezone.utc) >= current_cycle["calendar_deadline"]):
+            raise ValueError("M7_TIME_LIMIT_REACHED")
     runtime_rules = prepared_result["execution_rules"]
     prepared = prepare_assessment_situation(
         connection, assessment_situation_id=str(uuid4()), case_id=decision["selected_case_id"],
