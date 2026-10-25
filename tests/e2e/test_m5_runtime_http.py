@@ -1,4 +1,6 @@
 from contextlib import contextmanager
+import json
+from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -9,6 +11,9 @@ from fastapi.testclient import TestClient
 import Api.routes as routes
 
 pytestmark = pytest.mark.e2e
+
+ROOT = Path(__file__).resolve().parents[2]
+A06_MATRIX = ROOT / "tests/fixtures/arch_a06/acceptance-matrix-v1.json"
 
 
 class Result:
@@ -155,6 +160,47 @@ def test_cycle_preparation_api_rejects_foreign_or_reused_operation_key(client):
     })
     assert conflict.status_code == 409
     assert conflict.json() == {"detail": "Ключ операции уже использован для другого запроса."}
+
+
+def test_a06_case_function_matrix_uses_public_safe_preparation_contract(client):
+    http, monkeypatch, _ = client
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "owner")
+    matrix = json.loads(A06_MATRIX.read_text(encoding="utf-8"))
+    submitted = []
+
+    def enqueue(**kwargs):
+        submitted.append(kwargs)
+        operation_id = kwargs["operation_id"]
+        return {
+            "operation_id": operation_id,
+            "user_id": kwargs["user_id"],
+            "status": "completed",
+            "result_json": {
+                "plan": {"cycle_id": f"cycle-{operation_id.lower()}"},
+                "runtime": {"status": "prepared"},
+            },
+        }
+
+    monkeypatch.setattr(routes.product_cycle_preparation_queue, "enqueue", enqueue)
+    for profile_id, row in enumerate(matrix["rows"], start=1001):
+        response = http.post("/users/assessment/cycles/prepare", json={
+            "idempotency_key": row["id"],
+            "personalized_profile_id": profile_id,
+            "selected_skills": ["K1", "K2", "K3", "K4"],
+        })
+        assert response.status_code == 202
+        body = response.json()
+        assert body["operation_id"] == row["id"]
+        assert body["status"] == "completed"
+        assert body["result"]["runtime"] == {"status": "prepared"}
+        assert "candidate_as" not in response.text
+        assert "tester" not in response.text
+        assert "execution_payload" not in response.text
+
+    assert len(submitted) == 27
+    assert {item["operation_id"] for item in submitted} == {row["id"] for row in matrix["rows"]}
+    assert {item["request"]["personalized_profile_id"] for item in submitted} == set(range(1001, 1028))
+    assert {item["user_id"] for item in submitted} == {7}
 
 
 def test_product_turn_and_transition_use_runtime_without_exposing_execution_snapshot(client):

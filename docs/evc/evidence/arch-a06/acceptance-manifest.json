@@ -1,0 +1,1324 @@
+{
+  "schema_version": 1,
+  "matrix_id": "ARCH-A06-CASE-FUNCTION",
+  "commit": "cfb72ae3545642e95d153cf14f3a372e6f035adc",
+  "application_version": "2.0.24",
+  "synthetic_test_data": true,
+  "required_evidence": [
+    "generation",
+    "tester",
+    "admission",
+    "http_runtime",
+    "m6",
+    "m8"
+  ],
+  "rows": [
+    {
+      "id": "A06.C01.SALES",
+      "case_id": "CASE.SPEC.01",
+      "function": "sales",
+      "function_profile": {
+        "label": "Sales",
+        "activity": "Уточнить запрос клиента, сопоставить условия и подготовить обоснованное коммерческое предложение",
+        "authority": "Готовить рекомендацию и проект предложения; не подтверждать чужие ресурсы, согласия и решения"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.01.1",
+          "as_sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "as_sha256": "26ec03013b1988026fadd073c97081722b41cef057432e4ddd430dc97d293add",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.01.3",
+          "as_sha256": "dc311b35c6292f976302c9b874cbaa964d2bf024176e672e291fa13c1f461e38",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C01.HR",
+      "case_id": "CASE.SPEC.01",
+      "function": "hr",
+      "function_profile": {
+        "label": "HR-подбор",
+        "activity": "Уточнить запрос на подбор, проверить основания и подготовить обоснованную рекомендацию по кандидату",
+        "authority": "Готовить рекомендацию; не приписывать кандидату результаты и не принимать решение за нанимающего руководителя"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.01.1",
+          "as_sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "as_sha256": "26ec03013b1988026fadd073c97081722b41cef057432e4ddd430dc97d293add",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.01.3",
+          "as_sha256": "dc311b35c6292f976302c9b874cbaa964d2bf024176e672e291fa13c1f461e38",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C01.IT",
+      "case_id": "CASE.SPEC.01",
+      "function": "it_ops",
+      "function_profile": {
+        "label": "IT-эксплуатация",
+        "activity": "Проанализировать эксплуатационное событие, ограничения и подготовить обоснованный план восстановления",
+        "authority": "Готовить техническую рекомендацию; не объявлять непроверенное восстановление и не распоряжаться чужими ресурсами"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.01.1",
+          "as_sha256": "21b01709cc8991a3f4c91ca8a1109e2f29ae87b73120d0c60d3b22cc9d08d03d",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.01.2",
+          "as_sha256": "26ec03013b1988026fadd073c97081722b41cef057432e4ddd430dc97d293add",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.01.3",
+          "as_sha256": "dc311b35c6292f976302c9b874cbaa964d2bf024176e672e291fa13c1f461e38",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C02.SALES",
+      "case_id": "CASE.SPEC.02",
+      "function": "sales",
+      "function_profile": {
+        "label": "Sales",
+        "activity": "Уточнить запрос клиента, сопоставить условия и подготовить обоснованное коммерческое предложение",
+        "authority": "Готовить рекомендацию и проект предложения; не подтверждать чужие ресурсы, согласия и решения"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.02.1",
+          "as_sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.02.2",
+          "as_sha256": "25d91fb1cfcd68fcf68704d2f5251309aca378bae54279b77b3eea027c3e7546",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.02.3",
+          "as_sha256": "a3981a44dceca87a7fc98ef9349e75ffc98ceed48e131a056c318b9c93f141e1",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C02.HR",
+      "case_id": "CASE.SPEC.02",
+      "function": "hr",
+      "function_profile": {
+        "label": "HR-подбор",
+        "activity": "Уточнить запрос на подбор, проверить основания и подготовить обоснованную рекомендацию по кандидату",
+        "authority": "Готовить рекомендацию; не приписывать кандидату результаты и не принимать решение за нанимающего руководителя"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.02.1",
+          "as_sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.02.2",
+          "as_sha256": "25d91fb1cfcd68fcf68704d2f5251309aca378bae54279b77b3eea027c3e7546",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.02.3",
+          "as_sha256": "a3981a44dceca87a7fc98ef9349e75ffc98ceed48e131a056c318b9c93f141e1",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C02.IT",
+      "case_id": "CASE.SPEC.02",
+      "function": "it_ops",
+      "function_profile": {
+        "label": "IT-эксплуатация",
+        "activity": "Проанализировать эксплуатационное событие, ограничения и подготовить обоснованный план восстановления",
+        "authority": "Готовить техническую рекомендацию; не объявлять непроверенное восстановление и не распоряжаться чужими ресурсами"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.02.1",
+          "as_sha256": "be69c84a5654711a6ee335dce466ce3c87edd7e0c243d5548df511e1860d4abf",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.02.2",
+          "as_sha256": "25d91fb1cfcd68fcf68704d2f5251309aca378bae54279b77b3eea027c3e7546",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.02.3",
+          "as_sha256": "a3981a44dceca87a7fc98ef9349e75ffc98ceed48e131a056c318b9c93f141e1",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C03.SALES",
+      "case_id": "CASE.SPEC.03",
+      "function": "sales",
+      "function_profile": {
+        "label": "Sales",
+        "activity": "Уточнить запрос клиента, сопоставить условия и подготовить обоснованное коммерческое предложение",
+        "authority": "Готовить рекомендацию и проект предложения; не подтверждать чужие ресурсы, согласия и решения"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.03.1",
+          "as_sha256": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.03.2",
+          "as_sha256": "a0a58ef24a841347a71c6f5c7eb4bf623552c3dbcb9e39d1c8fae88f5a526518",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.03.3",
+          "as_sha256": "d035e939bf707815b50b9281a3246c60ba87d0830ed0a9fc8f14d79dd4b3bb8e",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C03.HR",
+      "case_id": "CASE.SPEC.03",
+      "function": "hr",
+      "function_profile": {
+        "label": "HR-подбор",
+        "activity": "Уточнить запрос на подбор, проверить основания и подготовить обоснованную рекомендацию по кандидату",
+        "authority": "Готовить рекомендацию; не приписывать кандидату результаты и не принимать решение за нанимающего руководителя"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.03.1",
+          "as_sha256": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.03.2",
+          "as_sha256": "a0a58ef24a841347a71c6f5c7eb4bf623552c3dbcb9e39d1c8fae88f5a526518",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.03.3",
+          "as_sha256": "d035e939bf707815b50b9281a3246c60ba87d0830ed0a9fc8f14d79dd4b3bb8e",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C03.IT",
+      "case_id": "CASE.SPEC.03",
+      "function": "it_ops",
+      "function_profile": {
+        "label": "IT-эксплуатация",
+        "activity": "Проанализировать эксплуатационное событие, ограничения и подготовить обоснованный план восстановления",
+        "authority": "Готовить техническую рекомендацию; не объявлять непроверенное восстановление и не распоряжаться чужими ресурсами"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.03.1",
+          "as_sha256": "4ed908269ce7fbe3774e25b0589afe87e80ef2e5dcda2ae66508bf716ed7a4e3",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.03.2",
+          "as_sha256": "a0a58ef24a841347a71c6f5c7eb4bf623552c3dbcb9e39d1c8fae88f5a526518",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.03.3",
+          "as_sha256": "d035e939bf707815b50b9281a3246c60ba87d0830ed0a9fc8f14d79dd4b3bb8e",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C04.SALES",
+      "case_id": "CASE.SPEC.04",
+      "function": "sales",
+      "function_profile": {
+        "label": "Sales",
+        "activity": "Уточнить запрос клиента, сопоставить условия и подготовить обоснованное коммерческое предложение",
+        "authority": "Готовить рекомендацию и проект предложения; не подтверждать чужие ресурсы, согласия и решения"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.04.1",
+          "as_sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.04.2",
+          "as_sha256": "6580dff1a9212c0321e5e10e957cadaaeb40eb6f3e259298783d9fe531f4b97c",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.04.3",
+          "as_sha256": "b2776fe4cad4c9ff5213cf0390f2fb651584ab340733e03d73a40291323f8e15",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C04.HR",
+      "case_id": "CASE.SPEC.04",
+      "function": "hr",
+      "function_profile": {
+        "label": "HR-подбор",
+        "activity": "Уточнить запрос на подбор, проверить основания и подготовить обоснованную рекомендацию по кандидату",
+        "authority": "Готовить рекомендацию; не приписывать кандидату результаты и не принимать решение за нанимающего руководителя"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.04.1",
+          "as_sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.04.2",
+          "as_sha256": "6580dff1a9212c0321e5e10e957cadaaeb40eb6f3e259298783d9fe531f4b97c",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.04.3",
+          "as_sha256": "b2776fe4cad4c9ff5213cf0390f2fb651584ab340733e03d73a40291323f8e15",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C04.IT",
+      "case_id": "CASE.SPEC.04",
+      "function": "it_ops",
+      "function_profile": {
+        "label": "IT-эксплуатация",
+        "activity": "Проанализировать эксплуатационное событие, ограничения и подготовить обоснованный план восстановления",
+        "authority": "Готовить техническую рекомендацию; не объявлять непроверенное восстановление и не распоряжаться чужими ресурсами"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.04.1",
+          "as_sha256": "2cc8bfeb614420a97b25c48e7d59681cd78187c2658a878a32479eacb794a189",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.04.2",
+          "as_sha256": "6580dff1a9212c0321e5e10e957cadaaeb40eb6f3e259298783d9fe531f4b97c",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.04.3",
+          "as_sha256": "b2776fe4cad4c9ff5213cf0390f2fb651584ab340733e03d73a40291323f8e15",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C05.SALES",
+      "case_id": "CASE.SPEC.05",
+      "function": "sales",
+      "function_profile": {
+        "label": "Sales",
+        "activity": "Уточнить запрос клиента, сопоставить условия и подготовить обоснованное коммерческое предложение",
+        "authority": "Готовить рекомендацию и проект предложения; не подтверждать чужие ресурсы, согласия и решения"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.05.1",
+          "as_sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.05.2",
+          "as_sha256": "e0ecd21274977c921053e0812bf15274cbd7e2cc92038980695552f10051e59b",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.05.3",
+          "as_sha256": "12030adb6600257eca9f1845ab83702d08328cbaf57c7ac0bd43530d3bdd3cec",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C05.HR",
+      "case_id": "CASE.SPEC.05",
+      "function": "hr",
+      "function_profile": {
+        "label": "HR-подбор",
+        "activity": "Уточнить запрос на подбор, проверить основания и подготовить обоснованную рекомендацию по кандидату",
+        "authority": "Готовить рекомендацию; не приписывать кандидату результаты и не принимать решение за нанимающего руководителя"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.05.1",
+          "as_sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.05.2",
+          "as_sha256": "e0ecd21274977c921053e0812bf15274cbd7e2cc92038980695552f10051e59b",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.05.3",
+          "as_sha256": "12030adb6600257eca9f1845ab83702d08328cbaf57c7ac0bd43530d3bdd3cec",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C05.IT",
+      "case_id": "CASE.SPEC.05",
+      "function": "it_ops",
+      "function_profile": {
+        "label": "IT-эксплуатация",
+        "activity": "Проанализировать эксплуатационное событие, ограничения и подготовить обоснованный план восстановления",
+        "authority": "Готовить техническую рекомендацию; не объявлять непроверенное восстановление и не распоряжаться чужими ресурсами"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.05.1",
+          "as_sha256": "1732f4ca7e48dc1bd6b601a285dd28d487c0c393d2022e4d831e0e3c1cf68421",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.05.2",
+          "as_sha256": "e0ecd21274977c921053e0812bf15274cbd7e2cc92038980695552f10051e59b",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.05.3",
+          "as_sha256": "12030adb6600257eca9f1845ab83702d08328cbaf57c7ac0bd43530d3bdd3cec",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C06.SALES",
+      "case_id": "CASE.SPEC.06",
+      "function": "sales",
+      "function_profile": {
+        "label": "Sales",
+        "activity": "Уточнить запрос клиента, сопоставить условия и подготовить обоснованное коммерческое предложение",
+        "authority": "Готовить рекомендацию и проект предложения; не подтверждать чужие ресурсы, согласия и решения"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.06.1",
+          "as_sha256": "8bb32acdef0d9e7849c75aa1f5ac54386a2a8f4a717cb7035341fd740ef58f89",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.06.2",
+          "as_sha256": "063ce8a08cc3779e765116ded5640978be226521a81b9edbaf7c130170b50c33",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.06.3",
+          "as_sha256": "a314df05c8c1aea52986ce3cb7fe44cd5a3a05e339d8e76f5b944201f824409f",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C06.HR",
+      "case_id": "CASE.SPEC.06",
+      "function": "hr",
+      "function_profile": {
+        "label": "HR-подбор",
+        "activity": "Уточнить запрос на подбор, проверить основания и подготовить обоснованную рекомендацию по кандидату",
+        "authority": "Готовить рекомендацию; не приписывать кандидату результаты и не принимать решение за нанимающего руководителя"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.06.1",
+          "as_sha256": "8bb32acdef0d9e7849c75aa1f5ac54386a2a8f4a717cb7035341fd740ef58f89",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.06.2",
+          "as_sha256": "063ce8a08cc3779e765116ded5640978be226521a81b9edbaf7c130170b50c33",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.06.3",
+          "as_sha256": "a314df05c8c1aea52986ce3cb7fe44cd5a3a05e339d8e76f5b944201f824409f",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C06.IT",
+      "case_id": "CASE.SPEC.06",
+      "function": "it_ops",
+      "function_profile": {
+        "label": "IT-эксплуатация",
+        "activity": "Проанализировать эксплуатационное событие, ограничения и подготовить обоснованный план восстановления",
+        "authority": "Готовить техническую рекомендацию; не объявлять непроверенное восстановление и не распоряжаться чужими ресурсами"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.06.1",
+          "as_sha256": "8bb32acdef0d9e7849c75aa1f5ac54386a2a8f4a717cb7035341fd740ef58f89",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.06.2",
+          "as_sha256": "063ce8a08cc3779e765116ded5640978be226521a81b9edbaf7c130170b50c33",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.06.3",
+          "as_sha256": "a314df05c8c1aea52986ce3cb7fe44cd5a3a05e339d8e76f5b944201f824409f",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C07.SALES",
+      "case_id": "CASE.SPEC.07",
+      "function": "sales",
+      "function_profile": {
+        "label": "Sales",
+        "activity": "Уточнить запрос клиента, сопоставить условия и подготовить обоснованное коммерческое предложение",
+        "authority": "Готовить рекомендацию и проект предложения; не подтверждать чужие ресурсы, согласия и решения"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.07.1",
+          "as_sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.07.2",
+          "as_sha256": "86393b7019a1531f49bfbddbc9825d21ad016d08e6b838620e9837d09e51cc80",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.07.3",
+          "as_sha256": "d0cf050868017ccbe2efa8f19cab2d0aa1e8fd17bbc17f9035504c8c474e22bc",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C07.HR",
+      "case_id": "CASE.SPEC.07",
+      "function": "hr",
+      "function_profile": {
+        "label": "HR-подбор",
+        "activity": "Уточнить запрос на подбор, проверить основания и подготовить обоснованную рекомендацию по кандидату",
+        "authority": "Готовить рекомендацию; не приписывать кандидату результаты и не принимать решение за нанимающего руководителя"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.07.1",
+          "as_sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.07.2",
+          "as_sha256": "86393b7019a1531f49bfbddbc9825d21ad016d08e6b838620e9837d09e51cc80",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.07.3",
+          "as_sha256": "d0cf050868017ccbe2efa8f19cab2d0aa1e8fd17bbc17f9035504c8c474e22bc",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C07.IT",
+      "case_id": "CASE.SPEC.07",
+      "function": "it_ops",
+      "function_profile": {
+        "label": "IT-эксплуатация",
+        "activity": "Проанализировать эксплуатационное событие, ограничения и подготовить обоснованный план восстановления",
+        "authority": "Готовить техническую рекомендацию; не объявлять непроверенное восстановление и не распоряжаться чужими ресурсами"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.07.1",
+          "as_sha256": "e5dbfe32fd471e497b236889896a09b48fa6b7b8cec2a1f827152616b2079b00",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.07.2",
+          "as_sha256": "86393b7019a1531f49bfbddbc9825d21ad016d08e6b838620e9837d09e51cc80",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.07.3",
+          "as_sha256": "d0cf050868017ccbe2efa8f19cab2d0aa1e8fd17bbc17f9035504c8c474e22bc",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C08.SALES",
+      "case_id": "CASE.SPEC.08",
+      "function": "sales",
+      "function_profile": {
+        "label": "Sales",
+        "activity": "Уточнить запрос клиента, сопоставить условия и подготовить обоснованное коммерческое предложение",
+        "authority": "Готовить рекомендацию и проект предложения; не подтверждать чужие ресурсы, согласия и решения"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.08.1",
+          "as_sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.08.2",
+          "as_sha256": "3a9e89e1eb802c54a43ed980cefc1c1a340f20fa135cedfa81f69f69f54b7fa5",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.08.3",
+          "as_sha256": "ec13891f7a4709954c728b18587bf1f8bf47363a3649dce869851b5e15901f4c",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C08.HR",
+      "case_id": "CASE.SPEC.08",
+      "function": "hr",
+      "function_profile": {
+        "label": "HR-подбор",
+        "activity": "Уточнить запрос на подбор, проверить основания и подготовить обоснованную рекомендацию по кандидату",
+        "authority": "Готовить рекомендацию; не приписывать кандидату результаты и не принимать решение за нанимающего руководителя"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.08.1",
+          "as_sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.08.2",
+          "as_sha256": "3a9e89e1eb802c54a43ed980cefc1c1a340f20fa135cedfa81f69f69f54b7fa5",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.08.3",
+          "as_sha256": "ec13891f7a4709954c728b18587bf1f8bf47363a3649dce869851b5e15901f4c",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C08.IT",
+      "case_id": "CASE.SPEC.08",
+      "function": "it_ops",
+      "function_profile": {
+        "label": "IT-эксплуатация",
+        "activity": "Проанализировать эксплуатационное событие, ограничения и подготовить обоснованный план восстановления",
+        "authority": "Готовить техническую рекомендацию; не объявлять непроверенное восстановление и не распоряжаться чужими ресурсами"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.08.1",
+          "as_sha256": "e2210795c0e67b43097e109166d8a4e6b652ea182d4836e0925b17e24da99213",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.08.2",
+          "as_sha256": "3a9e89e1eb802c54a43ed980cefc1c1a340f20fa135cedfa81f69f69f54b7fa5",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.08.3",
+          "as_sha256": "ec13891f7a4709954c728b18587bf1f8bf47363a3649dce869851b5e15901f4c",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C09.SALES",
+      "case_id": "CASE.SPEC.09",
+      "function": "sales",
+      "function_profile": {
+        "label": "Sales",
+        "activity": "Уточнить запрос клиента, сопоставить условия и подготовить обоснованное коммерческое предложение",
+        "authority": "Готовить рекомендацию и проект предложения; не подтверждать чужие ресурсы, согласия и решения"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.09.1",
+          "as_sha256": "b35cb62e5bfef1845b139a75ec8c8293248a02f5207d4721ebe87ae2532fcb26",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.09.2",
+          "as_sha256": "0d1494d246d7ae18b949d91b292fe6a2bfde2648d8b8e1d5d277d75129362096",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.09.3",
+          "as_sha256": "489d4385062664142da8c6289d4b7e410a2e292203d94df85c73810f7d8d8e51",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C09.HR",
+      "case_id": "CASE.SPEC.09",
+      "function": "hr",
+      "function_profile": {
+        "label": "HR-подбор",
+        "activity": "Уточнить запрос на подбор, проверить основания и подготовить обоснованную рекомендацию по кандидату",
+        "authority": "Готовить рекомендацию; не приписывать кандидату результаты и не принимать решение за нанимающего руководителя"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.09.1",
+          "as_sha256": "b35cb62e5bfef1845b139a75ec8c8293248a02f5207d4721ebe87ae2532fcb26",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.09.2",
+          "as_sha256": "0d1494d246d7ae18b949d91b292fe6a2bfde2648d8b8e1d5d277d75129362096",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.09.3",
+          "as_sha256": "489d4385062664142da8c6289d4b7e410a2e292203d94df85c73810f7d8d8e51",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    },
+    {
+      "id": "A06.C09.IT",
+      "case_id": "CASE.SPEC.09",
+      "function": "it_ops",
+      "function_profile": {
+        "label": "IT-эксплуатация",
+        "activity": "Проанализировать эксплуатационное событие, ограничения и подготовить обоснованный план восстановления",
+        "authority": "Готовить техническую рекомендацию; не объявлять непроверенное восстановление и не распоряжаться чужими ресурсами"
+      },
+      "status": "NOT_RUN",
+      "evidence": {
+        "generation": null,
+        "tester": null,
+        "admission": null,
+        "http_runtime": null,
+        "m6": null,
+        "m8": null
+      },
+      "contract_checks": {
+        "http_preparation_safe_projection": {
+          "status": "PASS",
+          "test": "tests/e2e/test_m5_runtime_http.py::test_a06_case_function_matrix_uses_public_safe_preparation_contract",
+          "scope": "request/ownership/idempotency input and participant-safe response shape; runtime execution NOT_RUN"
+        }
+      },
+      "historical_comparison": [
+        {
+          "test_id": "PROFILE.09.1",
+          "as_sha256": "b35cb62e5bfef1845b139a75ec8c8293248a02f5207d4721ebe87ae2532fcb26",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.09.2",
+          "as_sha256": "0d1494d246d7ae18b949d91b292fe6a2bfde2648d8b8e1d5d277d75129362096",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        },
+        {
+          "test_id": "PROFILE.09.3",
+          "as_sha256": "489d4385062664142da8c6289d4b7e410a2e292203d94df85c73810f7d8d8e51",
+          "final_status": "PASS",
+          "scope": "historical_profile_matrix_only"
+        }
+      ],
+      "methodology_status": "NOT_RUN",
+      "reliability_status": "NOT_RUN"
+    }
+  ],
+  "counts": {
+    "total": 27,
+    "PASS": 0,
+    "NOT_RUN": 27
+  },
+  "limitations": [
+    "Historical 27-profile evidence is comparison-only and is not the Sales/HR/IT Cartesian product.",
+    "Controlled adapters do not prove real-provider behavior or methodological acceptance.",
+    "A row remains NOT_RUN until every required evidence reference is recorded.",
+    "HTTP preparation contract PASS is not HTTP runtime, M6, or M8 acceptance."
+  ]
+}

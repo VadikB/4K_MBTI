@@ -95,6 +95,59 @@ def _jsonable(value):
     return json.loads(json.dumps(value, ensure_ascii=False, default=str))
 
 
+def _a06_runtime_assertions(*, test_id: str, saved: dict, paused: dict | None,
+                            response: dict, replay: dict, request: dict) -> list[dict]:
+    """Return named, primary-trace assertions for the A06 scenario matrix.
+
+    These checks intentionally describe only the deterministic runtime contract.
+    They do not turn a controlled adapter result into methodological acceptance.
+    """
+    events = saved["events"]
+    turns = saved["turns"]
+    event_types = [item["event_type"] for item in events]
+    sequences = [int(item["sequence_no"]) for item in events]
+    assertions = [
+        {"code": "A06.SEQUENCE_STRICT", "passed": sequences == sorted(set(sequences)),
+         "evidence": {"sequence_no": sequences}},
+        {"code": "A06.REQUEST_IDEMPOTENT", "passed": replay.get("idempotent") is True,
+         "evidence": {"request_id": request["request_id"], "turn_id": request["turn_id"],
+                      "replay_turn_id": str(replay["turn"]["turn_id"])}},
+        {"code": "A06.ONE_ASSESSEE_TURN", "passed": len([
+            item for item in turns if item["speaker_type"] == "assessee"
+        ]) == 1, "evidence": {"speaker_types": [item["speaker_type"] for item in turns]}},
+        {"code": "A06.NO_DUPLICATE_EVENT_KEY", "passed": len([
+            item["event_key"] for item in events
+        ]) == len(set(item["event_key"] for item in events)),
+         "evidence": {"event_keys": [item["event_key"] for item in events]}},
+    ]
+    if test_id == "R_ALL_PAUSE":
+        assertions.append({"code": "A06.PAUSE_BEFORE_TURN", "passed": paused is not None and not paused["turns"],
+                           "evidence": {"paused_turn_count": len((paused or {}).get("turns", []))}})
+    if test_id == "R_ALL_STOP":
+        assertions.append({"code": "A06.STOP_IS_TERMINAL", "passed": saved["status"] == "terminated",
+                           "evidence": {"status": saved["status"]}})
+    if test_id in {"R_ALL_NO_OPPORTUNITY", "R_ALL_FINAL_QUESTION"}:
+        scenario_end = [item for item in events if item["event_type"] == "scenario_completed"]
+        assertions.append({"code": "A06.SCENARIO_END_RECORDED", "passed": bool(scenario_end),
+                           "evidence": {"event_types": event_types,
+                                        "scenario_end_count": len(scenario_end)}})
+    if test_id in {"R_ALL_AUTHORITY", "R_ALL_NO_OPPORTUNITY", "R01_HIDDEN", "R02_PARTIAL",
+                   "R03_PRIVATE", "R06_LIMITED", "R06_CAUSE", "R_SCOPE_NO_REAL_EVENT",
+                   "R_SCOPE_NO_ROLE", "R_SCOPE_LINKS", "R_SCOPE_INVARIANT"}:
+        assertions.append({"code": "A06.UNKNOWN_DOES_NOT_OPEN_BRANCH",
+                           "passed": not any(item["event_type"] in {"character_response", "mandatory_update"}
+                                             for item in events if request["turn_id"] in {
+                                                 item.get("cause_json", {}).get("turn_id"),
+                                                 item.get("cause_json", {}).get("trigger_turn_id"),
+                                             }),
+                           "evidence": {"event_types": event_types}})
+    assertions.append({"code": "A06.RESPONSE_BOUND_TO_REQUEST",
+                       "passed": str(response["turn"]["turn_id"]) == request["turn_id"],
+                       "evidence": {"response_turn_id": str(response["turn"]["turn_id"])}})
+    assert all(item["passed"] for item in assertions), assertions
+    return assertions
+
+
 def test_f05_all_34_scenarios_use_generated_as_and_runtime_apis(product_db, monkeypatch):
     plan = json.loads(PLAN.read_text())
     assert len(plan) == 34
@@ -219,6 +272,7 @@ def test_f05_all_34_scenarios_use_generated_as_and_runtime_apis(product_db, monk
                     "повторную проверку на десяти запусках с заранее заданным критерием — не более одного "
                     "сбоя; Сергею передаю только анализ причин, решение о внедрении принимаю после результатов."
                 )
+            paused = None
             if test_id == "R_ALL_PAUSE":
                 transition(connection, assessment_situation_id=as_id, action="pause", reason="F05", request_id=f"{operation_id}-pause")
                 paused = trace(connection, as_id)
@@ -249,6 +303,8 @@ def test_f05_all_34_scenarios_use_generated_as_and_runtime_apis(product_db, monk
                 transition(connection, assessment_situation_id=as_id, action="scenario_end", reason="F05",
                            request_id=f"{operation_id}-end")
             saved = trace(connection, as_id)
+            assertions = _a06_runtime_assertions(test_id=test_id, saved=saved, paused=paused,
+                                                  response=response, replay=replay, request=request)
             runtime_readback = read_runtime(connection, cycle_id=cycle_id)
             handoff = saved["state"]["state_json"]
             generated = connection.execute("""SELECT execution_payload_json FROM m5_assessment_situations
@@ -259,6 +315,7 @@ def test_f05_all_34_scenarios_use_generated_as_and_runtime_apis(product_db, monk
             results.append({"test_id": test_id, "case_id": expected_case, "cycle_id": cycle_id,
                 "assessment_situation_id": as_id, "request": request, "response": _jsonable(response),
                 "events": _jsonable(saved["events"]), "state": _jsonable(handoff),
+                "runtime_assertions": assertions,
                 "readback": _jsonable(runtime_readback), "snapshot": {
                     "candidate_checksum": generated["candidate_checksum"],
                     "input_snapshot_checksum": generated["input_snapshot_checksum"],
