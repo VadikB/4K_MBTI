@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "matrix_id": "ARCH-A06-CASE-FUNCTION",
+  "source_task": "P4K_Case_AS_Cycle_Plan_2026-10-23/08_A06_Acceptance.txt",
+  "synthetic_test_data": true,
+  "functions": {
+    "sales": {"label": "Sales", "activity": "Уточнить запрос клиента, сопоставить условия и подготовить обоснованное коммерческое предложение", "authority": "Готовить рекомендацию и проект предложения; не подтверждать чужие ресурсы, согласия и решения"},
+    "hr": {"label": "HR-подбор", "activity": "Уточнить запрос на подбор, проверить основания и подготовить обоснованную рекомендацию по кандидату", "authority": "Готовить рекомендацию; не приписывать кандидату результаты и не принимать решение за нанимающего руководителя"},
+    "it_ops": {"label": "IT-эксплуатация", "activity": "Проанализировать эксплуатационное событие, ограничения и подготовить обоснованный план восстановления", "authority": "Готовить техническую рекомендацию; не объявлять непроверенное восстановление и не распоряжаться чужими ресурсами"}
+  },
+  "rows": [
+    {"id":"A06.C01.SALES","case_id":"CASE.SPEC.01","function":"sales"},{"id":"A06.C01.HR","case_id":"CASE.SPEC.01","function":"hr"},{"id":"A06.C01.IT","case_id":"CASE.SPEC.01","function":"it_ops"},
+    {"id":"A06.C02.SALES","case_id":"CASE.SPEC.02","function":"sales"},{"id":"A06.C02.HR","case_id":"CASE.SPEC.02","function":"hr"},{"id":"A06.C02.IT","case_id":"CASE.SPEC.02","function":"it_ops"},
+    {"id":"A06.C03.SALES","case_id":"CASE.SPEC.03","function":"sales"},{"id":"A06.C03.HR","case_id":"CASE.SPEC.03","function":"hr"},{"id":"A06.C03.IT","case_id":"CASE.SPEC.03","function":"it_ops"},
+    {"id":"A06.C04.SALES","case_id":"CASE.SPEC.04","function":"sales"},{"id":"A06.C04.HR","case_id":"CASE.SPEC.04","function":"hr"},{"id":"A06.C04.IT","case_id":"CASE.SPEC.04","function":"it_ops"},
+    {"id":"A06.C05.SALES","case_id":"CASE.SPEC.05","function":"sales"},{"id":"A06.C05.HR","case_id":"CASE.SPEC.05","function":"hr"},{"id":"A06.C05.IT","case_id":"CASE.SPEC.05","function":"it_ops"},
+    {"id":"A06.C06.SALES","case_id":"CASE.SPEC.06","function":"sales"},{"id":"A06.C06.HR","case_id":"CASE.SPEC.06","function":"hr"},{"id":"A06.C06.IT","case_id":"CASE.SPEC.06","function":"it_ops"},
+    {"id":"A06.C07.SALES","case_id":"CASE.SPEC.07","function":"sales"},{"id":"A06.C07.HR","case_id":"CASE.SPEC.07","function":"hr"},{"id":"A06.C07.IT","case_id":"CASE.SPEC.07","function":"it_ops"},
+    {"id":"A06.C08.SALES","case_id":"CASE.SPEC.08","function":"sales"},{"id":"A06.C08.HR","case_id":"CASE.SPEC.08","function":"hr"},{"id":"A06.C08.IT","case_id":"CASE.SPEC.08","function":"it_ops"},
+    {"id":"A06.C09.SALES","case_id":"CASE.SPEC.09","function":"sales"},{"id":"A06.C09.HR","case_id":"CASE.SPEC.09","function":"hr"},{"id":"A06.C09.IT","case_id":"CASE.SPEC.09","function":"it_ops"}
+  ],
+  "required_evidence": ["generation", "tester", "admission", "http_runtime", "m6", "m8"],
+  "default_status": "NOT_RUN",
+  "not_proved_by": ["historical_27_profile_matrix", "controlled_adapter", "nonempty_skills", "document_qa"]
+}
