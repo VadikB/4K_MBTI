@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "repository": "VadikB/4K_MBTI",
+  "base": {"commit":"f4af7beb0d09374153bf0e16c6edb5c0dabe1cec","version":"2.0.16","pr":102},
+  "results": [
+    {"pr":103,"head":"3ef79f1accebfe299965083c93287f6af78cb4bd","merge":"0c333dd87675a440c87eb10698a6fa766cb7d322","version":"2.0.17","push_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40033779361","pull_request_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40033783842","pull_request_conclusion":"failure_superseded_by_pr_104"},
+    {"pr":104,"head":"91abb7418c338de1ca730a9132362c68f58865ae","merge":"90b08c67f6be373130abdd32497fdba65a3066a4","version":"2.0.18","push_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40070247941","pull_request_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40070348020","post_merge_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40071186273","conclusion":"success"},
+    {"pr":106,"head":"e7c147d9c3fe24fb626c73c3bc5bbbea8508aac3","merge":"31779afc5ea53c0b62e63aa62f8640aec81b5fd1","version":"2.0.19","pull_request_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40075313573","post_merge_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40076247852","conclusion":"success"},
+    {"pr":107,"head":"70ba82440ada593ae6ae1f3bb17644187be20b81","merge":"f2ad4dfa5e95b8c6ea6e3831dc43bb1a94ac10e1","version":"2.0.20","pull_request_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40085309826","post_merge_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40086292824","conclusion":"success"},
+    {"pr":108,"head":"1482cd2305632b54bdf350918ebdf835b29984e6","merge":"95ca6aee04952ddd7fe22e34897ff28be7d5e550","version":"2.0.21","pull_request_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40109102391","post_merge_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40111343911","conclusion":"success"},
+    {"pr":109,"head":"1a3e3796b2e61bc9514b9a56eecd8061430c7a70","merge":"d722181c361e97003b75f96cb7a2d9bcf5de5bb3","version":"2.0.22","pull_request_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40115697755","post_merge_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40121849975","conclusion":"success"},
+    {"pr":110,"head":"61cd489923a7efd84f6cc4a614f2ca00d91d770a","merge":"c9c7c5a488c34003cb2fb8f55e54b630f25c0506","version":"2.0.23","pull_request_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40124667291","post_merge_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40126001903","conclusion":"success"},
+    {"pr":111,"head":"4098afd05854b8882cacc5c4da95a456ef98a3ba","merge":"f7707bc1fdb9bbe9a17c5a50eec2a3a5b11aa7ae","version":"2.0.24","pull_request_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40177331005","post_merge_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40179384313","conclusion":"success"},
+    {"pr":112,"head":"5c447cb60e2aed3008cb527e285f765455b2000a","merge":"2e4aa4000799e329e095a68ccd2d114e656267d3","version":"2.0.25","pull_request_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40188179772","post_merge_ci":"https://github.com/VadikB/4K_MBTI/actions/runs/40189333177","conclusion":"success"}
+  ],
+  "final_test": {"checked_at":"2026-10-25","url":"https://test.4k-assistant.ru/users/version","response":{"version":"2.0.25"},"workflow_jobs":{"frontend":"success","pytest":"success","deploy-test":"success"}}
+}

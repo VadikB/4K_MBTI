@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "tested_main_commit": "2e4aa4000799e329e095a68ccd2d114e656267d3",
+  "application_version": "2.0.25",
+  "statuses": [
+    {"id":"FIX-B01","status":"PASS","merge_commit":"0c333dd87675a440c87eb10698a6fa766cb7d322","evidence_scope":"participant preparation API omits closed candidate/tester payload","evidence":["docs/evc/tasks/fix-b01-b02-preparation-api-security.md","tests/e2e/test_m5_runtime_http.py"]},
+    {"id":"FIX-B02","status":"PASS","merge_commit":"0c333dd87675a440c87eb10698a6fa766cb7d322","evidence_scope":"POST/GET/replay bind operation to owner","evidence":["docs/evc/tasks/fix-b01-b02-preparation-api-security.md","tests/e2e/test_m5_runtime_http.py"]},
+    {"id":"ARCH-A01","status":"PASS","merge_commit":"31779afc5ea53c0b62e63aa62f8640aec81b5fd1","evidence_scope":"55 IndicatorTarget preserve authored fields through C45 to M6 input on package 0.3","evidence":["docs/evc/tasks/arch-a01-indicator-content-preservation.md","assessment_definitions/cases/competencies_4k/functional-personalization/0.3/content-preservation-report.json"]},
+    {"id":"FIX-B03","status":"PASS","merge_commit":"f2ad4dfa5e95b8c6ea6e3831dc43bb1a94ac10e1","evidence_scope":"four non-SELECTED planner outcomes complete without selected_case_id failure","evidence":["docs/evc/tasks/arch-b03-a02-functional-runtime.md","tests/unit/test_product_cycle_preparation_projection.py"]},
+    {"id":"ARCH-A02","status":"PASS","merge_commit":"f2ad4dfa5e95b8c6ea6e3831dc43bb1a94ac10e1","evidence_scope":"supported prepare/start/next/replay routes use accepted frozen functional AS path","evidence":["docs/evc/tasks/arch-b03-a02-functional-runtime.md","tests/integration/test_m10_product_path_db.py"]},
+    {"id":"ARCH-A03","status":"PASS","merge_commit":"2e4aa4000799e329e095a68ccd2d114e656267d3","evidence_scope":"attempt fencing, heartbeat, guarded commits and closed transaction at controlled provider boundary; technical concurrency only","evidence":["docs/evc/tasks/arch-a03-fencing-recovery.md","tests/integration/test_m10_product_path_db.py"]},
+    {"id":"ARCH-A04","status":"PASS","merge_commit":"95ca6aee04952ddd7fe22e34897ff28be7d5e550","evidence_scope":"Cycle dependency manifest pins exact refs/checksums and rejects mutation/deletion without latest fallback","evidence":["docs/evc/tasks/arch-a04-cycle-execution-manifest.md","tests/unit/test_cycle_execution_manifest.py"]},
+    {"id":"ARCH-A05","status":"PASS_LIMITED_SCOPE","merge_commit":"c9c7c5a488c34003cb2fb8f55e54b630f25c0506","evidence_scope":"catalog/plan/factual/admitted coverage separated; 7200/259200 resolved and read back; catalog remains 39 of 61","evidence":["docs/evc/tasks/arch-a05-coverage-pilot.md","tests/integration/test_m7_parameter_resolution_db.py","tests/frontend/rep01-participant-report.test.mjs"]},
+    {"id":"ARCH-A06","status":"PARTIAL","merge_commit":"f7707bc1fdb9bbe9a17c5a50eec2a3a5b11aa7ae","evidence_scope":"controlled generation/tester/admission and safe HTTP contract PASS; full 27-row real-provider HTTP/DB/M6/M8 matrix remains NOT_RUN","evidence":["docs/evc/tasks/arch-a06-end-to-end-acceptance.md","docs/evc/evidence/arch-a06/acceptance-manifest.json","tests/fixtures/arch_a06/acceptance-matrix-v1.json"]},
+    {"id":"ARCH-A07","status":"PASS_TECHNICAL","merge_commit":"d722181c361e97003b75f96cb7a2d9bcf5de5bb3","evidence_scope":"controlled semantic validator rejects contradiction, unsupported generalization, causality and context drift; real-provider/methodology NOT_RUN","evidence":["docs/evc/tasks/arch-a07-m8-semantic-grounding.md","assessment_definitions/prompts/m8_descriptive_report/v2/manifest.json","tests/unit/test_m8_descriptive_report.py"]}
+  ],
+  "gates": {
+    "technical_series": "PASS_WITH_A06_DECLARED_PARTIAL",
+    "controlled_ai_tester": "PASS_IN_RECORDED_SCOPE",
+    "real_provider": "HISTORICAL_CASE_SPEC_09_ONLY_IN_RECORDED_SCOPE",
+    "methodology_acceptance": "NOT_RUN",
+    "publication_admission": "NOT_GRANTED_BY_THIS_PACKAGE",
+    "reliability": "NOT_RUN"
+  }
+}
