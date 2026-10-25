@@ -15,11 +15,16 @@ from Api.m5_cycle_runtime import (
 )
 from Api.m5_storage import import_package, prepare_assessment_situation
 from scripts.build_m5_case_package import OUTPUT
-from Api.cycle_execution_manifest import resolve_cycle_dependency, validate_manifest
+from Api import cycle_execution_manifest
+from Api.cycle_execution_manifest import (
+    application_version,
+    resolve_cycle_dependency,
+    validate_manifest,
+)
 
 
 @pytest.mark.integration
-def test_cycle_session_membership_freeze_and_collection_boundary(test_database_url):
+def test_cycle_session_membership_freeze_and_collection_boundary(test_database_url, monkeypatch):
     package = json.loads((OUTPUT / "case-package.json").read_text())
     manifest = json.loads((OUTPUT / "manifest.json").read_text())
     policy = json.loads((OUTPUT / "admission-policy.json").read_text())
@@ -47,7 +52,15 @@ def test_cycle_session_membership_freeze_and_collection_boundary(test_database_u
         )
         saved = read_cycle(connection, str(cycle["cycle_id"]))
         validate_manifest(cycle["execution_manifest_json"], cycle["execution_manifest_checksum"])
-        assert cycle["execution_manifest_json"]["application_version"] == "2.0.25"
+        frozen_application_version = application_version()
+        assert cycle["execution_manifest_json"]["application_version"] == frozen_application_version
+        monkeypatch.setattr(cycle_execution_manifest, "application_version", lambda **_: "next-release")
+        frozen_cycle = read_cycle(connection, str(cycle["cycle_id"]))
+        assert frozen_cycle["execution_manifest_json"]["application_version"] == frozen_application_version
+        validate_manifest(
+            frozen_cycle["execution_manifest_json"],
+            frozen_cycle["execution_manifest_checksum"],
+        )
         assert resolve_cycle_dependency(cycle, "m7_cycle_plan").name == "v1"
         assert saved["time_budget_seconds"] == 2700
         assert saved["calendar_window_seconds"] == 172800
