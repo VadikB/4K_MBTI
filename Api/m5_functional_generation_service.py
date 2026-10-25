@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,14 @@ PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-person
 SOURCE = PACKAGE / "sources/functional-v0.2"
 REPAIR_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_repair/v1"
 PROTOCOL_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_protocol/v1"
+
+AUTHOR_INDICATOR_FIELDS = (
+    "IndicatorID", "SkillID", "ComponentID", "Название", "Версия M2",
+    "Нормативный источник", "Материалы и факты", "Конкретное условие",
+    "Что сохранить при адаптации", "Дефект потери", "Форма проявления",
+    "Проектная возможность", "Фактическое возникновение", "Evidence и IA",
+    "Связанные инварианты",
+)
 
 
 def canonical(value: Any) -> bytes:
@@ -133,13 +142,6 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
     check("base_role", candidate.get("BaseRole") == expected.get("BaseRole"), candidate.get("BaseRole"))
     check("indicator_targets", candidate.get("IndicatorIDs") == expected.get("IndicatorIDs"), candidate.get("IndicatorIDs"))
     check("m2_versions", candidate.get("Версии M2") == expected.get("Версии M2"))
-    protected_target_fields = (
-        "IndicatorID", "SkillID", "ComponentID", "Название", "Версия M2",
-        "Нормативный источник", "Материалы и факты", "Конкретное условие",
-        "Что сохранить при адаптации", "Дефект потери", "Форма проявления",
-        "Проектная возможность", "Фактическое возникновение", "Evidence и IA",
-        "Связанные инварианты",
-    )
     package_ref = (snapshot.get("refs") or {}).get("package") or {}
     compiler = package_ref.get("compiler") or {}
     if compiler.get("source_schema_profile") == "functional-personalization-indicator-v1":
@@ -155,7 +157,7 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
         if set(candidate_by_id) == set(expected_by_id):
             for indicator_id, source_target in expected_by_id.items():
                 candidate_target = candidate_by_id[indicator_id]
-                for field in protected_target_fields:
+                for field in AUTHOR_INDICATOR_FIELDS:
                     if candidate_target.get(field) != source_target.get(field):
                         differences.append({"indicator_id": indicator_id, "field": field})
         check("indicator_author_content_preserved", not differences, differences)
@@ -174,6 +176,33 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
         return set()
     check("no_premature_assessment", not (keys(candidate) & forbidden), sorted(keys(candidate) & forbidden))
     return {"status": "PASS" if all(x["result"] == "PASS" for x in checks) else "FAIL", "checks": checks}
+
+
+def bind_frozen_author_indicator_content(snapshot: dict[str, Any], candidate: Any) -> Any:
+    """Bind source-owned IndicatorObservability fields without repairing LLM content."""
+    package_ref = (snapshot.get("refs") or {}).get("package") or {}
+    compiler = package_ref.get("compiler") or {}
+    if (compiler.get("source_schema_profile") != "functional-personalization-indicator-v1"
+            or not isinstance(candidate, dict)):
+        return candidate
+    source_targets = snapshot["author_as_example"].get("IndicatorObservability")
+    candidate_targets = candidate.get("IndicatorObservability")
+    if not isinstance(source_targets, list) or not isinstance(candidate_targets, list):
+        return candidate
+    source_by_id = {item.get("IndicatorID"): item for item in source_targets if isinstance(item, dict)}
+    bound = deepcopy(candidate)
+    for target in bound["IndicatorObservability"]:
+        if not isinstance(target, dict):
+            continue
+        source = source_by_id.get(target.get("IndicatorID"))
+        if source is None:
+            continue
+        for field in AUTHOR_INDICATOR_FIELDS:
+            if field in source:
+                target[field] = deepcopy(source[field])
+            else:
+                target.pop(field, None)
+    return bound
 
 
 def _trace(response: Any, *, operation_id: str, kind: str, input_checksum: str) -> dict[str, Any]:
@@ -226,8 +255,17 @@ def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
         gateway, messages, operation_id=operation_id, max_tokens=32768, temperature=0.2,
         retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
     )
-    candidate, depth = extract_candidate_as(raw)
-    return {"candidate_as": candidate, "candidate_checksum": checksum(candidate),
+    provider_candidate, depth = extract_candidate_as(raw)
+    candidate = bind_frozen_author_indicator_content(snapshot, provider_candidate)
+    provider_candidate_checksum = checksum(provider_candidate)
+    candidate_checksum = checksum(candidate)
+    return {"candidate_as": candidate, "candidate_checksum": candidate_checksum,
+            "author_content_binding": {
+                "source": "frozen_input_snapshot.author_as_example",
+                "provider_candidate_checksum": provider_candidate_checksum,
+                "bound_candidate_checksum": candidate_checksum,
+                "changed": provider_candidate_checksum != candidate_checksum,
+            },
             "response_envelope_depth": depth, "deterministic_validation": deterministic_checks(snapshot, candidate),
             "provider_operation": {**_trace(response, operation_id=operation_id, kind="generation", input_checksum=input_checksum),
                                    "parse_failures": parse_failures}}
@@ -341,8 +379,17 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
         gateway, messages, operation_id=operation_id, max_tokens=32768, temperature=0.1,
         retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
     )
-    candidate, depth = extract_candidate_as(raw)
-    return {"candidate_as": candidate, "candidate_checksum": checksum(candidate),
+    provider_candidate, depth = extract_candidate_as(raw)
+    candidate = bind_frozen_author_indicator_content(snapshot, provider_candidate)
+    provider_candidate_checksum = checksum(provider_candidate)
+    candidate_checksum = checksum(candidate)
+    return {"candidate_as": candidate, "candidate_checksum": candidate_checksum,
+            "author_content_binding": {
+                "source": "frozen_input_snapshot.author_as_example",
+                "provider_candidate_checksum": provider_candidate_checksum,
+                "bound_candidate_checksum": candidate_checksum,
+                "changed": provider_candidate_checksum != candidate_checksum,
+            },
             "response_envelope_depth": depth,
             "deterministic_validation": deterministic_checks(snapshot, candidate),
             "provider_operation": {**_trace(response, operation_id=operation_id, kind="generation_repair",
@@ -362,6 +409,7 @@ def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
         retested = test_candidate(snapshot, repaired, gateway)
         repair = {
             "original_candidate_checksum": generation["candidate_checksum"],
+            "original_author_content_binding": generation["author_content_binding"],
             "original_deterministic_validation": generation["deterministic_validation"],
             "original_generation_operation": generation["provider_operation"],
             "original_tester": tested,
@@ -382,6 +430,7 @@ def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
         execution_rules = build_execution_rules([compiled_case])
     return {"schema_version": 1, "input_snapshot_checksum": checksum(snapshot),
             "candidate_as": generation["candidate_as"], "candidate_checksum": generation["candidate_checksum"],
+            "author_content_binding": generation["author_content_binding"],
             "deterministic_validation": generation["deterministic_validation"],
             "generation_operation": generation["provider_operation"], "tester": tested,
             "repair": repair,
@@ -410,6 +459,7 @@ def build_persistence_trace(snapshot: dict[str, Any], prepared: dict[str, Any]) 
         },
         "accepted_as": candidate,
         "candidate_checksum": prepared["candidate_checksum"],
+        "author_content_binding": prepared["author_content_binding"],
         "compiled_case_checksum": runtime_checksum(prepared["compiled_case"]),
         "execution_rules_checksum": runtime_checksum(prepared["execution_rules"]),
         "deterministic_validation": prepared["deterministic_validation"],
