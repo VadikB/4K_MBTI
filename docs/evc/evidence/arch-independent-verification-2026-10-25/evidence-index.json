@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "tested_main_commit": "2e4aa4000799e329e095a68ccd2d114e656267d3",
+  "key_artifacts": [
+    {"path":"docs/methodology/source-sets/2026-10-01/manifest.json","sha256":"f95a390f1257f4adbccf61be59bdcb0b99396501ca34cf117eb0efc10b237db8","role":"selected SourceSet"},
+    {"path":"assessment_definitions/cases/competencies_4k/functional-personalization/0.3/manifest.json","sha256":"a861778e90e2d55610061aa9e31fa60fa38089095f4f96ee199b3c2cdf17156d","role":"A01 package 0.3 draft"},
+    {"path":"assessment_definitions/cases/competencies_4k/functional-personalization/0.3/content-preservation-report.json","sha256":"4c559f7e6b463207023e6fc8c523d38916b7115d9f5d41cba0e0d47bcf518c92","role":"55-target field map"},
+    {"path":"assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.1.0/manifest.json","sha256":"c08aaed86e281175c5bb8d16190480fa24ea312b5683f03ae817f0668f5c4ad6","role":"runtime rules draft"},
+    {"path":"assessment_definitions/prompts/m8_descriptive_report/v2/manifest.json","sha256":"79fdccac1eb4f44b4cac643adfe78ff63cf0dbf3a84956c4106b7091b18e8621","role":"A07 semantic validator package 1.2.0 draft"},
+    {"path":"docs/evc/evidence/arch-a06/acceptance-manifest.json","sha256":"f12bdb3223803e6be5074914cdc41c555e3a44736d51aa1836ce49097c3a9ab2","role":"A06 honest acceptance status"},
+    {"path":"tests/fixtures/arch_a06/acceptance-matrix-v1.json","sha256":"0b1d4f2a3f2935df5be99b47b1c91b23d70f933ec7a5e23b72486b22f18a6a15","role":"27 Case/function rows"}
+  ],
+  "primary_trace_groups": [
+    {"path":"docs/evc/evidence/pers-functional-personalization/f05-runtime-db","scope":"34 controlled product-service scenarios and controlled AS-to-M8; historical regression baseline"},
+    {"path":"docs/evc/evidence/pers-functional-personalization/f05-remediation-2026-10-23","scope":"historical real-provider CASE.SPEC.09 generation/repair/accepted-AS-to-M8 and original M6 error"},
+    {"path":"docs/evc/evidence/pers-functional-personalization/generations","scope":"historical generated candidates"},
+    {"path":"docs/evc/evidence/pers-functional-personalization/tester-v2","scope":"historical tester inputs/outputs"},
+    {"path":"docs/evc/evidence/pers-functional-personalization/negative-v2-executed","scope":"historical negative mutation regression"},
+    {"path":"docs/evc/evidence/arch-a06/acceptance-manifest.json","scope":"current A06 status; null evidence fields remain NOT_RUN"}
+  ],
+  "trace_boundaries": {
+    "historical_f_block":"regression baseline only; no files overwritten",
+    "real_provider":"CASE.SPEC.09 only in its recorded historical scope",
+    "a06_full_27_runtime":"NOT_RUN",
+    "browser":"existing controlled paths only; not full CASE.SPEC real-provider matrix",
+    "methodology":"NOT_RUN",
+    "reliability":"NOT_RUN"
+  }
+}
