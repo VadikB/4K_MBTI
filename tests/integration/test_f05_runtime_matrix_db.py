@@ -213,7 +213,7 @@ def test_f05_all_34_scenarios_use_generated_as_and_runtime_apis(product_db, monk
         connection.execute("""CREATE TABLE product_cycle_preparation_operations (
             id BIGSERIAL PRIMARY KEY,operation_id TEXT UNIQUE,user_id BIGINT,request_json JSONB,request_checksum TEXT,
             status TEXT DEFAULT 'queued',attempts INTEGER DEFAULT 0,result_json JSONB,error_code TEXT,error_message TEXT,
-            worker_id TEXT,locked_at TIMESTAMP,created_at TIMESTAMP DEFAULT NOW(),updated_at TIMESTAMP DEFAULT NOW(),completed_at TIMESTAMP)""")
+            worker_id TEXT,attempt_token UUID,locked_at TIMESTAMP,created_at TIMESTAMP DEFAULT NOW(),updated_at TIMESTAMP DEFAULT NOW(),completed_at TIMESTAMP)""")
         connection.commit()
 
     monkeypatch.setattr("Api.product_cycle_preparation_queue.get_connection", product_db)

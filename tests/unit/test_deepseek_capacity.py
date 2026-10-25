@@ -23,20 +23,18 @@ class FakeResponse:
 
 
 @pytest.mark.unit
-def test_post_chat_releases_database_before_network(monkeypatch) -> None:
+def test_post_chat_requires_caller_to_close_database_transaction(monkeypatch) -> None:
     client = DeepSeekClient()
     client.api_keys = ["test-key"]
-    paused: list[bool] = []
-
     monkeypatch.setattr(
         gateway_module,
         "pause_thread_connections_for_external_io",
-        lambda: paused.append(True) or 1,
+        lambda: (_ for _ in ()).throw(RuntimeError("EXTERNAL_IO_REQUIRES_CLOSED_DATABASE_TRANSACTION")),
     )
     monkeypatch.setattr(gateway_module.request, "urlopen", lambda *_args, **_kwargs: FakeResponse())
 
-    assert client._post_chat([{"role": "user", "content": "test"}]) == "ok"
-    assert paused == [True]
+    with pytest.raises(RuntimeError, match="REQUIRES_CLOSED_DATABASE_TRANSACTION"):
+        client._post_chat([{"role": "user", "content": "test"}])
 
 
 @pytest.mark.unit

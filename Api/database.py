@@ -8,6 +8,7 @@ from typing import Any
 
 import psycopg
 from psycopg.conninfo import make_conninfo
+from psycopg.pq import TransactionStatus
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
@@ -97,6 +98,14 @@ class ResumablePooledConnection:
             connection.rollback()
         lease.__exit__(None, None, None)
 
+    def pause_for_external_io(self) -> None:
+        """Release an idle lease without deciding a caller-owned transaction."""
+        if self._lease is None or self._connection is None:
+            return
+        if self._connection.info.transaction_status != TransactionStatus.IDLE:
+            raise RuntimeError("EXTERNAL_IO_REQUIRES_CLOSED_DATABASE_TRANSACTION")
+        self.pause(commit=False)
+
     def execute(self, *args, **kwargs):
         return self._acquire().execute(*args, **kwargs)
 
@@ -114,12 +123,12 @@ class ResumablePooledConnection:
 
 
 def pause_thread_connections_for_external_io() -> int:
-    """Return every connection leased by this request thread before network I/O."""
+    """Release idle leases; never commit a transaction on behalf of transport."""
     active = list(getattr(_thread_connection_state, "active", ()) or ())
     paused = 0
     for connection in reversed(active):
         if connection._lease is not None:
-            connection.pause(commit=True)
+            connection.pause_for_external_io()
             paused += 1
     return paused
 
@@ -4163,12 +4172,17 @@ def ensure_core_schema() -> None:
                 error_code TEXT,
                 error_message TEXT,
                 worker_id TEXT,
+                attempt_token UUID,
                 locked_at TIMESTAMP,
                 created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
                 completed_at TIMESTAMP
             )
             """
+        )
+        connection.execute(
+            "ALTER TABLE product_cycle_preparation_operations "
+            "ADD COLUMN IF NOT EXISTS attempt_token UUID"
         )
         connection.execute(
             """
