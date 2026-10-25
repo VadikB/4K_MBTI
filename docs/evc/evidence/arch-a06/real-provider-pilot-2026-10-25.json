@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "matrix_id": "ARCH-A06-CASE-FUNCTION",
+  "scope": "PM-03 generation/tester/admission pilot only",
+  "base_commit": "034280f947434117bd4a72fb1940e55a5fdacf0d",
+  "application_version": "2.0.25",
+  "environment": "test",
+  "synthetic_test_data": true,
+  "owner_authorization": {
+    "real_provider_calls": true,
+    "authorized_at": "2026-10-25",
+    "scope": "isolated A06 Case/function matrix"
+  },
+  "provider_contract": {
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "thinking": false,
+    "secret_recorded": false
+  },
+  "preflight": {
+    "service_ready": "PASS",
+    "llm_enabled": true,
+    "configuration_blocker_before_change": "DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED",
+    "configuration_resolution": "test DEEPSEEK_MODEL aligned with published provider contract; remote backup retained"
+  },
+  "m6_smoke": {
+    "status": "FAIL",
+    "code": "M6_CONTEXT_REFERENCE",
+    "provider_response_received": true,
+    "scope": "synthetic one-indicator transport smoke; not an A06 row"
+  },
+  "pilot": {
+    "row_id": "A06.C01.SALES",
+    "case_id": "CASE.SPEC.01",
+    "function": "sales",
+    "technical_transport": "PASS",
+    "generation_deterministic_status": "FAIL",
+    "tester_aggregation_status": "FAIL",
+    "admission_status": "FAIL",
+    "failure_code": "indicator_author_content_preserved",
+    "changed_protected_fields": [
+      {"indicator_id": "K1.I01", "field": "Конкретное условие"},
+      {"indicator_id": "K1.I01", "field": "Что сохранить при адаптации"},
+      {"indicator_id": "K1.I01", "field": "Дефект потери"},
+      {"indicator_id": "K1.I13", "field": "Конкретное условие"},
+      {"indicator_id": "K1.I13", "field": "Что сохранить при адаптации"},
+      {"indicator_id": "K1.I14", "field": "Конкретное условие"},
+      {"indicator_id": "K1.I14", "field": "Что сохранить при адаптации"},
+      {"indicator_id": "K1.I14", "field": "Дефект потери"},
+      {"indicator_id": "K4.I06", "field": "Дефект потери"}
+    ],
+    "candidate_checksum": "9b5c309f2c6ff16d135cebf18e24fc42e0f14b0541b19d140f4a1c650d4f2308",
+    "input_snapshot_checksum": "17906f0219d88bfe33936ca728749445737e40dbfbcef47753cfd873d2eb5e29",
+    "raw_evidence": {
+      "location": "/home/user1/a06-evidence/2026-10-25-pilot/rows/a06.c01.sales.json",
+      "sha256": "25ef1f5f8da442b5597c8420b094db326903cb74325a47cefa8a47e22a5278fc",
+      "size_bytes": 641295
+    },
+    "summary": {
+      "location": "/home/user1/a06-evidence/2026-10-25-pilot/summary.json",
+      "sha256": "3a58b4c35d5b434e0bd75007830189aa094c5d9ae98a6a0283575396e94a1db9",
+      "size_bytes": 382
+    }
+  },
+  "remaining_rows": {
+    "status": "NOT_RUN",
+    "count": 26,
+    "reason": "pilot reproduced protected author-content loss; avoid multiplying the same costly failure"
+  },
+  "http_runtime": "NOT_RUN",
+  "database": "NOT_RUN",
+  "m8": "NOT_RUN",
+  "methodology_status": "NOT_RUN",
+  "reliability_status": "NOT_RUN"
+}
