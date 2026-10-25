@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from types import SimpleNamespace
 
 from Api import m5_functional_generation_service as service
@@ -57,6 +58,63 @@ def test_shared_service_admits_only_after_deterministic_and_independent_checks()
     assert result_a["compiled_case"]["author_assessment_situation"] == result_a["candidate_as"]
     assert result_a["compiled_case"]["author_as_source"]["sha256"] == result_a["candidate_checksum"]
     assert set(result_a["execution_rules"]["cases"]) == {"CASE.SPEC.01"}
+
+
+def test_provider_cannot_overwrite_frozen_author_indicator_content():
+    changed_fields = {
+        "K1.I01": ("Конкретное условие", "Что сохранить при адаптации", "Дефект потери"),
+        "K1.I13": ("Конкретное условие", "Что сохранить при адаптации"),
+        "K1.I14": ("Конкретное условие", "Что сохранить при адаптации", "Дефект потери"),
+        "K4.I06": ("Дефект потери",),
+    }
+
+    class PilotMutationGateway(Gateway):
+        def chat_with_trace(self, messages, **kwargs):
+            payload = json.loads(next(item["content"] for item in reversed(messages)
+                                      if item["role"] == "user"))
+            if ":generation:" in kwargs["routing_key"]:
+                candidate = deepcopy(payload["author_as_example"])
+                for target in candidate["IndicatorObservability"]:
+                    for field in changed_fields.get(target["IndicatorID"], ()):
+                        target[field] = "LLM_CHANGED_AUTHOR_CONTENT"
+                return SimpleNamespace(content=json.dumps(candidate, ensure_ascii=False), sent={},
+                                       provider={"finish_reason": "stop"})
+            return super().chat_with_trace(messages, **kwargs)
+
+    snapshot = service.build_input_snapshot(
+        case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="a06-pilot-regression",
+    )
+    result = service.prepare(snapshot, PilotMutationGateway())
+
+    expected = {item["IndicatorID"]: item
+                for item in snapshot["author_as_example"]["IndicatorObservability"]}
+    actual = {item["IndicatorID"]: item for item in result["candidate_as"]["IndicatorObservability"]}
+    assert result["admitted_for_participant"] is True
+    assert result["repair"] is None
+    assert result["generation_operation"]["kind"] == "generation"
+    assert result["deterministic_validation"]["status"] == "PASS"
+    assert result["author_content_binding"]["changed"] is True
+    assert (result["author_content_binding"]["provider_candidate_checksum"]
+            != result["candidate_checksum"])
+    for indicator_id, fields in changed_fields.items():
+        for field in fields:
+            assert actual[indicator_id][field] == expected[indicator_id][field]
+
+
+def test_author_binding_does_not_recreate_missing_indicator_target():
+    snapshot = service.build_input_snapshot(
+        case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="a06-missing-target",
+    )
+    candidate = deepcopy(snapshot["author_as_example"])
+    candidate["IndicatorObservability"].pop()
+
+    bound = service.bind_frozen_author_indicator_content(snapshot, candidate)
+    validation = service.deterministic_checks(snapshot, bound)
+
+    assert len(bound["IndicatorObservability"]) == len(candidate["IndicatorObservability"])
+    assert validation["status"] == "FAIL"
+    assert next(item for item in validation["checks"]
+                if item["code"] == "indicator_content_target_set")["result"] == "FAIL"
 
 
 def test_shared_service_closes_admission_when_tester_omits_required_checks():
