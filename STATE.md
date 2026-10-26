@@ -2,7 +2,7 @@
 
 - Base: `b3bbdc9e78880879e1d4fc930ef8c9cc9f200524` (`origin/main`, приложение `2.0.28`).
 - Ветка: `codex/case-cycle-r1`.
-- Активная карточка: R05.
+- Активная карточка: R06.
 - Завершённые commits: R00 — `aea9bf3`; R01 — `30fc6a0`; R02 — `420a315`;
   R03 — текущий commit совместимости.
 - Проверки R00 на рабочем дереве: `git diff --check` — PASS; ссылки/пути — PASS;
@@ -52,4 +52,24 @@
   во время вызова нет backend connection runtime-фазы в `pg_stat_activity`; timeout→retry
   даёт один Turn и attempt 2; concurrent pause даёт `rejected_late`; открытых blocking
   intervals после завершения нет. Real-provider не вызывался.
-- Следующий шаг: R05 — M6 Evidence/IA/admission/M8 consumers и границы UNKNOWN/error.
+- R05, фазы потребителей:
+
+  | Потребитель | DB до provider | Проверка при записи |
+  |---|---|---|
+  | M7 clarification | C54 payload/hash, boundary, AS/Cycle/time, mechanism input | тот же latest C54, payload hash, boundary и открытая AS |
+  | M6 admission | точный C46 composition, final IA observations, material contexts, mechanism checksum | повторный `_inputs`, тот же composition и полный input hash |
+  | M8 description | точный Results revision/payload, resolved evidence basis, два prompt packages | тот же immutable Results revision/payload checksum и request key |
+
+- Routes и M10 orchestration используют detached entrypoints; прежние синхронные
+  функции сохранены для совместимости внутренних/QA callers. Timeout clarification
+  остаётся `WAIT_TECHNICAL`; admission processing failure и M8 descriptive failure не
+  превращаются в содержательный результат или participant FAIL. Retry идемпотентен по
+  ключу, новая попытка обработки использует новый recovery/regeneration key.
+- Проверки R05: 35 unit — PASS; 35 исходных integration clarification/admission/M8 —
+  PASS; 2 новых PostgreSQL phase traces — PASS; 7 HTTP — PASS; 16 product orchestration
+  integration — PASS. Provider fixtures видели ноль активных DB contexts; M8 выполнил
+  обе внешние фазы и сохранил точный `results_revision_id`. Real-provider не вызывался.
+- Откат R05: detached entrypoints можно снять возвратом commit; созданные immutable
+  C54/admission/Results/Report revisions сохраняются. Поздний output, не прошедший
+  revision/composition fence, не публикуется и не требует удаления истории.
+- Следующий шаг: R06 — полный Cycle execution manifest и замыкание зависимостей.

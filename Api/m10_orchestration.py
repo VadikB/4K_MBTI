@@ -173,7 +173,7 @@ def _queue_assessment(connection) -> bool:
     return bool(request)
 
 
-def _clarify_interim(connection, gateway=None) -> bool:
+def _clarify_interim(connection, gateway=None, connection_factory=None) -> bool:
     # m7_clarification.decide/present recheck and lock Cycle -> AS.  Claiming the
     # AS here first used to deadlock with runtime presence/closure transactions.
     if gateway is None:
@@ -187,8 +187,10 @@ def _clarify_interim(connection, gateway=None) -> bool:
         ORDER BY c.created_at FOR UPDATE OF cy SKIP LOCKED LIMIT 1""").fetchone()
     if not row:
         return False
-    decision = m7_clarification.decide(connection, c54_revision_id=str(row["id"]),
-        key=f"product-clarification:{row['id']}", created_by=int(row["created_by"]), gateway=gateway)
+    connection.commit()
+    decision = m7_clarification.decide_detached(c54_revision_id=str(row["id"]),
+        key=f"product-clarification:{row['id']}", created_by=int(row["created_by"]), gateway=gateway,
+        connection_factory=connection_factory or get_connection)
     if decision["status"] == "ASK":
         m7_clarification.present(connection, decision_id=str(decision["id"]), expected_c54_revision_id=str(row["id"]))
     stage = "clarification_waiting" if decision["status"] == "ASK" else "clarification_resolved"
@@ -198,7 +200,7 @@ def _clarify_interim(connection, gateway=None) -> bool:
     return True
 
 
-def _finalize_cycle(connection, gateway=None) -> bool:
+def _finalize_cycle(connection, gateway=None, connection_factory=None) -> bool:
     if gateway is None:
         from Api.m10_test_gateway import enabled, BrowserAcceptanceGateway
         if enabled():
@@ -215,16 +217,20 @@ def _finalize_cycle(connection, gateway=None) -> bool:
         return False
     cycle_id = str(row["cycle_id"])
     c46 = m7_completion.read_c46(connection, cycle_id)
-    calculation = m6_cycle_aggregation_repository.create_substantive(
-        connection, cycle_id=cycle_id,
+    connection.commit()
+    factory = connection_factory or get_connection
+    calculation = m6_cycle_aggregation_repository.create_substantive_detached(
+        cycle_id=cycle_id,
         key=f"product-calculation:{c46['composition_checksum']}:{ADMISSION_VERSION}",
         expected_composition_checksum=c46["composition_checksum"],
-        created_by=int(row["created_by"]), gateway=gateway,
+        created_by=int(row["created_by"]), gateway=gateway, connection_factory=factory,
     )
     results = m8_results.create_results(connection, cycle_id=cycle_id, calculation_id=calculation["id"],
         key=f"product-results:{calculation['id']}", target_profile=None, created_by=int(row["created_by"]))
-    report = m8_results.create_report(connection, results_revision_id=results["revision_id"], audience="assessee",
-        key="product-report:assessee", target_profile=None, created_by=int(row["created_by"]), gateway=gateway)
+    connection.commit()
+    report = m8_results.create_report_detached(results_revision_id=results["revision_id"], audience="assessee",
+        key="product-report:assessee", target_profile=None, created_by=int(row["created_by"]), gateway=gateway,
+        connection_factory=factory)
     failure = _processing_failure(calculation)
     _set_state(connection, int(row["id"]), status="failed" if failure else "ready",
                stage="admission_processing_failed" if failure else "report_ready",
@@ -268,7 +274,7 @@ def request_processing_recovery(connection, *, cycle_id: str, idempotency_key: s
     return dict(row)
 
 
-def _process_recovery(connection, gateway=None) -> bool:
+def _process_recovery(connection, gateway=None, connection_factory=None) -> bool:
     from Api.m5_case_runtime import checksum
     row = connection.execute("""SELECT r.*,c.cycle_id,c.catalog_ref_json,c.profile_ref_json,c.target_set_checksum,
         c.collection_closed_at FROM m10_processing_recoveries r JOIN m5_cycles c ON c.id=r.cycle_db_id
@@ -285,14 +291,19 @@ def _process_recovery(connection, gateway=None) -> bool:
     connection.execute("UPDATE m10_processing_recoveries SET status='running',started_at=NOW() WHERE id=%s", (row["id"],))
     try:
         c46 = m7_completion.read_c46(connection, str(row["cycle_id"]))
-        calculation = m6_cycle_aggregation_repository.create_substantive(
-            connection, cycle_id=str(row["cycle_id"]),
+        connection.commit()
+        factory = connection_factory or get_connection
+        calculation = m6_cycle_aggregation_repository.create_substantive_detached(
+            cycle_id=str(row["cycle_id"]),
             key=f"processing-recovery:{row['id']}:{ADMISSION_VERSION}",
-            expected_composition_checksum=c46["composition_checksum"], created_by=int(row["created_by"]), gateway=gateway)
+            expected_composition_checksum=c46["composition_checksum"], created_by=int(row["created_by"]), gateway=gateway,
+            connection_factory=factory)
         results = m8_results.create_results(connection, cycle_id=str(row["cycle_id"]), calculation_id=calculation["id"],
             key=f"processing-recovery-results:{row['id']}", target_profile=None, created_by=int(row["created_by"]))
-        report = m8_results.create_report(connection, results_revision_id=results["revision_id"], audience="assessee",
-            key=f"processing-recovery-report:{row['id']}", target_profile=None, created_by=int(row["created_by"]))
+        connection.commit()
+        report = m8_results.create_report_detached(results_revision_id=results["revision_id"], audience="assessee",
+            key=f"processing-recovery-report:{row['id']}", target_profile=None, created_by=int(row["created_by"]),
+            gateway=gateway, connection_factory=factory)
         failure = _processing_failure(calculation)
         status = "failed" if failure else "succeeded"
         connection.execute("""UPDATE m10_processing_recoveries SET status=%s,finished_at=NOW(),calculation_id=%s,
@@ -333,9 +344,10 @@ def advance_once(*, gateway=None, connection_factory=None) -> bool:
     factory = connection_factory or get_connection
     with factory() as connection:
         try:
-            changed = (_propagate_failure(connection) or _process_recovery(connection, gateway=gateway)
+            changed = (_propagate_failure(connection) or _process_recovery(connection, gateway=gateway, connection_factory=factory)
                        or _queue_outbox(connection) or _queue_assessment(connection)
-                       or _clarify_interim(connection, gateway=gateway) or _finalize_cycle(connection, gateway=gateway))
+                       or _clarify_interim(connection, gateway=gateway, connection_factory=factory)
+                       or _finalize_cycle(connection, gateway=gateway, connection_factory=factory))
             connection.commit()
             return changed
         except Exception:

@@ -33,11 +33,11 @@ def _source(connection,c54_revision_id:str,lock=False):
     if definition_checksum(row['payload_json'])!=row['payload_hash']:raise ValueError('CHECKSUM_MISMATCH')
     return dict(row)
 
-def decide(connection,*,c54_revision_id:str,key:str,created_by:int,gateway=None):
+def _decision_snapshot(connection, *, c54_revision_id: str, key: str):
     source=_source(connection,c54_revision_id,lock=True);as_db=source['id']
     request_hash=checksum({'c54_revision_id':c54_revision_id})
     prior=repo.existing(connection,as_db,key,request_hash)
-    if prior:return prior
+    if prior:return {'prior': prior}
     latest=connection.execute("SELECT id FROM m6_c54_revisions WHERE as_db_id=%s AND mode='interim' ORDER BY created_at DESC LIMIT 1",(as_db,)).fetchone()
     if not latest or str(latest['id'])!=c54_revision_id:raise ValueError('M7_STALE_C54')
     cycle=read_cycle(connection,str(connection.execute('SELECT cycle_id FROM m5_cycles WHERE id=%s',(source['cycle_db_id'],)).fetchone()['cycle_id']))
@@ -52,21 +52,67 @@ def decide(connection,*,c54_revision_id:str,key:str,created_by:int,gateway=None)
         'turns':source['input_json']['material']['turns'],'case_ref':source['snapshot_json']['case_ref'],
         'remaining_seconds':cycle['remaining_seconds'],'minimum_remaining_seconds':minimum_seconds,
         'calendar_deadline':cycle['calendar_deadline'].isoformat() if cycle['calendar_deadline'] else None}
-    status='NO_QUESTION';question=None;trace={};explanation={'code':'M7_NO_ASSESSMENT_UNCERTAINTY'}
+    status='NO_QUESTION';explanation={'code':'M7_NO_ASSESSMENT_UNCERTAINTY'}
     if source['mode']!='interim' or source['status']!='scenario_ended':status='STOP';explanation={'code':'M7_AS_NOT_OPEN_AFTER_SCENARIO'}
     elif cycle['status'] not in {'active','paused'}:status='STOP';explanation={'code':'M7_COLLECTION_CLOSED'}
     elif cycle['started_at'] and (cycle['remaining_seconds']<minimum_seconds or (cycle['calendar_deadline'] and datetime.now(timezone.utc)>=cycle['calendar_deadline'])):status='STOP';explanation={'code':'M7_CLARIFICATION_TIME_UNAVAILABLE'}
     elif any(x['uncertainty']['requires_new_independent_action'] for x in uncertainties):status='NEW_AS';explanation={'code':'M7_NEW_INDEPENDENT_ACTION_REQUIRED','indicator_ids':[x['indicator_id'] for x in uncertainties if x['uncertainty']['requires_new_independent_action']]}
-    elif uncertainties:
-        try:question,trace=generate(input_value,mechanism,gateway=gateway)
+    return {'source':source,'as_db':as_db,'request_hash':request_hash,'mechanism':mechanism,
+        'input_value':input_value,'status':status,'explanation':explanation,
+        'requires_generation':bool(uncertainties and status=='NO_QUESTION')}
+
+
+def _save_generated(connection, *, snapshot: dict, c54_revision_id: str, key: str, created_by: int,
+                    status: str, question: dict | None, trace: dict, explanation: dict):
+    source=_source(connection,c54_revision_id,lock=True);as_db=source['id']
+    prior=repo.existing(connection,as_db,key,snapshot['request_hash'])
+    if prior:return prior
+    latest=connection.execute("SELECT id FROM m6_c54_revisions WHERE as_db_id=%s AND mode='interim' ORDER BY created_at DESC LIMIT 1",(as_db,)).fetchone()
+    if (not latest or str(latest['id'])!=c54_revision_id
+            or source['status']!='scenario_ended'
+            or source['payload_hash']!=snapshot['source']['payload_hash']
+            or source['boundary_sequence']!=snapshot['source']['boundary_sequence']):
+        raise ValueError('M7_CLARIFICATION_STATE_CHANGED')
+    saved=repo.save(connection,as_db_id=as_db,c54_revision_id=c54_revision_id,key=key,
+        request_hash=snapshot['request_hash'],status=status,input_value=snapshot['input_value'],
+        mechanism=snapshot['mechanism'],question=question,explanation=explanation,trace=trace,created_by=created_by)
+    return repo.read(connection,saved['id'])
+
+
+def decide(connection,*,c54_revision_id:str,key:str,created_by:int,gateway=None):
+    snapshot=_decision_snapshot(connection,c54_revision_id=c54_revision_id,key=key)
+    if snapshot.get('prior'):return snapshot['prior']
+    status=snapshot['status'];question=None;trace={};explanation=snapshot['explanation']
+    if snapshot['requires_generation']:
+        try:question,trace=generate(snapshot['input_value'],snapshot['mechanism'],gateway=gateway)
         except Exception as exc:
             status='WAIT_TECHNICAL';trace=getattr(exc,'ai_trace',{});explanation={'code':'M7_QUESTION_GENERATION_FAILED','error_type':type(exc).__name__}
         else:
             if question['admissible']:status='ASK';explanation={'code':'M7_CLARIFICATION_ADMISSIBLE','purpose':question['purpose']}
             else:status='NO_QUESTION';explanation={'code':'M7_QUESTION_NOT_ADMISSIBLE','reason':question['refusal_reason']}
-    saved=repo.save(connection,as_db_id=as_db,c54_revision_id=c54_revision_id,key=key,request_hash=request_hash,status=status,
-        input_value=input_value,mechanism=mechanism,question=question,explanation=explanation,trace=trace,created_by=created_by)
-    return repo.read(connection,saved['id'])
+    return _save_generated(connection,snapshot=snapshot,c54_revision_id=c54_revision_id,key=key,
+        created_by=created_by,status=status,question=question,trace=trace,explanation=explanation)
+
+
+def decide_detached(*,c54_revision_id:str,key:str,created_by:int,gateway=None,connection_factory=None):
+    if connection_factory is None:
+        from Api.database import get_connection as connection_factory
+    with connection_factory() as connection:
+        snapshot=_decision_snapshot(connection,c54_revision_id=c54_revision_id,key=key)
+        if snapshot.get('prior'):return snapshot['prior']
+        connection.commit()
+    status=snapshot['status'];question=None;trace={};explanation=snapshot['explanation']
+    if snapshot['requires_generation']:
+        try:question,trace=generate(snapshot['input_value'],snapshot['mechanism'],gateway=gateway)
+        except Exception as exc:
+            status='WAIT_TECHNICAL';trace=getattr(exc,'ai_trace',{});explanation={'code':'M7_QUESTION_GENERATION_FAILED','error_type':type(exc).__name__}
+        else:
+            if question['admissible']:status='ASK';explanation={'code':'M7_CLARIFICATION_ADMISSIBLE','purpose':question['purpose']}
+            else:status='NO_QUESTION';explanation={'code':'M7_QUESTION_NOT_ADMISSIBLE','reason':question['refusal_reason']}
+    with connection_factory() as connection:
+        result=_save_generated(connection,snapshot=snapshot,c54_revision_id=c54_revision_id,key=key,
+            created_by=created_by,status=status,question=question,trace=trace,explanation=explanation)
+        connection.commit();return result
 
 def present(connection,*,decision_id:str,expected_c54_revision_id:str):
     decision=repo.read(connection,decision_id)

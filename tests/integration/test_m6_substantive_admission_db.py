@@ -1,5 +1,6 @@
 """A8.1 saved revisions -> admission -> C56 -> Results -> HTTP C67/PDF. Not GC."""
 from copy import deepcopy
+from contextlib import contextmanager
 from types import SimpleNamespace
 import json
 import os
@@ -17,6 +18,58 @@ from Api.m7_completion import read_c46
 from Api.m5_case_runtime import checksum
 
 pytestmark = pytest.mark.integration
+
+
+def test_detached_admission_and_m8_provider_phases_hold_no_db_context(database):
+    add_original_plan(database[0])
+    factory, results, _ = saved_chain(database)
+    active = {"count": 0}
+
+    @contextmanager
+    def monitored_factory():
+        active["count"] += 1
+        try:
+            with factory() as connection:
+                yield connection
+        finally:
+            active["count"] -= 1
+
+    with factory() as connection:
+        composition = read_c46(connection, results["cycle_id"])["composition_checksum"]
+
+    class AdmissionGateway(RecordedAdmissionGateway):
+        def chat(self, messages, **kwargs):
+            assert active["count"] == 0
+            return super().chat(messages, **kwargs)
+
+    calculation = calculations.create_substantive_detached(
+        cycle_id=results["cycle_id"], key="r05-detached-admission",
+        expected_composition_checksum=composition, created_by=99,
+        gateway=AdmissionGateway(), connection_factory=monitored_factory,
+    )
+    assert calculation["c56"]["admissions"]
+
+    class DescriptionGateway:
+        enabled = True
+        calls = 0
+
+        def chat(self, messages, **kwargs):
+            assert active["count"] == 0
+            self.calls += 1
+            value = json.loads(messages[1]["content"])
+            if "candidate" in value:
+                return json.dumps({"status": "accepted", "claim_decisions": [], "summary_decisions": []})
+            return json.dumps({"summary": [], "claims": []})
+
+    description_gateway = DescriptionGateway()
+    report = m8_results.create_report_detached(
+        results_revision_id=results["revision_id"], audience="assessee",
+        key="r05-detached-report", target_profile=None, created_by=99,
+        gateway=description_gateway, connection_factory=monitored_factory,
+    )
+    assert report["c67"]["results_revision_id"] == results["revision_id"]
+    assert report["c67"]["descriptive"]["status"] == "ready"
+    assert description_gateway.calls == 2
 
 
 def add_original_plan(factory):

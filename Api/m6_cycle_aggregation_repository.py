@@ -89,10 +89,14 @@ def _inputs(connection, cycle_id: str, expected_composition_checksum: str):
 
 def create(connection, *, cycle_id: str, key: str, expected_composition_checksum: str,
            admission_mechanism_version: str, decisions: list[dict], created_by: int,
-           limitations: list[str] | None = None):
+           limitations: list[str] | None = None, expected_input_hash: str | None = None,
+           admission_input_checksum: str | None = None):
     cycle, c46, value = _inputs(connection, cycle_id, expected_composition_checksum)
+    if expected_input_hash is not None and checksum(value) != expected_input_hash:
+        raise ValueError("M6_ADMISSION_INPUT_CHANGED")
     request = {"expected_composition_checksum": expected_composition_checksum,
-        "admission_mechanism_version": admission_mechanism_version, "decisions": decisions}
+        "admission_mechanism_version": admission_mechanism_version, "decisions": decisions,
+        "admission_input_checksum": admission_input_checksum}
     request_hash = checksum(request)
     prior = connection.execute("SELECT * FROM m6_cycle_calculations WHERE cycle_db_id=%s AND request_key=%s", (cycle["id"], key)).fetchone()
     if prior:
@@ -165,3 +169,44 @@ def create_substantive(connection, *, cycle_id: str, key: str, expected_composit
                   expected_composition_checksum=expected_composition_checksum,
                   admission_mechanism_version=mechanism, decisions=decisions,
                   created_by=created_by, limitations=limitations)
+
+
+def create_substantive_detached(*, cycle_id: str, key: str, expected_composition_checksum: str,
+                                created_by: int, gateway=None, connection_factory=None):
+    """Run substantive admission between two short, hash-fenced DB phases."""
+    if connection_factory is None:
+        from Api.database import get_connection as connection_factory
+    from Api.m6_admission import VERSION, decide_prepared, prepare
+    with connection_factory() as connection:
+        cycle, _, value = _inputs(connection, cycle_id, expected_composition_checksum)
+        prior = connection.execute(
+            'SELECT * FROM m6_cycle_calculations WHERE cycle_db_id=%s AND request_key=%s',
+            (cycle['id'], key),
+        ).fetchone()
+        if prior:
+            saved = read(connection, prior['id'])
+            if (prior['composition_checksum'] != expected_composition_checksum
+                    or saved['c56']['admission_mechanism'] != VERSION
+                    or saved['c56']['observations'] != value['observations']):
+                raise ValueError('IDEMPOTENCY_CONFLICT')
+            return saved
+        frozen_input_hash = checksum(value)
+        prepared = prepare(
+            connection, cycle_id=cycle_id, observations=value['observations'],
+            mechanism_directory=resolve_cycle_dependency(cycle, "m6_substantive_admission"),
+            source_set=resolve_cycle_dependency(cycle, "source_set") / "manifest.json",
+            provider_contract=resolve_cycle_dependency(cycle, "provider_contract"),
+        )
+        connection.commit()
+    mechanism, decisions, limitations = decide_prepared(prepared, gateway=gateway)
+    with connection_factory() as connection:
+        saved = create(
+            connection, cycle_id=cycle_id, key=key,
+            expected_composition_checksum=expected_composition_checksum,
+            admission_mechanism_version=mechanism, decisions=decisions,
+            created_by=created_by, limitations=limitations,
+            expected_input_hash=frozen_input_hash,
+            admission_input_checksum=prepared['input_checksum'],
+        )
+        connection.commit()
+        return saved

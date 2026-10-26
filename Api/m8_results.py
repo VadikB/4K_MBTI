@@ -341,7 +341,8 @@ def _admission_summary(decision: dict) -> dict:
     return result
 
 
-def _report_content(results: dict, audience: str, target_profile: dict | None, *, connection=None, gateway=None) -> dict:
+def _report_content(results: dict, audience: str, target_profile: dict | None, *, connection=None, gateway=None,
+                    descriptive_override: dict | None = None) -> dict:
     if connection is None:
         # Pure projection support for unit consumers; persisted report creation always
         # supplies a connection and therefore must resolve the frozen Cycle manifest.
@@ -363,17 +364,19 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
             item.pop("components", None)
         skills.append(item)
     admission_summary = [_admission_summary(d) for d in payload.get("admissions", []) if d.get("schema_version") == 2]
-    descriptive = {"contract_version":"m8-descriptive-report/1.2.0", "status":"failed",
-                   "failure_reason":"DESCRIPTION_GENERATION_FAILED", "summary":[], "claims":[]}
-    try:
-        from Api.m8_recommendation_basis import resolve
-        from Api.m8_descriptive_report import generate
-        kwargs = {"gateway": gateway}
-        if descriptive_path is not None:
-            kwargs["package_path"] = descriptive_path
-        descriptive = generate(results, resolve(connection, results), **kwargs)
-    except (ValueError, KeyError, OSError):
-        pass
+    descriptive = descriptive_override or {
+        "contract_version":"m8-descriptive-report/1.2.0", "status":"failed",
+        "failure_reason":"DESCRIPTION_GENERATION_FAILED", "summary":[], "claims":[]}
+    if descriptive_override is None:
+        try:
+            from Api.m8_recommendation_basis import resolve
+            from Api.m8_descriptive_report import generate
+            kwargs = {"gateway": gateway}
+            if descriptive_path is not None:
+                kwargs["package_path"] = descriptive_path
+            descriptive = generate(results, resolve(connection, results), **kwargs)
+        except (ValueError, KeyError, OSError):
+            pass
     report = {"schema_version": 1, "contract": "C-67", "message_version": "1.1", "owner": "PM-06", "consumer": "PM-07",
             "results_id": results["id"], "results_revision_id": results["revision_id"],
             "results_revision_no": results["revision_no"], "cycle_id": results["cycle_id"], "audience": audience,
@@ -401,7 +404,8 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
 
 
 def create_report(connection, *, results_revision_id: str, audience: str, key: str,
-                  target_profile: dict | None, created_by: int, gateway=None) -> dict:
+                  target_profile: dict | None, created_by: int, gateway=None,
+                  descriptive_override: dict | None = None) -> dict:
     results = read_results_revision(connection, results_revision_id)
     request = {"audience": audience, "target_profile": target_profile, "template_version": REPORT_TEMPLATE_VERSION}
     request_hash = checksum(request)
@@ -414,7 +418,8 @@ def create_report(connection, *, results_revision_id: str, audience: str, key: s
     revision_no = connection.execute("SELECT COALESCE(MAX(revision_no),0)+1 AS n FROM m8_reports WHERE result_revision_id=%s",
                                      (UUID(results_revision_id),)).fetchone()["n"]
     report_id = uuid4()
-    c67 = _report_content(results, audience, target_profile, connection=connection, gateway=gateway)
+    c67 = _report_content(results, audience, target_profile, connection=connection, gateway=gateway,
+                          descriptive_override=descriptive_override)
     c67["report_id"] = str(report_id); c67["report_revision_no"] = revision_no
     c67["template_version"] = REPORT_TEMPLATE_VERSION
     target_hash = checksum(target_profile) if target_profile else None
@@ -424,6 +429,45 @@ def create_report(connection, *, results_revision_id: str, audience: str, key: s
         (report_id, UUID(results_revision_id), revision_no, audience, json.dumps(target_profile) if target_profile else None,
          target_hash, REPORT_TEMPLATE_VERSION, json.dumps(c67, ensure_ascii=False), checksum(c67), key, request_hash, created_by))
     return read_report(connection, report_id)
+
+
+def create_report_detached(*, results_revision_id: str, audience: str, key: str,
+                           target_profile: dict | None, created_by: int, gateway=None,
+                           connection_factory=None) -> dict:
+    """Generate and validate descriptive content outside the DB transaction."""
+    if connection_factory is None:
+        from Api.database import get_connection as connection_factory
+    from Api.m8_recommendation_basis import resolve
+    from Api.m8_descriptive_report import generate
+    with connection_factory() as connection:
+        results = read_results_revision(connection, results_revision_id)
+        request = {"audience": audience, "target_profile": target_profile,
+                   "template_version": REPORT_TEMPLATE_VERSION}
+        request_hash = checksum(request)
+        prior = connection.execute(
+            "SELECT id,request_hash FROM m8_reports WHERE result_revision_id=%s AND request_key=%s",
+            (UUID(results_revision_id), key),
+        ).fetchone()
+        if prior:
+            if prior["request_hash"] != request_hash:
+                raise ValueError("IDEMPOTENCY_CONFLICT")
+            return read_report(connection, prior["id"])
+        _, _, descriptive_path, _ = _cycle_report_packages(connection, results["cycle_id"])
+        resolved = resolve(connection, results)
+        frozen_checksum = checksum({"revision_id": results["revision_id"], "results": results["results"]})
+        connection.commit()
+    descriptive = generate(results, resolved, gateway=gateway, package_path=descriptive_path)
+    with connection_factory() as connection:
+        current = read_results_revision(connection, results_revision_id)
+        if checksum({"revision_id": current["revision_id"], "results": current["results"]}) != frozen_checksum:
+            raise ValueError("M8_RESULTS_REVISION_CHANGED")
+        saved = create_report(
+            connection, results_revision_id=results_revision_id, audience=audience, key=key,
+            target_profile=target_profile, created_by=created_by,
+            descriptive_override=descriptive,
+        )
+        connection.commit()
+        return saved
 
 
 OWNER_CYCLE_SCOPE = """c.owner_user_id=%s AND c.usage_scope='assessment'

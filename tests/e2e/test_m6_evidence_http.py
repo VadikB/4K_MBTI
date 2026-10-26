@@ -125,7 +125,7 @@ def test_m8_results_c67_and_pdf_contract(client):
     http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
     cycle_id=str(uuid4());results_revision=str(uuid4());report_id=str(uuid4())
     monkeypatch.setattr(routes.m8_results,'create_results',lambda *_args,**kwargs:{'revision_id':results_revision,'revision_no':1})
-    monkeypatch.setattr(routes.m8_results,'create_report',lambda *_args,**kwargs:{'id':report_id,'audience':'assessee','c67':{'contract':'C-67'}})
+    monkeypatch.setattr(routes.m8_results,'create_report_detached',lambda *_args,**kwargs:{'id':report_id,'audience':'assessee','c67':{'contract':'C-67'}})
     result=http.post(f'/users/admin/m8-cycles/{cycle_id}/results',json={'idempotency_key':'r','calculation_id':str(uuid4()),'synthetic_material_confirmed':True})
     assert result.status_code==201 and result.json()['revision_no']==1
     report=http.post('/users/admin/m8-reports',json={'idempotency_key':'p','results_revision_id':results_revision,'audience':'assessee'})
@@ -140,11 +140,13 @@ def test_t11_owner_regeneration_is_scoped_and_idempotency_is_forwarded(client):
     monkeypatch.setattr(routes.m8_results,'read_latest_report',lambda *_args:{'c67':{'target_profile':None}})
     def create(*_args,**kwargs):
         calls.append(kwargs);return {'id':report_id,'revision_no':2,'c67':{'recommendations':[]}}
-    monkeypatch.setattr(routes.m8_results,'create_report',create)
+    monkeypatch.setattr(routes.m8_results,'create_report_detached',create)
     response=http.post(f'/users/assessment/m8/cycles/{cycle_id}/reports/regenerate',json={'idempotency_key':'regen-1'})
     assert response.status_code==201 and response.json()['revision_no']==2
-    assert calls==[{'results_revision_id':results_revision,'audience':'assessee','key':'regen-1',
-                    'target_profile':None,'created_by':7}]
+    assert len(calls)==1
+    assert {k:v for k,v in calls[0].items() if k!='connection_factory'}=={
+        'results_revision_id':results_revision,'audience':'assessee','key':'regen-1',
+        'target_profile':None,'created_by':7}
 
 
 def test_substantive_admission_endpoint_rejects_client_decisions_and_requires_admin(client):
@@ -153,7 +155,7 @@ def test_substantive_admission_endpoint_rejects_client_decisions_and_requires_ad
     def calculate(*args,**kwargs):
         calls.append(kwargs)
         return {'id':'saved','c56':{'admission_mechanism':'m6_substantive_admission/2.0.0'}}
-    monkeypatch.setattr(routes.m6_cycle_aggregation_repository,'create_substantive',calculate)
+    monkeypatch.setattr(routes.m6_cycle_aggregation_repository,'create_substantive_detached',calculate)
     url=f'/users/admin/m6-cycles/{cycle}/substantive-calculations'
     payload={'idempotency_key':'attempt-1','expected_composition_checksum':'a'*64}
     assert http.post(url,json=payload).status_code==401
