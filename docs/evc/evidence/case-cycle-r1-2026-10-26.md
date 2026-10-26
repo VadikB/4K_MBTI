@@ -41,7 +41,7 @@ Report JSON, PDF/UI и server logs. Секреты и реальные поль�
 
 | Набор | Статус | Основание / остаток |
 | --- | --- | --- |
-| N01 — 27 real preparations | PARTIAL 12/27 | 7 admission PASS, 4 AS FAIL, 1 INCOMPLETE; C03/IT repair HTTP 502, 14 NOT_RUN |
+| N01 — 27 real preparations | PARTIAL 17/27 | 11 admission PASS, 5 AS FAIL, 1 INCOMPLETE; C03/IT repair HTTP 502, C07–C09 9 NOT_RUN |
 | N02 — 9 real API→M8 | NOT_RUN_DEPENDENT | Дефектная пилотная AS не предъявлялась; real 9 Case не запускались |
 | N03 — 3 real browser функции | NOT_RUN_DEPENDENT | Controlled browser PASS; real-provider browser не запускался после pilot gate |
 | N04 — multi-case Cycle | PARTIAL | Pause/reload/resume/additional Session PASS; 3 real generated AS NOT_RUN |
@@ -101,6 +101,12 @@ Safe diagnostic retry на `8eccc60` локализовал C03/IT: provider в�
 `generation_repair` через 162943.7 ms. Это environment/provider blocker, не вывод о
 содержании AS. Независимо завершены C04 Sales/HR/IT (admission FAIL) и C05/Sales
 (PASS); C05/HR прерван до результата и не учитывается как attempt.
+
+Следующий checkpoint добавил C05/HR, C05/IT, C06/HR и C06/IT как admission PASS;
+C06/Sales — admission FAIL. Всего завершено 17 preparations: 11 PASS, 5 FAIL и
+1 INCOMPLETE; C03/IT остаётся отдельным provider blocker. Начавшийся C07/Sales был
+прерван до результата и не учитывается. Актуальный raw archive SHA-256:
+`ac53c953fa279d94ba540caa865eb12cff0ff8a65e551d8f26809b4bbd5bb85b`.
 
 ## Откат и ограничения выпуска
 

@@ -219,12 +219,15 @@
   C03/IT — отдельный technical blocker; 14 строк NOT_RUN. C05/HR был прерван до
   результата и не считается завершённой попыткой. Обновлённый raw archive SHA-256:
   `cb462afc...e77634`.
+- Следующий checkpoint: C05/HR, C05/IT, C06/HR и C06/IT — admission PASS;
+  C06/Sales — admission FAIL. Итого 17 завершённых preparations: 11 PASS, 5 FAIL,
+  1 INCOMPLETE; C03/IT отдельно `BLOCKED_PROVIDER_502`; C07–C09 (9 строк) NOT_RUN.
+  Начавшийся C07/Sales прерван до результата и не учитывается. Raw archive SHA-256
+  `ac53c953...5bb85b`.
 - Единый пакет кандидата, фактическая матрица, безопасные trace locations, rollback и
   точное следующее действие сохранены в
   `docs/evc/evidence/case-cycle-r1-2026-10-26.md`. Existing real-cycle pytest не принят
   как R10 proof: он вручную вставляет Turn и нарушает критерий штатного API пути.
-- Следующий шаг: отдельная remediation причин
-  `INDICATOR_ADAPTATION_REFERENCES_MISSING` и
-  `PARTIAL_SUBSTITUTION_IN_OBSERVABILITY`, затем адресные controlled regression и
-  повтор только C01/Sales с новым candidate SHA. До успешного пилота не продолжать
-  зависимую real-provider серию; merge/deploy/publish не выполнять.
+- Следующий шаг: продолжить checkpoint только C07–C09; C03/IT не повторять без
+  изменения доказанной причины HTTP 502. После preparation inventory строить штатные
+  API/runtime пути только для admission PASS AS. Merge/deploy/publish не выполнять.
