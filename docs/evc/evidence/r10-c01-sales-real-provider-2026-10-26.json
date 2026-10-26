@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-26T14:39:17.327363+00:00",
+  "candidate_sha": "0ead559a36346718f301f849590086e14f1005f0",
+  "application_version": "2.0.29",
+  "row": "A06.C01.SALES",
+  "case_id": "CASE.SPEC.01",
+  "function": "sales",
+  "synthetic_test_data": true,
+  "provider": {
+    "id": "deepseek",
+    "model": "deepseek-flash",
+    "contract_version": "1.0.0",
+    "contract_checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+  },
+  "package": {
+    "id": "m5-functional-personalization-cases",
+    "version": "0.5",
+    "compiler_id": "m5-functional-json-compiler",
+    "compiler_version": "0.5.0",
+    "indicator_layer_contract": "m5-functional-indicator-two-layer/1.0.0"
+  },
+  "input_snapshot_checksum": "c5141ccea25d7b0f65bd088045d98c51b1602b89c2c674c4f9a379f5bd87c2da",
+  "original_candidate_checksum": "7b0394e060646161912aff10ceb4e6d5c21a15f3859e2b96dd81571ebc581f39",
+  "final_candidate_checksum": "ae9e79d12c3a1948c541a31a69c380db7692ffb2b017060e76b0b3d440042f50",
+  "operations": [
+    {
+      "kind": "generation",
+      "operation_id": "A06.C01.SALES:generation:fe101fd2ceea",
+      "input_checksum": "fe101fd2ceea18cbe7b72d8ccba63ab664b228a99adeb06c1826829ef135890f",
+      "provider_request_id": "d7b0264f-2e24-4c05-b718-e9f1ad6ee296",
+      "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+      "finish_reason": "stop",
+      "total_tokens": 60146,
+      "duration_ms": 50976.73,
+      "transport": "PASS"
+    },
+    {
+      "kind": "tester",
+      "operation_id": "A06.C01.SALES:tester:00a2044a4de1",
+      "input_checksum": "00a2044a4de1d150f06435c585e075ada2541b21a88f05fa23b19826421ef15a",
+      "provider_request_id": "cb27da65-7d28-45e9-9245-6d54af298213",
+      "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+      "finish_reason": "stop",
+      "total_tokens": 61933,
+      "duration_ms": 39225.73,
+      "transport": "PASS"
+    },
+    {
+      "kind": "challenger",
+      "operation_id": "A06.C01.SALES:challenger:224ad72daf31",
+      "input_checksum": "224ad72daf317cbb3dce9b69bd5eb7026c81153f148a6f86574121b97b5b1a41",
+      "provider_request_id": "fdfcdffa-a6d7-45ed-83a5-34936669c67b",
+      "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+      "finish_reason": "stop",
+      "total_tokens": 65941,
+      "duration_ms": 25368.32,
+      "transport": "PASS"
+    },
+    {
+      "kind": "generation_repair",
+      "operation_id": "A06.C01.SALES:generation:repair:2370713d15f5",
+      "input_checksum": "2370713d15f5ad8e528728ea37ca50bc96d537a030f8da624f80596ae3b3510d",
+      "prompt_ref": "m5_functional_repair@1.0.0",
+      "prompt_checksum": "d0b424cbff9000dfd3aa55341f89c63f20964c254a0077dc65cf95d90c77ccf0",
+      "provider_request_id": "37231f04-4c1a-42bb-943e-5f4dc8bbe4f6",
+      "provider_revision": "e72d3c7f663d3e1383b00b3884cb4501",
+      "finish_reason": "stop",
+      "total_tokens": 78181,
+      "duration_ms": 60203.23,
+      "transport": "PASS"
+    }
+  ],
+  "result": {
+    "transport": "PASS",
+    "generation_after_repair": "FAIL",
+    "tester": "FAIL",
+    "as_admission": "FAIL",
+    "runtime": "NOT_RUN",
+    "evidence_ia": "NOT_RUN",
+    "substantive_admission": "NOT_RUN",
+    "m8": "NOT_RUN",
+    "methodological_acceptance": "NOT_RUN",
+    "reliability": "NOT_RUN"
+  },
+  "blocking_findings": [
+    {
+      "code": "INDICATOR_ADAPTATION_REFERENCES_MISSING",
+      "affected_indicators": ["K1.I01", "K1.I13", "K1.I14", "K4.I06"],
+      "missing_fields": ["material_refs", "event_refs", "character_refs", "authority_refs", "author_mapping"]
+    },
+    {
+      "code": "STALE_AUTHOR_NAME_IN_OBSERVABILITY",
+      "affected_indicators": ["K1.I01", "K1.I14"],
+      "reason": "Sales AS retained author-example names and subject in the adapted observability layer."
+    },
+    {
+      "code": "PARTIAL_SUBSTITUTION_IN_OBSERVABILITY",
+      "requirement_ref": "critical_prohibition:04",
+      "reason": "Professional substitution was not propagated to every dependent observability field."
+    }
+  ],
+  "series_decision": "STOP_DEPENDENT_R10_SERIES",
+  "classification": "AS_ADMISSION_FAIL",
+  "secrets_in_artifact": false,
+  "raw_trace_location": "/tmp/p4k-r10-0ead559a-pilot/rows/a06.c01.sales.json"
+}

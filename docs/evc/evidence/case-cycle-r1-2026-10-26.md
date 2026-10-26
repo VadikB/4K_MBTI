@@ -41,9 +41,9 @@ Report JSON, PDF/UI и server logs. Секреты и реальные поль�
 
 | Набор | Статус | Основание / остаток |
 | --- | --- | --- |
-| N01 — 27 real preparations | BLOCKED_ENVIRONMENT | Controlled 27/27 PASS; real-provider gateway не настроен |
-| N02 — 9 real API→M8 | BLOCKED_ENVIRONMENT | Полный controlled путь PASS; real 9 Case NOT_RUN |
-| N03 — 3 real browser функции | BLOCKED_ENVIRONMENT | Controlled browser PASS; real-provider browser NOT_RUN |
+| N01 — 27 real preparations | STOPPED_AFTER_PILOT | C01/Sales transport PASS, AS admission FAIL; остальные 26 не запускались |
+| N02 — 9 real API→M8 | NOT_RUN_DEPENDENT | Дефектная пилотная AS не предъявлялась; real 9 Case не запускались |
+| N03 — 3 real browser функции | NOT_RUN_DEPENDENT | Controlled browser PASS; real-provider browser не запускался после pilot gate |
 | N04 — multi-case Cycle | PARTIAL | Pause/reload/resume/additional Session PASS; 3 real generated AS NOT_RUN |
 | N05 — различия контекста | PARTIAL | 27 controlled adaptations PASS; real-provider paths NOT_RUN |
 | N06 — результаты и recovery | PASS TECH / real NOT_RUN | nonempty partial, insufficiency, no-result, expiry, retry, late fence и M8/PDF проверены controlled |
@@ -55,23 +55,35 @@ Report JSON, PDF/UI и server logs. Секреты и реальные поль�
 tester NOT_RUN; methodological acceptance NOT_RUN; Reliability NOT_RUN; publication
 NOT_RUN. Недостаточность не преобразуется в ноль, а техническая ошибка — в результат.
 
-## R10 readiness и ограничение
+## R10 real-provider pilot и ограничение
 
-Изолированный PostgreSQL-контур готов. Архив фиксирует ранее выданный допуск на
-синтетическую real-provider матрицу, однако штатный `DeepSeekGateway` на машине
-кандидата сообщает `gateway_enabled=false`. Provider contract: `deepseek`, model
-`deepseek-flash`, version `1.0.0`, checksum
+Credential подключён и без чтения значения подтверждён как доступный. Общая `.env`
+содержит legacy alias `deepseek-chat`; запуск точного candidate
+`0ead559a36346718f301f849590086e14f1005f0` явно закрепил provider identity контракта:
+`deepseek/deepseek-flash`, version `1.0.0`, checksum
 `a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c`.
-Ключи не читались и не выводились. Поэтому R10 остановлен как `BLOCKED_ENVIRONMENT`,
-а не FAIL AS; оплачиваемые вызовы, N01/N02/N03 и реальные traces не создавались.
 
-Следующее точное действие владельца контура: подключить штатный credential к
-изолированному стенду для этого candidate SHA и подтвердить, что прежний бюджет
-покрывает pilot C01/Sales и последующие 27 preparations. После этого сначала выполнить
-одну C01/Sales через штатные Profile/API/queue/runtime endpoints; только при её успехе
-продолжить checkpoint-матрицу. Тест `tests/llm/test_m10_real_cycle_db.py` не является
-достаточным R10 runner, потому что его fixture вручную вставляет Turn; использовать его
-как доказательство полного пути запрещено.
+Одна синтетическая строка `A06.C01.SALES` выполнила реальные generation, tester,
+challenger и одну repair-фазу. Transport всех операций PASS. Исходная deterministic
+validation была PASS, но repair-кандидат завершился deterministic FAIL по отсутствующим
+`material_refs/event_refs/character_refs/authority_refs/author_mapping` для четырёх
+IndicatorID. Tester дополнительно сохранил blocking-находки: в Sales observability
+остались имя и предмет авторского примера (`K1.I01`, `K1.I14`), что нарушает полную
+профессиональную подстановку и `critical_prohibition:04`. Итог — честный
+`AS_ADMISSION_FAIL`; это ожидаемая работа защитного gate, а не infrastructure failure.
+
+Безопасная первичная трасса с operation/request IDs, timestamps, версиями, hashes,
+token usage и классификацией сохранена в
+`docs/evc/evidence/r10-c01-sales-real-provider-2026-10-26.json`; ключей в ней нет.
+Полный синтетический raw trace остаётся вне Git в `/tmp/p4k-r10-0ead559a-pilot/`.
+Дефектная AS не была предъявлена, поэтому runtime, Evidence/IA, substantive admission,
+M8, 26 остальных preparations, 9 API и 3 browser paths — `NOT_RUN_DEPENDENT`.
+Неограниченная регенерация и ослабление tester не выполнялись.
+
+Следующее точное действие — отдельная remediation двух причин, controlled regression
+и повтор только C01/Sales на новом candidate SHA. Тест
+`tests/llm/test_m10_real_cycle_db.py` по-прежнему не является достаточным R10 proof:
+fixture вручную вставляет Turn и не доказывает штатный API путь.
 
 ## Откат и ограничения выпуска
 
