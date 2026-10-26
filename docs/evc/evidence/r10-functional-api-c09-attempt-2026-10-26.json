@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "recorded_at": "2026-10-26T22:03:34+03:00",
+  "candidate_commit": "b568c8c",
+  "case_id": "CASE.SPEC.09",
+  "function": "Sales",
+  "operation_id": "r10-c09-sales-prepare",
+  "outcome": "AS_ADMISSION_INCOMPLETE",
+  "duration_seconds": 205.76,
+  "input_snapshot_checksum": "49f90f612f6bed9dfa67b3049f673e772730f0ca3178daceddc74cf353f3d62c",
+  "candidate_checksum": "d03d9d13ceaf462f18150e993961a676fb217e4deb1558bf81ce9d07f8ffb069",
+  "deterministic_validation": "PASS",
+  "repair_used": false,
+  "tester_aggregation": "INCOMPLETE",
+  "incomplete_checks": [
+    {"check_id": "indicator:K4.I12", "normalized_status": "TECHNICAL_ERROR", "reason": "Tester вернул повторяющийся check_id."},
+    {"check_id": "indicator:K4.I16", "normalized_status": "TECHNICAL_ERROR", "reason": "Tester вернул повторяющийся check_id."}
+  ],
+  "classification": {
+    "requested_check_ids_unique": true,
+    "tester_protocol_response_incomplete": true,
+    "substantive_as_fail": false,
+    "basis": "The deterministic four-batch workload contains every required check ID exactly once. Tester batch 3 returned duplicate protected IDs K4.I12 and K4.I16; aggregation correctly converted both to TECHNICAL_ERROR and INCOMPLETE."
+  },
+  "dependent_stages": {
+    "runtime": "NOT_RUN",
+    "m6_evidence": "NOT_RUN",
+    "m6_indicator_assessment": "NOT_RUN",
+    "m8": "NOT_RUN"
+  },
+  "retry_policy": "No repeat without a changed and verified cause.",
+  "raw_artifact": {
+    "path": "docs/evc/evidence/r10-functional-api-c09-attempt-2026-10-26.tar.gz",
+    "sha256": "3dd36f5daa6a41ebc0c8b26e7a8e23923833987451cd537e3a64cfb2e0e23313",
+    "contained_file_sha256": "2dc89c399cfb8fd0f4a32b6d3b870e47fe02caad72aec0d564f01ae504c8490f",
+    "contains_credentials": false
+  },
+  "acceptance": {
+    "technical_positive_path": "NOT_ACHIEVED_FOR_CASE",
+    "methodology": "NOT_RUN",
+    "reliability": "not_verified"
+  }
+}

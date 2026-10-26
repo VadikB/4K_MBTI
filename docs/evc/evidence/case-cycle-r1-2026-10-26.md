@@ -42,8 +42,8 @@ Report JSON, PDF/UI и server logs. Секреты и реальные поль�
 | Набор | Статус | Основание / остаток |
 | --- | --- | --- |
 | N01 — 27 real preparations | COMPLETE WITH OUTCOMES | 19 admission PASS, 5 AS FAIL, 2 INCOMPLETE, C03/IT repair HTTP 502; NOT_RUN 0 |
-| N02 — 9 real API→M8 | 2/9 FUNCTIONAL PASS | `CASE.SPEC.02` и `.03` product M4 + owner HTTP → real Evidence/IA → M8 PASS; C01 preparation INCOMPLETE, C04–C09 NOT_RUN; legacy boundary pilot также PASS |
-| N03 — 3 real browser функции | NOT_RUN_DEPENDENT | Controlled browser PASS; real-provider browser не запускался после pilot gate |
+| N02 — 9 real API→M8 | COMPLETE WITH OUTCOMES; 3/9 PASS | C02/C03/C07 full PASS; C01/C05/C09 INCOMPLETE; C04 tester-contract error; C06 provider JSON blocker; C08 M6 failed with capture gap; NOT_RUN 0 |
+| N03 — 3 real browser функции | NOT_RUN | Controlled browser PASS; real-provider browser требует отдельного stand path поверх admitted functional AS |
 | N04 — multi-case Cycle | PARTIAL | Pause/reload/resume/additional Session PASS; 3 real generated AS NOT_RUN |
 | N05 — различия контекста | PARTIAL | 27 controlled adaptations PASS; real-provider paths NOT_RUN |
 | N06 — результаты и recovery | PASS TECH / real NOT_RUN | nonempty partial, insufficiency, no-result, expiry, retry, late fence и M8/PDF проверены controlled |
@@ -242,6 +242,22 @@ assertion не экспортировал error/trace M6 attempt, а isolated sc
 attempt status, error code и trace. Evidence:
 `docs/evc/evidence/r10-functional-api-c08-attempt-2026-10-26.{json,tar.gz}`;
 archive SHA-256 `766270d9c73b07304ec6339df227eac3a634633febedd31910cf034142f1dd19`.
+
+`CASE.SPEC.09` на exact candidate `b568c8c` завершился admission `INCOMPLETE` за
+205.76 s. Generation и deterministic validation — PASS, repair не использован.
+Exact tester workload содержит каждый required check ID ровно один раз, но ответ
+batch 3 повторил protected IDs `indicator:K4.I12` и `indicator:K4.I16`; aggregator
+корректно присвоил им `TECHNICAL_ERROR`. Это protocol-incomplete ответ tester, не
+содержательный FAIL AS. Runtime/M6/M8 — `NOT_RUN`; повтор без изменения причины не
+выполняется. Evidence:
+`docs/evc/evidence/r10-functional-api-c09-attempt-2026-10-26.{json,tar.gz}`;
+archive SHA-256 `3dd36f5daa6a41ebc0c8b26e7a8e23923833987451cd537e3a64cfb2e0e23313`.
+
+N02 исчерпан без случайных повторов: C02, C03 и C07 дали полный technical PASS
+product M4 → owner HTTP → real Evidence/IA → M8; C01, C05 и C09 — `INCOMPLETE`;
+C04 — ошибочные требования tester; C06 — malformed provider JSON; C08 дошёл до M6
+Evidence `failed`, но точная причина не была сохранена старым runner. `NOT_RUN=0`.
+Methodological acceptance не проводилась, Reliability остаётся `not_verified`.
 
 ## Откат и ограничения выпуска
 

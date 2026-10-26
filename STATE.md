@@ -354,3 +354,14 @@
   проверка: `py_compile` PASS, real-provider test без opt-in SKIP. Evidence:
   `docs/evc/evidence/r10-functional-api-c08-attempt-2026-10-26.{json,tar.gz}`;
   archive SHA-256 `766270d9...f1dd19`.
+- `CASE.SPEC.09` на `b568c8c`: generation/deterministic PASS, repair не использован;
+  tester вернул повторяющиеся protected check IDs `K4.I12` и `K4.I16`, хотя exact
+  workload содержит каждый required ID один раз. Aggregator корректно нормализовал
+  их в `TECHNICAL_ERROR`, итог `INCOMPLETE` без содержательного FAIL. Runtime/M6/M8
+  `NOT_RUN`, C09 без новой причины не повторять. Evidence:
+  `docs/evc/evidence/r10-functional-api-c09-attempt-2026-10-26.{json,tar.gz}`;
+  archive SHA-256 `3dd36f5d...e23313`.
+- N02 исчерпан: 3/9 full functional PASS (C02, C03, C07); C01, C05, C09 —
+  `INCOMPLETE`; C04 — erroneous tester requirements; C06 — provider malformed JSON;
+  C08 — M6 Evidence failed с утраченной точной причиной. `NOT_RUN=0`; случайные
+  повторы запрещены. Methodology `NOT_RUN`, Reliability `not_verified`.
