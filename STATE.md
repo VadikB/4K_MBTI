@@ -338,3 +338,10 @@
   ограничение evidence. Admission не завершён, runtime/M6/M8 `NOT_RUN`; C06 не
   повторять. Evidence `docs/evc/evidence/r10-functional-api-c06-attempt-2026-10-26.{json,tar.gz}`;
   archive SHA-256 `85d38b5a...c4be0a`.
+- `CASE.SPEC.07` на `94d3963` завершил полный product путь PASS за 270.42 s:
+  product M4 → owner HTTP prepare/start/Turn/completion → real-provider Evidence и IA
+  `succeeded` → pipeline/report `ready`. Candidate `06113b8c...96bb7`, AS snapshot
+  `d4ad0ae3...425c8`. Reliability `not_verified`, methodology `NOT_RUN`. Evidence:
+  `docs/evc/evidence/r10-functional-api-c07-pass-2026-10-26.{json,tar.gz}`;
+  archive SHA-256 `1994a76b...abcec7`. N02 functional: C02/C03/C07 PASS (3/9);
+  C01/C05 INCOMPLETE, C04 tester-contract FAIL, C06 provider blocker, C08/C09 NOT_RUN.

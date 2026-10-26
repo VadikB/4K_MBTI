@@ -223,6 +223,15 @@ runtime/M6/M8 — `NOT_RUN`. Evidence:
 `docs/evc/evidence/r10-functional-api-c06-attempt-2026-10-26.{json,tar.gz}`;
 archive SHA-256 `85d38b5a541361342bb1df5438d69d85f87ccc631133a33d29e909088dc4be0a`.
 
+`CASE.SPEC.07` на exact candidate `94d3963` завершил полный product путь PASS за
+270.42 s: product-valid M4, owner HTTP prepare/start/Turn/completion, real-provider
+Evidence и IA `succeeded`, pipeline и M8 report `ready`. Candidate checksum
+`06113b8c6925f39c0b674aca60a09db0f703d773c3ff77639fffa5a182896bb7`, AS snapshot
+`d4ad0ae38c65f56f40b7b3dcd5ae142ebc12f4bac73e508a0fc741781f7425c8`.
+Reliability остаётся `not_verified`, methodology `NOT_RUN`. Evidence:
+`docs/evc/evidence/r10-functional-api-c07-pass-2026-10-26.{json,tar.gz}`;
+archive SHA-256 `1994a76bd60696be5078bda32b6331248bc59be8dc3049a7d263261d63abcec7`.
+
 ## Откат и ограничения выпуска
 
 Кодовый откат — вернуть R09 candidate commit и приложение `2.0.28`; опубликованные

@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "recorded_at": "2026-10-26T21:48:00+03:00",
+  "candidate_commit": "94d3963",
+  "case_id": "CASE.SPEC.07",
+  "function": "Sales",
+  "outcome": "TECHNICAL_END_TO_END_PASS",
+  "duration_seconds": 270.42,
+  "candidate_checksum": "06113b8c6925f39c0b674aca60a09db0f703d773c3ff77639fffa5a182896bb7",
+  "profile_checksum": "3a70f214da3d3905640ae714b04b3c1d8e749f32d633b80bd4e74f3a2cd68ba3",
+  "case_version_checksum": "d59ffa2e2a9e62924e00e433e2d43c7ccc4f0b46166b21a9d0f62bab8eddff44",
+  "assessment_situation": {
+    "id": "da7c83d7-e98c-4455-84ec-2a16c88f0ccf",
+    "snapshot_checksum": "d4ad0ae38c65f56f40b7b3dcd5ae142ebc12f4bac73e508a0fc741781f7425c8"
+  },
+  "path": {
+    "product_m4": "PASS",
+    "owner_http_prepare_start_turn_completion": "PASS",
+    "m6_evidence": "succeeded",
+    "m6_indicator_assessment": "succeeded",
+    "m7_pipeline": "ready",
+    "m8_report": "ready"
+  },
+  "raw_artifact": {
+    "path": "docs/evc/evidence/r10-functional-api-c07-pass-2026-10-26.tar.gz",
+    "sha256": "1994a76bd60696be5078bda32b6331248bc59be8dc3049a7d263261d63abcec7",
+    "cycle_trace_sha256": "2f617eb916fd2611b74f1245e8e78a28a0f1c638e5cea14c0764233631e85c18",
+    "preparation_trace_sha256": "0049521c35cabc71f06de35612f9b390d4af34cfa2f7963c1cd50998d2069323",
+    "contains_credentials": false
+  },
+  "acceptance": {
+    "technical_positive_path": "PASS",
+    "methodology": "NOT_RUN",
+    "reliability": "not_verified"
+  }
+}
