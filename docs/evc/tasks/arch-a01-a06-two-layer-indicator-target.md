@@ -80,6 +80,13 @@ persistence trace и M6 input resolver.
   JSON с LF. Исправлена только проверка checksum слоёв: она теперь использует
   алгоритм функционального контракта; checksum полного AS и CaseVersion остаются
   на прежнем runtime-алгоритме. Регрессия явно фиксирует различие алгоритмов.
+- CI pull_request для `beb0063`: M10 и остальные generated-AS integration
+  проходят; остаются F05 и два static-Case runtime теста. В статическом пути
+  `build_assessment_situation` хэшировал `CaseVersionV3.model_dump()` с
+  добавленными optional/default полями, тогда как импортированный immutable
+  CaseVersion сохраняет исходный JSON. `case_ref.checksum` теперь вычисляется
+  по исходному валидированному `case_value`; regression подтверждает точное
+  совпадение со stored content checksum, сохраняя строгую runtime-проверку.
 - Положительная корректная адаптация и hand-off `0.4`: PASS; frozen package
   `0.3` сохраняет legacy trace schema 2: PASS.
 - Отрицательные потеря условия, подмена смысла, неверный material ref,

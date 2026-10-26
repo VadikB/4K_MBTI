@@ -6,7 +6,7 @@ import json
 import pytest
 
 from Api.assessment_case_contracts import CaseVersionV3
-from Api.m5_case_runtime import checksum
+from Api.m5_case_runtime import build_assessment_situation, checksum
 from Api.m5_package import verify_package_directory
 from Api.m5_functional_generation_service import build_input_snapshot, deterministic_checks
 from Api.m5_runtime_rules import load_runtime_rule_package
@@ -48,6 +48,22 @@ def test_package_04_keeps_published_case_versions_and_runtime_bindings_immutable
     for case in current["cases"]:
         stored = CaseVersionV3.model_validate(case).model_dump(exclude_unset=True)
         assert checksum(stored) == checksum(case)
+
+
+def test_static_case_as_ref_uses_immutable_imported_content_checksum():
+    case = copy.deepcopy(_package()["cases"][0])
+    case["status"] = "FROZEN"
+    case["author_case"]["Status"] = "FROZEN"
+    ref = {"id": "fixture", "version": "1", "checksum": "a" * 64}
+    situation, _ = build_assessment_situation(
+        assessment_situation_id="AS.CASE.SPEC.01", case_value=case,
+        cycle_ref=ref, session_ref=ref, profile_ref=ref,
+        profile_snapshot={"base_role": case["base_role"]},
+        methodology_refs=[ref], substitutions=[], qa_evidence=[],
+        policy={"allowed_case_statuses": ["FROZEN"], "required_evidence_scopes": []},
+    )
+    assert situation["case_ref"]["checksum"] == checksum(case)
+    assert checksum(CaseVersionV3.model_validate(case).model_dump()) != checksum(case)
 
 
 def test_all_55_indicator_targets_preserve_author_content_exactly():
