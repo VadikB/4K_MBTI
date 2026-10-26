@@ -2,9 +2,11 @@
 
 - Base: `b3bbdc9e78880879e1d4fc930ef8c9cc9f200524` (`origin/main`, приложение `2.0.28`).
 - Ветка: `codex/case-cycle-r1`.
-- Активная карточка: R07.
+- Активная карточка: R10 — `BLOCKED_ENVIRONMENT` после завершённой readiness.
 - Завершённые commits: R00 — `aea9bf3`; R01 — `30fc6a0`; R02 — `420a315`;
-  R03 — текущий commit совместимости.
+  R03 — `e1d1dc0`; R04 — `2117b50`; R05 — `09b8944`; R06 — `bf3aeb7`;
+  R07 — `dc781d9`; R08 — `b4070db`; R09 — `3506bd5`; R10 — evidence commit
+  текущего head.
 - Проверки R00 на рабочем дереве: `git diff --check` — PASS; ссылки/пути — PASS;
   YAML parse и release checker — PASS. Продуктовые тесты не применимы.
 - Блокеры: `gh` отсутствует, поэтому PR остановленной ветки не подтверждён локально;
@@ -163,5 +165,15 @@
   exact-head и human review остаются `NOT_RUN`, несмотря на локальный PASS. Live
   program revision/publish также `NOT_RUN`. Откат кандидата: revert R09 commit и
   вернуть приложение `2.0.28`; immutable snapshots/package history не удалять.
-- Следующий шаг: R10 readiness и real-provider pilot только при наличии разрешённого
-  provider/credentials на отдельном pytest/test стенде; иначе `BLOCKED_ENVIRONMENT`.
+- R10 readiness: отдельные pytest/test БД и ранее выданная область синтетической
+  матрицы доступны, provider identity — `deepseek/deepseek-flash`, contract `1.0.0`
+  (`a9b20456...951c8c`), но штатный `DeepSeekGateway.enabled=false`. Ключи не читались
+  и не выводились. Real pilot C01/Sales и зависимые N01/N02/N03 остановлены как
+  `BLOCKED_ENVIRONMENT`, не FAIL AS; методологический PASS/Reliability не присвоены.
+- Единый пакет кандидата, фактическая матрица, безопасные trace locations, rollback и
+  точное следующее действие сохранены в
+  `docs/evc/evidence/case-cycle-r1-2026-10-26.md`. Existing real-cycle pytest не принят
+  как R10 proof: он вручную вставляет Turn и нарушает критерий штатного API пути.
+- Следующий шаг владельца контура: подключить credential штатной конфигурацией к
+  isolated stand и подтвердить покрытие бюджета pilot C01/Sales; затем продолжить
+  R10 с checkpoint. До этого merge/deploy/publish не выполнять.
