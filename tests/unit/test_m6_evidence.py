@@ -193,6 +193,39 @@ def test_retry_repeats_exact_attribution_mapping_without_interpretation():
     assert '"K1.I01"' in hints and '"boundaries":"b"' in hints
 
 
+def test_context_reference_retry_lists_exact_closed_namespaces_without_coercion():
+    from Api.m6_validation_retry import call_and_validate
+    original = material()
+    original['events'] = [{'event_id': 'event-1', 'sequence_no': 1}]
+    original['materials'] = [{'material_id': 'material-1', 'available_sequence': 1}]
+    original['initial_presentation'] = {'character_id': 'speaker-not-a-context-ref'}
+    calls = []
+
+    class Gateway:
+        enabled = True
+        def chat(self, messages, **kwargs):
+            calls.append(messages)
+            return json.dumps(output())
+
+    def reject(_value):
+        raise ValueError('M6_CONTEXT_REFERENCE')
+
+    with pytest.raises(ValueError, match='M6_CONTEXT_REFERENCE'):
+        call_and_validate(
+            gateway=Gateway(),
+            messages=[{'role': 'user', 'content': json.dumps(original, ensure_ascii=False)}],
+            operation={'provider': 'deepseek', 'endpoint': 'https://api.deepseek.com/chat/completions',
+                       'model': 'deepseek-flash', 'parameters': {}, 'response_format': 'text'},
+            routing_key='context-ref', validate=reject, max_attempts=2,
+        )
+    feedback = calls[1][-1]['content']
+    assert '"turn":["t1"]' in feedback
+    assert '"event":["event-1"]' in feedback
+    assert '"material":["material-1"]' in feedback
+    assert 'speaker-not-a-context-ref' not in feedback
+    assert 'не заменяй ошибочную ссылку произвольной допустимой' in feedback
+
+
 def test_current_worker_keeps_safe_domain_error_code():
     from Api.m6_worker_v2 import _error_code
     assert _error_code(ValueError('M6_CONTEXT_REFERENCE')) == 'M6_CONTEXT_REFERENCE'

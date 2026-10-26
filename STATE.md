@@ -100,4 +100,23 @@
 - Откат R06: вернуть resolver/schema/defaults предыдущего commit; schema-2 manifests и
   AS остаются immutable данными. Старое приложение их не должно исполнять без поддержки
   schema 2; удалять или переписывать созданные refs нельзя.
-- Следующий шаг: R07 — диагностические traces/observability без утечки данных.
+- R07, диагностика `M6_CONTEXT_REFERENCE`: приложенный архив не содержит raw M6
+  input/output отказавшей попытки, поэтому историческая причина не приписана по одному
+  error code. Текущий resolver сохраняет ID предъявленных C45 Turns, events и materials
+  без преобразования и исключает непредъявленные materials; `initial_presentation`
+  передаётся отдельно и не является namespace context ref. Validator корректно
+  отклоняет чужой/несуществующий ID и ссылку в будущее.
+- Подтверждённый дефект R07 был в recovery-контракте: retry после
+  `M6_CONTEXT_REFERENCE` не сообщал закрытый список разрешённых `{kind,id}`. Feedback
+  теперь перечисляет только фактические `turn/event/material` IDs входа и запрещает
+  speaker/fragment/BS/evidence/initial-presentation IDs, не удаляет ошибочный ref и не
+  подменяет его произвольным допустимым. Prompt package и предметные правила не менялись.
+- Проверки R07: 29 unit M6 Evidence — PASS, включая Unicode span, корректную цепочку,
+  чужую/несуществующую/будущую ссылку и точный retry allowlist; 3 PostgreSQL
+  integration — PASS: непустой Evidence readback, пустой/недостаточный bundle и
+  timeout→failed attempt→идемпотентный retry. Тесты используют штатные C45/enqueue,
+  без ручного INSERT Turn. Product API Evidence/IA входит в общий R09 path;
+  real-provider остаётся задачей R10 и не объявлен PASS.
+- Откат R07: вернуть изменение retry feedback; строгая валидация и сохранённые
+  Evidence/IA не меняются. Исправление не требует миграции или публикации prompt.
+- Следующий шаг: R08 pilot time.
