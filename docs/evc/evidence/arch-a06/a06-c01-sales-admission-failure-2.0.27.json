@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "real_provider_admission_failure_finding",
+  "row_id": "A06.C01.SALES",
+  "application_version": "2.0.27",
+  "commit": "97400d2ee17fb2f8f66205561846075e7a2c046a",
+  "technical_transport": "PASS",
+  "generation": "PASS",
+  "author_content_preservation": "PASS",
+  "ai_tester": "FAIL",
+  "admission": "FAIL",
+  "methodology_acceptance": "NOT_RUN",
+  "publication": "NOT_RUN",
+  "reliability": "NOT_RUN",
+  "blocking_checks": [
+    "common.professional_consistency",
+    "indicator:K1.I01",
+    "indicator:K1.I14",
+    "indicator:K4.I06",
+    "critical_prohibition:04"
+  ],
+  "finding": "Один IndicatorObservability одновременно использовался как неизменяемый авторский источник и исполняемое условие адаптированной Sales AS.",
+  "author_to_adapted_mapping_observed": [
+    {
+      "author_subject": "Елена",
+      "adapted_subject": "Марина",
+      "mapping_kind": "character",
+      "required_preservation": "роль собеседника, границы знаний и полномочий"
+    },
+    {
+      "author_subject": "рабочая сводка",
+      "adapted_subject": "данные и отклонения по отгрузкам",
+      "mapping_kind": "material_and_observation_context",
+      "required_preservation": "различение цели, интереса и выбранного средства"
+    },
+    {
+      "author_subject": "контролёр",
+      "adapted_subject": "Сергей",
+      "mapping_kind": "character_or_event_actor",
+      "required_preservation": "фактическая роль в событии без расширения полномочий"
+    },
+    {
+      "author_subject": "утверждение бюджета",
+      "adapted_subject": "изменение лимита количества",
+      "mapping_kind": "authority_constraint",
+      "required_preservation": "участник и собеседник не получают отсутствующее право утверждения"
+    }
+  ],
+  "candidate_checksum": "9b5c309f2c6ff16d135cebf18e24fc42e0f14b0541b19d140f4a1c650d4f2308",
+  "input_snapshot_checksum": "17906f0219d88bfe33936ca728749445737e40dbfbcef47753cfd873d2eb5e29",
+  "raw_evidence": {
+    "location": "/home/user1/a06-evidence/2026-10-25-v2.0.27-pilot",
+    "retention": "external_test_evidence_not_overwritten"
+  },
+  "remaining_matrix_rows": {
+    "status": "NOT_RUN",
+    "count": 26
+  }
+}

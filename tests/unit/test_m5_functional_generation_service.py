@@ -5,6 +5,24 @@ from types import SimpleNamespace
 from Api import m5_functional_generation_service as service
 
 
+def add_adaptation_mappings(candidate, author):
+    material_ids = [item["MaterialID"] for item in candidate["Материалы"]]
+    event_ids = [item["EventID"] for item in candidate["События"]]
+    character_ids = [item["CharacterID"] for item in candidate["Активные персонажи"]]
+    for index, target in enumerate(candidate["IndicatorObservability"]):
+        target.update({
+            "material_refs": material_ids[:1],
+            "event_refs": event_ids[:1],
+            "character_refs": character_ids[:1],
+            "authority_refs": ["participant"],
+            "author_mapping": {
+                "source_pointer": f"/IndicatorObservability/{index}",
+                "source_checksum": service.checksum(author["IndicatorObservability"][index]),
+            },
+        })
+    return candidate
+
+
 class Gateway:
     enabled = True
     def __init__(self): self.profiles = []; self.generation_requirements = []; self.tester_payloads = []
@@ -13,7 +31,9 @@ class Gateway:
         if ":generation:" in kwargs["routing_key"]:
             self.profiles.append(payload["profile"])
             self.generation_requirements.append(payload["requirements"])
-            content = json.dumps(payload["author_as_example"], ensure_ascii=False)
+            candidate = deepcopy(payload["author_as_example"])
+            add_adaptation_mappings(candidate, payload["author_as_example"])
+            content = json.dumps(candidate, ensure_ascii=False)
         else:
             self.tester_payloads.append(payload)
             required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
@@ -43,11 +63,12 @@ def test_shared_service_admits_only_after_deterministic_and_independent_checks()
     assert result_a["input_snapshot_checksum"] != result_b["input_snapshot_checksum"]
     assert first["refs"]["package"] == {
         "id": "m5-functional-personalization-cases",
-        "version": "0.3",
+        "version": "0.4",
         "compiler": {
             "id": "m5-functional-json-compiler",
-            "version": "0.3.0",
-            "source_schema_profile": "functional-personalization-indicator-v1",
+            "version": "0.4.0",
+            "source_schema_profile": "functional-personalization-indicator-v2",
+            "indicator_layer_contract": "m5-functional-indicator-two-layer/1.0.0",
         },
     }
     assert gateway.profiles[0]["user_context"]["regular_tasks"] != gateway.profiles[1]["user_context"]["regular_tasks"]
@@ -77,6 +98,7 @@ def test_provider_cannot_overwrite_frozen_author_indicator_content():
                 for target in candidate["IndicatorObservability"]:
                     for field in changed_fields.get(target["IndicatorID"], ()):
                         target[field] = "LLM_CHANGED_AUTHOR_CONTENT"
+                add_adaptation_mappings(candidate, payload["author_as_example"])
                 return SimpleNamespace(content=json.dumps(candidate, ensure_ascii=False), sent={},
                                        provider={"finish_reason": "stop"})
             return super().chat_with_trace(messages, **kwargs)
@@ -89,6 +111,8 @@ def test_provider_cannot_overwrite_frozen_author_indicator_content():
     expected = {item["IndicatorID"]: item
                 for item in snapshot["author_as_example"]["IndicatorObservability"]}
     actual = {item["IndicatorID"]: item for item in result["candidate_as"]["IndicatorObservability"]}
+    adapted = {item["IndicatorID"]: item
+               for item in result["candidate_as"]["IndicatorTargetLayers"]["adapted"]["targets"]}
     assert result["admitted_for_participant"] is True
     assert result["repair"] is None
     assert result["generation_operation"]["kind"] == "generation"
@@ -99,6 +123,7 @@ def test_provider_cannot_overwrite_frozen_author_indicator_content():
     for indicator_id, fields in changed_fields.items():
         for field in fields:
             assert actual[indicator_id][field] == expected[indicator_id][field]
+            assert adapted[indicator_id][field] == "LLM_CHANGED_AUTHOR_CONTENT"
 
 
 def test_author_binding_does_not_recreate_missing_indicator_target():
@@ -111,10 +136,110 @@ def test_author_binding_does_not_recreate_missing_indicator_target():
     bound = service.bind_frozen_author_indicator_content(snapshot, candidate)
     validation = service.deterministic_checks(snapshot, bound)
 
-    assert len(bound["IndicatorObservability"]) == len(candidate["IndicatorObservability"])
+    assert len(bound["IndicatorObservability"]) == len(snapshot["author_as_example"]["IndicatorObservability"])
+    assert len(bound["IndicatorTargetLayers"]["adapted"]["targets"]) == len(candidate["IndicatorObservability"])
     assert validation["status"] == "FAIL"
     assert next(item for item in validation["checks"]
-                if item["code"] == "indicator_content_target_set")["result"] == "FAIL"
+                if item["code"] == "indicator_adapted_target_set")["result"] == "FAIL"
+
+
+def test_two_layer_contract_accepts_valid_adaptation_and_compiles_it():
+    snapshot = service.build_input_snapshot(
+        case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="two-layer-positive",
+    )
+    result = service.prepare(snapshot, Gateway())
+
+    layers = result["candidate_as"]["IndicatorTargetLayers"]
+    assert result["admitted_for_participant"] is True
+    assert layers["author"]["targets"] == snapshot["author_as_example"]["IndicatorObservability"]
+    assert layers["author"]["checksum"] == service.checksum(layers["author"]["targets"])
+    assert layers["adapted"]["checksum"] == service.checksum(layers["adapted"]["targets"])
+    compiled = {item["indicator_id"]: item for item in result["compiled_case"]["indicator_targets"]}
+    adapted = {item["IndicatorID"]: item for item in layers["adapted"]["targets"]}
+    assert compiled["K1.I01"]["observation_condition"] == adapted["K1.I01"]["Конкретное условие"]
+    assert compiled["K1.I01"]["author_basis"]["target_checksum"] == service.checksum(
+        layers["author"]["targets"][0]
+    )
+
+
+def test_two_layer_contract_rejects_lost_condition_bad_reference_and_authority():
+    snapshot = service.build_input_snapshot(
+        case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="two-layer-negative",
+    )
+    gateway = Gateway()
+    generated = service.generate(snapshot, gateway)
+    targets = generated["candidate_as"]["IndicatorTargetLayers"]["adapted"]["targets"]
+    targets[0]["Конкретное условие"] = ""
+    targets[1]["material_refs"] = ["UNKNOWN_MATERIAL"]
+    targets[2]["authority_refs"] = ["character:UNKNOWN"]
+    generated["candidate_as"]["IndicatorTargetLayers"]["adapted"]["checksum"] = service.checksum(targets)
+
+    validation = service.deterministic_checks(snapshot, generated["candidate_as"])
+
+    failure = next(item for item in validation["checks"]
+                   if item["code"] == "indicator_adaptation_references")
+    assert validation["status"] == "FAIL"
+    assert failure["result"] == "FAIL"
+    assert failure["actual"][0]["empty_condition"] is True
+    assert failure["actual"][1]["material_refs"] == ["UNKNOWN_MATERIAL"]
+    assert failure["actual"][2]["authority_refs"] == ["character:UNKNOWN"]
+
+
+def test_two_layer_contract_rejects_semantic_substitution_from_independent_tester():
+    class SemanticSubstitutionGateway(Gateway):
+        def chat_with_trace(self, messages, **kwargs):
+            if ":tester:" in kwargs["routing_key"]:
+                payload = json.loads(next(item["content"] for item in reversed(messages)
+                                          if item["role"] == "user"))
+                checks = []
+                for item in payload["applicability_plan"]["required_checks"]:
+                    failed = item["check_id"].startswith("indicator:")
+                    checks.append({
+                        "check_id": item["check_id"], "status": "FAIL" if failed else "PASS",
+                        "reason": "meaning substituted" if failed else "fixture",
+                        "findings": ([{"code": "ADAPTATION_MEANING_SUBSTITUTED", "severity": "blocking",
+                                      "paths": ["candidate_as.IndicatorTargetLayers.adapted"],
+                                      "reason": "существенное условие подменено",
+                                      "requirement_ref": item["check_id"]}] if failed else []),
+                        "adversarial_review": {"candidate_conflicts": [], "resolution": "checked"},
+                    })
+                return SimpleNamespace(content=json.dumps({"checks": checks}), sent={},
+                                       provider={"finish_reason": "stop"})
+            return super().chat_with_trace(messages, **kwargs)
+
+    snapshot = service.build_input_snapshot(
+        case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="two-layer-semantic",
+    )
+    generation = service.generate(snapshot, SemanticSubstitutionGateway())
+    tested = service.test_candidate(snapshot, generation, SemanticSubstitutionGateway())
+    assert tested["aggregation"]["status"] == "FAIL"
+    assert tested["aggregation"]["admitted_for_participant"] is False
+
+
+def test_frozen_package_03_snapshot_keeps_legacy_handoff_contract():
+    class LegacyGateway(Gateway):
+        def chat_with_trace(self, messages, **kwargs):
+            payload = json.loads(next(item["content"] for item in reversed(messages)
+                                      if item["role"] == "user"))
+            if ":generation:" in kwargs["routing_key"]:
+                return SimpleNamespace(
+                    content=json.dumps(payload["author_as_example"], ensure_ascii=False),
+                    sent={}, provider={"finish_reason": "stop"},
+                )
+            return super().chat_with_trace(messages, **kwargs)
+
+    package_03 = service.ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.3"
+    snapshot = service.build_input_snapshot(
+        case_id="CASE.SPEC.01", profile=profile("legacy"), operation_id="legacy-03",
+        source_root=package_03 / "sources/functional-v0.2",
+    )
+    prepared = service.prepare(snapshot, LegacyGateway())
+    trace = service.build_persistence_trace(snapshot, prepared)
+
+    assert prepared["admitted_for_participant"] is True
+    assert "IndicatorTargetLayers" not in prepared["candidate_as"]
+    assert trace["schema_version"] == 2
+    assert "indicator_target_layers_checksum" not in trace
 
 
 def test_shared_service_closes_admission_when_tester_omits_required_checks():

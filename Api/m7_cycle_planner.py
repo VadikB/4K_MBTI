@@ -234,7 +234,15 @@ def attach_functional_generated_as(connection, *, decision_id: str, prepared_res
         raise ValueError("M5_FUNCTIONAL_COMPILED_RESULT_REQUIRED")
     from Api.m5_functional_generation_service import checksum as functional_checksum
     from Api.m5_case_runtime import checksum as runtime_checksum
-    if (generation_trace.get("schema_version") != 2
+    trace_schema = generation_trace.get("schema_version")
+    accepted_as = generation_trace.get("accepted_as") or {}
+    layer_integrity = ((trace_schema == 2 and "IndicatorTargetLayers" not in accepted_as) or (
+        trace_schema == 3
+        and generation_trace.get("indicator_target_layers_checksum")
+        == functional_checksum(accepted_as.get("IndicatorTargetLayers"))
+    ))
+    if (trace_schema not in {2, 3}
+            or not layer_integrity
             or generation_trace.get("candidate_checksum") != prepared_result.get("candidate_checksum")
             or functional_checksum(generation_trace.get("accepted_as")) != prepared_result.get("candidate_checksum")
             or generation_trace.get("compiled_case_checksum") != runtime_checksum(prepared_result["compiled_case"])

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -248,7 +249,7 @@ def compile_case_values(*, case: dict, situation: dict, case_source_name: str,
             "component_id": component_id,
             "source": _ref(as_entry["path"].name, as_entry["sha256"], "IndicatorObservability", index),
         }
-        if source_schema_profile == "functional-personalization-indicator-v1":
+        if source_schema_profile in {"functional-personalization-indicator-v1", "functional-personalization-indicator-v2"}:
             expected_keys = {
                 "IndicatorID", "SkillID", "ComponentID", "Название", "Версия M2",
                 "Нормативный источник", "Материалы и факты", "Конкретное условие",
@@ -261,24 +262,41 @@ def compile_case_values(*, case: dict, situation: dict, case_source_name: str,
                     f"Unsupported functional IndicatorObservability schema: {case_id} {indicator_id} "
                     f"missing={sorted(expected_keys - set(item))} extra={sorted(set(item) - expected_keys)}"
                 )
-            condition = item["Конкретное условие"]
+            runtime_item = item
+            runtime_pointer = ("IndicatorObservability", index)
+            if source_schema_profile == "functional-personalization-indicator-v2":
+                layers = situation.get("IndicatorTargetLayers") or {}
+                adapted = ((layers.get("adapted") or {}).get("targets") or [])
+                adapted_by_id = {value.get("IndicatorID"): value for value in adapted if isinstance(value, dict)}
+                runtime_item = adapted_by_id.get(indicator_id)
+                if not isinstance(runtime_item, dict):
+                    raise ValueError(f"Missing adapted IndicatorTarget: {case_id} {indicator_id}")
+                runtime_pointer = ("IndicatorTargetLayers", "adapted", "targets",
+                                   list(adapted_by_id).index(indicator_id))
+            condition = runtime_item["Конкретное условие"]
             locations = list(dict.fromkeys(re.findall(r"\bS\d+\b", condition)))
             target.update({
                 "observation_condition": condition,
                 "scenario_locations": locations,
                 "branch_condition": None,
                 "event_condition": None,
-                "observable_action": item["Форма проявления"],
-                "validity_risk": item["Дефект потери"],
+                "observable_action": runtime_item["Форма проявления"],
+                "validity_risk": runtime_item["Дефект потери"],
                 "author_title": item["Название"],
                 "normative_source": item["Нормативный источник"],
-                "material_refs": item["Материалы и факты"],
-                "adaptation_constraints": item["Что сохранить при адаптации"],
+                "material_refs": runtime_item["Материалы и факты"],
+                "adaptation_constraints": runtime_item["Что сохранить при адаптации"],
                 "design_opportunity": item["Проектная возможность"],
                 "actual_occurrence": item["Фактическое возникновение"],
                 "evidence_status": item["Evidence и IA"],
                 "invariant_refs": item["Связанные инварианты"],
                 "condition_absence_reason": "SOURCE_HAS_NO_SEPARATE_BRANCH_OR_EVENT_PREDICATE",
+                "author_basis": {
+                    "source": _ref(as_entry["path"].name, as_entry["sha256"], "IndicatorObservability", index),
+                    "target_checksum": hashlib.sha256(json.dumps(item, ensure_ascii=False, sort_keys=True,
+                                                                  separators=(",", ":")).encode()).hexdigest(),
+                },
+                "adapted_source": _ref(as_entry["path"].name, as_entry["sha256"], *runtime_pointer),
             })
         elif source_schema_profile == "sales-author-json-v1":
             target.update({

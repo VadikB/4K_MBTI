@@ -1,0 +1,75 @@
+# ARCH-A01/A06 — двухслойный IndicatorTarget
+
+## Основание и результат
+
+- Решение владельца от 26.10.2026: авторский источник неизменяем, а условия
+  конкретной AS разрешено адаптировать к профессиональному контексту при
+  сохранении смысла, наблюдаемости и ограничений.
+- Base: test `2.0.27`, commit
+  `97400d2ee17fb2f8f66205561846075e7a2c046a`.
+- Воспроизведение: `A06.C01.SALES`; generation и сохранность источника PASS,
+  AI tester/admission FAIL из-за смешения авторского и исполняемого слоёв.
+- Независимый результат: контракт, compiler и PM-03 hand-off. Исправление
+  `M6_CONTEXT_REFERENCE` выполняется другой задачей и не смешивается с этим PR.
+
+## Прочитанные источники и границы
+
+Прочитаны `README.md`, `CONTRIBUTING.md`, EVC workflow/matrix/artifact recipe,
+архитектурные context/Registry, Change 01, SourceSet `2026-10-01`, ADR-002,
+карточки ARCH-A01/A06, package `0.3`, PM-03 generation/tester, PM-04 compiler,
+persistence trace и M6 input resolver.
+
+Не меняются IndicatorID, M2, дескрипторы, достаточность, агрегация,
+исторические AS/FROZEN/evidence и пакеты `0.2`/`0.3`. Остальные 26 строк A06 и
+четыре RECHECK не запускаются до успешного повторного пилота.
+
+## Контракт
+
+Новый draft package `m5-functional-personalization-cases/0.4`, compiler
+`m5-functional-json-compiler/0.4.0` и контракт
+`m5-functional-indicator-two-layer/1.0.0` задают:
+
+1. `author` — точная копия `IndicatorObservability` frozen source, source ref,
+   версия и canonical SHA-256;
+2. `adapted` — проекция той же совокупности IndicatorID для одной AS, версия,
+   checksum, условия и явные ссылки на материалы, события, персонажей,
+   полномочия и конкретный авторский target;
+3. deterministic fail-closed validation целостности, множества целей, хэшей и
+   ссылок; independent tester/challenger проверяют сохранение смысла,
+   наблюдаемости, ограничений и согласованность с профессиональной AS;
+4. принятая AS и persistence trace фиксируют оба слоя; compiler берёт
+   исполняемые условия из adapted, добавляя `author_basis`; M6 получает тот же
+   target без повторного преобразования;
+5. participant projection не содержит execution payload, trace или закрытые
+   IndicatorTarget layers.
+
+## Стоп-условия и откат
+
+- Любая потеря условия, неизвестная ссылка/полномочие, несовпавший checksum или
+  смысловая подмена блокируют admission; сервер не синтезирует отсутствующее
+  соответствие.
+- Методологическая неоднозначность адресуется методологу; код не вводит новую
+  предметную норму.
+- Откат: не выбирать package `0.4` для новых Cycle и revert изменения default
+  dependency. Исторические snapshot продолжают ссылаться на свои версии.
+
+## Проверки и статусы
+
+- Package build `0.4`: PASS, 9 Case / 9 AS / 55 targets; package checksum
+  `1e7493fa5e631e77000c23259a5bae0c2b1a4749d7ca9d4f1d5253caf7675093`.
+- Положительная корректная адаптация и hand-off `0.4`: PASS; frozen package
+  `0.3` сохраняет legacy trace schema 2: PASS.
+- Отрицательные потеря условия, подмена смысла, неверный material ref,
+  authority ref и source mapping: PASS (отклоняются).
+- Backend без integration/e2e/llm: 583 passed, 230 deselected.
+- HTTP/e2e, включая B01/B02 safe projection и owner/reused-key: 69 passed,
+  11 deselected.
+- Unit после изменений: 570 passed; адресный двухслойный набор: 31 passed.
+- Frontend build, ESLint, npm audit: PASS; `0 vulnerabilities`.
+- Browser без изолированного stand: 48 passed; 14 runtime tests NOT_RUN из-за
+  обязательного отсутствующего `STAND_ADMIN_URL`, а не дефекта продукта.
+- DB integration локально NOT_RUN: Docker daemon недоступен; обязателен CI.
+- Release candidate: `2.0.28`; `git diff --check` и Python compile: PASS.
+- Real-provider: сначала только `A06.C01.SALES`; матрица — лишь после admission.
+- Technical PASS, AI tester, methodology acceptance, publication и Reliability
+  фиксируются раздельно.
