@@ -1872,6 +1872,39 @@ test('W02 does not present plan cards before the prepared plan exists', async ({
   await expect(page.getByText('Ориентировочная общая длительность')).toBeHidden();
 });
 
+test('R08 shows the frozen program budget instead of the planned duration sum', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  const acquaintance = {
+    readiness: { status: 'ready', organization_name: 'Организация А', briefing: {
+      organizer: 'Организация А', purpose: 'Пилот', results_usage: 'Для развития',
+      result_recipients: 'Участник', provided_participant_fields: [], questions: [], consent_version: 1,
+    } },
+    state: { answers_json: {} },
+    late_readiness: { status: 'ready_to_prepare', personalized_profile_id: 4 },
+    assigned_timing: { status: 'resolved', time_budget_seconds: 7200, calendar_window_seconds: 259200 },
+    prepared_plan: { cycle_id: 'cycle-r08', revision_id: 'revision-r08', revision_no: 1, plan: {
+      status: 'READY', route: [{ case_id: 'CASE.SPEC.01' }], planned_max_seconds: 11340,
+      time_budget_seconds: 7200, calendar_window_seconds: 259200,
+    } },
+  };
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'show_onboarding', profile: { status: 'complete' },
+      onboarding: { status: 'in_progress', current_step: 5 }, assessment: { status: 'not_started' }, acquaintance,
+    });
+    if (pathname === '/users/8/acquaintance') return fulfillJson(route, acquaintance);
+    if (pathname === '/users/8/onboarding') return fulfillJson(route, { status: 'in_progress', current_step: 5 });
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'r08-test' });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await expect(page.getByText('Время на выполнение', { exact: true })).toBeVisible();
+  await expect(page.getByText('120 мин.')).toBeVisible();
+  await expect(page.getByText('189 мин.')).toBeHidden();
+});
+
 test('R03 reset request locks every visible credential action', async ({ page }) => {
   await baseRoutes(page);
   await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, { email: 'person@example.test', auth_mode: 'password' }));

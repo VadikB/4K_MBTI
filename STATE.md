@@ -119,4 +119,21 @@
   real-provider остаётся задачей R10 и не объявлен PASS.
 - Откат R07: вернуть изменение retry feedback; строгая валидация и сохранённые
   Evidence/IA не меняются. Исправление не требует миграции или публикации prompt.
-- Следующий шаг: R08 pilot time.
+- R08: `revise_prepared_parameters` приведён к семантике `create_plan`: статус зависит
+  от покрытия/наличия route, но не от суммы `planned_max_seconds`. Плановые суммы 60,
+  120 и 189 минут не урезаются и при полном покрытии остаются `READY`; неполное
+  покрытие остаётся `LIMITED`. Число 189 не введено в runtime как порог.
+- Pilot-120 readback на изолированной БД: опубликованная идемпотентная program revision
+  для назначенной configuration разрешается как `7200/259200`, её revision/checksum
+  попадают в новый Cycle; последующая revision не меняет начатый snapshot. Method
+  default `3600` сохранён. Общая organization/program revision не изменялась: конкретная
+  live organization/configuration не дана, поэтому live publication — NOT_RUN, без
+  влияния на локальную реализацию и synthetic deployment-independent readback.
+- Проверки R08: 10 PostgreSQL integration — PASS (включая 7199/7200/7201 секунд,
+  calendar expiry paused Cycle и blocking wait); 1 browser — PASS. На 7199 collection
+  разрешён, на 7200/7201 `assert_collecting` закрывает Cycle с
+  `M7_TIME_LIMIT_REACHED`; UI показывает frozen budget `120 мин.`, не planned sum
+  `189 мин.`. Pause/blocking wait не продлевают calendar deadline.
+- Откат R08: вернуть одну формулу plan status и тесты; DB schema/данные не меняются.
+  Уже начатые Cycle сохраняют свои frozen parameter snapshots.
+- Следующий шаг: R09 — общий кандидат и полный набор проверок.
