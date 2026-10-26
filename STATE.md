@@ -249,3 +249,15 @@
   Safe manifest и raw synthetic trace: `docs/evc/evidence/r10-api-m8-pilot-2026-10-26.*`;
   архив SHA-256 `5e4336c1...8cfcf`. Следующий шаг — тот же owner HTTP контур на
   сохранённой admission-PASS `CASE.SPEC.01` с проверкой точной profile/case identity.
+- Попытка прямого reuse `A06.C01.SALES` остановлена до LLM: matrix-профиль N01
+  (`460fbfa6...770a3`) не является воспроизводимым frozen M4 snapshot и штатно
+  отклоняется `M4_CHECKSUM_MISMATCH`; перепривязка принятой AS к другому profile
+  запрещена. Поэтому N02 запущен заново через owner `/cycles/prepare` с валидным
+  `specialist_expert` M4 profile. M4 и M7 selection `CASE.SPEC.01` PASS; реальная
+  generation/tester завершилась `M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE` за
+  127.98 s. Runtime/M6/M8 — `NOT_RUN`; содержательный FAIL не присваивается.
+- Test harness не экспортировал `failure_result` до удаления isolated schema, поэтому
+  точные INCOMPLETE checks этой попытки утрачены. Runner исправлен: будущая ошибка
+  сохраняется как `.preparation-failure.json` до assertion. Без изменения причины
+  provider-повтор запрещён. Safe запись попытки:
+  `docs/evc/evidence/r10-functional-api-c01-attempt-2026-10-26.json`.

@@ -133,6 +133,17 @@ Manifest: `docs/evc/evidence/r10-api-m8-pilot-2026-10-26.json`; raw synthetic tr
 одноимённый `.tar.gz`, SHA-256
 `5e4336c1f8fbe76ad933e9329394eab741191735bb0f4b93039e78073278cfcf`.
 
+Попытка перенести сохранённую N01 AS в N02 выявила границу snapshot: профиль N01
+`460fbfa6...770a3` — matrix-only synthetic projection, а не профиль, воспроизводимый
+`participant_profile.validate_snapshot`. Перепривязка AS к иному frozen M4 snapshot
+не выполнялась. Штатный owner `/cycles/prepare` с product-valid `specialist_expert`
+профилем выбрал `CASE.SPEC.01`, после чего real generation/tester завершился
+`M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE` за 127.98 s. AS не предъявлялась;
+runtime/M6/M8 — `NOT_RUN`. Из-за пробела runner точные checks остались в удалённой
+isolated schema; поэтому результат не классифицирован как содержательный FAIL и
+повтор без изменения причины запрещён. Capture исправлен для следующих попыток.
+Safe manifest: `docs/evc/evidence/r10-functional-api-c01-attempt-2026-10-26.json`.
+
 ## Откат и ограничения выпуска
 
 Кодовый откат — вернуть R09 candidate commit и приложение `2.0.28`; опубликованные
