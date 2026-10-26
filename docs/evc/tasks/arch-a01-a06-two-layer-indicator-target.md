@@ -56,7 +56,13 @@ persistence trace и M6 input resolver.
 ## Проверки и статусы
 
 - Package build `0.4`: PASS, 9 Case / 9 AS / 55 targets; package checksum
-  `1e7493fa5e631e77000c23259a5bae0c2b1a4749d7ca9d4f1d5253caf7675093`.
+  `dcb71bf9b2a772c33d3446ef5a0cadcf567497afd966f833926d20e59384a61b`.
+- CI push для первого commit `6b8e05e`: integration FAIL из-за изменения
+  checksum девяти прежних CaseVersion при добавлении новых полей в статический
+  package `0.4`. Исправлено: статические Case побайтно-канонически совпадают с
+  package `0.3`, новый авторский basis и адаптированные условия добавляются
+  только при компиляции конкретной AS; runtime bindings `1.1.0` вновь проходят
+  строгую проверку. Регрессия проверяет все девять Case checksum и bindings.
 - Положительная корректная адаптация и hand-off `0.4`: PASS; frozen package
   `0.3` сохраняет legacy trace schema 2: PASS.
 - Отрицательные потеря условия, подмена смысла, неверный material ref,

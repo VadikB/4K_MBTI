@@ -2,7 +2,7 @@
   "artifacts": [
     {
       "name": "case-package.json",
-      "sha256": "5abd1e74ba26ad3f58e08347266d29b93accfceff1b0e57c87de4195e7379f37"
+      "sha256": "385390f0a85eee6058b69b97dd04d771f4accacd3de637089ca8389bffa23bf4"
     },
     {
       "name": "case.schema.json",
@@ -30,7 +30,7 @@
     },
     {
       "name": "verification-report.json",
-      "sha256": "58c93062fa1e780c9c3c0df86d6a5580a936aaa5c67417986c3a2fb6d5a95803"
+      "sha256": "195f6ea215b9c5204b7a27eb0d255661af08ab9a5941e82103868b2194842b4b"
     },
     {
       "name": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",

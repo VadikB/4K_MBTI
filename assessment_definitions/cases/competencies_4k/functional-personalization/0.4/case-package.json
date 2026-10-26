@@ -2316,19 +2316,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2/S3; интерес Елены к рабочей сводке и контролёра к плану можно выяснить и различить.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/0",
-            "sha256": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/0",
-              "sha256": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
-            },
-            "target_checksum": "10dccd07676741c5c7bd58ffef290bcec7fe315c5434a69b547d6d376a51e24f"
-          },
           "author_title": "Выявление и различение целей, интересов и позиций участников",
           "branch_condition": null,
           "component_id": "K1.C01",
@@ -2368,19 +2355,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S1–S4; неоднозначные «в месяц», «не останавливалась», «без сложного проекта» допускают реконструкцию по фактическим ответам.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/1",
-            "sha256": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/1",
-              "sha256": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
-            },
-            "target_checksum": "ac43ce6317ce3c59dfaffb0ed0ae5f0263aeaf9635351052d21d246a6f4dc378"
-          },
           "author_title": "Реконструкция существенного смысла и позиции другого",
           "branch_condition": null,
           "component_id": "K1.C07",
@@ -2422,19 +2396,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2/S3; Елена может подтвердить проверяемую интерпретацию и смысл черновика.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/2",
-            "sha256": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/2",
-              "sha256": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
-            },
-            "target_checksum": "473e76c69725d7ad4ffcb5db4d38b33159eabb4fd23e3af04ca4825bb1644666"
-          },
           "author_title": "Прояснение и проверка понимания",
           "branch_condition": null,
           "component_id": "K1.C07",
@@ -2476,19 +2437,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S1/S2; до вопроса неизвестны смысл срока, бюджет и нагрузка; причина остаётся неизвестной.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/3",
-            "sha256": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_01_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/3",
-              "sha256": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
-            },
-            "target_checksum": "b1953bd28b9e775346ecfff28500b306b0f452ac46dad04f010ba123d98bd61f"
-          },
           "author_title": "Выявление информационных пробелов и потребности в дополнительной информации",
           "branch_condition": null,
           "component_id": "K4.C03",
@@ -6328,19 +6276,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Сопоставить источник планового объёма откликов, уточнение графика и ограниченную проверку образцов; они подтверждают разные свойства.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/0",
-            "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/0",
-              "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-            },
-            "target_checksum": "88e6e08f03d47d6e6085255690f93b918cb416ca046e0dd43ca160f561127701"
-          },
           "author_title": "Оценка достоверности информации",
           "branch_condition": null,
           "component_id": "K4.C02",
@@ -6379,19 +6314,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Сверить требования к готовым профилям, ранний и обновлённый график A, промежуточный этап B и границы проверки.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/1",
-            "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/1",
-              "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-            },
-            "target_checksum": "a33a367543d544621c8329fed41e23fb5e1744b889a8c06593851a6dd7583a53"
-          },
           "author_title": "Сопоставление и проверка согласованности информации",
           "branch_condition": null,
           "component_id": "K4.C03",
@@ -6432,19 +6354,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Выявить предположение, что больший плановый объём откликов достаточен для нужного числа подходящих и заинтересованных кандидатов в срок.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/2",
-            "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/2",
-              "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-            },
-            "target_checksum": "8125c3798b752ef4a05cde02cd14b92459d473a46fa40a6c640923145ca7fd1c"
-          },
           "author_title": "Выявление существенных предпосылок и допущений",
           "branch_condition": null,
           "component_id": "K4.C07",
@@ -6481,19 +6390,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Проверить переход «60 откликов вместо 40 → лучший способ закрыть потребность» с учётом состава, статуса и срока результата.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/3",
-            "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/3",
-              "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-            },
-            "target_checksum": "e005ea7747b270dba4bc01e4f54293595d4a41082fa56818d89b00ba0b0cfacb"
-          },
           "author_title": "Проверка связности и непротиворечивости рассуждения",
           "branch_condition": null,
           "component_id": "K4.C07",
@@ -6534,19 +6430,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Сформулировать собственную ограниченную рекомендацию на основе доступных данных; без твёрдого обещания получения шести профилей к дню 20.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/4",
-            "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/4",
-              "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-            },
-            "target_checksum": "0cea287117cfbab211eec282a1c0725178e16b89f42e71d9214ec0bce1bd06d2"
-          },
           "author_title": "Обоснование вывода релевантными и достаточными основаниями",
           "branch_condition": null,
           "component_id": "K4.C08",
@@ -6586,19 +6469,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Сопоставить варианты и условные следующие действия по требованиям, срокам и подтверждённости; B также не удовлетворяет сроку без уточнения.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/5",
-            "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/5",
-              "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-            },
-            "target_checksum": "ac8ccb915a9d480da166c766ebe27e8453d683203936e680ff7b97b7bb7553df"
-          },
           "author_title": "Сравнение альтернатив по критериям",
           "branch_condition": null,
           "component_id": "K4.C10",
@@ -6638,19 +6508,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Рассмотреть последствия поздних или неподходящих профилей и обещания результата на основании одного объёма откликов; величина ущерба не задана.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/6",
-            "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/6",
-              "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-            },
-            "target_checksum": "cc86e61eddcbeae5441a7e37382d739311783d81a57b1bfab148540f916cbe6b"
-          },
           "author_title": "Оценка рисков и последствий альтернатив",
           "branch_condition": null,
           "component_id": "K4.C10",
@@ -6689,19 +6546,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Отобрать для отдельного сообщения руководителю существенное для решения по подбору.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/7",
-            "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/7",
-              "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-            },
-            "target_checksum": "177137b3b6184a907ca5f67809159649ef9406e39a44d41bc99bd91cd8b03e8a"
-          },
           "author_title": "Отбор релевантной и достаточной информации",
           "branch_condition": null,
           "component_id": "K1.C03",
@@ -6738,19 +6582,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Точно передать различие отклика и готового профиля, планового и подтверждённого, сбора и завершения проверки.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/8",
-            "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_02_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/8",
-              "sha256": "eab64cfe391d7ebf8c89d759bb04e6a5f783e99f73c2e043e134f8d0ea3acf32"
-            },
-            "target_checksum": "1a169b792e0add16dacd8e07090158492c55d1ad47fbe591685b40305a305f53"
-          },
           "author_title": "Точность и однозначность выражения смысла",
           "branch_condition": null,
           "component_id": "K1.C04",
@@ -10963,19 +10794,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S1/S2; локальные цели трёх коллег расходятся, общий рабочий результат не определён.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/0",
-            "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/0",
-              "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-            },
-            "target_checksum": "b9ff6df46f510d33e68ddb5bd5a8355318d49fcd4c0bafdc6463b74f9a8d7aa5"
-          },
           "author_title": "Выделение общего результата совместной работы",
           "branch_condition": null,
           "component_id": "K2.C01",
@@ -11017,19 +10835,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2/S4; ответственность за сборку, входы и собственный вклад нуждаются в согласовании.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/1",
-            "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/1",
-              "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-            },
-            "target_checksum": "857ebb59819ea43aac8e4edc7dd89f7f0743b2a92ed713a1ce403fe82671e9ff"
-          },
           "author_title": "Согласование ответственности и взаимных ожиданий по ролям",
           "branch_condition": null,
           "component_id": "K2.C03",
@@ -11070,19 +10875,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2/S4; две проверки предшествуют коммерческой части, обновление меняет входы.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/2",
-            "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/2",
-              "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-            },
-            "target_checksum": "2de8c2f5d922ce18f1818899985858a0665aebdcbebfcc472fd3bffc1e2071d2"
-          },
           "author_title": "Согласование взаимосвязанных действий участников",
           "branch_condition": null,
           "component_id": "K2.C04",
@@ -11122,19 +10914,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Условно после E01_UPDATE: новый состав известен участнику и Илье, но не двум зависимым коллегам; E02_TRANSFER допускает реальную передачу.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/3",
-            "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/3",
-              "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-            },
-            "target_checksum": "42091347b7afb7af09406eb838a052a24e4658bf4765b207bdefebadfe5c3948"
-          },
           "author_title": "Информационное обеспечение взаимосвязанных действий",
           "branch_condition": null,
           "component_id": "K2.C05",
@@ -11169,19 +10948,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S1/S2; Светлана исключена из исходной подготовки, но её вклад необходим и доступен.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/4",
-            "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/4",
-              "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-            },
-            "target_checksum": "28fac4cecae49e77346fa7263d625bbad676103deb3eb8a43461cd7f9cb1adc8"
-          },
           "author_title": "Включение участников в совместную работу",
           "branch_condition": null,
           "component_id": "K2.C07",
@@ -11220,19 +10986,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S1/S2; срок ответа, актуальность приложения и отсутствие сервисного подтверждения создают предметный конфликт.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/5",
-            "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/5",
-              "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-            },
-            "target_checksum": "eb155154124e53d171abbf275c7b71cba7ac10e19097b7d19a2630c98b8b0b40"
-          },
           "author_title": "Выявление предмета конфликта и позиций участников",
           "branch_condition": null,
           "component_id": "K2.C09",
@@ -11271,19 +11024,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2/S4; есть допустимое предварительное предложение и возможность договориться о вкладе, но согласие не гарантировано.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/6",
-            "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/6",
-              "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-            },
-            "target_checksum": "ee4708ba8adac04dd2850a49ed1ddf5a33a80e6e286672a851c440b309981f4e"
-          },
           "author_title": "Достижение рабочей договорённости в конфликте",
           "branch_condition": null,
           "component_id": "K2.C09",
@@ -11324,19 +11064,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2/S4; можно проверить общий смысл «ответа сегодня» и его изменение после нового состава.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/7",
-            "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/7",
-              "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-            },
-            "target_checksum": "2074a277fbbb175606e863b6380cfb70dec3c9092caa4dba7393037a10bfafe3"
-          },
           "author_title": "Формирование и проверка общего смыслового основания",
           "branch_condition": null,
           "component_id": "K1.C08",
@@ -11378,19 +11105,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Итог может фиксировать согласованные действия и открытые условия; допускается короткая форма без повторного полного плана.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/8",
-            "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_03_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/8",
-              "sha256": "90bb4a11f9711cd09224a268c4f3bd4c258ac273e68e52e588a7867e44f193c8"
-            },
-            "target_checksum": "a4a6b10e2a66fc8efd46f210a75016b3be28bffd24f4e0e7e0e7d0983bffecbe"
-          },
           "author_title": "Доведение и фиксация коммуникативного результата",
           "branch_condition": null,
           "component_id": "K1.C09",
@@ -15351,19 +15065,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; исправление ошибки и повторный показ отчёта не сняли вопрос дальнейшей работы.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/0",
-            "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/0",
-              "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-            },
-            "target_checksum": "8e37ca0b05834525d2cb76ae9d704e3e94582387d2e37d9b9721cb7e9b3c4028"
-          },
           "author_title": "Изменение рамки рассмотрения задачи (рефрейминг)",
           "branch_condition": null,
           "component_id": "K3.C02",
@@ -15405,19 +15106,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; способ дальнейшего взаимодействия открыт, есть разнородные возможности в границах мандата.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/1",
-            "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/1",
-              "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-            },
-            "target_checksum": "1feab4635c2d44855d1891e3f72b621ca2b7fac669d9b3716166ff46631fc403"
-          },
           "author_title": "Генерация содержательно различных вариантов решения",
           "branch_condition": null,
           "component_id": "K3.C03",
@@ -15457,19 +15145,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2/E01_REVIEW; замысел можно выразить конкретно для рассмотрения Алексеем в чате.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/2",
-            "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/2",
-              "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-            },
-            "target_checksum": "9e676a8a9c44c7fc1ba34589ee27ac06e08ed53a92d89af8ed423c182ec5b000"
-          },
           "author_title": "Перевод идеи в конкретную проверяемую форму",
           "branch_condition": null,
           "component_id": "K3.C06",
@@ -15507,19 +15182,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Условно E01_REVIEW: участник может сам проверить существенное предположение своего замысла на адресате и интерпретировать отклик.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/3",
-            "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/3",
-              "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-            },
-            "target_checksum": "81effcc8798c4e5323d25c6d2674de61b3ab687596140ed0054acbd9cd6fea3a"
-          },
           "author_title": "Проверка решения и интерпретация обратной связи",
           "branch_condition": null,
           "component_id": "K3.C07",
@@ -15559,19 +15221,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Условно E02_REVISION: если отклик выявил ограничение, доступно изменение решения с указанием связи с данными.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/4",
-            "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/4",
-              "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-            },
-            "target_checksum": "11ba368b2f36a2869b5463f3781c042f34112e78938b38841339448bacd2ceeb"
-          },
           "author_title": "Изменение решения на основе полученных данных",
           "branch_condition": null,
           "component_id": "K3.C08",
@@ -15610,19 +15259,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; исправление механизма и готовность продолжать работу не совпадают; причины расхождения можно обсуждать.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/5",
-            "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/5",
-              "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-            },
-            "target_checksum": "7f12b507c1f78e16358f90f801dc35917dfd14cf9e93a40e142e420a9827f596"
-          },
           "author_title": "Работа с существенными расхождениями",
           "branch_condition": null,
           "component_id": "K1.C09",
@@ -15662,19 +15298,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2/S3; можно выбрать допустимое действие с учётом неизвестного решения руководства.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/6",
-            "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_04_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/6",
-              "sha256": "7a387ef1fc909115510c2921f08535ab78ab1497513e742fb84f9a6ddeef0c1d"
-            },
-            "target_checksum": "0502c3c09f71ea868bc18a8590da8319be7884af3f8b724f934afcc69fcad373"
-          },
           "author_title": "Выбор решения",
           "branch_condition": null,
           "component_id": "K4.C10",
@@ -19480,19 +19103,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; цель сохраняется при неизвестной причине, есть основания продолжить или обоснованно сузить поиск.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/0",
-            "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/0",
-              "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
-            },
-            "target_checksum": "5b1c49a805b1d527816ddb1eb868722fd582e4ca88c348ff634dbe1494a53122"
-          },
           "author_title": "Удержание открытости при неопределённости",
           "branch_condition": null,
           "component_id": "K3.C01",
@@ -19532,19 +19142,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; исходная рамка связывает работу с отклонённой общей программой, первичные эпизоды допускают другую постановку.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/1",
-            "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/1",
-              "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
-            },
-            "target_checksum": "9030d8b7c0362cc28568934df7face9381015bd6f765d879efb104370d84116a"
-          },
           "author_title": "Изменение рамки рассмотрения задачи (рефрейминг)",
           "branch_condition": null,
           "component_id": "K3.C02",
@@ -19585,19 +19182,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; материалы поддерживают разные механизмы, готовых пакетов нет.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/2",
-            "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/2",
-              "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
-            },
-            "target_checksum": "c08040797ef7e6b30585b569d1f19c8f2da2716ead29d0bf0bc9f6c62dce2a3d"
-          },
           "author_title": "Генерация содержательно различных вариантов решения",
           "branch_condition": null,
           "component_id": "K3.C03",
@@ -19637,19 +19221,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; наблюдения, занятия, консультации и памятки имеют разные функции, связи между ними создаёт участник.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/3",
-            "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/3",
-              "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
-            },
-            "target_checksum": "2f77f7eb9158996a3cdfc74928a86efeb9b01c9cb81baec7d139de05de91aea4"
-          },
           "author_title": "Комбинирование разнородных элементов и знаний",
           "branch_condition": null,
           "component_id": "K3.C05",
@@ -19688,19 +19259,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; две задержки, неизвестная причина и отказ от программы позволяют самому выделить предмет проблемы.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/4",
-            "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/4",
-              "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
-            },
-            "target_checksum": "5cc1ebf4f4b602cdf85121c468e7e5438d6e0cb4b6f917ba2edd16b259d7623a"
-          },
           "author_title": "Выявление и формулирование проблемы",
           "branch_condition": null,
           "component_id": "K4.C04",
@@ -19740,19 +19298,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; общий лимит 300 тыс., стоимость за группу и два часа в неделю создают границы, которые нужно использовать в своей постановке.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/5",
-            "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_05_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/5",
-              "sha256": "d579e43a69bdd5b96f96144a87d91b56166b3a5c3ae7aac634c192c8a03102d9"
-            },
-            "target_checksum": "2435ae45fde49c6612aeedc5cf3a37af1442de7151a6560127551f068ac27587"
-          },
           "author_title": "Определение границ и условий проблемы",
           "branch_condition": null,
           "component_id": "K4.C04",
@@ -23458,19 +23003,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; технический запуск, качество учебной заявки и основание дальнейшего решения нужно согласовать; общего результата заранее нет.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/0",
-            "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/0",
-              "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
-            },
-            "target_checksum": "2b7cf2b50f3667b6ddc4c120fc9d9b07a60494f278f748d61d1f16b3c2a71a37"
-          },
           "author_title": "Согласование общего понимания результата",
           "branch_condition": null,
           "component_id": "K2.C01",
@@ -23509,19 +23041,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; вклад администратора, участников и руководителей ограничен и требует явного согласия.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/1",
-            "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/1",
-              "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
-            },
-            "target_checksum": "aa7c085f26d648144d897c57f7ed74382e5e552e005358df2c475773426a6b83"
-          },
           "author_title": "Согласование ответственности и взаимных ожиданий по ролям",
           "branch_condition": null,
           "component_id": "K2.C03",
@@ -23560,19 +23079,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2/S3; стороны предметно расходятся и могут принять ограниченную рамку либо сохранить блокер.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/2",
-            "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/2",
-              "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
-            },
-            "target_checksum": "b29eba9d0a4b2a1686e64d9a94fbc20a0d3e2001951e68bd6dc75e69f99c0224"
-          },
           "author_title": "Достижение рабочей договорённости в конфликте",
           "branch_condition": null,
           "component_id": "K2.C09",
@@ -23612,19 +23118,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; можно конкретизировать предмет и способ общей проверки в пределах двух 45-минутных окон на каждого.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/3",
-            "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/3",
-              "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
-            },
-            "target_checksum": "bc4bb018d2869187285a35888ff41d1464dd1d9e3f04d7b5ad64945470ce563c"
-          },
           "author_title": "Перевод идеи в конкретную проверяемую форму",
           "branch_condition": null,
           "component_id": "K3.C06",
@@ -23663,19 +23156,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; 25 минут — ориентир стороны, 35 минут — единственный несопоставимый эпизод; рамку следующего решения нужно определить.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/4",
-            "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_06_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/4",
-              "sha256": "7d620e586d5a7a4d0a2622db1af4646b44e768cf59ea0f92bbde2b0a76cd9fac"
-            },
-            "target_checksum": "1ceede867d8d9a1a3e9688bef71914242802f4b47b648f9e1db824849efee0b8"
-          },
           "author_title": "Определение критериев, ограничений и существенной неопределённости",
           "branch_condition": null,
           "component_id": "K4.C09",
@@ -27117,19 +26597,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Письменный ответ: ограниченные записи и авторское объяснение о привычке допускают различение факта сообщения и истинности его трактовки.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/0",
-            "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/0",
-              "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
-            },
-            "target_checksum": "17ab0a65241df51595b131a6052206ccbdae990343241c64b375ad257a7e05be"
-          },
           "author_title": "Разделение фактов, интерпретаций и предположений",
           "branch_condition": null,
           "component_id": "K4.C01",
@@ -27169,19 +26636,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Письменный ответ: отсутствуют уникальные запросы по каналам, дубли и число сотрудников с реальной потребностью.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/1",
-            "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/1",
-              "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
-            },
-            "target_checksum": "b29e5a90f3b06c90ff5ee14df51b6803e34c1c80c8bc1788c9bad9b5998b6d9c"
-          },
           "author_title": "Выявление информационных пробелов и потребности в дополнительной информации",
           "branch_condition": null,
           "component_id": "K4.C03",
@@ -27218,19 +26672,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Письменный ответ: проверка кнопок, активность и цель видеть согласования не тождественны; проблема не названа за участника.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/2",
-            "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/2",
-              "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
-            },
-            "target_checksum": "8bda35f6f4fddbdb9e9b73c031c213f7e3d474824d5e5ad2ce2df89cf4497ecf"
-          },
           "author_title": "Выявление и формулирование проблемы",
           "branch_condition": null,
           "component_id": "K4.C04",
@@ -27269,19 +26710,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Письменный ответ: можно аналитически проверить механизм «привычка», сопоставив скорость ответа, срочность и неопределённость переноса.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/3",
-            "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/3",
-              "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
-            },
-            "target_checksum": "006421ffb7d6629515e4e43462570a8f5e1aa9c7babf36fcbbd591ce99384b4f"
-          },
           "author_title": "Установление и проверка причинных связей",
           "branch_condition": null,
           "component_id": "K4.C05",
@@ -27319,19 +26747,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Письменный ответ: несколько содержательных трактовок сохраняются при неполноте общей статистики.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/4",
-            "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/4",
-              "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
-            },
-            "target_checksum": "364f4e98913785a7331a34e27de3de7d1e0fdc1413341fbb40b61ac68964947c"
-          },
           "author_title": "Удержание нескольких возможных трактовок и направлений",
           "branch_condition": null,
           "component_id": "K3.C01",
@@ -27370,19 +26785,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "Письменный ответ: открыты разные способы организации работы; бюджет и внедрение не согласованы.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/5",
-            "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_07_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/5",
-              "sha256": "e04b6540e5055266d7cc64cde287bea7e814d9a406c4a64500c0ae499d310621"
-            },
-            "target_checksum": "175875f83f0c8a98a71a7a5e71fbbc93c09c2bba147c04f95732c63114b71309"
-          },
           "author_title": "Генерация содержательно различных вариантов решения",
           "branch_condition": null,
           "component_id": "K3.C03",
@@ -30789,19 +30191,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; действия инженера, проектировщика и планировщика связаны с доступами и временем.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_08_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/0",
-            "sha256": "e875e9cbaddc4b4166f500658291d12a8f6237cb0e26380b1c215e642540f29f"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_08_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/0",
-              "sha256": "e875e9cbaddc4b4166f500658291d12a8f6237cb0e26380b1c215e642540f29f"
-            },
-            "target_checksum": "b349fb1fe99245224621dc24660d674a43070a2391ab04420f3564bdeeede084"
-          },
           "author_title": "Согласование взаимосвязанных действий участников",
           "branch_condition": null,
           "component_id": "K2.C04",
@@ -30840,19 +30229,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; конкретный фрагмент v3 и открытые статусы можно реально передать в чате для подготовки.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_08_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/1",
-            "sha256": "e875e9cbaddc4b4166f500658291d12a8f6237cb0e26380b1c215e642540f29f"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_08_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/1",
-              "sha256": "e875e9cbaddc4b4166f500658291d12a8f6237cb0e26380b1c215e642540f29f"
-            },
-            "target_checksum": "1e10d0ad20aa15f9677d6c27c7003ece165a81e3416b426a5ce1f91bdc9ce09e"
-          },
           "author_title": "Информационное обеспечение взаимосвязанных действий",
           "branch_condition": null,
           "component_id": "K2.C05",
@@ -30892,19 +30268,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; две обоснованные позиции допускают договорённость о способе работы либо явный нерешённый вопрос.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_08_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/2",
-            "sha256": "e875e9cbaddc4b4166f500658291d12a8f6237cb0e26380b1c215e642540f29f"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_08_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/2",
-              "sha256": "e875e9cbaddc4b4166f500658291d12a8f6237cb0e26380b1c215e642540f29f"
-            },
-            "target_checksum": "854851e9a300f48df701ea9949368eeedcea6fbabd998fad6778a803dbda6e94"
-          },
           "author_title": "Достижение рабочей договорённости в конфликте",
           "branch_condition": null,
           "component_id": "K2.C09",
@@ -30942,19 +30305,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; прошлые потери и текущий риск превращения проверки стенда в полную проверку позволяют действовать с искажением. E02_CORRECT возникает только при фактическом искажении.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_08_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/3",
-            "sha256": "e875e9cbaddc4b4166f500658291d12a8f6237cb0e26380b1c215e642540f29f"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_08_FUNCTIONAL_v0.2_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/3",
-              "sha256": "e875e9cbaddc4b4166f500658291d12a8f6237cb0e26380b1c215e642540f29f"
-            },
-            "target_checksum": "4e15bac80e2a39a18ec5aa0b1855c486e1c75af1f96740cc7e873c0c9f42a9e3"
-          },
           "author_title": "Управление рисками и искажениями передачи смысла",
           "branch_condition": null,
           "component_id": "K1.C05",
@@ -34559,19 +33909,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; позиция Андрея связана с нагрузкой, сроком и самостоятельностью; можно уточнить и различить интересы.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/0",
-            "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/0",
-              "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
-            },
-            "target_checksum": "ccb059c083301310d64204142021041cfb500c415b1f63bd73957459cf3544bd"
-          },
           "author_title": "Выявление и различение целей, интересов и позиций участников",
           "branch_condition": null,
           "component_id": "K1.C01",
@@ -34611,19 +33948,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; есть расхождение о достаточности наблюдения, которое можно прояснить и согласовать либо сохранить.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/1",
-            "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/1",
-              "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
-            },
-            "target_checksum": "7a5649c83c5d473396dae8b45b45b765f8b7494481208b81934fdaad237bf15a"
-          },
           "author_title": "Работа с существенными расхождениями",
           "branch_condition": null,
           "component_id": "K1.C09",
@@ -34662,19 +33986,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2/S3; рекомендация участника, признанное допущение и решение Андрея могут отличаться и нуждаются в точной фиксации.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/2",
-            "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/2",
-              "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
-            },
-            "target_checksum": "bc230eb140738673d5cbb3c15624d393116c464f069641721933499459e655ac"
-          },
           "author_title": "Доведение и фиксация коммуникативного результата",
           "branch_condition": null,
           "component_id": "K1.C09",
@@ -34714,19 +34025,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; переход от исправления после замечания к самостоятельности и собственные предпосылки о контроле доступны для проверки.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/3",
-            "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/3",
-              "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
-            },
-            "target_checksum": "81dc31785972dd4591b9efe6698f82edacd37ffd4662351334ee6d1afa512cdd"
-          },
           "author_title": "Выявление существенных предпосылок и допущений",
           "branch_condition": null,
           "component_id": "K4.C07",
@@ -34767,19 +34065,6 @@
         {
           "actual_occurrence": "NOT_RUN",
           "adaptation_constraints": "S2; срок ответа, новая проверка не раньше двух дней и ограниченная помощь создают сравнимые альтернативы.",
-          "adapted_source": {
-            "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-            "pointer": "/IndicatorObservability/4",
-            "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
-          },
-          "author_basis": {
-            "source": {
-              "file": "sources/AS_SPEC_09_FUNCTIONAL_v0.3_TEST_DRAFT.json",
-              "pointer": "/IndicatorObservability/4",
-              "sha256": "b4bc962a827ad9f1b3fc3b76ea419db3978ba348bbb018fc844e7a2264306f24"
-            },
-            "target_checksum": "babd1b8fb647325928bba6b1113895295587fe12686818d9ccbfe01c5e6b9ef8"
-          },
           "author_title": "Сравнение альтернатив по критериям",
           "branch_condition": null,
           "component_id": "K4.C10",

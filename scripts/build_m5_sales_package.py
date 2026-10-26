@@ -291,13 +291,14 @@ def compile_case_values(*, case: dict, situation: dict, case_source_name: str,
                 "evidence_status": item["Evidence и IA"],
                 "invariant_refs": item["Связанные инварианты"],
                 "condition_absence_reason": "SOURCE_HAS_NO_SEPARATE_BRANCH_OR_EVENT_PREDICATE",
-                "author_basis": {
+            })
+            if source_schema_profile == "functional-personalization-indicator-v2":
+                target["author_basis"] = {
                     "source": _ref(as_entry["path"].name, as_entry["sha256"], "IndicatorObservability", index),
                     "target_checksum": hashlib.sha256(json.dumps(item, ensure_ascii=False, sort_keys=True,
                                                                   separators=(",", ":")).encode()).hexdigest(),
-                },
-                "adapted_source": _ref(as_entry["path"].name, as_entry["sha256"], *runtime_pointer),
-            })
+                }
+                target["adapted_source"] = _ref(as_entry["path"].name, as_entry["sha256"], *runtime_pointer)
         elif source_schema_profile == "sales-author-json-v1":
             target.update({
                 "observation_condition": str(_first(item, "Условие возникновения", "Проектные условия наблюдения", "Проектное условие", "Проектные условия")),
@@ -365,7 +366,12 @@ def compile_case_values(*, case: dict, situation: dict, case_source_name: str,
         participant_presentation=_participant_presentation(case_id, passport, situation, as_entry, materials),
         unresolved_decisions=unresolved,
     )
-    return result.model_dump()
+    compiled = result.model_dump()
+    if source_schema_profile == "functional-personalization-indicator-v1":
+        for target in compiled["indicator_targets"]:
+            target.pop("author_basis", None)
+            target.pop("adapted_source", None)
+    return compiled
 
 
 def _build_case(case_entry: dict, as_entry: dict, m2: dict[str, tuple[str, str]],

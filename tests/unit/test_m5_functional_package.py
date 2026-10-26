@@ -6,8 +6,10 @@ import json
 import pytest
 
 from Api.assessment_case_contracts import CaseVersionV3
+from Api.m5_case_runtime import checksum
 from Api.m5_package import verify_package_directory
 from Api.m5_functional_generation_service import build_input_snapshot, deterministic_checks
+from Api.m5_runtime_rules import load_runtime_rule_package
 from scripts.build_m5_functional_package import OUTPUT, build
 
 pytestmark = pytest.mark.unit
@@ -31,6 +33,18 @@ def test_functional_package_keeps_all_nine_current_passports_and_full_fields():
         CaseVersionV3.model_validate(case)
         keys = set(case["passport"])
         assert all(any(key.startswith(prefix) for key in keys) for prefix in required)
+
+
+def test_package_04_keeps_published_case_versions_and_runtime_bindings_immutable():
+    previous = json.loads((OUTPUT.parent / "0.3/case-package.json").read_text(encoding="utf-8"))
+    current = _package()
+    assert {
+        (case["case_id"], case["version"]): checksum(case) for case in current["cases"]
+    } == {
+        (case["case_id"], case["version"]): checksum(case) for case in previous["cases"]
+    }
+    runtime = OUTPUT.parent.parent / "functional-personalization-runtime/1.1.0"
+    assert load_runtime_rule_package(runtime, current["cases"])["manifest"]["version"] == "1.1.0"
 
 
 def test_all_55_indicator_targets_preserve_author_content_exactly():
