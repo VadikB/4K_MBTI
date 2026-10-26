@@ -42,7 +42,7 @@ Report JSON, PDF/UI и server logs. Секреты и реальные поль�
 | Набор | Статус | Основание / остаток |
 | --- | --- | --- |
 | N01 — 27 real preparations | COMPLETE WITH OUTCOMES | 19 admission PASS, 5 AS FAIL, 2 INCOMPLETE, C03/IT repair HTTP 502; NOT_RUN 0 |
-| N02 — 9 real API→M8 | PILOT PASS / MATRIX NOT_RUN | Owner HTTP Turn и completion → real Evidence/IA → M8 PASS на legacy `CASE-TDISC-01`; девять `CASE.SPEC` ещё не запускались |
+| N02 — 9 real API→M8 | 1/9 FUNCTIONAL PASS | `CASE.SPEC.02` product M4 + owner HTTP → real Evidence/IA → M8 PASS; C01 preparation INCOMPLETE, C03–C09 NOT_RUN; legacy boundary pilot также PASS |
 | N03 — 3 real browser функции | NOT_RUN_DEPENDENT | Controlled browser PASS; real-provider browser не запускался после pilot gate |
 | N04 — multi-case Cycle | PARTIAL | Pause/reload/resume/additional Session PASS; 3 real generated AS NOT_RUN |
 | N05 — различия контекста | PARTIAL | 27 controlled adaptations PASS; real-provider paths NOT_RUN |
@@ -154,6 +154,18 @@ PASS (`finish_reason=stop`), однако единый запрос вернул
 не ослаблен. Unit regression: `30 passed`. Safe manifest и raw synthetic archive:
 `docs/evc/evidence/r10-functional-api-c02-attempt-2026-10-26.{json,tar.gz}`;
 archive SHA-256 `52433870b96d17c24332ab5f63fca0a4e19dc3115ccaa28b7c9b6cf0d906d1c6`.
+
+На exact candidate `bb2fb7f` C02 после batching admission прошёл. После исправления
+post-admission assertion полный product путь завершён: owner HTTP prepare, start,
+Turn и completion; real-provider Evidence и IA — `succeeded`; orchestration —
+`report_ready`; M8 — `C-67`. Проверка `1 passed in 304.15s`. Candidate checksum
+`dcccceedd5420d0742bdd1890dcbfa76ff11d06bd0d492d371451a6568472fd4`, profile
+`3a70f214da3d3905640ae714b04b3c1d8e749f32d633b80bd4e74f3a2cd68ba3`, AS snapshot
+`4c7668c0cd41c0fb4b582b3545892bf1742cece9019b862f087e777490206f1a`.
+Reliability `not_verified`, methodology `NOT_RUN`; один PASS не переносится на
+остальные восемь Case. Evidence:
+`docs/evc/evidence/r10-functional-api-c02-pass-2026-10-26.{json,tar.gz}`;
+archive SHA-256 `c538c19e299b3ae1b2cdd50a544e2402190747c8be21ebcc49b08b8e9aaa9802`.
 
 ## Откат и ограничения выпуска
 

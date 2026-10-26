@@ -211,12 +211,20 @@ def test_functional_case_owner_api_reaches_m8(product_db, monkeypatch):
         assert prepared["decision"]["selected_case_id"] == case_id
         cycle_id = str(prepared["plan"]["cycle_id"])
         as_id = str(prepared["decision"]["assessment_situation_id"])
+        output = os.getenv("P4K_FUNCTIONAL_CYCLE_EVIDENCE_PATH")
+        if output:
+            preparation_path = Path(output).with_suffix(".preparation.json")
+            preparation_path.parent.mkdir(parents=True, exist_ok=True)
+            preparation_path.write_text(
+                json.dumps(_jsonable(queue.get_status(f"{operation_key}-prepare")),
+                           ensure_ascii=False, indent=2) + "\n"
+            )
         started = http.post(
             "/users/assessment/cycles/start",
             json={"cycle_id": cycle_id, "idempotency_key": f"{operation_key}-start"},
         )
         assert started.status_code == 201, started.text
-        assert started.json()["presentation"]["assessment_situation_id"] == as_id
+        assert started.json()["runtime"]["current_situation"]["assessment_situation_id"] == as_id
         turn = http.post(
             f"/users/assessment/m5/situations/{as_id}/turns",
             json={"request_id": f"{operation_key}-turn", "turn_id": str(participant_turn_id),
@@ -291,6 +299,8 @@ def test_functional_case_owner_api_reaches_m8(product_db, monkeypatch):
             "profile_checksum": installed["profile_checksum"],
             "candidate_checksum": persisted["execution_payload_json"]["ai_operations"]
                 ["functional_personalization"]["candidate_checksum"],
+            "functional_personalization_trace": persisted["execution_payload_json"]["ai_operations"]
+                ["functional_personalization"],
             "case_version_checksum": persisted["content_checksum"],
             "assessment_situation": {"id": as_id, "snapshot_checksum": persisted["snapshot_checksum"]},
             "participant_turn": {"id": str(participant_turn_id),

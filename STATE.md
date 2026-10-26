@@ -275,3 +275,16 @@
   `docs/evc/evidence/r10-functional-api-c02-attempt-2026-10-26.{json,tar.gz}`,
   archive SHA-256 `52433870...06d1c6`. Следующий gate — commit и один C02 retry на
   исправленном exact candidate; C01 без собственного trace не повторять.
+- Exact candidate `bb2fb7f`: первый C02 retry после batching дошёл до admission PASS,
+  но test harness остановился после `/cycles/start` на неверном ожидании внутреннего
+  `assessment_situation_id` в participant projection; Turn ещё не отправлялся.
+  Assertion переведён на `runtime.current_situation`, completed preparation теперь
+  сохраняется до start. Единственный post-harness repeat завершил весь путь PASS:
+  product M4 → owner HTTP prepare/start/Turn/completion → real Evidence `succeeded`
+  → IA `succeeded` → pipeline `report_ready` → M8 `C-67`; `1 passed in 304.15s`.
+  Reliability `not_verified`, methodology `NOT_RUN`. Candidate AS
+  `dcccceed...72fd4`, profile `3a70f214...68ba3`, AS snapshot `4c7668c0...06f1a`.
+  Evidence `docs/evc/evidence/r10-functional-api-c02-pass-2026-10-26.{json,tar.gz}`,
+  archive SHA-256 `c538c19e...a9802`. N02: 1/9 functional paths PASS; C01 remains
+  INCOMPLETE without reusable trace and не повторяется. Следующие captures включают
+  полный persisted `functional_personalization_trace`.
