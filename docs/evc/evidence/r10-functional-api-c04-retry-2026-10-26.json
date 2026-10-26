@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "recorded_at": "2026-10-26T18:25:46+03:00",
+  "candidate_commit": "e82802fcde0296899253d7404fa81818e1545826",
+  "case_id": "CASE.SPEC.04",
+  "function": "Sales",
+  "operation_id": "r10-c04-sales-prepare",
+  "outcome": "AS_ADMISSION_FAIL_ERRONEOUS_TESTER_REQUIREMENT",
+  "stage": "functional_tester_admission",
+  "input_snapshot_checksum": "c4e9288b3e99f67ee9c52756383bb365a669350e7a2984eaafd24289583c2409",
+  "candidate_checksum": "738106e3af9bf5e0c91fc6ec1baa352289e38426a8c0c3e75df42e2614805f3b",
+  "deterministic_validation": "PASS",
+  "repair_used": true,
+  "tester_aggregation": "FAIL",
+  "blocking_checks": ["common.professional_consistency", "quality.clarity"],
+  "classification": {
+    "generation_defect": false,
+    "compilation_or_transformation_defect": false,
+    "tester_input_transfer_defect": false,
+    "erroneous_tester_requirement": true,
+    "basis": "Tester received a concrete candidate without IndicatorTargetLayers. candidate_as.IndicatorObservability[2], adapted_indicator_layer.targets[2], materials and active character use Marina. Alexey occurs only in the separately labelled immutable author_indicator_layer. Both findings claim the opposite projection and contradict the supplied payload and author/adapted contract."
+  },
+  "payload_probe": {
+    "candidate_has_indicator_target_layers": false,
+    "candidate_condition": "S2/E01_REVIEW; замысел можно выразить конкретно для рассмотрения Мариной в чате.",
+    "adapted_condition": "S2/E01_REVIEW; замысел можно выразить конкретно для рассмотрения Мариной в чате.",
+    "author_condition": "S2/E01_REVIEW; замысел можно выразить конкретно для рассмотрения Алексеем в чате."
+  },
+  "dependent_stages": {
+    "runtime": "NOT_RUN",
+    "m6_evidence": "NOT_RUN",
+    "m6_indicator_assessment": "NOT_RUN",
+    "m6_substantive_admission": "NOT_RUN",
+    "m8": "NOT_RUN"
+  },
+  "retry_policy": "No further CASE.SPEC.04 retry without a newly confirmed implementation cause and a targeted regression.",
+  "raw_artifact": {
+    "path": "docs/evc/evidence/r10-functional-api-c04-retry-2026-10-26.tar.gz",
+    "sha256": "fd9a6fce9e47a5fa5c0f0c4356c1e1d483e5bf2c33b22499b7c83174bdcb0ae0",
+    "contained_file_sha256": "2e67dc995d3ffc288fe8e04231ddb490e20d38ff9bcf530434f02a18e0310259",
+    "contains_credentials": false
+  },
+  "acceptance": {
+    "technical_positive_path": "NOT_ACHIEVED_FOR_CASE",
+    "methodology": "NOT_RUN",
+    "reliability": "not_verified"
+  }
+}

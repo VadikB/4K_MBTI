@@ -189,6 +189,18 @@ immutable author-only имя «Алексей» нельзя требовать 
 `docs/evc/evidence/r10-functional-api-c04-attempt-2026-10-26.{json,tar.gz}`;
 archive SHA-256 `a76e9f373c04162aca03aca3233e1932595436b9917dfdaa0cf5147c0402922a`.
 
+Единственный C04 retry на exact candidate `e82802f` также остановлен admission gate
+после одной repair. В фактически переданном tester payload concrete
+`candidate_as.IndicatorObservability[2]` и `adapted_indicator_layer.targets[2]`
+одинаково содержат «Марина», `IndicatorTargetLayers` отсутствует; «Алексей» сохранён
+только в отдельно размеченном immutable `author_indicator_layer`. Tester всё же выдал
+`common.professional_consistency` и `quality.clarity`, сославшись на обратное. Это
+подтверждённое ошибочное требование/чтение tester, а не дефект generation,
+compiler/transform или передачи входа. Admission не ослаблен; runtime/M6/M8 —
+`NOT_RUN`; новые C04 retries запрещены без новой подтверждённой причины. Evidence:
+`docs/evc/evidence/r10-functional-api-c04-retry-2026-10-26.{json,tar.gz}`;
+archive SHA-256 `fd9a6fce9e47a5fa5c0f0c4356c1e1d483e5bf2c33b22499b7c83174bdcb0ae0`.
+
 ## Откат и ограничения выпуска
 
 Кодовый откат — вернуть R09 candidate commit и приложение `2.0.28`; опубликованные

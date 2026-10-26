@@ -311,3 +311,12 @@
   namespaces; hidden facts проверяются семантически через conditions/events, а не
   как MaterialID. Admission не ослаблен. Адресные unit `30 PASS`, `py_compile` и
   `git diff --check` PASS. Следующий gate — commit и один C04 retry на exact SHA.
+- Единственный C04 retry на candidate `e82802f` снова завершился admission FAIL после
+  одной repair. Точный tester payload содержит «Марина» и в concrete
+  `IndicatorObservability`, и в adapted layer; `IndicatorTargetLayers` отсутствует,
+  а «Алексей» находится только в явно размеченном immutable author layer. Блокеры
+  `common.professional_consistency` и `quality.clarity`, утверждающие обратное, —
+  `ERRONEOUS_TESTER_REQUIREMENT`; дефекта generation/compiler/transfer не подтверждено.
+  Runtime/M6/M8 — `NOT_RUN`; новых C04 retries без новой причины не выполнять.
+  Evidence `docs/evc/evidence/r10-functional-api-c04-retry-2026-10-26.{json,tar.gz}`;
+  archive SHA-256 `fd9a6fce...cb0ae0`. Следующий независимый путь — C05.
