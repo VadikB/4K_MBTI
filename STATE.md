@@ -320,3 +320,12 @@
   Runtime/M6/M8 — `NOT_RUN`; новых C04 retries без новой причины не выполнять.
   Evidence `docs/evc/evidence/r10-functional-api-c04-retry-2026-10-26.{json,tar.gz}`;
   archive SHA-256 `fd9a6fce...cb0ae0`. Следующий независимый путь — C05.
+- `CASE.SPEC.05` на `413bada`: generation и deterministic validation PASS, repair не
+  использован, transport tester завершён `finish_reason=stop`, но PASS защищённого
+  `common.confidentiality` не содержал обязательный adversarial review. Валидатор
+  корректно нормализовал его в `TECHNICAL_ERROR`, aggregation `INCOMPLETE`; это
+  неполный protocol response tester, не содержательный FAIL AS. Runtime/M6/M8 —
+  `NOT_RUN`; без изменения причины C05 не повторять. Evidence:
+  `docs/evc/evidence/r10-functional-api-c05-attempt-2026-10-26.{json,tar.gz}`;
+  archive SHA-256 `3bb88b44...97cd80`. N02: C02/C03 PASS; C01/C05 INCOMPLETE;
+  C04 erroneous tester requirement; C06–C09 `NOT_RUN`.

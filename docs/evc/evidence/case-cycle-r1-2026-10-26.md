@@ -201,6 +201,16 @@ compiler/transform или передачи входа. Admission не ослаб
 `docs/evc/evidence/r10-functional-api-c04-retry-2026-10-26.{json,tar.gz}`;
 archive SHA-256 `fd9a6fce9e47a5fa5c0f0c4356c1e1d483e5bf2c33b22499b7c83174bdcb0ae0`.
 
+`CASE.SPEC.05` на exact candidate `413bada` дошёл до tester admission за 247.09 s.
+Generation и deterministic validation — PASS, repair не использован, provider
+transport завершён за одну попытку с `finish_reason=stop`. Однако PASS защищённой
+проверки `common.confidentiality` пришёл без обязательного adversarial review;
+валидатор корректно преобразовал его в `TECHNICAL_ERROR`, итог `INCOMPLETE` без
+blocking findings. Это неполный protocol response tester, а не содержательный FAIL
+AS. Runtime/M6/M8 не запускались; повтор без изменения причины запрещён. Evidence:
+`docs/evc/evidence/r10-functional-api-c05-attempt-2026-10-26.{json,tar.gz}`;
+archive SHA-256 `3bb88b442ed43563a88bcd6e286b03535fcbc19272af04edb47e9c6da897cd80`.
+
 ## Откат и ограничения выпуска
 
 Кодовый откат — вернуть R09 candidate commit и приложение `2.0.28`; опубликованные
