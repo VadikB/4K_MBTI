@@ -482,9 +482,255 @@ def start(connection, assessment_situation_id: str) -> dict:
             "execution_envelope": envelope, "event": event}
 
 
+class _DecisionReplayAdapter:
+    def __init__(self, decisions: dict[str, object]):
+        self.decisions = decisions
+
+    def decide(self, *, rule: dict, text: str, turn_id: str, context: dict):
+        return self.decisions[rule["rule_id"]]
+
+
+class _CharacterReplayAdapter:
+    def __init__(self, replies: dict[str, CharacterReply]):
+        self.replies = replies
+
+    def respond(self, *, material: dict, character: dict, text: str, turn_id: str, context: dict) -> CharacterReply:
+        return self.replies.get(
+            material["material_id"], CharacterReply("UNKNOWN", None, "detached-replay")
+        )
+
+
+def _candidate_rules(payload: dict, *, include_qa_unresolved: bool,
+                     current_stage: str) -> list[tuple[dict, dict, str]]:
+    result = []
+    for material in payload["materials"]:
+        condition = material["disclosure_condition"]
+        event_condition = material["event_condition"]
+        is_character_reaction = material.get("kind") == "character_reaction"
+        if not is_character_reaction and (material.get("participant_payload") is None or condition.get("type") == "never"):
+            continue
+        candidates = []
+        if condition.get("type") == "semantic_request":
+            candidates.append(("disclosure", condition, "material_disclosed"))
+        elif condition.get("type") == "method_owner_unresolved" and include_qa_unresolved:
+            candidates.append(("qa_unresolved_branch", condition, "material_disclosed"))
+        event_kind = event_condition.get("type", "")
+        if event_kind == "semantic_author_condition" and is_character_reaction:
+            candidates.append(("character_reaction", event_condition, "character_response"))
+        elif event_kind == "semantic_author_condition" or event_kind == "after_first_substantive_turn" or event_kind.startswith("after_first_"):
+            candidates.append(("mandatory", event_condition, "mandatory_update"))
+        elif is_character_reaction and event_kind.startswith("on_"):
+            candidates.append(("character_reaction", event_condition, "character_response"))
+        for purpose, specification, event_type in candidates:
+            rule_id = f"{material['material_id']}:{purpose}"
+            result.append((material, {
+                "rule_id": rule_id, "version": "2", "type": "semantic_decision",
+                "decision_code": specification.get("type", "semantic"), "condition": specification,
+                "allowed_codes": ["MATCH", "NO_MATCH", "UNKNOWN"], "true_code": "MATCH",
+            }, event_type))
+    stages = sorted(payload.get("scenario", []), key=lambda x: x["order"])
+    for stage in stages:
+        if stage["step_id"] != current_stage:
+            continue
+        result.append(({}, {
+            "rule_id": f"{payload['case_id']}:{stage['step_id']}:completion", "version": "1",
+            "type": "semantic_decision", "decision_code": "STAGE_COMPLETION",
+            "condition": {"stage": stage["title"], "rules": stage["rules"]},
+            "allowed_codes": ["MATCH", "NO_MATCH", "UNKNOWN"], "true_code": "MATCH",
+        }, "stage_transitioned"))
+    return result
+
+
+def _fail_detached_turn(connection_factory, *, as_db_id: int, request_id: str,
+                        attempt_token, cycle_db_id: int, session_db_id: int,
+                        operation_ref: str, error_code: str) -> None:
+    with connection_factory() as connection:
+        operation = connection.execute(
+            "SELECT * FROM m5_turn_operations WHERE assessment_situation_db_id=%s AND request_id=%s FOR UPDATE",
+            (as_db_id, request_id),
+        ).fetchone()
+        if not operation or str(operation["attempt_token"]) != str(attempt_token) or operation["status"] != "pending":
+            return
+        m5_cycle_runtime.end_blocking_wait(
+            connection, cycle_db_id=cycle_db_id, session_db_id=session_db_id,
+            operation_ref=operation_ref, reason="m5_turn_provider_failed",
+        )
+        connection.execute(
+            "UPDATE m5_turn_operations SET status='failed',error_code=%s,completed_at=NOW() WHERE id=%s",
+            (error_code[:200], operation["id"]),
+        )
+        connection.commit()
+
+
+def submit_turn_detached(*, assessment_situation_id: str, request_id: str, turn_id: str, content: str,
+                         semantic_adapter: SemanticDecisionAdapter | None = None,
+                         character_adapter: CharacterResponseAdapter | None = None,
+                         connection_factory=None) -> dict:
+    """Execute provider work between two committed DB phases, fenced by AS state revision."""
+    if connection_factory is None:
+        from Api.database import get_connection as connection_factory
+
+    attempt_token = uuid4()
+    operation_ref = f"m5-turn:{assessment_situation_id}:{request_id}:{attempt_token}"
+    with connection_factory() as connection:
+        row = _as_row(connection, assessment_situation_id, lock=True)
+        m5_cycle_runtime.assert_collecting(
+            connection, cycle_db_id=int(row["cycle_db_id"]), session_db_id=int(row["session_db_id"]),
+        )
+        if row["status"] != "active":
+            raise ValueError("M5_AS_NOT_ACTIVE")
+        saved = _state(connection, row, lock=True)
+        request_checksum = checksum({"turn_id": turn_id, "content": content})
+        existing_operation = connection.execute(
+            "SELECT * FROM m5_turn_operations WHERE assessment_situation_db_id=%s AND request_id=%s FOR UPDATE",
+            (row["id"], request_id),
+        ).fetchone()
+        if existing_operation:
+            if existing_operation["request_checksum"] != request_checksum:
+                raise ValueError("M5_IDEMPOTENCY_PAYLOAD_MISMATCH")
+            if existing_operation["status"] == "applied":
+                return {**dict(existing_operation["result_json"]), "idempotent": True}
+            if existing_operation["status"] == "pending" and existing_operation["locked_at"] > datetime.now(existing_operation["locked_at"].tzinfo) - timedelta(minutes=2):
+                raise ValueError("M5_TURN_OPERATION_IN_PROGRESS")
+            connection.execute("""
+                UPDATE m5_turn_operations SET status='pending',attempt_token=%s,attempt_no=attempt_no+1,
+                    input_revision=%s,locked_at=NOW(),error_code=NULL WHERE id=%s
+            """, (attempt_token, saved["revision"], existing_operation["id"]))
+        else:
+            connection.execute("""
+                INSERT INTO m5_turn_operations
+                    (assessment_situation_db_id,request_id,turn_id,request_checksum,input_revision,status,attempt_token)
+                VALUES (%s,%s,%s,%s,%s,'pending',%s)
+            """, (row["id"], request_id, UUID(turn_id), request_checksum, saved["revision"], attempt_token))
+        turn = connection.execute(
+            "SELECT * FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s AND request_id=%s",
+            (row["id"], request_id),
+        ).fetchone() or connection.execute("""
+            INSERT INTO m5_dialogue_turns
+                (assessment_situation_db_id,turn_id,sequence_no,speaker_type,speaker_id,content_text,request_id)
+            VALUES (%s,%s,%s,'assessee','assessee',%s,%s) RETURNING *
+        """, (row["id"], UUID(turn_id), _next_sequence(connection, int(row["id"])), content, request_id)).fetchone()
+        if str(turn["turn_id"]) != turn_id or turn["content_text"] != content:
+            raise ValueError("M5_IDEMPOTENCY_PAYLOAD_MISMATCH")
+        m5_cycle_runtime.begin_blocking_wait(
+            connection, cycle_db_id=int(row["cycle_db_id"]), session_db_id=int(row["session_db_id"]),
+            operation_ref=operation_ref, reason="m5_turn_provider_wait",
+        )
+        payload = dict(row["execution_payload_json"])
+        state = deepcopy(saved["state_json"])
+        factual_state = dict(state)
+        factual_state["dialogue_history"] = [dict(item) for item in connection.execute(
+            "SELECT turn_id::text AS turn_id,sequence_no,speaker_type,speaker_id,content_text "
+            "FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s ORDER BY sequence_no", (row["id"],)
+        ).fetchall()]
+        factual_state["events"] = [dict(item) for item in connection.execute(
+            "SELECT event_id::text AS event_id,sequence_no,event_type,material_id "
+            "FROM m5_scenario_events WHERE assessment_situation_db_id=%s ORDER BY sequence_no", (row["id"],)
+        ).fetchall()]
+        frozen = {"row": dict(row), "saved": dict(saved), "turn": dict(turn), "payload": payload,
+                  "state": state, "factual_state": factual_state}
+        connection.commit()
+
+    operations = payload.get("ai_operations") or {}
+    if semantic_adapter is None and not operations.get("semantic_decision"):
+        raise SnapshotIntegrityError(SNAPSHOT_DEPENDENCY_UNAVAILABLE, "Frozen semantic AI configuration is missing.")
+    if character_adapter is None and not operations.get("character_response"):
+        raise SnapshotIntegrityError(SNAPSHOT_DEPENDENCY_UNAVAILABLE, "Frozen character AI configuration is missing.")
+    adapter = semantic_adapter or DeepSeekSemanticAdapter(operation=operations["semantic_decision"])
+    responder = character_adapter or DeepSeekCharacterAdapter(operation=operations["character_response"])
+    rules = _candidate_rules(
+        payload, include_qa_unresolved=isinstance(adapter, ControlledSemanticAdapter),
+        current_stage=state["current_stage"],
+    )
+    decisions = {}
+    try:
+        for _, rule, _ in rules:
+            decisions[rule["rule_id"]] = evaluate_rule(
+                rule, state=frozen["factual_state"], data={}, text=content,
+                turn_id=turn_id, semantic_adapter=adapter,
+            )
+    except Exception as exc:
+        _fail_detached_turn(
+            connection_factory, as_db_id=int(frozen["row"]["id"]), request_id=request_id,
+            attempt_token=attempt_token, cycle_db_id=int(frozen["row"]["cycle_db_id"]),
+            session_db_id=int(frozen["row"]["session_db_id"]), operation_ref=operation_ref,
+            error_code=type(exc).__name__,
+        )
+        raise
+    replies = {}
+    for material, rule, _ in rules:
+        if not material or decisions[rule["rule_id"]].outcome != RuleOutcome.TRUE or not rule["rule_id"].endswith(":character_reaction"):
+            continue
+        character = next((item for item in payload["characters"] if item["character_id"] == material.get("speaker_id")), None)
+        if not character:
+            continue
+        raw_character = character.get("content") if isinstance(character.get("content"), dict) else character
+        character_input = {
+            "character_id": character["character_id"], "role_card": raw_character,
+            "public_position": character.get("public_position") or raw_character.get("Текст"),
+            "known_facts": raw_character.get("Начальные знания", character.get("known_facts", [])),
+            "disclosure_constraints": {"material_audiences": [
+                {"material_id": item["material_id"], "audience": (item.get("content") or {}).get("Аудитория", [])}
+                for item in payload.get("materials", [])
+            ], "rule": material.get("result_check") or material.get("reaction_rule")},
+        }
+        try:
+            replies[material["material_id"]] = responder.respond(
+                material=material, character=character_input, text=content, turn_id=turn_id,
+                context={"dialogue_history": frozen["factual_state"]["dialogue_history"],
+                         "events": frozen["factual_state"]["events"],
+                         "disclosed_materials": state["disclosed_materials"],
+                         "stage": state["current_stage"],
+                         "facilitator_only": {"must_not_be_disclosed": True}},
+            )
+        except Exception as exc:
+            _fail_detached_turn(
+                connection_factory, as_db_id=int(frozen["row"]["id"]), request_id=request_id,
+                attempt_token=attempt_token, cycle_db_id=int(frozen["row"]["cycle_db_id"]),
+                session_db_id=int(frozen["row"]["session_db_id"]), operation_ref=operation_ref,
+                error_code=type(exc).__name__,
+            )
+            raise
+
+    with connection_factory() as connection:
+        operation = connection.execute(
+            "SELECT * FROM m5_turn_operations WHERE assessment_situation_db_id=%s AND request_id=%s FOR UPDATE",
+            (frozen["row"]["id"], request_id),
+        ).fetchone()
+        if not operation or str(operation["attempt_token"]) != str(attempt_token) or operation["status"] != "pending":
+            raise ValueError("M5_TURN_ATTEMPT_SUPERSEDED")
+        m5_cycle_runtime.end_blocking_wait(
+            connection, cycle_db_id=int(frozen["row"]["cycle_db_id"]),
+            session_db_id=int(frozen["row"]["session_db_id"]), operation_ref=operation_ref,
+            reason="m5_turn_provider_finished",
+        )
+        try:
+            result = submit_turn(
+                connection, assessment_situation_id=assessment_situation_id, request_id=request_id,
+                turn_id=turn_id, content=content, semantic_adapter=_DecisionReplayAdapter(decisions),
+                character_adapter=_CharacterReplayAdapter(replies), expected_revision=int(operation["input_revision"]),
+            )
+        except Exception as exc:
+            code = str(exc)
+            status = "rejected_late" if code in {"M5_AS_NOT_ACTIVE", "M5_STATE_REVISION_CONFLICT", "M7_COLLECTION_CLOSED", "M7_TIME_LIMIT_REACHED"} else "failed"
+            connection.execute(
+                "UPDATE m5_turn_operations SET status=%s,error_code=%s,completed_at=NOW() WHERE id=%s",
+                (status, code, operation["id"]),
+            )
+            connection.commit()
+            raise
+        connection.execute(
+            "UPDATE m5_turn_operations SET status='applied',result_json=%s::jsonb,completed_at=NOW() WHERE id=%s",
+            (json.dumps(result, ensure_ascii=False, default=str), operation["id"]),
+        )
+        connection.commit()
+        return result
+
+
 def submit_turn(connection, *, assessment_situation_id: str, request_id: str, turn_id: str, content: str,
                 semantic_adapter: SemanticDecisionAdapter | None = None,
-                character_adapter: CharacterResponseAdapter | None = None) -> dict:
+                character_adapter: CharacterResponseAdapter | None = None,
+                expected_revision: int | None = None) -> dict:
     row = _as_row(connection, assessment_situation_id, lock=True)
     m5_cycle_runtime.assert_collecting(
         connection, cycle_db_id=int(row["cycle_db_id"]), session_db_id=int(row["session_db_id"]),
@@ -494,6 +740,8 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
     existing = connection.execute("SELECT * FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s AND request_id=%s",
                                   (row["id"], request_id)).fetchone()
     saved = _state(connection, row, lock=True)
+    if expected_revision is not None and int(saved["revision"]) != int(expected_revision):
+        raise ValueError("M5_STATE_REVISION_CONFLICT")
     state = deepcopy(saved["state_json"])
     turn = existing or connection.execute("""
             INSERT INTO m5_dialogue_turns (assessment_situation_db_id,turn_id,sequence_no,speaker_type,speaker_id,content_text,request_id)

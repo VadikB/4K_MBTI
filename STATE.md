@@ -2,7 +2,7 @@
 
 - Base: `b3bbdc9e78880879e1d4fc930ef8c9cc9f200524` (`origin/main`, приложение `2.0.28`).
 - Ветка: `codex/case-cycle-r1`.
-- Активная карточка: R04.
+- Активная карточка: R05.
 - Завершённые commits: R00 — `aea9bf3`; R01 — `30fc6a0`; R02 — `420a315`;
   R03 — текущий commit совместимости.
 - Проверки R00 на рабочем дереве: `git diff --check` — PASS; ссылки/пути — PASS;
@@ -35,4 +35,21 @@
   uniqueness и добавляет package-scoped unique index; откат приложения — вернуть
   предыдущий commit, не удаляя новые строки. Возврат глобальных constraints допустим
   лишь после retirement новых package memberships, без удаления истории и подмены hashes.
-- Следующий шаг: R04 — вынести provider-вызовы из DB-транзакции с fencing/idempotency.
+- R04, схема фаз: (1) короткая транзакция блокирует Cycle/AS, фиксирует неизменный
+  assessee Turn, `m5_turn_operations.pending`, attempt token и state revision, закрывает
+  collecting interval и открывает `blocking_system_wait`; (2) semantic/character provider
+  вызываются без выданного runtime DB connection; (3) новая транзакция сверяет token,
+  статус AS/Cycle и revision, закрывает wait и атомарно применяет decisions/materials/
+  character turns/state, после чего сохраняет `applied`. Timeout фиксируется как `failed`
+  и допускает fenced retry; смена состояния — `rejected_late`, без применения output.
+- Восстановление R04: replay того же request возвращает сохранённый `applied`; `failed`
+  получает новый attempt token/номер; зависший `pending` может быть перехвачен после
+  двухминутного lease. Исторический participant Turn не удаляется. Откат приложения
+  оставляет таблицу операций и интервалы аудита; незакрытый wait завершается штатным
+  retry/операторским recovery, а не удалением Evidence.
+- Проверки R04: 13 unit/HTTP — PASS; 3 runtime PostgreSQL integration — PASS. Отдельная
+  trace через штатный `DeepSeekSemanticAdapter` с подставным transport подтвердила:
+  во время вызова нет backend connection runtime-фазы в `pg_stat_activity`; timeout→retry
+  даёт один Turn и attempt 2; concurrent pause даёт `rejected_late`; открытых blocking
+  intervals после завершения нет. Real-provider не вызывался.
+- Следующий шаг: R05 — M6 Evidence/IA/admission/M8 consumers и границы UNKNOWN/error.

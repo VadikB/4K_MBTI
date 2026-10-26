@@ -3572,6 +3572,25 @@ def ensure_m5_runtime_schema(connection) -> None:
     connection.execute("ALTER TABLE m5_ai_attempts DROP CONSTRAINT IF EXISTS m5_ai_attempts_assessment_situation_db_id_action_key_key")
     connection.execute("CREATE UNIQUE INDEX IF NOT EXISTS m5_ai_attempts_action_attempt_uq ON m5_ai_attempts(assessment_situation_db_id,action_key,attempt_no)")
     connection.execute("""
+        CREATE TABLE IF NOT EXISTS m5_turn_operations (
+            id BIGSERIAL PRIMARY KEY,
+            assessment_situation_db_id BIGINT NOT NULL REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,
+            request_id TEXT NOT NULL,
+            turn_id UUID NOT NULL,
+            request_checksum TEXT NOT NULL,
+            input_revision INTEGER NOT NULL,
+            status TEXT NOT NULL CHECK (status IN ('pending','applied','failed','rejected_late')),
+            attempt_token UUID NOT NULL,
+            attempt_no INTEGER NOT NULL DEFAULT 1 CHECK (attempt_no > 0),
+            result_json JSONB,
+            error_code TEXT,
+            locked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            completed_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (assessment_situation_db_id,request_id)
+        )
+    """)
+    connection.execute("""
         CREATE TABLE IF NOT EXISTS m5_qa_overrides (
             id BIGSERIAL PRIMARY KEY,
             assessment_situation_db_id BIGINT NOT NULL UNIQUE REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT,

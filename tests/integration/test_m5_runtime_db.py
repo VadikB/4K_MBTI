@@ -13,10 +13,10 @@ from Api.m5_storage import (M5ImportConflict, import_package, package_readback,
                             prepare_assessment_situation as _prepare_assessment_situation,
                             record_technical_qa_evidence)
 from Api.m5_cycle_runtime import create_cycle_session_for_case
-from Api.m5_rule_engine import ControlledCharacterAdapter, ControlledSemanticAdapter
+from Api.m5_rule_engine import ControlledCharacterAdapter, ControlledSemanticAdapter, DeepSeekSemanticAdapter
 from Api.llm.contracts import LlmResponse
 from Api.m5_scenario_runtime import (build_c45, execute_technical_c45, run_model_check_case03,
-                                     start, submit_turn, trace, transition)
+                                     start, submit_turn, submit_turn_detached, trace, transition)
 from Api.m5_case_runtime import checksum
 from Api.snapshot_integrity import SNAPSHOT_OWNER_MISMATCH, SnapshotIntegrityError
 from scripts.build_m5_case_package import OUTPUT
@@ -36,6 +36,146 @@ def prepare_assessment_situation(connection, **kwargs):
     )
 
 
+@pytest.mark.integration
+def test_detached_turn_has_no_runtime_db_transaction_during_provider_wait(test_database_url):
+    package = json.loads((OUTPUT / "case-package.json").read_text())
+    manifest = json.loads((OUTPUT / "manifest.json").read_text())
+    policy = json.loads((OUTPUT / "admission-policy.json").read_text())
+    rules = json.loads((OUTPUT / "execution-rules.json").read_text())
+    schema = "m5_detached_pytest_" + uuid4().hex
+    application_name = "m5-r04-" + uuid4().hex
+
+    def connection_factory():
+        return psycopg.connect(
+            test_database_url, row_factory=dict_row, application_name=application_name,
+            options=f"-c search_path={schema}",
+        )
+
+    with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
+        connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
+    with connection_factory() as connection:
+        connection.execute("CREATE TABLE users (id BIGINT PRIMARY KEY)")
+        connection.execute("INSERT INTO users VALUES (99)")
+        connection.execute("""CREATE TABLE assessment_personalized_profiles
+            (id BIGINT PRIMARY KEY,status TEXT NOT NULL,content_json JSONB NOT NULL,
+             provenance_json JSONB NOT NULL,checksum TEXT NOT NULL)""")
+        ensure_m5_runtime_schema(connection)
+        import_package(connection, package=package, manifest=manifest, execution_rules=rules)
+        connection.execute(
+            "INSERT INTO assessment_personalized_profiles VALUES (7,'ready',%s::jsonb,'{}'::jsonb,%s)",
+            (json.dumps({"role_profile": {"code": "project_product_process_manager"}}), "c" * 64),
+        )
+        prepared = prepare_assessment_situation(
+            connection, assessment_situation_id=str(uuid4()), case_id="CASE-TDISC-01",
+            case_version="v0.1", personalized_profile_id=7, substitutions=[], policy=policy,
+            usage_scope="qa", qa_authorized_by=99,
+        )
+        start(connection, prepared["assessment_situation_id"])
+
+    observed = []
+
+    operation = prepared["execution_payload"]["ai_operations"]["semantic_decision"]
+
+    class InspectingGateway:
+        enabled = True
+        model = operation["model"]
+        base_url = operation["endpoint"].removesuffix("/chat/completions")
+
+        def chat_with_trace(self, messages, **kwargs):
+            with psycopg.connect(test_database_url, row_factory=dict_row) as probe:
+                rows = probe.execute(
+                    "SELECT state,wait_event_type FROM pg_stat_activity WHERE application_name=%s",
+                    (application_name,),
+                ).fetchall()
+            observed.append(rows)
+            parameters = {key: value for key, value in kwargs.items() if key != "routing_key"}
+            return LlmResponse(
+                json.dumps({"code": "MATCH", "basis": "R04 transport fixture"}),
+                {"request_id": "r04-provider", "model": self.model},
+                {"provider": operation["provider"], "endpoint": operation["endpoint"],
+                 "model": self.model, "parameters": parameters, "messages": messages},
+            )
+
+    turn_id = str(uuid4())
+    result = submit_turn_detached(
+        assessment_situation_id=prepared["assessment_situation_id"], request_id="detached-1",
+        turn_id=turn_id, content="Покажите готовность и выборку",
+        semantic_adapter=DeepSeekSemanticAdapter(gateway=InspectingGateway(), operation=operation),
+        character_adapter=ControlledCharacterAdapter({}), connection_factory=connection_factory,
+    )
+    assert observed and all(not rows for rows in observed)
+    assert "CASE-TDISC-01-D1" in {item["material_id"] for item in result["events"]}
+    replay = submit_turn_detached(
+        assessment_situation_id=prepared["assessment_situation_id"], request_id="detached-1",
+        turn_id=turn_id, content="Покажите готовность и выборку",
+        semantic_adapter=ControlledSemanticAdapter({}), character_adapter=ControlledCharacterAdapter({}),
+        connection_factory=connection_factory,
+    )
+    assert replay["idempotent"] is True
+    with connection_factory() as connection:
+        operation = connection.execute("SELECT * FROM m5_turn_operations").fetchone()
+        assert operation["status"] == "applied"
+        assert operation["attempt_no"] == 1
+        assert connection.execute(
+            "SELECT count(*) AS count FROM m5_dialogue_turns WHERE request_id='detached-1'"
+        ).fetchone()["count"] == 1
+
+    class FailingAdapter(ControlledSemanticAdapter):
+        def decide(self, **kwargs):
+            raise TimeoutError("controlled provider timeout")
+
+    failed_turn_id = str(uuid4())
+    with pytest.raises(TimeoutError, match="controlled provider timeout"):
+        submit_turn_detached(
+            assessment_situation_id=prepared["assessment_situation_id"], request_id="detached-retry",
+            turn_id=failed_turn_id, content="Повторяемый запрос",
+            semantic_adapter=FailingAdapter({}), character_adapter=ControlledCharacterAdapter({}),
+            connection_factory=connection_factory,
+        )
+    recovered = submit_turn_detached(
+        assessment_situation_id=prepared["assessment_situation_id"], request_id="detached-retry",
+        turn_id=failed_turn_id, content="Повторяемый запрос",
+        semantic_adapter=ControlledSemanticAdapter({}), character_adapter=ControlledCharacterAdapter({}),
+        connection_factory=connection_factory,
+    )
+    assert recovered["idempotent"] is True
+    with connection_factory() as connection:
+        recovered_operation = connection.execute(
+            "SELECT status,attempt_no FROM m5_turn_operations WHERE request_id='detached-retry'"
+        ).fetchone()
+        assert (recovered_operation["status"], recovered_operation["attempt_no"]) == ("applied", 2)
+        assert not connection.execute(
+            "SELECT 1 FROM m5_cycle_time_intervals WHERE interval_type='blocking_system_wait' AND ended_at IS NULL"
+        ).fetchone()
+
+    class PausingAdapter(ControlledSemanticAdapter):
+        changed = False
+
+        def decide(self, **kwargs):
+            if not self.changed:
+                with connection_factory() as concurrent:
+                    transition(
+                        concurrent, assessment_situation_id=prepared["assessment_situation_id"],
+                        action="pause", reason="R04 late result", request_id="r04-concurrent-pause",
+                    )
+                self.changed = True
+            return super().decide(**kwargs)
+
+    with pytest.raises(ValueError, match="M5_AS_NOT_ACTIVE"):
+        submit_turn_detached(
+            assessment_situation_id=prepared["assessment_situation_id"], request_id="detached-late",
+            turn_id=str(uuid4()), content="Поздний ответ",
+            semantic_adapter=PausingAdapter({}), character_adapter=ControlledCharacterAdapter({}),
+            connection_factory=connection_factory,
+        )
+    with connection_factory() as connection:
+        assert connection.execute(
+            "SELECT status FROM m5_turn_operations WHERE request_id='detached-late'"
+        ).fetchone()["status"] == "rejected_late"
+        transition(
+            connection, assessment_situation_id=prepared["assessment_situation_id"],
+            action="resume", reason="R04 test cleanup", request_id="r04-resume",
+        )
 @pytest.mark.integration
 def test_m5_import_readback_and_rejected_as_are_transactional(test_database_url):
     package = json.loads((OUTPUT / "case-package.json").read_text())

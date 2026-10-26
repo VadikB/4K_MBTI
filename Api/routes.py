@@ -6020,17 +6020,15 @@ def start_m5_runtime_situation(assessment_situation_id: UUID, request: Request) 
 def submit_m5_runtime_turn(assessment_situation_id: UUID, payload: M5QATurnRequest, request: Request) -> dict:
     _m5_superadmin(request)
     try:
-        with get_connection() as connection:
-            result = m5_scenario_runtime.submit_turn(
-                connection, assessment_situation_id=str(assessment_situation_id), request_id=payload.request_id,
-                turn_id=str(payload.turn_id), content=payload.content,
-                semantic_adapter=(m5_scenario_runtime.ControlledSemanticAdapter(payload.controlled_outcomes)
-                                  if payload.controlled_outcomes is not None else None),
-                character_adapter=(m5_scenario_runtime.ControlledCharacterAdapter(payload.controlled_character_responses)
-                                   if payload.controlled_character_responses is not None else None),
-            )
-            connection.commit()
-            return result
+        return m5_scenario_runtime.submit_turn_detached(
+            assessment_situation_id=str(assessment_situation_id), request_id=payload.request_id,
+            turn_id=str(payload.turn_id), content=payload.content,
+            semantic_adapter=(m5_scenario_runtime.ControlledSemanticAdapter(payload.controlled_outcomes)
+                              if payload.controlled_outcomes is not None else None),
+            character_adapter=(m5_scenario_runtime.ControlledCharacterAdapter(payload.controlled_character_responses)
+                               if payload.controlled_character_responses is not None else None),
+            connection_factory=get_connection,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
@@ -6151,12 +6149,12 @@ def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, 
                     controlled_outcomes[fixture['character_material_id']+':character_reaction']='TRUE'
                 semantic_adapter=ControlledSemanticAdapter(controlled_outcomes)
                 character_adapter=ControlledCharacterAdapter({fixture['character_material_id']:fixture['character_response']} if matched else {})
-            result = m5_scenario_runtime.submit_turn(connection, assessment_situation_id=str(assessment_situation_id),
-                                                     request_id=payload.request_id, turn_id=str(payload.turn_id),
-                                                     content=payload.content,semantic_adapter=semantic_adapter,
-                                                     character_adapter=character_adapter)
             connection.commit()
-            return result
+        return m5_scenario_runtime.submit_turn_detached(
+            assessment_situation_id=str(assessment_situation_id), request_id=payload.request_id,
+            turn_id=str(payload.turn_id), content=payload.content, semantic_adapter=semantic_adapter,
+            character_adapter=character_adapter, connection_factory=get_connection,
+        )
     except ValueError as exc:
         if str(exc)=='M7_TIME_LIMIT_REACHED':_persist_time_expiry_for_situation(str(assessment_situation_id))
         raise HTTPException(status_code=409, detail=str(exc)) from exc
