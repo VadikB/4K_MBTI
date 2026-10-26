@@ -6,6 +6,7 @@ from uuid import uuid4
 import pytest
 
 from Api.m5_case_runtime import checksum
+from Api.m5_functional_generation_service import checksum as functional_checksum
 from Api.m5_scenario_runtime import _as_row
 from Api.snapshot_integrity import SNAPSHOT_COMPOSITION_MISMATCH, SnapshotIntegrityError
 
@@ -33,13 +34,14 @@ def _situation():
     cycle_id = uuid4()
     session_id = uuid4()
     layers = {"author": {"checksum": "author"}, "adapted": {"checksum": "adapted"}}
+    assert checksum(layers) != functional_checksum(layers)
     trace = {
         "schema_version": 3,
         "source_snapshot": {"refs": {"case": {"case_version_checksum": "source-case"}}},
         "compiled_case_checksum": "compiled-case",
         "accepted_as": {"IndicatorTargetLayers": layers},
         "indicator_target_layers": layers,
-        "indicator_target_layers_checksum": checksum(layers),
+        "indicator_target_layers_checksum": functional_checksum(layers),
     }
     execution = {"ai_operations": {"functional_personalization": trace}}
     snapshot = {

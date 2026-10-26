@@ -74,6 +74,12 @@ persistence trace и M6 input resolver.
   `IndicatorTargetLayers` в trace и accepted AS, checksum слоёв,
   compiled Case и frozen source CaseVersion. Адресная регрессия: 4 passed,
   включая отклонение подмены слоёв, checksum и исходной Case-ссылки.
+- CI push/pull_request для `57ac148`: integration FAIL в той же композиции.
+  Точная причина: `IndicatorTargetLayers` хэшируется генератором canonical JSON
+  без завершающего LF, а новая проверка `_as_row` использовала runtime canonical
+  JSON с LF. Исправлена только проверка checksum слоёв: она теперь использует
+  алгоритм функционального контракта; checksum полного AS и CaseVersion остаются
+  на прежнем runtime-алгоритме. Регрессия явно фиксирует различие алгоритмов.
 - Положительная корректная адаптация и hand-off `0.4`: PASS; frozen package
   `0.3` сохраняет legacy trace schema 2: PASS.
 - Отрицательные потеря условия, подмена смысла, неверный material ref,
