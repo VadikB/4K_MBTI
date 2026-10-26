@@ -42,7 +42,7 @@ Report JSON, PDF/UI и server logs. Секреты и реальные поль�
 | Набор | Статус | Основание / остаток |
 | --- | --- | --- |
 | N01 — 27 real preparations | COMPLETE WITH OUTCOMES | 19 admission PASS, 5 AS FAIL, 2 INCOMPLETE, C03/IT repair HTTP 502; NOT_RUN 0 |
-| N02 — 9 real API→M8 | 1/9 FUNCTIONAL PASS | `CASE.SPEC.02` product M4 + owner HTTP → real Evidence/IA → M8 PASS; C01 preparation INCOMPLETE, C03–C09 NOT_RUN; legacy boundary pilot также PASS |
+| N02 — 9 real API→M8 | 2/9 FUNCTIONAL PASS | `CASE.SPEC.02` и `.03` product M4 + owner HTTP → real Evidence/IA → M8 PASS; C01 preparation INCOMPLETE, C04–C09 NOT_RUN; legacy boundary pilot также PASS |
 | N03 — 3 real browser функции | NOT_RUN_DEPENDENT | Controlled browser PASS; real-provider browser не запускался после pilot gate |
 | N04 — multi-case Cycle | PARTIAL | Pause/reload/resume/additional Session PASS; 3 real generated AS NOT_RUN |
 | N05 — различия контекста | PARTIAL | 27 controlled adaptations PASS; real-provider paths NOT_RUN |
@@ -166,6 +166,17 @@ Reliability `not_verified`, methodology `NOT_RUN`; один PASS не перен
 остальные восемь Case. Evidence:
 `docs/evc/evidence/r10-functional-api-c02-pass-2026-10-26.{json,tar.gz}`;
 archive SHA-256 `c538c19e299b3ae1b2cdd50a544e2402190747c8be21ebcc49b08b8e9aaa9802`.
+
+`CASE.SPEC.03` на candidate `3cfed3f` также завершил полный product путь PASS без
+repair: tester PASS четырьмя batches, challenger четырьмя batches, owner HTTP
+prepare/start/Turn/completion, Evidence и IA `succeeded`, pipeline `report_ready`,
+M8 `C-67`; `1 passed in 554.93s`. Candidate checksum
+`ac7bf97cfe86e800263134766df04c7dc70e0db956aca6ca9767c82b21f2f32a`, AS snapshot
+`92765972bb4d362620c36106ca4c1ccbcf411c8b02cfe7b73a4930cde87b1318`.
+Полный persisted PM-03 trace включён в raw artifact. Reliability `not_verified`,
+methodology `NOT_RUN`. Evidence:
+`docs/evc/evidence/r10-functional-api-c03-pass-2026-10-26.{json,tar.gz}`;
+archive SHA-256 `dd0b1c1bbb6b11ffd4665c13261ce58b3cef75af94490684fb913fc24c641e39`.
 
 ## Откат и ограничения выпуска
 

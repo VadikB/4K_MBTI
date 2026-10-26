@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "candidate_commit": "3cfed3f",
+  "scope": "N02 isolated CASE.SPEC.03 product M4 owner HTTP to real-provider M6 and M8",
+  "synthetic_test_data": true,
+  "result": "PASS_LIMITED_SCOPE",
+  "refs": {
+    "n01_row": "A06.C03.SALES",
+    "profile_checksum": "3a70f214da3d3905640ae714b04b3c1d8e749f32d633b80bd4e74f3a2cd68ba3",
+    "candidate_checksum": "ac7bf97cfe86e800263134766df04c7dc70e0db956aca6ca9767c82b21f2f32a",
+    "case_version_checksum": "6b496c20a8b0f6532d3552d1ca65c78fd37982c12671ce9c8a77d6d6cb3d73c5",
+    "assessment_situation_snapshot_checksum": "92765972bb4d362620c36106ca4c1ccbcf411c8b02cfe7b73a4930cde87b1318"
+  },
+  "checks": {
+    "product_m4_validation": "PASS",
+    "functional_generation_deterministic": "PASS",
+    "functional_repair_used": false,
+    "tester_aggregation": "PASS",
+    "tester_batches": 4,
+    "challenger_batches": 4,
+    "owner_http_prepare_start_turn_completion": "PASS",
+    "m6_evidence": "succeeded",
+    "m6_indicator_assessment": "succeeded",
+    "m7_pipeline": "report_ready",
+    "m8_contract": "C-67",
+    "reliability": "not_verified",
+    "methodological_acceptance": "NOT_RUN"
+  },
+  "test_result": "1 passed in 554.93s",
+  "raw_artifact": {
+    "path": "docs/evc/evidence/r10-functional-api-c03-pass-2026-10-26.tar.gz",
+    "sha256": "dd0b1c1bbb6b11ffd4665c13261ce58b3cef75af94490684fb913fc24c641e39",
+    "full_cycle_uncompressed_sha256": "04062fa81a92a14603458ceb45b045e91309688e7f0aa915bc10c7c379cdfa47",
+    "preparation_uncompressed_sha256": "57c88187e065691cba3773344fd6648e4d84c7fc3a0e6cb3cd3336abf90181f8"
+  },
+  "limitations": [
+    "This is the second of nine functional Case paths and does not imply results for the remaining Cases.",
+    "Technical PASS is separate from methodological acceptance and Reliability."
+  ]
+}

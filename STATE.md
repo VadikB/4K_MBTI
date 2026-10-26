@@ -288,3 +288,12 @@
   archive SHA-256 `c538c19e...a9802`. N02: 1/9 functional paths PASS; C01 remains
   INCOMPLETE without reusable trace and не повторяется. Следующие captures включают
   полный persisted `functional_personalization_trace`.
+- `CASE.SPEC.03` на candidate `3cfed3f` завершил полный product путь PASS без repair:
+  PM-03 tester PASS (4 batches), challenger (4 batches), owner HTTP
+  prepare/start/Turn/completion, Evidence и IA `succeeded`, pipeline `report_ready`,
+  M8 `C-67`; `1 passed in 554.93s`. Candidate `ac7bf97c...2f32a`, AS snapshot
+  `92765972...b1318`. Полный persisted PM-03 trace сохранён. Reliability
+  `not_verified`, methodology `NOT_RUN`. Evidence:
+  `docs/evc/evidence/r10-functional-api-c03-pass-2026-10-26.{json,tar.gz}`,
+  archive SHA-256 `dd0b1c1b...641e39`. N02 functional: 2/9 PASS; C01 INCOMPLETE,
+  C04–C09 NOT_RUN.
