@@ -66,7 +66,7 @@ def test_controlled_runner_compiles_all_27_rows():
     matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
     for row in matrix["rows"]:
         result = run_row(matrix, row, ControlledGateway())
-        assert result["package"]["version"] == "0.4"
+        assert result["package"]["version"] == "0.5"
         assert result["admission"]["status"] == "PASS", row["id"]
         assert result["generation_operation"]["kind"] == "generation"
         assert result["repair"] is None

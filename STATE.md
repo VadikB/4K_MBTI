@@ -136,4 +136,32 @@
   `189 мин.`. Pause/blocking wait не продлевают calendar deadline.
 - Откат R08: вернуть одну формулу plan status и тесты; DB schema/данные не меняются.
   Уже начатые Cycle сохраняют свои frozen parameter snapshots.
-- Следующий шаг: R09 — общий кандидат и полный набор проверок.
+- R09: единый application candidate `2.0.29`; version targets и hashed web assets
+  синхронизированы. Предметные версии независимы: functional package `0.5`, compiler
+  `0.5.0`, runtime bindings `1.2.0`, Cycle manifest schema `2`, M6 Evidence prompt
+  `1.0.1`, SourceSet `2026-10-01`. SHA-256 manifest files соответственно:
+  `fddb7bbbb036b2054126f65fd034656b52b0178dd33ae6e0615c904607746722`,
+  `8e2077bf27a87748102951cb6a1a444139134f6aba5901f339b7169ea60d4d56`,
+  `a0bb42457fe372abfcf0ff4c3c00a39e6ed78b969ccab70f3193b20667f3bb31`,
+  `f95a390f1257f4adbccf61be59bdcb0b99396501ca34cf117eb0efc10b237db8`.
+- R09 выявил concurrent regression в detached M7 clarification: новая C54 могла
+  выиграть fence во время provider-фазы; late output отклонялся, но orchestration
+  повторно выбирала старую revision и аварийно прекращала drain. Теперь выбирается
+  только newest interim C54; `M7_STALE_C54`/`M7_CLARIFICATION_STATE_CHANGED` остаются
+  отказом публикации late output и запускают следующий orchestration pass. S10-A
+  Report/PDF после исправления PASS; отдельный unit подтверждает recovery.
+- Полный локальный CI-контур R09 на содержимом кандидата: release guard — PASS;
+  backend unit `592 PASS`; HTTP `69 PASS`; PostgreSQL integration `167 PASS`,
+  `1 SKIP` только explicit real-provider; frontend lint — PASS; frontend content
+  `75 PASS`; build — PASS; browser `63 PASS` за ~10 минут. Controlled 27-row runner
+  собирает все Case/function строки package `0.5`; package/runtime, actorless 02/07,
+  reaction counts 04/05/06/08/09, hidden materials, time expiry, pause/resume,
+  additional Session, late worker/replay и полный synthetic Evidence→IA→M8 покрыты
+  адресными/общими наборами. Controlled LLM не является методологической приёмкой.
+- R09 внешние gates: PR не создан и CI URL отсутствует, поскольку `gh` недоступен и
+  ветка не отправлялась; merge/deploy не выполнялись. Поэтому обязательные remote CI
+  exact-head и human review остаются `NOT_RUN`, несмотря на локальный PASS. Live
+  program revision/publish также `NOT_RUN`. Откат кандидата: revert R09 commit и
+  вернуть приложение `2.0.28`; immutable snapshots/package history не удалять.
+- Следующий шаг: R10 readiness и real-provider pilot только при наличии разрешённого
+  provider/credentials на отдельном pytest/test стенде; иначе `BLOCKED_ENVIRONMENT`.

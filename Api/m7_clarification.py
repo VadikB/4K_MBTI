@@ -74,7 +74,7 @@ def _save_generated(connection, *, snapshot: dict, c54_revision_id: str, key: st
     if prior:return prior
     latest=connection.execute("SELECT id FROM m6_c54_revisions WHERE as_db_id=%s AND mode='interim' ORDER BY created_at DESC LIMIT 1",(as_db,)).fetchone()
     if (not latest or str(latest['id'])!=c54_revision_id
-            or source['status']!='scenario_ended'
+            or source['status']!=snapshot['source']['status']
             or source['payload_hash']!=snapshot['source']['payload_hash']
             or source['boundary_sequence']!=snapshot['source']['boundary_sequence']):
         raise ValueError('M7_CLARIFICATION_STATE_CHANGED')

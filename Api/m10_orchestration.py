@@ -184,13 +184,24 @@ def _clarify_interim(connection, gateway=None, connection_factory=None) -> bool:
         JOIN m5_assessment_situations s ON s.id=c.as_db_id JOIN m5_cycles cy ON cy.id=s.cycle_db_id
         WHERE c.mode='interim' AND {sql_scope('cy')} AND NOT EXISTS(
           SELECT 1 FROM m7_clarification_decisions d WHERE d.c54_revision_id=c.id)
+          AND NOT EXISTS(SELECT 1 FROM m6_c54_revisions newer
+              WHERE newer.as_db_id=c.as_db_id AND newer.mode='interim'
+                AND (newer.created_at,newer.id)>(c.created_at,c.id))
         ORDER BY c.created_at FOR UPDATE OF cy SKIP LOCKED LIMIT 1""").fetchone()
     if not row:
         return False
     connection.commit()
-    decision = m7_clarification.decide_detached(c54_revision_id=str(row["id"]),
-        key=f"product-clarification:{row['id']}", created_by=int(row["created_by"]), gateway=gateway,
-        connection_factory=connection_factory or get_connection)
+    try:
+        decision = m7_clarification.decide_detached(c54_revision_id=str(row["id"]),
+            key=f"product-clarification:{row['id']}", created_by=int(row["created_by"]), gateway=gateway,
+            connection_factory=connection_factory or get_connection)
+    except ValueError as exc:
+        if str(exc) not in {"M7_STALE_C54", "M7_CLARIFICATION_STATE_CHANGED"}:
+            raise
+        # A concurrent Evidence/IA or runtime transition won the fence.  The late
+        # provider output remains rejected; a following orchestration pass selects
+        # only the newest still-applicable interim revision.
+        return True
     if decision["status"] == "ASK":
         m7_clarification.present(connection, decision_id=str(decision["id"]), expected_c54_revision_id=str(row["id"]))
     stage = "clarification_waiting" if decision["status"] == "ASK" else "clarification_resolved"
