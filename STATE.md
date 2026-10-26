@@ -329,3 +329,12 @@
   `docs/evc/evidence/r10-functional-api-c05-attempt-2026-10-26.{json,tar.gz}`;
   archive SHA-256 `3bb88b44...97cd80`. N02: C02/C03 PASS; C01/C05 INCOMPLETE;
   C04 erroneous tester requirement; C06–C09 `NOT_RUN`.
+- `CASE.SPEC.06` на `72fee15` остановлен техническим provider blocker через 447.17 s:
+  при challenger retest после одной repair строгий JSON parser исчерпал один retry и
+  получил `JSONDecodeError` (`position=6419`), итог
+  `M5_FUNCTIONAL_PROVIDER_JSON_INVALID`. Частичный JSON не восстанавливался; это не
+  содержательный FAIL AS. Из-за исключения до возврата `prepare` queue сохранила
+  operation/error, но не phase trace; raw response после teardown недоступен — явное
+  ограничение evidence. Admission не завершён, runtime/M6/M8 `NOT_RUN`; C06 не
+  повторять. Evidence `docs/evc/evidence/r10-functional-api-c06-attempt-2026-10-26.{json,tar.gz}`;
+  archive SHA-256 `85d38b5a...c4be0a`.

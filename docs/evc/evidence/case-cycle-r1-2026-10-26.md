@@ -211,6 +211,18 @@ AS. Runtime/M6/M8 не запускались; повтор без измене�
 `docs/evc/evidence/r10-functional-api-c05-attempt-2026-10-26.{json,tar.gz}`;
 archive SHA-256 `3bb88b442ed43563a88bcd6e286b03535fcbc19272af04edb47e9c6da897cd80`.
 
+`CASE.SPEC.06` на exact candidate `72fee15` остановлен через 447.17 s техническим
+provider blocker. На challenger retest после одной repair строгий JSON parser исчерпал
+предусмотренный retry; второй ответ завершился `JSONDecodeError` (`position=6419`) и
+`M5_FUNCTIONAL_PROVIDER_JSON_INVALID`. Частичный ответ не восстанавливался и не
+смешивался, поэтому содержательный FAIL AS не присвоен. Исключение произошло до
+возврата generated trace: queue сохранила operation/error metadata, но `result_json`
+отсутствует, а response body после teardown isolated schema недоступен. Это явное
+ограничение evidence; повтор C06 не выполняется. Admission не завершён,
+runtime/M6/M8 — `NOT_RUN`. Evidence:
+`docs/evc/evidence/r10-functional-api-c06-attempt-2026-10-26.{json,tar.gz}`;
+archive SHA-256 `85d38b5a541361342bb1df5438d69d85f87ccc631133a33d29e909088dc4be0a`.
+
 ## Откат и ограничения выпуска
 
 Кодовый откат — вернуть R09 candidate commit и приложение `2.0.28`; опубликованные
