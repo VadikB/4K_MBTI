@@ -52,7 +52,22 @@ class FunctionalGateway:
     def chat_with_trace(self, messages, **kwargs):
         payload = json.loads(next(item["content"] for item in reversed(messages) if item["role"] == "user"))
         if ":generation:" in kwargs["routing_key"]:
-            content = json.dumps(payload["author_as_example"], ensure_ascii=False)
+            candidate = copy.deepcopy(payload["author_as_example"])
+            material_ids = [item["MaterialID"] for item in candidate["Материалы"]]
+            event_ids = [item["EventID"] for item in candidate["События"]]
+            character_ids = [item["CharacterID"] for item in candidate["Активные персонажи"]]
+            for index, target in enumerate(candidate["IndicatorObservability"]):
+                target.update({
+                    "material_refs": material_ids[:1], "event_refs": event_ids[:1],
+                    "character_refs": character_ids[:1], "authority_refs": ["participant"],
+                    "author_mapping": {
+                        "source_pointer": f"/IndicatorObservability/{index}",
+                        "source_checksum": functional_checksum(
+                            payload["author_as_example"]["IndicatorObservability"][index]
+                        ),
+                    },
+                })
+            content = json.dumps(candidate, ensure_ascii=False)
         else:
             required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
             content = json.dumps({"checks": [{

@@ -1,0 +1,690 @@
+{
+  "$defs": {
+    "Applicability": {
+      "additionalProperties": false,
+      "properties": {
+        "component_id": {
+          "pattern": "^K[1-4]\\.C\\d{2}$",
+          "title": "Component Id",
+          "type": "string"
+        },
+        "required": {
+          "const": true,
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "skill_id": {
+          "pattern": "^K[1-4]\\.\\d+$",
+          "title": "Skill Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "skill_id",
+        "component_id"
+      ],
+      "title": "Applicability",
+      "type": "object"
+    },
+    "CaseCharacterV3": {
+      "additionalProperties": false,
+      "properties": {
+        "character_id": {
+          "minLength": 1,
+          "title": "Character Id",
+          "type": "string"
+        },
+        "content": {
+          "additionalProperties": true,
+          "title": "Content",
+          "type": "object"
+        },
+        "order": {
+          "exclusiveMinimum": 0,
+          "title": "Order",
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/$defs/JsonSourceRefV3"
+        }
+      },
+      "required": [
+        "character_id",
+        "order",
+        "content",
+        "source"
+      ],
+      "title": "CaseCharacterV3",
+      "type": "object"
+    },
+    "CaseMaterialV3": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "additionalProperties": true,
+          "title": "Content",
+          "type": "object"
+        },
+        "material_id": {
+          "minLength": 1,
+          "title": "Material Id",
+          "type": "string"
+        },
+        "order": {
+          "exclusiveMinimum": 0,
+          "title": "Order",
+          "type": "integer"
+        },
+        "participant_visible_initially": {
+          "title": "Participant Visible Initially",
+          "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/$defs/JsonSourceRefV3"
+        }
+      },
+      "required": [
+        "material_id",
+        "order",
+        "participant_visible_initially",
+        "content",
+        "source"
+      ],
+      "title": "CaseMaterialV3",
+      "type": "object"
+    },
+    "IndicatorTargetV3": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_occurrence": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Occurrence"
+        },
+        "adaptation_constraints": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Adaptation Constraints"
+        },
+        "adapted_source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JsonSourceRefV3"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "author_basis": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author Basis"
+        },
+        "author_title": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author Title"
+        },
+        "branch_condition": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Branch Condition"
+        },
+        "component_id": {
+          "pattern": "^K[1-4]\\.C\\d{2}$",
+          "title": "Component Id",
+          "type": "string"
+        },
+        "condition_absence_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Condition Absence Reason"
+        },
+        "design_opportunity": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Design Opportunity"
+        },
+        "event_condition": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Event Condition"
+        },
+        "evidence_status": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Status"
+        },
+        "indicator_id": {
+          "pattern": "^K[1-4]\\.I\\d{2}$",
+          "title": "Indicator Id",
+          "type": "string"
+        },
+        "invariant_refs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Invariant Refs",
+          "type": "array"
+        },
+        "m2_version": {
+          "minLength": 1,
+          "title": "M2 Version",
+          "type": "string"
+        },
+        "material_refs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Material Refs",
+          "type": "array"
+        },
+        "normative_source": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Normative Source"
+        },
+        "observable_action": {
+          "minLength": 1,
+          "title": "Observable Action",
+          "type": "string"
+        },
+        "observation_condition": {
+          "minLength": 1,
+          "title": "Observation Condition",
+          "type": "string"
+        },
+        "scenario_locations": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Scenario Locations",
+          "type": "array"
+        },
+        "skill_id": {
+          "pattern": "^K[1-4]\\.\\d+$",
+          "title": "Skill Id",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/JsonSourceRefV3"
+        },
+        "validity_risk": {
+          "minLength": 1,
+          "title": "Validity Risk",
+          "type": "string"
+        }
+      },
+      "required": [
+        "indicator_id",
+        "m2_version",
+        "skill_id",
+        "component_id",
+        "observation_condition",
+        "scenario_locations",
+        "branch_condition",
+        "event_condition",
+        "observable_action",
+        "validity_risk",
+        "source"
+      ],
+      "title": "IndicatorTargetV3",
+      "type": "object"
+    },
+    "JsonSourceRefV3": {
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "minLength": 1,
+          "title": "File",
+          "type": "string"
+        },
+        "pointer": {
+          "pattern": "^(/.*)?$",
+          "title": "Pointer",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "sha256",
+        "pointer"
+      ],
+      "title": "JsonSourceRefV3",
+      "type": "object"
+    },
+    "ParticipantMaterialV3": {
+      "additionalProperties": false,
+      "properties": {
+        "material_id": {
+          "minLength": 1,
+          "title": "Material Id",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/JsonSourceRefV3"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "material_id",
+        "title",
+        "text",
+        "source"
+      ],
+      "title": "ParticipantMaterialV3",
+      "type": "object"
+    },
+    "ParticipantPresentationV3": {
+      "additionalProperties": false,
+      "properties": {
+        "assessee_position": {
+          "minLength": 1,
+          "title": "Assessee Position",
+          "type": "string"
+        },
+        "assessee_task": {
+          "minLength": 1,
+          "title": "Assessee Task",
+          "type": "string"
+        },
+        "assessment_situation_id": {
+          "minLength": 1,
+          "title": "Assessment Situation Id",
+          "type": "string"
+        },
+        "conditions_and_constraints": {
+          "minLength": 1,
+          "title": "Conditions And Constraints",
+          "type": "string"
+        },
+        "initial_materials": {
+          "items": {
+            "$ref": "#/$defs/ParticipantMaterialV3"
+          },
+          "title": "Initial Materials",
+          "type": "array"
+        },
+        "initial_situation": {
+          "minLength": 1,
+          "title": "Initial Situation",
+          "type": "string"
+        },
+        "introduction": {
+          "minLength": 1,
+          "title": "Introduction",
+          "type": "string"
+        },
+        "participants_and_positions": {
+          "minLength": 1,
+          "title": "Participants And Positions",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/JsonSourceRefV3"
+        },
+        "substitution_targets": {
+          "items": {
+            "$ref": "#/$defs/SubstitutionTargetV3"
+          },
+          "title": "Substitution Targets",
+          "type": "array"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "trigger": {
+          "minLength": 1,
+          "title": "Trigger",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assessment_situation_id",
+        "version",
+        "source",
+        "title",
+        "introduction",
+        "initial_situation",
+        "trigger",
+        "assessee_position",
+        "participants_and_positions",
+        "assessee_task",
+        "conditions_and_constraints",
+        "initial_materials"
+      ],
+      "title": "ParticipantPresentationV3",
+      "type": "object"
+    },
+    "ScenarioStepV3": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "additionalProperties": true,
+          "title": "Content",
+          "type": "object"
+        },
+        "order": {
+          "exclusiveMinimum": 0,
+          "title": "Order",
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/$defs/JsonSourceRefV3"
+        },
+        "step_id": {
+          "minLength": 1,
+          "title": "Step Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "step_id",
+        "order",
+        "content",
+        "source"
+      ],
+      "title": "ScenarioStepV3",
+      "type": "object"
+    },
+    "SubstitutionTargetV3": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "slot": {
+          "const": "organization_name",
+          "title": "Slot",
+          "type": "string"
+        },
+        "source_value": {
+          "minLength": 1,
+          "title": "Source Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slot",
+        "path",
+        "source_value"
+      ],
+      "title": "SubstitutionTargetV3",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "JSON-native author package; original author objects remain immutable snapshots.",
+  "properties": {
+    "applicability": {
+      "items": {
+        "$ref": "#/$defs/Applicability"
+      },
+      "minItems": 1,
+      "title": "Applicability",
+      "type": "array"
+    },
+    "author_as_source": {
+      "$ref": "#/$defs/JsonSourceRefV3"
+    },
+    "author_assessment_situation": {
+      "additionalProperties": true,
+      "title": "Author Assessment Situation",
+      "type": "object"
+    },
+    "author_case": {
+      "additionalProperties": true,
+      "title": "Author Case",
+      "type": "object"
+    },
+    "author_case_source": {
+      "$ref": "#/$defs/JsonSourceRefV3"
+    },
+    "base_role": {
+      "minLength": 1,
+      "title": "Base Role",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^CASE\\.SPEC\\.\\d{2}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_type_ids": {
+      "items": {
+        "pattern": "^CT\\d{2}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Case Type Ids",
+      "type": "array"
+    },
+    "characters": {
+      "items": {
+        "$ref": "#/$defs/CaseCharacterV3"
+      },
+      "title": "Characters",
+      "type": "array"
+    },
+    "format": {
+      "minLength": 1,
+      "title": "Format",
+      "type": "string"
+    },
+    "indicator_targets": {
+      "items": {
+        "$ref": "#/$defs/IndicatorTargetV3"
+      },
+      "minItems": 1,
+      "title": "Indicator Targets",
+      "type": "array"
+    },
+    "materials": {
+      "items": {
+        "$ref": "#/$defs/CaseMaterialV3"
+      },
+      "minItems": 1,
+      "title": "Materials",
+      "type": "array"
+    },
+    "participant_presentation": {
+      "$ref": "#/$defs/ParticipantPresentationV3"
+    },
+    "passport": {
+      "additionalProperties": true,
+      "title": "Passport",
+      "type": "object"
+    },
+    "passport_sources": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonSourceRefV3"
+      },
+      "title": "Passport Sources",
+      "type": "object"
+    },
+    "planned_max_minutes": {
+      "exclusiveMinimum": 0,
+      "title": "Planned Max Minutes",
+      "type": "integer"
+    },
+    "planned_min_minutes": {
+      "exclusiveMinimum": 0,
+      "title": "Planned Min Minutes",
+      "type": "integer"
+    },
+    "scenario": {
+      "items": {
+        "$ref": "#/$defs/ScenarioStepV3"
+      },
+      "minItems": 1,
+      "title": "Scenario",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 3,
+      "default": 3,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "status": {
+      "enum": [
+        "WORKING",
+        "REVIEW",
+        "FROZEN"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "unresolved_decisions": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Unresolved Decisions",
+      "type": "array"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "version",
+    "status",
+    "title",
+    "base_role",
+    "format",
+    "planned_min_minutes",
+    "planned_max_minutes",
+    "passport",
+    "passport_sources",
+    "case_type_ids",
+    "applicability",
+    "indicator_targets",
+    "characters",
+    "materials",
+    "scenario",
+    "participant_presentation",
+    "author_case",
+    "author_assessment_situation",
+    "author_case_source",
+    "author_as_source"
+  ],
+  "title": "CaseVersionV3",
+  "type": "object"
+}

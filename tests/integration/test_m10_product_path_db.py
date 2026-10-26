@@ -467,7 +467,22 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
                                          ORDER BY created_at DESC LIMIT 1)"""
                         )
                     type(self).cycle_closed = True
-                content = json.dumps(payload["author_as_example"], ensure_ascii=False)
+                candidate = json.loads(json.dumps(payload["author_as_example"], ensure_ascii=False))
+                material_ids = [item["MaterialID"] for item in candidate["Материалы"]]
+                event_ids = [item["EventID"] for item in candidate["События"]]
+                character_ids = [item["CharacterID"] for item in candidate["Активные персонажи"]]
+                for index, target in enumerate(candidate["IndicatorObservability"]):
+                    target.update({
+                        "material_refs": material_ids[:1], "event_refs": event_ids[:1],
+                        "character_refs": character_ids[:1], "authority_refs": ["participant"],
+                        "author_mapping": {
+                            "source_pointer": f"/IndicatorObservability/{index}",
+                            "source_checksum": functional_checksum(
+                                payload["author_as_example"]["IndicatorObservability"][index]
+                            ),
+                        },
+                    })
+                content = json.dumps(candidate, ensure_ascii=False)
             else:
                 required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
                 content = json.dumps({"checks": [{"check_id": item["check_id"], "status": "PASS",
@@ -569,7 +584,7 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         assert generated_ref == {"source": "functional_generation",
                                  "candidate_checksum": generated_trace["candidate_checksum"]}
         assert generated_trace["admitted_for_participant"] is True
-        assert generated_trace["schema_version"] == 2
+        assert generated_trace["schema_version"] == 3
         assert functional_checksum(generated_trace["accepted_as"]) == generated_trace["candidate_checksum"]
         assert generated_trace["tester_input_checksum"] == generated_trace["tester"]["provider_operation"]["input_checksum"]
         assert generated_trace["source_snapshot"]["author_as_example"]["CaseID"] == decision["selected_case_id"]
@@ -647,7 +662,7 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
             (second["result_json"]["decision"]["assessment_situation_id"],),
         ).fetchone()["execution_payload_json"]
         second_trace = second_payload["ai_operations"]["functional_personalization"]
-        assert second_trace["schema_version"] == 2
+        assert second_trace["schema_version"] == 3
         assert functional_checksum(second_trace["accepted_as"]) == second_trace["candidate_checksum"]
         assert second_trace["source_snapshot"]["author_as_example"]["CaseID"] == \
             second["result_json"]["decision"]["selected_case_id"]

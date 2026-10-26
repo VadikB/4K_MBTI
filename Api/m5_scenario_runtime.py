@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 
 from Api.m5_case_runtime import checksum
+from Api.m5_functional_generation_service import checksum as functional_checksum
 from Api import m5_cycle_runtime
 from Api.m5_rule_engine import (
     CharacterResponseAdapter,
@@ -128,8 +129,18 @@ def _as_row(connection, assessment_situation_id: str, *, lock: bool = False):
     case_ref = snapshot.get("case_ref") or {}
     profile_ref = snapshot.get("profile_ref") or {}
     functional = ((execution_payload.get("ai_operations") or {}).get("functional_personalization") or {})
-    functional_case_ok = bool(functional) and (
+    layers = functional.get("indicator_target_layers")
+    layer_integrity = (
         functional.get("schema_version") == 2
+        or (
+            functional.get("schema_version") == 3
+            and isinstance(layers, dict)
+            and layers == (functional.get("accepted_as") or {}).get("IndicatorTargetLayers")
+            and functional_checksum(layers) == functional.get("indicator_target_layers_checksum")
+        )
+    )
+    functional_case_ok = bool(functional) and (
+        layer_integrity
         and case_ref.get("checksum") == functional.get("compiled_case_checksum")
         and ((functional.get("source_snapshot") or {}).get("refs") or {}).get("case", {}).get(
             "case_version_checksum") == dependencies["content_checksum"]

@@ -1,0 +1,21 @@
+{
+  "Дата": "2026-10-22",
+  "Result": "PASS",
+  "Метод": "LOCAL_PACKAGE_AND_DOCUMENT_CHECK",
+  "JSON_files_parsed": 93,
+  "Cases": 9,
+  "AS": 9,
+  "Visual_review": {
+    "Result": "PASS",
+    "Pages": 5,
+    "Method": "Rendered DOCX and visually inspected each final page PNG",
+    "Checks": [
+      "No clipping or overlap",
+      "Tables and Cyrillic text readable",
+      "Black headings without title border",
+      "Page breaks and footer positions correct"
+    ],
+    "DocxSHA256": "6b7882586b770869f8ee3a0c41e7086e225bf1136e5eadd473503ed338eb0877"
+  },
+  "Предел": "Целостность поставки и макет записки. Не продуктный QA и не независимый допуск."
+}

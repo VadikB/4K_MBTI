@@ -145,6 +145,8 @@ class IndicatorTargetV3(Contract):
     evidence_status: Text | None = None
     invariant_refs: list[Text] = Field(default_factory=list)
     condition_absence_reason: Text | None = None
+    author_basis: dict[str, Any] | None = None
+    adapted_source: JsonSourceRefV3 | None = None
     source: JsonSourceRefV3
 
 class CaseCharacterV3(Contract):

@@ -143,13 +143,12 @@ def build_assessment_situation(
         "indicator_targets": [x.model_dump() for x in case.indicator_targets],
         "ai_operations": deepcopy(ai_operations or {}),
     }
-    case_dump = case.model_dump()
     execution_checksum = checksum(execution_payload)
     as_value = AssessmentSituationV2(
         assessment_situation_id=assessment_situation_id,
         cycle_ref=cycle_ref,
         session_ref=session_ref,
-        case_ref={"id": case.case_id, "version": case.version, "checksum": checksum(case_dump)},
+        case_ref={"id": case.case_id, "version": case.version, "checksum": checksum(case_value)},
         profile_ref=profile_ref,
         methodology_refs=methodology_refs,
         base_role=case.base_role,

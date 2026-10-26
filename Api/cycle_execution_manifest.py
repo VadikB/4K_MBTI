@@ -22,7 +22,7 @@ DEFAULT_DEPENDENCIES: dict[str, str] = {
     "m3_role_profiles": "assessment_definitions/role_profiles/competencies_4k/1.1",
     "m4_context": "assessment_definitions/contexts/competencies_4k/1.1",
     "m5_case_catalog": "assessment_definitions/cases/competencies_4k/1.1",
-    "m5_functional_package": "assessment_definitions/cases/competencies_4k/functional-personalization/0.3",
+    "m5_functional_package": "assessment_definitions/cases/competencies_4k/functional-personalization/0.4",
     "m5_functional_runtime": "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.1.0",
     "m5_functional_repair": "assessment_definitions/prompts/m5_functional_repair/v1",
     "m5_functional_protocol": "assessment_definitions/prompts/m5_functional_protocol/v1",
