@@ -6020,17 +6020,15 @@ def start_m5_runtime_situation(assessment_situation_id: UUID, request: Request) 
 def submit_m5_runtime_turn(assessment_situation_id: UUID, payload: M5QATurnRequest, request: Request) -> dict:
     _m5_superadmin(request)
     try:
-        with get_connection() as connection:
-            result = m5_scenario_runtime.submit_turn(
-                connection, assessment_situation_id=str(assessment_situation_id), request_id=payload.request_id,
-                turn_id=str(payload.turn_id), content=payload.content,
-                semantic_adapter=(m5_scenario_runtime.ControlledSemanticAdapter(payload.controlled_outcomes)
-                                  if payload.controlled_outcomes is not None else None),
-                character_adapter=(m5_scenario_runtime.ControlledCharacterAdapter(payload.controlled_character_responses)
-                                   if payload.controlled_character_responses is not None else None),
-            )
-            connection.commit()
-            return result
+        return m5_scenario_runtime.submit_turn_detached(
+            assessment_situation_id=str(assessment_situation_id), request_id=payload.request_id,
+            turn_id=str(payload.turn_id), content=payload.content,
+            semantic_adapter=(m5_scenario_runtime.ControlledSemanticAdapter(payload.controlled_outcomes)
+                              if payload.controlled_outcomes is not None else None),
+            character_adapter=(m5_scenario_runtime.ControlledCharacterAdapter(payload.controlled_character_responses)
+                               if payload.controlled_character_responses is not None else None),
+            connection_factory=get_connection,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
@@ -6151,12 +6149,12 @@ def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, 
                     controlled_outcomes[fixture['character_material_id']+':character_reaction']='TRUE'
                 semantic_adapter=ControlledSemanticAdapter(controlled_outcomes)
                 character_adapter=ControlledCharacterAdapter({fixture['character_material_id']:fixture['character_response']} if matched else {})
-            result = m5_scenario_runtime.submit_turn(connection, assessment_situation_id=str(assessment_situation_id),
-                                                     request_id=payload.request_id, turn_id=str(payload.turn_id),
-                                                     content=payload.content,semantic_adapter=semantic_adapter,
-                                                     character_adapter=character_adapter)
             connection.commit()
-            return result
+        return m5_scenario_runtime.submit_turn_detached(
+            assessment_situation_id=str(assessment_situation_id), request_id=payload.request_id,
+            turn_id=str(payload.turn_id), content=payload.content, semantic_adapter=semantic_adapter,
+            character_adapter=character_adapter, connection_factory=get_connection,
+        )
     except ValueError as exc:
         if str(exc)=='M7_TIME_LIMIT_REACHED':_persist_time_expiry_for_situation(str(assessment_situation_id))
         raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -8165,12 +8163,10 @@ def create_m6_cycle_calculation(cycle_id: UUID, payload: CreateAggregationReques
 def create_m6_substantive_calculation(cycle_id: UUID, payload: CreateSubstantiveAggregationRequest, request: Request):
     user = _m5_superadmin(request)
     try:
-        with get_connection() as connection:
-            result = m6_cycle_aggregation_repository.create_substantive(
-                connection, cycle_id=str(cycle_id), key=payload.idempotency_key,
-                expected_composition_checksum=payload.expected_composition_checksum, created_by=int(user.id))
-            connection.commit()
-            return result
+        return m6_cycle_aggregation_repository.create_substantive_detached(
+            cycle_id=str(cycle_id), key=payload.idempotency_key,
+            expected_composition_checksum=payload.expected_composition_checksum, created_by=int(user.id),
+            connection_factory=get_connection)
     except (ValueError, KeyError, OSError) as exc:
         raise HTTPException(409, detail='M6_SUBSTANTIVE_CALCULATION_UNAVAILABLE') from exc
 
@@ -8203,11 +8199,11 @@ def create_m8_results(cycle_id: UUID, payload: CreateResultsRequest, request: Re
 def create_m8_report(payload: CreateReportRequest, request: Request):
     user = _m5_superadmin(request)
     try:
-        with get_connection() as connection:
-            result = m8_results.create_report(connection, results_revision_id=payload.results_revision_id,
-                audience=payload.audience, key=payload.idempotency_key,
-                target_profile=payload.target_profile.model_dump() if payload.target_profile else None, created_by=int(user.id))
-            connection.commit(); return result
+        return m8_results.create_report_detached(
+            results_revision_id=payload.results_revision_id, audience=payload.audience,
+            key=payload.idempotency_key,
+            target_profile=payload.target_profile.model_dump() if payload.target_profile else None,
+            created_by=int(user.id), connection_factory=get_connection)
     except (ValueError, KeyError) as exc:
         raise HTTPException(409, detail=str(exc)) from exc
 
@@ -8348,9 +8344,11 @@ def regenerate_owned_m8_report(cycle_id: UUID, payload: RegenerateReportRequest,
         with get_connection() as connection:
             results = m8_results.read_latest_results(connection, str(cycle_id))
             previous = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
-            result = m8_results.create_report(connection, results_revision_id=results['revision_id'], audience='assessee',
-                key=payload.idempotency_key, target_profile=previous['c67'].get('target_profile'), created_by=int(user.id))
-            connection.commit(); return result
+            target_profile = previous['c67'].get('target_profile')
+            connection.commit()
+        return m8_results.create_report_detached(
+            results_revision_id=results['revision_id'], audience='assessee', key=payload.idempotency_key,
+            target_profile=target_profile, created_by=int(user.id), connection_factory=get_connection)
     except (ValueError, KeyError) as exc: raise HTTPException(409, detail=str(exc)) from exc
 
 
@@ -8535,9 +8533,8 @@ def present_m7_decision(decision_id: UUID, payload: PresentSituationRequest, req
 def create_m7_clarification(payload:CreateClarificationRequest,request:Request):
     user=_m5_superadmin(request)
     try:
-        with get_connection() as connection:
-            result=m7_clarification.decide(connection,c54_revision_id=payload.c54_revision_id,
-                key=payload.idempotency_key,created_by=int(user.id));connection.commit();return result
+        return m7_clarification.decide_detached(c54_revision_id=payload.c54_revision_id,
+            key=payload.idempotency_key,created_by=int(user.id),connection_factory=get_connection)
     except (ValueError,KeyError,OSError) as exc:raise HTTPException(409,detail=str(exc)) from exc
 
 

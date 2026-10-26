@@ -207,7 +207,7 @@ def test_product_turn_and_transition_use_runtime_without_exposing_execution_snap
     http, monkeypatch, _ = client
     http.cookies.set(routes.SESSION_COOKIE_NAME, "owner")
     situation_id = str(uuid4())
-    monkeypatch.setattr(routes.m5_scenario_runtime, "submit_turn",
+    monkeypatch.setattr(routes.m5_scenario_runtime, "submit_turn_detached",
                         lambda *_args, **kwargs: {"turn": {"content_text": kwargs["content"]}, "events": []})
     turn = http.post(f"/users/assessment/m5/situations/{situation_id}/turns", json={
         "request_id": "turn-1", "turn_id": str(uuid4()), "content": "Ответ",

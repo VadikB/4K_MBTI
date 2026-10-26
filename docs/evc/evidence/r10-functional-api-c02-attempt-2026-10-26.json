@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "candidate_base_commit": "9291661",
+  "scope": "N02 product-valid M4 owner HTTP preparation for isolated CASE.SPEC.02",
+  "synthetic_test_data": true,
+  "result": "AS_ADMISSION_INCOMPLETE",
+  "input_snapshot_checksum": "5740d5b196a1d7cac22692bbf6af542e07029d6d68307abee2cde657c2b65277",
+  "candidate_checksum": "bcfdde5f17ac6fa142f516df235818c7a7ad38afe14fa42c9d48d6fbd0c8079b",
+  "generation": {
+    "deterministic_validation": "PASS",
+    "repair_used": false
+  },
+  "tester": {
+    "aggregation": "INCOMPLETE",
+    "required_checks": 33,
+    "pass": 13,
+    "technical_error": 20,
+    "input_checksum": "ab3dee850769090f920fcac1ddabdba837488bf619d0f5d79456bbfc56f4898a",
+    "provider_request_id": "7af718c8-a45e-4d9d-96be-f33887118543",
+    "finish_reason": "stop",
+    "prompt_tokens": 71325,
+    "completion_tokens": 7934
+  },
+  "classification": {
+    "confirmed_cause": "The single tester request omitted valid adversarial_review for 20 mandatory protected checks; normalization correctly converted them to TECHNICAL_ERROR.",
+    "generation_defect": false,
+    "compiler_defect": false,
+    "tester_input_transport_defect": true,
+    "erroneous_tester_requirement": false,
+    "substantive_as_failure": false
+  },
+  "dependent_stages": {
+    "runtime": "NOT_RUN",
+    "m6": "NOT_RUN",
+    "m8": "NOT_RUN"
+  },
+  "raw_artifact": {
+    "path": "docs/evc/evidence/r10-functional-api-c02-attempt-2026-10-26.tar.gz",
+    "sha256": "52433870b96d17c24332ab5f63fca0a4e19dc3115ccaa28b7c9b6cf0d906d1c6",
+    "uncompressed_sha256": "de80c5a46f4d42a6daa12c89ee0859e90615543511253d8b48e8c7f2b3669b6a"
+  },
+  "remediation": "Evaluate tester and challenger required checks in deterministic batches of at most eight, then normalize and aggregate the complete exact-id set.",
+  "methodological_acceptance": "NOT_RUN",
+  "reliability": "NOT_RUN"
+}

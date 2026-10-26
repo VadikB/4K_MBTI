@@ -496,13 +496,17 @@ def test_m7_clarification_reuses_dialogue_and_restarts_m6(database):
         class QuestionGateway:
             enabled=True
             def chat(self,*args,**kwargs):
+                assert c.info.transaction_status.name == 'IDLE'
                 return json.dumps({'schema_version':1,'admissible':True,
                     'text':'Что именно вы имели в виду, когда назвали этот довод основным?',
                     'purpose':'clarify_meaning','indicator_ids':[first_indicator],
                     'resolving_information':['уточнение смысла уже данного ответа'],'refusal_reason':None},ensure_ascii=False)
-        decision=m7_clarification.decide(c,c54_revision_id=str(c54),key='clarification-1',created_by=99,gateway=QuestionGateway())
+        c.commit()
+        decision=m7_clarification.decide_detached(c54_revision_id=str(c54),key='clarification-1',created_by=99,
+            gateway=QuestionGateway(),connection_factory=factory)
         assert decision['status']=='ASK'
-        assert m7_clarification.decide(c,c54_revision_id=str(c54),key='clarification-alias',created_by=99,gateway=QuestionGateway())['id']==decision['id']
+        assert m7_clarification.decide_detached(c54_revision_id=str(c54),key='clarification-alias',created_by=99,
+            gateway=QuestionGateway(),connection_factory=factory)['id']==decision['id']
         shown=m7_clarification.present(c,decision_id=str(decision['id']),expected_c54_revision_id=str(c54))
         answered=m7_clarification.answer(c,decision_id=str(decision['id']),request_id='clarification-answer-1',
             turn_id=str(uuid4()),content='Я имел в виду, что этот довод связывает обе части моего решения.')
@@ -519,7 +523,14 @@ def test_m7_clarification_reuses_dialogue_and_restarts_m6(database):
     run_assessment(next_assessment['id'],connection_factory=factory,gateway=AssessmentGateway())
     with factory() as c:
         next_status=assessments.read_request(c,next_assessment['id']);assert next_status['status']=='succeeded'
-        second=m7_clarification.decide(c,c54_revision_id=str(next_status['c54_revision_id']),key='clarification-2',created_by=99,gateway=QuestionGateway())
+        class FollowupQuestionGateway:
+            enabled=True
+            def chat(self,*args,**kwargs):
+                return json.dumps({'schema_version':1,'admissible':True,
+                    'text':'Что именно вы имели в виду, когда назвали этот довод основным?',
+                    'purpose':'clarify_meaning','indicator_ids':[first_indicator],
+                    'resolving_information':['уточнение смысла уже данного ответа'],'refusal_reason':None},ensure_ascii=False)
+        second=m7_clarification.decide(c,c54_revision_id=str(next_status['c54_revision_id']),key='clarification-2',created_by=99,gateway=FollowupQuestionGateway())
         m7_clarification.present(c,decision_id=str(second['id']),expected_c54_revision_id=str(next_status['c54_revision_id']))
         before=c.execute("SELECT count(*) AS n FROM m5_dialogue_turns WHERE speaker_type='assessee'").fetchone()['n']
         no_answer=m7_clarification.record_outcome(c,decision_id=str(second['id']),request_id='clarification-no-answer-1',outcome='no_answer')

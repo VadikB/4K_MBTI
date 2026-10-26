@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-26T17:36:07Z",
+  "candidate_base_commit": "d5cb143",
+  "scope": "N02 product-valid M4 owner HTTP preparation pilot for CASE.SPEC.01",
+  "synthetic_test_data": true,
+  "result": "AS_ADMISSION_INCOMPLETE",
+  "stages": {
+    "m4_profile_validation": "PASS",
+    "m7_case_selection": "PASS",
+    "selected_case_id": "CASE.SPEC.01",
+    "real_provider_generation_tester": "COMPLETED_WITH_INCOMPLETE_ADMISSION",
+    "runtime": "NOT_RUN",
+    "m6_evidence": "NOT_RUN",
+    "m6_indicator_assessment": "NOT_RUN",
+    "m8": "NOT_RUN"
+  },
+  "error": {
+    "code": "ValueError",
+    "message": "M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE",
+    "elapsed_seconds": 127.98
+  },
+  "n01_profile_compatibility": {
+    "matrix_profile_checksum": "460fbfa6a7b8e783ee36e39a8017fa3a5869ec944e55c067f79ad477cc5770a3",
+    "status": "NOT_A_REUSABLE_M4_SNAPSHOT",
+    "reason": "The N01 matrix projection is not reproducible by participant_profile.validate_snapshot and must not be rebound to another immutable product M4 profile."
+  },
+  "trace_capture": {
+    "status": "FAILED_HARNESS_GAP",
+    "detail": "The isolated pytest schema was dropped before the queue failure_result was exported.",
+    "impact": "The exact INCOMPLETE tester checks cannot be classified from this attempt; no substantive AS defect is inferred.",
+    "remediation": "The runner now writes preparation-failure.json before asserting."
+  },
+  "retry_decision": "DO_NOT_REPEAT_WITHOUT_CHANGED_CAUSE",
+  "methodological_acceptance": "NOT_RUN",
+  "reliability": "NOT_RUN"
+}

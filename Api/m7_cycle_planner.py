@@ -324,9 +324,8 @@ def revise_prepared_parameters(connection, *, cycle_id: str, created_by: int,
                    calendar_window_seconds=resolved["values"]["calendar_window_seconds"],
                    parameter_sources=resolved["sources"],
                    parameter_resolution_checksum=resolved["resolved_checksum"])
-    total = int(content.get("planned_max_seconds") or 0)
     uncovered = list(content.get("uncovered_target_ids") or [])
-    content["status"] = "READY" if not uncovered and total <= content["time_budget_seconds"] else (
+    content["status"] = "READY" if not uncovered else (
         "LIMITED" if content.get("route") else "NO_ROUTE")
     sources = {"time_budget":resolved["sources"]["time_budget_seconds"],
                "calendar_window":resolved["sources"]["calendar_window_seconds"],

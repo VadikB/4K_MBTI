@@ -139,6 +139,9 @@ class IndicatorTargetV3(Contract):
     author_title: Text | None = None
     normative_source: dict[str, Any] | None = None
     material_refs: list[Text] = Field(default_factory=list)
+    event_refs: list[Text] = Field(default_factory=list)
+    character_refs: list[Text] = Field(default_factory=list)
+    authority_refs: list[Text] = Field(default_factory=list)
     adaptation_constraints: Text | None = None
     design_opportunity: Text | None = None
     actual_occurrence: Text | None = None

@@ -2,7 +2,10 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
+  workflow_dispatch:
 
 jobs:
   frontend:
@@ -125,10 +128,14 @@ jobs:
           node-version: "22"
           cache: npm
 
-      - name: Browser dependencies
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium
+      - name: Install browser test dependencies
+        run: npm ci
+
+      - name: Install Chromium system dependencies
+        run: npx playwright install-deps chromium
+
+      - name: Install Chromium browser
+        run: npx playwright install chromium
 
       - name: Browser acceptance (isolated bootstrap 10.2)
         env:

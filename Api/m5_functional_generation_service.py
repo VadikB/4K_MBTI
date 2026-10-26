@@ -17,12 +17,14 @@ from Api.m5_functional_personalization import extract_candidate_as
 from Api.m5_functional_tester import aggregate, build_applicability_plan, normalize_results
 from Api.m5_case_runtime import checksum as runtime_checksum
 from scripts.build_m5_sales_package import build_execution_rules, compile_case_values
+from Api.m5_runtime_rules import load_runtime_rule_package
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.4"
+PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.5"
 SOURCE = PACKAGE / "sources/functional-v0.2"
 REPAIR_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_repair/v1"
 PROTOCOL_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_protocol/v1"
+RUNTIME_PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.2.0"
 
 AUTHOR_INDICATOR_FIELDS = (
     "IndicatorID", "SkillID", "ComponentID", "Название", "Версия M2",
@@ -80,7 +82,8 @@ def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id:
                          case_version_checksum: str | None = None,
                          source_root: Path = SOURCE,
                          repair_package: Path = REPAIR_PACKAGE,
-                         protocol_package: Path = PROTOCOL_PACKAGE) -> dict[str, Any]:
+                         protocol_package: Path = PROTOCOL_PACKAGE,
+                         provider_contract: dict[str, Any] | None = None) -> dict[str, Any]:
     number = case_id.rsplit(".", 1)[-1]
     case_path = _unique(f"02_cases/Case_SPEC_{number}_*.json", f"PERS_CASE_SOURCE_NOT_UNIQUE:{case_id}", source_root=source_root)
     example_path = _unique(f"04_as/AS_SPEC_{number}_FUNCTIONAL_*.json", f"PERS_AS_SOURCE_NOT_UNIQUE:{case_id}", source_root=source_root)
@@ -114,6 +117,10 @@ def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id:
             for name in ("json-retry", "tester-addendum", "challenger")
         },
     }
+    if provider_contract is not None:
+        refs["provider_contract"] = {key: provider_contract[key] for key in (
+            "version", "checksum", "provider", "endpoint", "model", "thinking", "supported_response_formats"
+        )}
     if (package_manifest.get("compiler") or {}).get("source_schema_profile") == "functional-personalization-indicator-v2":
         adaptation_contract = source_root.parents[1] / "indicator-adaptation-contract.json"
         refs["indicator_adaptation_contract"] = {
@@ -160,15 +167,29 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
     check("base_role", candidate.get("BaseRole") == expected.get("BaseRole"), candidate.get("BaseRole"))
     check("indicator_targets", candidate.get("IndicatorIDs") == expected.get("IndicatorIDs"), candidate.get("IndicatorIDs"))
     check("m2_versions", candidate.get("Версии M2") == expected.get("Версии M2"))
+    def indexed(values: Any, field: str) -> tuple[dict[str, dict[str, Any]], list[Any]]:
+        if not isinstance(values, list):
+            return {}, ["NOT_A_LIST"]
+        invalid = [index for index, item in enumerate(values)
+                   if not isinstance(item, dict) or not isinstance(item.get(field), str)
+                   or not item.get(field).strip()]
+        ids = [item[field] for item in values if isinstance(item, dict)
+               and isinstance(item.get(field), str) and item.get(field).strip()]
+        duplicates = sorted({value for value in ids if ids.count(value) > 1})
+        return ({item[field]: item for item in values if isinstance(item, dict)
+                 and isinstance(item.get(field), str) and item.get(field).strip()},
+                [{"invalid_indexes": invalid}, {"duplicate_ids": duplicates}]
+                if invalid or duplicates else [])
     if compiler.get("source_schema_profile") == "functional-personalization-indicator-v1":
         expected_targets = expected.get("IndicatorObservability")
         candidate_targets = candidate.get("IndicatorObservability")
-        expected_by_id = ({item.get("IndicatorID"): item for item in expected_targets}
-                          if isinstance(expected_targets, list) else {})
-        candidate_by_id = ({item.get("IndicatorID"): item for item in candidate_targets}
-                           if isinstance(candidate_targets, list) else {})
+        expected_by_id, expected_shape_errors = indexed(expected_targets, "IndicatorID")
+        candidate_by_id, candidate_shape_errors = indexed(candidate_targets, "IndicatorID")
         check("indicator_content_target_set", bool(expected_by_id)
-              and set(candidate_by_id) == set(expected_by_id), sorted(candidate_by_id))
+              and not expected_shape_errors and not candidate_shape_errors
+              and len(candidate_targets) == len(expected_targets)
+              and set(candidate_by_id) == set(expected_by_id),
+              candidate_shape_errors or sorted(candidate_by_id))
         differences = []
         if set(candidate_by_id) == set(expected_by_id):
             for indicator_id, source_target in expected_by_id.items():
@@ -180,12 +201,13 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
     if compiler.get("source_schema_profile") == "functional-personalization-indicator-v2":
         expected_targets = expected.get("IndicatorObservability")
         candidate_targets = candidate.get("IndicatorObservability")
-        expected_by_id = ({item.get("IndicatorID"): item for item in expected_targets}
-                          if isinstance(expected_targets, list) else {})
-        candidate_by_id = ({item.get("IndicatorID"): item for item in candidate_targets}
-                           if isinstance(candidate_targets, list) else {})
+        expected_by_id, expected_shape_errors = indexed(expected_targets, "IndicatorID")
+        candidate_by_id, candidate_shape_errors = indexed(candidate_targets, "IndicatorID")
         check("indicator_content_target_set", bool(expected_by_id)
-              and set(candidate_by_id) == set(expected_by_id), sorted(candidate_by_id))
+              and not expected_shape_errors and not candidate_shape_errors
+              and len(candidate_targets) == len(expected_targets)
+              and set(candidate_by_id) == set(expected_by_id),
+              candidate_shape_errors or sorted(candidate_by_id))
         differences = []
         if set(candidate_by_id) == set(expected_by_id):
             for indicator_id, source_target in expected_by_id.items():
@@ -206,16 +228,21 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
               and author_targets == expected_targets
               and author_layer.get("checksum") == checksum(expected_targets))
         adapted_targets = adapted_layer.get("targets") if isinstance(adapted_layer, dict) else None
-        adapted_by_id = ({item.get("IndicatorID"): item for item in adapted_targets
-                          if isinstance(item, dict)} if isinstance(adapted_targets, list) else {})
+        adapted_by_id, adapted_shape_errors = indexed(adapted_targets, "IndicatorID")
         check("indicator_adapted_target_set", bool(expected_by_id)
-              and set(adapted_by_id) == set(expected_by_id), sorted(adapted_by_id))
-        material_ids = {item.get("MaterialID") for item in candidate.get("Материалы", [])
-                        if isinstance(item, dict)}
-        event_ids = {item.get("EventID") for item in candidate.get("События", [])
-                     if isinstance(item, dict)}
-        character_ids = {item.get("CharacterID") for item in candidate.get("Активные персонажи", [])
-                         if isinstance(item, dict)}
+              and not adapted_shape_errors and len(adapted_targets) == len(expected_targets)
+              and set(adapted_by_id) == set(expected_by_id),
+              adapted_shape_errors or sorted(adapted_by_id))
+        materials_by_id, material_shape_errors = indexed(candidate.get("Материалы"), "MaterialID")
+        events_by_id, event_shape_errors = indexed(candidate.get("События"), "EventID")
+        characters_by_id, character_shape_errors = indexed(candidate.get("Активные персонажи"), "CharacterID")
+        check("indicator_reference_namespaces_unambiguous",
+              not material_shape_errors and not event_shape_errors and not character_shape_errors,
+              {"materials": material_shape_errors, "events": event_shape_errors,
+               "characters": character_shape_errors})
+        material_ids = set(materials_by_id)
+        event_ids = set(events_by_id)
+        character_ids = set(characters_by_id)
         authority_ids = {f"character:{item.get('CharacterID')}" for item in candidate.get("Активные персонажи", [])
                          if isinstance(item, dict) and item.get("CharacterID")}
         authority_ids.add("participant")
@@ -224,13 +251,26 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
             missing = [field for field in ADAPTED_TARGET_FIELDS if field not in target]
             mapping = target.get("author_mapping")
             expected_pointer = f"/IndicatorObservability/{list(expected_by_id).index(indicator_id)}"
+            ref_type_errors = {}
+            for field in ("material_refs", "event_refs", "character_refs", "authority_refs"):
+                values = target.get(field)
+                if (not isinstance(values, list) or any(not isinstance(value, str) or not value.strip()
+                                                        for value in values)
+                        or (isinstance(values, list) and len(values) != len(set(values)))):
+                    ref_type_errors[field] = values
+            def refs(field: str) -> set[str]:
+                values = target.get(field)
+                return set(values) if isinstance(values, list) and all(
+                    isinstance(value, str) for value in values
+                ) else set()
             invalid = {
                 "missing_fields": missing,
                 "empty_condition": not str(target.get("Конкретное условие") or "").strip(),
-                "material_refs": sorted(set(target.get("material_refs") or []) - material_ids),
-                "event_refs": sorted(set(target.get("event_refs") or []) - event_ids),
-                "character_refs": sorted(set(target.get("character_refs") or []) - character_ids),
-                "authority_refs": sorted(set(target.get("authority_refs") or []) - authority_ids),
+                "material_refs": sorted(refs("material_refs") - material_ids),
+                "event_refs": sorted(refs("event_refs") - event_ids),
+                "character_refs": sorted(refs("character_refs") - character_ids),
+                "authority_refs": sorted(refs("authority_refs") - authority_ids),
+                "reference_types": ref_type_errors,
                 "author_mapping": mapping != {
                     "source_pointer": expected_pointer,
                     "source_checksum": checksum(expected_by_id[indicator_id]),
@@ -238,7 +278,8 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
             }
             if (missing or invalid["empty_condition"] or invalid["material_refs"]
                     or invalid["event_refs"] or invalid["character_refs"]
-                    or invalid["authority_refs"] or invalid["author_mapping"]):
+                    or invalid["authority_refs"] or invalid["reference_types"]
+                    or invalid["author_mapping"]):
                 adapted_failures.append({"indicator_id": indicator_id, **invalid})
         check("indicator_adaptation_references", not adapted_failures, adapted_failures)
         check("indicator_adapted_layer_checksum", isinstance(adapted_layer, dict)
@@ -305,6 +346,18 @@ def bind_indicator_target_layers(snapshot: dict[str, Any], candidate: Any) -> An
 
 # Compatibility alias for callers/tests created for package 0.3.
 bind_frozen_author_indicator_content = bind_indicator_target_layers
+
+
+def concrete_adapted_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    """Return the concrete AS view while keeping the frozen author layer separate."""
+    concrete = deepcopy(candidate)
+    layers = candidate.get(INDICATOR_LAYER_FIELD)
+    adapted = layers.get("adapted") if isinstance(layers, dict) else None
+    targets = adapted.get("targets") if isinstance(adapted, dict) else None
+    if isinstance(targets, list):
+        concrete["IndicatorObservability"] = deepcopy(targets)
+        concrete.pop(INDICATOR_LAYER_FIELD, None)
+    return concrete
 
 
 def _trace(response: Any, *, operation_id: str, kind: str, input_checksum: str) -> dict[str, Any]:
@@ -396,14 +449,25 @@ def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
 
 def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway: Any) -> dict[str, Any]:
     plan = build_applicability_plan(snapshot["case"])
-    payload = {"case": snapshot["case"], "profile": snapshot["profile"],
-               "candidate_as": generation["candidate_as"],
+    batch_size = 8
+    concrete_candidate = concrete_adapted_candidate(generation["candidate_as"])
+    payload_base = {"case": snapshot["case"], "profile": snapshot["profile"],
+               "candidate_as": concrete_candidate,
                "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
                "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
                "deterministic_validation": generation["deterministic_validation"],
-               "applicability_plan": plan,
                "protocol_rules": {"evaluate_every_required_check_exactly_once": True,
                  "llm_must_not_change_applicability": True,
+                 "candidate_as_is_concrete_adapted_view": True,
+                 "author_indicator_layer_is_provenance_not_professional_content": True,
+                 "author_only_names_are_not_adapted_defects": True,
+                 "never_require_mutating_immutable_author_layer": True,
+                 "reference_namespaces_are_closed": {
+                     "material_refs": "Материалы[].MaterialID only; hidden fact IDs are forbidden",
+                     "event_refs": "События[].EventID only",
+                     "character_refs": "Активные персонажи[].CharacterID only",
+                 },
+                 "hidden_fact_semantics_are_checked_in_conditions_and_events_not_material_refs": True,
                  "missing_required_material_or_condition_is_fail_not_not_applicable": True,
                  "allowed_statuses": ["PASS", "FAIL", "NOT_RUN", "INDETERMINATE", "TECHNICAL_ERROR"],
                  "do_not_return_overall_status": True},
@@ -419,24 +483,40 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                }]}}
     adaptation_contract = (_frozen_file(snapshot, "indicator_adaptation_contract").read_text(encoding="utf-8")
                            if "indicator_adaptation_contract" in snapshot["refs"] else None)
-    messages = [{"role": "system", "content": _frozen_file(snapshot, "tester_prompt").read_text(encoding="utf-8")},
-                {"role": "system", "content": _frozen_file(snapshot, "protocol_tester_addendum").read_text(encoding="utf-8")},
-                *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
-                  if adaptation_contract else []),
-                {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
-    input_checksum = checksum(messages)
-    operation_id = f"{snapshot['operation_id']}:tester:{input_checksum[:12]}"
-    raw, response, parse_failures = _strict_json_call(
-        gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
-        retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
-    )
-    checks = normalize_results(plan, raw.get("checks"))
+    tester_operations = []
+    tester_raw_checks = []
+    required_checks = plan["required_checks"]
+    for batch_no, offset in enumerate(range(0, len(required_checks), batch_size), start=1):
+        batch_checks = required_checks[offset:offset + batch_size]
+        batch_plan = {**plan, "required_checks": batch_checks, "not_applicable_checks": []}
+        payload = {**payload_base, "applicability_plan": batch_plan}
+        messages = [{"role": "system", "content": _frozen_file(snapshot, "tester_prompt").read_text(encoding="utf-8")},
+                    {"role": "system", "content": _frozen_file(snapshot, "protocol_tester_addendum").read_text(encoding="utf-8")},
+                    *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
+                      if adaptation_contract else []),
+                    {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
+        input_checksum = checksum(messages)
+        operation_id = f"{snapshot['operation_id']}:tester:{batch_no:02d}:{input_checksum[:12]}"
+        raw, response, parse_failures = _strict_json_call(
+            gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
+            retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
+        )
+        tester_raw_checks.extend(raw.get("checks") if isinstance(raw.get("checks"), list) else [])
+        tester_operations.append({
+            **_trace(response, operation_id=operation_id, kind="independent_tester_v2_batch",
+                     input_checksum=input_checksum),
+            "batch_no": batch_no, "required_check_ids": [item["check_id"] for item in batch_checks],
+            "parse_failures": parse_failures,
+        })
+    checks = normalize_results(plan, tester_raw_checks)
     protected = [item for item in plan["required_checks"] if item.get("protected")]
     challenge_payload = {
         "case": snapshot["case"], "author_as_example": snapshot["author_as_example"],
-        "candidate_as": generation["candidate_as"],
+        "candidate_as": concrete_candidate,
+        "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
+        "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
         "protected_checks": protected,
-        "required_output": payload["required_output"],
+        "required_output": payload_base["required_output"],
         "rules": {
             "purpose": "Ищи опровержение PASS, не подтверждение.",
             "inspect_entire_candidate": True,
@@ -444,24 +524,48 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             "different_labels_require_different_substance": True,
             "inspect_new_assertions_and_removed_constraints_against_author_example": True,
             "verify_author_layer_unchanged": True,
+            "candidate_as_is_concrete_adapted_view": True,
+            "source_only_names_are_not_concrete_as_defects": True,
+            "author_only_names_are_expected_provenance_and_must_not_be_changed": True,
             "verify_adaptation_preserves_meaning_observability_and_constraints": True,
             "verify_material_event_character_and_authority_mappings": True,
+            "reference_namespaces_are_closed": {
+                "material_refs": "Материалы[].MaterialID only; never require Fxx hidden fact IDs",
+                "event_refs": "События[].EventID only",
+                "character_refs": "Активные персонажи[].CharacterID only",
+            },
+            "hidden_facts_are_verified_semantically_via_conditions_and_events": True,
             "return_each_protected_check_once": True,
         },
     }
-    challenge_messages = [
-        {"role": "system", "content": _frozen_file(snapshot, "protocol_challenger").read_text(encoding="utf-8")},
-        *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
-          if adaptation_contract else []),
-        {"role": "user", "content": json.dumps(challenge_payload, ensure_ascii=False)},
-    ]
-    challenge_checksum = checksum(challenge_messages)
-    challenge_operation_id = f"{snapshot['operation_id']}:challenger:{challenge_checksum[:12]}"
-    challenge_raw, challenge_response, challenge_failures = _strict_json_call(
-        gateway, challenge_messages, operation_id=challenge_operation_id, max_tokens=16384, temperature=0,
-        retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
-    )
-    challenge_checks = normalize_results(plan, challenge_raw.get("checks"))
+    challenger_operations = []
+    challenger_raw_checks = []
+    for batch_no, offset in enumerate(range(0, len(protected), batch_size), start=1):
+        batch_checks = protected[offset:offset + batch_size]
+        batch_payload = {**challenge_payload, "protected_checks": batch_checks}
+        challenge_messages = [
+            {"role": "system", "content": _frozen_file(snapshot, "protocol_challenger").read_text(encoding="utf-8")},
+            *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
+              if adaptation_contract else []),
+            {"role": "user", "content": json.dumps(batch_payload, ensure_ascii=False)},
+        ]
+        challenge_checksum = checksum(challenge_messages)
+        challenge_operation_id = f"{snapshot['operation_id']}:challenger:{batch_no:02d}:{challenge_checksum[:12]}"
+        challenge_raw, challenge_response, challenge_failures = _strict_json_call(
+            gateway, challenge_messages, operation_id=challenge_operation_id, max_tokens=16384, temperature=0,
+            retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
+        )
+        challenger_raw_checks.extend(
+            challenge_raw.get("checks") if isinstance(challenge_raw.get("checks"), list) else []
+        )
+        challenger_operations.append({
+            **_trace(challenge_response, operation_id=challenge_operation_id,
+                     kind="independent_tester_v2_challenger_batch",
+                     input_checksum=challenge_checksum),
+            "batch_no": batch_no, "required_check_ids": [item["check_id"] for item in batch_checks],
+            "parse_failures": challenge_failures,
+        })
+    challenge_checks = normalize_results(plan, challenger_raw_checks)
     challenge_by_id = {item["check_id"]: item for item in challenge_checks
                        if item.get("status") != "NOT_APPLICABLE"}
     merged_checks = []
@@ -473,13 +577,17 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             merged_checks.append(item)
     checks = merged_checks
     aggregation = aggregate(generation["deterministic_validation"], checks)
+    tester_input_checksum = checksum([item["input_checksum"] for item in tester_operations])
+    challenger_input_checksum = checksum([item["input_checksum"] for item in challenger_operations])
     return {"protocol": plan["protocol"], "checks": checks, "aggregation": aggregation,
-            "provider_operation": {**_trace(response, operation_id=operation_id, kind="independent_tester_v2", input_checksum=input_checksum),
-                                   "parse_failures": parse_failures},
-            "challenger_operation": {**_trace(challenge_response, operation_id=challenge_operation_id,
-                                                kind="independent_tester_v2_challenger",
-                                                input_checksum=challenge_checksum),
-                                     "parse_failures": challenge_failures}}
+            "provider_operation": {"kind": "independent_tester_v2_batched",
+                                   "operation_id": f"{snapshot['operation_id']}:tester:batched",
+                                   "input_checksum": tester_input_checksum,
+                                   "batch_size": batch_size, "batches": tester_operations},
+            "challenger_operation": {"kind": "independent_tester_v2_challenger_batched",
+                                     "operation_id": f"{snapshot['operation_id']}:challenger:batched",
+                                     "input_checksum": challenger_input_checksum,
+                                     "batch_size": batch_size, "batches": challenger_operations}}
 
 
 def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], tested: dict[str, Any],
@@ -490,7 +598,9 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
     payload = {
         "profile": snapshot["profile"], "case": snapshot["case"],
         "author_as_example": snapshot["author_as_example"],
-        "rejected_candidate_as": generation["candidate_as"],
+        "rejected_candidate_as": concrete_adapted_candidate(generation["candidate_as"]),
+        "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
+        "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
         "blocking_failures": tested["aggregation"]["blocking_failures"],
         "deterministic_failures": tested["aggregation"]["deterministic_failures"],
         "requirements": {
@@ -499,12 +609,26 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
             "fix_every_listed_failure_in_all_dependent_fields": True,
             "do_not_weaken_or_remove_observation_conditions": True,
             "must_not_create_evidence_or_scores": True,
+            "indicator_target_layers": {
+                "author_layer": "server binds immutable author source after repair",
+                "adapted_projection_location": "IndicatorObservability",
+                "required_fields_per_adapted_target": list(ADAPTED_TARGET_FIELDS),
+                "author_mapping": {
+                    "source_pointer": "/IndicatorObservability/{source_index}",
+                    "source_checksum": "server-bound; provider must not calculate it",
+                },
+                "preserve_existing_valid_references": True,
+            },
             "status": "TEST_DRAFT", "current": False,
         },
     }
+    adaptation_contract = (_frozen_file(snapshot, "indicator_adaptation_contract").read_text(encoding="utf-8")
+                           if "indicator_adaptation_contract" in snapshot["refs"] else None)
     messages = [
         {"role": "system", "content": instruction},
         {"role": "system", "content": repair_instruction},
+        *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
+          if adaptation_contract else []),
         {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
     ]
     input_checksum = checksum(messages)
@@ -532,7 +656,13 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
                                    "parse_failures": parse_failures}}
 
 
-def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
+def prepare(snapshot: dict[str, Any], gateway: Any, *, functional_package: Path = PACKAGE,
+            runtime_package: Path = RUNTIME_PACKAGE) -> dict[str, Any]:
+    provider = (snapshot.get("refs") or {}).get("provider_contract")
+    if provider and hasattr(gateway, "model") and hasattr(gateway, "base_url"):
+        actual_endpoint = f"{str(getattr(gateway, 'base_url', '')).rstrip('/')}/chat/completions"
+        if str(getattr(gateway, "model", "")) != provider["model"] or actual_endpoint != provider["endpoint"]:
+            raise ValueError("M5_FUNCTIONAL_PROVIDER_IDENTITY_MISMATCH")
     generation = generate(snapshot, gateway)
     tested = test_candidate(snapshot, generation, gateway)
     repair = None
@@ -563,7 +693,12 @@ def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
             as_source_checksum=generation["candidate_checksum"],
             source_schema_profile=compiler_profile,
         )
-        execution_rules = build_execution_rules([compiled_case])
+        package_cases = json.loads((functional_package / "case-package.json").read_text(encoding="utf-8"))["cases"]
+        package_version = json.loads((functional_package / "manifest.json").read_text(encoding="utf-8"))["version"]
+        runtime_bindings = load_runtime_rule_package(
+            runtime_package, package_cases, expected_case_package_version=package_version
+        )["bindings"]
+        execution_rules = build_execution_rules([compiled_case], runtime_bindings)
     return {"schema_version": 1, "input_snapshot_checksum": checksum(snapshot),
             "candidate_as": generation["candidate_as"], "candidate_checksum": generation["candidate_checksum"],
             "author_content_binding": generation["author_content_binding"],

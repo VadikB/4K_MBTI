@@ -147,6 +147,42 @@ def test_prepared_plan_revision_is_historical_and_freezes_at_first_start(db):
             reason='late',time_budget_seconds=5000)
 
 
+@pytest.mark.parametrize('planned_seconds', [3600, 7200, 11340])
+def test_prepared_revision_does_not_treat_planned_sum_as_cycle_budget(db, planned_seconds):
+    cycle=create_cycle(db,personalized_profile_id=1,selected_role_ref={'id':'r','version':'1','checksum':'x'},
+        target_set=[{'indicator_id':'K1.I1','m2_version':'1'}],created_by=7,usage_scope='qa')
+    rules=load_rules();content={'status':'READY','route':[{'planned_max_minutes':planned_seconds // 60}],
+        'planned_max_seconds':planned_seconds,'uncovered_target_ids':[],'time_budget_seconds':3600,
+        'calendar_window_seconds':259200,
+        'duration_semantics':'planned durations do not constrain selection'}
+    repo.save_plan(db,cycle=cycle,profile_ref=cycle['profile_ref_json'],full_targets=cycle['target_set_json'],
+        planned_targets=cycle['target_set_json'],requirements=[],rules=rules,content=content,
+        created_by=7,key=f'planned-{planned_seconds}',request_hash=f'h-{planned_seconds}')
+
+    revised=revise_prepared_parameters(db,cycle_id=str(cycle['cycle_id']),created_by=99,
+        reason='pilot-120',time_budget_seconds=7200,calendar_window_seconds=259200)
+
+    assert revised['plan']['status']=='READY'
+    assert revised['plan']['planned_max_seconds']==planned_seconds
+    assert revised['plan']['time_budget_seconds']==7200
+
+
+def test_prepared_revision_keeps_incomplete_coverage_limited(db):
+    cycle=create_cycle(db,personalized_profile_id=1,selected_role_ref={'id':'r','version':'1','checksum':'x'},
+        target_set=[{'indicator_id':'K1.I1','m2_version':'1'}],created_by=7,usage_scope='qa')
+    rules=load_rules();content={'status':'LIMITED','route':[{'planned_max_minutes':200}],
+        'planned_max_seconds':12000,'uncovered_target_ids':['K1.I1'],'time_budget_seconds':3600,
+        'calendar_window_seconds':259200}
+    repo.save_plan(db,cycle=cycle,profile_ref=cycle['profile_ref_json'],full_targets=cycle['target_set_json'],
+        planned_targets=cycle['target_set_json'],requirements=[],rules=rules,content=content,
+        created_by=7,key='limited',request_hash='h-limited')
+
+    revised=revise_prepared_parameters(db,cycle_id=str(cycle['cycle_id']),created_by=99,
+        reason='pilot-120',time_budget_seconds=7200)
+
+    assert revised['plan']['status']=='LIMITED'
+
+
 def test_w02_reloads_the_saved_assessment_plan_snapshot(db):
     cycle=create_cycle(db,personalized_profile_id=1,selected_role_ref={'id':'r','version':'1','checksum':'x'},
         target_set=[{'indicator_id':'K1.I1','m2_version':'1'}],created_by=7,usage_scope='assessment')

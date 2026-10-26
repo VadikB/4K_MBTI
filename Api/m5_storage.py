@@ -84,14 +84,6 @@ def import_package(connection, *, package: dict, manifest: dict, execution_rules
         case = validate_case_version(raw)
         content = case.model_dump(exclude_unset=True)
         content_checksum = checksum(content)
-        conflict = connection.execute(
-            "SELECT content_checksum FROM m5_case_versions WHERE case_id=%s AND case_version=%s",
-            (case.case_id, case.version),
-        ).fetchone()
-        if conflict:
-            if conflict["content_checksum"] != content_checksum:
-                raise M5ImportConflict("M5_CASE_VERSION_CONTENT_CONFLICT")
-            raise M5ImportConflict("M5_CASE_VERSION_ALREADY_OWNED_BY_OTHER_PACKAGE")
         case_row = connection.execute("""
             INSERT INTO m5_case_versions (package_id, case_id, case_version, status, base_role, content_json, content_checksum)
             VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s) RETURNING id
@@ -275,16 +267,23 @@ def migrate_legacy_test_profile(connection, *, user_id: int, authorized_by: int)
 
 def save_assessment_situation(connection, *, situation: dict, execution_payload: dict, personalized_profile_id: int,
                               cycle_db_id: int, session_db_id: int, policy: dict, evidence_ids: list[int], usage_scope: str = "assessment",
-                              qa_authorized_by: int | None = None) -> dict:
+                              qa_authorized_by: int | None = None,
+                              case_version_db_id: int | None = None) -> dict:
     if usage_scope == "qa" and qa_authorized_by is None:
         raise ValueError("QA_SERVER_AUTHORIZATION_REQUIRED")
     value = AssessmentSituationV2.model_validate(situation)
     case_row = connection.execute(
-        "SELECT id FROM m5_case_versions WHERE case_id=%s AND case_version=%s",
+        "SELECT id,case_id,case_version FROM m5_case_versions WHERE id=%s"
+        if case_version_db_id is not None else
+        "SELECT id,case_id,case_version FROM m5_case_versions "
+        "WHERE case_id=%s AND case_version=%s ORDER BY package_id DESC LIMIT 1",
+        (case_version_db_id,) if case_version_db_id is not None else
         (value.case_ref.id, value.case_ref.version),
     ).fetchone()
     if not case_row:
         raise ValueError("M5_CASE_VERSION_NOT_IMPORTED")
+    if case_row["case_id"] != value.case_ref.id or case_row["case_version"] != value.case_ref.version:
+        raise ValueError("M5_CASE_VERSION_REF_MISMATCH")
     snapshot = value.model_dump()
     membership = connection.execute("""
         SELECT c.id AS cycle_id, s.id AS session_id, c.personalized_profile_id,
@@ -338,21 +337,13 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
                                  case_value_override: dict | None = None,
                                  runtime_rules_override: dict | None = None,
                                  generation_trace: dict | None = None) -> dict:
-    case_row = connection.execute(
-        "SELECT cv.id,cv.content_json, p.manifest_json, p.runtime_rules_json FROM m5_case_versions cv JOIN m5_packages p ON p.id=cv.package_id WHERE cv.case_id=%s AND cv.case_version=%s",
-        (case_id, case_version),
-    ).fetchone()
     profile_row = connection.execute("""
         SELECT id, status, content_json, provenance_json, checksum
         FROM assessment_personalized_profiles WHERE id=%s
     """, (personalized_profile_id,)).fetchone()
-    if not case_row:
-        raise ValueError("M5_CASE_VERSION_NOT_IMPORTED")
     if not profile_row or profile_row["status"] != "ready":
         raise ValueError("M4_PROFILE_NOT_READY")
     profile = dict(profile_row["content_json"])
-    refs = [{"id": "m2-competencies-4k", "version": "1.1",
-             "checksum": case_row["manifest_json"]["dependencies"]["m2"]}]
     cycle = connection.execute("SELECT * FROM m5_cycles WHERE id=%s", (cycle_db_id,)).fetchone()
     session = connection.execute("SELECT * FROM m5_cycle_sessions WHERE id=%s AND cycle_db_id=%s", (session_db_id, cycle_db_id)).fetchone()
     if not cycle or not session:
@@ -370,6 +361,23 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
     catalog_ref = dict(cycle["catalog_ref_json"] or {})
     catalog_db_id = int(catalog_ref["db_id"]) if catalog_ref.get("db_id") is not None else None
     legacy_unbound = catalog_ref.get("id") == "legacy-unbound-test-catalog"
+    if catalog_db_id is not None:
+        case_row = connection.execute("""
+            SELECT cv.id,cv.content_json,p.manifest_json,p.runtime_rules_json
+            FROM m5_case_versions cv JOIN m5_packages p ON p.id=cv.package_id
+            JOIN m5_catalog_case_versions member ON member.case_version_id=cv.id
+            WHERE member.catalog_db_id=%s AND cv.case_id=%s AND cv.case_version=%s
+        """, (catalog_db_id, case_id, case_version)).fetchone()
+    else:
+        case_row = connection.execute("""
+            SELECT cv.id,cv.content_json,p.manifest_json,p.runtime_rules_json
+            FROM m5_case_versions cv JOIN m5_packages p ON p.id=cv.package_id
+            WHERE cv.case_id=%s AND cv.case_version=%s ORDER BY p.id DESC LIMIT 1
+        """, (case_id, case_version)).fetchone()
+    if not case_row:
+        raise ValueError("M5_CASE_VERSION_NOT_IMPORTED")
+    refs = [{"id": "m2-competencies-4k", "version": "1.1",
+             "checksum": case_row["manifest_json"]["dependencies"]["m2"]}]
     if usage_scope == "assessment" and catalog_db_id is None and not legacy_unbound:
         raise ValueError("M5_CATALOG_REF_REQUIRED")
     admission = case_admission(connection, case_version_id=int(case_row["id"]),
@@ -397,7 +405,16 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
     case_value = case_value_override or case_row["content_json"]
     if case_value.get("case_id") != case_id or case_value.get("version") != case_version:
         raise ValueError("M5_GENERATED_CASE_IDENTITY_MISMATCH")
-    ai_operations = build_m5_ai_operations_snapshot()
+    from Api.cycle_execution_manifest import resolve_cycle_dependency
+    cycle_value = dict(cycle)
+    ai_operations = build_m5_ai_operations_snapshot(
+        prompt_packages={
+            "semantic_decision": resolve_cycle_dependency(cycle_value, "m5_semantic_decision"),
+            "character_response": resolve_cycle_dependency(cycle_value, "m5_character_response"),
+            "technical_c45": resolve_cycle_dependency(cycle_value, "m5_technical_c45"),
+        },
+        provider_contract_path=resolve_cycle_dependency(cycle_value, "provider_contract") / "manifest.json",
+    )
     if generation_trace is not None:
         ai_operations["functional_personalization"] = generation_trace
     situation, execution = build_assessment_situation(
@@ -460,7 +477,8 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
                                       personalized_profile_id=personalized_profile_id, cycle_db_id=cycle_db_id,
                                       session_db_id=session_db_id, policy=policy,
                                       evidence_ids=[int(x["id"]) for x in admission["evidence"]], usage_scope=usage_scope,
-                                      qa_authorized_by=qa_authorized_by)
+                                      qa_authorized_by=qa_authorized_by,
+                                      case_version_db_id=int(case_row["id"]))
     return {**saved, "snapshot": situation, "execution_payload": execution}
 
 

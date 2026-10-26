@@ -1,5 +1,6 @@
 import json
 from copy import deepcopy
+from pathlib import Path
 from types import SimpleNamespace
 
 from Api import m5_functional_generation_service as service
@@ -63,10 +64,10 @@ def test_shared_service_admits_only_after_deterministic_and_independent_checks()
     assert result_a["input_snapshot_checksum"] != result_b["input_snapshot_checksum"]
     assert first["refs"]["package"] == {
         "id": "m5-functional-personalization-cases",
-        "version": "0.4",
+        "version": "0.5",
         "compiler": {
             "id": "m5-functional-json-compiler",
-            "version": "0.4.0",
+            "version": "0.5.0",
             "source_schema_profile": "functional-personalization-indicator-v2",
             "indicator_layer_contract": "m5-functional-indicator-two-layer/1.0.0",
         },
@@ -76,6 +77,17 @@ def test_shared_service_admits_only_after_deterministic_and_independent_checks()
     assert gateway.generation_requirements[0]["omit_empty_required_fields"] is False
     assert result_a["tester"]["aggregation"]["status"] == "PASS"
     assert gateway.tester_payloads[0]["required_output"]["checks"][0]["check_id"].startswith("exact id")
+    assert all(len((payload.get("applicability_plan") or {}).get("required_checks")
+                   or payload.get("protected_checks", [])) <= 8
+               for payload in gateway.tester_payloads)
+    assert result_a["tester"]["provider_operation"]["kind"] == "independent_tester_v2_batched"
+    assert len(result_a["tester"]["provider_operation"]["batches"]) > 1
+    tester_rules = gateway.tester_payloads[0]["protocol_rules"]
+    assert tester_rules["never_require_mutating_immutable_author_layer"] is True
+    assert "hidden fact IDs are forbidden" in tester_rules["reference_namespaces_are_closed"]["material_refs"]
+    challenger = next(payload for payload in gateway.tester_payloads if "protected_checks" in payload)
+    assert challenger["rules"]["author_only_names_are_expected_provenance_and_must_not_be_changed"] is True
+    assert challenger["rules"]["hidden_facts_are_verified_semantically_via_conditions_and_events"] is True
     assert result_a["compiled_case"]["author_assessment_situation"] == result_a["candidate_as"]
     assert result_a["compiled_case"]["author_as_source"]["sha256"] == result_a["candidate_checksum"]
     assert set(result_a["execution_rules"]["cases"]) == {"CASE.SPEC.01"}
@@ -126,6 +138,54 @@ def test_provider_cannot_overwrite_frozen_author_indicator_content():
             assert adapted[indicator_id][field] == "LLM_CHANGED_AUTHOR_CONTENT"
 
 
+def test_saved_r10_pilot_uses_adapted_sales_view_for_semantic_review():
+    root = Path(__file__).resolve().parents[2]
+    evidence = json.loads((root / "docs/evc/evidence/"
+        "r10-c01-sales-real-provider-attempt-raw-2026-10-26.json").read_text())
+    payload = json.loads(evidence["repair"]["original_tester"]["provider_operation"]
+                         ["sent"]["messages"][-1]["content"])
+    bound = payload["candidate_as"]
+    author = bound["IndicatorTargetLayers"]["author"]["targets"]
+    adapted = bound["IndicatorTargetLayers"]["adapted"]["targets"]
+    assert "Елены" in author[0]["Конкретное условие"]
+    assert "Артёма" in adapted[0]["Конкретное условие"]
+    assert adapted[0]["material_refs"] == ["M01", "M02"]
+
+    concrete = service.concrete_adapted_candidate(bound)
+
+    assert concrete["IndicatorObservability"] == adapted
+    assert "IndicatorTargetLayers" not in concrete
+    assert "Артёма" in concrete["IndicatorObservability"][0]["Конкретное условие"]
+
+
+def test_repair_receives_concrete_projection_and_two_layer_requirements():
+    snapshot = service.build_input_snapshot(
+        case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="repair-two-layer",
+    )
+    generated = service.generate(snapshot, Gateway())
+    captured = {}
+
+    class RepairGateway(Gateway):
+        def chat_with_trace(self, messages, **kwargs):
+            payload = json.loads(messages[-1]["content"])
+            captured.update(payload)
+            return SimpleNamespace(content=json.dumps(payload["rejected_candidate_as"], ensure_ascii=False),
+                                   sent={"parameters": kwargs},
+                                   provider={"finish_reason": "stop", "request_id": kwargs["routing_key"]})
+
+    tested = {"aggregation": {"blocking_failures": [{"code": "fixture"}],
+                              "deterministic_failures": []}}
+    repaired = service.repair_candidate(snapshot, generated, tested, RepairGateway())
+
+    assert "IndicatorTargetLayers" not in captured["rejected_candidate_as"]
+    assert (captured["rejected_candidate_as"]["IndicatorObservability"]
+            == generated["candidate_as"]["IndicatorTargetLayers"]["adapted"]["targets"])
+    requirements = captured["requirements"]["indicator_target_layers"]
+    assert requirements["required_fields_per_adapted_target"] == list(service.ADAPTED_TARGET_FIELDS)
+    assert requirements["preserve_existing_valid_references"] is True
+    assert repaired["deterministic_validation"]["status"] == "PASS"
+
+
 def test_author_binding_does_not_recreate_missing_indicator_target():
     snapshot = service.build_input_snapshot(
         case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="a06-missing-target",
@@ -160,6 +220,10 @@ def test_two_layer_contract_accepts_valid_adaptation_and_compiles_it():
     assert compiled["K1.I01"]["author_basis"]["target_checksum"] == service.checksum(
         layers["author"]["targets"][0]
     )
+    assert compiled["K1.I01"]["material_refs"] == adapted["K1.I01"]["material_refs"]
+    assert compiled["K1.I01"]["event_refs"] == adapted["K1.I01"]["event_refs"]
+    assert compiled["K1.I01"]["character_refs"] == adapted["K1.I01"]["character_refs"]
+    assert compiled["K1.I01"]["authority_refs"] == adapted["K1.I01"]["authority_refs"]
 
 
 def test_two_layer_contract_rejects_lost_condition_bad_reference_and_authority():
@@ -183,6 +247,24 @@ def test_two_layer_contract_rejects_lost_condition_bad_reference_and_authority()
     assert failure["actual"][0]["empty_condition"] is True
     assert failure["actual"][1]["material_refs"] == ["UNKNOWN_MATERIAL"]
     assert failure["actual"][2]["authority_refs"] == ["character:UNKNOWN"]
+
+
+def test_two_layer_contract_rejects_duplicate_adapted_target_before_mapping():
+    snapshot = service.build_input_snapshot(
+        case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="two-layer-duplicate",
+    )
+    generated = service.generate(snapshot, Gateway())
+    targets = generated["candidate_as"]["IndicatorTargetLayers"]["adapted"]["targets"]
+    targets[1] = deepcopy(targets[0])
+    generated["candidate_as"]["IndicatorTargetLayers"]["adapted"]["checksum"] = service.checksum(targets)
+
+    validation = service.deterministic_checks(snapshot, generated["candidate_as"])
+
+    failure = next(item for item in validation["checks"]
+                   if item["code"] == "indicator_adapted_target_set")
+    assert validation["status"] == "FAIL"
+    assert failure["result"] == "FAIL"
+    assert failure["actual"][1]["duplicate_ids"] == [targets[0]["IndicatorID"]]
 
 
 def test_two_layer_contract_rejects_semantic_substitution_from_independent_tester():
@@ -268,7 +350,9 @@ def test_malformed_provider_json_is_retried_once_without_salvaging_fragments():
     result = service.prepare(snapshot, gateway)
     assert result["admitted_for_participant"] is True
     assert result["generation_operation"]["parse_failures"][0]["code"] == "PROVIDER_JSON_INVALID"
-    assert gateway.calls == 4  # generation failure + generation retry + tester + challenger
+    tester_batches = len(result["tester"]["provider_operation"]["batches"])
+    challenger_batches = len(result["tester"]["challenger_operation"]["batches"])
+    assert gateway.calls == 2 + tester_batches + challenger_batches
 
 
 def test_blocking_tester_failure_triggers_one_full_repair_and_retest():

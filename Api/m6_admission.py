@@ -45,8 +45,9 @@ def _failure(exc):
     return code if (code.startswith('M6_') or code in {'CHECKSUM_MISMATCH', 'SOURCE_UNRESOLVED', 'TARGET_SET_MISMATCH'}) and code.replace('_', '').isalnum() else type(exc).__name__
 
 
-def decide(connection, *, cycle_id: str, observations: list[dict], gateway=None,
-           mechanism_directory=None, source_set=None, provider_contract=None) -> tuple[str, list[dict], list[str]]:
+def prepare(connection, *, cycle_id: str, observations: list[dict],
+            mechanism_directory=None, source_set=None, provider_contract=None) -> dict:
+    """Resolve and freeze every DB-owned IA/material input before provider work."""
     mechanism = load_mechanism(VERSION, mechanism_directory, source_set, provider_contract)
     by_indicator = defaultdict(list)
     seen = set()
@@ -61,21 +62,50 @@ def decide(connection, *, cycle_id: str, observations: list[dict], gateway=None,
            JOIN m5_cycles c ON c.id=p.cycle_db_id WHERE c.cycle_id=%s''', (cycle_id,),
     ).fetchone()
     requirement_map = {x['indicator_id']: x for x in (requirements['observation_requirements_json'] if requirements else [])}
-    decisions, limitations = [], []
+    indicators = []
     for indicator, rows in sorted(by_indicator.items()):
-        individual, contexts, admitted = [], [], []
+        preliminary, contexts = [], []
         for observation in sorted(rows, key=lambda x: x['revision_id']):
             rid = observation['revision_id']
             if observation.get('outcome') not in {'L0', 'L1', 'L2', 'L3'}:
-                individual.append({'revision_id': rid, 'status': 'PROCESSING_FAILED' if observation.get('status') == 'TECHNICAL_FAILURE' else 'NOT_NUMERIC_IA',
-                                   'reason_code': observation.get('status', 'NO_NUMERIC_OUTCOME')})
+                preliminary.append({'revision_id': rid, 'status': 'PROCESSING_FAILED' if observation.get('status') == 'TECHNICAL_FAILURE' else 'NOT_NUMERIC_IA',
+                                    'reason_code': observation.get('status', 'NO_NUMERIC_OUTCOME')})
                 continue
             try:
                 context = resolve(connection, cycle_id=cycle_id, observations=[observation])[0]
             except (ValueError, KeyError, IndexError) as exc:
-                individual.append({'revision_id': rid, 'status': 'MATERIAL_INVALID', 'reason_code': _failure(exc)})
+                preliminary.append({'revision_id': rid, 'status': 'MATERIAL_INVALID', 'reason_code': _failure(exc)})
                 continue
             contexts.append(context)
+        indicators.append({
+            'indicator_id': indicator, 'observations': rows, 'contexts': contexts,
+            'preliminary': preliminary, 'requirement': requirement_map.get(indicator),
+        })
+    return {
+        'schema_version': 1, 'cycle_id': cycle_id, 'observations': observations,
+        'mechanism': mechanism, 'indicators': indicators,
+        'input_checksum': definition_checksum({
+            'cycle_id': cycle_id, 'observations': observations,
+            'requirements': requirement_map,
+            'context_checksums': [definition_checksum(item) for group in indicators for item in group['contexts']],
+            'mechanism_checksum': definition_checksum(mechanism),
+        }),
+    }
+
+
+def decide_prepared(prepared: dict, *, gateway=None) -> tuple[str, list[dict], list[str]]:
+    """Evaluate a frozen admission composition without accessing a database."""
+    cycle_id = prepared['cycle_id']
+    mechanism = prepared['mechanism']
+    decisions, limitations = [], []
+    for group in prepared['indicators']:
+        indicator = group['indicator_id']
+        rows = group['observations']
+        contexts = group['contexts']
+        individual = list(group['preliminary'])
+        admitted = []
+        for context in contexts:
+            rid = context['revision_id']
             try:
                 result = evaluate('individual', [context], mechanism, gateway=gateway)
             except Exception as exc:
@@ -99,7 +129,7 @@ def decide(connection, *, cycle_id: str, observations: list[dict], gateway=None,
                     joint = {'status': 'PROCESSING_FAILED', 'reason_code': _failure(exc)}
         else:
             joint = {'status': 'NO_INTERPRETABLE_IA'}
-        requirement = requirement_map.get(indicator)
+        requirement = group['requirement']
         required = requirement.get('distinct_as_required') if requirement else None
         count = len({x['material']['as_id'] for x in admitted})
         sufficient = type(required) is int and required > 0 and count >= required
@@ -129,3 +159,12 @@ def decide(connection, *, cycle_id: str, observations: list[dict], gateway=None,
         if not numeric:
             limitations.append(f'{indicator}: {reason}; ' + joint.get('rationale', joint.get('reason_code', reason)))
     return VERSION, decisions, limitations
+
+
+def decide(connection, *, cycle_id: str, observations: list[dict], gateway=None,
+           mechanism_directory=None, source_set=None, provider_contract=None) -> tuple[str, list[dict], list[str]]:
+    return decide_prepared(prepare(
+        connection, cycle_id=cycle_id, observations=observations,
+        mechanism_directory=mechanism_directory, source_set=source_set,
+        provider_contract=provider_contract,
+    ), gateway=gateway)

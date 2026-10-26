@@ -162,7 +162,9 @@ def create_cycle_session_for_case(
         """
         SELECT t.indicator_id,t.m2_version
         FROM m5_case_versions cv JOIN m5_case_targets t ON t.case_version_id=cv.id
-        WHERE cv.case_id=%s AND cv.case_version=%s ORDER BY t.display_order
+        WHERE cv.id=(SELECT id FROM m5_case_versions WHERE case_id=%s AND case_version=%s
+                     ORDER BY package_id DESC LIMIT 1)
+        ORDER BY t.display_order
         """,
         (case_id, case_version),
     ).fetchall()

@@ -35,16 +35,20 @@ def test_functional_package_keeps_all_nine_current_passports_and_full_fields():
         assert all(any(key.startswith(prefix) for key in keys) for prefix in required)
 
 
-def test_package_04_keeps_published_case_versions_and_runtime_bindings_immutable():
-    previous = json.loads((OUTPUT.parent / "0.3/case-package.json").read_text(encoding="utf-8"))
+def test_package_05_keeps_author_sources_and_runtime_bindings_immutable():
+    previous = json.loads((OUTPUT.parent / "0.4/case-package.json").read_text(encoding="utf-8"))
     current = _package()
-    assert {
-        (case["case_id"], case["version"]): checksum(case) for case in current["cases"]
-    } == {
-        (case["case_id"], case["version"]): checksum(case) for case in previous["cases"]
-    }
+    assert [(case["case_id"], case["version"], case["author_case_source"], case["author_as_source"])
+            for case in current["cases"]] == [
+        (case["case_id"], case["version"], case["author_case_source"], case["author_as_source"])
+        for case in previous["cases"]
+    ]
     runtime = OUTPUT.parent.parent / "functional-personalization-runtime/1.1.0"
-    assert load_runtime_rule_package(runtime, current["cases"])["manifest"]["version"] == "1.1.0"
+    assert load_runtime_rule_package(
+        runtime, previous["cases"], expected_case_package_version="0.3"
+    )["manifest"]["version"] == "1.1.0"
+    with pytest.raises(ValueError, match="M5_RUNTIME_RULE_PACKAGE_REF_MISMATCH"):
+        load_runtime_rule_package(runtime, current["cases"], expected_case_package_version="0.5")
     for case in current["cases"]:
         stored = CaseVersionV3.model_validate(case).model_dump(exclude_unset=True)
         assert checksum(stored) == checksum(case)

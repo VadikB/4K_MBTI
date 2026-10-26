@@ -70,9 +70,10 @@ class ControlledCharacterAdapter:
         return CharacterReply("COMPLETED" if value else "UNKNOWN", value, "controlled", controlled_test=True)
 
 
-def _prompt_bundle(name: str, version: str = "v1") -> tuple[str, dict]:
-    package_root = Path(__file__).resolve().parents[1] / f"assessment_definitions/prompts/{name}"
-    root = package_root / version
+def _prompt_bundle(name: str, version: str = "v1", package_path: Path | None = None) -> tuple[str, dict]:
+    repository_root = Path(__file__).resolve().parents[1]
+    package_root = repository_root / f"assessment_definitions/prompts/{name}"
+    root = package_path or (package_root / version)
     if not root.is_dir():
         matches = [candidate for candidate in package_root.iterdir() if candidate.is_dir()
                    and json.loads((candidate / "manifest.json").read_text()).get("version") == version]
@@ -84,25 +85,38 @@ def _prompt_bundle(name: str, version: str = "v1") -> tuple[str, dict]:
     prompt_checksum = hashlib.sha256(prompt_bytes).hexdigest()
     if prompt_checksum != manifest["artifacts"][0]["sha256"]:
         raise RuntimeError(f"{name.upper()}_PROMPT_CHECKSUM_MISMATCH")
-    return prompt_bytes.decode(), {"id": manifest["id"], "version": manifest["version"], "checksum": prompt_checksum}
+    return prompt_bytes.decode(), {
+        "id": manifest["id"], "version": manifest["version"], "checksum": prompt_checksum,
+        "path": root.relative_to(repository_root).as_posix(),
+    }
 
 
-def build_m5_ai_operations_snapshot() -> dict[str, dict[str, Any]]:
+def _prompt_ref_matches(actual: dict, expected: dict) -> bool:
+    required = ("id", "version", "checksum")
+    return all(actual.get(key) == expected.get(key) for key in required) and (
+        not expected.get("path") or actual.get("path") == expected.get("path")
+    )
+
+
+def build_m5_ai_operations_snapshot(*, prompt_packages: dict[str, Path] | None = None,
+                                    provider_contract_path: Path | None = None) -> dict[str, dict[str, Any]]:
     """Фиксирует исполнимые настройки; секреты в snapshot не входят."""
     operations = {}
-    provider_contract = load_provider_contract()
+    provider_contract = load_provider_contract(provider_contract_path)
     for code, bundle, version, parameters in (
         ("semantic_decision", "m5_semantic_decision", "v2", {"temperature": 0, "max_tokens": 300, "timeout_seconds": 60}),
         ("character_response", "m5_character_response", "v2", {"temperature": 0.2, "max_tokens": 500, "timeout_seconds": 60}),
         ("technical_c45", "m5_technical_c45", "v1", {"temperature": 0, "max_tokens": 300, "timeout_seconds": 30}),
     ):
-        _, prompt_ref = _prompt_bundle(bundle, version)
+        _, prompt_ref = _prompt_bundle(bundle, version, (prompt_packages or {}).get(code))
         operations[code] = {
             "schema_version": 1, "provider": "deepseek",
             "endpoint": provider_contract["endpoint"],
             "model": provider_contract["model"], "parameters": parameters,
             "thinking": provider_contract["thinking"],
-            "provider_contract": {"version": provider_contract["version"], "checksum": provider_contract["checksum"]},
+            "provider_contract": {key: provider_contract[key] for key in (
+                "version", "checksum", "provider", "endpoint", "model", "thinking", "supported_response_formats"
+            )},
             "prompt_ref": prompt_ref, "response_format": "json_object",
             "limits": {"max_input_bytes": 200000},
             "identity_policy": {
@@ -173,8 +187,12 @@ def execute_frozen_ai_json(*, operation: dict, prompt_bundle: str, input_value: 
     if not resolved.enabled:
         raise RuntimeError("M5_AI_GATEWAY_UNAVAILABLE")
     prompt_version = str((operation.get("prompt_ref") or {}).get("version") or "v1")
-    prompt, prompt_ref = _prompt_bundle(prompt_bundle, prompt_version)
-    if prompt_ref != operation["prompt_ref"]:
+    package_path = operation.get("prompt_ref", {}).get("path")
+    prompt, prompt_ref = _prompt_bundle(
+        prompt_bundle, prompt_version,
+        (Path(__file__).resolve().parents[1] / package_path) if package_path else None,
+    )
+    if not _prompt_ref_matches(prompt_ref, operation["prompt_ref"]):
         raise RuntimeError("M5_AI_PROMPT_IDENTITY_MISMATCH")
     input_bytes = json.dumps(input_value, ensure_ascii=False, sort_keys=True).encode("utf-8")
     max_input_bytes = int((operation.get("limits") or {}).get("max_input_bytes") or 0)
@@ -209,8 +227,12 @@ class DeepSeekCharacterAdapter:
         self.operation = operation or build_m5_ai_operations_snapshot()["character_response"]
         self.gateway = _gateway_for(self.operation, gateway)
         prompt_version = str((self.operation.get("prompt_ref") or {}).get("version") or "v1")
-        self.prompt, self.prompt_ref = _prompt_bundle("m5_character_response", prompt_version)
-        if self.prompt_ref != self.operation["prompt_ref"]:
+        package_path = self.operation.get("prompt_ref", {}).get("path")
+        self.prompt, self.prompt_ref = _prompt_bundle(
+            "m5_character_response", prompt_version,
+            (Path(__file__).resolve().parents[1] / package_path) if package_path else None,
+        )
+        if not _prompt_ref_matches(self.prompt_ref, self.operation["prompt_ref"]):
             raise RuntimeError("M5_AI_PROMPT_IDENTITY_MISMATCH")
 
     def respond(self, *, material: dict, character: dict, text: str, turn_id: str, context: dict) -> CharacterReply:
@@ -254,8 +276,12 @@ class DeepSeekSemanticAdapter:
         self.operation = operation or build_m5_ai_operations_snapshot()["semantic_decision"]
         self.gateway = _gateway_for(self.operation, gateway)
         prompt_version = str((self.operation.get("prompt_ref") or {}).get("version") or "v1")
-        self.prompt, self.prompt_ref = _prompt_bundle("m5_semantic_decision", prompt_version)
-        if self.prompt_ref != self.operation["prompt_ref"]:
+        package_path = self.operation.get("prompt_ref", {}).get("path")
+        self.prompt, self.prompt_ref = _prompt_bundle(
+            "m5_semantic_decision", prompt_version,
+            (Path(__file__).resolve().parents[1] / package_path) if package_path else None,
+        )
+        if not _prompt_ref_matches(self.prompt_ref, self.operation["prompt_ref"]):
             raise RuntimeError("M5_AI_PROMPT_IDENTITY_MISMATCH")
 
     def decide(self, *, rule: dict, text: str, turn_id: str, context: dict) -> Decision:

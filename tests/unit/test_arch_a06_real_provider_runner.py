@@ -5,9 +5,10 @@ from types import SimpleNamespace
 import pytest
 
 from Api import m5_functional_generation_service as functional_service
+from Api.llm.contracts import LlmGatewayError
 
 from scripts.run_arch_a06_real_provider_matrix import (
-    MATRIX, require_external_output, run_row, safe_error_code, select_rows,
+    MATRIX, require_external_output, run_row, safe_error_code, safe_gateway_failure, select_rows,
 )
 
 
@@ -62,13 +63,60 @@ def test_provider_error_details_are_not_persisted():
     assert safe_error_code(RuntimeError("provider body: synthetic content")) == "DETAILS_REDACTED"
 
 
+def test_gateway_failure_keeps_only_safe_transport_diagnostics():
+    exc = LlmGatewayError(
+        "DeepSeek response was truncated",
+        sent={
+            "provider": "deepseek", "endpoint": "https://api.deepseek.com/chat/completions",
+            "model": "deepseek-flash", "parameters": {"max_tokens": 32768},
+            "messages": [{"role": "user", "content": "synthetic private body"}],
+        },
+        provider={
+            "finish_reason": "length", "usage": {"total_tokens": 32768},
+            "transport_attempts": [{"attempt": 1, "outcome": "truncated"}],
+            "untrusted_body": "must not persist",
+        },
+    )
+
+    diagnostic = safe_gateway_failure(exc)
+
+    assert diagnostic["request"]["message_count"] == 1
+    assert "messages" not in diagnostic["request"]
+    assert "synthetic private body" not in json.dumps(diagnostic)
+    assert diagnostic["provider"]["finish_reason"] == "length"
+    assert "untrusted_body" not in diagnostic["provider"]
+
+
 def test_controlled_runner_compiles_all_27_rows():
     matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
     for row in matrix["rows"]:
         result = run_row(matrix, row, ControlledGateway())
-        assert result["package"]["version"] == "0.4"
+        assert result["package"]["version"] == "0.5"
         assert result["admission"]["status"] == "PASS", row["id"]
         assert result["generation_operation"]["kind"] == "generation"
         assert result["repair"] is None
         assert result["persistence_trace"] is not None
         assert result["m6"] == "NOT_RUN"
+
+
+def test_runner_preserves_incomplete_admission_status(monkeypatch):
+    matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
+    prepared = {
+        "admitted_for_participant": False,
+        "input_snapshot_checksum": "input",
+        "deterministic_validation": {"status": "PASS"},
+        "generation_operation": {},
+        "repair": None,
+        "tester": {"aggregation": {"status": "INCOMPLETE"}},
+        "candidate_checksum": "candidate",
+    }
+    monkeypatch.setattr(functional_service, "prepare", lambda *_args, **_kwargs: prepared)
+
+    result = run_row(matrix, matrix["rows"][0], ControlledGateway())
+
+    assert result["admission"] == {
+        "status": "INCOMPLETE",
+        "admitted_for_participant": False,
+        "aggregation_status": "INCOMPLETE",
+    }
+    assert result["persistence_trace"] is None

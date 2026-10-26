@@ -19,29 +19,91 @@ from Api.m6_input_resolver import resolve as resolve_m6_input
 from scripts.build_m5_sales_package import build_execution_rules
 from scripts.build_m5_functional_package import OUTPUT
 
-RUNTIME_PACKAGE = OUTPUT.parent.parent / "functional-personalization-runtime/1.1.0"
+RUNTIME_PACKAGE = OUTPUT.parent.parent / "functional-personalization-runtime/1.2.0"
+FUNCTIONAL_PACKAGES = OUTPUT.parent
 
 
 @pytest.mark.integration
-def test_functional_package_round_trip_is_idempotent_and_preserves_old_versions(test_database_url):
+@pytest.mark.parametrize("previous_version", ["0.2", "0.3"])
+def test_functional_package_round_trip_is_idempotent_and_preserves_old_versions(
+    test_database_url, previous_version
+):
     package = json.loads((OUTPUT / "case-package.json").read_text())
     manifest = json.loads((OUTPUT / "manifest.json").read_text())
     rules = json.loads((OUTPUT / "execution-rules.json").read_text())
+    previous = FUNCTIONAL_PACKAGES / previous_version
+    previous_package = json.loads((previous / "case-package.json").read_text())
+    previous_manifest = json.loads((previous / "manifest.json").read_text())
+    previous_rules = json.loads((previous / "execution-rules.json").read_text())
     with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
         schema = "m5_functional_" + uuid4().hex
         connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
         connection.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
         connection.execute("CREATE TABLE users (id BIGINT PRIMARY KEY)")
+        connection.execute("INSERT INTO users VALUES (99)")
         connection.execute(
             "CREATE TABLE assessment_personalized_profiles "
             "(id BIGINT PRIMARY KEY, status TEXT NOT NULL, content_json JSONB NOT NULL, "
             "provenance_json JSONB NOT NULL, checksum TEXT NOT NULL)"
         )
         ensure_m5_runtime_schema(connection)
+        old_import = import_package(
+            connection,
+            package=previous_package,
+            manifest=previous_manifest,
+            execution_rules=previous_rules,
+        )
+        old_readback_before = package_readback(connection, old_import["package_db_id"])
+        old_checksums = {
+            item["case_id"]: item["content_checksum"] for item in old_readback_before["cases"]
+        }
         first = import_package(connection, package=package, manifest=manifest, execution_rules=rules)
         second = import_package(connection, package=package, manifest=manifest, execution_rules=rules)
         assert first["created"] is True
         assert second["created"] is False
+        old_readback_after = package_readback(connection, old_import["package_db_id"])
+        assert {
+            item["case_id"]: item["content_checksum"] for item in old_readback_after["cases"]
+        } == old_checksums
+        assert connection.execute("SELECT count(*) AS count FROM m5_packages").fetchone()["count"] == 2
+        assert connection.execute("SELECT count(*) AS count FROM m5_case_versions").fetchone()["count"] == 18
+        old_case_id = old_readback_after["cases"][0]["id"]
+        new_case_id = package_readback(connection, first["package_db_id"])["cases"][0]["id"]
+        catalog_ids = []
+        for suffix, package_id, case_version_id in (
+            ("old", old_import["package_db_id"], old_case_id),
+            ("new", first["package_db_id"], new_case_id),
+        ):
+            catalog = connection.execute("""
+                INSERT INTO m5_catalogs
+                    (catalog_id,catalog_version,usage_scope,package_db_id,manifest_json,
+                     manifest_checksum,status,published_by,decision_basis,idempotency_key,
+                     request_hash,published_at)
+                VALUES (%s,'1','qa',%s,%s::jsonb,%s,'published',99,'R03 isolated regression',
+                        %s,%s,NOW()) RETURNING id
+            """, (
+                f"r03-{previous_version}-{suffix}", package_id,
+                json.dumps({"case_version_ids": [case_version_id]}),
+                f"{previous_version}-{suffix}-manifest", f"{previous_version}-{suffix}-key",
+                f"{previous_version}-{suffix}-request",
+            )).fetchone()
+            connection.execute(
+                "INSERT INTO m5_catalog_case_versions(catalog_db_id,case_version_id) VALUES (%s,%s)",
+                (catalog["id"], case_version_id),
+            )
+            catalog_ids.append(int(catalog["id"]))
+        linked = connection.execute("""
+            SELECT member.catalog_db_id,cv.package_id,cv.content_checksum
+            FROM m5_catalog_case_versions member
+            JOIN m5_case_versions cv ON cv.id=member.case_version_id
+            WHERE member.catalog_db_id=ANY(%s) ORDER BY member.catalog_db_id
+        """, (catalog_ids,)).fetchall()
+        assert {item["package_id"] for item in linked} == {
+            old_import["package_db_id"], first["package_db_id"]
+        }
+        assert next(item for item in linked if item["package_id"] == old_import["package_db_id"])[
+            "content_checksum"
+        ] == old_checksums[previous_package["cases"][0]["case_id"]]
         readback = package_readback(connection, first["package_db_id"])
         assert [(item["case_id"], item["case_version"]) for item in readback["cases"]] == [
             (f"CASE.SPEC.{number:02d}", version) for number, version in enumerate(
@@ -66,7 +128,9 @@ def test_versioned_runtime_rules_execute_all_nine_functional_cases(test_database
     package = json.loads((OUTPUT / "case-package.json").read_text())
     manifest = json.loads((OUTPUT / "manifest.json").read_text())
     legacy_rules = json.loads((OUTPUT / "execution-rules.json").read_text())
-    loaded = load_runtime_rule_package(RUNTIME_PACKAGE, package["cases"])
+    loaded = load_runtime_rule_package(
+        RUNTIME_PACKAGE, package["cases"], expected_case_package_version="0.5"
+    )
     compiled = build_execution_rules(package["cases"], loaded["bindings"])
     with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
         schema = "m5_functional_runtime_" + uuid4().hex
@@ -116,7 +180,7 @@ def test_versioned_runtime_rules_execute_all_nine_functional_cases(test_database
                 usage_scope="qa", qa_authorized_by=99,
                 runtime_rule_version_id=imported_rules["id"],
             )
-            assert prepared["execution_payload"]["runtime_rule_ref"]["version"] == "1.1.0"
+            assert prepared["execution_payload"]["runtime_rule_ref"]["version"] == "1.2.0"
             reactions = [item for item in prepared["execution_payload"]["materials"]
                          if item["kind"] == "character_reaction"]
             decisions = {f"{item['material_id']}:character_reaction": "TRUE" for item in reactions}

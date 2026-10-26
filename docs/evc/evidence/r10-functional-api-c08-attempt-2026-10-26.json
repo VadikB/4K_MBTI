@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "recorded_at": "2026-10-26T21:58:35+03:00",
+  "candidate_commit": "1e2bd67aaedee4c585f80883e24d247362718870",
+  "case_id": "CASE.SPEC.08",
+  "function": "Sales",
+  "operation_id": "r10-c08-sales-prepare",
+  "outcome": "M6_EVIDENCE_FAILED_CAUSE_NOT_CAPTURED",
+  "duration_seconds": 404.55,
+  "completed_boundaries": {
+    "product_m4": "PASS",
+    "functional_as_admission": "PASS",
+    "owner_http_prepare_start_turn_completion": "PASS"
+  },
+  "identities": {
+    "cycle_id": "9f929ddd-51f4-4f53-b852-a3b2768170b4",
+    "assessment_situation_id": "4fba28b0-0ead-4cdc-80dc-a73a4ebb7b79"
+  },
+  "failure": {
+    "stage": "m6_evidence",
+    "request_status": "failed",
+    "indicator_assessment": "NOT_CREATED",
+    "m8": "NOT_RUN",
+    "substantive_fail": false
+  },
+  "capture_limitation": "The runner asserted after observing the failed M6 request but before exporting its attempt error/trace. The isolated schema was then removed, so the exact M6 failure cause is unavailable. CASE.SPEC.08 is not retried without a confirmed cause.",
+  "harness_remediation": "The runner now exports the latest m6_processing request/attempt status, error_code and trace_json before asserting when no assessment request is created. This changes evidence capture only and is exercised by later rows.",
+  "raw_artifact": {
+    "path": "docs/evc/evidence/r10-functional-api-c08-attempt-2026-10-26.tar.gz",
+    "sha256": "766270d9c73b07304ec6339df227eac3a634633febedd31910cf034142f1dd19",
+    "preparation_trace_sha256": "bc3b407c2b1c1863365784845967c9eff4a641b467d08b09b25c03c8f02eb5cf",
+    "contains_credentials": false
+  },
+  "acceptance": {
+    "technical_positive_path": "NOT_ACHIEVED_FOR_CASE",
+    "methodology": "NOT_RUN",
+    "reliability": "not_verified"
+  }
+}

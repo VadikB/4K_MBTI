@@ -10,8 +10,16 @@ from Api import qa_orchestration
 CASE_PACKAGE = Path(__file__).resolve().parents[1] / "assessment_definitions/cases/competencies_4k/1.1"
 
 
-def _policy() -> dict:
-    return json.loads((CASE_PACKAGE / "admission-policy.json").read_bytes())
+def _policy(connection=None, *, cycle_id: str | None = None) -> dict:
+    if connection is None or cycle_id is None:
+        return json.loads((CASE_PACKAGE / "admission-policy.json").read_bytes())
+    from Api.cycle_execution_manifest import resolve_cycle_dependency
+    cycle = connection.execute(
+        "SELECT * FROM m5_cycles WHERE cycle_id=%s", (cycle_id,),
+    ).fetchone()
+    if not cycle:
+        raise ValueError("M7_CYCLE_NOT_FOUND")
+    return json.loads((resolve_cycle_dependency(dict(cycle), "m5_case_catalog") / "admission-policy.json").read_bytes())
 
 
 def _owned_profile(connection, user_id: int, profile_id=None) -> int:
@@ -74,7 +82,8 @@ def _prepare_next(connection, *, plan: dict, user_id: int, key: str, defer_as: b
     """Prepare an admitted AS without presenting it or starting M7 time."""
     decision = m7_cycle_planner.choose_next(
         connection, cycle_id=str(plan["cycle_id"]), expected_plan_revision_id=str(plan["revision_id"]),
-        key=key, created_by=user_id, policy=_policy(), prepare_selected=not defer_as,
+        key=key, created_by=user_id, policy=_policy(connection, cycle_id=str(plan["cycle_id"])),
+        prepare_selected=not defer_as,
     )
     return {"plan": m7_cycle_planner.read_plan(connection, str(plan["cycle_id"])),
             "decision": decision, "presentation": None}

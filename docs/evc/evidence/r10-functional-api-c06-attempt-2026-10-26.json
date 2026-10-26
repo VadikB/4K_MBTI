@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "recorded_at": "2026-10-26T18:42:30+03:00",
+  "candidate_commit": "72fee15",
+  "case_id": "CASE.SPEC.06",
+  "function": "Sales",
+  "operation_id": "r10-c06-sales-prepare",
+  "outcome": "BLOCKED_PROVIDER_JSON_INVALID",
+  "stage": "functional_tester_admission_retest_challenger",
+  "duration_seconds": 447.17,
+  "error_code": "M5_FUNCTIONAL_PROVIDER_JSON_INVALID",
+  "provider_parse_failure": {
+    "exception": "JSONDecodeError",
+    "message": "Expecting ':' delimiter",
+    "position": 6419,
+    "line": 1,
+    "column": 6420,
+    "strict_retry_exhausted": true
+  },
+  "classification": {
+    "provider_or_environment_blocker": true,
+    "substantive_as_fail": false,
+    "basis": "During challenger retest after one repair, the provider returned malformed JSON twice. The strict parser does not salvage or merge partial output and stopped preparation."
+  },
+  "capture_limitation": "The strict JSON exception occurred before prepare returned a generated trace, so the queue persisted the operation/error metadata but no result_json. The malformed response body and prior phase payloads are unavailable after isolated-schema teardown; this is recorded as an evidence limitation and the row is not retried.",
+  "dependent_stages": {
+    "admission": "NOT_COMPLETED",
+    "runtime": "NOT_RUN",
+    "m6_evidence": "NOT_RUN",
+    "m6_indicator_assessment": "NOT_RUN",
+    "m8": "NOT_RUN"
+  },
+  "raw_artifact": {
+    "path": "docs/evc/evidence/r10-functional-api-c06-attempt-2026-10-26.tar.gz",
+    "sha256": "85d38b5a541361342bb1df5438d69d85f87ccc631133a33d29e909088dc4be0a",
+    "contained_file_sha256": "177200a77f43165820db97ac30190308164f12421741ff91869053c5076c4c9a",
+    "contains_credentials": false
+  },
+  "acceptance": {
+    "technical_positive_path": "NOT_ACHIEVED_FOR_CASE",
+    "methodology": "NOT_RUN",
+    "reliability": "not_verified"
+  }
+}

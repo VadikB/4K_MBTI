@@ -267,12 +267,16 @@ def compile_case_values(*, case: dict, situation: dict, case_source_name: str,
             if source_schema_profile == "functional-personalization-indicator-v2":
                 layers = situation.get("IndicatorTargetLayers") or {}
                 adapted = ((layers.get("adapted") or {}).get("targets") or [])
-                adapted_by_id = {value.get("IndicatorID"): value for value in adapted if isinstance(value, dict)}
+                adapted_ids = [value.get("IndicatorID") for value in adapted if isinstance(value, dict)]
+                if (len(adapted_ids) != len(adapted) or len(adapted_ids) != len(set(adapted_ids))
+                        or any(not isinstance(value, str) or not value for value in adapted_ids)):
+                    raise ValueError(f"Ambiguous adapted IndicatorTarget IDs: {case_id}")
+                adapted_by_id = {value["IndicatorID"]: value for value in adapted}
                 runtime_item = adapted_by_id.get(indicator_id)
                 if not isinstance(runtime_item, dict):
                     raise ValueError(f"Missing adapted IndicatorTarget: {case_id} {indicator_id}")
                 runtime_pointer = ("IndicatorTargetLayers", "adapted", "targets",
-                                   list(adapted_by_id).index(indicator_id))
+                                   adapted_ids.index(indicator_id))
             condition = runtime_item["Конкретное условие"]
             locations = list(dict.fromkeys(re.findall(r"\bS\d+\b", condition)))
             target.update({
@@ -284,7 +288,12 @@ def compile_case_values(*, case: dict, situation: dict, case_source_name: str,
                 "validity_risk": runtime_item["Дефект потери"],
                 "author_title": item["Название"],
                 "normative_source": item["Нормативный источник"],
-                "material_refs": runtime_item["Материалы и факты"],
+                "material_refs": (runtime_item.get("material_refs", [])
+                                  if source_schema_profile == "functional-personalization-indicator-v2"
+                                  else runtime_item["Материалы и факты"]),
+                "event_refs": runtime_item.get("event_refs", []),
+                "character_refs": runtime_item.get("character_refs", []),
+                "authority_refs": runtime_item.get("authority_refs", []),
                 "adaptation_constraints": runtime_item["Что сохранить при адаптации"],
                 "design_opportunity": item["Проектная возможность"],
                 "actual_occurrence": item["Фактическое возникновение"],
@@ -371,6 +380,9 @@ def compile_case_values(*, case: dict, situation: dict, case_source_name: str,
         for target in compiled["indicator_targets"]:
             target.pop("author_basis", None)
             target.pop("adapted_source", None)
+            target.pop("event_refs", None)
+            target.pop("character_refs", None)
+            target.pop("authority_refs", None)
     return compiled
 
 

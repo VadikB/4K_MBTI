@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "recorded_at": "2026-10-26T18:33:35+03:00",
+  "candidate_commit": "413badaebbb02e0adb2ba4cd6226ba714d0ea281",
+  "case_id": "CASE.SPEC.05",
+  "function": "Sales",
+  "operation_id": "r10-c05-sales-prepare",
+  "outcome": "AS_ADMISSION_INCOMPLETE",
+  "stage": "functional_tester_admission",
+  "duration_seconds": 247.09,
+  "input_snapshot_checksum": "bba72262c6b0f20eebff5169a72431d81f06c17b1e95d9e7003c1307dc158bd5",
+  "candidate_checksum": "9edc373a9e98c5da84f96e7b749e392f7546495f0022518b27c39919c1062369",
+  "deterministic_validation": "PASS",
+  "repair_used": false,
+  "tester_aggregation": "INCOMPLETE",
+  "incomplete_check": {
+    "check_id": "common.confidentiality",
+    "normalized_status": "TECHNICAL_ERROR",
+    "reason": "PASS защищённой проверки без adversarial review не допускается.",
+    "provider_finish_reason": "stop",
+    "transport_attempts": 1,
+    "provider_request_id": "8c46038f-67c2-4bcb-b38e-150ca92da249"
+  },
+  "classification": {
+    "generation_defect": false,
+    "compilation_or_transformation_defect": false,
+    "tester_input_transfer_defect": false,
+    "tester_protocol_response_incomplete": true,
+    "substantive_as_fail": false,
+    "basis": "The exact protected check was requested in tester batch 1. Transport completed normally, but the returned PASS omitted the mandatory adversarial resolution/conflicts. The admission validator correctly converted it to TECHNICAL_ERROR and aggregation INCOMPLETE."
+  },
+  "dependent_stages": {
+    "runtime": "NOT_RUN",
+    "m6_evidence": "NOT_RUN",
+    "m6_indicator_assessment": "NOT_RUN",
+    "m6_substantive_admission": "NOT_RUN",
+    "m8": "NOT_RUN"
+  },
+  "retry_policy": "No repeat without a changed and verified cause; continue independent Case paths.",
+  "raw_artifact": {
+    "path": "docs/evc/evidence/r10-functional-api-c05-attempt-2026-10-26.tar.gz",
+    "sha256": "3bb88b442ed43563a88bcd6e286b03535fcbc19272af04edb47e9c6da897cd80",
+    "contained_file_sha256": "e746ff85723347979704b749e0f49c2d51361b69bf061212f4595e6c30c6be04",
+    "contains_credentials": false
+  },
+  "acceptance": {
+    "technical_positive_path": "NOT_ACHIEVED_FOR_CASE",
+    "methodology": "NOT_RUN",
+    "reliability": "not_verified"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "candidate_commit": "bb2fb7f",
+  "scope": "N02 isolated CASE.SPEC.02 product M4 owner HTTP to real-provider M6 and M8",
+  "synthetic_test_data": true,
+  "result": "PASS_LIMITED_SCOPE",
+  "refs": {
+    "n01_row": "A06.C02.SALES",
+    "profile_checksum": "3a70f214da3d3905640ae714b04b3c1d8e749f32d633b80bd4e74f3a2cd68ba3",
+    "candidate_checksum": "dcccceedd5420d0742bdd1890dcbfa76ff11d06bd0d492d371451a6568472fd4",
+    "case_version_checksum": "179fa0f8192862bee6af3190c8560f9c5ed133cc2fe07d6f5b6a98e6e3c9b729",
+    "assessment_situation_snapshot_checksum": "4c7668c0cd41c0fb4b582b3545892bf1742cece9019b862f087e777490206f1a"
+  },
+  "checks": {
+    "product_m4_validation": "PASS",
+    "functional_generation_deterministic": "PASS",
+    "batched_tester_challenger_admission": "PASS",
+    "owner_http_prepare_start_turn_completion": "PASS",
+    "m6_evidence": "succeeded",
+    "m6_indicator_assessment": "succeeded",
+    "m7_pipeline": "report_ready",
+    "m8_contract": "C-67",
+    "reliability": "not_verified",
+    "methodological_acceptance": "NOT_RUN"
+  },
+  "test_result": "1 passed in 304.15s",
+  "raw_artifact": {
+    "path": "docs/evc/evidence/r10-functional-api-c02-pass-2026-10-26.tar.gz",
+    "sha256": "c538c19e299b3ae1b2cdd50a544e2402190747c8be21ebcc49b08b8e9aaa9802",
+    "full_cycle_uncompressed_sha256": "f9af079e75b30255e9ea0735cface6bd4b30fd31e2638fb3580cf544036e1a72",
+    "preparation_uncompressed_sha256": "51e8ff09667af54da7e5f24bb9f77583b7395d73bde78de4ba742c0c6c2a7bba"
+  },
+  "limitations": [
+    "This proves one of nine functional Case paths; the remaining eight are not inferred PASS.",
+    "The saved pass artifact has PM-03 identity hashes and downstream traces but not the complete persisted tester body; future Case captures include functional_personalization_trace.",
+    "Technical PASS is separate from methodological acceptance and Reliability."
+  ]
+}

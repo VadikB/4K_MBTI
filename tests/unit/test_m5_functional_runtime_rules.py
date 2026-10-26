@@ -16,6 +16,8 @@ RUNTIME_PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functiona
 BINDINGS = RUNTIME_PACKAGE / "event-bindings.json"
 PACKAGE_03 = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.3/case-package.json"
 RUNTIME_PACKAGE_11 = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.1.0"
+PACKAGE_05 = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/case-package.json"
+RUNTIME_PACKAGE_12 = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.2.0"
 
 
 def _cases():
@@ -35,6 +37,21 @@ def test_runtime_artifact_1_1_binds_new_content_preserving_package():
     loaded = load_runtime_rule_package(RUNTIME_PACKAGE_11, cases)
     assert loaded["manifest"]["version"] == "1.1.0"
     assert loaded["manifest"]["source"]["case_package_version"] == "0.3"
+
+
+def test_runtime_artifact_1_2_binds_typed_indicator_package():
+    cases = json.loads(PACKAGE_05.read_text())["cases"]
+    loaded = load_runtime_rule_package(RUNTIME_PACKAGE_12, cases)
+    rules = build_execution_rules(cases, loaded["bindings"])
+    counts = {
+        case_id: sum(item["kind"] == "character_reaction" for item in value["materials"])
+        for case_id, value in rules["cases"].items()
+    }
+    assert counts == {
+        "CASE.SPEC.01": 1, "CASE.SPEC.02": 0, "CASE.SPEC.03": 3,
+        "CASE.SPEC.04": 3, "CASE.SPEC.05": 2, "CASE.SPEC.06": 6,
+        "CASE.SPEC.07": 0, "CASE.SPEC.08": 6, "CASE.SPEC.09": 2,
+    }
 
 
 def test_explicit_event_functions_compile_all_interactive_cases_without_actorless_calls():

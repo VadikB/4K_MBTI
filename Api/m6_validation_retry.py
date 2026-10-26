@@ -41,6 +41,27 @@ def _attribution_hints(messages: list[dict]) -> str:
         return ""
 
 
+def _context_reference_hints(messages: list[dict]) -> str:
+    """Expose only the closed reference namespaces already present in M6 input."""
+    try:
+        material = json.loads(messages[-1]["content"])
+        allowed = {
+            "turn": [str(item["turn_id"]) for item in material["turns"]],
+            "event": [str(item["event_id"]) for item in material["events"]],
+            "material": [str(item["material_id"]) for item in material["materials"]],
+        }
+        return (
+            " Допустимые context_refs образуют закрытый список "
+            "{kind,id} из входа: "
+            + json.dumps(allowed, ensure_ascii=False, separators=(",", ":"))
+            + ". Не используй speaker_id, fragment/BS/evidence ID, ID из initial_presentation "
+              "или непредъявленного материала. Сохраняй только содержательно нужные refs; "
+              "не заменяй ошибочную ссылку произвольной допустимой."
+        )
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+        return ""
+
+
 def call_and_validate(*, gateway, messages: list[dict], operation: dict, routing_key: str,
                       validate: Callable[[dict], dict], max_attempts: int) -> tuple[dict, dict]:
     """Retry only rejected provider output; never coerce or partially accept it."""
@@ -68,6 +89,8 @@ def call_and_validate(*, gateway, messages: list[dict], operation: dict, routing
                 raise
             span_hints = _fragment_span_hints(raw, messages) if validation_code == "M6_FRAGMENT_SPAN" else ""
             attribution_hints = _attribution_hints(messages)
+            context_hints = (_context_reference_hints(messages)
+                             if validation_code == "M6_CONTEXT_REFERENCE" else "")
             current_messages = [
                 *messages,
                 {"role": "assistant", "content": raw},
@@ -80,6 +103,7 @@ def call_and_validate(*, gateway, messages: list[dict], operation: dict, routing
                        "end-start должен быть равен len(quote), а content[start:end] — в точности quote; "
                        "не включай в quote пропущенный текст и многоточия." + span_hints
                        if validation_code == "M6_FRAGMENT_SPAN" else "")
+                    + context_hints
                     + attribution_hints
                 )},
             ]

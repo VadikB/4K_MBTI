@@ -30,7 +30,13 @@ def load_provider_contract(path: Path | None = CONTRACT_PATH) -> dict[str, Any]:
 
 
 def operation_parameters(operation: dict[str, Any]) -> dict[str, Any]:
-    contract = load_provider_contract()
+    frozen = operation.get("provider_contract") or {}
+    if all(key in frozen for key in ("provider", "endpoint", "model", "thinking", "supported_response_formats")):
+        contract = frozen
+    else:
+        contract = load_provider_contract()
+        if frozen.get("checksum") and frozen["checksum"] != contract["checksum"]:
+            raise ValueError("DEEPSEEK_PROVIDER_CONTRACT_UNAVAILABLE")
     if operation.get("provider") != contract["provider"] or operation.get("model") != contract["model"]:
         raise ValueError("DEEPSEEK_OPERATION_IDENTITY_UNSUPPORTED")
     if operation.get("endpoint") != contract["endpoint"]:

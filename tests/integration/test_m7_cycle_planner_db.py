@@ -24,7 +24,7 @@ from Api.m7_route_replacement import (FixedCaseReplacementProvider,GeneratedCand
 from Api.m7_return_integration import (continue_return,heartbeat,read_return_state,
     record_controlled_absence)
 from Api import m7_return_integration as return_integration
-from Api.m5_cycle_runtime import begin_blocking_wait,end_blocking_wait,read_cycle
+from Api.m5_cycle_runtime import assert_collecting,begin_blocking_wait,end_blocking_wait,read_cycle
 from scripts.build_m5_case_package import OUTPUT
 
 pytestmark=pytest.mark.integration
@@ -634,6 +634,26 @@ def test_background_calendar_expiry_closes_paused_cycle(db):
         results=expire_due_cycles(c,initiated_by=99)
         assert len(results)==1 and results[0]['reason']=='calendar_deadline'
         assert c.execute('SELECT status FROM m5_cycles').fetchone()['status']=='collection_closed'
+
+
+@pytest.mark.parametrize('consumed_seconds,allowed', [(7199, True), (7200, False), (7201, False)])
+def test_pilot_120_actual_collection_boundary(db, consumed_seconds, allowed):
+    with db() as c:
+        plan,_=active_cycle(c)
+        cycle=c.execute('SELECT id FROM m5_cycles WHERE cycle_id=%s',(plan['cycle_id'],)).fetchone()
+        session=c.execute('SELECT id FROM m5_cycle_sessions WHERE cycle_db_id=%s ORDER BY ordinal DESC LIMIT 1',
+                          (cycle['id'],)).fetchone()
+        c.execute("UPDATE m5_cycles SET time_budget_seconds=7200,calendar_window_seconds=259200")
+        c.execute("""UPDATE m5_cycle_time_intervals
+            SET started_at=NOW()-(%s*INTERVAL '1 second'),ended_at=NULL
+            WHERE cycle_db_id=%s AND interval_type='collecting'""",(consumed_seconds,cycle['id']))
+        if allowed:
+            assert assert_collecting(c,cycle_db_id=cycle['id'],session_db_id=session['id'])['status']=='active'
+            assert read_cycle(c,str(plan['cycle_id']))['remaining_seconds']>0
+        else:
+            with pytest.raises(ValueError,match='M7_TIME_LIMIT_REACHED'):
+                assert_collecting(c,cycle_db_id=cycle['id'],session_db_id=session['id'])
+            assert c.execute('SELECT status FROM m5_cycles WHERE id=%s',(cycle['id'],)).fetchone()['status']=='collection_closed'
 
 
 def test_blocking_wait_is_explicit_idempotent_and_does_not_move_deadline(db):

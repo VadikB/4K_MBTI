@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "candidate_sha": "8eccc601ad976304dc2e0a4cb0be03055f51424c",
+  "application_version": "2.0.29",
+  "provider": "deepseek/deepseek-flash",
+  "provider_contract": "1.0.0",
+  "package": "m5-functional-personalization-cases@0.5",
+  "compiler": "m5-functional-json-compiler@0.5.0",
+  "checkpoint": {
+    "completed_preparations": 26,
+    "admission_pass": [
+      "A06.C01.SALES",
+      "A06.C01.HR",
+      "A06.C01.IT",
+      "A06.C02.SALES",
+      "A06.C02.HR",
+      "A06.C03.SALES",
+      "A06.C05.SALES",
+      "A06.C05.HR",
+      "A06.C05.IT",
+      "A06.C06.HR",
+      "A06.C06.IT",
+      "A06.C07.SALES",
+      "A06.C07.HR",
+      "A06.C07.IT",
+      "A06.C08.SALES",
+      "A06.C08.HR",
+      "A06.C08.IT",
+      "A06.C09.SALES",
+      "A06.C09.HR"
+    ],
+    "admission_fail": ["A06.C02.IT", "A06.C04.SALES", "A06.C04.HR", "A06.C04.IT", "A06.C06.SALES"],
+    "admission_incomplete": ["A06.C03.HR", "A06.C09.IT"],
+    "technical_error": ["A06.C03.IT"],
+    "not_run": 0
+  },
+  "pilot": {
+    "row": "A06.C01.SALES",
+    "generation": "PASS",
+    "tester": "PASS",
+    "challenger": "PASS",
+    "repair_used": false,
+    "admission": "PASS",
+    "input_snapshot_checksum": "f828a55ea336c29d575ba68edc4dbffd1c413aa02feb5c1f200d79329b0467db",
+    "candidate_checksum": "f103d1e7b7d505e4d8af47fed43902d79fccc287f34658d717dfbe87286b9f1a"
+  },
+  "stops": [
+    {
+      "row": "A06.C02.IT",
+      "classification": "AS_ADMISSION_FAIL",
+      "deterministic": "PASS",
+      "repair_used": true,
+      "confirmed_findings": [
+        "PROFESSIONAL_SUBSTITUTION_INCOMPLETE",
+        "CONTRADICTORY_ADVANTAGE_CLAIM",
+        "NO_VERIFIABLE_ADVANTAGE_FOR_A",
+        "UNVERIFIABLE_COLLEAGUE_INFERENCE"
+      ]
+    },
+    {
+      "row": "A06.C03.HR",
+      "classification": "TESTER_CHALLENGER_INCOMPLETE",
+      "deterministic": "PASS",
+      "repair_used": false,
+      "aggregation": "INCOMPLETE",
+      "technical_error_checks": 23
+    },
+    {
+      "row": "A06.C03.IT",
+      "classification": "REPEATED_PROVIDER_TECHNICAL_ERROR",
+      "attempts": 3,
+      "error_type": "LlmGatewayError",
+      "error_code": "DETAILS_REDACTED",
+      "diagnosed_stage": "generation_repair",
+      "transport": {
+        "outcome": "http_error",
+        "status": 502,
+        "duration_ms": 162943.7,
+        "messages_checksum": "7a72d5dd8183b07b00ddddc49fd3bc3bf7509c5d46a8a005245c398e6daa5f29"
+      }
+    }
+  ],
+  "full_api_paths": "NOT_RUN",
+  "browser_paths": "NOT_RUN",
+  "methodological_acceptance": "NOT_RUN",
+  "reliability": "NOT_RUN",
+  "raw_checkpoint_archive": {
+    "path": "docs/evc/evidence/r10-matrix-9f6d958-checkpoint-2026-10-26.tar.gz",
+    "sha256": "59a286a92933d4ef3fc24de988f51051673e4d8ec7a5bcf10d2a76fdb1e39284",
+    "contains_credentials": false
+  }
+}
