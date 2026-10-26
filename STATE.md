@@ -374,3 +374,18 @@
   owner boundaries — `3 passed in 2.1m`. Первый запуск без `BROWSER_PYTHON` остановился
   до создания stand и не является product result. Safe manifest:
   `docs/evc/evidence/r10-browser-boundary-2026-10-26.json`.
+- Финальный локальный CI на содержимом кандидата после R10 remediation: release guard
+  `2.0.29` PASS; backend `597 PASS`; HTTP `69 PASS`; PostgreSQL integration
+  `167 PASS, 2 SKIP` только explicit real-provider (выполнен отдельно); frontend lint
+  PASS, content `75 PASS`, build PASS. Полный browser: `62 PASS`, один REV-02 timeout
+  при 200 responses и без server ERROR; единственный адресный повтор на чистой DB —
+  PASS за 1.0m. Устаревший negative-matrix oracle исправлен: он теперь вычисляет
+  ожидаемое число tester/challenger batches и проверяет лимит `1..8`; адресно 3 PASS.
+- N04 real multi-case с тремя generated functional AS остаётся
+  `BLOCKED_INFRASTRUCTURE`: существующий real runner создаёт один Case на одноразовый
+  Cycle, а controlled multi-case нельзя повышать до real-provider. N05 подтверждает
+  real-provider различия контекста на N01, но runtime глубина только для Sales и
+  остаётся PARTIAL. N06 recovery полный только controlled; real positive результаты
+  C02/C03/C07 сохранены отдельно. N07 live publish/deploy `NOT_RUN`: нет подключённого
+  общего test stand/PR/remote CI; локальная PILOT-120 граница PASS. N08 PASS TECH;
+  N09 PASS TECH, methodology `NOT_RUN`.

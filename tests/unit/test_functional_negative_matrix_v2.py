@@ -42,7 +42,15 @@ def test_full_negative_as_is_rejected_without_leaking_expected_diagnosis_to_test
 
     assert result["result"] == "PASS"
     assert result["acceptance"] == {"positive_admitted": True, "mutated_as_rejected": True}
-    assert len(gateway.tester_payloads) == 4
+    expected_batches = sum(
+        len(result[key][operation]["batches"])
+        for key in ("positive_control", "negative_test")
+        for operation in ("provider_operation", "challenger_operation")
+    )
+    assert len(gateway.tester_payloads) == expected_batches
+    assert all(1 <= len((payload.get("applicability_plan") or {}).get("required_checks") or
+                        payload["protected_checks"]) <= 8
+               for payload in gateway.tester_payloads)
     def keys(value):
         if isinstance(value, dict):
             return set(value) | set().union(*(keys(item) for item in value.values()), set())

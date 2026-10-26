@@ -22,12 +22,12 @@ Cycle execution manifest schema `2`, M6 Evidence prompt `1.0.1`, SourceSet
 
 | Контур | Фактический результат |
 | --- | --- |
-| release guard / `git diff --check` | PASS |
-| backend unit | 592 PASS |
+| release guard / `git diff --check` | PASS (`2.0.29`) |
+| backend unit | 597 PASS |
 | HTTP contracts | 69 PASS |
-| PostgreSQL integration | 167 PASS; 1 SKIP — explicit real-provider |
+| PostgreSQL integration | 167 PASS; 2 SKIP — explicit real-provider, выполнены отдельно в R10 |
 | frontend lint / content tests / build | PASS / 75 PASS / PASS |
-| browser acceptance | 63 PASS, около 10 минут |
+| browser acceptance | full run 62 PASS + 1 REV-02 timeout; clean targeted REV-02 retry PASS |
 | controlled 27-row Case/function compile | PASS для package `0.5`; controlled gateway |
 | remote CI exact head / PR review | NOT_RUN: ветка не отправлена, `gh` отсутствует |
 
@@ -44,9 +44,9 @@ Report JSON, PDF/UI и server logs. Секреты и реальные поль�
 | N01 — 27 real preparations | COMPLETE WITH OUTCOMES | 19 admission PASS, 5 AS FAIL, 2 INCOMPLETE, C03/IT repair HTTP 502; NOT_RUN 0 |
 | N02 — 9 real API→M8 | COMPLETE WITH OUTCOMES; 3/9 PASS | C02/C03/C07 full PASS; C01/C05/C09 INCOMPLETE; C04 tester-contract error; C06 provider JSON blocker; C08 M6 failed with capture gap; NOT_RUN 0 |
 | N03 — 3 real browser функции | BLOCKED_INFRASTRUCTURE | Owned stand поддерживает только controlled gateway/catalog; 3 controlled full paths повторены на `6fea0a8` и PASS |
-| N04 — multi-case Cycle | PARTIAL | Pause/reload/resume/additional Session PASS; 3 real generated AS NOT_RUN |
-| N05 — различия контекста | PARTIAL | 27 controlled adaptations PASS; real-provider paths NOT_RUN |
-| N06 — результаты и recovery | PASS TECH / real NOT_RUN | nonempty partial, insufficiency, no-result, expiry, retry, late fence и M8/PDF проверены controlled |
+| N04 — multi-case Cycle | BLOCKED_INFRASTRUCTURE / controlled PASS | Existing real runner owns one Case per disposable Cycle; 3 real generated AS in one Cycle have no accepted harness |
+| N05 — различия контекста | PARTIAL | N01 real-provider adaptations complete with outcomes; runtime depth only covers Sales paths |
+| N06 — результаты и recovery | PASS TECH / real PARTIAL | Controlled recovery matrix PASS; real positive Results/M8 preserved for C02/C03/C07, real recovery NOT_RUN |
 | N07 — PILOT-120 | PASS TECH / live NOT_RUN | `7200/259200`, 7199/7200/7201, UI и frozen snapshot PASS; общая program revision не публиковалась |
 | N08 — upgrade/history | PASS TECH | coexistence и old/new Cycle dependency tests PASS |
 | N09 — negative | PASS TECH / method NOT_RUN | deterministic/contract rejects PASS; методологический PASS не присваивался |
@@ -268,6 +268,25 @@ clarification и Report/PDF, S10-B interruption/Additional Session, recovery с 
 response/two tabs/owner boundaries — `3 passed in 2.1m` на отдельных owned pytest-БД.
 Первый запуск без явного `BROWSER_PYTHON` остановился до создания stand и не является
 product result. Safe manifest: `docs/evc/evidence/r10-browser-boundary-2026-10-26.json`.
+
+После R10 remediation полный локальный набор повторён на итоговом содержимом. Backend:
+`597 passed`; HTTP: `69 passed`; PostgreSQL integration: `167 passed, 2 skipped`
+(оба skip — explicit real-provider, фактические вызовы документированы отдельно).
+Frontend lint, `75` content tests и build — PASS. Full browser дал `62 passed` и один
+REV-02 timeout: endpoint отвечал 200, server log не содержал ERROR/traceback, controlled
+pipeline не достиг `ready` за 70 s. Единственный адресный повтор REV-02 на чистой owned
+DB — PASS за 1.0m; результат классифицирован как timing instability полного suite.
+Первый backend run также выявил устаревшее ожидание четырёх монолитных tester calls в
+negative-matrix unit после batching. Oracle теперь вычисляет число фактических
+tester/challenger batches и проверяет размер `1..8`; адресный набор 3 PASS, полный
+backend после исправления 597 PASS. Release guard `2.0.29` и `git diff --check` — PASS.
+
+Оставшиеся границы серии не маскируются: N04 real multi-case с тремя generated
+functional AS заблокирован отсутствием accepted harness (имеющийся real runner создаёт
+один Case на одноразовый Cycle); N05 real context adaptation завершён на уровне N01,
+но runtime depth есть только для Sales; N06 real recovery не выполнялся; N07 common
+test publish/deploy не выполнялся, поскольку общий stand/PR/remote CI к задаче не
+подключены. N08 остаётся technical PASS, N09 — technical PASS при methodology NOT_RUN.
 
 ## Откат и ограничения выпуска
 
