@@ -87,6 +87,11 @@ persistence trace и M6 input resolver.
   CaseVersion сохраняет исходный JSON. `case_ref.checksum` теперь вычисляется
   по исходному валидированному `case_value`; regression подтверждает точное
   совпадение со stored content checksum, сохраняя строгую runtime-проверку.
+- CI push для `6aa2f35`: static Case и M10 integration проходят; F05 fixture
+  останавливается на первой операции подготовки, потому что её controlled
+  generator возвращал прежнюю AS без обязательных адаптационных mappings.
+  Fixture теперь строит соответствия material/event/character/authority и
+  checksum авторских targets по контракту 0.4; требования admission не снижены.
 - Положительная корректная адаптация и hand-off `0.4`: PASS; frozen package
   `0.3` сохраняет legacy trace schema 2: PASS.
 - Отрицательные потеря условия, подмена смысла, неверный material ref,
