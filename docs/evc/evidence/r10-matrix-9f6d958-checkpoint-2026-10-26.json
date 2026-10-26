@@ -7,7 +7,7 @@
   "package": "m5-functional-personalization-cases@0.5",
   "compiler": "m5-functional-json-compiler@0.5.0",
   "checkpoint": {
-    "completed_preparations": 23,
+    "completed_preparations": 26,
     "admission_pass": [
       "A06.C01.SALES",
       "A06.C01.HR",
@@ -25,12 +25,14 @@
       "A06.C07.IT",
       "A06.C08.SALES",
       "A06.C08.HR",
-      "A06.C08.IT"
+      "A06.C08.IT",
+      "A06.C09.SALES",
+      "A06.C09.HR"
     ],
     "admission_fail": ["A06.C02.IT", "A06.C04.SALES", "A06.C04.HR", "A06.C04.IT", "A06.C06.SALES"],
-    "admission_incomplete": ["A06.C03.HR"],
+    "admission_incomplete": ["A06.C03.HR", "A06.C09.IT"],
     "technical_error": ["A06.C03.IT"],
-    "not_run": 3
+    "not_run": 0
   },
   "pilot": {
     "row": "A06.C01.SALES",
@@ -84,7 +86,7 @@
   "reliability": "NOT_RUN",
   "raw_checkpoint_archive": {
     "path": "docs/evc/evidence/r10-matrix-9f6d958-checkpoint-2026-10-26.tar.gz",
-    "sha256": "c25fdd0cbca13753f9634f23982af1680a5e49f1d46fdcd66249c40101e70dee",
+    "sha256": "59a286a92933d4ef3fc24de988f51051673e4d8ec7a5bcf10d2a76fdb1e39284",
     "contains_credentials": false
   }
 }

@@ -231,10 +231,13 @@
 - CASE.SPEC.08 Sales/HR/IT — admission PASS. Итого 23 завершённых preparations:
   17 PASS, 5 FAIL, 1 INCOMPLETE; C03/IT отдельно `BLOCKED_PROVIDER_502`; только C09
   (3 строки) NOT_RUN. Raw archive SHA-256 `c25fdd0c...e70dee`.
+- CASE.SPEC.09 Sales/HR — admission PASS; C09/IT — INCOMPLETE. N01 исчерпан:
+  26 сохранённых результатов (19 PASS, 5 FAIL, 2 INCOMPLETE) и C03/IT как отдельный
+  `BLOCKED_PROVIDER_502`; `NOT_RUN=0`. Raw archive SHA-256 `59a286a9...1e39284`.
 - Единый пакет кандидата, фактическая матрица, безопасные trace locations, rollback и
   точное следующее действие сохранены в
   `docs/evc/evidence/case-cycle-r1-2026-10-26.md`. Existing real-cycle pytest не принят
   как R10 proof: он вручную вставляет Turn и нарушает критерий штатного API пути.
-- Следующий шаг: продолжить checkpoint только C09; C03/IT не повторять без
-  изменения доказанной причины HTTP 502. После preparation inventory строить штатные
-  API/runtime пути только для admission PASS AS. Merge/deploy/publish не выполнять.
+- Следующий шаг: строить штатные API/runtime пути только для admission PASS AS;
+  C03/IT не повторять без изменения доказанной причины HTTP 502. FAIL/INCOMPLETE AS
+  не предъявлять. Merge/deploy/publish не выполнять.

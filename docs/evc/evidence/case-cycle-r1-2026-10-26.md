@@ -41,7 +41,7 @@ Report JSON, PDF/UI и server logs. Секреты и реальные поль�
 
 | Набор | Статус | Основание / остаток |
 | --- | --- | --- |
-| N01 — 27 real preparations | PARTIAL 23/27 | 17 admission PASS, 5 AS FAIL, 1 INCOMPLETE; C03/IT repair HTTP 502, C09 3 NOT_RUN |
+| N01 — 27 real preparations | COMPLETE WITH OUTCOMES | 19 admission PASS, 5 AS FAIL, 2 INCOMPLETE, C03/IT repair HTTP 502; NOT_RUN 0 |
 | N02 — 9 real API→M8 | NOT_RUN_DEPENDENT | Дефектная пилотная AS не предъявлялась; real 9 Case не запускались |
 | N03 — 3 real browser функции | NOT_RUN_DEPENDENT | Controlled browser PASS; real-provider browser не запускался после pilot gate |
 | N04 — multi-case Cycle | PARTIAL | Pause/reload/resume/additional Session PASS; 3 real generated AS NOT_RUN |
@@ -117,6 +117,11 @@ CASE.SPEC.08 Sales/HR/IT прошёл admission PASS. Всего заверше�
 17 PASS, 5 FAIL, 1 INCOMPLETE; C03/IT остаётся provider blocker, C09 — NOT_RUN.
 Актуальный raw archive SHA-256:
 `c25fdd0cbca13753f9634f23982af1680a5e49f1d46fdcd66249c40101e70dee`.
+
+CASE.SPEC.09 Sales/HR прошёл admission PASS; C09/IT завершился INCOMPLETE. N01
+исчерпан: 26 сохранённых AS-результатов (19 PASS, 5 FAIL, 2 INCOMPLETE) и один
+диагностированный provider blocker C03/IT; NOT_RUN=0. Актуальный raw archive SHA-256:
+`59a286a92933d4ef3fc24de988f51051673e4d8ec7a5bcf10d2a76fdb1e39284`.
 
 ## Откат и ограничения выпуска
 
