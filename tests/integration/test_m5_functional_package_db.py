@@ -19,7 +19,7 @@ from Api.m6_input_resolver import resolve as resolve_m6_input
 from scripts.build_m5_sales_package import build_execution_rules
 from scripts.build_m5_functional_package import OUTPUT
 
-RUNTIME_PACKAGE = OUTPUT.parent.parent / "functional-personalization-runtime/1.1.0"
+RUNTIME_PACKAGE = OUTPUT.parent.parent / "functional-personalization-runtime/1.2.0"
 
 
 @pytest.mark.integration
@@ -116,7 +116,7 @@ def test_versioned_runtime_rules_execute_all_nine_functional_cases(test_database
                 usage_scope="qa", qa_authorized_by=99,
                 runtime_rule_version_id=imported_rules["id"],
             )
-            assert prepared["execution_payload"]["runtime_rule_ref"]["version"] == "1.1.0"
+            assert prepared["execution_payload"]["runtime_rule_ref"]["version"] == "1.2.0"
             reactions = [item for item in prepared["execution_payload"]["materials"]
                          if item["kind"] == "character_reaction"]
             decisions = {f"{item['material_id']}:character_reaction": "TRUE" for item in reactions}

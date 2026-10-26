@@ -50,3 +50,12 @@ target с точным `source_pointer`/checksum → compiled target. В compile
 materials/events/Turns с sequence boundary. Package `0.5`, compiler `0.5.0`, draft;
 исторические `0.2`–`0.4` не изменены. Откат для новых запусков — вернуть resolver
 на `0.4`; сохранённые snapshots продолжают читаться по собственной версии.
+
+## R02 — runtime bindings
+
+Package `0.5` связан с immutable runtime rules `1.2.0`. `prepare()` компилирует
+принятую AS с явными versioned event bindings; правила и checksum сохраняются в
+execution snapshot. Контрольные character-reaction counts: `1,0,3,3,2,6,0,6,2`.
+Это снимок текущих девяти авторских примеров, не универсальная квота. Откат для
+новых запусков — package `0.4` + runtime `1.1.0`; начатые AS используют сохранённый
+snapshot и не переключаются на latest.

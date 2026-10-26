@@ -17,12 +17,14 @@ from Api.m5_functional_personalization import extract_candidate_as
 from Api.m5_functional_tester import aggregate, build_applicability_plan, normalize_results
 from Api.m5_case_runtime import checksum as runtime_checksum
 from scripts.build_m5_sales_package import build_execution_rules, compile_case_values
+from Api.m5_runtime_rules import load_runtime_rule_package
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.5"
 SOURCE = PACKAGE / "sources/functional-v0.2"
 REPAIR_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_repair/v1"
 PROTOCOL_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_protocol/v1"
+RUNTIME_PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.2.0"
 
 AUTHOR_INDICATOR_FIELDS = (
     "IndicatorID", "SkillID", "ComponentID", "Название", "Версия M2",
@@ -597,7 +599,9 @@ def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
             as_source_checksum=generation["candidate_checksum"],
             source_schema_profile=compiler_profile,
         )
-        execution_rules = build_execution_rules([compiled_case])
+        package_cases = json.loads((PACKAGE / "case-package.json").read_text(encoding="utf-8"))["cases"]
+        runtime_bindings = load_runtime_rule_package(RUNTIME_PACKAGE, package_cases)["bindings"]
+        execution_rules = build_execution_rules([compiled_case], runtime_bindings)
     return {"schema_version": 1, "input_snapshot_checksum": checksum(snapshot),
             "candidate_as": generation["candidate_as"], "candidate_checksum": generation["candidate_checksum"],
             "author_content_binding": generation["author_content_binding"],

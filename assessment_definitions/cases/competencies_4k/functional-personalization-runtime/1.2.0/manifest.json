@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "m5-functional-personalization-runtime",
+  "version": "1.2.0",
+  "status": "draft",
+  "scope": "functional-personalization-case-execution",
+  "owner": "PM-04",
+  "source": {
+    "case_package_id": "m5-functional-personalization-cases",
+    "case_package_version": "0.5"
+  },
+  "artifacts": [
+    {
+      "name": "event-bindings.json",
+      "sha256": "ff2e4a2a49196632d2a6a70d87dcef4877fd8eaa17bcd4ce1623fb5b63230e20"
+    }
+  ]
+}
