@@ -41,7 +41,7 @@ Report JSON, PDF/UI и server logs. Секреты и реальные поль�
 
 | Набор | Статус | Основание / остаток |
 | --- | --- | --- |
-| N01 — 27 real preparations | PARTIAL 8/27 | Исправленный C01/Sales PASS; всего 6 admission PASS, 1 AS FAIL, 1 INCOMPLETE; C03/IT дважды technical error, 18 NOT_RUN |
+| N01 — 27 real preparations | PARTIAL 12/27 | 7 admission PASS, 4 AS FAIL, 1 INCOMPLETE; C03/IT repair HTTP 502, 14 NOT_RUN |
 | N02 — 9 real API→M8 | NOT_RUN_DEPENDENT | Дефектная пилотная AS не предъявлялась; real 9 Case не запускались |
 | N03 — 3 real browser функции | NOT_RUN_DEPENDENT | Controlled browser PASS; real-provider browser не запускался после pilot gate |
 | N04 — multi-case Cycle | PARTIAL | Pause/reload/resume/additional Session PASS; 3 real generated AS NOT_RUN |
@@ -94,8 +94,13 @@ C02/IT — содержательный AS FAIL после одной repair, C0
 C03/IT — повторный `LlmGatewayError` на двух checkpoint-запусках. Оставшиеся 18 строк
 не запускались. Полные traces checkpoint сохранены в
 `docs/evc/evidence/r10-matrix-9f6d958-checkpoint-2026-10-26.tar.gz` с SHA-256
-`585f397b747f7ce209805afdf664cc434cc3cbb0b44c27f335a0902f82718a84`;
+`cb462afc73dfaf5a5afaa0078ccf2b7e06f31f36447c39caa620c2c4f7e77634`;
 safe manifest — одноимённый JSON. API/runtime/M6/M8 и browser пути остаются NOT_RUN.
+
+Safe diagnostic retry на `8eccc60` локализовал C03/IT: provider вернул HTTP 502 на
+`generation_repair` через 162943.7 ms. Это environment/provider blocker, не вывод о
+содержании AS. Независимо завершены C04 Sales/HR/IT (admission FAIL) и C05/Sales
+(PASS); C05/HR прерван до результата и не учитывается как attempt.
 
 ## Откат и ограничения выпуска
 

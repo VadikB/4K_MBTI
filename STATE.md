@@ -210,6 +210,15 @@
   status (`INCOMPLETE` не маскируется как `FAIL`). Следующий независимый шаг — создать
   и проверить штатный API/runtime runner на уже принятых AS; зависимый preparation
   checkpoint ожидает локализации повторного provider failure C03/IT.
+- Safe provider diagnostics commit `8eccc60`: адресный C03/IT retry доказал HTTP 502
+  на `generation_repair` после 162943.7 ms; request messages checksum
+  `7a72d5dd...a5f29`, credential/prompt body не сохранялись. Строка остаётся
+  `BLOCKED_PROVIDER_502`, последующие повторы без изменения причины запрещены.
+- Независимый checkpoint продолжен: C04 Sales/HR/IT — admission FAIL, C05/Sales —
+  admission PASS. Итого 12 завершённых preparations: 7 PASS, 4 FAIL, 1 INCOMPLETE;
+  C03/IT — отдельный technical blocker; 14 строк NOT_RUN. C05/HR был прерван до
+  результата и не считается завершённой попыткой. Обновлённый raw archive SHA-256:
+  `cb462afc...e77634`.
 - Единый пакет кандидата, фактическая матрица, безопасные trace locations, rollback и
   точное следующее действие сохранены в
   `docs/evc/evidence/case-cycle-r1-2026-10-26.md`. Existing real-cycle pytest не принят

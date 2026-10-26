@@ -1,25 +1,26 @@
 {
   "schema_version": 1,
-  "candidate_sha": "9f6d958174645754f4744842ca3eb184d1f5b7a7",
+  "candidate_sha": "8eccc601ad976304dc2e0a4cb0be03055f51424c",
   "application_version": "2.0.29",
   "provider": "deepseek/deepseek-flash",
   "provider_contract": "1.0.0",
   "package": "m5-functional-personalization-cases@0.5",
   "compiler": "m5-functional-json-compiler@0.5.0",
   "checkpoint": {
-    "completed_preparations": 8,
+    "completed_preparations": 12,
     "admission_pass": [
       "A06.C01.SALES",
       "A06.C01.HR",
       "A06.C01.IT",
       "A06.C02.SALES",
       "A06.C02.HR",
-      "A06.C03.SALES"
+      "A06.C03.SALES",
+      "A06.C05.SALES"
     ],
-    "admission_fail": ["A06.C02.IT"],
+    "admission_fail": ["A06.C02.IT", "A06.C04.SALES", "A06.C04.HR", "A06.C04.IT"],
     "admission_incomplete": ["A06.C03.HR"],
     "technical_error": ["A06.C03.IT"],
-    "not_run": 18
+    "not_run": 14
   },
   "pilot": {
     "row": "A06.C01.SALES",
@@ -55,9 +56,16 @@
     {
       "row": "A06.C03.IT",
       "classification": "REPEATED_PROVIDER_TECHNICAL_ERROR",
-      "attempts": 2,
+      "attempts": 3,
       "error_type": "LlmGatewayError",
-      "error_code": "DETAILS_REDACTED"
+      "error_code": "DETAILS_REDACTED",
+      "diagnosed_stage": "generation_repair",
+      "transport": {
+        "outcome": "http_error",
+        "status": 502,
+        "duration_ms": 162943.7,
+        "messages_checksum": "7a72d5dd8183b07b00ddddc49fd3bc3bf7509c5d46a8a005245c398e6daa5f29"
+      }
     }
   ],
   "full_api_paths": "NOT_RUN",
@@ -66,7 +74,7 @@
   "reliability": "NOT_RUN",
   "raw_checkpoint_archive": {
     "path": "docs/evc/evidence/r10-matrix-9f6d958-checkpoint-2026-10-26.tar.gz",
-    "sha256": "585f397b747f7ce209805afdf664cc434cc3cbb0b44c27f335a0902f82718a84",
+    "sha256": "cb462afc73dfaf5a5afaa0078ccf2b7e06f31f36447c39caa620c2c4f7e77634",
     "contains_credentials": false
   }
 }
