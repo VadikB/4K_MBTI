@@ -365,3 +365,12 @@
   `INCOMPLETE`; C04 — erroneous tester requirements; C06 — provider malformed JSON;
   C08 — M6 Evidence failed с утраченной точной причиной. `NOT_RUN=0`; случайные
   повторы запрещены. Methodology `NOT_RUN`, Reliability `not_verified`.
+- N03 real-provider browser — `BLOCKED_INFRASTRUCTURE`: owned browser stand имеет
+  только guarded `acceptance-v1` controlled gateway/catalog и не умеет импортировать
+  admitted functional AS, выбирать Sales/HR/IT profiles и сохранять real-provider
+  trace через UI lifecycle. Controlled результат не повышен до real-provider PASS.
+  На exact head `6fea0a8` три полных controlled пути повторены: S10-A/T11-10 +
+  clarification/Report/PDF, interruption + Additional Session, recovery + two tabs +
+  owner boundaries — `3 passed in 2.1m`. Первый запуск без `BROWSER_PYTHON` остановился
+  до создания stand и не является product result. Safe manifest:
+  `docs/evc/evidence/r10-browser-boundary-2026-10-26.json`.

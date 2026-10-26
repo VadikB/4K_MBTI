@@ -43,7 +43,7 @@ Report JSON, PDF/UI и server logs. Секреты и реальные поль�
 | --- | --- | --- |
 | N01 — 27 real preparations | COMPLETE WITH OUTCOMES | 19 admission PASS, 5 AS FAIL, 2 INCOMPLETE, C03/IT repair HTTP 502; NOT_RUN 0 |
 | N02 — 9 real API→M8 | COMPLETE WITH OUTCOMES; 3/9 PASS | C02/C03/C07 full PASS; C01/C05/C09 INCOMPLETE; C04 tester-contract error; C06 provider JSON blocker; C08 M6 failed with capture gap; NOT_RUN 0 |
-| N03 — 3 real browser функции | NOT_RUN | Controlled browser PASS; real-provider browser требует отдельного stand path поверх admitted functional AS |
+| N03 — 3 real browser функции | BLOCKED_INFRASTRUCTURE | Owned stand поддерживает только controlled gateway/catalog; 3 controlled full paths повторены на `6fea0a8` и PASS |
 | N04 — multi-case Cycle | PARTIAL | Pause/reload/resume/additional Session PASS; 3 real generated AS NOT_RUN |
 | N05 — различия контекста | PARTIAL | 27 controlled adaptations PASS; real-provider paths NOT_RUN |
 | N06 — результаты и recovery | PASS TECH / real NOT_RUN | nonempty partial, insufficiency, no-result, expiry, retry, late fence и M8/PDF проверены controlled |
@@ -258,6 +258,16 @@ product M4 → owner HTTP → real Evidence/IA → M8; C01, C05 и C09 — `INCO
 C04 — ошибочные требования tester; C06 — malformed provider JSON; C08 дошёл до M6
 Evidence `failed`, но точная причина не была сохранена старым runner. `NOT_RUN=0`.
 Methodological acceptance не проводилась, Reliability остаётся `not_verified`.
+
+N03 не может быть честно выполнен существующим browser stand: он намеренно включает
+только guarded `acceptance-v1` controlled gateway и controlled catalog, не имеет
+контракта импорта admitted functional AS, выбора product profiles Sales/HR/IT и
+экспорта real-provider trace через UI lifecycle. Это инфраструктурный blocker, а не
+FAIL AS. Техническая browser-база на exact head `6fea0a8` повторена: S10-A/T11-10 с
+clarification и Report/PDF, S10-B interruption/Additional Session, recovery с lost
+response/two tabs/owner boundaries — `3 passed in 2.1m` на отдельных owned pytest-БД.
+Первый запуск без явного `BROWSER_PYTHON` остановился до создания stand и не является
+product result. Safe manifest: `docs/evc/evidence/r10-browser-boundary-2026-10-26.json`.
 
 ## Откат и ограничения выпуска
 

@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "recorded_at": "2026-10-26T22:08:00+03:00",
+  "candidate_commit": "6fea0a8",
+  "real_provider_n03": {
+    "status": "BLOCKED_INFRASTRUCTURE",
+    "required": "Three full browser paths covering Sales, HR and IT over admitted CASE.SPEC assessment situations.",
+    "blocker": "The owned browser stand only supports the guarded acceptance-v1 controlled gateway and controlled catalog. It has no contract or fixture for importing an admitted functional AS, selecting Sales/HR/IT product profiles, or preserving real-provider preparation traces through the browser lifecycle.",
+    "impact": "Controlled browser PASS cannot be promoted to N03 real-provider PASS. No production/test user data or shared test deployment was used.",
+    "needed_next": "A separately reviewed real-provider browser stand contract that provisions isolated product profiles/catalog, persists admitted functional AS, exports provider/API/UI/DB traces and cleans up its owned database."
+  },
+  "controlled_regression": {
+    "status": "PASS",
+    "command_scope": "tests/browser/runtime.spec.mjs; workers=1; three named full paths",
+    "database": "isolated product4k_pytest_* databases created by owned stand",
+    "gateway": "acceptance-v1 controlled",
+    "results": [
+      {"path": "S10-A/T11-10 + clarification + Report/PDF", "status": "PASS", "duration_seconds": 57.8},
+      {"path": "S10-B interruption + Additional Session", "status": "PASS", "duration_seconds": 36.1},
+      {"path": "lost response + unaccepted request + two tabs + owner boundaries", "status": "PASS", "duration_seconds": 31.1}
+    ],
+    "total": "3 passed in 2.1m",
+    "initial_environment_attempt": "NOT_A_PRODUCT_RESULT: worktree-local .venv path was absent; rerun used the repository runtime specified by BROWSER_PYTHON. The first attempt failed before stand creation."
+  },
+  "acceptance": {
+    "controlled_browser_technical": "PASS",
+    "real_provider_browser": "BLOCKED_INFRASTRUCTURE",
+    "methodology": "NOT_RUN",
+    "reliability": "not_verified"
+  }
+}
