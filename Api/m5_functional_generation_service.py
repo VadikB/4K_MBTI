@@ -19,7 +19,7 @@ from Api.m5_case_runtime import checksum as runtime_checksum
 from scripts.build_m5_sales_package import build_execution_rules, compile_case_values
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.4"
+PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.5"
 SOURCE = PACKAGE / "sources/functional-v0.2"
 REPAIR_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_repair/v1"
 PROTOCOL_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_protocol/v1"
@@ -160,15 +160,29 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
     check("base_role", candidate.get("BaseRole") == expected.get("BaseRole"), candidate.get("BaseRole"))
     check("indicator_targets", candidate.get("IndicatorIDs") == expected.get("IndicatorIDs"), candidate.get("IndicatorIDs"))
     check("m2_versions", candidate.get("Версии M2") == expected.get("Версии M2"))
+    def indexed(values: Any, field: str) -> tuple[dict[str, dict[str, Any]], list[Any]]:
+        if not isinstance(values, list):
+            return {}, ["NOT_A_LIST"]
+        invalid = [index for index, item in enumerate(values)
+                   if not isinstance(item, dict) or not isinstance(item.get(field), str)
+                   or not item.get(field).strip()]
+        ids = [item[field] for item in values if isinstance(item, dict)
+               and isinstance(item.get(field), str) and item.get(field).strip()]
+        duplicates = sorted({value for value in ids if ids.count(value) > 1})
+        return ({item[field]: item for item in values if isinstance(item, dict)
+                 and isinstance(item.get(field), str) and item.get(field).strip()},
+                [{"invalid_indexes": invalid}, {"duplicate_ids": duplicates}]
+                if invalid or duplicates else [])
     if compiler.get("source_schema_profile") == "functional-personalization-indicator-v1":
         expected_targets = expected.get("IndicatorObservability")
         candidate_targets = candidate.get("IndicatorObservability")
-        expected_by_id = ({item.get("IndicatorID"): item for item in expected_targets}
-                          if isinstance(expected_targets, list) else {})
-        candidate_by_id = ({item.get("IndicatorID"): item for item in candidate_targets}
-                           if isinstance(candidate_targets, list) else {})
+        expected_by_id, expected_shape_errors = indexed(expected_targets, "IndicatorID")
+        candidate_by_id, candidate_shape_errors = indexed(candidate_targets, "IndicatorID")
         check("indicator_content_target_set", bool(expected_by_id)
-              and set(candidate_by_id) == set(expected_by_id), sorted(candidate_by_id))
+              and not expected_shape_errors and not candidate_shape_errors
+              and len(candidate_targets) == len(expected_targets)
+              and set(candidate_by_id) == set(expected_by_id),
+              candidate_shape_errors or sorted(candidate_by_id))
         differences = []
         if set(candidate_by_id) == set(expected_by_id):
             for indicator_id, source_target in expected_by_id.items():
@@ -180,12 +194,13 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
     if compiler.get("source_schema_profile") == "functional-personalization-indicator-v2":
         expected_targets = expected.get("IndicatorObservability")
         candidate_targets = candidate.get("IndicatorObservability")
-        expected_by_id = ({item.get("IndicatorID"): item for item in expected_targets}
-                          if isinstance(expected_targets, list) else {})
-        candidate_by_id = ({item.get("IndicatorID"): item for item in candidate_targets}
-                           if isinstance(candidate_targets, list) else {})
+        expected_by_id, expected_shape_errors = indexed(expected_targets, "IndicatorID")
+        candidate_by_id, candidate_shape_errors = indexed(candidate_targets, "IndicatorID")
         check("indicator_content_target_set", bool(expected_by_id)
-              and set(candidate_by_id) == set(expected_by_id), sorted(candidate_by_id))
+              and not expected_shape_errors and not candidate_shape_errors
+              and len(candidate_targets) == len(expected_targets)
+              and set(candidate_by_id) == set(expected_by_id),
+              candidate_shape_errors or sorted(candidate_by_id))
         differences = []
         if set(candidate_by_id) == set(expected_by_id):
             for indicator_id, source_target in expected_by_id.items():
@@ -206,16 +221,21 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
               and author_targets == expected_targets
               and author_layer.get("checksum") == checksum(expected_targets))
         adapted_targets = adapted_layer.get("targets") if isinstance(adapted_layer, dict) else None
-        adapted_by_id = ({item.get("IndicatorID"): item for item in adapted_targets
-                          if isinstance(item, dict)} if isinstance(adapted_targets, list) else {})
+        adapted_by_id, adapted_shape_errors = indexed(adapted_targets, "IndicatorID")
         check("indicator_adapted_target_set", bool(expected_by_id)
-              and set(adapted_by_id) == set(expected_by_id), sorted(adapted_by_id))
-        material_ids = {item.get("MaterialID") for item in candidate.get("Материалы", [])
-                        if isinstance(item, dict)}
-        event_ids = {item.get("EventID") for item in candidate.get("События", [])
-                     if isinstance(item, dict)}
-        character_ids = {item.get("CharacterID") for item in candidate.get("Активные персонажи", [])
-                         if isinstance(item, dict)}
+              and not adapted_shape_errors and len(adapted_targets) == len(expected_targets)
+              and set(adapted_by_id) == set(expected_by_id),
+              adapted_shape_errors or sorted(adapted_by_id))
+        materials_by_id, material_shape_errors = indexed(candidate.get("Материалы"), "MaterialID")
+        events_by_id, event_shape_errors = indexed(candidate.get("События"), "EventID")
+        characters_by_id, character_shape_errors = indexed(candidate.get("Активные персонажи"), "CharacterID")
+        check("indicator_reference_namespaces_unambiguous",
+              not material_shape_errors and not event_shape_errors and not character_shape_errors,
+              {"materials": material_shape_errors, "events": event_shape_errors,
+               "characters": character_shape_errors})
+        material_ids = set(materials_by_id)
+        event_ids = set(events_by_id)
+        character_ids = set(characters_by_id)
         authority_ids = {f"character:{item.get('CharacterID')}" for item in candidate.get("Активные персонажи", [])
                          if isinstance(item, dict) and item.get("CharacterID")}
         authority_ids.add("participant")
@@ -224,13 +244,26 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
             missing = [field for field in ADAPTED_TARGET_FIELDS if field not in target]
             mapping = target.get("author_mapping")
             expected_pointer = f"/IndicatorObservability/{list(expected_by_id).index(indicator_id)}"
+            ref_type_errors = {}
+            for field in ("material_refs", "event_refs", "character_refs", "authority_refs"):
+                values = target.get(field)
+                if (not isinstance(values, list) or any(not isinstance(value, str) or not value.strip()
+                                                        for value in values)
+                        or (isinstance(values, list) and len(values) != len(set(values)))):
+                    ref_type_errors[field] = values
+            def refs(field: str) -> set[str]:
+                values = target.get(field)
+                return set(values) if isinstance(values, list) and all(
+                    isinstance(value, str) for value in values
+                ) else set()
             invalid = {
                 "missing_fields": missing,
                 "empty_condition": not str(target.get("Конкретное условие") or "").strip(),
-                "material_refs": sorted(set(target.get("material_refs") or []) - material_ids),
-                "event_refs": sorted(set(target.get("event_refs") or []) - event_ids),
-                "character_refs": sorted(set(target.get("character_refs") or []) - character_ids),
-                "authority_refs": sorted(set(target.get("authority_refs") or []) - authority_ids),
+                "material_refs": sorted(refs("material_refs") - material_ids),
+                "event_refs": sorted(refs("event_refs") - event_ids),
+                "character_refs": sorted(refs("character_refs") - character_ids),
+                "authority_refs": sorted(refs("authority_refs") - authority_ids),
+                "reference_types": ref_type_errors,
                 "author_mapping": mapping != {
                     "source_pointer": expected_pointer,
                     "source_checksum": checksum(expected_by_id[indicator_id]),
@@ -238,7 +271,8 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
             }
             if (missing or invalid["empty_condition"] or invalid["material_refs"]
                     or invalid["event_refs"] or invalid["character_refs"]
-                    or invalid["authority_refs"] or invalid["author_mapping"]):
+                    or invalid["authority_refs"] or invalid["reference_types"]
+                    or invalid["author_mapping"]):
                 adapted_failures.append({"indicator_id": indicator_id, **invalid})
         check("indicator_adaptation_references", not adapted_failures, adapted_failures)
         check("indicator_adapted_layer_checksum", isinstance(adapted_layer, dict)

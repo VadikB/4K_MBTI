@@ -1,4 +1,4 @@
-"""Build the immutable M5 functional-personalization v0.4 draft package."""
+"""Build the immutable M5 functional-personalization v0.5 draft package."""
 from __future__ import annotations
 
 import argparse
@@ -17,7 +17,7 @@ from Api.m5_package import digest, json_bytes, verify_package_directory
 from scripts.build_m5_sales_package import build_execution_rules, build_package
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.4"
+OUTPUT = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.5"
 M2 = ROOT / "assessment_definitions/methodologies/competencies_4k/1.1/methodology.json"
 M3 = ROOT / "assessment_definitions/role_profiles/competencies_4k/1.1/base_roles.json"
 CURRENT_DIRS = ("02_cases", "03_personalization", "04_as", "05_participant", "06_facilitator", "07_generation", "08_qa")
@@ -41,7 +41,7 @@ def _selection(source_root: Path, destination: Path) -> Path:
                 "sha256": actual, "bytes": target.stat().st_size,
             })
     manifest = {
-        "handoff_revision": "functional-personalization-v0.4-2026-10-26",
+        "handoff_revision": "functional-personalization-v0.5-2026-10-26",
         "reference_main": "d54dbba", "files": files,
     }
     (selected / "manifest.json").write_bytes(json_bytes(manifest))
@@ -64,7 +64,7 @@ def build(source_root: Path) -> tuple[dict, dict, list[dict], list[dict]]:
             source_schema_profile="functional-personalization-indicator-v1",
         )
     package.update({
-        "version": "0.4", "source_status": "WORKING", "runtime_enabled": False,
+        "version": "0.5", "source_status": "WORKING", "runtime_enabled": False,
         "scope": {
             "professional_context": "functional", "base_role": "specialist_expert", "case_count": 9,
             "excluded": ["development_recommendations", "mini_cases"],
@@ -133,14 +133,14 @@ def write_package(source_root: Path, destination: Path = OUTPUT) -> dict:
                 "source_pointer": compiled["source"], "preserved_sha256": checksum(preserved),
             })
     preservation = {
-        "schema_version": 2, "compiler_version": "0.4.0",
+        "schema_version": 2, "compiler_version": "0.5.0",
         "source_schema_profile": "functional-personalization-indicator-v2",
         "result": "PASS", "target_count": len(preservation_rows), "targets": preservation_rows,
     }
     adaptation_contract = {
         "schema_version": 1,
         "id": "m5-functional-indicator-two-layer",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "status": "draft",
         "author_layer": {
             "version": "functional-indicator-author/1.0.0",
@@ -186,9 +186,9 @@ def write_package(source_root: Path, destination: Path = OUTPUT) -> dict:
         for path in sorted(source_dir.rglob("*")) if path.is_file()
     )
     manifest = {
-        "schema_version": 4, "id": "m5-functional-personalization-cases", "version": "0.4",
+        "schema_version": 4, "id": "m5-functional-personalization-cases", "version": "0.5",
         "status": "draft", "source_status": "WORKING", "runtime_enabled": False, "artifacts": artifacts,
-        "compiler": {"id": "m5-functional-json-compiler", "version": "0.4.0",
+        "compiler": {"id": "m5-functional-json-compiler", "version": "0.5.0",
                      "source_schema_profile": "functional-personalization-indicator-v2",
                      "indicator_layer_contract": "m5-functional-indicator-two-layer/1.0.0"},
         "dependencies": {"m2": digest(M2.read_bytes()), "m3": digest(M3.read_bytes())},

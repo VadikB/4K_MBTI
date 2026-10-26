@@ -63,10 +63,10 @@ def test_shared_service_admits_only_after_deterministic_and_independent_checks()
     assert result_a["input_snapshot_checksum"] != result_b["input_snapshot_checksum"]
     assert first["refs"]["package"] == {
         "id": "m5-functional-personalization-cases",
-        "version": "0.4",
+        "version": "0.5",
         "compiler": {
             "id": "m5-functional-json-compiler",
-            "version": "0.4.0",
+            "version": "0.5.0",
             "source_schema_profile": "functional-personalization-indicator-v2",
             "indicator_layer_contract": "m5-functional-indicator-two-layer/1.0.0",
         },
@@ -160,6 +160,10 @@ def test_two_layer_contract_accepts_valid_adaptation_and_compiles_it():
     assert compiled["K1.I01"]["author_basis"]["target_checksum"] == service.checksum(
         layers["author"]["targets"][0]
     )
+    assert compiled["K1.I01"]["material_refs"] == adapted["K1.I01"]["material_refs"]
+    assert compiled["K1.I01"]["event_refs"] == adapted["K1.I01"]["event_refs"]
+    assert compiled["K1.I01"]["character_refs"] == adapted["K1.I01"]["character_refs"]
+    assert compiled["K1.I01"]["authority_refs"] == adapted["K1.I01"]["authority_refs"]
 
 
 def test_two_layer_contract_rejects_lost_condition_bad_reference_and_authority():
@@ -183,6 +187,24 @@ def test_two_layer_contract_rejects_lost_condition_bad_reference_and_authority()
     assert failure["actual"][0]["empty_condition"] is True
     assert failure["actual"][1]["material_refs"] == ["UNKNOWN_MATERIAL"]
     assert failure["actual"][2]["authority_refs"] == ["character:UNKNOWN"]
+
+
+def test_two_layer_contract_rejects_duplicate_adapted_target_before_mapping():
+    snapshot = service.build_input_snapshot(
+        case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="two-layer-duplicate",
+    )
+    generated = service.generate(snapshot, Gateway())
+    targets = generated["candidate_as"]["IndicatorTargetLayers"]["adapted"]["targets"]
+    targets[1] = deepcopy(targets[0])
+    generated["candidate_as"]["IndicatorTargetLayers"]["adapted"]["checksum"] = service.checksum(targets)
+
+    validation = service.deterministic_checks(snapshot, generated["candidate_as"])
+
+    failure = next(item for item in validation["checks"]
+                   if item["code"] == "indicator_adapted_target_set")
+    assert validation["status"] == "FAIL"
+    assert failure["result"] == "FAIL"
+    assert failure["actual"][1]["duplicate_ids"] == [targets[0]["IndicatorID"]]
 
 
 def test_two_layer_contract_rejects_semantic_substitution_from_independent_tester():

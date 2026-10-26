@@ -40,3 +40,13 @@ untracked файлы не изменялись. `gh` отсутствует; с�
 Минимум: YAML parse, release checker, проверка ссылок/команд, `git diff --check`,
 содержательная сверка четырёх событий CI. Продуктовые тесты для R00 не применимы.
 Откат: revert только R00 commit; данные и runtime не затрагиваются.
+
+## R01 — карта полей
+
+`author IndicatorObservability[index]` → immutable author layer + checksum → adapted
+target с точным `source_pointer`/checksum → compiled target. В compiled/C-34/M6
+сохраняются `material_refs`, `event_refs`, `character_refs`, `authority_refs` и
+`author_basis`; фактические C-45 context refs остаются отдельными предъявленными
+materials/events/Turns с sequence boundary. Package `0.5`, compiler `0.5.0`, draft;
+исторические `0.2`–`0.4` не изменены. Откат для новых запусков — вернуть resolver
+на `0.4`; сохранённые snapshots продолжают читаться по собственной версии.

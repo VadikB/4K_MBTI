@@ -1,0 +1,52 @@
+{
+  "adapted_layer": {
+    "authority_namespace": [
+      "participant",
+      "character:<CharacterID>"
+    ],
+    "must_preserve": [
+      "author meaning",
+      "observability",
+      "constraints",
+      "invariants"
+    ],
+    "required_references": [
+      "material_refs",
+      "event_refs",
+      "character_refs",
+      "authority_refs"
+    ],
+    "scope": "one accepted assessment situation",
+    "version": "functional-indicator-adaptation/1.0.0"
+  },
+  "admission": {
+    "adapted_checksum_required": true,
+    "author_checksum_required": true,
+    "exact_indicator_target_set": true,
+    "missing_condition": "FAIL",
+    "semantic_tester_required": true,
+    "unknown_reference": "FAIL"
+  },
+  "author_layer": {
+    "identity": [
+      "IndicatorID",
+      "SkillID",
+      "ComponentID",
+      "Версия M2"
+    ],
+    "immutable": true,
+    "source": "author_assessment_situation.IndicatorObservability",
+    "version": "functional-indicator-author/1.0.0"
+  },
+  "id": "m5-functional-indicator-two-layer",
+  "schema_version": 1,
+  "status": "draft",
+  "tester_rules": {
+    "mapping": "Verify every material, event, character and authority reference against the concrete AS and reject lost conditions, semantic substitution, unknown references or expanded authority.",
+    "no_automatic_pass": "Presence of mapping fields or matching hashes does not prove semantic equivalence.",
+    "professional_consistency": "Evaluate the adapted projection together with the concrete AS; source-only names and objects are closed provenance and are not required literally in the adapted situation.",
+    "semantic_equivalence": "For every adapted target verify that author meaning, observability conditions, constraints and invariants remain testable in the concrete AS.",
+    "source_preservation": "Compare author.targets with the frozen author source byte-for-meaning and checksum."
+  },
+  "version": "1.1.0"
+}
