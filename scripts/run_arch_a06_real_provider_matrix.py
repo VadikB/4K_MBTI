@@ -45,6 +45,29 @@ def safe_error_code(exc: Exception) -> str:
     return value if SAFE_ERROR.fullmatch(value) else "DETAILS_REDACTED"
 
 
+def safe_gateway_failure(exc: Exception) -> dict[str, Any] | None:
+    sent = getattr(exc, "sent", None)
+    provider = getattr(exc, "provider", None)
+    if not isinstance(sent, dict) and not isinstance(provider, dict):
+        return None
+    request = {}
+    if isinstance(sent, dict):
+        for field in ("provider", "endpoint", "model", "parameters", "gateway_version", "contract"):
+            if field in sent:
+                request[field] = sent[field]
+        messages = sent.get("messages")
+        if isinstance(messages, list):
+            request["messages_checksum"] = functional_service.checksum(messages)
+            request["message_count"] = len(messages)
+    safe_provider = {}
+    if isinstance(provider, dict):
+        for field in ("request_id", "model", "revision", "finish_reason", "usage",
+                      "transport_attempts"):
+            if field in provider:
+                safe_provider[field] = provider[field]
+    return {"request": request, "provider": safe_provider}
+
+
 def source_row(matrix: dict[str, Any], row: dict[str, Any]) -> dict[str, Any]:
     function = matrix["functions"][row["function"]]
     return {
@@ -142,6 +165,9 @@ def main() -> None:
                 "synthetic_test_data": True, "status": "TECHNICAL_ERROR",
                 "error_type": type(exc).__name__, "error_code": safe_error_code(exc),
             }
+            gateway_failure = safe_gateway_failure(exc)
+            if gateway_failure is not None:
+                failure["gateway_failure"] = gateway_failure
             write_json(output / "failures" / f"{row['id'].lower()}.json", failure)
             outcomes.append({"id": row["id"], "status": "TECHNICAL_ERROR", "resumed": False})
             print(f"{row['id']} TECHNICAL_ERROR {type(exc).__name__}: {safe_error_code(exc)}", flush=True)

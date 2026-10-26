@@ -5,9 +5,10 @@ from types import SimpleNamespace
 import pytest
 
 from Api import m5_functional_generation_service as functional_service
+from Api.llm.contracts import LlmGatewayError
 
 from scripts.run_arch_a06_real_provider_matrix import (
-    MATRIX, require_external_output, run_row, safe_error_code, select_rows,
+    MATRIX, require_external_output, run_row, safe_error_code, safe_gateway_failure, select_rows,
 )
 
 
@@ -60,6 +61,30 @@ def test_default_selection_is_one_row_and_all_is_explicit():
 def test_provider_error_details_are_not_persisted():
     assert safe_error_code(ValueError("M6_CONTEXT_REFERENCE")) == "M6_CONTEXT_REFERENCE"
     assert safe_error_code(RuntimeError("provider body: synthetic content")) == "DETAILS_REDACTED"
+
+
+def test_gateway_failure_keeps_only_safe_transport_diagnostics():
+    exc = LlmGatewayError(
+        "DeepSeek response was truncated",
+        sent={
+            "provider": "deepseek", "endpoint": "https://api.deepseek.com/chat/completions",
+            "model": "deepseek-flash", "parameters": {"max_tokens": 32768},
+            "messages": [{"role": "user", "content": "synthetic private body"}],
+        },
+        provider={
+            "finish_reason": "length", "usage": {"total_tokens": 32768},
+            "transport_attempts": [{"attempt": 1, "outcome": "truncated"}],
+            "untrusted_body": "must not persist",
+        },
+    )
+
+    diagnostic = safe_gateway_failure(exc)
+
+    assert diagnostic["request"]["message_count"] == 1
+    assert "messages" not in diagnostic["request"]
+    assert "synthetic private body" not in json.dumps(diagnostic)
+    assert diagnostic["provider"]["finish_reason"] == "length"
+    assert "untrusted_body" not in diagnostic["provider"]
 
 
 def test_controlled_runner_compiles_all_27_rows():
