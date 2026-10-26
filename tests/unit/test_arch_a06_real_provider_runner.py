@@ -72,3 +72,26 @@ def test_controlled_runner_compiles_all_27_rows():
         assert result["repair"] is None
         assert result["persistence_trace"] is not None
         assert result["m6"] == "NOT_RUN"
+
+
+def test_runner_preserves_incomplete_admission_status(monkeypatch):
+    matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
+    prepared = {
+        "admitted_for_participant": False,
+        "input_snapshot_checksum": "input",
+        "deterministic_validation": {"status": "PASS"},
+        "generation_operation": {},
+        "repair": None,
+        "tester": {"aggregation": {"status": "INCOMPLETE"}},
+        "candidate_checksum": "candidate",
+    }
+    monkeypatch.setattr(functional_service, "prepare", lambda *_args, **_kwargs: prepared)
+
+    result = run_row(matrix, matrix["rows"][0], ControlledGateway())
+
+    assert result["admission"] == {
+        "status": "INCOMPLETE",
+        "admitted_for_participant": False,
+        "aggregation_status": "INCOMPLETE",
+    }
+    assert result["persistence_trace"] is None

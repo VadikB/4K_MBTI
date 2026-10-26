@@ -41,7 +41,7 @@ Report JSON, PDF/UI и server logs. Секреты и реальные поль�
 
 | Набор | Статус | Основание / остаток |
 | --- | --- | --- |
-| N01 — 27 real preparations | STOPPED_AFTER_PILOT | C01/Sales transport PASS, AS admission FAIL; остальные 26 не запускались |
+| N01 — 27 real preparations | PARTIAL 8/27 | Исправленный C01/Sales PASS; всего 6 admission PASS, 1 AS FAIL, 1 INCOMPLETE; C03/IT дважды technical error, 18 NOT_RUN |
 | N02 — 9 real API→M8 | NOT_RUN_DEPENDENT | Дефектная пилотная AS не предъявлялась; real 9 Case не запускались |
 | N03 — 3 real browser функции | NOT_RUN_DEPENDENT | Controlled browser PASS; real-provider browser не запускался после pilot gate |
 | N04 — multi-case Cycle | PARTIAL | Pause/reload/resume/additional Session PASS; 3 real generated AS NOT_RUN |
@@ -86,6 +86,16 @@ M8, 26 остальных preparations, 9 API и 3 browser paths — `NOT_RUN_DE
 и повтор только C01/Sales на новом candidate SHA. Тест
 `tests/llm/test_m10_real_cycle_db.py` по-прежнему не является достаточным R10 proof:
 fixture вручную вставляет Turn и не доказывает штатный API путь.
+
+Remediation выполнена в `9f6d958174645754f4744842ca3eb184d1f5b7a7` без
+ослабления admission. Повтор C01/Sales прошёл generation/tester/challenger/admission
+без repair. Checkpoint расширен до восьми сохранённых preparations: шесть PASS,
+C02/IT — содержательный AS FAIL после одной repair, C03/HR — aggregation INCOMPLETE,
+C03/IT — повторный `LlmGatewayError` на двух checkpoint-запусках. Оставшиеся 18 строк
+не запускались. Полные traces checkpoint сохранены в
+`docs/evc/evidence/r10-matrix-9f6d958-checkpoint-2026-10-26.tar.gz` с SHA-256
+`585f397b747f7ce209805afdf664cc434cc3cbb0b44c27f335a0902f82718a84`;
+safe manifest — одноимённый JSON. API/runtime/M6/M8 и browser пути остаются NOT_RUN.
 
 ## Откат и ограничения выпуска
 

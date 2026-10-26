@@ -195,6 +195,21 @@
 - Адресные проверки remediation: 41 functional/package/ARCH-A06 unit PASS;
   `py_compile` PASS; `git diff --check` PASS. Следующий gate — commit исправления и
   один повтор C01/Sales на exact SHA; 27/9/3 до успеха не запускать.
+- Remediation commit `9f6d958174645754f4744842ca3eb184d1f5b7a7`. Повтор
+  `A06.C01.SALES` real-provider: generation/tester/challenger/admission PASS без repair;
+  input `f828a55e...b0467db`, candidate `f103d1e7...b9f1a`.
+- Checkpoint 27 preparations продолжен: 8 результатов сохранены; 6 admission PASS
+  (C01 Sales/HR/IT, C02 Sales/HR, C03 Sales), C02/IT — подтверждённый AS FAIL после
+  одной repair (несогласованное преимущество A и неполная IT-подстановка), C03/HR —
+  `INCOMPLETE` из-за 23 protected checks без adversarial review, C03/IT — дважды
+  `LlmGatewayError`. После повторного технического blocker оставшиеся 18 не запускались.
+- Raw checkpoint сохранён в `docs/evc/evidence/r10-matrix-9f6d958-checkpoint-2026-10-26.tar.gz`,
+  SHA-256 `585f397b...18a84`; safe manifest — одноимённый `.json`. Full API и browser
+  paths пока `NOT_RUN`; методологический PASS/Reliability не присвоены.
+- Runner исправлен отдельно от admission: outcome теперь сохраняет точный aggregation
+  status (`INCOMPLETE` не маскируется как `FAIL`). Следующий независимый шаг — создать
+  и проверить штатный API/runtime runner на уже принятых AS; зависимый preparation
+  checkpoint ожидает локализации повторного provider failure C03/IT.
 - Единый пакет кандидата, фактическая матрица, безопасные trace locations, rollback и
   точное следующее действие сохранены в
   `docs/evc/evidence/case-cycle-r1-2026-10-26.md`. Existing real-cycle pytest не принят

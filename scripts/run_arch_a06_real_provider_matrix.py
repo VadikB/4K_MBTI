@@ -82,7 +82,7 @@ def run_row(matrix: dict[str, Any], row: dict[str, Any], gateway: Any) -> dict[s
         "repair": prepared["repair"],
         "tester": prepared["tester"],
         "admission": {
-            "status": "PASS" if prepared["admitted_for_participant"] else "FAIL",
+            "status": aggregation["status"],
             "admitted_for_participant": prepared["admitted_for_participant"],
             "aggregation_status": aggregation["status"],
         },
