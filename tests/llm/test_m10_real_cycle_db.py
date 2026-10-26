@@ -6,16 +6,18 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from Api import m10_orchestration
 from Api.llm.deepseek_gateway import DeepSeekGateway
 from Api.m10_product_flow import read_runtime, start_or_resume
 from Api.m5_cycle_runtime import transition_session
-from Api.m7_completion import complete
 from Api.m6_worker_v2 import run_request as run_evidence
 from Api.m6_assessment_worker_v2 import run_request as run_assessment
 from Api.m8_results import read_latest_report
 from tests.integration.test_m10_product_path_db import product_db
+from Api import routes
 
 
 pytestmark = [pytest.mark.integration, pytest.mark.llm]
@@ -25,7 +27,7 @@ def _jsonable(value):
     return json.loads(json.dumps(value, ensure_ascii=False, default=str))
 
 
-def test_real_cycle_reaches_m8_and_preserves_return_state(product_db):
+def test_real_cycle_reaches_m8_and_preserves_return_state(product_db, monkeypatch):
     """Explicit real-provider acceptance run; excluded from the standard suite by marker."""
     if os.getenv("RUN_REAL_CYCLE_LLM") != "1":
         pytest.skip("explicit real-provider acceptance run")
@@ -60,16 +62,48 @@ def test_real_cycle_reaches_m8_and_preserves_return_state(product_db):
         ).fetchone()["id"]
         participant_turn_id = uuid4()
         participant_text = "Нет."
-        connection.execute(
-            """INSERT INTO m5_dialogue_turns
-               (assessment_situation_db_id,turn_id,sequence_no,speaker_type,speaker_id,content_text,request_id)
-               VALUES(%s,%s,2,'assessee','assessee',%s,%s)""",
-            (as_db_id, participant_turn_id, participant_text, "pers-real-cycle-turn"),
+        connection.commit()
+
+    monkeypatch.setattr(routes, "get_connection", factory)
+    monkeypatch.setattr(
+        routes.web_session_service,
+        "get_user_by_token",
+        lambda token: type("SyntheticUser", (), {"id": 99})() if token == "r10-owner" else None,
+    )
+    app = FastAPI()
+    app.include_router(routes.router)
+    with TestClient(app) as http:
+        http.cookies.set(routes.SESSION_COOKIE_NAME, "r10-owner")
+        turn_response = http.post(
+            f"/users/assessment/m5/situations/{as_id}/turns",
+            json={
+                "request_id": "pers-real-cycle-turn",
+                "turn_id": str(participant_turn_id),
+                "content": participant_text,
+            },
         )
-        complete(
-            connection, cycle_id=cycle_id, key="pers-real-cycle-close", action="complete",
-            reason="plan_finished", initiated_by=99,
+        assert turn_response.status_code == 200, turn_response.text
+        completion_response = http.post(
+            f"/users/assessment/m7/cycles/{cycle_id}/completion",
+            json={
+                "idempotency_key": "pers-real-cycle-close",
+                "action": "complete",
+                "reason": "plan_finished",
+            },
         )
+        assert completion_response.status_code == 200, completion_response.text
+
+    with factory() as connection:
+        stored_turn = connection.execute(
+            """SELECT speaker_type,content_text,request_id FROM m5_dialogue_turns
+               WHERE assessment_situation_db_id=%s AND turn_id=%s""",
+            (as_db_id, participant_turn_id),
+        ).fetchone()
+        assert stored_turn == {
+            "speaker_type": "assessee",
+            "content_text": participant_text,
+            "request_id": "pers-real-cycle-turn",
+        }
         frozen = connection.execute(
             """SELECT s.snapshot_json,s.snapshot_checksum,cv.content_checksum,cv.case_id,cv.case_version,
                       p.checksum AS profile_checksum

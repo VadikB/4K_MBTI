@@ -42,7 +42,7 @@ Report JSON, PDF/UI и server logs. Секреты и реальные поль�
 | Набор | Статус | Основание / остаток |
 | --- | --- | --- |
 | N01 — 27 real preparations | COMPLETE WITH OUTCOMES | 19 admission PASS, 5 AS FAIL, 2 INCOMPLETE, C03/IT repair HTTP 502; NOT_RUN 0 |
-| N02 — 9 real API→M8 | NOT_RUN_DEPENDENT | Дефектная пилотная AS не предъявлялась; real 9 Case не запускались |
+| N02 — 9 real API→M8 | PILOT PASS / MATRIX NOT_RUN | Owner HTTP Turn и completion → real Evidence/IA → M8 PASS на legacy `CASE-TDISC-01`; девять `CASE.SPEC` ещё не запускались |
 | N03 — 3 real browser функции | NOT_RUN_DEPENDENT | Controlled browser PASS; real-provider browser не запускался после pilot gate |
 | N04 — multi-case Cycle | PARTIAL | Pause/reload/resume/additional Session PASS; 3 real generated AS NOT_RUN |
 | N05 — различия контекста | PARTIAL | 27 controlled adaptations PASS; real-provider paths NOT_RUN |
@@ -122,6 +122,16 @@ CASE.SPEC.09 Sales/HR прошёл admission PASS; C09/IT завершился I
 исчерпан: 26 сохранённых AS-результатов (19 PASS, 5 FAIL, 2 INCOMPLETE) и один
 диагностированный provider blocker C03/IT; NOT_RUN=0. Актуальный raw archive SHA-256:
 `59a286a92933d4ef3fc24de988f51051673e4d8ec7a5bcf10d2a76fdb1e39284`.
+
+Первый N02 owner-API pilot устранил ручной SQL Turn из
+`tests/llm/test_m10_real_cycle_db.py`. Participant Turn и завершение Cycle прошли
+через штатные owner HTTP endpoints, после чего реальные provider Evidence и IA
+завершились `succeeded`, orchestration дошёл до `report_ready`, M8 сохранил `C-67`.
+Проверка: `1 passed in 45.41s`. Это ограниченное доказательство HTTP/M6/M8 границы
+на `CASE-TDISC-01`, не функциональная строка N01 и не зачёт матрицы девяти Case.
+Manifest: `docs/evc/evidence/r10-api-m8-pilot-2026-10-26.json`; raw synthetic trace:
+одноимённый `.tar.gz`, SHA-256
+`5e4336c1f8fbe76ad933e9329394eab741191735bb0f4b93039e78073278cfcf`.
 
 ## Откат и ограничения выпуска
 

@@ -241,3 +241,11 @@
 - Следующий шаг: строить штатные API/runtime пути только для admission PASS AS;
   C03/IT не повторять без изменения доказанной причины HTTP 502. FAIL/INCOMPLETE AS
   не предъявлять. Merge/deploy/publish не выполнять.
+- N02 предварительный owner-API pilot больше не использует ручной `INSERT Turn`:
+  participant Turn и завершение Cycle выполнены через `/users/assessment/...`;
+  real-provider Evidence и IA завершились `succeeded`, pipeline — `report_ready`,
+  M8 — `C-67`, Reliability — `not_verified`. Тест: `1 passed` за 45.41 s.
+  Это ограниченный PASS на `CASE-TDISC-01`, а не зачёт функциональной матрицы N02.
+  Safe manifest и raw synthetic trace: `docs/evc/evidence/r10-api-m8-pilot-2026-10-26.*`;
+  архив SHA-256 `5e4336c1...8cfcf`. Следующий шаг — тот же owner HTTP контур на
+  сохранённой admission-PASS `CASE.SPEC.01` с проверкой точной profile/case identity.

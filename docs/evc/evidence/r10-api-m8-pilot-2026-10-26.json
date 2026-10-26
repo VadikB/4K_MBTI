@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "candidate_commit": "04846ed5827cd4be40c7858f2d17484364ac3e54",
+  "scope": "isolated owner HTTP Turn and Cycle completion through real-provider Evidence, IA and M8",
+  "result": "PASS_LIMITED_SCOPE",
+  "case_ref": {
+    "id": "CASE-TDISC-01",
+    "version": "v0.1",
+    "checksum": "93ac113caf116411879a5036b9816151dd49c68cd1cae2bb264fe7b28e14633d"
+  },
+  "provider": {
+    "name": "deepseek",
+    "model": "deepseek-flash",
+    "credential_recorded": false
+  },
+  "checks": {
+    "owner_turn_http": "PASS",
+    "owner_cycle_completion_http": "PASS",
+    "pause_resume_identity": "PASS",
+    "m6_evidence": "succeeded",
+    "m6_indicator_assessment": "succeeded",
+    "m7_pipeline": "report_ready",
+    "m8_contract": "C-67",
+    "reliability": "not_verified",
+    "methodological_acceptance": "NOT_RUN",
+    "empirical_pilot": "NOT_RUN"
+  },
+  "raw_artifact": {
+    "path": "docs/evc/evidence/r10-api-m8-pilot-2026-10-26.tar.gz",
+    "sha256": "5e4336c1f8fbe76ad933e9329394eab741191735bb0f4b93039e78073278cfcf",
+    "uncompressed_sha256": "ad596faa4fbf02fe706faa209e804fe3e6c710dbda9a61ed6335002ecb2ead58"
+  },
+  "limitations": [
+    "This pilot used the admitted legacy CASE-TDISC-01 fixture, not a CASE.SPEC functional AS from N01.",
+    "It proves the owner HTTP boundary and downstream real-provider pipeline only; it does not satisfy the nine-Case N02 matrix.",
+    "The participant response and all database records are synthetic; no production or test personal data were used."
+  ],
+  "command_result": "1 passed in 45.41s"
+}
