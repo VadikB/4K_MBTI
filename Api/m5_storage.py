@@ -82,7 +82,7 @@ def import_package(connection, *, package: dict, manifest: dict, execution_rules
     package_db_id = int(row["id"])
     for raw in package["cases"]:
         case = validate_case_version(raw)
-        content = case.model_dump()
+        content = case.model_dump(exclude_unset=True)
         content_checksum = checksum(content)
         conflict = connection.execute(
             "SELECT content_checksum FROM m5_case_versions WHERE case_id=%s AND case_version=%s",
@@ -103,7 +103,7 @@ def import_package(connection, *, package: dict, manifest: dict, execution_rules
                 INSERT INTO m5_case_targets (case_version_id, indicator_id, m2_version, skill_id, component_id, target_json, display_order)
                 VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s)
             """, (case_db_id, target.indicator_id, target.m2_version, target.skill_id, target.component_id,
-                  json.dumps(target.model_dump(), ensure_ascii=False), position))
+                  json.dumps(target.model_dump(exclude_unset=True), ensure_ascii=False), position))
         for table, key, values in (
             ("m5_case_characters", "character_id", case.characters),
             ("m5_case_materials", "material_id", case.materials),

@@ -63,11 +63,17 @@ persistence trace и M6 input resolver.
   package `0.3`, новый авторский basis и адаптированные условия добавляются
   только при компиляции конкретной AS; runtime bindings `1.1.0` вновь проходят
   строгую проверку. Регрессия проверяет все девять Case checksum и bindings.
+- CI push/pull_request для `7573376`: integration FAIL при импорте Case в БД:
+  `model_dump()` добавлял отсутствующие optional поля как `null`, вследствие
+  чего `M5_RUNTIME_RULE_CASE_NOT_IMPORTED` срабатывал на старом CaseVersion.
+  Импорт сохраняет только поля, присутствовавшие в валидированном Case;
+  регрессия проверяет checksum после сериализации.
 - Положительная корректная адаптация и hand-off `0.4`: PASS; frozen package
   `0.3` сохраняет legacy trace schema 2: PASS.
 - Отрицательные потеря условия, подмена смысла, неверный material ref,
   authority ref и source mapping: PASS (отклоняются).
-- Backend без integration/e2e/llm: 583 passed, 230 deselected.
+- Backend без integration/e2e/llm после исправления CI: 584 passed,
+  230 deselected.
 - HTTP/e2e, включая B01/B02 safe projection и owner/reused-key: 69 passed,
   11 deselected.
 - Unit после изменений: 570 passed; адресный двухслойный набор: 31 passed.

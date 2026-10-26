@@ -45,6 +45,9 @@ def test_package_04_keeps_published_case_versions_and_runtime_bindings_immutable
     }
     runtime = OUTPUT.parent.parent / "functional-personalization-runtime/1.1.0"
     assert load_runtime_rule_package(runtime, current["cases"])["manifest"]["version"] == "1.1.0"
+    for case in current["cases"]:
+        stored = CaseVersionV3.model_validate(case).model_dump(exclude_unset=True)
+        assert checksum(stored) == checksum(case)
 
 
 def test_all_55_indicator_targets_preserve_author_content_exactly():
