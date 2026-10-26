@@ -3260,10 +3260,13 @@ def ensure_m5_runtime_schema(connection) -> None:
             content_json JSONB NOT NULL,
             content_checksum TEXT NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            UNIQUE (case_id, case_version),
-            UNIQUE (content_checksum)
+            UNIQUE (package_id, case_id, case_version)
         )
     """)
+    connection.execute("ALTER TABLE m5_case_versions DROP CONSTRAINT IF EXISTS m5_case_versions_case_id_case_version_key")
+    connection.execute("ALTER TABLE m5_case_versions DROP CONSTRAINT IF EXISTS m5_case_versions_content_checksum_key")
+    connection.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_m5_case_version_package_identity "
+                       "ON m5_case_versions(package_id,case_id,case_version)")
     connection.execute("""
         CREATE TABLE IF NOT EXISTS m5_case_targets (
             case_version_id BIGINT NOT NULL REFERENCES m5_case_versions(id) ON DELETE RESTRICT,

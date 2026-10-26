@@ -13,7 +13,12 @@ from Api.m5_case_runtime import checksum
 ALLOWED_FUNCTIONS = {"character_reaction", "material_update", "facilitator_action"}
 
 
-def load_runtime_rule_package(directory: Path, cases: list[dict[str, Any]]) -> dict[str, Any]:
+def load_runtime_rule_package(
+    directory: Path,
+    cases: list[dict[str, Any]],
+    *,
+    expected_case_package_version: str | None = None,
+) -> dict[str, Any]:
     manifest_raw = (directory / "manifest.json").read_bytes()
     manifest = json.loads(manifest_raw)
     identity = tuple(manifest.get(key) for key in ("schema_version", "id", "status", "owner"))
@@ -21,6 +26,10 @@ def load_runtime_rule_package(directory: Path, cases: list[dict[str, Any]]) -> d
         r"\d+\.\d+\.\d+", str(manifest.get("version", ""))
     ):
         raise ValueError("M5_RUNTIME_RULE_MANIFEST_INVALID")
+    source = manifest.get("source") or {}
+    if (expected_case_package_version is not None
+            and source.get("case_package_version") != expected_case_package_version):
+        raise ValueError("M5_RUNTIME_RULE_PACKAGE_REF_MISMATCH")
     artifacts = manifest.get("artifacts")
     if not isinstance(artifacts, list) or len(artifacts) != 1 or artifacts[0].get("name") != "event-bindings.json":
         raise ValueError("M5_RUNTIME_RULE_MANIFEST_INVALID")
@@ -94,8 +103,9 @@ def import_runtime_rule_version(connection, loaded: dict[str, Any], compiled_rul
     rule_id = int(row["id"])
     for case_id, binding in bindings["case_bindings"].items():
         case = connection.execute(
-            "SELECT id,content_checksum FROM m5_case_versions WHERE case_id=%s AND case_version=%s",
-            (case_id, binding["case_version"]),
+            "SELECT id,content_checksum FROM m5_case_versions "
+            "WHERE case_id=%s AND case_version=%s AND content_checksum=%s ORDER BY id DESC LIMIT 1",
+            (case_id, binding["case_version"], binding["case_checksum"]),
         ).fetchone()
         if case is None or case["content_checksum"] != binding["case_checksum"]:
             raise ValueError(f"M5_RUNTIME_RULE_CASE_NOT_IMPORTED:{case_id}")

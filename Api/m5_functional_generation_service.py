@@ -600,7 +600,9 @@ def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
             source_schema_profile=compiler_profile,
         )
         package_cases = json.loads((PACKAGE / "case-package.json").read_text(encoding="utf-8"))["cases"]
-        runtime_bindings = load_runtime_rule_package(RUNTIME_PACKAGE, package_cases)["bindings"]
+        runtime_bindings = load_runtime_rule_package(
+            RUNTIME_PACKAGE, package_cases, expected_case_package_version="0.5"
+        )["bindings"]
         execution_rules = build_execution_rules([compiled_case], runtime_bindings)
     return {"schema_version": 1, "input_snapshot_checksum": checksum(snapshot),
             "candidate_as": generation["candidate_as"], "candidate_checksum": generation["candidate_checksum"],

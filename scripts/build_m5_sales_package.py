@@ -380,6 +380,9 @@ def compile_case_values(*, case: dict, situation: dict, case_source_name: str,
         for target in compiled["indicator_targets"]:
             target.pop("author_basis", None)
             target.pop("adapted_source", None)
+            target.pop("event_refs", None)
+            target.pop("character_refs", None)
+            target.pop("authority_refs", None)
     return compiled
 
 

@@ -44,9 +44,11 @@ def test_package_05_keeps_author_sources_and_runtime_bindings_immutable():
         for case in previous["cases"]
     ]
     runtime = OUTPUT.parent.parent / "functional-personalization-runtime/1.1.0"
-    assert load_runtime_rule_package(runtime, previous["cases"])["manifest"]["version"] == "1.1.0"
-    with pytest.raises(ValueError, match="M5_RUNTIME_RULE_CASE_REF_MISMATCH"):
-        load_runtime_rule_package(runtime, current["cases"])
+    assert load_runtime_rule_package(
+        runtime, previous["cases"], expected_case_package_version="0.3"
+    )["manifest"]["version"] == "1.1.0"
+    with pytest.raises(ValueError, match="M5_RUNTIME_RULE_PACKAGE_REF_MISMATCH"):
+        load_runtime_rule_package(runtime, current["cases"], expected_case_package_version="0.5")
     for case in current["cases"]:
         stored = CaseVersionV3.model_validate(case).model_dump(exclude_unset=True)
         assert checksum(stored) == checksum(case)

@@ -320,17 +320,20 @@ class ProductCyclePreparationQueue:
                 frozen_profile = dict(profile["content_json"]) if needs_generation else None
                 frozen_case = None
                 if needs_generation:
+                    frozen_cycle = connection.execute(
+                        "SELECT * FROM m5_cycles WHERE cycle_id=%s", (str(result["plan"]["cycle_id"]),)
+                    ).fetchone()
+                    catalog_db_id = (frozen_cycle["catalog_ref_json"] or {}).get("db_id")
                     frozen_case_row = connection.execute(
-                        "SELECT content_json,content_checksum FROM m5_case_versions WHERE case_id=%s AND case_version=%s",
-                        (decision["selected_case_id"], decision["selected_case_version"]),
+                        "SELECT cv.content_json,cv.content_checksum FROM m5_case_versions cv "
+                        "JOIN m5_catalog_case_versions member ON member.case_version_id=cv.id "
+                        "WHERE member.catalog_db_id=%s AND cv.case_id=%s AND cv.case_version=%s",
+                        (catalog_db_id, decision["selected_case_id"], decision["selected_case_version"]),
                     ).fetchone()
                     if not frozen_case_row:
                         raise ValueError("M5_FUNCTIONAL_CASE_VERSION_NOT_FOUND")
                     frozen_case = dict(frozen_case_row["content_json"])
                     frozen_case_checksum = frozen_case_row["content_checksum"]
-                    frozen_cycle = connection.execute(
-                        "SELECT * FROM m5_cycles WHERE cycle_id=%s", (str(result["plan"]["cycle_id"]),)
-                    ).fetchone()
                     functional_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_package")
                     repair_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_repair")
                     protocol_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_protocol")

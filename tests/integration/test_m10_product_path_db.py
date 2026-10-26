@@ -361,7 +361,9 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_text())
         legacy_rules = json.loads((FUNCTIONAL_OUTPUT / "execution-rules.json").read_text())
         runtime_package = FUNCTIONAL_OUTPUT.parent.parent / "functional-personalization-runtime/1.2.0"
-        loaded = load_runtime_rule_package(runtime_package, package["cases"])
+        loaded = load_runtime_rule_package(
+            runtime_package, package["cases"], expected_case_package_version="0.5"
+        )
         fixture_package = copy.deepcopy(package)
         fixture_bindings = copy.deepcopy(loaded)
         for case in fixture_package["cases"]:
