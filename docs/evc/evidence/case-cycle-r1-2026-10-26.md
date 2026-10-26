@@ -232,6 +232,17 @@ Reliability остаётся `not_verified`, methodology `NOT_RUN`. Evidence:
 `docs/evc/evidence/r10-functional-api-c07-pass-2026-10-26.{json,tar.gz}`;
 archive SHA-256 `1994a76bd60696be5078bda32b6331248bc59be8dc3049a7d263261d63abcec7`.
 
+`CASE.SPEC.08` на exact candidate `1e2bd67` прошёл product M4, functional AS
+admission и owner HTTP prepare/start/Turn/completion, после чего M6 Evidence request
+завершился `failed`; IA не была создана, M8 — `NOT_RUN`. Runner увидел статус, но до
+assertion не экспортировал error/trace M6 attempt, а isolated schema затем удалена.
+Поэтому точная причина недоступна, содержательный FAIL не присвоен и C08 не
+повторяется без нового основания. Диагностический capture исправлен для последующих
+строк без изменения предметной логики: теперь до assertion сохраняются status,
+attempt status, error code и trace. Evidence:
+`docs/evc/evidence/r10-functional-api-c08-attempt-2026-10-26.{json,tar.gz}`;
+archive SHA-256 `766270d9c73b07304ec6339df227eac3a634633febedd31910cf034142f1dd19`.
+
 ## Откат и ограничения выпуска
 
 Кодовый откат — вернуть R09 candidate commit и приложение `2.0.28`; опубликованные

@@ -254,9 +254,20 @@ def test_functional_case_owner_api_reaches_m8(product_db, monkeypatch):
         assessment_request = connection.execute(
             "SELECT id FROM m6_assessment_requests ORDER BY created_at DESC LIMIT 1"
         ).fetchone()
-        evidence_status = connection.execute(
-            "SELECT status FROM m6_processing_requests WHERE id=%s", (evidence_request["id"],)
-        ).fetchone()["status"]
+        evidence_diagnostic = connection.execute(
+            """SELECT r.id,r.status,a.status AS attempt_status,a.error_code,a.trace_json
+               FROM m6_processing_requests r
+               LEFT JOIN m6_processing_attempts a ON a.request_id=r.id
+               WHERE r.id=%s ORDER BY a.attempt_no DESC LIMIT 1""",
+            (evidence_request["id"],),
+        ).fetchone()
+    if assessment_request is None and output:
+        failure_path = Path(output).with_suffix(".evidence-failure.json")
+        failure_path.parent.mkdir(parents=True, exist_ok=True)
+        failure_path.write_text(
+            json.dumps(_jsonable(evidence_diagnostic), ensure_ascii=False, indent=2) + "\n"
+        )
+    evidence_status = evidence_diagnostic["status"]
     assert assessment_request is not None, {"evidence_status": evidence_status}
     run_assessment(assessment_request["id"], connection_factory=factory, gateway=gateway)
     assert m10_orchestration.advance_once(connection_factory=factory, gateway=gateway)

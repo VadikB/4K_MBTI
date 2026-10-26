@@ -345,3 +345,12 @@
   `docs/evc/evidence/r10-functional-api-c07-pass-2026-10-26.{json,tar.gz}`;
   archive SHA-256 `1994a76b...abcec7`. N02 functional: C02/C03/C07 PASS (3/9);
   C01/C05 INCOMPLETE, C04 tester-contract FAIL, C06 provider blocker, C08/C09 NOT_RUN.
+- `CASE.SPEC.08` на `1e2bd67` прошёл product M4, functional AS admission и owner HTTP
+  prepare/start/Turn/completion, но M6 Evidence request завершился `failed`; IA не
+  создана, M8 `NOT_RUN`. Runner не экспортировал attempt error/trace до teardown,
+  поэтому точная причина недоступна и содержательный FAIL не присваивается; C08 без
+  подтверждённой причины не повторять. Capture исправлен только для следующих строк:
+  при отсутствии IA сохраняются status/error/trace последней M6 attempt. Адресная
+  проверка: `py_compile` PASS, real-provider test без opt-in SKIP. Evidence:
+  `docs/evc/evidence/r10-functional-api-c08-attempt-2026-10-26.{json,tar.gz}`;
+  archive SHA-256 `766270d9...f1dd19`.
