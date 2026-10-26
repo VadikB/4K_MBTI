@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "candidate_base_commit": "3c6311b",
+  "scope": "N02 isolated CASE.SPEC.04 product M4 owner HTTP preparation",
+  "synthetic_test_data": true,
+  "result": "AS_ADMISSION_FAIL_TESTER_CONTRACT",
+  "input_snapshot_checksum": "db9ac760206d55c50143f38b607824a9b010507fc0497a935161b4ef7749b375",
+  "candidate_checksum": "99fa1bafb75a81b7ac8991f32cfb6ede72cf521524705cd9e402fd4798d5cb37",
+  "generation": {"deterministic_validation": "PASS", "repair_used": true},
+  "tester": {
+    "aggregation": "FAIL",
+    "input_checksum": "d4bbe4e488193b94e82cd6708ce839bc2ddd3689c9788b633ffa2070ed7712dc",
+    "tester_batches": 4,
+    "challenger_batches": 4,
+    "incomplete_checks": 0,
+    "blocking_checks": [
+      "common.professional_consistency",
+      "indicator:K3.I10",
+      "indicator:K3.I11"
+    ]
+  },
+  "classification": [
+    {
+      "check_id": "common.professional_consistency",
+      "type": "ERRONEOUS_TESTER_REQUIREMENT",
+      "fragment": "adapted target names Marina while immutable author provenance names Alexey",
+      "violated_contract": "Author-only names are provenance, not concrete AS content; the immutable author layer must not be rewritten."
+    },
+    {
+      "check_id": "indicator:K3.I10",
+      "type": "ERRONEOUS_TESTER_REQUIREMENT",
+      "fragment": "tester requires F01-F05 inside material_refs",
+      "violated_contract": "material_refs namespace contains only Materials[].MaterialID; hidden fact IDs are not material IDs."
+    },
+    {
+      "check_id": "indicator:K3.I11",
+      "type": "ERRONEOUS_TESTER_REQUIREMENT",
+      "fragment": "tester requires F02-F05 inside material_refs",
+      "violated_contract": "Hidden-fact semantics are verified through conditions and events, not by placing Fxx IDs in material_refs."
+    }
+  ],
+  "dependent_stages": {"runtime": "NOT_RUN", "m6": "NOT_RUN", "m8": "NOT_RUN"},
+  "raw_artifact": {
+    "path": "docs/evc/evidence/r10-functional-api-c04-attempt-2026-10-26.tar.gz",
+    "sha256": "a76e9f373c04162aca03aca3233e1932595436b9917dfdaa0cf5147c0402922a",
+    "uncompressed_sha256": "12868a40ebab2c7340d626bcefef44a6fe6d8b280689141b9eb121a53f5b10bf"
+  },
+  "remediation": "Clarify the closed reference namespaces and immutable author/adapted separation in both tester and challenger payload rules; do not weaken admission or mutate author provenance.",
+  "methodological_acceptance": "NOT_RUN",
+  "reliability": "NOT_RUN"
+}

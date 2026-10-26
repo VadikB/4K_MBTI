@@ -297,3 +297,17 @@
   `docs/evc/evidence/r10-functional-api-c03-pass-2026-10-26.{json,tar.gz}`,
   archive SHA-256 `dd0b1c1b...641e39`. N02 functional: 2/9 PASS; C01 INCOMPLETE,
   C04–C09 NOT_RUN.
+- `CASE.SPEC.04` на `3c6311b`: generation/compilation deterministic PASS, одна repair,
+  final tester FAIL по трём blocking checks; runtime/M6/M8 `NOT_RUN`. Все три находки
+  нарушают технический двухслойный контракт tester: требование заменить имя в
+  immutable author provenance при уже корректной adapted «Марина»; требования
+  поместить hidden facts `F01–F05` в `material_refs`, чей закрытый namespace допускает
+  только `Материалы[].MaterialID`. Это ошибочные требования tester, не доказанный
+  дефект AS. Полный raw trace:
+  `docs/evc/evidence/r10-functional-api-c04-attempt-2026-10-26.tar.gz`, SHA-256
+  `a76e9f37...02922a`; safe classification — одноимённый `.json`.
+- Tester/challenger payload явно закрепил: author-only имена являются provenance и
+  не изменяются; `material_refs`/`event_refs`/`character_refs` имеют закрытые
+  namespaces; hidden facts проверяются семантически через conditions/events, а не
+  как MaterialID. Admission не ослаблен. Адресные unit `30 PASS`, `py_compile` и
+  `git diff --check` PASS. Следующий gate — commit и один C04 retry на exact SHA.

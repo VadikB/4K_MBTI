@@ -82,6 +82,12 @@ def test_shared_service_admits_only_after_deterministic_and_independent_checks()
                for payload in gateway.tester_payloads)
     assert result_a["tester"]["provider_operation"]["kind"] == "independent_tester_v2_batched"
     assert len(result_a["tester"]["provider_operation"]["batches"]) > 1
+    tester_rules = gateway.tester_payloads[0]["protocol_rules"]
+    assert tester_rules["never_require_mutating_immutable_author_layer"] is True
+    assert "hidden fact IDs are forbidden" in tester_rules["reference_namespaces_are_closed"]["material_refs"]
+    challenger = next(payload for payload in gateway.tester_payloads if "protected_checks" in payload)
+    assert challenger["rules"]["author_only_names_are_expected_provenance_and_must_not_be_changed"] is True
+    assert challenger["rules"]["hidden_facts_are_verified_semantically_via_conditions_and_events"] is True
     assert result_a["compiled_case"]["author_assessment_situation"] == result_a["candidate_as"]
     assert result_a["compiled_case"]["author_as_source"]["sha256"] == result_a["candidate_checksum"]
     assert set(result_a["execution_rules"]["cases"]) == {"CASE.SPEC.01"}

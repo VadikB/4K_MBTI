@@ -158,10 +158,14 @@ def test_functional_case_owner_api_reaches_m8(product_db, monkeypatch):
 
     with factory() as connection:
         installed = _install_functional_catalog(connection, selected_case_id=case_id)
-        # N01 used a matrix-only synthetic projection. It is evidence for PM-03,
-        # but cannot be rebound to a different immutable M4 snapshot in N02.
-        assert installed["profile_checksum"] != \
-            saved["persistence_trace"]["source_snapshot"]["profile_checksum"]
+        # A passing N01 row used a matrix-only synthetic projection and cannot be
+        # rebound to a different immutable M4 snapshot in N02. Failed/incomplete
+        # N01 rows intentionally have no persistence trace and are references only.
+        if saved.get("persistence_trace") is not None:
+            assert installed["profile_checksum"] != \
+                saved["persistence_trace"]["source_snapshot"]["profile_checksum"]
+        else:
+            assert saved["admission"]["admitted_for_participant"] is False
         connection.commit()
 
     from Api import product_cycle_preparation_queue as queue_module

@@ -178,6 +178,17 @@ methodology `NOT_RUN`. Evidence:
 `docs/evc/evidence/r10-functional-api-c03-pass-2026-10-26.{json,tar.gz}`;
 archive SHA-256 `dd0b1c1bbb6b11ffd4665c13261ce58b3cef75af94490684fb913fc24c641e39`.
 
+`CASE.SPEC.04` остановлен admission gate после одной repair: deterministic PASS,
+final tester FAIL по `common.professional_consistency`, `K3.I10`, `K3.I11`.
+Конкретные требования tester противоречат действующему техническому контракту:
+immutable author-only имя «Алексей» нельзя требовать заменить, когда adapted слой
+уже содержит корректную «Марина»; hidden facts `F01–F05` нельзя помещать в
+`material_refs`, разрешающий только `Материалы[].MaterialID`. Поэтому это
+`ERRONEOUS_TESTER_REQUIREMENT`, не содержательный FAIL AS. Payload tester/challenger
+уточнён без ослабления admission; unit `30 PASS`. Evidence:
+`docs/evc/evidence/r10-functional-api-c04-attempt-2026-10-26.{json,tar.gz}`;
+archive SHA-256 `a76e9f373c04162aca03aca3233e1932595436b9917dfdaa0cf5147c0402922a`.
+
 ## Откат и ограничения выпуска
 
 Кодовый откат — вернуть R09 candidate commit и приложение `2.0.28`; опубликованные
