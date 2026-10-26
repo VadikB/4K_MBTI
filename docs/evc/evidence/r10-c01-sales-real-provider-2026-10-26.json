@@ -103,5 +103,6 @@
   "series_decision": "STOP_DEPENDENT_R10_SERIES",
   "classification": "AS_ADMISSION_FAIL",
   "secrets_in_artifact": false,
-  "raw_trace_location": "/tmp/p4k-r10-0ead559a-pilot/rows/a06.c01.sales.json"
+  "raw_trace_location": "docs/evc/evidence/r10-c01-sales-real-provider-attempt-raw-2026-10-26.json",
+  "raw_trace_sha256": "a9af0eee39a25813253ed18df9ac657cfc59243bae9a4aebd2f215c01c6c0530"
 }

@@ -348,6 +348,18 @@ def bind_indicator_target_layers(snapshot: dict[str, Any], candidate: Any) -> An
 bind_frozen_author_indicator_content = bind_indicator_target_layers
 
 
+def concrete_adapted_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    """Return the concrete AS view while keeping the frozen author layer separate."""
+    concrete = deepcopy(candidate)
+    layers = candidate.get(INDICATOR_LAYER_FIELD)
+    adapted = layers.get("adapted") if isinstance(layers, dict) else None
+    targets = adapted.get("targets") if isinstance(adapted, dict) else None
+    if isinstance(targets, list):
+        concrete["IndicatorObservability"] = deepcopy(targets)
+        concrete.pop(INDICATOR_LAYER_FIELD, None)
+    return concrete
+
+
 def _trace(response: Any, *, operation_id: str, kind: str, input_checksum: str) -> dict[str, Any]:
     return {"operation_id": operation_id, "kind": kind, "input_checksum": input_checksum,
             "sent": response.sent, "provider": response.provider}
@@ -437,14 +449,17 @@ def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
 
 def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway: Any) -> dict[str, Any]:
     plan = build_applicability_plan(snapshot["case"])
+    concrete_candidate = concrete_adapted_candidate(generation["candidate_as"])
     payload = {"case": snapshot["case"], "profile": snapshot["profile"],
-               "candidate_as": generation["candidate_as"],
+               "candidate_as": concrete_candidate,
                "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
                "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
                "deterministic_validation": generation["deterministic_validation"],
                "applicability_plan": plan,
                "protocol_rules": {"evaluate_every_required_check_exactly_once": True,
                  "llm_must_not_change_applicability": True,
+                 "candidate_as_is_concrete_adapted_view": True,
+                 "author_indicator_layer_is_provenance_not_professional_content": True,
                  "missing_required_material_or_condition_is_fail_not_not_applicable": True,
                  "allowed_statuses": ["PASS", "FAIL", "NOT_RUN", "INDETERMINATE", "TECHNICAL_ERROR"],
                  "do_not_return_overall_status": True},
@@ -475,7 +490,9 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
     protected = [item for item in plan["required_checks"] if item.get("protected")]
     challenge_payload = {
         "case": snapshot["case"], "author_as_example": snapshot["author_as_example"],
-        "candidate_as": generation["candidate_as"],
+        "candidate_as": concrete_candidate,
+        "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
+        "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
         "protected_checks": protected,
         "required_output": payload["required_output"],
         "rules": {
@@ -485,6 +502,8 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             "different_labels_require_different_substance": True,
             "inspect_new_assertions_and_removed_constraints_against_author_example": True,
             "verify_author_layer_unchanged": True,
+            "candidate_as_is_concrete_adapted_view": True,
+            "source_only_names_are_not_concrete_as_defects": True,
             "verify_adaptation_preserves_meaning_observability_and_constraints": True,
             "verify_material_event_character_and_authority_mappings": True,
             "return_each_protected_check_once": True,
@@ -531,7 +550,9 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
     payload = {
         "profile": snapshot["profile"], "case": snapshot["case"],
         "author_as_example": snapshot["author_as_example"],
-        "rejected_candidate_as": generation["candidate_as"],
+        "rejected_candidate_as": concrete_adapted_candidate(generation["candidate_as"]),
+        "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
+        "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
         "blocking_failures": tested["aggregation"]["blocking_failures"],
         "deterministic_failures": tested["aggregation"]["deterministic_failures"],
         "requirements": {
@@ -540,12 +561,26 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
             "fix_every_listed_failure_in_all_dependent_fields": True,
             "do_not_weaken_or_remove_observation_conditions": True,
             "must_not_create_evidence_or_scores": True,
+            "indicator_target_layers": {
+                "author_layer": "server binds immutable author source after repair",
+                "adapted_projection_location": "IndicatorObservability",
+                "required_fields_per_adapted_target": list(ADAPTED_TARGET_FIELDS),
+                "author_mapping": {
+                    "source_pointer": "/IndicatorObservability/{source_index}",
+                    "source_checksum": "server-bound; provider must not calculate it",
+                },
+                "preserve_existing_valid_references": True,
+            },
             "status": "TEST_DRAFT", "current": False,
         },
     }
+    adaptation_contract = (_frozen_file(snapshot, "indicator_adaptation_contract").read_text(encoding="utf-8")
+                           if "indicator_adaptation_contract" in snapshot["refs"] else None)
     messages = [
         {"role": "system", "content": instruction},
         {"role": "system", "content": repair_instruction},
+        *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
+          if adaptation_contract else []),
         {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
     ]
     input_checksum = checksum(messages)

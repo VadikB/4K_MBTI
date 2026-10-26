@@ -180,6 +180,21 @@
   не выполнялись дополнительные regeneration, ослабление tester или подмена AS.
   Safe trace: `docs/evc/evidence/r10-c01-sales-real-provider-2026-10-26.json`; полный
   синтетический raw trace сохранён вне Git в `/tmp/p4k-r10-0ead559a-pilot/`.
+- R10 remediation локализовала две разные причины. Исходная generation имела
+  корректный Sales adapted-layer с Артёмом и полными refs; «Елена» находилась только
+  в обязательном immutable author provenance. Tester/challenger ошибочно оценивали
+  bound author-view как concrete AS — дефект передачи входа. Repair затем получил
+  тот же bound view без полного двухслойного контракта и действительно потерял refs —
+  дефект repair input/generation; compiler не запускался. Semantic consumers теперь
+  получают concrete adapted-view и отдельные author/adapted layers; repair также
+  получает versioned contract и обязательные поля. Admission не ослаблен.
+- Сохранён полный synthetic raw trace (без credential) в
+  `docs/evc/evidence/r10-c01-sales-real-provider-attempt-raw-2026-10-26.json`, SHA-256
+  `a9af0eee...c0530`; классификация с фрагментами — в
+  `docs/evc/evidence/r10-c01-sales-blocker-analysis-2026-10-26.md`.
+- Адресные проверки remediation: 41 functional/package/ARCH-A06 unit PASS;
+  `py_compile` PASS; `git diff --check` PASS. Следующий gate — commit исправления и
+  один повтор C01/Sales на exact SHA; 27/9/3 до успеха не запускать.
 - Единый пакет кандидата, фактическая матрица, безопасные trace locations, rollback и
   точное следующее действие сохранены в
   `docs/evc/evidence/case-cycle-r1-2026-10-26.md`. Existing real-cycle pytest не принят

@@ -1,5 +1,6 @@
 import json
 from copy import deepcopy
+from pathlib import Path
 from types import SimpleNamespace
 
 from Api import m5_functional_generation_service as service
@@ -124,6 +125,54 @@ def test_provider_cannot_overwrite_frozen_author_indicator_content():
         for field in fields:
             assert actual[indicator_id][field] == expected[indicator_id][field]
             assert adapted[indicator_id][field] == "LLM_CHANGED_AUTHOR_CONTENT"
+
+
+def test_saved_r10_pilot_uses_adapted_sales_view_for_semantic_review():
+    root = Path(__file__).resolve().parents[2]
+    evidence = json.loads((root / "docs/evc/evidence/"
+        "r10-c01-sales-real-provider-attempt-raw-2026-10-26.json").read_text())
+    payload = json.loads(evidence["repair"]["original_tester"]["provider_operation"]
+                         ["sent"]["messages"][-1]["content"])
+    bound = payload["candidate_as"]
+    author = bound["IndicatorTargetLayers"]["author"]["targets"]
+    adapted = bound["IndicatorTargetLayers"]["adapted"]["targets"]
+    assert "Елены" in author[0]["Конкретное условие"]
+    assert "Артёма" in adapted[0]["Конкретное условие"]
+    assert adapted[0]["material_refs"] == ["M01", "M02"]
+
+    concrete = service.concrete_adapted_candidate(bound)
+
+    assert concrete["IndicatorObservability"] == adapted
+    assert "IndicatorTargetLayers" not in concrete
+    assert "Артёма" in concrete["IndicatorObservability"][0]["Конкретное условие"]
+
+
+def test_repair_receives_concrete_projection_and_two_layer_requirements():
+    snapshot = service.build_input_snapshot(
+        case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="repair-two-layer",
+    )
+    generated = service.generate(snapshot, Gateway())
+    captured = {}
+
+    class RepairGateway(Gateway):
+        def chat_with_trace(self, messages, **kwargs):
+            payload = json.loads(messages[-1]["content"])
+            captured.update(payload)
+            return SimpleNamespace(content=json.dumps(payload["rejected_candidate_as"], ensure_ascii=False),
+                                   sent={"parameters": kwargs},
+                                   provider={"finish_reason": "stop", "request_id": kwargs["routing_key"]})
+
+    tested = {"aggregation": {"blocking_failures": [{"code": "fixture"}],
+                              "deterministic_failures": []}}
+    repaired = service.repair_candidate(snapshot, generated, tested, RepairGateway())
+
+    assert "IndicatorTargetLayers" not in captured["rejected_candidate_as"]
+    assert (captured["rejected_candidate_as"]["IndicatorObservability"]
+            == generated["candidate_as"]["IndicatorTargetLayers"]["adapted"]["targets"])
+    requirements = captured["requirements"]["indicator_target_layers"]
+    assert requirements["required_fields_per_adapted_target"] == list(service.ADAPTED_TARGET_FIELDS)
+    assert requirements["preserve_existing_valid_references"] is True
+    assert repaired["deterministic_validation"]["status"] == "PASS"
 
 
 def test_author_binding_does_not_recreate_missing_indicator_target():

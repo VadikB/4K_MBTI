@@ -75,7 +75,9 @@ IndicatorID. Tester дополнительно сохранил blocking-нах�
 Безопасная первичная трасса с operation/request IDs, timestamps, версиями, hashes,
 token usage и классификацией сохранена в
 `docs/evc/evidence/r10-c01-sales-real-provider-2026-10-26.json`; ключей в ней нет.
-Полный синтетический raw trace остаётся вне Git в `/tmp/p4k-r10-0ead559a-pilot/`.
+Полный синтетический raw trace сохранён в Git как
+`docs/evc/evidence/r10-c01-sales-real-provider-attempt-raw-2026-10-26.json`
+(SHA-256 `a9af0eee39a25813253ed18df9ac657cfc59243bae9a4aebd2f215c01c6c0530`).
 Дефектная AS не была предъявлена, поэтому runtime, Evidence/IA, substantive admission,
 M8, 26 остальных preparations, 9 API и 3 browser paths — `NOT_RUN_DEPENDENT`.
 Неограниченная регенерация и ослабление tester не выполнялись.
