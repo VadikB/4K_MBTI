@@ -68,6 +68,12 @@ persistence trace и M6 input resolver.
   чего `M5_RUNTIME_RULE_CASE_NOT_IMPORTED` срабатывал на старом CaseVersion.
   Импорт сохраняет только поля, присутствовавшие в валидированном Case;
   регрессия проверяет checksum после сериализации.
+- CI push/pull_request для `567ef8a`: integration FAIL в `_as_row` с
+  `SNAPSHOT_COMPOSITION_MISMATCH`: runtime признавал функциональную трассу
+  только schema 2. Исправлено признание schema 3 при строгой проверке
+  `IndicatorTargetLayers` в trace и accepted AS, checksum слоёв,
+  compiled Case и frozen source CaseVersion. Адресная регрессия: 4 passed,
+  включая отклонение подмены слоёв, checksum и исходной Case-ссылки.
 - Положительная корректная адаптация и hand-off `0.4`: PASS; frozen package
   `0.3` сохраняет legacy trace schema 2: PASS.
 - Отрицательные потеря условия, подмена смысла, неверный material ref,
