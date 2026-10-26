@@ -449,13 +449,13 @@ def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
 
 def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway: Any) -> dict[str, Any]:
     plan = build_applicability_plan(snapshot["case"])
+    batch_size = 8
     concrete_candidate = concrete_adapted_candidate(generation["candidate_as"])
-    payload = {"case": snapshot["case"], "profile": snapshot["profile"],
+    payload_base = {"case": snapshot["case"], "profile": snapshot["profile"],
                "candidate_as": concrete_candidate,
                "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
                "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
                "deterministic_validation": generation["deterministic_validation"],
-               "applicability_plan": plan,
                "protocol_rules": {"evaluate_every_required_check_exactly_once": True,
                  "llm_must_not_change_applicability": True,
                  "candidate_as_is_concrete_adapted_view": True,
@@ -475,18 +475,32 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                }]}}
     adaptation_contract = (_frozen_file(snapshot, "indicator_adaptation_contract").read_text(encoding="utf-8")
                            if "indicator_adaptation_contract" in snapshot["refs"] else None)
-    messages = [{"role": "system", "content": _frozen_file(snapshot, "tester_prompt").read_text(encoding="utf-8")},
-                {"role": "system", "content": _frozen_file(snapshot, "protocol_tester_addendum").read_text(encoding="utf-8")},
-                *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
-                  if adaptation_contract else []),
-                {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
-    input_checksum = checksum(messages)
-    operation_id = f"{snapshot['operation_id']}:tester:{input_checksum[:12]}"
-    raw, response, parse_failures = _strict_json_call(
-        gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
-        retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
-    )
-    checks = normalize_results(plan, raw.get("checks"))
+    tester_operations = []
+    tester_raw_checks = []
+    required_checks = plan["required_checks"]
+    for batch_no, offset in enumerate(range(0, len(required_checks), batch_size), start=1):
+        batch_checks = required_checks[offset:offset + batch_size]
+        batch_plan = {**plan, "required_checks": batch_checks, "not_applicable_checks": []}
+        payload = {**payload_base, "applicability_plan": batch_plan}
+        messages = [{"role": "system", "content": _frozen_file(snapshot, "tester_prompt").read_text(encoding="utf-8")},
+                    {"role": "system", "content": _frozen_file(snapshot, "protocol_tester_addendum").read_text(encoding="utf-8")},
+                    *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
+                      if adaptation_contract else []),
+                    {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
+        input_checksum = checksum(messages)
+        operation_id = f"{snapshot['operation_id']}:tester:{batch_no:02d}:{input_checksum[:12]}"
+        raw, response, parse_failures = _strict_json_call(
+            gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
+            retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
+        )
+        tester_raw_checks.extend(raw.get("checks") if isinstance(raw.get("checks"), list) else [])
+        tester_operations.append({
+            **_trace(response, operation_id=operation_id, kind="independent_tester_v2_batch",
+                     input_checksum=input_checksum),
+            "batch_no": batch_no, "required_check_ids": [item["check_id"] for item in batch_checks],
+            "parse_failures": parse_failures,
+        })
+    checks = normalize_results(plan, tester_raw_checks)
     protected = [item for item in plan["required_checks"] if item.get("protected")]
     challenge_payload = {
         "case": snapshot["case"], "author_as_example": snapshot["author_as_example"],
@@ -494,7 +508,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
         "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
         "protected_checks": protected,
-        "required_output": payload["required_output"],
+        "required_output": payload_base["required_output"],
         "rules": {
             "purpose": "Ищи опровержение PASS, не подтверждение.",
             "inspect_entire_candidate": True,
@@ -509,19 +523,34 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             "return_each_protected_check_once": True,
         },
     }
-    challenge_messages = [
-        {"role": "system", "content": _frozen_file(snapshot, "protocol_challenger").read_text(encoding="utf-8")},
-        *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
-          if adaptation_contract else []),
-        {"role": "user", "content": json.dumps(challenge_payload, ensure_ascii=False)},
-    ]
-    challenge_checksum = checksum(challenge_messages)
-    challenge_operation_id = f"{snapshot['operation_id']}:challenger:{challenge_checksum[:12]}"
-    challenge_raw, challenge_response, challenge_failures = _strict_json_call(
-        gateway, challenge_messages, operation_id=challenge_operation_id, max_tokens=16384, temperature=0,
-        retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
-    )
-    challenge_checks = normalize_results(plan, challenge_raw.get("checks"))
+    challenger_operations = []
+    challenger_raw_checks = []
+    for batch_no, offset in enumerate(range(0, len(protected), batch_size), start=1):
+        batch_checks = protected[offset:offset + batch_size]
+        batch_payload = {**challenge_payload, "protected_checks": batch_checks}
+        challenge_messages = [
+            {"role": "system", "content": _frozen_file(snapshot, "protocol_challenger").read_text(encoding="utf-8")},
+            *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
+              if adaptation_contract else []),
+            {"role": "user", "content": json.dumps(batch_payload, ensure_ascii=False)},
+        ]
+        challenge_checksum = checksum(challenge_messages)
+        challenge_operation_id = f"{snapshot['operation_id']}:challenger:{batch_no:02d}:{challenge_checksum[:12]}"
+        challenge_raw, challenge_response, challenge_failures = _strict_json_call(
+            gateway, challenge_messages, operation_id=challenge_operation_id, max_tokens=16384, temperature=0,
+            retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
+        )
+        challenger_raw_checks.extend(
+            challenge_raw.get("checks") if isinstance(challenge_raw.get("checks"), list) else []
+        )
+        challenger_operations.append({
+            **_trace(challenge_response, operation_id=challenge_operation_id,
+                     kind="independent_tester_v2_challenger_batch",
+                     input_checksum=challenge_checksum),
+            "batch_no": batch_no, "required_check_ids": [item["check_id"] for item in batch_checks],
+            "parse_failures": challenge_failures,
+        })
+    challenge_checks = normalize_results(plan, challenger_raw_checks)
     challenge_by_id = {item["check_id"]: item for item in challenge_checks
                        if item.get("status") != "NOT_APPLICABLE"}
     merged_checks = []
@@ -533,13 +562,17 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             merged_checks.append(item)
     checks = merged_checks
     aggregation = aggregate(generation["deterministic_validation"], checks)
+    tester_input_checksum = checksum([item["input_checksum"] for item in tester_operations])
+    challenger_input_checksum = checksum([item["input_checksum"] for item in challenger_operations])
     return {"protocol": plan["protocol"], "checks": checks, "aggregation": aggregation,
-            "provider_operation": {**_trace(response, operation_id=operation_id, kind="independent_tester_v2", input_checksum=input_checksum),
-                                   "parse_failures": parse_failures},
-            "challenger_operation": {**_trace(challenge_response, operation_id=challenge_operation_id,
-                                                kind="independent_tester_v2_challenger",
-                                                input_checksum=challenge_checksum),
-                                     "parse_failures": challenge_failures}}
+            "provider_operation": {"kind": "independent_tester_v2_batched",
+                                   "operation_id": f"{snapshot['operation_id']}:tester:batched",
+                                   "input_checksum": tester_input_checksum,
+                                   "batch_size": batch_size, "batches": tester_operations},
+            "challenger_operation": {"kind": "independent_tester_v2_challenger_batched",
+                                     "operation_id": f"{snapshot['operation_id']}:challenger:batched",
+                                     "input_checksum": challenger_input_checksum,
+                                     "batch_size": batch_size, "batches": challenger_operations}}
 
 
 def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], tested: dict[str, Any],

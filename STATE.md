@@ -261,3 +261,17 @@
   сохраняется как `.preparation-failure.json` до assertion. Без изменения причины
   provider-повтор запрещён. Safe запись попытки:
   `docs/evc/evidence/r10-functional-api-c01-attempt-2026-10-26.json`.
+- Независимая product-valid попытка `CASE.SPEC.02` с исправленным capture локализовала
+  причину: generation deterministic PASS, repair не использован, provider transport
+  PASS/`finish_reason=stop`, но один tester request вернул полноценный PASS только для
+  13 из 33 checks; 20 обязательных protected checks остались без adversarial review и
+  были корректно нормализованы в `TECHNICAL_ERROR`. Итог `INCOMPLETE`; AS не
+  предъявлялась, runtime/M6/M8 `NOT_RUN`. Это дефект передачи tester workload одним
+  запросом, а не содержательный FAIL AS и не ошибочное требование tester.
+- Исправление делит точный required-check set tester/challenger на детерминированные
+  партии максимум по 8, сохраняет trace каждой партии и агрегирует только после
+  восстановления полного набора exact IDs. Admission не ослаблен. Адресные unit:
+  `30 passed`; `py_compile` и `git diff --check` PASS. Evidence:
+  `docs/evc/evidence/r10-functional-api-c02-attempt-2026-10-26.{json,tar.gz}`,
+  archive SHA-256 `52433870...06d1c6`. Следующий gate — commit и один C02 retry на
+  исправленном exact candidate; C01 без собственного trace не повторять.

@@ -77,6 +77,11 @@ def test_shared_service_admits_only_after_deterministic_and_independent_checks()
     assert gateway.generation_requirements[0]["omit_empty_required_fields"] is False
     assert result_a["tester"]["aggregation"]["status"] == "PASS"
     assert gateway.tester_payloads[0]["required_output"]["checks"][0]["check_id"].startswith("exact id")
+    assert all(len((payload.get("applicability_plan") or {}).get("required_checks")
+                   or payload.get("protected_checks", [])) <= 8
+               for payload in gateway.tester_payloads)
+    assert result_a["tester"]["provider_operation"]["kind"] == "independent_tester_v2_batched"
+    assert len(result_a["tester"]["provider_operation"]["batches"]) > 1
     assert result_a["compiled_case"]["author_assessment_situation"] == result_a["candidate_as"]
     assert result_a["compiled_case"]["author_as_source"]["sha256"] == result_a["candidate_checksum"]
     assert set(result_a["execution_rules"]["cases"]) == {"CASE.SPEC.01"}
@@ -339,7 +344,9 @@ def test_malformed_provider_json_is_retried_once_without_salvaging_fragments():
     result = service.prepare(snapshot, gateway)
     assert result["admitted_for_participant"] is True
     assert result["generation_operation"]["parse_failures"][0]["code"] == "PROVIDER_JSON_INVALID"
-    assert gateway.calls == 4  # generation failure + generation retry + tester + challenger
+    tester_batches = len(result["tester"]["provider_operation"]["batches"])
+    challenger_batches = len(result["tester"]["challenger_operation"]["batches"])
+    assert gateway.calls == 2 + tester_batches + challenger_batches
 
 
 def test_blocking_tester_failure_triggers_one_full_repair_and_retest():

@@ -47,7 +47,7 @@ def _saved_a06_row(row_id: str) -> dict:
         return json.load(extracted)
 
 
-def _install_functional_catalog(connection) -> dict:
+def _install_functional_catalog(connection, *, selected_case_id: str) -> dict:
     package = json.loads((FUNCTIONAL_OUTPUT / "case-package.json").read_text())
     manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_text())
     legacy_rules = json.loads((FUNCTIONAL_OUTPUT / "execution-rules.json").read_text())
@@ -88,16 +88,18 @@ def _install_functional_catalog(connection) -> dict:
                    VALUES(%s,%s,'PASS',%s::jsonb,%s)""",
                 (case["id"], scope, json.dumps(evidence, ensure_ascii=False), runtime_checksum(evidence)),
             )
+    selected_cases = [case for case in cases if case["case_id"] == selected_case_id]
+    assert len(selected_cases) == 1
     plan = publication_plan(
         connection, package_db_id=imported["package_db_id"],
-        case_version_ids=[int(case["id"]) for case in cases], usage_scope="assessment",
+        case_version_ids=[int(case["id"]) for case in selected_cases], usage_scope="assessment",
         organization_id=10, runtime_rule_version_id=runtime["id"],
     )
     assert plan["publishable"] is True, plan["decisions"]
     catalog = publish_catalog(
         connection, catalog_id="r10-functional-cycle-fixture", catalog_version="1.0",
         package_db_id=imported["package_db_id"],
-        case_version_ids=[int(case["id"]) for case in cases], usage_scope="assessment",
+        case_version_ids=[int(case["id"]) for case in selected_cases], usage_scope="assessment",
         organization_id=10, published_by=99,
         decision_basis="isolated R10 replay of an unchanged real-provider admitted AS",
         idempotency_key="r10-functional-cycle-catalog", runtime_rule_version_id=runtime["id"],
@@ -140,17 +142,22 @@ def _install_functional_catalog(connection) -> dict:
             "profile_checksum": profile["checksum"], "runtime_package": runtime_package}
 
 
-def test_functional_c01_owner_api_reaches_m8(product_db, monkeypatch):
+def test_functional_case_owner_api_reaches_m8(product_db, monkeypatch):
     """Prepare a product-valid M4 functional AS through owner HTTP and reach real M6/M8."""
     if os.getenv("RUN_REAL_CYCLE_LLM") != "1":
         pytest.skip("explicit real-provider acceptance run")
     factory = product_db
     gateway = DeepSeekGateway()
     assert gateway.enabled
-    saved = _saved_a06_row("A06.C01.SALES")
+    case_id = os.getenv("R10_FUNCTIONAL_CASE_ID", "CASE.SPEC.01")
+    assert case_id in {f"CASE.SPEC.{number:02d}" for number in range(1, 10)}
+    case_number = case_id.rsplit(".", 1)[-1]
+    row_id = f"A06.C{case_number}.SALES"
+    saved = _saved_a06_row(row_id)
+    operation_key = f"r10-c{case_number}-sales"
 
     with factory() as connection:
-        installed = _install_functional_catalog(connection)
+        installed = _install_functional_catalog(connection, selected_case_id=case_id)
         # N01 used a matrix-only synthetic projection. It is evidence for PM-03,
         # but cannot be rebound to a different immutable M4 snapshot in N02.
         assert installed["profile_checksum"] != \
@@ -180,7 +187,7 @@ def test_functional_c01_owner_api_reaches_m8(product_db, monkeypatch):
         enqueued = http.post(
             "/users/assessment/cycles/prepare",
             json={"personalized_profile_id": installed["profile_id"],
-                  "idempotency_key": "r10-c01-sales-prepare",
+                  "idempotency_key": f"{operation_key}-prepare",
                   "selected_skills": ["K1", "K2", "K3", "K4"]},
         )
         assert enqueued.status_code == 202, enqueued.text
@@ -188,12 +195,12 @@ def test_functional_c01_owner_api_reaches_m8(product_db, monkeypatch):
         assert job is not None
         queue._process(job)
         preparation = http.get(
-            "/users/assessment/cycles/preparation/r10-c01-sales-prepare"
+            f"/users/assessment/cycles/preparation/{operation_key}-prepare"
         )
         assert preparation.status_code == 200, preparation.text
         operation = preparation.json()
         if operation["status"] != "completed":
-            diagnostic = queue.get_status("r10-c01-sales-prepare")
+            diagnostic = queue.get_status(f"{operation_key}-prepare")
             output = os.getenv("P4K_FUNCTIONAL_CYCLE_EVIDENCE_PATH")
             if output:
                 path = Path(output).with_suffix(".preparation-failure.json")
@@ -201,24 +208,24 @@ def test_functional_c01_owner_api_reaches_m8(product_db, monkeypatch):
                 path.write_text(json.dumps(_jsonable(diagnostic), ensure_ascii=False, indent=2) + "\n")
             pytest.fail(f"functional preparation failed: {diagnostic['error_code']}:{diagnostic['error_message']}")
         prepared = operation["result"]
-        assert prepared["decision"]["selected_case_id"] == "CASE.SPEC.01"
+        assert prepared["decision"]["selected_case_id"] == case_id
         cycle_id = str(prepared["plan"]["cycle_id"])
         as_id = str(prepared["decision"]["assessment_situation_id"])
         started = http.post(
             "/users/assessment/cycles/start",
-            json={"cycle_id": cycle_id, "idempotency_key": "r10-c01-sales-start"},
+            json={"cycle_id": cycle_id, "idempotency_key": f"{operation_key}-start"},
         )
         assert started.status_code == 201, started.text
         assert started.json()["presentation"]["assessment_situation_id"] == as_id
         turn = http.post(
             f"/users/assessment/m5/situations/{as_id}/turns",
-            json={"request_id": "r10-c01-sales-turn", "turn_id": str(participant_turn_id),
+            json={"request_id": f"{operation_key}-turn", "turn_id": str(participant_turn_id),
                   "content": participant_text},
         )
         assert turn.status_code == 200, turn.text
         completed = http.post(
             f"/users/assessment/m7/cycles/{cycle_id}/completion",
-            json={"idempotency_key": "r10-c01-sales-complete", "action": "complete",
+            json={"idempotency_key": f"{operation_key}-complete", "action": "complete",
                   "reason": "isolated_r10_functional_path"},
         )
         assert completed.status_code == 200, completed.text
@@ -286,7 +293,8 @@ def test_functional_c01_owner_api_reaches_m8(product_db, monkeypatch):
                 ["functional_personalization"]["candidate_checksum"],
             "case_version_checksum": persisted["content_checksum"],
             "assessment_situation": {"id": as_id, "snapshot_checksum": persisted["snapshot_checksum"]},
-            "participant_turn": {"id": str(participant_turn_id), "request_id": "r10-c01-sales-turn"},
+            "participant_turn": {"id": str(participant_turn_id),
+                                 "request_id": f"{operation_key}-turn"},
             "m6_evidence": _jsonable(evidence),
             "m6_indicator_assessment": _jsonable(assessment),
             "m7_pipeline": _jsonable(pipeline),

@@ -144,6 +144,17 @@ isolated schema; поэтому результат не классифициро
 повтор без изменения причины запрещён. Capture исправлен для следующих попыток.
 Safe manifest: `docs/evc/evidence/r10-functional-api-c01-attempt-2026-10-26.json`.
 
+Независимая попытка `CASE.SPEC.02` сохранила полный failure payload и локализовала
+`INCOMPLETE`: generation deterministic PASS, repair не использован, transport tester
+PASS (`finish_reason=stop`), однако единый запрос вернул допустимый adversarial PASS
+только для 13 из 33 checks. Остальные 20 обязательных protected checks были штатно
+переведены в `TECHNICAL_ERROR`. Это дефект размера/передачи tester workload, не
+содержательный FAIL AS. Реализация теперь делит tester и challenger на партии не
+более восьми exact check IDs и агрегирует полный набор после всех ответов; admission
+не ослаблен. Unit regression: `30 passed`. Safe manifest и raw synthetic archive:
+`docs/evc/evidence/r10-functional-api-c02-attempt-2026-10-26.{json,tar.gz}`;
+archive SHA-256 `52433870b96d17c24332ab5f63fca0a4e19dc3115ccaa28b7c9b6cf0d906d1c6`.
+
 ## Откат и ограничения выпуска
 
 Кодовый откат — вернуть R09 candidate commit и приложение `2.0.28`; опубликованные
