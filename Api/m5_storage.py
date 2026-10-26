@@ -405,7 +405,16 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
     case_value = case_value_override or case_row["content_json"]
     if case_value.get("case_id") != case_id or case_value.get("version") != case_version:
         raise ValueError("M5_GENERATED_CASE_IDENTITY_MISMATCH")
-    ai_operations = build_m5_ai_operations_snapshot()
+    from Api.cycle_execution_manifest import resolve_cycle_dependency
+    cycle_value = dict(cycle)
+    ai_operations = build_m5_ai_operations_snapshot(
+        prompt_packages={
+            "semantic_decision": resolve_cycle_dependency(cycle_value, "m5_semantic_decision"),
+            "character_response": resolve_cycle_dependency(cycle_value, "m5_character_response"),
+            "technical_c45": resolve_cycle_dependency(cycle_value, "m5_technical_c45"),
+        },
+        provider_contract_path=resolve_cycle_dependency(cycle_value, "provider_contract") / "manifest.json",
+    )
     if generation_trace is not None:
         ai_operations["functional_personalization"] = generation_trace
     situation, execution = build_assessment_situation(

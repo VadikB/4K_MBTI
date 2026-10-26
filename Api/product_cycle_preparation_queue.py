@@ -231,6 +231,7 @@ class ProductCyclePreparationQueue:
     def _process(self, job: dict) -> None:
         from Api import m10_product_flow, m7_cycle_planner
         from Api.llm.deepseek_gateway import DeepSeekGateway
+        from Api.llm.provider_contract import load_provider_contract
         from Api import m5_functional_generation_service
         from Api.cycle_execution_manifest import resolve_cycle_dependency
 
@@ -258,6 +259,7 @@ class ProductCyclePreparationQueue:
     def _process_current_attempt(self, job: dict) -> None:
         from Api import m10_product_flow, m7_cycle_planner
         from Api.llm.deepseek_gateway import DeepSeekGateway
+        from Api.llm.provider_contract import load_provider_contract
         from Api import m5_functional_generation_service
         from Api.cycle_execution_manifest import resolve_cycle_dependency
 
@@ -337,6 +339,8 @@ class ProductCyclePreparationQueue:
                     functional_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_package")
                     repair_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_repair")
                     protocol_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_protocol")
+                    runtime_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_runtime")
+                    provider_path = resolve_cycle_dependency(dict(frozen_cycle), "provider_contract") / "manifest.json"
             if needs_generation:
                 with get_connection() as connection:
                     self._assert_current_attempt(connection, job)
@@ -350,8 +354,22 @@ class ProductCyclePreparationQueue:
                     source_root=functional_package / "sources/functional-v0.2",
                     repair_package=repair_package,
                     protocol_package=protocol_package,
+                    provider_contract=load_provider_contract(provider_path),
                 )
-                generated = m5_functional_generation_service.prepare(snapshot, DeepSeekGateway())
+                provider = snapshot["refs"]["provider_contract"]
+                try:
+                    generation_gateway = DeepSeekGateway(
+                        base_url=provider["endpoint"].removesuffix("/chat/completions"),
+                        model=provider["model"],
+                    )
+                except TypeError:
+                    # Test/injected transports may intentionally expose no constructor options;
+                    # their sent identity remains captured in the immutable operation trace.
+                    generation_gateway = DeepSeekGateway()
+                generated = m5_functional_generation_service.prepare(
+                    snapshot, generation_gateway, functional_package=functional_package,
+                    runtime_package=runtime_package,
+                )
                 if not generated["admitted_for_participant"]:
                     failure_result = {
                         "stage": "functional_tester_admission",
@@ -363,7 +381,8 @@ class ProductCyclePreparationQueue:
                     self._assert_current_attempt(connection, job, lock=True)
                     attached = m7_cycle_planner.attach_functional_generated_as(
                         connection, decision_id=str(decision["id"]), prepared_result=generated,
-                        generation_trace=trace, created_by=int(job["user_id"]), policy=m10_product_flow._policy(),
+                        generation_trace=trace, created_by=int(job["user_id"]),
+                        policy=m10_product_flow._policy(connection, cycle_id=str(result["plan"]["cycle_id"])),
                     )
                     result["decision"] = attached
                     result["plan"] = m7_cycle_planner.read_plan(connection, str(result["plan"]["cycle_id"]))

@@ -82,7 +82,8 @@ def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id:
                          case_version_checksum: str | None = None,
                          source_root: Path = SOURCE,
                          repair_package: Path = REPAIR_PACKAGE,
-                         protocol_package: Path = PROTOCOL_PACKAGE) -> dict[str, Any]:
+                         protocol_package: Path = PROTOCOL_PACKAGE,
+                         provider_contract: dict[str, Any] | None = None) -> dict[str, Any]:
     number = case_id.rsplit(".", 1)[-1]
     case_path = _unique(f"02_cases/Case_SPEC_{number}_*.json", f"PERS_CASE_SOURCE_NOT_UNIQUE:{case_id}", source_root=source_root)
     example_path = _unique(f"04_as/AS_SPEC_{number}_FUNCTIONAL_*.json", f"PERS_AS_SOURCE_NOT_UNIQUE:{case_id}", source_root=source_root)
@@ -116,6 +117,10 @@ def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id:
             for name in ("json-retry", "tester-addendum", "challenger")
         },
     }
+    if provider_contract is not None:
+        refs["provider_contract"] = {key: provider_contract[key] for key in (
+            "version", "checksum", "provider", "endpoint", "model", "thinking", "supported_response_formats"
+        )}
     if (package_manifest.get("compiler") or {}).get("source_schema_profile") == "functional-personalization-indicator-v2":
         adaptation_contract = source_root.parents[1] / "indicator-adaptation-contract.json"
         refs["indicator_adaptation_contract"] = {
@@ -568,7 +573,13 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
                                    "parse_failures": parse_failures}}
 
 
-def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
+def prepare(snapshot: dict[str, Any], gateway: Any, *, functional_package: Path = PACKAGE,
+            runtime_package: Path = RUNTIME_PACKAGE) -> dict[str, Any]:
+    provider = (snapshot.get("refs") or {}).get("provider_contract")
+    if provider and hasattr(gateway, "model") and hasattr(gateway, "base_url"):
+        actual_endpoint = f"{str(getattr(gateway, 'base_url', '')).rstrip('/')}/chat/completions"
+        if str(getattr(gateway, "model", "")) != provider["model"] or actual_endpoint != provider["endpoint"]:
+            raise ValueError("M5_FUNCTIONAL_PROVIDER_IDENTITY_MISMATCH")
     generation = generate(snapshot, gateway)
     tested = test_candidate(snapshot, generation, gateway)
     repair = None
@@ -599,9 +610,10 @@ def prepare(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
             as_source_checksum=generation["candidate_checksum"],
             source_schema_profile=compiler_profile,
         )
-        package_cases = json.loads((PACKAGE / "case-package.json").read_text(encoding="utf-8"))["cases"]
+        package_cases = json.loads((functional_package / "case-package.json").read_text(encoding="utf-8"))["cases"]
+        package_version = json.loads((functional_package / "manifest.json").read_text(encoding="utf-8"))["version"]
         runtime_bindings = load_runtime_rule_package(
-            RUNTIME_PACKAGE, package_cases, expected_case_package_version="0.5"
+            runtime_package, package_cases, expected_case_package_version=package_version
         )["bindings"]
         execution_rules = build_execution_rules([compiled_case], runtime_bindings)
     return {"schema_version": 1, "input_snapshot_checksum": checksum(snapshot),

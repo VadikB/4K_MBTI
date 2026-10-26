@@ -41,7 +41,12 @@ def _decision_snapshot(connection, *, c54_revision_id: str, key: str):
     latest=connection.execute("SELECT id FROM m6_c54_revisions WHERE as_db_id=%s AND mode='interim' ORDER BY created_at DESC LIMIT 1",(as_db,)).fetchone()
     if not latest or str(latest['id'])!=c54_revision_id:raise ValueError('M7_STALE_C54')
     cycle=read_cycle(connection,str(connection.execute('SELECT cycle_id FROM m5_cycles WHERE id=%s',(source['cycle_db_id'],)).fetchone()['cycle_id']))
-    mechanism=load_mechanism()
+    from Api.cycle_execution_manifest import resolve_cycle_dependency
+    mechanism=load_mechanism(
+        resolve_cycle_dependency(cycle,'m7_clarification'),
+        resolve_cycle_dependency(cycle,'source_set')/'manifest.json',
+        resolve_cycle_dependency(cycle,'provider_contract')/'manifest.json',
+    )
     minimum_seconds=mechanism['decision']['minimum_remaining_seconds']
     targets=source['payload_json'].get('interim_targets') or []
     uncertainties=[{'indicator_id':x['indicator_id'],'m2_version':x['m2_version'],'uncertainty':x.get('uncertainty'),

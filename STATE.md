@@ -2,7 +2,7 @@
 
 - Base: `b3bbdc9e78880879e1d4fc930ef8c9cc9f200524` (`origin/main`, приложение `2.0.28`).
 - Ветка: `codex/case-cycle-r1`.
-- Активная карточка: R06.
+- Активная карточка: R07.
 - Завершённые commits: R00 — `aea9bf3`; R01 — `30fc6a0`; R02 — `420a315`;
   R03 — текущий commit совместимости.
 - Проверки R00 на рабочем дереве: `git diff --check` — PASS; ссылки/пути — PASS;
@@ -72,4 +72,32 @@
 - Откат R05: detached entrypoints можно снять возвратом commit; созданные immutable
   C54/admission/Results/Report revisions сохраняются. Поздний output, не прошедший
   revision/composition fence, не публикуется и не требует удаления истории.
-- Следующий шаг: R06 — полный Cycle execution manifest и замыкание зависимостей.
+- R06, consumer map:
+
+  | Consumer | Frozen dependency / resolution |
+  |---|---|
+  | functional generator/tester/repair | `m5_functional_package`, `m5_functional_protocol`, `m5_functional_repair` через Cycle manifest; refs/checksums входят в generation snapshot |
+  | runtime event bindings | `m5_functional_runtime` через Cycle manifest и Case checksum/package-version binding |
+  | M5 semantic/character/technical C45 | `m5_semantic_decision`, `m5_character_response`, `m5_technical_c45`, `provider_contract`; safe operation identity сохраняется в AS |
+  | M7 planning/return/clarification | `m7_cycle_plan`, `m7_return_integration`, `m7_clarification`, `source_set`, `provider_contract` |
+  | M6 Evidence/IA/admission/aggregation | `m6_evidence`, `m6_indicator_assessment`, `m6_substantive_admission`, `m6_cycle_aggregation`, `m2_methodology`, `source_set`, `provider_contract` |
+  | M8 projection/description/validator/recommendations | `m8_report_projection`, `m8_descriptive_report`, `m8_recommendations`, frozen Results/evidence refs |
+
+- Manifest schema 2 фиксирует новые prompt/runtime dependencies; default нового Cycle —
+  functional package `0.5` и runtime `1.2.0`. Schema 1 читается через закрытую
+  compatibility map только для четырёх ранее неименованных versioned prompt paths;
+  произвольный fallback/current запрещён. Повреждение или отсутствие явно pinned path
+  остаётся `CYCLE_DEPENDENCY_*` technical failure.
+- Provider snapshot содержит requested provider/endpoint/model/thinking/response formats
+  и checksum контракта, но не credential. Ротация ключа не меняет semantic identity.
+  Reported provider model/revision сохраняется trace; веса за alias не объявляются
+  воспроизводимыми.
+- Проверки R06: 56 unit — PASS; 6 Cycle/runtime/package PostgreSQL tests — PASS;
+  16 product-path integration — PASS. V1/V2 trace: старый Cycle после смены defaults
+  создал следующую AS с semantic/character prompt `1.0.0` и runtime `1.1.0`; новый
+  Cycle — prompt `v2`, package `0.5`, runtime `1.2.0`; provider checksum совпал,
+  `api_key` в snapshots отсутствует.
+- Откат R06: вернуть resolver/schema/defaults предыдущего commit; schema-2 manifests и
+  AS остаются immutable данными. Старое приложение их не должно исполнять без поддержки
+  schema 2; удалять или переписывать созданные refs нельзя.
+- Следующий шаг: R07 — диагностические traces/observability без утечки данных.
