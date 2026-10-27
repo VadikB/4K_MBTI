@@ -1548,6 +1548,17 @@ if (adminOrganizationsList) {
       );
       return;
     }
+    if (form.dataset.action === 'assign-member-assessment') {
+      const userIds = [...card.querySelectorAll('input[name="invitation_email"]:checked')]
+        .map((checkbox) => Number(checkbox.dataset.userId))
+        .filter(Boolean);
+      withScreen(loadAdminOrganizations, (module) =>
+        module.assignAdminOrganizationAssessment(
+          organizationId, userIds, module.getSelectedAdminOrganizationAssessment(organizationId),
+        ),
+      );
+      return;
+    }
     if (form.dataset.action === 'update-profile') {
       const formData = new FormData(form);
       const optionalNumber = (name) => {
@@ -1586,13 +1597,13 @@ if (adminOrganizationsList) {
     if (form.dataset.action === 'add-member') {
       const formData = new FormData(form);
       withScreen(loadAdminOrganizations, async (module) => {
-        await module.addAdminOrganizationMember(organizationId, {
+        const added = await module.addAdminOrganizationMember(organizationId, {
           email: formData.get('email'),
           full_name: formData.get('full_name'),
           role_description: formData.get('role_description'),
           job_instructions: null,
         });
-        form.reset();
+        if (added) form.reset();
       });
       return;
     }

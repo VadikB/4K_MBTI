@@ -168,6 +168,9 @@ from Api.schemas import (
     PersonalInvitationBatchResponse,
     PersonalInvitationRequest,
     PersonalInvitationResultItem,
+    AssessmentAssignmentRequest,
+    AssessmentAssignmentResultItem,
+    AssessmentAssignmentBatchResponse,
     PromptLabCaseOption,
     PromptLabCaseRunRequest,
     PromptLabCaseRunResponse,
@@ -1043,6 +1046,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                 personal_invitation.id AS invitation_id,
                 personal_invitation.expires_at AS invitation_expires_at,
                 personal_invitation.delivery_status AS invitation_delivery_status,
+                COALESCE(assignments.assignment_refs, ARRAY[]::text[]) AS assessment_assignments,
                 CASE
                     WHEN personal_invitation.id IS NULL THEN 'not_created'
                     WHEN personal_invitation.revoked_at IS NOT NULL THEN 'revoked'
@@ -1084,6 +1088,14 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                 ORDER BY oi.created_at DESC, oi.id DESC
                 LIMIT 1
             ) personal_invitation ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT ARRAY_AGG(oa.assignment_ref ORDER BY oa.assignment_ref) AS assignment_refs
+                FROM organization_assessment_assignments oa
+                WHERE oa.organization_id = om.organization_id
+                  AND oa.recipient_user_id = u.id
+                  AND oa.status = 'active'
+                  AND oa.revoked_at IS NULL
+            ) assignments ON TRUE
             WHERE om.organization_id = ANY(%s)
             ORDER BY LOWER(COALESCE(u.email, '')) ASC
             LIMIT 500
@@ -1120,6 +1132,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                     "invitation_delivery_status": row["invitation_delivery_status"] or "not_sent",
                     "invitation_link_status": row["invitation_link_status"] or "not_created",
                     "invitation_expires_at": row["invitation_expires_at"],
+                    "assessment_assignments": list(row["assessment_assignments"] or []),
                 }
             )
 
@@ -3858,7 +3871,10 @@ def send_personal_organization_invitations(
                     )
                 member = connection.execute(
                     """
-                    SELECT u.id
+                    SELECT u.id, EXISTS (
+                        SELECT 1 FROM auth_password_credentials c
+                        WHERE LOWER(c.email) = LOWER(u.email)
+                    ) AS is_registered
                     FROM organization_memberships om
                     JOIN users u ON u.id = om.user_id
                     JOIN organizations o ON o.id = om.organization_id
@@ -3872,6 +3888,12 @@ def send_personal_organization_invitations(
                 ).fetchone()
                 if member is None:
                     raise ValueError("Участник не добавлен в эту организацию.")
+                if bool(member.get("is_registered")):
+                    results.append(PersonalInvitationResultItem(
+                        email=email, status="already_registered",
+                        error="Участник уже зарегистрирован, приглашение не требуется.",
+                    ))
+                    continue
                 if settings.auth_magic_link_dev_mode or settings.email_provider in {"", "console"}:
                     raise EmailDeliveryError("Почтовый провайдер не настроен для отправки приглашений.")
                 row = connection.execute(
@@ -3938,7 +3960,11 @@ def send_personal_organization_invitations(
                 if int(locked["organization_id"]) != organization_id or normalize_email(locked["recipient_email"]) != email:
                     raise ValueError("Сохранённая операция не соответствует адресату или организации.")
                 recipient_allowed = connection.execute(
-                    """SELECT 1 FROM organization_memberships om
+                    """SELECT EXISTS (
+                           SELECT 1 FROM auth_password_credentials c
+                           WHERE LOWER(c.email)=LOWER(u.email)
+                         ) AS is_registered
+                       FROM organization_memberships om
                        JOIN users u ON u.id=om.user_id
                        JOIN organizations o ON o.id=om.organization_id
                        WHERE om.organization_id=%s AND LOWER(u.email)=%s
@@ -3948,6 +3974,17 @@ def send_personal_organization_invitations(
                 ).fetchone()
                 if recipient_allowed is None:
                     raise ValueError("Организация неактивна или доступ участника отозван.")
+                if bool(recipient_allowed.get("is_registered")):
+                    connection.execute(
+                        "UPDATE organization_invitations SET revoked_at=COALESCE(revoked_at,NOW()) WHERE id=%s",
+                        (invitation_id,),
+                    )
+                    connection.commit()
+                    results.append(PersonalInvitationResultItem(
+                        email=email, status="already_registered", invitation_id=invitation_id,
+                        error="Участник уже зарегистрирован, приглашение не требуется.",
+                    ))
+                    continue
                 if str(locked["token_hash"]) != hash_invitation_token(raw_token):
                     raise ValueError(
                         "Старая операция не может быть безопасно восстановлена. "
@@ -4072,6 +4109,88 @@ def send_personal_organization_invitations(
                     connection.commit()
             results.append(PersonalInvitationResultItem(email=str(raw_email).strip().lower(), status="error", invitation_id=invitation_id, error=str(exc)))
     return PersonalInvitationBatchResponse(items=results)
+
+
+@router.post(
+    "/admin/organizations/{organization_id}/assessment-assignments",
+    response_model=AssessmentAssignmentBatchResponse,
+)
+def assign_organization_assessment(
+    organization_id: int,
+    payload: AssessmentAssignmentRequest,
+    request: Request,
+) -> AssessmentAssignmentBatchResponse:
+    """Persist an explicit scoped assignment without registration mail or preparation."""
+    current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    assignment_ref = str(payload.assignment_ref).strip()
+    recipient_ids = sorted(set(int(value) for value in payload.user_ids))
+    fingerprint = hashlib.sha256(json.dumps(
+        {"assignment_ref": assignment_ref, "user_ids": recipient_ids},
+        sort_keys=True, separators=(",", ":"),
+    ).encode("utf-8")).hexdigest()
+    results: list[AssessmentAssignmentResultItem] = []
+    with get_connection() as connection:
+        _require_organization_admin(connection, current_user, organization_id)
+        readiness = questionnaire_sources.assignment_readiness(
+            connection, organization_id=organization_id, assignment_ref=assignment_ref,
+        )
+        if readiness["status"] != "ready":
+            raise HTTPException(
+                status_code=409,
+                detail="Подтвердите сведения выбранной оценки перед назначением.",
+            )
+        previous = connection.execute(
+            """SELECT DISTINCT request_fingerprint
+               FROM organization_assessment_assignments
+               WHERE organization_id=%s AND created_by_user_id=%s AND operation_id=%s""",
+            (organization_id, int(current_user.id), payload.operation_id),
+        ).fetchall()
+        if previous and any(str(row["request_fingerprint"]) != fingerprint for row in previous):
+            raise HTTPException(status_code=409, detail="operation_id уже использован с другим набором назначения.")
+        for user_id in recipient_ids:
+            member = connection.execute(
+                """SELECT om.user_id
+                   FROM organization_memberships om
+                   JOIN organizations o ON o.id=om.organization_id
+                   WHERE om.organization_id=%s AND om.user_id=%s AND o.is_active=TRUE
+                   LIMIT 1""",
+                (organization_id, user_id),
+            ).fetchone()
+            if member is None:
+                results.append(AssessmentAssignmentResultItem(
+                    user_id=user_id, status="not_assigned",
+                    error="Участник не связан с этой активной организацией.",
+                ))
+                continue
+            row = connection.execute(
+                """INSERT INTO organization_assessment_assignments (
+                     organization_id,recipient_user_id,assignment_ref,created_by_user_id,
+                     questionnaire_revision_id,status,operation_id,request_fingerprint
+                   ) VALUES (%s,%s,%s,%s,%s,'active',%s,%s)
+                   ON CONFLICT (organization_id,recipient_user_id,assignment_ref) DO NOTHING
+                   RETURNING id""",
+                (
+                    organization_id, user_id, assignment_ref, int(current_user.id),
+                    readiness.get("questionnaire_revision_id"), payload.operation_id, fingerprint,
+                ),
+            ).fetchone()
+            if row is None:
+                row = connection.execute(
+                    """SELECT id FROM organization_assessment_assignments
+                       WHERE organization_id=%s AND recipient_user_id=%s AND assignment_ref=%s
+                         AND status='active' AND revoked_at IS NULL""",
+                    (organization_id, user_id, assignment_ref),
+                ).fetchone()
+                results.append(AssessmentAssignmentResultItem(
+                    user_id=user_id, status="already_assigned",
+                    assignment_id=int(row["id"]) if row else None,
+                ))
+            else:
+                results.append(AssessmentAssignmentResultItem(
+                    user_id=user_id, status="assigned", assignment_id=int(row["id"]),
+                ))
+        connection.commit()
+    return AssessmentAssignmentBatchResponse(items=results)
 
 
 @router.delete("/admin/organizations/{organization_id}/personal-invitations/{invitation_id}")

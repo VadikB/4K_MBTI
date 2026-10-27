@@ -4637,6 +4637,29 @@ def ensure_core_schema() -> None:
         connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS delivery_started_at TIMESTAMP")
         connection.execute("ALTER TABLE organization_invitations ADD COLUMN IF NOT EXISTS assignment_ref TEXT")
         connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS organization_assessment_assignments (
+                id BIGSERIAL PRIMARY KEY,
+                organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+                recipient_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                assignment_ref TEXT NOT NULL,
+                created_by_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                questionnaire_revision_id BIGINT,
+                status TEXT NOT NULL DEFAULT 'active',
+                operation_id TEXT NOT NULL,
+                request_fingerprint TEXT NOT NULL,
+                created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
+                revoked_at TIMESTAMP WITHOUT TIME ZONE,
+                UNIQUE (organization_id, recipient_user_id, assignment_ref),
+                UNIQUE (organization_id, created_by_user_id, operation_id, recipient_user_id)
+            )
+            """
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_org_assessment_assignments_recipient "
+            "ON organization_assessment_assignments(recipient_user_id, organization_id, status)"
+        )
+        connection.execute(
             "CREATE INDEX IF NOT EXISTS idx_organization_invitations_recipient "
             "ON organization_invitations(organization_id, LOWER(recipient_email), expires_at) "
             "WHERE recipient_email IS NOT NULL"
