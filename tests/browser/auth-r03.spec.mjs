@@ -127,8 +127,9 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
   const rows = page.locator('.admin-organization-member');
   await expect(rows).toHaveCount(2);
-  await expect(rows.first().locator('.admin-organization-invitation-state')).toHaveCount(4);
+  await expect(rows.first().locator('.admin-organization-invitation-state')).toHaveCount(5);
   await expect(rows.nth(1)).toContainText('Регистрация: завершена');
+  await expect(rows.nth(1).locator('[data-action="send-member-invitation"]')).toHaveCount(0);
 
   // 683 CSS px approximates the available width at 200% browser zoom on a 1366 px display.
   for (const width of [320, 375, 390, 683, 768, 1024, 1366, 1440]) {
@@ -262,6 +263,7 @@ test('UX-FIX20-04 org-admin edits the attached card and never sees free tenant c
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
   await expect(page.locator('#admin-organization-create-form')).toBeHidden();
   const card = page.locator('[data-organization-id="3"]');
+  await card.locator('.admin-organization-step[data-view="organization-data"]').click();
   const profile = card.locator('[data-action="update-profile"]');
   await expect(profile).toBeVisible();
   await expect(card).toHaveCSS('border-radius', '8px');
@@ -764,6 +766,34 @@ test('ADM19-01 adds a participant with only email, name and role', async ({ page
     email: 'new.person@example.test', full_name: 'Новый Участник',
     role_description: 'Руководитель направления', job_instructions: null,
   });
+});
+
+test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague', async ({ page }) => {
+  const organization = {
+    ...adminOrganization,
+    members_count: 2,
+    members: [
+      { ...adminOrganization.members[0], user_id: 18, email: adminUser.email, full_name: 'Admin',
+        registration_status: 'registered', assessment_assignments: [] },
+      { ...adminOrganization.members[0], user_id: 19, email: 'colleague@example.test', full_name: 'Colleague',
+        assessment_assignments: [] },
+    ],
+  };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  let assignmentPayload;
+  await page.route('**/users/admin/organizations/3/assessment-assignments', (route) => {
+    assignmentPayload = route.request().postDataJSON();
+    return fulfillJson(route, { items: assignmentPayload.user_ids.map((userId) => ({
+      user_id: userId, status: 'assigned', assignment_id: userId + 100,
+    })) });
+  });
+  await page.locator('input[name="invitation_email"]').nth(0).check();
+  await page.locator('input[name="invitation_email"]').nth(1).check();
+  await page.getByRole('button', { name: 'Назначить оценку' }).click();
+  await expect.poll(() => assignmentPayload).toBeTruthy();
+  await expect(page.locator('#admin-organizations-status')).toContainText('Назначена: 2');
+  expect(assignmentPayload.assignment_ref).toBe('competencies_4k');
+  expect(assignmentPayload.user_ids.sort()).toEqual([18, 19]);
 });
 
 test('QA19-02 resolves palette tokens in visible auth and admin states', async ({ page }) => {

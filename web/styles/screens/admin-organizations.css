@@ -106,6 +106,24 @@
     grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
 }
 
+.admin-organization-member-form label {
+    display: grid;
+    gap: var(--space-1);
+    color: var(--text-muted);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-bold);
+}
+
+.admin-organization-bulk-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.admin-organization-profile-form--compact {
+    margin-block: var(--space-3);
+}
+
 .admin-organization-early-data-form {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

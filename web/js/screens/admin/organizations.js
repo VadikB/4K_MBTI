@@ -484,7 +484,7 @@ export const addAdminOrganizationMember = async (organizationId, payload) => {
   const normalizedEmail = String(payload?.email || '').trim();
   if (!normalizedEmail) {
     setStatus('Укажите email участника.', 'error');
-    return;
+    return false;
   }
   try {
     await requestOrganizations(
@@ -501,8 +501,10 @@ export const addAdminOrganizationMember = async (organizationId, payload) => {
       'Не удалось привязать участника.',
     );
     setStatus('Участник привязан к организации.', 'success');
+    return true;
   } catch (error) {
     setStatus(error.message || 'Не удалось привязать участника.', 'error');
+    return false;
   }
 };
 
@@ -559,19 +561,20 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
     const queued = items.filter((item) => item.status === 'queued');
     const accepted = items.filter((item) => item.status === 'accepted');
     const uncertain = items.filter((item) => item.status === 'uncertain');
+    const registered = items.filter((item) => item.status === 'already_registered');
     invitationOperationIds.delete(requestKey);
     await loadAdminOrganizations();
     if (failed.length || uncertain.length) {
       setStatus(
-        'Принято провайдером: ' + accepted.length + '. В очереди: ' + queued.length +
+        'Принято провайдером: ' + accepted.length + '. Уже зарегистрированы: ' + registered.length + '. В очереди: ' + queued.length +
           '. Неопределённый исход: ' + uncertain.length + '. Ошибок: ' + failed.length + '. ' +
           [...uncertain, ...failed].map((item) => item.email + ': ' + (item.error || 'ошибка отправки')).join('; '),
         'error',
       );
     } else if (queued.length) {
-      setStatus('Принято провайдером: ' + accepted.length + '. В очереди: ' + queued.length + '.', 'muted');
+      setStatus('Принято провайдером: ' + accepted.length + '. Уже зарегистрированы: ' + registered.length + '. В очереди: ' + queued.length + '.', 'muted');
     } else {
-      setStatus('Почтовый сервис принял приглашения: ' + accepted.length + '.', 'success');
+      setStatus('Почтовый сервис принял приглашения: ' + accepted.length + '. Уже зарегистрированы: ' + registered.length + '.', 'success');
     }
   } catch (error) {
     const message = error instanceof TypeError || error?.message === 'Failed to fetch'
@@ -580,6 +583,41 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
     setStatus(message, 'error');
   } finally {
     invitationRequestsInFlight.delete(requestKey);
+  }
+};
+
+export const assignAdminOrganizationAssessment = async (organizationId, userIds, assignmentRef) => {
+  const selected = [...new Set((userIds || []).map(Number).filter(Boolean))];
+  const assessment = String(assignmentRef || '').trim();
+  if (!selected.length) {
+    setStatus('Выберите хотя бы одного участника.', 'error');
+    return false;
+  }
+  if (!assessment) {
+    setStatus('Сначала выберите оценку в разделе «Данные организации».', 'error');
+    return false;
+  }
+  const operationId = createOperationId();
+  try {
+    const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-assignments', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_ids: selected, assignment_ref: assessment, operation_id: operationId }),
+    });
+    const result = await readApiResponse(response, 'Не удалось назначить оценку.');
+    const items = Array.isArray(result.items) ? result.items : [];
+    const assigned = items.filter((item) => item.status === 'assigned').length;
+    const existing = items.filter((item) => item.status === 'already_assigned').length;
+    const failed = items.filter((item) => item.status === 'not_assigned');
+    await loadAdminOrganizations();
+    setStatus(
+      'Назначена: ' + assigned + '. Уже была назначена: ' + existing + '. Не назначена: ' + failed.length +
+        (failed.length ? '. ' + failed.map((item) => item.user_id + ': ' + item.error).join('; ') : ''),
+      failed.length ? 'error' : 'success',
+    );
+    return failed.length === 0;
+  } catch (error) {
+    setStatus(error.message || 'Не удалось назначить оценку.', 'error');
+    return false;
   }
 };
 
@@ -924,7 +962,7 @@ const renderTagList = (items, emptyText, className, deleteAction) => {
   );
 };
 
-const renderMemberList = (items, { isSuperadmin = false } = {}) => {
+const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef = '' } = {}) => {
   if (!items.length) {
     return '<p class="admin-organizations-empty">Участники не привязаны.</p>';
   }
@@ -966,13 +1004,14 @@ const renderMemberList = (items, { isSuperadmin = false } = {}) => {
         const linkLabels = { not_created: 'Ссылка: не создана', active: 'Ссылка: действует 72 часа', revoked: 'Ссылка: отозвана', expired: 'Ссылка: истекла', used: 'Ссылка: использована' };
         const registrationLabel = item.registration_status === 'registered' ? 'Регистрация: завершена' : 'Регистрация: ожидается';
         const sendLabel = item.invitation_id ? 'Отправить повторно' : 'Отправить';
-        const invitationButton = '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
+        const isRegistered = item.registration_status === 'registered';
+        const invitationButton = isRegistered ? '' : '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
         const revokeButton = (invitationStatus === 'accepted' || invitationStatus === 'queued' || invitationStatus === 'sending')
           ? '<button type="button" data-action="revoke-member-invitation" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать ссылку</button>'
           : '';
         return (
           '<div class="admin-organization-member">' +
-          '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>' +
+          '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>' +
           '<div class="admin-organization-member-main"><strong>' +
           escapeHtml(label) +
           '</strong>' +
@@ -983,6 +1022,7 @@ const renderMemberList = (items, { isSuperadmin = false } = {}) => {
           '<span class="admin-organization-invitation-state">' + escapeHtml(registrationLabel) + '</span>' +
           '<span class="admin-organization-invitation-state">' + escapeHtml(deliveryLabels[item.invitation_delivery_status] || invitationLabels[invitationStatus] || invitationStatus) + '</span>' +
           '<span class="admin-organization-invitation-state">' + escapeHtml(linkLabels[item.invitation_link_status] || item.invitation_link_status || 'Ссылка: не создана') + '</span>' +
+          '<span class="admin-organization-invitation-state">Оценка: ' + escapeHtml((item.assessment_assignments || []).includes(selectedAssessmentRef) ? 'назначена' : 'не назначена') + '</span>' +
           '</div>' +
           '<div class="admin-organization-member-actions">' +
           invitationButton + revokeButton +
@@ -1130,7 +1170,7 @@ export const renderAdminOrganizations = () => {
         '</button>' : '') + '</div>' +
         '</div>' +
         renderOrganizationBatchProgress(orgId) +
-        '<form class="admin-organization-profile-form" data-action="update-profile">' +
+        (isSuperadmin ? '<form class="admin-organization-profile-form" data-action="update-profile">' +
         '<div class="admin-organization-profile-heading"><div><p class="section-label accent-label">Профиль</p><h4>Сведения об организации</h4></div>' +
         '<button class="primary-button compact-primary" type="submit">Сохранить карточку</button></div>' +
         '<label><span>Название</span><input name="name" value="' + escapeHtml(org.name) + '" required></label>' +
@@ -1142,7 +1182,7 @@ export const renderAdminOrganizations = () => {
         '<label><span>Сайт</span><input name="website" type="url" value="' + escapeHtml(org.website || '') + '" placeholder="https://company.ru"></label>' +
         '<label><span>Штаб-квартира</span><input name="headquarters" type="text" value="' + escapeHtml(org.headquarters || '') + '" placeholder="Город, страна"></label>' +
         '<label class="admin-organization-profile-wide"><span>Прочая существенная информация</span><textarea name="notes" placeholder="Структура, география, культура и другие важные сведения">' + escapeHtml(org.notes || '') + '</textarea></label>' +
-        '</form>' +
+        '</form>' : '') +
         (isSuperadmin ? '<div class="admin-organization-columns">' +
         '<section><h4>Домены</h4>' +
         renderTagList(org.domains || [], 'Домены не заданы.', 'domain', isSuperadmin ? 'delete-domain' : '') +
@@ -1159,12 +1199,13 @@ export const renderAdminOrganizations = () => {
         viewButton('questionnaire', 'Анкета') + '</nav>' +
         '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people"><h4>Организация и участники</h4>' +
         '<p>Перед отправкой выберите оценку в разделе «Данные организации» и подтвердите сведения для знакомства.</p>' +
-        '<form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
-        renderMemberList(org.members || [], { isSuperadmin }) +
+        '<div class="admin-organization-bulk-actions"><form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
+        '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment"><button class="primary-button compact-primary" type="submit">Назначить оценку</button></form></div>' +
+        renderMemberList(org.members || [], { isSuperadmin, selectedAssessmentRef: selectedRef }) +
         '<form class="admin-organization-member-form" data-action="add-member">' +
-        '<input name="email" type="email" placeholder="user@company.ru" required>' +
-        '<input name="full_name" type="text" placeholder="ФИО">' +
-        '<input name="role_description" type="text" placeholder="Должность">' +
+        '<label><span>Email</span><input name="email" type="email" placeholder="user@company.ru" required></label>' +
+        '<label><span>ФИО</span><input name="full_name" type="text" placeholder="Иван Иванов"></label>' +
+        '<label><span>Должность</span><input name="role_description" type="text" placeholder="Руководитель отдела"></label>' +
         '<button class="primary-button compact-primary" type="submit">Добавить</button>' +
         '</form>' +
         '<form class="admin-organization-import-form" data-action="import-members">' +
@@ -1174,21 +1215,32 @@ export const renderAdminOrganizations = () => {
         '</form>' +
         '</section>' +
         '<section class="admin-organization-members-section' + (activeView === 'organization-data' ? '' : ' hidden') + '" data-admin-view="organization-data">' + readinessMarkup(selectedRef, readiness) + '<h4>Данные организации и выбранной оценки</h4>' +
+        (!isSuperadmin ? '<form class="admin-organization-profile-form admin-organization-profile-form--compact" data-action="update-profile">' +
+          '<div class="admin-organization-profile-heading"><strong>Карточка организации</strong><button class="primary-button compact-primary" type="submit">Сохранить карточку</button></div>' +
+          '<label><span>Название</span><input name="name" value="' + escapeHtml(org.name) + '" required></label>' +
+          '<label><span>Код</span><input name="code" value="' + escapeHtml(org.code) + '" required></label>' +
+          '<label class="admin-organization-profile-wide"><span>Профиль организации</span><textarea name="profile">' + escapeHtml(org.profile || '') + '</textarea></label>' +
+          '<input name="founded_year" type="hidden" value="' + escapeHtml(org.founded_year ?? '') + '">' +
+          '<input name="employee_count" type="hidden" value="' + escapeHtml(org.employee_count ?? '') + '">' +
+          '<input name="industry" type="hidden" value="' + escapeHtml(org.industry || '') + '">' +
+          '<input name="website" type="hidden" value="' + escapeHtml(org.website || '') + '">' +
+          '<input name="headquarters" type="hidden" value="' + escapeHtml(org.headquarters || '') + '">' +
+          '<input name="notes" type="hidden" value="' + escapeHtml(org.notes || '') + '"></form>' : '') +
         '<p>Черновик и подтверждение сохраняются в общем версионируемом контуре. Изменение полей не переписывает опубликованную редакцию.</p>' +
         '<form class="admin-organization-early-data-form" data-action="preview-early-data">' +
         '<label><span>Оценка</span><input name="assignment_ref" type="text" value="' + escapeHtml(selectedRef) + '" placeholder="Например, 4К · поток октябрь 2026" required></label>' +
         '<label><span>Автор сведений</span><input name="source_author" type="text" placeholder="Ответственный со стороны заказчика" required></label>' +
-        '<label><span>Название организации</span><input name="organization_name" value="' + answer('C01', 'name') + '" required></label>' +
-        '<label><span>Тип организации</span><input name="organization_type" value="' + answer('C01', 'organization_type') + '" required></label>' +
-        '<label><span>Сфера деятельности</span><input name="industry" value="' + answer('C01', 'industry') + '" required></label>' +
-        '<label class="admin-organization-profile-wide"><span>Описание деятельности</span><textarea name="activity_description" required>' + answer('C01', 'activity_description') + '</textarea></label>' +
-        '<label class="admin-organization-profile-wide"><span>Цель оценки</span><textarea name="purpose" required>' + answer('C02a', 'participant_text') + '</textarea></label>' +
-        '<label class="admin-organization-profile-wide"><span>Использование результатов</span><textarea name="results_usage" required>' + answer('C03', 'participant_text') + '</textarea></label>' +
-        '<label><span>Кто увидит результаты</span><input name="result_recipients" value="' + answer('C04', 'answer') + '" required></label>' +
-        '<label><span>Организатор</span><input name="organizer" value="' + answer('C21', 'organizer') + '" required></label>' +
-        '<label><span>Контакт ответственного</span><input name="responsible_contact" value="' + answer('C21', 'responsible_contact') + '" required></label>' +
-        '<label><span>Реалистичность кейсов</span><input name="case_reality_level" value="' + answer('C17', 'case_reality_level') + '" required></label>' +
-        '<label><span>Правила использования названия</span><input name="organization_name_usage_rules" value="' + answer('C17', 'organization_name_usage_rules') + '" required></label>' +
+        '<label><span>Название организации</span><input name="organization_name" value="' + answer('C01', 'name') + '"></label>' +
+        '<label><span>Тип организации</span><input name="organization_type" value="' + answer('C01', 'organization_type') + '"></label>' +
+        '<label><span>Сфера деятельности</span><input name="industry" value="' + answer('C01', 'industry') + '"></label>' +
+        '<label class="admin-organization-profile-wide"><span>Описание деятельности</span><textarea name="activity_description">' + answer('C01', 'activity_description') + '</textarea></label>' +
+        '<label class="admin-organization-profile-wide"><span>Цель оценки</span><textarea name="purpose">' + answer('C02a', 'participant_text') + '</textarea></label>' +
+        '<label class="admin-organization-profile-wide"><span>Использование результатов</span><textarea name="results_usage">' + answer('C03', 'participant_text') + '</textarea></label>' +
+        '<label><span>Кто увидит результаты</span><input name="result_recipients" value="' + answer('C04', 'answer') + '"></label>' +
+        '<label><span>Организатор</span><input name="organizer" value="' + answer('C21', 'organizer') + '"></label>' +
+        '<label><span>Контакт ответственного</span><input name="responsible_contact" value="' + answer('C21', 'responsible_contact') + '"></label>' +
+        '<label><span>Реалистичность кейсов</span><input name="case_reality_level" value="' + answer('C17', 'case_reality_level') + '"></label>' +
+        '<label><span>Правила использования названия</span><input name="organization_name_usage_rules" value="' + answer('C17', 'organization_name_usage_rules') + '"></label>' +
         '<button class="primary-button compact-primary" type="submit">Сохранить черновик и предпросмотр</button></form>' +
         (activeView === 'organization-data' ? previewMarkup : '') + '</section>' +
         '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') + '" data-admin-view="questionnaire">' + readinessMarkup(selectedRef, readiness) + '<h4>Корпоративная анкета</h4>' +

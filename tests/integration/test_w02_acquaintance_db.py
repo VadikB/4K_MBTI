@@ -24,6 +24,9 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
         connection.execute("""CREATE TABLE organization_invitations(
             id BIGSERIAL PRIMARY KEY,organization_id BIGINT,recipient_email TEXT,purpose TEXT,
             assignment_ref TEXT,created_by_user_id BIGINT,revoked_at TIMESTAMP)""")
+        connection.execute("""CREATE TABLE organization_assessment_assignments(
+            id BIGSERIAL PRIMARY KEY,organization_id BIGINT,recipient_user_id BIGINT,
+            assignment_ref TEXT,created_by_user_id BIGINT,status TEXT,revoked_at TIMESTAMP)""")
         connection.execute("""CREATE TABLE questionnaire_response_revisions(
             id BIGSERIAL PRIMARY KEY,organization_id BIGINT,assignment_ref TEXT,status TEXT,
             briefing_json JSONB,organization_context_version_id BIGINT,confirmed_at TIMESTAMP)""")
@@ -57,6 +60,7 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
 
         briefing = {
             "purpose": "Развитие компетенций", "organizer": "Организация А",
+            "responsible_contact": "admin-a@example.test",
             "results_usage": "Для персонального плана развития",
             "result_recipients": "Участник и назначенный администратор",
             "provided_participant_fields": [{"label": "Подразделение", "value": "Продукт"}],
@@ -89,6 +93,13 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
         connection.execute("""UPDATE organization_invitations SET revoked_at=NOW()
             WHERE created_by_user_id=3""")
         assert early_readiness(connection, user_id=2)["status"] == "waiting_for_assignment"
+
+        connection.execute("""INSERT INTO organization_assessment_assignments(
+            organization_id,recipient_user_id,assignment_ref,created_by_user_id,status)
+            VALUES(10,2,'assessment-a',2,'active')""")
+        own_assignment = early_readiness(connection, user_id=2)
+        assert own_assignment["status"] == "ready"
+        assert own_assignment["assignment_ref"] == "assessment-a"
 
         accept_consent(connection, user_id=1, version=2)
         save_answers(connection, user_id=1, answers={"answer_1": "Ответ 1"})

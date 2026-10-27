@@ -30,14 +30,20 @@ def early_readiness(connection, *, user_id: int) -> dict:
         return _waiting("active_membership", university=False)
     organization = dict(memberships[0])
     assignment_rows = connection.execute(
-        """SELECT DISTINCT oi.assignment_ref
-           FROM organization_invitations oi
-           JOIN users u ON LOWER(u.email)=LOWER(oi.recipient_email)
-           WHERE u.id=%s AND oi.organization_id=%s AND oi.purpose='personal_registration'
-             AND oi.assignment_ref IS NOT NULL AND oi.revoked_at IS NULL
-             AND oi.created_by_user_id IS DISTINCT FROM u.id
-           ORDER BY oi.assignment_ref""",
-        (user_id, organization["id"]),
+        """SELECT DISTINCT assignment_ref FROM (
+             SELECT oa.assignment_ref
+             FROM organization_assessment_assignments oa
+             WHERE oa.recipient_user_id=%s AND oa.organization_id=%s
+               AND oa.status='active' AND oa.revoked_at IS NULL
+             UNION
+             SELECT oi.assignment_ref
+             FROM organization_invitations oi
+             JOIN users u ON LOWER(u.email)=LOWER(oi.recipient_email)
+             WHERE u.id=%s AND oi.organization_id=%s AND oi.purpose='personal_registration'
+               AND oi.assignment_ref IS NOT NULL AND oi.revoked_at IS NULL
+               AND oi.created_by_user_id IS DISTINCT FROM u.id
+           ) assignments ORDER BY assignment_ref""",
+        (user_id, organization["id"], user_id, organization["id"]),
     ).fetchall()
     if not assignment_rows:
         if str(organization.get("role") or "") == "admin":

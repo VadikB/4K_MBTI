@@ -233,6 +233,23 @@ class PersonalInvitationBatchResponse(BaseModel):
     items: list[PersonalInvitationResultItem]
 
 
+class AssessmentAssignmentRequest(BaseModel):
+    user_ids: list[int] = Field(min_length=1, max_length=500)
+    assignment_ref: str = Field(min_length=1, max_length=200)
+    operation_id: str = Field(min_length=8, max_length=200)
+
+
+class AssessmentAssignmentResultItem(BaseModel):
+    user_id: int
+    status: str
+    assignment_id: int | None = None
+    error: str | None = None
+
+
+class AssessmentAssignmentBatchResponse(BaseModel):
+    items: list[AssessmentAssignmentResultItem]
+
+
 class AgentReply(BaseModel):
     dashboard: UserDashboard | None = None
     session_id: str
@@ -902,6 +919,7 @@ class AdminOrganizationMemberItem(BaseModel):
     invitation_delivery_status: str = "not_sent"
     invitation_link_status: str = "not_created"
     invitation_expires_at: datetime | None = None
+    assessment_assignments: list[str] = Field(default_factory=list)
 
 
 class AdminOrganizationItem(BaseModel):
