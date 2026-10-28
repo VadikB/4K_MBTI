@@ -1,0 +1,857 @@
+{
+  "url": "https://test.4k-assistant.ru/",
+  "backend_version": "2.0.31",
+  "matching_complete_frontend_refs": [
+    "0b44c26"
+  ],
+  "scope": "Public bytes only; identical frontend bytes do not identify a unique backend SHA",
+  "assets": [
+    {
+      "path": "/",
+      "status": 200,
+      "bytes": 120832,
+      "sha256": "359f0378707a0f24db681d35b89af5075ad86c437c65b357d93c249fd42f527f",
+      "duration_ms": 1665.33,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/assets/decor/subtle-animated-background-decor.png",
+      "status": 200,
+      "bytes": 3593181,
+      "sha256": "08cdb10d7439e21e38d7bddf46b973284fdaf2119ea95aed397210125f01272a",
+      "duration_ms": 5240.01,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/assets/fonts/onest/Onest-Variable.woff",
+      "status": 200,
+      "bytes": 108028,
+      "sha256": "59e3c5996656da1edcf26bbf593c6439f11b26cf9f1a667b2ec2292e2bdbad18",
+      "duration_ms": 1128.84,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/assets/icons/auth-email-outline.svg",
+      "status": 200,
+      "bytes": 358,
+      "sha256": "e117de87a01b279693050574b6f7c176bdf6be3d908b94506204cda924d2d914",
+      "duration_ms": 498.77,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/assets/icons/auth-eye.svg",
+      "status": 200,
+      "bytes": 896,
+      "sha256": "d6497965ae5479429ed1fd55e1302c29b8605eba46714b780e2cdf44c2a2b614",
+      "duration_ms": 428.19,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/assets/icons/download-icon.svg",
+      "status": 200,
+      "bytes": 408,
+      "sha256": "b663aa021b7a261a38de53dd1fcd9c455e98f47dd6f83464aff7868609b1c476",
+      "duration_ms": 477.11,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/assets/icons/exclamationmark-shield-icon.svg",
+      "status": 200,
+      "bytes": 1651,
+      "sha256": "a72b0ea0c290bf152430d9f6d9dc75ddd7bd9783a16f8113480190f3451e2759",
+      "duration_ms": 2579.3,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/admin-dashboard-VLP77SVV.js",
+      "status": 200,
+      "bytes": 433,
+      "sha256": "9b5cf34a1ff39cfd947aec0ed136055f371e9bc87b9cf134ca9b4772e49c0711",
+      "duration_ms": 436.95,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/admin-methodology-A6DZLRNK.js",
+      "status": 200,
+      "bytes": 69058,
+      "sha256": "9e86ba7992ae46d00788adc94643d2c6559513573193f8f0865ab23b4c1edc1e",
+      "duration_ms": 712.49,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/admin-organizations-3HXKG2YA.js",
+      "status": 200,
+      "bytes": 1301,
+      "sha256": "dc28e7dc35e51ca0419447a03680d6c83fd2eb0d683947f0c9d76c80bf9a6ef8",
+      "duration_ms": 435.37,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/admin-prompt-lab-NBW2X75T.js",
+      "status": 200,
+      "bytes": 46646,
+      "sha256": "8adb7f5a2044082b5578b4701000e805345bd989be155c116b707813a9783ec5",
+      "duration_ms": 757.75,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/admin-regression-tests-H5UAW5TU.js",
+      "status": 200,
+      "bytes": 13074,
+      "sha256": "960a876725ae6676e14be483aeeb3980827789ad9b373358128bcaee4e02f1a1",
+      "duration_ms": 585.35,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/admin-report-detail-ZZPRSA24.js",
+      "status": 200,
+      "bytes": 488,
+      "sha256": "cfe4f7444f651835dc50493190d1e54893c1a7bd0ada58bb8d278f5e4e80cbd7",
+      "duration_ms": 901.4,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/admin-reports-NRJGRAMI.js",
+      "status": 200,
+      "bytes": 13143,
+      "sha256": "ad448ed81106580b117c9e5ca469ba40ef16afdceb7911341d8b0d9f46940711",
+      "duration_ms": 545.24,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/ai-welcome-Q6Y4OCLS.js",
+      "status": 200,
+      "bytes": 597,
+      "sha256": "93066f40e083e939af219740f6583c538f5ebfe6b8515298ff68dbf80cd5b21f",
+      "duration_ms": 435.24,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/assessment-547HFTYS.js",
+      "status": 200,
+      "bytes": 596,
+      "sha256": "0eb8eb431ef583c8cb1aac04b34ad0f889603b4d90471747de0b8ea006a0700b",
+      "duration_ms": 464.05,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chat-B3TDNEFH.js",
+      "status": 200,
+      "bytes": 622,
+      "sha256": "4381071c99bfbbdc8448a764e359d6258acb94d09f2a6bf5fcceca22f27f8d3c",
+      "duration_ms": 476.58,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chat-JT64V65I.js",
+      "status": 200,
+      "bytes": 717,
+      "sha256": "e664b0e3687693f70da50069fa8b7b9f0ec6e056fad5eaa360f0afd6853d8df5",
+      "duration_ms": 440.25,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-2JUXQXPD.js",
+      "status": 200,
+      "bytes": 34373,
+      "sha256": "54face2cf732f0687117e556b81d246b783989e7c19bcc6985b2819d82d4a63e",
+      "duration_ms": 659.63,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-5DIIGAQ6.js",
+      "status": 200,
+      "bytes": 2408,
+      "sha256": "430e9256ce697fb7c7e27ee32e56e47979d310f03e6db5a74a5d7611915278d7",
+      "duration_ms": 477.14,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-5RYSOQZO.js",
+      "status": 200,
+      "bytes": 238575,
+      "sha256": "830a63fa0ed06b13ed8e9b2dc7603c099b855af0104f54b830efdd6b223f4ae8",
+      "duration_ms": 1563.43,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-5XKLRMKF.js",
+      "status": 200,
+      "bytes": 12093,
+      "sha256": "6a955f27cdce5b263bfe3e055f8ddcb71037401db14bbc85dc1d96ebfcc34938",
+      "duration_ms": 749.24,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-CUGDJRLA.js",
+      "status": 200,
+      "bytes": 81545,
+      "sha256": "c77c0232cfe6cc9821e75bd6b659b432b27e9d5d46b713e24e97e0826917017b",
+      "duration_ms": 815.06,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-CZ5ZSDVQ.js",
+      "status": 200,
+      "bytes": 628,
+      "sha256": "a4b493ce965482c091a2cc9059da2145aa496016a412d8dc95bee68a4c01252b",
+      "duration_ms": 626.43,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-FW35KP7C.js",
+      "status": 200,
+      "bytes": 27924,
+      "sha256": "e9213569ac73559f26b1fe412474e0d3dd234ba836af9d6a183b31f0c02d75bf",
+      "duration_ms": 799.96,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-IHZJSU2Y.js",
+      "status": 200,
+      "bytes": 180,
+      "sha256": "f055b7575f457dddbfb944bf06f3d1c374097bcf9fcfc9965d6c65d1001d9ca6",
+      "duration_ms": 437.03,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-JCTGIBIL.js",
+      "status": 200,
+      "bytes": 8929,
+      "sha256": "ff52b3b9032cd4cf4fce8f75d997947ea59e29e73d4f8c193836cf331c667d38",
+      "duration_ms": 454.09,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-KYCQXH74.js",
+      "status": 200,
+      "bytes": 12134,
+      "sha256": "27b8a8369237f2b681f8abe7a062480531b84af3661c33c3a2f8dcbcb1c34dcb",
+      "duration_ms": 537.51,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-OQLHMCO7.js",
+      "status": 200,
+      "bytes": 2205,
+      "sha256": "9429b485c60ea0494eeef2552c24180fcea0843f528efb58c9e91b60c9a7cb64",
+      "duration_ms": 464.72,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-T7IB6VDE.js",
+      "status": 200,
+      "bytes": 3876,
+      "sha256": "a40a85ae8034c49e7f65d361fcc075959d9ae30f067b5adb8a40e06492dc6a22",
+      "duration_ms": 608.23,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-W4EBS277.js",
+      "status": 200,
+      "bytes": 24590,
+      "sha256": "aab465d8b606092c0e00e57fac8afca35713b218fea90fdc6c58ab40c6b32786",
+      "duration_ms": 608.29,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-WO6IOGED.js",
+      "status": 200,
+      "bytes": 5591,
+      "sha256": "7bae558fb028304a13d9566ea047180a1cd7883606deabe1199d943d56782737",
+      "duration_ms": 2130.45,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-WWNXA7JH.js",
+      "status": 200,
+      "bytes": 4145,
+      "sha256": "17ec5cf77e076bdfde9dea66bc8cba758b52c9cc5c65c6e6e0728bb7ddb8367c",
+      "duration_ms": 836.55,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/chunk-XXM6BQ2N.js",
+      "status": 200,
+      "bytes": 2247,
+      "sha256": "2d1d6e42c108ac5b6903d724170ea905ed2df146f3e23b08d182d8be79c10f0e",
+      "duration_ms": 437.81,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/dashboard-UFR6HYY3.js",
+      "status": 200,
+      "bytes": 575,
+      "sha256": "74d1fd175d20dd785eea9bf70eac378048a260d442889603ee3ed7fbd5c8fdf3",
+      "duration_ms": 463.62,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/interview-Q7UBYR3Q.js",
+      "status": 200,
+      "bytes": 1036,
+      "sha256": "31e2e0a70ef9ff97790bf57a9873ffcedc14c8a836a7a83c3a7172bf53c60803",
+      "duration_ms": 449.84,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/main.js",
+      "status": 200,
+      "bytes": 82162,
+      "sha256": "2008156272cf99ca5229b76f3a3a970121df04c16ef46936b2b7193cb783a289",
+      "duration_ms": 1119.4,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/onboarding-UR4IRWYE.js",
+      "status": 200,
+      "bytes": 20270,
+      "sha256": "93e8e5876487b2a0684678e167208647ad04b9eeab02689b72740cec3cf0c9eb",
+      "duration_ms": 625.82,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/organizations-VZIU4B6F.js",
+      "status": 200,
+      "bytes": 1315,
+      "sha256": "ce059dcad7a577e9a9685357b5d525dadbe26d6c5df4427f5a3e97b325c48f4d",
+      "duration_ms": 444.43,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/processing-IPKHP6AR.js",
+      "status": 200,
+      "bytes": 545,
+      "sha256": "4b756cf135c4c8f7c93cd9fa5c9b4b87ec52772d43102c37b569b47ebcd1e7e6",
+      "duration_ms": 433.8,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/profile-T7PCK62I.js",
+      "status": 200,
+      "bytes": 304,
+      "sha256": "a1fb221c6deefc70d5f5857c207248aee61cdeaa47d10b1e07ea9e42c4f432a9",
+      "duration_ms": 597.73,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/profile-recovery-N5QECHFF.js",
+      "status": 200,
+      "bytes": 248,
+      "sha256": "17f6f2ccc0c4e08aec5497072703e9455d5f9b8053387fcb1539977702288cb5",
+      "duration_ms": 478.54,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/report-A72Q2A5B.js",
+      "status": 200,
+      "bytes": 659,
+      "sha256": "e81b7d52c757c1a80a02521c68a2cfb2240604d7dc61e78e090c9a5fef3b8e69",
+      "duration_ms": 436.71,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/report-VKNCFSPF.js",
+      "status": 200,
+      "bytes": 951,
+      "sha256": "8899bea7a3055929c69485ca463d649ac1bbac9ea18562a061ead3e42387a6ab",
+      "duration_ms": 459.64,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/reports-EH6XQPP6.js",
+      "status": 200,
+      "bytes": 542,
+      "sha256": "ee7d9d34a577b7a2fbc9ec3e411aecdc1cf6fe01439988e4c9ec4930bb8b5252",
+      "duration_ms": 437.45,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/router-MKCOOTBO.js",
+      "status": 200,
+      "bytes": 299,
+      "sha256": "8de4aea1c961b20edb865427d7dc1a3620fbd53319f75018274217aca7371e23",
+      "duration_ms": 1816.36,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/screen-loaders-VRWN5OUY.js",
+      "status": 200,
+      "bytes": 1263,
+      "sha256": "15551dbcc13ab4c2e6618009e523c957c1e2415fa3c5b568de4502a454816f88",
+      "duration_ms": 502.86,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/dist/session-MN5MDMOP.js",
+      "status": 200,
+      "bytes": 400,
+      "sha256": "9e48d60d214ec9fc9772b70f3a5e52c7a295ec7e3a02f9564539da9c481e96d5",
+      "duration_ms": 480.83,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/base.css",
+      "status": 200,
+      "bytes": 4141,
+      "sha256": "4cda16d6ec0d028693832d84deaafa0553a4b9f02a3a6dd18202909954ba2702",
+      "duration_ms": 494.54,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/components.css",
+      "status": 200,
+      "bytes": 10761,
+      "sha256": "f6b6433aa2c296aa1a3db0ab4a5fedce9f7671a667eba248ff2c646c4e3dc8ee",
+      "duration_ms": 569.24,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/admin-methodology.css",
+      "status": 200,
+      "bytes": 19759,
+      "sha256": "123ae1e27b06c9b14304accb9d16d3747556d09b23de7c393245ce07a275c62d",
+      "duration_ms": 848.84,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/admin-organizations.css",
+      "status": 200,
+      "bytes": 18985,
+      "sha256": "5fc05ac9c5ab97b7897c066b730ad94a7432676efb8477db869e08064bb3a86c",
+      "duration_ms": 641.98,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/admin-prompt-lab.css",
+      "status": 200,
+      "bytes": 7595,
+      "sha256": "d6631b3fe80476332d685f4aa4fd5578d527901366fd2d9fa4ba47384a74474e",
+      "duration_ms": 468.06,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/admin-report-detail.css",
+      "status": 200,
+      "bytes": 23916,
+      "sha256": "6e32cb6bd9b595ed2e00ed98703803a792a1f7aa8e6a8c16f8b398f0946f1844",
+      "duration_ms": 1368.27,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/admin-reports.css",
+      "status": 200,
+      "bytes": 8043,
+      "sha256": "415488333a2643363a65cb98433e0a048079ed5dba0b60debbfea59c8d6955bd",
+      "duration_ms": 567.75,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/admin.css",
+      "status": 200,
+      "bytes": 9120,
+      "sha256": "aa667a33e801e0eb813511a2de458d0bb0d943e4afaffb0e5b33bf1c2258ed9c",
+      "duration_ms": 916.18,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/ai-welcome.css",
+      "status": 200,
+      "bytes": 14483,
+      "sha256": "b993a8d801d6b1e6cd4fe07bcdee6d93eb6ebe88707a4188519ef3268eafa120",
+      "duration_ms": 2374.37,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/app-loader.css",
+      "status": 200,
+      "bytes": 3418,
+      "sha256": "11fd92038d41a77b2bd9f08e67279fea3c5bd38ba640f7a4b9f6aad8810dbad7",
+      "duration_ms": 816.78,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/auth.css",
+      "status": 200,
+      "bytes": 25434,
+      "sha256": "0dc86b8ff42a6fe46ca1c4fd85519247af37acc5125b371c1df08a787146a9ab",
+      "duration_ms": 1012.56,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/chat.css",
+      "status": 200,
+      "bytes": 19883,
+      "sha256": "fe23d40e99333cca5164e3c220c6681e6acf6a5183598a47b3d21c53dbd4c138",
+      "duration_ms": 976.3,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/dashboard.css",
+      "status": 200,
+      "bytes": 22508,
+      "sha256": "f688aa7f61fe935bb8c4b8c69c8e635d70e47b4c5c02673a9e30946d4d779e42",
+      "duration_ms": 869.43,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/interview.css",
+      "status": 200,
+      "bytes": 27059,
+      "sha256": "b429cfb8ad7a7603c3c7cf1573049801025d0ed450fd5838966859701d37647e",
+      "duration_ms": 649.45,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/onboarding.css",
+      "status": 200,
+      "bytes": 13403,
+      "sha256": "f324470eb858de05e3399f48ab9912cb964464b89881c30763dfcf3ab5f23051",
+      "duration_ms": 728.48,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/prechat.css",
+      "status": 200,
+      "bytes": 3166,
+      "sha256": "d24ea18488872546e8152ada527e1e07368618b485a6d90224b35f61a592e9e3",
+      "duration_ms": 1461.35,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/processing.css",
+      "status": 200,
+      "bytes": 9132,
+      "sha256": "4014a90dfefef18b68b1e5450329404745ca7a7cdde0e6b217be4ce46f5584a4",
+      "duration_ms": 537.39,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/profile.css",
+      "status": 200,
+      "bytes": 19822,
+      "sha256": "ea6bd7532031d5609d32d41502f30e18516103da3a8b2d0082c63e2245962517",
+      "duration_ms": 712.76,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/report.css",
+      "status": 200,
+      "bytes": 53489,
+      "sha256": "c33cf36c89c4b9b9cc40bc4b21742d4714d17605abbfbd1c9adcb6ab34c08a78",
+      "duration_ms": 1066.59,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/screens/reports.css",
+      "status": 200,
+      "bytes": 3479,
+      "sha256": "5cab8783e9e6d54e37afb175c2b5bf2ce18edb841adc5c99af8047eee5454383",
+      "duration_ms": 4367.84,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/tokens.css",
+      "status": 200,
+      "bytes": 3796,
+      "sha256": "85987fef50f78ce99a6677f294d1bb62ff089e0ebc289b0ede69153dd10dd276",
+      "duration_ms": 718.87,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/styles/utilities.css",
+      "status": 200,
+      "bytes": 15526,
+      "sha256": "264355eb9dbd09448cd6198037d128b19b7e876ed7d8728f0aab83a6e43be721",
+      "duration_ms": 1045.37,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    },
+    {
+      "path": "/web/vendor/chart.js/chart.umd.min.js",
+      "status": 200,
+      "bytes": 205637,
+      "sha256": "d46d97a1fd022c5fb29fa2f45ebcbc32202d73aeebf076ce5f7248f5498fc7d7",
+      "duration_ms": 1771.45,
+      "cache_control": "no-store, no-cache, must-revalidate, max-age=0",
+      "matching_refs": [
+        "origin/main",
+        "bbb589c6875c2db103fc516b29123c056d1b510a",
+        "0b44c26"
+      ]
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { state, persistAssessmentContext, clearAssessmentContext } from './state.js';
-import { advanceSessionGeneration, getSessionGeneration, readApiResponse } from './api.js';
+import { advanceSessionGeneration, getSessionGeneration, readApiResponse, fetchWithDeadline } from './api.js';
 import { isAdminUserPayload } from './utils/format.js';
 import { resetChatScreen } from './screen-loaders.js';
 import { returnToStart } from './router.js';
@@ -84,14 +84,15 @@ const selectedProfileQuery = () => state.dashboard?.personalized_profile_id
   ? '?personalized_profile_id=' + encodeURIComponent(state.dashboard.personalized_profile_id) : '';
 
 export const restoreServerSession = async () => {
-  const restoreAssessmentArea = state.canAdmin && state.activeArea === 'assessment';
-  const response = await fetch('/users/session/restore' + selectedProfileQuery(), {
+  let restoreAssessmentArea = state.canAdmin && state.activeArea === 'assessment';
+  const response = await fetchWithDeadline('/users/session/restore' + selectedProfileQuery(), {
     credentials: 'same-origin',
   });
   const data = await readApiResponse(response, 'Не удалось восстановить пользовательскую сессию.');
   if (!data.authenticated || !data.user) {
     return false;
   }
+  restoreAssessmentArea = restoreAssessmentArea && Number(state.pendingUser?.id) === Number(data.user.id);
   if (state.pendingUser?.id !== data.user.id) { clearAssessmentContext(); clearProfileDisplay(); }
   advanceSessionGeneration({ broadcast: false });
   state.pendingUser = data.user;
@@ -106,7 +107,9 @@ export const restoreServerSession = async () => {
     state.pendingAgentMessage = null;
     state.pendingRoleOptions = [];
     state.pendingNoChangesQuickReply = false;
-    if (!restoreAssessmentArea && !state.currentScreen?.startsWith('admin')) state.currentScreen = 'admin';
+    if (!restoreAssessmentArea && !state.currentScreen?.startsWith('admin')) {
+      state.currentScreen = state.adminDashboard?.is_superadmin ? 'admin' : 'admin-organizations';
+    }
   } else if (!state.currentScreen || state.currentScreen === 'auth') {
     state.currentScreen = 'auth';
   }
@@ -121,7 +124,7 @@ export const restoreLocalUserSession = async () => {
 
   try {
     const restoreAssessmentArea = state.canAdmin && state.activeArea === 'assessment';
-    const response = await fetch('/users/' + state.pendingUser.id + '/session-bootstrap' + selectedProfileQuery(), {
+    const response = await fetchWithDeadline('/users/' + state.pendingUser.id + '/session-bootstrap' + selectedProfileQuery(), {
       credentials: 'same-origin',
     });
     const data = await readApiResponse(response, 'Не удалось восстановить локальную пользовательскую сессию.');
@@ -139,7 +142,9 @@ export const restoreLocalUserSession = async () => {
       state.pendingAgentMessage = null;
       state.pendingRoleOptions = [];
       state.pendingNoChangesQuickReply = false;
-      if (!restoreAssessmentArea && !state.currentScreen?.startsWith('admin')) state.currentScreen = 'admin';
+      if (!restoreAssessmentArea && !state.currentScreen?.startsWith('admin')) {
+        state.currentScreen = state.adminDashboard?.is_superadmin ? 'admin' : 'admin-organizations';
+      }
     } else if (!state.currentScreen || state.currentScreen === 'auth') {
       state.currentScreen = 'auth';
     }

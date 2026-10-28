@@ -67,7 +67,6 @@ class WebSessionService:
             connection.commit()
 
     def create_session(self, user_id: int, *, selected_organization_id: int | None = None) -> str:
-        self.ensure_schema()
         token = token_urlsafe(32)
         with get_connection() as connection:
             connection.execute(
@@ -83,7 +82,6 @@ class WebSessionService:
     def selected_organization_id(self, token: str | None) -> int | None:
         if not token:
             return None
-        self.ensure_schema()
         with get_connection() as connection:
             row = connection.execute(
                 "SELECT selected_organization_id FROM web_user_sessions WHERE token = %s AND expires_at > NOW() LIMIT 1",
@@ -92,7 +90,6 @@ class WebSessionService:
         return int(row["selected_organization_id"]) if row and row["selected_organization_id"] is not None else None
 
     def touch_session(self, token: str) -> None:
-        self.ensure_schema()
         with get_connection() as connection:
             connection.execute(
                 """
@@ -107,7 +104,6 @@ class WebSessionService:
     def delete_session(self, token: str | None) -> None:
         if not token:
             return
-        self.ensure_schema()
         with get_connection() as connection:
             connection.execute(
                 """
@@ -121,7 +117,6 @@ class WebSessionService:
     def get_user_by_token(self, token: str | None) -> UserResponse | None:
         if not token:
             return None
-        self.ensure_schema()
         with get_connection() as connection:
             row = connection.execute(
                 USER_SELECT_SQL

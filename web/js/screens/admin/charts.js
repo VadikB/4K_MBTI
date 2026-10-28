@@ -27,7 +27,7 @@ const adminCompetencyBarValueLabelsPlugin = {
     const context = chart.ctx;
     context.save();
     context.fillStyle = '#18b8c6';
-    context.font = '700 13px Inter, sans-serif';
+    context.font = '700 13px Onest, sans-serif';
     context.textAlign = 'center';
     context.textBaseline = 'bottom';
     meta.data.forEach((bar, index) => {
@@ -50,7 +50,7 @@ const adminActivityBarValueLabelsPlugin = {
     const barSlotsAreReadable = chart.chartArea.width / Math.max(dataset.data.length, 1) >= 24;
     context.save();
     context.fillStyle = '#68777c';
-    context.font = '700 11px Inter, sans-serif';
+    context.font = '700 11px Onest, sans-serif';
     context.textAlign = 'center';
     context.textBaseline = 'bottom';
     meta.data.forEach((bar, index) => {
@@ -224,12 +224,12 @@ export const renderAdminCompetencyBarChart = (competencies = []) => {
           backgroundColor: '#222c30',
           displayColors: false,
           titleFont: {
-            family: 'Inter',
+            family: 'Onest',
             size: 13,
             weight: '600',
           },
           bodyFont: {
-            family: 'Inter',
+            family: 'Onest',
             size: 12,
             weight: '500',
           },
@@ -257,7 +257,7 @@ export const renderAdminCompetencyBarChart = (competencies = []) => {
             maxRotation: 0,
             minRotation: 0,
             font: {
-              family: 'Inter',
+              family: 'Onest',
               size: 12,
               weight: '700',
             },
@@ -274,7 +274,7 @@ export const renderAdminCompetencyBarChart = (competencies = []) => {
               return value + '%';
             },
             font: {
-              family: 'Inter',
+              family: 'Onest',
               size: 11,
               weight: '600',
             },
@@ -473,12 +473,12 @@ export const renderAdminActivityBarChart = (adminDashboard = {}) => {
           backgroundColor: '#222c30',
           displayColors: false,
           titleFont: {
-            family: 'Inter',
+            family: 'Onest',
             size: 13,
             weight: '600',
           },
           bodyFont: {
-            family: 'Inter',
+            family: 'Onest',
             size: 12,
             weight: '500',
           },
@@ -505,7 +505,7 @@ export const renderAdminActivityBarChart = (adminDashboard = {}) => {
             autoSkip: true,
             maxTicksLimit: 14,
             font: {
-              family: 'Inter',
+              family: 'Onest',
               size: 11,
               weight: '700',
             },
@@ -519,7 +519,7 @@ export const renderAdminActivityBarChart = (adminDashboard = {}) => {
             precision: 0,
             color: '#68777c',
             font: {
-              family: 'Inter',
+              family: 'Onest',
               size: 11,
               weight: '600',
             },

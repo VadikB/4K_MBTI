@@ -1700,7 +1700,10 @@ def _build_admin_dashboard(connection, scope: AdminScope, period_key: str = "30d
             AdminInsightCard(title="Наиболее слабый контур", description=f"Минимальный средний показатель сейчас у направления «{weakest['name']}»."),
             AdminInsightCard(title="Лучшая группа", description=f"Самый высокий средний результат показывает направление «{strongest['name']}»."),
             AdminInsightCard(title="Фокус развития", description="Админ-панель позволяет отслеживать завершение оценок и динамику загрузки платформы."),
-        ],
+        ] if completed_sessions else [AdminInsightCard(
+            title="Пока нет данных для выводов",
+            description="Аналитика появится после завершения оценок.",
+        )],
         activity_points=activity_points,
         activity_labels=activity_labels,
         activity_axis_max=activity_axis_max,
@@ -4942,6 +4945,20 @@ def preview_admin_organization_questionnaire(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@router.get("/admin/organizations/{organization_id}/questionnaire/{revision_id}")
+def get_admin_organization_questionnaire_revision(organization_id: int, revision_id: int, request: Request) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_organization_admin(connection, user, organization_id)
+        row = connection.execute(
+            "SELECT * FROM questionnaire_response_revisions WHERE id=%s AND organization_id=%s",
+            (revision_id, organization_id),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="QUESTIONNAIRE_REVISION_NOT_FOUND")
+        return questionnaire_sources.public_revision(dict(row))
+
+
 @router.post("/admin/organizations/{organization_id}/questionnaire/{revision_id}/confirm")
 def confirm_admin_organization_questionnaire(
     organization_id: int, revision_id: int, payload: QuestionnaireConfirmRequest, request: Request,
@@ -4966,13 +4983,19 @@ def confirm_admin_organization_questionnaire(
                 recipient_user_ids=list(payload.recipient_user_ids),
             )
             connection.commit()
-            return {
-                **questionnaire_sources.public_revision(result),
-                "readiness": questionnaire_sources.admin_assignment_readiness(
+            confirmed = questionnaire_sources.public_revision(result)
+            try:
+                confirmed["readiness"] = questionnaire_sources.admin_assignment_readiness(
                     connection, organization_id=organization_id,
                     assignment_ref=str(result["assignment_ref"]),
-                ),
-            }
+                )
+            except Exception:
+                # Confirmation was committed. A supplementary read cannot undo it.
+                connection.rollback()
+                logger.exception("Questionnaire readiness unavailable after confirmation")
+                confirmed["readiness"] = None
+                confirmed["readiness_refresh_required"] = True
+            return confirmed
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 

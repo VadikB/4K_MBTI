@@ -17,6 +17,7 @@ FRONTEND_VERSION_RE = re.compile(r'(?m)^export const APP_RELEASE = "[^"]*";$')
 INDEX_ASSET_VERSION_RE = re.compile(
     r'((?:href|src)="/web/(?:styles/[^"\n]+|dist/main\.js)\?v=)([^"\n]+)(")'
 )
+INDEX_RELEASE_BADGE_RE = re.compile(r'(data-app-release-number>)([^<]*)(</span>)')
 
 
 def parse_version(value: str) -> tuple[int, int, int]:
@@ -69,6 +70,9 @@ def check_consistency(root: Path = ROOT, *, check_index: bool = True) -> str:
         asset_versions = INDEX_ASSET_VERSION_RE.findall(index)
         if not asset_versions or not all(index_version == version for _, index_version, _ in asset_versions):
             raise ValueError("web/index.html asset query versions do not match the application release")
+        badges = INDEX_RELEASE_BADGE_RE.findall(index)
+        if not badges or any(badge_version != version for _, badge_version, _ in badges):
+            raise ValueError("web/index.html visible release versions do not match the application release")
     return version
 
 
@@ -92,6 +96,7 @@ def prepare_updates(root: Path, version: str) -> dict[Path, str]:
     updated_index, count = INDEX_ASSET_VERSION_RE.subn(lambda match: match[1] + version + match[3], index)
     if count < 2:
         raise ValueError("Expected CSS and main.js release query versions in web/index.html")
+    updated_index = INDEX_RELEASE_BADGE_RE.sub(lambda match: match[1] + version + match[3], updated_index)
     return {
         project_path: _replace_exactly_once(project, PROJECT_VERSION_RE, f'version = "{version}"', "pyproject.toml"),
         lock_path: _replace_exactly_once(lock, LOCK_ROOT_RE, lambda match: match[1] + version + match[2], "uv.lock"),

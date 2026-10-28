@@ -23,6 +23,7 @@ import {
   authenticatedJourneyErrorMessage,
   installSessionRequestTracking,
   registerUnauthorizedResponseHandler,
+  fetchWithDeadline,
 } from './api.js';
 import { hideAllPanels, returnToStart, openAcquaintanceWaiting } from './router.js';
 import { initAppFooter } from './components/app-footer.js';
@@ -40,7 +41,6 @@ import {
   openAdminDashboardScreen,
   loadAdminDashboardData,
   openAdminOrganizationsScreen,
-  loadAdminOrganizationsData,
   openAdminRegressionTestsScreen,
   openAdminPromptLabScreen,
   openAdminReportsScreen,
@@ -55,7 +55,7 @@ renderReleaseVersion(document, resolveReleaseVersion(null, APP_RELEASE));
 
 const syncRuntimeReleaseNumber = async () => {
   try {
-    const response = await fetch('/users/version', {
+    const response = await fetchWithDeadline('/users/version', {
       credentials: 'same-origin',
     });
     if (!response.ok) {
@@ -93,7 +93,7 @@ const resetInitialState = () => {
   state.assessmentTotalCases = 0;
   state.currentScreen = 'auth';
   hideAllPanels();
-  authPanel.classList.remove('hidden');
+  document.getElementById('session-restore-panel')?.classList.remove('hidden');
   if (authTokenForm) {
     authTokenForm.classList.add('hidden');
   }
@@ -128,6 +128,8 @@ const bootApp = async () => {
     try {
       const organization = await activateOrganizationInvitation(invitationToken);
       if (organization?.personal) {
+        hideAllPanels();
+        authPanel.classList.remove('hidden');
         // A personal invitation is a complete, priority auth route. Do not let
         // stale local state or another server session replace its recipient.
         return;
@@ -156,6 +158,8 @@ const bootApp = async () => {
   restoreAssessmentContext();
   restoreAssessmentContextFromParams(params);
   if (authTokenFromLink) {
+    document.getElementById('session-restore-panel')?.classList.add('hidden');
+    authPanel.classList.remove('hidden');
     if (authTokenForm) {
       authTokenForm.classList.remove('hidden');
     }
@@ -185,6 +189,10 @@ const bootApp = async () => {
       restoredServerSession = await restoreServerSession();
     } catch (error) {
       console.error('Failed to restore server session', error);
+      if (error?.status !== 401) {
+        showSessionRestoreFailure();
+        return;
+      }
     }
   }
 
@@ -193,6 +201,10 @@ const bootApp = async () => {
       await restoreLocalUserSession();
     } catch (error) {
       console.error('Failed to restore local user session', error);
+      if (error?.status !== 401) {
+        showSessionRestoreFailure();
+        return;
+      }
     }
   }
 
@@ -228,11 +240,6 @@ const bootApp = async () => {
       return;
     }
     if (state.currentScreen === 'admin-organizations' && state.isAdmin) {
-      try {
-        await loadAdminOrganizationsData();
-      } catch (error) {
-        console.error('Failed to restore admin organizations', error);
-      }
       void openAdminOrganizationsScreen();
       return;
     }
@@ -402,3 +409,13 @@ window.addEventListener('popstate', () => {
 });
 
 void bootApp();
+
+function showSessionRestoreFailure() {
+  hideAllPanels();
+  document.getElementById('session-restore-panel')?.classList.remove('hidden');
+  document.getElementById('session-restore-title').textContent = 'Не удалось восстановить сессию';
+  document.getElementById('session-restore-message').textContent = 'Сервер временно недоступен. Повторите проверку доступа.';
+  const retry = document.getElementById('session-restore-retry');
+  retry.classList.remove('hidden');
+  retry.onclick = () => window.location.reload();
+}

@@ -796,15 +796,22 @@ const applyAuthResponse = async (data) => {
   state.pendingNoChangesQuickReply = data.exists && shouldOfferNoChangesQuickReply(state.pendingAgentMessage) && hasRequiredProfileFields(data.user);
 
   if (state.isAdmin) {
+    state.canAdmin = true;
+    state.activeArea = 'management';
     state.sessionId = null;
     state.pendingAgentMessage = null;
     state.pendingRoleOptions = [];
     state.pendingNoChangesQuickReply = false;
-    setCurrentScreen('admin');
+    setCurrentScreen(state.adminDashboard?.is_superadmin ? 'admin' : 'admin-organizations');
     persistAssessmentContext();
     hideLoader();
-    const adminDashboardModule = await loadAdminDashboard();
-    adminDashboardModule.openAdminDashboard();
+    if (state.adminDashboard?.is_superadmin) {
+      const adminDashboardModule = await loadAdminDashboard();
+      adminDashboardModule.openAdminDashboard();
+    } else {
+      const organizationsModule = await loadAdminOrganizations();
+      await organizationsModule.openAdminOrganizations();
+    }
     return;
   }
 
@@ -1710,22 +1717,7 @@ if (adminOrganizationsList) {
     if (!field.closest('[data-action="preview-early-data"], [data-action="preview-questionnaire"], .admin-questionnaire-preview')) return;
     const preview = field.closest('.admin-questionnaire-preview');
     if (preview && ['questionnaire_recipient', 'questionnaire_recipient_user'].includes(field.getAttribute('name'))) {
-      const adminToggle = preview.querySelector('input[name="questionnaire_recipient"][value="organization_admin"]');
-      const userFields = [...preview.querySelectorAll('input[name="questionnaire_recipient_user"]')];
-      if (!adminToggle?.checked) userFields.forEach((input) => { input.checked = false; input.disabled = true; });
-      else userFields.forEach((input) => { input.disabled = false; });
-      const selectedUsers = userFields.filter((input) => input.checked).length;
-      const valid = !adminToggle?.checked || selectedUsers > 0;
-      const error = preview.querySelector('[data-questionnaire-recipient-error]');
-      if (error) {
-        error.textContent = valid ? '' : 'Выберите хотя бы одного представителя заказчика.';
-        error.classList.toggle('hidden', valid);
-      }
-      const projection = preview.querySelector('[data-questionnaire-recipient-projection]');
-      if (projection) projection.textContent = adminToggle?.checked && selectedUsers
-        ? projection.dataset.adminProjection : projection.dataset.participantProjection;
-      const confirm = preview.querySelector('[data-action="confirm-questionnaire"]');
-      if (confirm) confirm.disabled = !valid || Boolean(preview.querySelector('[data-preview-stale]'));
+      withScreen(loadAdminOrganizations, (module) => module.updateAdminOrganizationQuestionnaireRecipients(organizationId, preview));
       return;
     }
     const assessmentRef = field.closest('.admin-questionnaire-preview')?.getAttribute('data-assessment-ref') ||
@@ -1786,6 +1778,10 @@ if (adminOrganizationsList) {
       if (recipientUserIds.length && !recipients.includes('organization_admin')) recipients.push('organization_admin');
       withScreen(loadAdminOrganizations, (module) =>
         module.confirmAdminOrganizationQuestionnaire(organizationId, Number(value), recipients, recipientUserIds));
+      return;
+    }
+    if (button.dataset.action === 'check-questionnaire-confirmation') {
+      withScreen(loadAdminOrganizations, (module) => module.checkAdminOrganizationConfirmation(organizationId, Number(value)));
       return;
     }
     if (button.dataset.action === 'retry-questionnaire-load') {

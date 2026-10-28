@@ -125,10 +125,10 @@ class _ReadinessConnection:
         if "SELECT status FROM questionnaire_response_revisions" in query:
             return _One({"status": self.latest} if self.latest else None)
         if "assessment_preparation_jobs" in query:
-            assert _params == (3, "assessment-a")
+            assert _params == (3, "assessment-a", "assessment-a")
             return _One({"in_progress": self.in_progress})
         if "SELECT DISTINCT u.id AS user_id" in query:
-            assert _params == (3, "assessment-a")
+            assert _params == (3, "assessment-a", "assessment-a")
             return _Many([{"user_id": number + 1} for number in range(self.total)])
         if "participant_acquaintance_confirmations" in query:
             user_id = int(_params[0])

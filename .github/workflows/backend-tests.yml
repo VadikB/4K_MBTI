@@ -174,15 +174,15 @@ jobs:
           TEST_SSH_HOST: ${{ secrets.TEST_SSH_HOST }}
         run: |
           set -eu
-          test -n "$TEST_SSH_PRIVATE_KEY"
-          test -n "$TEST_SSH_HOST"
+          test -n "$TEST_SSH_PRIVATE_KEY" || { echo "::error::TEST_SSH_PRIVATE_KEY is missing in environment test"; exit 1; }
+          test -n "$TEST_SSH_HOST" || { echo "::error::TEST_SSH_HOST is missing in environment test"; exit 1; }
           install -m 700 -d ~/.ssh
           printf '%s\n' "$TEST_SSH_PRIVATE_KEY" > ~/.ssh/test_deploy_key
           chmod 600 ~/.ssh/test_deploy_key
-          ssh-keygen -y -f ~/.ssh/test_deploy_key >/dev/null
+          ssh-keygen -y -f ~/.ssh/test_deploy_key >/dev/null || { echo "::error::Test SSH private key is invalid or requires a passphrase"; exit 1; }
 
           expected_fingerprint="SHA256:WaR/8vp4pqCqig4CjWai9WN0GGW93FJGtDFXf1GgYbo"
-          ssh-keyscan -t ed25519 "$TEST_SSH_HOST" > ~/.ssh/known_hosts
+          ssh-keyscan -T 10 -t ed25519 "$TEST_SSH_HOST" > ~/.ssh/known_hosts || { echo "::error::Cannot obtain test SSH host key: check test host, DNS, port 22 and runner access"; exit 1; }
           chmod 600 ~/.ssh/known_hosts
           actual_fingerprint="$(ssh-keygen -lf ~/.ssh/known_hosts -E sha256 | awk '{print $2}')"
           if [ "$actual_fingerprint" != "$expected_fingerprint" ]; then

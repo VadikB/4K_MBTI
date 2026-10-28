@@ -11,6 +11,6 @@ test('F22-04 keeps newer server revisions and post-submit drafts', () => {
   assert.match(organizations, /currentCard\?\.querySelector\('form\[data-action=/);
   assert.match(organizations, /formSignature\(form\) === signature/);
   assert.match(organizations, /captureFormDraft\(organizationId, form\)/);
-  assert.match(organizations, /if \(!changedActions\.has\(action\)\)/);
+  assert.match(organizations, /if \(!changedActions\.has\(action\) &&/);
   assert.match(organizations, /Показана более новая серверная редакция/);
 });

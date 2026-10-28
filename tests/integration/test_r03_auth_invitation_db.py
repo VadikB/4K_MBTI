@@ -217,6 +217,8 @@ def test_selected_organization_survives_session_restore_and_access_recheck(invit
             yield connection
 
     monkeypatch.setattr(session_module, "get_connection", session_connection)
+    # Match application startup: request-path session operations no longer run DDL.
+    session_module.web_session_service.ensure_schema()
     token = session_module.web_session_service.create_session(user_id, selected_organization_id=second_id)
     assert session_module.web_session_service.selected_organization_id(token) == second_id
     with session_connection() as connection:

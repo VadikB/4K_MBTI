@@ -12,6 +12,7 @@ from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.concurrency import run_in_threadpool
 
 from Api.database import ensure_core_schema, get_connection, get_connection_pool_stats
 from Api.routes import router as users_router
@@ -114,7 +115,7 @@ def _should_persist_request_audit(request: Request, status_code: int) -> bool:
 @app.middleware("http")
 async def disable_browser_cache(request: Request, call_next):
     started_at = perf_counter()
-    current_user = _resolve_request_user(request)
+    current_user = None if _is_static_request_path(str(request.url.path)) else await run_in_threadpool(_resolve_request_user, request)
     client_ip = request.client.host if request.client else None
     response = await call_next(request)
     if request.url.path == "/" or request.url.path.startswith("/web/"):
@@ -122,7 +123,7 @@ async def disable_browser_cache(request: Request, call_next):
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
     if settings.audit_logs_to_db and _should_persist_request_audit(request, response.status_code):
-        write_system_log(
+        await run_in_threadpool(write_system_log,
             level="INFO",
             logger_name="http.audit",
             message=f"{request.method} {request.url.path} -> {response.status_code}",
@@ -144,16 +145,18 @@ async def disable_browser_cache(request: Request, call_next):
 @app.middleware("http")
 async def log_unhandled_exceptions(request: Request, call_next):
     started_at = perf_counter()
-    current_user = _resolve_request_user(request)
+    current_user = None
     client_ip = request.client.host if request.client else None
     try:
+        if not _is_static_request_path(str(request.url.path)):
+            current_user = await run_in_threadpool(_resolve_request_user, request)
         return await call_next(request)
     except FastAPIHTTPException:
         raise
     except Exception as exc:
         traceback_text = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-        if settings.audit_logs_to_db:
-            write_system_log(
+        if settings.audit_logs_to_db and not _is_static_request_path(str(request.url.path)):
+            await run_in_threadpool(write_system_log,
                 level="ERROR",
                 logger_name="http.exception",
                 message=f"Unhandled exception during {request.method} {request.url.path}: {exc}",
