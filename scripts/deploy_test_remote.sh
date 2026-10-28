@@ -1,7 +1,11 @@
 #!/bin/sh
 set -eu
 
-project_dir="/home/user1/projects/Agent4K-Test"
+project_dir="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)"
+case "$project_dir" in
+  /home/user1/projects/Agent4K-Test|/home/user1/projects/4K-Mbti-Test) ;;
+  *) echo "Refusing deployment outside the configured test checkouts" >&2; exit 1 ;;
+esac
 service_name="agent4k-test.service"
 health_url="http://127.0.0.1:8002/users/version"
 asset_url="http://127.0.0.1:8002/web/dist/main.js"

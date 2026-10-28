@@ -34,8 +34,8 @@ https://test.4k-assistant.ru/. Визуальная приёмка владел�
 
 1. TASK01 реализован и проверен адресными HTTP/PostgreSQL/браузерными тестами.
 2. TASK02 реализован; Chromium и сверка четырёх ширин выполнены.
-3. TASK03 реализован; единственный кандидат 2.0.33. Активны итоговая integration,
-   передача одним PR, обязательный CI, человеческое review и выпуск на HTTPS-test.
+3. TASK03 реализован; единственный кандидат 2.0.33. Локальный минимум завершён.
+   Активны передача одним PR, обязательный CI, человеческое review и выпуск на HTTPS-test.
 
 ## Проверки
 
@@ -94,6 +94,10 @@ PostgreSQL integration на изолированной test/pytest-БД; Playwri
   version endpoint не блокирует первую отрисовку и не подменяет frontend release.
   Политика no-store/retention immutable chunks не менялась без измерений.
   Workflow сообщает конкретную фазу ошибки Configure SSH, fingerprint неизменён.
+  Исправлено несовпадение deployment checkout: workflow запускает скрипт из
+  `4K-Mbti-Test`, раньше он принудительно переходил в `Agent4K-Test`. Теперь
+  используется фактический каталог запущенного скрипта; allowlist ограничивает
+  его этими двумя существующими test-путями, service/порт не меняются.
 
 ## Изменённые файлы
 
@@ -105,7 +109,8 @@ PostgreSQL integration на изолированной test/pytest-БД; Playwri
 - `web/index.html`, `web/styles/screens/admin-organizations.css`, `web/dist/`:
   оболочка/компоновка и собранный кандидат.
 - `scripts/release_version.py`, `pyproject.toml`, `uv.lock`, `web/js/config.js`:
-  единый PATCH 2.0.33; `.github/workflows/backend-tests.yml`: диагностика SSH.
+  единый PATCH 2.0.33; `.github/workflows/backend-tests.yml`: диагностика SSH;
+  `scripts/deploy_test_remote.sh`: согласованный test checkout.
 - `scripts/adm28_browser_fixture.py`, `scripts/check_https_release.py`, адресные
   unit/frontend/HTTP/integration/browser tests и evidence: воспроизводимость.
 
@@ -138,12 +143,18 @@ runtime M1–M8 не объявлен соответствующим всему 
 - `npm run build:web`; `scripts/check_release_version.py` — PASS, 2.0.33.
 - `.venv/bin/python -m pytest -m 'not integration and not llm' -q` — PASS, 679:
   598 unit и 81 HTTP, реального LLM и рабочей БД нет.
+  После дополнительной deploy-регрессии `npm run test:backend` — PASS, 599 unit.
+  Дополнительная регрессия отказа deploy из неизвестного каталога:
+  `tests/unit/test_frontend_asset_retention.py` — PASS, 4.
 - Полный integration на собственном `agent4k_pytest`, localhost:55448: первый прогон
   165 PASS / 2 FAIL / 2 llm SKIP. Причина двух FAIL — fixture без явного startup
   web-session schema после выноса DDL из запросов. Fixture исправлена;
-  повтор двух затронутых файлов — PASS, 15. Повтор полного набора выполняется.
+  повтор двух затронутых файлов — PASS, 15. Повтор полного набора — PASS,
+  167 passed / 2 llm skipped (explicit opt-in, не относятся к стандартному набору),
+  exit 0. Stand полностью изолирован от developer/production DB.
 - `npx playwright test tests/browser/adm28-real.spec.mjs tests/browser/auth-r03.spec.mjs`
-  — PASS, 60; после финальных адресных правок — PASS, 16 затронутых сценариев.
+  — PASS, 63, включая поздний POST после смены account/assessment,
+  version до JS, hover/disabled и единственную навигацию собственной оценки.
   Один реальный локальный backend/PostgreSQL, остальные UI mocks различены.
 - `sh -n scripts/deploy_test_remote.sh`; YAML parse workflow; `git diff --check` — PASS.
 - Реальная выдача HTTPS до выпуска:
@@ -191,6 +202,10 @@ ensure_schema (production main и штатный stand уже делают эт�
 доступа environment test; безопасность: fingerprint/StrictHostKeyChecking сохранены;
 откат: revert PR, штатный test rollback, без удаления опубликованных контекстов.
 
-Следующий шаг: завершить полный integration, один PR и CI актуального head,
+Следующий шаг: один PR и CI актуального head,
 человеческое review; после этого merge/test deploy и повторная HTTPS-сверка.
 Визуальное принятие владельцем/маркетологом — PENDING. Baseline не присваивается.
+
+Код первоначального кандидата: `d62166b02b7609225886eadab1cbf85cdbffd89e`.
+Финальный head, обязательный CI и решение о merge фиксируются в единственном PR;
+номер версии повторно не увеличивается при уточнении evidence/диагностики.
