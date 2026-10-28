@@ -181,7 +181,7 @@ jobs:
           chmod 600 ~/.ssh/test_deploy_key
           ssh-keygen -y -f ~/.ssh/test_deploy_key >/dev/null
 
-          expected_fingerprint="SHA256:wtV3lu90RnXeqjLcbvRjCfdoUdaw4jmzGnnwzr4LRSs"
+          expected_fingerprint="SHA256:WaR/8vp4pqCqig4CjWai9WN0GGW93FJGtDFXf1GgYbo"
           ssh-keyscan -t ed25519 "$TEST_SSH_HOST" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
           actual_fingerprint="$(ssh-keygen -lf ~/.ssh/known_hosts -E sha256 | awk '{print $2}')"
