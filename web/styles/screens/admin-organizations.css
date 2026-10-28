@@ -3,6 +3,53 @@
     background: var(--palette-graphite-050);
 }
 
+.org-admin-product-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-5);
+    min-height: 72px;
+    padding: 0 clamp(20px, 5vw, 72px);
+    border-bottom: 1px solid var(--palette-graphite-200);
+    background: #fff;
+}
+
+.org-admin-account {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--fs-meta);
+}
+
+.admin-assessment-empty-content {
+    display: grid;
+    place-items: center;
+    min-height: calc(100vh - 72px);
+    padding: clamp(24px, 7vw, 96px);
+    background: var(--palette-graphite-050);
+}
+
+.admin-assessment-empty-card {
+    width: min(100%, 760px);
+    text-align: center;
+}
+
+.admin-assessment-empty-card .primary-button { margin: var(--space-4) auto 0; }
+
+.admin-questionnaire-load-state {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--palette-graphite-050);
+}
+
+.admin-questionnaire-load-state.error { color: var(--danger); }
+.admin-readiness-panel--empty { background: var(--palette-graphite-050); }
+
 .admin-account-navigation {
     display: flex;
     gap: var(--space-4);
@@ -404,6 +451,49 @@
     min-width: 0;
 }
 
+@media (min-width: 861px) {
+    .admin-organization-members-section[data-admin-view="people"] {
+        grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.75fr);
+        align-items: start;
+    }
+
+    .admin-organization-members-section[data-admin-view="people"] > h4,
+    .admin-organization-members-section[data-admin-view="people"] > p,
+    .admin-organization-members-section[data-admin-view="people"] > .admin-organization-bulk-actions {
+        grid-column: 1 / -1;
+    }
+
+    .admin-organization-members-section[data-admin-view="people"] > .admin-organization-members {
+        grid-column: 1;
+        grid-row: 4 / span 2;
+    }
+
+    .admin-organization-members-section[data-admin-view="people"] > .admin-organization-member-form,
+    .admin-organization-members-section[data-admin-view="people"] > .admin-organization-import-form {
+        grid-column: 2;
+        grid-template-columns: 1fr;
+        margin-top: 0;
+        padding: var(--space-3);
+        border: 1px solid var(--palette-graphite-200);
+        border-radius: var(--radius-sm);
+        background: #fff;
+    }
+
+    .admin-organization-members-section[data-admin-view="organization-data"] {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 0.34fr);
+        align-items: start;
+    }
+
+    .admin-organization-members-section[data-admin-view="organization-data"] > .admin-readiness-panel {
+        grid-column: 2;
+        grid-row: 1 / span 5;
+    }
+
+    .admin-organization-members-section[data-admin-view="organization-data"] > :not(.admin-readiness-panel) {
+        grid-column: 1;
+    }
+}
+
 .admin-organization-members-section h4 {
     margin: 0;
 }
@@ -645,6 +735,19 @@
 }
 
 @media (max-width: 860px) {
+    .org-admin-product-header {
+        grid-template-columns: 1fr auto;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .org-admin-product-header .admin-account-navigation {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .org-admin-account > span,
+    .org-admin-account #admin-organizations-back-button { display: none; }
     .admin-organizations-form,
     .admin-organization-inline-form,
     .admin-organization-member-form,

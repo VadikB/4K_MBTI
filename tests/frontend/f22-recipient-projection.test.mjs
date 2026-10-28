@@ -8,7 +8,8 @@ const wiring = fs.readFileSync('web/js/wiring.js', 'utf8');
 test('F22-05 shows the server projection for the recipients selected for confirm', () => {
   assert.match(organizations, /recipient_projections/);
   assert.match(organizations, /data-questionnaire-recipient-projection/);
-  assert.match(wiring, /dataset\.adminProjection/);
-  assert.match(wiring, /dataset\.participantProjection/);
+  assert.match(organizations, /projection\.dataset\.adminProjection/);
+  assert.match(organizations, /projection\.dataset\.participantProjection/);
   assert.match(wiring, /questionnaire_recipient_user/);
+  assert.match(organizations, /Выберите хотя бы одного представителя заказчика/);
 });

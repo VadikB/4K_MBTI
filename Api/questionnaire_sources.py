@@ -484,6 +484,7 @@ def public_revision(row: dict, *, confirmed_row: dict | None = None) -> dict:
     return {
         "id": int(item["id"]), "assignment_ref": str(item["assignment_ref"]),
         "status": str(item["status"]), "channel": str(item["channel"]),
+        "source_author": str(item.get("source_author") or ""),
         "validation_json": dict(item.get("validation_json") or {}),
         "answers_json": answers,
         "participant_preview": participant_preview,
