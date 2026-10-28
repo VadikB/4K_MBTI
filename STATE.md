@@ -1,4 +1,22 @@
-# STATE — Case / Cycle R00–R10
+# STATE — UX-ADM28-ADD01 v2
+
+- Base: `9d7c9eaacf101fd3c48d7059bd68a96cf7176d87` (`origin/main`, 2.0.32).
+- Ветка: `codex/ux-adm28-add01-v2`; кандидат приложения 2.0.33.
+- TASK01–03 реализованы. Код и локальные проверки: `c4d6debc916e861b11e53de6cdc3a95437bcb5d6`
+  (предшествующий рабочий commit `d62166b`).
+- Локально PASS: 599 unit, 81 HTTP, 167 PostgreSQL integration / 2 explicit llm SKIP,
+  82 frontend, 63 browser; lint/build/reproducible dist/release/shell/YAML/diff.
+- Единственный [PR #122](https://github.com/VadikB/4K_MBTI/pull/122).
+  Обязательный CI проверяет актуальный head PR; результаты и ограничения —
+  [в отчёте](docs/evc/tasks/ux-adm28-add01-v2.md).
+- Следующий шаг: зелёный CI точного head и человеческое review, затем разрешённые
+  merge и deploy только на test с повторной HTTPS-проверкой. Сообщение владельца
+  «идем дальше» подтверждает продолжение работы, но не заявляет выполненное review.
+- HTTPS до выпуска: 2.0.31, 71/71 asset совпадает с `0b44c26`; main deploy остановился
+  на Configure SSH. После выпуска HTTPS, полная матрица платформ и визуальная
+  приёмка владельца/маркетолога ещё не проверены. Pilot/production не затронуты.
+
+## Предыдущая серия — Case / Cycle R00–R10
 
 - Base: `b3bbdc9e78880879e1d4fc930ef8c9cc9f200524` (`origin/main`, приложение `2.0.28`).
 - Ветка: `codex/case-cycle-r1`.
