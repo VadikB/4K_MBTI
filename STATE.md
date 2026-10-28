@@ -1,4 +1,21 @@
-# STATE — UX-ADM28-ADD01 v2
+# STATE — TEST-DEPLOY-28
+
+- Base: `84467d12814196b3196e72f841d462de1a7f8223`, свежий origin/main, 2.0.33.
+- Ветка: `codex/test-deploy-current-checkout`; отдельный инфраструктурный PR
+  и один PATCH 2.0.34 явно разрешены владельцем 28.10.2026 после merge #122.
+- Реализованы bootstrap по CI SHA в фактическом test checkout,
+  отказы dirty/behind/divergent и rollback; кандидат 2.0.34 собран.
+- Read-only inventory: User=vadim_bogachev, WorkingDirectory=
+  `/home/vadim_bogachev/projects/Agent4K-Test`, чистый HEAD 0b44c26;
+  прежние /home/user1 test-пути отсутствуют. HOST исправлен с разрешения;
+  CI теперь проходит host key gate, но получает Permission denied (publickey).
+- PASS: 615 backend unit, 25 адресных deploy/retention/release,
+  lint/82 frontend/build/release consistency, shell/YAML/diff.
+  Следующий шаг: PR и обязательный CI; CI user/key и новое человеческое review
+  остаются внешними gates. Приватные ключи не читаются и не переносятся.
+- План, границы, откат: [карточка](docs/evc/tasks/test-deploy-current-checkout.md).
+
+## Предыдущий результат — UX-ADM28-ADD01 v2
 
 - Base: `9d7c9eaacf101fd3c48d7059bd68a96cf7176d87` (`origin/main`, 2.0.32).
 - Ветка: `codex/ux-adm28-add01-v2`; кандидат приложения 2.0.33.

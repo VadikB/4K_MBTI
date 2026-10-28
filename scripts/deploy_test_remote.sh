@@ -3,17 +3,35 @@ set -eu
 
 project_dir="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)"
 case "$project_dir" in
-  /home/user1/projects/Agent4K-Test|/home/user1/projects/4K-Mbti-Test) ;;
+  /home/user1/projects/Agent4K-Test|/home/user1/projects/4K-Mbti-Test|/home/vadim_bogachev/projects/Agent4K-Test) ;;
   *) echo "Refusing deployment outside the configured test checkouts" >&2; exit 1 ;;
 esac
+deploy_commit="${1:-}"
+if [ -n "$deploy_commit" ]; then
+  case "$deploy_commit" in
+    *[!0-9a-f]*) echo "Invalid deploy commit" >&2; exit 1 ;;
+  esac
+  test "${#deploy_commit}" -eq 40 || { echo "Invalid deploy commit" >&2; exit 1; }
+fi
 service_name="agent4k-test.service"
 health_url="http://127.0.0.1:8002/users/version"
 asset_url="http://127.0.0.1:8002/web/dist/main.js"
-frontend_asset_backup_dir="$(mktemp -d)"
 
 cd "$project_dir"
 
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  echo "Refusing deployment with tracked local changes" >&2
+  exit 1
+fi
+if [ -n "$deploy_commit" ]; then
+  git merge-base --is-ancestor "$deploy_commit" origin/main
+  git merge-base --is-ancestor HEAD "$deploy_commit" || {
+    echo "Refusing a deploy commit behind or divergent from the current checkout" >&2
+    exit 1
+  }
+fi
 previous_commit="$(git rev-parse HEAD)"
+frontend_asset_backup_dir="$(mktemp -d)"
 
 if [ -d web/dist ]; then
   cp -a web/dist/. "$frontend_asset_backup_dir/"
@@ -38,9 +56,14 @@ rollback() {
 trap rollback HUP INT TERM
 
 # Old versions of the build did not clean hashed chunks before rebuilding.
-git clean -fd web/dist
-git switch main
-git pull --ff-only origin main || rollback
+git clean -fd web/dist || rollback
+git switch main || rollback
+if [ -n "$deploy_commit" ]; then
+  git merge --ff-only "$deploy_commit" || rollback
+  test "$(git rev-parse HEAD)" = "$deploy_commit" || rollback
+else
+  git pull --ff-only origin main || rollback
+fi
 
 # Reuse the CPU/ML runtime already installed on the server. Install only direct
 # project requirements so pip does not resolve and download a new CUDA stack.
