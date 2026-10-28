@@ -20,6 +20,7 @@ import {
 } from './session.js';
 import {
   advanceSessionGeneration,
+  authenticatedJourneyErrorMessage,
   installSessionRequestTracking,
   registerUnauthorizedResponseHandler,
 } from './api.js';
@@ -361,7 +362,7 @@ const bootApp = async () => {
         console.error('Failed to route by server journey state', error);
         returnToStart();
         if (authError) {
-          authError.textContent = 'Не удалось определить актуальный этап. Обновите страницу или повторите вход.';
+          authError.textContent = authenticatedJourneyErrorMessage(error);
           authError.hidden = false;
         }
         return;

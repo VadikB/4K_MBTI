@@ -34,10 +34,9 @@ import {
   caseSidebarToggleLabel,
   prechatError,
 } from '../dom.js';
-import { readApiResponse } from '../api.js';
+import { createOperationId, readApiResponse } from '../api.js';
 import { hideAllPanels, syncUrlState } from '../router.js';
 import { showError } from '../components/errors.js';
-import { createOperationId } from '../api.js';
 import { showLoader, hideLoader, startLoaderProgressPolling } from '../utils/loader.js';
 import { loaderFlows } from '../config.js';
 import {
@@ -58,7 +57,7 @@ let activeInterviewDraftKey = null;
 const returnClientId = (() => {
   const key = 'agent4k.returnClientId';
   let value = window.sessionStorage.getItem(key);
-  if (!value) { value = crypto.randomUUID(); window.sessionStorage.setItem(key, value); }
+  if (!value) { value = createOperationId(); window.sessionStorage.setItem(key, value); }
   return value;
 })();
 
@@ -1208,7 +1207,7 @@ const submitAssessmentMessage = async (text, requestIdentity = null) => {
     if (requestIdentity) requestIdentity.endpoint = endpoint;
     const body = {
       request_id: requestIdentity?.requestId || createOperationId(),
-      turn_id: requestIdentity?.turnId || crypto.randomUUID(),
+      turn_id: requestIdentity?.turnId || createOperationId(),
       content: text,
     };
     const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });

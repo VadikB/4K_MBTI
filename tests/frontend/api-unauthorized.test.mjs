@@ -3,12 +3,24 @@ import test from 'node:test';
 
 import {
   advanceSessionGeneration,
+  authenticatedJourneyErrorMessage,
   ApiResponseError,
   createSessionAwareFetch,
   readApiResponse,
   registerUnauthorizedResponseHandler,
   StaleApiResponseError,
 } from '../../web/js/api.js';
+
+test('journey authentication failure explains a lost session without misreporting the product stage', () => {
+  assert.equal(
+    authenticatedJourneyErrorMessage(new ApiResponseError('Session not found', 401)),
+    'Сессия входа не сохранилась. Повторите вход; если ошибка повторится, обратитесь к администратору стенда.',
+  );
+  assert.equal(
+    authenticatedJourneyErrorMessage(new ApiResponseError('controlled outage', 503)),
+    'Не удалось определить актуальный этап. Обновите страницу или повторите вход.',
+  );
+});
 
 const unauthorizedResponse = (detail = 'Admin session not found') =>
   new Response(JSON.stringify({ detail }), {
