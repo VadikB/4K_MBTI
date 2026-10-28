@@ -104,6 +104,10 @@ CURRENT/FROZEN, опубликованные пакеты и рабочие да
   frontend suite — PASS, 14 tests; `npm run build:web` — PASS;
   `npx playwright test tests/browser/auth-r03.spec.mjs --grep "W02 does not present plan cards|successful password response reports a missing browser session|refresh obeys server journey" --workers=1`
   — PASS, 3 tests, включая HTTP-совместимый onboarding без `randomUUID`.
+- Первый CI запуска `57e4a72` остановлен release gate: продукт изменён при версии
+  `2.0.31`. По штатному `prepare_release.py` подготовлен patch `2.0.32`, frontend
+  пересобран; повторный локальный минимум — PASS с теми же 14 frontend и 3 browser
+  тестами. Публикация допускается только после успешного повторного CI.
 - Вход нового участника — FAIL на опубликованной версии `2.0.31`, причина
   E10.2-LOGIN-01 локализована и исправлена в ветке.
 - Полный клиентский путь и real LLM — BLOCKED до штатной публикации исправления.
