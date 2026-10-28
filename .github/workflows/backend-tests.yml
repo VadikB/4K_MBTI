@@ -194,11 +194,30 @@ jobs:
         env:
           TEST_SSH_HOST: ${{ secrets.TEST_SSH_HOST }}
           TEST_SSH_USER: ${{ secrets.TEST_SSH_USER }}
+          DEPLOY_COMMIT: ${{ github.sha }}
         run: |
+          set -eu
+          test -n "$TEST_SSH_USER" || { echo "::error::TEST_SSH_USER is missing in environment test"; exit 1; }
           ssh \
             -i ~/.ssh/test_deploy_key \
             -o BatchMode=yes \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 \
             "$TEST_SSH_USER@$TEST_SSH_HOST" \
-            sh /home/user1/projects/4K-Mbti-Test/scripts/deploy_test_remote.sh
+            sh -s -- "$DEPLOY_COMMIT" <<'REMOTE'
+          set -eu
+          project_dir="/home/vadim_bogachev/projects/Agent4K-Test"
+          deploy_commit="$1"
+          case "$deploy_commit" in
+            ''|*[!0-9a-f]*) echo "Invalid deploy commit" >&2; exit 1 ;;
+          esac
+          test "${#deploy_commit}" -eq 40 || { echo "Invalid deploy commit" >&2; exit 1; }
+          cd "$project_dir"
+          git fetch origin main
+          git merge-base --is-ancestor "$deploy_commit" origin/main
+          # Read the validated script from Git, not the potentially stale checkout.
+          # The checkout remains unchanged until the script captures its rollback SHA.
+          deploy_script="$(git show "$deploy_commit:scripts/deploy_test_remote.sh")"
+          exec sh -c "$deploy_script" "$project_dir/scripts/deploy_test_remote.sh" "$deploy_commit"
+          REMOTE
