@@ -209,7 +209,7 @@ test('ADM19-01 exposes three keyboard-operable management blocks without horizon
   await expect(organizationData).toBeHidden();
   await expect(peopleButton).toHaveAttribute('aria-pressed', 'true');
 
-  for (const width of [320, 360, 375, 390, 430, 768, 1024, 1366, 1440]) {
+  for (const width of [320, 360, 375, 390, 430, 768, 1024, 1280, 1366, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     const layout = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
@@ -308,20 +308,23 @@ test('UX-FIX20-04 keeps readiness separated when org-admin switches assessment',
   await expect(panel).not.toContainText('Контекст A подтверждён.');
 });
 
-test('UX-FIX20-04 never reports ready when readiness request fails', async ({ page }) => {
+test('UX-ADM28-02 reports questionnaire load failure separately and offers retry', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), adminOrganization, {
     body: { detail: 'temporary failure' }, status: 503,
   });
   const card = page.locator('[data-organization-id="3"]');
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
-  const panel = card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel');
-  await expect(panel).toContainText('Не удалось проверить');
-  await expect(panel).not.toContainText('Всё готово');
+  const error = card.locator('[data-admin-view="questionnaire"] .admin-questionnaire-load-state.error');
+  await expect(error).toContainText('temporary failure');
+  await expect(error.getByRole('button', { name: 'Повторить' })).toBeVisible();
+  await expect(card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel'))
+    .toContainText('Выберите оценку');
 });
 
 test('F22-06 restores confirmed fields when the selected assessment has no local draft', async ({ page }) => {
   const revision = (id, assignmentRef, purpose) => ({
     id, assignment_ref: assignmentRef, status: 'confirmed', channel: 'product_form',
+    source_author: `Автор ${assignmentRef}`,
     validation_json: {}, answers_json: {
       C01: { name: `Организация ${assignmentRef}`, organization_type: 'Компания', industry: 'ИТ',
         activity_description: `Описание ${assignmentRef}` },
@@ -341,12 +344,14 @@ test('F22-06 restores confirmed fields when the selected assessment has no local
   await card.getByRole('button', { name: 'Данные организации' }).click();
   const form = card.locator('[data-action="preview-early-data"]');
   await expect(form.locator('[name="purpose"]')).toHaveValue('Published A');
+  await expect(form.locator('[name="source_author"]')).toHaveValue('Автор A');
   const assignment = form.locator('[name="assignment_ref"]');
   await assignment.focus();
   await assignment.fill('B');
   await assignment.press('Tab');
   await expect(form.locator('[name="purpose"]')).toHaveValue('Published B');
   await expect(form.locator('[name="organization_name"]')).toHaveValue('Организация B');
+  await expect(form.locator('[name="source_author"]')).toHaveValue('Автор B');
 
   await form.locator('[name="purpose"]').fill('Draft B');
   await card.getByRole('button', { name: 'Участники' }).click();
@@ -524,23 +529,26 @@ test('ADM19-02 routes org-admin own assessment by server journey and preserves m
   await card.locator('[data-action="preview-early-data"] [name="purpose"]').fill('Черновик цели оценки');
   await page.getByRole('button', { name: 'Моя оценка' }).click();
   await expect(page.getByRole('heading', { name: 'Оценка пока не назначена' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Вернуться в управление' })).toBeVisible();
+  await expect(page.locator('#admin-assessment-empty-panel')).toBeVisible();
+  await expect(page.locator('#auth-complete-panel')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Перейти к участникам и назначению' })).toBeVisible();
   expect(profileReopens).toBe(0);
   expect(await page.evaluate(() => localStorage.getItem('agent4k.canAdmin'))).toBe('1');
 
-  await page.getByRole('button', { name: 'Вернуться в управление' }).click();
+  await page.getByRole('button', { name: 'Перейти к участникам и назначению' }).click();
   await expect(page.locator('#admin-organizations-panel')).toBeVisible();
-  await expect(card.locator('[data-admin-view="organization-data"]')).toBeVisible();
+  await expect(card.locator('[data-admin-view="people"]')).toBeVisible();
+  await card.getByRole('button', { name: 'Данные организации' }).click();
   await expect(card.locator('[data-action="preview-early-data"] [name="purpose"]')).toHaveValue('Черновик цели оценки');
   await page.getByRole('button', { name: 'Моя оценка' }).click();
   await expect(page.getByRole('heading', { name: 'Оценка пока не назначена' })).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Оценка пока не назначена' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Вернуться в управление' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Перейти к участникам и назначению' })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('agent4k.activeArea'))).toBe('assessment');
 
-  await page.getByRole('button', { name: 'Вернуться в управление' }).click();
+  await page.getByRole('button', { name: 'Перейти к участникам и назначению' }).click();
   await expect(page.locator('#admin-organizations-panel')).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('agent4k.activeArea'))).toBe('management');
   expect(await page.evaluate(() => localStorage.getItem('agent4k.isAdmin'))).toBe('1');
@@ -629,8 +637,11 @@ test('ADM19-01 saves early organization data through the versioned product form 
   expect(submittedPayload.idempotency_key).toBeTruthy();
 });
 
-test('UX-FIX20-03 previews participant text, invalidates stale preview and applies confirmation immediately', async ({ page }) => {
-  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [{ status: 'queued' }] }));
+test('UX-ADM28-01 changes recipients without invalidating content preview and applies confirmation immediately', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [{ status: 'queued' }] }), {
+    ...adminOrganization,
+    admins: [{ user_id: 18, email: 'admin@example.test', full_name: 'Admin' }],
+  });
   let revisionId = 100;
   await page.route('**/users/admin/organizations/3/questionnaire/preview', async (route) => {
     const payload = route.request().postDataJSON();
@@ -683,12 +694,13 @@ test('UX-FIX20-03 previews participant text, invalidates stale preview and appli
     .toHaveText('Результаты доступны только участнику.');
   await preview.locator('[name="questionnaire_recipient"][value="organization_admin"]').check();
   await expect(preview.locator('[data-questionnaire-recipient-projection]'))
-    .toHaveText('Результаты доступны участнику и выбранным представителям заказчика.');
-  await expect(preview).toContainText('Обновите предпросмотр перед подтверждением');
+    .toHaveText('Результаты доступны только участнику.');
+  await expect(preview).not.toContainText('Обновите предпросмотр перед подтверждением');
+  await expect(preview).toContainText('Выберите хотя бы одного представителя заказчика');
   await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
-
-  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
-  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toHaveAttribute('data-value', '102');
+  await preview.locator('[name="questionnaire_recipient_user"]').first().check();
+  await expect(preview.locator('[data-questionnaire-recipient-projection]'))
+    .toHaveText('Результаты доступны участнику и выбранным представителям заказчика.');
   await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeEnabled();
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
   await expect(preview).toHaveCount(0);

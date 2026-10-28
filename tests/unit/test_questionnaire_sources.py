@@ -68,6 +68,7 @@ def test_public_preview_has_participant_projection_and_safe_diff():
     current = parse_csv(EXAMPLE.read_text())["answers"]
     proposed = {**current, "C02a": {"participant_text": "Новая цель"}}
     row = {"id": 2, "assignment_ref": "assessment-a", "status": "ready_for_confirmation",
+           "source_author": "Синтетический заказчик",
            "channel": "csv", "validation_json": {}, "answers_json": proposed, "confirmed_at": None}
     confirmed = {"answers_json": current}
     result = public_revision(row, confirmed_row=confirmed)
@@ -79,6 +80,7 @@ def test_public_preview_has_participant_projection_and_safe_diff():
     }]
     assert "questionnaire_revision_id" not in result["participant_preview"]
     assert "briefing" not in result
+    assert result["source_author"] == "Синтетический заказчик"
 
 
 def test_recipient_projection_ignores_contradictory_free_text():

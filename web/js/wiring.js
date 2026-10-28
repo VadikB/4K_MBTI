@@ -32,6 +32,8 @@ import {
   authChangeCredentialEmailButton,
   authCompleteContinueButton,
   authCompleteLogoutButton,
+  adminAssessmentEmptyAction,
+  adminAssessmentEmptyLogoutButton,
   chatForm,
   chatInput,
   restartButton,
@@ -55,6 +57,7 @@ import {
   adminRegressionTestsRunFullButton,
   adminRegressionTestsCleanupButton,
   adminOrganizationsBackButton,
+  adminOrganizationsLogoutButton,
   adminOrganizationCreateForm,
   adminOrganizationSelect,
   adminOrganizationsList,
@@ -1304,6 +1307,26 @@ if (authCompleteLogoutButton) {
   authCompleteLogoutButton.addEventListener('click', () => void logoutAndReturnToStart(authCompleteLogoutButton));
 }
 
+if (adminAssessmentEmptyAction) {
+  adminAssessmentEmptyAction.addEventListener('click', () => {
+    withScreen(loadAdminOrganizations, async (module) => {
+      await module.openAdminOrganizations();
+      const organizationId = Number(document.querySelector('[data-organization-id]')?.dataset.organizationId);
+      if (organizationId) module.selectAdminOrganizationView(organizationId, 'people');
+    });
+  });
+}
+
+if (adminAssessmentEmptyLogoutButton) {
+  adminAssessmentEmptyLogoutButton.addEventListener('click', (event) =>
+    void logoutAndReturnToStart(event.currentTarget));
+}
+
+if (adminOrganizationsLogoutButton) {
+  adminOrganizationsLogoutButton.addEventListener('click', (event) =>
+    void logoutAndReturnToStart(event.currentTarget));
+}
+
 if (authCompleteContinueButton) {
   authCompleteContinueButton.addEventListener('click', async () => {
     if (authCompleteContinueButton.dataset.action === 'return-to-management' && state.canAdmin) {
@@ -1687,13 +1710,23 @@ if (adminOrganizationsList) {
     if (!field.closest('[data-action="preview-early-data"], [data-action="preview-questionnaire"], .admin-questionnaire-preview')) return;
     const preview = field.closest('.admin-questionnaire-preview');
     if (preview && ['questionnaire_recipient', 'questionnaire_recipient_user'].includes(field.getAttribute('name'))) {
+      const adminToggle = preview.querySelector('input[name="questionnaire_recipient"][value="organization_admin"]');
+      const userFields = [...preview.querySelectorAll('input[name="questionnaire_recipient_user"]')];
+      if (!adminToggle?.checked) userFields.forEach((input) => { input.checked = false; input.disabled = true; });
+      else userFields.forEach((input) => { input.disabled = false; });
+      const selectedUsers = userFields.filter((input) => input.checked).length;
+      const valid = !adminToggle?.checked || selectedUsers > 0;
+      const error = preview.querySelector('[data-questionnaire-recipient-error]');
+      if (error) {
+        error.textContent = valid ? '' : 'Выберите хотя бы одного представителя заказчика.';
+        error.classList.toggle('hidden', valid);
+      }
       const projection = preview.querySelector('[data-questionnaire-recipient-projection]');
-      const includesAdmin = Boolean(
-        preview.querySelector('input[name="questionnaire_recipient"][value="organization_admin"]:checked') ||
-        preview.querySelector('input[name="questionnaire_recipient_user"]:checked'),
-      );
-      if (projection) projection.textContent = includesAdmin
+      if (projection) projection.textContent = adminToggle?.checked && selectedUsers
         ? projection.dataset.adminProjection : projection.dataset.participantProjection;
+      const confirm = preview.querySelector('[data-action="confirm-questionnaire"]');
+      if (confirm) confirm.disabled = !valid || Boolean(preview.querySelector('[data-preview-stale]'));
+      return;
     }
     const assessmentRef = field.closest('.admin-questionnaire-preview')?.getAttribute('data-assessment-ref') ||
       card?.querySelector('[data-admin-view]:not(.hidden) [name="assignment_ref"]')?.value || '';
@@ -1739,13 +1772,34 @@ if (adminOrganizationsList) {
       return;
     }
     if (button.dataset.action === 'confirm-questionnaire') {
+      if (button.disabled) return;
+      const preview = button.closest('.admin-questionnaire-preview');
+      const includeAdmins = Boolean(preview?.querySelector(
+        'input[name="questionnaire_recipient"][value="organization_admin"]:checked',
+      ));
       const recipients = [...(card?.querySelectorAll('input[name="questionnaire_recipient"]:checked') || [])]
         .map((input) => input.value);
-      const recipientUserIds = [...(card?.querySelectorAll('input[name="questionnaire_recipient_user"]:checked') || [])]
-        .map((input) => Number(input.value)).filter((value) => Number.isFinite(value) && value > 0);
+      const recipientUserIds = includeAdmins ? [...(preview?.querySelectorAll('input[name="questionnaire_recipient_user"]:checked') || [])]
+        .map((input) => Number(input.value)).filter((value) => Number.isFinite(value) && value > 0)
+        : [];
+      if (includeAdmins && !recipientUserIds.length) return;
       if (recipientUserIds.length && !recipients.includes('organization_admin')) recipients.push('organization_admin');
       withScreen(loadAdminOrganizations, (module) =>
         module.confirmAdminOrganizationQuestionnaire(organizationId, Number(value), recipients, recipientUserIds));
+      return;
+    }
+    if (button.dataset.action === 'retry-questionnaire-load') {
+      withScreen(loadAdminOrganizations, (module) =>
+        module.retryAdminOrganizationQuestionnaireLoad(organizationId));
+      return;
+    }
+    if (button.dataset.action === 'refresh-questionnaire-preview') {
+      const assessmentRef = button.closest('.admin-questionnaire-preview')?.dataset.assessmentRef || '';
+      const previewAction = button.closest('.admin-questionnaire-preview')?.dataset.previewAction || 'preview-early-data';
+      const form = [...(card?.querySelectorAll('form[data-action="preview-early-data"], form[data-action="preview-questionnaire"]') || [])]
+        .find((candidate) => candidate.dataset.action === previewAction &&
+          candidate.querySelector('[name="assignment_ref"]')?.value === assessmentRef);
+      form?.requestSubmit();
       return;
     }
     if (button.dataset.action === 'prepare-organization-assessments') {

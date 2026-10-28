@@ -17,6 +17,8 @@ import {
   dashboardPanel,
   adminPanel,
   adminOrganizationsPanel,
+  adminAssessmentEmptyPanel,
+  adminAssessmentEmptyDescription,
   adminRegressionTestsPanel,
   adminPromptLabPanel,
   adminMethodologyPanel,
@@ -43,6 +45,7 @@ export const hideAllPanels = () => {
   if (adminOrganizationsPanel) {
     adminOrganizationsPanel.classList.add('hidden');
   }
+  adminAssessmentEmptyPanel?.classList.add('hidden');
   if (adminRegressionTestsPanel) {
     adminRegressionTestsPanel.classList.add('hidden');
   }
@@ -72,9 +75,20 @@ export const openAuthComplete = () => {
 
 export const openAcquaintanceWaiting = (readiness = {}) => {
   hideAllPanels();
+  const assignmentMissing = readiness.status === 'waiting_for_assignment';
+  if (assignmentMissing && state.canAdmin && !state.adminDashboard?.is_superadmin) {
+    state.currentScreen = 'admin-assessment-empty';
+    state.activeArea = 'assessment';
+    persistAssessmentContext();
+    if (adminAssessmentEmptyDescription && readiness.message) {
+      adminAssessmentEmptyDescription.textContent = readiness.message;
+    }
+    adminAssessmentEmptyPanel?.classList.remove('hidden');
+    window.history.replaceState({ screen: 'admin-assessment-empty' }, '', '/?screen=admin-assessment-empty');
+    return;
+  }
   state.currentScreen = 'auth-complete';
   persistAssessmentContext();
-  const assignmentMissing = readiness.status === 'waiting_for_assignment';
   if (authCompleteTitle) authCompleteTitle.textContent = assignmentMissing ? 'Оценка пока не назначена' : 'Данные для оценки готовятся';
   if (authCompleteDescription) {
     authCompleteDescription.textContent = readiness.message

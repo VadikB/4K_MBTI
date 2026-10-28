@@ -66,6 +66,7 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         replay = save_preview(connection, **kwargs)
         assert preview["id"] == replay["id"]
         assert preview["status"] == "ready_for_confirmation"
+        assert public_revision(preview)["source_author"] == "Синтетический заказчик"
 
         confirmed = confirm(
             connection, revision_id=preview["id"], organization_id=10,
