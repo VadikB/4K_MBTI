@@ -36,6 +36,7 @@ import {
 } from './dom.js';
 
 export const hideAllPanels = () => {
+  document.getElementById('session-restore-panel')?.classList.add('hidden');
   participantAreaNavigation?.classList.toggle('hidden', !state.canAdmin || state.activeArea !== 'assessment');
   authPanel.classList.add('hidden');
   authCompletePanel?.classList.add('hidden');
@@ -77,11 +78,12 @@ export const openAcquaintanceWaiting = (readiness = {}) => {
   hideAllPanels();
   const assignmentMissing = readiness.status === 'waiting_for_assignment';
   if (assignmentMissing && state.canAdmin && !state.adminDashboard?.is_superadmin) {
+    participantAreaNavigation?.classList.add('hidden');
     state.currentScreen = 'admin-assessment-empty';
     state.activeArea = 'assessment';
     persistAssessmentContext();
-    if (adminAssessmentEmptyDescription && readiness.message) {
-      adminAssessmentEmptyDescription.textContent = readiness.message;
+    if (adminAssessmentEmptyDescription) {
+      adminAssessmentEmptyDescription.textContent = 'Вы можете назначить себе оценку в разделе «Организация и участники» после подготовки необходимых сведений.';
     }
     adminAssessmentEmptyPanel?.classList.remove('hidden');
     window.history.replaceState({ screen: 'admin-assessment-empty' }, '', '/?screen=admin-assessment-empty');

@@ -36,7 +36,7 @@ def test_dry_run_and_consistency(tmp_path):
     (tmp_path / "pyproject.toml").write_text('[project]\nname = "agent-4k"\nversion = "2.0.1"\n')
     (tmp_path / "uv.lock").write_text('version = 1\n\n[[package]]\nname = "agent-4k"\nversion = "2.0.1"\nsource = { virtual = "." }\n')
     (tmp_path / "web/js/config.js").write_text('export const APP_RELEASE = "2.0.1";\n')
-    (tmp_path / "web/index.html").write_text('<link href="/web/styles/base.css?v=2.0.1"><script src="/web/dist/main.js?v=2.0.1"></script>')
+    (tmp_path / "web/index.html").write_text('<link href="/web/styles/base.css?v=2.0.1"><script src="/web/dist/main.js?v=2.0.1"></script><span data-app-release-number>2.0.1</span>')
     before = (tmp_path / "web/index.html").read_text()
     assert check_consistency(tmp_path) == "2.0.1"
     assert len(write_updates(tmp_path, "2.0.2", dry_run=True)) == 4

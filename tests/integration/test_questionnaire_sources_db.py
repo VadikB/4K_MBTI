@@ -27,6 +27,9 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         connection.execute("""CREATE TABLE organization_invitations(
             id BIGSERIAL PRIMARY KEY,organization_id BIGINT,recipient_email TEXT,purpose TEXT,
             assignment_ref TEXT,created_by_user_id BIGINT,revoked_at TIMESTAMP)""")
+        connection.execute("""CREATE TABLE organization_assessment_assignments(
+            organization_id BIGINT,recipient_user_id BIGINT,assignment_ref TEXT,status TEXT,
+            revoked_at TIMESTAMP)""")
         connection.execute("""CREATE TABLE participant_acquaintance_confirmations(
             id BIGSERIAL PRIMARY KEY,user_id BIGINT,organization_id BIGINT,assignment_ref TEXT,
             personalized_profile_id BIGINT,confirmed_at TIMESTAMP DEFAULT NOW())""")
@@ -67,6 +70,8 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         assert preview["id"] == replay["id"]
         assert preview["status"] == "ready_for_confirmation"
         assert public_revision(preview)["source_author"] == "Синтетический заказчик"
+        # The product form supplies the early minimum, without optional C02b.
+        connection.execute("UPDATE questionnaire_response_revisions SET answers_json=answers_json-'C02b' WHERE id=%s", (preview['id'],))
 
         confirmed = confirm(
             connection, revision_id=preview["id"], organization_id=10,
@@ -91,8 +96,11 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         assert version["source_manifest_json"]["questionnaire_revision_id"] == preview["id"]
         assert confirm(
             connection, revision_id=preview["id"], organization_id=10,
-            confirmed_by=2, recipients=["participant"],
+            confirmed_by=2, recipients=["participant", "organization_admin"], recipient_user_ids=[2],
         )["organization_context_version_id"] == confirmed["organization_context_version_id"]
+        with pytest.raises(ValueError, match="QUESTIONNAIRE_RECIPIENTS_CONFLICT"):
+            confirm(connection, revision_id=preview["id"], organization_id=10,
+                    confirmed_by=2, recipients=["participant"])
 
         stale = save_preview(connection, **{
             **kwargs, "idempotency_key": "preview-stale",
@@ -154,6 +162,22 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         assert missing_admin["roles"]["total"] == 0
         assert first_admin["early"]["status"] == second_admin["early"]["status"] == "ready"
         assert missing_admin["early"]["status"] == "data_missing"
+
+        # Direct self-assignment works without a registration invitation. Overlap
+        # with legacy and foreign/revoked assignments must not inflate the count.
+        connection.execute("DELETE FROM organization_invitations WHERE recipient_email='admin@example.test'")
+        connection.execute("""INSERT INTO organization_assessment_assignments VALUES
+            (10,2,'synthetic-assignment','active',NULL),
+            (10,1,'synthetic-assignment','active',NULL),
+            (10,2,'second-assignment','active',NOW()),
+            (20,2,'second-assignment','active',NULL),
+            (10,2,'other-assignment','active',NULL)""")
+        connection.execute("INSERT INTO assessment_preparation_jobs(user_id,status) VALUES(2,'running')")
+        direct = admin_assignment_readiness(connection, organization_id=10, assignment_ref="synthetic-assignment")
+        assert direct["roles"]["total"] == 2
+        assert direct["preparation"]["status"] == "in_progress"
+        assert admin_assignment_readiness(connection, organization_id=10,
+                                          assignment_ref="second-assignment")["roles"]["total"] == 1
 
         with pytest.raises(ValueError, match="QUESTIONNAIRE_REVISION_NOT_FOUND"):
             confirm(

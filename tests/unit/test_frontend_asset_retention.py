@@ -55,3 +55,13 @@ def test_test_deploy_installs_frontend_build_dependencies() -> None:
     deploy_script = DEPLOY_SCRIPT.read_text(encoding="utf-8")
 
     assert deploy_script.count("npm ci --include=dev") == 2
+
+
+def test_deploy_refuses_unknown_checkout_before_touching_git_or_service(tmp_path: Path) -> None:
+    isolated = tmp_path / 'scripts'
+    isolated.mkdir()
+    script = isolated / 'deploy_test_remote.sh'
+    script.write_bytes(DEPLOY_SCRIPT.read_bytes())
+    result = subprocess.run(['sh', str(script)], capture_output=True, text=True)
+    assert result.returncode == 1
+    assert 'Refusing deployment outside the configured test checkouts' in result.stderr

@@ -174,7 +174,17 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     ).fetchone()
     if row is None:
         raise ValueError("QUESTIONNAIRE_REVISION_NOT_FOUND")
+    mapped = sorted(set(recipients))
+    selected_users = sorted(set(int(value) for value in (recipient_user_ids or [])))
+    if "participant" not in mapped or any(item not in ALLOWED_RECIPIENTS for item in mapped):
+        raise ValueError("QUESTIONNAIRE_RECIPIENTS_CONFLICT")
+    if ("organization_admin" in mapped) != bool(selected_users):
+        raise ValueError("QUESTIONNAIRE_RECIPIENTS_CONFLICT")
     if row["status"] == "confirmed":
+        saved_users = sorted(int(item["user_id"]) for item in
+                             (row.get("briefing_json") or {}).get("authorized_recipients", []))
+        if mapped != sorted(row.get("recipient_mapping_json") or ["participant"]) or selected_users != saved_users:
+            raise ValueError("QUESTIONNAIRE_RECIPIENTS_CONFLICT")
         return dict(row)
     newer_confirmed = connection.execute(
         """SELECT id FROM questionnaire_response_revisions
@@ -187,12 +197,6 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     validation = dict(row["validation_json"] or {})
     if validation.get("errors") or validation.get("missing"):
         raise ValueError("QUESTIONNAIRE_NOT_READY_FOR_CONFIRMATION")
-    mapped = sorted(set(recipients))
-    if "participant" not in mapped or any(item not in ALLOWED_RECIPIENTS for item in mapped):
-        raise ValueError("QUESTIONNAIRE_RECIPIENTS_CONFLICT")
-    selected_users = sorted(set(int(value) for value in (recipient_user_ids or [])))
-    if ("organization_admin" in mapped) != bool(selected_users):
-        raise ValueError("QUESTIONNAIRE_RECIPIENTS_CONFLICT")
     answers = dict(row["answers_json"] or {})
     current = connection.execute(
         """SELECT v.definition_json FROM assessment_organization_context_versions v
@@ -220,7 +224,7 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     access_projection = recipient_access_projection(mapped)
     participant_briefing = {
         "purpose": answers["C02a"]["participant_text"],
-        "customer_question": answers["C02b"].get("answer", ""),
+        "customer_question": answers.get("C02b", {}).get("answer", ""),
         "organizer": answers["C21"]["organizer"],
         "responsible_contact": answers["C21"]["responsible_contact"],
         "results_usage": answers["C03"]["participant_text"],
@@ -293,6 +297,24 @@ def assignment_readiness(connection, *, organization_id: int, assignment_ref: st
     }
 
 
+_ASSIGNED_PARTICIPANTS_SQL = """
+    SELECT DISTINCT u.id AS user_id
+    FROM users u JOIN organization_memberships om ON om.user_id=u.id
+    JOIN organizations o ON o.id=om.organization_id AND o.is_active=TRUE
+    WHERE om.organization_id=%s AND u.id IN (
+        SELECT oa.recipient_user_id FROM organization_assessment_assignments oa
+        WHERE oa.organization_id=om.organization_id AND oa.assignment_ref=%s
+          AND oa.status='active' AND oa.revoked_at IS NULL
+        UNION
+        SELECT legacy_user.id FROM organization_invitations oi
+        JOIN users legacy_user ON LOWER(legacy_user.email)=LOWER(oi.recipient_email)
+        WHERE oi.organization_id=om.organization_id AND oi.assignment_ref=%s
+          AND oi.purpose='personal_registration' AND oi.revoked_at IS NULL
+          AND oi.created_by_user_id IS DISTINCT FROM legacy_user.id
+    )
+"""
+
+
 def admin_assignment_readiness(connection, *, organization_id: int, assignment_ref: str) -> dict:
     """Admin-safe explanation of server-owned gates for one assessment preparation."""
     normalized_ref = str(assignment_ref or "").strip()
@@ -317,17 +339,9 @@ def admin_assignment_readiness(connection, *, organization_id: int, assignment_r
         early_state = "data_missing"
         early_message = "Для выбранной оценки ещё нет подтверждённых сведений. Заполните данные организации или загрузите анкету."
 
+    participant_params = (organization_id, normalized_ref, normalized_ref)
     participant_rows = connection.execute(
-        """SELECT DISTINCT u.id AS user_id
-           FROM organization_invitations oi
-           JOIN users u ON LOWER(u.email)=LOWER(oi.recipient_email)
-           JOIN organization_memberships om
-             ON om.organization_id=oi.organization_id AND om.user_id=u.id
-           WHERE oi.organization_id=%s AND oi.purpose='personal_registration'
-             AND oi.assignment_ref=%s AND oi.revoked_at IS NULL
-             AND oi.created_by_user_id IS DISTINCT FROM u.id
-           ORDER BY u.id""",
-        (organization_id, normalized_ref),
+        _ASSIGNED_PARTICIPANTS_SQL + " ORDER BY u.id", participant_params,
     ).fetchall()
     total_roles = len(participant_rows)
     ready_roles = 0
@@ -385,22 +399,13 @@ def admin_assignment_readiness(connection, *, organization_id: int, assignment_r
 
     preparation = connection.execute(
         """SELECT COUNT(*) FILTER (WHERE latest.status IN ('queued','running'))::int AS in_progress
-           FROM (
-             SELECT DISTINCT u.id AS user_id
-             FROM organization_invitations oi
-             JOIN users u ON LOWER(u.email)=LOWER(oi.recipient_email)
-             JOIN organization_memberships om
-               ON om.organization_id=oi.organization_id AND om.user_id=u.id
-             WHERE oi.organization_id=%s AND oi.purpose='personal_registration'
-               AND oi.assignment_ref=%s AND oi.revoked_at IS NULL
-               AND oi.created_by_user_id IS DISTINCT FROM u.id
-           ) participant
+           FROM (""" + _ASSIGNED_PARTICIPANTS_SQL + """) participant
            LEFT JOIN LATERAL (
              SELECT status FROM assessment_preparation_jobs
              WHERE user_id=participant.user_id ORDER BY created_at DESC LIMIT 1
            ) latest ON TRUE
            """,
-        (organization_id, normalized_ref),
+        participant_params,
     ).fetchone() or {"in_progress": 0}
     in_progress = int(preparation.get("in_progress") or 0)
     context_state = "ready" if early["status"] == "ready" else early_state
@@ -491,6 +496,9 @@ def public_revision(row: dict, *, confirmed_row: dict | None = None) -> dict:
         "changes": _projection_changes(current_projection, participant_preview),
         "is_first_publication": confirmed_row is None,
         "recipient_options": ["participant", "organization_admin"],
+        "recipient_mapping": recipient_mapping,
+        "recipient_user_ids": [int(recipient["user_id"]) for recipient in
+                               (item.get("briefing_json") or {}).get("authorized_recipients", [])],
         "recipient_projections": {
             "participant": recipient_access_projection(["participant"])["result_recipients"],
             "organization_admin": recipient_access_projection(

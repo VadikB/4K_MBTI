@@ -139,6 +139,40 @@ export const readApiResponse = async (response, fallbackMessage, { recoverUnauth
   return data;
 };
 
+// The deadline covers headers AND body. Some proxies send headers then stall.
+export const fetchWithDeadline = async (url, options = {}, timeoutMs = null) => {
+  const controller = new AbortController();
+  const deadline = timeoutMs ?? (String(options.method || 'GET').toUpperCase() === 'GET' ? 15000 : 30000);
+  let timer;
+  const forwardAbort = () => controller.abort(options.signal?.reason);
+  options.signal?.addEventListener('abort', forwardAbort, { once: true });
+  if (options.signal?.aborted) forwardAbort();
+  try {
+    return await Promise.race([
+      (async () => {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        const body = await response.text();
+        const buffered = new Response(body || null, {
+          status: response.status, statusText: response.statusText, headers: response.headers,
+        });
+        responseGenerations.set(buffered, responseGenerations.get(response) ?? sessionGeneration);
+        return buffered;
+      })(),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          const error = new Error('Сервер не ответил вовремя. Проверьте результат операции.');
+          error.name = 'RequestDeadlineError';
+          reject(error);
+          controller.abort();
+        }, deadline);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+    options.signal?.removeEventListener('abort', forwardAbort);
+  }
+};
+
 export const createOperationId = () =>
   typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
     ? crypto.randomUUID()

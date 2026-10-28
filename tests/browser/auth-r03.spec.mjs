@@ -51,6 +51,226 @@ async function baseRoutes(page, restore = { authenticated: false }) {
 }
 
 const adminUser = { id: 18, email: 'admin@example.test', full_name: 'Admin' };
+
+async function adm28Preview(page) {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), {
+    ...adminOrganization, admins: [{ user_id: 18, email: adminUser.email, full_name: 'Admin' }],
+  });
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
+  const form = card.locator('form[data-action="preview-early-data"]');
+  let revisionId = 201;
+  await page.route('**/users/admin/organizations/3/questionnaire/preview', (route) => {
+    const payload = route.request().postDataJSON();
+    return fulfillJson(route, { id: revisionId++, assignment_ref: payload.assignment_ref,
+      status: 'ready_for_confirmation', channel: 'product_form', answers_json: payload.answers,
+      validation_json: {}, participant_preview: { purpose: payload.answers.C02a.participant_text },
+      recipient_options: ['participant', 'organization_admin'] });
+  });
+  await form.locator('[name="assignment_ref"]').fill('ADM28 synthetic');
+  await form.locator('[name="source_author"]').fill('Synthetic owner');
+  await form.locator('[name="purpose"]').fill('Synthetic purpose');
+  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+  await expect(card.locator('.admin-questionnaire-preview')).toBeVisible();
+  return { card, form, preview: card.locator('.admin-questionnaire-preview'),
+    saved: { id: 201, assignment_ref: 'ADM28 synthetic', status: 'confirmed', channel: 'product_form',
+      answers_json: { C02a: { participant_text: 'Synthetic purpose' } },
+      recipient_mapping: ['participant'], recipient_user_ids: [] } };
+}
+
+test('ADM28 confirmation finishes before supplementary GET and offers a retry on GET failure', async ({ page }) => {
+  const { card, preview, saved } = await adm28Preview(page);
+  let release;
+  const delayed = new Promise((resolve) => { release = resolve; });
+  await page.route('**/users/admin/organizations/3/questionnaire', async (route) => {
+    await delayed;
+    return fulfillJson(route, { detail: 'synthetic unavailable' }, 503);
+  });
+  await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', (route) => fulfillJson(route, saved));
+  await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
+  await expect(preview).toHaveCount(0);
+  await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
+  await expect(card).not.toContainText('Подтверждаем…');
+  release();
+  await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Не удалось обновить готовность');
+  await expect(card.getByRole('button', { name: 'Проверить результат' })).toBeVisible();
+});
+
+test('ADM28 lost POST response checks exact revision and recipients without republishing', async ({ page }) => {
+  const { card, preview, saved } = await adm28Preview(page);
+  let posts = 0;
+  await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', (route) => {
+    posts += 1;
+    return route.abort('connectionreset');
+  });
+  await page.route('**/users/admin/organizations/3/questionnaire/201', (route) => fulfillJson(route, saved));
+  await page.route('**/users/admin/organizations/3/questionnaire', (route) => fulfillJson(route, {
+    items: [{ ...saved, readiness: { status: 'incomplete', early: { status: 'ready' } } }],
+  }));
+  await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
+  await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Итог подтверждения неизвестен');
+  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
+  await card.getByRole('button', { name: 'Проверить результат' }).click();
+  await expect(preview).toHaveCount(0);
+  await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
+  expect(posts).toBe(1);
+});
+
+test('ADM28 recipients stay checked and editable after navigation, and errors stay beside confirm', async ({ page }) => {
+  const { card, preview } = await adm28Preview(page);
+  const toggle = preview.locator('[name="questionnaire_recipient"][value="organization_admin"]');
+  const recipient = preview.locator('[name="questionnaire_recipient_user"]');
+  await toggle.check();
+  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
+  await preview.getByRole('button', { name: 'Подтвердить сведения' }).hover();
+  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toHaveCSS('background-color', 'rgb(214, 226, 229)');
+  await recipient.check();
+  await preview.getByRole('button', { name: 'Подтвердить сведения' }).hover();
+  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toHaveCSS('background-color', 'rgb(104, 119, 124)');
+  await card.getByRole('button', { name: 'Организация и участники', exact: true }).click();
+  await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
+  await expect(toggle).toBeChecked();
+  await expect(recipient).toBeChecked();
+  await expect(recipient).toBeEnabled();
+  await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', (route) =>
+    fulfillJson(route, { detail: 'QUESTIONNAIRE_REVISION_CONFLICT' }, 409));
+  await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
+  await expect(preview.locator('[data-operation-status]')).toContainText('уже подтверждена более новая');
+  await expect(preview.locator('[data-operation-status]')).toBeVisible();
+  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeEnabled();
+});
+
+test('ADM28 old confirmation cannot delete a newly created preview or newer input', async ({ page }) => {
+  const { card, preview, form, saved } = await adm28Preview(page);
+  let release;
+  const delayed = new Promise((resolve) => { release = resolve; });
+  await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', async (route) => {
+    await delayed;
+    return fulfillJson(route, saved);
+  });
+  await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
+  await form.locator('[name="purpose"]').fill('New synthetic purpose');
+  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+  await expect(card.locator('[data-questionnaire-revision-id="202"]')).toBeVisible();
+  release();
+  await expect(form.locator('[name="purpose"]')).toHaveValue('New synthetic purpose');
+  await expect(card.locator('[data-questionnaire-revision-id="202"]')).toContainText('New synthetic purpose');
+});
+
+test('ADM28 late confirmation cannot replace another selected assessment', async ({ page }) => {
+  const { card, preview, form, saved } = await adm28Preview(page);
+  let release;
+  const delayed = new Promise((resolve) => { release = resolve; });
+  await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', async (route) => {
+    await delayed; return fulfillJson(route, saved);
+  });
+  await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
+  await form.locator('[name="assignment_ref"]').fill('Another assessment');
+  await form.locator('[name="assignment_ref"]').press('Tab');
+  await form.locator('[name="purpose"]').fill('Another purpose');
+  release();
+  await expect(form.locator('[name="assignment_ref"]')).toHaveValue('Another assessment');
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Another purpose');
+  await expect(card.locator('.admin-questionnaire-confirmation')).toHaveCount(0);
+});
+
+test('ADM28 late confirmation after account change cannot populate the new account', async ({ page }) => {
+  const { preview, saved } = await adm28Preview(page);
+  let release;
+  const delayed = new Promise((resolve) => { release = resolve; });
+  await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', async (route) => {
+    await delayed; return fulfillJson(route, saved);
+  });
+  await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
+  await page.locator('#admin-organizations-logout-button').click();
+  await expect(page.locator('#auth-panel')).toBeVisible();
+  const nextUser = { ...adminUser, id: 28, email: 'next@example.test', full_name: 'Account B' };
+  await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, { email: nextUser.email, auth_mode: 'password' }));
+  await page.route('**/users/auth/email/password-login', (route) => fulfillJson(route, {
+    exists: true, user: nextUser, is_admin: true, admin_dashboard: { is_superadmin: false },
+  }));
+  await page.locator('#email-input').fill(nextUser.email);
+  await page.locator('#request-magic-link-button').click();
+  await page.locator('#magic-token-input').fill('synthetic-existing-password');
+  await page.locator('#verify-magic-link-button').click();
+  await expect(page.locator('#admin-organizations-account-name')).toHaveText('Account B');
+  release();
+  await page.locator('[data-organization-id="3"]').getByRole('button', { name: 'Данные организации', exact: true }).click();
+  await expect(page.locator('.admin-questionnaire-preview')).toHaveCount(0);
+  await expect(page.locator('[data-action="preview-early-data"] [name="assignment_ref"]')).not.toHaveValue('ADM28 synthetic');
+});
+
+test('ADM28 session restoration hides credentials and loads each admin resource once', async ({ page }) => {
+  let release;
+  let organizations = 0;
+  let questionnaires = 0;
+  const delayed = new Promise((resolve) => { release = resolve; });
+  await page.route('**/users/**', async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') {
+      await delayed;
+      return fulfillJson(route, { authenticated: true, user: adminUser, is_admin: true, admin_dashboard: { is_superadmin: false } });
+    }
+    if (pathname === '/users/admin/organizations') { organizations += 1; return fulfillJson(route, { items: [adminOrganization] }); }
+    if (pathname === '/users/admin/organizations/3/questionnaire') { questionnaires += 1; return fulfillJson(route, { items: [] }); }
+    return fulfillJson(route, {});
+  });
+  await page.goto(base);
+  await expect(page.locator('#session-restore-panel')).toBeVisible();
+  await expect(page.locator('#email-input')).toBeHidden();
+  release();
+  await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+  await expect(page.locator('.admin-organization-member')).toHaveCount(1);
+  expect(organizations).toBe(1);
+  expect(questionnaires).toBe(1);
+});
+
+test('ADM28 temporary restore failure offers retry and does not show login credentials', async ({ page }) => {
+  await page.route('**/users/session/restore', (route) => fulfillJson(route, { detail: 'unavailable' }, 503));
+  await page.route('**/users/version', (route) => fulfillJson(route, {}, 503));
+  await page.goto(base);
+  await expect(page.locator('#session-restore-title')).toHaveText('Не удалось восстановить сессию');
+  await expect(page.locator('#session-restore-retry')).toBeVisible();
+  await expect(page.locator('#email-input')).toBeHidden();
+  await expect(page.locator('#session-restore-panel [data-app-release-number]')).toHaveText(appRelease);
+});
+
+test('ADM28 initial HTML has a complete frontend version before JavaScript', async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    await page.goto(base);
+    await expect(page.locator('#session-restore-panel')).toBeVisible();
+    await expect(page.locator('#session-restore-panel [data-app-release-number]')).toHaveText(appRelease);
+    await expect(page.locator('#email-input')).toBeHidden();
+  } finally { await context.close(); }
+});
+
+test('ADM28 invalid JSON leaves a finite unknown outcome and restores confirm controls', async ({ page }) => {
+  const { card, preview } = await adm28Preview(page);
+  await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '{broken' }));
+  await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
+  await expect(card).toContainText('Итог подтверждения неизвестен');
+  await expect(preview).not.toContainText('Подтверждаем…');
+  await expect(card.getByRole('button', { name: 'Проверить результат' })).toBeEnabled();
+});
+
+test('ADM28 superadmin still restores its global dashboard', async ({ page }) => {
+  const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+  await page.route('**/users/**', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === '/users/session/restore') return fulfillJson(route, {
+      authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
+    });
+    if (path === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+    return fulfillJson(route, {});
+  });
+  await page.goto(base);
+  await expect(page.locator('#admin-panel')).toBeVisible();
+  await expect(page.locator('#admin-organizations-panel')).toBeHidden();
+  await expect(page.locator('#admin-open-methodology-button')).toBeVisible();
+});
 const adminOrganization = {
   id: 3, code: 'r03', name: 'R03 Organization', is_active: true, domains: [], admins: [],
   members_count: 1, reports_count: 0,
@@ -94,7 +314,7 @@ async function openAdminOrganizations(page, invitationHandler, organization = ad
   await page.locator('#request-magic-link-button').click();
   await page.locator('#magic-token-input').fill('legacy-password');
   await page.locator('#verify-magic-link-button').click();
-  await page.locator('#admin-open-organizations-button').click();
+  await expect(page.locator('#admin-organizations-panel')).toBeVisible();
   if (organization.members.length) {
     await page.locator('input[name="invitation_email"]').first().waitFor();
   } else {
@@ -459,7 +679,7 @@ test('UX-FIX20-02 clears account A drafts and ignores its late preview after acc
   await page.locator('#request-magic-link-button').click();
   await page.locator('#magic-token-input').fill('legacy-password');
   await page.locator('#verify-magic-link-button').click();
-  await page.locator('#admin-open-organizations-button').click();
+  await expect(page.locator('#admin-organizations-panel')).toBeVisible();
   const cardB = page.locator('[data-organization-id="3"]');
   await cardB.getByRole('button', { name: 'Данные организации' }).click();
   const formB = cardB.locator('[data-action="preview-early-data"]');
@@ -530,6 +750,9 @@ test('ADM19-02 routes org-admin own assessment by server journey and preserves m
   await page.getByRole('button', { name: 'Моя оценка' }).click();
   await expect(page.getByRole('heading', { name: 'Оценка пока не назначена' })).toBeVisible();
   await expect(page.locator('#admin-assessment-empty-panel')).toBeVisible();
+  await expect(page.locator('#participant-area-navigation')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Моя оценка', exact: true }).filter({ visible: true })).toHaveCount(1);
+  await expect(page.locator('#admin-assessment-empty-description')).toContainText('Вы можете назначить себе оценку');
   await expect(page.locator('#auth-complete-panel')).toBeHidden();
   await expect(page.getByRole('button', { name: 'Перейти к участникам и назначению' })).toBeVisible();
   expect(profileReopens).toBe(0);
@@ -735,6 +958,7 @@ test('F22-04 keeps a newer confirmed revision and input entered after confirm st
       id: 13, assignment_ref: 'Поток order', status: 'confirmed', channel: 'product_form',
       confirmed_at: '2026-10-21T10:01:00Z', validation_json: { errors: [], missing: [] },
       answers_json: { C02a: { participant_text: 'Newer confirmed 13' } },
+      readiness: { early: { status: 'ready' }, context: { status: 'ready' }, roles: { status: 'incomplete' } },
     }],
   }));
 
@@ -1790,6 +2014,7 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/version') return fulfillJson(route, { version: 'e01-test' });
     if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
     if (pathname === '/users/8/journey-state') return fulfillJson(route, {
       next_action: 'resume_assessment', profile: { status: 'complete' }, onboarding: { status: 'completed' },
       assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: 'cycle-e01', cycle_session_id: 'session-e01', assessment_situation_id: 'as-e01' },
