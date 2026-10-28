@@ -1,4 +1,4 @@
-import { readApiResponse } from '../../api.js';
+import { createOperationId, readApiResponse } from '../../api.js';
 import { escapeHtml } from '../../utils/format.js';
 
 let initialized = false;
@@ -79,14 +79,14 @@ export const initializeM5Lab = async () => {
         if (!content) return;
         await readApiResponse(await fetch(`/users/admin/m5-runtime/situations/${encodeURIComponent(asId)}/turns`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ request_id: crypto.randomUUID(), turn_id: crypto.randomUUID(), content }),
+          body: JSON.stringify({ request_id: createOperationId(), turn_id: createOperationId(), content }),
         }), 'Не удалось сохранить Turn.');
         show(await readApiResponse(await fetch(`/users/admin/m5-lab/runs/${encodeURIComponent(row.run_id)}`), 'Не удалось перечитать trace.'));
       });
       card.querySelectorAll('[data-m5-action]').forEach((actionButton) => actionButton.addEventListener('click', async () => {
         await readApiResponse(await fetch(`/users/admin/m5-runtime/situations/${encodeURIComponent(asId)}/transitions`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ request_id: crypto.randomUUID(), action: actionButton.dataset.m5Action, reason: 'Prompt Lab QA' }),
+          body: JSON.stringify({ request_id: createOperationId(), action: actionButton.dataset.m5Action, reason: 'Prompt Lab QA' }),
         }), 'Не удалось изменить состояние AS.');
         show(await readApiResponse(await fetch(`/users/admin/m5-lab/runs/${encodeURIComponent(row.run_id)}`), 'Не удалось перечитать trace.'));
       }));
@@ -118,7 +118,7 @@ export const initializeM5Lab = async () => {
         let failures = 0;
         try {
           for (let index = 0; index < selected.length; index += 1) {
-            const runId = crypto.randomUUID();
+            const runId = createOperationId();
             root.querySelector('[data-m5-run-id]').value = runId;
             status.textContent = `Подготовка QA AS ${index + 1} из ${selected.length}. ID: ${runId}`;
             const response = await fetch('/users/admin/m5-lab/runs', {

@@ -1093,6 +1093,32 @@ test('R03 refresh obeys server journey and fails closed on journey outage', asyn
   await expect(page.locator('#auth-error')).toContainText('Не удалось определить актуальный этап');
 });
 
+test('R03 successful password response reports a missing browser session as auth failure', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'r03-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: false });
+    if (pathname === '/users/auth/email/request-link') return fulfillJson(route, {
+      email: user.email, auth_mode: 'password', message: 'Введите пароль.',
+    });
+    if (pathname === '/users/auth/email/password-login') return fulfillJson(route, {
+      exists: true, user, is_admin: false,
+      agent: { session_id: 'profile-session', message: '', stage: 'profile', completed: false },
+      dashboard: {},
+    });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, { detail: 'Session not found' }, 401);
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await page.locator('#email-input').fill(user.email);
+  await page.locator('#request-magic-link-button').click();
+  await page.locator('#magic-token-input').fill('legacy-password');
+  await page.locator('#verify-magic-link-button').click();
+  await expect(page.locator('#auth-error')).toContainText('Сессия входа не сохранилась');
+  await expect(page.locator('#auth-error')).not.toContainText('актуальный этап');
+});
+
 test('LK01 renders selected Cycle cards without catalogue or horizontal overflow', async ({ page }) => {
   const user = { id: 8, email: 'person@example.test', full_name: 'Person', job_description: 'Product Lead' };
   const dashboard = {
@@ -1881,6 +1907,12 @@ test('W02 blocks direct entry on missing participant briefing and supports readi
 });
 
 test('W02 does not present plan cards before the prepared plan exists', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window.crypto, 'randomUUID', {
+      configurable: true,
+      value: undefined,
+    });
+  });
   const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
   const acquaintance = {
     readiness: { status: 'ready', organization_name: 'Организация А', briefing: {

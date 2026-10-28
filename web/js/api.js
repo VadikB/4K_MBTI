@@ -90,6 +90,10 @@ export class StaleApiResponseError extends Error {
   }
 }
 
+export const authenticatedJourneyErrorMessage = (error) => error?.status === 401
+  ? 'Сессия входа не сохранилась. Повторите вход; если ошибка повторится, обратитесь к администратору стенда.'
+  : 'Не удалось определить актуальный этап. Обновите страницу или повторите вход.';
+
 export const readApiResponse = async (response, fallbackMessage, { recoverUnauthorized = true } = {}) => {
   const requestGeneration = responseGenerations.get(response) ?? sessionGeneration;
   const rawText = await response.text();

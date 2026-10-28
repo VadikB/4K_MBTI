@@ -226,7 +226,7 @@ document.getElementById('organization-invitation-keep-session-button')?.addEvent
   try { window.sessionStorage.removeItem('agent4k.organizationInvitationToken'); } catch (_error) { /* optional */ }
   window.location.assign('/');
 });
-import { advanceSessionGeneration, readApiResponse, createOperationId } from './api.js';
+import { advanceSessionGeneration, authenticatedJourneyErrorMessage, readApiResponse, createOperationId } from './api.js';
 import {
   buildExistingUserAgentMessage,
   shouldOfferNoChangesQuickReply,
@@ -857,7 +857,7 @@ const applyAuthResponse = async (data) => {
     throw new Error(`Неизвестный серверный этап: ${journey?.next_action || 'empty'}`);
   } catch (error) {
     console.error('Failed to route authenticated user', error);
-    showError(authError, 'Не удалось определить актуальный этап. Обновите страницу или повторите вход.');
+    showError(authError, authenticatedJourneyErrorMessage(error));
     return;
   }
 };
@@ -2493,7 +2493,7 @@ const sendInterviewAnswer = async (text, existingMessageRow = null) => {
     logAssessmentClientEvent('request_started');
     if (interviewModule.isCycleAssessment()) {
       messageRow.dataset.requestId ||= createOperationId();
-      messageRow.dataset.turnId ||= crypto.randomUUID();
+      messageRow.dataset.turnId ||= createOperationId();
     }
     messageRow.productRequestIdentity ||= {
       requestId: messageRow.dataset.requestId,
