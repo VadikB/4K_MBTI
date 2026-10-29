@@ -33,6 +33,8 @@
 - Следующий шаг: review, CI, deploy test и ручная приёмка.
 - Ветка / base commit: `codex/superadmin-organization-purge` /
   `2f930bb9ee10c6acde7ebf50dc8d36462f642c90` (`main` на старте worktree).
+- Версия выпуска: patch `2.0.35` → `2.0.36`; bump потребован обязательным
+  CI release gate после изменения продуктового API/UI.
 
 ## Ограничения и риски
 
@@ -67,6 +69,7 @@
 - `node --test tests/frontend/*.test.mjs`: `88 passed`.
 - `npm run test:backend:http`: `81 passed`, `12 deselected`.
 - `npm run lint:js`: PASS; `npm run build:web`: PASS.
+- `scripts/check_release_version.py --base-ref origin/main`: PASS (`2.0.36`).
 - Адресная PostgreSQL 16 integration сервиса в итоговом worktree: `2 passed`.
 - Полный backend-набор без `integration`, `e2e` и `llm`:
   `654 passed`, `259 deselected`; два предупреждения среды не влияют на результат.
