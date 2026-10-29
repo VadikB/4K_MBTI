@@ -3,10 +3,11 @@
 Дата: 29.10.2026, МСК. Все четыре задания — одна ветка
 `codex/ux-path29-participant`, один кандидат, один будущий PR.
 Base `a86775ff011a51831f9f86596be3dd776de79d11` / 2.0.34.
-Backend и схема зафиксированы в `89f4f267653f567cfcbaac803799b1a61c601701`.
-После этого менялись только frontend, browser/frontend tests, dist и отчёт;
-`git diff 89f4f26 -- Api scripts tests/integration` пуст. Поэтому результаты
-backend ниже относятся к неизменённому содержимому, не объявляются новым прогоном.
+Исходный backend и схема — `89f4f267653f567cfcbaac803799b1a61c601701`;
+UI/recovery checkpoint — `f0bac1156f05981d53d0ac483cd3ce48f1ac7517`.
+Между ними менялись только frontend, browser/frontend tests, dist и отчёт.
+После CI найдено адресное pre-existing M7 concurrency-нарушение; ниже выделены
+исторические результаты и повторные проверки исправления, они не смешиваются.
 Окончательный head и обязательный CI фиксируются в PR; merge/deploy ещё нет.
 
 ## Причины, а не только симптомы
@@ -116,6 +117,51 @@ plan-only готовностью; они исправлены, полный по
 теперь принимает уже открытый чат, не выполняет повторного старта. Все retries=0.
 
 ## U01–U07
+
+### CI checkpoint f0bac11 и исправление
+
+[Run 40872272091](https://github.com/VadikB/4K_MBTI/actions/runs/40872272091),
+pytest job `123442080822`: unit/HTTP/integration прошли; browser 83 PASS / 1 FAIL,
+S10-A `drain` → `_clarify_interim` → `m7_clarification.present` → UniqueViolation
+по (AS, question turn_id). Два обработчика успели прочитать отсутствие delivery
+до блокировки; второй не перечитывал состояние после Cycle → AS lock.
+Функция идентична base main; это отдельная причина, не sleep и не provider.
+
+Контракт `docs/architecture/m7-clarification-contract.md` v1, draft QA:
+SHA-256 `03d5aa51ef63489c75a48b2a0b276a02a054a794ee85e7159f3e30b4f70800c3`.
+одна immutable delivery/question Turn в том же Dialogue, без изменения M4/C-54.
+Адресное исправление — повторное чтение delivery под прежним lock, не подавление
+исключения и не снятие constraint. Нормы, API, схема, snapshots и артефакты не меняются.
+Два реальных соединения + barrier: до исправления FAIL с тем же UniqueViolation,
+после sequential/concurrent **2 PASS / 12.84s**. Лог до:
+`/private/tmp/path29-clarification-before.log`, после:
+`/private/tmp/path29-clarification-after.log`.
+
+Три локальных S10-A без изменений дали 2 PASS / 1 FAIL в browser-helper:
+его deadline 5s включал фактический POST/start. Искусственная задержка настоящего
+commit-ответа на 6s отдельно воспроизвела FAIL (`path29-start-before.log`).
+Теперь helper ждёт start ack, затем переход UI; продуктовые таймауты не увеличены.
+Новый полный unit — 646 PASS / 83.60s, HTTP — 81 PASS / 33.73s, exit 0;
+логи `path29-ci-fix-unit.log`, `path29-ci-fix-http.log` в `/private/tmp`.
+S10-A с задержанным настоящим start-ответом — **3 PASS / 4.3m**, exit 0;
+лог `/private/tmp/path29-start-after.log`. Полные integration/browser были прерваны
+по команде владельца: exit 2 / 84 PASS до KeyboardInterrupt и exit 130 / 73 PASS,
+1 interrupted / 10 NOT_RUN соответственно. Они не являются полными PASS.
+После следующей команды «продолжаем» запущены заново с начала, логи:
+`/private/tmp/path29-resumed-integration.log`, `/private/tmp/path29-resumed-browser.log`.
+На момент фиксации рабочего checkpoint они RUNNING; итог и CI точного head —
+в [PR #124](https://github.com/VadikB/4K_MBTI/pull/124). До полного успеха проверок
+и нового review передача не считается завершённой, merge/deploy заблокированы.
+
+Review f0bac11 принят владельцем в чате и записан в PR comment 6496524820.
+Merge/deploy на test после зелёного CI разрешены отдельно; текущее исправление
+требует нового review точного head. Merge/deploy не выполнены.
+
+Read-only preflight test: config 1 (`methodology_version=1.0`) и 2 (`1.1`) без catalog ref;
+config 3 связан только с `e102-controlled/1.0`, `technical_fixture_only=true`,
+organization-scoped, 2 cases. Новых операций и LLM-вызовов нет. Владелец решил:
+deploy после gates продолжить, real-provider smoke **NOT_RUN**, каталог согласовать
+отдельно. Fixture не считается допуском реальных кейсов, самовольной публикации нет.
 
 | Сценарий | Проверенное | Граница |
 | --- | --- | --- |

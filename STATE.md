@@ -1,5 +1,38 @@
 # STATE — UX-PATH29
 
+Возобновлено 29.10.2026 по следующей прямой команде владельца «продолжаем».
+Старые тестовые процессы завершены; полные прогоны запускаются заново, не с места
+прерывания. Сохранённые результаты остановки: integration exit 2 / 84 PASS до
+KeyboardInterrupt; browser exit 130 / 73 PASS, 1 interrupted, 10 NOT_RUN.
+Это не полные PASS. Новые логи: `/private/tmp/path29-resumed-integration.log`,
+`/private/tmp/path29-resumed-browser.log`. Ниже — историческая запись паузы.
+
+## Пауза по команде владельца 29.10.2026
+
+Владелец: «останови тестирование, я закрываю крышку. возобновим по моей команде».
+Локальные полные integration/browser прогоны прерваны; их частичные результаты
+не являются PASS. Не возобновлять проверки, push, merge, deploy или LLM без новой
+команды владельца. Все исходники и логи сохранены, destructive cleanup не нужен.
+
+Исторический checkpoint паузы: worktree `/Users/vadim_bogachev/.codex/worktrees/ux-adm28-add01-v2/4K`,
+ветка `codex/ux-path29-participant`; remote/PR #124 head `f0bac11`, кандидат 2.0.35.
+CI run 40872272091 завершён FAIL (83 browser PASS / 1 FAIL); merge/deploy не было.
+Uncommitted: 4 строки в `Api/m7_clarification.py`, конкурентная регрессия в
+`tests/integration/test_m6_evidence_db.py`, ожидание POST/start + 6s fault injection
+в `tests/browser/runtime.spec.mjs`, STATE/задача/verification report.
+
+Доказано до паузы: новая regression до исправления FAIL/UniqueViolation, после
+sequential/concurrent 2 PASS; unit 646 PASS; HTTP 81 PASS; delayed-start S10-A
+3 PASS / 4.3m. После возобновления проверить фактическое состояние ресурсов и
+повторить прерванные полные наборы, не переиспользовать их как завершённые.
+Логи: `/private/tmp/path29-ci-fix-integration.log`, `/private/tmp/path29-ci-fix-browser.log`.
+Затем отчёт/changed-paths, рабочий commit и push в тот же PR, новое review точного
+head и обязательный CI. Разрешение test merge/deploy действует только после gates.
+Real-provider smoke оставлен NOT_RUN по отдельному решению владельца; каталог
+согласовать отдельно. Новых LLM-вызовов/публикаций не было.
+
+## Состояние до паузы
+
 - Base: свежий `origin/main` `a86775ff011a51831f9f86596be3dd776de79d11`, 2.0.34.
 - Ветка `codex/ux-path29-participant`, изолированный worktree; пользовательская
   основная копия и её untracked не затронуты. Все четыре задания — один PR.
@@ -27,12 +60,29 @@
   Последний сквозной review-mode PATH29 — 1 PASS / 51.9s: тот же M4/Cycle,
   started=1 после возврата; новый frontend повтор 85 PASS, lint PASS.
   Новый CI/deploy NOT_RUN.
-- Следующий шаг: один PR и новый review точного head; локальный минимум завершён.
-  Real-provider smoke NOT_RUN; владелец разрешил ровно один после штатного test deploy,
-  текущие модель/лимиты, новые synthetic данные, без изменения ключей. P0 не закрыт.
+- Единый [PR #124](https://github.com/VadikB/4K_MBTI/pull/124), head f0bac11.
+  Владелец принял review этого head и разрешил squash merge/штатный test deploy
+  только после зелёного CI. CI run 40872272091: frontend PASS; backend unit/HTTP/
+  integration PASS; browser 83 PASS / 1 FAIL (S10-A, duplicate clarification Turn).
+- Активный шаг: адресное устранение CI-гонки в M7.present (pre-lock read →
+  повторное чтение delivery под Cycle → AS lock). Конкурентная регрессия:
+  до исправления UniqueViolation FAIL, после sequential/concurrent 2 PASS.
+  Отдельно доказан 5s timeout browser-helper на реальном start; helper теперь ждёт
+  POST/start ack, synthetic задержка ответа 6s остаётся регрессией.
+  Полные unit 646 PASS / HTTP 81 PASS; S10-A с delayed start — 3 PASS / 4.3m.
+  Полные integration/browser были прерваны по команде владельца и после «продолжаем»
+  запущены заново. В рабочем checkpoint они RUNNING; окончательные результаты и CI
+  точного head фиксируются в PR #124, локальный частичный успех не равен допуску.
+  Тот же PR/2.0.35;
+  новое review окончательного head потребуется, f0bac11 approval не переносится.
+- Read-only test preflight: единственный каталог e102-controlled/1.0 — technical
+  synthetic fixture, scoped, 2 cases; configs 1/2 без catalog. Владелец решил
+  продолжить deploy после gates, smoke оставить NOT_RUN, каталог согласовать отдельно.
+  Новых LLM-вызовов/публикации артефактов нет; P0 генерации не объявлен закрытым.
   [Общий план и откат](docs/evc/tasks/ux-path29-participant.md).
 - [Подробные команды, traceability, U01–U07 и ограничения](docs/evc/tasks/artifacts/ux-path29/verification.md).
-- Backend в `89f4f26`, последующий рабочий коммит закрывает UI/test/report.
+- Исходный backend в `89f4f26`, UI/test/report в `f0bac11`; следующий рабочий
+  checkpoint фиксирует узкое runtime-исправление M7 и регрессии.
   Передача — единый PR; его URL и окончательный head фиксируются в PR/сообщении.
   Новые review/CI gates обязательны; прежние PR122/123 reviews не применяются.
   Локальная готовность к review не равна приёмке или допуску deploy.

@@ -158,7 +158,12 @@ async function completeAcquaintance(page){
   const next=page.locator('#onboarding-next');
   const marker=`${await panel.getAttribute('data-step')}|${await page.locator('#onboarding-title').textContent()}`;
   await expect(next).toBeEnabled();
+  const startsAssessment=(await next.textContent())==='Приступить к оценке';
+  const committedStart=startsAssessment?page.waitForResponse(response=>
+   response.request().method()==='POST' && new URL(response.url()).pathname==='/users/assessment/cycles/start',
+   {timeout:30000}):null;
   await next.click();
+  if(committedStart)expect((await committedStart).ok()).toBeTruthy();
   await expect.poll(async()=>{
    if(!await panel.isVisible())return true;
    return `${await panel.getAttribute('data-step')}|${await page.locator('#onboarding-title').textContent()}`!==marker;
@@ -242,6 +247,16 @@ async function report(page,stand,info){
  return saved;
 }
 test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page,stand},info)=>{
+ // Deliberately hold the real committed start response beyond the old helper's
+ // five-second title deadline. No fake start result or extra Cycle is created.
+ let firstStart=true;
+ await page.route('**/users/assessment/cycles/start',async route=>{
+  if(!firstStart)return route.continue();
+  firstStart=false;
+  const response=await route.fetch();
+  await new Promise(resolve=>setTimeout(resolve,6000));
+  await route.fulfill({response});
+ });
  await login(page,stand);await start(page);await answer(page);
  const dialogue=await runtime(page,stand);
  const delivered=dialogue.trace.events.find(x=>x.event_type==='mandatory_update');

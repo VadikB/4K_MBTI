@@ -296,3 +296,45 @@ deploy на test, на новых синтетических данных, с т
 без изменения ключей; при окончательном отказе остановка, дополнительных операций нет.
 P0 генерации не закрывается synthetic PASS; визуальная приёмка владельца/маркетолога
 и реальная платформенная матрица NOT_RUN. Chromium viewport не равен Safari/iOS/Яндекс.
+
+## CI #642 и адресная регрессия доставки уточнения
+
+PR #124, head `f0bac1156f05981d53d0ac483cd3ce48f1ac7517`, run
+`40872272091`: frontend PASS; unit/HTTP/integration PASS, browser 83 PASS / 1 FAIL.
+S10-A падает в `stand.cli('drain')` → `_clarify_interim` →
+`m7_clarification.present`: UniqueViolation по (AS, turn_id) уточняющего вопроса.
+CLI drain и штатный worker одновременно предъявляют одно решение. `present`
+читает delivery до Cycle → AS lock, но после ожидания блокировки не перечитывает.
+Код этой функции идентичен base main; ошибка не связана со сном ноутбука.
+
+Прочитано для адресного исправления: `docs/architecture/m7-clarification-contract.md`
+(v1, draft QA), `Api/m7_clarification.py`, `Api/m7_clarification_repository.py`,
+`Api/m10_orchestration.py`, `scripts/test_stand.py`, существующий M6/M7 integration
+в `tests/integration/test_m6_evidence_db.py` и `tests/browser/runtime.spec.mjs`.
+Правило: неизменяемое решение → единственный question Turn/delivery того же Dialogue;
+PM-04/M7, без изменения семантики вопроса, C-54/M4, прав, схемы или артефактов.
+
+План до реализации: воспроизвести двумя реальными соединениями с barrier до lock;
+в `present` перечитать delivery под уже существующей Cycle → AS блокировкой.
+Не подавлять UniqueViolation и не ослаблять constraint. Отдельный локальный повтор
+S10-A (2 PASS / 1 FAIL) выявил timeout browser-помощника: 5 секунд смены заголовка
+включали реальный start. Помощник должен ждать подтверждение POST/start и затем
+экран интервью; регрессия — задержанный ответ после настоящего commit. Продуктовые
+таймауты и правила времени не меняются. Повторить unit/HTTP/полный integration и
+browser, обновить тот же PR/версию; новое человеческое review точного head обязательно.
+Откат: revert адресного изменения приложения; данные/доставленные Turns сохраняются.
+
+Владелец в чате подтвердил review f0bac11 и разрешил squash merge/штатный deploy
+только на test после зелёного CI; до исправления CI merge не выполняется.
+Read-only preflight test обнаружил единственный catalog `e102-controlled/1.0`,
+`technical_fixture_only=true`, scoped, 2 cases; configs 1/2 без catalog ref.
+Владелец отдельно решил: deploy продолжать после gates, real-provider smoke
+оставить NOT_RUN, каталог согласовать отдельно. Новых платных вызовов нет;
+публикация/изменение каталога этим PR не разрешены.
+
+Рабочий checkpoint исправления: barrier regression 2 PASS, unit 646 PASS,
+HTTP 81 PASS, delayed-start S10-A 3 PASS / 4.3m. Полные integration/browser были
+прерваны по команде владельца (не полный PASS), после «продолжаем» запущены с начала.
+Рабочая ветка сохраняется в тот же PR для CI параллельно локальному прогону;
+это не готовность к merge. Окончательные результаты полного набора и новое review
+точного head фиксируются в [PR #124](https://github.com/VadikB/4K_MBTI/pull/124).

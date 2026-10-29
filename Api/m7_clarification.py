@@ -125,6 +125,10 @@ def present(connection,*,decision_id:str,expected_c54_revision_id:str):
     if decision['status']!='ASK':raise ValueError('M7_CLARIFICATION_NOT_PRESENTABLE')
     if str(decision['c54_revision_id'])!=expected_c54_revision_id:raise ValueError('M7_STALE_C54')
     source=_source(connection,expected_c54_revision_id,lock=True)
+    # A competing presenter may have delivered while we waited for Cycle -> AS.
+    # Re-read under that lock; the pre-lock snapshot cannot decide idempotency.
+    decision=repo.read(connection,decision_id)
+    if decision['question_turn_id']:return decision
     latest=connection.execute("SELECT id FROM m6_c54_revisions WHERE as_db_id=%s AND mode='interim' ORDER BY created_at DESC LIMIT 1",(source['id'],)).fetchone()
     if source['status']!='scenario_ended' or not latest or str(latest['id'])!=expected_c54_revision_id:raise ValueError('M7_CLARIFICATION_STATE_CHANGED')
     cycle=read_cycle(connection,str(connection.execute('SELECT cycle_id FROM m5_cycles WHERE id=%s',(source['cycle_db_id'],)).fetchone()['cycle_id']))

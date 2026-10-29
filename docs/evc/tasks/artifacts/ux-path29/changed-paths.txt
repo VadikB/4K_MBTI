@@ -9,6 +9,7 @@ Api/auth_service.py
 Api/config.py
 Api/database.py
 Api/m10_product_flow.py
+Api/m7_clarification.py
 Api/participant_profile.py
 Api/product_cycle_preparation_queue.py
 Api/public_origin.py
@@ -36,6 +37,7 @@ tests/frontend/onboarding-flow.test.mjs
 tests/frontend/ui01-common-footer.test.mjs
 tests/frontend/w02-acquaintance.test.mjs
 tests/integration/test_m10_product_path_db.py
+tests/integration/test_m6_evidence_db.py
 tests/integration/test_m7_parameter_resolution_db.py
 tests/integration/test_path29_participant_owned_stand.py
 tests/integration/test_path29_scope_states_db.py
