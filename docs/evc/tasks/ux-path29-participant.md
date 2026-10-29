@@ -291,9 +291,9 @@ summary/4К/queued/completed, новая auth-сессия, возврат с г
 Подробное доказательство и ограничения —
 в [verification report](artifacts/ux-path29/verification.md).
 
-Real-provider smoke NOT_RUN: владелец 29.10 явно разрешил один smoke после штатного
-deploy на test, на новых синтетических данных, с текущими моделью и лимитами,
-без изменения ключей; при окончательном отказе остановка, дополнительных операций нет.
+Real-provider smoke NOT_RUN: после исходного разрешения одного smoke владелец
+29.10 отдельно решил продолжить deploy, но smoke оставить NOT_RUN до согласования
+утверждённого каталога. Это последнее решение; новых provider-вызовов не выполнять.
 P0 генерации не закрывается synthetic PASS; визуальная приёмка владельца/маркетолога
 и реальная платформенная матрица NOT_RUN. Chromium viewport не равен Safari/iOS/Яндекс.
 
@@ -338,3 +338,34 @@ HTTP 81 PASS, delayed-start S10-A 3 PASS / 4.3m. Полные integration/browse
 Рабочая ветка сохраняется в тот же PR для CI параллельно локальному прогону;
 это не готовность к merge. Окончательные результаты полного набора и новое review
 точного head фиксируются в [PR #124](https://github.com/VadikB/4K_MBTI/pull/124).
+
+## Возобновлённый полный контроль head 49e6693
+
+Владелец подтвердил review `49e6693a903c06bcdb65d51ce936ecdabc41d972` в чате;
+решение записано в PR comment 6498103561. Integration завершён 170 PASS /
+2 explicit llm SKIP, exit 0, 917.48s. Полный browser — 80 PASS / 1 FAIL /
+3 NOT_RUN, exit 1, 12.3m. Это не полный PASS, merge/deploy не выполнены.
+
+S10.4: сохранение Telegram реально вернуло 200, но лишний profile-summary затем
+сбросил статус. Прочитаны неизменённые относительно main `screens/profile.js`,
+`screen-loaders.js`, wiring и существующий helper settings в runtime.spec.mjs.
+Helper повторял действие внутри expect.poll, пока загружался lazy screen;
+регрессия с контролируемой задержкой его настоящего bundle 350ms воспроизводит
+3 GET profile-summary вместо 1 до исправления. Логи before/after:
+`/private/tmp/path29-profile-before.log`, `/private/tmp/path29-profile-after.log`.
+
+Узкое исправление только теста: один исходный клик и ожидание visible без повторной
+команды. Добавлены задержка cold load и проверка ровно одного открытия; существующие
+PATCH/reload/403/logout/late response/account switch/401 проверки сохранены.
+Product код, bundle, API, БД, права, артефакты и продуктовые таймауты не меняются.
+Откат этого шага — revert test helper, без изменения runtime/данных.
+После адресного повтора нужен полный browser и CI нового точного head; backend
+646 unit / 81 HTTP / 170 integration переиспользуется с явным отсутствием runtime diff.
+Новое review потребуется, принятие 49e6693 не переносится на следующий head.
+
+Адресный S10.4 с cold-load регрессией после исправления — **3 PASS / 1.5m**,
+exit 0. CI 49e6693 (`40881550481`) завершён frontend/pytest PASS, pytest 12m39s;
+это не отменяет найденный локальный FAIL и не переносится на новый head. Новый
+полный browser запущен с начала; лог `/private/tmp/path29-final-helper-browser.log`.
+Свежий origin/main перед checkpoint — a86775ff, версия 2.0.34; release check
+2.0.35, JS syntax и diff-check PASS. Frontend/runtime/schema изменений нет.

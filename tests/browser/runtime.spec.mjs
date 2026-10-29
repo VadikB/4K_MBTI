@@ -542,6 +542,17 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
 
 
 test('S10.4 owner profile, 403, logout, late response and account switch',async({page,stand},info)=>{
+ // A cold lazy screen must not make the navigation helper click repeatedly.
+ // Those extra opens can finish after PATCH and erase its success feedback.
+ let profileLoads=0;
+ page.on('request',request=>{
+   if(new URL(request.url()).pathname.endsWith('/profile-summary'))profileLoads++;
+ });
+ await page.route('**/web/dist/profile-*.js',async route=>{
+   const response=await route.fetch();
+   await new Promise(resolve=>setTimeout(resolve,350));
+   await route.fulfill({response});
+ });
  await login(page,stand);
  const settings=async()=>{
    const open=()=>page.evaluate(()=>{
@@ -549,11 +560,7 @@ test('S10.4 owner profile, 403, logout, late response and account switch',async(
      document.querySelector(selector)?.click();
    });
    await open();
-   await expect.poll(async()=>{
-     if(await page.locator('#profile-panel').isVisible())return true;
-     await open();
-     return page.locator('#profile-panel').isVisible();
-   },{timeout:10000}).toBe(true);
+   await expect(page.locator('#profile-panel')).toBeVisible({timeout:10000});
  };
  const logout=async()=>{
    await page.evaluate(()=>{
@@ -567,6 +574,7 @@ test('S10.4 owner profile, 403, logout, late response and account switch',async(
  await settings();
  await expect(page.locator('#profile-email')).toHaveValue('participant@example.test');
  await expect(page.locator('#profile-email')).toHaveAttribute('readonly','');
+ expect(profileLoads,'one click must open the cold profile exactly once').toBe(1);
  await page.locator('#profile-telegram').fill('@owner_changed');await page.locator('#profile-telegram').press('Tab');
  await expect(page.locator('#profile-save-status')).toContainText('Telegram обновлен');
  await info.attach('owner-profile',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});

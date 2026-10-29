@@ -197,7 +197,8 @@ Chromium viewport не подменяет эти PASS. Визуальная пр
 - Шаблоны env, trusted origin и rollback синхронизированы; нет нового runtime
   fallback или выбора источников агентом. Номер кандидата увеличен один раз.
 - Независимое человеческое review, обязательный CI точного head, deployed HTTPS,
-  один real-provider smoke и визуальная приёмка остаются отдельными gates.
+  визуальная приёмка остаются отдельными gates; real-provider smoke отложен
+  владельцем до отдельного согласования каталога и остаётся NOT_RUN.
 - Изменённые пути: [changed-paths.txt](changed-paths.txt); это самопроверка агента,
   не человеческая приёмка. Финальная воспроизводимость staged dist — PASS.
 
@@ -212,7 +213,37 @@ global role и не переписывать snapshots ради обхода. С
 сохраняют свои контракты. Destructive backfill или удаление данных не предусмотрены.
 
 После PR: обязательные frontend/pytest CI точного head/base и новое человеческое
-review. Только затем разрешённый выпуск на test. Владелец разрешил ровно один
-real-provider smoke на новых synthetic данных после штатного deploy, текущие
-модель/лимиты/ключи без изменений, остановка при окончательном отказе. Это не допуск
-нового каталога/публикации артефактов, pilot/production или следующих блоков.
+review. Только затем разрешённый выпуск на test. Последнее решение владельца:
+deploy продолжить после gates, real-provider smoke NOT_RUN, утверждённый каталог
+согласовать отдельно. Публикация артефактов, pilot/production и следующие блоки
+не разрешены.
+
+## Полный контроль после паузы и гонка browser-helper
+
+На `49e6693a903c06bcdb65d51ce936ecdabc41d972` integration завершён:
+**170 PASS / 2 explicit llm SKIP**, exit 0, 917.48s;
+`/private/tmp/path29-resumed-integration.log`. Полный browser:
+**80 PASS / 1 FAIL / 3 NOT_RUN**, exit 1, 12.3m;
+`/private/tmp/path29-resumed-browser.log`. Владелец принял review этого head,
+запись [в PR](https://github.com/VadikB/4K_MBTI/pull/124#issuecomment-6498103561).
+Merge/deploy не выполнены: полный локальный browser gate ещё открыт.
+
+S10.4 FAIL: ожидался Telegram success, после PATCH 200 статус очищен последующим
+GET profile-summary. Product profile module идентичен base main. Старый test helper
+повторно кликает настройки внутри expect.poll до видимости lazy screen. Контролируемая
+задержка настоящего profile bundle 350ms воспроизводит **3 GET вместо 1**, FAIL
+до исправления; `/private/tmp/path29-profile-before.log`.
+Исправлен только helper (один клик + ожидание), добавлены cold-load задержка и
+проверка одного открытия. Все сохранение/reload/403/logout/late response/switch/401
+assertions сохранены. Product код/dist/таймауты/API/схема не меняются.
+Адресные и полные результаты нового head будут записаны в PR; старый CI и review
+49e6693 не заменяют gates нового head. Backend 646/81/170 PASS можно переиспользовать
+только пока runtime/schema/integration diff с 49e6693 отсутствует.
+
+S10.4 cold-load после исправления — **3 PASS / 1.5m**, exit 0;
+`/private/tmp/path29-profile-after.log`. CI `40881550481` на 49e6693:
+frontend/pytest **PASS** (pytest 12m39s); локальный FAIL не скрывается этим результатом.
+Новый полный browser запущен: `/private/tmp/path29-final-helper-browser.log`.
+Runtime/frontend/schema/integration изменений нет; release guard 2.0.35,
+node --check и git diff --check PASS. Окончательные full browser/CI/review
+нового head и deploy — в PR #124, до их завершения merge не допускается.
