@@ -30,8 +30,14 @@ class Connection:
         self.members = set(members)
         self.rows = []
         self.next_id = 1
+        self.operations = {}
 
     def execute(self, sql, params=()):
+        if 'INSERT INTO organization_assessment_assignment_operations' in sql:
+            self.operations.setdefault(tuple(params[:3]), params[3])
+            return Result()
+        if 'SELECT request_fingerprint FROM organization_assessment_assignment_operations' in sql:
+            return Result(one={'request_fingerprint': self.operations[tuple(params)]})
         if "SELECT DISTINCT request_fingerprint" in sql:
             return Result(many=[{"request_fingerprint": row["fingerprint"]} for row in self.rows
                                 if row["organization_id"] == params[0]

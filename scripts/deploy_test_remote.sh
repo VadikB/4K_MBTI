@@ -32,6 +32,12 @@ if [ -n "$deploy_commit" ]; then
 fi
 previous_commit="$(git rev-parse HEAD)"
 frontend_asset_backup_dir="$(mktemp -d)"
+public_origin_backup="$(mktemp)"
+had_public_origin=0
+if [ -f .public-origin.json ]; then
+  cp .public-origin.json "$public_origin_backup"
+  had_public_origin=1
+fi
 
 if [ -d web/dist ]; then
   cp -a web/dist/. "$frontend_asset_backup_dir/"
@@ -39,10 +45,16 @@ fi
 
 cleanup_frontend_asset_backup() {
   rm -rf "$frontend_asset_backup_dir"
+  rm -f "$public_origin_backup"
 }
 
 rollback() {
   echo "Test deployment failed; rolling back to $previous_commit" >&2
+  if [ "$had_public_origin" -eq 1 ]; then
+    cp "$public_origin_backup" .public-origin.json
+  else
+    rm -f "$project_dir/.public-origin.json"
+  fi
   git restore --worktree web/dist
   git clean -fd web/dist
   git switch --detach "$previous_commit"
@@ -64,6 +76,9 @@ if [ -n "$deploy_commit" ]; then
 else
   git pull --ff-only origin main || rollback
 fi
+
+.venv/bin/python scripts/configure_public_origin.py \
+  --origin https://test.4k-assistant.ru --root "$project_dir" || rollback
 
 # Reuse the CPU/ML runtime already installed on the server. Install only direct
 # project requirements so pip does not resolve and download a new CUDA stack.
@@ -95,6 +110,11 @@ expected_version="$(.venv/bin/python -c 'import tomllib; from pathlib import Pat
 actual_version="$(curl -fsS "$health_url" | .venv/bin/python -c 'import json, sys; print(json.load(sys.stdin)["version"])')" || rollback
 if [ "$actual_version" != "$expected_version" ]; then
   echo "Backend release does not match checked-out product release" >&2
+  rollback
+fi
+actual_origin="$(curl -fsS "$health_url" | .venv/bin/python -c 'import json, sys; print(json.load(sys.stdin)["public_origin"])')" || rollback
+if [ "$actual_origin" != "https://test.4k-assistant.ru" ]; then
+  echo "Backend effective public origin does not match test deployment" >&2
   rollback
 fi
 curl -fsS "$asset_url" | cmp -s - web/dist/main.js || rollback

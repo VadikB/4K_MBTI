@@ -44,6 +44,9 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
         connection.execute("""CREATE TABLE participant_data_issue_reports(
             id BIGSERIAL PRIMARY KEY,user_id BIGINT,organization_id BIGINT,message TEXT,status TEXT DEFAULT 'open',
             created_at TIMESTAMP DEFAULT NOW(),resolved_at TIMESTAMP,UNIQUE(user_id,organization_id,message))""")
+        connection.execute('''CREATE TABLE participant_acquaintance_confirmations(
+            user_id BIGINT,organization_id BIGINT,assignment_ref TEXT,
+            questionnaire_revision_id BIGINT,personalized_profile_id BIGINT)''')
         connection.execute("""INSERT INTO users VALUES
             (1,'participant@example.test'),(2,'admin-a@example.test'),(3,'admin-b@example.test')""")
         connection.execute("INSERT INTO organizations VALUES(10,'Организация А',TRUE),(20,'Организация Б',TRUE)")
@@ -127,7 +130,7 @@ def test_late_readiness_does_not_fall_back_past_latest_unbound_confirmation(
         connection.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
         connection.execute("""CREATE TABLE participant_acquaintance_confirmations(
             id BIGSERIAL PRIMARY KEY,user_id BIGINT,organization_id BIGINT,assignment_ref TEXT,
-            personalized_profile_id BIGINT,confirmed_at TIMESTAMP NOT NULL)""")
+            questionnaire_revision_id BIGINT,personalized_profile_id BIGINT,confirmed_at TIMESTAMP NOT NULL)""")
         connection.execute("""INSERT INTO participant_acquaintance_confirmations(
             user_id,organization_id,assignment_ref,personalized_profile_id,confirmed_at)
             VALUES(1,10,'assignment-a',77,'2026-10-19 10:00:00'),

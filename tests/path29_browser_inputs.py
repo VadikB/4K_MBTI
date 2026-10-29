@@ -1,0 +1,64 @@
+"""Synthetic admin + published test sources; target participant is never pre-created here."""
+import argparse
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+
+def seed(state_path, state):
+    from scripts.test_stand_seed import seed as source_seed
+    source_seed(state)
+    from Api.database import get_connection
+    from Api.auth_service import _hash_password
+    from Api.assessment_authoring_service import assessment_authoring_service
+    with get_connection() as c:
+        org = c.execute("SELECT id FROM organizations WHERE code='e102_synthetic'").fetchone()['id']
+        actor = c.execute("""INSERT INTO users(full_name,email,job_description)
+            VALUES('Синтетический администратор PATH29','path29-admin@example.test','Синтетический координатор') RETURNING id""").fetchone()['id']
+        c.execute("""INSERT INTO organization_memberships(organization_id,user_id,role,admission_source,admitted_at)
+            VALUES(%s,%s,'admin','admin_add',NOW())""", (org, actor))
+        salt, digest = _hash_password(state['password'])
+        c.execute('INSERT INTO auth_password_credentials(user_id,email,password_hash,password_salt) VALUES(%s,%s,%s,%s)',
+            (actor, 'path29-admin@example.test', digest, salt))
+        c.execute("""INSERT INTO user_identities(user_id,provider,email,is_primary,is_verified,verified_at)
+            VALUES(%s,'email_magic_link','path29-admin@example.test',TRUE,TRUE,NOW())""", (actor,))
+        source = c.execute("SELECT * FROM assessment_configurations WHERE code='e102_controlled_catalog'").fetchone()
+        other = assessment_authoring_service.create_configuration(c, code='path29_browser_explicit_second',
+            name='Synthetic second explicit configuration', methodology_version_id=source['methodology_version_id'],
+            scenario_version_id=source['scenario_version_id'], catalog_version_id=source['catalog_version_id'],
+            actor_user_id=actor, comment='Synthetic owned browser source selection only')
+        assessment_authoring_service.publish_configuration(c, configuration_id=other['id'], make_default=False,
+            actor_user_id=actor, comment='Synthetic owned browser source selection only')
+        cases = json.loads((ROOT / 'assessment_definitions/cases/competencies_4k/1.1/case-package.json').read_text())
+        role_id = c.execute('''SELECT v.id FROM assessment_role_profile_versions v
+            JOIN assessment_role_profiles r ON r.id=v.role_profile_id WHERE r.code=%s AND v.status='published' ''',
+            (cases['cases'][0]['base_role'],)).fetchone()['id']
+        assert c.execute("SELECT id FROM users WHERE email='path29-new@example.test'").fetchone() is None
+        c.commit()
+    state['path29'] = {'organization_id': org, 'configuration_id': other['id'], 'role_version_id': role_id,
+                      'admin_email': 'path29-admin@example.test', 'participant_email': 'path29-new@example.test'}
+    state_path.write_text(json.dumps(state))
+    print('PATH29 synthetic sources/admin ready; target participant/M4/Cycle absent')
+
+
+if __name__ == '__main__':
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--state', type=Path, required=True)
+    p.add_argument('--child', action='store_true')
+    args = p.parse_args()
+    from scripts.test_stand import owned, environment
+    state = json.loads(args.state.read_text())
+    with owned(state):
+        pass
+    if args.child:
+        if os.getenv('AGENT4K_ISOLATED_STAND') != '1':
+            raise RuntimeError('ISOLATED_STAND_REQUIRED')
+        seed(args.state, state)
+    else:
+        subprocess.run([sys.executable, __file__, '--state', str(args.state), '--child'],
+                       env=environment(state), cwd=ROOT, check=True)

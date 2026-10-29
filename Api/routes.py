@@ -44,6 +44,8 @@ from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest, CreateS
 from Api.profile_access import require_unchanged_email
 from Api import participant_profile
 from Api import acquaintance
+from Api import assessment_assignment_sources
+from Api.public_origin import build_public_link
 from Api import questionnaire_sources
 from Api import m8_results
 from Api import m8_report_access
@@ -289,9 +291,10 @@ MONTH_LABELS_RU = {
 }
 
 
-@router.get("/version", response_model=AppVersionResponse)
+@router.get("/version", response_model=AppVersionResponse, response_model_exclude_none=True)
 def get_application_version() -> AppVersionResponse:
-    return AppVersionResponse(version=get_app_version())
+    return AppVersionResponse(version=get_app_version(), public_origin=(
+        settings.public_app_origin if settings.app_origin_mode == "public" else None))
 ADMIN_PERSONALIZATION_SOURCE_LABELS = {
     "static": "задано в шаблоне кейса",
     "from_user_profile": "из профиля пользователя",
@@ -3077,11 +3080,11 @@ def _build_authenticated_user_response(
             organization=organization,
         )
 
-    agent = interviewer_agent.start(
-        login_identifier=login_identifier,
-        user=user,
-        bootstrap_user_id=user.id if is_new_user else None,
-    )
+    managed_assignment = assessment_assignment_sources.has_managed_assignment(connection, user_id=int(user.id))
+    agent = (AgentReply(session_id='acquaintance-session', stage='acquaintance', completed=False,
+                        message='Продолжите знакомство с назначенной оценкой.', user=compact_user)
+        if managed_assignment else interviewer_agent.start(
+            login_identifier=login_identifier, user=user, bootstrap_user_id=user.id if is_new_user else None))
     agent = agent.model_copy(update={"user": compact_user})
     return CheckOrCreateUserResponse(
         exists=not is_new_user,
@@ -3411,6 +3414,7 @@ def reopen_profile_session(request: Request, response: FastAPIResponse) -> Check
     if user is None:
         raise HTTPException(status_code=401, detail="Сессия не найдена. Войдите заново.")
     with get_connection() as connection:
+        _require_unmanaged_profile_path(connection, user_id=int(user.id))
         compact_user = _compact_user_response(user)
         _set_user_session_cookie(response, web_session_service.create_session(user.id))
         assign_user_organization_from_email(connection, user_id=user.id, email=user.email)
@@ -3482,6 +3486,11 @@ def _require_matching_session_user(request: Request, user_id: int) -> UserRespon
     return user
 
 
+def _require_unmanaged_profile_path(connection, *, user_id: int) -> None:
+    if assessment_assignment_sources.has_managed_assignment(connection, user_id=user_id):
+        raise HTTPException(409, detail='W02_MANAGED_ASSIGNMENT: Продолжите знакомство; источники оценки назначает организация.')
+
+
 def _require_assessment_session_owner(request: Request, session_code: str) -> UserResponse:
     token = request.cookies.get(SESSION_COOKIE_NAME)
     user = web_session_service.get_user_by_token(token)
@@ -3515,9 +3524,18 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
     from Api.qa_orchestration import usage_scope
     user = _require_matching_session_user(request, user_id)
     with get_connection() as connection:
-        profile = participant_profile.readiness(connection, user_id=user.id, profile_id=personalized_profile_id)
         onboarding = get_or_create_onboarding_state(connection, user_id)
         acquaintance_state = acquaintance.read_state(connection, user_id=user.id)
+        early = acquaintance_state['readiness']
+        assignment_scope = early.get('assignment_ref') if early.get('questionnaire_revision_id') is not None else None
+        canonical_assignment = bool(assignment_scope) or assessment_assignment_sources.has_managed_assignment(
+            connection, user_id=int(user.id))
+        effective_profile_id = acquaintance_state['late_readiness'].get('personalized_profile_id')
+        if not assignment_scope:
+            effective_profile_id = personalized_profile_id or effective_profile_id
+        profile = (participant_profile.readiness(connection, user_id=user.id, profile_id=effective_profile_id)
+            if effective_profile_id is not None or not assignment_scope else
+            {'status': 'not_ready', 'id': None, 'organization_id': early.get('organization_id')})
         cycle = connection.execute("""SELECT c.status,c.cycle_id,
             latest_as.assessment_situation_id,latest_as.as_status,latest_as.session_id
             FROM m5_cycles c
@@ -3530,8 +3548,16 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
                 ORDER BY s.created_at DESC,s.id DESC LIMIT 1
             ) latest_as ON TRUE
             WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.usage_scope=%s
-              AND p.assessment_configuration_id=%s ORDER BY c.created_at DESC,c.id DESC LIMIT 1""",
-            (user.id, profile.get('organization_id'), usage_scope(), profile.get('assessment_configuration_id'))).fetchone()
+              AND ((%s::text IS NOT NULL AND EXISTS (
+                     SELECT 1 FROM participant_acquaintance_confirmations confirmation
+                     WHERE confirmation.personalized_profile_id=p.id AND confirmation.user_id=c.owner_user_id
+                       AND confirmation.organization_id=c.organization_id AND confirmation.assignment_ref=%s)
+                    AND (c.status<>'prepared' OR p.id=%s))
+                   OR (%s::text IS NULL AND p.assessment_configuration_id=%s))
+            ORDER BY c.created_at DESC,c.id DESC LIMIT 1""",
+            (user.id, profile.get('organization_id') or early.get('organization_id'), usage_scope(),
+             assignment_scope, assignment_scope, effective_profile_id, assignment_scope,
+             profile.get('assessment_configuration_id'))).fetchone()
         connection.commit()
     ready = profile['status'] == 'ready'
     assessment_status = ({'prepared':'preparing','active':'in_progress','paused':'in_progress',
@@ -3554,7 +3580,9 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
         elif report and report['status'] == 'ready':
             assessment_status = 'report_ready'
             report_status = 'ready'
-    if cycle:
+    if cycle and cycle['status'] == 'prepared' and canonical_assignment:
+        next_action = 'show_onboarding'
+    elif cycle:
         next_action = determine_cycle_next_action(
             profile_status='complete', onboarding_status=str(onboarding['status']),
             cycle_status=str(cycle['status']),
@@ -3562,12 +3590,14 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
         )
     elif acquaintance_state["readiness"]["status"] != "ready":
         next_action = "wait_for_acquaintance_data"
-    elif str(onboarding["status"]) in {"not_started", "in_progress"}:
-        next_action = "show_onboarding"
-    elif not ready:
-        next_action = "complete_profile"
+    elif not canonical_assignment and str(onboarding['status']) in {'completed', 'skipped'}:
+        # Released, genuinely unmanaged M4 clients keep their confirmation route.
+        # A modern assignment (including incomplete sources) never enters it.
+        next_action = 'show_dashboard' if ready else 'complete_profile'
     else:
-        next_action = "show_dashboard"
+        # Acquaintance owns the participant's recovery, including old completed/skipped
+        # flags with missing mandatory steps or late organizational dependencies.
+        next_action = "show_onboarding"
     # A stored Cycle owns the confirmed M4 snapshot. Reading this projection must
     # not reopen M4 or mutate Cycle intervals/time budgets.
     return UserJourneyStateResponse(
@@ -3586,6 +3616,8 @@ def get_user_journey_state(user_id: int, request: Request, personalized_profile_
         ),
         report_status=report_status,
         next_action=next_action,
+        can_open_dashboard=bool(acquaintance_state.get('mandatory_complete')
+            and str(onboarding['status']) in {'completed', 'skipped'}),
         acquaintance=acquaintance_state,
     )
 
@@ -3599,6 +3631,10 @@ def set_user_onboarding_state(
     _require_matching_session_user(request, user_id)
     with get_connection() as connection:
         try:
+            if payload.status in {'completed', 'skipped'}:
+                current = acquaintance.read_state(connection, user_id=user_id)
+                if not current.get('mandatory_complete'):
+                    raise ValueError('W02_MANDATORY_STEPS_REQUIRED')
             onboarding = update_onboarding_state(
                 connection,
                 user_id,
@@ -3644,6 +3680,18 @@ def accept_participant_acquaintance_consent(
             result = acquaintance.accept_consent(connection, user_id=user_id, version=payload.version)
             connection.commit()
             return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/{user_id}/acquaintance/resolve-profile")
+def resolve_participant_acquaintance_profile(user_id: int, request: Request) -> dict:
+    _require_matching_session_user(request, user_id)
+    try:
+        with get_connection() as connection:
+            acquaintance.resolve_confirmed_profile(connection, user_id=user_id)
+            connection.commit()
+            return acquaintance.read_state(connection, user_id=user_id)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
@@ -3776,6 +3824,7 @@ def create_organization_invitation(
     expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=payload.expires_in_days)
     with get_connection() as connection:
         _require_superadmin(connection, current_user)
+        origin = settings.public_app_origin
         organization = connection.execute(
             "SELECT id, name, invitation_intro FROM organizations WHERE id = %s AND is_active = TRUE LIMIT 1",
             (organization_id,),
@@ -3800,7 +3849,7 @@ def create_organization_invitation(
         invitation_intro=str(organization["invitation_intro"] or "").strip() or None,
         expires_at=expires_at,
         token=raw_token,
-        invitation_url=settings.app_base_url.rstrip("/") + "/?invite=" + quote(raw_token, safe=""),
+        invitation_url=build_public_link(origin, {"invite": raw_token}, mode=settings.app_origin_mode),
     )
 
 
@@ -3863,6 +3912,7 @@ def send_personal_organization_invitations(
             ).decode("ascii").rstrip("=")
             now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
             expires_at = now_utc + timedelta(hours=max(settings.auth_personal_invitation_ttl_hours,1))
+            invitation_url = build_public_link(settings.app_base_url, {"invite": raw_token}, mode=settings.app_origin_mode)
             with get_connection() as connection:
                 _require_organization_admin(connection, current_user, organization_id)
                 readiness = questionnaire_sources.assignment_readiness(
@@ -3942,7 +3992,6 @@ def send_personal_organization_invitations(
                     raise RuntimeError("Не удалось создать приглашение.")
                 invitation_id = int(row["id"])
                 connection.commit()
-            invitation_url = settings.app_base_url.rstrip("/") + "/?invite=" + quote(raw_token, safe="")
             with get_connection() as connection:
                 try:
                     _require_organization_admin(connection, current_user, organization_id)
@@ -4114,6 +4163,14 @@ def send_personal_organization_invitations(
     return PersonalInvitationBatchResponse(items=results)
 
 
+@router.get('/admin/organizations/{organization_id}/assessment-source-options')
+def get_organization_assessment_source_options(organization_id: int, request: Request) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_organization_admin(connection, user, organization_id)
+        return assessment_assignment_sources.options(connection, organization_id=organization_id)
+
+
 @router.post(
     "/admin/organizations/{organization_id}/assessment-assignments",
     response_model=AssessmentAssignmentBatchResponse,
@@ -4127,8 +4184,12 @@ def assign_organization_assessment(
     current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     assignment_ref = str(payload.assignment_ref).strip()
     recipient_ids = sorted(set(int(value) for value in payload.user_ids))
+    fingerprint_payload = {"assignment_ref": assignment_ref, "user_ids": recipient_ids}
+    if payload.assessment_configuration_id is not None:
+        fingerprint_payload.update(assessment_configuration_id=payload.assessment_configuration_id,
+                                   role_profile_version_id=payload.role_profile_version_id)
     fingerprint = hashlib.sha256(json.dumps(
-        {"assignment_ref": assignment_ref, "user_ids": recipient_ids},
+        fingerprint_payload,
         sort_keys=True, separators=(",", ":"),
     ).encode("utf-8")).hexdigest()
     results: list[AssessmentAssignmentResultItem] = []
@@ -4150,6 +4211,11 @@ def assign_organization_assessment(
         ).fetchall()
         if previous and any(str(row["request_fingerprint"]) != fingerprint for row in previous):
             raise HTTPException(status_code=409, detail="operation_id уже использован с другим набором назначения.")
+        try:
+            assessment_assignment_sources.record_operation(connection, organization_id=organization_id,
+                actor_user_id=int(current_user.id), operation_id=payload.operation_id, fingerprint=fingerprint)
+        except ValueError as exc:
+            raise HTTPException(409, detail=str(exc)) from exc
         for user_id in recipient_ids:
             member = connection.execute(
                 """SELECT om.user_id
@@ -4192,6 +4258,15 @@ def assign_organization_assessment(
                 results.append(AssessmentAssignmentResultItem(
                     user_id=user_id, status="assigned", assignment_id=int(row["id"]),
                 ))
+            if row and payload.assessment_configuration_id is not None:
+                try:
+                    assessment_assignment_sources.bind(connection, assignment_id=int(row['id']),
+                        organization_id=organization_id, configuration_id=payload.assessment_configuration_id,
+                        role_version_id=payload.role_profile_version_id,
+                        questionnaire_revision_id=readiness['questionnaire_revision_id'],
+                        actor_user_id=int(current_user.id), operation_id=payload.operation_id)
+                except ValueError as exc:
+                    raise HTTPException(409, detail=str(exc)) from exc
         connection.commit()
     return AssessmentAssignmentBatchResponse(items=results)
 
@@ -6335,17 +6410,23 @@ def prepare_owned_assessment_cycle(payload: ProductCycleStartRequest, request: R
     token=request.cookies.get(SESSION_COOKIE_NAME);user=web_session_service.get_user_by_token(token) if token else None
     if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
     try:
+        preparation_request = payload.model_dump(mode='json')
+        with get_connection() as connection:
+            scope = acquaintance.preparation_scope(connection, user_id=int(user.id),
+                profile_id=payload.personalized_profile_id)
+            if scope:
+                preparation_request.update(scope)
         operation = product_cycle_preparation_queue.enqueue(
             operation_id=payload.idempotency_key,
             user_id=int(user.id),
-            request=payload.model_dump(mode='json'),
+            request=preparation_request,
         )
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail='Нет доступа к операции подготовки Cycle.') from exc
     except ValueError as exc:
         if str(exc) == 'PRODUCT_CYCLE_PREPARATION_IDEMPOTENCY_CONFLICT':
             raise HTTPException(status_code=409, detail='Ключ операции уже использован для другого запроса.') from exc
-        raise
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return public_operation(operation)
 
 
@@ -6355,6 +6436,13 @@ def read_owned_assessment_cycle_preparation(operation_id: str, request: Request)
     if user is None:raise HTTPException(status_code=401,detail='Сессия не найдена. Войдите заново.')
     operation=product_cycle_preparation_queue.get_owned_status(operation_id, int(user.id))
     if operation is None:raise HTTPException(status_code=404,detail='Операция подготовки Cycle не найдена.')
+    saved_scope = operation.get('request_json') or {}
+    if saved_scope.get('assignment_ref'):
+        with get_connection() as connection:
+            readiness = acquaintance.early_readiness(connection, user_id=int(user.id))
+            if any(readiness.get(key) != saved_scope.get(key) for key in
+                   ('organization_id', 'assignment_ref', 'questionnaire_revision_id')):
+                raise HTTPException(409, detail='W02_PREPARATION_ASSIGNMENT_SCOPE_MISMATCH')
     return public_operation(operation)
 
 
@@ -6365,9 +6453,16 @@ def start_owned_assessment_cycle(payload: ProductCycleActionRequest, request: Re
     try:
         with get_connection() as connection:
             if payload.cycle_id:
+                owned_cycle = connection.execute('''SELECT status,personalized_profile_id FROM m5_cycles
+                    WHERE cycle_id=%s AND owner_user_id=%s''', (str(payload.cycle_id), int(user.id))).fetchone()
+                if owned_cycle and owned_cycle.get('status') == 'prepared':
+                    acquaintance.preparation_scope(connection, user_id=int(user.id),
+                        profile_id=owned_cycle['personalized_profile_id'])
                 result=m10_product_flow.start_prepared(connection,user_id=int(user.id),cycle_id=payload.cycle_id,
                     key=payload.idempotency_key)
             else:
+                if acquaintance.preparation_scope(connection, user_id=int(user.id), profile_id=payload.personalized_profile_id):
+                    raise ValueError('W02_PREPARED_CYCLE_REQUIRED')
                 # Compatibility path for released clients. New UI always prepares first.
                 result=m10_product_flow.start_or_resume(connection,user_id=int(user.id),key=payload.idempotency_key,
                     selected_skills=list(payload.selected_skills),profile_id=payload.personalized_profile_id)
@@ -7657,6 +7752,7 @@ def select_my_role_profile(payload: RoleProfileSelectionRequest, request: Reques
         raise HTTPException(status_code=401, detail="Требуется авторизация")
     try:
         with get_connection() as connection:
+            _require_unmanaged_profile_path(connection, user_id=int(user.id))
             role = select_role_profile_for_user(connection, user_id=user.id, version_id=payload.version_id)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -7670,6 +7766,7 @@ def get_participant_profile_options(request: Request):
         raise HTTPException(401, detail="Требуется авторизация")
     try:
         with get_connection() as connection:
+            _require_unmanaged_profile_path(connection, user_id=int(user.id))
             return participant_profile.options(connection, user_id=user.id)
     except ValueError as exc:
         raise HTTPException(409, detail=str(exc)) from exc
@@ -7680,6 +7777,8 @@ def confirm_agent_profile(payload: AgentProfileConfirmRequest, request: Request,
     operation_id = request.headers.get("X-Agent4K-Operation-Id")
     try:
         authenticated_user = _require_profile_dialogue_owner(request, payload.session_id)
+        with get_connection() as connection:
+            _require_unmanaged_profile_path(connection, user_id=int(authenticated_user.id))
         try:
             require_unchanged_email(authenticated_user.email, payload.email)
         except ValueError as exc:
@@ -7738,6 +7837,8 @@ def confirm_agent_profile(payload: AgentProfileConfirmRequest, request: Request,
 )
 def start_assessment(user_id: int, request: Request) -> AssessmentPreparationEnqueueResponse:
     _require_matching_session_user(request, user_id)
+    with get_connection() as connection:
+        _require_unmanaged_profile_path(connection, user_id=user_id)
     operation_id = request.headers.get("X-Agent4K-Operation-Id") or uuid4().hex
     operation_progress_service.begin(
         operation_id,

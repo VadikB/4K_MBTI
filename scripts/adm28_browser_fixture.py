@@ -17,8 +17,8 @@ def seed(state):
         organization_id = connection.execute("""INSERT INTO organizations(code,name)
             VALUES('adm28_synthetic','Синтетическая организация ADM28') RETURNING id""").fetchone()['id']
         for email, role in [('admin@example.test', 'admin'), ('colleague@example.test', 'member')]:
-            user_id = connection.execute('INSERT INTO users(full_name,email) VALUES(%s,%s) RETURNING id',
-                                         ('Синтетический ' + role, email)).fetchone()['id']
+            user_id = connection.execute('INSERT INTO users(full_name,email,job_description) VALUES(%s,%s,%s) RETURNING id',
+                                         ('Синтетический ' + role, email, 'Синтетический специалист')).fetchone()['id']
             connection.execute("""INSERT INTO organization_memberships(
                 organization_id,user_id,role,admission_source,admitted_at)
                 VALUES(%s,%s,%s,'admin_add',NOW())""", (organization_id, user_id, role))

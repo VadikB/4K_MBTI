@@ -134,10 +134,12 @@ async function start(page,expected='готовности'){
  await expect.poll(async()=>await page.locator('#onboarding-panel').isVisible() || await page.locator('#prechat-panel').isVisible()).toBe(true);
  if(await page.locator('#onboarding-panel').isVisible()){
   await completeAcquaintance(page);
-  await expect.poll(()=>page.locator(entrySelector).count()).toBe(1);
-  await page.evaluate(selector=>document.querySelector(selector)?.click(),entrySelector);
+  if(!await page.locator('#interview-panel').isVisible()){
+   await expect.poll(()=>page.locator(entrySelector).count()).toBe(1);
+   await page.evaluate(selector=>document.querySelector(selector)?.click(),entrySelector);
+  }
  }
- await page.locator('#prechat-start-button').click();
+ if(await page.locator('#prechat-panel').isVisible())await page.locator('#prechat-start-button').click();
  await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
  await expect(page.locator('#interview-messages')).toContainText(expected);
  await test.info().attach('interview-start',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
@@ -156,7 +158,12 @@ async function completeAcquaintance(page){
   const next=page.locator('#onboarding-next');
   const marker=`${await panel.getAttribute('data-step')}|${await page.locator('#onboarding-title').textContent()}`;
   await expect(next).toBeEnabled();
+  const startsAssessment=(await next.textContent())==='Приступить к оценке';
+  const committedStart=startsAssessment?page.waitForResponse(response=>
+   response.request().method()==='POST' && new URL(response.url()).pathname==='/users/assessment/cycles/start',
+   {timeout:30000}):null;
   await next.click();
+  if(committedStart)expect((await committedStart).ok()).toBeTruthy();
   await expect.poll(async()=>{
    if(!await panel.isVisible())return true;
    return `${await panel.getAttribute('data-step')}|${await page.locator('#onboarding-title').textContent()}`!==marker;
@@ -240,6 +247,16 @@ async function report(page,stand,info){
  return saved;
 }
 test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page,stand},info)=>{
+ // Deliberately hold the real committed start response beyond the old helper's
+ // five-second title deadline. No fake start result or extra Cycle is created.
+ let firstStart=true;
+ await page.route('**/users/assessment/cycles/start',async route=>{
+  if(!firstStart)return route.continue();
+  firstStart=false;
+  const response=await route.fetch();
+  await new Promise(resolve=>setTimeout(resolve,6000));
+  await route.fulfill({response});
+ });
  await login(page,stand);await start(page);await answer(page);
  const dialogue=await runtime(page,stand);
  const delivered=dialogue.trace.events.find(x=>x.event_type==='mandatory_update');
@@ -525,6 +542,17 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
 
 
 test('S10.4 owner profile, 403, logout, late response and account switch',async({page,stand},info)=>{
+ // A cold lazy screen must not make the navigation helper click repeatedly.
+ // Those extra opens can finish after PATCH and erase its success feedback.
+ let profileLoads=0;
+ page.on('request',request=>{
+   if(new URL(request.url()).pathname.endsWith('/profile-summary'))profileLoads++;
+ });
+ await page.route('**/web/dist/profile-*.js',async route=>{
+   const response=await route.fetch();
+   await new Promise(resolve=>setTimeout(resolve,350));
+   await route.fulfill({response});
+ });
  await login(page,stand);
  const settings=async()=>{
    const open=()=>page.evaluate(()=>{
@@ -532,11 +560,7 @@ test('S10.4 owner profile, 403, logout, late response and account switch',async(
      document.querySelector(selector)?.click();
    });
    await open();
-   await expect.poll(async()=>{
-     if(await page.locator('#profile-panel').isVisible())return true;
-     await open();
-     return page.locator('#profile-panel').isVisible();
-   },{timeout:10000}).toBe(true);
+   await expect(page.locator('#profile-panel')).toBeVisible({timeout:10000});
  };
  const logout=async()=>{
    await page.evaluate(()=>{
@@ -550,6 +574,7 @@ test('S10.4 owner profile, 403, logout, late response and account switch',async(
  await settings();
  await expect(page.locator('#profile-email')).toHaveValue('participant@example.test');
  await expect(page.locator('#profile-email')).toHaveAttribute('readonly','');
+ expect(profileLoads,'one click must open the cold profile exactly once').toBe(1);
  await page.locator('#profile-telegram').fill('@owner_changed');await page.locator('#profile-telegram').press('Tab');
  await expect(page.locator('#profile-save-status')).toContainText('Telegram обновлен');
  await info.attach('owner-profile',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});

@@ -1017,6 +1017,8 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
   };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
   let assignmentPayload;
+  await page.route('**/users/admin/organizations/3/assessment-source-options', (route) =>
+    fulfillJson(route, { configurations: [], roles: [] }));
   await page.route('**/users/admin/organizations/3/assessment-assignments', (route) => {
     assignmentPayload = route.request().postDataJSON();
     return fulfillJson(route, { items: assignmentPayload.user_ids.map((userId) => ({
@@ -2176,9 +2178,11 @@ test('R08 shows the frozen program budget instead of the planned duration sum', 
   const acquaintance = {
     readiness: { status: 'ready', organization_name: 'Организация А', briefing: {
       organizer: 'Организация А', purpose: 'Пилот', results_usage: 'Для развития',
-      result_recipients: 'Участник', provided_participant_fields: [], questions: [], consent_version: 1,
+      result_recipients: 'Участник', provided_participant_fields: [], questions: ['Q1', 'Q2', 'Q3'], consent_version: 1,
     } },
-    state: { answers_json: {} },
+    state: { answers_json: { answer_1: 'A', answer_2: 'B', answer_3: 'C' },
+      consent_accepted_at: 'synthetic', consent_version: 1, answers_confirmed_at: 'synthetic' },
+    mandatory_complete: true, onboarding: { status: 'completed', current_step: 8 },
     late_readiness: { status: 'ready_to_prepare', personalized_profile_id: 4 },
     assigned_timing: { status: 'resolved', time_budget_seconds: 7200, calendar_window_seconds: 259200 },
     prepared_plan: { cycle_id: 'cycle-r08', revision_id: 'revision-r08', revision_no: 1, plan: {
@@ -2194,12 +2198,13 @@ test('R08 shows the frozen program budget instead of the planned duration sum', 
       onboarding: { status: 'in_progress', current_step: 5 }, assessment: { status: 'not_started' }, acquaintance,
     });
     if (pathname === '/users/8/acquaintance') return fulfillJson(route, acquaintance);
+    if (pathname === '/users/8/acquaintance/resolve-profile') return fulfillJson(route, acquaintance);
     if (pathname === '/users/8/onboarding') return fulfillJson(route, { status: 'in_progress', current_step: 5 });
     if (pathname === '/users/version') return fulfillJson(route, { version: 'r08-test' });
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.getByText('Время на выполнение', { exact: true })).toBeVisible();
+  await expect(page.locator('.onboarding-metrics')).toContainText('Время на выполнение');
   await expect(page.getByText('120 мин.')).toBeVisible();
   await expect(page.getByText('189 мин.')).toBeHidden();
 });
@@ -2218,3 +2223,48 @@ test('R03 reset request locks every visible credential action', async ({ page })
   }
   finishReset();
 });
+
+for (const [failure, expected] of [
+  [403, 'Нет доступа к подготовке'], [409, 'Нужно обновить состояние назначения'],
+  [503, 'Сервис подготовки временно недоступен'], ['network', 'Не удалось проверить подготовку'],
+  ['failed', 'Не удалось подготовить оценку'], ['organization', 'Для оценки ещё нужны сведения организации'],
+]) {
+  test(`PATH29 readiness distinguishes ${failure} without a fake ready plan`, async ({ page }) => {
+    const user = { id: 8, email: 'person@example.test', full_name: 'Synthetic' };
+    const acquaintance = {
+      readiness: { status: 'ready', organization_id: 10, assignment_ref: 'synthetic', questionnaire_revision_id: 1,
+        responsible_contact: 'owner@example.test', briefing: { organizer: 'Synthetic', purpose: 'Synthetic',
+          results_usage: 'Synthetic', result_recipients: 'Synthetic', questions: ['Q1', 'Q2', 'Q3'], consent_version: 1 } },
+      state: { answers_json: { answer_1: 'A', answer_2: 'B', answer_3: 'C' },
+        consent_accepted_at: 'synthetic', consent_version: 1, answers_confirmed_at: 'synthetic' },
+      mandatory_complete: true, onboarding: { status: 'completed', current_step: 8 },
+      late_readiness: { status: failure === 'organization' ? 'waiting_for_assessment_data' : 'ready_to_prepare', personalized_profile_id: 4 },
+      prepared_plan: null,
+    };
+    let prepares = 0;
+    await page.route('**/users/**', (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+      if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'show_onboarding', acquaintance,
+        profile: { status: 'complete' }, onboarding: acquaintance.onboarding, assessment: { status: 'not_started' } });
+      if (['/users/8/acquaintance', '/users/8/acquaintance/resolve-profile'].includes(pathname)) return fulfillJson(route, acquaintance);
+      if (pathname === '/users/assessment/cycles/prepare') {
+        prepares += 1;
+        if (failure === 'network') return route.abort('failed');
+        if (typeof failure === 'number') return fulfillJson(route, { detail: 'Synthetic controlled refusal' }, failure);
+        return fulfillJson(route, { operation_id: 'synthetic-failed-operation', status: 'failed',
+          error: { code: 'ASSESSMENT_CYCLE_PREPARATION_FAILED', message: 'Synthetic controlled job failure' } }, 202);
+      }
+      if (pathname === '/users/version') return fulfillJson(route, { version: 'path29-test' });
+      return fulfillJson(route, {}, 404);
+    });
+    await page.goto(base);
+    await expect(page.locator('#onboarding-title')).toHaveText(expected);
+    await expect(page.locator('.onboarding-metrics')).toHaveCount(0);
+    await expect(page.locator('.onboarding-spinner')).toHaveCount(0);
+    await expect(page.locator('#onboarding-next')).toBeEnabled();
+    expect(prepares).toBe(failure === 'organization' ? 0 : 1);
+    if (failure === 'organization') await expect(page.locator('#feature-list')).toContainText('owner@example.test');
+    if (failure === 'failed') await expect(page.locator('#feature-list')).toContainText('synthetic-failed-operation');
+  });
+}

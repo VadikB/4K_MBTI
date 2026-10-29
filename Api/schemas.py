@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class UserResponse(BaseModel):
@@ -237,6 +237,14 @@ class AssessmentAssignmentRequest(BaseModel):
     user_ids: list[int] = Field(min_length=1, max_length=500)
     assignment_ref: str = Field(min_length=1, max_length=200)
     operation_id: str = Field(min_length=8, max_length=200)
+    assessment_configuration_id: int | None = Field(default=None, gt=0)
+    role_profile_version_id: int | None = Field(default=None, gt=0)
+
+    @model_validator(mode='after')
+    def source_pair(self):
+        if (self.assessment_configuration_id is None) != (self.role_profile_version_id is None):
+            raise ValueError('Конфигурация и опубликованная роль назначаются вместе.')
+        return self
 
 
 class AssessmentAssignmentResultItem(BaseModel):
@@ -1520,10 +1528,12 @@ class UserJourneyStateResponse(BaseModel):
     report_status: str
     next_action: str
     acquaintance: dict = Field(default_factory=dict)
+    can_open_dashboard: bool = False
 
 
 class AppVersionResponse(BaseModel):
     version: str
+    public_origin: str | None = None
 
 
 class OperationProgressStep(BaseModel):

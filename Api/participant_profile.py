@@ -1,5 +1,6 @@
 """Participant confirmation and current-scope selection of canonical M4 snapshots."""
 from Api import assessment_contexts as contexts
+from Api import assessment_assignment_sources as assignment_sources
 from Api.assessment_role_profiles import list_available_role_profiles, get_selected_role_profile
 
 
@@ -65,13 +66,13 @@ def active_organization(connection, user_id):
 def profile_for_start(connection, *, user_id, profile_id=None):
     organization_id = active_organization(connection, user_id)
     role = get_selected_role_profile(connection, user_id=user_id)
-    if role is None:
-        raise ValueError('M4_PROFILE_NOT_READY: Подтвердите роль и контекст оценки в профиле.')
     rows = connection.execute('''SELECT DISTINCT ON (assessment_configuration_id) *
         FROM assessment_personalized_profiles WHERE user_id=%s AND organization_id=%s
         ORDER BY assessment_configuration_id,frozen_at DESC,id DESC''', (user_id, organization_id)).fetchall()
     if profile_id is not None:
-        selected = next((r for r in rows if r['id'] == profile_id), None)
+        selected = connection.execute('''SELECT * FROM assessment_personalized_profiles
+            WHERE id=%s AND user_id=%s AND organization_id=%s''',
+            (profile_id, user_id, organization_id)).fetchone()
         if selected is None:
             raise ValueError('M4_PROFILE_SCOPE_MISMATCH: Подтвердите актуальный профиль для выбранной организации и конфигурации.')
     elif len(rows) == 1:
@@ -80,7 +81,8 @@ def profile_for_start(connection, *, user_id, profile_id=None):
         raise ValueError('M4_PROFILE_SELECTION_REQUIRED: Выберите конфигурацию оценки и подтвердите профиль.')
     else:
         raise ValueError('M4_PROFILE_NOT_READY: Завершите подтверждение контекста оценки.')
-    if selected['role_profile_version_id'] != role['id']:
+    if not assignment_sources.profile_has_binding(connection, selected) and (
+            role is None or selected['role_profile_version_id'] != role['id']):
         raise ValueError('M4_PROFILE_NOT_READY: Подтвердите контекст для выбранной роли.')
     if selected['status'] != 'ready':
         raise ValueError('M4_PROFILE_NOT_READY: Ответственный специалист должен разрешить противоречия контекста.')

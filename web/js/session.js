@@ -163,7 +163,7 @@ export const loadUserJourneyState = async ({ allowAdmin = false } = {}) => {
   if (!state.pendingUser?.id || (state.isAdmin && !allowAdmin)) {
     return null;
   }
-  const response = await fetch('/users/' + state.pendingUser.id + '/journey-state' + selectedProfileQuery(), {
+  const response = await fetchWithDeadline('/users/' + state.pendingUser.id + '/journey-state' + selectedProfileQuery(), {
     credentials: 'same-origin',
   });
   return readApiResponse(response, 'Не удалось определить следующий шаг пользователя.');

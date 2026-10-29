@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from Api.public_origin import read_deployment_origin, validate_public_origin
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -17,6 +18,10 @@ if os.getenv("AGENT4K_ISOLATED_STAND") == "1":
         raise ValueError("ISOLATED_STAND_CONFIGURATION_REQUIRED")
 else:
     load_dotenv(BASE_DIR / ".env")
+
+
+DEPLOYMENT_PUBLIC_ORIGIN = (None if os.getenv("AGENT4K_ISOLATED_STAND") == "1"
+                            else read_deployment_origin(BASE_DIR))
 
 
 class Settings:
@@ -38,7 +43,8 @@ class Settings:
     log_backup_count: int = int(os.getenv("LOG_BACKUP_COUNT", "14"))
     audit_logs_to_db: bool = os.getenv("AUDIT_LOGS_TO_DB", "true").strip().lower() in {"1", "true", "yes", "on"}
     runtime_logs_to_db: bool = os.getenv("RUNTIME_LOGS_TO_DB", "false").strip().lower() in {"1", "true", "yes", "on"}
-    app_base_url: str = os.getenv("APP_BASE_URL", "http://127.0.0.1:8010").strip() or "http://127.0.0.1:8010"
+    app_base_url: str = DEPLOYMENT_PUBLIC_ORIGIN or os.getenv("APP_BASE_URL", "http://127.0.0.1:8010").strip() or "http://127.0.0.1:8010"
+    app_origin_mode: str = "public" if DEPLOYMENT_PUBLIC_ORIGIN else os.getenv("APP_ORIGIN_MODE", "local").strip().lower()
     auth_magic_link_ttl_minutes: int = int(os.getenv("AUTH_MAGIC_LINK_TTL_MINUTES", "15"))
     auth_magic_link_dev_mode: bool = os.getenv("AUTH_MAGIC_LINK_DEV_MODE", "true").strip().lower() in {"1", "true", "yes", "on"}
     auth_magic_link_resend_cooldown_seconds: int = int(os.getenv("AUTH_MAGIC_LINK_RESEND_COOLDOWN_SECONDS", "60"))
@@ -117,6 +123,10 @@ class Settings:
     esco_api_base_url: str = os.getenv("ESCO_API_BASE_URL", "https://ec.europa.eu/esco/api")
     esco_api_version: str = os.getenv("ESCO_API_VERSION", "v1.2.0")
     esco_api_language: str = os.getenv("ESCO_API_LANGUAGE", "en")
+
+    @property
+    def public_app_origin(self) -> str:
+        return validate_public_origin(self.app_base_url, mode=self.app_origin_mode)
 
     @property
     def deepseek_api_keys(self) -> list[str]:

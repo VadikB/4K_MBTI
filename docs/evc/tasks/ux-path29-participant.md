@@ -1,0 +1,371 @@
+# UX-PATH29 — единый путь участника
+
+## Результат и границы
+
+Запрос владельца 29.10.2026: выполнить четыре задания внешнего пакета одним PR.
+Один независимо принимаемый результат: письмо с доверенным origin → назначение →
+знакомство W01/W02 → согласие и три собственных ответа → подтверждение →
+фоновая подготовка/восстановление → явный старт той же подготовленной ситуации.
+Не входят: редизайн админки, Stage 2, методологические нормы, deliverability,
+pilot/production, удаление данных, перезапись frozen M4/Cycle/AS/snapshots.
+
+База после `git fetch origin main`: `a86775ff011a51831f9f86596be3dd776de79d11`,
+2.0.34. Ветка `codex/ux-path29-participant`, переиспользован чистый прикреплённый
+worktree `/Users/vadim_bogachev/.codex/worktrees/ux-adm28-add01-v2/4K`.
+Основная пользовательская копия и её untracked/другие worktrees не меняются.
+
+## Источники и чтение
+
+Пакет: `P4K_Participant_Path_Tasks_2026-10-29.zip`, SHA256
+`c6c70d9ba548cce1a8d01b18a4398ff0efea664fd62901334d036e196874e4cb`.
+Распакован в `/private/tmp/p4k-participant-20261029.7Jo7NU`.
+Прочитаны полностью START_CODEX, REPORT, DATA_CONTRACT, TASK01–04, ACCEPTANCE,
+reference/READ_FIRST, W01 README/CHECKSUMS. W01 0.1/14.10.2026: 11/11 hashes PASS,
+эталон не меняется. Исторические demo-вопросы/числа/фон/skip не являются runtime.
+START SHA256 `2cd0e55a17634c0d6dd1777838c26d12249181b882649b132eedd0734f520f80`;
+DATA_CONTRACT `65a9500e0b0de48c33defbbb04af6d1587ffc4151e81382e393280580c244fa6`;
+ACCEPTANCE `004f2dae5c6dc998f633760ded36698387d5c9787171829548d1aa2bffc870bf`.
+
+Прочитаны/повторно использованы неизменённые на этой базе: AGENTS, README,
+CONTRIBUTING, EVC workflow/matrix/recipe/task-template/review-checklist;
+архитектурные context/Registry, M1 1.4 FROZEN/CURRENT=NO, Change 01 README,
+task SourceSet manifest, ADR-002/traceability; карточки W02, CTX01 и W02 ADD02/03.
+Адресно прочитаны M3/M4 consumers (`assessment_contexts.py`, `participant_profile.py`),
+относящиеся контракты M5/M7, их тесты и затронутые UI-маршруты.
+PM-02 владеет ролью/M4, PM-03 подготовкой AS, PM-04 стартом/временем;
+ответы участника не Evidence, организационный текст не меняет фактическую оценку.
+Corporate вопросы — существующий artifact participant_context/corporate/1.0,
+definition SHA256 `3d4c18bbec032822b1c90e912f7ffadb4cd6f2765439d5fec16d2142a2d49071`.
+
+Пробелы: отдельный P4K.DEV.PRINCIPLES 1.0 и исходный PDF ТЗ Кати не найдены в
+архиве/репозитории; доступны EVC и приложенные W01/текстовый excerpt. Не объявлять
+прочитанным отсутствующий источник. Конкретная operation из 8.jpg не идентифицирована;
+владелец уточнил время: 28.10 около 22:40 МСК и разрешил диагностику логов/БД.
+В journal test за 19:10–20:10 UTC найдены шесть preparation_failed в 22:40–22:46
+МСК, все `ValueError / M4_PROFILE_NOT_READY`, стек `participant_profile.py:69`:
+`get_selected_role_profile` вернул None. Это отказ до генерации, не provider failure.
+Read-only сверка БД подтвердила все шесть failed operations: одна попытка,
+нет result trace; текущие confirmation/consent сохранены, M4/роль не связаны.
+Конкретный screenshot не связан с одним UUID без дополнительных данных; совпадение
+окна и одинаковая причина подтверждены журналом и сохранёнными операциями.
+[Безопасное доказательство](artifacts/ux-path29/incident-2026-10-28.md).
+
+## Разведка: подтверждённое кодом, не состояние live-БД
+
+- questionnaire briefing отдаёт ключи-строки; onboarding renderer ждёт label/value.
+- `_bind_confirmed_answers` зависит от глобального `len(configs)==1` и роли user.
+- journey после completed/skipped и incomplete M4 выбирает legacy complete_profile.
+- answers confirmation ожидает prepare перед переходом к 4К; skip открывает AI-welcome.
+- URL писем собираются из settings.app_base_url; effective server origin ещё не проверен.
+- API назначения содержит assignment_ref/recipients, но не явные role/config refs.
+  M4 уже различает determined_by=user/organization; применимость административного
+  механизма и tenant-прав уточняется до расширения связи.
+
+## План и состояние
+
+1. Разведка и воспроизведение: реальные формы/назначение без готового M4,
+   две published configurations, данные и consent, очередь и повтор.
+2. TASK01: единый валидируемый trusted origin, controlled mail sink,
+   deployment/effective-origin verification без секретов.
+3. TASK02: participant-safe projection, явная допустимая роль/config binding,
+   канонический scoped resume, обязательные шаги на сервере, совместимость истории.
+4. TASK03: последовательный чат W01 с поздними решениями, сохранённый ввод,
+   адресные действия/error/busy/focus, геометрия шести viewport и zoom/short height.
+5. TASK04: диагностика причины, операция до ожидания, независимая подготовка,
+   recovery/dedup/scope, prepared → explicit idempotent start без раннего времени.
+6. Полный применимый минимум, один candidate/PR, CI exact head, отчёт U01–U07.
+
+TASK01–04 реализованы. Локальные сквозные проверки и регрессии завершены;
+следующий этап — один PR, обязательный CI и человеческое review. Выпуска и полной
+приёмки ещё нет. Предметные опубликованные пакеты не менялись.
+
+### TASK02: expand / compatibility / recovery до записи схемы
+
+Основание допуска: прямой запрос владельца выполнить TASK02 пакета, разрешающий
+минимальную аддитивную привязку источников в существующем tenant-admin механизме;
+M4 допускает `determined_by=organization`. Не вводим публикацию или редактирование
+методологии для org-admin. Выбор — только опубликованные M3/configuration и
+опубликованный assessment catalog, доступный данной организации, не QA другого tenant.
+
+Expand: новая таблица append-only `organization_assessment_source_bindings`:
+assignment FK, questionnaire revision, configuration/role FKs, actor/time/operation.
+Старые строки назначения не переписываются/backfill не выполняется. Новая редакция
+связи допустима до первого bound M4 этого назначения; после — только новое назначение,
+без изменения исторического snapshot. Повтор operation возвращает ту же связь либо
+409 при несовпадении. Scope чтения: organization+recipient+assignment+questionnaire
+revision. Отсутствие точной связи — ожидание, не global/default fallback.
+
+Совместимость: новые поля admin request optional для прежних клиентов; без них
+сохраняется создание назначения, но подготовка ждёт ответственного. GET options
+с tenant gate отдаёт только доступные опубликованные источники для выбора, не
+новые права публикации. Участник не может назначать себе источники этим API.
+После подтверждения ответы read-only; изменение требует нового назначения,
+одинаковый транспортный replay не снимает подтверждение. Отдельная идемпотентная POST-команда разрешает M4 из
+тех же сохранённых ответов; GET состояния не создаёт M4. Legacy snapshot продолжает
+свой контракт чтения; ответы знакомства не заменяются duties/организационным текстом.
+
+Откат: revert приложения, таблица/история связей остаются; старый код её игнорирует.
+Не удалять ответы, согласия или M4/Cycle. Фактические записи live не меняем до gates.
+
+Для совместимости single-row legacy state добавляется scoped history
+`participant_acquaintance_scope_states` (user+organization+assignment+questionnaire
+revision → сохранённый state). Перед переключением активного scope его draft и
+факт согласия архивируются, при возврате читаются из того же scope; GET не пишет.
+Это техническое хранилище состояний, не новый предметный артефакт. Null legacy
+revision кодируется 0 только в ключе history; исходный state сохраняет NULL.
+Текущая таблица остаётся совместимым active projection, destructive migration нет.
+
+Дополнение expand перед реализацией: append-only
+`organization_assessment_assignment_operations` хранит org+actor+operation_id и
+fingerprint всего batch (включая состав участников и явные source refs). Это
+техническая идемпотентность команды, включая случай, когда все назначения уже
+существуют и новые строки assignments не создаются. Конкурирующий повтор
+сериализуется уникальным ключом; иные параметры с тем же operation_id → 409.
+Старые operation fingerprints проверяются дополнительно; backfill не нужен.
+Откат кода оставляет журнал неизменным, старый код его игнорирует.
+
+## Стоп-условия и решения
+
+1. Новые предметные нормы — нет; существующие artifacts/snapshots сохраняются.
+2. Контракты/данные — анализируется минимальное аддитивное расширение refs;
+   до записи нужен явный expand/compatibility/rollback plan, не скрытый fallback.
+3. Миграция с потерями — нет; backfill/удаление/перепись истории запрещены.
+4. Отсутствующий предметный источник — конкретного конфликта пока не выявлено;
+   отсутствующие общие principles/PDF отмечены, новые нормы не изобретаются.
+5. Новый контур артефакта — нет, используем corporate/1.0 и действующие M3/M4/M5/M7.
+6. Права/чувствительные данные — не расширяются; неопределённая власть назначения
+   блокирует только соответствующее расширение до решения владельца.
+7. Откат — revert кода, сохранить аддитивные записи/ответы/consent и frozen snapshots.
+8. Выход за область — нет; real-provider smoke требует отдельного допуска и
+   изолированных synthetic данных, обычные тесты используют controlled gateway.
+
+## Действия выпуска
+
+`branch_push=true`, `pr=true` — один PR по прямому запросу владельца.
+`version_bump=true`: владелец подтвердил единый PATCH-кандидат 2.0.35 для всего PR.
+`merge=false`, `deploy=false` до отдельной передачи/человеческого review нового
+head и обязательного зелёного CI; старые review PR #122/#123 не переиспользуются.
+`artifact_publish=false`; управляющие документы не меняются, baseline не заявляется.
+
+## Минимум проверок до PR
+
+Регрессии до/после по каждому установленному дефекту; lint, frontend tests,
+build/reproducible dist/release guard/diff-check; backend unit и HTTP;
+PostgreSQL integration только owned test/pytest DB, без developer/shared test DB;
+полный synthetic путь U01–U07 без предсозданного M4 и реальных писем.
+Browser: mock fault cases отдельно от реального isolated backend; 1440/1280/768/
+390/360/320, short height/zoom200, computed styles/geometry/keyboard.
+Real LLM отдельно `llm`, не заменяется synthetic PASS. Incident без доступа остаётся
+NOT_VERIFIED; platform matrix и визуальная приёмка владельца не присваиваются агентом.
+Перед merge frontend/pytest CI exact head/base обязательны.
+
+## Журнал ранних проверок (не итог кандидата)
+
+PASS: свежий origin/main, чистый исходный worktree, W01 checksums 11/11.
+PASS: `pytest -p no:cacheprovider -q tests/unit/test_public_origin.py
+tests/unit/test_test_deploy_bootstrap.py tests/unit/test_frontend_asset_retention.py`
+— 39 passed. Отдельно config security defaults + public origin — 21 passed.
+Остальной минимум NOT_RUN: реализация и воспроизведение ещё не завершены.
+
+TASK01 адресный прогон после дополнения delivery sink/Host и rollback: `pytest
+-p no:cacheprovider -q tests/e2e/test_r03_invitation_http.py
+tests/unit/test_auth_public_origin.py tests/unit/test_public_origin.py
+tests/unit/test_test_deploy_bootstrap.py` — 58 PASS, exit 0.
+
+На текущем рабочем diff TASK01: backend unit `632 PASS`, HTTP `93 PASS`,
+`sh -n scripts/deploy_test_remote.sh` и `git diff --check` PASS (exit 0).
+Это промежуточные проверки, не итоговый SHA полного кандидата; TASK02–04,
+integration/browser U01–U07 и real-provider ещё NOT_RUN.
+
+### TASK01: конфигурация и совместимость
+
+`APP_ORIGIN_MODE=local|public` сохраняет явно локальный HTTP-контур разработки;
+public требует HTTPS DNS origin без credentials/path/query/fragment/IP/localhost.
+Публичные URL строятся только из операторской настройки, не из Host/forwarded headers.
+TTL, purpose, HMAC/хеш и одноразовость токенов/tenant-проверки не меняются.
+Неверный origin отклоняется до записи токена/приглашения.
+
+Чтобы не читать и не переписывать серверный secret `.env`, штатный test deploy
+атомарно создаёт отдельный ignored `.public-origin.json` schema 1 через
+`scripts/configure_public_origin.py --origin https://test.4k-assistant.ru`.
+Он содержит только публичный origin/mode и переопределяет только APP_BASE_URL/mode,
+остальные настройки не затрагивает. Повреждённый файл — fail closed, не fallback.
+Isolated stand явно игнорирует этот deployment override.
+
+`GET /users/version` в public mode дополнен `public_origin`; в local ответ прежний
+(поле None исключено). Deploy сверяет effective origin работающего backend и
+сохраняет/восстанавливает прежний public config при rollback. Доставленные письма
+не меняются: новая ссылка только через штатный новый запрос/явную повторную отправку.
+Live effective-origin и mail sink после будущего deploy ещё NOT_RUN.
+
+## Откат и передача
+
+Рабочие изменения сохраняются только в одной ветке задачи. Аддитивные связи и
+ответы после rollback кода не удаляются; начатые Cycle используют прежний snapshot.
+Конкретный план схемы/совместимости будет внесён перед соответствующей записью.
+Следующий шаг: завершить полный integration/browser минимум, проверки восстановления
+и UI, единый bump 2.0.35 и review diff. Затем один PR и CI точного head.
+Версия 2.0.35 согласована и присвоена один раз на границе пакета.
+Первый рабочий commit `89f4f267653f567cfcbaac803799b1a61c601701` создан;
+последующие UI-регрессии исправляются в той же ветке/версии. Передача — один PR,
+live не изменён. Актуальная проверка — в [verification report](artifacts/ux-path29/verification.md).
+
+## Реализация и промежуточная проверка 29.10
+
+- TASK02: `assessment_assignment_sources` — только явные опубликованные config/role
+  refs существующего org-admin; student/чужой tenant исключены, после M4 refs frozen.
+  Batch operation journal не позволяет повторить ключ с иными участниками/источниками.
+  `acquaintance_state_store` архивирует и восстанавливает draft/consent по точному scope.
+  Реальные user fields проецируются типизированными read-only объектами; роль не должность.
+  Confirm answers сохраняется независимо от наличия M4. Отдельный POST resolve-profile
+  связывает сохранённые версии ответов с M4 без глобального выбора/default; повтор
+  сериализован user lock. После bound M4 изменённые ответы → 409, identical replay
+  не снимает подтверждение. Существенные прежние conflicts не обнуляются.
+- Journey/legacy API: обязательные факты consent+3 answers+confirmation проверяются
+  сервером; completed/skipped и старый profile/role/start не обходят новый путь.
+  Старые действительно unmanaged участники сохраняют прежний API; старые M4/Cycle
+  не переписываются. Если историческая confirmation не содержит revision в checksum,
+  сохранённая запись не меняется: новая canonical confirmation имеет новый checksum.
+- TASK03: W01 chat вместо promo-слайдов: история без старых кнопок, актуальный
+  вопрос+поле+действия, вопрос/ответ в сводке, адресная правка до подтверждения,
+  back 44×44 вне badge; палитра только owner tokens. Шапка проверяет journey и
+  не выбрасывает unsent ввод. Нормативное объяснение берётся из выбранного published
+  M2 с checksum, не встроенным словарём; при отсутствии источников — честное ожидание.
+- TASK04: confirm немедленно открывает 4К; resolve/prepare/poll идут независимо.
+  UUID записывается до POST, серверная операция восстанавливается по scope;
+  semantic dedup начальной подготовки исключает transport UUID, но не ключ next AS.
+  Смена identity/экрана прекращает только локальное ожидание; worker fencing сохранён.
+  Prepared snapshot требует admitted AS; кнопка старта использует тот же Cycle.
+
+Промежуточные результаты (рабочий diff, не финальный SHA):
+
+- `npm run test:backend` — 646 PASS / 256 deselected; предупреждения о TestClient
+  и недоступной записи pytest cache, ошибок нет.
+- HTTP + M4 regression — 94 PASS. Собственно HTTP — 93, M4 — 1.
+- Новые owned participant API + W02 + scope history: 4 PASS; отдельно M4 после
+  актуализации минимального fixture — PASS. Ранее очередь/M10/positive path — 17 PASS.
+- `node --test tests/frontend/*.test.mjs` — 85 PASS; lint/build PASS.
+- Новый `path29-participant.spec.mjs` — 1 PASS / 36.9s: реальные UI анкеты,
+  участник и явные sources, controlled HTTPS mail, новая регистрация без готового M4,
+  consent/3 answers/адресная правка, failed PUT с сохранением текста, reload,
+  4К во время held real worker, две вкладки/один UUID, prepared без started_at,
+  явный старт/первая AS в чате. Viewport 1440/1280/768/390/360/320, short+zoom200.
+  Owned artifacts: `.test-stand/path29/b26c4e64-c15f-4323-8b9d-da475eca0c67/`.
+  Не публиковать state.json (синтетический пароль) или auth URL/cookies.
+  Harness не входит в production main: требует isolated marker, owned DB и localhost.
+
+Найдены и исправлены по проверкам: frontend запрещал локальные hex вне owner palette;
+старый CSS другого экрана менял направление topbar; тест сравнивал весь текст
+queued/running вместо устойчивого operation UUID. Это не provider retry.
+Первый полный integration: 167 PASS, 2 FAIL (минимальные fixtures без revision и
+ожидание готовности от плана без admitted AS), 2 explicit llm SKIP. Исправлено:
+revision добавлена в тестовую схему; plan-only теперь проверяется как NOT READY,
+сам snapshot сохраняется и читается через read_plan. Адресный повтор — 12 PASS.
+Это не итоговый PASS всего набора: полный повтор перед review обязателен.
+
+Browser: 63 PASS (auth + прежний новый positive), отдельно ADM28 real PASS.
+Дополнительно 6 UI fault cases PASS: 403/409/503/network/failed/organization;
+network/5xx/409 не анимируют fake preparation и не выдаются за job failure.
+Runtime S10-A обнаружил обход штатного lazy-loader при новом прямом старте:
+первое сообщение могло опередить инициализацию. Переход переведён на loadInterview;
+адресный S10-A до saved Report/PDF — PASS / 1.1m. Unmanaged historical M4/QA
+оставлен на прежнем journey, modern assignments не попадают в legacy profile.
+Prepared QA snapshot использует явно выбранный QA scope только из guarded test contour.
+Новый positive дополнен потерей ответа prepare после настоящего commit и отправкой
+первого ответа; финальный полный browser ещё не завершён.
+
+Полный повтор backend integration на `89f4f26`: 169 PASS / 2 explicit llm SKIP,
+exit 0. Backend/schema/scripts/integration tests после него не менялись;
+последующие исправления затрагивают UI и browser/frontend tests.
+Возврат с dashboard теперь читает journey и возвращает canonical readiness,
+а не старый prechat. Во время GET старые действия скрыты/disabled; навигация
+сохраняется до запроса. Expanded U02: 1 PASS / 48.1s (reload после ответов1/2,
+summary/4К/queued/completed, новая auth-сессия, возврат с главной, тот же UUID/Cycle).
+Полный browser завершён: 84 PASS / 13.6m, exit 0, до последнего review-mode изменения.
+Режим «Как это работает» активной оценки теперь открывает объяснение 4К и возвращает
+по актуальному journey без новой подготовки. Следующий контрольный прогон прерван
+сном ноутбука при закрытой крышке: pmset подтвердил clamshell sleep
+13:53:03–15:00:39 МСК, E01 timeout сразу после wake. Без изменения кода E01
+прошёл 3 раза; полный auth — 68 PASS / 1.0m. Последний сквозной PATH29 с проверкой
+возврата из review-mode — 1 PASS / 51.9s (тот же M4/Cycle, started=1).
+Подробное доказательство и ограничения —
+в [verification report](artifacts/ux-path29/verification.md).
+
+Real-provider smoke NOT_RUN: после исходного разрешения одного smoke владелец
+29.10 отдельно решил продолжить deploy, но smoke оставить NOT_RUN до согласования
+утверждённого каталога. Это последнее решение; новых provider-вызовов не выполнять.
+P0 генерации не закрывается synthetic PASS; визуальная приёмка владельца/маркетолога
+и реальная платформенная матрица NOT_RUN. Chromium viewport не равен Safari/iOS/Яндекс.
+
+## CI #642 и адресная регрессия доставки уточнения
+
+PR #124, head `f0bac1156f05981d53d0ac483cd3ce48f1ac7517`, run
+`40872272091`: frontend PASS; unit/HTTP/integration PASS, browser 83 PASS / 1 FAIL.
+S10-A падает в `stand.cli('drain')` → `_clarify_interim` →
+`m7_clarification.present`: UniqueViolation по (AS, turn_id) уточняющего вопроса.
+CLI drain и штатный worker одновременно предъявляют одно решение. `present`
+читает delivery до Cycle → AS lock, но после ожидания блокировки не перечитывает.
+Код этой функции идентичен base main; ошибка не связана со сном ноутбука.
+
+Прочитано для адресного исправления: `docs/architecture/m7-clarification-contract.md`
+(v1, draft QA), `Api/m7_clarification.py`, `Api/m7_clarification_repository.py`,
+`Api/m10_orchestration.py`, `scripts/test_stand.py`, существующий M6/M7 integration
+в `tests/integration/test_m6_evidence_db.py` и `tests/browser/runtime.spec.mjs`.
+Правило: неизменяемое решение → единственный question Turn/delivery того же Dialogue;
+PM-04/M7, без изменения семантики вопроса, C-54/M4, прав, схемы или артефактов.
+
+План до реализации: воспроизвести двумя реальными соединениями с barrier до lock;
+в `present` перечитать delivery под уже существующей Cycle → AS блокировкой.
+Не подавлять UniqueViolation и не ослаблять constraint. Отдельный локальный повтор
+S10-A (2 PASS / 1 FAIL) выявил timeout browser-помощника: 5 секунд смены заголовка
+включали реальный start. Помощник должен ждать подтверждение POST/start и затем
+экран интервью; регрессия — задержанный ответ после настоящего commit. Продуктовые
+таймауты и правила времени не меняются. Повторить unit/HTTP/полный integration и
+browser, обновить тот же PR/версию; новое человеческое review точного head обязательно.
+Откат: revert адресного изменения приложения; данные/доставленные Turns сохраняются.
+
+Владелец в чате подтвердил review f0bac11 и разрешил squash merge/штатный deploy
+только на test после зелёного CI; до исправления CI merge не выполняется.
+Read-only preflight test обнаружил единственный catalog `e102-controlled/1.0`,
+`technical_fixture_only=true`, scoped, 2 cases; configs 1/2 без catalog ref.
+Владелец отдельно решил: deploy продолжать после gates, real-provider smoke
+оставить NOT_RUN, каталог согласовать отдельно. Новых платных вызовов нет;
+публикация/изменение каталога этим PR не разрешены.
+
+Рабочий checkpoint исправления: barrier regression 2 PASS, unit 646 PASS,
+HTTP 81 PASS, delayed-start S10-A 3 PASS / 4.3m. Полные integration/browser были
+прерваны по команде владельца (не полный PASS), после «продолжаем» запущены с начала.
+Рабочая ветка сохраняется в тот же PR для CI параллельно локальному прогону;
+это не готовность к merge. Окончательные результаты полного набора и новое review
+точного head фиксируются в [PR #124](https://github.com/VadikB/4K_MBTI/pull/124).
+
+## Возобновлённый полный контроль head 49e6693
+
+Владелец подтвердил review `49e6693a903c06bcdb65d51ce936ecdabc41d972` в чате;
+решение записано в PR comment 6498103561. Integration завершён 170 PASS /
+2 explicit llm SKIP, exit 0, 917.48s. Полный browser — 80 PASS / 1 FAIL /
+3 NOT_RUN, exit 1, 12.3m. Это не полный PASS, merge/deploy не выполнены.
+
+S10.4: сохранение Telegram реально вернуло 200, но лишний profile-summary затем
+сбросил статус. Прочитаны неизменённые относительно main `screens/profile.js`,
+`screen-loaders.js`, wiring и существующий helper settings в runtime.spec.mjs.
+Helper повторял действие внутри expect.poll, пока загружался lazy screen;
+регрессия с контролируемой задержкой его настоящего bundle 350ms воспроизводит
+3 GET profile-summary вместо 1 до исправления. Логи before/after:
+`/private/tmp/path29-profile-before.log`, `/private/tmp/path29-profile-after.log`.
+
+Узкое исправление только теста: один исходный клик и ожидание visible без повторной
+команды. Добавлены задержка cold load и проверка ровно одного открытия; существующие
+PATCH/reload/403/logout/late response/account switch/401 проверки сохранены.
+Product код, bundle, API, БД, права, артефакты и продуктовые таймауты не меняются.
+Откат этого шага — revert test helper, без изменения runtime/данных.
+После адресного повтора нужен полный browser и CI нового точного head; backend
+646 unit / 81 HTTP / 170 integration переиспользуется с явным отсутствием runtime diff.
+Новое review потребуется, принятие 49e6693 не переносится на следующий head.
+
+Адресный S10.4 с cold-load регрессией после исправления — **3 PASS / 1.5m**,
+exit 0. CI 49e6693 (`40881550481`) завершён frontend/pytest PASS, pytest 12m39s;
+это не отменяет найденный локальный FAIL и не переносится на новый head. Новый
+полный browser запущен с начала; лог `/private/tmp/path29-final-helper-browser.log`.
+Свежий origin/main перед checkpoint — a86775ff, версия 2.0.34; release check
+2.0.35, JS syntax и diff-check PASS. Frontend/runtime/schema изменений нет.

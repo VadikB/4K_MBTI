@@ -5,11 +5,11 @@ import logging
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from urllib.parse import quote
 
 from Api.config import settings
 from Api.database import get_connection
 from Api.email_service import send_auth_action_email, send_magic_link_email
+from Api.public_origin import build_public_link
 from Api.org_access import assign_user_organization_from_email, email_has_organization_access, ensure_configured_organizations
 from Api.organization_invitation_service import (
     OrganizationInvitationContext,
@@ -276,6 +276,7 @@ class AuthService:
     ) -> AuthActionTokenResult:
         if purpose not in {"email_verification", "password_reset"}:
             raise ValueError("Неизвестный тип операции авторизации.")
+        origin = settings.public_app_origin
         self.ensure_schema()
         normalized_email = normalize_email(email)
         raw_token = secrets.token_urlsafe(32)
@@ -342,7 +343,8 @@ class AuthService:
                 ),
             )
             connection.commit()
-        action_url = settings.app_base_url.rstrip("/") + "/?auth_action=" + purpose + "&token=" + quote(raw_token, safe="")
+        action_url = build_public_link(origin, {"auth_action": purpose, "token": raw_token},
+                                       mode=settings.app_origin_mode)
         if not settings.auth_magic_link_dev_mode and settings.email_provider != "console":
             send_auth_action_email(email=normalized_email, action_url=action_url, expires_at=expires_at, purpose=purpose)
         server_time = _utc_now()
@@ -495,6 +497,7 @@ class AuthService:
         client_ip: str | None = None,
         user_agent: str | None = None,
     ) -> MagicLinkRequestResult:
+        origin = settings.public_app_origin
         self.ensure_schema()
         normalized_email = normalize_email(email)
         raw_token = secrets.token_urlsafe(24)
@@ -539,7 +542,7 @@ class AuthService:
             )
             connection.commit()
 
-        login_url = settings.app_base_url.rstrip("/") + "/?token=" + quote(raw_token, safe="")
+        login_url = build_public_link(origin, {"token": raw_token}, mode=settings.app_origin_mode)
         if not settings.auth_magic_link_dev_mode:
             send_magic_link_email(
                 email=normalized_email,

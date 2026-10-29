@@ -37,7 +37,7 @@ def stand(tmp_path: Path) -> dict:
     git(repo, "init", "-q", "-b", "main")
     git(repo, "config", "user.name", "Synthetic deploy test")
     git(repo, "config", "user.email", "deploy@example.invalid")
-    (repo / ".gitignore").write_text(".venv/\n", encoding="utf-8")
+    (repo / ".gitignore").write_text(".venv/\n.public-origin.json\n", encoding="utf-8")
     (repo / "scripts").mkdir()
     (repo / "web/dist").mkdir(parents=True)
     (repo / "scripts/retain_previous_frontend_assets.sh").write_bytes(
@@ -53,6 +53,9 @@ def stand(tmp_path: Path) -> dict:
     old = git(repo, "rev-parse", "HEAD")
 
     source = DEPLOY.replace(TEST_ROOT, str(repo))
+    (repo / "Api").mkdir()
+    (repo / "Api/public_origin.py").write_bytes((ROOT / "Api/public_origin.py").read_bytes())
+    (repo / "scripts/configure_public_origin.py").write_bytes((ROOT / "scripts/configure_public_origin.py").read_bytes())
     (repo / "scripts/deploy_test_remote.sh").write_text(source, encoding="utf-8")
     (repo / "pyproject.toml").write_text('[project]\nversion = "2.0.34"\n', encoding="utf-8")
     (repo / "web/dist/main.js").write_text("checked-entrypoint", encoding="utf-8")
@@ -95,7 +98,7 @@ def stand(tmp_path: Path) -> dict:
         #!/bin/sh
         case "$*" in
           *users/version*)
-            .venv/bin/python -c 'import json,tomllib; print(json.dumps({"version": tomllib.load(open("pyproject.toml","rb"))["project"]["version"]}))'
+            .venv/bin/python -c 'import json,tomllib,os; print(json.dumps({"version": tomllib.load(open("pyproject.toml","rb"))["project"]["version"], "public_origin": os.getenv("SYNTHETIC_SMOKE_ORIGIN", "https://test.4k-assistant.ru")}))'
             ;;
           *web/dist/main.js*)
             if [ "${SYNTHETIC_SMOKE_FAIL:-0}" = 1 ]; then exit 1; fi
@@ -135,6 +138,27 @@ def test_bootstrap_uses_checked_git_script_not_stale_checkout(stand: dict) -> No
     assert (stand["repo"] / "web/dist/main.js").read_text() == "checked-entrypoint"
     assert (stand["repo"] / "web/dist/old-HASH.js").read_text() == "old-hashed-chunk"
     assert stand["future"] not in result.stdout
+    assert '"origin": "https://test.4k-assistant.ru"' in (stand["repo"] / ".public-origin.json").read_text()
+
+
+@pytest.mark.parametrize("previous", [None, '{"schema_version":1,"mode":"public","origin":"https://old.example.com"}'])
+def test_effective_origin_mismatch_rolls_back_public_config_without_touching_dotenv(stand: dict, previous) -> None:
+    config = stand["repo"] / ".public-origin.json"
+    dotenv = stand["repo"] / ".env"
+    dotenv.write_text("APP_BASE_URL=http://127.0.0.1:8002\nSYNTHETIC_SECRET=not-a-real-secret\n")
+    original = dotenv.read_bytes()
+    if previous is not None:
+        config.write_text(previous)
+    result = run_deploy(stand, stand["target"], bootstrap=True,
+                        SYNTHETIC_SMOKE_ORIGIN="https://wrong.example.com")
+    assert result.returncode == 1
+    assert "effective public origin" in result.stderr
+    assert git(stand["repo"], "rev-parse", "HEAD") == stand["old"]
+    assert dotenv.read_bytes() == original
+    if previous is None:
+        assert not config.exists()
+    else:
+        assert config.read_text() == previous
 
 
 @pytest.mark.parametrize("failure", ["SYNTHETIC_BUILD_FAIL", "SYNTHETIC_SMOKE_FAIL"])

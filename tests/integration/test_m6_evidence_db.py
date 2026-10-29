@@ -467,7 +467,8 @@ def test_m6_b_failure_is_not_person_result_and_retry_succeeds(database):
         assert c.execute('SELECT count(*) AS n FROM m6_assessment_attempts').fetchone()['n']==2
 
 
-def test_m7_clarification_reuses_dialogue_and_restarts_m6(database):
+@pytest.mark.parametrize('concurrent_delivery', [False, True])
+def test_m7_clarification_reuses_dialogue_and_restarts_m6(database, monkeypatch, concurrent_delivery):
     from Api import m6_assessment_repository as assessments
     from Api.m6_assessment_package import load_mechanism as load_assessment_mechanism
     from Api.m6_assessment_worker import run_request as run_assessment
@@ -507,7 +508,36 @@ def test_m7_clarification_reuses_dialogue_and_restarts_m6(database):
         assert decision['status']=='ASK'
         assert m7_clarification.decide_detached(c54_revision_id=str(c54),key='clarification-alias',created_by=99,
             gateway=QuestionGateway(),connection_factory=factory)['id']==decision['id']
-        shown=m7_clarification.present(c,decision_id=str(decision['id']),expected_c54_revision_id=str(c54))
+        if concurrent_delivery:
+            from concurrent.futures import ThreadPoolExecutor
+            from threading import Barrier, local
+            gate=Barrier(2);seen=local()
+            original_read=m7_clarification.repo.read
+            def read_before_lock(connection, decision_id):
+                result=original_read(connection,decision_id)
+                if not getattr(seen,'read',False):
+                    seen.read=True
+                    assert result['question_turn_id'] is None
+                    gate.wait(timeout=10)
+                return result
+            def deliver():
+                with factory() as competing:
+                    competing.execute("SET LOCAL lock_timeout='10s'")
+                    result=m7_clarification.present(competing,decision_id=str(decision['id']),
+                        expected_c54_revision_id=str(c54))
+                    competing.commit()
+                    return result
+            with monkeypatch.context() as patch:
+                patch.setattr(m7_clarification.repo,'read',read_before_lock)
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    futures=[pool.submit(deliver) for _ in range(2)]
+                    deliveries=[future.result(timeout=15) for future in futures]
+            assert deliveries[0]['question_turn_id']==deliveries[1]['question_turn_id']
+            shown=deliveries[0]
+            assert c.execute('SELECT count(*) AS n FROM m7_clarification_deliveries').fetchone()['n']==1
+            assert c.execute("SELECT count(*) AS n FROM m5_dialogue_turns WHERE speaker_id='m7-clarification'").fetchone()['n']==1
+        else:
+            shown=m7_clarification.present(c,decision_id=str(decision['id']),expected_c54_revision_id=str(c54))
         answered=m7_clarification.answer(c,decision_id=str(decision['id']),request_id='clarification-answer-1',
             turn_id=str(uuid4()),content='Я имел в виду, что этот довод связывает обе части моего решения.')
         assert answered['question_turn_id']==shown['question_turn_id']
