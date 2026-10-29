@@ -45,6 +45,17 @@ def test_public_operation_keeps_only_committed_participant_result() -> None:
     }
 
 
+def test_public_operation_explains_missing_admitted_specialist_case_without_internal_details() -> None:
+    value = public_operation({
+        "operation_id": "operation-specialist",
+        "status": "failed",
+        "error_message": "M7_NO_ADMISSIBLE_CASE: internal diagnostic",
+    })
+    assert value["error"]["code"] == "ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE"
+    assert "Специалист" in value["error"]["message"]
+    assert "internal diagnostic" not in value["error"]["message"]
+
+
 @pytest.mark.parametrize(
     "status",
     ["WAITING_CURRENT_AS", "OUT_OF_TIME", "COLLECTION_CLOSED", "NO_ADMISSIBLE_CASE"],

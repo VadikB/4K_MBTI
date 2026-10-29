@@ -69,7 +69,7 @@ def internal():
             actor_user_id=superadmin, comment='Synthetic isolated source assignment regression')
         other = assessment_authoring_service.publish_configuration(c, configuration_id=other['id'], make_default=False,
             actor_user_id=superadmin, comment='Synthetic isolated source assignment regression')
-        role_code = json.loads(Path('assessment_definitions/cases/competencies_4k/1.1/case-package.json').read_text())['cases'][0]['base_role']
+        role_code = 'specialist_expert'
         role_id = c.execute('''SELECT v.id FROM assessment_role_profile_versions v
             JOIN assessment_role_profiles r ON r.id=v.role_profile_id WHERE r.code=%s AND v.status='published' ''', (role_code,)).fetchone()['id']
         student_id = c.execute("SELECT v.id FROM assessment_role_profile_versions v JOIN assessment_role_profiles r ON r.id=v.role_profile_id WHERE r.code='student'").fetchone()['id']
@@ -97,8 +97,16 @@ def internal():
         revision = preview.json()['id']
         response = admin.post(base + f'/questionnaire/{revision}/confirm', json={'recipients': ['participant']})
         assert response.status_code == 200, response.text
+        with get_connection() as c:
+            c.execute('''INSERT INTO organization_assessment_pilot_bindings
+                (organization_id,assignment_ref,binding_version,assessment_configuration_id,
+                 role_profile_version_id,configured_by_user_id)
+                VALUES(%s,%s,'specialist-pilot/1',%s,%s,%s)''',
+                (org, 'path29-flow', other['id'], role_id, actor))
+            c.commit()
         payload = {'user_ids': [uid], 'assignment_ref': 'path29-flow', 'operation_id': 'path29-without-sources'}
-        assert admin.post(base + '/assessment-assignments', json=payload).status_code == 200
+        assigned = admin.post(base + '/assessment-assignments', json=payload)
+        assert assigned.status_code == 200, assigned.text
         email = 'path29-participant@example.test'
         sent = participant.post('/users/auth/email/request-link', json={'email': email})
         assert sent.status_code == 200 and sent.json()['auth_mode'] == 'verification_pending', sent.text
@@ -122,7 +130,7 @@ def internal():
         fields = {item['key']: item for item in current['readiness']['briefing']['provided_participant_fields']}
         assert fields['position']['value'] == 'Synthetic actual position'
         assert fields['full_name']['value'] == 'Synthetic new participant'
-        assert fields['role']['value'] is None
+        assert fields['role']['value'] == 'Специалист / эксперт'
         assert all(item['readonly'] and item['source'] and item['label'] for item in fields.values())
         assert participant.put(path + '/answers', json={'answers': {'answer_1': 'Synthetic'}}).status_code == 409
         assert participant.post('/users/assessment/cycles/prepare', json={
@@ -139,27 +147,23 @@ def internal():
         assert participant.put(path + '/answers', json={'answers': {'answer_2': answers['answer_2']}}).status_code == 200
         response = participant.put(path + '/answers', json={'answers': answers, 'confirm': True})
         assert response.status_code == 200, response.text
-        unbound = participant.post(path + '/resolve-profile')
-        assert unbound.status_code == 200, unbound.text
-        assert unbound.json()['late_readiness']['status'] == 'waiting_for_assessment_data'
-        assert unbound.json()['state']['answers_json'] == answers
+        resolved = participant.post(path + '/resolve-profile')
+        assert resolved.status_code == 200, resolved.text
+        assert resolved.json()['late_readiness']['status'] == 'ready_to_prepare'
+        assert resolved.json()['state']['answers_json'] == answers
         assert participant.put(path + '/answers', json={'answers': {'answer_2': 'Changed after confirmation'}}).status_code == 409
         assert participant.put(path + '/answers', json={'answers': answers, 'confirm': False}).json()['answers_confirmed_at']
         assert participant.get(f'/users/{uid}/journey-state').json()['next_action'] == 'show_onboarding'
-        assert participant.get(base + '/assessment-source-options').status_code == 403
-        available = admin.get(base + '/assessment-source-options').json()
-        assert len(available['configurations']) >= 2
-        assert student_id not in {item['version_id'] for item in available['roles']}
+        assert participant.get(base + '/assessment-source-options').status_code in {401, 403, 404}
         assert admin.post(base + '/assessment-assignments', json={**payload, 'operation_id': 'path29-deny-student',
             'assessment_configuration_id': other['id'], 'role_profile_version_id': student_id}).status_code == 409
-        selected = {**payload, 'operation_id': 'path29-explicit-sources',
-                    'assessment_configuration_id': other['id'], 'role_profile_version_id': role_id}
+        selected = {**payload, 'operation_id': 'path29-complete-specialist'}
         for _ in range(2):
             response = admin.post(base + '/assessment-assignments', json=selected)
             assert response.status_code == 200, response.text
         assert admin.post(base + '/assessment-assignments', json={**selected, 'user_ids': [uid, actor]}).status_code == 409
         assert admin.post(base + '/assessment-assignments', json={**selected,
-            'assessment_configuration_id': runtime['id']}).status_code == 409
+            'assessment_configuration_id': runtime['id'], 'role_profile_version_id': role_id}).status_code == 409
         for _ in range(2):
             response = participant.post(path + '/resolve-profile')
             assert response.status_code == 200, response.text
@@ -183,8 +187,9 @@ def internal():
                 'selected_role_profile_version_id': None, 'personal_data_consent_accepted_at': None}
         assert participant.get(f'/users/{uid}/journey-state').json()['profile']['status'] == 'complete'
         changed = admin.post(base + '/assessment-assignments', json={**selected,
-            'operation_id': 'path29-deny-frozen-change', 'assessment_configuration_id': runtime['id']})
-        assert changed.status_code == 409 and 'FROZEN' in changed.text
+            'operation_id': 'path29-deny-frozen-change', 'assessment_configuration_id': runtime['id'],
+            'role_profile_version_id': role_id})
+        assert changed.status_code == 409 and 'PILOT_SOURCE_OVERRIDE_NOT_ALLOWED' in changed.text
         participant.cookies.clear()
         logged_in = participant.post('/users/auth/email/password-login', json={'email': email, 'password': 'SyntheticPass1!'})
         assert logged_in.status_code == 200, logged_in.text
@@ -203,29 +208,33 @@ def internal():
         assert participant.get(path).json()['preparation_operation']['operation_id'] == operation_id
         job = queue._claim()
         assert job['operation_id'] == operation_id
-        queue._process(job)  # Source-backed controlled AS fixture, not real-provider smoke.
+        queue._process(job)  # The fixture catalog intentionally has no admitted specialist_expert case.
         completed = participant.get('/users/assessment/cycles/preparation/' + operation_id)
-        assert completed.status_code == 200 and completed.json()['status'] == 'completed', completed.text
-        prepared = completed.json()['result']
-        cycle_id = prepared['plan']['cycle_id']
-        recovered = participant.post('/users/assessment/cycles/prepare', json={
-            'idempotency_key': 'path29-after-lost-response', 'selected_skills': ['K1', 'K2', 'K3', 'K4'],
-        })
-        assert recovered.json()['operation_id'] == operation_id and recovered.json()['status'] == 'completed'
+        assert completed.status_code == 200 and completed.json()['status'] == 'failed', completed.text
+        assert completed.json()['error']['code'] == 'ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE'
         with get_connection() as c:
-            cycle = c.execute('SELECT status,started_at FROM m5_cycles WHERE cycle_id=%s', (cycle_id,)).fetchone()
-            assert cycle['status'] == 'prepared' and cycle['started_at'] is None
-            before_sessions = c.execute('SELECT COUNT(*) AS n FROM m5_cycle_sessions WHERE cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s)', (cycle_id,)).fetchone()['n']
-        for index in (1, 2):
-            started = participant.post('/users/assessment/cycles/start', json={
-                'cycle_id': cycle_id, 'idempotency_key': f'path29-explicit-start-{index}',
-            })
-            assert started.status_code == 201, started.text
-            assert started.json()['runtime']['current_situation']
+            assert c.execute('SELECT COUNT(*) AS n FROM m5_cycles WHERE owner_user_id=%s', (uid,)).fetchone()['n'] == 0
+            invitations_before = c.execute('SELECT COUNT(*) AS n FROM organization_invitations WHERE organization_id=%s AND LOWER(recipient_email)=%s',
+                (org, email)).fetchone()['n']
+        removed = admin.delete(base + '/members', params={'email': email})
+        assert removed.status_code == 200, removed.text
         with get_connection() as c:
-            assert c.execute('SELECT COUNT(*) AS n FROM m5_cycles WHERE owner_user_id=%s', (uid,)).fetchone()['n'] == 1
-            assert c.execute('SELECT COUNT(*) AS n FROM m5_cycle_sessions WHERE cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s)', (cycle_id,)).fetchone()['n'] == before_sessions
-            assert c.execute('SELECT started_at FROM m5_cycles WHERE cycle_id=%s', (cycle_id,)).fetchone()['started_at'] is not None
+            assert c.execute("SELECT 1 FROM organization_memberships WHERE organization_id=%s AND user_id=%s AND role='member'", (org, uid)).fetchone() is None
+        # The removed membership cannot grant organization administration; the user's own saved
+        # assessment state remains stored under the existing owner contract.
+        assert participant.get(base + '/assessment-source-options').status_code in {401, 403, 404}
+        with get_connection() as c:
+            assert c.execute('SELECT COUNT(*) AS n FROM assessment_personalized_profiles WHERE user_id=%s', (uid,)).fetchone()['n'] == 1
+        restored = admin.post(base + '/members', json={'email': email, 'full_name': 'Synthetic new participant'})
+        assert restored.status_code == 200, restored.text
+        with get_connection() as c:
+            assert c.execute("SELECT 1 FROM organization_memberships WHERE organization_id=%s AND user_id=%s AND role='member'", (org, uid)).fetchone()
+            assert c.execute('SELECT id FROM users WHERE email=%s', (email,)).fetchone()['id'] == uid
+            assert c.execute('SELECT COUNT(*) AS n FROM organization_invitations WHERE organization_id=%s AND LOWER(recipient_email)=%s',
+                (org, email)).fetchone()['n'] == invitations_before
+        participant.cookies.clear()
+        assert participant.post('/users/auth/email/password-login', json={
+            'email': email, 'password': 'SyntheticPass1!'}).status_code == 200
     close_connection_pool()
     print('PATH29 canonical participant API regression PASS')
 

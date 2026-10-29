@@ -80,6 +80,10 @@ def client(monkeypatch):
     monkeypatch.setattr(routes.questionnaire_sources, "assignment_readiness", lambda *_args, **_kwargs: {
         "status": "ready", "questionnaire_revision_id": 71,
     })
+    monkeypatch.setattr(routes.assessment_assignment_sources, "resolve_pilot_binding", lambda *_args, **_kwargs: {
+        "assessment_configuration_id": 81, "role_profile_version_id": 91,
+    })
+    monkeypatch.setattr(routes.assessment_assignment_sources, "bind", lambda *_args, **_kwargs: {"id": 1})
     app = FastAPI()
     app.include_router(routes.router)
     with TestClient(app) as http:
@@ -116,4 +120,15 @@ def test_assignment_reports_foreign_recipient_without_side_effect(client):
     })
     assert response.status_code == 200
     assert response.json()["items"][0]["status"] == "not_assigned"
+    assert connection.rows == []
+
+
+def test_assignment_rejects_attempt_to_override_pilot_sources(client):
+    http, connection = client
+    response = http.post("/users/admin/organizations/3/assessment-assignments", json={
+        "user_ids": [18], "assignment_ref": "assessment-a", "operation_id": "adm29-source-override",
+        "assessment_configuration_id": 82, "role_profile_version_id": 92,
+    })
+    assert response.status_code == 409
+    assert "PILOT_SOURCE_OVERRIDE_NOT_ALLOWED" in response.text
     assert connection.rows == []

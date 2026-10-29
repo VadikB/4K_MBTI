@@ -1849,7 +1849,7 @@ if (adminOrganizationsList) {
         window.alert('Autotest-пользователей нельзя отвязывать из списка организаций. Используйте очистку регрессионных тестов.');
         return;
       }
-      if (!window.confirm('Отвязать пользователя ' + value + ' от организации?')) {
+      if (!window.confirm('Убрать ' + value + ' из участников этой организации? Аккаунт пользователя, пароль, результаты и связи с другими организациями сохранятся. Повторное добавление не потребует новой регистрации.')) {
         return;
       }
       withScreen(loadAdminOrganizations, (module) => module.deleteAdminOrganizationMember(organizationId, value));

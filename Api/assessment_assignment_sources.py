@@ -5,6 +5,16 @@ from Api.assessment_role_profiles import load_published_role_profile
 
 
 def ensure_schema(connection) -> None:
+    connection.execute('''CREATE TABLE IF NOT EXISTS organization_assessment_pilot_bindings (
+        organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+        assignment_ref TEXT NOT NULL,
+        binding_version TEXT NOT NULL,
+        assessment_configuration_id BIGINT NOT NULL REFERENCES assessment_configurations(id) ON DELETE RESTRICT,
+        role_profile_version_id BIGINT NOT NULL REFERENCES assessment_role_profile_versions(id) ON DELETE RESTRICT,
+        configured_by_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+        configured_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        PRIMARY KEY(organization_id,assignment_ref)
+    )''')
     connection.execute('''CREATE TABLE IF NOT EXISTS organization_assessment_assignment_operations (
         organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
         actor_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
@@ -28,6 +38,10 @@ def ensure_schema(connection) -> None:
         RETURNS trigger AS $$ BEGIN
             RAISE EXCEPTION 'Assessment source binding revisions are immutable';
         END $$ LANGUAGE plpgsql""")
+    connection.execute("DROP TRIGGER IF EXISTS pilot_binding_immutable ON organization_assessment_pilot_bindings")
+    connection.execute("""CREATE TRIGGER pilot_binding_immutable
+        BEFORE UPDATE OR DELETE ON organization_assessment_pilot_bindings
+        FOR EACH ROW EXECUTE FUNCTION prevent_assignment_source_binding_change()""")
     connection.execute("DROP TRIGGER IF EXISTS assignment_source_binding_immutable ON organization_assessment_source_bindings")
     connection.execute("""CREATE TRIGGER assignment_source_binding_immutable
         BEFORE UPDATE OR DELETE ON organization_assessment_source_bindings
@@ -95,6 +109,37 @@ def options(connection, *, organization_id: int) -> dict:
     return {'configurations': [dict(row) for row in configurations],
             'roles': [{'version_id': row['id'], 'name': row['definition']['description']['name'],
                        'version': row['version']} for row in roles]}
+
+
+def resolve_pilot_binding(connection, *, organization_id: int, assignment_ref: str) -> dict:
+    """Resolve the explicit operator-owned pilot binding; never infer a default."""
+    row = connection.execute("""SELECT binding.organization_id,binding.assignment_ref,
+            binding.binding_version,binding.assessment_configuration_id,binding.role_profile_version_id,
+            configuration.code AS configuration_code,configuration.status AS configuration_status,
+            catalog.status AS catalog_status,catalog.usage_scope AS catalog_usage_scope,
+            catalog.organization_id AS catalog_organization_id,
+            role.code AS role_code,version.status AS role_status,version.methodology_version
+        FROM organization_assessment_pilot_bindings binding
+        JOIN assessment_configurations configuration ON configuration.id=binding.assessment_configuration_id
+        JOIN m5_catalogs catalog ON catalog.id=configuration.catalog_version_id
+        JOIN assessment_role_profile_versions version ON version.id=binding.role_profile_version_id
+        JOIN assessment_role_profiles role ON role.id=version.role_profile_id
+        WHERE binding.organization_id=%s AND binding.assignment_ref=%s""",
+        (organization_id, assignment_ref)).fetchone()
+    if not row:
+        raise ValueError('PILOT_BINDING_NOT_CONFIGURED')
+    result = dict(row)
+    if result['role_code'] != 'specialist_expert':
+        raise ValueError('PILOT_ROLE_NOT_ALLOWED')
+    if result['configuration_status'] != 'published' or result['role_status'] != 'published':
+        raise ValueError('PILOT_BINDING_NOT_PUBLISHED')
+    if result['catalog_status'] != 'published' or result['catalog_usage_scope'] != 'assessment':
+        raise ValueError('PILOT_CATALOG_NOT_ADMITTED')
+    if result['catalog_organization_id'] is not None and int(result['catalog_organization_id']) != organization_id:
+        raise ValueError('PILOT_CATALOG_SCOPE_MISMATCH')
+    if str(result['methodology_version']) != '1.1':
+        raise ValueError('PILOT_METHODOLOGY_NOT_ALLOWED')
+    return result
 
 
 def current_binding(connection, *, user_id: int, organization_id: int,

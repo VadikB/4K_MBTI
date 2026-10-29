@@ -40,6 +40,13 @@ test('W02 displays server-resolved assignment timing and restores the prepared s
   assert.doesNotMatch(onboarding, /(?:default|fallback).*60/i);
 });
 
+test('UX-AUD29-05 explains return from the saved policy instead of snapshot truthiness', () => {
+  assert.match(onboarding, /resume_mode === 'same_assessment_situation'/);
+  assert.match(onboarding, /продолжите ту же незавершённую ситуацию/);
+  assert.match(onboarding, /resume_mode === 'replace_assessment_situation'/);
+  assert.doesNotMatch(onboarding, /return_policy_snapshot \?[^:]+может обновиться/);
+});
+
 test('W02 closes one situation and requires an explicit start for the next one', () => {
   assert.match(interview, /finish-situation/);
   assert.match(interview, /Приступить к следующей ситуации/);

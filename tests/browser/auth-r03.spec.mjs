@@ -232,7 +232,7 @@ test('ADM28 temporary restore failure offers retry and does not show login crede
   await expect(page.locator('#session-restore-title')).toHaveText('Не удалось восстановить сессию');
   await expect(page.locator('#session-restore-retry')).toBeVisible();
   await expect(page.locator('#email-input')).toBeHidden();
-  await expect(page.locator('#session-restore-panel [data-app-release-number]')).toHaveText(appRelease);
+  await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
 });
 
 test('ADM28 initial HTML has a complete frontend version before JavaScript', async ({ browser }) => {
@@ -241,7 +241,7 @@ test('ADM28 initial HTML has a complete frontend version before JavaScript', asy
     const page = await context.newPage();
     await page.goto(base);
     await expect(page.locator('#session-restore-panel')).toBeVisible();
-    await expect(page.locator('#session-restore-panel [data-app-release-number]')).toHaveText(appRelease);
+    await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
     await expect(page.locator('#email-input')).toBeHidden();
   } finally { await context.close(); }
 });
@@ -1275,11 +1275,12 @@ test('REL-VERSION-01 shows one build number on auth and common areas, with a saf
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('#app-release-badge')).toHaveText(`Версия ${appRelease}`);
-  await expect(page.locator('#app-release-badge')).toBeVisible();
-  await expect(page.locator('.app-footer-release')).toBeHidden();
+  await expect(page.locator('#auth-panel .auth-external-brand')).toHaveText('4К Ассистент');
+  await expect(page.locator('#auth-panel .auth-external-brand')).toBeVisible();
+  await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
+  await expect(page.locator('.app-footer-release')).toBeVisible();
   await page.setViewportSize({ width: 360, height: 760 });
-  await expect(page.locator('#app-release-badge')).toBeInViewport();
+  await expect(page.locator('.app-footer-release')).toBeInViewport();
   await page.locator('#auth-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.remove('hidden'));
   await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
@@ -2171,6 +2172,53 @@ test('W02 does not present plan cards before the prepared plan exists', async ({
   await expect(page.getByText('Календарное окно после старта')).toBeHidden();
   await expect(page.getByText('Время на выполнение')).toBeHidden();
   await expect(page.getByText('Ориентировочная общая длительность')).toBeHidden();
+});
+
+test('UX-AUD29-03 grows the answer and submits desktop Enter only once', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  const acquaintance = {
+    readiness: { status: 'ready', organization_name: 'Организация А', briefing: {
+      organizer: 'Организация А', purpose: 'Пилот', results_usage: 'Для развития',
+      result_recipients: 'Участник', provided_participant_fields: [], questions: ['Опишите задачи', 'Q2', 'Q3'],
+      consent_version: 1, consent_text: 'Подтверждаю сведения',
+    } },
+    state: { answers_json: {} }, mandatory_complete: false,
+    onboarding: { status: 'not_started', current_step: 0 },
+    late_readiness: { status: 'waiting_for_answers' }, prepared_plan: null,
+  };
+  let answerRequests = 0;
+  await page.route('**/users/**', async (route) => {
+    const request = route.request();
+    const pathname = new URL(request.url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'show_onboarding', profile: { status: 'incomplete' },
+      onboarding: acquaintance.onboarding, assessment: { status: 'not_started' }, acquaintance });
+    if (pathname === '/users/8/acquaintance' && request.method() === 'GET') return fulfillJson(route, acquaintance);
+    if (pathname === '/users/8/onboarding') return fulfillJson(route, { status: 'in_progress', current_step: 0 });
+    if (pathname.endsWith('/acquaintance/consent')) {
+      acquaintance.state.consent_accepted_at = 'synthetic'; return fulfillJson(route, acquaintance.state);
+    }
+    if (pathname.endsWith('/acquaintance/answers')) {
+      answerRequests += 1;
+      const payload = request.postDataJSON();
+      acquaintance.state.answers_json = { ...acquaintance.state.answers_json, ...payload.answers };
+      return fulfillJson(route, acquaintance.state);
+    }
+    if (pathname === '/users/version') return fulfillJson(route, { version: appRelease });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await page.getByRole('button', { name: 'Начать знакомство' }).click();
+  await page.getByRole('button', { name: 'Согласен и продолжить' }).click();
+  const input = page.locator('.onboarding-answer');
+  await input.fill('Строка 1\nСтрока 2\nСтрока 3\nСтрока 4\nСтрока 5\nСтрока 6');
+  expect(await input.evaluate((node) => parseFloat(getComputedStyle(node).height))).toBeLessThanOrEqual(120);
+  await input.press('Shift+Enter');
+  expect(answerRequests).toBe(0);
+  await input.press('Enter');
+  await expect.poll(() => answerRequests).toBe(1);
+  await page.waitForTimeout(100);
+  expect(answerRequests).toBe(1);
 });
 
 test('R08 shows the frozen program budget instead of the planned duration sum', async ({ page }) => {

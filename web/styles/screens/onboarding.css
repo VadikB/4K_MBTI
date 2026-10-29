@@ -54,7 +54,7 @@
 .onboarding-data dt { font-size: 14px; color: var(--palette-graphite-600); margin-bottom: 5px; }
 .onboarding-data dd { margin: 0; }
 .onboarding-answer, .onboarding-data-issue textarea {
-    display: block; width: 100%; min-height: 104px; resize: vertical; margin: 0;
+    display: block; width: 100%; min-height: 48px; max-height: 120px; resize: none; margin: 0;
     border: 1px solid var(--palette-graphite-200); border-radius: 8px; background: var(--palette-white);
     padding: 12px; font: 400 16px/24px var(--font-body); color: inherit;
 }
