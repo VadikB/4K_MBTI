@@ -17,6 +17,7 @@ import { createAdminOrganizationDraftKey } from './organization-draft-key.js';
 let selectedOrganizationId = null;
 const invitationRequestsInFlight = new Set();
 const invitationOperationIds = new Map();
+const assignmentSourceRequests = new Set();
 const questionnairePreviews = new Map();
 const questionnaireRevisions = new Map();
 const staleQuestionnairePreviews = new Set();
@@ -208,6 +209,7 @@ const clearAdminOrganizationsSessionState = () => {
   selectedOrganizationId = null;
   invitationRequestsInFlight.clear();
   invitationOperationIds.clear();
+  assignmentSourceRequests.clear();
   questionnairePreviews.clear();
   questionnaireRevisions.clear();
   staleQuestionnairePreviews.clear();
@@ -747,10 +749,47 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
     return false;
   }
   const operationId = createOperationId();
+  const requestKey = assessmentKey(organizationId, assessment);
+  if (assignmentSourceRequests.has(requestKey)) return false;
+  assignmentSourceRequests.add(requestKey);
+  const identityEpoch = state.identityEpoch;
   try {
+    const card = adminOrganizationsList.querySelector('[data-organization-id="' + Number(organizationId) + '"]');
+    let sources = card?.querySelector('[data-assignment-sources]');
+    let needsSourceSelection = false;
+    if (!sources || sources.dataset.assessmentRef !== assessment) {
+      const optionsResponse = await fetch('/users/admin/organizations/' + organizationId + '/assessment-source-options', {
+        credentials: 'same-origin',
+      });
+      const available = await readApiResponse(optionsResponse, 'Не удалось загрузить источники назначения. Повторите действие.');
+      if (state.identityEpoch !== identityEpoch || !card?.isConnected) return false;
+      sources?.remove();
+      sources = document.createElement('fieldset');
+      sources.className = 'admin-assignment-sources';
+      sources.dataset.assignmentSources = '';
+      sources.dataset.assessmentRef = assessment;
+      sources.innerHTML = '<legend>Источники выбранного назначения</legend>' +
+        '<p>Выберите опубликованные источники для отмеченных участников. Роль в оценке не заменяет должность.</p>' +
+        '<label>Конфигурация оценки<select name="assessment_configuration_id"><option value="">Выберите конфигурацию</option>' +
+        (available.configurations || []).map((item) => '<option value="' + Number(item.id) + '">' + escapeHtml(item.name) + '</option>').join('') + '</select></label>' +
+        '<label>Роль в оценке<select name="role_profile_version_id"><option value="">Выберите опубликованную роль</option>' +
+        (available.roles || []).map((item) => '<option value="' + Number(item.version_id) + '">' + escapeHtml(item.name) + ' · v' + Number(item.version) + '</option>').join('') + '</select></label>';
+      card.querySelector('.admin-organization-bulk-actions').prepend(sources);
+      needsSourceSelection = true;
+    }
+    const configurationId = Number(sources.querySelector('[name="assessment_configuration_id"]').value);
+    const roleVersionId = Number(sources.querySelector('[name="role_profile_version_id"]').value);
+    if ((!configurationId || !roleVersionId) && !needsSourceSelection) {
+      setStatus('Для назначения выберите конфигурацию и опубликованную роль. Автоматического выбора нет.', 'error');
+      sources.querySelector('select:invalid, select').focus();
+      return false;
+    }
     const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-assignments', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_ids: selected, assignment_ref: assessment, operation_id: operationId }),
+      body: JSON.stringify({ user_ids: selected, assignment_ref: assessment, operation_id: operationId,
+        ...(configurationId && roleVersionId ? {
+          assessment_configuration_id: configurationId, role_profile_version_id: roleVersionId,
+        } : {}) }),
     });
     const result = await readApiResponse(response, 'Не удалось назначить оценку.');
     const items = Array.isArray(result.items) ? result.items : [];
@@ -758,9 +797,16 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
     const existing = items.filter((item) => item.status === 'already_assigned').length;
     const failed = items.filter((item) => item.status === 'not_assigned');
     await loadAdminOrganizations();
+    if (state.identityEpoch !== identityEpoch) return false;
+    if (needsSourceSelection) {
+      adminOrganizationsList.querySelector('[data-organization-id="' + Number(organizationId) + '"] .admin-organization-bulk-actions')?.prepend(sources);
+      sources.querySelector('select').focus();
+    }
     setStatus(
       'Назначена: ' + assigned + '. Уже была назначена: ' + existing + '. Не назначена: ' + failed.length +
-        (failed.length ? '. ' + failed.map((item) => item.user_id + ': ' + item.error).join('; ') : ''),
+        (failed.length ? '. ' + failed.map((item) => item.user_id + ': ' + item.error).join('; ') : '') +
+        (needsSourceSelection ? '. Источники пока не назначены: выберите их и повторите «Назначить оценку». Пустой список требует публикации источников ответственным.'
+          : '. Опубликованные источники назначены выбранным участникам.'),
       failed.length ? 'error' : 'success',
     );
     return failed.length === 0;
@@ -768,6 +814,8 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
     setStatus(error.message || 'Не удалось назначить оценку.', 'error');
     offerAssessmentDataNavigation(organizationId, assessment);
     return false;
+  } finally {
+    assignmentSourceRequests.delete(requestKey);
   }
 };
 

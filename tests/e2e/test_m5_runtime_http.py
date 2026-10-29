@@ -47,6 +47,9 @@ def client(monkeypatch):
         yield connection
 
     monkeypatch.setattr(routes, "get_connection", get_connection)
+    # This suite isolates queue projection/ownership. Canonical assignment gates
+    # are exercised with actual PostgreSQL and questionnaire API in PATH29.
+    monkeypatch.setattr(routes.acquaintance, 'preparation_scope', lambda *args, **kwargs: None)
     monkeypatch.setattr(routes.web_session_service, "get_user_by_token",
                         lambda token: SimpleNamespace(id=7) if token == "owner" else SimpleNamespace(id=8) if token else None)
     app = FastAPI()

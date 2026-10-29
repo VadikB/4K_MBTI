@@ -333,14 +333,13 @@ def test_product_cycle_preparation_reclaim_fences_late_worker(product_db, monkey
 
     active = queue.enqueue(operation_id="async-product-02", user_id=99,
                            request={**request, "idempotency_key": "async-product-02"})
-    separate = queue.enqueue(operation_id="async-product-03", user_id=99,
-                             request={**request, "idempotency_key": "async-product-03",
-                                      "selected_skills": ["K1"]})
+    with pytest.raises(ValueError, match='PREPARATION_SCOPE_BUSY'):
+        queue.enqueue(operation_id="async-product-03", user_id=99,
+                      request={**request, "idempotency_key": "async-product-03", "selected_skills": ["K1"]})
     duplicate_scope = queue.enqueue(operation_id="async-product-04", user_id=99,
                                     request={**request, "idempotency_key": "async-product-02"})
-    assert active["operation_id"] == "async-product-02"
-    assert separate["operation_id"] == "async-product-03"
-    assert duplicate_scope["operation_id"] == "async-product-02"
+    assert active["operation_id"] == "fenced-product-01"
+    assert duplicate_scope["operation_id"] == "fenced-product-01"
 
 
 @pytest.mark.parametrize(
@@ -616,11 +615,12 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
     # Refresh/retry and an explicit next while the current AS is still open reuse
     # persisted state. Neither path may call generator/tester again.
     replay_operation = "functional-cycle-replay"
-    queue.enqueue(operation_id=replay_operation, user_id=99, request={
+    accepted_replay = queue.enqueue(operation_id=replay_operation, user_id=99, request={
         **request, "idempotency_key": replay_operation,
     })
-    queue._process(queue._claim())
-    replay = queue.get_status(replay_operation)
+    assert accepted_replay['operation_id'] == 'functional-cycle'
+    assert queue._claim() is None
+    replay = queue.get_status(accepted_replay['operation_id'])
     assert replay["status"] == "completed"
     assert replay["result_json"]["decision"]["assessment_situation_id"] == first_as
     assert FunctionalGateway.call_count == generation_calls

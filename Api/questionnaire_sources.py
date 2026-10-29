@@ -353,6 +353,7 @@ def admin_assignment_readiness(connection, *, organization_id: int, assignment_r
         selected_readiness = {
             "status": "ready", "reason": None, "organization_id": organization_id,
             "assignment_ref": normalized_ref,
+            "questionnaire_revision_id": early.get('questionnaire_revision_id'),
         }
         for row in participant_rows:
             late = late_readiness(

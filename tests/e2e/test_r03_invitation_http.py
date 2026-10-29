@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
 from types import SimpleNamespace
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -167,6 +168,28 @@ def test_personal_invitation_repeated_operation_has_one_effect(monkeypatch) -> N
     assert len(sent) == 1
     expires_at = datetime.fromisoformat(first.json()["items"][0]["expires_at"])
     assert timedelta(hours=71, minutes=59) < expires_at - _utcnow() <= timedelta(hours=72)
+
+
+def test_personal_delivery_and_explicit_resend_ignore_attacker_host(monkeypatch) -> None:
+    connection = _InvitationConnection()
+    sent = []
+    client = _client(monkeypatch, connection, sent)
+    monkeypatch.setattr(routes.settings, "app_origin_mode", "public")
+    for index, origin in enumerate(("https://test.example.com", "https://next.example.com")):
+        monkeypatch.setattr(routes.settings, "app_base_url", origin)
+        response = client.post(
+            "/users/admin/organizations/3/personal-invitations",
+            json={"emails": ["person@example.test"], "operation_id": f"origin-send-{index}"},
+            headers={"Host": "attacker.example", "X-Forwarded-Host": "attacker.example",
+                     "X-Forwarded-Proto": "http"},
+        )
+        assert response.status_code == 200
+        assert response.json()["items"][0]["status"] == "accepted"
+        assert sent[-1]["action_url"].startswith(origin + "/?invite=")
+        assert urlsplit(sent[-1]["action_url"]).hostname != "attacker.example"
+        assert sent[-1]["purpose"] == "organization_invitation"
+    assert len(sent) == 2
+    assert len(connection.rows) == 2
 
 
 def test_personal_invitation_without_provider_is_not_accepted(monkeypatch) -> None:

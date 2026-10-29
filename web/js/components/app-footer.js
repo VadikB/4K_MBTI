@@ -1,4 +1,4 @@
-const CHAT_PANEL_IDS = new Set(['chat-panel', 'interview-panel']);
+const CHAT_PANEL_IDS = new Set(['chat-panel', 'interview-panel', 'onboarding-panel']);
 
 export const shouldShowAppFooter = (panelId) => Boolean(panelId && !CHAT_PANEL_IDS.has(panelId));
 

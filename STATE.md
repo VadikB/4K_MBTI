@@ -1,4 +1,34 @@
-# STATE — TEST-DEPLOY-28
+# STATE — UX-PATH29
+
+- Base: свежий `origin/main` `a86775ff011a51831f9f86596be3dd776de79d11`, 2.0.34.
+- Ветка `codex/ux-path29-participant`, изолированный worktree; пользовательская
+  основная копия и её untracked не затронуты. Все четыре задания — один PR.
+- Владелец 29.10 подтвердил один PATCH-кандидат 2.0.35. Bump выполнен один раз.
+- С разрешения владельца read-only journal/БД test подтвердили шесть отказов
+  28.10 22:40–22:46 МСК: `M4_PROFILE_NOT_READY`, нет выбранной роли/M4;
+  confirmation/consent сохранены. Provider не вызывался на этом пути отказа.
+  [Безопасное доказательство](docs/evc/tasks/artifacts/ux-path29/incident-2026-10-28.md).
+- TASK01 локально: единый trusted origin, public-only deployment config без
+  чтения/перезаписи secret dotenv, URL builders и rollback/smoke origin.
+- TASK02–04 реализованы локально: явные scoped config/role refs, восстановление
+  ответов/consent, canonical M4 без global/default; W01 chat; независимая durable
+  подготовка и явный старт того же prepared Cycle. Frozen history не переписывается.
+- Промежуточно: backend 646 PASS, HTTP+M4 94 PASS, frontend 85 PASS;
+  owned browser positive path 1 PASS (все 6 viewport/short/zoom200, две вкладки,
+  failed PUT/reload, один UUID/M4/Cycle, нет раннего времени, первая AS в чате).
+  Первый полный integration: 167 PASS/2 fixture FAIL/2 explicit llm SKIP;
+  обе причины исправлены, адресный повтор 12 PASS. Полный повтор обязателен.
+  S10-A до saved Report/PDF PASS после исправления lazy-init первого сообщения.
+  Auth 62 + 6 readiness fault cases PASS; новый расширенный positive RUNNING.
+  Новый CI/deploy NOT_RUN.
+- Следующий шаг: финальные полные проверки, один PR и новый review точного head.
+  Real-provider smoke NOT_RUN; владелец разрешил ровно один после штатного test deploy,
+  текущие модель/лимиты, новые synthetic данные, без изменения ключей. P0 не закрыт.
+  [Общий план и откат](docs/evc/tasks/ux-path29-participant.md).
+- Изменения uncommitted; PR ещё не создан. Не передавать как завершённый пакет.
+  Новые review/CI gates обязательны; прежние PR122/123 reviews не применяются.
+
+## Предыдущий результат — TEST-DEPLOY-28
 
 - Base: `84467d12814196b3196e72f841d462de1a7f8223`, свежий origin/main, 2.0.33.
 - Ветка: `codex/test-deploy-current-checkout`; отдельный инфраструктурный PR

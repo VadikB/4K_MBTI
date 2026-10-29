@@ -5,28 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>4K Ассистент</title>
   <!-- CSS is modularized under /web/styles/. Load order: tokens → base → components → screens → utilities. -->
-  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/base.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/components.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.0.34">
-  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.0.34">
+  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/base.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/components.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.0.35">
+  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.0.35">
       <!--Favicons-->
   <link rel="icon" href="/favicons/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
@@ -58,7 +58,7 @@
       <span aria-current="page">Моя оценка</span>
     </nav>
     <section class="panel auth-panel" id="session-restore-panel" role="status" aria-live="polite">
-      <div class="auth-panel-head"><div class="brand">4К Ассистент</div><div class="release-badge">Версия <span data-app-release-number>2.0.34</span></div></div>
+      <div class="auth-panel-head"><div class="brand">4К Ассистент</div><div class="release-badge">Версия <span data-app-release-number>2.0.35</span></div></div>
       <h1 id="session-restore-title">Восстанавливаем сессию</h1>
       <p id="session-restore-message">Проверяем доступ и открываем ваш раздел…</p>
       <button id="session-restore-retry" class="primary-button hidden" type="button">Повторить</button>
@@ -69,7 +69,7 @@
           <div class="brand">4K Ассистент</div>
           <span class="auth-brand-caption">Оценка компетенций</span>
         </div>
-        <div id="app-release-badge" class="release-badge">Версия <span id="app-release-number" data-app-release-number>2.0.34</span></div>
+        <div id="app-release-badge" class="release-badge">Версия <span id="app-release-number" data-app-release-number>2.0.35</span></div>
       </div>
       <p id="auth-credential-step-indicator" class="auth-credential-step-indicator hidden" data-step="1" aria-live="polite">Шаг 1 из 2</p>
       <div class="auth-panel-copy">
@@ -159,11 +159,12 @@
     <section class="panel onboarding-panel hidden" id="onboarding-panel">
       <div class="onboarding-shell">
         <div class="onboarding-topbar">
-          <div class="brand dashboard-brand">4K Ассистент</div>
+          <button id="onboarding-home" type="button" class="brand dashboard-brand">4К Ассистент</button>
+          <span class="onboarding-section-label">ЗНАКОМСТВО</span>
         </div>
-        <div class="onboarding-copy">
-          <div class="step-badge" id="step-badge">
+        <div class="onboarding-toolbar">
             <button id="onboarding-step-back" type="button" class="step-badge-back" aria-label="Назад" hidden></button>
+          <div class="step-badge" id="step-badge">
             <span class="step-progress" aria-hidden="true">
               <span></span>
               <span></span>
@@ -171,15 +172,27 @@
             </span>
             <span id="step-badge-label">Шаг 01</span>
           </div>
+        </div>
+        <main id="onboarding-history" class="onboarding-history" aria-label="История знакомства">
+        <div class="onboarding-thread">
+          <div id="onboarding-messages"></div>
+        <section class="onboarding-copy onboarding-message onboarding-message--assistant" aria-labelledby="onboarding-title">
+          <div class="onboarding-author">4К Ассистент</div>
+          <div class="onboarding-bubble">
           <h2 id="onboarding-title">Познакомьтесь с AI-ассистентом</h2>
           <p class="subtitle" id="onboarding-description"></p>
           <div class="feature-list" id="feature-list"></div>
+          <p id="onboarding-error" class="onboarding-error" role="alert" tabindex="-1" hidden></p>
+          <p id="onboarding-notice" class="onboarding-notice" role="status" hidden></p>
           <div class="onboarding-actions">
             <button id="onboarding-next" type="button" class="primary-button">Далее</button>
             <button id="onboarding-skip" type="button" class="ghost-button">Пропустить</button>
           </div>
+          </div>
+        </section>
         </div>
-        <div class="onboarding-visual" id="onboarding-visual"></div>
+        </main>
+        <div class="onboarding-visual" id="onboarding-visual" hidden></div>
       </div>
     </section>
 
@@ -1983,7 +1996,7 @@
         <span>Политика конфиденциальности</span>
         <span>Согласие на обработку персональных данных</span>
       </div>
-      <span class="app-footer-release">Версия <span data-app-release-number>2.0.34</span></span>
+      <span class="app-footer-release">Версия <span data-app-release-number>2.0.35</span></span>
       <span class="app-footer-copyright">© <span data-app-footer-year></span> LIDUM</span>
     </footer>
   </main>
@@ -1999,6 +2012,6 @@
 
   <script src="/app-config.js"></script>
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=2.0.34"></script>
+  <script type="module" src="/web/dist/main.js?v=2.0.35"></script>
 </body>
 </html>

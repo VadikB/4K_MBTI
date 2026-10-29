@@ -873,6 +873,15 @@
 .admin-organizations-panel button { max-width: 100%; white-space: normal; }
 .admin-organization-steps .admin-organization-step { white-space: nowrap; flex-shrink: 0; }
 .admin-organization-member-form > h4, .admin-organization-member-form > p { grid-column: 1 / -1; margin: 0; }
+.admin-organization-bulk-actions:has(> .admin-assignment-sources) { flex-wrap: wrap; }
+.admin-assignment-sources {
+    flex: 0 0 100%; grid-column: 1 / -1; min-width: 0; width: 100%;
+    display: grid; gap: 12px; margin: 0; padding: 16px;
+    border: 1px solid var(--palette-graphite-200); border-radius: var(--radius-sm);
+}
+.admin-assignment-sources label { display: grid; gap: 8px; min-width: 0; }
+.admin-assignment-sources select { min-height: 44px; min-width: 0; width: 100%; font: inherit; }
+.admin-assignment-sources p { margin: 0; }
 .admin-organization-member-form > p { color: var(--text-muted); font-size: var(--fs-body-sm); }
 
 @media (min-width: 861px) {

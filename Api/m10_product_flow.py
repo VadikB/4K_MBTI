@@ -27,15 +27,16 @@ def _owned_profile(connection, user_id: int, profile_id=None) -> int:
 
 
 def _current_cycle(connection, user_id: int, organization_id: int, configuration_id=None,
-                   usage_scope: str = "assessment") -> dict | None:
+                   usage_scope: str = "assessment", profile_id: int | None = None) -> dict | None:
     rows = connection.execute(
         """SELECT c.cycle_id FROM m5_cycles c
            JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
            WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.usage_scope=%s
              AND (%s::bigint IS NULL OR p.assessment_configuration_id=%s)
+             AND (%s::bigint IS NULL OR c.personalized_profile_id=%s)
              AND c.status IN('prepared','active','paused','interrupted','collection_closed','calculation_pending')
            ORDER BY c.created_at DESC""",
-        (user_id, organization_id, usage_scope, configuration_id, configuration_id),
+        (user_id, organization_id, usage_scope, configuration_id, configuration_id, profile_id, profile_id),
     ).fetchall()
     if len(rows) > 1:
         raise ValueError('M4_PROFILE_SELECTION_REQUIRED: Выберите конфигурацию оценки в профиле.')
@@ -91,7 +92,7 @@ def _prepare_next(connection, *, plan: dict, user_id: int, key: str, defer_as: b
 
 def prepare(connection, *, user_id: int, key: str,
             selected_skills: list[str] | None = None, profile_id: int | None = None,
-            defer_as: bool = False) -> dict:
+            defer_as: bool = False, exact_profile: bool = False) -> dict:
     """Create/reuse one prepared Cycle; never start its Session or calendar window."""
     connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(user_id),))
     organization_id = participant_profile.active_organization(connection, user_id)
@@ -103,6 +104,7 @@ def prepare(connection, *, user_id: int, key: str,
     usage_scope = qa_orchestration.usage_scope()
     current = _current_cycle(
         connection, user_id, organization_id, profile["assessment_configuration_id"], usage_scope,
+        profile_id=profile_id if exact_profile else None,
     )
     if current:
         situation = connection.execute(

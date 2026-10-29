@@ -134,10 +134,12 @@ async function start(page,expected='готовности'){
  await expect.poll(async()=>await page.locator('#onboarding-panel').isVisible() || await page.locator('#prechat-panel').isVisible()).toBe(true);
  if(await page.locator('#onboarding-panel').isVisible()){
   await completeAcquaintance(page);
-  await expect.poll(()=>page.locator(entrySelector).count()).toBe(1);
-  await page.evaluate(selector=>document.querySelector(selector)?.click(),entrySelector);
+  if(!await page.locator('#interview-panel').isVisible()){
+   await expect.poll(()=>page.locator(entrySelector).count()).toBe(1);
+   await page.evaluate(selector=>document.querySelector(selector)?.click(),entrySelector);
+  }
  }
- await page.locator('#prechat-start-button').click();
+ if(await page.locator('#prechat-panel').isVisible())await page.locator('#prechat-start-button').click();
  await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
  await expect(page.locator('#interview-messages')).toContainText(expected);
  await test.info().attach('interview-start',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});

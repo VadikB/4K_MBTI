@@ -26,6 +26,29 @@ def _canonical(value: dict) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
+def semantic_request(request: dict) -> dict:
+    """Client retry UUID is transport identity, not a new assessment/profile scope."""
+    if request.get('kind') == 'next':
+        # Each next request may follow a newly closed AS in the same Cycle.
+        return dict(request)
+    return {key: value for key, value in request.items() if key != 'idempotency_key'}
+
+
+def latest_scope_operation(connection, *, user_id: int, profile_id: int, assignment_ref: str,
+                           questionnaire_revision_id: int | None) -> dict | None:
+    table = connection.execute("SELECT to_regclass(current_schema()||'.product_cycle_preparation_operations') AS relation").fetchone()
+    if not table or not table.get('relation'):
+        return None
+    row = connection.execute('''SELECT operation_id,status FROM product_cycle_preparation_operations
+        WHERE user_id=%s AND request_json->>'personalized_profile_id'=%s
+          AND request_json->>'assignment_ref'=%s
+          AND request_json->>'questionnaire_revision_id' IS NOT DISTINCT FROM %s
+        ORDER BY created_at DESC,id DESC LIMIT 1''',
+        (user_id, str(profile_id), assignment_ref,
+         str(questionnaire_revision_id) if questionnaire_revision_id is not None else None)).fetchone()
+    return public_operation(dict(row)) if row else None
+
+
 def _operation_lock_key(operation_id: str) -> int:
     return int.from_bytes(hashlib.sha256(operation_id.encode()).digest()[:8], "big", signed=True)
 
@@ -108,14 +131,19 @@ class ProductCyclePreparationQueue:
             existing = connection.execute(
                 """SELECT operation_id,status,result_json,error_code,error_message,request_checksum,created_at,updated_at,completed_at
                    FROM product_cycle_preparation_operations
-                   WHERE user_id=%s AND status IN ('queued','running') AND request_checksum=%s
+                   WHERE user_id=%s AND status IN ('queued','running','completed')
+                     AND (CASE WHEN request_json->>'kind'='next' THEN request_json
+                          ELSE request_json - 'idempotency_key' END)=%s::jsonb
                    ORDER BY created_at DESC LIMIT 1""",
-                (user_id, request_checksum),
+                (user_id, _canonical(semantic_request(request))),
             ).fetchone()
             if existing:
                 result = dict(existing)
                 result.pop("request_checksum", None)
                 return result
+            if connection.execute("""SELECT 1 FROM product_cycle_preparation_operations
+                WHERE user_id=%s AND status IN ('queued','running') LIMIT 1""", (user_id,)).fetchone():
+                raise ValueError('PRODUCT_CYCLE_PREPARATION_SCOPE_BUSY')
             row = connection.execute(
                 """INSERT INTO product_cycle_preparation_operations
                    (operation_id,user_id,request_json,request_checksum)
@@ -139,7 +167,7 @@ class ProductCyclePreparationQueue:
     def get_owned_status(self, operation_id: str, user_id: int) -> dict | None:
         with get_connection() as connection:
             row = connection.execute(
-                """SELECT operation_id,user_id,status,attempts,result_json,error_code,error_message,
+                """SELECT operation_id,user_id,status,attempts,result_json,error_code,error_message,request_json,
                           created_at,updated_at,completed_at
                    FROM product_cycle_preparation_operations
                    WHERE operation_id=%s AND user_id=%s""",
@@ -289,9 +317,12 @@ class ProductCyclePreparationQueue:
                         request.get("personalized_profile_id"),
                     )
                 profile = connection.execute(
-                    "SELECT content_json,assessment_configuration_id,checksum FROM assessment_personalized_profiles WHERE id=%s AND user_id=%s",
+                    "SELECT content_json,assessment_configuration_id,checksum,organization_id FROM assessment_personalized_profiles WHERE id=%s AND user_id=%s",
                     (profile_id, job["user_id"]),
                 ).fetchone() if profile_id else None
+                if request.get('profile_checksum') and (not profile or profile['checksum'] != request['profile_checksum']
+                        or profile['organization_id'] != request.get('organization_id')):
+                    raise ValueError('PRODUCT_CYCLE_PREPARATION_PROFILE_SCOPE_CHANGED')
                 if not next_cycle_id:
                     catalog_column = connection.execute("""SELECT EXISTS (
                         SELECT 1 FROM information_schema.columns
@@ -312,7 +343,7 @@ class ProductCyclePreparationQueue:
                     result = m10_product_flow.prepare(
                         connection, user_id=int(job["user_id"]), key=str(request["idempotency_key"]),
                         selected_skills=list(request["selected_skills"]), profile_id=profile_id,
-                        defer_as=functional,
+                        defer_as=functional, exact_profile=bool(request.get('assignment_ref')),
                     )
                 decision = result["decision"]
                 needs_generation = needs_functional_generation(

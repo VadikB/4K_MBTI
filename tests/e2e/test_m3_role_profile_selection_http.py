@@ -30,6 +30,7 @@ def _connection():
 @pytest.fixture
 def role_client(monkeypatch):
     monkeypatch.setattr(routes, "get_connection", _connection)
+    monkeypatch.setattr(routes.assessment_assignment_sources, 'has_managed_assignment', lambda *args, **kwargs: False)
     monkeypatch.setattr(
         routes.web_session_service,
         "get_user_by_token",

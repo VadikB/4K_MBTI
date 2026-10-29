@@ -1267,7 +1267,7 @@ export const openInterview = () => {
   }
 };
 
-const startAssessmentInterview = async () => {
+const startAssessmentInterview = async ({ preparedCycleId = null } = {}) => {
   if (!state.pendingUser || !state.pendingUser.id) {
     showError(prechatError, 'Не удалось определить пользователя для старта ассессмента.');
     return;
@@ -1288,12 +1288,15 @@ const startAssessmentInterview = async () => {
   showError(interviewError, '');
 
   try {
-    const prepared = await prepareProductCycle({
-      personalized_profile_id: state.dashboard?.personalized_profile_id || null,
-      idempotency_key: createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'],
-    });
+    state.productCycleId = preparedCycleId;
+    if (!state.productCycleId) {
+      const prepared = await prepareProductCycle({
+        personalized_profile_id: state.dashboard?.personalized_profile_id || null,
+        idempotency_key: createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'],
+      });
+      state.productCycleId = prepared.plan.cycle_id;
+    }
     state.assessmentRuntimeKind = 'cycle';
-    state.productCycleId = prepared.plan.cycle_id;
     persistAssessmentContext();
     const response = await fetch('/users/assessment/cycles/start', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1313,6 +1316,7 @@ const startAssessmentInterview = async () => {
     openInterview();
     renderProductRuntime(started.runtime);
   } catch (error) {
+    if (preparedCycleId) throw error; // The acquaintance screen owns retry; never open legacy profile/library.
     if (shouldRecoverProfileOnAssessmentError(error.message)) {
       await recoverProfileCompletionForAssessment();
       return;

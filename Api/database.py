@@ -4674,6 +4674,10 @@ def ensure_core_schema() -> None:
         ensure_questionnaire_source_schema(connection)
         ensure_acquaintance_confirmation_schema(connection)
         ensure_m5_runtime_schema(connection)
+        from Api.assessment_assignment_sources import ensure_schema as ensure_assignment_source_schema
+        ensure_assignment_source_schema(connection)
+        from Api.acquaintance_state_store import ensure_schema as ensure_acquaintance_scope_schema
+        ensure_acquaintance_scope_schema(connection)
         from Api.m8_report_access import ensure_schema as ensure_m8_report_access_schema
         ensure_m8_report_access_schema(connection)
         connection.execute("""

@@ -32,7 +32,7 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
             revoked_at TIMESTAMP)""")
         connection.execute("""CREATE TABLE participant_acquaintance_confirmations(
             id BIGSERIAL PRIMARY KEY,user_id BIGINT,organization_id BIGINT,assignment_ref TEXT,
-            personalized_profile_id BIGINT,confirmed_at TIMESTAMP DEFAULT NOW())""")
+            personalized_profile_id BIGINT,questionnaire_revision_id BIGINT,confirmed_at TIMESTAMP DEFAULT NOW())""")
         connection.execute("""CREATE TABLE assessment_preparation_jobs(
             id BIGSERIAL PRIMARY KEY,user_id BIGINT,status TEXT,created_at TIMESTAMP DEFAULT NOW())""")
         connection.execute("CREATE TABLE m5_cycles(id BIGINT PRIMARY KEY)")

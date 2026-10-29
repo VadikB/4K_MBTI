@@ -16,6 +16,7 @@ test('shared footer is visible on common panels and hidden on chat panels', () =
   assert.equal(shouldShowAppFooter('admin-panel'), true);
   assert.equal(shouldShowAppFooter('chat-panel'), false);
   assert.equal(shouldShowAppFooter('interview-panel'), false);
+  assert.equal(shouldShowAppFooter('onboarding-panel'), false);
   assert.equal(shouldShowAppFooter(undefined), false);
   assert.match(main, /initAppFooter\(\)/);
 });

@@ -1,6 +1,8 @@
 .DS_Store
 .env
 .env.test
+.public-origin.json
+.public-origin-*
 .venv/
 node_modules/
 .idea/

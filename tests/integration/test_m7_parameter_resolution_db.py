@@ -183,7 +183,7 @@ def test_prepared_revision_keeps_incomplete_coverage_limited(db):
     assert revised['plan']['status']=='LIMITED'
 
 
-def test_w02_reloads_the_saved_assessment_plan_snapshot(db):
+def test_w02_keeps_saved_plan_but_does_not_report_ready_without_admitted_as(db):
     cycle=create_cycle(db,personalized_profile_id=1,selected_role_ref={'id':'r','version':'1','checksum':'x'},
         target_set=[{'indicator_id':'K1.I1','m2_version':'1'}],created_by=7,usage_scope='assessment')
     rules=load_rules();content={'status':'READY','route':[{'planned_max_minutes':12}],
@@ -192,8 +192,9 @@ def test_w02_reloads_the_saved_assessment_plan_snapshot(db):
     repo.save_plan(db,cycle=cycle,profile_ref=cycle['profile_ref_json'],full_targets=cycle['target_set_json'],
         planned_targets=cycle['target_set_json'],requirements=[],rules=rules,content=content,
         created_by=7,key='w02-display',request_hash='w02-display-hash')
-    snapshot=_prepared_plan_snapshot(db,personalized_profile_id=1)
-    assert snapshot['cycle_id']==str(cycle['cycle_id'])
+    assert _prepared_plan_snapshot(db,personalized_profile_id=1) is None
+    snapshot=read_plan(db,str(cycle['cycle_id']))
+    assert str(snapshot['cycle_id'])==str(cycle['cycle_id'])
     assert snapshot['revision_no']==1
     assert snapshot['revision_id']
     assert snapshot['plan']['planned_max_seconds']==720

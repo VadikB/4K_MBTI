@@ -16,6 +16,7 @@ from Api.schemas import AgentReply, OrganizationInvitationPublicResponse, UserRe
 
 @pytest.fixture
 def admission_client(monkeypatch):
+    monkeypatch.setattr(routes.assessment_assignment_sources, 'has_managed_assignment', lambda *args, **kwargs: False)
     monkeypatch.setattr(
         routes.web_session_service,
         "get_user_by_token",

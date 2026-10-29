@@ -1,4 +1,4 @@
-import { readApiResponse } from '../api.js';
+import { readApiResponse, fetchWithDeadline as fetch } from '../api.js';
 import { state, persistAssessmentContext } from '../state.js';
 import { hasRequiredProfileFields, shouldOfferNoChangesQuickReply } from '../utils/format.js';
 
@@ -8,6 +8,19 @@ export const shouldRecoverProfileOnAssessmentError = (message) => {
 };
 
 export const recoverProfileCompletionForAssessment = async ({ resumeAssessment = true } = {}) => {
+  const journeyResponse = await fetch('/users/' + state.pendingUser.id + '/journey-state', { credentials: 'same-origin' });
+  const journey = await readApiResponse(journeyResponse, 'Не удалось восстановить актуальный этап оценки.');
+  if (journey.next_action === 'show_onboarding') {
+    const { openOnboarding } = await import('./onboarding.js');
+    await openOnboarding({ currentStep: Number(journey.onboarding?.current_step || 0) });
+    return;
+  }
+  if (journey.next_action === 'wait_for_acquaintance_data') {
+    const { openAcquaintanceWaiting } = await import('../router.js');
+    openAcquaintanceWaiting(journey.acquaintance?.readiness);
+    return;
+  }
+  if (journey.next_action !== 'complete_profile') throw new Error('Откройте текущую оценку через личный кабинет.');
   const response = await fetch('/users/session/reopen-profile', {
     method: 'POST',
     credentials: 'same-origin',
