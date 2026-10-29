@@ -1101,6 +1101,8 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
             LEFT JOIN LATERAL (
                 SELECT ARRAY_AGG(oa.assignment_ref ORDER BY oa.assignment_ref) AS assignment_refs
                 FROM organization_assessment_assignments oa
+                JOIN organization_assessment_source_bindings source_binding
+                  ON source_binding.assignment_id=oa.id
                 WHERE oa.organization_id = om.organization_id
                   AND oa.recipient_user_id = u.id
                   AND oa.status = 'active'
@@ -4193,9 +4195,6 @@ def assign_organization_assessment(
     assignment_ref = str(payload.assignment_ref).strip()
     recipient_ids = sorted(set(int(value) for value in payload.user_ids))
     fingerprint_payload = {"assignment_ref": assignment_ref, "user_ids": recipient_ids}
-    if payload.assessment_configuration_id is not None:
-        fingerprint_payload.update(assessment_configuration_id=payload.assessment_configuration_id,
-                                   role_profile_version_id=payload.role_profile_version_id)
     fingerprint = hashlib.sha256(json.dumps(
         fingerprint_payload,
         sort_keys=True, separators=(",", ":"),
@@ -4211,6 +4210,20 @@ def assign_organization_assessment(
                 status_code=409,
                 detail="Подтвердите сведения выбранной оценки перед назначением.",
             )
+        try:
+            pilot_binding = assessment_assignment_sources.resolve_pilot_binding(
+                connection, organization_id=organization_id, assignment_ref=assignment_ref,
+            )
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Оценка ещё не настроена для запуска. Обратитесь к ответственному за настройку. [{exc}]",
+            ) from exc
+        if payload.assessment_configuration_id is not None and (
+            int(payload.assessment_configuration_id) != int(pilot_binding["assessment_configuration_id"])
+            or int(payload.role_profile_version_id) != int(pilot_binding["role_profile_version_id"])
+        ):
+            raise HTTPException(status_code=409, detail="PILOT_SOURCE_OVERRIDE_NOT_ALLOWED")
         previous = connection.execute(
             """SELECT DISTINCT request_fingerprint
                FROM organization_assessment_assignments
@@ -4266,11 +4279,12 @@ def assign_organization_assessment(
                 results.append(AssessmentAssignmentResultItem(
                     user_id=user_id, status="assigned", assignment_id=int(row["id"]),
                 ))
-            if row and payload.assessment_configuration_id is not None:
+            if row:
                 try:
                     assessment_assignment_sources.bind(connection, assignment_id=int(row['id']),
-                        organization_id=organization_id, configuration_id=payload.assessment_configuration_id,
-                        role_version_id=payload.role_profile_version_id,
+                        organization_id=organization_id,
+                        configuration_id=int(pilot_binding['assessment_configuration_id']),
+                        role_version_id=int(pilot_binding['role_profile_version_id']),
                         questionnaire_revision_id=readiness['questionnaire_revision_id'],
                         actor_user_id=int(current_user.id), operation_id=payload.operation_id)
                 except ValueError as exc:

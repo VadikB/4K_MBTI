@@ -463,6 +463,17 @@
     text-align: left;
 }
 
+.auth-external-brand {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 16px);
+    width: 100%;
+    color: var(--palette-graphite-900);
+    font: 600 24px/32px "Onest", var(--font-heading);
+    letter-spacing: -0.02em;
+    text-align: center;
+}
+
 .auth-panel .auth-brand-lockup .brand {
     color: var(--entry-graphite);
     font-family: "Onest", var(--font-heading);
@@ -790,7 +801,6 @@
     display: flex;
     justify-content: center;
 }
-.auth-panel.auth-panel .auth-brand-lockup { display: none; }
 .auth-panel.auth-panel .auth-panel-copy { align-items: center; text-align: center; }
 .auth-panel.auth-panel h1 { color: var(--palette-graphite-900); font-size: 24px; line-height: 32px; font-weight: 700; letter-spacing: 0; }
 .auth-panel.auth-panel .subtitle { color: var(--palette-graphite-600); font-size: 14px; line-height: 20px; text-align: center; }

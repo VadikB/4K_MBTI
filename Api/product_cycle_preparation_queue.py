@@ -57,6 +57,12 @@ PUBLIC_FAILURE = {
     "code": "ASSESSMENT_CYCLE_PREPARATION_FAILED",
     "message": "Не удалось подготовить оценочный цикл. Повторите попытку.",
 }
+PUBLIC_FAILURES_BY_PREFIX = {
+    "M7_NO_ADMISSIBLE_CASE": {
+        "code": "ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE",
+        "message": "Для роли «Специалист» в назначенной конфигурации пока нет допущенной ситуации. Обратитесь к ответственному за настройку оценки.",
+    },
+}
 
 
 def public_operation(operation: dict) -> dict:
@@ -68,7 +74,9 @@ def public_operation(operation: dict) -> dict:
     if operation["status"] == "completed" and operation.get("result_json") is not None:
         payload["result"] = operation["result_json"]
     elif operation["status"] == "failed":
-        payload["error"] = dict(PUBLIC_FAILURE)
+        internal_message = str(operation.get("error_message") or "")
+        payload["error"] = dict(next((value for prefix, value in PUBLIC_FAILURES_BY_PREFIX.items()
+                                      if internal_message.startswith(prefix)), PUBLIC_FAILURE))
     return payload
 
 

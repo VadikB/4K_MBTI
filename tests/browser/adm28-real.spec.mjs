@@ -20,6 +20,7 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
   cli('create');
   try {
     cli('bootstrap');
+    cli('seed');
     const fixture = spawnSync(python, ['scripts/adm28_browser_fixture.py', '--state', statePath], { encoding: 'utf8' });
     if (fixture.status !== 0) throw new Error(fixture.stderr);
     const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));

@@ -1,10 +1,13 @@
 // Technical projection of server state; question text/definitions come from artifacts through API.
 export const resumeOnboardingIndex = (model, onboarding = {}) => {
   const saved = model?.state || {};
+  const questions = model?.readiness?.briefing?.questions || [];
+  // A committed prepared plan is stronger evidence than a stale questionnaire/consent
+  // projection returned during reload. Never send a prepared participant back to step 1.
+  if (model?.mandatory_complete && preparationView(model) === 'ready') return 5 + questions.length;
   if (!saved.consent_accepted_at || saved.consent_version !== model?.readiness?.briefing?.consent_version) {
     return Number(onboarding.current_step || saved.current_step || 0) > 0 ? 1 : 0;
   }
-  const questions = model?.readiness?.briefing?.questions || [];
   const missing = questions.findIndex((_question, index) => !String(saved.answers_json?.[`answer_${index + 1}`] || '').trim());
   if (missing >= 0) return 2 + missing;
   if (!model?.mandatory_complete) return 2 + questions.length;

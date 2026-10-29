@@ -32,13 +32,20 @@ const explanationIndex = () => summaryIndex() + 1;
 const readinessIndex = () => explanationIndex() + 2;
 const operationKey = () => 'agent4k.onboardingOperation:' + scopeKey + ':' + (model?.late_readiness?.personalized_profile_id || '');
 const storeOperation = (operation) => {
-  localOperation = { operation_id: operation.operation_id, status: operation.status };
+  localOperation = { operation_id: operation.operation_id, status: operation.status,
+    ...(operation.error ? { error: operation.error } : {}) };
   model.preparation_operation = localOperation;
   const key = operationKey();
   operationKeys.add(key);
   try { window.sessionStorage.setItem(key, JSON.stringify(localOperation)); } catch { /* Server recovery remains authoritative. */ }
 };
 const paragraph = (text) => '<p>' + escape(text) + '</p>';
+const resizeAnswer = (input) => {
+  input.style.height = '48px';
+  input.style.height = Math.min(120, Math.max(48, input.scrollHeight)) + 'px';
+  input.style.overflowY = input.scrollHeight > 120 ? 'auto' : 'hidden';
+};
+const hasDesktopKeyboard = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 const fieldsHtml = () => '<dl class="onboarding-data">' +
   (model?.readiness?.briefing?.provided_participant_fields || []).map((item) =>
     '<div><dt>' + escape(item.label) + '</dt><dd>' + escape(item.value || 'Ожидает уточнения организацией') + '</dd></div>').join('') + '</dl>';
@@ -59,12 +66,22 @@ const timing = () => {
 const processCopy = () => {
   const effective = timing();
   const hours = Number(effective?.calendar_window_seconds || 0) / 3600;
+  const returnPolicy = model?.prepared_plan?.plan?.return_policy_snapshot ||
+    model?.prepared_plan?.return_policy_snapshot || effective?.return_policy_snapshot;
+  let returnCopy = '';
+  if (returnPolicy?.resume_mode === 'same_assessment_situation') {
+    returnCopy = '\n\nПосле перерыва вы продолжите ту же незавершённую ситуацию. Чтобы вернуться к работе, нажмите „Продолжить“.';
+  } else if (returnPolicy?.resume_mode === 'replace_assessment_situation') {
+    returnCopy = '\n\nПосле перерыва незавершённая ситуация будет заменена по правилам этой оценки. Завершённые ситуации повторять не потребуется.';
+  } else if (returnPolicy) {
+    returnCopy = '\n\nПорядок возврата определяется сохранёнными правилами этой оценки и будет показан при продолжении.';
+  }
   return 'Вам предстоит разобраться в практических ситуациях. Опишите, как будете действовать, и поясните решения.\n\n' +
     'В некоторых ситуациях есть собеседник. Если не хватает информации, можно задать ему вопрос.\n\n' +
     'Между завершёнными ситуациями можно сделать перерыв. Во время такого перерыва время на выполнение не расходуется, но общий срок завершения продолжает идти.\n\n' +
     (hours > 0 ? `Завершить оценку нужно в течение ${hours} ч. после её начала.` :
       'Фактические параметры появятся после подготовки плана, до явного старта.') +
-    (model?.prepared_plan?.plan?.return_policy_snapshot ? '\n\nПри возвращении незавершённая ситуация может обновиться по правилам вашей оценки; завершённые ситуации повторять не потребуется.' : '');
+    returnCopy;
 };
 const readinessStep = () => {
   const status = preparationView(model, preparationError);
@@ -91,7 +108,9 @@ const readinessStep = () => {
       ? 'Контакт ответственного: ' + model.readiness.responsible_contact : 'Обратитесь к ответственному за оценку в вашей организации.') + '</div>',
     action: 'refresh', button: 'Проверить готовность' };
   if (status === 'failed') return { title: 'Не удалось подготовить оценку',
-    description: 'Ваши ответы сохранены. Подготовка завершилась технической ошибкой; можно повторить её или передать код обращения ответственному.',
+    description: model?.preparation_operation?.error?.code === 'ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE'
+      ? model.preparation_operation.error.message
+      : 'Ваши ответы сохранены. Подготовка завершилась технической ошибкой; можно повторить её или передать код обращения ответственному.',
     body: reference, action: 'retry', button: 'Повторить подготовку' };
   if (status === 'ready') {
     const plan = timing();
@@ -232,14 +251,21 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   featureList.innerHTML = step.body || '';
   if (step.answerKey) {
     const input = document.createElement('textarea'); input.className = 'onboarding-answer';
-    input.rows = 3; input.maxLength = 4000; input.value = answers[step.answerKey] || '';
+    input.rows = 1; input.maxLength = 4000; input.value = answers[step.answerKey] || '';
     input.setAttribute('aria-label', step.title); input.setAttribute('aria-describedby', 'onboarding-error');
     input.setAttribute('aria-invalid', String(Boolean(errorMessage))); input.disabled = busy || reviewMode || Boolean(model?.mandatory_complete);
     input.addEventListener('input', () => {
       answers[step.answerKey] = input.value;
       errorMessage = ''; notice = ''; input.setAttribute('aria-invalid', 'false'); showMessages();
+      resizeAnswer(input);
+    });
+    input.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' || event.shiftKey || event.isComposing || !hasDesktopKeyboard() || busy) return;
+      event.preventDefault();
+      onboardingNext.click();
     });
     featureList.append(input);
+    window.requestAnimationFrame(() => resizeAnswer(input));
   }
   if (step.action === 'consent') featureList.append(reportIssue());
   document.getElementById('onboarding-messages').innerHTML = loading || loadFailed ? '' : all.slice(0, index).map((prior, priorIndex) => {
@@ -318,7 +344,7 @@ const beginPreparation = ({ retry = false } = {}) => {
         : error.status === 403 ? { kind: 'access' } : error.status === 409 ? { kind: 'conflict' }
           : error.status >= 500 ? { kind: 'service' } : { kind: 'network' };
       if (error.status === 404 && localOperation) storeOperation({ ...localOperation, status: 'unknown' });
-      if (error.name === 'PreparationFailed') storeOperation({ operation_id: error.operationId, status: 'failed' });
+      if (error.name === 'PreparationFailed') storeOperation({ operation_id: error.operationId, status: 'failed', error: error.operationError });
       renderOnboarding();
     } finally { if (preparationTask === task) preparationTask = null; }
   })();

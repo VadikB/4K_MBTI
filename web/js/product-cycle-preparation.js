@@ -20,7 +20,7 @@ export const waitForProductCyclePreparation = async (accepted, {
     if (operation.status === 'completed' && operation.result) return operation.result;
     if (operation.status === 'failed') {
       throw Object.assign(new Error(operation.error?.message || 'Не удалось подготовить план оценки.'), {
-        name: 'PreparationFailed', operationId: operation.operation_id,
+        name: 'PreparationFailed', operationId: operation.operation_id, operationError: operation.error,
       });
     }
     await new Promise((resolve) => window.setTimeout(resolve, delay));
