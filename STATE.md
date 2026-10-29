@@ -13,20 +13,29 @@
 - TASK02–04 реализованы локально: явные scoped config/role refs, восстановление
   ответов/consent, canonical M4 без global/default; W01 chat; независимая durable
   подготовка и явный старт того же prepared Cycle. Frozen history не переписывается.
-- Промежуточно: backend 646 PASS, HTTP+M4 94 PASS, frontend 85 PASS;
+- Backend кандидата `89f4f26` (после него не менялся): 646 PASS, HTTP 81 PASS,
+  integration 169 PASS / 2 explicit llm SKIP. Frontend 85 PASS, lint/build PASS.
   owned browser positive path 1 PASS (все 6 viewport/short/zoom200, две вкладки,
   failed PUT/reload, один UUID/M4/Cycle, нет раннего времени, первая AS в чате).
-  Первый полный integration: 167 PASS/2 fixture FAIL/2 explicit llm SKIP;
-  обе причины исправлены, адресный повтор 12 PASS. Полный повтор обязателен.
+  Ранние два fixture FAIL исправлены и закрыты полным повтором 169 PASS.
   S10-A до saved Report/PDF PASS после исправления lazy-init первого сообщения.
-  Auth 62 + 6 readiness fault cases PASS; новый расширенный positive RUNNING.
+  Возврат с dashboard исправлен через journey, начальная загрузка блокирует старые
+  действия. Expanded U02 PASS / 48.1s: все reload точки и новая auth-сессия.
+  Полный browser 84 PASS / 13.6m до последней review-mode правки.
+  Следующий прогон прерван clamshell sleep 13:53:03–15:00:39 МСК;
+  без правок повтор E01 3 PASS и полный auth 68 PASS / 1.0m.
+  Последний сквозной review-mode PATH29 — 1 PASS / 51.9s: тот же M4/Cycle,
+  started=1 после возврата; новый frontend повтор 85 PASS, lint PASS.
   Новый CI/deploy NOT_RUN.
-- Следующий шаг: финальные полные проверки, один PR и новый review точного head.
+- Следующий шаг: один PR и новый review точного head; локальный минимум завершён.
   Real-provider smoke NOT_RUN; владелец разрешил ровно один после штатного test deploy,
   текущие модель/лимиты, новые synthetic данные, без изменения ключей. P0 не закрыт.
   [Общий план и откат](docs/evc/tasks/ux-path29-participant.md).
-- Изменения uncommitted; PR ещё не создан. Не передавать как завершённый пакет.
+- [Подробные команды, traceability, U01–U07 и ограничения](docs/evc/tasks/artifacts/ux-path29/verification.md).
+- Backend в `89f4f26`, последующий рабочий коммит закрывает UI/test/report.
+  Передача — единый PR; его URL и окончательный head фиксируются в PR/сообщении.
   Новые review/CI gates обязательны; прежние PR122/123 reviews не применяются.
+  Локальная готовность к review не равна приёмке или допуску deploy.
 
 ## Предыдущий результат — TEST-DEPLOY-28
 

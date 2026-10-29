@@ -22,6 +22,10 @@ test('W02 keeps preparation separate from explicit assessment start', () => {
   assert.match(interview, /assessment\/cycles\/start/);
   assert.match(router, /Проверить готовность/);
   assert.doesNotMatch(router, /invitation_intro/);
+  const entry = interview.slice(interview.indexOf('export const handleAssessmentEntryClick'));
+  assert.match(entry, /loadUserJourneyState/);
+  assert.match(entry, /journey.next_action === 'show_onboarding'/);
+  assert.match(entry, /openOnboardingScreen/);
 });
 
 test('W02 displays server-resolved assignment timing and restores the prepared snapshot', () => {

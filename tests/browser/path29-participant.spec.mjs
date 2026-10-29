@@ -12,11 +12,12 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   fs.mkdirSync(dir, { recursive: true });
   const statePath = path.join(dir, 'state.json'), base = 'http://127.0.0.1:18859';
   const run = (script, args) => {
-    const result = spawnSync(python, [script, ...args], { encoding: 'utf8' });
+    const result = spawnSync(python, [script, ...args], { encoding: 'utf8', timeout: 180000 });
     if (result.status !== 0) throw new Error(script + ': ' + result.stderr + result.stdout);
   };
   const cli = (action) => run('scripts/test_stand.py', [action, '--state', statePath, '--port', '18859', '--gateway', '1']);
   const adminContext = await browser.newContext(), participantContext = await browser.newContext();
+  const extraContexts = [];
   const admin = await adminContext.newPage(), page = await participantContext.newPage();
   let server;
   cli('create');
@@ -88,6 +89,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await page.locator('#magic-token-input').fill(state.password);
     await page.locator('#verify-magic-link-button').click();
     await expect(page.locator('#onboarding-panel')).toBeVisible();
+    const participantId = (await (await page.request.get(base + '/users/session/restore')).json()).user.id;
+    const savedAcquaintance = async () => (await page.request.get(`${base}/users/${participantId}/acquaintance`)).json();
     const next = page.locator('#onboarding-next');
     await next.click();
     await expect(page.locator('#feature-list')).toContainText(fullName);
@@ -96,6 +99,14 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect(page.locator('#onboarding-skip')).toBeHidden();
     await next.click();
     const answer = page.locator('.onboarding-answer');
+    const saveAnswer = async (value) => {
+      const previousQuestion = await page.locator('#onboarding-title').innerText();
+      await answer.fill(value);
+      const saved = page.waitForResponse((response) => response.request().method() === 'PUT' && response.url().endsWith('/acquaintance/answers'));
+      await next.click(); expect((await saved).status()).toBe(200);
+      await expect(page.locator('#onboarding-title')).not.toHaveText(previousQuestion);
+      await expect(next).toBeEnabled();
+    };
     await expect(answer).toBeVisible();
     await next.click();
     await expect(page.locator('#onboarding-error')).toContainText('Напишите ответ');
@@ -105,6 +116,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect(page.locator('#onboarding-notice')).toContainText('неотправленный текст');
     await expect(answer).toHaveValue(text[0]);
     await answer.fill(text[0]); // Editing clears stale validation/navigation messages.
+    const geometry = [];
     for (const width of [1440, 1280, 768, 390, 360, 320]) {
       await page.setViewportSize({ width, height: 936 });
       await page.locator('.onboarding-copy').evaluate((element) => element.scrollIntoView({ block: 'start' }));
@@ -119,6 +131,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       expect(metrics.overflow).toBe(false); expect(metrics.font).toContain('Onest');
       expect(metrics.background).toBe('rgb(246, 249, 249)'); expect(metrics.back).toEqual([44, 44]);
       expect(metrics.gap).toBeGreaterThanOrEqual(16); expect(metrics.gap).toBeLessThan(80);
+      geometry.push({ width, ...metrics });
       await page.screenshot({ path: path.join(dir, `question-${width}.png`), fullPage: true });
     }
     await page.setViewportSize({ width: 640, height: 360 });
@@ -133,13 +146,20 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     });
     await next.click();
     await expect(page.locator('#onboarding-error')).toBeVisible(); await expect(answer).toHaveValue(text[0]);
-    await next.click();
-    await page.reload(); await expect(answer).toHaveValue('');
-    for (const value of text.slice(1)) { await answer.fill(value); await next.click(); }
+    await saveAnswer(text[0]);
+    const secondQuestion = await page.locator('#onboarding-title').innerText();
+    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText(secondQuestion);
+    await expect(answer).toHaveValue('');
+    await saveAnswer(text[1]);
+    const thirdQuestion = await page.locator('#onboarding-title').innerText();
+    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText(thirdQuestion);
+    await saveAnswer(text[2]);
     await expect(page.locator('#onboarding-title')).toHaveText('Проверьте ваши ответы');
+    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Проверьте ваши ответы');
+    await expect(page.locator('.onboarding-summary-answer')).toHaveText(text);
     await page.locator('[data-edit-answer="1"]').click();
     text[1] = 'Синтетическая адресная правка второго ответа';
-    await answer.fill(text[1]); await next.click();
+    await saveAnswer(text[1]);
     await expect(page.locator('.onboarding-summary-answer')).toHaveText(text);
     let lostPreparationReply = false;
     await page.route('**/users/assessment/cycles/prepare', async (route) => {
@@ -151,6 +171,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect.poll(async () => (await snapshot()).operations).toBe(1);
     expect((await snapshot()).started).toBe(0);
     await expect.poll(() => lostPreparationReply).toBe(true);
+    await expect.poll(async () => (await savedAcquaintance()).onboarding.current_step).toBe(6);
+    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Что показывает оценка 4К');
     await page.locator('#onboarding-skip').click();
     // Entering readiness re-reads the committed server operation, not another prepare POST.
     await expect(page.locator('#onboarding-title')).toHaveText('Готовим вашу оценку');
@@ -164,6 +186,30 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await page.request.post(base + '/__pytest__/release-preparation');
     await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке', { timeout: 45000 });
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
+    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+    const freshContext = await browser.newContext(); extraContexts.push(freshContext);
+    const fresh = await freshContext.newPage(); await fresh.goto(base);
+    await fresh.locator('#email-input').fill(state.path29.participant_email);
+    await fresh.locator('#request-magic-link-button').click();
+    await fresh.locator('#magic-token-input').fill(state.password);
+    await fresh.locator('#verify-magic-link-button').click();
+    await expect(fresh.locator('#onboarding-panel')).toBeVisible();
+    await expect(fresh.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+    await expect(fresh.locator('.onboarding-summary-answer')).toHaveText(text);
+    expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
+    await page.locator('#onboarding-home').click();
+    await expect(page.locator('#dashboard-panel')).toBeVisible();
+    let releaseAcquaintance;
+    await page.route('**/users/*/acquaintance', (route) => { releaseAcquaintance = () => route.continue(); });
+    await page.locator('#assessment-action-button').click();
+    await expect(page.locator('#onboarding-panel')).toBeVisible();
+    await expect(page.locator('#prechat-panel')).toBeHidden();
+    await expect(page.locator('#onboarding-title')).toHaveText('Загружаем знакомство');
+    await expect(next).toBeDisabled();
+    await expect.poll(() => typeof releaseAcquaintance).toBe('function');
+    await releaseAcquaintance(); await page.unroute('**/users/*/acquaintance');
+    await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+    expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
     await page.screenshot({ path: path.join(dir, 'ready.png'), fullPage: true });
     await next.dblclick();
     await expect(page.locator('#interview-panel')).toBeVisible();
@@ -176,14 +222,33 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await page.locator('#interview-submit-button').click();
     expect((await sent).status()).toBe(200);
     await expect(page.locator('#interview-messages .own')).toContainText([ownAnswer]);
+    await page.locator('#interview-profile-button').click();
+    await expect(page.locator('#dashboard-panel')).toBeVisible();
+    await page.locator('.user-chip[aria-label="Меню пользователя"]').focus();
+    await page.locator('#dashboard-onboarding-button').click();
+    await expect(page.locator('#onboarding-panel')).toBeVisible();
+    await expect(page.locator('#onboarding-title')).toHaveText('Что показывает оценка 4К');
+    await expect(page.locator('#onboarding-panel')).not.toContainText('Подготовленный план пока недоступен');
+    await next.click();
+    await expect(page.locator('#interview-panel')).toBeVisible();
+    const afterReview = await snapshot();
+    expect(afterReview.profiles).toBe(1); expect(afterReview.cycles).toBe(1); expect(afterReview.started).toBe(1);
+    await test.info().attach('path29-browser-and-geometry', { body: JSON.stringify({ browser: browser.version(), geometry }), contentType: 'application/json' });
+    for (const name of ['question-1440', 'question-1280', 'question-768', 'question-390', 'question-360',
+      'question-320', 'question-short-zoom200', 'ready', 'first-case']) {
+      await test.info().attach(`path29-${name}`, { path: path.join(dir, `${name}.png`), contentType: 'image/png' });
+    }
     console.log('PATH29 owned screenshots and server log:', dir);
   } finally {
-    await adminContext.close(); await participantContext.close();
-    if (server && server.exitCode === null) {
-      const exited = new Promise((resolve) => server.once('exit', resolve)); server.kill('SIGTERM');
-      await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 5000))]);
-      if (server.exitCode === null) { server.kill('SIGKILL'); await exited; }
+    try {
+      if (server && server.exitCode === null) {
+        const exited = new Promise((resolve) => server.once('exit', resolve)); server.kill('SIGTERM');
+        await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 5000))]);
+        if (server.exitCode === null) { server.kill('SIGKILL'); await exited; }
+      }
+    } finally {
+      try { cli('destroy'); }
+      finally { await Promise.allSettled([adminContext.close(), participantContext.close(), ...extraContexts.map((context) => context.close())]); }
     }
-    cli('destroy');
   }
 });

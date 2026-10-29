@@ -13,6 +13,7 @@ let scopeKey = '';
 let reviewMode = false;
 let busy = false;
 let loadFailed = false;
+let loading = false;
 let errorMessage = '';
 let notice = '';
 let preparationError = null;
@@ -219,10 +220,11 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   const all = steps();
   state.onboardingIndex = Math.max(0, Math.min(state.onboardingIndex || 0, all.length - 1));
   const index = state.onboardingIndex;
-  const step = loadFailed ? { title: 'Не удалось загрузить знакомство', description: 'Сохранённые ответы остаются на сервере.', action: 'reload', button: 'Повторить', body: '' } : all[index];
+  const step = loading ? { title: 'Загружаем знакомство', description: 'Проверяем сохранённый этап и готовность оценки.', button: 'Подождите…', body: '' }
+    : loadFailed ? { title: 'Не удалось загрузить знакомство', description: 'Сохранённые ответы остаются на сервере.', action: 'reload', button: 'Повторить', body: '' } : all[index];
   onboardingPanel.dataset.step = String(index < 2 ? 1 : index <= summaryIndex() ? 2 : 3);
   stepBadgeLabel.textContent = index < explanationIndex() ? 'Знакомство' : index === readinessIndex() ? 'Готовность оценки' : 'Оценка 4К';
-  onboardingStepBackButton.hidden = loadFailed || index === 0;
+  onboardingStepBackButton.hidden = loading || loadFailed || index === 0;
   onboardingStepBackButton.disabled = busy;
   onboardingTitle.textContent = step.title;
   onboardingDescription.textContent = step.description;
@@ -240,7 +242,7 @@ export const renderOnboarding = ({ focus = false } = {}) => {
     featureList.append(input);
   }
   if (step.action === 'consent') featureList.append(reportIssue());
-  document.getElementById('onboarding-messages').innerHTML = loadFailed ? '' : all.slice(0, index).map((prior, priorIndex) => {
+  document.getElementById('onboarding-messages').innerHTML = loading || loadFailed ? '' : all.slice(0, index).map((prior, priorIndex) => {
     const historical = priorIndex === summaryIndex() ? { ...prior, body: summaryHtml(false) } : prior;
     let html = transcript(historical);
     if (prior.answerKey && answers[prior.answerKey]) html += transcript(null, answers[prior.answerKey], true);
@@ -251,10 +253,10 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   }).join('');
   onboardingNext.textContent = busy ? 'Подождите…' : reviewMode ? 'Вернуться к оценке'
     : step.answerKey && model?.mandatory_complete ? 'Продолжить' : step.button || 'Далее';
-  onboardingNext.disabled = busy || (!loadFailed && step.action === 'consent' && !model?.readiness?.briefing?.consent_text);
-  onboardingSkip.hidden = reviewMode || !model?.mandatory_complete || ![explanationIndex(), explanationIndex() + 1].includes(index);
+  onboardingNext.disabled = loading || busy || (!loadFailed && step.action === 'consent' && !model?.readiness?.briefing?.consent_text);
+  onboardingSkip.hidden = loading || reviewMode || !model?.mandatory_complete || ![explanationIndex(), explanationIndex() + 1].includes(index);
   onboardingSkip.textContent = 'Перейти к готовности'; onboardingSkip.disabled = busy;
-  document.getElementById('onboarding-home').disabled = busy;
+  document.getElementById('onboarding-home').disabled = loading || busy;
   featureList.querySelectorAll('[data-edit-answer]').forEach((button) => button.addEventListener('click', () => {
     if (busy || model?.mandatory_complete || reviewMode) return;
     editingFromSummary = true; errorMessage = ''; notice = '';
@@ -330,36 +332,47 @@ export const openOnboarding = async ({ currentStep = 0, reviewMode: requestedRev
   reviewMode = Boolean(requestedReview); errorMessage = ''; notice = ''; preparationError = null;
   setCurrentScreen('onboarding'); hideAllPanels(); onboardingPanel.classList.remove('hidden');
   state.onboardingShown = true; state.onboardingIndex = Number(currentStep || 0);
+  // Preserve navigation intent even if reload happens while the first GET is pending.
+  persistAssessmentContext(); syncUrlState('onboarding');
+  loading = true; renderOnboarding();
   try {
     await loadAcquaintance();
-    if (model.readiness.status !== 'ready') { openAcquaintanceWaiting(model.readiness); return; }
-    state.onboardingIndex = reviewMode ? readinessIndex() : resumeOnboardingIndex(model, model.onboarding);
+    if (!isCurrent(owner, epoch, run) || state.currentScreen !== 'onboarding') return;
+    if (model.readiness.status !== 'ready') { loading = false; openAcquaintanceWaiting(model.readiness); return; }
+    reviewMode = reviewMode && Boolean(model.mandatory_complete);
+    state.onboardingIndex = reviewMode ? explanationIndex() : resumeOnboardingIndex(model, model.onboarding);
     if (!reviewMode && model.onboarding?.status === 'not_started') await saveProgress('in_progress');
   } catch (error) {
     if (!isCurrent(owner, epoch, run)) return;
     loadFailed = true; errorMessage = error.message;
   }
-  if (!isCurrent(owner, epoch, run)) return;
+  if (!isCurrent(owner, epoch, run) || state.currentScreen !== 'onboarding') return;
+  loading = false;
   persistAssessmentContext(); syncUrlState('onboarding'); renderOnboarding({ focus: true });
   if (!loadFailed && model?.mandatory_complete && !reviewMode) void beginPreparation();
 };
 
 export const goBackInOnboarding = () => {
-  if (busy || state.onboardingIndex <= 0) return;
+  if (loading || busy || state.onboardingIndex <= 0) return;
   captureInput(); errorMessage = ''; notice = '';
   state.onboardingIndex = editingFromSummary ? summaryIndex() : state.onboardingIndex - 1;
   editingFromSummary = false; renderOnboarding({ focus: true });
 };
 
 const advance = async () => {
-  if (busy) return;
+  if (loading || busy) return;
   const owner = identity(), epoch = state.identityEpoch, run = generation;
   captureInput();
   const step = steps()[state.onboardingIndex];
   busy = true; errorMessage = ''; notice = ''; renderOnboarding();
   try {
     if (loadFailed) { await openOnboarding(); return; }
-    if (reviewMode) { await openOnboarding(); return; }
+    if (reviewMode) {
+      const { loadInterview } = await import('../screen-loaders.js');
+      const interview = await loadInterview();
+      if (isCurrent(owner, epoch, run)) await interview.handleAssessmentEntryClick();
+      return;
+    }
     if (step.answerKey) {
       if (model.mandatory_complete) { state.onboardingIndex += 1; return; }
       if (!String(answers[step.answerKey] || '').trim()) throw new Error('Напишите ответ. Если точного ответа нет, можно написать «Не знаю».');
@@ -444,6 +457,6 @@ export const initOnboarding = () => {
     progressTail = Promise.resolve();
     for (const key of operationKeys) { try { window.sessionStorage.removeItem(key); } catch { /* No storage access. */ } }
     operationKeys.clear(); model = null; answers = {}; savedAnswers = {}; scopeKey = ''; localOperation = null;
-    busy = false; errorMessage = ''; notice = ''; preparationError = null;
+    busy = false; loading = false; errorMessage = ''; notice = ''; preparationError = null;
   });
 };

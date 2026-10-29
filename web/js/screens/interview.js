@@ -5,6 +5,7 @@ import {
   persistAssessmentContext,
   setCurrentScreen,
   registerLeaveInterviewCleanup,
+  applyJourneyAssessmentContext,
 } from '../state.js';
 import {
   interviewPanel,
@@ -35,7 +36,7 @@ import {
   prechatError,
 } from '../dom.js';
 import { createOperationId, readApiResponse } from '../api.js';
-import { hideAllPanels, syncUrlState } from '../router.js';
+import { hideAllPanels, syncUrlState, openAcquaintanceWaiting } from '../router.js';
 import { showError } from '../components/errors.js';
 import { showLoader, hideLoader, startLoaderProgressPolling } from '../utils/loader.js';
 import { loaderFlows } from '../config.js';
@@ -1330,11 +1331,64 @@ const startAssessmentInterview = async ({ preparedCycleId = null } = {}) => {
   }
 };
 
-export const handleAssessmentEntryClick = () => {
-  openPrechat();
+let assessmentEntryPending = null;
+export const handleAssessmentEntryClick = async () => {
+  if (assessmentEntryPending || !state.pendingUser?.id) return;
+  const owner = state.pendingUser.id, epoch = state.identityEpoch;
+  const current = () => state.pendingUser?.id === owner && state.identityEpoch === epoch;
+  const buttons = ['assessment-action-button', 'start-first-assessment', 'library-start-button']
+    .map((id) => document.getElementById(id)).filter(Boolean);
+  const disabled = buttons.map((button) => button.disabled);
+  const operation = { buttons, disabled };
+  assessmentEntryPending = operation;
+  buttons.forEach((button) => { button.disabled = true; });
+  document.getElementById('assessment-entry-error')?.remove();
+  try {
+    const { loadUserJourneyState } = await import('../session.js');
+    if (!current()) return;
+    const journey = await loadUserJourneyState({ allowAdmin: true });
+    if (!current()) return;
+    if (!journey?.next_action) throw new Error('Не удалось определить текущий этап оценки. Повторите действие.');
+    applyJourneyAssessmentContext(journey);
+    if (journey.next_action === 'show_onboarding') {
+      const { openOnboardingScreen } = await import('../screen-loaders.js');
+      if (current()) await openOnboardingScreen({ currentStep: Number(journey.onboarding?.current_step || 0) });
+    } else if (journey.next_action === 'wait_for_acquaintance_data') {
+      openAcquaintanceWaiting(journey.acquaintance?.readiness);
+    } else if (journey.next_action === 'complete_profile') {
+      await recoverProfileCompletionForAssessment({ resumeAssessment: false });
+    } else if (journey.next_action === 'resume_assessment' && state.productCycleId) {
+      openInterview();
+    } else if (['show_processing', 'show_assessment_error'].includes(journey.next_action)) {
+      openProcessing({ initialCycleSnapshot: state.productCycleId ? {
+        results_status: journey.assessment?.status === 'failed' ? 'failed' : 'processing',
+        report_status: journey.report_status || 'not_ready',
+      } : null });
+    } else if (['show_dashboard', 'resume_assessment'].includes(journey.next_action)) {
+      openPrechat(); // Only a server-authorized historical route, not a failed lookup fallback.
+    } else throw new Error('Текущий этап недоступен. Обновите страницу и повторите действие.');
+  } catch (error) {
+    if (!current()) return;
+    const anchor = buttons.find((button) => button.getClientRects().length);
+    if (anchor) {
+      const message = document.createElement('p'); message.id = 'assessment-entry-error';
+      message.className = 'error'; message.setAttribute('role', 'alert');
+      message.textContent = error.message || 'Не удалось проверить состояние оценки. Повторите действие.';
+      anchor.insertAdjacentElement('afterend', message);
+    }
+  } finally {
+    if (assessmentEntryPending === operation) assessmentEntryPending = null;
+    if (current()) buttons.forEach((button, index) => { button.disabled = disabled[index]; });
+  }
 };
 
 export const initInterview = () => {
+  window.addEventListener('agent4k:assessment-context-cleared', () => {
+    const pending = assessmentEntryPending;
+    assessmentEntryPending = null;
+    pending?.buttons.forEach((button, index) => { button.disabled = pending.disabled[index]; });
+    document.getElementById('assessment-entry-error')?.remove();
+  });
   disableTextareaAssistFeatures(interviewTextarea);
   interviewTextarea.addEventListener('input', () => {
     const key = interviewDraftKey();

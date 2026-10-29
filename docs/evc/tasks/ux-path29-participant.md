@@ -30,7 +30,8 @@ ACCEPTANCE `004f2dae5c6dc998f633760ded36698387d5c9787171829548d1aa2bffc870bf`.
 CONTRIBUTING, EVC workflow/matrix/recipe/task-template/review-checklist;
 архитектурные context/Registry, M1 1.4 FROZEN/CURRENT=NO, Change 01 README,
 task SourceSet manifest, ADR-002/traceability; карточки W02, CTX01 и W02 ADD02/03.
-Адресное чтение M3/M4/M5/M7 contracts/runtime и UI продолжается до реализации.
+Адресно прочитаны M3/M4 consumers (`assessment_contexts.py`, `participant_profile.py`),
+относящиеся контракты M5/M7, их тесты и затронутые UI-маршруты.
 PM-02 владеет ролью/M4, PM-03 подготовкой AS, PM-04 стартом/временем;
 ответы участника не Evidence, организационный текст не меняет фактическую оценку.
 Corporate вопросы — существующий artifact participant_context/corporate/1.0,
@@ -74,8 +75,9 @@ Read-only сверка БД подтвердила все шесть failed oper
    recovery/dedup/scope, prepared → explicit idempotent start без раннего времени.
 6. Полный применимый минимум, один candidate/PR, CI exact head, отчёт U01–U07.
 
-TASK01–04 реализованы в рабочем diff. Активна сквозная проверка и регрессии;
-выпуска, PR и полной приёмки ещё нет. Предметные опубликованные пакеты не менялись.
+TASK01–04 реализованы. Локальные сквозные проверки и регрессии завершены;
+следующий этап — один PR, обязательный CI и человеческое review. Выпуска и полной
+приёмки ещё нет. Предметные опубликованные пакеты не менялись.
 
 ### TASK02: expand / compatibility / recovery до записи схемы
 
@@ -157,7 +159,7 @@ Real LLM отдельно `llm`, не заменяется synthetic PASS. Incid
 NOT_VERIFIED; platform matrix и визуальная приёмка владельца не присваиваются агентом.
 Перед merge frontend/pytest CI exact head/base обязательны.
 
-## Проверки пока
+## Журнал ранних проверок (не итог кандидата)
 
 PASS: свежий origin/main, чистый исходный worktree, W01 checksums 11/11.
 PASS: `pytest -p no:cacheprovider -q tests/unit/test_public_origin.py
@@ -204,7 +206,9 @@ Live effective-origin и mail sink после будущего deploy ещё NOT
 Следующий шаг: завершить полный integration/browser минимум, проверки восстановления
 и UI, единый bump 2.0.35 и review diff. Затем один PR и CI точного head.
 Версия 2.0.35 согласована и присвоена один раз на границе пакета.
-Коммит/PR полного результата ещё не созданы, live не изменён.
+Первый рабочий commit `89f4f267653f567cfcbaac803799b1a61c601701` создан;
+последующие UI-регрессии исправляются в той же ветке/версии. Передача — один PR,
+live не изменён. Актуальная проверка — в [verification report](artifacts/ux-path29/verification.md).
 
 ## Реализация и промежуточная проверка 29.10
 
@@ -269,6 +273,23 @@ Runtime S10-A обнаружил обход штатного lazy-loader при 
 Prepared QA snapshot использует явно выбранный QA scope только из guarded test contour.
 Новый positive дополнен потерей ответа prepare после настоящего commit и отправкой
 первого ответа; финальный полный browser ещё не завершён.
+
+Полный повтор backend integration на `89f4f26`: 169 PASS / 2 explicit llm SKIP,
+exit 0. Backend/schema/scripts/integration tests после него не менялись;
+последующие исправления затрагивают UI и browser/frontend tests.
+Возврат с dashboard теперь читает journey и возвращает canonical readiness,
+а не старый prechat. Во время GET старые действия скрыты/disabled; навигация
+сохраняется до запроса. Expanded U02: 1 PASS / 48.1s (reload после ответов1/2,
+summary/4К/queued/completed, новая auth-сессия, возврат с главной, тот же UUID/Cycle).
+Полный browser завершён: 84 PASS / 13.6m, exit 0, до последнего review-mode изменения.
+Режим «Как это работает» активной оценки теперь открывает объяснение 4К и возвращает
+по актуальному journey без новой подготовки. Следующий контрольный прогон прерван
+сном ноутбука при закрытой крышке: pmset подтвердил clamshell sleep
+13:53:03–15:00:39 МСК, E01 timeout сразу после wake. Без изменения кода E01
+прошёл 3 раза; полный auth — 68 PASS / 1.0m. Последний сквозной PATH29 с проверкой
+возврата из review-mode — 1 PASS / 51.9s (тот же M4/Cycle, started=1).
+Подробное доказательство и ограничения —
+в [verification report](artifacts/ux-path29/verification.md).
 
 Real-provider smoke NOT_RUN: владелец 29.10 явно разрешил один smoke после штатного
 deploy на test, на новых синтетических данных, с текущими моделью и лимитами,
