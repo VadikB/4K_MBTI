@@ -957,6 +957,7 @@ class AdminOrganizationsResponse(BaseModel):
     title: str
     subtitle: str
     is_superadmin: bool = False
+    physical_purge_available: bool = False
     items: list[AdminOrganizationItem]
 
 
@@ -976,6 +977,12 @@ class AdminOrganizationUpdateRequest(BaseModel):
     headquarters: str | None = None
     notes: str | None = None
     invitation_intro: str | None = None
+
+
+class AdminOrganizationPurgeRequest(BaseModel):
+    confirmation_code: str = Field(min_length=1, max_length=80)
+    backup_reference: str = Field(min_length=1, max_length=500)
+    acknowledge_irreversible: bool = False
 
 
 class AdminOrganizationDomainRequest(BaseModel):

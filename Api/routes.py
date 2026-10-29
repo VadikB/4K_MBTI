@@ -89,6 +89,7 @@ from Api.organization_invitation_service import (
     resolve_invitation,
     resolve_invitation_by_id,
 )
+from scripts.purge_test_organization import purge_organization
 from Api.report_growth_logic import (
     WEAK_SIGNAL_RECOMMENDATIONS,
     build_ai_insight_copy,
@@ -149,6 +150,7 @@ from Api.schemas import (
     AdminOrganizationItem,
     AdminOrganizationMemberRequest,
     AdminOrganizationMembersImportRequest,
+    AdminOrganizationPurgeRequest,
     AdminOrganizationsResponse,
     AdminOrganizationUpdateRequest,
     QuestionnairePreviewRequest,
@@ -974,6 +976,11 @@ def _normalize_optional_admin_text(value: str | None, *, max_length: int = 4000)
     return text[:max_length]
 
 
+def _physical_organization_purge_available() -> bool:
+    database_name = str(settings.db_name or "").strip().lower()
+    return "test" in database_name or "pytest" in database_name
+
+
 def _build_admin_organizations(connection, scope: AdminScope | None = None) -> AdminOrganizationsResponse:
     ensure_configured_organizations(connection)
     connection.commit()
@@ -1181,6 +1188,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
         title="Организации",
         subtitle="Управление доменами и администраторами организаций.",
         is_superadmin=bool(scope is None or scope.is_superadmin),
+        physical_purge_available=_physical_organization_purge_available(),
         items=[
             AdminOrganizationItem(
                 id=int(row["id"]),
@@ -4418,26 +4426,64 @@ def delete_or_deactivate_admin_organization(organization_id: int, request: Reque
         org_row = connection.execute("SELECT id FROM organizations WHERE id = %s LIMIT 1", (organization_id,)).fetchone()
         if org_row is None:
             raise HTTPException(status_code=404, detail="Organization not found")
-        counts = connection.execute(
-            """
-            SELECT
-                (SELECT COUNT(*)::int FROM organization_memberships WHERE organization_id = %s) AS members_count,
-                (SELECT COUNT(DISTINCT us.id)::int
-                 FROM organization_memberships om
-                 JOIN user_sessions us ON us.user_id = om.user_id
-                 WHERE om.organization_id = %s) AS reports_count
-            """,
-            (organization_id, organization_id),
-        ).fetchone()
-        is_empty = not any(int(counts[key] or 0) for key in ("members_count", "reports_count"))
-        if is_empty:
-            connection.execute("DELETE FROM organizations WHERE id = %s", (organization_id,))
-        else:
-            connection.execute(
-                "UPDATE organizations SET is_active = FALSE, updated_at = NOW() WHERE id = %s",
-                (organization_id,),
-            )
+        connection.execute(
+            "UPDATE organizations SET is_active = FALSE, updated_at = NOW() WHERE id = %s",
+            (organization_id,),
+        )
         connection.commit()
+        return _build_admin_organizations(connection)
+
+
+@router.post("/admin/organizations/{organization_id}/purge", response_model=AdminOrganizationsResponse)
+def purge_admin_organization(
+    organization_id: int,
+    payload: AdminOrganizationPurgeRequest,
+    request: Request,
+) -> AdminOrganizationsResponse:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    user = web_session_service.get_user_by_token(token)
+    if not _physical_organization_purge_available():
+        raise HTTPException(status_code=404, detail="Physical organization purge is unavailable")
+    if not payload.acknowledge_irreversible:
+        raise HTTPException(status_code=400, detail="Irreversible purge acknowledgement is required")
+    confirmation_code = str(payload.confirmation_code or "").strip()
+    backup_reference = str(payload.backup_reference or "").strip()
+    if not backup_reference:
+        raise HTTPException(status_code=400, detail="Backup reference is required")
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        organization = connection.execute(
+            "SELECT id, code, is_active FROM organizations WHERE id = %s FOR UPDATE",
+            (organization_id,),
+        ).fetchone()
+        if organization is None:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        if bool(organization["is_active"]):
+            raise HTTPException(status_code=409, detail="Deactivate organization before physical purge")
+        if confirmation_code != str(organization["code"]):
+            raise HTTPException(status_code=409, detail="Confirmation code does not match organization code")
+        try:
+            counts = purge_organization(
+                connection,
+                organization_id=organization_id,
+                confirm_code=confirmation_code,
+            )
+            connection.commit()
+        except (LookupError, ValueError) as exc:
+            connection.rollback()
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except Exception as exc:
+            connection.rollback()
+            logger.exception("Physical organization purge failed organization_id=%s", organization_id)
+            raise HTTPException(status_code=409, detail="Physical organization purge failed; no data changed") from exc
+        backup_digest = hashlib.sha256(backup_reference.encode("utf-8")).hexdigest()[:16]
+        logger.warning(
+            "Physical organization purge completed organization_id=%s actor_user_id=%s rows=%s backup_ref_sha256=%s",
+            organization_id,
+            int(user.id) if user and user.id is not None else None,
+            sum(counts.values()),
+            backup_digest,
+        )
         return _build_admin_organizations(connection)
 
 

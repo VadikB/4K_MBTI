@@ -28,4 +28,5 @@ export {
   previewAdminOrganizationQuestionnaire,
   confirmAdminOrganizationQuestionnaire,
   deleteOrDeactivateAdminOrganization,
+  purgeAdminOrganization,
 } from '../screens/admin/organizations.js';

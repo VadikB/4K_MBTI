@@ -1275,6 +1275,27 @@ export const deleteOrDeactivateAdminOrganization = async (organizationId, organi
   }
 };
 
+export const purgeAdminOrganization = async (organizationId, confirmationCode, backupReference, organizationName = '') => {
+  const label = String(organizationName || 'Организация').trim();
+  try {
+    await requestOrganizations(
+      '/users/admin/organizations/' + organizationId + '/purge',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          confirmation_code: String(confirmationCode || '').trim(),
+          backup_reference: String(backupReference || '').trim(),
+          acknowledge_irreversible: true,
+        }),
+      },
+      'Не удалось физически удалить организацию.',
+    );
+    setStatus('Организация «' + label + '» и все связанные данные физически удалены.', 'success');
+  } catch (error) {
+    setStatus(error.message || 'Не удалось физически удалить организацию «' + label + '».', 'error');
+  }
+};
+
 const renderTagList = (items, emptyText, className, deleteAction) => {
   if (!items.length) {
     return '<p class="admin-organizations-empty">' + escapeHtml(emptyText) + '</p>';
@@ -1399,6 +1420,7 @@ export const renderAdminOrganizations = () => {
   const organizations = Array.isArray(data?.items) ? data.items : [];
   clearInaccessibleOrganizationState(organizations);
   const isSuperadmin = Boolean(data?.is_superadmin);
+  const physicalPurgeAvailable = Boolean(data?.physical_purge_available);
   adminOrganizationsPanel.dataset.superadmin = String(isSuperadmin);
   document.querySelector('[data-admin-area="assessment"]')?.classList.toggle('hidden', isSuperadmin);
   document.getElementById('admin-organization-create-form')?.closest('section')?.classList.toggle(
@@ -1433,7 +1455,6 @@ export const renderAdminOrganizations = () => {
       const isActive = org.is_active !== false;
       const activeBatch = state.adminOrganizationPreparationBatches?.[orgId];
       const batchIsRunning = activeBatch?.status === 'in_progress';
-      const actionLabel = Number(org.members_count || 0) || Number(org.reports_count || 0) ? 'Деактивировать' : 'Удалить';
       const revisions = questionnaireRevisions.get(organizationKey(orgId)) || [];
       const selectedRef = selectedAssessmentRefs.get(organizationKey(orgId)) || revisions[0]?.assignment_ref || '';
       const questionnairePreview = questionnairePreviews.get(assessmentKey(orgId, selectedRef));
@@ -1519,6 +1540,7 @@ export const renderAdminOrganizations = () => {
       return (
         '<article class="card card--inset admin-organization-card" data-organization-id="' +
         orgId +
+        '" data-organization-code="' + escapeHtml(org.code) +
         '" data-organization-active="' +
         (isActive ? 'true' : 'false') +
         '">' +
@@ -1536,9 +1558,12 @@ export const renderAdminOrganizations = () => {
         Number(org.reports_count || 0) +
         ' отчетов</span>' + (isSuperadmin ? '<button class="ghost-button compact-ghost" type="button" data-action="prepare-organization-assessments"' +
         (batchIsRunning || !isActive ? ' disabled' : '') +
-        '>Подготовить кейсы всем</button><button class="ghost-button compact-ghost danger" type="button" data-action="delete-organization">' +
-        actionLabel +
-        '</button>' : '') + '</div>' +
+        '>Подготовить кейсы всем</button>' +
+        (isActive
+          ? '<button class="ghost-button compact-ghost danger" type="button" data-action="delete-organization">Деактивировать</button>'
+          : (physicalPurgeAvailable
+            ? '<button class="ghost-button compact-ghost danger" type="button" data-action="purge-organization">Удалить физически</button>'
+            : '')) : '') + '</div>' +
         '</div>' +
         renderOrganizationBatchProgress(orgId) +
         (isSuperadmin ? '<form class="admin-organization-profile-form" data-action="update-profile">' +

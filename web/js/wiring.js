@@ -1751,12 +1751,35 @@ if (adminOrganizationsList) {
     if (!organizationId) {
       return;
     }
+    if (button.dataset.action === 'purge-organization') {
+      const organizationName = card?.querySelector('h3')?.textContent?.trim() || 'организацию';
+      const organizationCode = String(card?.getAttribute('data-organization-code') || '').trim();
+      const confirmationCode = window.prompt(
+        'Физическое удаление уничтожит все связанные данные организации «' + organizationName +
+        '». Для подтверждения введите код: ' + organizationCode,
+      );
+      if (confirmationCode === null) return;
+      if (String(confirmationCode).trim() !== organizationCode) {
+        window.alert('Код подтверждения не совпадает. Удаление отменено.');
+        return;
+      }
+      const backupReference = window.prompt('Укажите путь или идентификатор проверенного backup:');
+      if (!String(backupReference || '').trim()) {
+        window.alert('Backup reference обязателен. Удаление отменено.');
+        return;
+      }
+      if (!window.confirm('Удалить организацию «' + organizationName + '» физически? Действие необратимо.')) {
+        return;
+      }
+      withScreen(loadAdminOrganizations, (module) => module.purgeAdminOrganization(
+        organizationId, organizationCode, String(backupReference).trim(), organizationName,
+      ));
+      return;
+    }
     if (button.dataset.action === 'delete-organization') {
       const organizationName = card?.querySelector('h3')?.textContent?.trim() || 'организацию';
-      const isDeleteAction = String(button.textContent || '').trim().toLowerCase().includes('удал');
-      const message = isDeleteAction
-        ? 'Удалить организацию «' + organizationName + '»? Это действие нельзя отменить.'
-        : 'Деактивировать организацию «' + organizationName + '»? Новые пользователи больше не будут автоматически привязываться к ней.';
+      const message = 'Деактивировать организацию «' + organizationName +
+        '»? Новые пользователи больше не будут автоматически привязываться к ней.';
       if (!window.confirm(message)) {
         return;
       }
