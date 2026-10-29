@@ -22,6 +22,9 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   let server;
   cli('create');
   try {
+    const initialState = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+    initialState.browser_case = 'specialist';
+    fs.writeFileSync(statePath, JSON.stringify(initialState));
     cli('bootstrap');
     run('tests/path29_browser_inputs.py', ['--state', statePath]);
     const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
@@ -61,15 +64,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     const checkbox = card.locator(`input[name="invitation_email"][value="${state.path29.participant_email}"]`);
     await checkbox.check();
     await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
-    const sources = card.locator('[data-assignment-sources]');
-    await expect(sources).toBeVisible();
-    await expect(card.locator('[data-operation-status]').first()).toContainText('Источники пока не назначены');
-    await expect(sources.locator('[name="assessment_configuration_id"]')).toHaveValue('');
-    await sources.locator('[name="assessment_configuration_id"]').selectOption(String(state.path29.configuration_id));
-    await sources.locator('[name="role_profile_version_id"]').selectOption(String(state.path29.role_version_id));
-    await checkbox.check();
-    await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
-    await expect(card.locator('[data-operation-status]').first()).toContainText('Опубликованные источники назначены');
+    await expect(card.locator('[data-assignment-sources]')).toHaveCount(0);
+    await expect(card.locator('[data-operation-status]').first()).toContainText('Оценка для специалистов назначена со всеми проверенными источниками');
     await checkbox.check();
     await card.getByRole('button', { name: 'Отправить приглашения', exact: true }).click();
     await expect.poll(async () => (await (await admin.request.get(base + '/__pytest__/mailbox', {

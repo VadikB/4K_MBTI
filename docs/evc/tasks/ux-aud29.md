@@ -69,7 +69,7 @@ FROZEN / CURRENT=NO; они не переключают runtime автомати
 
 - `npm run lint:js` — PASS;
 - `npm run build:web` — PASS, versioned `web/dist` пересобран;
-- `npm run test:frontend` — 89 PASS;
+- `node --test tests/frontend/*.test.mjs` — 90 PASS;
 - `npm run test:backend` — 655 PASS, 260 deselected;
 - `npm run test:backend:http` — 82 PASS, 12 deselected;
 - `npm run test:backend:integration` с явными изолированными
@@ -81,6 +81,8 @@ FROZEN / CURRENT=NO; они не переключают runtime автомати
   recipients, confirm/readback/reload, assignment и размеры 1440/1280/390/320;
 - изолированный PATH29 — 1 PASS: atomic binding, точный blocker подготовки,
   delete/readback/re-add с тем же `user_id` без нового invitation и login;
+- real-browser PATH29 — 1 PASS: атомарное Specialist-назначение, сохранение после
+  reload, durable preparation и явный старт первой синтетической Specialist-AS;
 - `git diff --check`, `node --check`, Python `py_compile` — PASS.
 
 Screenshot-readback управления сохранён в

@@ -34,16 +34,20 @@ def seed(state_path, state):
             actor_user_id=actor, comment='Synthetic owned browser source selection only')
         assessment_authoring_service.publish_configuration(c, configuration_id=other['id'], make_default=False,
             actor_user_id=actor, comment='Synthetic owned browser source selection only')
-        cases = json.loads((ROOT / 'assessment_definitions/cases/competencies_4k/1.1/case-package.json').read_text())
         role_id = c.execute('''SELECT v.id FROM assessment_role_profile_versions v
             JOIN assessment_role_profiles r ON r.id=v.role_profile_id WHERE r.code=%s AND v.status='published' ''',
-            (cases['cases'][0]['base_role'],)).fetchone()['id']
+            ('specialist_expert',)).fetchone()['id']
+        c.execute("""INSERT INTO organization_assessment_pilot_bindings
+            (organization_id,assignment_ref,binding_version,assessment_configuration_id,
+             role_profile_version_id,configured_by_user_id)
+            VALUES(%s,'PATH29 browser','specialist-pilot/1',%s,%s,%s)""",
+            (org, other['id'], role_id, actor))
         assert c.execute("SELECT id FROM users WHERE email='path29-new@example.test'").fetchone() is None
         c.commit()
     state['path29'] = {'organization_id': org, 'configuration_id': other['id'], 'role_version_id': role_id,
                       'admin_email': 'path29-admin@example.test', 'participant_email': 'path29-new@example.test'}
     state_path.write_text(json.dumps(state))
-    print('PATH29 synthetic sources/admin ready; target participant/M4/Cycle absent')
+    print('PATH29 synthetic Specialist binding/admin ready; target participant/M4/Cycle absent')
 
 
 if __name__ == '__main__':

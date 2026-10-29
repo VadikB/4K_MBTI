@@ -81,7 +81,8 @@ def seed(state):
         roles=publish_base_roles(c,package=read('assessment_definitions/role_profiles/competencies_4k/1.1/base_roles.json'),
             manifest=read('assessment_definitions/role_profiles/competencies_4k/1.1/manifest.json'),published_by_user_id=users[0],decision_basis=basis)
         cases=read('assessment_definitions/cases/competencies_4k/1.1/case-package.json')
-        role_code=cases['cases'][3 if state.get('browser_case')=='character' else 0]['base_role']
+        role_index = {'character': 3, 'specialist': 1}.get(state.get('browser_case'), 0)
+        role_code=cases['cases'][role_index]['base_role']
         role=c.execute('SELECT v.id FROM assessment_role_profile_versions v JOIN assessment_role_profiles r ON r.id=v.role_profile_id WHERE r.code=%s',(role_code,)).fetchone()['id']
         definition={'name':'Синтетическая организация','organization_type':'компания','industry':'образование',
             'activity_description':'Техническая проверка','case_reality_level':'обобщённый','organization_name_usage_rules':'не использовать название',
@@ -101,7 +102,10 @@ def seed(state):
         for uid in users:
             accept_consent(c,user_id=uid,version=1)
         # Same isolated fixture lifecycle as test_m10_product_path_db; repository package stays WORKING.
-        admitted=([read('tests/browser/fixtures/sources/character-case-v1.json')] if state.get('browser_case')=='character' else [cases['cases'][0],cases['cases'][2]])
+        admitted=([read('tests/browser/fixtures/sources/character-case-v1.json')]
+                  if state.get('browser_case')=='character' else
+                  [cases['cases'][1]] if state.get('browser_case')=='specialist' else
+                  [cases['cases'][0],cases['cases'][2]])
         if state.get('browser_catalog') == 'unavailable':
             admitted = []  # Preserve WORKING status and absent admission; no runtime outputs are seeded.
         for case in admitted:case['status']='FROZEN'

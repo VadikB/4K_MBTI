@@ -31,6 +31,18 @@ test('local operation key separates account, tenant, assignment and questionnair
   }
 });
 
+test('prepared plan survives reload even when a stale briefing projection disagrees on consent', () => {
+  const prepared = model({}, {
+    mandatory_complete: true,
+    state: { consent_version: 1, consent_accepted_at: 'synthetic-accepted', answers_json: {} },
+    late_readiness: { status: 'ready_to_prepare' },
+    prepared_plan: { cycle_id: 'synthetic-cycle', plan: {
+      route: [{}], time_budget_seconds: 1, calendar_window_seconds: 2,
+    } },
+  });
+  assert.equal(resumeOnboardingIndex(prepared, { status: 'completed', current_step: 0 }), 8);
+});
+
 test('readiness distinguishes organizational waiting, job status, network and admitted prepared plan', () => {
   const current = model();
   assert.equal(preparationView(current), 'organization');
