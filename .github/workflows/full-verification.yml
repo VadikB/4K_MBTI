@@ -3,7 +3,8 @@ name: Full verification
 run-name: Full verification — ${{ github.ref_name }}
 
 on:
-  workflow_dispatch:
+  pull_request:
+    types: [labeled, synchronize]
 
 jobs:
   full-verification:
@@ -31,6 +32,11 @@ jobs:
       TEST_DATABASE_URL: postgresql://pytest:pytest@127.0.0.1:5432/agent4k_pytest
 
     steps:
+      - name: Require run-full-verification label
+        env:
+          FULL_VERIFICATION_REQUESTED: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-verification') }}
+        run: test "$FULL_VERIFICATION_REQUESTED" = "true"
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5

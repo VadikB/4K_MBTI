@@ -51,23 +51,24 @@
 - pytest на событии `pull_request`: быстрые unit- и HTTP-контракты на отдельном
   PostgreSQL 16; integration и browser на этом событии не запускаются.
 
-Перед merge владелец один раз запускает workflow `Full verification` для актуальной
-head-ветки PR. Обязательный job `full-verification` выполняет unit, HTTP, integration
-и browser acceptance на изолированной БД. Новый commit после успешного полного
-прогона делает доказательство устаревшим: workflow запускается повторно для нового head.
-До включения repository ruleset это ручной стоп-гейт; после включения ruleset GitHub
-не должен разрешать merge без checks `frontend`, `pytest` и `full-verification`.
+Перед merge владелец добавляет к PR метку `run-full-verification`. Обязательный job
+`full-verification` выполняет unit, HTTP, integration и browser acceptance на
+изолированной БД в `pull_request`-контексте. Новый commit после успешного полного
+прогона делает доказательство устаревшим: при сохранённой метке workflow запускается
+повторно для нового head. Активный ruleset не разрешает merge без checks `frontend`,
+`pytest` и `full-verification`.
 
 Для документального PR полный CI также сохраняется. Job `deploy-test` на PR
 ожидаемо пропускается: он применяется после push в main, а не является доказательством
 проверенного развёртывания кандидата. Проверять результат для актуального head и
 целевой ветки; после изменения base или разрешения конфликтов проверить CI заново.
-Наличие этого документа не означает, что branch protection уже настроен.
+Для `main` действует ruleset `Protect main and require full verification` (ID
+`26191885`) без bypass, только со squash merge и обязательным актуальным head.
 
-Workflow `CI` запускается на `pull_request`, push в `main` и вручную через
-`workflow_dispatch`. На переходном этапе push в `main` сохраняет полный набор перед
-`deploy-test`; он будет удалён отдельным изменением только после активации ruleset.
-Workflow `Full verification` запускается вручную на выбранной head-ветке PR.
+Workflow `CI` запускается на `pull_request` и push в `main`: на PR выполняются
+`frontend` и быстрый `pytest`, а на push в `main` — только `deploy-test`.
+Workflow `Full verification` запускается событием `pull_request` после добавления
+метки `run-full-verification` и при последующих обновлениях head с сохранённой меткой.
 
 ## Отчёт и сбои
 
