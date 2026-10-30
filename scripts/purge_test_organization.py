@@ -27,6 +27,7 @@ class ForeignKey:
     child_oid: int
     parent_columns: tuple[str, ...]
     child_columns: tuple[str, ...]
+    name: str = ""
 
 
 def _get(row, name: str, index: int):
@@ -68,6 +69,7 @@ def _foreign_keys(connection: psycopg.Connection) -> list[ForeignKey]:
         """
         SELECT constraint_row.conrelid::bigint AS child_oid,
                constraint_row.confrelid::bigint AS parent_oid,
+               constraint_row.conname AS constraint_name,
                ARRAY(
                    SELECT child_attribute.attname
                    FROM unnest(constraint_row.conkey) WITH ORDINALITY AS key(attnum, position)
@@ -98,8 +100,9 @@ def _foreign_keys(connection: psycopg.Connection) -> list[ForeignKey]:
         ForeignKey(
             parent_oid=int(_get(row, "parent_oid", 1)),
             child_oid=int(_get(row, "child_oid", 0)),
-            parent_columns=tuple(_get(row, "parent_columns", 3)),
-            child_columns=tuple(_get(row, "child_columns", 2)),
+            parent_columns=tuple(_get(row, "parent_columns", 4)),
+            child_columns=tuple(_get(row, "child_columns", 3)),
+            name=str(_get(row, "constraint_name", 2)),
         )
         for row in rows
     ]
@@ -141,11 +144,9 @@ def _seed_by_organization_id(
 def _seed_legacy_assessment_rows(
     connection: psycopg.Connection,
     tables: dict[int, TableRef],
-    organization_id: int,
 ) -> None:
     by_name = {table.name: table for table in tables.values()}
-    membership = by_name.get("organization_memberships")
-    if membership is None:
+    if by_name.get("organization_memberships") is None or by_name.get("users") is None:
         return
     for table_name in ("user_sessions", "assessment_preparation_jobs"):
         target = by_name.get(table_name)
@@ -155,17 +156,59 @@ def _seed_legacy_assessment_rows(
             sql.SQL(
                 "INSERT INTO organization_purge_rows(table_oid, row_ctid) "
                 "SELECT %s, target.ctid FROM {}.{} target "
-                "WHERE EXISTS (SELECT 1 FROM {}.{} membership "
-                "WHERE membership.organization_id = %s AND membership.user_id = target.user_id) "
+                "WHERE EXISTS (SELECT 1 FROM organization_purge_orphan_users candidate "
+                "WHERE candidate.user_id = target.user_id) "
                 "ON CONFLICT DO NOTHING"
             ).format(
                 sql.Identifier(target.schema),
                 sql.Identifier(target.name),
-                sql.Identifier(membership.schema),
-                sql.Identifier(membership.name),
             ),
-            (target.oid, organization_id),
+            (target.oid,),
         )
+
+
+def _seed_orphan_users(
+    connection: psycopg.Connection,
+    tables: dict[int, TableRef],
+    organization_id: int,
+) -> None:
+    by_name = {table.name: table for table in tables.values()}
+    users = by_name.get("users")
+    memberships = by_name.get("organization_memberships")
+    if users is None or memberships is None:
+        return
+    connection.execute(
+        """
+        CREATE TEMP TABLE organization_purge_orphan_users (
+            user_id BIGINT PRIMARY KEY
+        ) ON COMMIT DROP
+        """
+    )
+    connection.execute(
+        sql.SQL(
+            "INSERT INTO organization_purge_orphan_users(user_id) "
+            "SELECT DISTINCT membership.user_id FROM {}.{} membership "
+            "WHERE membership.organization_id = %s "
+            "AND NOT EXISTS (SELECT 1 FROM {}.{} other_membership "
+            "WHERE other_membership.user_id = membership.user_id "
+            "AND other_membership.organization_id <> %s)"
+        ).format(
+            sql.Identifier(memberships.schema),
+            sql.Identifier(memberships.name),
+            sql.Identifier(memberships.schema),
+            sql.Identifier(memberships.name),
+        ),
+        (organization_id, organization_id),
+    )
+    connection.execute(
+        sql.SQL(
+            "INSERT INTO organization_purge_rows(table_oid, row_ctid) "
+            "SELECT %s, target.ctid FROM {}.{} target "
+            "JOIN organization_purge_orphan_users candidate ON candidate.user_id = target.id "
+            "ON CONFLICT DO NOTHING"
+        ).format(sql.Identifier(users.schema), sql.Identifier(users.name)),
+        (users.oid,),
+    )
 
 
 def _expand_foreign_keys(
@@ -216,6 +259,9 @@ def _delete_order(selected_oids: set[int], foreign_keys: Iterable[ForeignKey]) -
         if foreign_key.parent_oid in selected_oids
         and foreign_key.child_oid in selected_oids
         and foreign_key.parent_oid != foreign_key.child_oid
+        # The selected users have this nullable back-reference cleared before
+        # deletion. Ignoring it breaks the users <-> profiles catalog cycle.
+        and foreign_key.name != "users_active_profile_fk"
     }
     depths = {oid: 0 for oid in selected_oids}
     for iteration in range(len(selected_oids)):
@@ -260,7 +306,8 @@ def build_purge_plan(connection: psycopg.Connection, organization_id: int) -> tu
         (organizations.oid, organization_id),
     )
     _seed_by_organization_id(connection, tables, organization_id)
-    _seed_legacy_assessment_rows(connection, tables, organization_id)
+    _seed_orphan_users(connection, tables, organization_id)
+    _seed_legacy_assessment_rows(connection, tables)
     _expand_foreign_keys(connection, tables, foreign_keys)
 
     rows = connection.execute(
@@ -298,6 +345,28 @@ def purge_organization(
     # A nested transaction is a savepoint when the caller already has an active
     # transaction. Any failure restores both deleted rows and trigger state.
     with connection.transaction():
+        users = next((table for table in tables.values() if table.name == "users"), None)
+        if users is not None:
+            connection.execute(
+                sql.SQL(
+                    "UPDATE {}.{} SET active_profile_id = NULL "
+                    "WHERE id IN (SELECT user_id FROM organization_purge_orphan_users)"
+                ).format(sql.Identifier(users.schema), sql.Identifier(users.name))
+            )
+            # UPDATE creates a new row version and therefore a new ctid. Refresh
+            # the physical-row selector before executing the deletion plan.
+            connection.execute(
+                "DELETE FROM organization_purge_rows WHERE table_oid = %s",
+                (users.oid,),
+            )
+            connection.execute(
+                sql.SQL(
+                    "INSERT INTO organization_purge_rows(table_oid, row_ctid) "
+                    "SELECT %s, target.ctid FROM {}.{} target "
+                    "JOIN organization_purge_orphan_users candidate ON candidate.user_id = target.id"
+                ).format(sql.Identifier(users.schema), sql.Identifier(users.name)),
+                (users.oid,),
+            )
         disabled: list[TableRef] = []
         for oid in order:
             table = tables[oid]
@@ -335,6 +404,15 @@ def purge_organization(
             ).fetchone()
             if int(_get(row, "count", 0) or 0):
                 raise RuntimeError(f"Purge verification failed: rows remain in {table.label}.")
+        if users is not None:
+            remaining_users = connection.execute(
+                sql.SQL(
+                    "SELECT COUNT(*) FROM {}.{} target "
+                    "JOIN organization_purge_orphan_users candidate ON candidate.user_id = target.id"
+                ).format(sql.Identifier(users.schema), sql.Identifier(users.name))
+            ).fetchone()
+            if int(_get(remaining_users, "count", 0) or 0):
+                raise RuntimeError("Purge verification failed: orphan users remain.")
     return counts
 
 
