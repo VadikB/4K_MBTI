@@ -194,6 +194,8 @@ test('ADM28 late confirmation after account change cannot populate the new accou
   await page.locator('#magic-token-input').fill('synthetic-existing-password');
   await page.locator('#verify-magic-link-button').click();
   await expect(page.locator('#admin-organizations-account-name')).toHaveText('Account B');
+  await expect(page.locator('#admin-organizations-logout-button')).toBeEnabled();
+  await expect(page.locator('#admin-organizations-logout-button')).toHaveText('Выйти');
   release();
   await page.locator('[data-organization-id="3"]').getByRole('button', { name: 'Данные организации', exact: true }).click();
   await expect(page.locator('.admin-questionnaire-preview')).toHaveCount(0);
@@ -328,6 +330,45 @@ test('QA19-03 keeps the participant section available with no members', async ({
   });
   await expect(page.locator('.admin-organization-member')).toHaveCount(0);
   await expect(page.locator('.admin-organization-members-section').first()).toBeVisible();
+});
+
+test('ARCH30 shows the current participant stage and keeps technical signals collapsed', async ({ page }) => {
+  const baseMember = { ...adminOrganization.members[0], assessment_assignments: ['competencies_4k'] };
+  const organization = {
+    ...adminOrganization,
+    members_count: 4,
+    members: [
+      { ...baseMember, user_id: 8, email: 'not-sent@example.test', invitation_delivery_status: 'not_sent' },
+      { ...baseMember, user_id: 9, email: 'started@example.test', acquaintance_status: 'in_progress' },
+      { ...baseMember, user_id: 10, email: 'preparing@example.test', assessment_preparation_status: 'running' },
+      { ...baseMember, user_id: 11, email: 'failed@example.test', assessment_preparation_status: 'failed' },
+    ],
+  };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  const rows = page.locator('.admin-organization-member');
+  await expect(rows.nth(0).locator('.admin-organization-current-stage')).toHaveText('Приглашение не отправлено');
+  await expect(rows.nth(1).locator('.admin-organization-current-stage')).toHaveText('Проходит знакомство');
+  await expect(rows.nth(2).locator('.admin-organization-current-stage')).toHaveText('Идёт подготовка оценки');
+  await expect(rows.nth(3).locator('.admin-organization-current-stage')).toHaveText('Подготовка завершилась с ошибкой');
+  await expect(rows.nth(0).locator('.admin-organization-invitation-state').first()).toBeHidden();
+  await rows.nth(0).getByText('Подробности статуса').click();
+  await expect(rows.nth(0).locator('.admin-organization-invitation-state')).toHaveCount(5);
+  await expect(rows.nth(0).locator('.admin-organization-invitation-state').first()).toBeVisible();
+});
+
+test('ARCH30 offers an explicit one-way legacy profile copy into an empty C01 draft', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), {
+    ...adminOrganization,
+    profile: 'Старое описание деятельности',
+  });
+  await page.getByRole('button', { name: 'Данные организации' }).click();
+  const legacy = page.locator('.admin-organization-legacy-profile');
+  await expect(legacy).toContainText('Старое описание деятельности');
+  const target = page.locator('textarea[name="activity_description"]');
+  await expect(target).toHaveValue('');
+  await legacy.getByRole('button', { name: 'Перенести в описание деятельности' }).click();
+  await expect(target).toHaveValue('Старое описание деятельности');
+  await expect(legacy.getByRole('button')).toHaveText('Перенесено в черновик');
 });
 
 test('QA19-03 keeps long participant rows readable and actions associated after view changes', async ({ page }) => {

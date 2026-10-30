@@ -351,6 +351,13 @@ curl -fsS http://127.0.0.1:8000/users/version
 Прогресс длительных операций хранится в PostgreSQL, поэтому polling продолжает
 работать, даже если последовательные запросы попадают в разные workers.
 
+Штатный test-deploy автоматически создаёт PII-free deletion ledger в
+`.runtime/deletion-ledger/deletion-intents.jsonl` и добавляет абсолютный
+`DELETION_LEDGER_PATH` в серверный `.env`, если собственный путь ещё не настроен.
+Каталог `.runtime/` исключён из Git и переживает штатный fast-forward. При
+rollback исходный `.env` восстанавливается. Для production используйте
+постоянный каталог вне release checkout, например `/var/lib/agent4k/deletion-ledger`.
+
 Публичная проверка:
 
 ```bash

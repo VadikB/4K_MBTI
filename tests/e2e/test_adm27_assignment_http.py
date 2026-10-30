@@ -130,5 +130,5 @@ def test_assignment_rejects_attempt_to_override_pilot_sources(client):
         "assessment_configuration_id": 82, "role_profile_version_id": 92,
     })
     assert response.status_code == 409
-    assert "PILOT_SOURCE_OVERRIDE_NOT_ALLOWED" in response.text
+    assert "PROGRAM_SOURCE_OVERRIDE_NOT_ALLOWED" in response.text
     assert connection.rows == []

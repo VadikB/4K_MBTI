@@ -99,6 +99,85 @@ def test_assignment_does_not_create_member_from_domain(monkeypatch) -> None:
     )
 
 
+def test_configured_bootstrap_never_reactivates_or_renames_existing_organization(monkeypatch) -> None:
+    statements = []
+
+    class _Connection:
+        def execute(self, query, params=None):
+            statements.append((" ".join(query.split()), params))
+            return _Rows([])
+
+    monkeypatch.setattr(org_access, "configured_org_names", lambda: {"pilot": "Configured name"})
+    monkeypatch.setattr(org_access, "configured_org_admin_emails", lambda: {})
+    monkeypatch.setattr(org_access, "configured_org_domains", lambda: {})
+
+    org_access.ensure_configured_organizations(_Connection())
+
+    query, params = next(item for item in statements if "INSERT INTO organizations" in item[0])
+    assert params == ("pilot", "Configured name")
+    assert "ON CONFLICT (code) DO NOTHING" in query
+    assert "is_active = TRUE" not in query
+    assert "DO UPDATE" not in query
+
+
+def test_configured_bootstrap_skips_a_fully_deleted_organization(monkeypatch) -> None:
+    statements = []
+
+    class _Connection:
+        def execute(self, query, params=None):
+            normalized = " ".join(query.split())
+            statements.append((normalized, params))
+            if "organization_deletion_tombstones" in normalized:
+                return _Rows([{"exists": 1}])
+            return _Rows([])
+
+    monkeypatch.setattr(org_access, "configured_org_names", lambda: {"pilot": "Configured name"})
+    monkeypatch.setattr(org_access, "configured_org_admin_emails", lambda: {})
+    monkeypatch.setattr(org_access, "configured_org_domains", lambda: {})
+
+    org_access.ensure_configured_organizations(_Connection())
+
+    assert not any("INSERT INTO organizations" in query for query, _params in statements)
+
+
+def test_suppressed_configured_admin_is_not_recreated_or_admitted(monkeypatch) -> None:
+    calls = []
+
+    class _Result:
+        def __init__(self, row=None, rows=None):
+            self.row = row
+            self.rows = rows or []
+
+        def fetchone(self):
+            return self.row
+
+        def fetchall(self):
+            return self.rows
+
+    class _Connection:
+        def execute(self, query, params=None):
+            normalized = " ".join(query.split())
+            calls.append((normalized, params))
+            if "SELECT id FROM organizations" in normalized:
+                return _Result({"id": 7})
+            if "FROM configured_organization_membership_suppressions" in normalized:
+                return _Result({"?column?": 1})
+            if "LEFT JOIN configured_organization_membership_suppressions" in normalized:
+                return _Result(None)
+            if "FROM organization_memberships" in normalized:
+                return _Result(rows=[])
+            return _Result()
+
+    monkeypatch.setattr(org_access, "ensure_configured_organizations", lambda _connection: None)
+    monkeypatch.setattr(org_access, "configured_superadmin_emails", lambda: set())
+    monkeypatch.setattr(org_access, "configured_org_admin_emails", lambda: {"pilot": ["admin@example.com"]})
+
+    connection = _Connection()
+    org_access.assign_user_organization_from_email(connection, user_id=42, email="admin@example.com")
+    assert not any("INSERT INTO organization_memberships" in query for query, _params in calls)
+    assert not org_access.email_has_organization_access(connection, email="admin@example.com")
+
+
 def test_legacy_web_session_is_deleted_when_used(monkeypatch) -> None:
     executed = []
 

@@ -1589,6 +1589,15 @@ if (adminOrganizationsList) {
       );
       return;
     }
+    if (form.dataset.action === 'connect-assessment-program') {
+      const formData = new FormData(form);
+      const programDefinitionId = Number(formData.get('program_definition_id'));
+      if (!programDefinitionId) return;
+      withScreen(loadAdminOrganizations, (module) =>
+        module.connectAdminOrganizationProgram(organizationId, programDefinitionId),
+      );
+      return;
+    }
     if (form.dataset.action === 'update-profile') {
       const formData = new FormData(form);
       const optionalNumber = (name) => {
@@ -1599,7 +1608,6 @@ if (adminOrganizationsList) {
         module.updateAdminOrganizationProfile(organizationId, {
           name: String(formData.get('name') || '').trim(),
           code: String(formData.get('code') || '').trim(),
-          profile: String(formData.get('profile') || '').trim() || null,
           founded_year: optionalNumber('founded_year'),
           employee_count: optionalNumber('employee_count'),
           industry: String(formData.get('industry') || '').trim() || null,
@@ -1635,6 +1643,18 @@ if (adminOrganizationsList) {
         });
         if (added) form.reset();
       });
+      return;
+    }
+    if (form.dataset.action === 'transfer-member') {
+      const formData = new FormData(form);
+      const targetOrganizationId = Number(formData.get('target_organization_id'));
+      const targetRole = String(formData.get('target_role') || 'member');
+      const userId = Number(form.dataset.userId);
+      if (!targetOrganizationId || !userId) return;
+      if (!window.confirm('Перенести участника в другую организацию? Старые назначения и приглашения будут отозваны, активные сессии завершены.')) return;
+      withScreen(loadAdminOrganizations, (module) =>
+        module.transferAdminOrganizationMember(organizationId, userId, targetOrganizationId, targetRole),
+      );
       return;
     }
     if (form.dataset.action === 'preview-early-data') {
@@ -1748,35 +1768,75 @@ if (adminOrganizationsList) {
     const card = button.closest('[data-organization-id]');
     const organizationId = Number(card?.getAttribute('data-organization-id'));
     const value = button.getAttribute('data-value') || '';
+    if (button.dataset.action === 'purge-account') {
+      const userId = Number(button.dataset.userId);
+      const email = String(button.dataset.email || '').trim();
+      withScreen(loadAdminOrganizations, async (module) => {
+        const preview = await module.previewAdminAccountPurge(userId);
+        const tables = Object.entries(preview.tables || {}).filter(([, count]) => Number(count) > 0)
+          .map(([name, count]) => name + ': ' + Number(count)).join(', ');
+        const typed = window.prompt('Будут удалены аккаунт и связанные данные (' + tables + '). ' +
+          'Общие методологические материалы останутся. Для подтверждения введите email: ' + email);
+        if (typed === null || String(typed).trim().toLowerCase() !== email.toLowerCase()) {
+          window.alert('Email подтверждения не совпадает. Удаление отменено.');
+          return;
+        }
+        if (!window.confirm('Удалить аккаунт «' + email + '» полностью? Действие необратимо.')) return;
+        await module.purgeAdminAccount(userId, email, preview.fingerprint);
+      });
+      return;
+    }
     if (!organizationId) {
       return;
     }
     if (button.dataset.action === 'purge-organization') {
       const organizationName = card?.querySelector('h3')?.textContent?.trim() || 'организацию';
       const organizationCode = String(card?.getAttribute('data-organization-code') || '').trim();
-      const confirmationCode = window.prompt(
-        'Физическое удаление уничтожит все связанные данные организации «' + organizationName +
-        '», а также аккаунты, identities, credentials и сессии пользователей, которые не состоят больше ни в одной организации. ' +
-        'Аккаунты участников других организаций сохранятся. Для подтверждения введите код: ' + organizationCode,
-      );
-      if (confirmationCode === null) return;
-      if (String(confirmationCode).trim() !== organizationCode) {
-        window.alert('Код подтверждения не совпадает. Удаление отменено.');
-        return;
-      }
-      const backupReference = window.prompt('Укажите путь или идентификатор проверенного backup:');
-      if (!String(backupReference || '').trim()) {
-        window.alert('Backup reference обязателен. Удаление отменено.');
-        return;
-      }
-      if (!window.confirm(
-        'Удалить организацию «' + organizationName + '» физически вместе с orphan-аккаунтами? Действие необратимо.',
-      )) {
-        return;
-      }
-      withScreen(loadAdminOrganizations, (module) => module.purgeAdminOrganization(
-        organizationId, organizationCode, String(backupReference).trim(), organizationName,
-      ));
+      withScreen(loadAdminOrganizations, async (module) => {
+        let preview;
+        try {
+          preview = await module.previewAdminOrganizationPurge(organizationId);
+        } catch (error) {
+          window.alert(error.message || 'Не удалось построить состав удаления.');
+          return;
+        }
+        const deletedAccounts = (preview.accounts || []).filter((account) => account.will_delete_account);
+        const sharedAccounts = (preview.accounts || []).filter((account) => !account.will_delete_account);
+        const tableSummary = Object.entries(preview.tables || {}).filter(([, count]) => Number(count) > 0)
+          .map(([name, count]) => name + ': ' + Number(count)).join(', ');
+        const preserved = sharedAccounts.map((account) => account.email +
+          (account.preserved_reason === 'current_account' ? ' (текущий аккаунт)' :
+            account.preserved_reason === 'configured_account' ? ' (задан конфигурацией)' : '')).join(', ') || 'нет';
+        const summary = 'Будут удалены организация, связанные записи и аккаунты без других организаций. ' +
+          'Строк: ' + Number(preview.total_rows || 0) + (tableSummary ? ' (' + tableSummary + ')' : '') +
+          '. Полностью удаляемых аккаунтов: ' + deletedAccounts.length +
+          '. Останутся защищённые или используемые другими организациями аккаунты: ' + preserved +
+          '. Общие методологические материалы останутся, потому что не принадлежат организации.';
+        const blockers = Array.isArray(preview.execution_blockers) ? preview.execution_blockers : [];
+        if (blockers.length) {
+          const blockerSummary = blockers.map((account) => account.email +
+            (account.reason === 'current_account'
+              ? ' — текущий аккаунт выполняющего администратора'
+              : ' — аккаунт задан в конфигурации администраторов')).join(', ');
+          window.alert(summary + ' Удаление пока заблокировано: ' + blockerSummary +
+            '. Используйте другой аккаунт или сначала измените конфигурацию администраторов.');
+          return;
+        }
+        if (button.dataset.executionAvailable !== 'true') {
+          window.alert(summary + ' Исполнение недоступно: внешний журнал удаления не настроен.');
+          return;
+        }
+        const confirmationCode = window.prompt(summary + ' Для подтверждения введите код: ' + organizationCode);
+        if (confirmationCode === null) return;
+        if (String(confirmationCode).trim() !== organizationCode) {
+          window.alert('Код подтверждения не совпадает. Удаление отменено.');
+          return;
+        }
+        if (!window.confirm('Удалить организацию «' + organizationName + '» полностью? Действие необратимо.')) return;
+        await module.purgeAdminOrganization(
+          organizationId, organizationCode, preview.fingerprint, organizationName,
+        );
+      });
       return;
     }
     if (button.dataset.action === 'delete-organization') {
@@ -1787,6 +1847,12 @@ if (adminOrganizationsList) {
         return;
       }
       withScreen(loadAdminOrganizations, (module) => module.deleteOrDeactivateAdminOrganization(organizationId, organizationName));
+      return;
+    }
+    if (button.dataset.action === 'restore-organization') {
+      const organizationName = card?.querySelector('h3')?.textContent?.trim() || 'организацию';
+      if (!window.confirm('Восстановить организацию «' + organizationName + '» и снова разрешить доступ?')) return;
+      withScreen(loadAdminOrganizations, (module) => module.restoreAdminOrganization(organizationId, organizationName));
       return;
     }
     if (button.dataset.action === 'confirm-questionnaire') {
@@ -1822,6 +1888,17 @@ if (adminOrganizationsList) {
         .find((candidate) => candidate.dataset.action === previewAction &&
           candidate.querySelector('[name="assignment_ref"]')?.value === assessmentRef);
       form?.requestSubmit();
+      return;
+    }
+    if (button.dataset.action === 'use-legacy-profile') {
+      const legacyText = button.closest('.admin-organization-legacy-profile')?.querySelector('p')?.textContent || '';
+      const target = card?.querySelector('form[data-action="preview-early-data"] textarea[name="activity_description"]');
+      if (!target || target.value.trim()) return;
+      target.value = legacyText;
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+      target.focus();
+      button.disabled = true;
+      button.textContent = 'Перенесено в черновик';
       return;
     }
     if (button.dataset.action === 'prepare-organization-assessments') {

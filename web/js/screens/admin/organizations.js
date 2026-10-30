@@ -105,6 +105,31 @@ const questionnaireErrorMessage = (error, fallback) => {
   return message || fallback;
 };
 
+const membershipErrorMessage = (error, fallback) => {
+  const message = String(error?.message || '');
+  if (message.includes('ORGANIZATION_MEMBERSHIP_CONFLICT:')) {
+    return message.split('ORGANIZATION_MEMBERSHIP_CONFLICT:', 2)[1].trim();
+  }
+  if (error?.status === 401) return 'Сессия истекла. Войдите снова; введённые данные формы сохранены в этой вкладке.';
+  if (error?.name === 'RequestDeadlineError') return 'Не удалось подтвердить результат операции. Обновите список перед безопасным повтором.';
+  if (error instanceof TypeError) return 'Не удалось связаться с сервером. Проверьте соединение.';
+  if (Number(error?.status) >= 500) return 'Не удалось добавить пользователя. Произошла ошибка сервиса.';
+  return message || fallback;
+};
+
+const transferErrorMessage = (error) => {
+  const message = String(error?.message || '');
+  const labels = {
+    ORGANIZATION_TRANSFER_LAST_ADMIN: 'Нельзя перенести последнего администратора организации. Сначала назначьте другого администратора.',
+    ORGANIZATION_TRANSFER_ACTIVE_ACQUAINTANCE: 'Перенос заблокирован: участник проходит знакомство с оценкой.',
+    ORGANIZATION_TRANSFER_SOURCE_CHANGED: 'Состав организации изменился. Обновите список и повторите перенос.',
+    ORGANIZATION_TRANSFER_TARGET_INACTIVE: 'Целевая организация неактивна.',
+    ORGANIZATION_TRANSFER_TARGET_NOT_FOUND: 'Целевая организация не найдена.',
+  };
+  const code = Object.keys(labels).find((item) => message.includes(item));
+  return code ? labels[code] : membershipErrorMessage(error, 'Не удалось перенести участника.');
+};
+
 const captureFormDraft = (organizationId, form, { assessmentRef: assessmentOverride = null, updateSelected = true } = {}) => {
   const fields = editableFields(form);
   const assignmentField = form.querySelector('[name="assignment_ref"]');
@@ -326,7 +351,7 @@ const trackOperation = (event) => {
   const target = event.target instanceof Element ? event.target : null;
   const form = event.type === 'submit' ? target?.closest('form[data-action]') : null;
   const button = event.type === 'click' ? target?.closest('button[data-action]') : null;
-  if (!form && (!button || ['show-admin-view', 'refresh-questionnaire-preview'].includes(button.dataset.action))) return;
+  if (!form && (!button || ['show-admin-view', 'refresh-questionnaire-preview', 'use-legacy-profile'].includes(button.dataset.action))) return;
   const root = form || button.closest('.admin-questionnaire-preview') || button.parentElement;
   const card = root?.closest('[data-organization-id]');
   if (!card) return;
@@ -615,7 +640,7 @@ export const addAdminOrganizationAdmin = async (organizationId, email) => {
     );
     setStatus('Администратор добавлен.', 'success');
   } catch (error) {
-    setStatus(error.message || 'Не удалось добавить администратора.', 'error');
+    setStatus(membershipErrorMessage(error, 'Не удалось добавить администратора.'), 'error');
   }
 };
 
@@ -655,7 +680,7 @@ export const addAdminOrganizationMember = async (organizationId, payload) => {
     setStatus('Участник привязан к организации.', 'success');
     return true;
   } catch (error) {
-    setStatus(error.message || 'Не удалось привязать участника.', 'error');
+    setStatus(membershipErrorMessage(error, 'Не удалось привязать участника.'), 'error');
     return false;
   }
 };
@@ -670,6 +695,29 @@ export const deleteAdminOrganizationMember = async (organizationId, email) => {
     setStatus('Участник убран из организации. Аккаунт пользователя сохранён; повторное добавление не потребует новой регистрации.', 'success');
   } catch (error) {
     setStatus(error.message || 'Не удалось отвязать участника.', 'error');
+  }
+};
+
+export const transferAdminOrganizationMember = async (organizationId, userId, targetOrganizationId, targetRole) => {
+  try {
+    await requestOrganizations(
+      '/users/admin/users/' + Number(userId) + '/transfer-organization',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          expected_source_organization_id: Number(organizationId),
+          target_organization_id: Number(targetOrganizationId),
+          target_role: targetRole === 'admin' ? 'admin' : 'member',
+          operation_id: createOperationId(),
+        }),
+      },
+      'Не удалось перенести участника.',
+    );
+    setStatus('Участник перенесён. Старые назначения и приглашения отозваны, активные веб-сессии завершены.', 'success');
+    return true;
+  } catch (error) {
+    setStatus(transferErrorMessage(error), 'error');
+    return false;
   }
 };
 
@@ -1242,7 +1290,38 @@ export const deleteOrDeactivateAdminOrganization = async (organizationId, organi
   }
 };
 
-export const purgeAdminOrganization = async (organizationId, confirmationCode, backupReference, organizationName = '') => {
+export const restoreAdminOrganization = async (organizationId, organizationName = '') => {
+  const label = String(organizationName || 'Организация').trim();
+  try {
+    await requestOrganizations(
+      '/users/admin/organizations/' + organizationId + '/restore',
+      { method: 'POST', headers: {} },
+      'Не удалось восстановить организацию.',
+    );
+    setStatus('Организация «' + label + '» восстановлена.', 'success');
+  } catch (error) {
+    setStatus(error.message || 'Не удалось восстановить организацию «' + label + '».', 'error');
+  }
+};
+
+export const connectAdminOrganizationProgram = async (organizationId, programDefinitionId) => {
+  const operationId = createOperationId();
+  try {
+    const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-program', {
+      method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ program_definition_id: Number(programDefinitionId), operation_id: operationId }),
+    });
+    await readApiResponse(response, 'Не удалось подключить программу оценки.');
+    await loadAdminOrganizations();
+    setStatus('Опубликованная версия программы подключена к организации.', 'success');
+    return true;
+  } catch (error) {
+    setStatus(error.message || 'Не удалось подключить программу оценки.', 'error');
+    return false;
+  }
+};
+
+export const purgeAdminOrganization = async (organizationId, confirmationCode, previewFingerprint, organizationName = '') => {
   const label = String(organizationName || 'Организация').trim();
   try {
     await requestOrganizations(
@@ -1251,7 +1330,8 @@ export const purgeAdminOrganization = async (organizationId, confirmationCode, b
         method: 'POST',
         body: JSON.stringify({
           confirmation_code: String(confirmationCode || '').trim(),
-          backup_reference: String(backupReference || '').trim(),
+          preview_fingerprint: String(previewFingerprint || '').trim(),
+          operation_id: createOperationId(),
           acknowledge_irreversible: true,
         }),
       },
@@ -1264,6 +1344,29 @@ export const purgeAdminOrganization = async (organizationId, confirmationCode, b
   } catch (error) {
     setStatus(error.message || 'Не удалось физически удалить организацию «' + label + '».', 'error');
   }
+};
+
+export const previewAdminOrganizationPurge = async (organizationId) => {
+  const response = await fetch('/users/admin/organizations/' + organizationId + '/purge-preview', {
+    credentials: 'same-origin',
+  });
+  return readApiResponse(response, 'Не удалось построить состав полного удаления.');
+};
+
+export const previewAdminAccountPurge = async (userId) => {
+  const response = await fetch('/users/admin/users/' + Number(userId) + '/purge-preview', { credentials: 'same-origin' });
+  return readApiResponse(response, 'Не удалось построить состав полного удаления аккаунта.');
+};
+
+export const purgeAdminAccount = async (userId, email, previewFingerprint) => {
+  const response = await fetch('/users/admin/users/' + Number(userId) + '/purge', {
+    method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ confirmation_email: email, preview_fingerprint: previewFingerprint,
+      operation_id: createOperationId(), acknowledge_irreversible: true }),
+  });
+  await readApiResponse(response, 'Не удалось полностью удалить аккаунт.');
+  await loadAdminOrganizations();
+  setStatus('Аккаунт «' + email + '» и связанные данные полностью удалены.', 'success');
 };
 
 const renderTagList = (items, emptyText, className, deleteAction) => {
@@ -1293,7 +1396,7 @@ const renderTagList = (items, emptyText, className, deleteAction) => {
   );
 };
 
-const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef = '' } = {}) => {
+const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef = '', transferTargets = [] } = {}) => {
   if (!items.length) {
     return '<p class="admin-organizations-empty">Участники не привязаны.</p>';
   }
@@ -1334,12 +1437,35 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
         const deliveryLabels = { not_sent: 'Письмо: не отправлено', queued: 'Письмо: в очереди', sending: 'Письмо: исход неизвестен', accepted: 'Письмо: принято провайдером', error: 'Письмо: ошибка' };
         const linkLabels = { not_created: 'Ссылка: не создана', active: 'Ссылка: действует 72 часа', revoked: 'Ссылка: отозвана', expired: 'Ссылка: истекла', used: 'Ссылка: использована' };
         const registrationLabel = item.registration_status === 'registered' ? 'Регистрация: завершена' : 'Регистрация: ожидается';
+        const hasAssignment = (item.assessment_assignments || []).includes(selectedAssessmentRef);
+        const acquaintanceStatus = String(item.acquaintance_status || 'not_started');
+        const currentStage = preparationStatus === 'failed'
+          ? 'Подготовка завершилась с ошибкой'
+          : isPreparing
+            ? 'Идёт подготовка оценки'
+            : isPrepared
+              ? 'Оценка подготовлена'
+              : ['answers_confirmed', 'completed'].includes(acquaintanceStatus)
+                ? 'Знакомство завершено'
+                : acquaintanceStatus === 'in_progress'
+                  ? 'Проходит знакомство'
+                  : !hasAssignment
+                    ? 'Оценка не назначена'
+                    : item.invitation_delivery_status === 'accepted'
+                      ? 'Письмо отправлено — ожидаем начала знакомства'
+                      : 'Приглашение не отправлено';
         const sendLabel = item.invitation_id ? 'Отправить повторно' : 'Отправить';
         const isRegistered = item.registration_status === 'registered';
         const invitationButton = isRegistered ? '' : '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
         const revokeButton = (invitationStatus === 'accepted' || invitationStatus === 'queued' || invitationStatus === 'sending')
           ? '<button type="button" data-action="revoke-member-invitation" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать ссылку</button>'
           : '';
+        const transferForm = !isSuperadmin || !transferTargets.length ? '' :
+          '<form class="admin-organization-transfer-form" data-action="transfer-member" data-user-id="' + Number(item.user_id) + '">' +
+          '<label><span>Перенести в</span><select name="target_organization_id" required><option value="">Выберите организацию</option>' +
+          transferTargets.map((target) => '<option value="' + Number(target.id) + '">' + escapeHtml(target.name) + '</option>').join('') +
+          '</select></label><label><span>Роль</span><select name="target_role"><option value="member">Участник</option><option value="admin">Администратор</option></select></label>' +
+          '<button class="ghost-button compact-ghost" type="submit">Перенести</button></form>';
         return (
           '<div class="admin-organization-member">' +
           '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>' +
@@ -1347,20 +1473,21 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
           escapeHtml(label) +
           '</strong>' +
           (details ? '<span>' + escapeHtml(details) + '</span>' : '') +
+          '<span class="admin-organization-current-stage">' + escapeHtml(currentStage) + '</span>' +
           '</div>' +
-          '<div class="admin-organization-member-statuses">' +
+          '<details class="admin-organization-member-statuses"><summary>Подробности статуса</summary><div>' +
           '<span class="admin-organization-invitation-state">Допуск: разрешён</span>' +
           '<span class="admin-organization-invitation-state">' + escapeHtml(registrationLabel) + '</span>' +
           '<span class="admin-organization-invitation-state">' + escapeHtml(deliveryLabels[item.invitation_delivery_status] || invitationLabels[invitationStatus] || invitationStatus) + '</span>' +
           '<span class="admin-organization-invitation-state">' + escapeHtml(linkLabels[item.invitation_link_status] || item.invitation_link_status || 'Ссылка: не создана') + '</span>' +
-          '<span class="admin-organization-invitation-state">Оценка: ' + escapeHtml((item.assessment_assignments || []).includes(selectedAssessmentRef) ? 'назначена' : 'не назначена') + '</span>' +
-          '</div>' +
+          '<span class="admin-organization-invitation-state">Оценка: ' + escapeHtml(hasAssignment ? 'назначена' : 'не назначена') + '</span>' +
+          '</div></details>' +
           '<div class="admin-organization-member-actions">' +
           invitationButton + revokeButton +
           preparationButton +
           passwordButton +
           removeButton +
-          '</div>' +
+          '</div>' + transferForm +
           '</div>'
         );
       })
@@ -1391,6 +1518,13 @@ export const renderAdminOrganizations = () => {
   clearInaccessibleOrganizationState(organizations);
   const isSuperadmin = Boolean(data?.is_superadmin);
   const physicalPurgeAvailable = Boolean(data?.physical_purge_available);
+  const purgePreviewAvailable = Boolean(data?.purge_preview_available);
+  const detachedAccounts = Array.isArray(data?.detached_accounts) ? data.detached_accounts : [];
+  const detachedMarkup = isSuperadmin ? '<section class="card card--inset admin-detached-accounts"><h3>Ранее отвязанные аккаунты</h3>' +
+    (detachedAccounts.length ? detachedAccounts.map((account) => '<div class="admin-organization-member"><span>' +
+      escapeHtml(account.email) + '</span><button class="ghost-button compact-ghost danger" type="button" data-action="purge-account" data-user-id="' +
+      Number(account.user_id) + '" data-email="' + escapeHtml(account.email) + '">Удалить полностью</button></div>').join('') :
+      '<p class="admin-organizations-empty">Ранее отвязанных аккаунтов нет.</p>') + '</section>' : '';
   adminOrganizationsPanel.dataset.superadmin = String(isSuperadmin);
   document.querySelector('[data-admin-area="assessment"]')?.classList.toggle('hidden', isSuperadmin);
   document.getElementById('admin-organization-create-form')?.closest('section')?.classList.toggle(
@@ -1399,7 +1533,7 @@ export const renderAdminOrganizations = () => {
   document.querySelector('.admin-organization-picker')?.classList.toggle('hidden', !isSuperadmin && organizations.length <= 1);
   if (!organizations.length) {
     if (adminOrganizationSelect) adminOrganizationSelect.innerHTML = '<option value="">Нет организаций</option>';
-    adminOrganizationsList.innerHTML = '<p class="report-empty-state">' + (isSuperadmin
+    adminOrganizationsList.innerHTML = detachedMarkup + '<p class="report-empty-state">' + (isSuperadmin
       ? 'Организации пока не созданы.'
       : 'Закреплённая организация недоступна или доступ отозван. Обратитесь к администратору платформы.') + '</p>';
     return;
@@ -1418,7 +1552,7 @@ export const renderAdminOrganizations = () => {
       )
       .join('');
   }
-  adminOrganizationsList.innerHTML = organizations
+  adminOrganizationsList.innerHTML = detachedMarkup + organizations
     .filter((org) => Number(org.id) === Number(selectedOrganizationId))
     .map((org) => {
       const orgId = Number(org.id);
@@ -1443,8 +1577,29 @@ export const renderAdminOrganizations = () => {
       const questionnaireProblems = [...(questionnaireValidation.errors || []).map((item) => item.code),
         ...(questionnaireValidation.missing || [])];
       const activeView = organizationViews.get(orgId) || 'people';
+      const availablePrograms = Array.isArray(data?.assessment_programs) ? data.assessment_programs : [];
+      const currentProgram = org.assessment_program || null;
+      const programMarkup = isSuperadmin ? '<form class="admin-organization-inline-form admin-organization-program-form" data-action="connect-assessment-program">' +
+        '<label><span>Программа оценки</span><select name="program_definition_id" required>' +
+        '<option value="">Выберите опубликованную версию</option>' + availablePrograms.map((program) =>
+          '<option value="' + Number(program.id) + '"' +
+          (Number(currentProgram?.program_definition_id) === Number(program.id) ? ' selected' : '') + '>' +
+          escapeHtml(program.name) + ' · ' + escapeHtml(program.version) + '</option>').join('') +
+        '</select></label><button class="ghost-button compact-ghost" type="submit">Подключить</button>' +
+        (currentProgram ? '<p>Подключено: <strong>' + escapeHtml(currentProgram.program_name) +
+          ' · ' + escapeHtml(currentProgram.program_version) + '</strong></p>' : '<p>Программа ещё не подключена.</p>') +
+        '</form>' : '';
       const revisionAnswers = currentRevision?.answers_json || {};
       const answer = (questionId, field) => escapeHtml(revisionAnswers?.[questionId]?.[field] || '');
+      const legacyProfile = String(org.profile || '').trim();
+      const currentActivityDescription = String(revisionAnswers?.C01?.activity_description || '').trim();
+      const legacyProfileMarkup = !legacyProfile ? '' :
+        '<aside class="admin-organization-legacy-profile" role="note"><strong>Сохранённое описание из прежней карточки</strong>' +
+        '<p>' + escapeHtml(legacyProfile) + '</p>' +
+        (currentActivityDescription
+          ? '<p class="admin-organization-legacy-profile-note">В текущем черновике C01 уже есть описание деятельности. Старое значение оставлено только для сверки и не перезаписывает подтверждённые сведения.</p>'
+          : '<button type="button" class="ghost-button compact-ghost" data-action="use-legacy-profile">Перенести в описание деятельности</button>') +
+        '</aside>';
       const viewButton = (view, label) => '<button type="button" class="admin-organization-step' +
         (activeView === view ? ' current' : '') + '" data-action="show-admin-view" data-view="' + view +
         '" aria-pressed="' + String(activeView === view) + '">' + label + '</button>';
@@ -1531,17 +1686,18 @@ export const renderAdminOrganizations = () => {
         '>Подготовить кейсы всем</button>' +
         (isActive
           ? '<button class="ghost-button compact-ghost danger" type="button" data-action="delete-organization">Деактивировать</button>'
-          : (physicalPurgeAvailable
-            ? '<button class="ghost-button compact-ghost danger" type="button" data-action="purge-organization">Удалить физически</button>'
-            : '')) : '') + '</div>' +
+          : '<button class="ghost-button compact-ghost" type="button" data-action="restore-organization">Восстановить</button>') +
+        (purgePreviewAvailable
+          ? '<button class="ghost-button compact-ghost danger" type="button" data-action="purge-organization" data-execution-available="' +
+            String(physicalPurgeAvailable) + '">Удалить полностью</button>' : '') : '') + '</div>' +
         '</div>' +
         renderOrganizationBatchProgress(orgId) +
+        programMarkup +
         (isSuperadmin ? '<form class="admin-organization-profile-form" data-action="update-profile">' +
         '<div class="admin-organization-profile-heading"><div><p class="section-label accent-label">Профиль</p><h4>Сведения об организации</h4></div>' +
         '<button class="primary-button compact-primary" type="submit">Сохранить карточку</button></div>' +
         '<label><span>Название</span><input name="name" value="' + escapeHtml(org.name) + '" required></label>' +
         '<label><span>Код</span><input name="code" value="' + escapeHtml(org.code) + '" required></label>' +
-        '<label class="admin-organization-profile-wide"><span>Профиль организации</span><textarea name="profile" placeholder="Кратко опишите организацию, её деятельность и особенности">' + escapeHtml(org.profile || '') + '</textarea></label>' +
         '<label><span>Год основания</span><input name="founded_year" type="number" min="1000" max="2100" value="' + escapeHtml(org.founded_year ?? '') + '" placeholder="Например, 2012"></label>' +
         '<label><span>Численность</span><input name="employee_count" type="number" min="0" value="' + escapeHtml(org.employee_count ?? '') + '" placeholder="Количество сотрудников"></label>' +
         '<label><span>Отрасль</span><input name="industry" type="text" value="' + escapeHtml(org.industry || '') + '" placeholder="Например, финтех"></label>' +
@@ -1567,7 +1723,11 @@ export const renderAdminOrganizations = () => {
         '<p>Выбранная оценка: <strong>' + escapeHtml(selectedRef || 'не выбрана') + '</strong>. Назначение не запускает оценку.</p>' +
         '<div class="admin-organization-bulk-actions"><form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
         '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment"><button class="primary-button compact-primary" type="submit">Назначить оценку</button></form></div>' +
-        renderMemberList(org.members || [], { isSuperadmin, selectedAssessmentRef: selectedRef }) +
+        renderMemberList(org.members || [], {
+          isSuperadmin,
+          selectedAssessmentRef: selectedRef,
+          transferTargets: organizations.filter((candidate) => candidate.is_active !== false && Number(candidate.id) !== orgId),
+        }) +
         '<form class="admin-organization-member-form" data-action="add-member">' +
         '<h4>Добавить участника</h4><p>Для добавления нужны email, ФИО и должность.</p>' +
         '<label><span>Email</span><input name="email" type="email" placeholder="user@company.ru" required></label>' +
@@ -1586,14 +1746,13 @@ export const renderAdminOrganizations = () => {
           '<div class="admin-organization-profile-heading"><strong>Карточка организации</strong><button class="primary-button compact-primary" type="submit">Сохранить карточку</button></div>' +
           '<label><span>Название</span><input name="name" value="' + escapeHtml(org.name) + '" required></label>' +
           '<label><span>Код</span><input name="code" value="' + escapeHtml(org.code) + '" required></label>' +
-          '<label class="admin-organization-profile-wide"><span>Профиль организации</span><textarea name="profile">' + escapeHtml(org.profile || '') + '</textarea></label>' +
           '<input name="founded_year" type="hidden" value="' + escapeHtml(org.founded_year ?? '') + '">' +
           '<input name="employee_count" type="hidden" value="' + escapeHtml(org.employee_count ?? '') + '">' +
           '<input name="industry" type="hidden" value="' + escapeHtml(org.industry || '') + '">' +
           '<input name="website" type="hidden" value="' + escapeHtml(org.website || '') + '">' +
           '<input name="headquarters" type="hidden" value="' + escapeHtml(org.headquarters || '') + '">' +
           '<input name="notes" type="hidden" value="' + escapeHtml(org.notes || '') + '"></form>' : '') +
-        '<p>Черновик можно редактировать. Участники увидят новые сведения после подтверждения.</p>' +
+        '<p>Черновик можно редактировать. Участники увидят новые сведения после подтверждения.</p>' + legacyProfileMarkup +
         '<form class="admin-organization-early-data-form" data-action="preview-early-data">' +
         '<label><span>Оценка</span><input name="assignment_ref" type="text" value="' + escapeHtml(selectedRef) + '" placeholder="Например, 4К · поток октябрь 2026" required></label>' +
         '<label><span>Автор сведений</span><input name="source_author" type="text" value="' + escapeHtml(currentRevision?.source_author || '') + '" placeholder="Ответственный со стороны заказчика" required></label>' +

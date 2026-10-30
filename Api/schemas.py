@@ -242,8 +242,8 @@ class AssessmentAssignmentRequest(BaseModel):
 
     @model_validator(mode='after')
     def source_pair(self):
-        if (self.assessment_configuration_id is None) != (self.role_profile_version_id is None):
-            raise ValueError('Конфигурация и опубликованная роль назначаются вместе.')
+        if self.assessment_configuration_id is not None and self.role_profile_version_id is None:
+            raise ValueError('Техническую конфигурацию нельзя выбирать без допустимой роли программы.')
         return self
 
 
@@ -920,6 +920,7 @@ class AdminOrganizationMemberItem(BaseModel):
     assessment_preparation_operation_id: str | None = None
     assessment_prepared: bool = False
     assessment_profile_ready: bool = False
+    acquaintance_status: str = "not_started"
     invitation_id: int | None = None
     invitation_status: str = "not_sent"
     admission_status: str = "admitted"
@@ -949,6 +950,7 @@ class AdminOrganizationItem(BaseModel):
     members_count: int = 0
     reports_count: int = 0
     assessment_preparation_batch_id: str | None = None
+    assessment_program: dict | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -958,6 +960,9 @@ class AdminOrganizationsResponse(BaseModel):
     subtitle: str
     is_superadmin: bool = False
     physical_purge_available: bool = False
+    purge_preview_available: bool = False
+    assessment_programs: list[dict] = Field(default_factory=list)
+    detached_accounts: list[dict] = Field(default_factory=list)
     items: list[AdminOrganizationItem]
 
 
@@ -981,8 +986,21 @@ class AdminOrganizationUpdateRequest(BaseModel):
 
 class AdminOrganizationPurgeRequest(BaseModel):
     confirmation_code: str = Field(min_length=1, max_length=80)
-    backup_reference: str = Field(min_length=1, max_length=500)
+    preview_fingerprint: str = Field(min_length=64, max_length=64)
+    operation_id: str = Field(min_length=8, max_length=200)
     acknowledge_irreversible: bool = False
+
+
+class AdminAccountPurgeRequest(BaseModel):
+    confirmation_email: str = Field(min_length=3, max_length=320)
+    preview_fingerprint: str = Field(min_length=64, max_length=64)
+    operation_id: str = Field(min_length=8, max_length=200)
+    acknowledge_irreversible: bool = False
+
+
+class AdminOrganizationProgramConnectionRequest(BaseModel):
+    program_definition_id: int = Field(gt=0)
+    operation_id: str = Field(min_length=8, max_length=200)
 
 
 class AdminOrganizationDomainRequest(BaseModel):
@@ -999,6 +1017,13 @@ class AdminOrganizationMemberRequest(BaseModel):
     full_name: str | None = None
     role_description: str | None = None
     job_instructions: str | None = None
+
+
+class AdminOrganizationTransferRequest(BaseModel):
+    expected_source_organization_id: int
+    target_organization_id: int
+    target_role: Literal["member", "admin"] = "member"
+    operation_id: str = Field(min_length=8, max_length=200)
 
 
 class AdminOrganizationMembersImportRequest(BaseModel):

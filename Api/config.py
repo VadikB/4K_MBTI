@@ -41,6 +41,7 @@ class Settings:
     log_error_filename: str = os.getenv("LOG_ERROR_FILENAME", "agent4k-error.log")
     log_rotation_when: str = os.getenv("LOG_ROTATION_WHEN", "midnight").strip().lower() or "midnight"
     log_backup_count: int = int(os.getenv("LOG_BACKUP_COUNT", "14"))
+    deletion_ledger_path: str = os.getenv("DELETION_LEDGER_PATH", "").strip()
     audit_logs_to_db: bool = os.getenv("AUDIT_LOGS_TO_DB", "true").strip().lower() in {"1", "true", "yes", "on"}
     runtime_logs_to_db: bool = os.getenv("RUNTIME_LOGS_TO_DB", "false").strip().lower() in {"1", "true", "yes", "on"}
     app_base_url: str = DEPLOYMENT_PUBLIC_ORIGIN or os.getenv("APP_BASE_URL", "http://127.0.0.1:8010").strip() or "http://127.0.0.1:8010"

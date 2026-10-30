@@ -1,4 +1,42 @@
-# STATE — UX-PATH29
+# STATE — ARCH30
+
+## Текущий checkpoint ARCH30, 30.10.2026
+
+- Worktree: `.codex/worktrees/arch30/4K`, ветка `codex/arch30`, base
+  `e08c6f51acaf5a59b08b73cc98f05e9d03be0bd4`.
+- Решения владельца по ProgramDefinition, полному purge и переносу зафиксированы
+  в `docs/adr/003-arch30-program-and-deletion-lifecycle.md`.
+- Реализованы ранее независимые ARCH30-02/03/05/06/07 и минимальный
+  ProgramDefinition: immutable published/retired, история подключения, точные
+  config/catalog/role refs, API/UI суперадминистратора, release-команда.
+- Текущие проверки: стандартный backend 755 PASS / 186 deselected,
+  frontend 102 PASS, объединённый ARCH30 DB 11 PASS; финальная пересборка,
+  py_compile и diff PASS.
+- Полный browser discovery: 71 PASS; 16 owned-backend сценариев NOT_RUN, потому
+  что для destructive/real-stand контура явно не задан `STAND_ADMIN_URL`.
+  Продуктовых browser FAIL в этом запуске нет.
+- Dependency preview и изолированное доказательство purge организации/отдельного
+  detached account завершены. External ledger + DB receipts + fail-closed startup
+  + replay и product execution endpoints реализованы; production fail-closed
+  ждёт provisioned эксплуатационный путь вне общего PostgreSQL backup.
+- Preview помечает текущий и заданные конфигурацией аккаунты как сохраняемые;
+  purge организации останавливается до изменения конфигурации, если такой
+  аккаунт иначе пришлось бы удалить. Detached-account UI доступен и при нуле
+  организаций; блокирующая причина показывается до ввода необратимого
+  подтверждения.
+- Исполнение purge строит план на своём DB-соединении, сверяет fingerprint и
+  только после успешной сверки синхронно сохраняет внешний intent перед первым
+  удалением. Устаревший preview не оставляет ложный intent для replay.
+- После исправления execution endpoint повторён стандартный backend без
+  integration/e2e/llm: 671 PASS / 273 deselected; предупреждение только
+  Starlette deprecation.
+- Финальный HTTP/e2e: 86 PASS / 858 deselected; JS lint `--quiet` PASS.
+- `branch_push=false`, `pr=false`, `merge=false`, `deploy=false`,
+  `version_bump=false`, `artifact_publish=false`; реальное удаление не выполнялось.
+- Локальная реализация и применимая матрица завершены. Следующий внешний gate:
+  человеческий review и, только после разрешения владельца, commit/PR и exact-head CI.
+
+## Историческое состояние UX-PATH29
 
 ## Текущий checkpoint после возобновления
 

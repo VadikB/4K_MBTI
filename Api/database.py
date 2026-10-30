@@ -4526,6 +4526,26 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS configured_organization_membership_suppressions (
+                user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+                reason TEXT NOT NULL,
+                created_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                PRIMARY KEY (user_id, organization_id)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS organization_deletion_tombstones (
+                code_sha256 TEXT PRIMARY KEY,
+                deleted_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
             CREATE TABLE IF NOT EXISTS participant_acquaintance_states (
                 user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
                 organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -4676,6 +4696,10 @@ def ensure_core_schema() -> None:
         ensure_m5_runtime_schema(connection)
         from Api.assessment_assignment_sources import ensure_schema as ensure_assignment_source_schema
         ensure_assignment_source_schema(connection)
+        from Api.assessment_programs import ensure_schema as ensure_assessment_program_schema
+        ensure_assessment_program_schema(connection)
+        from Api.deletion_ledger import ensure_receipt_schema
+        ensure_receipt_schema(connection)
         from Api.acquaintance_state_store import ensure_schema as ensure_acquaintance_scope_schema
         ensure_acquaintance_scope_schema(connection)
         from Api.m8_report_access import ensure_schema as ensure_m8_report_access_schema

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 
 from Api.config import settings
@@ -7,7 +8,7 @@ from Api.config import settings
 
 ORG_ADMIN_ROLE = "admin"
 ORG_MEMBER_ROLE = "member"
-EXPLICIT_MEMBER_ADMISSION_SOURCES = frozenset({"admin_add", "csv_import"})
+EXPLICIT_MEMBER_ADMISSION_SOURCES = frozenset({"admin_add", "csv_import", "superadmin_transfer"})
 
 
 @dataclass(frozen=True)
@@ -105,15 +106,19 @@ def ensure_configured_organizations(connection) -> None:
     org_codes.update(domain_map)
 
     for org_code in sorted(org_codes):
+        code_sha256 = hashlib.sha256(org_code.encode("utf-8")).hexdigest()
+        deleted = connection.execute(
+            "SELECT 1 FROM organization_deletion_tombstones WHERE code_sha256=%s",
+            (code_sha256,),
+        ).fetchall()
+        if deleted:
+            continue
         org_name = org_names.get(org_code) or org_code.replace("-", " ").replace("_", " ").title()
         connection.execute(
             """
             INSERT INTO organizations (code, name)
             VALUES (%s, %s)
-            ON CONFLICT (code) DO UPDATE
-            SET name = EXCLUDED.name,
-                is_active = TRUE,
-                updated_at = NOW()
+            ON CONFLICT (code) DO NOTHING
             """,
             (org_code, org_name),
         )
@@ -154,6 +159,16 @@ def assign_user_organization_from_email(connection, *, user_id: int, email: str 
         ).fetchone()
         if org_row is None:
             continue
+        suppressed = connection.execute(
+            """
+            SELECT 1 FROM configured_organization_membership_suppressions
+            WHERE user_id = %s AND organization_id = %s
+            LIMIT 1
+            """,
+            (user_id, int(org_row["id"])),
+        ).fetchone()
+        if suppressed:
+            return
         _upsert_membership(
             connection,
             organization_id=int(org_row["id"]),
@@ -173,8 +188,25 @@ def email_has_organization_access(connection, *, email: str | None) -> bool:
 
     ensure_configured_organizations(connection)
 
-    for emails in configured_org_admin_emails().values():
-        if normalized_email in emails:
+    for org_code, emails in configured_org_admin_emails().items():
+        if normalized_email not in emails:
+            continue
+        configured_access = connection.execute(
+            """
+            SELECT 1
+            FROM organizations organization
+            LEFT JOIN users user_row ON LOWER(user_row.email) = %s
+            LEFT JOIN configured_organization_membership_suppressions suppression
+              ON suppression.user_id = user_row.id
+             AND suppression.organization_id = organization.id
+            WHERE organization.code = %s
+              AND organization.is_active = TRUE
+              AND suppression.user_id IS NULL
+            LIMIT 1
+            """,
+            (normalized_email, org_code),
+        ).fetchone()
+        if configured_access:
             return True
 
     membership_rows = connection.execute(
