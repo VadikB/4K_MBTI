@@ -1,4 +1,7 @@
+import json
+
 from Api.m5_case_runtime import checksum
+from scripts import plan_specialist_program_release as release
 from scripts.plan_specialist_program_release import (
     EXPECTED_CASE_IDS,
     build_admitted_materials,
@@ -26,3 +29,26 @@ def test_owner_decision_builds_frozen_release_snapshot_from_existing_pass_eviden
     for case in package["cases"]:
         binding = runtime["bindings"]["case_bindings"][case["case_id"]]
         assert binding["case_checksum"] == checksum(case)
+
+
+def test_publish_cli_result_has_no_circular_source_trace(monkeypatch, capsys):
+    def fake_publish(trace, **_kwargs):
+        return {"source_trace": trace, "catalog": {"catalog_db_id": 7}}
+
+    monkeypatch.setattr(release, "publish_admitted_catalog", fake_publish)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "plan_specialist_program_release.py",
+            "--publish-admitted-catalog",
+            "--published-by",
+            "4",
+            "--decision-basis",
+            "owner-approved",
+        ],
+    )
+
+    assert release.main() == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["database"]["catalog"]["catalog_db_id"] == 7
+    assert result["database"]["source_trace"]["package"] == result["package"]

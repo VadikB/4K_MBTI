@@ -234,7 +234,7 @@ def main() -> int:
         if args.published_by is None or not args.decision_basis:
             parser.error("--publish-admitted-catalog requires --published-by and --decision-basis")
         result["database"] = publish_admitted_catalog(
-            result, published_by=args.published_by, decision_basis=args.decision_basis,
+            copy.deepcopy(result), published_by=args.published_by, decision_basis=args.decision_basis,
             catalog_id=args.catalog_id, catalog_version=args.catalog_version,
             idempotency_key=args.idempotency_key, organization_id=args.organization_id,
         )
