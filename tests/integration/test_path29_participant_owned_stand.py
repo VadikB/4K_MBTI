@@ -189,7 +189,9 @@ def internal():
         changed = admin.post(base + '/assessment-assignments', json={**selected,
             'operation_id': 'path29-deny-frozen-change', 'assessment_configuration_id': runtime['id'],
             'role_profile_version_id': role_id})
-        assert changed.status_code == 409 and 'PROGRAM_SOURCE_OVERRIDE_NOT_ALLOWED' in changed.text
+        assert changed.status_code == 409, changed.text
+        assert 'Выбранная роль или версия программы не относится к текущей оценке' in changed.text
+        assert 'PROGRAM_SOURCE_OVERRIDE_NOT_ALLOWED' not in changed.text
         participant.cookies.clear()
         logged_in = participant.post('/users/auth/email/password-login', json={'email': email, 'password': 'SyntheticPass1!'})
         assert logged_in.status_code == 200, logged_in.text
