@@ -4,7 +4,9 @@
 
 После squash merge проверенный commit сразу разворачивается на test без повторного
 unit/HTTP/integration/browser прогона. До merge GitHub требует успешные `frontend`,
-`pytest` и `full-verification` для актуального head PR.
+`pytest` и `full-verification` для актуального head PR. Полная проверка запускается
+добавлением PR-метки `run-full-verification`; событие `pull_request` связывает check
+с merge-контекстом PR.
 
 ## Область и основание
 
@@ -40,8 +42,8 @@ unit/HTTP/integration/browser прогона. До merge GitHub требует �
 - [ ] Integration и browser acceptance находятся только в `Full verification`.
 - [ ] Push в `main` запускает `deploy-test` без зависимости от повторных test jobs.
 - [ ] Адресные тесты конфигурации и deploy bootstrap проходят.
-- [ ] На актуальном head PR успешны required checks, включая ручной
-  `full-verification`.
+- [ ] На актуальном head PR успешны required checks, включая запускаемый меткой
+  `run-full-verification` check `full-verification`.
 
 ## Проверки
 
@@ -50,11 +52,13 @@ unit/HTTP/integration/browser прогона. До merge GitHub требует �
 - `tests/unit/test_test_deploy_bootstrap.py` и release guard tests.
 - `scripts/check_release_version.py --base-ref origin/main`.
 - `git diff --check`.
-- PR CI: `frontend`, `pytest`; ручной `Full verification` на точном head.
+- PR CI: `frontend`, `pytest`; `Full verification` после добавления метки
+  `run-full-verification` на точном head.
 
 ## Риски и откат
 
-- Конфиг: merge заблокирован, если ручной `full-verification` не запускался для head.
+- Конфиг: merge заблокирован, если метка `run-full-verification` не добавлена или
+  `full-verification` не прошёл для актуального head.
 - Deploy: после merge повторной проверки нет; безопасность обеспечивают required
   checks до merge и существующий rollback `deploy-test`.
 - Схема, данные, безопасность: не применимо, изменения отсутствуют.
@@ -71,5 +75,8 @@ unit/HTTP/integration/browser прогона. До merge GitHub требует �
   записать необязательный `.pytest_cache` в managed worktree, на результат тестов
   это не повлияло.
 - Текущий шаг: commit и PR.
-- Следующий шаг: автоматические checks, ручной `Full verification`, review владельца.
+- Диагностика PR №130: успешный `workflow_dispatch` check на точном head не был
+  засчитан ruleset как required check PR; контракт запуска переведён на
+  `pull_request` с меткой `run-full-verification`.
+- Следующий шаг: push исправления, добавить метку, дождаться required checks и review владельца.
 - Открытые вопросы: нет.

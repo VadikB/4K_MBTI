@@ -13,8 +13,12 @@ def test_pull_request_ci_contains_only_fast_jobs() -> None:
     assert "Browser acceptance (isolated bootstrap 10.2)" not in CI
 
 
-def test_manual_full_verification_covers_all_suites() -> None:
-    assert "workflow_dispatch:" in FULL
+def test_labeled_pull_request_full_verification_covers_all_suites() -> None:
+    assert "pull_request:" in FULL
+    assert "types: [labeled, synchronize]" in FULL
+    assert "contains(github.event.pull_request.labels.*.name, 'run-full-verification')" in FULL
+    assert "run: test \"$FULL_VERIFICATION_REQUESTED\" = \"true\"" in FULL
+    assert "workflow_dispatch:" not in FULL
     assert "full-verification:" in FULL
     for step in (
         "Unit tests",
