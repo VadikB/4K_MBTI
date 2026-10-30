@@ -12,4 +12,6 @@ test('ARCH30 connects an exact published program version from the superadmin UI'
   assert.match(source, /\/assessment-program/);
   assert.match(wiring, /connect-assessment-program/);
   assert.match(wiring, /connectAdminOrganizationProgram/);
+  assert.match(source, /allowedRoles\.length > 1/);
+  assert.match(source, /Выберите роль/);
 });

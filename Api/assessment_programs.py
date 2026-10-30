@@ -135,7 +135,20 @@ def current_connection(connection, *, organization_id: int) -> dict | None:
         FROM organization_assessment_program_connections c
         JOIN assessment_program_definitions p ON p.id=c.program_definition_id
         WHERE c.organization_id=%s AND c.is_current=TRUE""", (organization_id,)).fetchone()
-    return dict(row) if row else None
+    if not row:
+        return None
+    result = dict(row)
+    result['roles'] = [dict(role) for role in connection.execute(
+        """SELECT rv.id AS version_id,r.code,rv.version,
+                  rv.definition_json->'description'->>'name' AS name
+           FROM assessment_program_allowed_roles ar
+           JOIN assessment_role_profile_versions rv ON rv.id=ar.role_profile_version_id
+           JOIN assessment_role_profiles r ON r.id=rv.role_profile_id
+           WHERE ar.program_definition_id=%s
+           ORDER BY ar.display_order,rv.id""",
+        (result['program_definition_id'],),
+    ).fetchall()]
+    return result
 
 
 def connect(connection, *, organization_id: int, program_definition_id: int,

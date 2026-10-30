@@ -31,6 +31,22 @@ class ForeignKey:
     name: str = ""
 
 
+# These columns describe provenance or an action performed by a user. They do
+# not make the referenced user the owner of the child row. Following them while
+# building a purge scope can otherwise pull another organization's content or a
+# shared published artifact into the deletion plan.
+USER_ATTRIBUTION_COLUMNS = frozenset(
+    {
+        "author_user_id",
+        "created_by_user_id",
+        "invited_by_user_id",
+        "published_by_user_id",
+        "updated_by_user_id",
+    }
+)
+EMAIL_SCOPE_EXCLUDED_TABLES = frozenset({"configured_access_suppressions"})
+
+
 def _get(row, name: str, index: int):
     return row[name] if isinstance(row, dict) else row[index]
 
@@ -181,8 +197,9 @@ def _seed_orphan_users(
     connection.execute(
         """
         CREATE TEMP TABLE organization_purge_orphan_users (
-            user_id BIGINT PRIMARY KEY,
-            email TEXT
+            user_id BIGINT NOT NULL,
+            email TEXT NOT NULL,
+            PRIMARY KEY (user_id, email)
         ) ON COMMIT DROP
         """
     )
@@ -203,6 +220,17 @@ def _seed_orphan_users(
         ),
         (organization_id, organization_id),
     )
+    identities = by_name.get("user_identities")
+    if identities is not None:
+        connection.execute(
+            sql.SQL(
+                "INSERT INTO organization_purge_orphan_users(user_id,email) "
+                "SELECT identity.user_id,identity.email FROM {}.{} identity "
+                "JOIN organization_purge_orphan_users account ON account.user_id=identity.user_id "
+                "WHERE identity.is_verified=TRUE AND identity.email IS NOT NULL "
+                "ON CONFLICT DO NOTHING"
+            ).format(sql.Identifier(identities.schema), sql.Identifier(identities.name))
+        )
     connection.execute(
         sql.SQL(
             "INSERT INTO organization_purge_rows(table_oid, row_ctid) "
@@ -220,6 +248,8 @@ def _seed_account_email_rows(connection: psycopg.Connection, tables: dict[int, T
     for column_name in ('email', 'recipient_email'):
         for oid in _column_tables(connection, column_name):
             table = tables[oid]
+            if table.name in EMAIL_SCOPE_EXCLUDED_TABLES:
+                continue
             connection.execute(
                 sql.SQL(
                     "INSERT INTO organization_purge_rows(table_oid,row_ctid) "
@@ -238,9 +268,15 @@ def _seed_selected_user(connection: psycopg.Connection, tables: dict[int, TableR
     if account is None:
         raise LookupError(f'User id={user_id} not found.')
     connection.execute("""CREATE TEMP TABLE organization_purge_orphan_users(
-        user_id BIGINT PRIMARY KEY,email TEXT) ON COMMIT DROP""")
+        user_id BIGINT NOT NULL,email TEXT NOT NULL,PRIMARY KEY(user_id,email)) ON COMMIT DROP""")
     connection.execute('INSERT INTO organization_purge_orphan_users VALUES(%s,%s)',
         (user_id, _get(account, 'email', 1)))
+    identities = next((table for table in tables.values() if table.name == 'user_identities'), None)
+    if identities is not None:
+        connection.execute(sql.SQL("""INSERT INTO organization_purge_orphan_users(user_id,email)
+            SELECT user_id,email FROM {}.{} WHERE user_id=%s AND is_verified=TRUE
+              AND email IS NOT NULL ON CONFLICT DO NOTHING""").format(
+            sql.Identifier(identities.schema), sql.Identifier(identities.name)), (user_id,))
     connection.execute(sql.SQL("""INSERT INTO organization_purge_rows(table_oid,row_ctid)
         SELECT %s,target.ctid FROM {}.{} target WHERE target.id=%s""").format(
         sql.Identifier(users.schema), sql.Identifier(users.name)), (users.oid,user_id))
@@ -264,6 +300,11 @@ def _expand_foreign_keys(
         for foreign_key in foreign_keys:
             parent = tables[foreign_key.parent_oid]
             child = tables[foreign_key.child_oid]
+            if (
+                parent.name == "users"
+                and any(column in USER_ATTRIBUTION_COLUMNS for column in foreign_key.child_columns)
+            ):
+                continue
             predicates = [
                 sql.SQL("child.{} = parent.{}").format(
                     sql.Identifier(child_column), sql.Identifier(parent_column)
@@ -438,7 +479,8 @@ def purge_organization(
                 sql.SQL(
                     "INSERT INTO organization_purge_rows(table_oid, row_ctid) "
                     "SELECT %s, target.ctid FROM {}.{} target "
-                    "JOIN organization_purge_orphan_users candidate ON candidate.user_id = target.id"
+                    "WHERE EXISTS (SELECT 1 FROM organization_purge_orphan_users candidate "
+                    "WHERE candidate.user_id = target.id)"
                 ).format(sql.Identifier(users.schema), sql.Identifier(users.name)),
                 (users.oid,),
             )

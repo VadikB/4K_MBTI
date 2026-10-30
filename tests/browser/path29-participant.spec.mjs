@@ -109,9 +109,9 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     const text = ['Синтетические регулярные задачи и рабочие ситуации', 'Не знаю', 'Синтетические ограничения и взаимодействия'];
     await answer.fill(text[0]);
     await page.locator('#onboarding-home').click();
-    await expect(page.locator('#onboarding-notice')).toContainText('неотправленный текст');
+    await expect(page.locator('#onboarding-notice')).toContainText('Сейчас доступно продолжение знакомства');
     await expect(answer).toHaveValue(text[0]);
-    await answer.fill(text[0]); // Editing clears stale validation/navigation messages.
+    await answer.fill(text[0]); // The persisted dirty draft remains editable after the management return.
     const geometry = [];
     for (const width of [1440, 1280, 768, 390, 360, 320]) {
       await page.setViewportSize({ width, height: 936 });

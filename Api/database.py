@@ -4561,6 +4561,31 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS organization_transfer_operations (
+                operation_id TEXT PRIMARY KEY,
+                user_id BIGINT NOT NULL,
+                expected_source_organization_id BIGINT NOT NULL,
+                target_organization_id BIGINT NOT NULL,
+                target_role TEXT NOT NULL CHECK (target_role IN ('member', 'admin')),
+                completed_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS configured_access_suppressions (
+                email TEXT NOT NULL,
+                access_kind TEXT NOT NULL CHECK (access_kind IN ('superadmin', 'organization_admin')),
+                organization_code TEXT NOT NULL DEFAULT '',
+                reason TEXT NOT NULL,
+                created_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                PRIMARY KEY (email, access_kind, organization_code)
+            )
+            """
+        )
+        connection.execute(
+            """
             CREATE TABLE IF NOT EXISTS organization_deletion_tombstones (
                 code_sha256 TEXT PRIMARY KEY,
                 deleted_at TIMESTAMP NOT NULL DEFAULT NOW()

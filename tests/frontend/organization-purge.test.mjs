@@ -44,7 +44,8 @@ test('detached accounts remain visible when no organizations exist', () => {
 
 test('purge preview explains protected accounts', () => {
   assert.match(wiring, /preserved_reason === 'current_account'/);
-  assert.match(wiring, /preserved_reason === 'configured_account'/);
+  assert.match(wiring, /configured_access_will_be_revoked/);
+  assert.match(wiring, /Настроенные полномочия будут отозваны/);
   assert.match(wiring, /preview\.execution_blockers/);
   assert.match(wiring, /Удаление пока заблокировано/);
 });

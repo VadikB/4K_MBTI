@@ -791,7 +791,7 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
   }
 };
 
-export const assignAdminOrganizationAssessment = async (organizationId, userIds, assignmentRef) => {
+export const assignAdminOrganizationAssessment = async (organizationId, userIds, assignmentRef, roleProfileVersionId = null) => {
   const selected = [...new Set((userIds || []).map(Number).filter(Boolean))];
   const assessment = String(assignmentRef || '').trim();
   if (!selected.length) {
@@ -813,7 +813,8 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-assignments', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_ids: selected, assignment_ref: assessment, operation_id: operationId }),
+      body: JSON.stringify({ user_ids: selected, assignment_ref: assessment, operation_id: operationId,
+        ...(roleProfileVersionId ? { role_profile_version_id: Number(roleProfileVersionId) } : {}) }),
     });
     const result = await readApiResponse(response, 'Не удалось назначить оценку.');
     const items = Array.isArray(result.items) ? result.items : [];
@@ -1454,14 +1455,13 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
                 ? 'Знакомство завершено'
                 : acquaintanceStatus === 'in_progress'
                   ? 'Проходит знакомство'
-                  : !hasAssignment
-                    ? 'Оценка не назначена'
-                    : item.invitation_delivery_status === 'accepted'
+                  : item.invitation_delivery_status === 'accepted'
                       ? 'Письмо отправлено — ожидаем начала знакомства'
+                    : !hasAssignment
+                      ? 'Оценка не назначена'
                       : 'Приглашение не отправлено';
         const sendLabel = item.invitation_id ? 'Отправить повторно' : 'Отправить';
-        const isRegistered = item.registration_status === 'registered';
-        const invitationButton = isRegistered ? '' : '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
+        const invitationButton = '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
         const revokeButton = (invitationStatus === 'accepted' || invitationStatus === 'queued' || invitationStatus === 'sending')
           ? '<button type="button" data-action="revoke-member-invitation" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать ссылку</button>'
           : '';
@@ -1481,7 +1481,7 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
           '<span class="admin-organization-current-stage">' + escapeHtml(currentStage) + '</span>' +
           '</div>' +
           '<details class="admin-organization-member-statuses"><summary>Подробности статуса</summary><div>' +
-          '<span class="admin-organization-invitation-state">Допуск: разрешён</span>' +
+          '<span class="admin-organization-invitation-state">Допуск: ' + escapeHtml(item.admission_status === 'denied' ? 'запрещён' : 'разрешён') + '</span>' +
           '<span class="admin-organization-invitation-state">' + escapeHtml(registrationLabel) + '</span>' +
           '<span class="admin-organization-invitation-state">' + escapeHtml(deliveryLabels[item.invitation_delivery_status] || invitationLabels[invitationStatus] || invitationStatus) + '</span>' +
           '<span class="admin-organization-invitation-state">' + escapeHtml(linkLabels[item.invitation_link_status] || item.invitation_link_status || 'Ссылка: не создана') + '</span>' +
@@ -1584,6 +1584,13 @@ export const renderAdminOrganizations = () => {
       const activeView = organizationViews.get(orgId) || 'people';
       const availablePrograms = Array.isArray(data?.assessment_programs) ? data.assessment_programs : [];
       const currentProgram = org.assessment_program || null;
+      const allowedRoles = Array.isArray(currentProgram?.roles) ? currentProgram.roles : [];
+      const roleSelectionMarkup = allowedRoles.length > 1
+        ? '<label><span>Роль программы</span><select name="role_profile_version_id" required><option value="">Выберите роль</option>' +
+          allowedRoles.map((role) => '<option value="' + Number(role.version_id) + '">' + escapeHtml(role.name || role.code) + '</option>').join('') + '</select></label>'
+        : allowedRoles.length === 1
+          ? '<input type="hidden" name="role_profile_version_id" value="' + Number(allowedRoles[0].version_id) + '"><span>Роль: ' + escapeHtml(allowedRoles[0].name || allowedRoles[0].code) + '</span>'
+          : '';
       const programMarkup = isSuperadmin ? '<form class="admin-organization-inline-form admin-organization-program-form" data-action="connect-assessment-program">' +
         '<label><span>Программа оценки</span><select name="program_definition_id" required>' +
         '<option value="">Выберите опубликованную версию</option>' + availablePrograms.map((program) =>
@@ -1727,7 +1734,7 @@ export const renderAdminOrganizations = () => {
         '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people"><h4>Организация и участники</h4>' +
         '<p>Выбранная оценка: <strong>' + escapeHtml(selectedRef || 'не выбрана') + '</strong>. Назначение не запускает оценку.</p>' +
         '<div class="admin-organization-bulk-actions"><form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
-        '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment"><button class="primary-button compact-primary" type="submit">Назначить оценку</button></form></div>' +
+        '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment">' + roleSelectionMarkup + '<button class="primary-button compact-primary" type="submit">Назначить оценку</button></form></div>' +
         renderMemberList(org.members || [], {
           isSuperadmin,
           selectedAssessmentRef: selectedRef,

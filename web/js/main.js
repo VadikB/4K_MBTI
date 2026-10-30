@@ -208,7 +208,7 @@ const bootApp = async () => {
     }
   }
 
-  if (state.canAdmin && !state.adminDashboard?.is_superadmin && screen) {
+  if (state.canAdmin && screen) {
     if (screen === 'admin-assessment-empty') {
       state.activeArea = 'assessment';
       state.isAdmin = false;

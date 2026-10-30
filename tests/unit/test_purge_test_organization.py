@@ -1,6 +1,11 @@
 import pytest
 
-from scripts.purge_test_organization import ForeignKey, _delete_order, require_test_database
+from scripts.purge_test_organization import (
+    ForeignKey,
+    USER_ATTRIBUTION_COLUMNS,
+    _delete_order,
+    require_test_database,
+)
 
 
 def test_database_guard_accepts_only_test_names():
@@ -25,3 +30,10 @@ def test_delete_order_rejects_cross_table_cycle():
     ]
     with pytest.raises(RuntimeError, match="Cyclic"):
         _delete_order({1, 2}, foreign_keys)
+
+
+def test_user_attribution_columns_are_not_ownership_relationships():
+    assert "created_by_user_id" in USER_ATTRIBUTION_COLUMNS
+    assert "published_by_user_id" in USER_ATTRIBUTION_COLUMNS
+    assert "user_id" not in USER_ATTRIBUTION_COLUMNS
+    assert "owner_user_id" not in USER_ATTRIBUTION_COLUMNS

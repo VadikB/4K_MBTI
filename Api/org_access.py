@@ -79,6 +79,15 @@ def configured_superadmin_emails() -> set[str]:
     return {normalize_email_for_access(item) for item in _split_csv(settings.superadmin_emails_raw)}
 
 
+def configured_access_suppressed(connection, *, email: str, access_kind: str,
+                                 organization_code: str = "") -> bool:
+    return connection.execute(
+        """SELECT 1 FROM configured_access_suppressions
+           WHERE LOWER(email)=%s AND access_kind=%s AND organization_code=%s LIMIT 1""",
+        (normalize_email_for_access(email), access_kind, normalize_org_code(organization_code)),
+    ).fetchone() is not None
+
+
 def configured_org_admin_emails() -> dict[str, list[str]]:
     return {
         code: [normalize_email_for_access(email) for email in emails if normalize_email_for_access(email)]
@@ -153,6 +162,11 @@ def assign_user_organization_from_email(connection, *, user_id: int, email: str 
     for org_code, emails in admin_map.items():
         if normalized_email not in emails:
             continue
+        if configured_access_suppressed(
+            connection, email=normalized_email, access_kind="organization_admin",
+            organization_code=org_code,
+        ):
+            return
         org_row = connection.execute(
             "SELECT id FROM organizations WHERE code = %s AND is_active = TRUE LIMIT 1",
             (org_code,),
@@ -183,7 +197,9 @@ def email_has_organization_access(connection, *, email: str | None) -> bool:
     normalized_email = normalize_email_for_access(email)
     if not normalized_email:
         return False
-    if normalized_email in configured_superadmin_emails():
+    if normalized_email in configured_superadmin_emails() and not configured_access_suppressed(
+        connection, email=normalized_email, access_kind="superadmin"
+    ):
         return True
 
     ensure_configured_organizations(connection)
@@ -266,7 +282,9 @@ def get_admin_scope(connection, user) -> AdminScope:
     if user is None:
         return AdminScope()
     email = normalize_email_for_access(getattr(user, "email", None))
-    if email and email in configured_superadmin_emails():
+    if email and email in configured_superadmin_emails() and not configured_access_suppressed(
+        connection, email=email, access_kind="superadmin"
+    ):
         return AdminScope(is_superadmin=True)
 
     assign_user_organization_from_email(connection, user_id=int(user.id), email=email)

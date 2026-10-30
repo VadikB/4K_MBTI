@@ -13,6 +13,7 @@ class FakeConnection:
         self.protected_accounts = protected_accounts or []
         self.committed = False
         self.rolled_back = False
+        self.statements = []
 
     def __enter__(self):
         return self
@@ -21,10 +22,13 @@ class FakeConnection:
         return False
 
     def execute(self, query, _params=()):
+        self.statements.append((str(query), _params))
         if "SELECT id, code, is_active FROM organizations" in str(query):
             return SimpleNamespace(fetchone=lambda: self.organization)
         if "FROM organization_memberships membership JOIN users" in str(query):
             return SimpleNamespace(fetchall=lambda: self.protected_accounts)
+        if "INSERT INTO configured_access_suppressions" in str(query):
+            return SimpleNamespace(rowcount=1)
         raise AssertionError(str(query))
 
     def commit(self):
@@ -133,7 +137,7 @@ def test_purge_rejects_organization_that_would_delete_current_account(monkeypatc
     assert failure.value.detail == "CANNOT_PURGE_ORGANIZATION_WITH_CURRENT_ACCOUNT"
 
 
-def test_purge_rejects_organization_with_configured_orphan_account(monkeypatch):
+def test_purge_revokes_configured_access_before_deleting_orphan_account(monkeypatch):
     connection = FakeConnection(
         {"id": 1, "code": "test-org", "is_active": False},
         [{"id": 12, "email": "configured@example.test"}],
@@ -142,8 +146,15 @@ def test_purge_rejects_organization_with_configured_orphan_account(monkeypatch):
     monkeypatch.setattr(routes, "configured_superadmin_emails", lambda: {"configured@example.test"})
     monkeypatch.setattr(routes, "configured_org_admin_emails", lambda: {})
 
-    with pytest.raises(HTTPException) as failure:
-        routes.purge_admin_organization(1, payload(), request)
+    monkeypatch.setattr(routes, "purge_organization", lambda *_args, **_kwargs: {"public.organizations": 1})
+    invalidated = []
+    monkeypatch.setattr(routes.interviewer_agent, "invalidate_user", invalidated.append)
 
-    assert failure.value.status_code == 409
-    assert failure.value.detail == "CONFIGURED_ACCOUNT_REQUIRES_CONFIG_REMOVAL"
+    routes.purge_admin_organization(1, payload(), request)
+
+    suppression = [statement for statement in connection.statements
+        if "INSERT INTO configured_access_suppressions" in statement[0]]
+    assert len(suppression) == 1
+    assert suppression[0][1] == ("configured@example.test", 99)
+    assert invalidated == [12]
+    assert connection.committed
