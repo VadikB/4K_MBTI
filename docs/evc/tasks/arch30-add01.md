@@ -86,7 +86,11 @@
 - Реализовано:
   - D01: `scripts/plan_specialist_program_release.py` проверяет package/runtime,
     формирует реестр `CASE.SPEC.01–09` с версиями и checksum и готовит
-    идемпотентный DB import/readback; assessment publication остаётся fail-closed.
+    идемпотентный DB import/readback. После решения владельца команда получила
+    отдельный `--publish-admitted-catalog`: он требует `--published-by` и
+    `--decision-basis`, проверяет существующие PASS evidence, формирует FROZEN
+    DB snapshot, runtime binding, human-review evidence, immutable catalog и readback.
+    Без явных параметров публикация остаётся fail-closed.
   - D02: существующая транзакция назначения повторно вызывает immutable `bind()`
     и штатно доводит пригодное незапущенное назначение без source binding;
     регрессия фиксирует этот readback.
@@ -110,10 +114,13 @@
     `4c127cbb8ed3573885cccdadfc9ae8199b6f266bd3f8077644b45a3d7c8e486c`.
   - PASS — содержательное решение по D01: владелец зафиксировал точные
     `CASE.SPEC.01–09`, их версии и checksum без изменения содержания.
-  - BLOCKED — D01 technical publication/D06 live first Case: файловый кандидат
-    всё ещё `draft/WORKING/runtime_enabled=false`; необходимы контролируемый
-    lifecycle transition, QA evidence, immutable catalog publication и readback.
+  - READY / NOT_RUN — D01 technical publication: файловый кандидат остаётся
+    `draft/WORKING/runtime_enabled=false`, а release-команда готова выполнить
+    контролируемый FROZEN snapshot, QA evidence, immutable catalog publication
+    и readback. На рабочей/test БД в этой задаче команда не запускалась.
   - PASS — `11` ARCH30/ADD01 frontend tests.
+  - PASS — admission/release unit: `17 passed` (release plan + M5 package).
+  - PASS — isolated PostgreSQL catalog lifecycle regression: `1 passed`.
   - PASS — `13` затронутых HTTP tests; отдельный ранний набор — `11` PASS.
   - PASS — backend, кроме integration/e2e/llm: `672 passed, 275 deselected`.
   - PASS — isolated PostgreSQL: path29, membership race, transfer: `5 passed`.
@@ -130,7 +137,7 @@
 | Проверка | Результат | Доказательство / граница |
 |---|---|---|
 | Q01 | PASS | Машинный реестр package/runtime/Case/source hashes. |
-| Q02 | PARTIAL | Состав и checksum утверждены владельцем; import plan готов. Технический lifecycle/QA/catalog publish ещё не выполнен. |
+| Q02 | READY / NOT_RUN | Состав и checksum утверждены; команда технического lifecycle/QA/catalog publish и readback реализована, на целевой БД не запускалась. |
 | Q03 | BLOCKED | UI подключения опубликованной ProgramDefinition есть; immutable допустимый каталог D01 ещё не опубликован. |
 | Q04 | PASS | Повтор/operation fingerprint/полный `bind()` проверены HTTP. |
 | Q05 | PASS | Пригодный active incomplete assignment доводится через immutable `bind()`; frozen отклоняется контрактом. Рабочие №6–8 не изменялись. |
