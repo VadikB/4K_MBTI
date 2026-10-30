@@ -31,6 +31,7 @@ class Connection:
         self.rows = []
         self.next_id = 1
         self.operations = {}
+        self.bound_assignment_ids = []
 
     def execute(self, sql, params=()):
         if 'INSERT INTO organization_assessment_assignment_operations' in sql:
@@ -83,7 +84,11 @@ def client(monkeypatch):
     monkeypatch.setattr(routes.assessment_assignment_sources, "resolve_pilot_binding", lambda *_args, **_kwargs: {
         "assessment_configuration_id": 81, "role_profile_version_id": 91,
     })
-    monkeypatch.setattr(routes.assessment_assignment_sources, "bind", lambda *_args, **_kwargs: {"id": 1})
+    def bind(_connection, **kwargs):
+        connection.bound_assignment_ids.append(kwargs["assignment_id"])
+        return {"id": 1}
+
+    monkeypatch.setattr(routes.assessment_assignment_sources, "bind", bind)
     app = FastAPI()
     app.include_router(routes.router)
     with TestClient(app) as http:
@@ -99,6 +104,7 @@ def test_org_admin_assigns_self_and_colleague_idempotently(client):
     assert [item["status"] for item in first.json()["items"]] == ["assigned", "assigned"]
     assert [item["status"] for item in second.json()["items"]] == ["already_assigned", "already_assigned"]
     assert {(row["user_id"], row["assignment_ref"]) for row in connection.rows} == {(18, "assessment-a"), (19, "assessment-a")}
+    assert connection.bound_assignment_ids == [1, 2, 1, 2]
 
 
 def test_assignment_rejects_operation_payload_substitution(client):

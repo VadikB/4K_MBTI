@@ -626,6 +626,7 @@ test('UX-FIX20-02 preserves named drafts across all management views', async ({ 
   const memberForm = card.locator('[data-action="add-member"]');
   await memberForm.locator('[name="email"]').fill('draft.member@example.test');
   await memberForm.locator('[name="full_name"]').fill('Черновик участника');
+  await memberForm.locator('[name="role_description"]').fill('Черновик должности');
   await card.locator('input[name="invitation_email"]').check();
 
   await card.getByRole('button', { name: 'Данные организации' }).click();
@@ -641,6 +642,7 @@ test('UX-FIX20-02 preserves named drafts across all management views', async ({ 
   await card.getByRole('button', { name: 'Организация и участники' }).click();
   await expect(memberForm.locator('[name="email"]')).toHaveValue('draft.member@example.test');
   await expect(memberForm.locator('[name="full_name"]')).toHaveValue('Черновик участника');
+  await expect(memberForm.locator('[name="role_description"]')).toHaveValue('Черновик должности');
   await expect(card.locator('input[name="invitation_email"]')).toBeChecked();
 
   await card.getByRole('button', { name: 'Данные организации' }).click();

@@ -107,6 +107,7 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     const add = card.locator('form[data-action="add-member"]');
     await add.locator('[name="email"]').fill('added@example.test');
     await add.locator('[name="full_name"]').fill('Синтетический новый участник');
+    await add.locator('[name="role_description"]').fill('Синтетический специалист');
     await add.getByRole('button', { name: 'Добавить', exact: true }).click();
     await expect(add.locator('[data-operation-status]')).toContainText('Участник привязан');
     const imported = card.locator('form[data-action="import-members"]');

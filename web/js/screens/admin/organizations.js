@@ -659,8 +659,10 @@ export const deleteAdminOrganizationAdmin = async (organizationId, email) => {
 
 export const addAdminOrganizationMember = async (organizationId, payload) => {
   const normalizedEmail = String(payload?.email || '').trim();
-  if (!normalizedEmail) {
-    setStatus('Укажите email участника.', 'error');
+  const fullName = String(payload?.full_name || '').trim();
+  const roleDescription = String(payload?.role_description || '').trim();
+  if (!normalizedEmail || !fullName || !roleDescription) {
+    setStatus('Укажите email, ФИО и должность участника.', 'error');
     return false;
   }
   try {
@@ -670,8 +672,8 @@ export const addAdminOrganizationMember = async (organizationId, payload) => {
         method: 'POST',
         body: JSON.stringify({
           email: normalizedEmail,
-          full_name: String(payload?.full_name || '').trim() || null,
-          role_description: String(payload?.role_description || '').trim() || null,
+          full_name: fullName,
+          role_description: roleDescription,
           job_instructions: String(payload?.job_instructions || '').trim() || null,
         }),
       },
@@ -687,12 +689,15 @@ export const addAdminOrganizationMember = async (organizationId, payload) => {
 
 export const deleteAdminOrganizationMember = async (organizationId, email) => {
   try {
-    await requestOrganizations(
+    const result = await requestOrganizations(
       '/users/admin/organizations/' + organizationId + '/members?email=' + encodeURIComponent(email),
       { method: 'DELETE', headers: {} },
       'Не удалось отвязать участника.',
     );
-    setStatus('Участник убран из организации. Аккаунт пользователя сохранён; повторное добавление не потребует новой регистрации.', 'success');
+    const action = result?.membership_action;
+    setStatus(action?.result === 'already_absent'
+      ? 'Связь участника с организацией уже отсутствовала. Аккаунт пользователя не изменён.'
+      : 'Участник убран из организации. Аккаунт пользователя сохранён; повторное добавление не потребует новой регистрации.', 'success');
   } catch (error) {
     setStatus(error.message || 'Не удалось отвязать участника.', 'error');
   }
@@ -1731,8 +1736,8 @@ export const renderAdminOrganizations = () => {
         '<form class="admin-organization-member-form" data-action="add-member">' +
         '<h4>Добавить участника</h4><p>Для добавления нужны email, ФИО и должность.</p>' +
         '<label><span>Email</span><input name="email" type="email" placeholder="user@company.ru" required></label>' +
-        '<label><span>ФИО</span><input name="full_name" type="text" placeholder="Иван Иванов"></label>' +
-        '<label><span>Должность</span><input name="role_description" type="text" placeholder="Руководитель отдела"></label>' +
+        '<label><span>ФИО</span><input name="full_name" type="text" placeholder="Иван Иванов" required></label>' +
+        '<label><span>Должность</span><input name="role_description" type="text" placeholder="Руководитель отдела" required></label>' +
         '<button class="primary-button compact-primary" type="submit">Добавить</button>' +
         '</form>' +
         '<form class="admin-organization-import-form" data-action="import-members">' +
