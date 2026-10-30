@@ -89,6 +89,8 @@
   `npm run build:web`; browser — для изменённого UI.
 - Реальные LLM, рабочая БД и удаление рабочих организаций/аккаунтов запрещены.
 - Результаты:
+  - Release candidate: `2.0.40` (`patch` от `2.0.39`), подготовлен после
+    обязательного CI release gate; повторная сборка `web/dist` выполнена.
   - PASS — release trace: девять точных Case, BaseRole `specialist_expert`, Sales
     только профессиональный пример; package checksum
     `4c127cbb8ed3573885cccdadfc9ae8199b6f266bd3f8077644b45a3d7c8e486c`.
@@ -125,5 +127,5 @@
 | Q17 | PASS | Save/confirm/readback и confirmed-vs-preview HTTP/product-path regressions. |
 | Q18 | BLOCKED | Product path до подготовки PASS; первый Case блокируется `ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE`. |
 
-Итоговый SHA появится после commit. Публикация, test deploy и приёмка владельцем
-не подменяются локальными проверками.
+Публикация предметного артефакта, test deploy и приёмка владельцем не подменяются
+локальными проверками. Exact-head SHA и CI фиксируются в PR.
