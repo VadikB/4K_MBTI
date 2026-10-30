@@ -10,6 +10,18 @@
   поставки и назначения, проверить delta D03–D05 и предъявить D01–D06 без
   повторного широкого аудита и без удаления рабочих данных.
 
+## Решение владельца от 30.10.2026
+
+- Зафиксирован состав пилота: `CASE.SPEC.01–09` из
+  `m5-functional-personalization-cases@0.5`, BaseRole `specialist_expert`.
+- Зафиксированы текущие версии Case и их содержимое с package checksum
+  `4c127cbb8ed3573885cccdadfc9ae8199b6f266bd3f8077644b45a3d7c8e486c`;
+  Sales остаётся профессиональным примером, а не отдельной BaseRole.
+- Решение закрывает повторное продуктовое/содержательное согласование состава.
+  Оно не подменяет техническую публикацию каталога: импорт, QA evidence,
+  runtime binding, публикация immutable catalog version и readback выполняются
+  действующим release-процессом.
+
 ## Прочитанные источники
 
 - `README.md`, `CONTRIBUTING.md`, `AGENTS.md`.
@@ -46,9 +58,11 @@
 - Публичный контракт/схема без совместимости: **нет** для аддитивной реализации;
   несовместимое изменение запрещено.
 - Миграция/удаление данных без допуска: **нет**; рабочие данные не меняются.
-- Нет применимого предметного источника: **да только для фактической публикации** —
-  package сам фиксирует `methodology_admission=NOT_RUN`. Это блокирует
-  `artifact_publish` и live D06, но не технический release-контур и регрессии.
+- Нет применимого предметного источника: **нет** — владелец 30.10.2026 зафиксировал
+  точный набор, версии и checksum. Остаётся технический разрыв lifecycle: файловый
+  кандидат всё ещё помечен `draft/WORKING/runtime_disabled`, поэтому публикация
+  должна выполнить контролируемый переход, QA evidence и readback, а не ручную
+  замену флагов в артефакте.
 - Новый формат артефакта: **нет**; используются существующие package/catalog/
   ProgramDefinition contracts.
 - Права/граница deploy без допуска: **нет** для локальной реализации;
@@ -94,8 +108,11 @@
   - PASS — release trace: девять точных Case, BaseRole `specialist_expert`, Sales
     только профессиональный пример; package checksum
     `4c127cbb8ed3573885cccdadfc9ae8199b6f266bd3f8077644b45a3d7c8e486c`.
-  - BLOCKED — D01 publication/D06 live first Case: package `draft`, Case
-    `WORKING`, `runtime_enabled=false`, `methodology_admission=NOT_RUN`.
+  - PASS — содержательное решение по D01: владелец зафиксировал точные
+    `CASE.SPEC.01–09`, их версии и checksum без изменения содержания.
+  - BLOCKED — D01 technical publication/D06 live first Case: файловый кандидат
+    всё ещё `draft/WORKING/runtime_enabled=false`; необходимы контролируемый
+    lifecycle transition, QA evidence, immutable catalog publication и readback.
   - PASS — `11` ARCH30/ADD01 frontend tests.
   - PASS — `13` затронутых HTTP tests; отдельный ранний набор — `11` PASS.
   - PASS — backend, кроме integration/e2e/llm: `672 passed, 275 deselected`.
@@ -113,8 +130,8 @@
 | Проверка | Результат | Доказательство / граница |
 |---|---|---|
 | Q01 | PASS | Машинный реестр package/runtime/Case/source hashes. |
-| Q02 | BLOCKED | Import plan готов; предметный admission отсутствует, публикации нет. |
-| Q03 | BLOCKED | UI подключения опубликованной ProgramDefinition есть; реального допустимого каталога D01 нет. |
+| Q02 | PARTIAL | Состав и checksum утверждены владельцем; import plan готов. Технический lifecycle/QA/catalog publish ещё не выполнен. |
+| Q03 | BLOCKED | UI подключения опубликованной ProgramDefinition есть; immutable допустимый каталог D01 ещё не опубликован. |
 | Q04 | PASS | Повтор/operation fingerprint/полный `bind()` проверены HTTP. |
 | Q05 | PASS | Пригодный active incomplete assignment доводится через immutable `bind()`; frozen отклоняется контрактом. Рабочие №6–8 не изменялись. |
 | Q06 | PASS | Ограничение ролей принадлежит ProgramDefinition; глобального specialist-only валидатора нет. |
@@ -125,7 +142,7 @@
 | Q15 | PASS / NOT_RUN | CSS/автотест PASS; визуальная приёмка владельцем NOT_RUN. |
 | Q16 | PASS | UI/API/CSV required и read-only member stage regressions. |
 | Q17 | PASS | Save/confirm/readback и confirmed-vs-preview HTTP/product-path regressions. |
-| Q18 | BLOCKED | Product path до подготовки PASS; первый Case блокируется `ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE`. |
+| Q18 | BLOCKED | Product path до подготовки PASS; до технической публикации каталога первый Case блокируется `ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE`. |
 
 Публикация предметного артефакта, test deploy и приёмка владельцем не подменяются
 локальными проверками. Exact-head SHA и CI фиксируются в PR.
