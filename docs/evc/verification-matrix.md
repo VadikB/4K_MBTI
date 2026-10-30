@@ -51,12 +51,12 @@
 - pytest на событии `pull_request`: быстрые unit- и HTTP-контракты на отдельном
   PostgreSQL 16; integration и browser на этом событии не запускаются.
 
-Перед merge владелец добавляет к PR метку `run-full-verification`. Обязательный job
-`full-verification` выполняет unit, HTTP, integration и browser acceptance на
-изолированной БД в `pull_request`-контексте. Новый commit после успешного полного
-прогона делает доказательство устаревшим: при сохранённой метке workflow запускается
-повторно для нового head. Активный ruleset не разрешает merge без checks `frontend`,
-`pytest` и `full-verification`.
+Обязательный job `full-verification` автоматически запускается при открытии или
+повторном открытии PR и после каждого нового commit. Он выполняет unit, HTTP,
+integration и browser acceptance на изолированной БД в `pull_request`-контексте.
+Новый commit после успешного полного прогона делает доказательство устаревшим и
+запускает workflow повторно для нового head. Активный ruleset не разрешает merge
+без checks `frontend`, `pytest` и `full-verification`.
 
 Для документального PR полный CI также сохраняется. Job `deploy-test` на PR
 ожидаемо пропускается: он применяется после push в main, а не является доказательством
@@ -67,8 +67,8 @@
 
 Workflow `CI` запускается на `pull_request` и push в `main`: на PR выполняются
 `frontend` и быстрый `pytest`, а на push в `main` — только `deploy-test`.
-Workflow `Full verification` запускается событием `pull_request` после добавления
-метки `run-full-verification` и при последующих обновлениях head с сохранённой меткой.
+Workflow `Full verification` автоматически запускается событиями `opened`,
+`reopened` и `synchronize` для `pull_request`; ручная метка не требуется.
 
 ## Отчёт и сбои
 

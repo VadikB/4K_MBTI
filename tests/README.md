@@ -72,9 +72,10 @@ npm run test:backend:coverage
 ## Непрерывная интеграция (CI)
 
 На `pull_request` workflow `.github/workflows/backend-tests.yml` выполняет быстрые
-unit- и HTTP-проверки. Перед merge к PR добавляется метка `run-full-verification`;
-workflow `.github/workflows/full-verification.yml` выполняет unit, HTTP, integration
-и browser acceptance в PR-контексте актуального head.
+unit- и HTTP-проверки. Workflow `.github/workflows/full-verification.yml`
+автоматически запускается при открытии или повторном открытии PR и после каждого
+нового commit; он выполняет unit, HTTP, integration и browser acceptance в
+PR-контексте актуального head.
 Активный ruleset запрещает merge без checks `frontend`, `pytest` и
 `full-verification`. После push в `main` проверки повторно не запускаются: workflow
 выполняет только `deploy-test` уже проверенного commit.
