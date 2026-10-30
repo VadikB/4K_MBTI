@@ -7,6 +7,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   frontend:
     runs-on: ubuntu-latest
@@ -53,9 +57,9 @@ jobs:
       - name: Verify committed frontend build
         run: git diff --exit-code -- web/dist
 
-  pytest:
+  backend:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
 
     services:
       postgres:
@@ -107,6 +111,54 @@ jobs:
       - name: HTTP contract smoke tests
         run: python -m pytest -m e2e tests/e2e
 
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: agent4k_pytest
+          POSTGRES_USER: pytest
+          POSTGRES_PASSWORD: pytest
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pytest -d agent4k_pytest"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_POOL_MIN_SIZE: "0"
+      DEEPSEEK_API_KEYS: ""
+      TEST_DATABASE_URL: postgresql://pytest:pytest@127.0.0.1:5432/agent4k_pytest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            "fastapi>=0.115.0" \
+            "pydantic>=2.0.0" \
+            "psycopg[binary]>=3.2.0" \
+            "psycopg_pool>=3.2.0" \
+            "python-dotenv>=1.0.1" \
+            "typst>=0.14.8" \
+            "pypdf>=6.0.0" \
+            "pytest>=8.3.0" \
+            "pytest-cov>=6.0.0" \
+            "httpx2" \
+            "uvicorn>=0.30.0"
+
       - name: Integration tests
         shell: bash
         run: |
@@ -122,6 +174,60 @@ jobs:
             echo "::error title=Integration tests failed::$details"
             exit "$status"
           fi
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard:
+          - 1/2
+          - 2/2
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: agent4k_pytest
+          POSTGRES_USER: pytest
+          POSTGRES_PASSWORD: pytest
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pytest -d agent4k_pytest"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_POOL_MIN_SIZE: "0"
+      DEEPSEEK_API_KEYS: ""
+      TEST_DATABASE_URL: postgresql://pytest:pytest@127.0.0.1:5432/agent4k_pytest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            "fastapi>=0.115.0" \
+            "pydantic>=2.0.0" \
+            "psycopg[binary]>=3.2.0" \
+            "psycopg_pool>=3.2.0" \
+            "python-dotenv>=1.0.1" \
+            "typst>=0.14.8" \
+            "pypdf>=6.0.0" \
+            "pytest>=8.3.0" \
+            "pytest-cov>=6.0.0" \
+            "httpx2" \
+            "uvicorn>=0.30.0"
 
       - uses: actions/setup-node@v4
         with:
@@ -141,17 +247,37 @@ jobs:
         env:
           STAND_ADMIN_URL: postgresql://pytest:pytest@127.0.0.1:5432/postgres
           BROWSER_PYTHON: python
-        run: xvfb-run -a npm run test:browser
+        run: xvfb-run -a npm run test:browser -- --shard=${{ matrix.shard }}
 
       - name: Browser evidence (no credentials or auth traces)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: browser-acceptance
+          name: browser-acceptance-${{ strategy.job-index }}
           path: |
             .test-stand/browser-output/
             .test-stand/browser-results.json
           if-no-files-found: error
+
+  pytest:
+    if: always()
+    needs:
+      - backend
+      - integration
+      - browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Verify parallel test jobs
+        env:
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          INTEGRATION_RESULT: ${{ needs.integration.result }}
+          BROWSER_RESULT: ${{ needs.browser.result }}
+        run: |
+          test "$BACKEND_RESULT" = "success"
+          test "$INTEGRATION_RESULT" = "success"
+          test "$BROWSER_RESULT" = "success"
 
   deploy-test:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

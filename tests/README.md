@@ -71,6 +71,7 @@ npm run test:backend:coverage
 
 ## Непрерывная интеграция (CI)
 
-Workflow `.github/workflows/backend-tests.yml` запускается на каждый push и
-pull request. Он поднимает временный PostgreSQL 16, выполняет быстрые тесты,
-а затем integration-набор. Пароли и данные рабочей БД в CI не используются.
+Workflow `.github/workflows/backend-tests.yml` запускается для pull request,
+push в `main` и вручную. Быстрые backend-, integration- и browser-наборы идут
+параллельно на независимых runners с временным PostgreSQL 16, после чего job
+`pytest` агрегирует их результат. Пароли и данные рабочей БД в CI не используются.

@@ -48,7 +48,10 @@
 В текущем CI для каждого PR обязательны успешные jobs `frontend` и `pytest`:
 
 - frontend: аудит зависимостей, lint, frontend regression tests, сборка и совпадение `web/dist`;
-- pytest: unit, HTTP и integration на отдельном PostgreSQL 16.
+- backend: unit и HTTP-контракты на отдельном PostgreSQL 16;
+- integration: integration-набор на отдельном PostgreSQL 16;
+- browser: два Playwright shards на независимых runners и PostgreSQL 16;
+- pytest: обязательный агрегатор результатов `backend`, `integration` и всех browser shards.
 
 Для документального PR полный CI также сохраняется. Job `deploy-test` на PR
 ожидаемо пропускается: он применяется после push в main, а не является доказательством
@@ -60,6 +63,8 @@ Workflow запускается на `pull_request`, на push только в `
 `workflow_dispatch`. Поэтому локальный commit и push feature-ветки без PR не запускают
 полный CI; открытие/обновление PR запускает один набор; merge создаёт push в `main`,
 повторно проверяет объединённый commit и после успеха допускает `deploy-test`.
+При новом commit в том же PR незавершённый устаревший run отменяется. Проверки
+актуального PR и post-merge `main` остаются разными обязательными запусками.
 
 ## Отчёт и сбои
 

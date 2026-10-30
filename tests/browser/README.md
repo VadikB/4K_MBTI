@@ -17,6 +17,8 @@ STAND_ADMIN_URL=postgresql://pytest:pytest@127.0.0.1:5432/postgres npm run test:
 Локально используется `.venv/bin/python`; `BROWSER_PYTHON=python` — для CI.
 На Linux для установки системных зависимостей: `npx playwright install --with-deps chromium`.
 Нет implicit skip при отсутствии БД/браузера. Retries выключены, workers=1.
+В CI набор распределяется между двумя независимыми runners через Playwright shards;
+каждый runner использует собственные PostgreSQL service и файловую систему.
 
 Основные A/B/C и positive T11 идут через реальный UI, cookie auth, HTTP, PostgreSQL,
 workers и экспорт PDF. Подменяется только AI-граница явным техническим gateway;
@@ -33,7 +35,8 @@ N3/N4 — явно отделённые редкие fixtures **после** з�
 исхода/версии проверяются существующим backend/HTTP/integration набором.
 
 Артефакты: `.test-stand/browser-output/` и `.test-stand/browser-results.json`;
-CI прикладывает их как `browser-acceptance`. Вложения содержат только synthetic
+CI прикладывает их отдельно для каждого shard как `browser-acceptance-*`.
+Вложения содержат только synthetic
 Report/PDF/screenshots, серверный лог и assessment HTTP-ответы. Auth trace/cookies/
 пароли не записываются. Не публиковать каталоги со `state.json` или `prepare.log`.
 Успех browser suite подтверждает техническую интеграцию указанного gateway,
