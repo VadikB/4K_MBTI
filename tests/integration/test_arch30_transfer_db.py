@@ -31,6 +31,10 @@ def transfer_db(test_database_url, monkeypatch):
         setup.execute("""CREATE TABLE configured_organization_membership_suppressions(
             user_id BIGINT NOT NULL,organization_id BIGINT NOT NULL,reason TEXT NOT NULL,
             created_by_user_id BIGINT,created_at TIMESTAMP DEFAULT NOW(),PRIMARY KEY(user_id,organization_id))""")
+        setup.execute("""CREATE TABLE organization_transfer_operations(
+            operation_id TEXT PRIMARY KEY,user_id BIGINT NOT NULL,
+            expected_source_organization_id BIGINT NOT NULL,target_organization_id BIGINT NOT NULL,
+            target_role TEXT NOT NULL,completed_at TIMESTAMP DEFAULT NOW())""")
         setup.execute("""CREATE TABLE organization_assessment_assignments(
             organization_id BIGINT,recipient_user_id BIGINT,status TEXT,revoked_at TIMESTAMP)""")
         setup.execute("""CREATE TABLE organization_invitations(
@@ -71,12 +75,12 @@ def _request():
     return SimpleNamespace(cookies={routes.SESSION_COOKIE_NAME: "session"})
 
 
-def _payload(target=4, role="member"):
+def _payload(target=4, role="member", operation_id="transfer-operation-1"):
     return AdminOrganizationTransferRequest(
         expected_source_organization_id=3,
         target_organization_id=target,
         target_role=role,
-        operation_id="transfer-operation-1",
+        operation_id=operation_id,
     )
 
 
@@ -128,6 +132,27 @@ def test_transfer_rejects_last_admin_without_partial_changes(transfer_db):
     assert transfer_db.execute("SELECT organization_id FROM organization_memberships WHERE user_id=7").fetchone()["organization_id"] == 3
 
 
+def test_same_organization_role_change_protects_last_admin_and_operation_payload(transfer_db):
+    transfer_db.execute("INSERT INTO organization_memberships VALUES(3,7,'admin','admin_add',99,NOW(),NOW())")
+    transfer_db.commit()
+
+    with pytest.raises(HTTPException) as last_admin:
+        routes.transfer_admin_organization_user(7, _payload(target=3, role="member"), _request())
+    assert last_admin.value.detail == "ORGANIZATION_TRANSFER_LAST_ADMIN"
+    transfer_db.rollback()
+    assert transfer_db.execute("SELECT role FROM organization_memberships WHERE user_id=7").fetchone()["role"] == "admin"
+
+    transfer_db.execute("INSERT INTO organization_memberships VALUES(3,8,'admin','admin_add',99,NOW(),NOW())")
+    transfer_db.commit()
+    routes.transfer_admin_organization_user(7, _payload(target=3, role="member"), _request())
+    routes.transfer_admin_organization_user(7, _payload(target=3, role="member"), _request())
+    assert transfer_db.execute("SELECT role FROM organization_memberships WHERE user_id=7").fetchone()["role"] == "member"
+
+    with pytest.raises(HTTPException) as changed:
+        routes.transfer_admin_organization_user(7, _payload(target=3, role="admin"), _request())
+    assert changed.value.detail == "ORGANIZATION_TRANSFER_OPERATION_CONFLICT"
+
+
 def test_transfer_closes_active_cycle_via_m7_and_rejects_inactive_target(transfer_db, monkeypatch):
     transfer_db.execute("INSERT INTO organization_memberships VALUES(3,7,'member','admin_add',99,NOW(),NOW())")
     transfer_db.execute(
@@ -151,5 +176,7 @@ def test_transfer_closes_active_cycle_via_m7_and_rejects_inactive_target(transfe
     transfer_db.commit()
 
     with pytest.raises(HTTPException) as inactive:
-        routes.transfer_admin_organization_user(7, _payload(target=5), _request())
+        routes.transfer_admin_organization_user(
+            7, _payload(target=5, operation_id="transfer-operation-inactive"), _request()
+        )
     assert inactive.value.detail == "ORGANIZATION_TRANSFER_TARGET_INACTIVE"

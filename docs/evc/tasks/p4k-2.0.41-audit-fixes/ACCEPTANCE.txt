@@ -1,0 +1,67 @@
+МАТРИЦА ПРИЁМКИ ИСПРАВЛЕНИЙ 2.0.41
+База: 3e35937b55408424bc99d2b5baaa9499d6d43468
+Ветка: codex/p4k-2-0-41-audit-fixes
+Дата проверки: 2026-10-30
+
+PASS означает выполненную проверку текущего diff. NOT_RUN не считается успехом.
+Live test/pilot, реальные письма, production/test данные и LLM не использовались.
+
+АВТОМАТИЧЕСКИЕ ПРОВЕРКИ
+T01 PASS | Python py_compile затронутых backend-модулей.
+T02 PASS | Полный backend unit: 675 passed, 277 deselected.
+T03 PASS | Полный HTTP e2e: 89 passed, 12 deselected.
+T04 PASS | Frontend Node: 104 passed, 0 failed.
+T05 PASS | ESLint.
+T06 PASS | Web build; web/dist пересобран.
+T07 PASS | PostgreSQL 16 integration: purge 5 + transfer 4 = 9 passed.
+T08 PASS | git diff --check.
+T09 PASS | Адресные unit/HTTP входят в полные наборы выше.
+T10 NOT_RUN | GitHub CI frontend/pytest текущего head.
+T11 NOT_RUN | Playwright auth/admin: 70 сценариев прошли до одного старого
+ожидания registered invitation; после обновления адресный сценарий прошёл.
+Полный набор на окончательном diff повторно не запускался; live test-стенд не использовался.
+
+R01 PASS | FK авторства исключены из ownership expansion. PostgreSQL readback
+подтвердил удаление scope A и сохранность чужой организации/опубликованного
+артефакта для organization/account entry point.
+
+R02 NOT_RUN | Verified alias и принадлежащий ему token проверены PostgreSQL;
+unverified alias сохранён как negative control. Configured-access suppression
+проверен unit, текущий аккаунт защищён. Cached reply теперь сверяет существование
+аккаунта с БД и инвалидирует локальный user cache. Два реальных API process,
+выполняющийся job и поздняя запись после purge не воспроизводились.
+
+R03 PASS | PostgreSQL: last admin при source==target защищён; точный повтор
+operation_id идемпотентен; изменённый payload конфликтует; M7 путь сохранён.
+
+R04 NOT_RUN | Source/frontend regression: superadmin использует общий restore
+assessment-area; user_id/full_name/job_description удалены из URL builders.
+Фактический browser replay всех экранов и чужих ресурсов не выполнен.
+
+R05 NOT_RUN | Dirty draft сохраняется в sessionStorage по scope
+user/organization/assignment/questionnaire и очищается только после серверного
+подтверждения/смены identity. Реальный reload каждого из трёх вопросов и гонка
+late GET в браузере не выполнены.
+
+R06 NOT_RUN | Current ProgramDefinition возвращает только allowed roles; UI
+показывает одну роль либо обязательный выбор нескольких и отправляет точный
+role_profile_version_id. PostgreSQL UI→API→snapshot с двухрольной fixture не запущен.
+
+R07 NOT_RUN | Registered participant больше не блокируется UI/API; стадия письма
+имеет приоритет над отсутствующим assignment, admission выводится из сервера.
+HTTP regression прошёл; контролируемый почтовый приёмник и полный stage browser
+сценарий не запускались.
+
+R08 NOT_RUN | Raw PROGRAM_* удалён из пользовательских ошибок назначения,
+техническая причина журналируется; role/program mismatch описывает действие.
+Полная матрица 403/409/422/500/timeout в браузере не пройдена.
+
+НЕИЗМЕННОСТЬ
+PASS | Опубликованные ProgramDefinition/RoleProfile/specialist-pilot@1.0 не менялись.
+PASS | Вопрос переноса во время знакомства не менялся.
+PASS | Реальные destructive smoke, письма, merge/deploy не выполнялись.
+
+ОТКАТ
+Откатить commit/PR целиком. Новая таблица configured_access_suppressions должна
+быть сохранена при откате, если в неё уже записаны отзывы; удаление таблицы без
+экспорта вернёт configured-права и потому не является безопасным откатом.

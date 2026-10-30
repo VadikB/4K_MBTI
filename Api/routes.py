@@ -990,6 +990,25 @@ def _physical_organization_purge_available() -> bool:
     return bool(settings.deletion_ledger_path) or "test" in database_name or "pytest" in database_name
 
 
+def _suppress_configured_access_for_deleted_email(connection, *, email: str, actor_user_id: int) -> None:
+    normalized = normalize_email(email)
+    if normalized in configured_superadmin_emails():
+        connection.execute(
+            """INSERT INTO configured_access_suppressions
+               (email,access_kind,organization_code,reason,created_by_user_id)
+               VALUES(%s,'superadmin','','account_purge',%s) ON CONFLICT DO NOTHING""",
+            (normalized, actor_user_id),
+        )
+    for organization_code, emails in configured_org_admin_emails().items():
+        if normalized in emails:
+            connection.execute(
+                """INSERT INTO configured_access_suppressions
+                   (email,access_kind,organization_code,reason,created_by_user_id)
+                   VALUES(%s,'organization_admin',%s,'account_purge',%s) ON CONFLICT DO NOTHING""",
+                (normalized, organization_code, actor_user_id),
+            )
+
+
 def _build_admin_organizations(connection, scope: AdminScope | None = None) -> AdminOrganizationsResponse:
     ensure_configured_organizations(connection)
     connection.commit()
@@ -3930,13 +3949,15 @@ def preview_admin_organization_purge(organization_id: int, request: Request) -> 
         preview_accounts = []
         for row in accounts:
             preserved_reason = None
+            configured_access_will_be_revoked = False
             if int(row['id']) == int(user.id):
                 preserved_reason = 'current_account'
             elif normalize_email(row['email']) in protected_emails:
-                preserved_reason = 'configured_account'
+                configured_access_will_be_revoked = bool(row['will_delete_account'])
             preview_accounts.append({'user_id': int(row['id']), 'email': row['email'],
                 'will_delete_account': bool(row['will_delete_account']) and preserved_reason is None,
-                'preserved_reason': preserved_reason})
+                'preserved_reason': preserved_reason,
+                'configured_access_will_be_revoked': configured_access_will_be_revoked})
         try:
             counts,_,_ = build_purge_plan(connection, organization_id)
         except LookupError as exc:
@@ -3964,7 +3985,12 @@ def preview_admin_user_purge(user_id: int, request: Request) -> dict:
             raise HTTPException(404, detail=str(exc)) from exc
         return {'target_type':'account','target_id':user_id,'email':account['email'],
             'fingerprint':purge_plan_fingerprint(connection),
-            'tables':counts,'total_rows':sum(counts.values())}
+            'tables':counts,'total_rows':sum(counts.values()),
+            'configured_access_will_be_revoked': normalize_email(account['email']) in (
+                configured_superadmin_emails() | {
+                    email for emails in configured_org_admin_emails().values() for email in emails
+                }
+            )}
 
 
 @router.get('/admin/assessment-programs')
@@ -4160,12 +4186,6 @@ def send_personal_organization_invitations(
                 ).fetchone()
                 if member is None:
                     raise ValueError("Участник не добавлен в эту организацию.")
-                if bool(member.get("is_registered")):
-                    results.append(PersonalInvitationResultItem(
-                        email=email, status="already_registered",
-                        error="Участник уже зарегистрирован, приглашение не требуется.",
-                    ))
-                    continue
                 if settings.auth_magic_link_dev_mode or settings.email_provider in {"", "console"}:
                     raise EmailDeliveryError("Почтовый провайдер не настроен для отправки приглашений.")
                 row = connection.execute(
@@ -4245,17 +4265,6 @@ def send_personal_organization_invitations(
                 ).fetchone()
                 if recipient_allowed is None:
                     raise ValueError("Организация неактивна или доступ участника отозван.")
-                if bool(recipient_allowed.get("is_registered")):
-                    connection.execute(
-                        "UPDATE organization_invitations SET revoked_at=COALESCE(revoked_at,NOW()) WHERE id=%s",
-                        (invitation_id,),
-                    )
-                    connection.commit()
-                    results.append(PersonalInvitationResultItem(
-                        email=email, status="already_registered", invitation_id=invitation_id,
-                        error="Участник уже зарегистрирован, приглашение не требуется.",
-                    ))
-                    continue
                 if str(locked["token_hash"]) != hash_invitation_token(raw_token):
                     raise ValueError(
                         "Старая операция не может быть безопасно восстановлена. "
@@ -4411,7 +4420,7 @@ def assign_organization_assessment(
     ).encode("utf-8")).hexdigest()
     results: list[AssessmentAssignmentResultItem] = []
     with get_connection() as connection:
-        _require_organization_admin(connection, current_user, organization_id)
+        assignment_scope = _require_organization_admin(connection, current_user, organization_id)
         readiness = questionnaire_sources.assignment_readiness(
             connection, organization_id=organization_id, assignment_ref=assignment_ref,
         )
@@ -4434,15 +4443,28 @@ def assign_organization_assessment(
                 program_binding = assessment_assignment_sources.resolve_pilot_binding(
                     connection, organization_id=organization_id, assignment_ref=assignment_ref)
         except ValueError as exc:
+            logger.warning(
+                "Assessment assignment source resolution failed organization_id=%s code=%s",
+                organization_id,
+                str(exc),
+            )
             raise HTTPException(
                 status_code=409,
-                detail=f"Оценка ещё не настроена для запуска. Обратитесь к ответственному за настройку. [{exc}]",
+                detail=(
+                    "Оценка ещё не настроена для запуска. Подключите опубликованную программу "
+                    "в карточке организации или обратитесь к суперадминистратору."
+                    if assignment_scope.is_superadmin
+                    else "Оценка ещё не настроена для запуска. Обратитесь к суперадминистратору."
+                ),
             ) from exc
         if payload.assessment_configuration_id is not None and (
             int(payload.assessment_configuration_id) != int(program_binding["assessment_configuration_id"])
             or int(payload.role_profile_version_id) != int(program_binding["role_profile_version_id"])
         ):
-            raise HTTPException(status_code=409, detail="PROGRAM_SOURCE_OVERRIDE_NOT_ALLOWED")
+            raise HTTPException(
+                status_code=409,
+                detail="Выбранная роль или версия программы не относится к текущей оценке. Обновите карточку и повторите назначение.",
+            )
         previous = connection.execute(
             """SELECT DISTINCT request_fingerprint
                FROM organization_assessment_assignments
@@ -4719,8 +4741,6 @@ def purge_admin_organization(
             raise HTTPException(status_code=404, detail="Organization not found")
         if confirmation_code != str(organization["code"]):
             raise HTTPException(status_code=409, detail="Confirmation code does not match organization code")
-        protected_emails = configured_superadmin_emails() | {
-            email for emails in configured_org_admin_emails().values() for email in emails}
         protected_account = connection.execute("""SELECT u.id,u.email
             FROM organization_memberships membership JOIN users u ON u.id=membership.user_id
             WHERE membership.organization_id=%s
@@ -4729,9 +4749,11 @@ def purge_admin_organization(
             ORDER BY u.id""", (organization_id, organization_id)).fetchall()
         if any(int(row['id']) == int(user.id) for row in protected_account):
             raise HTTPException(status_code=409, detail="CANNOT_PURGE_ORGANIZATION_WITH_CURRENT_ACCOUNT")
-        if any(normalize_email(row['email']) in protected_emails for row in protected_account):
-            raise HTTPException(status_code=409, detail="CONFIGURED_ACCOUNT_REQUIRES_CONFIG_REMOVAL")
         try:
+            for row in protected_account:
+                _suppress_configured_access_for_deleted_email(
+                    connection, email=row['email'], actor_user_id=int(user.id)
+                )
             intent = {"operation_id": payload.operation_id, "target_type": "organization",
                 "target_id": organization_id, "preview_fingerprint": payload.preview_fingerprint}
             def persist_intent(validated_fingerprint: str) -> None:
@@ -4749,6 +4771,8 @@ def purge_admin_organization(
             )
             record_receipt(connection, intent)
             connection.commit()
+            for row in protected_account:
+                interviewer_agent.invalidate_user(int(row['id']))
         except (LookupError, ValueError) as exc:
             connection.rollback()
             raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -4789,13 +4813,12 @@ def purge_admin_account(user_id: int, payload: AdminAccountPurgeRequest, request
             raise HTTPException(status_code=404, detail="User not found")
         if normalize_email(payload.confirmation_email) != normalize_email(account["email"]):
             raise HTTPException(status_code=409, detail="Confirmation email does not match account")
-        protected_emails = configured_superadmin_emails() | {
-            email for emails in configured_org_admin_emails().values() for email in emails}
         if int(actor.id) == user_id:
             raise HTTPException(status_code=409, detail="CANNOT_PURGE_CURRENT_ACCOUNT")
-        if normalize_email(account["email"]) in protected_emails:
-            raise HTTPException(status_code=409, detail="CONFIGURED_ACCOUNT_REQUIRES_CONFIG_REMOVAL")
         try:
+            _suppress_configured_access_for_deleted_email(
+                connection, email=account['email'], actor_user_id=int(actor.id)
+            )
             intent = {"operation_id": payload.operation_id, "target_type": "account",
                 "target_id": user_id, "preview_fingerprint": payload.preview_fingerprint}
             def persist_intent(validated_fingerprint: str) -> None:
@@ -4807,6 +4830,7 @@ def purge_admin_account(user_id: int, payload: AdminAccountPurgeRequest, request
                 expected_fingerprint=payload.preview_fingerprint, on_validated=persist_intent)
             record_receipt(connection, intent)
             connection.commit()
+            interviewer_agent.invalidate_user(user_id)
         except (LookupError, ValueError) as exc:
             connection.rollback()
             raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -4978,6 +5002,27 @@ def transfer_admin_organization_user(
     actor = web_session_service.get_user_by_token(token)
     with get_connection() as connection:
         _require_superadmin(connection, actor)
+        prior_operation = connection.execute(
+            """SELECT user_id,expected_source_organization_id,target_organization_id,target_role
+               FROM organization_transfer_operations WHERE operation_id=%s FOR UPDATE""",
+            (payload.operation_id,),
+        ).fetchone()
+        requested_operation = (
+            user_id,
+            int(payload.expected_source_organization_id),
+            int(payload.target_organization_id),
+            payload.target_role,
+        )
+        if prior_operation is not None:
+            recorded_operation = (
+                int(prior_operation["user_id"]),
+                int(prior_operation["expected_source_organization_id"]),
+                int(prior_operation["target_organization_id"]),
+                prior_operation["target_role"],
+            )
+            if recorded_operation != requested_operation:
+                raise HTTPException(status_code=409, detail="ORGANIZATION_TRANSFER_OPERATION_CONFLICT")
+            return _build_admin_organizations(connection)
         membership = connection.execute(
             """
             SELECT membership.organization_id, membership.role, membership.admission_source,
@@ -5002,12 +5047,24 @@ def transfer_admin_organization_user(
         if not bool(target["is_active"]):
             raise HTTPException(status_code=409, detail="ORGANIZATION_TRANSFER_TARGET_INACTIVE")
         if source_organization_id == int(payload.target_organization_id):
-            # A lost response may repeat the original request with the old expected source.
-            # The membership row lock makes this a readback/idempotent role assertion.
+            if membership["role"] == "admin" and payload.target_role != "admin":
+                another_admin = connection.execute(
+                    """SELECT 1 FROM organization_memberships
+                       WHERE organization_id=%s AND role='admin' AND user_id<>%s LIMIT 1""",
+                    (source_organization_id, user_id),
+                ).fetchone()
+                if another_admin is None:
+                    raise HTTPException(status_code=409, detail="ORGANIZATION_TRANSFER_LAST_ADMIN")
             connection.execute(
                 "UPDATE organization_memberships SET role=%s, admission_source='superadmin_transfer', "
                 "admitted_by_user_id=%s, admitted_at=NOW(), updated_at=NOW() WHERE user_id=%s",
                 (payload.target_role, int(actor.id), user_id),
+            )
+            connection.execute(
+                """INSERT INTO organization_transfer_operations
+                   (operation_id,user_id,expected_source_organization_id,target_organization_id,target_role)
+                   VALUES(%s,%s,%s,%s,%s)""",
+                (payload.operation_id, *requested_operation),
             )
             connection.commit()
             return _build_admin_organizations(connection)
@@ -5079,6 +5136,12 @@ def transfer_admin_organization_user(
             (payload.target_organization_id, payload.target_role, int(actor.id), user_id, source_organization_id),
         )
         connection.execute("DELETE FROM web_user_sessions WHERE user_id=%s", (user_id,))
+        connection.execute(
+            """INSERT INTO organization_transfer_operations
+               (operation_id,user_id,expected_source_organization_id,target_organization_id,target_role)
+               VALUES(%s,%s,%s,%s,%s)""",
+            (payload.operation_id, *requested_operation),
+        )
         connection.commit()
         return _build_admin_organizations(connection)
 

@@ -110,11 +110,6 @@ export const navigateToScreen = (screen) => {
     screen,
     ui: String(Date.now()),
   });
-  if (state.pendingUser?.id) {
-    params.set('user_id', String(state.pendingUser.id));
-    params.set('full_name', state.pendingUser.full_name || 'Пользователь');
-    params.set('job_description', state.pendingUser.job_description || 'Должность не указана');
-  }
   if (state.assessmentSessionId) {
     params.set('session_id', String(state.assessmentSessionId));
   }
@@ -137,12 +132,6 @@ export const syncUrlState = (screen, options = {}) => {
   params.set('screen', screen);
   params.set('ui', String(Date.now()));
   if (state.assessmentRuntimeKind === 'cycle' && state.productCycleId) params.set('cycle_id', state.productCycleId);
-
-  if (state.pendingUser?.id) {
-    params.set('user_id', String(state.pendingUser.id));
-    params.set('full_name', state.pendingUser.full_name || 'Пользователь');
-    params.set('job_description', state.pendingUser.job_description || 'Должность не указана');
-  }
 
   if (state.sessionId) {
     params.set('agent_session_id', state.sessionId);

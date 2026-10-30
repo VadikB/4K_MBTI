@@ -390,7 +390,7 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await expect(rows).toHaveCount(2);
   await expect(rows.first().locator('.admin-organization-invitation-state')).toHaveCount(5);
   await expect(rows.nth(1)).toContainText('Регистрация: завершена');
-  await expect(rows.nth(1).locator('[data-action="send-member-invitation"]')).toHaveCount(0);
+  await expect(rows.nth(1).locator('[data-action="send-member-invitation"]')).toHaveCount(1);
 
   // 683 CSS px approximates the available width at 200% browser zoom on a 1366 px display.
   for (const width of [320, 375, 390, 683, 768, 1024, 1366, 1440]) {

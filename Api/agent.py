@@ -3067,6 +3067,10 @@ class InterviewerAgent:
 
         if state.user_id != authenticated_user_id:
             raise PermissionError("Profile session does not belong to the authenticated user")
+        with get_connection() as connection:
+            if connection.execute("SELECT 1 FROM users WHERE id=%s", (authenticated_user_id,)).fetchone() is None:
+                self.invalidate_user(authenticated_user_id)
+                raise KeyError("Session not found")
         state.history.append({"role": "user", "content": text})
 
         if state.mode == ConversationMode.EXISTING_USER:
@@ -3118,6 +3122,12 @@ class InterviewerAgent:
     def invalidate_session(self, session_id):
         with self._lock:
             self._sessions.pop(session_id, None)
+
+    def invalidate_user(self, user_id: int) -> None:
+        with self._lock:
+            stale = [session_id for session_id, state in self._sessions.items() if state.user_id == user_id]
+            for session_id in stale:
+                self._sessions.pop(session_id, None)
 
     def confirm_existing_profile(
         self,

@@ -23,6 +23,7 @@ let editingFromSummary = false;
 let localOperation = null;
 let progressTail = Promise.resolve();
 const operationKeys = new Set();
+const draftKeys = new Set();
 const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 }[char]));
@@ -31,6 +32,21 @@ const summaryIndex = () => 2 + questions().length;
 const explanationIndex = () => summaryIndex() + 1;
 const readinessIndex = () => explanationIndex() + 2;
 const operationKey = () => 'agent4k.onboardingOperation:' + scopeKey + ':' + (model?.late_readiness?.personalized_profile_id || '');
+const draftKey = () => 'agent4k.onboardingDraft:' + scopeKey;
+const readDraft = () => {
+  if (!scopeKey) return {};
+  const key = draftKey(); draftKeys.add(key);
+  try { return JSON.parse(window.sessionStorage.getItem(key) || '{}') || {}; } catch { return {}; }
+};
+const writeDraft = () => {
+  if (!scopeKey) return;
+  const key = draftKey(); draftKeys.add(key);
+  const dirty = Object.fromEntries(Object.entries(answers).filter(([name, value]) => value !== savedAnswers[name]));
+  try {
+    if (Object.keys(dirty).length) window.sessionStorage.setItem(key, JSON.stringify(dirty));
+    else window.sessionStorage.removeItem(key);
+  } catch { /* The in-memory draft remains available until navigation. */ }
+};
 const storeOperation = (operation) => {
   localOperation = { operation_id: operation.operation_id, status: operation.status,
     ...(operation.error ? { error: operation.error } : {}) };
@@ -173,7 +189,7 @@ const loadAcquaintance = async () => {
   scopeKey = nextScope;
   model = next;
   savedAnswers = { ...(next.state?.answers_json || {}) };
-  answers = { ...savedAnswers, ...dirty };
+  answers = { ...savedAnswers, ...readDraft(), ...dirty };
   loadFailed = false;
   if (next.preparation_operation) localOperation = next.preparation_operation;
   else {
@@ -256,6 +272,7 @@ export const renderOnboarding = ({ focus = false } = {}) => {
     input.setAttribute('aria-invalid', String(Boolean(errorMessage))); input.disabled = busy || reviewMode || Boolean(model?.mandatory_complete);
     input.addEventListener('input', () => {
       answers[step.answerKey] = input.value;
+      writeDraft();
       errorMessage = ''; notice = ''; input.setAttribute('aria-invalid', 'false'); showMessages();
       resizeAnswer(input);
     });
@@ -404,6 +421,7 @@ const advance = async () => {
       if (!String(answers[step.answerKey] || '').trim()) throw new Error('Напишите ответ. Если точного ответа нет, можно написать «Не знаю».');
       model.state = await api('/acquaintance/answers', { method: 'PUT', body: JSON.stringify({ answers: { [step.answerKey]: answers[step.answerKey] }, confirm: false }) });
       savedAnswers = { ...model.state.answers_json };
+      writeDraft();
       state.onboardingIndex = editingFromSummary ? summaryIndex() : state.onboardingIndex + 1;
       editingFromSummary = false; persistProgress();
     } else if (step.action === 'consent') {
@@ -413,6 +431,7 @@ const advance = async () => {
       if (!model.mandatory_complete) {
         model.state = await api('/acquaintance/answers', { method: 'PUT', body: JSON.stringify({ answers, confirm: true }) });
         savedAnswers = { ...model.state.answers_json }; model.mandatory_complete = true;
+        writeDraft();
       }
       state.onboardingIndex = explanationIndex();
       renderOnboarding({ focus: true }); persistProgress();
@@ -459,7 +478,7 @@ export const initOnboarding = () => {
     if (busy) return;
     captureInput();
     if (Object.entries(answers).some(([key, value]) => value !== savedAnswers[key])) {
-      notice = 'В поле есть неотправленный текст. Сохраните ответ перед переходом; текст оставлен здесь.'; showMessages(); return;
+      writeDraft();
     }
     const owner = identity(), epoch = state.identityEpoch, run = generation;
     busy = true; renderOnboarding();
@@ -482,6 +501,8 @@ export const initOnboarding = () => {
     generation += 1; preparationTask?.controller.abort(); preparationTask = null;
     progressTail = Promise.resolve();
     for (const key of operationKeys) { try { window.sessionStorage.removeItem(key); } catch { /* No storage access. */ } }
+    for (const key of draftKeys) { try { window.sessionStorage.removeItem(key); } catch { /* No storage access. */ } }
+    draftKeys.clear();
     operationKeys.clear(); model = null; answers = {}; savedAnswers = {}; scopeKey = ''; localOperation = null;
     busy = false; loading = false; errorMessage = ''; notice = ''; preparationError = null;
   });

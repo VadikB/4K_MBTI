@@ -27,7 +27,8 @@ def purge_db(test_database_url):
         connection.execute("""CREATE TABLE user_identities(
             id BIGINT PRIMARY KEY,
             user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
-            email TEXT NOT NULL)""")
+            email TEXT NOT NULL,
+            is_verified BOOLEAN NOT NULL DEFAULT FALSE)""")
         connection.execute("""CREATE TABLE auth_password_credentials(
             id BIGINT PRIMARY KEY,
             user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
@@ -35,6 +36,16 @@ def purge_db(test_database_url):
         connection.execute("""CREATE TABLE auth_action_tokens(
             id BIGINT PRIMARY KEY,email TEXT NOT NULL,token_hash TEXT NOT NULL)""")
         connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY, code TEXT UNIQUE, name TEXT)")
+        connection.execute("""CREATE TABLE organization_invitations(
+            id BIGINT PRIMARY KEY,
+            organization_id BIGINT REFERENCES organizations(id),
+            created_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+            payload TEXT NOT NULL)""")
+        connection.execute("""CREATE TABLE program_definitions(
+            id BIGINT PRIMARY KEY,
+            created_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+            status TEXT NOT NULL,
+            definition TEXT NOT NULL)""")
         connection.execute("""CREATE TABLE organization_memberships(
             id BIGSERIAL PRIMARY KEY,
             organization_id BIGINT REFERENCES organizations(id) ON DELETE CASCADE,
@@ -63,10 +74,24 @@ def purge_db(test_database_url):
         connection.execute("INSERT INTO user_role_profiles VALUES (1000,10,'orphan profile'),(3000,30,'shared profile')")
         connection.execute("UPDATE users SET active_profile_id=1000 WHERE id=10")
         connection.execute("UPDATE users SET active_profile_id=3000 WHERE id=30")
-        connection.execute("INSERT INTO user_identities VALUES (101,10,'orphan@example.test'),(301,30,'shared@example.test')")
+        connection.execute("""INSERT INTO user_identities VALUES
+            (101,10,'orphan@example.test',TRUE),
+            (111,10,'verified-alias@example.test',TRUE),
+            (112,10,'unverified-alias@example.test',FALSE),
+            (301,30,'shared@example.test',TRUE)""")
         connection.execute("INSERT INTO auth_password_credentials VALUES (102,10,'orphan@example.test'),(302,30,'shared@example.test')")
         connection.execute("INSERT INTO auth_action_tokens VALUES (103,'orphan@example.test','old-token'),(303,'shared@example.test','shared-token')")
+        connection.execute("""INSERT INTO auth_action_tokens VALUES
+            (113,'verified-alias@example.test','verified-alias-token'),
+            (114,'unverified-alias@example.test','unverified-control-token')""")
         connection.execute("INSERT INTO organizations VALUES (1, 'purge-me', 'Purge me'), (2, 'keep-me', 'Keep me')")
+        connection.execute("""INSERT INTO organization_invitations VALUES
+            (701,1,10,'owned by organization A'),
+            (702,2,10,'foreign content authored by A'),
+            (703,2,20,'foreign control')""")
+        connection.execute("""INSERT INTO program_definitions VALUES
+            (801,10,'published','shared published artifact'),
+            (802,20,'published','foreign control')""")
         connection.execute("""INSERT INTO organization_memberships(organization_id,user_id) VALUES
             (1,10),(1,30),(2,20),(2,30)""")
         profile_id = connection.execute(
@@ -107,7 +132,18 @@ def test_full_purge_removes_orphan_user_and_preserves_shared_user(purge_db):
     assert purge_db.execute("SELECT id FROM user_role_profiles ORDER BY id").fetchall() == [(3000,)]
     assert purge_db.execute("SELECT id FROM user_sessions ORDER BY id").fetchall() == [(200,), (300,)]
     assert purge_db.execute("SELECT id FROM m5_cycles ORDER BY id").fetchall() == [(600,)]
-    assert purge_db.execute("SELECT email FROM auth_action_tokens ORDER BY email").fetchall() == [('shared@example.test',)]
+    assert purge_db.execute("SELECT id,created_by_user_id FROM organization_invitations ORDER BY id").fetchall() == [
+        (702, None), (703, 20)
+    ]
+    assert purge_db.execute("SELECT id,created_by_user_id FROM program_definitions ORDER BY id").fetchall() == [
+        (801, None), (802, 20)
+    ]
+    assert purge_db.execute("SELECT email FROM auth_action_tokens ORDER BY email").fetchall() == [
+        ('shared@example.test',), ('unverified-alias@example.test',)
+    ]
+    assert purge_db.execute("SELECT token_hash FROM auth_action_tokens ORDER BY token_hash").fetchall() == [
+        ('shared-token',), ('unverified-control-token',)
+    ]
     purge_db.execute("DELETE FROM organization_memberships WHERE organization_id=2 AND user_id=30")
     purge_db.execute("INSERT INTO organization_memberships(organization_id,user_id) VALUES (2,30)")
     assert purge_db.execute(
@@ -128,7 +164,7 @@ def test_full_purge_removes_orphan_user_and_preserves_shared_user(purge_db):
 
 def test_detached_account_purge_removes_credentials_and_preserves_other_accounts(purge_db):
     purge_db.execute('DELETE FROM organization_memberships WHERE user_id=20')
-    purge_db.execute("INSERT INTO user_identities VALUES(201,20,'other@example.test')")
+    purge_db.execute("INSERT INTO user_identities VALUES(201,20,'other@example.test',TRUE)")
     purge_db.execute("INSERT INTO auth_password_credentials VALUES(202,20,'other@example.test')")
     purge_db.commit()
     counts,_,_ = build_account_purge_plan(purge_db,20)
@@ -139,6 +175,12 @@ def test_detached_account_purge_removes_credentials_and_preserves_other_accounts
     assert purge_db.execute('SELECT id FROM users ORDER BY id').fetchall() == [(10,),(30,)]
     assert purge_db.execute("SELECT COUNT(*) FROM auth_password_credentials WHERE email='other@example.test'").fetchone()[0] == 0
     assert purge_db.execute('SELECT COUNT(*) FROM organizations').fetchone()[0] == 2
+    assert purge_db.execute("SELECT id,created_by_user_id FROM organization_invitations ORDER BY id").fetchall() == [
+        (701, 10), (702, 10), (703, None)
+    ]
+    assert purge_db.execute("SELECT id,created_by_user_id FROM program_definitions ORDER BY id").fetchall() == [
+        (801, 10), (802, None)
+    ]
 
 
 def test_intent_callback_runs_only_after_preview_fingerprint_validation(purge_db):

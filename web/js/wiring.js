@@ -1579,12 +1579,14 @@ if (adminOrganizationsList) {
       return;
     }
     if (form.dataset.action === 'assign-member-assessment') {
+      const formData = new FormData(form);
       const userIds = [...card.querySelectorAll('input[name="invitation_email"]:checked')]
         .map((checkbox) => Number(checkbox.dataset.userId))
         .filter(Boolean);
       withScreen(loadAdminOrganizations, (module) =>
         module.assignAdminOrganizationAssessment(
           organizationId, userIds, module.getSelectedAdminOrganizationAssessment(organizationId),
+          formData.get('role_profile_version_id') || null,
         ),
       );
       return;
@@ -1776,6 +1778,8 @@ if (adminOrganizationsList) {
         const tables = Object.entries(preview.tables || {}).filter(([, count]) => Number(count) > 0)
           .map(([name, count]) => name + ': ' + Number(count)).join(', ');
         const typed = window.prompt('Будут удалены аккаунт и связанные данные (' + tables + '). ' +
+          (preview.configured_access_will_be_revoked
+            ? 'Настроенные полномочия этого email будут постоянно отозваны. ' : '') +
           'Общие методологические материалы останутся. Для подтверждения введите email: ' + email);
         if (typed === null || String(typed).trim().toLowerCase() !== email.toLowerCase()) {
           window.alert('Email подтверждения не совпадает. Удаление отменено.');
@@ -1806,10 +1810,13 @@ if (adminOrganizationsList) {
           .map(([name, count]) => name + ': ' + Number(count)).join(', ');
         const preserved = sharedAccounts.map((account) => account.email +
           (account.preserved_reason === 'current_account' ? ' (текущий аккаунт)' :
-            account.preserved_reason === 'configured_account' ? ' (задан конфигурацией)' : '')).join(', ') || 'нет';
+            '')).join(', ') || 'нет';
+        const revokedConfigured = deletedAccounts.filter((account) => account.configured_access_will_be_revoked)
+          .map((account) => account.email).join(', ');
         const summary = 'Будут удалены организация, связанные записи и аккаунты без других организаций. ' +
           'Строк: ' + Number(preview.total_rows || 0) + (tableSummary ? ' (' + tableSummary + ')' : '') +
           '. Полностью удаляемых аккаунтов: ' + deletedAccounts.length +
+          (revokedConfigured ? '. Настроенные полномочия будут отозваны: ' + revokedConfigured : '') +
           '. Останутся защищённые или используемые другими организациями аккаунты: ' + preserved +
           '. Общие методологические материалы останутся, потому что не принадлежат организации.';
         const blockers = Array.isArray(preview.execution_blockers) ? preview.execution_blockers : [];
