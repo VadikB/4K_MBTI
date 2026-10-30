@@ -48,7 +48,15 @@
 В текущем CI для каждого PR обязательны успешные jobs `frontend` и `pytest`:
 
 - frontend: аудит зависимостей, lint, frontend regression tests, сборка и совпадение `web/dist`;
-- pytest: unit, HTTP и integration на отдельном PostgreSQL 16.
+- pytest на событии `pull_request`: быстрые unit- и HTTP-контракты на отдельном
+  PostgreSQL 16; integration и browser на этом событии не запускаются.
+
+Перед merge владелец один раз запускает workflow `Full verification` для актуальной
+head-ветки PR. Обязательный job `full-verification` выполняет unit, HTTP, integration
+и browser acceptance на изолированной БД. Новый commit после успешного полного
+прогона делает доказательство устаревшим: workflow запускается повторно для нового head.
+До включения repository ruleset это ручной стоп-гейт; после включения ruleset GitHub
+не должен разрешать merge без checks `frontend`, `pytest` и `full-verification`.
 
 Для документального PR полный CI также сохраняется. Job `deploy-test` на PR
 ожидаемо пропускается: он применяется после push в main, а не является доказательством
@@ -56,10 +64,10 @@
 целевой ветки; после изменения base или разрешения конфликтов проверить CI заново.
 Наличие этого документа не означает, что branch protection уже настроен.
 
-Workflow запускается на `pull_request`, на push только в `main` и вручную через
-`workflow_dispatch`. Поэтому локальный commit и push feature-ветки без PR не запускают
-полный CI; открытие/обновление PR запускает один набор; merge создаёт push в `main`,
-повторно проверяет объединённый commit и после успеха допускает `deploy-test`.
+Workflow `CI` запускается на `pull_request`, push в `main` и вручную через
+`workflow_dispatch`. На переходном этапе push в `main` сохраняет полный набор перед
+`deploy-test`; он будет удалён отдельным изменением только после активации ruleset.
+Workflow `Full verification` запускается вручную на выбранной head-ветке PR.
 
 ## Отчёт и сбои
 

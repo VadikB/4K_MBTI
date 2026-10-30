@@ -108,6 +108,7 @@ jobs:
         run: python -m pytest -m e2e tests/e2e
 
       - name: Integration tests
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set +e
@@ -124,27 +125,32 @@ jobs:
           fi
 
       - uses: actions/setup-node@v4
+        if: github.event_name != 'pull_request'
         with:
           node-version: "22"
           cache: npm
 
       - name: Install browser test dependencies
+        if: github.event_name != 'pull_request'
         run: npm ci
 
       - name: Install Chromium system dependencies
+        if: github.event_name != 'pull_request'
         run: npx playwright install-deps chromium
 
       - name: Install Chromium browser
+        if: github.event_name != 'pull_request'
         run: npx playwright install chromium
 
       - name: Browser acceptance (isolated bootstrap 10.2)
+        if: github.event_name != 'pull_request'
         env:
           STAND_ADMIN_URL: postgresql://pytest:pytest@127.0.0.1:5432/postgres
           BROWSER_PYTHON: python
         run: xvfb-run -a npm run test:browser
 
       - name: Browser evidence (no credentials or auth traces)
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: browser-acceptance
