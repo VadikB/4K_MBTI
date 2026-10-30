@@ -1756,7 +1756,8 @@ if (adminOrganizationsList) {
       const organizationCode = String(card?.getAttribute('data-organization-code') || '').trim();
       const confirmationCode = window.prompt(
         'Физическое удаление уничтожит все связанные данные организации «' + organizationName +
-        '». Для подтверждения введите код: ' + organizationCode,
+        '», а также аккаунты, identities, credentials и сессии пользователей, которые не состоят больше ни в одной организации. ' +
+        'Аккаунты участников других организаций сохранятся. Для подтверждения введите код: ' + organizationCode,
       );
       if (confirmationCode === null) return;
       if (String(confirmationCode).trim() !== organizationCode) {
@@ -1768,7 +1769,9 @@ if (adminOrganizationsList) {
         window.alert('Backup reference обязателен. Удаление отменено.');
         return;
       }
-      if (!window.confirm('Удалить организацию «' + organizationName + '» физически? Действие необратимо.')) {
+      if (!window.confirm(
+        'Удалить организацию «' + organizationName + '» физически вместе с orphan-аккаунтами? Действие необратимо.',
+      )) {
         return;
       }
       withScreen(loadAdminOrganizations, (module) => module.purgeAdminOrganization(

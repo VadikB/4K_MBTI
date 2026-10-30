@@ -17,7 +17,15 @@ test('physical purge requires exact code, backup reference and final confirmatio
   assert.match(wiring, /confirmationCode\)\.trim\(\) !== organizationCode/);
   assert.match(wiring, /backupReference/);
   assert.match(wiring, /Backup reference обязателен/);
+  assert.match(wiring, /аккаунты, identities, credentials и сессии/);
+  assert.match(wiring, /Аккаунты участников других организаций сохранятся/);
+  assert.match(wiring, /orphan-аккаунтами/);
   assert.match(wiring, /Действие необратимо/);
+});
+
+test('removing a member preserves their account for another organization', () => {
+  assert.match(organizations, /Аккаунт сохранится; повторная регистрация не потребуется/);
+  assert.match(organizations, /Убрать из участников/);
 });
 
 test('physical purge request includes all backend confirmations', () => {

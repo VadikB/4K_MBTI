@@ -1257,7 +1257,10 @@ export const purgeAdminOrganization = async (organizationId, confirmationCode, b
       },
       'Не удалось физически удалить организацию.',
     );
-    setStatus('Организация «' + label + '» и все связанные данные физически удалены.', 'success');
+    setStatus(
+      'Организация «' + label + '», все связанные данные и orphan-аккаунты физически удалены. Аккаунты участников других организаций сохранены.',
+      'success',
+    );
   } catch (error) {
     setStatus(error.message || 'Не удалось физически удалить организацию «' + label + '».', 'error');
   }
