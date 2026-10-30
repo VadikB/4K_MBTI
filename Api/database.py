@@ -4526,6 +4526,29 @@ def ensure_core_schema() -> None:
         )
         connection.execute(
             """
+            CREATE TABLE IF NOT EXISTS organization_membership_action_audit (
+                id BIGSERIAL PRIMARY KEY,
+                actor_user_id BIGINT,
+                target_user_id BIGINT,
+                organization_id BIGINT NOT NULL,
+                relationship_type TEXT NOT NULL,
+                action TEXT NOT NULL,
+                result TEXT NOT NULL,
+                affected_rows INTEGER NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                CHECK (relationship_type IN ('member', 'admin')),
+                CHECK (action IN ('remove')),
+                CHECK (result IN ('removed', 'already_absent')),
+                CHECK (affected_rows >= 0)
+            )
+            """
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_organization_membership_action_audit_target "
+            "ON organization_membership_action_audit(organization_id, target_user_id, created_at)"
+        )
+        connection.execute(
+            """
             CREATE TABLE IF NOT EXISTS configured_organization_membership_suppressions (
                 user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,

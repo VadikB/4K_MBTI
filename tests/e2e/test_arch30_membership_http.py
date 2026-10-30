@@ -16,12 +16,15 @@ pytestmark = pytest.mark.e2e
 
 
 class _Connection:
-    def __init__(self):
+    def __init__(self, *, delete_rowcount=1):
         self.committed = False
         self.queries = []
+        self.rowcount = 0
+        self.delete_rowcount = delete_rowcount
 
     def execute(self, query, params=None):
         self.queries.append((" ".join(query.split()), params))
+        self.rowcount = self.delete_rowcount if "DELETE FROM organization_memberships" in query else 0
         return self
 
     def fetchone(self):
@@ -76,7 +79,8 @@ def test_org_admin_conflict_is_409_without_foreign_tenant_leak(monkeypatch, memb
     monkeypatch.setattr(routes, "_attach_user_to_organization", attach)
     response = http.post(
         "/users/admin/organizations/4/members",
-        json={"email": "person@example.test", "full_name": "Не должно сохраниться"},
+        json={"email": "person@example.test", "full_name": "Не должно сохраниться",
+              "role_description": "Специалист"},
     )
 
     assert response.status_code == 409
@@ -103,13 +107,97 @@ def test_superadmin_conflict_includes_open_or_transfer_action(monkeypatch, membe
     monkeypatch.setattr(routes, "_attach_user_to_organization", attach)
     response = http.post(
         "/users/admin/organizations/4/members",
-        json={"email": "person@example.test"},
+        json={"email": "person@example.test", "full_name": "Участник",
+              "role_description": "Специалист"},
     )
 
     assert response.status_code == 409
     assert "Организация А" in response.json()["detail"]
     assert "перенесите пользователя" in response.json()["detail"]
     assert not connection.committed
+
+
+def test_member_requires_full_name_and_position_before_database_write(membership_http):
+    http, connection = membership_http
+    response = http.post(
+        "/users/admin/organizations/4/members",
+        json={"email": "person@example.test", "full_name": " ", "role_description": " "},
+    )
+    assert response.status_code == 422
+    assert connection.queries == []
+
+
+def test_member_csv_skips_rows_without_name_or_position(monkeypatch, membership_http):
+    http, connection = membership_http
+    monkeypatch.setattr(
+        routes,
+        "_require_organization_admin",
+        lambda *_args: AdminScope(is_superadmin=False, organization_ids=(4,)),
+    )
+    attached = []
+    monkeypatch.setattr(routes, "_attach_user_to_organization", lambda *_args, **kwargs: attached.append(kwargs))
+
+    response = http.post(
+        "/users/admin/organizations/4/members/import",
+        json={"csv_text": (
+            "email,full_name,role_description\n"
+            "missing-name@example.test,,Специалист\n"
+            "missing-position@example.test,Иван Иванов,  \n"
+        )},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["imported_count"] == 0
+    assert response.json()["skipped_count"] == 2
+    assert response.json()["errors"] == [
+        "Строка 2: не указаны обязательные поля: ФИО",
+        "Строка 3: не указаны обязательные поля: должность",
+    ]
+    assert attached == []
+    assert connection.committed
+
+
+def test_member_removal_reports_and_audits_affected_rows(monkeypatch, membership_http):
+    http, connection = membership_http
+    monkeypatch.setattr(
+        routes,
+        "_require_organization_admin",
+        lambda *_args: AdminScope(is_superadmin=False, organization_ids=(4,)),
+    )
+
+    response = http.delete(
+        "/users/admin/organizations/4/members",
+        params={"email": "person@example.test"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["membership_action"] == {
+        "target_user_id": 3,
+        "organization_id": 4,
+        "relationship_type": "member",
+        "result": "removed",
+        "affected_rows": 1,
+    }
+    assert any(
+        "INSERT INTO organization_membership_action_audit" in query
+        and params == (18, 3, 4, "removed", 1)
+        for query, params in connection.queries
+    )
+    assert connection.committed
+
+    connection.delete_rowcount = 0
+    repeated = http.delete(
+        "/users/admin/organizations/4/members",
+        params={"email": "person@example.test"},
+    )
+    assert repeated.status_code == 200
+    assert repeated.json()["membership_action"]["result"] == "already_absent"
+    assert repeated.json()["membership_action"]["affected_rows"] == 0
+    assert any(
+        "INSERT INTO organization_membership_action_audit" in query
+        and params == (18, 3, 4, "already_absent", 0)
+        for query, params in connection.queries
+    )
 
 
 def test_organization_admin_cannot_call_superadmin_transfer(monkeypatch, membership_http):

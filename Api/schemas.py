@@ -963,6 +963,7 @@ class AdminOrganizationsResponse(BaseModel):
     purge_preview_available: bool = False
     assessment_programs: list[dict] = Field(default_factory=list)
     detached_accounts: list[dict] = Field(default_factory=list)
+    membership_action: dict | None = None
     items: list[AdminOrganizationItem]
 
 
@@ -1014,9 +1015,17 @@ class AdminOrganizationAdminRequest(BaseModel):
 
 class AdminOrganizationMemberRequest(BaseModel):
     email: str
-    full_name: str | None = None
-    role_description: str | None = None
+    full_name: str = Field(min_length=1, max_length=200)
+    role_description: str = Field(min_length=1, max_length=300)
     job_instructions: str | None = None
+
+    @field_validator("full_name", "role_description")
+    @classmethod
+    def required_text(cls, value: str) -> str:
+        normalized = str(value or "").strip()
+        if not normalized:
+            raise ValueError("Поле обязательно для административного добавления участника.")
+        return normalized
 
 
 class AdminOrganizationTransferRequest(BaseModel):

@@ -225,7 +225,8 @@ def internal():
         assert participant.get(base + '/assessment-source-options').status_code in {401, 403, 404}
         with get_connection() as c:
             assert c.execute('SELECT COUNT(*) AS n FROM assessment_personalized_profiles WHERE user_id=%s', (uid,)).fetchone()['n'] == 1
-        restored = admin.post(base + '/members', json={'email': email, 'full_name': 'Synthetic new participant'})
+        restored = admin.post(base + '/members', json={'email': email,
+            'full_name': 'Synthetic new participant', 'role_description': 'Synthetic actual position'})
         assert restored.status_code == 200, restored.text
         with get_connection() as c:
             assert c.execute("SELECT 1 FROM organization_memberships WHERE organization_id=%s AND user_id=%s AND role='member'", (org, uid)).fetchone()

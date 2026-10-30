@@ -5103,8 +5103,10 @@ def delete_admin_organization_member(organization_id: int, email: str, request: 
             """,
             (normalized_email,),
         ).fetchone()
+        affected_rows = 0
+        target_user_id = int(user_row["id"]) if user_row is not None else None
         if user_row is not None:
-            connection.execute(
+            result = connection.execute(
                 """
                 DELETE FROM organization_memberships
                 WHERE organization_id = %s
@@ -5113,8 +5115,26 @@ def delete_admin_organization_member(organization_id: int, email: str, request: 
                 """,
                 (organization_id, int(user_row["id"])),
             )
-            connection.commit()
-        return _build_admin_organizations(connection, scope)
+            affected_rows = int(result.rowcount or 0)
+        action_result = "removed" if affected_rows else "already_absent"
+        connection.execute(
+            """
+            INSERT INTO organization_membership_action_audit (
+                actor_user_id, target_user_id, organization_id, relationship_type,
+                action, result, affected_rows
+            ) VALUES (%s, %s, %s, 'member', 'remove', %s, %s)
+            """,
+            (int(user.id), target_user_id, organization_id, action_result, affected_rows),
+        )
+        connection.commit()
+        response = _build_admin_organizations(connection, scope)
+        return response.model_copy(update={"membership_action": {
+            "target_user_id": target_user_id,
+            "organization_id": organization_id,
+            "relationship_type": "member",
+            "result": action_result,
+            "affected_rows": affected_rows,
+        }})
 
 
 @router.post("/admin/organizations/{organization_id}/members/reset-password", response_model=AdminOrganizationsResponse)
@@ -5434,13 +5454,24 @@ def import_admin_organization_members(
                 skipped_count += 1
                 errors.append(f"Строка {line_number}: email не указан или некорректен")
                 continue
+            full_name = _csv_value(row, "full_name", "name", "fio", "фио")
+            role_description = _csv_value(
+                row, "role_description", "position", "job_title", "role", "должность", "роль"
+            )
+            if not full_name or not role_description:
+                skipped_count += 1
+                missing = "ФИО и должность" if not full_name and not role_description else (
+                    "ФИО" if not full_name else "должность"
+                )
+                errors.append(f"Строка {line_number}: не указаны обязательные поля: {missing}")
+                continue
             try:
                 _attach_user_to_organization(
                     connection,
                     organization_id=organization_id,
                     email=email,
-                    full_name=_csv_value(row, "full_name", "name", "fio", "фио"),
-                    role_description=_csv_value(row, "role_description", "position", "job_title", "role", "должность", "роль"),
+                    full_name=full_name,
+                    role_description=role_description,
                     job_instructions=_csv_value(row, "job_instructions", "duties", "instructions", "job_description", "обязанности", "инструкции"),
                     admission_source="csv_import",
                     admitted_by_user_id=int(user.id),
