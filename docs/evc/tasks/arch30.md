@@ -84,8 +84,8 @@
 
 ## Действия выпуска
 
-- `branch_push=false`, `pr=false`, `merge=false`, `deploy=false`,
-  `version_bump=false`, `artifact_publish=false`.
+- `branch_push=true`, `pr=true` (`#131`), `version_bump=true` (`2.0.39`),
+  `merge=false`, `deploy=false`, `artifact_publish=false`.
 - Флаги меняются только по действующему release-процессу после локальной проверки.
 
 ## Проверки
@@ -187,7 +187,7 @@ owned stand; synthetic mail sink; реальные LLM/письма/удален
 | A31 | PARTIAL | ProgramDefinition и подключение готовы; реальный smoke ждёт технической публикации программы с существующим допущенным nine-case catalog. Synthetic fixture не объявлен продуктовым каталогом. |
 | A32 | PASS (local) | R03 invitation tests используют разрешённый public base URL и server identity; mail sink, не реальное письмо. |
 | A33 | PASS (regression), NOT_RUN (performance evidence) | Version/browser recovery tests PASS; отдельные cold/repeat timing traces не снимались, потому что доказанной новой задержки нет. |
-| A34 | NOT_RUN | Push/PR/CI/version/deploy/publish не разрешены задачей; локальные результаты не объявлены публикацией. |
+| A34 | IN_PROGRESS | Ветка и PR #131 созданы; обязательный CI выполняется. Patch-кандидат `2.0.39` подготовлен после release guard. Merge/deploy/publish не выполнялись. |
 
 ## Изменения данных и совместимость
 

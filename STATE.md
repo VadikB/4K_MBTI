@@ -31,8 +31,9 @@
   integration/e2e/llm: 671 PASS / 273 deselected; предупреждение только
   Starlette deprecation.
 - Финальный HTTP/e2e: 86 PASS / 858 deselected; JS lint `--quiet` PASS.
-- `branch_push=false`, `pr=false`, `merge=false`, `deploy=false`,
-  `version_bump=false`, `artifact_publish=false`; реальное удаление не выполнялось.
+- `branch_push=true`, `pr=true` (`#131`), `version_bump=true` (`2.0.39`),
+  `merge=false`, `deploy=false`, `artifact_publish=false`; реальное удаление не
+  выполнялось.
 - Локальная реализация и применимая матрица завершены. Следующий внешний gate:
   человеческий review и, только после разрешения владельца, commit/PR и exact-head CI.
 
