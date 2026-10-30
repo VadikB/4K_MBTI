@@ -39,6 +39,9 @@ if os.getenv("AGENT4K_ISOLATED_STAND") == "1":
         check_schema(connection)
 ensure_core_schema()
 with get_connection() as connection:
+    if settings.deletion_ledger_path:
+        from Api.deletion_ledger import assert_reconciled
+        assert_reconciled(connection, settings.deletion_ledger_path)
     ensure_lab_schema(connection)
     connection.commit()
 web_session_service.ensure_schema()

@@ -52,7 +52,6 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     await expect(card.locator('[data-operation-status]')).toContainText('Выберите хотя бы одного участника');
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
     const profile = card.locator('form[data-action="update-profile"]');
-    await profile.locator('[name="profile"]').fill('Синтетическая карточка организации');
     await profile.getByRole('button', { name: 'Сохранить карточку' }).click();
     await expect(profile.locator('[data-operation-status]')).toContainText('Карточка организации сохранена');
     const form = card.locator('form[data-action="preview-early-data"]');

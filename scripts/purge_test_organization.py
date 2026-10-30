@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Callable, Iterable
 
 import psycopg
 from psycopg import sql
@@ -180,14 +181,16 @@ def _seed_orphan_users(
     connection.execute(
         """
         CREATE TEMP TABLE organization_purge_orphan_users (
-            user_id BIGINT PRIMARY KEY
+            user_id BIGINT PRIMARY KEY,
+            email TEXT
         ) ON COMMIT DROP
         """
     )
     connection.execute(
         sql.SQL(
-            "INSERT INTO organization_purge_orphan_users(user_id) "
-            "SELECT DISTINCT membership.user_id FROM {}.{} membership "
+            "INSERT INTO organization_purge_orphan_users(user_id,email) "
+            "SELECT DISTINCT membership.user_id,account.email FROM {}.{} membership "
+            "JOIN users account ON account.id=membership.user_id "
             "WHERE membership.organization_id = %s "
             "AND NOT EXISTS (SELECT 1 FROM {}.{} other_membership "
             "WHERE other_membership.user_id = membership.user_id "
@@ -209,6 +212,45 @@ def _seed_orphan_users(
         ).format(sql.Identifier(users.schema), sql.Identifier(users.name)),
         (users.oid,),
     )
+    _seed_account_email_rows(connection, tables)
+
+
+def _seed_account_email_rows(connection: psycopg.Connection, tables: dict[int, TableRef]) -> None:
+    """Include credentials and one-time tokens that intentionally have no user FK."""
+    for column_name in ('email', 'recipient_email'):
+        for oid in _column_tables(connection, column_name):
+            table = tables[oid]
+            connection.execute(
+                sql.SQL(
+                    "INSERT INTO organization_purge_rows(table_oid,row_ctid) "
+                    "SELECT %s,target.ctid FROM {}.{} target "
+                    "WHERE EXISTS (SELECT 1 FROM organization_purge_orphan_users account "
+                    "WHERE LOWER(account.email)=LOWER(target.{})) ON CONFLICT DO NOTHING"
+                ).format(sql.Identifier(table.schema), sql.Identifier(table.name),
+                         sql.Identifier(column_name)),
+                (oid,),
+            )
+
+
+def _seed_selected_user(connection: psycopg.Connection, tables: dict[int, TableRef], user_id: int) -> None:
+    users = next(table for table in tables.values() if table.name == 'users')
+    account = connection.execute('SELECT id,email FROM users WHERE id=%s FOR UPDATE', (user_id,)).fetchone()
+    if account is None:
+        raise LookupError(f'User id={user_id} not found.')
+    connection.execute("""CREATE TEMP TABLE organization_purge_orphan_users(
+        user_id BIGINT PRIMARY KEY,email TEXT) ON COMMIT DROP""")
+    connection.execute('INSERT INTO organization_purge_orphan_users VALUES(%s,%s)',
+        (user_id, _get(account, 'email', 1)))
+    connection.execute(sql.SQL("""INSERT INTO organization_purge_rows(table_oid,row_ctid)
+        SELECT %s,target.ctid FROM {}.{} target WHERE target.id=%s""").format(
+        sql.Identifier(users.schema), sql.Identifier(users.name)), (users.oid,user_id))
+    for oid in _column_tables(connection, 'user_id'):
+        table = tables[oid]
+        connection.execute(sql.SQL("""INSERT INTO organization_purge_rows(table_oid,row_ctid)
+            SELECT %s,target.ctid FROM {}.{} target WHERE target.user_id=%s
+            ON CONFLICT DO NOTHING""").format(sql.Identifier(table.schema),sql.Identifier(table.name)),
+            (oid,user_id))
+    _seed_account_email_rows(connection, tables)
 
 
 def _expand_foreign_keys(
@@ -321,11 +363,34 @@ def build_purge_plan(connection: psycopg.Connection, organization_id: int) -> tu
     return counts, tables, foreign_keys
 
 
+def build_account_purge_plan(connection: psycopg.Connection, user_id: int) -> tuple[dict[str, int], dict[int, TableRef], list[ForeignKey]]:
+    connection.execute("""CREATE TEMP TABLE organization_purge_rows(
+        table_oid OID NOT NULL,row_ctid TID NOT NULL,PRIMARY KEY(table_oid,row_ctid)
+    ) ON COMMIT DROP""")
+    tables = _tables(connection)
+    foreign_keys = _foreign_keys(connection)
+    _seed_selected_user(connection, tables, user_id)
+    _expand_foreign_keys(connection, tables, foreign_keys)
+    rows = connection.execute("""SELECT table_oid::bigint AS table_oid,COUNT(*)::bigint AS row_count
+        FROM organization_purge_rows GROUP BY table_oid""").fetchall()
+    counts = {tables[int(_get(row,'table_oid',0))].label: int(_get(row,'row_count',1)) for row in rows}
+    return counts,tables,foreign_keys
+
+
+def purge_plan_fingerprint(connection: psycopg.Connection) -> str:
+    rows = connection.execute("""SELECT table_oid::bigint AS table_oid,row_ctid::text AS row_ctid
+        FROM organization_purge_rows ORDER BY table_oid,row_ctid""").fetchall()
+    material = '\n'.join(f"{_get(row,'table_oid',0)}:{_get(row,'row_ctid',1)}" for row in rows)
+    return hashlib.sha256(material.encode('utf-8')).hexdigest()
+
+
 def purge_organization(
     connection: psycopg.Connection,
     *,
     organization_id: int,
     confirm_code: str,
+    expected_fingerprint: str | None = None,
+    on_validated: Callable[[str], None] | None = None,
 ) -> dict[str, int]:
     organization = connection.execute(
         "SELECT code FROM organizations WHERE id = %s FOR UPDATE", (organization_id,)
@@ -337,7 +402,17 @@ def purge_organization(
         raise ValueError("Confirmation code does not match the selected organization.")
 
     connection.execute("SELECT pg_advisory_xact_lock(%s)", (8_044_001,))
+    connection.execute("""CREATE TABLE IF NOT EXISTS organization_deletion_tombstones(
+        code_sha256 TEXT PRIMARY KEY,deleted_at TIMESTAMP NOT NULL DEFAULT NOW())""")
+    connection.execute("""INSERT INTO organization_deletion_tombstones(code_sha256)
+        VALUES(%s) ON CONFLICT(code_sha256) DO NOTHING""",
+        (hashlib.sha256(actual_code.encode('utf-8')).hexdigest(),))
     counts, tables, foreign_keys = build_purge_plan(connection, organization_id)
+    current_fingerprint = purge_plan_fingerprint(connection)
+    if expected_fingerprint is not None and current_fingerprint != expected_fingerprint:
+        raise ValueError('PURGE_PREVIEW_STALE')
+    if on_validated is not None:
+        on_validated(current_fingerprint)
     label_to_oid = {table.label: oid for oid, table in tables.items()}
     selected_oids = {label_to_oid[label] for label in counts}
     order = _delete_order(selected_oids, foreign_keys)
@@ -416,6 +491,47 @@ def purge_organization(
     return counts
 
 
+def purge_account(connection: psycopg.Connection, *, user_id: int,
+                  expected_fingerprint: str | None = None,
+                  on_validated: Callable[[str], None] | None = None) -> dict[str, int]:
+    """Delete one account and all reachable/email-owned data, regardless of membership."""
+    connection.execute('SELECT pg_advisory_xact_lock(%s)', (8_044_001,))
+    counts,tables,foreign_keys = build_account_purge_plan(connection,user_id)
+    current_fingerprint = purge_plan_fingerprint(connection)
+    if expected_fingerprint is not None and current_fingerprint != expected_fingerprint:
+        raise ValueError('PURGE_PREVIEW_STALE')
+    if on_validated is not None:
+        on_validated(current_fingerprint)
+    label_to_oid = {table.label:oid for oid,table in tables.items()}
+    order = _delete_order({label_to_oid[label] for label in counts},foreign_keys)
+    users = next(table for table in tables.values() if table.name == 'users')
+    with connection.transaction():
+        connection.execute(sql.SQL("""UPDATE {}.{} SET active_profile_id=NULL WHERE id=%s""").format(
+            sql.Identifier(users.schema),sql.Identifier(users.name)), (user_id,))
+        connection.execute('DELETE FROM organization_purge_rows WHERE table_oid=%s',(users.oid,))
+        connection.execute(sql.SQL("""INSERT INTO organization_purge_rows(table_oid,row_ctid)
+            SELECT %s,target.ctid FROM {}.{} target WHERE target.id=%s""").format(
+            sql.Identifier(users.schema),sql.Identifier(users.name)),(users.oid,user_id))
+        disabled=[]
+        for oid in order:
+            table=tables[oid]
+            connection.execute(sql.SQL('ALTER TABLE {}.{} DISABLE TRIGGER USER').format(
+                sql.Identifier(table.schema),sql.Identifier(table.name)))
+            disabled.append(table)
+        for oid in order:
+            table=tables[oid]
+            connection.execute(sql.SQL("""DELETE FROM {}.{} target
+                USING organization_purge_rows selected
+                WHERE selected.table_oid=%s AND selected.row_ctid=target.ctid""").format(
+                sql.Identifier(table.schema),sql.Identifier(table.name)),(oid,))
+        for table in reversed(disabled):
+            connection.execute(sql.SQL('ALTER TABLE {}.{} ENABLE TRIGGER USER').format(
+                sql.Identifier(table.schema),sql.Identifier(table.name)))
+        if connection.execute('SELECT 1 FROM users WHERE id=%s',(user_id,)).fetchone():
+            raise RuntimeError('Purge verification failed: user still exists.')
+    return counts
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Dry-run or physically purge one organization from a test database."
@@ -423,7 +539,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--organization-id", type=int, required=True)
     parser.add_argument("--execute", action="store_true", help="Commit destructive purge.")
     parser.add_argument("--confirm-code", help="Exact organization code; required with --execute.")
-    parser.add_argument("--backup-reference", help="Backup/snapshot identifier; required with --execute.")
     return parser.parse_args()
 
 
@@ -436,8 +551,8 @@ def main() -> int:
         db_name = require_test_database(database_url)
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
-    if args.execute and (not args.confirm_code or not str(args.backup_reference or "").strip()):
-        raise SystemExit("--execute requires --confirm-code and --backup-reference.")
+    if args.execute and not args.confirm_code:
+        raise SystemExit("--execute requires --confirm-code.")
 
     with psycopg.connect(database_url) as connection:
         connection.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
@@ -459,7 +574,7 @@ def main() -> int:
         print(f"{table_name}: {counts[table_name]}")
     print(f"total_rows={sum(counts.values())}")
     if not args.execute:
-        print("No data changed. Review the plan, create a backup, then rerun with --execute.")
+        print("No data changed. Review the plan, then rerun with --execute.")
     return 0
 
 

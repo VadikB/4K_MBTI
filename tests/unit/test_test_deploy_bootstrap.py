@@ -139,6 +139,10 @@ def test_bootstrap_uses_checked_git_script_not_stale_checkout(stand: dict) -> No
     assert (stand["repo"] / "web/dist/old-HASH.js").read_text() == "old-hashed-chunk"
     assert stand["future"] not in result.stdout
     assert '"origin": "https://test.4k-assistant.ru"' in (stand["repo"] / ".public-origin.json").read_text()
+    ledger = stand["repo"] / ".runtime/deletion-ledger/deletion-intents.jsonl"
+    assert ledger.is_file()
+    assert ledger.stat().st_mode & 0o777 == 0o600
+    assert f"DELETION_LEDGER_PATH={ledger}" in (stand["repo"] / ".env").read_text()
 
 
 @pytest.mark.parametrize("previous", [None, '{"schema_version":1,"mode":"public","origin":"https://old.example.com"}'])

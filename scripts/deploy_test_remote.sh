@@ -34,9 +34,15 @@ previous_commit="$(git rev-parse HEAD)"
 frontend_asset_backup_dir="$(mktemp -d)"
 public_origin_backup="$(mktemp)"
 had_public_origin=0
+dotenv_backup="$(mktemp)"
+had_dotenv=0
 if [ -f .public-origin.json ]; then
   cp .public-origin.json "$public_origin_backup"
   had_public_origin=1
+fi
+if [ -f .env ]; then
+  cp .env "$dotenv_backup"
+  had_dotenv=1
 fi
 
 if [ -d web/dist ]; then
@@ -46,6 +52,7 @@ fi
 cleanup_frontend_asset_backup() {
   rm -rf "$frontend_asset_backup_dir"
   rm -f "$public_origin_backup"
+  rm -f "$dotenv_backup"
 }
 
 rollback() {
@@ -54,6 +61,11 @@ rollback() {
     cp "$public_origin_backup" .public-origin.json
   else
     rm -f "$project_dir/.public-origin.json"
+  fi
+  if [ "$had_dotenv" -eq 1 ]; then
+    cp "$dotenv_backup" .env
+  else
+    rm -f "$project_dir/.env"
   fi
   git restore --worktree web/dist
   git clean -fd web/dist
@@ -79,6 +91,24 @@ fi
 
 .venv/bin/python scripts/configure_public_origin.py \
   --origin https://test.4k-assistant.ru --root "$project_dir" || rollback
+
+# The test ledger is PII-free and survives Git fast-forwards and web cleanup.
+ledger_path="$(sed -n 's/^DELETION_LEDGER_PATH=//p' .env 2>/dev/null | tail -n 1)"
+if [ -z "$ledger_path" ]; then
+  ledger_dir="$project_dir/.runtime/deletion-ledger"
+  ledger_path="$ledger_dir/deletion-intents.jsonl"
+  mkdir -p "$ledger_dir" || rollback
+  chmod 700 "$project_dir/.runtime" "$ledger_dir" || rollback
+  touch "$ledger_path" || rollback
+  chmod 600 "$ledger_path" || rollback
+  printf '\nDELETION_LEDGER_PATH=%s\n' "$ledger_path" >> .env || rollback
+else
+  case "$ledger_path" in
+    /*) ;;
+    *) echo "DELETION_LEDGER_PATH must be absolute" >&2; rollback ;;
+  esac
+  test -f "$ledger_path" || { echo "Configured deletion ledger is not provisioned" >&2; rollback; }
+fi
 
 # Reuse the CPU/ML runtime already installed on the server. Install only direct
 # project requirements so pip does not resolve and download a new CUDA stack.

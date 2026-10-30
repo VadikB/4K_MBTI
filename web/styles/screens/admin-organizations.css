@@ -217,6 +217,24 @@
     margin-block: var(--space-3);
 }
 
+.admin-organization-legacy-profile {
+  margin: 0.75rem 0;
+  padding: 0.875rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 0.75rem;
+  background: var(--surface-soft);
+  overflow-wrap: anywhere;
+}
+
+.admin-organization-legacy-profile p {
+  margin: 0.5rem 0;
+  white-space: pre-wrap;
+}
+
+.admin-organization-legacy-profile-note {
+  color: var(--text-muted);
+}
+
 .admin-organization-early-data-form {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -621,11 +639,29 @@
 }
 
 .admin-organization-member-statuses {
+    min-width: 0;
+}
+
+.admin-organization-member-statuses summary {
+    color: var(--accent);
+    cursor: pointer;
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-bold);
+}
+
+.admin-organization-member-statuses > div {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
     gap: var(--space-2);
-    min-width: 0;
+    margin-top: var(--space-2);
+}
+
+.admin-organization-current-stage {
+    color: var(--text-main);
+    font-size: var(--fs-body-sm);
+    font-weight: var(--fw-bold);
+    overflow-wrap: anywhere;
 }
 
 .admin-organization-invitation-state {
@@ -642,6 +678,24 @@
     align-items: flex-start;
     gap: var(--space-2);
     min-width: 0;
+}
+
+.admin-organization-transfer-form {
+  grid-column: 2 / -1;
+  display: flex;
+  align-items: end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-organization-transfer-form label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.admin-organization-transfer-form label span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
 .admin-organization-member button {

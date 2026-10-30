@@ -1,6 +1,8 @@
 .DS_Store
 .env
 .env.test
+.deletion-ledger/
+.runtime/
 .public-origin.json
 .public-origin-*
 .venv/

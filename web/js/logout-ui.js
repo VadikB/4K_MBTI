@@ -32,7 +32,7 @@ export const applyLogoutButtonPendingState = (button) => {
 export const resetLogoutButtonsState = () => {
   document
     .querySelectorAll(
-      '#admin-logout-button, #restart-button, #dashboard-restart-button, #dashboard-mobile-exit-button, #prechat-exit-button, .topbar-exit-button',
+      'button[id$="-logout-button"], button[id$="-exit-button"], #restart-button, #dashboard-restart-button, .topbar-exit-button',
     )
     .forEach((button) => {
       if (!(button instanceof HTMLButtonElement)) {
