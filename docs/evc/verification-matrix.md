@@ -62,11 +62,11 @@ head-ветки PR. Обязательный job `full-verification` выпол�
 ожидаемо пропускается: он применяется после push в main, а не является доказательством
 проверенного развёртывания кандидата. Проверять результат для актуального head и
 целевой ветки; после изменения base или разрешения конфликтов проверить CI заново.
-Наличие этого документа не означает, что branch protection уже настроен.
+Для `main` действует ruleset `Protect main and require full verification` (ID
+`26191885`) без bypass, только со squash merge и обязательным актуальным head.
 
-Workflow `CI` запускается на `pull_request`, push в `main` и вручную через
-`workflow_dispatch`. На переходном этапе push в `main` сохраняет полный набор перед
-`deploy-test`; он будет удалён отдельным изменением только после активации ruleset.
+Workflow `CI` запускается на `pull_request` и push в `main`: на PR выполняются
+`frontend` и быстрый `pytest`, а на push в `main` — только `deploy-test`.
 Workflow `Full verification` запускается вручную на выбранной head-ветке PR.
 
 ## Отчёт и сбои

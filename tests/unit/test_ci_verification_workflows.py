@@ -6,17 +6,11 @@ CI = (ROOT / ".github/workflows/backend-tests.yml").read_text(encoding="utf-8")
 FULL = (ROOT / ".github/workflows/full-verification.yml").read_text(encoding="utf-8")
 
 
-def test_pull_request_skips_expensive_ci_steps() -> None:
-    guard = "if: github.event_name != 'pull_request'"
-    for step in (
-        "Integration tests",
-        "Install browser test dependencies",
-        "Install Chromium system dependencies",
-        "Install Chromium browser",
-        "Browser acceptance (isolated bootstrap 10.2)",
-    ):
-        fragment = CI.split(f"- name: {step}", 1)[1].split("\n      - ", 1)[0]
-        assert guard in fragment
+def test_pull_request_ci_contains_only_fast_jobs() -> None:
+    assert "frontend:\n    if: github.event_name == 'pull_request'" in CI
+    assert "pytest:\n    if: github.event_name == 'pull_request'" in CI
+    assert "Integration tests" not in CI
+    assert "Browser acceptance (isolated bootstrap 10.2)" not in CI
 
 
 def test_manual_full_verification_covers_all_suites() -> None:
@@ -31,7 +25,8 @@ def test_manual_full_verification_covers_all_suites() -> None:
         assert f"- name: {step}" in FULL
 
 
-def test_main_still_requires_full_ci_before_transition_finishes() -> None:
-    assert "needs:\n      - frontend\n      - pytest" in CI
-    integration = CI.split("- name: Integration tests", 1)[1].split("\n      - ", 1)[0]
-    assert "github.event_name != 'pull_request'" in integration
+def test_main_push_deploys_without_repeating_pre_merge_checks() -> None:
+    deploy = CI.split("  deploy-test:", 1)[1]
+    assert "if: github.event_name == 'push' && github.ref == 'refs/heads/main'" in deploy
+    assert "needs:" not in deploy
+    assert "workflow_dispatch:" not in CI

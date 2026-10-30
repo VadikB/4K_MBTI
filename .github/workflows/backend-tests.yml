@@ -5,10 +5,10 @@ on:
     branches:
       - main
   pull_request:
-  workflow_dispatch:
 
 jobs:
   frontend:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -54,6 +54,7 @@ jobs:
         run: git diff --exit-code -- web/dist
 
   pytest:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -107,63 +108,8 @@ jobs:
       - name: HTTP contract smoke tests
         run: python -m pytest -m e2e tests/e2e
 
-      - name: Integration tests
-        if: github.event_name != 'pull_request'
-        shell: bash
-        run: |
-          set +e
-          python -m pytest --run-integration -m integration > /tmp/integration-tests.log 2>&1
-          status=$?
-          cat /tmp/integration-tests.log
-          if [ "$status" -ne 0 ]; then
-            details="$(tail -n 80 /tmp/integration-tests.log)"
-            details="${details//'%'/'%25'}"
-            details="${details//$'\r'/'%0D'}"
-            details="${details//$'\n'/'%0A'}"
-            echo "::error title=Integration tests failed::$details"
-            exit "$status"
-          fi
-
-      - uses: actions/setup-node@v4
-        if: github.event_name != 'pull_request'
-        with:
-          node-version: "22"
-          cache: npm
-
-      - name: Install browser test dependencies
-        if: github.event_name != 'pull_request'
-        run: npm ci
-
-      - name: Install Chromium system dependencies
-        if: github.event_name != 'pull_request'
-        run: npx playwright install-deps chromium
-
-      - name: Install Chromium browser
-        if: github.event_name != 'pull_request'
-        run: npx playwright install chromium
-
-      - name: Browser acceptance (isolated bootstrap 10.2)
-        if: github.event_name != 'pull_request'
-        env:
-          STAND_ADMIN_URL: postgresql://pytest:pytest@127.0.0.1:5432/postgres
-          BROWSER_PYTHON: python
-        run: xvfb-run -a npm run test:browser
-
-      - name: Browser evidence (no credentials or auth traces)
-        if: always() && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: browser-acceptance
-          path: |
-            .test-stand/browser-output/
-            .test-stand/browser-results.json
-          if-no-files-found: error
-
   deploy-test:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs:
-      - frontend
-      - pytest
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment:
