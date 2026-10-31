@@ -42,18 +42,25 @@ Draft и retired ProgramDefinition отсутствуют; это не озна�
 
 ## Release readiness
 
-Публикацию выполнять рано. Из обязательных параметров подтверждены catalog
-`specialist-pilot@1.0` и role-code `specialist_expert`. Для него отсутствует
-опубликованная `assessment_configuration`, связанная именно с этим catalog.
-`scripts/publish_assessment_program.py` принимает `configuration-code`, а не
-catalog напрямую, и обоснованно остановит validation. Code, version, name,
-assignment-ref, mode и publisher-user-id для новой ProgramDefinition также не
-зафиксированы принятым release-решением. Синтетические значения не подставлялись.
+Владелец 31.10.2026 принял идентичность новой связки:
 
-Следующий отдельный шаг владельца: утвердить/указать существующую configuration
-для `specialist-pilot@1.0` и идентичность ProgramDefinition. Затем штатная команда
-сначала запускается без `--publish`; публикация и подключение организации — два
-разных разрешённых действия.
+- configuration: `specialist_pilot_v1`, «Пилотная оценка 4К — Специалист»;
+- methodology: `competencies_4k@1.1`;
+- scenario: `standard_4k_interview@1`;
+- catalog: `specialist-pilot@1.0`;
+- ProgramDefinition: `specialist_pilot@1.0`, «Пилотная оценка 4К — Специалист»;
+- assignment-ref: `specialist-pilot`;
+- mode: `dialogue`, по диалоговому письменному формату принятого пакета;
+- role-code: `specialist_expert`.
+
+Добавлен `scripts/publish_assessment_configuration.py`: без `--publish` он
+создаёт и публикует configuration внутри транзакции, проверяет зависимости и
+prompt/agent bundle, затем выполняет rollback. С `--publish` фиксирует тот же
+результат. После публикации configuration штатный
+`scripts/publish_assessment_program.py` валидирует и отдельно публикует
+ProgramDefinition. Обе команды требуют явный `publisher-user-id`; извлекать его
+из email/configuration или audit log запрещено, поэтому ID передаёт владелец.
+Публикация и подключение организации остаются разными разрешёнными действиями.
 
 ## Проверки и границы
 
