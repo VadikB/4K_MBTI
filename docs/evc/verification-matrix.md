@@ -52,7 +52,8 @@
   PostgreSQL 16; integration и browser на этом событии не запускаются.
 
 Обязательный job `full-verification` автоматически запускается при открытии или
-повторном открытии PR и после каждого нового commit. Он выполняет unit, HTTP,
+повторном открытии PR, после каждого нового commit и при переходах между draft и
+`Ready for review`. Он выполняет unit, HTTP,
 integration и browser acceptance на изолированной БД в `pull_request`-контексте.
 Новый commit после успешного полного прогона делает доказательство устаревшим и
 запускает workflow повторно для нового head. Активный ruleset не разрешает merge
@@ -67,8 +68,13 @@ integration и browser acceptance на изолированной БД в `pull_
 
 Workflow `CI` запускается на `pull_request` и push в `main`: на PR выполняются
 `frontend` и быстрый `pytest`, а на push в `main` — только `deploy-test`.
+В draft job `frontend` выполняет весь набор, кроме отложенного шага
+`Verify application release`. Переход в `Ready for review` повторно запускает
+обязательные jobs для того же head и включает release gate; merge без нового
+согласованного номера продукта остаётся запрещён.
 Workflow `Full verification` автоматически запускается событиями `opened`,
-`reopened` и `synchronize` для `pull_request`; ручная метка не требуется.
+`reopened`, `synchronize`, `ready_for_review` и `converted_to_draft` для
+`pull_request`; ручная метка не требуется.
 
 ## Отчёт и сбои
 
