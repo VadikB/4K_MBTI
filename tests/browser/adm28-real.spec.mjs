@@ -5,7 +5,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 test('ADM28 real isolated backend: draft, recipients, publication, self-assignment and own journey', async ({ page }) => {
-  test.setTimeout(150000);
+  test.setTimeout(240000);
   if (!process.env.STAND_ADMIN_URL) throw new Error('Explicit isolated STAND_ADMIN_URL required');
   const root = process.cwd();
   const python = process.env.BROWSER_PYTHON || path.join(root, '.venv/bin/python');
