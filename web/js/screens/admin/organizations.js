@@ -1575,6 +1575,7 @@ export const renderAdminOrganizations = () => {
         ...(questionnaireValidation.missing || [])];
       const activeView = organizationViews.get(orgId) || 'people';
       const availablePrograms = Array.isArray(data?.assessment_programs) ? data.assessment_programs : [];
+      const programsAreEmpty = availablePrograms.length === 0;
       const currentProgram = org.assessment_program || null;
       const allowedRoles = Array.isArray(currentProgram?.roles) ? currentProgram.roles : [];
       const roleSelectionMarkup = allowedRoles.length > 1
@@ -1584,12 +1585,13 @@ export const renderAdminOrganizations = () => {
           ? '<input type="hidden" name="role_profile_version_id" value="' + Number(allowedRoles[0].version_id) + '"><span>Роль: ' + escapeHtml(allowedRoles[0].name || allowedRoles[0].code) + '</span>'
           : '';
       const programMarkup = isSuperadmin ? '<form class="admin-organization-inline-form admin-organization-program-form" data-action="connect-assessment-program">' +
-        '<label><span>Программа оценки</span><select name="program_definition_id" required>' +
+        '<label><span>Программа оценки</span><select name="program_definition_id" required' + (programsAreEmpty ? ' disabled' : '') + '>' +
         '<option value="">Выберите опубликованную версию</option>' + availablePrograms.map((program) =>
           '<option value="' + Number(program.id) + '"' +
           (Number(currentProgram?.program_definition_id) === Number(program.id) ? ' selected' : '') + '>' +
           escapeHtml(program.name) + ' · ' + escapeHtml(program.version) + '</option>').join('') +
-        '</select></label><button class="ghost-button compact-ghost" type="submit">Подключить</button>' +
+        '</select></label><button class="ghost-button compact-ghost" type="submit"' + (programsAreEmpty ? ' disabled' : '') + '>Подключить</button>' +
+        (programsAreEmpty ? '<p class="admin-organizations-empty" role="status"><strong>Нет опубликованных программ, доступных для подключения.</strong> Подготовьте и опубликуйте программу через принятый release workflow, затем повторите загрузку.</p>' : '') +
         (currentProgram ? '<p>Подключено: <strong>' + escapeHtml(currentProgram.program_name) +
           ' · ' + escapeHtml(currentProgram.program_version) + '</strong></p>' : '<p>Программа ещё не подключена.</p>') +
         '</form>' : '';
@@ -1804,7 +1806,8 @@ export const openAdminOrganizations = async () => {
   try {
     await loadAdminOrganizations();
   } catch (error) {
-    adminOrganizationsList.innerHTML = '<p class="report-empty-state">' + escapeHtml(error.message) + '</p>';
+    adminOrganizationsList.innerHTML = '<div class="report-empty-state" role="alert"><p><strong>Не удалось загрузить программы и организации.</strong></p><p>' +
+      escapeHtml(error.message) + '</p><button type="button" class="ghost-button compact-ghost" data-action="retry-admin-organizations-load">Повторить загрузку</button></div>';
     return;
   }
   renderAdminOrganizations();
