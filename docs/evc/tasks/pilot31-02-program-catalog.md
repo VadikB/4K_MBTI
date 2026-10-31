@@ -71,7 +71,11 @@ ProgramDefinition `specialist_pilot@1.0` опубликована как id `1`,
 `46aec8816b4571f1fbe44a3e1aa6274dcf0c16f5569b20f9ed8b0fead641b982`.
 Readback в транзакции `READ ONLY` подтвердил status `published`, configuration id
 `23`, catalog id `2` и единственную published role `specialist_expert@1`.
-Связь с организацией и назначения этим выпуском не создавались.
+После отдельного подтверждения ProgramDefinition подключена к активной организации
+`test5` (organization id `6`): connection id `2`, current=true. Повтор с тем же
+operation id вернул тот же connection id `2`, новая строка не создана. Resolver
+для assignment-ref `specialist-pilot` подтвердил configuration id `23` и role
+version id `2`. Назначения участникам этим выпуском не создавались.
 
 ## Проверки и границы
 
