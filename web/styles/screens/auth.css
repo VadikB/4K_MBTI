@@ -463,17 +463,6 @@
     text-align: left;
 }
 
-.auth-external-brand {
-    position: absolute;
-    left: 0;
-    bottom: calc(100% + 16px);
-    width: 100%;
-    color: var(--palette-graphite-900);
-    font: 600 24px/32px "Onest", var(--font-heading);
-    letter-spacing: -0.02em;
-    text-align: center;
-}
-
 .auth-panel .auth-brand-lockup .brand {
     color: var(--entry-graphite);
     font-family: "Onest", var(--font-heading);

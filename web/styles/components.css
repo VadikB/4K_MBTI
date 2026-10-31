@@ -368,6 +368,67 @@ textarea {
     opacity: 0.5;
     transform: none;
 }
+
+.entry-header {
+    display: flex;
+    flex: 0 0 80px;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    padding-inline: 64px;
+    background: var(--palette-canvas);
+    color: var(--palette-graphite-900);
+    font-family: "Onest", var(--font-body);
+}
+
+.entry-brand-lockup,
+.onboarding-brand-lockup {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 16px;
+}
+
+.entry-product-name {
+    flex: 0 1 auto;
+    min-width: 0;
+    font: 700 20px/28px "Onest", var(--font-body);
+    white-space: nowrap;
+}
+
+.entry-release-badge {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    min-height: 24px;
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #b3ebef;
+    color: var(--palette-graphite-900);
+    font: 400 12px/16px "Onest", var(--font-body);
+    letter-spacing: 0.8px;
+    white-space: nowrap;
+}
+
+[data-app-release-badge].release-version-invalid {
+    display: none !important;
+}
+
+@media (max-width: 1023px) {
+    .entry-header { padding-inline: 32px; }
+}
+
+@media (max-width: 479px) {
+    .entry-header {
+        flex-basis: 64px;
+        padding-inline: 16px;
+    }
+
+    .entry-brand-lockup { gap: 8px; }
+    .entry-product-name { font-size: 18px; line-height: 24px; }
+    .entry-release-badge { padding-inline: 8px; letter-spacing: 0.4px; }
+}
+
 .app-footer {
     display: flex;
     flex: 0 0 auto;

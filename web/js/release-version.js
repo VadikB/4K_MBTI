@@ -11,7 +11,11 @@ export const resolveReleaseVersion = (runtimeVersion, frontendVersion) => {
 };
 
 export const renderReleaseVersion = (root, version) => {
-  if (!isReleaseVersion(version)) return;
+  const valid = isReleaseVersion(version);
+  root.querySelectorAll('[data-app-release-badge]').forEach((badge) => {
+    badge.classList.toggle('release-version-invalid', !valid);
+  });
+  if (!valid) return;
   root.querySelectorAll('[data-app-release-number]').forEach((target) => {
     target.textContent = version;
   });

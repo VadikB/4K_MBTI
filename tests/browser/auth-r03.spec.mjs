@@ -234,7 +234,8 @@ test('ADM28 temporary restore failure offers retry and does not show login crede
   await expect(page.locator('#session-restore-title')).toHaveText('Не удалось восстановить сессию');
   await expect(page.locator('#session-restore-retry')).toBeVisible();
   await expect(page.locator('#email-input')).toBeHidden();
-  await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
+  await expect(page.locator('[data-entry-header] .entry-release-badge')).toHaveText(`Релиз ${appRelease}`);
+  await expect(page.locator('.app-footer-release')).toBeHidden();
 });
 
 test('ADM28 initial HTML has a complete frontend version before JavaScript', async ({ browser }) => {
@@ -243,7 +244,8 @@ test('ADM28 initial HTML has a complete frontend version before JavaScript', asy
     const page = await context.newPage();
     await page.goto(base);
     await expect(page.locator('#session-restore-panel')).toBeVisible();
-    await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
+    await expect(page.locator('[data-entry-header] .entry-release-badge')).toHaveText(`Релиз ${appRelease}`);
+    await expect(page.locator('.app-footer-release')).toBeHidden();
     await expect(page.locator('#email-input')).toBeHidden();
   } finally { await context.close(); }
 });
@@ -1318,7 +1320,7 @@ test('R04 shared footer stays in document flow and stacks on mobile', async ({ p
   expect(layout.scrollWidth).toBe(layout.clientWidth);
 });
 
-test('REL-VERSION-01 shows one build number on auth and common areas, with a safe fallback', async ({ page }) => {
+test('PILOT31-01 shows one build number in auth header and keeps common footer fallback', async ({ page }) => {
   await page.route('**/users/**', (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: false });
@@ -1326,18 +1328,56 @@ test('REL-VERSION-01 shows one build number on auth and common areas, with a saf
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('#auth-panel .auth-external-brand')).toHaveText('4К Ассистент');
-  await expect(page.locator('#auth-panel .auth-external-brand')).toBeVisible();
-  await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
-  await expect(page.locator('.app-footer-release')).toBeVisible();
-  await page.setViewportSize({ width: 360, height: 760 });
-  await expect(page.locator('.app-footer-release')).toBeInViewport();
+  const entryHeader = page.locator('[data-entry-header]');
+  await expect(entryHeader.locator('.entry-product-name')).toHaveText('4К Ассистент');
+  await expect(entryHeader.locator('.entry-release-badge')).toHaveText(`Релиз ${appRelease}`);
+  await expect(entryHeader).toBeVisible();
+  await expect(page.locator('.app-footer-release')).toBeHidden();
+  for (const viewport of [
+    { width: 1440, height: 1024 },
+    { width: 1024, height: 768 },
+    { width: 768, height: 800 },
+    { width: 360, height: 800 },
+    { width: 320, height: 700 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const geometry = await page.evaluate(() => {
+      const header = document.querySelector('[data-entry-header]').getBoundingClientRect();
+      const card = document.querySelector('#auth-panel').getBoundingClientRect();
+      return {
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+        headerHeight: header.height,
+        cardLeft: card.left,
+        cardRight: card.right,
+      };
+    });
+    expect(geometry.scrollWidth).toBe(geometry.clientWidth);
+    expect(geometry.headerHeight).toBeGreaterThanOrEqual(viewport.width < 480 ? 64 : 80);
+    expect(geometry.cardLeft).toBeGreaterThanOrEqual(0);
+    expect(geometry.cardRight).toBeLessThanOrEqual(viewport.width);
+  }
+  await page.setViewportSize({ width: 360, height: 800 });
+  await expect(entryHeader).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
   await page.locator('#auth-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.remove('hidden'));
+  await expect(entryHeader).toBeVisible();
+  await expect(page.locator('.app-footer-release')).toBeHidden();
+  await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.add('hidden'));
+  await page.locator('#dashboard-panel').evaluate((panel) => panel.classList.remove('hidden'));
+  await expect(entryHeader).toBeHidden();
   await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
   await expect(page.locator('.app-footer-release')).toBeVisible();
-  await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.add('hidden'));
-  await page.locator('#chat-panel').evaluate((panel) => panel.classList.remove('hidden'));
+  await page.locator('#dashboard-panel').evaluate((panel) => panel.classList.add('hidden'));
+  await page.locator('#onboarding-panel').evaluate((panel) => panel.classList.remove('hidden'));
+  await expect(page.locator('#onboarding-panel .entry-release-badge')).toHaveText(`Релиз ${appRelease}`);
+  await expect(page.locator('#onboarding-panel .entry-release-badge')).toBeVisible();
+  const centered = await page.evaluate(() => {
+    const label = document.querySelector('.onboarding-section-label').getBoundingClientRect();
+    return Math.abs((label.left + label.width / 2) - window.innerWidth / 2);
+  });
+  expect(centered).toBeLessThanOrEqual(1);
   await expect(page.locator('.app-footer')).toBeHidden();
 });
 
