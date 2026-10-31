@@ -8,6 +8,10 @@ const wiring = readFileSync(new URL('../../web/js/wiring.js', import.meta.url), 
 test('ARCH30 connects an exact published program version from the superadmin UI', () => {
   assert.match(source, /assessment_programs/);
   assert.match(source, /program_definition_id/);
+  assert.match(source, /Нет опубликованных программ, доступных для подключения/);
+  assert.match(source, /programsAreEmpty \? ' disabled'/);
+  assert.match(source, /Не удалось загрузить программы и организации/);
+  assert.match(wiring, /retry-admin-organizations-load/);
   assert.match(source, /createOperationId\(\)/);
   assert.match(source, /\/assessment-program/);
   assert.match(wiring, /connect-assessment-program/);

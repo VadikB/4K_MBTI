@@ -1770,6 +1770,10 @@ if (adminOrganizationsList) {
     const card = button.closest('[data-organization-id]');
     const organizationId = Number(card?.getAttribute('data-organization-id'));
     const value = button.getAttribute('data-value') || '';
+    if (button.dataset.action === 'retry-admin-organizations-load') {
+      withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations());
+      return;
+    }
     if (button.dataset.action === 'purge-account') {
       const userId = Number(button.dataset.userId);
       const email = String(button.dataset.email || '').trim();
