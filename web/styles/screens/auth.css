@@ -353,14 +353,15 @@
 }
 
 .auth-complete-panel {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    flex: 0 0 auto;
     align-self: center;
-    width: min(calc(100% - 40px), 520px);
-    max-width: 520px;
+    width: min(calc(100% - 64px), 760px);
+    max-width: 760px;
     min-height: auto;
-    padding: 44px;
-    gap: 24px;
+    padding: 48px;
+    gap: 32px 24px;
     border: 1px solid rgb(from var(--palette-graphite-900) r g b / 0.08);
     border-radius: 20px;
     background: rgba(255, 255, 255, 0.97);
@@ -383,6 +384,7 @@
 
 .auth-complete-copy {
     display: grid;
+    align-content: center;
     gap: 10px;
 }
 
@@ -410,16 +412,30 @@
     text-transform: uppercase;
 }
 
-.auth-complete-panel .ghost-button {
+.auth-complete-actions {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+}
+
+.auth-complete-actions .primary-button,
+.auth-complete-actions .ghost-button {
     width: 100%;
     min-height: 52px;
 }
 
 @media (max-width: 520px) {
     .auth-complete-panel {
+        grid-template-columns: minmax(0, 1fr);
         width: min(calc(100% - 24px), 520px);
         padding: 30px 22px;
+        gap: 20px;
         border-radius: 16px;
+    }
+
+    .auth-complete-actions {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
