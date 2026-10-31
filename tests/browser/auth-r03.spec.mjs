@@ -2205,6 +2205,82 @@ test('W02 blocks direct entry on missing participant briefing and supports readi
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 
+test('PARTICIPANT-LAYOUT-01 keeps waiting states content-sized and responsive', async ({ page }, testInfo) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, {
+      authenticated: true, user, is_admin: false, dashboard: {},
+    });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'wait_for_acquaintance_data', profile: { status: 'incomplete' },
+      onboarding: { status: 'not_started' }, assessment: { status: 'not_started' },
+      acquaintance: { readiness: {
+        status: 'waiting_for_organization',
+        message: 'Организация ещё готовит данные для вашей оценки. Когда подготовка будет завершена, здесь можно будет начать знакомство',
+      } },
+    });
+    if (pathname === '/users/version') return fulfillJson(route, { version: '2.0.44' });
+    return fulfillJson(route, {}, 404);
+  });
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${base}/?screen=onboarding`);
+  const panel = page.locator('#auth-complete-panel');
+  const title = page.locator('#auth-complete-title');
+  const description = page.locator('#auth-complete-description');
+  await expect(title).toHaveText('Данные для оценки готовятся');
+  await page.screenshot({ path: testInfo.outputPath('participant-layout-desktop.png'), fullPage: true });
+
+  for (const state of [
+    ['Данные для оценки готовятся', 'Организация ещё готовит данные для вашей оценки.'],
+    ['Оценка пока не назначена', 'Обратитесь к уполномоченному назначающему.'],
+    ['Следующий этап готовится', 'Доступ к организации подтверждён.'],
+  ]) {
+    await title.evaluate((node, value) => { node.textContent = value; }, state[0]);
+    await description.evaluate((node, value) => { node.textContent = value; }, state[1]);
+    await expect(panel).toBeVisible();
+    expect(await panel.evaluate((node) => node.getBoundingClientRect().height)).toBeLessThan(460);
+  }
+
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 1366, height: 768 },
+    { width: 768, height: 1024 },
+    { width: 390, height: 844 },
+    { width: 720, height: 450 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const geometry = await panel.evaluate((node) => {
+      const rect = node.getBoundingClientRect();
+      const footer = document.querySelector('.app-footer')?.getBoundingClientRect();
+      return {
+        left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom,
+        width: rect.width, height: rect.height,
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+        footerTop: footer?.top ?? null,
+      };
+    });
+    expect(geometry.scrollWidth).toBe(geometry.clientWidth);
+    expect(geometry.left).toBeGreaterThanOrEqual(0);
+    expect(geometry.right).toBeLessThanOrEqual(viewport.width);
+    if (viewport.width >= 768) expect(geometry.width).toBeGreaterThanOrEqual(700);
+    if (geometry.footerTop !== null && geometry.bottom <= viewport.height) {
+      expect(geometry.bottom).toBeLessThanOrEqual(geometry.footerTop);
+    }
+    await expect(page.getByRole('button', { name: 'Проверить готовность' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Выйти' })).toBeVisible();
+    if (viewport.width === 390) {
+      await title.evaluate((node) => { node.textContent = 'Данные для оценки готовятся'; });
+      await description.evaluate((node) => {
+        node.textContent = 'Организация ещё готовит данные для вашей оценки. Когда подготовка будет завершена, здесь можно будет начать знакомство';
+      });
+      await page.screenshot({ path: testInfo.outputPath('participant-layout-mobile.png'), fullPage: true });
+    }
+  }
+});
+
 test('W02 does not present plan cards before the prepared plan exists', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window.crypto, 'randomUUID', {
