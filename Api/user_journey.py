@@ -7,7 +7,6 @@ from Api.schemas import UserResponse
 
 PROFILE_REQUIRED_FIELDS = (
     "personal_data_consent",
-    "position",
     "duties",
     "role",
     "company_industry",
@@ -37,8 +36,6 @@ def evaluate_profile_state(user: UserResponse) -> ProfileState:
     missing_fields: list[str] = []
     if user.personal_data_consent_accepted_at is None:
         missing_fields.append("personal_data_consent")
-    if not _has_text(user.raw_position) and not _has_text(user.job_description):
-        missing_fields.append("position")
     if not _has_text(user.raw_duties) and not _has_text(user.normalized_duties):
         missing_fields.append("duties")
     if not user.role_id:
