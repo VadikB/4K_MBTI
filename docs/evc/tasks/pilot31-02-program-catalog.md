@@ -62,6 +62,17 @@ ProgramDefinition. Обе команды требуют явный `publisher-us
 из email/configuration или audit log запрещено, поэтому ID передаёт владелец.
 Публикация и подключение организации остаются разными разрешёнными действиями.
 
+### Выполнение на TEST
+
+Владелец отдельно подтвердил оба immutable release-действия. Configuration
+`specialist_pilot_v1` опубликована как id `23`, catalog version id `2`, checksum
+`9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688`.
+ProgramDefinition `specialist_pilot@1.0` опубликована как id `1`, checksum
+`46aec8816b4571f1fbe44a3e1aa6274dcf0c16f5569b20f9ed8b0fead641b982`.
+Readback в транзакции `READ ONLY` подтвердил status `published`, configuration id
+`23`, catalog id `2` и единственную published role `specialist_expert@1`.
+Связь с организацией и назначения этим выпуском не создавались.
+
 ## Проверки и границы
 
 - Приложенный `READONLY_INVENTORY.sql` — PASS с `ROLLBACK` в test/pytest БД.
@@ -71,6 +82,9 @@ ProgramDefinition. Обе команды требуют явный `publisher-us
 - `npm run build:web` — PASS.
 - `git diff --check` — PASS.
 
-Live-данные, схемы, статусы, связи, права, опубликованные артефакты и snapshots не
-изменялись. Публикации, миграции, писем и LLM-вызовов не было. Откат кода — revert
-коммита этой задачи; для данных откат не требуется.
+До явного подтверждения live-диагностика была read-only. После подтверждения
+опубликованы новые immutable configuration и ProgramDefinition; существующие
+строки, связи и snapshots не переписывались. Миграций, писем и LLM-вызовов не
+было. Откат кода — revert коммита задачи. Опубликованные определения не удаляются:
+при необходимости ProgramDefinition переводится в `retired`, а новая версия
+выпускается отдельно.
