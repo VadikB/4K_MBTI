@@ -80,6 +80,8 @@
 - `node --test tests/frontend/*.test.mjs` → PASS, 120/120.
 - `npm run lint:js` → PASS.
 - `npm run build:web` → PASS; `web/dist` пересобран.
+- Release gate потребовал product patch: `2.0.43` → `2.0.44` через
+  `scripts/prepare_release.py`; `scripts/check_release_version.py --base-ref origin/main` → PASS.
 - `/Users/vadim_bogachev/Developer/4K/.venv/bin/python -m pytest -m "not integration and not e2e and not llm"` → PASS, 676 passed, 288 deselected.
   Эквивалентная `npm run test:backend` сначала не стартовала, потому что отдельный
   worktree не содержит `.venv`; тест повторён тем же интерпретатором корневого checkout.
