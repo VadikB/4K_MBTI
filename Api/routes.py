@@ -4251,7 +4251,7 @@ def send_personal_organization_invitations(
         or ""
     )
     if len(invitation_secret) < 32:
-        raise HTTPException(status_code=503, detail="Сервис приглашений не настроен.")
+        raise HTTPException(status_code=503, detail="EMAIL_PROVIDER_NOT_CONFIGURED")
     results: list[PersonalInvitationResultItem] = []
     for raw_email in dict.fromkeys(payload.emails):
         invitation_id: int | None = None

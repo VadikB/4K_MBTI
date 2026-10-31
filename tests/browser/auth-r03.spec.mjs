@@ -583,7 +583,8 @@ test('UX-ADM28-02 reports questionnaire load failure separately and offers retry
   const card = page.locator('[data-organization-id="3"]');
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
   const error = card.locator('[data-admin-view="questionnaire"] .admin-questionnaire-load-state.error');
-  await expect(error).toContainText('temporary failure');
+  await expect(error).toContainText('Сервис не смог выполнить операцию');
+  await expect(error).not.toContainText('temporary failure');
   await expect(error.getByRole('button', { name: 'Повторить' })).toBeVisible();
   await expect(card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel'))
     .toContainText('Выберите оценку');

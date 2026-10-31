@@ -12,6 +12,15 @@ test('known domain codes provide actionable messages', async () => {
       error.message.includes('Выберите одну из разрешённых ролей') && !error.message.includes('подключите программу'),
   );
 });
+test('known invitation provider configuration error remains actionable', async () => {
+  await assert.rejects(
+    readApiResponse(new Response(JSON.stringify({ detail: 'EMAIL_PROVIDER_NOT_CONFIGURED' }), {
+      status: 503, headers: { 'content-type': 'application/json' },
+    }), 'Не удалось отправить приглашение.'),
+    (error) => error instanceof ApiResponseError && error.code === 'EMAIL_PROVIDER_NOT_CONFIGURED' &&
+      error.message.includes('Сервис приглашений не настроен') && error.outcomeUnknown === false,
+  );
+});
 test('membership conflict preserves the already scope-filtered server action', async () => {
   await assert.rejects(
     readApiResponse(new Response(JSON.stringify({
