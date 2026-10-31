@@ -52,12 +52,18 @@ def test_incomplete_profile_reports_every_missing_field() -> None:
     assert state.status == "incomplete"
     assert set(state.missing_fields) == {
         "personal_data_consent",
-        "position",
         "duties",
         "role",
         "company_industry",
         "active_profile",
     }
+
+
+def test_missing_position_does_not_block_an_otherwise_complete_profile() -> None:
+    state = evaluate_profile_state(make_user(raw_position=None, job_description=None))
+
+    assert state.status == "complete"
+    assert "position" not in state.missing_fields
 
 
 def test_journey_prioritizes_profile_then_onboarding_then_assessment() -> None:

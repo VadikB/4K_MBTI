@@ -3120,11 +3120,11 @@ def ensure_questionnaire_source_schema(connection) -> None:
             validation_json JSONB NOT NULL DEFAULT '{}'::jsonb,
             raw_source_text TEXT,
             source_checksum TEXT NOT NULL,
-            uploaded_by_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            uploaded_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
             source_author TEXT NOT NULL,
             idempotency_key TEXT NOT NULL,
             request_hash TEXT NOT NULL,
-            confirmed_by_user_id BIGINT REFERENCES users(id) ON DELETE RESTRICT,
+            confirmed_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
             confirmed_at TIMESTAMPTZ,
             organization_context_version_id BIGINT REFERENCES assessment_organization_context_versions(id) ON DELETE RESTRICT,
             briefing_json JSONB,
@@ -3137,6 +3137,35 @@ def ensure_questionnaire_source_schema(connection) -> None:
     connection.execute(
         "ALTER TABLE questionnaire_response_revisions ADD COLUMN IF NOT EXISTS briefing_json JSONB"
     )
+    # Actor references are provenance, not ownership. Existing installations
+    # used NOT NULL/RESTRICT and therefore either deleted a foreign questionnaire
+    # through purge expansion or blocked account deletion.
+    for column in ("uploaded_by_user_id", "confirmed_by_user_id"):
+        connection.execute(
+            f"""DO $$ DECLARE actor_constraint TEXT; delete_action \"char\"; BEGIN
+                SELECT constraint_row.conname,constraint_row.confdeltype
+                  INTO actor_constraint,delete_action
+                FROM pg_constraint constraint_row
+                JOIN pg_attribute attribute
+                  ON attribute.attrelid=constraint_row.conrelid
+                 AND attribute.attnum=ANY(constraint_row.conkey)
+                WHERE constraint_row.conrelid='questionnaire_response_revisions'::regclass
+                  AND constraint_row.confrelid='users'::regclass
+                  AND attribute.attname='{column}' LIMIT 1;
+                IF EXISTS (
+                    SELECT 1 FROM pg_attribute attribute
+                    WHERE attribute.attrelid='questionnaire_response_revisions'::regclass
+                      AND attribute.attname='{column}' AND attribute.attnotnull
+                ) OR actor_constraint IS NULL OR delete_action <> 'n' THEN
+                    ALTER TABLE questionnaire_response_revisions ALTER COLUMN {column} DROP NOT NULL;
+                    IF actor_constraint IS NOT NULL THEN
+                        EXECUTE format('ALTER TABLE questionnaire_response_revisions DROP CONSTRAINT %I', actor_constraint);
+                    END IF;
+                    ALTER TABLE questionnaire_response_revisions ADD CONSTRAINT questionnaire_{column}_fk
+                      FOREIGN KEY({column}) REFERENCES users(id) ON DELETE SET NULL;
+                END IF;
+            END $$"""
+        )
     connection.execute(
         "CREATE INDEX IF NOT EXISTS idx_questionnaire_response_org_assignment "
         "ON questionnaire_response_revisions(organization_id,assignment_ref,created_at DESC)"
@@ -4711,7 +4740,7 @@ def ensure_core_schema() -> None:
                 organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
                 recipient_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
                 assignment_ref TEXT NOT NULL,
-                created_by_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                created_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
                 questionnaire_revision_id BIGINT,
                 status TEXT NOT NULL DEFAULT 'active',
                 operation_id TEXT NOT NULL,
@@ -4723,6 +4752,29 @@ def ensure_core_schema() -> None:
             )
             """
         )
+        connection.execute("""DO $$ DECLARE actor_constraint TEXT; delete_action "char"; BEGIN
+            SELECT constraint_row.conname,constraint_row.confdeltype
+              INTO actor_constraint,delete_action
+            FROM pg_constraint constraint_row
+            JOIN pg_attribute attribute
+              ON attribute.attrelid=constraint_row.conrelid
+             AND attribute.attnum=ANY(constraint_row.conkey)
+            WHERE constraint_row.conrelid='organization_assessment_assignments'::regclass
+              AND constraint_row.confrelid='users'::regclass
+              AND attribute.attname='created_by_user_id' LIMIT 1;
+            IF EXISTS (
+                SELECT 1 FROM pg_attribute attribute
+                WHERE attribute.attrelid='organization_assessment_assignments'::regclass
+                  AND attribute.attname='created_by_user_id' AND attribute.attnotnull
+            ) OR actor_constraint IS NULL OR delete_action <> 'n' THEN
+                ALTER TABLE organization_assessment_assignments ALTER COLUMN created_by_user_id DROP NOT NULL;
+                IF actor_constraint IS NOT NULL THEN
+                    EXECUTE format('ALTER TABLE organization_assessment_assignments DROP CONSTRAINT %I', actor_constraint);
+                END IF;
+                ALTER TABLE organization_assessment_assignments ADD CONSTRAINT org_assessment_assignment_created_by_fk
+                  FOREIGN KEY(created_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
+            END IF;
+        END $$""")
         connection.execute(
             "CREATE INDEX IF NOT EXISTS idx_org_assessment_assignments_recipient "
             "ON organization_assessment_assignments(recipient_user_id, organization_id, status)"

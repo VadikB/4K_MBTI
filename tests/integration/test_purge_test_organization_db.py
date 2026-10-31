@@ -5,7 +5,10 @@ import psycopg
 import pytest
 
 from Api.deletion_ledger import append_intent, assert_reconciled, ensure_receipt_schema, record_receipt
-from scripts.purge_test_organization import build_account_purge_plan, build_purge_plan, purge_account, purge_organization
+from scripts.purge_test_organization import (
+    build_account_purge_plan, build_purge_plan, purge_account,
+    purge_organization, purge_plan_fingerprint,
+)
 
 
 pytestmark = pytest.mark.integration
@@ -46,6 +49,20 @@ def purge_db(test_database_url):
             created_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
             status TEXT NOT NULL,
             definition TEXT NOT NULL)""")
+        connection.execute("""CREATE TABLE questionnaire_response_revisions(
+            id BIGINT PRIMARY KEY,organization_id BIGINT REFERENCES organizations(id),
+            uploaded_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+            confirmed_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+            status TEXT NOT NULL,answers_json JSONB NOT NULL)""")
+        connection.execute("""CREATE TABLE organization_assessment_assignments(
+            id BIGINT PRIMARY KEY,organization_id BIGINT REFERENCES organizations(id),
+            recipient_user_id BIGINT REFERENCES users(id),
+            created_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+            status TEXT NOT NULL,assignment_ref TEXT NOT NULL)""")
+        connection.execute("""CREATE TABLE organization_assessment_program_connections(
+            id BIGINT PRIMARY KEY,organization_id BIGINT REFERENCES organizations(id),
+            connected_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+            is_current BOOLEAN NOT NULL,program_ref TEXT NOT NULL)""")
         connection.execute("""CREATE TABLE organization_memberships(
             id BIGSERIAL PRIMARY KEY,
             organization_id BIGINT REFERENCES organizations(id) ON DELETE CASCADE,
@@ -92,6 +109,15 @@ def purge_db(test_database_url):
         connection.execute("""INSERT INTO program_definitions VALUES
             (801,10,'published','shared published artifact'),
             (802,20,'published','foreign control')""")
+        connection.execute("""INSERT INTO questionnaire_response_revisions VALUES
+            (901,2,10,10,'confirmed','{"answer":"foreign questionnaire"}'),
+            (902,2,20,20,'confirmed','{"answer":"foreign control"}')""")
+        connection.execute("""INSERT INTO organization_assessment_assignments VALUES
+            (911,2,20,10,'active','foreign-assignment'),
+            (912,2,30,20,'active','foreign-control')""")
+        connection.execute("""INSERT INTO organization_assessment_program_connections VALUES
+            (921,2,10,TRUE,'foreign-program'),
+            (922,2,20,FALSE,'foreign-control')""")
         connection.execute("""INSERT INTO organization_memberships(organization_id,user_id) VALUES
             (1,10),(1,30),(2,20),(2,30)""")
         profile_id = connection.execute(
@@ -138,6 +164,21 @@ def test_full_purge_removes_orphan_user_and_preserves_shared_user(purge_db):
     assert purge_db.execute("SELECT id,created_by_user_id FROM program_definitions ORDER BY id").fetchall() == [
         (801, None), (802, 20)
     ]
+    assert purge_db.execute("""SELECT id,uploaded_by_user_id,confirmed_by_user_id,status,
+        answers_json->>'answer' FROM questionnaire_response_revisions ORDER BY id""").fetchall() == [
+        (901, None, None, 'confirmed', 'foreign questionnaire'),
+        (902, 20, 20, 'confirmed', 'foreign control'),
+    ]
+    assert purge_db.execute("""SELECT id,recipient_user_id,created_by_user_id,status,assignment_ref
+        FROM organization_assessment_assignments ORDER BY id""").fetchall() == [
+        (911, 20, None, 'active', 'foreign-assignment'),
+        (912, 30, 20, 'active', 'foreign-control'),
+    ]
+    assert purge_db.execute("""SELECT id,connected_by_user_id,is_current,program_ref
+        FROM organization_assessment_program_connections ORDER BY id""").fetchall() == [
+        (921, None, True, 'foreign-program'),
+        (922, 20, False, 'foreign-control'),
+    ]
     assert purge_db.execute("SELECT email FROM auth_action_tokens ORDER BY email").fetchall() == [
         ('shared@example.test',), ('unverified-alias@example.test',)
     ]
@@ -183,13 +224,26 @@ def test_detached_account_purge_removes_credentials_and_preserves_other_accounts
     ]
 
 
+def test_unknown_required_actor_reference_blocks_preview_without_data_loss(purge_db):
+    purge_db.execute("""CREATE TABLE unsafe_foreign_authorship(
+        id BIGINT PRIMARY KEY,actor_reference BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+        payload TEXT NOT NULL)""")
+    purge_db.execute("INSERT INTO unsafe_foreign_authorship VALUES(1,20,'foreign content')")
+    purge_db.commit()
+
+    with pytest.raises(RuntimeError, match='PURGE_ATTRIBUTION_SCHEMA_UNSAFE'):
+        build_account_purge_plan(purge_db, 20)
+    purge_db.rollback()
+
+    assert purge_db.execute("SELECT id,email FROM users WHERE id=20").fetchone() == (20, 'other@example.test')
+    assert purge_db.execute("SELECT actor_reference,payload FROM unsafe_foreign_authorship").fetchone() == (
+        20, 'foreign content',
+    )
+
+
 def test_intent_callback_runs_only_after_preview_fingerprint_validation(purge_db):
     build_purge_plan(purge_db, 1)
-    fingerprint = hashlib.sha256('\n'.join(
-        f"{row[0]}:{row[1]}" for row in purge_db.execute(
-            "SELECT table_oid::bigint,row_ctid::text FROM organization_purge_rows ORDER BY table_oid,row_ctid"
-        ).fetchall()
-    ).encode()).hexdigest()
+    fingerprint = purge_plan_fingerprint(purge_db)
     purge_db.rollback()
     callbacks = []
 

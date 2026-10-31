@@ -139,3 +139,19 @@ def test_assignment_rejects_attempt_to_override_pilot_sources(client):
     assert "Выбранная роль или версия программы не относится к текущей оценке" in response.text
     assert "PROGRAM_SOURCE_OVERRIDE_NOT_ALLOWED" not in response.text
     assert connection.rows == []
+
+
+def test_connected_program_without_selected_role_returns_exact_action_code(client, monkeypatch):
+    http, connection = client
+
+    def require_role(*_args, **_kwargs):
+        raise ValueError("PROGRAM_ROLE_SELECTION_REQUIRED")
+
+    monkeypatch.setattr(routes.assessment_programs, "resolve", require_role)
+    response = http.post("/users/admin/organizations/3/assessment-assignments", json={
+        "user_ids": [18], "assignment_ref": "assessment-a", "operation_id": "adm42-role-required",
+    })
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "PROGRAM_ROLE_SELECTION_REQUIRED"
+    assert connection.rows == []

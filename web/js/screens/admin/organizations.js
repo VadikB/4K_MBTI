@@ -1415,9 +1415,10 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
         const hasPassword = item.has_password === true;
         const label = item.full_name ? item.full_name + ' · ' + email : email;
         const details = item.raw_position || item.job_description || item.role_description || item.raw_duties || '';
-        const preparationStatus = String(item.assessment_preparation_status || '');
-        const isPreparing = preparationStatus === 'queued' || preparationStatus === 'running';
-        const isPrepared = item.assessment_prepared === true;
+        const scopedStage = item.assessment_stages?.[selectedAssessmentRef] || null;
+        const preparationStatus = String(scopedStage?.code || '');
+        const isPreparing = preparationStatus === 'preparing';
+        const isPrepared = ['prepared', 'ready_to_start', 'in_progress', 'processing', 'report_ready'].includes(preparationStatus);
         const canPrepare = item.assessment_profile_ready === true && !isPreparing && !isPrepared;
         const preparationButton = !isSuperadmin ? '' : isPrepared
           ? '<span class="admin-organization-preparation-state ready">Кейсы готовы</span>'
@@ -1444,22 +1445,13 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
         const linkLabels = { not_created: 'Ссылка: не создана', active: 'Ссылка: действует 72 часа', revoked: 'Ссылка: отозвана', expired: 'Ссылка: истекла', used: 'Ссылка: использована' };
         const registrationLabel = item.registration_status === 'registered' ? 'Регистрация: завершена' : 'Регистрация: ожидается';
         const hasAssignment = (item.assessment_assignments || []).includes(selectedAssessmentRef);
-        const acquaintanceStatus = String(item.acquaintance_status || 'not_started');
-        const currentStage = preparationStatus === 'failed'
-          ? 'Подготовка завершилась с ошибкой'
-          : isPreparing
-            ? 'Идёт подготовка оценки'
-            : isPrepared
-              ? 'Оценка подготовлена'
-              : ['answers_confirmed', 'completed'].includes(acquaintanceStatus)
-                ? 'Знакомство завершено'
-                : acquaintanceStatus === 'in_progress'
-                  ? 'Проходит знакомство'
-                  : item.invitation_delivery_status === 'accepted'
-                      ? 'Письмо отправлено — ожидаем начала знакомства'
-                    : !hasAssignment
-                      ? 'Оценка не назначена'
-                      : 'Приглашение не отправлено';
+        const currentStage = scopedStage && scopedStage.code !== 'assigned'
+          ? scopedStage.label
+          : item.invitation_delivery_status === 'accepted'
+            ? 'Письмо отправлено — ожидаем начала знакомства'
+            : !hasAssignment
+              ? 'Оценка не назначена'
+              : 'Приглашение не отправлено';
         const sendLabel = item.invitation_id ? 'Отправить повторно' : 'Отправить';
         const invitationButton = '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
         const revokeButton = (invitationStatus === 'accepted' || invitationStatus === 'queued' || invitationStatus === 'sending')

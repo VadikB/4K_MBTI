@@ -2,7 +2,7 @@ import pytest
 
 from scripts.purge_test_organization import (
     ForeignKey,
-    USER_ATTRIBUTION_COLUMNS,
+    USER_OWNERSHIP_COLUMNS,
     _delete_order,
     require_test_database,
 )
@@ -32,8 +32,11 @@ def test_delete_order_rejects_cross_table_cycle():
         _delete_order({1, 2}, foreign_keys)
 
 
-def test_user_attribution_columns_are_not_ownership_relationships():
-    assert "created_by_user_id" in USER_ATTRIBUTION_COLUMNS
-    assert "published_by_user_id" in USER_ATTRIBUTION_COLUMNS
-    assert "user_id" not in USER_ATTRIBUTION_COLUMNS
-    assert "owner_user_id" not in USER_ATTRIBUTION_COLUMNS
+def test_only_explicit_account_relationships_are_ownership_edges():
+    assert "user_id" in USER_OWNERSHIP_COLUMNS
+    assert "owner_user_id" in USER_OWNERSHIP_COLUMNS
+    assert "recipient_user_id" in USER_OWNERSHIP_COLUMNS
+    assert "created_by_user_id" not in USER_OWNERSHIP_COLUMNS
+    assert "uploaded_by_user_id" not in USER_OWNERSHIP_COLUMNS
+    assert "connected_by_user_id" not in USER_OWNERSHIP_COLUMNS
+    assert "future_actor_reference" not in USER_OWNERSHIP_COLUMNS

@@ -28,6 +28,7 @@ class ForeignKey:
     child_oid: int
     parent_columns: tuple[str, ...]
     child_columns: tuple[str, ...]
+    child_nullable: tuple[bool, ...] = ()
     name: str = ""
 
 
@@ -35,14 +36,12 @@ class ForeignKey:
 # not make the referenced user the owner of the child row. Following them while
 # building a purge scope can otherwise pull another organization's content or a
 # shared published artifact into the deletion plan.
-USER_ATTRIBUTION_COLUMNS = frozenset(
-    {
-        "author_user_id",
-        "created_by_user_id",
-        "invited_by_user_id",
-        "published_by_user_id",
-        "updated_by_user_id",
-    }
+# Only these relationships make a row part of the account's destructive scope.
+# Every other FK to users is provenance/operator attribution and must either be
+# detached safely or block the purge. This deny-by-default classification keeps
+# new author columns from silently becoming ownership edges.
+USER_OWNERSHIP_COLUMNS = frozenset(
+    {"user_id", "owner_user_id", "recipient_user_id", "subject_user_id"}
 )
 EMAIL_SCOPE_EXCLUDED_TABLES = frozenset({"configured_access_suppressions"})
 
@@ -103,6 +102,14 @@ def _foreign_keys(connection: psycopg.Connection) -> list[ForeignKey]:
                     AND parent_attribute.attnum = key.attnum
                    ORDER BY key.position
                ) AS parent_columns
+               ,ARRAY(
+                   SELECT NOT child_attribute.attnotnull
+                   FROM unnest(constraint_row.conkey) WITH ORDINALITY AS key(attnum, position)
+                   JOIN pg_attribute child_attribute
+                     ON child_attribute.attrelid = constraint_row.conrelid
+                    AND child_attribute.attnum = key.attnum
+                   ORDER BY key.position
+               ) AS child_nullable
         FROM pg_constraint constraint_row
         JOIN pg_class child_table ON child_table.oid = constraint_row.conrelid
         JOIN pg_namespace child_namespace ON child_namespace.oid = child_table.relnamespace
@@ -119,6 +126,7 @@ def _foreign_keys(connection: psycopg.Connection) -> list[ForeignKey]:
             child_oid=int(_get(row, "child_oid", 0)),
             parent_columns=tuple(_get(row, "parent_columns", 4)),
             child_columns=tuple(_get(row, "child_columns", 3)),
+            child_nullable=tuple(bool(value) for value in _get(row, "child_nullable", 5)),
             name=str(_get(row, "constraint_name", 2)),
         )
         for row in rows
@@ -220,6 +228,14 @@ def _seed_orphan_users(
         ),
         (organization_id, organization_id),
     )
+    # Keep the ownership/attribution snapshot stable while preview or execute is
+    # being built. A concurrent FK insert must wait and will either be included
+    # by a fresh preview or make the old fingerprint stale.
+    connection.execute(
+        "SELECT account.id FROM users account "
+        "JOIN organization_purge_orphan_users candidate ON candidate.user_id=account.id "
+        "ORDER BY account.id FOR UPDATE"
+    ).fetchall()
     identities = by_name.get("user_identities")
     if identities is not None:
         connection.execute(
@@ -300,9 +316,8 @@ def _expand_foreign_keys(
         for foreign_key in foreign_keys:
             parent = tables[foreign_key.parent_oid]
             child = tables[foreign_key.child_oid]
-            if (
-                parent.name == "users"
-                and any(column in USER_ATTRIBUTION_COLUMNS for column in foreign_key.child_columns)
+            if parent.name == "users" and not all(
+                column in USER_OWNERSHIP_COLUMNS for column in foreign_key.child_columns
             ):
                 continue
             predicates = [
@@ -333,6 +348,71 @@ def _expand_foreign_keys(
             inserted += int(cursor.rowcount or 0)
         if inserted == 0:
             return
+
+
+def _stage_user_attributions(
+    connection: psycopg.Connection,
+    tables: dict[int, TableRef],
+    foreign_keys: Iterable[ForeignKey],
+) -> None:
+    """Freeze non-owned user references for preview and reject unsafe schema."""
+    connection.execute("""CREATE TEMP TABLE organization_purge_attribution_rows(
+        table_oid OID NOT NULL,row_ctid TID NOT NULL,fk_name TEXT NOT NULL,
+        PRIMARY KEY(table_oid,row_ctid,fk_name)) ON COMMIT DROP""")
+    users = next((table for table in tables.values() if table.name == "users"), None)
+    if users is None:
+        return
+    for foreign_key in foreign_keys:
+        if foreign_key.parent_oid != users.oid or all(
+            column in USER_OWNERSHIP_COLUMNS for column in foreign_key.child_columns
+        ):
+            continue
+        child = tables[foreign_key.child_oid]
+        predicates = [sql.SQL("child.{} = account.user_id").format(sql.Identifier(column))
+                      for column in foreign_key.child_columns]
+        unsafe = connection.execute(
+            sql.SQL("SELECT 1 FROM {}.{} child JOIN organization_purge_orphan_users account ON {} "
+                    "WHERE NOT EXISTS (SELECT 1 FROM organization_purge_rows selected "
+                    "WHERE selected.table_oid=%s AND selected.row_ctid=child.ctid) LIMIT 1").format(
+                sql.Identifier(child.schema), sql.Identifier(child.name), sql.SQL(" AND ").join(predicates)),
+            (child.oid,),
+        ).fetchone()
+        if unsafe and not all(foreign_key.child_nullable):
+            columns = ",".join(foreign_key.child_columns)
+            raise RuntimeError(f"PURGE_ATTRIBUTION_SCHEMA_UNSAFE:{child.label}({columns})")
+        if not unsafe:
+            continue
+        connection.execute(
+            sql.SQL("INSERT INTO organization_purge_attribution_rows(table_oid,row_ctid,fk_name) "
+                    "SELECT %s,child.ctid,%s FROM {}.{} child "
+                    "JOIN organization_purge_orphan_users account ON {} "
+                    "WHERE NOT EXISTS (SELECT 1 FROM organization_purge_rows selected "
+                    "WHERE selected.table_oid=%s AND selected.row_ctid=child.ctid) ON CONFLICT DO NOTHING").format(
+                sql.Identifier(child.schema), sql.Identifier(child.name), sql.SQL(" AND ").join(predicates)),
+            (child.oid, foreign_key.name, child.oid),
+        )
+
+
+def _clear_user_attributions(connection: psycopg.Connection, tables: dict[int, TableRef],
+                             foreign_keys: Iterable[ForeignKey]) -> None:
+    users = next((table for table in tables.values() if table.name == "users"), None)
+    if users is None:
+        return
+    for foreign_key in foreign_keys:
+        if foreign_key.parent_oid != users.oid or all(
+            column in USER_OWNERSHIP_COLUMNS for column in foreign_key.child_columns
+        ):
+            continue
+        child = tables[foreign_key.child_oid]
+        assignments = sql.SQL(",").join(
+            sql.SQL("{}=NULL").format(sql.Identifier(column)) for column in foreign_key.child_columns
+        )
+        connection.execute(
+            sql.SQL("UPDATE {}.{} child SET {} FROM organization_purge_attribution_rows selected "
+                    "WHERE selected.table_oid=%s AND selected.fk_name=%s AND selected.row_ctid=child.ctid").format(
+                sql.Identifier(child.schema), sql.Identifier(child.name), assignments),
+            (child.oid, foreign_key.name),
+        )
 
 
 def _delete_order(selected_oids: set[int], foreign_keys: Iterable[ForeignKey]) -> list[int]:
@@ -392,6 +472,7 @@ def build_purge_plan(connection: psycopg.Connection, organization_id: int) -> tu
     _seed_orphan_users(connection, tables, organization_id)
     _seed_legacy_assessment_rows(connection, tables)
     _expand_foreign_keys(connection, tables, foreign_keys)
+    _stage_user_attributions(connection, tables, foreign_keys)
 
     rows = connection.execute(
         "SELECT table_oid::bigint AS table_oid, COUNT(*)::bigint AS row_count "
@@ -412,6 +493,7 @@ def build_account_purge_plan(connection: psycopg.Connection, user_id: int) -> tu
     foreign_keys = _foreign_keys(connection)
     _seed_selected_user(connection, tables, user_id)
     _expand_foreign_keys(connection, tables, foreign_keys)
+    _stage_user_attributions(connection, tables, foreign_keys)
     rows = connection.execute("""SELECT table_oid::bigint AS table_oid,COUNT(*)::bigint AS row_count
         FROM organization_purge_rows GROUP BY table_oid""").fetchall()
     counts = {tables[int(_get(row,'table_oid',0))].label: int(_get(row,'row_count',1)) for row in rows}
@@ -421,7 +503,12 @@ def build_account_purge_plan(connection: psycopg.Connection, user_id: int) -> tu
 def purge_plan_fingerprint(connection: psycopg.Connection) -> str:
     rows = connection.execute("""SELECT table_oid::bigint AS table_oid,row_ctid::text AS row_ctid
         FROM organization_purge_rows ORDER BY table_oid,row_ctid""").fetchall()
-    material = '\n'.join(f"{_get(row,'table_oid',0)}:{_get(row,'row_ctid',1)}" for row in rows)
+    destructive = [f"D:{_get(row,'table_oid',0)}:{_get(row,'row_ctid',1)}" for row in rows]
+    attribution_rows = connection.execute("""SELECT table_oid::bigint,row_ctid::text,fk_name
+        FROM organization_purge_attribution_rows ORDER BY table_oid,row_ctid,fk_name""").fetchall()
+    attribution = [f"A:{_get(row,'table_oid',0)}:{_get(row,'row_ctid',1)}:{_get(row,'fk_name',2)}"
+                   for row in attribution_rows]
+    material = '\n'.join(destructive + attribution)
     return hashlib.sha256(material.encode('utf-8')).hexdigest()
 
 
@@ -461,6 +548,7 @@ def purge_organization(
     # A nested transaction is a savepoint when the caller already has an active
     # transaction. Any failure restores both deleted rows and trigger state.
     with connection.transaction():
+        _clear_user_attributions(connection, tables, foreign_keys)
         users = next((table for table in tables.values() if table.name == "users"), None)
         if users is not None:
             connection.execute(
@@ -548,6 +636,7 @@ def purge_account(connection: psycopg.Connection, *, user_id: int,
     order = _delete_order({label_to_oid[label] for label in counts},foreign_keys)
     users = next(table for table in tables.values() if table.name == 'users')
     with connection.transaction():
+        _clear_user_attributions(connection, tables, foreign_keys)
         connection.execute(sql.SQL("""UPDATE {}.{} SET active_profile_id=NULL WHERE id=%s""").format(
             sql.Identifier(users.schema),sql.Identifier(users.name)), (user_id,))
         connection.execute('DELETE FROM organization_purge_rows WHERE table_oid=%s',(users.oid,))

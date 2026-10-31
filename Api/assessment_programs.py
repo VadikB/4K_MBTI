@@ -50,7 +50,7 @@ def ensure_schema(connection) -> None:
         id BIGSERIAL PRIMARY KEY,
         organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
         program_definition_id BIGINT NOT NULL REFERENCES assessment_program_definitions(id) ON DELETE RESTRICT,
-        connected_by_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+        connected_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
         operation_id TEXT NOT NULL,
         request_fingerprint TEXT NOT NULL,
         is_current BOOLEAN NOT NULL DEFAULT TRUE,
@@ -58,6 +58,29 @@ def ensure_schema(connection) -> None:
         superseded_at TIMESTAMP,
         UNIQUE(organization_id,operation_id)
     )""")
+    connection.execute("""DO $$ DECLARE actor_constraint TEXT; delete_action "char"; BEGIN
+        SELECT constraint_row.conname,constraint_row.confdeltype
+          INTO actor_constraint,delete_action
+        FROM pg_constraint constraint_row
+        JOIN pg_attribute attribute
+          ON attribute.attrelid=constraint_row.conrelid
+         AND attribute.attnum=ANY(constraint_row.conkey)
+        WHERE constraint_row.conrelid='organization_assessment_program_connections'::regclass
+          AND constraint_row.confrelid='users'::regclass
+          AND attribute.attname='connected_by_user_id' LIMIT 1;
+        IF EXISTS (
+            SELECT 1 FROM pg_attribute attribute
+            WHERE attribute.attrelid='organization_assessment_program_connections'::regclass
+              AND attribute.attname='connected_by_user_id' AND attribute.attnotnull
+        ) OR actor_constraint IS NULL OR delete_action <> 'n' THEN
+            ALTER TABLE organization_assessment_program_connections ALTER COLUMN connected_by_user_id DROP NOT NULL;
+            IF actor_constraint IS NOT NULL THEN
+                EXECUTE format('ALTER TABLE organization_assessment_program_connections DROP CONSTRAINT %I', actor_constraint);
+            END IF;
+            ALTER TABLE organization_assessment_program_connections ADD CONSTRAINT org_assessment_program_connected_by_fk
+              FOREIGN KEY(connected_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
+        END IF;
+    END $$""")
     connection.execute("""CREATE UNIQUE INDEX IF NOT EXISTS uq_org_assessment_program_current
         ON organization_assessment_program_connections(organization_id) WHERE is_current""")
     connection.execute("""CREATE OR REPLACE FUNCTION protect_published_assessment_program()

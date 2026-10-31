@@ -416,7 +416,7 @@ def _bind_confirmed_answers(connection, *, user_id: int, readiness: dict, answer
     }
     user_context_version_id = None
     profile_id = None
-    if binding is not None and str((user or {}).get("full_name") or "").strip() and professional['position_or_status']:
+    if binding is not None and str((user or {}).get("full_name") or "").strip():
         previous = connection.execute('''SELECT conflicts_json FROM assessment_personalized_profiles
             WHERE user_id=%s AND organization_id=%s AND assessment_configuration_id=%s
             ORDER BY frozen_at DESC,id DESC LIMIT 1''',

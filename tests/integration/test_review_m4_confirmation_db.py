@@ -68,7 +68,6 @@ def test_confirmed_profile_lifecycle_and_boundaries(test_database_url):
         assert bound['personalized_profile_id'] is None
         c.execute("INSERT INTO assessment_configurations VALUES(2,1,'published','synthetic-second','Synthetic second configuration')")
         c.execute("ALTER TABLE users ADD COLUMN job_description TEXT")
-        c.execute("UPDATE users SET job_description='Фактическая должность' WHERE id=2")
         c.execute('''CREATE TABLE organization_assessment_assignments(
             id BIGINT PRIMARY KEY,recipient_user_id BIGINT,organization_id BIGINT,assignment_ref TEXT,
             status TEXT,revoked_at TIMESTAMP)''')
@@ -93,7 +92,8 @@ def test_confirmed_profile_lifecycle_and_boundaries(test_database_url):
         assert bound_profile['user_context']['regular_tasks'] == answers['answer_1']
         assert bound_profile['user_context']['decision_situations'] == answers['answer_2']
         assert bound_profile['user_context']['constraints_and_interactions'] == answers['answer_3']
-        assert bound_profile['user_context']['position_or_status'] == 'Фактическая должность'
+        assert bound_profile['user_context']['position_or_status'] == ''
+        assert c.execute('SELECT job_description FROM users WHERE id=2').fetchone()['job_description'] is None
         assert _bind_confirmed_answers(c,user_id=2,readiness={
             'organization_id': 20, 'organization_kind': 'organization',
             'organization_context_version_id': foreign, 'assignment_ref': 'ctx01-review',

@@ -76,10 +76,13 @@ const notifyUnauthorizedResponse = (requestGeneration) => {
 };
 
 export class ApiResponseError extends Error {
-  constructor(message, status) {
+  constructor(message, status, { code = null, requestId = null, outcomeUnknown = false } = {}) {
     super(message);
     this.name = 'ApiResponseError';
     this.status = status;
+    this.code = code;
+    this.requestId = requestId;
+    this.outcomeUnknown = outcomeUnknown;
   }
 }
 
@@ -93,6 +96,37 @@ export class StaleApiResponseError extends Error {
 export const authenticatedJourneyErrorMessage = (error) => error?.status === 401
   ? 'Сессия входа не сохранилась. Повторите вход; если ошибка повторится, обратитесь к администратору стенда.'
   : 'Не удалось определить актуальный этап. Обновите страницу или повторите вход.';
+
+const apiErrorMessages = {
+  PURGE_PREVIEW_STALE: 'Состав удаления изменился. Обновите предварительный просмотр и подтвердите новый состав; удаление не выполнено.',
+  PURGE_ATTRIBUTION_SCHEMA_UNSAFE: 'Удаление остановлено: обнаружена небезопасная ссылка авторства. Передайте код обращения техническому администратору.',
+  PURGE_EXECUTION_FAILED: 'Удаление не подтверждено и было отменено. Обновите состояние; перед повтором передайте код обращения техническому администратору.',
+  CANNOT_PURGE_CURRENT_ACCOUNT: 'Нельзя удалить аккаунт, под которым выполнен текущий вход. Используйте другой аккаунт суперадминистратора.',
+  CANNOT_PURGE_ORGANIZATION_WITH_CURRENT_ACCOUNT: 'Нельзя удалить организацию вместе с аккаунтом текущего входа. Используйте другой аккаунт суперадминистратора.',
+  ORGANIZATION_MEMBERSHIP_CONFLICT: 'Пользователь уже состоит в другой организации. Суперадминистратор может открыть текущую организацию или выполнить явный перенос.',
+  ORGANIZATION_TRANSFER_LAST_ADMIN: 'Перенос невозможен: сначала назначьте другого администратора исходной организации.',
+  ORGANIZATION_TRANSFER_ACTIVE_ACQUAINTANCE: 'Перенос невозможен, пока участник проходит знакомство. Завершите текущий процесс или обратитесь к суперадминистратору.',
+  ORGANIZATION_TRANSFER_SOURCE_CHANGED: 'Состав исходной организации изменился. Обновите список перед повтором.',
+  ORGANIZATION_TRANSFER_TARGET_INACTIVE: 'Целевая организация неактивна. Выберите активную организацию.',
+  ORGANIZATION_TRANSFER_TARGET_NOT_FOUND: 'Целевая организация не найдена. Обновите список организаций.',
+  PROGRAM_ROLE_SELECTION_REQUIRED: 'Выберите одну из разрешённых ролей для этой оценки.',
+  PROGRAM_ROLE_NOT_AVAILABLE: 'Выбранная роль недоступна для этой версии программы. Обновите список ролей и выберите доступную.',
+  PROGRAM_NOT_CONNECTED: 'К организации не подключена программа оценки. Сначала подключите опубликованную программу.',
+  PROGRAM_NOT_AVAILABLE: 'Выбранная программа недоступна. Выберите опубликованную версию.',
+  PROGRAM_NOT_AVAILABLE_FOR_NEW_ASSIGNMENTS: 'Эта версия программы больше не принимает новые назначения. Подключите актуальную опубликованную версию.',
+  EMAIL_PROVIDER_NOT_CONFIGURED: 'Сервис приглашений не настроен. Обратитесь к техническому администратору.',
+};
+
+const errorCodeFrom = (data) => {
+  const detail = data && typeof data === 'object' ? data.detail : null;
+  const direct = data && typeof data === 'object' ? data.code || data.error_code : null;
+  if (direct) return String(direct);
+  if (detail && typeof detail === 'object') return String(detail.code || detail.error_code || '') || null;
+  if (typeof detail !== 'string') return null;
+  return Object.keys(apiErrorMessages).find((code) => detail.includes(code)) || null;
+};
+
+const appendRequestId = (message, requestId) => requestId ? `${message} Код обращения: ${requestId}.` : message;
 
 export const readApiResponse = async (response, fallbackMessage, { recoverUnauthorized = true } = {}) => {
   const requestGeneration = responseGenerations.get(response) ?? sessionGeneration;
@@ -115,8 +149,25 @@ export const readApiResponse = async (response, fallbackMessage, { recoverUnauth
     if (response.status === 401 && recoverUnauthorized) {
       notifyUnauthorizedResponse(requestGeneration);
     }
+    const requestId = String(response.headers.get('x-request-id') || data?.request_id || data?.reference_id || '').trim() || null;
+    const code = errorCodeFrom(data);
+    const detailText = typeof data?.detail === 'string' ? data.detail : '';
+    if (code === 'ORGANIZATION_MEMBERSHIP_CONFLICT' && detailText.startsWith(code + ':')) {
+      throw new ApiResponseError(
+        appendRequestId(detailText.slice(code.length + 1).trim(), requestId), response.status, { code, requestId },
+      );
+    }
+    if (code && apiErrorMessages[code]) {
+      throw new ApiResponseError(appendRequestId(apiErrorMessages[code], requestId), response.status, { code, requestId });
+    }
+    if (response.status >= 500) {
+      throw new ApiResponseError(appendRequestId(
+        'Сервис не смог выполнить операцию. Повторная отправка может быть небезопасна — сначала обновите состояние.', requestId,
+      ), response.status, { code, requestId, outcomeUnknown: true });
+    }
     if (data && typeof data === 'object' && 'detail' in data && data.detail) {
-      throw new ApiResponseError(data.detail, response.status);
+      const detail = typeof data.detail === 'object' ? data.detail.message : data.detail;
+      throw new ApiResponseError(String(detail || fallbackMessage), response.status, { code, requestId });
     }
     if (rawText && rawText.trim()) {
       const contentType = String(response.headers.get('content-type') || '').toLowerCase();
@@ -127,7 +178,7 @@ export const readApiResponse = async (response, fallbackMessage, { recoverUnauth
           response.status,
         );
       }
-      throw new ApiResponseError(rawText.trim().slice(0, 240), response.status);
+      throw new ApiResponseError(rawText.trim().slice(0, 240), response.status, { code, requestId });
     }
     throw new ApiResponseError(fallbackMessage, response.status);
   }
