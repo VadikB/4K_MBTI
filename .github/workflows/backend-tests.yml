@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft]
 
 jobs:
   frontend:
@@ -22,6 +23,7 @@ jobs:
           python-version: "3.12"
 
       - name: Verify application release
+        if: github.event.pull_request.draft == false
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             git fetch origin main
@@ -29,6 +31,10 @@ jobs:
           else
             python scripts/check_release_version.py
           fi
+
+      - name: Explain deferred draft release
+        if: github.event.pull_request.draft == true
+        run: echo "Release version is assigned when the pull request is ready for review."
 
       - uses: actions/setup-node@v4
         with:
