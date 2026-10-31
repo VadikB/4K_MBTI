@@ -74,8 +74,11 @@ npm run test:backend:coverage
 На `pull_request` workflow `.github/workflows/backend-tests.yml` выполняет быстрые
 unit- и HTTP-проверки. Workflow `.github/workflows/full-verification.yml`
 автоматически запускается при открытии или повторном открытии PR и после каждого
-нового commit; он выполняет unit, HTTP, integration и browser acceptance в
-PR-контексте актуального head.
+нового commit, а также при переходах между draft и `Ready for review`; он выполняет
+unit, HTTP, integration и browser acceptance в PR-контексте актуального head.
+В draft быстрый frontend-набор откладывает только release gate. При переводе в
+`Ready for review` обязательный CI запускается повторно и требует согласованный
+новый номер для продуктовых изменений.
 Активный ruleset запрещает merge без checks `frontend`, `pytest` и
 `full-verification`. После push в `main` проверки повторно не запускаются: workflow
 выполняет только `deploy-test` уже проверенного commit.
