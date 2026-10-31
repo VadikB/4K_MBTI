@@ -26,9 +26,14 @@ test('backend outage or mismatch keeps frontend build version', () => {
 
 test('all visible release targets update together as text', () => {
   const targets = [{ textContent: '' }, { textContent: '' }];
-  const root = { querySelectorAll: () => targets };
+  const badges = [{ classList: { toggle: (_name, invalid) => { badges[0].invalid = invalid; } } }];
+  const root = {
+    querySelectorAll: (selector) => selector === '[data-app-release-badge]' ? badges : targets,
+  };
   renderReleaseVersion(root, '2.0.1');
   assert.deepEqual(targets.map((target) => target.textContent), ['2.0.1', '2.0.1']);
+  assert.equal(badges[0].invalid, false);
   renderReleaseVersion(root, 'invalid');
   assert.deepEqual(targets.map((target) => target.textContent), ['2.0.1', '2.0.1']);
+  assert.equal(badges[0].invalid, true);
 });

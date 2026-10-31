@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { shouldShowAppFooter } from '../../web/js/components/app-footer.js';
+import {
+  shouldShowAppFooter,
+  shouldShowEntryHeader,
+  shouldShowFooterRelease,
+} from '../../web/js/components/app-footer.js';
 
 const html = await readFile(new URL('../../web/index.html', import.meta.url), 'utf8');
 const baseCss = await readFile(new URL('../../web/styles/base.css', import.meta.url), 'utf8');
@@ -18,6 +22,12 @@ test('shared footer is visible on common panels and hidden on chat panels', () =
   assert.equal(shouldShowAppFooter('interview-panel'), false);
   assert.equal(shouldShowAppFooter('onboarding-panel'), false);
   assert.equal(shouldShowAppFooter(undefined), false);
+  assert.equal(shouldShowEntryHeader('session-restore-panel'), true);
+  assert.equal(shouldShowEntryHeader('auth-panel'), true);
+  assert.equal(shouldShowEntryHeader('auth-complete-panel'), true);
+  assert.equal(shouldShowEntryHeader('dashboard-panel'), false);
+  assert.equal(shouldShowFooterRelease('auth-panel'), false);
+  assert.equal(shouldShowFooterRelease('dashboard-panel'), true);
   assert.match(main, /initAppFooter\(\)/);
 });
 

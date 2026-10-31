@@ -6,14 +6,18 @@
 }
 .onboarding-shell { width: 100%; height: 100%; display: flex; flex-direction: column; }
 #onboarding-panel .onboarding-topbar {
-    flex: 0 0 72px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; margin-bottom: 0;
+    position: relative; flex: 0 0 72px; display: flex; flex-direction: row; align-items: center; margin-bottom: 0;
     gap: 16px; padding: 0 32px; background: var(--palette-white); border-bottom: 1px solid var(--palette-graphite-200);
 }
+.onboarding-brand-lockup { position: relative; z-index: 1; }
 #onboarding-home {
     border: 0; background: transparent; color: inherit; padding: 8px 0;
     font: 700 20px/28px var(--font-body); min-height: 44px; text-align: left;
 }
-.onboarding-section-label { font-size: 14px; line-height: 20px; color: var(--palette-graphite-600); }
+.onboarding-section-label {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    font-size: 14px; line-height: 20px; color: var(--palette-graphite-600); white-space: nowrap;
+}
 .onboarding-toolbar, .onboarding-thread { width: calc(100% - 128px); max-width: 1120px; margin-inline: auto; }
 .onboarding-toolbar { display: flex; align-items: center; gap: 16px; flex: 0 0 64px; }
 .step-badge {
@@ -97,9 +101,13 @@
     .onboarding-knowledge { grid-template-columns: 1fr; }
 }
 @media (max-width: 600px) {
-    #onboarding-panel .onboarding-topbar { flex-basis: 64px; padding-inline: 16px; gap: 8px; }
+    #onboarding-panel .onboarding-topbar {
+        flex-basis: auto; min-height: 64px; padding: 8px 16px; gap: 4px;
+        flex-direction: column; align-items: flex-start; justify-content: center;
+    }
+    .onboarding-brand-lockup { gap: 8px; }
     #onboarding-home { font-size: 18px; line-height: 24px; }
-    .onboarding-section-label { font-size: 11px; }
+    .onboarding-section-label { position: static; transform: none; align-self: center; font-size: 11px; }
     .onboarding-toolbar, .onboarding-thread { width: calc(100% - 32px); }
     .onboarding-message--assistant { width: 100%; }
     .onboarding-message--user { max-width: 90%; }

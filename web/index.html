@@ -53,18 +53,22 @@
     </div>
   </div>
   <main class="shell">
+    <header class="entry-header" data-entry-header>
+      <div class="entry-brand-lockup">
+        <span class="entry-product-name">4К Ассистент</span>
+        <span class="entry-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.0.43</span></span>
+      </div>
+    </header>
     <nav id="participant-area-navigation" class="participant-area-navigation hidden" aria-label="Разделы аккаунта">
       <button id="participant-return-management-button" class="ghost-button compact-ghost" type="button">Управление</button>
       <span aria-current="page">Моя оценка</span>
     </nav>
     <section class="panel auth-panel" id="session-restore-panel" role="status" aria-live="polite">
-      <div class="auth-external-brand">4К Ассистент</div>
       <h1 id="session-restore-title">Восстанавливаем сессию</h1>
       <p id="session-restore-message">Проверяем доступ и открываем ваш раздел…</p>
       <button id="session-restore-retry" class="primary-button hidden" type="button">Повторить</button>
     </section>
     <section class="panel auth-panel hidden" id="auth-panel">
-      <div class="auth-external-brand">4К Ассистент</div>
       <p id="auth-credential-step-indicator" class="auth-credential-step-indicator hidden" data-step="1" aria-live="polite">Шаг 1 из 2</p>
       <div class="auth-panel-copy">
         <h1 id="auth-title">Добро пожаловать</h1>
@@ -153,7 +157,10 @@
     <section class="panel onboarding-panel hidden" id="onboarding-panel">
       <div class="onboarding-shell">
         <div class="onboarding-topbar">
-          <button id="onboarding-home" type="button" class="brand dashboard-brand">4К Ассистент</button>
+          <div class="onboarding-brand-lockup">
+            <button id="onboarding-home" type="button" class="brand dashboard-brand">4К Ассистент</button>
+            <span class="entry-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.0.43</span></span>
+          </div>
           <span class="onboarding-section-label">ЗНАКОМСТВО</span>
         </div>
         <div class="onboarding-toolbar">
@@ -1990,7 +1997,7 @@
         <span>Политика конфиденциальности</span>
         <span>Согласие на обработку персональных данных</span>
       </div>
-      <span class="app-footer-release">Версия <span data-app-release-number>2.0.43</span></span>
+      <span class="app-footer-release hidden" data-app-release-badge>Версия <span data-app-release-number>2.0.43</span></span>
       <span class="app-footer-copyright">© <span data-app-footer-year></span> LIDUM</span>
     </footer>
   </main>
