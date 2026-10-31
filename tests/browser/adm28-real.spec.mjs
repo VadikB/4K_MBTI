@@ -5,7 +5,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 test('ADM28 real isolated backend: draft, recipients, publication, self-assignment and own journey', async ({ page }) => {
-  test.setTimeout(240000);
+  test.setTimeout(150000);
   if (!process.env.STAND_ADMIN_URL) throw new Error('Explicit isolated STAND_ADMIN_URL required');
   const root = process.cwd();
   const python = process.env.BROWSER_PYTHON || path.join(root, '.venv/bin/python');
@@ -39,7 +39,10 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     await page.locator('#magic-token-input').fill(state.password);
     await page.locator('#verify-magic-link-button').click();
     await expect(page.locator('#admin-organizations-panel')).toBeVisible();
-    await page.getByRole('button', { name: 'К сводке', exact: true }).click();
+    await page.getByLabel('Открыть меню аккаунта').press('Enter');
+    const dashboardButton = page.getByRole('menuitem', { name: 'К сводке', exact: true });
+    await expect(dashboardButton).toBeVisible();
+    await dashboardButton.click();
     await expect(page.locator('#admin-panel')).toBeVisible();
     await expect(page.locator('#admin-insights-grid')).toContainText('Пока нет данных для выводов');
     await expect(page.locator('#admin-insights-grid')).not.toContainText('Наиболее слабый контур');
@@ -49,7 +52,10 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     const card = page.locator('.admin-organization-card');
     const organizationId = await card.getAttribute('data-organization-id');
     await expect(card.locator('.admin-assignment-readiness')).toContainText('Оценка не выбрана');
+    const firstParticipant = card.locator('input[name="invitation_email"]').first();
+    await firstParticipant.check();
     await expect(card.getByRole('button', { name: 'Назначить оценку', exact: true })).toBeDisabled();
+    await firstParticipant.uncheck();
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
     const profile = card.locator('form[data-action="update-profile"]');
     await profile.getByRole('button', { name: 'Сохранить карточку' }).click();
@@ -99,7 +105,7 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
     await expect(card.locator('[data-operation-status]')).toContainText('Назначена: 2');
     await expect(card.locator('.admin-organization-member')).toHaveCount(2);
-    await expect(card.locator('.admin-organization-member').first()).toContainText('Оценка: назначена');
+    await expect(card.locator('.admin-organization-member').first()).toContainText('Оценка назначена');
     const revisions = await (await page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire`)).json();
     expect(revisions.items[0].readiness.roles.total).toBe(2);
     expect(revisions.items[0].readiness.roles.status).toBe('incomplete');
