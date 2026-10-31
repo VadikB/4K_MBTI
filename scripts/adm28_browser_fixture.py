@@ -14,6 +14,7 @@ def seed(state):
     from Api.database import get_connection
     from Api.auth_service import _hash_password
     from Api.assessment_authoring_service import assessment_authoring_service
+    from Api import assessment_programs
     from Api.m5_catalog_integrity import publish_catalog
     with get_connection() as connection:
         organization_id = connection.execute("""INSERT INTO organizations(code,name)
@@ -64,6 +65,32 @@ def seed(state):
         configuration = assessment_authoring_service.publish_configuration(connection,
             configuration_id=configuration['id'], make_default=False, actor_user_id=admin_user_id,
             comment='Synthetic ADM28 isolated binding')
+        source_refs = {
+            'methodology_version_id': int(configuration['methodology_version_id']),
+            'scenario_version_id': int(configuration['scenario_version_id']),
+            'prompt_bundle_checksum': configuration['prompt_bundle_checksum'],
+        }
+        program_checksum = assessment_programs.definition_checksum(
+            code='adm28-specialist-pilot', version='1.0', name='ADM28 synthetic Specialist pilot',
+            assignment_ref='ADM28 isolated', mode='dialogue', configuration_id=configuration['id'],
+            role_version_ids=[specialist['id']], catalog_version_id=configuration['catalog_version_id'],
+            source_refs=source_refs,
+        )
+        program_id = connection.execute("""INSERT INTO assessment_program_definitions
+            (code,version,name,assignment_ref,mode,status,assessment_configuration_id,
+             catalog_version_id,source_refs_json,definition_checksum,published_by_user_id)
+            VALUES('adm28-specialist-pilot','1.0','ADM28 synthetic Specialist pilot',
+             'ADM28 isolated','dialogue','draft',%s,%s,%s::jsonb,%s,%s) RETURNING id""",
+            (configuration['id'], configuration['catalog_version_id'], json.dumps(source_refs),
+             program_checksum, admin_user_id)).fetchone()['id']
+        connection.execute("""INSERT INTO assessment_program_allowed_roles
+            (program_definition_id,role_profile_version_id,display_order) VALUES(%s,%s,0)""",
+            (program_id, specialist['id']))
+        connection.execute("""UPDATE assessment_program_definitions
+            SET status='published',published_at=NOW() WHERE id=%s""", (program_id,))
+        assessment_programs.connect(connection, organization_id=organization_id,
+            program_definition_id=program_id, actor_user_id=admin_user_id,
+            operation_id='adm28-connect-specialist-pilot')
         connection.execute("""INSERT INTO organization_assessment_pilot_bindings
             (organization_id,assignment_ref,binding_version,assessment_configuration_id,
              role_profile_version_id,configured_by_user_id)
