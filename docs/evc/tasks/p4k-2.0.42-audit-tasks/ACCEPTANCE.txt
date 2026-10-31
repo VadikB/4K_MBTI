@@ -1,0 +1,39 @@
+P4K 2.0.42 audit tasks — локальная приёмка
+
+База: f852ae823be88e998f10bd74c4726b153e5f34c8
+Ветка: codex/p4k-2-0-42-audit-tasks
+Версия результата: 2.0.43
+Движок DB: PostgreSQL 16.15, изолированные pytest-БД
+
+A42-01 PASS для заявленного сценария questionnaire/assignment/program connection:
+чужой business content, status/currentness и действующие предметные refs сохранены;
+actor refs очищены через nullable ON DELETE SET NULL; аккаунт и его собственные
+данные удалены. Preview/execute защищены fingerprint и блокируют stale manifest.
+Неизвестная обязательная авторская FK: FAIL-CLOSED с
+PURGE_ATTRIBUTION_SCHEMA_UNSAFE, без удаления аккаунта или чужого объекта.
+Полное удаление всех legacy-вариантов такой схемы не объявляется PASS.
+
+A42-02 PASS: confirmed server answers выше scoped local draft; draft удаляется
+только после подтверждённого серверного состояния; незавершённый draft сохраняется.
+
+A42-03 PASS: этап проецируется по organization + assignment + profile/cycle/job;
+job другого назначения не подменяет выбранную оценку.
+
+A42-04 PASS: известные коды дают применимое действие; неизвестные 5xx и invalid
+payload не раскрывают raw detail/SQL/HTML/trace; timeout помечает unknown outcome.
+
+PASS:
+- backend unit: 675 passed, 279 deselected
+- HTTP e2e: 90 passed, 12 deselected
+- frontend Node: 112 passed
+- PostgreSQL integration: 9 passed
+- Playwright ARCH30: 1 passed
+- Playwright PATH29: 1 passed (28.8s)
+- py_compile, node --check, lint:js, build:web, release check, diff check
+
+NOT_RUN:
+- два API-процесса, in-flight worker и late write после purge
+- live management-return на всех экранах
+- live email/LLM, deploy, реальные test/production удаления
+
+Откат: revert change commit; опубликованные методологические артефакты не менялись.

@@ -339,9 +339,16 @@ test('ARCH30 shows the current participant stage and keeps technical signals col
     members_count: 4,
     members: [
       { ...baseMember, user_id: 8, email: 'not-sent@example.test', invitation_delivery_status: 'not_sent' },
-      { ...baseMember, user_id: 9, email: 'started@example.test', acquaintance_status: 'in_progress' },
-      { ...baseMember, user_id: 10, email: 'preparing@example.test', assessment_preparation_status: 'running' },
-      { ...baseMember, user_id: 11, email: 'failed@example.test', assessment_preparation_status: 'failed' },
+      { ...baseMember, user_id: 9, email: 'started@example.test', assessment_stages: {
+        competencies_4k: { code: 'acquaintance', label: 'Проходит знакомство' },
+      } },
+      { ...baseMember, user_id: 10, email: 'preparing@example.test', assessment_stages: {
+        competencies_4k: { code: 'preparing', label: 'Идёт подготовка оценки', operation_id: 'prep-current' },
+        'other-assessment': { code: 'preparation_failed', label: 'Подготовка завершилась с ошибкой', operation_id: 'prep-other' },
+      } },
+      { ...baseMember, user_id: 11, email: 'failed@example.test', assessment_stages: {
+        competencies_4k: { code: 'preparation_failed', label: 'Подготовка завершилась с ошибкой' },
+      } },
     ],
   };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);

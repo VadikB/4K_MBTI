@@ -1032,6 +1032,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
     reports_by_org: dict[int, int] = {org_id: 0 for org_id in org_ids}
     latest_batch_by_org: dict[int, str] = {}
     programs_by_org: dict[int, dict] = {}
+    assessment_stages: dict[tuple[int, int], dict[str, dict]] = {}
     if org_ids:
         domain_rows = connection.execute(
             """
@@ -1063,6 +1064,96 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
             admins_by_org.setdefault(int(row["organization_id"]), []).append(
                 {"user_id": int(row["user_id"]), "email": email, "full_name": row["full_name"]}
             )
+
+        stage_rows = connection.execute(
+            """
+            SELECT assignment.organization_id, assignment.recipient_user_id,
+                   assignment.assignment_ref,
+                   acquaintance.status AS acquaintance_status,
+                   preparation.operation_id AS preparation_operation_id,
+                   preparation.status AS preparation_status,
+                   cycle.cycle_id, cycle.status AS cycle_status,
+                   EXISTS (
+                       SELECT 1
+                       FROM m8_results result
+                       JOIN m8_result_revisions revision ON revision.results_id=result.id
+                       JOIN m8_reports report ON report.result_revision_id=revision.id
+                       WHERE result.cycle_db_id=cycle.id AND report.audience='assessee'
+                   ) AS report_ready
+            FROM organization_assessment_assignments assignment
+            JOIN organization_assessment_source_bindings binding
+              ON binding.assignment_id=assignment.id
+            LEFT JOIN LATERAL (
+                SELECT profile.id
+                FROM assessment_personalized_profiles profile
+                WHERE profile.user_id=assignment.recipient_user_id
+                  AND profile.organization_id=assignment.organization_id
+                  AND profile.assessment_configuration_id=binding.assessment_configuration_id
+                ORDER BY profile.frozen_at DESC, profile.id DESC
+                LIMIT 1
+            ) profile ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT job.operation_id,job.status
+                FROM assessment_preparation_jobs job
+                WHERE job.user_id=assignment.recipient_user_id
+                  AND job.personalized_profile_id=profile.id
+                ORDER BY job.created_at DESC,job.id DESC
+                LIMIT 1
+            ) preparation ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT runtime.id,runtime.cycle_id,runtime.status
+                FROM m5_cycles runtime
+                WHERE runtime.owner_user_id=assignment.recipient_user_id
+                  AND runtime.organization_id=assignment.organization_id
+                  AND runtime.personalized_profile_id=profile.id
+                  AND runtime.usage_scope='assessment'
+                ORDER BY runtime.created_at DESC,runtime.id DESC
+                LIMIT 1
+            ) cycle ON TRUE
+            LEFT JOIN participant_acquaintance_states acquaintance
+              ON acquaintance.user_id=assignment.recipient_user_id
+             AND acquaintance.organization_id=assignment.organization_id
+             AND acquaintance.assignment_ref=assignment.assignment_ref
+            WHERE assignment.organization_id=ANY(%s)
+              AND assignment.status='active' AND assignment.revoked_at IS NULL
+            """,
+            (org_ids,),
+        ).fetchall()
+        for row in stage_rows:
+            cycle_status = row.get("cycle_status")
+            preparation_status = row.get("preparation_status")
+            acquaintance_status = row.get("acquaintance_status") or "not_started"
+            if row.get("report_ready"):
+                code, label, action = "report_ready", "Отчёт готов", "open_report"
+            elif cycle_status == "failed":
+                code, label, action = "failed", "Обработка завершилась с ошибкой", "open_processing"
+            elif cycle_status in {"collection_closed", "calculation_pending", "calculated"}:
+                code, label, action = "processing", "Результат обрабатывается", "open_processing"
+            elif cycle_status in {"active", "paused", "interrupted"}:
+                code, label, action = "in_progress", "Проходит оценку", "resume_assessment"
+            elif cycle_status == "prepared":
+                code, label, action = "ready_to_start", "Можно начинать оценку", "start_assessment"
+            elif preparation_status == "failed":
+                code, label, action = "preparation_failed", "Подготовка завершилась с ошибкой", "retry_preparation"
+            elif preparation_status in {"queued", "running"}:
+                code, label, action = "preparing", "Идёт подготовка оценки", "check_preparation"
+            elif preparation_status == "completed":
+                code, label, action = "prepared", "Оценка подготовлена", "start_assessment"
+            elif acquaintance_status in {"answers_confirmed", "completed"}:
+                code, label, action = "acquaintance_complete", "Знакомство завершено", "prepare_assessment"
+            elif acquaintance_status == "in_progress":
+                code, label, action = "acquaintance", "Проходит знакомство", "continue_acquaintance"
+            else:
+                code, label, action = "assigned", "Оценка назначена", "send_invitation"
+            assessment_stages.setdefault(
+                (int(row["organization_id"]), int(row["recipient_user_id"])), {}
+            )[str(row["assignment_ref"])] = {
+                "code": code,
+                "label": label,
+                "action": action,
+                "cycle_id": str(row["cycle_id"]) if row.get("cycle_id") else None,
+                "operation_id": row.get("preparation_operation_id"),
+            }
 
         member_detail_rows = connection.execute(
             """
@@ -1179,6 +1270,9 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                     "invitation_link_status": row["invitation_link_status"] or "not_created",
                     "invitation_expires_at": row["invitation_expires_at"],
                     "assessment_assignments": list(row["assessment_assignments"] or []),
+                    "assessment_stages": assessment_stages.get(
+                        (int(row["organization_id"]), int(row["user_id"])), {}
+                    ),
                 }
             )
 
@@ -3962,6 +4056,12 @@ def preview_admin_organization_purge(organization_id: int, request: Request) -> 
             counts,_,_ = build_purge_plan(connection, organization_id)
         except LookupError as exc:
             raise HTTPException(404, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            code = str(exc).split(':', 1)[0]
+            if code == 'PURGE_ATTRIBUTION_SCHEMA_UNSAFE':
+                logger.error("Organization purge preview blocked organization_id=%s reason=%s", organization_id, exc)
+                raise HTTPException(409, detail=code) from exc
+            raise
         return {'target_type':'organization','target_id':organization_id,
             'fingerprint':purge_plan_fingerprint(connection),
             'tables':counts,'total_rows':sum(counts.values()),
@@ -3983,6 +4083,12 @@ def preview_admin_user_purge(user_id: int, request: Request) -> dict:
             counts,_,_ = build_account_purge_plan(connection,user_id)
         except LookupError as exc:
             raise HTTPException(404, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            code = str(exc).split(':', 1)[0]
+            if code == 'PURGE_ATTRIBUTION_SCHEMA_UNSAFE':
+                logger.error("Account purge preview blocked user_id=%s reason=%s", user_id, exc)
+                raise HTTPException(409, detail=code) from exc
+            raise
         return {'target_type':'account','target_id':user_id,'email':account['email'],
             'fingerprint':purge_plan_fingerprint(connection),
             'tables':counts,'total_rows':sum(counts.values()),
@@ -4443,20 +4549,22 @@ def assign_organization_assessment(
                 program_binding = assessment_assignment_sources.resolve_pilot_binding(
                     connection, organization_id=organization_id, assignment_ref=assignment_ref)
         except ValueError as exc:
+            error_code = str(exc)
             logger.warning(
                 "Assessment assignment source resolution failed organization_id=%s code=%s",
                 organization_id,
-                str(exc),
+                error_code,
             )
-            raise HTTPException(
-                status_code=409,
-                detail=(
-                    "Оценка ещё не настроена для запуска. Подключите опубликованную программу "
-                    "в карточке организации или обратитесь к суперадминистратору."
-                    if assignment_scope.is_superadmin
-                    else "Оценка ещё не настроена для запуска. Обратитесь к суперадминистратору."
-                ),
-            ) from exc
+            public_codes = {
+                "PROGRAM_ROLE_SELECTION_REQUIRED",
+                "PROGRAM_ROLE_NOT_AVAILABLE",
+                "PROGRAM_NOT_CONNECTED",
+                "PROGRAM_NOT_AVAILABLE",
+                "PROGRAM_NOT_AVAILABLE_FOR_NEW_ASSIGNMENTS",
+            }
+            raise HTTPException(status_code=409, detail=(
+                error_code if error_code in public_codes else "PROGRAM_CONFIGURATION_NOT_AVAILABLE"
+            )) from exc
         if payload.assessment_configuration_id is not None and (
             int(payload.assessment_configuration_id) != int(program_binding["assessment_configuration_id"])
             or int(payload.role_profile_version_id) != int(program_binding["role_profile_version_id"])
@@ -4776,10 +4884,16 @@ def purge_admin_organization(
         except (LookupError, ValueError) as exc:
             connection.rollback()
             raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            connection.rollback()
+            logger.exception("Physical organization purge failed organization_id=%s", organization_id)
+            code = str(exc).split(':', 1)[0]
+            raise HTTPException(status_code=409, detail=(code
+                if code == 'PURGE_ATTRIBUTION_SCHEMA_UNSAFE' else 'PURGE_EXECUTION_FAILED')) from exc
         except Exception as exc:
             connection.rollback()
             logger.exception("Physical organization purge failed organization_id=%s", organization_id)
-            raise HTTPException(status_code=409, detail="Physical organization purge failed; replay may be required") from exc
+            raise HTTPException(status_code=409, detail="PURGE_EXECUTION_FAILED") from exc
         logger.warning(
             "Physical organization purge completed organization_id=%s actor_user_id=%s rows=%s operation_id=%s",
             organization_id,
@@ -4834,10 +4948,16 @@ def purge_admin_account(user_id: int, payload: AdminAccountPurgeRequest, request
         except (LookupError, ValueError) as exc:
             connection.rollback()
             raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            connection.rollback()
+            logger.exception("Physical account purge failed user_id=%s", user_id)
+            code = str(exc).split(':', 1)[0]
+            raise HTTPException(status_code=409, detail=(code
+                if code == 'PURGE_ATTRIBUTION_SCHEMA_UNSAFE' else 'PURGE_EXECUTION_FAILED')) from exc
         except Exception as exc:
             connection.rollback()
             logger.exception("Physical account purge failed user_id=%s", user_id)
-            raise HTTPException(status_code=409, detail="Physical account purge failed; replay may be required") from exc
+            raise HTTPException(status_code=409, detail="PURGE_EXECUTION_FAILED") from exc
         logger.warning("Physical account purge completed user_id=%s actor_user_id=%s rows=%s operation_id=%s",
             user_id, int(actor.id) if actor and actor.id is not None else None,
             sum(counts.values()), payload.operation_id)

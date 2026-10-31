@@ -189,7 +189,14 @@ const loadAcquaintance = async () => {
   scopeKey = nextScope;
   model = next;
   savedAnswers = { ...(next.state?.answers_json || {}) };
-  answers = { ...savedAnswers, ...readDraft(), ...dirty };
+  if (next.mandatory_complete) {
+    const key = draftKey();
+    draftKeys.add(key);
+    try { window.sessionStorage.removeItem(key); } catch { /* Confirmed server state remains authoritative. */ }
+    answers = { ...savedAnswers };
+  } else {
+    answers = { ...savedAnswers, ...readDraft(), ...dirty };
+  }
   loadFailed = false;
   if (next.preparation_operation) localOperation = next.preparation_operation;
   else {

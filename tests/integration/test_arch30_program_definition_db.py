@@ -89,3 +89,34 @@ def test_retired_program_stops_new_resolution_without_rewriting_connection(progr
     assert assessment_programs.current_connection(connection, organization_id=10)['program_status'] == 'retired'
     with pytest.raises(ValueError, match='PROGRAM_NOT_AVAILABLE_FOR_NEW_ASSIGNMENTS'):
         assessment_programs.resolve(connection, organization_id=10, assignment_ref='competencies_4k')
+
+
+def test_existing_program_connection_actor_fk_migrates_without_rewriting_business_data(program_db):
+    connection, program_id = program_db
+    connected = assessment_programs.connect(connection, organization_id=10,
+        program_definition_id=program_id, actor_user_id=2, operation_id='connect-program-migration')
+    constraint = connection.execute("""SELECT constraint_row.conname
+        FROM pg_constraint constraint_row JOIN pg_attribute attribute
+          ON attribute.attrelid=constraint_row.conrelid AND attribute.attnum=ANY(constraint_row.conkey)
+        WHERE constraint_row.conrelid='organization_assessment_program_connections'::regclass
+          AND constraint_row.confrelid='users'::regclass
+          AND attribute.attname='connected_by_user_id'""").fetchone()['conname']
+    connection.execute(psycopg.sql.SQL("ALTER TABLE organization_assessment_program_connections DROP CONSTRAINT {}")
+        .format(psycopg.sql.Identifier(constraint)))
+    connection.execute("ALTER TABLE organization_assessment_program_connections ALTER COLUMN connected_by_user_id SET NOT NULL")
+    connection.execute("""ALTER TABLE organization_assessment_program_connections
+        ADD CONSTRAINT legacy_connected_by_fk FOREIGN KEY(connected_by_user_id)
+        REFERENCES users(id) ON DELETE RESTRICT""")
+    connection.commit()
+
+    assessment_programs.ensure_schema(connection)
+    connection.execute('DELETE FROM users WHERE id=2')
+    row = connection.execute("""SELECT id,organization_id,program_definition_id,is_current,
+        operation_id,connected_by_user_id FROM organization_assessment_program_connections
+        WHERE id=%s""", (connected['connection_id'],)).fetchone()
+
+    assert row == {
+        'id': connected['connection_id'], 'organization_id': 10,
+        'program_definition_id': program_id, 'is_current': True,
+        'operation_id': 'connect-program-migration', 'connected_by_user_id': None,
+    }
