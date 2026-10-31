@@ -127,6 +127,8 @@
 .admin-organization-steps {
     display: flex;
     gap: var(--space-4);
+    min-width: 0;
+    max-width: 100%;
     overflow-x: auto;
     border-bottom: 1px solid var(--palette-graphite-200);
 }
@@ -965,20 +967,33 @@
 .admin-assignment-readiness {
     display: grid;
     gap: 12px;
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
     padding: 16px;
     border: 1px solid var(--palette-graphite-200);
     border-radius: var(--radius-sm);
 }
 .admin-assignment-readiness h5,
-.admin-assignment-readiness p { margin: 0; }
+.admin-assignment-readiness p {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
 .admin-assignment-readiness dl {
     display: grid;
     grid-template-columns: max-content minmax(0, 1fr);
     gap: 8px 16px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     margin: 0;
 }
-.admin-assignment-readiness dt { color: var(--text-muted); }
-.admin-assignment-readiness dd { margin: 0; overflow-wrap: anywhere; }
+.admin-assignment-readiness dt { min-width: 0; color: var(--text-muted); }
+.admin-assignment-readiness dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .admin-assignment-readiness .form-status ul { margin: 8px 0 0; padding-left: 20px; }
 
 @media (min-width: 861px) {
