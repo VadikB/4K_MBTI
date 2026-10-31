@@ -46,7 +46,7 @@
   frontend/build и browser viewport/keyboard регрессии.
 - Активный шаг: полная регрессия P06 и I08 screenshots.
 - Следующий шаг: обновить acceptance-артефакт, финальную сборку и выполнить CI.
-- Ветка / commit: `codex/adm-layout-31`, base `de8261d`, PR отсутствует.
+- Ветка / implementation commit: `codex/adm-layout-31`, `aa46c97`, base `de8261d`.
 
 ## Действия выпуска
 
@@ -89,8 +89,8 @@
 
 - `node --test tests/frontend/*.test.mjs` — PASS, 120/120.
 - `npm run build:web` — PASS.
-- `tests/browser/auth-r03.spec.mjs` — PASS, 73/73, включая CSV dialog/Escape.
-- `pytest tests/unit -q` — PASS, 662/662.
+- `tests/browser/auth-r03.spec.mjs` — PASS, 74/74, 2 evidence-only skipped.
+- `pytest tests/unit tests/e2e/test_adm27_assignment_http.py -q` — PASS, 678/678.
 - `Api/routes.py` py_compile — PASS; `git diff --check` — PASS.
 - P06 HTTP regression — PASS, `tests/e2e/test_adm27_assignment_http.py`.
 - P06 isolated PostgreSQL — PASS, 16/16: аудит/idempotency/rollback, все started
