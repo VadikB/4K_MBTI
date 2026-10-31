@@ -136,8 +136,7 @@ def test_assignment_rejects_attempt_to_override_pilot_sources(client):
         "assessment_configuration_id": 82, "role_profile_version_id": 92,
     })
     assert response.status_code == 409
-    assert "Выбранная роль или версия программы не относится к текущей оценке" in response.text
-    assert "PROGRAM_SOURCE_OVERRIDE_NOT_ALLOWED" not in response.text
+    assert response.json()["detail"] == "PROGRAM_SOURCE_SELECTION_STALE"
     assert connection.rows == []
 
 
@@ -154,4 +153,46 @@ def test_connected_program_without_selected_role_returns_exact_action_code(clien
 
     assert response.status_code == 409
     assert response.json()["detail"] == "PROGRAM_ROLE_SELECTION_REQUIRED"
+    assert connection.rows == []
+
+
+@pytest.mark.parametrize("error_code", [
+    "PROGRAM_ASSIGNMENT_REF_MISMATCH",
+    "PROGRAM_NOT_AVAILABLE_FOR_NEW_ASSIGNMENTS",
+    "PROGRAM_ROLE_NOT_AVAILABLE",
+    "PROGRAM_CONFIGURATION_NOT_AVAILABLE",
+    "PROGRAM_CATALOG_NOT_AVAILABLE",
+    "PROGRAM_CATALOG_VERSION_MISMATCH",
+    "PROGRAM_CATALOG_SCOPE_MISMATCH",
+])
+def test_assignment_preserves_public_program_blocker(client, monkeypatch, error_code):
+    http, connection = client
+
+    def reject(*_args, **_kwargs):
+        raise ValueError(error_code)
+
+    monkeypatch.setattr(routes.assessment_programs, "resolve", reject)
+    response = http.post("/users/admin/organizations/3/assessment-assignments", json={
+        "user_ids": [18], "assignment_ref": "assessment-a",
+        "operation_id": "pilot31-public-blocker-" + error_code.lower(),
+    })
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == error_code
+    assert connection.rows == []
+
+
+def test_assignment_requires_confirmed_questionnaire_with_stable_code(client, monkeypatch):
+    http, connection = client
+    monkeypatch.setattr(routes.questionnaire_sources, "assignment_readiness", lambda *_args, **_kwargs: {
+        "status": "draft", "reason": "confirmed_questionnaire", "missing": ["confirmation"],
+    })
+
+    response = http.post("/users/admin/organizations/3/assessment-assignments", json={
+        "user_ids": [18], "assignment_ref": "assessment-a",
+        "operation_id": "pilot31-questionnaire-not-confirmed",
+    })
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "ASSIGNMENT_QUESTIONNAIRE_NOT_CONFIRMED"
     assert connection.rows == []

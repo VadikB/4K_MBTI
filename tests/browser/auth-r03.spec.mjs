@@ -1058,6 +1058,10 @@ test('ADM19-01 adds a participant with only email, name and role', async ({ page
 test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague', async ({ page }) => {
   const organization = {
     ...adminOrganization,
+    assessment_program: {
+      program_definition_id: 7, program_name: 'Специалист 4К', program_version: '1.0',
+      assignment_ref: 'competencies_4k', roles: [{ version_id: 92, code: 'specialist', name: 'Специалист' }],
+    },
     members_count: 2,
     members: [
       { ...adminOrganization.members[0], user_id: 18, email: adminUser.email, full_name: 'Admin',
@@ -1082,7 +1086,23 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
   await expect.poll(() => assignmentPayload).toBeTruthy();
   await expect(page.locator('#admin-organizations-status')).toContainText('Назначена: 2');
   expect(assignmentPayload.assignment_ref).toBe('competencies_4k');
+  expect(assignmentPayload.role_profile_version_id).toBe(92);
   expect(assignmentPayload.user_ids.sort()).toEqual([18, 19]);
+});
+
+test('PILOT31-03 explains every visible readiness blocker before assignment', async ({ page }) => {
+  await openAdminOrganizations(
+    page,
+    (route) => fulfillJson(route, { items: [] }),
+    adminOrganization,
+    { body: { items: [{ id: 12, assignment_ref: 'other-assessment', status: 'draft' }] } },
+  );
+
+  const readiness = page.locator('.admin-assignment-readiness');
+  await expect(readiness).toBeVisible();
+  await expect(readiness).toContainText('Программа оценки не подключена');
+  await expect(readiness).toContainText('Анкета для выбранной оценки не подтверждена');
+  await expect(page.getByRole('button', { name: 'Назначить оценку' })).toBeDisabled();
 });
 
 test('QA19-02 resolves palette tokens in visible auth and admin states', async ({ page }) => {

@@ -114,6 +114,13 @@ const apiErrorMessages = {
   PROGRAM_NOT_CONNECTED: 'К организации не подключена программа оценки. Сначала подключите опубликованную программу.',
   PROGRAM_NOT_AVAILABLE: 'Выбранная программа недоступна. Выберите опубликованную версию.',
   PROGRAM_NOT_AVAILABLE_FOR_NEW_ASSIGNMENTS: 'Эта версия программы больше не принимает новые назначения. Подключите актуальную опубликованную версию.',
+  PROGRAM_ASSIGNMENT_REF_MISMATCH: 'Выбранная оценка не соответствует подключённой программе. Выберите оценку этой программы и повторите назначение.',
+  PROGRAM_CONFIGURATION_NOT_AVAILABLE: 'Настройка программы не завершена. Обратитесь к суперадминистратору.',
+  PROGRAM_CATALOG_NOT_AVAILABLE: 'Каталог подключённой программы недоступен для новых назначений. Обратитесь к суперадминистратору.',
+  PROGRAM_CATALOG_VERSION_MISMATCH: 'Версии программы и каталога не совпадают. Обратитесь к суперадминистратору.',
+  PROGRAM_CATALOG_SCOPE_MISMATCH: 'Каталог программы недоступен этой организации. Обратитесь к суперадминистратору.',
+  PROGRAM_SOURCE_SELECTION_STALE: 'Выбранная роль или версия программы устарела. Обновите карточку и повторите назначение.',
+  ASSIGNMENT_QUESTIONNAIRE_NOT_CONFIRMED: 'Подтвердите сведения выбранной оценки перед назначением.',
   EMAIL_PROVIDER_NOT_CONFIGURED: 'Сервис приглашений не настроен. Обратитесь к техническому администратору.',
 };
 
@@ -123,7 +130,11 @@ const errorCodeFrom = (data) => {
   if (direct) return String(direct);
   if (detail && typeof detail === 'object') return String(detail.code || detail.error_code || '') || null;
   if (typeof detail !== 'string') return null;
-  return Object.keys(apiErrorMessages).find((code) => detail.includes(code)) || null;
+  const normalized = detail.trim();
+  if (Object.hasOwn(apiErrorMessages, normalized)) return normalized;
+  return Object.keys(apiErrorMessages)
+    .sort((left, right) => right.length - left.length)
+    .find((code) => normalized.startsWith(code + ':')) || null;
 };
 
 const appendRequestId = (message, requestId) => requestId ? `${message} Код обращения: ${requestId}.` : message;
