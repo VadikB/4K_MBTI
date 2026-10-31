@@ -449,8 +449,13 @@
         </nav>
         <div class="org-admin-account">
           <span id="admin-organizations-account-name">Аккаунт</span>
-          <button id="admin-organizations-back-button" class="ghost-button compact-ghost" type="button">К сводке</button>
-          <button id="admin-organizations-logout-button" class="ghost-button compact-ghost" type="button">Выйти</button>
+          <details class="org-admin-account-menu">
+            <summary aria-label="Открыть меню аккаунта"><span class="org-admin-account-avatar" aria-hidden="true">А</span><span aria-hidden="true">⌄</span></summary>
+            <div class="org-admin-account-menu-popover" role="menu">
+              <button id="admin-organizations-back-button" type="button" role="menuitem">К сводке</button>
+              <button id="admin-organizations-logout-button" type="button" role="menuitem">Выйти</button>
+            </div>
+          </details>
         </div>
       </header>
 

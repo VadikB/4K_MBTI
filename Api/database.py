@@ -3200,6 +3200,7 @@ def ensure_m5_runtime_schema(connection) -> None:
             cycle_id UUID NOT NULL UNIQUE,
             owner_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
             organization_id BIGINT,
+            assignment_id BIGINT,
             personalized_profile_id BIGINT NOT NULL REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT,
             profile_ref_json JSONB NOT NULL,
             selected_role_ref_json JSONB NOT NULL,
@@ -3222,6 +3223,16 @@ def ensure_m5_runtime_schema(connection) -> None:
     """)
     connection.execute("ALTER TABLE m5_cycles ADD COLUMN IF NOT EXISTS execution_manifest_json JSONB")
     connection.execute("ALTER TABLE m5_cycles ADD COLUMN IF NOT EXISTS execution_manifest_checksum TEXT")
+    connection.execute("ALTER TABLE m5_cycles ADD COLUMN IF NOT EXISTS assignment_id BIGINT")
+    connection.execute("""DO $$ BEGIN
+        IF to_regclass(current_schema()||'.organization_assessment_assignments') IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM pg_constraint
+                           WHERE conname='m5_cycles_assignment_id_fk' AND conrelid='m5_cycles'::regclass) THEN
+            ALTER TABLE m5_cycles ADD CONSTRAINT m5_cycles_assignment_id_fk
+              FOREIGN KEY(assignment_id) REFERENCES organization_assessment_assignments(id) ON DELETE RESTRICT;
+        END IF;
+    END $$""")
+    connection.execute("CREATE INDEX IF NOT EXISTS idx_m5_cycles_assignment ON m5_cycles(assignment_id) WHERE assignment_id IS NOT NULL")
     connection.execute("""DO $$ BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='ck_m5_cycle_execution_manifest_pair'
                        AND conrelid='m5_cycles'::regclass) THEN
@@ -4779,6 +4790,20 @@ def ensure_core_schema() -> None:
             "CREATE INDEX IF NOT EXISTS idx_org_assessment_assignments_recipient "
             "ON organization_assessment_assignments(recipient_user_id, organization_id, status)"
         )
+        connection.execute("""DO $$ DECLARE constraint_name TEXT; BEGIN
+            SELECT conname INTO constraint_name FROM pg_constraint
+            WHERE conrelid='organization_assessment_assignments'::regclass AND contype='u'
+              AND pg_get_constraintdef(oid) LIKE 'UNIQUE (organization_id, recipient_user_id, assignment_ref)%'
+            LIMIT 1;
+            IF constraint_name IS NOT NULL THEN
+                EXECUTE format('ALTER TABLE organization_assessment_assignments DROP CONSTRAINT %I', constraint_name);
+            END IF;
+        END $$""")
+        connection.execute("""CREATE UNIQUE INDEX IF NOT EXISTS uq_org_assessment_assignment_active
+            ON organization_assessment_assignments(organization_id,recipient_user_id,assignment_ref)
+            WHERE status='active' AND revoked_at IS NULL""")
+        from Api.assessment_assignment_cancellation import ensure_schema as ensure_assignment_cancellation_schema
+        ensure_assignment_cancellation_schema(connection)
         connection.execute(
             "CREATE INDEX IF NOT EXISTS idx_organization_invitations_recipient "
             "ON organization_invitations(organization_id, LOWER(recipient_email), expires_at) "

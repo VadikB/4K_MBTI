@@ -138,11 +138,20 @@ def start_prepared(connection, *, user_id: int, cycle_id: str, key: str) -> dict
     connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(user_id),))
     plan = m7_cycle_planner.read_plan(connection, cycle_id)
     cycle = connection.execute(
-        "SELECT owner_user_id,personalized_profile_id,status,started_at FROM m5_cycles WHERE cycle_id=%s FOR UPDATE",
+        "SELECT owner_user_id,personalized_profile_id,assignment_id,status,started_at FROM m5_cycles WHERE cycle_id=%s FOR UPDATE",
         (cycle_id,),
     ).fetchone()
     if not cycle or int(cycle["owner_user_id"]) != int(user_id):
         raise ValueError("M7_CYCLE_NOT_FOUND")
+    if cycle.get("assignment_id") is not None:
+        active_assignment = connection.execute(
+            """SELECT 1 FROM organization_assessment_assignments
+               WHERE id=%s AND recipient_user_id=%s AND status='active' AND revoked_at IS NULL
+               FOR UPDATE""",
+            (cycle["assignment_id"], user_id),
+        ).fetchone()
+        if not active_assignment:
+            raise ValueError("ASSIGNMENT_CANCELLED")
     participant_profile.profile_for_start(
         connection, user_id=user_id, profile_id=int(cycle["personalized_profile_id"]),
     )
@@ -185,6 +194,15 @@ def start_or_resume(connection, *, user_id: int, key: str,
     usage_scope = qa_orchestration.usage_scope()
     current = _current_cycle(connection, user_id, organization_id, configuration_id, usage_scope)
     if current:
+        current_assignment = connection.execute(
+            "SELECT assignment_id FROM m5_cycles WHERE cycle_id=%s FOR UPDATE", (current["cycle_id"],),
+        ).fetchone()
+        if current_assignment and current_assignment.get("assignment_id") is not None and not connection.execute(
+            """SELECT 1 FROM organization_assessment_assignments
+               WHERE id=%s AND recipient_user_id=%s AND status='active' AND revoked_at IS NULL FOR UPDATE""",
+            (current_assignment["assignment_id"], user_id),
+        ).fetchone():
+            raise ValueError("ASSIGNMENT_CANCELLED")
         open_as = connection.execute(
             """SELECT assessment_situation_id,status FROM m5_assessment_situations
                WHERE cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s)

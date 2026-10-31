@@ -258,6 +258,20 @@ class AssessmentAssignmentBatchResponse(BaseModel):
     items: list[AssessmentAssignmentResultItem]
 
 
+class AssessmentAssignmentCancelRequest(BaseModel):
+    operation_id: str = Field(min_length=8, max_length=200)
+
+
+class AssessmentAssignmentCancelResponse(BaseModel):
+    assignment_id: int
+    organization_id: int
+    recipient_user_id: int
+    assignment_ref: str
+    status: str
+    operation_id: str
+    cancelled_at: datetime
+
+
 class AgentReply(BaseModel):
     dashboard: UserDashboard | None = None
     session_id: str

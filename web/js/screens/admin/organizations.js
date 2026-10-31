@@ -19,6 +19,7 @@ const invitationRequestsInFlight = new Set();
 const invitationOperationIds = new Map();
 const assignmentSourceRequests = new Set();
 const assignmentOperationIds = new Map();
+const cancellationOperationIds = new Map();
 const questionnairePreviews = new Map();
 const questionnaireRevisions = new Map();
 const staleQuestionnairePreviews = new Set();
@@ -30,6 +31,7 @@ const questionnaireConfirmRequestGenerations = new Map();
 const questionnaireConfirmRequestsInFlight = new Set();
 const questionnaireLoadStates = new Map();
 const questionnaireConfirmOutcomes = new Map();
+const dismissedQuestionnairePreviews = new Set();
 let operationAnchor = null;
 let restoredManagementIdentity = null;
 
@@ -237,6 +239,7 @@ const clearAdminOrganizationsSessionState = () => {
   invitationOperationIds.clear();
   assignmentSourceRequests.clear();
   assignmentOperationIds.clear();
+  cancellationOperationIds.clear();
   questionnairePreviews.clear();
   questionnaireRevisions.clear();
   staleQuestionnairePreviews.clear();
@@ -248,6 +251,7 @@ const clearAdminOrganizationsSessionState = () => {
   questionnaireConfirmRequestsInFlight.clear();
   questionnaireLoadStates.clear();
   questionnaireConfirmOutcomes.clear();
+  dismissedQuestionnairePreviews.clear();
   operationAnchor = null;
   restoredManagementIdentity = null;
 };
@@ -840,6 +844,27 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
   }
 };
 
+export const cancelAdminOrganizationAssessment = async (organizationId, assignmentId) => {
+  const key = Number(organizationId) + ':' + Number(assignmentId);
+  const operationId = cancellationOperationIds.get(key) || createOperationId();
+  cancellationOperationIds.set(key, operationId);
+  try {
+    const response = await fetch(
+      '/users/admin/organizations/' + Number(organizationId) + '/assessment-assignments/' + Number(assignmentId) + '/cancel',
+      { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operation_id: operationId }) },
+    );
+    await readApiResponse(response, 'Не удалось отменить назначение оценки.');
+    cancellationOperationIds.delete(key);
+    await loadAdminOrganizations();
+    setStatus('Назначение оценки отменено. Участник и его история сохранены.', 'success');
+    return true;
+  } catch (error) {
+    setStatus(error.message || 'Не удалось отменить назначение оценки.', 'error');
+    return false;
+  }
+};
+
 const offerAssessmentDataNavigation = (organizationId, assessmentRef) => {
   const target = operationRoot()?.querySelector('[data-operation-status]') || adminOrganizationsStatus;
   const button = document.createElement('button');
@@ -1056,6 +1081,7 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
     if (currentForm && inputChanged) captureFormDraft(organizationId, currentForm);
     else if (!managementDrafts.has(draftKey) && submittedForm) captureFormDraft(organizationId, submittedForm);
     questionnairePreviews.set(scopeKey, preview);
+    dismissedQuestionnairePreviews.delete(scopeKey + ':' + Number(preview.id));
     if (inputChanged) staleQuestionnairePreviews.add(scopeKey);
     else staleQuestionnairePreviews.delete(scopeKey);
     renderAdminOrganizations();
@@ -1440,23 +1466,38 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
             '" title="Сбросить пароль" aria-label="Сбросить пароль">Сбросить пароль</button>'
           : '<span class="admin-organization-password-state" title="Пользователь еще не задавал пароль">Пароль не задан</span>';
         const invitationStatus = String(item.invitation_status || 'not_sent');
-        const invitationLabels = { not_sent: 'Письмо не отправлено', queued: 'Письмо в очереди', sending: 'Исход отправки уточняется', accepted: 'Письмо принято провайдером', error: 'Ошибка отправки', revoked: 'Ссылка отозвана', expired: 'Ссылка истекла', used: 'Регистрация завершена' };
-        const deliveryLabels = { not_sent: 'Письмо: не отправлено', queued: 'Письмо: в очереди', sending: 'Письмо: исход неизвестен', accepted: 'Письмо: принято провайдером', error: 'Письмо: ошибка' };
-        const linkLabels = { not_created: 'Ссылка: не создана', active: 'Ссылка: действует 72 часа', revoked: 'Ссылка: отозвана', expired: 'Ссылка: истекла', used: 'Ссылка: использована' };
-        const registrationLabel = item.registration_status === 'registered' ? 'Регистрация: завершена' : 'Регистрация: ожидается';
         const hasAssignment = (item.assessment_assignments || []).includes(selectedAssessmentRef);
-        const currentStage = scopedStage && scopedStage.code !== 'assigned'
-          ? scopedStage.label
+        const stageLabels = {
+          ready_to_start: 'Готов к прохождению оценки', prepared: 'Готов к прохождению оценки',
+          processing: 'Готовится отчёт', report_ready: 'Отчёт готов',
+        };
+        const currentStage = preparationStatus === 'cancelled'
+          ? 'Назначение отменено'
+          : scopedStage && scopedStage.code !== 'assigned'
+          ? (stageLabels[preparationStatus] || scopedStage.label)
           : item.invitation_delivery_status === 'accepted'
             ? 'Письмо отправлено — ожидаем начала знакомства'
             : !hasAssignment
               ? 'Оценка не назначена'
               : 'Приглашение не отправлено';
-        const sendLabel = item.invitation_id ? 'Отправить повторно' : 'Отправить';
+        const stageDescription = preparationStatus === 'cancelled'
+          ? 'Можно назначить эту оценку повторно'
+          : ['ready_to_start', 'prepared'].includes(preparationStatus)
+          ? 'Ожидаем начала'
+          : scopedStage?.description || (hasAssignment ? 'Оценка назначена' : 'Оценка не назначена');
+        const sendLabel = item.invitation_id ? 'Отправить повторно' : 'Пригласить';
         const invitationButton = '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
         const revokeButton = (invitationStatus === 'accepted' || invitationStatus === 'queued' || invitationStatus === 'sending')
-          ? '<button type="button" data-action="revoke-member-invitation" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать ссылку</button>'
+          ? '<button type="button" data-action="revoke-member-invitation" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать приглашение</button>'
           : '';
+        const cancellableStages = ['assigned', 'acquaintance', 'acquaintance_complete', 'preparing', 'preparation_failed', 'prepared', 'ready_to_start'];
+        const cancelAssignmentButton = scopedStage?.assignment_id && hasAssignment && cancellableStages.includes(preparationStatus)
+          ? '<button type="button" data-action="cancel-member-assignment" data-assignment-id="' + Number(scopedStage.assignment_id) +
+            '" data-assignment-ref="' + escapeHtml(selectedAssessmentRef) + '" data-value="' + escapeHtml(item.full_name || email) + '">Отменить назначение оценки</button>'
+          : '';
+        const primaryAction = invitationStatus === 'not_sent' || invitationStatus === 'error' || invitationStatus === 'revoked'
+          ? invitationButton : '';
+        const menuActions = (primaryAction ? '' : invitationButton) + revokeButton + cancelAssignmentButton + preparationButton + passwordButton + removeButton;
         const transferForm = !isSuperadmin || !transferTargets.length ? '' :
           '<form class="admin-organization-transfer-form" data-action="transfer-member" data-user-id="' + Number(item.user_id) + '">' +
           '<label><span>Перенести в</span><select name="target_organization_id" required><option value="">Выберите организацию</option>' +
@@ -1466,24 +1507,13 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
         return (
           '<div class="admin-organization-member">' +
           '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>' +
-          '<div class="admin-organization-member-main"><strong>' +
-          escapeHtml(label) +
-          '</strong>' +
-          (details ? '<span>' + escapeHtml(details) + '</span>' : '') +
-          '<span class="admin-organization-current-stage">' + escapeHtml(currentStage) + '</span>' +
+          '<div class="admin-organization-member-main"><button type="button" class="admin-organization-member-name" data-action="open-member-card" data-user-id="' + Number(item.user_id) + '">' + escapeHtml(item.full_name || email) + '</button>' +
+          '<span class="admin-organization-member-email">' + escapeHtml(email) + '</span>' +
+          '<span class="admin-organization-member-position">' + escapeHtml(details || 'Должность не указана') + '</span>' +
           '</div>' +
-          '<details class="admin-organization-member-statuses"><summary>Подробности статуса</summary><div>' +
-          '<span class="admin-organization-invitation-state">Допуск: ' + escapeHtml(item.admission_status === 'denied' ? 'запрещён' : 'разрешён') + '</span>' +
-          '<span class="admin-organization-invitation-state">' + escapeHtml(registrationLabel) + '</span>' +
-          '<span class="admin-organization-invitation-state">' + escapeHtml(deliveryLabels[item.invitation_delivery_status] || invitationLabels[invitationStatus] || invitationStatus) + '</span>' +
-          '<span class="admin-organization-invitation-state">' + escapeHtml(linkLabels[item.invitation_link_status] || item.invitation_link_status || 'Ссылка: не создана') + '</span>' +
-          '<span class="admin-organization-invitation-state">Оценка: ' + escapeHtml(hasAssignment ? 'назначена' : 'не назначена') + '</span>' +
-          '</div></details>' +
-          '<div class="admin-organization-member-actions">' +
-          invitationButton + revokeButton +
-          preparationButton +
-          passwordButton +
-          removeButton +
+          '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span></div>' +
+          '<div class="admin-organization-member-actions">' + primaryAction +
+          (menuActions ? '<details class="admin-organization-member-menu"><summary aria-label="Другие действия">⋯</summary><div role="menu">' + menuActions + '</div></details>' : '') +
           '</div>' + transferForm +
           '</div>'
         );
@@ -1675,10 +1705,17 @@ export const renderAdminOrganizations = () => {
           '<p>Изменений относительно текущей подтверждённой редакции нет.</p>');
       const humanProblems = questionnaireProblems.map((item) => validationLabels[item] ||
         (String(item).includes('duplicate') ? 'повторяющиеся поля' : 'некорректно заполненные поля'));
-      const previewMarkup = questionnairePreview ? '<div class="admin-questionnaire-preview" role="status" data-draft-action="questionnaire-preview" data-assessment-ref="' +
+      const previewIsDialog = questionnairePreview?.channel === 'csv';
+      const previewElement = previewIsDialog ? 'dialog' : 'div';
+      const previewDismissKey = assessmentKey(orgId, selectedRef) + ':' + Number(questionnairePreview?.id || 0);
+      const previewMarkup = questionnairePreview ? '<' + previewElement + ' class="admin-questionnaire-preview' +
+        (previewIsDialog ? ' admin-questionnaire-preview-dialog' : '') + '" ' +
+        (previewIsDialog ? 'aria-modal="true" aria-labelledby="admin-questionnaire-preview-title-' + Number(questionnairePreview.id) + '"' : 'role="status"') +
+        ' data-preview-dismiss-key="' + escapeHtml(previewDismissKey) + '" data-draft-action="questionnaire-preview" data-assessment-ref="' +
         escapeHtml(selectedRef) + '" data-preview-action="' +
         (questionnairePreview.channel === 'csv' ? 'preview-questionnaire' : 'preview-early-data') +
-        '" data-questionnaire-revision-id="' + Number(questionnairePreview.id) + '"><strong>' +
+        '" data-questionnaire-revision-id="' + Number(questionnairePreview.id) + '">' +
+        (previewIsDialog ? '<div class="admin-questionnaire-preview-dialog-head"><strong id="admin-questionnaire-preview-title-' + Number(questionnairePreview.id) + '">Проверка сведений</strong><button type="button" class="ghost-button compact-ghost" data-action="close-questionnaire-preview">Закрыть</button></div><p>Загрузка и подтверждение — разные действия.</p><strong>' : '<strong>') +
         (questionnairePreview.status === 'ready_for_confirmation' ? 'Готово к подтверждению' : 'Нужно исправить анкету') + '</strong>' +
         (previewIsStale ? '<p class="form-status error" data-preview-stale>Данные изменились. Обновите предпросмотр перед подтверждением. ' +
           '<button type="button" class="text-button" data-action="refresh-questionnaire-preview">Обновить предпросмотр</button></p>' : '') +
@@ -1695,7 +1732,7 @@ export const renderAdminOrganizations = () => {
             escapeHtml(admin.full_name || admin.email) + ' · ' + escapeHtml(admin.email) + '</label>').join('') + '</div>' +
           '<p class="form-status error hidden" data-questionnaire-recipient-error></p>' +
           '</fieldset><button type="button" class="primary-button compact-primary" data-action="confirm-questionnaire" data-value="' +
-          Number(questionnairePreview.id) + '"' + (previewIsStale ? ' disabled' : '') + '>Подтвердить сведения</button>' : '') + '</div>' : '';
+          Number(questionnairePreview.id) + '"' + (previewIsStale ? ' disabled' : '') + '>Подтвердить сведения</button>' : '') + '</' + previewElement + '>' : '';
       return (
         '<article class="card card--inset admin-organization-card" data-organization-id="' +
         orgId +
@@ -1754,9 +1791,10 @@ export const renderAdminOrganizations = () => {
         viewButton('organization-data', 'Данные организации') +
         viewButton('questionnaire', 'Анкета') + '</nav>' +
         '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people"><h4>Организация и участники</h4>' +
-        '<p>Выбранная оценка: <strong>' + escapeHtml(selectedRef || 'не выбрана') + '</strong>. Назначение не запускает оценку.</p>' +
+        '<div class="admin-people-context"><div><span>Оценка</span><strong>' + escapeHtml(selectedRef || 'Не выбрана') + '</strong></div><div><span>Программа</span><strong>' + escapeHtml(currentProgram?.program_name || 'Не подключена') + '</strong></div><div><span>Роль</span><strong>' + escapeHtml(allowedRoles.map((role) => role.name || role.code).join(', ') || 'Не выбрана') + '</strong></div></div>' +
         assignmentReadinessMarkup +
-        '<div class="admin-organization-bulk-actions"><form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
+        '<div class="admin-people-selection"><label class="admin-select-all"><input type="checkbox" name="select_all_participants"> <span>Все участники</span></label><span data-selected-count>Выбрано: 0</span></div>' +
+        '<div class="admin-organization-bulk-actions hidden" data-bulk-actions><form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
         '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment">' + roleSelectionMarkup + '<button class="primary-button compact-primary" type="submit"' +
         (assignmentBlockers.length ? ' disabled' : '') + '>Назначить оценку</button></form></div>' +
         renderMemberList(org.members || [], {
@@ -1804,23 +1842,49 @@ export const renderAdminOrganizations = () => {
         '<label><span>Реалистичность кейсов</span><input name="case_reality_level" value="' + answer('C17', 'case_reality_level') + '"></label>' +
         '<label><span>Правила использования названия</span><input name="organization_name_usage_rules" value="' + answer('C17', 'organization_name_usage_rules') + '"></label>' +
         '<button class="primary-button compact-primary" type="submit">Сохранить черновик и предпросмотр</button></form>' +
-        (activeView === 'organization-data' ? confirmationMarkup + previewMarkup : '') + '</section>' +
+        (activeView === 'organization-data' ? confirmationMarkup + previewMarkup : '') +
+        '<aside class="admin-next-step"><span>Следующий шаг</span><strong>' +
+        (publishedRevision ? 'Перейдите к участникам' : 'Проверьте и подтвердите сведения') +
+        '</strong><p>' + (publishedRevision
+          ? 'Сведения готовы для назначения выбранной оценки.'
+          : 'Черновик не меняет права и не публикуется до подтверждения.') +
+        '</p><button type="button" class="ghost-button compact-ghost" data-action="show-admin-view" data-view="' +
+        (publishedRevision ? 'people' : 'questionnaire') + '">' +
+        (publishedRevision ? 'К участникам' : 'К анкете') + '</button></aside></section>' +
         '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') + '" data-admin-view="questionnaire">' + questionnaireLoadMarkup + readinessMarkup(selectedRef, readiness) + '<h4>Корпоративная анкета</h4>' +
-        '<p>Скачайте утверждённый UTF-8 CSV-шаблон, загрузите заполненный файл и проверьте ошибки.</p>' +
+        '<div class="admin-questionnaire-upload-card"><strong>Анкета для подготовки оценки</strong><p>Скачайте утверждённый UTF-8 CSV-шаблон и загрузите заполненный файл. Перед сохранением вы сможете проверить сведения.</p>' +
         '<p><a class="text-link" href="/users/admin/organizations/' + orgId + '/questionnaire/template">Скачать CSV-шаблон</a></p>' +
         '<form class="admin-organization-import-form" data-action="preview-questionnaire">' +
         '<label><span>Оценка</span><input name="assignment_ref" list="assessment-options-' + orgId + '" type="text" value="' + escapeHtml(selectedRef) + '" placeholder="Например, 4К · поток октябрь 2026" required></label>' +
         '<datalist id="assessment-options-' + orgId + '">' + revisions.map((item) => '<option value="' + escapeHtml(item.assignment_ref) + '"></option>').join('') + '</datalist>' +
         '<label><span>Автор сведений</span><input name="source_author" type="text" value="' + escapeHtml(currentRevision?.source_author || '') + '" placeholder="Автор сведений со стороны заказчика" required></label>' +
-        '<input name="csv" type="file" accept=".csv,text/csv" required>' +
-        '<button class="ghost-button compact-ghost" type="submit">Предпросмотр анкеты</button></form>' +
+        '<label class="admin-questionnaire-file"><span>Файл анкеты</span><input name="csv" type="file" accept=".csv,text/csv" required></label>' +
+        '<button class="ghost-button compact-ghost" type="submit">Проверить сведения</button></form></div>' +
         (activeView === 'questionnaire' ? confirmationMarkup + previewMarkup : '') +
+        '<aside class="admin-next-step"><span>Следующий шаг</span><strong>' +
+        (publishedRevision ? 'Редакция подтверждена' : 'Подтвердите сведения') + '</strong><p>' +
+        (publishedRevision ? 'Можно перейти к участникам и назначению.' : 'Выбор файла сам по себе ничего не публикует.') +
+        '</p><button type="button" class="ghost-button compact-ghost" data-action="show-admin-view" data-view="people">К участникам</button></aside>' +
         '</section>' +
         '</article>'
       );
     })
     .join('');
   restoreAdminOrganizationsDraft();
+  adminOrganizationsList.querySelectorAll('dialog.admin-questionnaire-preview-dialog').forEach((dialog) => {
+    if (dismissedQuestionnairePreviews.has(dialog.dataset.previewDismissKey)) return;
+    if (!dialog.open) dialog.showModal();
+    if (dialog.dataset.closeBound !== 'true') {
+      dialog.dataset.closeBound = 'true';
+      dialog.addEventListener('close', () => dismissedQuestionnairePreviews.add(dialog.dataset.previewDismissKey));
+    }
+  });
+};
+
+export const closeAdminOrganizationQuestionnairePreview = (dialog) => {
+  if (!(dialog instanceof HTMLDialogElement)) return;
+  dismissedQuestionnairePreviews.add(dialog.dataset.previewDismissKey);
+  dialog.close();
 };
 
 export const openAdminOrganizations = async () => {

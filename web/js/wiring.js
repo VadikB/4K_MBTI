@@ -264,6 +264,41 @@ const withScreen = (loader, callback) => {
   })();
 };
 
+const confirmAssignmentCancellation = ({ assignmentRef, participant }) => new Promise((resolve) => {
+  const dialog = document.createElement('dialog');
+  dialog.className = 'admin-assignment-cancel-dialog';
+  const form = document.createElement('form');
+  form.method = 'dialog';
+  const title = document.createElement('h3');
+  title.textContent = 'Отменить назначение оценки?';
+  const message = document.createElement('p');
+  message.textContent = 'Отменить назначение «' + assignmentRef + '» для ' + participant +
+    '? Участник не сможет начать эту оценку. Его аккаунт и участие в организации сохранятся. Для прохождения потребуется новое назначение.';
+  const actions = document.createElement('div');
+  actions.className = 'admin-assignment-cancel-actions';
+  const keep = document.createElement('button');
+  keep.type = 'submit';
+  keep.value = 'keep';
+  keep.className = 'ghost-button compact-ghost';
+  keep.textContent = 'Оставить назначение';
+  const confirm = document.createElement('button');
+  confirm.type = 'submit';
+  confirm.value = 'cancel';
+  confirm.className = 'primary-button compact-primary';
+  confirm.textContent = 'Отменить назначение';
+  actions.append(keep, confirm);
+  form.append(title, message, actions);
+  dialog.append(form);
+  dialog.addEventListener('close', () => {
+    const accepted = dialog.returnValue === 'cancel';
+    dialog.remove();
+    resolve(accepted);
+  }, { once: true });
+  document.body.append(dialog);
+  dialog.showModal();
+  keep.focus();
+});
+
 const isEditableKeyboardTarget = (target) => {
   if (!(target instanceof Element)) {
     return false;
@@ -1750,6 +1785,26 @@ if (adminOrganizationsList) {
   adminOrganizationsList.addEventListener('input', markQuestionnairePreviewStale);
   adminOrganizationsList.addEventListener('change', markQuestionnairePreviewStale);
 
+  adminOrganizationsList.addEventListener('change', (event) => {
+    const checkbox = event.target instanceof HTMLInputElement ? event.target : null;
+    if (!checkbox || !['invitation_email', 'select_all_participants'].includes(checkbox.name)) return;
+    const card = checkbox.closest('[data-organization-id]');
+    if (!card) return;
+    const participantCheckboxes = [...card.querySelectorAll('input[name="invitation_email"]')];
+    if (checkbox.name === 'select_all_participants') {
+      participantCheckboxes.forEach((item) => { item.checked = checkbox.checked; });
+    }
+    const selected = participantCheckboxes.filter((item) => item.checked).length;
+    const selectAll = card.querySelector('input[name="select_all_participants"]');
+    if (selectAll && checkbox.name !== 'select_all_participants') {
+      selectAll.checked = selected === participantCheckboxes.length && participantCheckboxes.length > 0;
+      selectAll.indeterminate = selected > 0 && selected < participantCheckboxes.length;
+    }
+    const count = card.querySelector('[data-selected-count]');
+    if (count) count.textContent = 'Выбрано: ' + selected;
+    card.querySelector('[data-bulk-actions]')?.classList.toggle('hidden', selected === 0);
+  });
+
   adminOrganizationsList.addEventListener('focusout', (event) => {
     const field = event.target instanceof HTMLInputElement && event.target.name === 'assignment_ref'
       ? event.target : null;
@@ -1770,6 +1825,21 @@ if (adminOrganizationsList) {
     const card = button.closest('[data-organization-id]');
     const organizationId = Number(card?.getAttribute('data-organization-id'));
     const value = button.getAttribute('data-value') || '';
+    if (button.dataset.action === 'close-questionnaire-preview') {
+      withScreen(loadAdminOrganizations, (module) =>
+        module.closeAdminOrganizationQuestionnairePreview(button.closest('dialog')));
+      return;
+    }
+    if (button.dataset.action === 'open-member-card') {
+      const row = button.closest('.admin-organization-member');
+      const details = [
+        row?.querySelector('.admin-organization-member-email')?.textContent,
+        row?.querySelector('.admin-organization-member-position')?.textContent,
+        row?.querySelector('.admin-organization-current-stage')?.textContent,
+      ].filter(Boolean).join('\n');
+      window.alert(button.textContent.trim() + '\n' + details);
+      return;
+    }
     if (button.dataset.action === 'purge-account') {
       const userId = Number(button.dataset.userId);
       const email = String(button.dataset.email || '').trim();
@@ -1959,6 +2029,23 @@ if (adminOrganizationsList) {
       const invitationId = Number(button.getAttribute('data-invitation-id'));
       if (!invitationId) return;
       withScreen(loadAdminOrganizations, (module) => module.revokeAdminOrganizationMemberInvitation(organizationId, invitationId));
+      return;
+    }
+    if (button.dataset.action === 'cancel-member-assignment') {
+      const assignmentId = Number(button.getAttribute('data-assignment-id'));
+      const assignmentRef = String(button.getAttribute('data-assignment-ref') || '');
+      if (!assignmentId) return;
+      void confirmAssignmentCancellation({ assignmentRef, participant: value }).then((accepted) => {
+        if (!accepted || !button.isConnected) return;
+        button.disabled = true;
+        withScreen(loadAdminOrganizations, async (module) => {
+          try {
+            await module.cancelAdminOrganizationAssessment(organizationId, assignmentId);
+          } finally {
+            if (button.isConnected) button.disabled = false;
+          }
+        });
+      });
       return;
     }
     if (button.dataset.action === 'prepare-member-assessment') {

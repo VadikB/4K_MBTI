@@ -3,7 +3,8 @@ import fs from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
 
-const root = process.cwd();
+const root = process.env.P4K_STATIC_ROOT || process.cwd();
+const evidenceDir = process.env.ADM_LAYOUT_EVIDENCE_DIR || '';
 const port = 18764;
 const base = `http://127.0.0.1:${port}`;
 const appRelease = (await fs.readFile(path.join(root, 'web/js/config.js'), 'utf8'))
@@ -40,6 +41,12 @@ const fulfillJson = (route, body, status = 200) => route.fulfill({
   contentType: 'application/json',
   body: JSON.stringify(body),
 });
+
+async function evidenceScreenshot(page, name) {
+  if (!evidenceDir) return;
+  await fs.mkdir(evidenceDir, { recursive: true });
+  await page.screenshot({ path: path.join(evidenceDir, name + '.png'), fullPage: true });
+}
 
 async function baseRoutes(page, restore = { authenticated: false }) {
   await page.route('**/users/**', (route) => {
@@ -182,6 +189,7 @@ test('ADM28 late confirmation after account change cannot populate the new accou
     await delayed; return fulfillJson(route, saved);
   });
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
+  await page.locator('.org-admin-account-menu > summary').click();
   await page.locator('#admin-organizations-logout-button').click();
   await expect(page.locator('#auth-panel')).toBeVisible();
   const nextUser = { ...adminUser, id: 28, email: 'next@example.test', full_name: 'Account B' };
@@ -332,7 +340,79 @@ test('QA19-03 keeps the participant section available with no members', async ({
   await expect(page.locator('.admin-organization-members-section').first()).toBeVisible();
 });
 
-test('ARCH30 shows the current participant stage and keeps technical signals collapsed', async ({ page }) => {
+test('ADM-LAYOUT-31 I08 captures the comparable cabinet states', async ({ page }) => {
+  test.skip(!evidenceDir, 'Set ADM_LAYOUT_EVIDENCE_DIR for explicit visual evidence capture.');
+  const organization = {
+    ...adminOrganization,
+    members_count: 2,
+    members: [
+      { ...adminOrganization.members[0], user_id: 19, full_name: 'Synthetic Participant',
+        email: 'participant@example.test', assessment_assignments: ['competencies_4k'], assessment_stages: {
+          competencies_4k: { code: 'ready_to_start', label: 'Готов к прохождению оценки', assignment_id: 141 },
+        } },
+      { ...adminOrganization.members[0], user_id: 20,
+        full_name: 'Очень длинное синтетическое имя участника для проверки переноса',
+        email: 'long.synthetic.participant.address@example.test', assessment_assignments: [] },
+    ],
+  };
+  await page.setViewportSize({ width: 1440, height: 1024 });
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  await evidenceScreenshot(page, '01-people-1440');
+  const accountMenu = page.locator('.org-admin-account-menu summary');
+  if (await accountMenu.count()) await accountMenu.click();
+  await evidenceScreenshot(page, '02-account-menu-1440');
+  await page.getByRole('button', { name: 'Данные организации', exact: true }).click();
+  await evidenceScreenshot(page, '03-organization-data-1440');
+  await page.getByRole('button', { name: 'Анкета', exact: true }).click();
+  await evidenceScreenshot(page, '04-questionnaire-1440');
+  await page.route('**/users/admin/organizations/3/questionnaire/preview', (route) => fulfillJson(route, {
+    id: 301, assignment_ref: 'competencies_4k', status: 'ready_for_confirmation', channel: 'csv',
+    answers_json: {}, validation_json: {}, participant_preview: { purpose: 'Synthetic purpose' },
+    recipient_options: ['participant'],
+  }));
+  const questionnaireForm = page.locator('[data-action="preview-questionnaire"]');
+  await questionnaireForm.locator('[name="source_author"]').fill('Synthetic author');
+  await questionnaireForm.locator('[name="csv"]').setInputFiles({
+    name: 'synthetic-questionnaire.csv', mimeType: 'text/csv', buffer: Buffer.from('question_id,answer\nC01,Synthetic'),
+  });
+  await questionnaireForm.locator('button[type="submit"]').click();
+  await expect(page.locator('.admin-questionnaire-preview')).toBeVisible();
+  await evidenceScreenshot(page, '05-preview-confirm-1440');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Организация и участники' }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await evidenceScreenshot(page, '06-people-mobile-390');
+  await page.setViewportSize({ width: 1440, height: 1024 });
+  const cancel = page.getByRole('button', { name: 'Отменить назначение оценки' });
+  if (await cancel.count()) {
+    let cancelAttempt = 0;
+    await page.route('**/assessment-assignments/141/cancel', (route) => {
+      cancelAttempt += 1;
+      const payload = route.request().postDataJSON();
+      if (cancelAttempt === 1) return fulfillJson(route, { detail: 'ASSIGNMENT_ALREADY_STARTED' }, 409);
+      organization.members[0].assessment_assignments = [];
+      organization.members[0].assessment_stages.competencies_4k = {
+        code: 'cancelled', label: 'Назначение отменено', assignment_id: 141,
+      };
+      return fulfillJson(route, { assignment_id: 141, organization_id: 3, recipient_user_id: 19,
+        assignment_ref: 'competencies_4k', status: 'revoked', operation_id: payload.operation_id,
+        cancelled_at: '2026-10-31T08:00:00' });
+    });
+    await page.locator('.admin-organization-member').first().locator('summary').click();
+    await cancel.click();
+    await evidenceScreenshot(page, '07-cancel-confirmation-1440');
+    await page.getByRole('button', { name: 'Отменить назначение', exact: true }).click();
+    await expect(page.locator('[data-operation-status]')).toContainText('Оценка уже началась. Отменить назначение нельзя.');
+    await evidenceScreenshot(page, '08-cancel-conflict-1440');
+    await page.getByRole('button', { name: 'Отменить назначение оценки' }).click();
+    await page.getByRole('button', { name: 'Отменить назначение', exact: true }).click();
+    await expect(page.locator('#admin-organizations-status')).toContainText('Назначение оценки отменено');
+    await expect(page.locator('.admin-organization-current-stage').first()).toHaveText('Назначение отменено');
+    await evidenceScreenshot(page, '09-cancel-success-1440');
+  }
+});
+
+test('ADM-STATUS shows the current participant stage and keeps it permanently visible', async ({ page }) => {
   const baseMember = { ...adminOrganization.members[0], assessment_assignments: ['competencies_4k'] };
   const organization = {
     ...adminOrganization,
@@ -357,10 +437,80 @@ test('ARCH30 shows the current participant stage and keeps technical signals col
   await expect(rows.nth(1).locator('.admin-organization-current-stage')).toHaveText('Проходит знакомство');
   await expect(rows.nth(2).locator('.admin-organization-current-stage')).toHaveText('Идёт подготовка оценки');
   await expect(rows.nth(3).locator('.admin-organization-current-stage')).toHaveText('Подготовка завершилась с ошибкой');
-  await expect(rows.nth(0).locator('.admin-organization-invitation-state').first()).toBeHidden();
-  await rows.nth(0).getByText('Подробности статуса').click();
-  await expect(rows.nth(0).locator('.admin-organization-invitation-state')).toHaveCount(5);
-  await expect(rows.nth(0).locator('.admin-organization-invitation-state').first()).toBeVisible();
+  await expect(rows.nth(0).locator('.admin-organization-current-stage')).toBeVisible();
+  await expect(rows.nth(0).locator('.admin-organization-member-stage')).toContainText('Оценка назначена');
+  await expect(rows.nth(0).locator('.admin-organization-member-menu')).toHaveCount(1);
+});
+
+test('ADM-LAYOUT-31 cancels one exact assignment only after explicit confirmation', async ({ page }) => {
+  const organization = {
+    ...adminOrganization,
+    members: [{ ...adminOrganization.members[0], user_id: 19, full_name: 'Synthetic Participant',
+      email: 'participant@example.test', assessment_assignments: ['competencies_4k'], assessment_stages: {
+        competencies_4k: { code: 'ready_to_start', label: 'Готов к прохождению оценки', assignment_id: 141 },
+      } }],
+  };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  let payload;
+  let release;
+  const delayed = new Promise((resolve) => { release = resolve; });
+  await page.route('**/assessment-assignments/141/cancel', async (route) => {
+    payload = route.request().postDataJSON();
+    await delayed;
+    return fulfillJson(route, { assignment_id: 141, organization_id: 3, recipient_user_id: 19,
+      assignment_ref: 'competencies_4k', status: 'revoked', operation_id: payload.operation_id,
+      cancelled_at: '2026-10-31T08:00:00' });
+  });
+  const row = page.locator('.admin-organization-member').first();
+  await row.locator('summary').click();
+  const cancelButton = row.getByRole('button', { name: 'Отменить назначение оценки' });
+  await cancelButton.click();
+  const confirmation = page.locator('.admin-assignment-cancel-dialog');
+  await expect(confirmation).toContainText('Отменить назначение «competencies_4k» для Synthetic Participant?');
+  await expect(confirmation).toContainText('Для прохождения потребуется новое назначение.');
+  await confirmation.getByRole('button', { name: 'Отменить назначение', exact: true }).click();
+  await expect.poll(() => payload).toBeTruthy();
+  await expect(cancelButton).toBeDisabled();
+  release();
+  await expect(page.locator('#admin-organizations-status')).toContainText('Назначение оценки отменено');
+  expect(payload.operation_id).toMatch(/.+/);
+});
+
+test('ADM-LAYOUT-31 I08 captures cancellation confirmation conflict and success', async ({ page }) => {
+  test.skip(!evidenceDir || Boolean(process.env.P4K_STATIC_ROOT), 'Current-build P06 visual evidence only.');
+  const organization = {
+    ...adminOrganization,
+    members: [{ ...adminOrganization.members[0], user_id: 19, full_name: 'Synthetic Participant',
+      email: 'participant@example.test', assessment_assignments: ['competencies_4k'], assessment_stages: {
+        competencies_4k: { code: 'ready_to_start', label: 'Готов к прохождению оценки', assignment_id: 141 },
+      } }],
+  };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  let attempt = 0;
+  await page.route('**/assessment-assignments/141/cancel', (route) => {
+    attempt += 1;
+    const payload = route.request().postDataJSON();
+    if (attempt === 1) return fulfillJson(route, { detail: 'ASSIGNMENT_ALREADY_STARTED' }, 409);
+    organization.members[0].assessment_assignments = [];
+    organization.members[0].assessment_stages.competencies_4k = {
+      code: 'cancelled', label: 'Назначение отменено', assignment_id: 141,
+    };
+    return fulfillJson(route, { assignment_id: 141, organization_id: 3, recipient_user_id: 19,
+      assignment_ref: 'competencies_4k', status: 'revoked', operation_id: payload.operation_id,
+      cancelled_at: '2026-10-31T08:00:00' });
+  });
+  const row = page.locator('.admin-organization-member').first();
+  await row.locator('summary').click();
+  await row.getByRole('button', { name: 'Отменить назначение оценки' }).click();
+  await evidenceScreenshot(page, '07-cancel-confirmation-1440');
+  await page.getByRole('button', { name: 'Отменить назначение', exact: true }).click();
+  await expect(page.locator('[data-operation-status]')).toContainText('Оценка уже началась. Отменить назначение нельзя.');
+  await evidenceScreenshot(page, '08-cancel-conflict-1440');
+  await row.getByRole('button', { name: 'Отменить назначение оценки' }).click();
+  await page.getByRole('button', { name: 'Отменить назначение', exact: true }).click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('Назначение оценки отменено');
+  await expect(page.locator('.admin-organization-current-stage').first()).toHaveText('Назначение отменено');
+  await evidenceScreenshot(page, '09-cancel-success-1440');
 });
 
 test('ARCH30 offers an explicit one-way legacy profile copy into an empty C01 draft', async ({ page }) => {
@@ -395,8 +545,8 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
   const rows = page.locator('.admin-organization-member');
   await expect(rows).toHaveCount(2);
-  await expect(rows.first().locator('.admin-organization-invitation-state')).toHaveCount(5);
-  await expect(rows.nth(1)).toContainText('Регистрация: завершена');
+  await expect(rows.first().locator('.admin-organization-current-stage')).toBeVisible();
+  await expect(rows.first().locator('.admin-organization-member-stage')).toContainText('Оценка');
   await expect(rows.nth(1).locator('[data-action="send-member-invitation"]')).toHaveCount(1);
 
   // 683 CSS px approximates the available width at 200% browser zoom on a 1366 px display.
@@ -405,7 +555,7 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
     const layout = await rows.first().evaluate((row) => {
       const main = row.querySelector('.admin-organization-member-main').getBoundingClientRect();
       const name = row.querySelector('strong').getBoundingClientRect();
-      const statuses = row.querySelector('.admin-organization-member-statuses').getBoundingClientRect();
+      const statuses = row.querySelector('.admin-organization-member-stage').getBoundingClientRect();
       const actions = row.querySelector('.admin-organization-member-actions').getBoundingClientRect();
       const select = row.querySelector('.admin-organization-member-select').getBoundingClientRect();
       const buttons = [...row.querySelectorAll('button')].map((button) => button.getBoundingClientRect());
@@ -422,6 +572,9 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
     expect(layout.buttons.every((button) => button.width >= 44 && button.height >= 44)).toBe(true);
     if (width >= 1100) {
       expect(layout.mainRight).toBeLessThanOrEqual(layout.statusesX);
+      expect(layout.mainRight).toBeLessThanOrEqual(layout.actionsX);
+    } else if (width >= 768) {
+      expect(layout.statusesY).toBeGreaterThanOrEqual(layout.mainBottom);
       expect(layout.mainRight).toBeLessThanOrEqual(layout.actionsX);
     } else {
       expect(layout.statusesY).toBeGreaterThanOrEqual(layout.mainBottom);
@@ -442,6 +595,7 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
     expect(dialog.message()).toContain(longEmail);
     await dialog.dismiss();
   });
+  await rows.first().locator('.admin-organization-member-menu').getByLabel('Другие действия').click();
   await rows.first().locator('[data-action="delete-member"]').click();
 });
 
@@ -679,6 +833,36 @@ test('UX-FIX20-02 preserves named drafts across all management views', async ({ 
   await card.getByRole('button', { name: 'Организация и участники' }).click();
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
   await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('Автор B');
+});
+
+test('ADM-LAYOUT-31 opens CSV preview as a keyboard dialog and cancel does not confirm', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
+  const form = card.locator('[data-action="preview-questionnaire"]');
+  let confirmations = 0;
+  await page.route('**/users/admin/organizations/3/questionnaire/preview', (route) => fulfillJson(route, {
+    id: 301, assignment_ref: 'competencies_4k', status: 'ready_for_confirmation', channel: 'csv',
+    answers_json: {}, validation_json: {}, participant_preview: { purpose: 'Synthetic purpose' },
+    recipient_options: ['participant'],
+  }));
+  await page.route('**/users/admin/organizations/3/questionnaire/301/confirm', (route) => {
+    confirmations += 1;
+    return fulfillJson(route, {});
+  });
+  await form.locator('[name="source_author"]').fill('Synthetic author');
+  await form.locator('[name="csv"]').setInputFiles({
+    name: 'synthetic-questionnaire.csv', mimeType: 'text/csv', buffer: Buffer.from('question_id,answer\nC01,Synthetic'),
+  });
+  await form.getByRole('button', { name: 'Проверить сведения' }).click();
+  const dialog = card.locator('dialog.admin-questionnaire-preview-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute('aria-modal', 'true');
+  await expect(dialog).toContainText('Загрузка и подтверждение — разные действия');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  expect(confirmations).toBe(0);
+  await expect(form.locator('[name="source_author"]')).toHaveValue('Synthetic author');
 });
 
 test('UX-FIX20-02 clears account A drafts and ignores its late preview after account B login', async ({ page }) => {
@@ -1102,6 +1286,7 @@ test('PILOT31-03 explains every visible readiness blocker before assignment', as
   await expect(readiness).toBeVisible();
   await expect(readiness).toContainText('Программа оценки не подключена');
   await expect(readiness).toContainText('Анкета для выбранной оценки не подтверждена');
+  await page.locator('.admin-organization-member-select').first().click();
   await expect(page.getByRole('button', { name: 'Назначить оценку' })).toBeDisabled();
 });
 
@@ -1900,6 +2085,7 @@ test('R03 network retry reuses invitation operation id', async ({ page }) => {
     return route.abort('failed');
   });
   const button = page.locator('[data-action="send-member-invitation"]').first();
+  await page.locator('.admin-organization-member-menu > summary').first().click();
   await button.click();
   await expect(page.locator('#admin-organizations-status')).toContainText('Не удалось');
   await button.click();
