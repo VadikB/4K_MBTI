@@ -12,6 +12,25 @@ test('known domain codes provide actionable messages', async () => {
       error.message.includes('Выберите одну из разрешённых ролей') && !error.message.includes('подключите программу'),
   );
 });
+
+for (const [code, expected, forbidden] of [
+  ['ASSIGNMENT_QUESTIONNAIRE_NOT_CONFIRMED', 'Подтвердите сведения', 'подключите программу'],
+  ['PROGRAM_ASSIGNMENT_REF_MISMATCH', 'не соответствует подключённой программе', 'Сначала подключите'],
+  ['PROGRAM_NOT_AVAILABLE_FOR_NEW_ASSIGNMENTS', 'больше не принимает новые назначения', 'Подтвердите сведения'],
+  ['PROGRAM_CONFIGURATION_NOT_AVAILABLE', 'Настройка программы не завершена', 'пустая организация'],
+  ['PROGRAM_CATALOG_SCOPE_MISMATCH', 'недоступен этой организации', 'Подтвердите сведения'],
+  ['PROGRAM_SOURCE_SELECTION_STALE', 'Обновите карточку', 'подключите программу'],
+]) {
+  test(`assignment blocker ${code} keeps its exact next action`, async () => {
+    await assert.rejects(
+      readApiResponse(new Response(JSON.stringify({ detail: code }), {
+        status: 409, headers: { 'content-type': 'application/json' },
+      }), 'Не удалось назначить оценку.'),
+      (error) => error instanceof ApiResponseError && error.code === code &&
+        error.message.includes(expected) && !error.message.includes(forbidden),
+    );
+  });
+}
 test('known invitation provider configuration error remains actionable', async () => {
   await assert.rejects(
     readApiResponse(new Response(JSON.stringify({ detail: 'EMAIL_PROVIDER_NOT_CONFIGURED' }), {

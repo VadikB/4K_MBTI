@@ -4533,7 +4533,7 @@ def assign_organization_assessment(
         if readiness["status"] != "ready":
             raise HTTPException(
                 status_code=409,
-                detail="Подтвердите сведения выбранной оценки перед назначением.",
+                detail="ASSIGNMENT_QUESTIONNAIRE_NOT_CONFIRMED",
             )
         try:
             try:
@@ -4561,6 +4561,11 @@ def assign_organization_assessment(
                 "PROGRAM_NOT_CONNECTED",
                 "PROGRAM_NOT_AVAILABLE",
                 "PROGRAM_NOT_AVAILABLE_FOR_NEW_ASSIGNMENTS",
+                "PROGRAM_ASSIGNMENT_REF_MISMATCH",
+                "PROGRAM_CONFIGURATION_NOT_AVAILABLE",
+                "PROGRAM_CATALOG_NOT_AVAILABLE",
+                "PROGRAM_CATALOG_VERSION_MISMATCH",
+                "PROGRAM_CATALOG_SCOPE_MISMATCH",
             }
             raise HTTPException(status_code=409, detail=(
                 error_code if error_code in public_codes else "PROGRAM_CONFIGURATION_NOT_AVAILABLE"
@@ -4571,7 +4576,7 @@ def assign_organization_assessment(
         ):
             raise HTTPException(
                 status_code=409,
-                detail="Выбранная роль или версия программы не относится к текущей оценке. Обновите карточку и повторите назначение.",
+                detail="PROGRAM_SOURCE_SELECTION_STALE",
             )
         previous = connection.execute(
             """SELECT DISTINCT request_fingerprint

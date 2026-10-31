@@ -1577,6 +1577,37 @@ export const renderAdminOrganizations = () => {
       const availablePrograms = Array.isArray(data?.assessment_programs) ? data.assessment_programs : [];
       const currentProgram = org.assessment_program || null;
       const allowedRoles = Array.isArray(currentProgram?.roles) ? currentProgram.roles : [];
+      const publishedRevision = revisions.find((item) => item.assignment_ref === selectedRef && item.status === 'confirmed');
+      const assignmentBlockers = [];
+      if (!currentProgram) {
+        assignmentBlockers.push('Программа оценки не подключена. Обратитесь к суперадминистратору.');
+      }
+      if (!selectedRef) {
+        assignmentBlockers.push('Оценка не выбрана. Сначала подготовьте сведения для оценки.');
+      } else if (currentProgram?.assignment_ref && currentProgram.assignment_ref !== selectedRef) {
+        assignmentBlockers.push('Выбранная оценка не соответствует подключённой программе.');
+      }
+      if (selectedRef && !publishedRevision) {
+        assignmentBlockers.push('Анкета для выбранной оценки не подтверждена. Подтвердите сведения перед назначением.');
+      }
+      if (currentProgram && !allowedRoles.length) {
+        assignmentBlockers.push('В подключённой программе нет доступной роли для назначения.');
+      }
+      const assignmentReadinessMarkup = '<section class="admin-assignment-readiness" aria-label="Готовность назначения">' +
+        '<h5>Готовность назначения</h5><dl>' +
+        '<dt>Программа</dt><dd>' + (currentProgram
+          ? escapeHtml(currentProgram.program_name) + ' · ' + escapeHtml(currentProgram.program_version)
+          : 'не подключена') + '</dd>' +
+        '<dt>Роль</dt><dd>' + (allowedRoles.length
+          ? escapeHtml(allowedRoles.map((role) => role.name || role.code).join(', '))
+          : 'недоступна') + '</dd>' +
+        '<dt>Оценка</dt><dd>' + escapeHtml(selectedRef || 'не выбрана') + '</dd>' +
+        '<dt>Анкета</dt><dd>' + (publishedRevision ? 'подтверждена' : 'не подтверждена') + '</dd></dl>' +
+        (assignmentBlockers.length
+          ? '<div class="form-status error" role="alert"><strong>Назначение пока недоступно</strong><ul>' +
+            assignmentBlockers.map((blocker) => '<li>' + escapeHtml(blocker) + '</li>').join('') + '</ul></div>'
+          : '<p class="form-status success">Можно назначать. Выберите участников ниже; назначение не запускает оценку.</p>') +
+        '</section>';
       const roleSelectionMarkup = allowedRoles.length > 1
         ? '<label><span>Роль программы</span><select name="role_profile_version_id" required><option value="">Выберите роль</option>' +
           allowedRoles.map((role) => '<option value="' + Number(role.version_id) + '">' + escapeHtml(role.name || role.code) + '</option>').join('') + '</select></label>'
@@ -1609,7 +1640,6 @@ export const renderAdminOrganizations = () => {
         '" aria-pressed="' + String(activeView === view) + '">' + label + '</button>';
       const previewIsStale = staleQuestionnairePreviews.has(assessmentKey(orgId, selectedRef));
       const confirmationOutcome = questionnaireConfirmOutcomes.get(assessmentKey(orgId, selectedRef));
-      const publishedRevision = revisions.find((item) => item.assignment_ref === selectedRef && item.status === 'confirmed');
       const confirmationMarkup = confirmationOutcome || publishedRevision
         ? '<div class="admin-questionnaire-confirmation" role="status"><strong>' +
           (confirmationOutcome?.status === 'unknown' ? 'Итог подтверждения неизвестен' : 'Сведения подтверждены') + '</strong>' +
@@ -1725,8 +1755,10 @@ export const renderAdminOrganizations = () => {
         viewButton('questionnaire', 'Анкета') + '</nav>' +
         '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people"><h4>Организация и участники</h4>' +
         '<p>Выбранная оценка: <strong>' + escapeHtml(selectedRef || 'не выбрана') + '</strong>. Назначение не запускает оценку.</p>' +
+        assignmentReadinessMarkup +
         '<div class="admin-organization-bulk-actions"><form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
-        '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment">' + roleSelectionMarkup + '<button class="primary-button compact-primary" type="submit">Назначить оценку</button></form></div>' +
+        '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment">' + roleSelectionMarkup + '<button class="primary-button compact-primary" type="submit"' +
+        (assignmentBlockers.length ? ' disabled' : '') + '>Назначить оценку</button></form></div>' +
         renderMemberList(org.members || [], {
           isSuperadmin,
           selectedAssessmentRef: selectedRef,

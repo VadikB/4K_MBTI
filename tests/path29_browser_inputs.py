@@ -16,6 +16,7 @@ def seed(state_path, state):
     from Api.database import get_connection
     from Api.auth_service import _hash_password
     from Api.assessment_authoring_service import assessment_authoring_service
+    from Api import assessment_programs
     with get_connection() as c:
         org = c.execute("SELECT id FROM organizations WHERE code='e102_synthetic'").fetchone()['id']
         actor = c.execute("""INSERT INTO users(full_name,email,job_description)
@@ -37,6 +38,31 @@ def seed(state_path, state):
         role_id = c.execute('''SELECT v.id FROM assessment_role_profile_versions v
             JOIN assessment_role_profiles r ON r.id=v.role_profile_id WHERE r.code=%s AND v.status='published' ''',
             ('specialist_expert',)).fetchone()['id']
+        source_refs = {
+            'methodology_version_id': int(other['methodology_version_id']),
+            'scenario_version_id': int(other['scenario_version_id']),
+            'prompt_bundle_checksum': other['prompt_bundle_checksum'],
+        }
+        program_checksum = assessment_programs.definition_checksum(
+            code='path29-browser-specialist', version='1.0', name='PATH29 browser Specialist',
+            assignment_ref='PATH29 browser', mode='dialogue', configuration_id=other['id'],
+            role_version_ids=[role_id], catalog_version_id=other['catalog_version_id'],
+            source_refs=source_refs,
+        )
+        program_id = c.execute("""INSERT INTO assessment_program_definitions
+            (code,version,name,assignment_ref,mode,status,assessment_configuration_id,
+             catalog_version_id,source_refs_json,definition_checksum,published_by_user_id)
+            VALUES('path29-browser-specialist','1.0','PATH29 browser Specialist',
+             'PATH29 browser','dialogue','draft',%s,%s,%s::jsonb,%s,%s) RETURNING id""",
+            (other['id'], other['catalog_version_id'], json.dumps(source_refs),
+             program_checksum, actor)).fetchone()['id']
+        c.execute("""INSERT INTO assessment_program_allowed_roles
+            (program_definition_id,role_profile_version_id,display_order) VALUES(%s,%s,0)""",
+            (program_id, role_id))
+        c.execute("""UPDATE assessment_program_definitions
+            SET status='published',published_at=NOW() WHERE id=%s""", (program_id,))
+        assessment_programs.connect(c, organization_id=org, program_definition_id=program_id,
+            actor_user_id=actor, operation_id='path29-connect-specialist')
         c.execute("""INSERT INTO organization_assessment_pilot_bindings
             (organization_id,assignment_ref,binding_version,assessment_configuration_id,
              role_profile_version_id,configured_by_user_id)
@@ -44,7 +70,8 @@ def seed(state_path, state):
             (org, other['id'], role_id, actor))
         assert c.execute("SELECT id FROM users WHERE email='path29-new@example.test'").fetchone() is None
         c.commit()
-    state['path29'] = {'organization_id': org, 'configuration_id': other['id'], 'role_version_id': role_id,
+    state['path29'] = {'organization_id': org, 'configuration_id': other['id'], 'program_id': program_id,
+                      'role_version_id': role_id,
                       'admin_email': 'path29-admin@example.test', 'participant_email': 'path29-new@example.test'}
     state_path.write_text(json.dumps(state))
     print('PATH29 synthetic Specialist binding/admin ready; target participant/M4/Cycle absent')

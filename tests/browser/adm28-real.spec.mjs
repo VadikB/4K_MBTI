@@ -48,8 +48,8 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     await expect(page.locator('#admin-organizations-panel')).toBeVisible();
     const card = page.locator('.admin-organization-card');
     const organizationId = await card.getAttribute('data-organization-id');
-    await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
-    await expect(card.locator('[data-operation-status]')).toContainText('Выберите хотя бы одного участника');
+    await expect(card.locator('.admin-assignment-readiness')).toContainText('Оценка не выбрана');
+    await expect(card.getByRole('button', { name: 'Назначить оценку', exact: true })).toBeDisabled();
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
     const profile = card.locator('form[data-action="update-profile"]');
     await profile.getByRole('button', { name: 'Сохранить карточку' }).click();

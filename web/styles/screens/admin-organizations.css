@@ -127,6 +127,8 @@
 .admin-organization-steps {
     display: flex;
     gap: var(--space-4);
+    min-width: 0;
+    max-width: 100%;
     overflow-x: auto;
     border-bottom: 1px solid var(--palette-graphite-200);
 }
@@ -962,6 +964,37 @@
 .admin-assignment-sources select { min-height: 44px; min-width: 0; width: 100%; font: inherit; }
 .admin-assignment-sources p { margin: 0; }
 .admin-organization-member-form > p { color: var(--text-muted); font-size: var(--fs-body-sm); }
+.admin-assignment-readiness {
+    display: grid;
+    gap: 12px;
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 16px;
+    border: 1px solid var(--palette-graphite-200);
+    border-radius: var(--radius-sm);
+}
+.admin-assignment-readiness h5,
+.admin-assignment-readiness p {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.admin-assignment-readiness dl {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 8px 16px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+}
+.admin-assignment-readiness dt { min-width: 0; color: var(--text-muted); }
+.admin-assignment-readiness dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.admin-assignment-readiness .form-status ul { margin: 8px 0 0; padding-left: 20px; }
 
 @media (min-width: 861px) {
     .admin-organizations-panel[data-superadmin="false"] [data-admin-view="people"] > .admin-organization-members { grid-row: 3 / span 2; }
@@ -977,4 +1010,6 @@
     .admin-organization-bulk-actions button { width: 100%; }
     .admin-organization-member-form, .admin-organization-import-form { min-width: 0; }
     .org-admin-product-header .admin-account-navigation { justify-content: flex-start; }
+    .admin-assignment-readiness dl { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+    .admin-assignment-readiness dd + dt { margin-top: 8px; }
 }
