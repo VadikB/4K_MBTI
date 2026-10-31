@@ -86,6 +86,7 @@
   Эквивалентная `npm run test:backend` сначала не стартовала, потому что отдельный
   worktree не содержит `.venv`; тест повторён тем же интерпретатором корневого checkout.
 - `npx playwright test tests/browser/auth-r03.spec.mjs --grep "UX-ADM27 org-admin assigns|PILOT31-03 explains" --workers=1` → PASS, 2/2; проверены видимость нескольких причин, disabled и валидный submit.
+- `tests/integration/test_path29_participant_owned_stand.py --run-integration` на disposable pytest PostgreSQL → PASS, 1/1; обновлено устаревшее ожидание на `PROGRAM_SOURCE_SELECTION_STALE`.
 - `git diff --check` → PASS.
 - Обязательные `frontend`, `pytest`, `full-verification` должны пройти для точного
   head PR до слияния.
