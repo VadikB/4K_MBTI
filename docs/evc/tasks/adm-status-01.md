@@ -3,6 +3,7 @@
 ## Основание и границы
 
 - База: `origin/main` / `95d708a683c5db59ef002893ff2bf1159bba22af`, ветка `codex/adm-status-01`.
+- Проверенный commit реализации до документальной фиксации SHA: `388ecde2008450c30c0be125a104e354c8618cba`; окончательный PR head включает только следующую правку этого отчёта.
 - Пакет: `P4K_ADM_STATUS_01_2026-10-31_v1.zip`, SHA-256 `debf4a82ca88e8627a52f79f756b41bc26d6d3c5bee0c30225015dc7453985be`.
 - Управляющий вход пакета: `START_ARCHITECT.txt`, SHA-256 `6fe1e8799d515b5ac0d36cf44851174e01ec3bb737e32ccf07caca88198d5eb3`.
 - Постановка: `TASK.txt` `103ee1fb85deb7c711082ad3fed805ee232ddcf875fac41fe7ae2b918c951340`; критерии `ACCEPTANCE.txt` `80c5cde86d43e3f416d216c059fc1741bce1e551fc736b4bf0a17573a4948a6e`; матрица `STATUS_MATRIX.csv` `8b916df8ead8f1fb4d8767fd10ad7f6167fd163e28db384c73cf1100b4ad7c4a`.
