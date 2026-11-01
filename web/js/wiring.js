@@ -1731,6 +1731,48 @@ if (adminOrganizationsList) {
     if (field) field.dataset.previousAssessmentRef = field.value;
   });
 
+  adminOrganizationsList.addEventListener('change', (event) => {
+    const checkbox = event.target instanceof HTMLInputElement ? event.target : null;
+    const card = checkbox?.closest('[data-organization-id]');
+    if (!checkbox || !card || !['invitation_email', 'select_all_participants'].includes(checkbox.name)) return;
+    const participants = [...card.querySelectorAll('input[name="invitation_email"]')];
+    if (checkbox.name === 'select_all_participants') participants.forEach((item) => { item.checked = checkbox.checked; });
+    const selectedCount = participants.filter((item) => item.checked).length;
+    const selectAll = card.querySelector('input[name="select_all_participants"]');
+    if (selectAll && checkbox.name !== 'select_all_participants') {
+      selectAll.checked = selectedCount === participants.length && participants.length > 0;
+      selectAll.indeterminate = selectedCount > 0 && selectedCount < participants.length;
+    }
+    const counter = card.querySelector('[data-selected-count]');
+    if (counter) counter.textContent = String(selectedCount);
+    const bulkActions = card.querySelector('[data-bulk-actions]');
+    if (bulkActions) bulkActions.hidden = selectedCount === 0;
+  });
+
+  adminOrganizationsList.addEventListener('toggle', (event) => {
+    const menu = event.target instanceof HTMLDetailsElement && event.target.matches('.admin-organization-member-menu')
+      ? event.target : null;
+    if (!menu?.open) return;
+    adminOrganizationsList.querySelectorAll('.admin-organization-member-menu[open]').forEach((candidate) => {
+      if (candidate !== menu) candidate.removeAttribute('open');
+    });
+    menu.querySelector('[role="menu"] button:not([disabled])')?.focus();
+  }, true);
+
+  adminOrganizationsList.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const menu = event.target instanceof Element ? event.target.closest('.admin-organization-member-menu[open]') : null;
+    if (!menu) return;
+    event.preventDefault();
+    menu.removeAttribute('open');
+    menu.querySelector('summary')?.focus();
+  });
+
+  document.addEventListener('click', (event) => {
+    if (event.target instanceof Element && event.target.closest('.admin-organization-member-menu')) return;
+    adminOrganizationsList.querySelectorAll('.admin-organization-member-menu[open]').forEach((menu) => menu.removeAttribute('open'));
+  });
+
   const markQuestionnairePreviewStale = (event) => {
     const field = event.target instanceof Element ? event.target : null;
     const card = field?.closest('[data-organization-id]');
@@ -1919,6 +1961,26 @@ if (adminOrganizationsList) {
         module.selectAdminOrganizationView(organizationId, button.dataset.view));
       return;
     }
+    if (button.dataset.action === 'open-member-card') {
+      const dialog = document.createElement('dialog');
+      dialog.className = 'admin-member-card-dialog';
+      dialog.setAttribute('aria-labelledby', 'admin-member-card-title');
+      dialog.innerHTML = '<form method="dialog"><div><h3 id="admin-member-card-title"></h3><button type="submit" class="dialog-close" aria-label="Закрыть карточку">×</button></div>' +
+        '<dl><dt>Email</dt><dd data-card-email></dd><dt>Должность</dt><dd data-card-position></dd><dt>Основной этап</dt><dd data-card-stage></dd><dt>Пояснение</dt><dd data-card-description></dd><dt>Допуск</dt><dd data-card-admission></dd><dt>Регистрация</dt><dd data-card-registration></dd></dl>' +
+        '<button type="submit" class="primary-button">Закрыть</button></form>';
+      dialog.querySelector('#admin-member-card-title').textContent = button.dataset.participantName || value;
+      dialog.querySelector('[data-card-email]').textContent = button.dataset.email || 'Не указан';
+      dialog.querySelector('[data-card-position]').textContent = button.dataset.position || 'Не указана';
+      dialog.querySelector('[data-card-stage]').textContent = button.dataset.stage || 'Нет данных';
+      dialog.querySelector('[data-card-description]').textContent = button.dataset.stageDescription || 'Нет пояснения';
+      dialog.querySelector('[data-card-admission]').textContent = button.dataset.admission || 'Нет данных';
+      dialog.querySelector('[data-card-registration]').textContent = button.dataset.registration || 'Нет данных';
+      document.body.append(dialog);
+      dialog.addEventListener('close', () => { dialog.remove(); button.focus(); }, { once: true });
+      dialog.showModal();
+      dialog.querySelector('.dialog-close')?.focus();
+      return;
+    }
     if (!value) {
       return;
     }
@@ -1958,7 +2020,19 @@ if (adminOrganizationsList) {
     if (button.dataset.action === 'revoke-member-invitation') {
       const invitationId = Number(button.getAttribute('data-invitation-id'));
       if (!invitationId) return;
+      const participantName = button.dataset.participantName || value;
+      if (!window.confirm('Отозвать приглашение для «' + participantName + '»? Ссылка перестанет действовать, но участник и его история сохранятся.')) return;
       withScreen(loadAdminOrganizations, (module) => module.revokeAdminOrganizationMemberInvitation(organizationId, invitationId));
+      return;
+    }
+    if (button.dataset.action === 'cancel-member-assignment') {
+      const assignmentId = Number(button.getAttribute('data-assignment-id'));
+      const participantName = button.dataset.participantName || value;
+      const assessmentRef = button.dataset.assessmentRef || 'выбранная оценка';
+      if (!assignmentId) return;
+      if (!window.confirm('Отменить назначение оценки «' + assessmentRef + '» для «' + participantName + '»? Участник и история сохранятся. Отменить можно только до начала прохождения.')) return;
+      button.disabled = true;
+      withScreen(loadAdminOrganizations, (module) => module.cancelAdminOrganizationAssessment(organizationId, assignmentId));
       return;
     }
     if (button.dataset.action === 'prepare-member-assessment') {

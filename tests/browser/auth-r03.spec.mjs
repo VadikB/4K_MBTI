@@ -332,7 +332,7 @@ test('QA19-03 keeps the participant section available with no members', async ({
   await expect(page.locator('.admin-organization-members-section').first()).toBeVisible();
 });
 
-test('ARCH30 shows the current participant stage and keeps technical signals collapsed', async ({ page }) => {
+test('ADM-STATUS-01 shows the current participant stage and opens known facts in the participant card', async ({ page }) => {
   const baseMember = { ...adminOrganization.members[0], assessment_assignments: ['competencies_4k'] };
   const organization = {
     ...adminOrganization,
@@ -353,14 +353,64 @@ test('ARCH30 shows the current participant stage and keeps technical signals col
   };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
   const rows = page.locator('.admin-organization-member');
-  await expect(rows.nth(0).locator('.admin-organization-current-stage')).toHaveText('Приглашение не отправлено');
+  await expect(rows.nth(0).locator('.admin-organization-current-stage')).toHaveText('Оценка назначена');
   await expect(rows.nth(1).locator('.admin-organization-current-stage')).toHaveText('Проходит знакомство');
   await expect(rows.nth(2).locator('.admin-organization-current-stage')).toHaveText('Идёт подготовка оценки');
   await expect(rows.nth(3).locator('.admin-organization-current-stage')).toHaveText('Подготовка завершилась с ошибкой');
-  await expect(rows.nth(0).locator('.admin-organization-invitation-state').first()).toBeHidden();
-  await rows.nth(0).getByText('Подробности статуса').click();
-  await expect(rows.nth(0).locator('.admin-organization-invitation-state')).toHaveCount(5);
-  await expect(rows.nth(0).locator('.admin-organization-invitation-state').first()).toBeVisible();
+  await expect(rows.nth(3).locator('.admin-organization-current-stage')).toHaveClass(/is-critical/);
+  await rows.nth(1).locator('[data-action="open-member-card"]').click();
+  const dialog = page.locator('.admin-member-card-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('Проходит знакомство');
+  await dialog.getByRole('button', { name: 'Закрыть', exact: true }).click();
+  await expect(rows.nth(1).locator('[data-action="open-member-card"]')).toBeFocused();
+  await fs.mkdir(path.join(root, 'docs/evc/evidence/adm-status-01'), { recursive: true });
+  await page.locator('[data-organization-id="3"] [data-admin-view="people"]').screenshot({
+    path: path.join(root, 'docs/evc/evidence/adm-status-01/desktop-status-list.png'),
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 390);
+  await page.locator('[data-organization-id="3"] [data-admin-view="people"]').screenshot({
+    path: path.join(root, 'docs/evc/evidence/adm-status-01/mobile-status-list.png'),
+  });
+});
+
+test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from assignment cancellation', async ({ page }) => {
+  const organization = {
+    ...adminOrganization,
+    assessment_program: { program_definition_id: 7, program_name: 'Специалист 4К', program_version: '1.0', assignment_ref: 'competencies_4k', roles: [] },
+    members: [{ ...adminOrganization.members[0], full_name: 'Иван Иванов', raw_position: 'Руководитель',
+      assessment_assignments: ['competencies_4k'], assessment_stages: {
+        competencies_4k: { code: 'assigned', label: 'Оценка назначена', assignment_id: 41 },
+      } }],
+  };
+  let cancelled = false;
+  let revoked = false;
+  await openAdminOrganizations(page, (route) => { revoked = true; return fulfillJson(route, { ok: true }); }, organization);
+  await page.route('**/users/admin/organizations/3/assessment-assignments/41/cancel', (route) => {
+    cancelled = true;
+    return fulfillJson(route, { assignment_id: 41, status: 'cancelled' });
+  });
+  await expect(page.locator('.admin-people-context')).toContainText('Специалист 4К · 1.0');
+  await expect(page.locator('[data-bulk-actions]')).toBeHidden();
+  await page.locator('input[name="invitation_email"]').check();
+  await expect(page.locator('[data-bulk-actions]')).toBeVisible();
+  await expect(page.locator('[data-selected-count]')).toHaveText('1');
+  const menu = page.locator('.admin-organization-member-menu');
+  await menu.locator('summary').click();
+  page.once('dialog', async (dialog) => {
+    expect(dialog.message()).toContain('Ссылка перестанет действовать');
+    await dialog.dismiss();
+  });
+  await menu.getByRole('menuitem', { name: 'Отозвать приглашение' }).click();
+  expect(revoked).toBe(false);
+  page.once('dialog', async (dialog) => {
+    expect(dialog.message()).toContain('Участник и история сохранятся');
+    await dialog.accept();
+  });
+  await menu.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+  await expect.poll(() => cancelled).toBe(true);
+  await expect(page.locator('input[name="invitation_email"]')).toBeChecked();
 });
 
 test('ARCH30 offers an explicit one-way legacy profile copy into an empty C01 draft', async ({ page }) => {
@@ -395,8 +445,10 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
   const rows = page.locator('.admin-organization-member');
   await expect(rows).toHaveCount(2);
-  await expect(rows.first().locator('.admin-organization-invitation-state')).toHaveCount(5);
-  await expect(rows.nth(1)).toContainText('Регистрация: завершена');
+  await expect(rows.first().locator('.admin-organization-invitation-state')).toHaveCount(0);
+  await rows.nth(1).locator('[data-action="open-member-card"]').click();
+  await expect(page.locator('.admin-member-card-dialog')).toContainText('Регистрация: завершена');
+  await page.locator('.admin-member-card-dialog').getByRole('button', { name: 'Закрыть', exact: true }).click();
   await expect(rows.nth(1).locator('[data-action="send-member-invitation"]')).toHaveCount(1);
 
   // 683 CSS px approximates the available width at 200% browser zoom on a 1366 px display.
@@ -404,11 +456,12 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
     await page.setViewportSize({ width, height: 900 });
     const layout = await rows.first().evaluate((row) => {
       const main = row.querySelector('.admin-organization-member-main').getBoundingClientRect();
-      const name = row.querySelector('strong').getBoundingClientRect();
-      const statuses = row.querySelector('.admin-organization-member-statuses').getBoundingClientRect();
-      const actions = row.querySelector('.admin-organization-member-actions').getBoundingClientRect();
+      const name = row.querySelector('.admin-organization-member-name').getBoundingClientRect();
+      const statuses = row.querySelector('.admin-organization-member-stage').getBoundingClientRect();
+      const actions = row.querySelector('.admin-organization-member-menu').getBoundingClientRect();
       const select = row.querySelector('.admin-organization-member-select').getBoundingClientRect();
-      const buttons = [...row.querySelectorAll('button')].map((button) => button.getBoundingClientRect());
+      const buttons = [...row.querySelectorAll('button, summary')]
+        .filter((button) => button.getClientRects().length).map((button) => button.getBoundingClientRect());
       return { documentWidth: document.documentElement.scrollWidth, viewportWidth: document.documentElement.clientWidth,
         mainWidth: main.width, nameWidth: name.width, statusesX: statuses.x, statusesY: statuses.y,
         mainRight: main.right, mainBottom: main.bottom, actionsX: actions.x, actionsY: actions.y,
@@ -420,13 +473,12 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
     expect(layout.selectWidth).toBeGreaterThanOrEqual(44);
     expect(layout.selectHeight).toBeGreaterThanOrEqual(44);
     expect(layout.buttons.every((button) => button.width >= 44 && button.height >= 44)).toBe(true);
-    if (width >= 1100) {
+    if (layout.statusesY < layout.mainBottom - 1) {
       expect(layout.mainRight).toBeLessThanOrEqual(layout.statusesX);
-      expect(layout.mainRight).toBeLessThanOrEqual(layout.actionsX);
     } else {
       expect(layout.statusesY).toBeGreaterThanOrEqual(layout.mainBottom);
-      expect(layout.actionsY).toBeGreaterThanOrEqual(layout.mainBottom);
     }
+    expect(layout.actionsX >= layout.mainRight - 1 || layout.actionsY >= layout.mainBottom).toBe(true);
   }
 
   const checkbox = rows.first().getByRole('checkbox', { name: 'Выбрать ' + longEmail });
@@ -438,6 +490,7 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await page.getByRole('button', { name: 'Данные организации' }).click();
   await page.getByRole('button', { name: 'Организация и участники' }).click();
   await expect(rows.first().locator('[data-action="send-member-invitation"]')).toHaveAttribute('data-value', longEmail);
+  await rows.first().locator('.admin-organization-member-menu summary').click();
   page.once('dialog', async (dialog) => {
     expect(dialog.message()).toContain(longEmail);
     await dialog.dismiss();
@@ -1102,6 +1155,9 @@ test('PILOT31-03 explains every visible readiness blocker before assignment', as
   await expect(readiness).toBeVisible();
   await expect(readiness).toContainText('Программа оценки не подключена');
   await expect(readiness).toContainText('Анкета для выбранной оценки не подтверждена');
+  await expect(page.locator('[data-bulk-actions]')).toBeHidden();
+  await page.locator('input[name="invitation_email"]').check();
+  await expect(page.locator('[data-bulk-actions]')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Назначить оценку' })).toBeDisabled();
 });
 
@@ -1899,7 +1955,9 @@ test('R03 network retry reuses invitation operation id', async ({ page }) => {
     keys.push(route.request().headers()['idempotency-key']);
     return route.abort('failed');
   });
-  const button = page.locator('[data-action="send-member-invitation"]').first();
+  const row = page.locator('.admin-organization-member').first();
+  await row.locator('.admin-organization-member-menu summary').click();
+  const button = row.locator('[data-action="send-member-invitation"]');
   await button.click();
   await expect(page.locator('#admin-organizations-status')).toContainText('Не удалось');
   await button.click();

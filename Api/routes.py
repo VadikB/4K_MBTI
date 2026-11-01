@@ -184,6 +184,8 @@ from Api.schemas import (
     AssessmentAssignmentRequest,
     AssessmentAssignmentResultItem,
     AssessmentAssignmentBatchResponse,
+    AssessmentAssignmentCancelRequest,
+    AssessmentAssignmentCancelResponse,
     PromptLabCaseOption,
     PromptLabCaseRunRequest,
     PromptLabCaseRunResponse,
@@ -1068,7 +1070,8 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
         stage_rows = connection.execute(
             """
             SELECT assignment.organization_id, assignment.recipient_user_id,
-                   assignment.assignment_ref,
+                   assignment.id AS assignment_id, assignment.assignment_ref,
+                   assignment.status AS assignment_status, assignment.revoked_at,
                    acquaintance.status AS acquaintance_status,
                    preparation.operation_id AS preparation_operation_id,
                    preparation.status AS preparation_status,
@@ -1105,7 +1108,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                 FROM m5_cycles runtime
                 WHERE runtime.owner_user_id=assignment.recipient_user_id
                   AND runtime.organization_id=assignment.organization_id
-                  AND runtime.personalized_profile_id=profile.id
+                  AND runtime.assignment_id=assignment.id
                   AND runtime.usage_scope='assessment'
                 ORDER BY runtime.created_at DESC,runtime.id DESC
                 LIMIT 1
@@ -1115,7 +1118,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
              AND acquaintance.organization_id=assignment.organization_id
              AND acquaintance.assignment_ref=assignment.assignment_ref
             WHERE assignment.organization_id=ANY(%s)
-              AND assignment.status='active' AND assignment.revoked_at IS NULL
+            ORDER BY assignment.id ASC
             """,
             (org_ids,),
         ).fetchall()
@@ -1123,22 +1126,24 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
             cycle_status = row.get("cycle_status")
             preparation_status = row.get("preparation_status")
             acquaintance_status = row.get("acquaintance_status") or "not_started"
-            if row.get("report_ready"):
+            if row.get("assignment_status") == "revoked" or row.get("revoked_at") is not None:
+                code, label, action = "cancelled", "Назначение отменено", None
+            elif row.get("report_ready"):
                 code, label, action = "report_ready", "Отчёт готов", "open_report"
             elif cycle_status == "failed":
                 code, label, action = "failed", "Обработка завершилась с ошибкой", "open_processing"
             elif cycle_status in {"collection_closed", "calculation_pending", "calculated"}:
-                code, label, action = "processing", "Результат обрабатывается", "open_processing"
+                code, label, action = "processing", "Готовится отчёт", "open_processing"
             elif cycle_status in {"active", "paused", "interrupted"}:
                 code, label, action = "in_progress", "Проходит оценку", "resume_assessment"
             elif cycle_status == "prepared":
-                code, label, action = "ready_to_start", "Можно начинать оценку", "start_assessment"
+                code, label, action = "ready_to_start", "Готов к прохождению оценки", "start_assessment"
             elif preparation_status == "failed":
                 code, label, action = "preparation_failed", "Подготовка завершилась с ошибкой", "retry_preparation"
             elif preparation_status in {"queued", "running"}:
                 code, label, action = "preparing", "Идёт подготовка оценки", "check_preparation"
             elif preparation_status == "completed":
-                code, label, action = "prepared", "Оценка подготовлена", "start_assessment"
+                code, label, action = "prepared", "Готов к прохождению оценки", "start_assessment"
             elif acquaintance_status in {"answers_confirmed", "completed"}:
                 code, label, action = "acquaintance_complete", "Знакомство завершено", "prepare_assessment"
             elif acquaintance_status == "in_progress":
@@ -1153,6 +1158,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                 "action": action,
                 "cycle_id": str(row["cycle_id"]) if row.get("cycle_id") else None,
                 "operation_id": row.get("preparation_operation_id"),
+                "assignment_id": int(row["assignment_id"]),
             }
 
         member_detail_rows = connection.execute(
@@ -4611,7 +4617,8 @@ def assign_organization_assessment(
                      organization_id,recipient_user_id,assignment_ref,created_by_user_id,
                      questionnaire_revision_id,status,operation_id,request_fingerprint
                    ) VALUES (%s,%s,%s,%s,%s,'active',%s,%s)
-                   ON CONFLICT (organization_id,recipient_user_id,assignment_ref) DO NOTHING
+                   ON CONFLICT (organization_id,recipient_user_id,assignment_ref)
+                   WHERE status='active' AND revoked_at IS NULL DO NOTHING
                    RETURNING id""",
                 (
                     organization_id, user_id, assignment_ref, int(current_user.id),
@@ -4645,6 +4652,29 @@ def assign_organization_assessment(
                     raise HTTPException(409, detail=str(exc)) from exc
         connection.commit()
     return AssessmentAssignmentBatchResponse(items=results)
+
+
+@router.post(
+    "/admin/organizations/{organization_id}/assessment-assignments/{assignment_id}/cancel",
+    response_model=AssessmentAssignmentCancelResponse,
+)
+def cancel_organization_assessment_assignment(
+    organization_id: int, assignment_id: int,
+    payload: AssessmentAssignmentCancelRequest, request: Request,
+) -> AssessmentAssignmentCancelResponse:
+    from Api import assessment_assignment_cancellation
+    current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_organization_admin(connection, current_user, organization_id)
+        try:
+            result = assessment_assignment_cancellation.cancel(
+                connection, organization_id=organization_id, assignment_id=assignment_id,
+                actor_user_id=int(current_user.id), operation_id=payload.operation_id,
+            )
+            connection.commit()
+            return AssessmentAssignmentCancelResponse(**result)
+        except assessment_assignment_cancellation.CancellationError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=exc.code) from exc
 
 
 @router.delete("/admin/organizations/{organization_id}/personal-invitations/{invitation_id}")

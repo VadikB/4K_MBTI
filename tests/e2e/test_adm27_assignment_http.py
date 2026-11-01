@@ -129,6 +129,53 @@ def test_assignment_reports_foreign_recipient_without_side_effect(client):
     assert connection.rows == []
 
 
+def test_org_admin_cancels_exact_assignment_generation(client, monkeypatch):
+    http, _connection = client
+    observed = {}
+
+    def cancel(_connection, **kwargs):
+        observed.update(kwargs)
+        return {"assignment_id": kwargs["assignment_id"], "organization_id": kwargs["organization_id"],
+                "recipient_user_id": 19, "assignment_ref": "assessment-a", "status": "revoked",
+                "operation_id": kwargs["operation_id"], "cancelled_at": "2026-10-31T08:00:00"}
+
+    monkeypatch.setattr("Api.assessment_assignment_cancellation.cancel", cancel)
+    response = http.post("/users/admin/organizations/3/assessment-assignments/41/cancel", json={
+        "operation_id": "adm31-cancel-operation",
+    })
+    assert response.status_code == 200
+    assert response.json()["status"] == "revoked"
+    assert observed == {"organization_id": 3, "assignment_id": 41,
+                        "actor_user_id": 18, "operation_id": "adm31-cancel-operation"}
+
+
+def test_assignment_cancel_rechecks_current_scope_before_replay(client, monkeypatch):
+    http, _connection = client
+    monkeypatch.setattr(routes, "_require_organization_admin", lambda *_args: (_ for _ in ()).throw(
+        routes.HTTPException(status_code=403, detail="Недостаточно прав.")))
+    monkeypatch.setattr("Api.assessment_assignment_cancellation.cancel", lambda *_args, **_kwargs: pytest.fail(
+        "cancellation must not run after scope revocation"))
+    response = http.post("/users/admin/organizations/3/assessment-assignments/41/cancel", json={
+        "operation_id": "adm31-revoked-scope",
+    })
+    assert response.status_code == 403
+
+
+def test_assignment_cancel_exposes_machine_state_conflict(client, monkeypatch):
+    http, _connection = client
+
+    def reject(*_args, **_kwargs):
+        from Api.assessment_assignment_cancellation import CancellationError
+        raise CancellationError("ASSIGNMENT_ALREADY_STARTED")
+
+    monkeypatch.setattr("Api.assessment_assignment_cancellation.cancel", reject)
+    response = http.post("/users/admin/organizations/3/assessment-assignments/41/cancel", json={
+        "operation_id": "adm31-started-conflict",
+    })
+    assert response.status_code == 409
+    assert response.json()["detail"] == "ASSIGNMENT_ALREADY_STARTED"
+
+
 def test_assignment_rejects_attempt_to_override_pilot_sources(client):
     http, connection = client
     response = http.post("/users/admin/organizations/3/assessment-assignments", json={

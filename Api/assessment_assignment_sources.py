@@ -176,6 +176,21 @@ def bind(connection, *, assignment_id: int, organization_id: int, configuration_
         questionnaire_revision_id=questionnaire_revision_id)
     if latest and (latest['assessment_configuration_id'], latest['role_profile_version_id']) == (configuration_id, role_version_id):
         return latest
+    historical = connection.execute("""SELECT b.* FROM organization_assessment_source_bindings b
+        JOIN organization_assessment_assignments a ON a.id=b.assignment_id
+        WHERE a.recipient_user_id=%s AND a.organization_id=%s AND a.assignment_ref=%s
+          AND b.questionnaire_revision_id=%s
+        ORDER BY b.id DESC LIMIT 1""",
+        (assignment['recipient_user_id'], organization_id, assignment['assignment_ref'],
+         questionnaire_revision_id)).fetchone()
+    if historical and (
+        historical['assessment_configuration_id'], historical['role_profile_version_id']
+    ) == (configuration_id, role_version_id):
+        return dict(connection.execute("""INSERT INTO organization_assessment_source_bindings
+            (assignment_id,questionnaire_revision_id,assessment_configuration_id,role_profile_version_id,
+             assigned_by_user_id,operation_id) VALUES(%s,%s,%s,%s,%s,%s) RETURNING *""",
+            (assignment_id, questionnaire_revision_id, configuration_id, role_version_id,
+             actor_user_id, operation_id)).fetchone())
     if connection.execute("""SELECT 1 FROM participant_acquaintance_confirmations
         WHERE user_id=%s AND organization_id=%s AND assignment_ref=%s
           AND personalized_profile_id IS NOT NULL LIMIT 1""",
