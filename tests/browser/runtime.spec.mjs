@@ -360,7 +360,7 @@ for(const variant of ['C1','C2']) test(`S10-${variant} background time closure w
    await info.attach('background-visibility',{body:JSON.stringify({at:new Date().toISOString(),lifecycle:'frozen'}),contentType:'application/json'});
  }
  const statusUrl=`${stand.url}/users/assessment/m7/cycles/${before.cycle_id}`;
- // Allow the 30s fixture budget, the 30s worker sweep and result calculation on CI.
+ // The isolated stand uses a 2s expiry sweep; retain room for the result pipeline on CI.
  await expect.poll(async()=>{const r=await context.request.get(statusUrl);return (await r.json()).collection_status;},{timeout:120000,intervals:[500,1000]}).toBe('calculated');
  await info.attach('runtime-after-expiry',{body:JSON.stringify(await (await context.request.get(statusUrl)).json(),null,2),contentType:'application/json'});
  const late=await context.request.post(`${stand.url}/users/assessment/m5/situations/${before.current_situation.assessment_situation_id}/turns`,{data:{request_id:'late',turn_id:randomUUID(),content:'Late synthetic answer'}});expect(late.status()).toBe(409);

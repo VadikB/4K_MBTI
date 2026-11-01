@@ -20,6 +20,7 @@ const invitationOperationIds = new Map();
 const assignmentSourceRequests = new Set();
 const assignmentOperationIds = new Map();
 const cancellationOperationIds = new Map();
+const programConnectionOperationIds = new Map();
 const questionnairePreviews = new Map();
 const questionnaireRevisions = new Map();
 const staleQuestionnairePreviews = new Set();
@@ -33,6 +34,7 @@ const questionnaireLoadStates = new Map();
 const questionnaireConfirmOutcomes = new Map();
 let operationAnchor = null;
 let restoredManagementIdentity = null;
+let organizationsRequestGeneration = 0;
 
 const currentIdentityKey = () => String(state.pendingUser?.id || '');
 const organizationKey = (organizationId) => currentIdentityKey() + ':' + Number(organizationId);
@@ -159,6 +161,20 @@ const captureParticipantSelection = (organizationId, card) => {
   });
 };
 
+const syncParticipantSelection = (card) => {
+  const participants = [...card.querySelectorAll('input[name="invitation_email"]')];
+  const selectedCount = participants.filter((item) => item.checked).length;
+  const selectAll = card.querySelector('input[name="select_all_participants"]');
+  if (selectAll) {
+    selectAll.checked = selectedCount === participants.length && participants.length > 0;
+    selectAll.indeterminate = selectedCount > 0 && selectedCount < participants.length;
+  }
+  const counter = card.querySelector('[data-selected-count]');
+  if (counter) counter.textContent = String(selectedCount);
+  const bulkActions = card.querySelector('[data-bulk-actions]');
+  if (bulkActions) bulkActions.hidden = selectedCount === 0;
+};
+
 export const captureAdminOrganizationsDraft = () => {
   if (adminOrganizationsPanel.classList.contains('hidden')) return;
   adminOrganizationsList.querySelectorAll('[data-organization-id]').forEach((card) => {
@@ -229,6 +245,7 @@ const restoreAdminOrganizationsDraft = () => {
     card.querySelectorAll('input[name="invitation_email"]').forEach((field) => {
       if (selection?.fields?.[field.value]) field.checked = selection.fields[field.value].checked;
     });
+    syncParticipantSelection(card);
     card.querySelectorAll('.admin-questionnaire-preview').forEach((preview) =>
       updateAdminOrganizationQuestionnaireRecipients(organizationId, preview));
   });
@@ -241,6 +258,7 @@ const clearAdminOrganizationsSessionState = () => {
   assignmentSourceRequests.clear();
   assignmentOperationIds.clear();
   cancellationOperationIds.clear();
+  programConnectionOperationIds.clear();
   questionnairePreviews.clear();
   questionnaireRevisions.clear();
   staleQuestionnairePreviews.clear();
@@ -372,13 +390,15 @@ adminOrganizationsPanel?.addEventListener('click', trackOperation, true);
 const requestOrganizations = async (url, options, fallbackMessage) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
+  const requestGeneration = ++organizationsRequestGeneration;
   const response = await fetch(url, {
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
     ...options,
   });
   const data = await readApiResponse(response, fallbackMessage);
-  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
+  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
+      requestGeneration !== organizationsRequestGeneration) return null;
   state.adminOrganizations = data;
   persistAssessmentContext();
   renderAdminOrganizations();
@@ -808,7 +828,8 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
     return false;
   }
   const requestKey = assessmentKey(organizationId, assessment);
-  const operationKey = requestKey + ':' + selected.slice().sort((left, right) => left - right).join(',');
+  const operationKey = requestKey + ':' + selected.slice().sort((left, right) => left - right).join(',') +
+    ':role:' + String(Number(roleProfileVersionId) || 'auto');
   const operationId = assignmentOperationIds.get(operationKey) || createOperationId();
   assignmentOperationIds.set(operationKey, operationId);
   if (assignmentSourceRequests.has(requestKey)) return false;
@@ -822,6 +843,17 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
     });
     const result = await readApiResponse(response, 'Не удалось назначить оценку.');
     const items = Array.isArray(result.items) ? result.items : [];
+    const requestedIds = new Set(selected);
+    const returnedIds = items.map((item) => Number(item.user_id));
+    const uniqueReturnedIds = new Set(returnedIds);
+    const responseMatchesRequest = items.length === selected.length &&
+      uniqueReturnedIds.size === selected.length &&
+      returnedIds.every((userId) => requestedIds.has(userId)) &&
+      items.every((item) => ['assigned', 'already_assigned', 'not_assigned'].includes(item.status));
+    if (!responseMatchesRequest) {
+      setStatus('Сервер вернул неполный или противоречивый результат назначения. Обновите список перед безопасным повтором.', 'error');
+      return false;
+    }
     const assigned = items.filter((item) => item.status === 'assigned').length;
     const existing = items.filter((item) => item.status === 'already_assigned').length;
     const failed = items.filter((item) => item.status === 'not_assigned');
@@ -830,8 +862,7 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
     assignmentOperationIds.delete(operationKey);
     setStatus(
       'Назначена: ' + assigned + '. Уже была назначена: ' + existing + '. Не назначена: ' + failed.length +
-        (failed.length ? '. ' + failed.map((item) => item.user_id + ': ' + item.error).join('; ') : '') +
-        '. Оценка для специалистов назначена со всеми проверенными источниками.',
+        (failed.length ? '. ' + failed.map((item) => item.user_id + ': ' + item.error).join('; ') : '') + '.',
       failed.length ? 'error' : 'success',
     );
     return failed.length === 0;
@@ -860,8 +891,12 @@ export const cancelAdminOrganizationAssessment = async (organizationId, assignme
     );
     await readApiResponse(response, 'Не удалось отменить назначение оценки.');
     cancellationOperationIds.delete(key);
-    await loadAdminOrganizations();
-    setStatus('Назначение оценки отменено. Участник и его история сохранены.', 'success');
+    try {
+      await loadAdminOrganizations();
+      setStatus('Назначение оценки отменено. Участник и его история сохранены.', 'success');
+    } catch {
+      setStatus('Назначение оценки отменено, но обновить список не удалось. Обновите страницу для проверки.', 'muted');
+    }
     return true;
   } catch (error) {
     setStatus(error.message || 'Не удалось отменить назначение оценки.', 'error');
@@ -1340,14 +1375,29 @@ export const restoreAdminOrganization = async (organizationId, organizationName 
 };
 
 export const connectAdminOrganizationProgram = async (organizationId, programDefinitionId) => {
-  const operationId = createOperationId();
+  const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
+  const operationKey = organizationKey(organizationId) + ':' + Number(programDefinitionId);
+  const operationId = programConnectionOperationIds.get(operationKey) || createOperationId();
+  programConnectionOperationIds.set(operationKey, operationId);
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-program', {
       method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ program_definition_id: Number(programDefinitionId), operation_id: operationId }),
     });
-    await readApiResponse(response, 'Не удалось подключить программу оценки.');
-    await loadAdminOrganizations();
+    const result = await readApiResponse(response, 'Не удалось подключить программу оценки.');
+    const commandConnection = result?.connection;
+    if (Number(commandConnection?.organization_id) !== Number(organizationId) ||
+        Number(commandConnection?.program_definition_id) !== Number(programDefinitionId)) {
+      throw new Error('Сервер не подтвердил точную версию подключённой программы. Обновите список перед повтором.');
+    }
+    const refreshed = await loadAdminOrganizations();
+    if (!refreshed || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
+    const readback = (refreshed.items || []).find((item) => Number(item.id) === Number(organizationId))?.assessment_program;
+    if (Number(readback?.program_definition_id) !== Number(programDefinitionId)) {
+      throw new Error('Команда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.');
+    }
+    programConnectionOperationIds.delete(operationKey);
     setStatus('Опубликованная версия программы подключена к организации.', 'success');
     return true;
   } catch (error) {
@@ -1473,6 +1523,9 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
         const deliveryLabels = { not_sent: 'Письмо: не отправлено', queued: 'Письмо: в очереди', sending: 'Письмо: исход неизвестен', accepted: 'Письмо: принято провайдером', error: 'Письмо: ошибка' };
         const linkLabels = { not_created: 'Ссылка: не создана', active: 'Ссылка: действует 72 часа', revoked: 'Ссылка: отозвана', expired: 'Ссылка: истекла', used: 'Ссылка: использована' };
         const registrationLabel = item.registration_status === 'registered' ? 'Регистрация: завершена' : 'Регистрация: ожидается';
+        const invitationLabel = invitationLabels[invitationStatus] || 'Статус письма неизвестен';
+        const deliveryLabel = deliveryLabels[item.invitation_delivery_status] || 'Письмо: статус неизвестен';
+        const linkLabel = linkLabels[item.invitation_link_status] || 'Ссылка: статус неизвестен';
         const hasAssignment = (item.assessment_assignments || []).includes(selectedAssessmentRef);
         const stageLabels = {
           assigned: 'Оценка назначена', acquaintance: 'Знакомство', acquaintance_complete: 'Знакомство завершено',
@@ -1510,6 +1563,8 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
           '<div class="admin-organization-member-main"><button type="button" class="admin-organization-member-name" data-action="open-member-card" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) + '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(currentStage) + '" data-stage-description="' + escapeHtml(stageDescription) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') + '" data-registration="' + escapeHtml(registrationLabel) + '">' + escapeHtml(participantName) + '</button>' +
           '<span class="admin-organization-member-email">' + escapeHtml(email) + '</span>' +
           (details ? '<span class="admin-organization-member-position">' + escapeHtml(details) + '</span>' : '') +
+          '<span class="admin-organization-member-invitation" title="' + escapeHtml(invitationLabel) + '">' +
+          escapeHtml(deliveryLabel + ' · ' + linkLabel + ' · ' + registrationLabel) + '</span>' +
           '</div>' +
           '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' + (['preparation_failed', 'failed'].includes(preparationStatus) ? ' is-critical' : '') + '">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span></div>' +
           '<div class="admin-organization-member-actions">' +
@@ -1608,6 +1663,8 @@ export const renderAdminOrganizations = () => {
       const availablePrograms = Array.isArray(data?.assessment_programs) ? data.assessment_programs : [];
       const currentProgram = org.assessment_program || null;
       const allowedRoles = Array.isArray(currentProgram?.roles) ? currentProgram.roles : [];
+      const roleCapabilities = Array.isArray(currentProgram?.role_capabilities)
+        ? currentProgram.role_capabilities : allowedRoles.map((role) => ({ ...role, is_available: true }));
       const publishedRevision = revisions.find((item) => item.assignment_ref === selectedRef && item.status === 'confirmed');
       const assignmentBlockers = [];
       if (!currentProgram) {
@@ -1639,12 +1696,12 @@ export const renderAdminOrganizations = () => {
             assignmentBlockers.map((blocker) => '<li>' + escapeHtml(blocker) + '</li>').join('') + '</ul></div>'
           : '<p class="form-status success">Можно назначать. Выберите участников ниже; назначение не запускает оценку.</p>') +
         '</section>';
-      const roleSelectionMarkup = allowedRoles.length > 1
+      const roleSelectionMarkup = roleCapabilities.length
         ? '<label><span>Роль программы</span><select name="role_profile_version_id" required><option value="">Выберите роль</option>' +
-          allowedRoles.map((role) => '<option value="' + Number(role.version_id) + '">' + escapeHtml(role.name || role.code) + '</option>').join('') + '</select></label>'
-        : allowedRoles.length === 1
-          ? '<input type="hidden" name="role_profile_version_id" value="' + Number(allowedRoles[0].version_id) + '"><span>Роль: ' + escapeHtml(allowedRoles[0].name || allowedRoles[0].code) + '</span>'
-          : '';
+          roleCapabilities.map((role) => '<option value="' + Number(role.version_id) + '"' +
+            (role.is_available ? '' : ' disabled') + (role.is_available && allowedRoles.length === 1 ? ' selected' : '') + '>' +
+            escapeHtml(role.name || role.code) + (role.is_available ? '' : ' — ' + escapeHtml(role.unavailable_reason || 'Недоступно')) +
+            '</option>').join('') + '</select></label>' : '';
       const programMarkup = isSuperadmin ? '<form class="admin-organization-inline-form admin-organization-program-form" data-action="connect-assessment-program">' +
         '<label><span>Программа оценки</span><select name="program_definition_id" required>' +
         '<option value="">Выберите опубликованную версию</option>' + availablePrograms.map((program) =>

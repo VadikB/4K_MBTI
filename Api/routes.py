@@ -4686,17 +4686,30 @@ def revoke_personal_organization_invitation(
     current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     with get_connection() as connection:
         _require_organization_admin(connection, current_user, organization_id)
+        invitation = connection.execute(
+            """SELECT id,used_at,revoked_at
+               FROM organization_invitations
+               WHERE id=%s AND organization_id=%s AND purpose='personal_registration'
+               FOR UPDATE""",
+            (invitation_id, organization_id),
+        ).fetchone()
+        if invitation is None:
+            raise HTTPException(status_code=404, detail="INVITATION_NOT_FOUND")
+        if invitation["used_at"] is not None:
+            raise HTTPException(status_code=409, detail="INVITATION_ALREADY_USED")
+        if invitation["revoked_at"] is not None:
+            return {"ok": True}
         row = connection.execute(
             """
-            UPDATE organization_invitations
-            SET revoked_at = COALESCE(revoked_at, NOW())
-            WHERE id = %s AND organization_id = %s AND purpose = 'personal_registration'
+            UPDATE organization_invitations SET revoked_at=NOW()
+            WHERE id=%s AND organization_id=%s AND purpose='personal_registration'
+              AND used_at IS NULL AND revoked_at IS NULL
             RETURNING id
             """,
             (invitation_id, organization_id),
         ).fetchone()
         if row is None:
-            raise HTTPException(status_code=404, detail="Invitation not found")
+            raise HTTPException(status_code=409, detail="INVITATION_STATE_CHANGED")
         connection.commit()
     return {"ok": True}
 

@@ -26,10 +26,10 @@ def program_db(test_database_url):
         connection.execute("""CREATE TABLE m5_catalogs(
             id BIGINT PRIMARY KEY,status TEXT,usage_scope TEXT,organization_id BIGINT)""")
         connection.execute("""CREATE TABLE assessment_role_profiles(
-            id BIGINT PRIMARY KEY,code TEXT)""")
+            id BIGINT PRIMARY KEY,code TEXT,scope TEXT DEFAULT 'base')""")
         connection.execute("""CREATE TABLE assessment_role_profile_versions(
             id BIGINT PRIMARY KEY,role_profile_id BIGINT REFERENCES assessment_role_profiles(id),
-            version TEXT,status TEXT,methodology_version TEXT,definition_json JSONB)""")
+            version TEXT,status TEXT,methodology_version TEXT,definition_json JSONB,published_at TIMESTAMP)""")
         assessment_programs.ensure_schema(connection)
         connection.execute('INSERT INTO users VALUES(1),(2)')
         connection.execute('INSERT INTO organizations VALUES(10)')
@@ -68,6 +68,10 @@ def test_program_connect_resolve_and_immutability(program_db):
         program_definition_id=program_id, actor_user_id=1, operation_id='connect-program-0001')
     connection.commit()
     assert connected['program_version'] == '1.0'
+    assert connected['role_capabilities'] == [{
+        'version_id': 50, 'code': 'specialist_expert', 'version': '1.0',
+        'name': 'Специалист', 'is_available': True, 'unavailable_reason': None,
+    }]
     resolved = assessment_programs.resolve(connection, organization_id=10,
         assignment_ref='competencies_4k')
     assert resolved['assessment_configuration_id'] == 30
@@ -78,6 +82,22 @@ def test_program_connect_resolve_and_immutability(program_db):
     with pytest.raises(psycopg.errors.RaiseException):
         connection.execute("UPDATE assessment_program_definitions SET name='changed' WHERE id=%s", (program_id,))
     connection.rollback()
+
+
+def test_capability_projection_prefers_program_pinned_role_version(program_db):
+    connection, program_id = program_db
+    connection.execute("""INSERT INTO assessment_role_profile_versions
+        VALUES(51,40,'1.1','published','1.1','{"description":{"name":"Специалист новый"}}',NOW())""")
+    connection.commit()
+
+    connected = assessment_programs.connect(connection, organization_id=10,
+        program_definition_id=program_id, actor_user_id=1, operation_id='connect-program-pinned-role')
+
+    specialist = next(item for item in connected['role_capabilities']
+                      if item['code'] == 'specialist_expert')
+    assert specialist['version_id'] == 50
+    assert specialist['name'] == 'Специалист'
+    assert specialist['is_available'] is True
 
 
 def test_retired_program_stops_new_resolution_without_rewriting_connection(program_db):
