@@ -65,11 +65,13 @@
 ## Текущее состояние
 
 - Ветка: `codex/program01`.
-- База: `1abb9cf71212ed2be214bd74267daebd070f942b`.
+- База после rebase: `main@8fa2df75e2414066d9dac27fdb47e4a696f84bf1`.
+- Кандидат приложения: `2.0.47`; подготовлен штатным `scripts/prepare_release.py`, release check PASS.
 - Реализация: исправлены точный command/readback подключения программы, сохранение idempotency key при неопределённом исходе, защита от позднего ответа списка, строгий batch-контракт назначения, role-scoped fingerprint клиента, восстановление bulk selection, определённый исход отмены при сбое refresh, серверная capability-проекция шести BaseRoles, раздельные статусы письма/ссылки/регистрации и запрет отзыва использованного приглашения.
 - Совместимость: `assessment_program.roles` сохранён как список допущенных runtime-ролей; добавлен `role_capabilities`. Published ProgramDefinition и исторические bindings не изменялись.
 - Проверки: ESLint PASS; frontend `124/124 PASS`; backend unit/e2e `779 PASS`; целевые invitation/assignment HTTP `19 PASS`; integration PostgreSQL `36/36 PASS` (ProgramDefinition, cancellation/races, invitations, acquaintance); browser admin flow `3/3 PASS`; `npm run build:web` PASS; `git diff --check` PASS.
 - Evidence: обновлены desktop/mobile snapshots `docs/evc/evidence/adm-status-01/`; визуально проверен desktop snapshot.
-- NOT_RUN: полный browser suite, live и CI — до commit/PR/version/release gate.
-- Открытый release-gate: новая immutable ProgramDefinition «Пилот 4К · 9 кейсов», version bump, публикация, PR, merge и deploy требуют отдельного допуска владельца по принятой границе.
+- После rebase повторены: ESLint PASS; адресная frontend-регрессия `3/3 PASS`; HTTP-регрессия `3/3 PASS`; release unit `5/5 PASS`; `npm run build:web` и `git diff --check` PASS. Ранее выполненный полный набор относится к неизменённому содержимому реализации на базе `1abb9cf`; обязательный CI проверит окончательный release SHA.
+- NOT_RUN: повтор полного browser suite, live и CI — до PR/развёртывания кандидата.
+- Владелец подтвердил выпускной пакет: новая immutable ProgramDefinition «Пилот 4К · 9 кейсов», patch `2.0.47`, branch push и Draft PR. Фактическая публикация ProgramDefinition выполняется штатной командой на `test` только после развёртывания поддерживающего SHA и readback точных опубликованных configuration/catalog/role; merge и deploy требуют отдельного подтверждения.
 - Откат: revert будущего commit приложения; добавочная API-проекция совместима. Опубликованные определения не затронуты.
