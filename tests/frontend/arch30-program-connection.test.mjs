@@ -12,6 +12,22 @@ test('ARCH30 connects an exact published program version from the superadmin UI'
   assert.match(source, /\/assessment-program/);
   assert.match(wiring, /connect-assessment-program/);
   assert.match(wiring, /connectAdminOrganizationProgram/);
-  assert.match(source, /allowedRoles\.length > 1/);
-  assert.match(source, /Выберите роль/);
+  assert.match(source, /roleCapabilities\.length/);
+  assert.match(source, /role_capabilities/);
+  assert.match(source, /unavailable_reason/);
+  assert.match(source, /commandConnection/);
+  assert.match(source, /readback/);
+});
+
+test('PROGRAM01 rejects incomplete assignment batches and preserves role-scoped idempotency', () => {
+  assert.match(source, /responseMatchesRequest/);
+  assert.match(source, /неполный или противоречивый результат назначения/);
+  assert.match(source, /':role:'/);
+  assert.doesNotMatch(source, /Оценка для специалистов назначена со всеми проверенными источниками/);
+});
+
+test('PROGRAM01 restores the bulk selection projection and rejects stale organization reads', () => {
+  assert.match(source, /syncParticipantSelection\(card\)/);
+  assert.match(source, /organizationsRequestGeneration/);
+  assert.match(source, /requestGeneration !== organizationsRequestGeneration/);
 });

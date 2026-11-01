@@ -5,6 +5,33 @@ import hashlib
 import json
 
 
+def _base_role_capabilities(connection, *, available_version_ids: set[int]) -> list[dict]:
+    """Project all normative BaseRoles without admitting unavailable roles to runtime."""
+    published_rows = connection.execute("""SELECT
+            version.id AS version_id,profile.code,version.version,
+            version.definition_json->'description'->>'name' AS name
+        FROM assessment_role_profiles profile
+        JOIN assessment_role_profile_versions version ON version.role_profile_id=profile.id
+        WHERE profile.scope='base' AND version.status='published'
+        ORDER BY profile.code,version.published_at DESC NULLS LAST,version.id DESC""").fetchall()
+    by_code: dict[str, list] = {}
+    for row in published_rows:
+        by_code.setdefault(str(row['code']), []).append(row)
+    rows = [next((row for row in versions if int(row['version_id']) in available_version_ids), versions[0])
+            for versions in by_code.values()]
+    role_order = {
+        code: index for index, code in enumerate((
+            'operational_employee', 'specialist_expert', 'team_lead',
+            'project_product_process_manager', 'direction_system_leader', 'student',
+        ))
+    }
+    rows = sorted(rows, key=lambda row: role_order.get(str(row['code']), len(role_order)))
+    return [{**dict(row),
+        'is_available': int(row['version_id']) in available_version_ids,
+        'unavailable_reason': None if int(row['version_id']) in available_version_ids else 'Недоступно в пилоте',
+    } for row in rows]
+
+
 def ensure_schema(connection) -> None:
     connection.execute("""CREATE TABLE IF NOT EXISTS assessment_program_definitions (
         id BIGSERIAL PRIMARY KEY,
@@ -147,7 +174,15 @@ def list_published(connection) -> list[dict]:
         LEFT JOIN assessment_role_profiles r ON r.id=rv.role_profile_id
         WHERE p.status='published'
         GROUP BY p.id ORDER BY p.code,p.version""").fetchall()
-    return [dict(row) for row in rows]
+    result = []
+    for row in rows:
+        item = dict(row)
+        available_ids = {int(role['version_id']) for role in item.get('roles') or []}
+        item['role_capabilities'] = _base_role_capabilities(
+            connection, available_version_ids=available_ids,
+        )
+        result.append(item)
+    return result
 
 
 def current_connection(connection, *, organization_id: int) -> dict | None:
@@ -171,6 +206,10 @@ def current_connection(connection, *, organization_id: int) -> dict | None:
            ORDER BY ar.display_order,rv.id""",
         (result['program_definition_id'],),
     ).fetchall()]
+    result['role_capabilities'] = _base_role_capabilities(
+        connection,
+        available_version_ids={int(role['version_id']) for role in result['roles']},
+    )
     return result
 
 

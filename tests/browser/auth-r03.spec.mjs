@@ -1114,6 +1114,19 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
     assessment_program: {
       program_definition_id: 7, program_name: 'Специалист 4К', program_version: '1.0',
       assignment_ref: 'competencies_4k', roles: [{ version_id: 92, code: 'specialist', name: 'Специалист' }],
+      role_capabilities: [
+        { version_id: 91, code: 'operational_employee', name: 'Операционный сотрудник', is_available: false,
+          unavailable_reason: 'Недоступно в пилоте' },
+        { version_id: 92, code: 'specialist_expert', name: 'Специалист / эксперт', is_available: true },
+        { version_id: 93, code: 'team_lead', name: 'Руководитель команды', is_available: false,
+          unavailable_reason: 'Недоступно в пилоте' },
+        { version_id: 94, code: 'project_product_process_manager', name: 'Менеджер проекта, продукта или процесса', is_available: false,
+          unavailable_reason: 'Недоступно в пилоте' },
+        { version_id: 95, code: 'direction_system_leader', name: 'Руководитель направления или системы', is_available: false,
+          unavailable_reason: 'Недоступно в пилоте' },
+        { version_id: 96, code: 'student', name: 'Студент', is_available: false,
+          unavailable_reason: 'Недоступно в пилоте' },
+      ],
     },
     members_count: 2,
     members: [
@@ -1135,6 +1148,10 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
   });
   await page.locator('input[name="invitation_email"]').nth(0).check();
   await page.locator('input[name="invitation_email"]').nth(1).check();
+  const roleOptions = page.locator('[name="role_profile_version_id"] option');
+  await expect(roleOptions).toHaveCount(7);
+  await expect(roleOptions.filter({ hasText: 'Операционный сотрудник' })).toHaveAttribute('disabled', '');
+  await expect(page.locator('[name="role_profile_version_id"]')).toHaveValue('92');
   await page.getByRole('button', { name: 'Назначить оценку' }).click();
   await expect.poll(() => assignmentPayload).toBeTruthy();
   await expect(page.locator('#admin-organizations-status')).toContainText('Назначена: 2');
