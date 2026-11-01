@@ -38,8 +38,9 @@
 - `node --test tests/frontend/*.test.mjs` — PASS, 122.
 - `npm run build:web` — PASS.
 - `playwright … --grep ADM-STATUS-01` — PASS, 2; 1440 и 390 px, без горизонтального overflow.
+- `STAND_ADMIN_URL=…/postgres npm run test:browser` — PASS, 90; полный isolated browser acceptance, включая ADM28 real и ширины 320/375/390/683/768/1024/1366/1440.
 - `git diff --check` — PASS.
-- Полный browser suite, полный integration suite, реальные LLM, deploy и приёмка окружения — NOT_RUN; локальный минимум изменения покрыт, обязательный полный CI остаётся gate перед merge.
+- Полный integration suite локально, реальные LLM, deploy и приёмка окружения — NOT_RUN; локальный минимум изменения покрыт, обязательный полный CI остаётся gate перед merge.
 
 Детальный статус критериев: [adm-status-01-acceptance.csv](adm-status-01-acceptance.csv). Визуальные доказательства: [desktop](../evidence/adm-status-01/desktop-status-list.png) и [mobile](../evidence/adm-status-01/mobile-status-list.png).
 

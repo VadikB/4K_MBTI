@@ -445,8 +445,10 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
   const rows = page.locator('.admin-organization-member');
   await expect(rows).toHaveCount(2);
-  await expect(rows.first().locator('.admin-organization-invitation-state')).toHaveCount(5);
-  await expect(rows.nth(1)).toContainText('Регистрация: завершена');
+  await expect(rows.first().locator('.admin-organization-invitation-state')).toHaveCount(0);
+  await rows.nth(1).locator('[data-action="open-member-card"]').click();
+  await expect(page.locator('.admin-member-card-dialog')).toContainText('Регистрация: завершена');
+  await page.locator('.admin-member-card-dialog').getByRole('button', { name: 'Закрыть', exact: true }).click();
   await expect(rows.nth(1).locator('[data-action="send-member-invitation"]')).toHaveCount(1);
 
   // 683 CSS px approximates the available width at 200% browser zoom on a 1366 px display.
@@ -454,11 +456,12 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
     await page.setViewportSize({ width, height: 900 });
     const layout = await rows.first().evaluate((row) => {
       const main = row.querySelector('.admin-organization-member-main').getBoundingClientRect();
-      const name = row.querySelector('strong').getBoundingClientRect();
-      const statuses = row.querySelector('.admin-organization-member-statuses').getBoundingClientRect();
-      const actions = row.querySelector('.admin-organization-member-actions').getBoundingClientRect();
+      const name = row.querySelector('.admin-organization-member-name').getBoundingClientRect();
+      const statuses = row.querySelector('.admin-organization-member-stage').getBoundingClientRect();
+      const actions = row.querySelector('.admin-organization-member-menu').getBoundingClientRect();
       const select = row.querySelector('.admin-organization-member-select').getBoundingClientRect();
-      const buttons = [...row.querySelectorAll('button')].map((button) => button.getBoundingClientRect());
+      const buttons = [...row.querySelectorAll('button, summary')]
+        .filter((button) => button.getClientRects().length).map((button) => button.getBoundingClientRect());
       return { documentWidth: document.documentElement.scrollWidth, viewportWidth: document.documentElement.clientWidth,
         mainWidth: main.width, nameWidth: name.width, statusesX: statuses.x, statusesY: statuses.y,
         mainRight: main.right, mainBottom: main.bottom, actionsX: actions.x, actionsY: actions.y,
@@ -470,13 +473,12 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
     expect(layout.selectWidth).toBeGreaterThanOrEqual(44);
     expect(layout.selectHeight).toBeGreaterThanOrEqual(44);
     expect(layout.buttons.every((button) => button.width >= 44 && button.height >= 44)).toBe(true);
-    if (width >= 1100) {
+    if (layout.statusesY < layout.mainBottom - 1) {
       expect(layout.mainRight).toBeLessThanOrEqual(layout.statusesX);
-      expect(layout.mainRight).toBeLessThanOrEqual(layout.actionsX);
     } else {
       expect(layout.statusesY).toBeGreaterThanOrEqual(layout.mainBottom);
-      expect(layout.actionsY).toBeGreaterThanOrEqual(layout.mainBottom);
     }
+    expect(layout.actionsX >= layout.mainRight - 1 || layout.actionsY >= layout.mainBottom).toBe(true);
   }
 
   const checkbox = rows.first().getByRole('checkbox', { name: 'Выбрать ' + longEmail });
@@ -488,6 +490,7 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await page.getByRole('button', { name: 'Данные организации' }).click();
   await page.getByRole('button', { name: 'Организация и участники' }).click();
   await expect(rows.first().locator('[data-action="send-member-invitation"]')).toHaveAttribute('data-value', longEmail);
+  await rows.first().locator('.admin-organization-member-menu summary').click();
   page.once('dialog', async (dialog) => {
     expect(dialog.message()).toContain(longEmail);
     await dialog.dismiss();
@@ -1152,6 +1155,9 @@ test('PILOT31-03 explains every visible readiness blocker before assignment', as
   await expect(readiness).toBeVisible();
   await expect(readiness).toContainText('Программа оценки не подключена');
   await expect(readiness).toContainText('Анкета для выбранной оценки не подтверждена');
+  await expect(page.locator('[data-bulk-actions]')).toBeHidden();
+  await page.locator('input[name="invitation_email"]').check();
+  await expect(page.locator('[data-bulk-actions]')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Назначить оценку' })).toBeDisabled();
 });
 
@@ -1949,7 +1955,9 @@ test('R03 network retry reuses invitation operation id', async ({ page }) => {
     keys.push(route.request().headers()['idempotency-key']);
     return route.abort('failed');
   });
-  const button = page.locator('[data-action="send-member-invitation"]').first();
+  const row = page.locator('.admin-organization-member').first();
+  await row.locator('.admin-organization-member-menu summary').click();
+  const button = row.locator('[data-action="send-member-invitation"]');
   await button.click();
   await expect(page.locator('#admin-organizations-status')).toContainText('Не удалось');
   await button.click();

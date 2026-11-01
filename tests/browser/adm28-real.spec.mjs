@@ -49,7 +49,11 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     const card = page.locator('.admin-organization-card');
     const organizationId = await card.getAttribute('data-organization-id');
     await expect(card.locator('.admin-assignment-readiness')).toContainText('Оценка не выбрана');
+    await expect(card.locator('[data-bulk-actions]')).toBeHidden();
+    await card.locator('input[name="invitation_email"]').first().check();
+    await expect(card.locator('[data-bulk-actions]')).toBeVisible();
     await expect(card.getByRole('button', { name: 'Назначить оценку', exact: true })).toBeDisabled();
+    await card.locator('input[name="invitation_email"]').first().uncheck();
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
     const profile = card.locator('form[data-action="update-profile"]');
     await profile.getByRole('button', { name: 'Сохранить карточку' }).click();
@@ -99,7 +103,7 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
     await expect(card.locator('[data-operation-status]')).toContainText('Назначена: 2');
     await expect(card.locator('.admin-organization-member')).toHaveCount(2);
-    await expect(card.locator('.admin-organization-member').first()).toContainText('Оценка: назначена');
+    await expect(card.locator('.admin-organization-member').first().locator('.admin-organization-current-stage')).toHaveText('Оценка назначена');
     const revisions = await (await page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire`)).json();
     expect(revisions.items[0].readiness.roles.total).toBe(2);
     expect(revisions.items[0].readiness.roles.status).toBe('incomplete');
