@@ -19,6 +19,7 @@ const invitationRequestsInFlight = new Set();
 const invitationOperationIds = new Map();
 const assignmentSourceRequests = new Set();
 const assignmentOperationIds = new Map();
+const cancellationOperationIds = new Map();
 const questionnairePreviews = new Map();
 const questionnaireRevisions = new Map();
 const staleQuestionnairePreviews = new Set();
@@ -152,7 +153,8 @@ const captureFormDraft = (organizationId, form, { assessmentRef: assessmentOverr
 
 const captureParticipantSelection = (organizationId, card) => {
   const fields = [...card.querySelectorAll('input[name="invitation_email"]')];
-  managementDrafts.set(organizationKey(organizationId) + ':participant-selection:organization', {
+  const assessmentRef = selectedAssessmentRefs.get(organizationKey(organizationId)) || '';
+  managementDrafts.set(organizationKey(organizationId) + ':participant-selection:' + assessmentRef, {
     fields: Object.fromEntries(fields.map((field) => [field.value, { value: field.value, checked: field.checked }])),
   });
 };
@@ -222,7 +224,8 @@ const restoreAdminOrganizationsDraft = () => {
     const organizationId = Number(card.getAttribute('data-organization-id'));
     card.querySelectorAll('form[data-action], .admin-questionnaire-preview').forEach((form) =>
       restoreFormDraft(organizationId, form));
-    const selection = managementDrafts.get(organizationKey(organizationId) + ':participant-selection:organization');
+    const assessmentRef = selectedAssessmentRefs.get(organizationKey(organizationId)) || '';
+    const selection = managementDrafts.get(organizationKey(organizationId) + ':participant-selection:' + assessmentRef);
     card.querySelectorAll('input[name="invitation_email"]').forEach((field) => {
       if (selection?.fields?.[field.value]) field.checked = selection.fields[field.value].checked;
     });
@@ -237,6 +240,7 @@ const clearAdminOrganizationsSessionState = () => {
   invitationOperationIds.clear();
   assignmentSourceRequests.clear();
   assignmentOperationIds.clear();
+  cancellationOperationIds.clear();
   questionnairePreviews.clear();
   questionnaireRevisions.clear();
   staleQuestionnairePreviews.clear();
@@ -840,6 +844,31 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
   }
 };
 
+export const cancelAdminOrganizationAssessment = async (organizationId, assignmentId) => {
+  const key = Number(organizationId) + ':' + Number(assignmentId);
+  const operationId = cancellationOperationIds.get(key) || createOperationId();
+  cancellationOperationIds.set(key, operationId);
+  try {
+    const response = await fetch(
+      '/users/admin/organizations/' + Number(organizationId) + '/assessment-assignments/' + Number(assignmentId) + '/cancel',
+      {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operation_id: operationId }),
+      },
+    );
+    await readApiResponse(response, 'Не удалось отменить назначение оценки.');
+    cancellationOperationIds.delete(key);
+    await loadAdminOrganizations();
+    setStatus('Назначение оценки отменено. Участник и его история сохранены.', 'success');
+    return true;
+  } catch (error) {
+    setStatus(error.message || 'Не удалось отменить назначение оценки.', 'error');
+    return false;
+  }
+};
+
 const offerAssessmentDataNavigation = (organizationId, assessmentRef) => {
   const target = operationRoot()?.querySelector('[data-operation-status]') || adminOrganizationsStatus;
   const button = document.createElement('button');
@@ -1413,7 +1442,7 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
         const email = String(item.email || '');
         const isAutotest = email.toLowerCase().startsWith('__autotest__') || email.toLowerCase().endsWith('@autotest.local');
         const hasPassword = item.has_password === true;
-        const label = item.full_name ? item.full_name + ' · ' + email : email;
+        const participantName = item.full_name || email;
         const details = item.raw_position || item.job_description || item.role_description || item.raw_duties || '';
         const scopedStage = item.assessment_stages?.[selectedAssessmentRef] || null;
         const preparationStatus = String(scopedStage?.code || '');
@@ -1445,18 +1474,30 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
         const linkLabels = { not_created: 'Ссылка: не создана', active: 'Ссылка: действует 72 часа', revoked: 'Ссылка: отозвана', expired: 'Ссылка: истекла', used: 'Ссылка: использована' };
         const registrationLabel = item.registration_status === 'registered' ? 'Регистрация: завершена' : 'Регистрация: ожидается';
         const hasAssignment = (item.assessment_assignments || []).includes(selectedAssessmentRef);
-        const currentStage = scopedStage && scopedStage.code !== 'assigned'
-          ? scopedStage.label
-          : item.invitation_delivery_status === 'accepted'
-            ? 'Письмо отправлено — ожидаем начала знакомства'
-            : !hasAssignment
-              ? 'Оценка не назначена'
-              : 'Приглашение не отправлено';
+        const stageLabels = {
+          assigned: 'Оценка назначена', acquaintance: 'Знакомство', acquaintance_complete: 'Знакомство завершено',
+          preparing: 'Готовится оценка', preparation_failed: 'Подготовка заблокирована', prepared: 'Готов к прохождению оценки',
+          ready_to_start: 'Готов к прохождению оценки', in_progress: 'Проходит оценку', processing: 'Готовится отчёт',
+          report_ready: 'Отчёт готов', failed: 'Обработка завершилась с ошибкой', cancelled: 'Назначение отменено',
+        };
+        const currentStage = scopedStage
+          ? (scopedStage.label || stageLabels[preparationStatus] || preparationStatus)
+          : hasAssignment ? 'Оценка назначена' : 'Оценка не назначена';
+        const stageDescription = scopedStage?.description || (hasAssignment
+          ? 'Ожидаем следующего действия участника или системы.'
+          : 'Для выбранной оценки назначения нет.');
         const sendLabel = item.invitation_id ? 'Отправить повторно' : 'Отправить';
         const invitationButton = '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
         const revokeButton = (invitationStatus === 'accepted' || invitationStatus === 'queued' || invitationStatus === 'sending')
-          ? '<button type="button" data-action="revoke-member-invitation" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать ссылку</button>'
+          ? '<button type="button" role="menuitem" data-action="revoke-member-invitation" data-participant-name="' + escapeHtml(participantName) + '" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать приглашение</button>'
           : '';
+        const cancellableStage = ['assigned', 'acquaintance', 'acquaintance_complete', 'preparing', 'preparation_failed', 'prepared', 'ready_to_start'].includes(preparationStatus);
+        const cancelButton = scopedStage?.assignment_id && cancellableStage
+          ? '<button type="button" role="menuitem" data-action="cancel-member-assignment" data-assignment-id="' + Number(scopedStage.assignment_id) + '" data-participant-name="' + escapeHtml(participantName) + '" data-assessment-ref="' + escapeHtml(selectedAssessmentRef) + '" data-value="' + escapeHtml(email) + '">Отменить назначение оценки</button>'
+          : '';
+        const primaryAction = !hasAssignment && ['not_sent', 'error', 'revoked', 'expired'].includes(invitationStatus)
+          ? invitationButton : '';
+        const menuActions = (primaryAction ? '' : invitationButton) + revokeButton + cancelButton + preparationButton + passwordButton + removeButton;
         const transferForm = !isSuperadmin || !transferTargets.length ? '' :
           '<form class="admin-organization-transfer-form" data-action="transfer-member" data-user-id="' + Number(item.user_id) + '">' +
           '<label><span>Перенести в</span><select name="target_organization_id" required><option value="">Выберите организацию</option>' +
@@ -1464,28 +1505,18 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
           '</select></label><label><span>Роль</span><select name="target_role"><option value="member">Участник</option><option value="admin">Администратор</option></select></label>' +
           '<button class="ghost-button compact-ghost" type="submit">Перенести</button></form>';
         return (
-          '<div class="admin-organization-member">' +
+          '<article class="admin-organization-member">' +
           '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>' +
-          '<div class="admin-organization-member-main"><strong>' +
-          escapeHtml(label) +
-          '</strong>' +
-          (details ? '<span>' + escapeHtml(details) + '</span>' : '') +
-          '<span class="admin-organization-current-stage">' + escapeHtml(currentStage) + '</span>' +
+          '<div class="admin-organization-member-main"><button type="button" class="admin-organization-member-name" data-action="open-member-card" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) + '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(currentStage) + '" data-stage-description="' + escapeHtml(stageDescription) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') + '" data-registration="' + escapeHtml(registrationLabel) + '">' + escapeHtml(participantName) + '</button>' +
+          '<span class="admin-organization-member-email">' + escapeHtml(email) + '</span>' +
+          (details ? '<span class="admin-organization-member-position">' + escapeHtml(details) + '</span>' : '') +
           '</div>' +
-          '<details class="admin-organization-member-statuses"><summary>Подробности статуса</summary><div>' +
-          '<span class="admin-organization-invitation-state">Допуск: ' + escapeHtml(item.admission_status === 'denied' ? 'запрещён' : 'разрешён') + '</span>' +
-          '<span class="admin-organization-invitation-state">' + escapeHtml(registrationLabel) + '</span>' +
-          '<span class="admin-organization-invitation-state">' + escapeHtml(deliveryLabels[item.invitation_delivery_status] || invitationLabels[invitationStatus] || invitationStatus) + '</span>' +
-          '<span class="admin-organization-invitation-state">' + escapeHtml(linkLabels[item.invitation_link_status] || item.invitation_link_status || 'Ссылка: не создана') + '</span>' +
-          '<span class="admin-organization-invitation-state">Оценка: ' + escapeHtml(hasAssignment ? 'назначена' : 'не назначена') + '</span>' +
-          '</div></details>' +
+          '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' + (['preparation_failed', 'failed'].includes(preparationStatus) ? ' is-critical' : '') + '">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span></div>' +
           '<div class="admin-organization-member-actions">' +
-          invitationButton + revokeButton +
-          preparationButton +
-          passwordButton +
-          removeButton +
+          primaryAction +
+          '<details class="admin-organization-member-menu"><summary aria-label="Другие действия" aria-haspopup="menu">⋯</summary><div role="menu">' + menuActions + '</div></details>' +
           '</div>' + transferForm +
-          '</div>'
+          '</article>'
         );
       })
       .join('') +
@@ -1754,9 +1785,11 @@ export const renderAdminOrganizations = () => {
         viewButton('organization-data', 'Данные организации') +
         viewButton('questionnaire', 'Анкета') + '</nav>' +
         '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people"><h4>Организация и участники</h4>' +
-        '<p>Выбранная оценка: <strong>' + escapeHtml(selectedRef || 'не выбрана') + '</strong>. Назначение не запускает оценку.</p>' +
+        '<dl class="admin-people-context"><div><dt>Выбранная оценка</dt><dd>' + escapeHtml(selectedRef || 'Не выбрана') + '</dd></div><div><dt>Подключённая программа</dt><dd>' + (currentProgram ? escapeHtml(currentProgram.program_name) + ' · ' + escapeHtml(currentProgram.program_version) : 'Не подключена') + '</dd></div></dl>' +
+        '<p>Назначение не запускает оценку.</p>' +
         assignmentReadinessMarkup +
-        '<div class="admin-organization-bulk-actions"><form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
+        '<div class="admin-organization-selection"><label><input type="checkbox" name="select_all_participants"> Выбрать всех</label><strong aria-live="polite"><span data-selected-count>0</span> выбрано</strong></div>' +
+        '<div class="admin-organization-bulk-actions" data-bulk-actions hidden><form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
         '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment">' + roleSelectionMarkup + '<button class="primary-button compact-primary" type="submit"' +
         (assignmentBlockers.length ? ' disabled' : '') + '>Назначить оценку</button></form></div>' +
         renderMemberList(org.members || [], {

@@ -19,6 +19,46 @@ def _profile_row(connection, personalized_profile_id: int) -> dict[str, Any]:
     return dict(row["value"])
 
 
+def _assignment_for_profile(connection, profile: dict[str, Any], personalized_profile_id: int) -> int | None:
+    """Resolve the exact immutable assignment generation that produced this M4 profile."""
+    relations = connection.execute("""SELECT
+        to_regclass(current_schema()||'.organization_assessment_assignments') AS assignments,
+        to_regclass(current_schema()||'.organization_assessment_source_bindings') AS bindings,
+        to_regclass(current_schema()||'.participant_acquaintance_confirmations') AS confirmations""").fetchone()
+    if not relations or not all(relations.get(name) for name in ("assignments", "bindings", "confirmations")):
+        return None
+    rows = connection.execute(
+        """SELECT assignment.id,assignment.status,assignment.revoked_at
+           FROM participant_acquaintance_confirmations confirmation
+           JOIN organization_assessment_assignments assignment
+             ON assignment.recipient_user_id=confirmation.user_id
+            AND assignment.organization_id=confirmation.organization_id
+            AND assignment.assignment_ref=confirmation.assignment_ref
+           JOIN organization_assessment_source_bindings binding
+             ON binding.assignment_id=assignment.id
+            AND binding.questionnaire_revision_id=confirmation.questionnaire_revision_id
+           WHERE confirmation.personalized_profile_id=%s
+             AND assignment.recipient_user_id=%s
+             AND assignment.organization_id=%s
+             AND binding.assessment_configuration_id=%s
+             AND binding.role_profile_version_id=%s
+           ORDER BY assignment.id DESC""",
+        (
+            personalized_profile_id,
+            profile.get("user_id"),
+            profile.get("organization_id"),
+            profile.get("assessment_configuration_id"),
+            profile.get("role_profile_version_id"),
+        ),
+    ).fetchall()
+    if not rows:
+        return None
+    assignment = rows[0]
+    if assignment["status"] != "active" or assignment.get("revoked_at") is not None:
+        raise ValueError("ASSIGNMENT_CANCELLED")
+    return int(assignment["id"])
+
+
 def create_cycle(
     connection,
     *,
@@ -33,6 +73,9 @@ def create_cycle(
     catalog_ref: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     profile = _profile_row(connection, personalized_profile_id)
+    assignment_id = None
+    if usage_scope == "assessment" and profile.get("organization_id") is not None:
+        assignment_id = _assignment_for_profile(connection, profile, personalized_profile_id)
     if parameter_sources is None:
         from Api.m7_parameter_resolution import resolve
         overrides={name:value for name,value in {
@@ -86,17 +129,18 @@ def create_cycle(
     row = connection.execute(
         """
         INSERT INTO m5_cycles
-            (cycle_id,owner_user_id,organization_id,personalized_profile_id,profile_ref_json,
+            (cycle_id,owner_user_id,organization_id,assignment_id,personalized_profile_id,profile_ref_json,
              selected_role_ref_json,target_set_json,target_set_checksum,time_budget_seconds,
              calendar_window_seconds,parameter_sources_json,execution_manifest_json,
              execution_manifest_checksum,usage_scope,catalog_ref_json,status,created_by)
-        VALUES (%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s,%s,%s,%s::jsonb,%s::jsonb,%s,%s,%s::jsonb,'prepared',%s)
+        VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s,%s,%s,%s::jsonb,%s::jsonb,%s,%s,%s::jsonb,'prepared',%s)
         RETURNING *
         """,
         (
             cycle_id,
             profile.get("user_id") or created_by,
             profile.get("organization_id"),
+            assignment_id,
             personalized_profile_id,
             json.dumps(profile_ref),
             json.dumps(selected_role_ref),
@@ -193,8 +237,16 @@ def create_cycle_session_for_case(
 
 
 def start_session(connection, *, session_id: str) -> dict[str, Any]:
+    owner = connection.execute(
+        """SELECT c.owner_user_id FROM m5_cycle_sessions s
+           JOIN m5_cycles c ON c.id=s.cycle_db_id WHERE s.session_id=%s""",
+        (UUID(session_id),),
+    ).fetchone()
+    if not owner:
+        raise ValueError("M7_SESSION_CANNOT_START")
+    connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(owner["owner_user_id"]),))
     session = connection.execute(
-        "SELECT s.*, c.status AS cycle_status FROM m5_cycle_sessions s JOIN m5_cycles c ON c.id=s.cycle_db_id "
+        "SELECT s.*, c.status AS cycle_status,c.assignment_id,c.owner_user_id FROM m5_cycle_sessions s JOIN m5_cycles c ON c.id=s.cycle_db_id "
         "WHERE s.session_id=%s FOR UPDATE OF s,c",
         (UUID(session_id),),
     ).fetchone()
@@ -202,6 +254,12 @@ def start_session(connection, *, session_id: str) -> dict[str, Any]:
         raise ValueError("M7_SESSION_CANNOT_START")
     if session["cycle_status"] not in {"prepared", "interrupted", "active", "paused"}:
         raise ValueError("M7_CYCLE_COLLECTION_CLOSED")
+    if session.get("assignment_id") is not None and not connection.execute(
+        """SELECT 1 FROM organization_assessment_assignments
+           WHERE id=%s AND recipient_user_id=%s AND status='active' AND revoked_at IS NULL FOR UPDATE""",
+        (session["assignment_id"], session["owner_user_id"]),
+    ).fetchone():
+        raise ValueError("ASSIGNMENT_CANCELLED")
     connection.execute(
         "UPDATE m5_cycles SET status='active', started_at=COALESCE(started_at,NOW()), updated_at=NOW() WHERE id=%s",
         (session["cycle_db_id"],),
