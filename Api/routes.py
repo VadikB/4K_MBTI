@@ -5766,6 +5766,10 @@ def preview_admin_organization_questionnaire(
     with get_connection() as connection:
         _require_organization_admin(connection, user, organization_id)
         try:
+            assessment_programs.validate_questionnaire_assignment(
+                connection, organization_id=organization_id,
+                assignment_ref=payload.assignment_ref,
+            )
             result = questionnaire_sources.save_preview(
                 connection, organization_id=organization_id, assignment_ref=payload.assignment_ref,
                 channel=payload.channel, template_variant=payload.template_variant,
@@ -5824,6 +5828,16 @@ def confirm_admin_organization_questionnaire(
         if membership is None and not scope.is_superadmin:
             raise HTTPException(status_code=403, detail="Organization responsible confirmation required")
         try:
+            candidate = connection.execute(
+                "SELECT assignment_ref FROM questionnaire_response_revisions WHERE id=%s AND organization_id=%s",
+                (revision_id, organization_id),
+            ).fetchone()
+            if candidate is None:
+                raise ValueError("QUESTIONNAIRE_REVISION_NOT_FOUND")
+            assessment_programs.validate_questionnaire_assignment(
+                connection, organization_id=organization_id,
+                assignment_ref=str(candidate['assignment_ref']),
+            )
             result = questionnaire_sources.confirm(
                 connection, revision_id=revision_id, organization_id=organization_id,
                 confirmed_by=int(user.id), recipients=list(payload.recipients),

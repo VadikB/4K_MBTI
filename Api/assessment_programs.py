@@ -236,6 +236,24 @@ def current_connection(connection, *, organization_id: int) -> dict | None:
     return result
 
 
+def validate_questionnaire_assignment(connection, *, organization_id: int,
+                                      assignment_ref: str) -> dict | None:
+    """Bind new questionnaire work to the exact current program when one exists.
+
+    Organizations without a ProgramDefinition keep the historical questionnaire
+    path.  The organization row lock serializes this check with program changes.
+    """
+    connection.execute("SELECT id FROM organizations WHERE id=%s FOR SHARE", (organization_id,))
+    program = current_connection(connection, organization_id=organization_id)
+    if not program:
+        return None
+    if program['program_status'] != 'published':
+        raise ValueError('PROGRAM_NOT_AVAILABLE_FOR_NEW_ASSIGNMENTS')
+    if str(program['assignment_ref']) != str(assignment_ref or '').strip():
+        raise ValueError('PROGRAM_ASSIGNMENT_REF_MISMATCH')
+    return program
+
+
 def connect(connection, *, organization_id: int, program_definition_id: int,
             actor_user_id: int, operation_id: str) -> dict:
     connection.execute("SELECT id FROM organizations WHERE id=%s FOR UPDATE", (organization_id,))

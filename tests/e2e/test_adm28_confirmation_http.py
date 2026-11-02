@@ -30,6 +30,7 @@ def confirmation_client(monkeypatch):
         if organization_id != 3: raise HTTPException(403, "Forbidden")
     monkeypatch.setattr(routes, "_require_organization_admin", require)
     monkeypatch.setattr(routes, "get_admin_scope", lambda *_args: SimpleNamespace(is_superadmin=False))
+    monkeypatch.setattr(routes.assessment_programs, "validate_questionnaire_assignment", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(routes.questionnaire_sources, "confirm", lambda *_args, **_kwargs: revision)
     def failed_readiness(*_args, **_kwargs):
         assert connection.committed
@@ -60,3 +61,30 @@ def test_exact_revision_check_reads_effective_recipients_and_checks_scope(confir
     assert saved.json()['recipient_mapping'] == ['participant', 'organization_admin']
     assert saved.json()['recipient_user_ids'] == [18]
     assert client.get('/users/admin/organizations/4/questionnaire/71').status_code == 403
+
+
+def test_connected_program_rejects_tampered_questionnaire_preview_and_stale_confirm(
+        confirmation_client, monkeypatch):
+    client, _ = confirmation_client
+
+    def reject_mismatch(_connection, *, organization_id, assignment_ref):
+        assert organization_id == 3
+        assert assignment_ref == 'synthetic'
+        raise ValueError('PROGRAM_ASSIGNMENT_REF_MISMATCH')
+
+    monkeypatch.setattr(
+        routes.assessment_programs, 'validate_questionnaire_assignment', reject_mismatch,
+    )
+    preview = client.post('/users/admin/organizations/3/questionnaire/preview', json={
+        'assignment_ref': 'synthetic', 'source_author': 'Synthetic customer',
+        'idempotency_key': 'program01-r02-preview', 'channel': 'product_form',
+        'answers': {},
+    })
+    assert preview.status_code == 400
+    assert preview.json()['detail'] == 'PROGRAM_ASSIGNMENT_REF_MISMATCH'
+
+    confirm = client.post('/users/admin/organizations/3/questionnaire/71/confirm', json={
+        'recipients': ['participant'],
+    })
+    assert confirm.status_code == 409
+    assert confirm.json()['detail'] == 'PROGRAM_ASSIGNMENT_REF_MISMATCH'

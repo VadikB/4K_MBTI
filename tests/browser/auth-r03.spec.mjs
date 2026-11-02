@@ -1359,7 +1359,14 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
         assessment_assignments: [] },
     ],
   };
-  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization, {
+    body: { items: [
+      { id: 90, assignment_ref: 'same-visible-name-wrong-key', status: 'confirmed', channel: 'product_form',
+        source_author: 'Чужой черновик', answers_json: { C02a: { participant_text: 'Не использовать' } } },
+      { id: 91, assignment_ref: 'competencies_4k', status: 'confirmed', channel: 'product_form',
+        source_author: 'Точный автор', answers_json: { C02a: { participant_text: 'Точная цель' } } },
+    ] },
+  });
   let assignmentPayload;
   await page.route('**/users/admin/organizations/3/assessment-source-options', (route) =>
     fulfillJson(route, { configurations: [], roles: [] }));
@@ -1376,6 +1383,19 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
   await expect(roleOptions.filter({ hasText: 'Операционный сотрудник' })).toHaveAttribute('disabled', '');
   await expect(roleOptions.filter({ hasText: 'Операционный сотрудник' })).toHaveAttribute('value', '');
   await expect(page.locator('[name="role_profile_version_id"]')).toHaveValue('92');
+  await page.getByRole('button', { name: 'Данные организации', exact: true }).click();
+  const assessmentIdentity = page.locator('[data-action="preview-early-data"] .admin-assessment-identity');
+  await expect(assessmentIdentity).toContainText('Специалист 4К');
+  await expect(assessmentIdentity).toContainText('Версия программы');
+  await expect(assessmentIdentity).toContainText('1.0');
+  await expect(assessmentIdentity).toContainText('Ключ оценки');
+  await expect(assessmentIdentity).toContainText('competencies_4k');
+  const boundAssignment = page.locator('[data-action="preview-early-data"] [name="assignment_ref"]');
+  await expect(boundAssignment).toHaveAttribute('type', 'hidden');
+  await expect(boundAssignment).toHaveValue('competencies_4k');
+  await expect(page.locator('[data-action="preview-early-data"] [name="source_author"]')).toHaveValue('Точный автор');
+  await expect(page.locator('[data-action="preview-early-data"] [name="purpose"]')).toHaveValue('Точная цель');
+  await page.getByRole('button', { name: 'Организация и участники', exact: true }).click();
   await page.getByRole('button', { name: 'Назначить оценку' }).click();
   await expect.poll(() => assignmentPayload).toBeTruthy();
   await expect(page.locator('#admin-organizations-status')).toContainText('Назначена: 2');
