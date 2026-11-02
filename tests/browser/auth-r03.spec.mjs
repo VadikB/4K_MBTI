@@ -273,6 +273,229 @@ test('ADM28 superadmin still restores its global dashboard', async ({ page }) =>
   await expect(page.locator('#admin-organizations-panel')).toBeHidden();
   await expect(page.locator('#admin-open-methodology-button')).toBeVisible();
 });
+
+test('PROGRAM01 R10 finishes exact program connection while questionnaire refresh is pending', async ({ page }) => {
+  const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+  const connection = {
+    organization_id: 3, program_definition_id: 11, program_name: 'Пилот 4К · 9 кейсов',
+    program_version: '1.1', assignment_ref: 'pilot-4k-9', roles: [], role_capabilities: [],
+  };
+  const organization = {
+    id: 3, code: 'r10', name: 'R10 Organization', is_active: true, domains: [], admins: [],
+    members_count: 0, reports_count: 0, members: [], assessment_program: null,
+  };
+  let releaseQuestionnaire;
+  const questionnairePending = new Promise((resolve) => { releaseQuestionnaire = resolve; });
+  let questionnaireRequests = 0;
+  await page.route('**/users/**', async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, {
+      authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
+    });
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'r10-test' });
+    if (pathname === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+    if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') {
+      return fulfillJson(route, {
+        is_superadmin: true, items: [organization],
+        assessment_programs: [{ id: 11, name: connection.program_name, version: connection.program_version }],
+      });
+    }
+    if (pathname === '/users/admin/organizations/3/questionnaire') {
+      questionnaireRequests += 1;
+      await questionnairePending;
+      return fulfillJson(route, { detail: 'synthetic questionnaire unavailable' }, 503);
+    }
+    if (pathname === '/users/admin/organizations/3/assessment-program' && route.request().method() === 'PUT') {
+      return fulfillJson(route, { connection });
+    }
+    if (pathname === '/users/admin/organizations/3/assessment-program' && route.request().method() === 'GET') {
+      return fulfillJson(route, { connection });
+    }
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await page.locator('#admin-open-organizations-button').click();
+  const form = page.locator('[data-action="connect-assessment-program"]');
+  await form.locator('[name="program_definition_id"]').selectOption('11');
+  await form.getByRole('button', { name: 'Подключить' }).click();
+  await expect(form).toContainText('Подключено: Пилот 4К · 9 кейсов · 1.1');
+  await expect(form.locator('[data-operation-status]')).toContainText('Опубликованная версия программы подключена');
+  expect(questionnaireRequests).toBeGreaterThanOrEqual(1);
+  releaseQuestionnaire();
+  await expect(form.locator('[data-operation-status]')).toContainText('Опубликованная версия программы подключена');
+});
+
+test('PROGRAM01 R10 shows a terminal error when exact readback is null', async ({ page }) => {
+  const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+  const organization = {
+    id: 3, code: 'r10-null', name: 'R10 Null Organization', is_active: true, domains: [], admins: [],
+    members_count: 0, reports_count: 0, members: [], assessment_program: null,
+  };
+  const operationIds = [];
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, {
+      authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
+    });
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'r10-test' });
+    if (pathname === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+    if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') return fulfillJson(route, {
+      is_superadmin: true, items: [organization],
+      assessment_programs: [{ id: 11, name: 'Пилот 4К · 9 кейсов', version: '1.1' }],
+    });
+    if (pathname === '/users/admin/organizations/3/questionnaire') return fulfillJson(route, { items: [] });
+    if (pathname === '/users/admin/organizations/3/assessment-program' && route.request().method() === 'PUT') {
+      operationIds.push(route.request().postDataJSON().operation_id);
+      return fulfillJson(route, { connection: { organization_id: 3, program_definition_id: 11 } });
+    }
+    if (pathname === '/users/admin/organizations/3/assessment-program' && route.request().method() === 'GET') {
+      return fulfillJson(route, { connection: null });
+    }
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await page.locator('#admin-open-organizations-button').click();
+  const form = page.locator('[data-action="connect-assessment-program"]');
+  await form.locator('[name="program_definition_id"]').selectOption('11');
+  await form.getByRole('button', { name: 'Подключить' }).click();
+  await expect(form.locator('[data-operation-status]')).toContainText('повторное чтение не подтвердило');
+  await expect(form.locator('[data-operation-status]')).not.toContainText('Выполняем действие');
+  await expect(form.getByRole('button', { name: 'Подключить' })).toBeEnabled();
+  await form.getByRole('button', { name: 'Подключить' }).click();
+  await expect.poll(() => operationIds.length).toBe(2);
+  expect(operationIds[1]).toBe(operationIds[0]);
+});
+
+test('PROGRAM01 R10 confirms a committed connection after the PUT response is lost', async ({ page }) => {
+  const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+  const connection = {
+    organization_id: 3, program_definition_id: 11, program_name: 'Пилот 4К · 9 кейсов',
+    program_version: '1.1', assignment_ref: 'pilot-4k-9', roles: [], role_capabilities: [],
+  };
+  const operationIds = [];
+  let serverConnected = false;
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, {
+      authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
+    });
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'r10-test' });
+    if (pathname === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+    if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') return fulfillJson(route, {
+      is_superadmin: true,
+      items: [{ id: 3, code: 'r10-lost', name: 'R10 Lost Response', is_active: true,
+        domains: [], admins: [], members_count: 0, reports_count: 0, members: [],
+        assessment_program: serverConnected ? connection : null }],
+      assessment_programs: [{ id: 11, name: connection.program_name, version: connection.program_version }],
+    });
+    if (pathname === '/users/admin/organizations/3/questionnaire') return fulfillJson(route, { items: [] });
+    if (pathname === '/users/admin/organizations/3/assessment-program' && route.request().method() === 'PUT') {
+      operationIds.push(route.request().postDataJSON().operation_id);
+      serverConnected = true;
+      return route.abort('connectionreset');
+    }
+    if (pathname === '/users/admin/organizations/3/assessment-program' && route.request().method() === 'GET') {
+      return fulfillJson(route, { connection });
+    }
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await page.locator('#admin-open-organizations-button').click();
+  const form = page.locator('[data-action="connect-assessment-program"]');
+  await form.locator('[name="program_definition_id"]').selectOption('11');
+  await form.getByRole('button', { name: 'Подключить' }).click();
+  await expect(form.locator('[data-operation-status]')).toContainText('подтверждено повторным чтением');
+  await expect(form).toContainText('Подключено: Пилот 4К · 9 кейсов · 1.1');
+  expect(operationIds).toHaveLength(1);
+});
+
+test('PROGRAM01 R10 restores the exact connected program after reopening the card', async ({ page }) => {
+  const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+  const connection = {
+    organization_id: 3, program_definition_id: 11, program_name: 'Пилот 4К · 9 кейсов',
+    program_version: '1.1', assignment_ref: 'pilot-4k-9', roles: [], role_capabilities: [],
+  };
+  let serverConnected = false;
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, {
+      authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
+    });
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'r10-test' });
+    if (pathname === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+    if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') return fulfillJson(route, {
+      is_superadmin: true,
+      items: [{ id: 3, code: 'r10-reload', name: 'R10 Reload', is_active: true,
+        domains: [], admins: [], members_count: 0, reports_count: 0, members: [],
+        assessment_program: serverConnected ? connection : null }],
+      assessment_programs: [{ id: 11, name: connection.program_name, version: connection.program_version }],
+    });
+    if (pathname === '/users/admin/organizations/3/questionnaire') return fulfillJson(route, { items: [] });
+    if (pathname === '/users/admin/organizations/3/assessment-program' && route.request().method() === 'PUT') {
+      serverConnected = true;
+      return fulfillJson(route, { connection });
+    }
+    if (pathname === '/users/admin/organizations/3/assessment-program' && route.request().method() === 'GET') {
+      return fulfillJson(route, { connection: serverConnected ? connection : null });
+    }
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await page.locator('#admin-open-organizations-button').click();
+  const form = page.locator('[data-action="connect-assessment-program"]');
+  await form.locator('[name="program_definition_id"]').selectOption('11');
+  await form.getByRole('button', { name: 'Подключить' }).click();
+  await expect(form).toContainText('Подключено: Пилот 4К · 9 кейсов · 1.1');
+  await page.locator('#admin-organizations-back-button').click();
+  await expect(page.locator('#admin-panel')).toBeVisible();
+  await page.locator('#admin-open-organizations-button').click();
+  await expect(page.locator('[data-action="connect-assessment-program"]'))
+    .toContainText('Подключено: Пилот 4К · 9 кейсов · 1.1');
+});
+
+test('PROGRAM01 R10 does not render the old connection result after logout', async ({ page }) => {
+  const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+  const connection = {
+    organization_id: 3, program_definition_id: 11, program_name: 'Пилот 4К · 9 кейсов',
+    program_version: '1.1', assignment_ref: 'pilot-4k-9', roles: [], role_capabilities: [],
+  };
+  let releaseReadback;
+  const delayedReadback = new Promise((resolve) => { releaseReadback = resolve; });
+  await page.route('**/users/**', async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, {
+      authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
+    });
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'r10-test' });
+    if (pathname === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+    if (pathname === '/users/session/logout') return fulfillJson(route, { ok: true });
+    if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') return fulfillJson(route, {
+      is_superadmin: true,
+      items: [{ id: 3, code: 'r10-context', name: 'R10 Context', is_active: true,
+        domains: [], admins: [], members_count: 0, reports_count: 0, members: [], assessment_program: null }],
+      assessment_programs: [{ id: 11, name: connection.program_name, version: connection.program_version }],
+    });
+    if (pathname === '/users/admin/organizations/3/questionnaire') return fulfillJson(route, { items: [] });
+    if (pathname === '/users/admin/organizations/3/assessment-program' && route.request().method() === 'PUT') {
+      return fulfillJson(route, { connection });
+    }
+    if (pathname === '/users/admin/organizations/3/assessment-program' && route.request().method() === 'GET') {
+      await delayedReadback;
+      return fulfillJson(route, { connection });
+    }
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await page.locator('#admin-open-organizations-button').click();
+  const form = page.locator('[data-action="connect-assessment-program"]');
+  await form.locator('[name="program_definition_id"]').selectOption('11');
+  await form.getByRole('button', { name: 'Подключить' }).click();
+  await page.locator('#admin-organizations-logout-button').click();
+  await expect(page.locator('#auth-panel')).toBeVisible();
+  releaseReadback();
+  await expect(page.locator('#auth-panel')).toBeVisible();
+  await expect(page.locator('#admin-organizations-panel')).toBeHidden();
+});
 const adminOrganization = {
   id: 3, code: 'r03', name: 'R03 Organization', is_active: true, domains: [], admins: [],
   members_count: 1, reports_count: 0,

@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const source = readFileSync(new URL('../../web/js/screens/admin/organizations.js', import.meta.url), 'utf8');
 const wiring = readFileSync(new URL('../../web/js/wiring.js', import.meta.url), 'utf8');
+const entry = readFileSync(new URL('../../web/js/entries/admin-organizations.js', import.meta.url), 'utf8');
 
 test('ARCH30 connects an exact published program version from the superadmin UI', () => {
   assert.match(source, /assessment_programs/);
@@ -12,11 +13,19 @@ test('ARCH30 connects an exact published program version from the superadmin UI'
   assert.match(source, /\/assessment-program/);
   assert.match(wiring, /connect-assessment-program/);
   assert.match(wiring, /connectAdminOrganizationProgram/);
+  assert.match(entry, /connectAdminOrganizationProgram/);
   assert.match(source, /roleCapabilities\.length/);
   assert.match(source, /role_capabilities/);
   assert.match(source, /unavailable_reason/);
   assert.match(source, /commandConnection/);
   assert.match(source, /readback/);
+  assert.match(source, /readAdminOrganizationProgram/);
+  assert.match(source, /\/assessment-program', \{\s*method: 'GET'/);
+  assert.match(source, /refreshAdminOrganizationQuestionnaireInBackground/);
+  assert.doesNotMatch(
+    source.match(/export const connectAdminOrganizationProgram[\s\S]*?\n\};/)?.[0] || '',
+    /await loadAdminOrganizations\(\)/,
+  );
 });
 
 test('PROGRAM01 rejects incomplete assignment batches and preserves role-scoped idempotency', () => {
