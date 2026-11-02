@@ -3,6 +3,28 @@ from __future__ import annotations
 
 import hashlib
 import json
+from functools import lru_cache
+from pathlib import Path
+
+from scripts.build_m3_base_roles import validate_package
+
+
+_BASE_ROLES_DIR = Path(__file__).resolve().parents[1] / 'assessment_definitions' / 'role_profiles' / 'competencies_4k' / '1.1'
+
+
+@lru_cache(maxsize=1)
+def _normative_base_roles() -> tuple[dict, ...]:
+    """Load the versioned M3 directory without treating its draft profiles as admitted runtime roles."""
+    package_path = _BASE_ROLES_DIR / 'base_roles.json'
+    manifest_path = _BASE_ROLES_DIR / 'manifest.json'
+    package_bytes = package_path.read_bytes()
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    artifact = manifest.get('artifact') or {}
+    if artifact.get('name') != package_path.name or artifact.get('sha256') != hashlib.sha256(package_bytes).hexdigest():
+        raise ValueError('M3 BaseRoles manifest does not match the capability directory.')
+    package = json.loads(package_bytes)
+    validate_package(package)
+    return tuple(package['base_roles'])
 
 
 def _base_role_capabilities(connection, *, available_version_ids: set[int]) -> list[dict]:
@@ -17,19 +39,20 @@ def _base_role_capabilities(connection, *, available_version_ids: set[int]) -> l
     by_code: dict[str, list] = {}
     for row in published_rows:
         by_code.setdefault(str(row['code']), []).append(row)
-    rows = [next((row for row in versions if int(row['version_id']) in available_version_ids), versions[0])
-            for versions in by_code.values()]
-    role_order = {
-        code: index for index, code in enumerate((
-            'operational_employee', 'specialist_expert', 'team_lead',
-            'project_product_process_manager', 'direction_system_leader', 'student',
-        ))
-    }
-    rows = sorted(rows, key=lambda row: role_order.get(str(row['code']), len(role_order)))
-    return [{**dict(row),
-        'is_available': int(row['version_id']) in available_version_ids,
-        'unavailable_reason': None if int(row['version_id']) in available_version_ids else 'Недоступно в пилоте',
-    } for row in rows]
+    capabilities = []
+    for role in _normative_base_roles():
+        code = str(role['code'])
+        admitted = next((row for row in by_code.get(code, ())
+                         if int(row['version_id']) in available_version_ids), None)
+        capabilities.append({
+            'version_id': int(admitted['version_id']) if admitted else None,
+            'code': code,
+            'version': admitted['version'] if admitted else None,
+            'name': role['description']['name'],
+            'is_available': admitted is not None,
+            'unavailable_reason': None if admitted else 'Недоступно в пилоте',
+        })
+    return capabilities
 
 
 def ensure_schema(connection) -> None:
