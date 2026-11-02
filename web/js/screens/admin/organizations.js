@@ -1683,7 +1683,13 @@ export const renderAdminOrganizations = () => {
       const activeBatch = state.adminOrganizationPreparationBatches?.[orgId];
       const batchIsRunning = activeBatch?.status === 'in_progress';
       const revisions = questionnaireRevisions.get(organizationKey(orgId)) || [];
-      const selectedRef = selectedAssessmentRefs.get(organizationKey(orgId)) || revisions[0]?.assignment_ref || '';
+      const currentProgram = org.assessment_program || null;
+      const connectedRef = String(currentProgram?.assignment_ref || '').trim();
+      const storedRef = selectedAssessmentRefs.get(organizationKey(orgId)) || '';
+      const selectedRef = connectedRef || storedRef || revisions[0]?.assignment_ref || '';
+      if (connectedRef && storedRef !== connectedRef) {
+        selectedAssessmentRefs.set(organizationKey(orgId), connectedRef);
+      }
       const questionnairePreview = questionnairePreviews.get(assessmentKey(orgId, selectedRef));
       const currentRevision = questionnairePreview ||
         (selectedRef ? revisions.find((item) => item.assignment_ref === selectedRef) : revisions[0]) || null;
@@ -1701,7 +1707,6 @@ export const renderAdminOrganizations = () => {
         ...(questionnaireValidation.missing || [])];
       const activeView = organizationViews.get(orgId) || 'people';
       const availablePrograms = Array.isArray(data?.assessment_programs) ? data.assessment_programs : [];
-      const currentProgram = org.assessment_program || null;
       const allowedRoles = Array.isArray(currentProgram?.roles) ? currentProgram.roles : [];
       const roleCapabilities = Array.isArray(currentProgram?.role_capabilities)
         ? currentProgram.role_capabilities : allowedRoles.map((role) => ({ ...role, is_available: true }));
@@ -1745,6 +1750,16 @@ export const renderAdminOrganizations = () => {
             escapeHtml(role.name || role.code) + (role.is_available ? '' : ' — ' + escapeHtml(role.unavailable_reason || 'Недоступно')) +
             '</option>';
           }).join('') + '</select></label>' : '';
+      const assessmentFieldMarkup = currentProgram
+        ? '<section class="admin-assessment-identity" aria-label="Выбранная оценка программы"><strong>' +
+          escapeHtml(currentProgram.program_name) + '</strong><dl>' +
+          '<dt>Версия программы</dt><dd>' + escapeHtml(currentProgram.program_version) + '</dd>' +
+          '<dt>Роль</dt><dd>' + escapeHtml(allowedRoles.map((role) => role.name || role.code).join(', ') || 'не выбрана') + '</dd>' +
+          '<dt>Ключ оценки</dt><dd><code>' + escapeHtml(connectedRef) + '</code></dd></dl>' +
+          '<input name="assignment_ref" type="hidden" value="' + escapeHtml(connectedRef) + '"></section>'
+        : '<label><span>Оценка</span><input name="assignment_ref" type="text" value="' +
+          escapeHtml(selectedRef) + '" placeholder="Подключите программу или укажите исторический ключ" required></label>' +
+          '<p class="form-status error">Программа оценки не подключена. Для нового программного назначения сначала обратитесь к суперадминистратору.</p>';
       const programMarkup = isSuperadmin ? '<form class="admin-organization-inline-form admin-organization-program-form" data-action="connect-assessment-program">' +
         '<label><span>Программа оценки</span><select name="program_definition_id" required>' +
         '<option value="">Выберите опубликованную версию</option>' + availablePrograms.map((program) =>
@@ -1923,7 +1938,7 @@ export const renderAdminOrganizations = () => {
           '<input name="notes" type="hidden" value="' + escapeHtml(org.notes || '') + '"></form>' : '') +
         '<p>Черновик можно редактировать. Участники увидят новые сведения после подтверждения.</p>' + legacyProfileMarkup +
         '<form class="admin-organization-early-data-form" data-action="preview-early-data">' +
-        '<label><span>Оценка</span><input name="assignment_ref" type="text" value="' + escapeHtml(selectedRef) + '" placeholder="Например, 4К · поток октябрь 2026" required></label>' +
+        assessmentFieldMarkup +
         '<label><span>Автор сведений</span><input name="source_author" type="text" value="' + escapeHtml(currentRevision?.source_author || '') + '" placeholder="Ответственный со стороны заказчика" required></label>' +
         '<label><span>Название организации</span><input name="organization_name" value="' + answer('C01', 'name') + '"></label>' +
         '<label><span>Тип организации</span><input name="organization_type" value="' + answer('C01', 'organization_type') + '"></label>' +
@@ -1942,8 +1957,7 @@ export const renderAdminOrganizations = () => {
         '<p>Скачайте утверждённый UTF-8 CSV-шаблон, загрузите заполненный файл и проверьте ошибки.</p>' +
         '<p><a class="text-link" href="/users/admin/organizations/' + orgId + '/questionnaire/template">Скачать CSV-шаблон</a></p>' +
         '<form class="admin-organization-import-form" data-action="preview-questionnaire">' +
-        '<label><span>Оценка</span><input name="assignment_ref" list="assessment-options-' + orgId + '" type="text" value="' + escapeHtml(selectedRef) + '" placeholder="Например, 4К · поток октябрь 2026" required></label>' +
-        '<datalist id="assessment-options-' + orgId + '">' + revisions.map((item) => '<option value="' + escapeHtml(item.assignment_ref) + '"></option>').join('') + '</datalist>' +
+        assessmentFieldMarkup +
         '<label><span>Автор сведений</span><input name="source_author" type="text" value="' + escapeHtml(currentRevision?.source_author || '') + '" placeholder="Автор сведений со стороны заказчика" required></label>' +
         '<input name="csv" type="file" accept=".csv,text/csv" required>' +
         '<button class="ghost-button compact-ghost" type="submit">Предпросмотр анкеты</button></form>' +

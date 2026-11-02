@@ -87,6 +87,12 @@ def test_program_connect_resolve_and_immutability(program_db):
     with pytest.raises(ValueError, match='PROGRAM_ROLE_NOT_AVAILABLE'):
         assessment_programs.resolve(connection, organization_id=10,
             assignment_ref='competencies_4k', role_profile_version_id=999)
+    questionnaire_program = assessment_programs.validate_questionnaire_assignment(
+        connection, organization_id=10, assignment_ref='competencies_4k')
+    assert questionnaire_program['program_definition_id'] == program_id
+    with pytest.raises(ValueError, match='PROGRAM_ASSIGNMENT_REF_MISMATCH'):
+        assessment_programs.validate_questionnaire_assignment(
+            connection, organization_id=10, assignment_ref='same-visible-name-wrong-key')
     assert assessment_programs.connect(connection, organization_id=10,
         program_definition_id=program_id, actor_user_id=1,
         operation_id='connect-program-0001')['connection_id'] == connected['connection_id']
@@ -109,6 +115,12 @@ def test_capability_projection_prefers_program_pinned_role_version(program_db):
     assert specialist['version_id'] == 50
     assert specialist['name'] == 'Специалист / эксперт'
     assert specialist['is_available'] is True
+
+
+def test_questionnaire_assignment_keeps_legacy_organization_compatible(program_db):
+    connection, _ = program_db
+    assert assessment_programs.validate_questionnaire_assignment(
+        connection, organization_id=10, assignment_ref='legacy-assessment') is None
 
 
 def test_retired_program_stops_new_resolution_without_rewriting_connection(program_db):

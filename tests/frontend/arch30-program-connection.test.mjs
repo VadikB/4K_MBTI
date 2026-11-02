@@ -40,3 +40,12 @@ test('PROGRAM01 restores the bulk selection projection and rejects stale organiz
   assert.match(source, /organizationsRequestGeneration/);
   assert.match(source, /requestGeneration !== organizationsRequestGeneration/);
 });
+
+test('PROGRAM01 R02 binds questionnaire forms to the exact connected program key', () => {
+  assert.match(source, /const connectedRef = String\(currentProgram\?\.assignment_ref/);
+  assert.match(source, /const selectedRef = connectedRef \|\| storedRef/);
+  assert.match(source, /aria-label="Выбранная оценка программы"/);
+  assert.match(source, /<dt>Версия программы<\/dt>/);
+  assert.match(source, /<dt>Ключ оценки<\/dt>/);
+  assert.match(source, /name="assignment_ref" type="hidden"/);
+});

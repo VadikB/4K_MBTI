@@ -48,7 +48,9 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     await expect(page.locator('#admin-organizations-panel')).toBeVisible();
     const card = page.locator('.admin-organization-card');
     const organizationId = await card.getAttribute('data-organization-id');
-    await expect(card.locator('.admin-assignment-readiness')).toContainText('Оценка не выбрана');
+    await expect(card.locator('.admin-assignment-readiness')).toContainText('ADM28 synthetic Specialist pilot');
+    await expect(card.locator('.admin-assignment-readiness')).toContainText('ADM28 isolated');
+    await expect(card.locator('.admin-assignment-readiness')).toContainText('не подтверждена');
     await expect(card.locator('[data-bulk-actions]')).toBeHidden();
     await card.locator('input[name="invitation_email"]').first().check();
     await expect(card.locator('[data-bulk-actions]')).toBeVisible();
@@ -59,7 +61,9 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     await profile.getByRole('button', { name: 'Сохранить карточку' }).click();
     await expect(profile.locator('[data-operation-status]')).toContainText('Карточка организации сохранена');
     const form = card.locator('form[data-action="preview-early-data"]');
-    const values = { assignment_ref: 'ADM28 isolated', source_author: 'Синтетический заказчик',
+    await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
+    await expect(form.locator('[name="assignment_ref"]')).toHaveValue('ADM28 isolated');
+    const values = { source_author: 'Синтетический заказчик',
       organization_name: 'Синтетическая организация ADM28', organization_type: 'Компания', industry: 'ИТ',
       activity_description: 'Синтетическая проверка', purpose: 'Синтетическая цель', results_usage: 'Для развития',
       result_recipients: 'Участник', organizer: 'Синтетический HR', responsible_contact: 'admin@example.test',
