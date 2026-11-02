@@ -68,14 +68,25 @@ def test_program_connect_resolve_and_immutability(program_db):
         program_definition_id=program_id, actor_user_id=1, operation_id='connect-program-0001')
     connection.commit()
     assert connected['program_version'] == '1.0'
-    assert connected['role_capabilities'] == [{
+    assert [item['code'] for item in connected['role_capabilities']] == [
+        'operational_employee', 'specialist_expert', 'team_lead',
+        'project_product_process_manager', 'direction_system_leader', 'student',
+    ]
+    specialist = connected['role_capabilities'][1]
+    assert specialist == {
         'version_id': 50, 'code': 'specialist_expert', 'version': '1.0',
-        'name': 'Специалист', 'is_available': True, 'unavailable_reason': None,
-    }]
+        'name': 'Специалист / эксперт', 'is_available': True, 'unavailable_reason': None,
+    }
+    assert all(item['version_id'] is None and item['is_available'] is False
+               and item['unavailable_reason'] == 'Недоступно в пилоте'
+               for item in connected['role_capabilities'] if item['code'] != 'specialist_expert')
     resolved = assessment_programs.resolve(connection, organization_id=10,
         assignment_ref='competencies_4k')
     assert resolved['assessment_configuration_id'] == 30
     assert resolved['role_profile_version_id'] == 50
+    with pytest.raises(ValueError, match='PROGRAM_ROLE_NOT_AVAILABLE'):
+        assessment_programs.resolve(connection, organization_id=10,
+            assignment_ref='competencies_4k', role_profile_version_id=999)
     assert assessment_programs.connect(connection, organization_id=10,
         program_definition_id=program_id, actor_user_id=1,
         operation_id='connect-program-0001')['connection_id'] == connected['connection_id']
@@ -96,7 +107,7 @@ def test_capability_projection_prefers_program_pinned_role_version(program_db):
     specialist = next(item for item in connected['role_capabilities']
                       if item['code'] == 'specialist_expert')
     assert specialist['version_id'] == 50
-    assert specialist['name'] == 'Специалист'
+    assert specialist['name'] == 'Специалист / эксперт'
     assert specialist['is_available'] is True
 
 

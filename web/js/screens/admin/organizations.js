@@ -1738,10 +1738,13 @@ export const renderAdminOrganizations = () => {
         '</section>';
       const roleSelectionMarkup = roleCapabilities.length
         ? '<label><span>Роль программы</span><select name="role_profile_version_id" required><option value="">Выберите роль</option>' +
-          roleCapabilities.map((role) => '<option value="' + Number(role.version_id) + '"' +
-            (role.is_available ? '' : ' disabled') + (role.is_available && allowedRoles.length === 1 ? ' selected' : '') + '>' +
+          roleCapabilities.map((role) => {
+            const selectable = role.is_available === true && Number(role.version_id) > 0;
+            return '<option value="' + (selectable ? Number(role.version_id) : '') + '"' +
+            (selectable ? '' : ' disabled') + (selectable && allowedRoles.length === 1 ? ' selected' : '') + '>' +
             escapeHtml(role.name || role.code) + (role.is_available ? '' : ' — ' + escapeHtml(role.unavailable_reason || 'Недоступно')) +
-            '</option>').join('') + '</select></label>' : '';
+            '</option>';
+          }).join('') + '</select></label>' : '';
       const programMarkup = isSuperadmin ? '<form class="admin-organization-inline-form admin-organization-program-form" data-action="connect-assessment-program">' +
         '<label><span>Программа оценки</span><select name="program_definition_id" required>' +
         '<option value="">Выберите опубликованную версию</option>' + availablePrograms.map((program) =>
