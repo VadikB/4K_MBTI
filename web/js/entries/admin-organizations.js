@@ -28,6 +28,7 @@ export {
   importAdminOrganizationMembers,
   previewAdminOrganizationQuestionnaire,
   confirmAdminOrganizationQuestionnaire,
+  connectAdminOrganizationProgram,
   deleteOrDeactivateAdminOrganization,
   purgeAdminOrganization,
   previewAdminOrganizationPurge,

@@ -1374,12 +1374,36 @@ export const restoreAdminOrganization = async (organizationId, organizationName 
   }
 };
 
+const readAdminOrganizationProgram = async (organizationId, identityEpoch, identityKey) => {
+  const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-program', {
+    method: 'GET', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+  });
+  const result = await readApiResponse(response, 'Не удалось проверить подключённую версию программы.');
+  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
+  return result?.connection || null;
+};
+
+const applyAdminOrganizationProgramReadback = (organizationId, connection) => {
+  const organizations = state.adminOrganizations;
+  if (!organizations || !Array.isArray(organizations.items)) return;
+  const organization = organizations.items.find((item) => Number(item.id) === Number(organizationId));
+  if (!organization) return;
+  organization.assessment_program = connection;
+  persistAssessmentContext();
+  renderAdminOrganizations();
+};
+
+const refreshAdminOrganizationQuestionnaireInBackground = (organizationId, identityEpoch, identityKey) => {
+  void loadQuestionnaireRevisions(organizationId, { identityEpoch, identityKey, render: false });
+};
+
 export const connectAdminOrganizationProgram = async (organizationId, programDefinitionId) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   const operationKey = organizationKey(organizationId) + ':' + Number(programDefinitionId);
   const operationId = programConnectionOperationIds.get(operationKey) || createOperationId();
   programConnectionOperationIds.set(operationKey, operationId);
+  let commandConfirmed = false;
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-program', {
       method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
@@ -1391,16 +1415,32 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
         Number(commandConnection?.program_definition_id) !== Number(programDefinitionId)) {
       throw new Error('Сервер не подтвердил точную версию подключённой программы. Обновите список перед повтором.');
     }
-    const refreshed = await loadAdminOrganizations();
-    if (!refreshed || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
-    const readback = (refreshed.items || []).find((item) => Number(item.id) === Number(organizationId))?.assessment_program;
+    commandConfirmed = true;
+    const readback = await readAdminOrganizationProgram(organizationId, identityEpoch, identityKey);
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
     if (Number(readback?.program_definition_id) !== Number(programDefinitionId)) {
       throw new Error('Команда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.');
     }
+    applyAdminOrganizationProgramReadback(organizationId, readback);
     programConnectionOperationIds.delete(operationKey);
     setStatus('Опубликованная версия программы подключена к организации.', 'success');
+    refreshAdminOrganizationQuestionnaireInBackground(organizationId, identityEpoch, identityKey);
     return true;
   } catch (error) {
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
+    if (!commandConfirmed) {
+      try {
+        const readback = await readAdminOrganizationProgram(organizationId, identityEpoch, identityKey);
+        if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
+        if (Number(readback?.program_definition_id) === Number(programDefinitionId)) {
+          applyAdminOrganizationProgramReadback(organizationId, readback);
+          programConnectionOperationIds.delete(operationKey);
+          setStatus('Подключение подтверждено повторным чтением после потери ответа команды.', 'success');
+          refreshAdminOrganizationQuestionnaireInBackground(organizationId, identityEpoch, identityKey);
+          return true;
+        }
+      } catch { /* The original command error remains the actionable outcome. */ }
+    }
     setStatus(error.message || 'Не удалось подключить программу оценки.', 'error');
     return false;
   }
