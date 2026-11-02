@@ -54,6 +54,10 @@ GET readback той же организации. Фоновая загрузка
 - `npm run lint:js` — PASS.
 - `node --test tests/frontend/*.test.mjs` — 124 PASS, 0 FAIL.
 - `npm run build:web` — PASS; `web/dist` пересобран.
+- `scripts/prepare_release.py patch --candidate 2.0.48` — PASS; после решения
+  владельца подготовлен единый PATCH-кандидат `2.0.48`.
+- `scripts/check_release_version.py --base-ref origin/main` — PASS,
+  `Release check passed: 2.0.48`.
 - `npx playwright test tests/browser/auth-r03.spec.mjs --grep "PROGRAM01 R10" --workers=1`
   — 5 PASS, 0 FAIL: pending/error анкеты, null readback и повтор того же
   `operation_id`, потерянный PUT, повторное чтение карточки, смена identity.
@@ -61,5 +65,7 @@ GET readback той же организации. Фоновая загрузка
 - `git diff --check` — PASS.
 - Backend/HTTP/PostgreSQL — NOT_RUN: API и данные не менялись; изменён frontend
   orchestration поверх существующих PUT/GET контрактов.
-- GitHub CI и live test — NOT_RUN до push/PR/deploy. Реальные организации,
-  программы, анкеты и назначения не изменялись.
+- GitHub CI на исходном SHA в Draft — PASS. После `Ready for review` release gate
+  ожидаемо выявил отсутствие нового номера; кандидат `2.0.48` подготовлен, повторный
+  CI ожидается после push. Live test — NOT_RUN. Реальные организации, программы,
+  анкеты и назначения не изменялись.
