@@ -34,10 +34,10 @@ R01 / M3 BaseRoles → каталог шести ролей → `role_capabiliti
 
 ## Действия выпуска
 
-- `branch_push=false`, `pr=false` до локальной проверки.
-- `merge=false`, `deploy=false`, `version_bump=false`, `artifact_publish=false`.
-- Перед Ready product-кандидат готовится отдельно через `npm run ready:prepare`
-  после решения владельца о версии.
+- `branch_push=true`, `pr=true`, `version_bump=true` после локальной проверки и
+  решения владельца продолжить подготовку Ready.
+- `merge=false`, `deploy=false`, `artifact_publish=false`.
+- Перед Ready подготовлен patch-кандидат `2.0.50` через `npm run ready:prepare`.
 
 ## Критерии приёмки
 
@@ -72,14 +72,19 @@ R01 / M3 BaseRoles → каталог шести ролей → `role_capabiliti
 - `pytest -m "not integration and not e2e and not llm"` — PASS, 685 тестов;
   311 deselected, 1 warning.
 - `node --test tests/frontend/*.test.mjs` — PASS, 124 теста.
+- `pytest tests/unit/test_release_version.py` — PASS, 9 тестов после подготовки
+  кандидата.
 - адресная frontend-регрессия `arch30-program-connection` — PASS, 3 теста.
 - адресный Playwright org-admin assignment — PASS, 1 тест.
 - `node --check web/js/screens/admin/organizations.js`, `npm run lint:js` — PASS.
 - `npm run build:web` — PASS; повторная чистая сборка дала тот же набор производных
   файлов `web/dist`.
+- `python3.12 scripts/prepare_ready_release.py --candidate 2.0.50` — PASS;
+  `2.0.49 → 2.0.50`; повторный preflight после сборки проверил 50 product paths.
 - `git diff --check` — PASS.
 - GitHub CI — NOT_RUN до создания PR; обязателен перед merge.
 
 Изменены capability-проекция API, org-admin select, backend/browser регрессии,
 паспорт задачи и штатно пересобранный `web/dist`. Схема БД, опубликованные артефакты,
-версия приложения и исходный пользовательский checkout не менялись.
+версия приложения подготовлена как `2.0.50`; исходный пользовательский checkout
+не менялся.
