@@ -34,9 +34,9 @@ frontend/browser/integration regression.
 
 - После явного разрешения владельца выполнены `branch_push=true`, `pr=true`:
   создан Draft PR #151 для обязательного CI.
-- `merge=false`, `deploy=false`, `version_bump=false`, `artifact_publish=false`.
-- Version bump выполняется отдельным preflight только перед переводом в
-  `Ready for review`, а не для Draft PR.
+- После успешного Draft CI владелец подтвердил patch-кандидат `2.0.51`:
+  `version_bump=true`; единый Ready preflight выполнен успешно.
+- `merge=false`, `deploy=false`, `artifact_publish=false`.
 
 ## Критерии приёмки
 
@@ -62,6 +62,10 @@ frontend/browser/integration regression.
   заполнение ставшего системным hidden `assignment_ref` и истекли по таймауту.
 - После обновления acceptance-контракта на изолированной pytest-БД:
   `PATH29` — PASS, `ADM28` — PASS. Новый полный CI обязателен для нового head.
+- Повторный Draft CI на `e8a3228`: `frontend`, `pytest`,
+  `full-verification` — PASS; конфликтов с `main` нет.
+- Ready preflight: `2.0.50 → 2.0.51`, release gate, frontend build и
+  `git diff --check` — PASS. После release-коммита обязателен CI нового head.
 - Адресный frontend ProgramDefinition — 4 PASS; полный frontend — 125 PASS.
 - Backend без `integration/e2e/llm` — 685 PASS, 313 deselected,
   1 предупреждение.
