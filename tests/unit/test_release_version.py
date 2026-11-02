@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from prepare_release import candidate_version  # noqa: E402
 from release_version import check_consistency, next_version, parse_version, write_updates  # noqa: E402
 import check_release_version  # noqa: E402
+import prepare_ready_release  # noqa: E402
 
 
 def test_release_numbers_and_rollovers():
@@ -67,3 +68,56 @@ def test_backend_version_source_matches_release():
 
     get_app_version.cache_clear()
     assert get_app_version() == check_consistency(Path(__file__).resolve().parents[2])
+
+
+def test_ready_preflight_does_not_require_release_for_non_product_change(monkeypatch):
+    monkeypatch.setattr(prepare_ready_release, "changed_product_paths", lambda _base: [])
+    assert prepare_ready_release.run("origin/main", "patch", None) == 0
+
+
+def test_ready_preflight_includes_uncommitted_and_staged_paths(monkeypatch):
+    outputs = {
+        ("diff", "--name-only", "origin/main...HEAD"): "docs/committed.md\n",
+        ("diff", "--name-only"): "scripts/prepare_ready_release.py\n",
+        ("diff", "--name-only", "--cached"): "web/js/main.js\n",
+    }
+    monkeypatch.setattr(prepare_ready_release, "git", lambda *args: outputs[args])
+    assert prepare_ready_release.changed_product_paths("origin/main") == [
+        "scripts/prepare_ready_release.py",
+        "web/js/main.js",
+    ]
+
+
+def test_ready_preflight_reports_candidate_before_ready(monkeypatch, capsys):
+    monkeypatch.setattr(prepare_ready_release, "changed_product_paths", lambda _base: ["web/js/main.js"])
+    monkeypatch.setattr(prepare_ready_release, "check_consistency", lambda _root: "2.0.47")
+    monkeypatch.setattr(
+        prepare_ready_release,
+        "git",
+        lambda *args: '[project]\nversion = "2.0.47"' if args[0] == "show" else "",
+    )
+    assert prepare_ready_release.run("origin/main", "patch", None) == 2
+    assert "2.0.47 → 2.0.48" in capsys.readouterr().err
+
+
+def test_ready_preflight_prepares_builds_and_verifies(monkeypatch):
+    versions = iter(("2.0.47", "2.0.48"))
+    monkeypatch.setattr(prepare_ready_release, "changed_product_paths", lambda _base: ["web/js/main.js"])
+    monkeypatch.setattr(prepare_ready_release, "check_consistency", lambda _root: next(versions))
+    monkeypatch.setattr(
+        prepare_ready_release,
+        "git",
+        lambda *args: '[project]\nversion = "2.0.47"' if args[0] == "show" else "",
+    )
+    prepared = []
+    monkeypatch.setattr(prepare_ready_release, "prepare_release", lambda args: prepared.append(args) or 0)
+    monkeypatch.setattr(prepare_ready_release.subprocess, "run", lambda *args, **kwargs: None)
+    verified = []
+    monkeypatch.setattr(
+        prepare_ready_release.check_release_version,
+        "verify_against_base",
+        lambda base, version: verified.append((base, version)),
+    )
+    assert prepare_ready_release.run("origin/main", "patch", "2.0.48") == 0
+    assert prepared == [["patch", "--candidate", "2.0.48"]]
+    assert verified == [("origin/main", "2.0.48")]

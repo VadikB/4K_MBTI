@@ -53,6 +53,8 @@
 - `version_bump=false`:
 - `artifact_publish=false`:
 - Основание и точка изменения флагов:
+- Перед `Ready for review`: `npm run ready:prepare` → фактический результат;
+  для product-изменений указать согласованный кандидат и commit.
 
 ## Ограничения и риски
 
