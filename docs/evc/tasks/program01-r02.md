@@ -32,8 +32,11 @@ frontend/browser/integration regression.
 
 ## Действия выпуска
 
-- `branch_push=false`, `pr=false` до локальной проверки.
+- После локальной проверки владелец разрешил передачу: `branch_push=true`,
+  `pr=true`; PR создаётся как Draft для обязательного CI.
 - `merge=false`, `deploy=false`, `version_bump=false`, `artifact_publish=false`.
+- Version bump выполняется отдельным preflight только перед переводом в
+  `Ready for review`, а не для Draft PR.
 
 ## Критерии приёмки
 
