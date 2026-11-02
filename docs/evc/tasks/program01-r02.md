@@ -32,8 +32,8 @@ frontend/browser/integration regression.
 
 ## Действия выпуска
 
-- После локальной проверки владелец разрешил передачу: `branch_push=true`,
-  `pr=true`; PR создаётся как Draft для обязательного CI.
+- Локальная проверка завершена; `branch_push` и `pr` ожидают явного разрешения
+  владельца на отправку кода в удалённый GitHub и создание Draft PR.
 - `merge=false`, `deploy=false`, `version_bump=false`, `artifact_publish=false`.
 - Version bump выполняется отдельным preflight только перед переводом в
   `Ready for review`, а не для Draft PR.
