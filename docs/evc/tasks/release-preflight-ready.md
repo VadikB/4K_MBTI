@@ -14,7 +14,9 @@
 
 - Основание: решение владельца 2026-11-02 устранить повторяющиеся поздние падения
   release gate без снятия контроля версии.
-- Base: `origin/main@0e18d31497736c54c5cc9517451fc8f9f7c4030a`.
+- Исходный base: `origin/main@0e18d31497736c54c5cc9517451fc8f9f7c4030a`;
+  перед выпуском ветка перебазирована на
+  `origin/main@a5934dd33f97a58532522fe747d03aa44140417d`.
 - Прочитано: `README.md`, `CONTRIBUTING.md`, `docs/evc/agent-workflow.md`,
   `verification-matrix.md`, `task-template.md`, `review-checklist.md`, архитектурные
   `context.md` и `registry.md`, workflow, release scripts и их unit-тесты.
@@ -26,8 +28,8 @@
 
 - `branch_push=true`, `pr=true` после локальной проверки.
 - `merge=false`, `deploy=false`, `artifact_publish=false`.
-- `version_bump=false` в Draft; после merge PR #148 обновить base и отдельно
-  согласовать следующий свободный PATCH-кандидат перед Ready.
+- `version_bump=true`: после merge PR #148 владелец подтвердил продолжение;
+  подготовлен следующий свободный PATCH-кандидат `2.0.49` перед Ready.
 
 ## Критерии приёмки
 
@@ -45,6 +47,10 @@
 - `python scripts/prepare_ready_release.py --base-ref origin/main`
 - `git diff --check`
 
-Фактически: release/unit workflow tests — `14 passed`; живой preflight — ожидаемый
-exit `2` с подсказкой `2.0.47 → 2.0.48`; номер не занят, потому что `2.0.48`
-зарезервирован текущим PR #148. Следующая зависимость — его merge и обновление base.
+Фактически в Draft: release/unit workflow tests — `14 passed`; живой preflight —
+ожидаемый exit `2` с подсказкой `2.0.47 → 2.0.48`. После merge PR #148 ветка
+перебазирована на `2.0.48`; `npm run ready:prepare -- --candidate 2.0.49` — PASS,
+версия назначена, frontend пересобран, release gate пройден. Итоговые проверки
+перед commit: release/unit workflow tests — `14 passed`, `npm run lint:js` — PASS,
+`npm run build:web` — PASS, `git diff --check` — PASS. GitHub CI фиксируется
+после commit/push для точного release SHA.
