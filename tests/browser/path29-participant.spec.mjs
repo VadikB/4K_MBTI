@@ -43,7 +43,9 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     const card = admin.locator(`[data-organization-id="${state.path29.organization_id}"]`);
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
     const form = card.locator('[data-action="preview-early-data"]');
-    const values = { assignment_ref: 'PATH29 browser', source_author: 'Синтетический заказчик',
+    await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
+    await expect(form.locator('[name="assignment_ref"]')).toHaveValue('PATH29 browser');
+    const values = { source_author: 'Синтетический заказчик',
       organization_name: 'Синтетическая организация PATH29', organization_type: 'Компания', industry: 'ИТ',
       activity_description: 'Синтетическая проверка пути участника', purpose: 'Синтетическая цель развития',
       results_usage: 'Для синтетического плана развития', result_recipients: 'Участник', organizer: 'Синтетический HR',

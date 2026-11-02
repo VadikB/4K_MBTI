@@ -57,6 +57,11 @@ frontend/browser/integration regression.
 - HTTP questionnaire confirmation — 3 PASS, 1 предупреждение Starlette.
 - Browser `UX-ADM27` — 1 PASS; промежуточный FAIL был вызван устаревшим
   тестовым названием вкладки, селектор исправлен без изменения продукта.
+- Первый Draft CI на `173cc15`: `frontend` и `pytest` — PASS,
+  `full-verification` — FAIL; real-browser `ADM28` и `PATH29` ожидали ручное
+  заполнение ставшего системным hidden `assignment_ref` и истекли по таймауту.
+- После обновления acceptance-контракта на изолированной pytest-БД:
+  `PATH29` — PASS, `ADM28` — PASS. Новый полный CI обязателен для нового head.
 - Адресный frontend ProgramDefinition — 4 PASS; полный frontend — 125 PASS.
 - Backend без `integration/e2e/llm` — 685 PASS, 313 deselected,
   1 предупреждение.
