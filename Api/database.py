@@ -3781,6 +3781,40 @@ def ensure_execution_snapshot_guards(connection, *, tables: tuple[str, ...] = ("
         )
 
 
+def ensure_organization_membership_admission_source_constraint(connection) -> None:
+    """Keep membership provenance values aligned with supported admin operations."""
+    connection.execute(
+        """
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1
+                FROM pg_constraint
+                WHERE conname = 'organization_memberships_admission_source_check'
+                  AND conrelid = 'organization_memberships'::regclass
+                  AND pg_get_constraintdef(oid) NOT LIKE '%superadmin_transfer%'
+            ) THEN
+                ALTER TABLE organization_memberships
+                DROP CONSTRAINT organization_memberships_admission_source_check;
+            END IF;
+
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'organization_memberships_admission_source_check'
+                  AND conrelid = 'organization_memberships'::regclass
+            ) THEN
+                ALTER TABLE organization_memberships
+                ADD CONSTRAINT organization_memberships_admission_source_check
+                CHECK (admission_source IN (
+                    'legacy_unclassified', 'admin_add', 'csv_import', 'configured_admin',
+                    'superadmin_transfer'
+                ));
+            END IF;
+        END $$
+        """
+    )
+
+
 def ensure_core_schema() -> None:
     with get_connection() as connection:
         connection.execute(
@@ -4680,24 +4714,7 @@ def ensure_core_schema() -> None:
             "BIGINT REFERENCES users(id) ON DELETE SET NULL"
         )
         connection.execute("ALTER TABLE organization_memberships ADD COLUMN IF NOT EXISTS admitted_at TIMESTAMP")
-        connection.execute(
-            """
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM pg_constraint
-                    WHERE conname = 'organization_memberships_admission_source_check'
-                      AND conrelid = 'organization_memberships'::regclass
-                ) THEN
-                    ALTER TABLE organization_memberships
-                    ADD CONSTRAINT organization_memberships_admission_source_check
-                    CHECK (admission_source IN (
-                        'legacy_unclassified', 'admin_add', 'csv_import', 'configured_admin'
-                    ));
-                END IF;
-            END $$
-            """
-        )
+        ensure_organization_membership_admission_source_constraint(connection)
         connection.execute(
             """
             DO $$

@@ -9,7 +9,7 @@ from psycopg.rows import dict_row
 import pytest
 from fastapi import HTTPException
 
-from Api import routes
+from Api import database, routes
 from Api.schemas import AdminOrganizationsResponse, AdminOrganizationTransferRequest
 
 
@@ -27,7 +27,10 @@ def transfer_db(test_database_url, monkeypatch):
         setup.execute("""CREATE TABLE organization_memberships(
             organization_id BIGINT NOT NULL REFERENCES organizations(id),user_id BIGINT NOT NULL REFERENCES users(id),
             role TEXT NOT NULL,admission_source TEXT NOT NULL,admitted_by_user_id BIGINT,admitted_at TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT NOW(),UNIQUE(user_id))""")
+            updated_at TIMESTAMP DEFAULT NOW(),UNIQUE(user_id),
+            CONSTRAINT organization_memberships_admission_source_check CHECK (admission_source IN (
+                'legacy_unclassified','admin_add','csv_import','configured_admin','superadmin_transfer'
+            )))""")
         setup.execute("""CREATE TABLE configured_organization_membership_suppressions(
             user_id BIGINT NOT NULL,organization_id BIGINT NOT NULL,reason TEXT NOT NULL,
             created_by_user_id BIGINT,created_at TIMESTAMP DEFAULT NOW(),PRIMARY KEY(user_id,organization_id))""")
@@ -82,6 +85,32 @@ def _payload(target=4, role="member", operation_id="transfer-operation-1"):
         target_role=role,
         operation_id=operation_id,
     )
+
+
+def test_admission_source_constraint_migrates_existing_schema(transfer_db):
+    transfer_db.execute(
+        "ALTER TABLE organization_memberships DROP CONSTRAINT organization_memberships_admission_source_check"
+    )
+    transfer_db.execute(
+        """ALTER TABLE organization_memberships
+           ADD CONSTRAINT organization_memberships_admission_source_check
+           CHECK (admission_source IN (
+               'legacy_unclassified','admin_add','csv_import','configured_admin'
+           ))"""
+    )
+
+    database.ensure_organization_membership_admission_source_constraint(transfer_db)
+    transfer_db.execute(
+        "INSERT INTO organization_memberships VALUES(3,7,'member','superadmin_transfer',99,NOW(),NOW())"
+    )
+
+    definition = transfer_db.execute(
+        """SELECT pg_get_constraintdef(oid) AS definition
+           FROM pg_constraint
+           WHERE conname='organization_memberships_admission_source_check'
+             AND conrelid='organization_memberships'::regclass"""
+    ).fetchone()["definition"]
+    assert "superadmin_transfer" in definition
 
 
 def test_transfer_is_atomic_revokes_old_scope_and_suppresses_configured_admin(transfer_db):
