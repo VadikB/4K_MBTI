@@ -1928,6 +1928,11 @@ if (adminOrganizationsList) {
         module.retryAdminOrganizationQuestionnaireLoad(organizationId));
       return;
     }
+    if (button.dataset.action === 'refresh-admin-organizations') {
+      button.disabled = true;
+      withScreen(loadAdminOrganizations, (module) => module.refreshAdminOrganizationsSafely());
+      return;
+    }
     if (button.dataset.action === 'refresh-questionnaire-preview') {
       const assessmentRef = button.closest('.admin-questionnaire-preview')?.dataset.assessmentRef || '';
       const previewAction = button.closest('.admin-questionnaire-preview')?.dataset.previewAction || 'preview-early-data';
@@ -2057,7 +2062,9 @@ if (adminOrganizationsList) {
       if (!assignmentId) return;
       if (!window.confirm('Отменить назначение оценки «' + assessmentRef + '» для «' + participantName + '»? Участник и история сохранятся. Отменить можно только до начала прохождения.')) return;
       button.disabled = true;
-      withScreen(loadAdminOrganizations, (module) => module.cancelAdminOrganizationAssessment(organizationId, assignmentId));
+      withScreen(loadAdminOrganizations, (module) => module.cancelAdminOrganizationAssessment(
+        organizationId, assignmentId, assessmentRef,
+      ));
       return;
     }
     if (button.dataset.action === 'prepare-member-assessment') {

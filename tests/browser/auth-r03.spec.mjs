@@ -655,6 +655,139 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
   await expect(page.locator('input[name="invitation_email"]')).toBeChecked();
 });
 
+test('PROGRAM01 R06 marks a confirmed cancellation stale when readback fails and restores the action', async ({ page }) => {
+  const organization = {
+    ...adminOrganization,
+    assessment_program: { program_definition_id: 7, program_name: 'Специалист 4К', program_version: '1.0', assignment_ref: 'competencies_4k', roles: [] },
+    members: [{ ...adminOrganization.members[0], full_name: 'Иван Иванов',
+      assessment_assignments: ['competencies_4k'], assessment_stages: {
+        competencies_4k: { code: 'assigned', label: 'Оценка назначена', assignment_id: 41 },
+      } }],
+  };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  let posts = 0;
+  await page.route('**/users/admin/organizations/3/assessment-assignments/41/cancel', (route) => {
+    posts += 1;
+    return fulfillJson(route, { assignment_id: 41, status: 'cancelled' });
+  });
+  await page.route('**/users/admin/organizations', (route) => route.abort('connectionreset'));
+  const cancel = page.getByRole('menuitem', { name: 'Отменить назначение оценки' });
+  await page.locator('.admin-organization-member-menu summary').click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await cancel.click();
+  await expect(page.locator('[data-organizations-stale]')).toContainText('последнее подтверждённое состояние');
+  await expect(page.getByRole('button', { name: 'Обновить безопасно' })).toBeVisible();
+  await page.locator('.admin-organization-member-menu summary').click();
+  await expect(page.getByRole('menuitem', { name: 'Отменить назначение оценки' })).toBeEnabled();
+  expect(posts).toBe(1);
+});
+
+test('PROGRAM01 R06 refreshes an exact assignment after 409 and removes an invalid cancellation', async ({ page }) => {
+  const member = { ...adminOrganization.members[0], full_name: 'Иван Иванов',
+    assessment_assignments: ['competencies_4k'], assessment_stages: {
+      competencies_4k: { code: 'assigned', label: 'Оценка назначена', assignment_id: 41 },
+    } };
+  const organization = {
+    ...adminOrganization,
+    assessment_program: { program_definition_id: 7, program_name: 'Специалист 4К', program_version: '1.0', assignment_ref: 'competencies_4k', roles: [] },
+    members: [member],
+  };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  await page.route('**/users/admin/organizations/3/assessment-assignments/41/cancel', (route) => {
+    member.assessment_stages.competencies_4k = {
+      code: 'active', label: 'Оценка выполняется', assignment_id: 41,
+    };
+    return fulfillJson(route, { detail: 'ASSESSMENT_ALREADY_STARTED' }, 409);
+  });
+  await page.locator('.admin-organization-member-menu summary').click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+  await expect(page.locator('[data-operation-status]')).toContainText('больше не может быть отменено');
+  await page.locator('.admin-organization-member-menu summary').click();
+  await expect(page.getByRole('menuitem', { name: 'Отменить назначение оценки' })).toHaveCount(0);
+  await expect(page.locator('.admin-organization-member').first()).toContainText('Оценка выполняется');
+});
+
+test('PROGRAM01 R06 resolves a lost cancellation response by exact readback without a new intent', async ({ page }) => {
+  const member = { ...adminOrganization.members[0], full_name: 'Иван Иванов',
+    assessment_assignments: ['competencies_4k'], assessment_stages: {
+      competencies_4k: { code: 'assigned', label: 'Оценка назначена', assignment_id: 41 },
+    } };
+  const organization = {
+    ...adminOrganization,
+    assessment_program: { program_definition_id: 7, program_name: 'Специалист 4К', program_version: '1.0', assignment_ref: 'competencies_4k', roles: [] },
+    members: [member],
+  };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  let posts = 0;
+  let operationId = '';
+  await page.route('**/users/admin/organizations/3/assessment-assignments/41/cancel', (route) => {
+    posts += 1;
+    operationId = route.request().postDataJSON().operation_id;
+    member.assessment_stages.competencies_4k = {
+      code: 'cancelled', label: 'Назначение отменено', assignment_id: 41,
+    };
+    return route.abort('connectionreset');
+  });
+  await page.locator('.admin-organization-member-menu summary').click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+  await expect(page.locator('[data-operation-status]')).toContainText('после потери ответа команды');
+  expect(posts).toBe(1);
+  expect(operationId).toMatch(/^[0-9a-f-]{16,}$/i);
+});
+
+test('PROGRAM01 R06 does not render an old cancellation result after identity changes', async ({ page }) => {
+  const organization = {
+    ...adminOrganization,
+    assessment_program: { program_definition_id: 7, program_name: 'Специалист 4К', program_version: '1.0', assignment_ref: 'competencies_4k', roles: [] },
+    members: [{ ...adminOrganization.members[0], full_name: 'Иван Иванов',
+      assessment_assignments: ['competencies_4k'], assessment_stages: {
+        competencies_4k: { code: 'assigned', label: 'Оценка назначена', assignment_id: 41 },
+      } }],
+  };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  let release;
+  const delayed = new Promise((resolve) => { release = resolve; });
+  await page.route('**/users/admin/organizations/3/assessment-assignments/41/cancel', async (route) => {
+    await delayed;
+    return fulfillJson(route, { assignment_id: 41, status: 'cancelled' });
+  });
+  await page.locator('.admin-organization-member-menu summary').click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+  await page.locator('#admin-organizations-logout-button').click();
+  await expect(page.locator('#auth-panel')).toBeVisible();
+  release();
+  await expect(page.locator('#admin-organizations-panel')).toBeHidden();
+  await expect(page.locator('#admin-organizations-status')).not.toContainText('Назначение оценки отменено');
+});
+
+for (const [status, detail] of [[403, 'Недостаточно прав.'], [500, 'synthetic service failure']]) {
+  test(`PROGRAM01 R06 restores cancellation after ${status}`, async ({ page }) => {
+    const organization = {
+      ...adminOrganization,
+      assessment_program: { program_definition_id: 7, program_name: 'Специалист 4К', program_version: '1.0', assignment_ref: 'competencies_4k', roles: [] },
+      members: [{ ...adminOrganization.members[0], full_name: 'Иван Иванов',
+        assessment_assignments: ['competencies_4k'], assessment_stages: {
+          competencies_4k: { code: 'assigned', label: 'Оценка назначена', assignment_id: 41 },
+        } }],
+    };
+    await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+    let posts = 0;
+    await page.route('**/users/admin/organizations/3/assessment-assignments/41/cancel', (route) => {
+      posts += 1;
+      return fulfillJson(route, { detail }, status);
+    });
+    await page.locator('.admin-organization-member-menu summary').click();
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+    await expect(page.locator('[data-operation-status]')).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Отменить назначение оценки' })).toBeEnabled();
+    expect(posts).toBe(1);
+  });
+}
+
 test('PROGRAM01 R05 keeps privileged password reset in the card and exposes only an authorized exact report', async ({ page }) => {
   const reportId = '11111111-1111-4111-8111-111111111111';
   const organization = {

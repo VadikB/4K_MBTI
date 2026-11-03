@@ -39,7 +39,7 @@ test('detached accounts remain visible when no organizations exist', () => {
   const detachedMarkupIndex = organizations.indexOf('const detachedMarkup');
   const emptyOrganizationsIndex = organizations.indexOf('if (!organizations.length)');
   assert.ok(detachedMarkupIndex >= 0 && detachedMarkupIndex < emptyOrganizationsIndex);
-  assert.match(organizations, /adminOrganizationsList\.innerHTML = detachedMarkup \+ '<p class="report-empty-state">'/);
+  assert.match(organizations, /adminOrganizationsList\.innerHTML = staleMarkup \+ detachedMarkup \+ '<p class="report-empty-state">'/);
 });
 
 test('purge preview explains protected accounts', () => {

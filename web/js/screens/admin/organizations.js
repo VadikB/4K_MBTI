@@ -20,6 +20,7 @@ const invitationOperationIds = new Map();
 const assignmentSourceRequests = new Set();
 const assignmentOperationIds = new Map();
 const cancellationOperationIds = new Map();
+const cancellationRequestsInFlight = new Set();
 const programConnectionOperationIds = new Map();
 const questionnairePreviews = new Map();
 const questionnaireRevisions = new Map();
@@ -35,6 +36,8 @@ const questionnaireConfirmOutcomes = new Map();
 let operationAnchor = null;
 let restoredManagementIdentity = null;
 let organizationsRequestGeneration = 0;
+let organizationsReadStale = false;
+let organizationsReadStaleReason = '';
 
 const currentIdentityKey = () => String(state.pendingUser?.id || '');
 const organizationKey = (organizationId) => currentIdentityKey() + ':' + Number(organizationId);
@@ -258,6 +261,7 @@ const clearAdminOrganizationsSessionState = () => {
   assignmentSourceRequests.clear();
   assignmentOperationIds.clear();
   cancellationOperationIds.clear();
+  cancellationRequestsInFlight.clear();
   programConnectionOperationIds.clear();
   questionnairePreviews.clear();
   questionnaireRevisions.clear();
@@ -272,6 +276,8 @@ const clearAdminOrganizationsSessionState = () => {
   questionnaireConfirmOutcomes.clear();
   operationAnchor = null;
   restoredManagementIdentity = null;
+  organizationsReadStale = false;
+  organizationsReadStaleReason = '';
 };
 
 window.addEventListener('agent4k:assessment-context-cleared', clearAdminOrganizationsSessionState);
@@ -399,10 +405,38 @@ const requestOrganizations = async (url, options, fallbackMessage) => {
   const data = await readApiResponse(response, fallbackMessage);
   if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
       requestGeneration !== organizationsRequestGeneration) return null;
+  organizationsReadStale = false;
+  organizationsReadStaleReason = '';
   state.adminOrganizations = data;
   persistAssessmentContext();
   renderAdminOrganizations();
   return data;
+};
+
+const markOrganizationsReadStale = (reason) => {
+  organizationsReadStale = true;
+  organizationsReadStaleReason = String(reason || 'Не удалось подтвердить актуальное состояние.');
+  renderAdminOrganizations();
+};
+
+export const refreshAdminOrganizationsSafely = async () => {
+  try {
+    const data = await requestOrganizations(
+      '/users/admin/organizations',
+      { method: 'GET', headers: {} },
+      'Не удалось обновить организации.',
+    );
+    if (!data) {
+      markOrganizationsReadStale('Ответ обновления устарел или относится к другому контексту.');
+      return false;
+    }
+    setStatus('Состояние организаций обновлено.', 'success');
+    return true;
+  } catch (error) {
+    markOrganizationsReadStale(error.message || 'Не удалось обновить организации.');
+    setStatus('Состояние не обновлено. Последние показанные данные могут быть устаревшими.', 'error');
+    return false;
+  }
 };
 
 const requestOrganizationsImport = async (url, csvText) => {
@@ -875,10 +909,39 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
   }
 };
 
-export const cancelAdminOrganizationAssessment = async (organizationId, assignmentId) => {
-  const key = Number(organizationId) + ':' + Number(assignmentId);
+export const cancelAdminOrganizationAssessment = async (organizationId, assignmentId, assessmentRefOverride = '') => {
+  const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
+  const selectedOrganization = Number(selectedOrganizationId);
+  const assessmentRef = String(assessmentRefOverride || getSelectedAdminOrganizationAssessment(organizationId) || '').trim();
+  const key = identityKey + ':' + Number(organizationId) + ':' + Number(assignmentId);
   const operationId = cancellationOperationIds.get(key) || createOperationId();
   cancellationOperationIds.set(key, operationId);
+  if (cancellationRequestsInFlight.has(key)) return false;
+  cancellationRequestsInFlight.add(key);
+  const contextIsCurrent = () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey &&
+    Number(selectedOrganizationId) === selectedOrganization && selectedOrganization === Number(organizationId) &&
+    String(getSelectedAdminOrganizationAssessment(organizationId) || '').trim() === assessmentRef;
+  const restoreButton = () => {
+    if (!contextIsCurrent()) return;
+    const button = adminOrganizationsList.querySelector(
+      '[data-organization-id="' + Number(organizationId) + '"] ' +
+      '[data-action="cancel-member-assignment"][data-assignment-id="' + Number(assignmentId) + '"]',
+    );
+    if (button) button.disabled = false;
+  };
+  const refreshExactAssignment = async () => {
+    const data = await requestOrganizations(
+      '/users/admin/organizations',
+      { method: 'GET', headers: {} },
+      'Не удалось проверить состояние назначения.',
+    );
+    if (!data || !contextIsCurrent()) return null;
+    const organization = (data.items || []).find((item) => Number(item.id) === Number(organizationId));
+    if (!organization) return null;
+    const stages = (organization.members || []).map((member) => member.assessment_stages?.[assessmentRef]).filter(Boolean);
+    return stages.find((stage) => Number(stage.assignment_id) === Number(assignmentId)) || null;
+  };
   try {
     const response = await fetch(
       '/users/admin/organizations/' + Number(organizationId) + '/assessment-assignments/' + Number(assignmentId) + '/cancel',
@@ -889,18 +952,60 @@ export const cancelAdminOrganizationAssessment = async (organizationId, assignme
         body: JSON.stringify({ operation_id: operationId }),
       },
     );
-    await readApiResponse(response, 'Не удалось отменить назначение оценки.');
-    cancellationOperationIds.delete(key);
+    const command = await readApiResponse(response, 'Не удалось отменить назначение оценки.');
+    if (Number(command?.assignment_id || assignmentId) !== Number(assignmentId)) {
+      throw new Error('Сервер вернул результат для другого назначения.');
+    }
+    if (!contextIsCurrent()) return false;
     try {
-      await loadAdminOrganizations();
-      setStatus('Назначение оценки отменено. Участник и его история сохранены.', 'success');
-    } catch {
-      setStatus('Назначение оценки отменено, но обновить список не удалось. Обновите страницу для проверки.', 'muted');
+      const readback = await refreshExactAssignment();
+      if (!contextIsCurrent()) return false;
+      if (readback?.code === 'cancelled') {
+        cancellationOperationIds.delete(key);
+        setStatus('Назначение оценки отменено. Участник и его история сохранены.', 'success');
+      } else {
+        markOrganizationsReadStale('Команда отмены подтверждена, но точное состояние назначения не подтверждено чтением.');
+        setStatus('Отмена подтверждена сервером, но список может быть устаревшим. Обновите состояние перед следующим действием.', 'muted');
+      }
+    } catch (error) {
+      if (!contextIsCurrent()) return false;
+      markOrganizationsReadStale(error.message || 'Не удалось обновить список после отмены.');
+      setStatus('Назначение отменено, но обновить список не удалось. Последние показанные данные устарели.', 'muted');
     }
     return true;
   } catch (error) {
-    setStatus(error.message || 'Не удалось отменить назначение оценки.', 'error');
+    if (!contextIsCurrent()) return false;
+    if (Number(error?.status) === 409) {
+      try {
+        await refreshExactAssignment();
+      } catch (refreshError) {
+        if (contextIsCurrent()) markOrganizationsReadStale(refreshError.message || 'Не удалось обновить назначение после конфликта.');
+      }
+      if (contextIsCurrent()) setStatus('Назначение уже изменилось и больше не может быть отменено. Показано актуальное состояние.', 'error');
+    } else if (error?.name === 'RequestDeadlineError' || error instanceof TypeError) {
+      try {
+        const readback = await refreshExactAssignment();
+        if (!contextIsCurrent()) return false;
+        if (readback?.code === 'cancelled') {
+          cancellationOperationIds.delete(key);
+          setStatus('Отмена подтверждена чтением после потери ответа команды.', 'success');
+          return true;
+        }
+        markOrganizationsReadStale('Ответ команды потерян, а чтение не подтвердило её итог.');
+        setStatus('Итог отмены пока неизвестен. Не создавайте новую отмену; обновите состояние или повторите с тем же ключом.', 'error');
+      } catch (refreshError) {
+        if (contextIsCurrent()) {
+          markOrganizationsReadStale(refreshError.message || 'Не удалось выяснить итог отмены.');
+          setStatus('Итог отмены неизвестен. Повтор использует тот же operation_id.', 'error');
+        }
+      }
+    } else {
+      setStatus(error.message || 'Не удалось отменить назначение оценки.', 'error');
+    }
     return false;
+  } finally {
+    cancellationRequestsInFlight.delete(key);
+    restoreButton();
   }
 };
 
@@ -1644,6 +1749,9 @@ export const renderAdminOrganizations = () => {
   const physicalPurgeAvailable = Boolean(data?.physical_purge_available);
   const purgePreviewAvailable = Boolean(data?.purge_preview_available);
   const detachedAccounts = Array.isArray(data?.detached_accounts) ? data.detached_accounts : [];
+  const staleMarkup = organizationsReadStale ? '<div class="form-status error" role="status" data-organizations-stale>' +
+    '<strong>Показано последнее подтверждённое состояние.</strong> ' + escapeHtml(organizationsReadStaleReason) +
+    ' <button type="button" class="text-button" data-action="refresh-admin-organizations">Обновить безопасно</button></div>' : '';
   const detachedMarkup = isSuperadmin ? '<section class="card card--inset admin-detached-accounts"><h3>Ранее отвязанные аккаунты</h3>' +
     (detachedAccounts.length ? detachedAccounts.map((account) => '<div class="admin-organization-member"><span>' +
       escapeHtml(account.email) + '</span><button class="ghost-button compact-ghost danger" type="button" data-action="purge-account" data-user-id="' +
@@ -1657,7 +1765,7 @@ export const renderAdminOrganizations = () => {
   document.querySelector('.admin-organization-picker')?.classList.toggle('hidden', !isSuperadmin && organizations.length <= 1);
   if (!organizations.length) {
     if (adminOrganizationSelect) adminOrganizationSelect.innerHTML = '<option value="">Нет организаций</option>';
-    adminOrganizationsList.innerHTML = detachedMarkup + '<p class="report-empty-state">' + (isSuperadmin
+    adminOrganizationsList.innerHTML = staleMarkup + detachedMarkup + '<p class="report-empty-state">' + (isSuperadmin
       ? 'Организации пока не созданы.'
       : 'Закреплённая организация недоступна или доступ отозван. Обратитесь к администратору платформы.') + '</p>';
     return;
@@ -1676,7 +1784,7 @@ export const renderAdminOrganizations = () => {
       )
       .join('');
   }
-  adminOrganizationsList.innerHTML = detachedMarkup + organizations
+  adminOrganizationsList.innerHTML = staleMarkup + detachedMarkup + organizations
     .filter((org) => Number(org.id) === Number(selectedOrganizationId))
     .map((org) => {
       const orgId = Number(org.id);
