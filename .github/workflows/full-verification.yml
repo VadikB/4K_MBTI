@@ -164,7 +164,7 @@ jobs:
         if: matrix.shard == ''
         env:
           BROWSER_SUITE: fast
-        run: xvfb-run -a npx playwright test
+        run: xvfb-run -a npx playwright test --config tests/browser/playwright.ci.config.mjs
 
       - name: Browser acceptance — runtime shard ${{ matrix.shard }}
         if: matrix.shard != ''
@@ -172,6 +172,7 @@ jobs:
           BROWSER_SUITE: runtime
         run: >-
           xvfb-run -a npx playwright test
+          --config tests/browser/playwright.ci.config.mjs
           --fully-parallel
           --shard=${{ matrix.shard }}
 

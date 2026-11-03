@@ -6,7 +6,8 @@
   `full-verification`; `runtime.spec.mjs` остаётся единственным шардируемым набором.
 - Основание: решение владельца в чате после merge PR #159 — «делаем».
 - База: `origin/main` / `89a2d1d`.
-- Включено: Playwright selection profile, workflow, документация и CI-регрессия.
+- Включено: отдельный test-owned Playwright CI profile, workflow, документация и
+  CI-регрессия. Корневой локальный Playwright config не меняется.
 - Не входит: состав/поведение тестов, product runtime, данные, deploy, ruleset и версия.
 
 ## Источники и решения
@@ -45,7 +46,7 @@
 ## План проверки
 
 - `git diff --check`.
-- `node --check playwright.config.mjs`.
+- `node --check tests/browser/playwright.ci.config.mjs`.
 - CI unit regression.
 - `BROWSER_SUITE=fast npx playwright test --list`.
 - `BROWSER_SUITE=runtime npx playwright test --fully-parallel --shard=N/4 --list`.
@@ -59,7 +60,7 @@
 
 ## Проверки (локально)
 
-- `node --check playwright.config.mjs` → PASS.
+- `node --check tests/browser/playwright.ci.config.mjs` → PASS.
 - `.venv/bin/python -m pytest tests/unit/test_ci_verification_workflows.py` →
   PASS, 9 тестов.
 - Расширенная CI-регрессия с release/deploy тестами → PASS, 38 тестов.
@@ -70,3 +71,7 @@
 - `git diff --check` → PASS.
 - Полный browser/integration → локально NOT_RUN; фактический изолированный прогон
   выполняется обязательным CI PR и остаётся критерием готовности.
+- Первый CI `ab87a9f` → FAIL до тестов: корневой `playwright.config.mjs` был
+  корректно классифицирован release-gate как product change без новой версии.
+  Исправление: selection вынесен в `tests/browser/playwright.ci.config.mjs`;
+  release-контракт и версия не ослабляются.
