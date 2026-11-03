@@ -41,6 +41,22 @@ test('PROGRAM01 restores the bulk selection projection and rejects stale organiz
   assert.match(source, /requestGeneration !== organizationsRequestGeneration/);
 });
 
+test('PROGRAM01 R06 scopes cancellation and exposes stale readback recovery', () => {
+  const cancellation = source.match(/export const cancelAdminOrganizationAssessment[\s\S]*?\n\};/)?.[0] || '';
+  assert.match(cancellation, /identityEpoch/);
+  assert.match(cancellation, /identityKey/);
+  assert.match(cancellation, /assessmentRef/);
+  assert.match(cancellation, /cancellationRequestsInFlight/);
+  assert.match(cancellation, /refreshExactAssignment/);
+  assert.match(cancellation, /readback\?\.code === 'cancelled'/);
+  assert.match(cancellation, /Number\(error\?\.status\) === 409/);
+  assert.match(cancellation, /restoreButton\(\)/);
+  assert.match(source, /data-organizations-stale/);
+  assert.match(source, /refreshAdminOrganizationsSafely/);
+  assert.match(entry, /refreshAdminOrganizationsSafely/);
+  assert.match(wiring, /refresh-admin-organizations/);
+});
+
 test('PROGRAM01 R02 binds questionnaire forms to the exact connected program key', () => {
   assert.match(source, /const connectedRef = String\(currentProgram\?\.assignment_ref/);
   assert.match(source, /const selectedRef = connectedRef \|\| storedRef/);

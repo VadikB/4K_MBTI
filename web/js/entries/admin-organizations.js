@@ -1,6 +1,7 @@
 export {
   openAdminOrganizations,
   loadAdminOrganizations,
+  refreshAdminOrganizationsSafely,
   renderAdminOrganizations,
   createAdminOrganization,
   selectAdminOrganization,
