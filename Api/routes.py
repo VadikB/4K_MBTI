@@ -935,12 +935,16 @@ def _get_admin_scope_or_403(connection, user: UserResponse | None) -> AdminScope
     if user is None:
         raise HTTPException(status_code=401, detail="Admin session not found")
     if str(user.email or "").strip().lower() == ADMIN_EMAIL.lower():
-        return AdminScope(is_superadmin=True)
+        return AdminScope(is_superadmin=True, actor_user_id=int(user.id))
     scope = get_admin_scope(connection, user)
     connection.commit()
     if not scope.can_admin:
         raise HTTPException(status_code=403, detail="Admin access required")
-    return scope
+    return AdminScope(
+        is_superadmin=scope.is_superadmin,
+        organization_ids=scope.organization_ids,
+        actor_user_id=int(user.id),
+    )
 
 
 def _require_superadmin(connection, user: UserResponse | None) -> AdminScope:
@@ -1024,7 +1028,8 @@ def _project_admin_assessment_stage(row: dict) -> dict:
     if row.get("assignment_status") == "revoked" or row.get("revoked_at") is not None:
         code, label, action = "cancelled", "Назначение отменено", None
     elif row.get("report_ready"):
-        code, label, action = "report_ready", "Отчёт готов", "open_report"
+        code, label = "report_ready", "Отчёт готов"
+        action = "open_report" if row.get("report_access") else None
     elif cycle_status == "failed" or row.get("pipeline_status") == "failed":
         code, label, action = "failed", "Обработка завершилась с ошибкой", "open_processing"
         blocker = {"reason": "Техническая обработка не завершена.", "responsible": "Система"}
@@ -1090,13 +1095,15 @@ def _project_admin_assessment_stage(row: dict) -> dict:
         "code": code, "label": label, "action": action,
         "cycle_id": str(row["cycle_id"]) if row.get("cycle_id") else None,
         "operation_id": row.get("preparation_operation_id"),
+        "report_id": str(row["report_id"]) if row.get("report_id") and row.get("report_access") else None,
+        "report_access": row.get("report_access_kind") if row.get("report_access") else None,
         "assignment_id": int(row["assignment_id"]),
         "progress": progress, "blocker": blocker, "result_summary": result_summary,
         "description": " ".join(description_parts) or None,
     }
 
 
-def _build_admin_organizations(connection, scope: AdminScope | None = None) -> AdminOrganizationsResponse:
+def _build_admin_organizations(connection, scope: AdminScope | None = None, *, actor_user_id: int | None = None) -> AdminOrganizationsResponse:
     ensure_configured_organizations(connection)
     connection.commit()
     scope_filter = "" if scope is None or scope.is_superadmin else "WHERE id = ANY(%s)"
@@ -1166,13 +1173,13 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                    COALESCE(plan_progress.completed_positions, 0) AS completed_positions,
                    result_revision.payload_json AS results_payload,
                    pipeline.status AS pipeline_status,
-                   EXISTS (
-                       SELECT 1
-                       FROM m8_results result
-                       JOIN m8_result_revisions revision ON revision.results_id=result.id
-                       JOIN m8_reports report ON report.result_revision_id=revision.id
-                       WHERE result.cycle_db_id=cycle.id AND report.audience='assessee'
-                   ) AS report_ready
+                   ready_report.id AS report_id,
+                   ready_report.id IS NOT NULL AS report_ready,
+                   (ready_report.id IS NOT NULL AND EXISTS (
+                       SELECT 1 FROM m8_cycle_report_recipients recipient
+                       WHERE recipient.cycle_db_id=cycle.id AND recipient.user_id=%s
+                   )) AS report_access,
+                   'customer' AS report_access_kind
             FROM organization_assessment_assignments assignment
             JOIN organization_assessment_source_bindings binding
               ON binding.assignment_id=assignment.id
@@ -1203,6 +1210,15 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                 ORDER BY runtime.created_at DESC,runtime.id DESC
                 LIMIT 1
             ) cycle ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT report.id
+                FROM m8_results result
+                JOIN m8_result_revisions revision ON revision.results_id=result.id
+                JOIN m8_reports report ON report.result_revision_id=revision.id
+                WHERE result.cycle_db_id=cycle.id AND report.audience='assessee'
+                ORDER BY revision.revision_no DESC,report.revision_no DESC
+                LIMIT 1
+            ) ready_report ON TRUE
             LEFT JOIN m7_cycle_plans plan ON plan.cycle_db_id=cycle.id
             LEFT JOIN LATERAL (
                 SELECT
@@ -1245,7 +1261,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
             WHERE assignment.organization_id=ANY(%s)
             ORDER BY assignment.id ASC
             """,
-            (org_ids,),
+            (int(actor_user_id or (scope.actor_user_id if scope else None) or -1), org_ids),
         ).fetchall()
         for row in stage_rows:
             assessment_stages.setdefault(
@@ -1273,6 +1289,9 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                 COALESCE(acquaintance_state.status, 'not_started') AS acquaintance_status,
                 personal_invitation.id AS invitation_id,
                 personal_invitation.expires_at AS invitation_expires_at,
+                personal_invitation.created_at AS invitation_created_at,
+                personal_invitation.used_at AS invitation_used_at,
+                personal_invitation.revoked_at AS invitation_revoked_at,
                 personal_invitation.delivery_status AS invitation_delivery_status,
                 COALESCE(assignments.assignment_refs, ARRAY[]::text[]) AS assessment_assignments,
                 CASE
@@ -1311,7 +1330,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
               ON acquaintance_state.user_id = u.id
              AND acquaintance_state.organization_id = om.organization_id
             LEFT JOIN LATERAL (
-                SELECT id, expires_at, revoked_at, used_at, delivery_status
+                SELECT id, created_at, expires_at, revoked_at, used_at, delivery_status
                 FROM organization_invitations oi
                 WHERE oi.organization_id = om.organization_id
                   AND LOWER(oi.recipient_email) = LOWER(u.email)
@@ -1366,6 +1385,9 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                     "invitation_delivery_status": row["invitation_delivery_status"] or "not_sent",
                     "invitation_link_status": row["invitation_link_status"] or "not_created",
                     "invitation_expires_at": row["invitation_expires_at"],
+                    "invitation_created_at": row["invitation_created_at"],
+                    "invitation_used_at": row["invitation_used_at"],
+                    "invitation_revoked_at": row["invitation_revoked_at"],
                     "assessment_assignments": list(row["assessment_assignments"] or []),
                     "assessment_stages": assessment_stages.get(
                         (int(row["organization_id"]), int(row["user_id"])), {}
@@ -4121,7 +4143,7 @@ def get_admin_organizations(request: Request) -> AdminOrganizationsResponse:
     user = web_session_service.get_user_by_token(token)
     with get_connection() as connection:
         scope = _get_admin_scope_or_403(connection, user)
-        return _build_admin_organizations(connection, scope)
+        return _build_admin_organizations(connection, scope, actor_user_id=int(user.id))
 
 
 @router.get('/admin/organizations/{organization_id}/purge-preview')
