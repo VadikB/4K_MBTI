@@ -51,13 +51,16 @@ git pull --ff-only
 После этого `git commit` проверяет формат staged diff и не позволяет
 закоммитить изменения `web/js` без пересобранного `web/dist`.
 
-Для подготовки нового PATCH-кандидата сначала посмотрите расчёт, затем укажите утверждённый номер:
+Каноническая подготовка PATCH-кандидата перед `Ready for review` сначала обновляет
+`origin/main` и остановится, если рабочая ветка основана на устаревшем commit:
 
 ```bash
-.venv/bin/python scripts/bump_patch_version.py --dry-run
-.venv/bin/python scripts/bump_patch_version.py --candidate 2.0.2
-npm run build:web
+npm run ready:prepare -- --candidate 2.0.53
 ```
+
+Команда назначает версию и пересобирает frontend. Отдельно запускать другой bump
+для того же релиза нельзя. После удалённого merge обновите локальный `main` через
+`git switch main && git pull --ff-only`.
 
 После деплоя версии нужен рестарт backend-процесса, потому что `/users/version` читает версию из `pyproject.toml` и кеширует ее в процессе приложения.
 

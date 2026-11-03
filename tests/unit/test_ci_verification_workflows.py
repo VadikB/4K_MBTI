@@ -52,3 +52,6 @@ def test_main_push_deploys_without_repeating_pre_merge_checks() -> None:
     assert "if: github.event_name == 'push' && github.ref == 'refs/heads/main'" in deploy
     assert "needs:" not in deploy
     assert "workflow_dispatch:" not in CI
+    assert "- name: Verify merged application release" in deploy
+    assert "python scripts/check_release_version.py --base-ref HEAD^" in deploy
+    assert deploy.index("Verify merged application release") < deploy.index("Configure SSH")

@@ -15,6 +15,18 @@ def git(*args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
 
 
+def refresh_and_require_current_base(base_ref: str) -> None:
+    if base_ref == "origin/main":
+        subprocess.run(["git", "fetch", "origin", "main"], cwd=ROOT, check=True)
+    merge_base = git("merge-base", "HEAD", base_ref)
+    base_sha = git("rev-parse", base_ref)
+    if merge_base != base_sha:
+        raise ValueError(
+            f"Branch is based on stale {base_ref} ({merge_base}); "
+            f"update it to {base_sha} before preparing a release candidate"
+        )
+
+
 def changed_product_paths(base_ref: str) -> list[str]:
     paths = set(git("diff", "--name-only", f"{base_ref}...HEAD").splitlines())
     paths.update(git("diff", "--name-only").splitlines())
@@ -27,6 +39,7 @@ def changed_product_paths(base_ref: str) -> list[str]:
 
 
 def run(base_ref: str, release_type: str, candidate: str | None) -> int:
+    refresh_and_require_current_base(base_ref)
     product_paths = changed_product_paths(base_ref)
     if not product_paths:
         print("Ready preflight passed: no product release change")
