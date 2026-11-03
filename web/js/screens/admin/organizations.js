@@ -1537,7 +1537,7 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
         const scopedStage = item.assessment_stages?.[selectedAssessmentRef] || null;
         const preparationStatus = String(scopedStage?.code || '');
         const isPreparing = preparationStatus === 'preparing';
-        const isPrepared = ['prepared', 'ready_to_start', 'in_progress', 'processing', 'report_ready'].includes(preparationStatus);
+        const isPrepared = ['preparation_complete', 'start_blocked', 'ready_to_start', 'active', 'paused', 'interrupted', 'processing', 'report_ready'].includes(preparationStatus);
         const canPrepare = item.assessment_profile_ready === true && !isPreparing && !isPrepared;
         const preparationButton = !isSuperadmin ? '' : isPrepared
           ? '<span class="admin-organization-preparation-state ready">Кейсы готовы</span>'
@@ -1569,8 +1569,10 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
         const hasAssignment = (item.assessment_assignments || []).includes(selectedAssessmentRef);
         const stageLabels = {
           assigned: 'Оценка назначена', acquaintance: 'Знакомство', acquaintance_complete: 'Знакомство завершено',
-          preparing: 'Готовится оценка', preparation_failed: 'Подготовка заблокирована', prepared: 'Готов к прохождению оценки',
-          ready_to_start: 'Готов к прохождению оценки', in_progress: 'Проходит оценку', processing: 'Готовится отчёт',
+          preparing: 'Готовится оценка', preparation_failed: 'Подготовка заблокирована',
+          preparation_complete: 'Подготовка завершена, старт ещё не подтверждён', start_blocked: 'Старт оценки заблокирован',
+          ready_to_start: 'Готов к прохождению оценки', active: 'Оценка выполняется', paused: 'Оценка приостановлена',
+          interrupted: 'Оценка прервана', processing: 'Готовится отчёт',
           report_ready: 'Отчёт готов', failed: 'Обработка завершилась с ошибкой', cancelled: 'Назначение отменено',
         };
         const currentStage = scopedStage
@@ -1584,7 +1586,7 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
         const revokeButton = (invitationStatus === 'accepted' || invitationStatus === 'queued' || invitationStatus === 'sending')
           ? '<button type="button" role="menuitem" data-action="revoke-member-invitation" data-participant-name="' + escapeHtml(participantName) + '" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать приглашение</button>'
           : '';
-        const cancellableStage = ['assigned', 'acquaintance', 'acquaintance_complete', 'preparing', 'preparation_failed', 'prepared', 'ready_to_start'].includes(preparationStatus);
+        const cancellableStage = ['assigned', 'acquaintance', 'acquaintance_complete', 'preparing', 'preparation_failed', 'preparation_complete', 'start_blocked', 'ready_to_start'].includes(preparationStatus);
         const cancelButton = scopedStage?.assignment_id && cancellableStage
           ? '<button type="button" role="menuitem" data-action="cancel-member-assignment" data-assignment-id="' + Number(scopedStage.assignment_id) + '" data-participant-name="' + escapeHtml(participantName) + '" data-assessment-ref="' + escapeHtml(selectedAssessmentRef) + '" data-value="' + escapeHtml(email) + '">Отменить назначение оценки</button>'
           : '';
@@ -1606,7 +1608,7 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
           '<span class="admin-organization-member-invitation" title="' + escapeHtml(invitationLabel) + '">' +
           escapeHtml(deliveryLabel + ' · ' + linkLabel + ' · ' + registrationLabel) + '</span>' +
           '</div>' +
-          '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' + (['preparation_failed', 'failed'].includes(preparationStatus) ? ' is-critical' : '') + '">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span></div>' +
+          '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' + (['preparation_failed', 'start_blocked', 'failed'].includes(preparationStatus) ? ' is-critical' : '') + '">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span></div>' +
           '<div class="admin-organization-member-actions">' +
           primaryAction +
           '<details class="admin-organization-member-menu"><summary aria-label="Другие действия" aria-haspopup="menu">⋯</summary><div role="menu">' + menuActions + '</div></details>' +

@@ -1011,6 +1011,91 @@ def _suppress_configured_access_for_deleted_email(connection, *, email: str, act
             )
 
 
+def _project_admin_assessment_stage(row: dict) -> dict:
+    cycle_status = row.get("cycle_status")
+    preparation_status = row.get("preparation_status")
+    acquaintance_status = row.get("acquaintance_status") or "not_started"
+    plan_status = row.get("plan_status")
+    planned = int(row.get("planned_positions") or 0)
+    completed = int(row.get("completed_positions") or 0)
+    progress = {"completed": completed, "planned": planned} if planned else None
+    blocker = None
+
+    if row.get("assignment_status") == "revoked" or row.get("revoked_at") is not None:
+        code, label, action = "cancelled", "Назначение отменено", None
+    elif row.get("report_ready"):
+        code, label, action = "report_ready", "Отчёт готов", "open_report"
+    elif cycle_status == "failed" or row.get("pipeline_status") == "failed":
+        code, label, action = "failed", "Обработка завершилась с ошибкой", "open_processing"
+        blocker = {"reason": "Техническая обработка не завершена.", "responsible": "Система"}
+    elif cycle_status in {"collection_closed", "calculation_pending", "calculated"}:
+        code, label, action = "processing", "Готовится отчёт", "open_processing"
+    elif cycle_status == "active":
+        code, label, action = "active", "Оценка выполняется", "resume_assessment"
+    elif cycle_status == "paused":
+        code, label, action = "paused", "Оценка приостановлена", "resume_assessment"
+        blocker = {"reason": "Оценка поставлена на разрешённую паузу.", "responsible": "Участник"}
+    elif cycle_status == "interrupted":
+        code, label, action = "interrupted", "Оценка прервана", "resume_assessment"
+        blocker = {"reason": "Для продолжения требуется восстановить сессию.", "responsible": "Участник"}
+    elif cycle_status == "prepared" and plan_status == "READY" and planned > 0:
+        code, label, action = "ready_to_start", "Готов к прохождению оценки", "start_assessment"
+    elif cycle_status == "prepared":
+        code, label, action = "start_blocked", "Старт оценки заблокирован", None
+        reason = "Для Cycle не подтверждён исполнимый план."
+        if plan_status == "LIMITED":
+            reason = "План ограничен и не разрешает старт полного маршрута."
+        elif plan_status == "NO_ROUTE":
+            reason = "Для Cycle не найден допустимый маршрут."
+        blocker = {"reason": reason, "responsible": "Организатор оценки"}
+    elif preparation_status == "failed":
+        code, label, action = "preparation_failed", "Подготовка завершилась с ошибкой", "retry_preparation"
+        blocker = {"reason": "Подготовка оценки не завершена.", "responsible": "Организатор оценки"}
+    elif preparation_status in {"queued", "running"}:
+        code, label, action = "preparing", "Идёт подготовка оценки", "check_preparation"
+    elif preparation_status == "completed":
+        code, label, action = "preparation_complete", "Подготовка завершена, старт ещё не подтверждён", None
+        blocker = {"reason": "Точный Cycle и исполнимый план ещё не подтверждены.", "responsible": "Организатор оценки"}
+    elif acquaintance_status in {"answers_confirmed", "completed"}:
+        code, label, action = "acquaintance_complete", "Знакомство завершено", "prepare_assessment"
+    elif acquaintance_status == "in_progress":
+        code, label, action = "acquaintance", "Проходит знакомство", "continue_acquaintance"
+    else:
+        code, label, action = "assigned", "Оценка назначена", "send_invitation"
+
+    result_summary = None
+    payload = row.get("results_payload") or {}
+    skills = payload.get("assessed_skill_profile") or [] if isinstance(payload, dict) else []
+    outcomes = {str(item.get("outcome")) for item in skills if item.get("outcome")}
+    if outcomes:
+        if outcomes == {"no_result"}:
+            result_summary = {"kind": "insufficient", "label": "Недостаточно оснований для результата"}
+        elif outcomes == {"full_score"} and not (payload.get("partial_result") or {}).get("is_incomplete"):
+            result_summary = {"kind": "full", "label": "Полный результат"}
+        else:
+            result_summary = {"kind": "partial", "label": "Частичный или ограниченный результат"}
+        processing = payload.get("processing") or {}
+        result_summary["technical_failure"] = processing.get("status") == "failed"
+
+    description_parts = []
+    if progress:
+        description_parts.append(f"Прогресс: {completed} из {planned} AS плана.")
+    if blocker:
+        description_parts.append(f"{blocker['reason']} Ответственный: {blocker['responsible']}.")
+    if result_summary:
+        description_parts.append(result_summary["label"] + ".")
+        if result_summary["technical_failure"]:
+            description_parts.append("Есть отдельное техническое ограничение обработки.")
+    return {
+        "code": code, "label": label, "action": action,
+        "cycle_id": str(row["cycle_id"]) if row.get("cycle_id") else None,
+        "operation_id": row.get("preparation_operation_id"),
+        "assignment_id": int(row["assignment_id"]),
+        "progress": progress, "blocker": blocker, "result_summary": result_summary,
+        "description": " ".join(description_parts) or None,
+    }
+
+
 def _build_admin_organizations(connection, scope: AdminScope | None = None) -> AdminOrganizationsResponse:
     ensure_configured_organizations(connection)
     connection.commit()
@@ -1076,6 +1161,11 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                    preparation.operation_id AS preparation_operation_id,
                    preparation.status AS preparation_status,
                    cycle.cycle_id, cycle.status AS cycle_status,
+                   plan.status AS plan_status,
+                   COALESCE(plan_progress.planned_positions, 0) AS planned_positions,
+                   COALESCE(plan_progress.completed_positions, 0) AS completed_positions,
+                   result_revision.payload_json AS results_payload,
+                   pipeline.status AS pipeline_status,
                    EXISTS (
                        SELECT 1
                        FROM m8_results result
@@ -1113,6 +1203,41 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
                 ORDER BY runtime.created_at DESC,runtime.id DESC
                 LIMIT 1
             ) cycle ON TRUE
+            LEFT JOIN m7_cycle_plans plan ON plan.cycle_db_id=cycle.id
+            LEFT JOIN LATERAL (
+                SELECT
+                    COALESCE(jsonb_array_length(revision.content_json->'route'), 0)::int AS planned_positions,
+                    (
+                        SELECT COUNT(*)::int
+                        FROM m5_assessment_situations situation
+                        WHERE situation.cycle_db_id=cycle.id
+                          AND situation.status='closed'
+                          AND NOT EXISTS (
+                              SELECT 1 FROM m7_route_position_as_history history
+                              WHERE history.assessment_situation_db_id=situation.id
+                                AND history.disposition='replaced'
+                          )
+                    ) AS completed_positions
+                FROM m7_plan_revisions revision
+                WHERE revision.plan_id=plan.id
+                ORDER BY revision.revision_no DESC
+                LIMIT 1
+            ) plan_progress ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT revision.payload_json
+                FROM m8_results result
+                JOIN m8_result_revisions revision ON revision.results_id=result.id
+                WHERE result.cycle_db_id=cycle.id
+                ORDER BY revision.revision_no DESC
+                LIMIT 1
+            ) result_revision ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT run.status
+                FROM m10_pipeline_runs run
+                WHERE run.cycle_db_id=cycle.id
+                ORDER BY run.updated_at DESC
+                LIMIT 1
+            ) pipeline ON TRUE
             LEFT JOIN participant_acquaintance_states acquaintance
               ON acquaintance.user_id=assignment.recipient_user_id
              AND acquaintance.organization_id=assignment.organization_id
@@ -1123,43 +1248,9 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None) -> A
             (org_ids,),
         ).fetchall()
         for row in stage_rows:
-            cycle_status = row.get("cycle_status")
-            preparation_status = row.get("preparation_status")
-            acquaintance_status = row.get("acquaintance_status") or "not_started"
-            if row.get("assignment_status") == "revoked" or row.get("revoked_at") is not None:
-                code, label, action = "cancelled", "Назначение отменено", None
-            elif row.get("report_ready"):
-                code, label, action = "report_ready", "Отчёт готов", "open_report"
-            elif cycle_status == "failed":
-                code, label, action = "failed", "Обработка завершилась с ошибкой", "open_processing"
-            elif cycle_status in {"collection_closed", "calculation_pending", "calculated"}:
-                code, label, action = "processing", "Готовится отчёт", "open_processing"
-            elif cycle_status in {"active", "paused", "interrupted"}:
-                code, label, action = "in_progress", "Проходит оценку", "resume_assessment"
-            elif cycle_status == "prepared":
-                code, label, action = "ready_to_start", "Готов к прохождению оценки", "start_assessment"
-            elif preparation_status == "failed":
-                code, label, action = "preparation_failed", "Подготовка завершилась с ошибкой", "retry_preparation"
-            elif preparation_status in {"queued", "running"}:
-                code, label, action = "preparing", "Идёт подготовка оценки", "check_preparation"
-            elif preparation_status == "completed":
-                code, label, action = "prepared", "Готов к прохождению оценки", "start_assessment"
-            elif acquaintance_status in {"answers_confirmed", "completed"}:
-                code, label, action = "acquaintance_complete", "Знакомство завершено", "prepare_assessment"
-            elif acquaintance_status == "in_progress":
-                code, label, action = "acquaintance", "Проходит знакомство", "continue_acquaintance"
-            else:
-                code, label, action = "assigned", "Оценка назначена", "send_invitation"
             assessment_stages.setdefault(
                 (int(row["organization_id"]), int(row["recipient_user_id"])), {}
-            )[str(row["assignment_ref"])] = {
-                "code": code,
-                "label": label,
-                "action": action,
-                "cycle_id": str(row["cycle_id"]) if row.get("cycle_id") else None,
-                "operation_id": row.get("preparation_operation_id"),
-                "assignment_id": int(row["assignment_id"]),
-            }
+            )[str(row["assignment_ref"])] = _project_admin_assessment_stage(dict(row))
 
         member_detail_rows = connection.execute(
             """
