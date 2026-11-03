@@ -7,7 +7,7 @@ import subprocess
 import sys
 import tomllib
 
-from release_version import ROOT, check_consistency, parse_version
+from release_version import ROOT, check_consistency, next_version, parse_version
 
 
 NON_PRODUCT_PREFIXES = ("docs/", "tests/", ".github/", ".githooks/")
@@ -31,8 +31,18 @@ def verify_against_base(base: str, version: str) -> None:
     if (base_version, version) == ("2.1.37", "2.0.1"):
         if "docs/evc/tasks/rel-version-01.md" not in changed:
             raise ValueError("One-time 2.0.1 transition needs its release card")
-    elif tuple(parse_version(version)) <= tuple(parse_version(base_version)):
-        raise ValueError(f"Release {version} is not newer than current base {base_version}")
+    else:
+        allowed = {
+            next_version(base_version, "patch"),
+            next_version(base_version, "minor"),
+            next_version(base_version, "major"),
+        }
+        if version not in allowed:
+            expected = ", ".join(sorted(allowed, key=parse_version))
+            raise ValueError(
+                f"Release {version} is not an immediate successor of {base_version}; "
+                f"expected one of: {expected}"
+            )
 
 
 def main() -> int:

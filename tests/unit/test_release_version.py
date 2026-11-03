@@ -49,7 +49,7 @@ def test_dry_run_and_consistency(tmp_path):
         check_consistency(tmp_path)
 
 
-def test_ci_rejects_unchanged_or_stale_release(monkeypatch):
+def test_ci_requires_immediate_release_successor(monkeypatch):
     def fake_git(*args):
         if args[0] == "show":
             return '[project]\nversion = "2.0.1"'
@@ -58,9 +58,15 @@ def test_ci_rejects_unchanged_or_stale_release(monkeypatch):
     monkeypatch.setattr(check_release_version, "git", fake_git)
     with pytest.raises(ValueError, match="remains"):
         check_release_version.verify_against_base("base", "2.0.1")
-    with pytest.raises(ValueError, match="not newer"):
+    with pytest.raises(ValueError, match="not an immediate successor"):
         check_release_version.verify_against_base("base", "2.0.0")
     check_release_version.verify_against_base("base", "2.0.2")
+    check_release_version.verify_against_base("base", "2.1.0")
+    check_release_version.verify_against_base("base", "3.0.0")
+    with pytest.raises(ValueError, match="not an immediate successor"):
+        check_release_version.verify_against_base("base", "2.0.3")
+    with pytest.raises(ValueError, match="not an immediate successor"):
+        check_release_version.verify_against_base("base", "2.2.0")
 
 
 def test_backend_version_source_matches_release():
@@ -71,6 +77,7 @@ def test_backend_version_source_matches_release():
 
 
 def test_ready_preflight_does_not_require_release_for_non_product_change(monkeypatch):
+    monkeypatch.setattr(prepare_ready_release, "refresh_and_require_current_base", lambda _base: None)
     monkeypatch.setattr(prepare_ready_release, "changed_product_paths", lambda _base: [])
     assert prepare_ready_release.run("origin/main", "patch", None) == 0
 
@@ -89,6 +96,7 @@ def test_ready_preflight_includes_uncommitted_and_staged_paths(monkeypatch):
 
 
 def test_ready_preflight_reports_candidate_before_ready(monkeypatch, capsys):
+    monkeypatch.setattr(prepare_ready_release, "refresh_and_require_current_base", lambda _base: None)
     monkeypatch.setattr(prepare_ready_release, "changed_product_paths", lambda _base: ["web/js/main.js"])
     monkeypatch.setattr(prepare_ready_release, "check_consistency", lambda _root: "2.0.47")
     monkeypatch.setattr(
@@ -101,6 +109,7 @@ def test_ready_preflight_reports_candidate_before_ready(monkeypatch, capsys):
 
 
 def test_ready_preflight_prepares_builds_and_verifies(monkeypatch):
+    monkeypatch.setattr(prepare_ready_release, "refresh_and_require_current_base", lambda _base: None)
     versions = iter(("2.0.47", "2.0.48"))
     monkeypatch.setattr(prepare_ready_release, "changed_product_paths", lambda _base: ["web/js/main.js"])
     monkeypatch.setattr(prepare_ready_release, "check_consistency", lambda _root: next(versions))
@@ -121,3 +130,31 @@ def test_ready_preflight_prepares_builds_and_verifies(monkeypatch):
     assert prepare_ready_release.run("origin/main", "patch", "2.0.48") == 0
     assert prepared == [["patch", "--candidate", "2.0.48"]]
     assert verified == [("origin/main", "2.0.48")]
+
+
+def test_ready_preflight_fetches_and_requires_current_main(monkeypatch):
+    runs = []
+    monkeypatch.setattr(
+        prepare_ready_release.subprocess,
+        "run",
+        lambda *args, **kwargs: runs.append((args, kwargs)),
+    )
+    values = {
+        ("merge-base", "HEAD", "origin/main"): "base-sha",
+        ("rev-parse", "origin/main"): "base-sha",
+    }
+    monkeypatch.setattr(prepare_ready_release, "git", lambda *args: values[args])
+    prepare_ready_release.refresh_and_require_current_base("origin/main")
+    assert runs[0][0][0] == ["git", "fetch", "origin", "main"]
+    assert runs[0][1]["check"] is True
+
+
+def test_ready_preflight_rejects_stale_branch(monkeypatch):
+    monkeypatch.setattr(prepare_ready_release.subprocess, "run", lambda *args, **kwargs: None)
+    values = {
+        ("merge-base", "HEAD", "origin/main"): "old-base",
+        ("rev-parse", "origin/main"): "current-base",
+    }
+    monkeypatch.setattr(prepare_ready_release, "git", lambda *args: values[args])
+    with pytest.raises(ValueError, match="based on stale origin/main"):
+        prepare_ready_release.refresh_and_require_current_base("origin/main")

@@ -126,6 +126,17 @@ jobs:
       cancel-in-progress: false
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify merged application release
+        run: python scripts/check_release_version.py --base-ref HEAD^
+
       - name: Configure SSH
         env:
           TEST_SSH_PRIVATE_KEY: ${{ secrets.TEST_SSH_PRIVATE_KEY }}
