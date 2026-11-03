@@ -44,6 +44,7 @@
 - `tests/e2e/test_ux_fix20_04_admin_readiness_http.py`: вместе с unit-набором **9 passed**.
 - `tests/integration/test_path29_participant_owned_stand.py`: **1 passed** на disposable БД через разрешённую maintenance DB.
 - Playwright `ADM-STATUS-01 shows`: **1 passed**.
+- `node --test tests/frontend/*.test.mjs`: **125 passed** после синхронизации статического контракта ADM-STATUS-01 с новыми раздельными статусами.
 - `npm run build:web`: **PASS**.
 - ESLint изменённого JS и `git diff --check`: **PASS**.
 
