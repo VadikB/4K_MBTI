@@ -162,17 +162,17 @@ jobs:
 
       - name: Browser acceptance — fast lane
         if: matrix.shard == ''
-        run: >-
-          xvfb-run -a npx playwright test
-          tests/browser/auth-r03.spec.mjs
-          tests/browser/adm28-real.spec.mjs
-          tests/browser/path29-participant.spec.mjs
+        env:
+          BROWSER_SUITE: fast
+        run: xvfb-run -a npx playwright test --config tests/browser/playwright.ci.config.mjs
 
       - name: Browser acceptance — runtime shard ${{ matrix.shard }}
         if: matrix.shard != ''
+        env:
+          BROWSER_SUITE: runtime
         run: >-
           xvfb-run -a npx playwright test
-          tests/browser/runtime.spec.mjs
+          --config tests/browser/playwright.ci.config.mjs
           --fully-parallel
           --shard=${{ matrix.shard }}
 

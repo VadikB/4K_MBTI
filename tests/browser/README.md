@@ -22,7 +22,9 @@ STAND_ADMIN_URL=postgresql://pytest:pytest@127.0.0.1:5432/postgres npm run test:
 Playwright на четыре shard; каждый shard работает на отдельном runner со своим
 PostgreSQL, поэтому фиксированные порты и временные БД между ними не пересекаются.
 Остальные browser-spec выполняются отдельным fast lane параллельно с runtime и
-backend integration.
+backend integration. Новый `tests/browser/*.spec.mjs` автоматически включается в
+fast lane. Для тяжёлого набора, которому требуется шардирование, нужно явное
+решение о включении в runtime-контур; молчаливого исключения нового spec нет.
 
 Основные A/B/C и positive T11 идут через реальный UI, cookie auth, HTTP, PostgreSQL,
 workers и экспорт PDF. Подменяется только AI-граница явным техническим gateway;

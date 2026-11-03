@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CI = (ROOT / ".github/workflows/backend-tests.yml").read_text(encoding="utf-8")
 FULL = (ROOT / ".github/workflows/full-verification.yml").read_text(encoding="utf-8")
+PLAYWRIGHT_CI = (ROOT / "tests/browser/playwright.ci.config.mjs").read_text(encoding="utf-8")
 
 
 def test_pull_request_ci_contains_only_fast_jobs() -> None:
@@ -58,7 +59,7 @@ def test_full_verification_parallelizes_integration_and_browser_runtime() -> Non
     assert "fail-fast: false" in FULL
     for shard in ("1/4", "2/4", "3/4", "4/4"):
         assert f'shard: "{shard}"' in FULL
-    assert "tests/browser/runtime.spec.mjs" in FULL
+    assert "BROWSER_SUITE: runtime" in FULL
     assert "--fully-parallel" in FULL
     assert "--shard=${{ matrix.shard }}" in FULL
 
@@ -72,13 +73,16 @@ def test_full_verification_preserves_required_aggregate_check() -> None:
 
 
 def test_browser_lanes_keep_all_specs_and_separate_evidence() -> None:
-    for spec in (
-        "auth-r03.spec.mjs",
-        "adm28-real.spec.mjs",
-        "path29-participant.spec.mjs",
-        "runtime.spec.mjs",
-    ):
-        assert f"tests/browser/{spec}" in FULL
+    assert "BROWSER_SUITE: fast" in FULL
+    assert "BROWSER_SUITE: runtime" in FULL
+    assert "tests/browser/auth-r03.spec.mjs" not in FULL
+    assert "tests/browser/adm28-real.spec.mjs" not in FULL
+    assert "tests/browser/path29-participant.spec.mjs" not in FULL
+    assert "browserSuite === 'runtime' ? 'runtime.spec.mjs' : '*.spec.mjs'" in PLAYWRIGHT_CI
+    assert "browserSuite === 'fast' ? 'runtime.spec.mjs' : undefined" in PLAYWRIGHT_CI
+    assert "path.resolve(process.cwd(), '.test-stand/browser-output')" in PLAYWRIGHT_CI
+    assert "path.resolve(process.cwd(), '.test-stand/browser-results.json')" in PLAYWRIGHT_CI
+    assert "--config tests/browser/playwright.ci.config.mjs" in FULL
     assert "full-verification-browser-${{ matrix.lane }}" in FULL
     assert "playwright-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}" in FULL
 
