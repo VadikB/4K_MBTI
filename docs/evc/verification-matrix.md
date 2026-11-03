@@ -51,13 +51,15 @@
 - pytest на событии `pull_request`: быстрые unit- и HTTP-контракты на отдельном
   PostgreSQL 16; integration и browser на этом событии не запускаются.
 
-Обязательный job `full-verification` автоматически запускается при открытии или
-повторном открытии PR и после каждого нового commit. Он выполняет integration и
-browser acceptance на изолированной БД в `pull_request`-контексте. Unit и HTTP
-выполняются один раз быстрым job `pytest`.
-Новый commit после успешного полного прогона делает доказательство устаревшим и
-запускает workflow повторно для нового head. Активный ruleset не разрешает merge
-без checks `frontend`, `pytest` и `full-verification`.
+Обязательный job `full-verification` не запускается для draft PR. Он впервые
+запускается при создании PR сразу не в draft либо при переходе draft PR в
+`Ready for review`, затем — после каждого нового commit, пока PR остаётся Ready.
+Job выполняет integration и browser acceptance на изолированной БД в
+`pull_request`-контексте. Unit и HTTP выполняются один раз быстрым job `pytest`.
+Новый commit после успешного полного прогона Ready PR делает доказательство
+устаревшим и запускает workflow для нового head; незавершённый прогон прежнего
+head отменяется. Активный ruleset не разрешает merge без checks `frontend`,
+`pytest` и `full-verification`.
 
 Для документального PR полный CI также сохраняется. Job `deploy-test` на PR
 ожидаемо пропускается: он применяется после push в main, а не является доказательством
@@ -70,11 +72,11 @@ Workflow `CI` запускается на `pull_request` и push в `main`: на
 `frontend` и быстрый `pytest`, а на push в `main` — только `deploy-test`.
 В draft job `frontend` выполняет весь набор, кроме отложенного шага
 `Verify application release`. Переход в `Ready for review` повторно запускает
-быстрые jobs `frontend` и `pytest` для того же head и включает release gate;
-успешный `full-verification` неизменённого SHA сохраняется. Merge без нового
-согласованного номера продукта остаётся запрещён.
-Workflow `Full verification` автоматически запускается событиями `opened`,
-`reopened` и `synchronize` для `pull_request`; ручная метка не требуется.
+быстрые jobs `frontend` и `pytest` для того же head, включает release gate и
+запускает `full-verification`. Merge без нового согласованного номера продукта
+остаётся запрещён. Workflow `Full verification` реагирует на события `opened`,
+`reopened`, `synchronize` и `ready_for_review`, но job выполняется только при
+`draft == false`; ручная метка не требуется.
 
 ## Отчёт и сбои
 

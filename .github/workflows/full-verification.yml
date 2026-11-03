@@ -4,10 +4,15 @@ run-name: Full verification — ${{ github.ref_name }}
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    types: [opened, reopened, synchronize, ready_for_review]
+
+concurrency:
+  group: full-verification-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   full-verification:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 25
 

@@ -25,20 +25,24 @@ def test_draft_defers_release_gate_until_ready_for_review() -> None:
     assert "if: github.event.pull_request.draft == true" in deferred_step
 
 
-def test_each_pull_request_head_full_verification_covers_expensive_suites_once() -> None:
+def test_full_verification_runs_only_for_ready_pull_request_heads() -> None:
     assert "pull_request:" in FULL
-    assert "types: [opened, reopened, synchronize]" in FULL
-    assert "ready_for_review" not in FULL
+    assert "types: [opened, reopened, synchronize, ready_for_review]" in FULL
+    assert "full-verification:\n    if: github.event.pull_request.draft == false" in FULL
     assert "converted_to_draft" not in FULL
     assert "run-full-verification" not in FULL
     assert "Require run-full-verification label" not in FULL
     assert "labeled" not in FULL
     assert "workflow_dispatch:" not in FULL
-    assert "full-verification:" in FULL
     for step in ("Integration tests", "Browser acceptance (isolated bootstrap 10.2)"):
         assert f"- name: {step}" in FULL
     assert "- name: Unit tests" not in FULL
     assert "- name: HTTP contract smoke tests" not in FULL
+
+
+def test_full_verification_cancels_obsolete_run_for_same_pull_request() -> None:
+    assert "group: full-verification-${{ github.event.pull_request.number }}" in FULL
+    assert "cancel-in-progress: true" in FULL
 
 
 def test_fast_suites_are_not_duplicated_by_full_verification() -> None:
