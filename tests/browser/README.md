@@ -3,9 +3,10 @@
 Требуются Python-зависимости штатного тестового окружения, Node и PostgreSQL.
 `STAND_ADMIN_URL` должен указывать на **локальный выделенный кластер**, где разрешено
 создание/удаление БД. Рабочие `.env`, production/test сервера с реальными данными
-не используются. Каждый тест через bootstrap 10.2 создаёт собственную
+не используются. Каждый runtime-тест через bootstrap 10.2 создаёт собственную
 `product4k_pytest_*`, synthetic участников/входы, запускает сервер/worker и удаляет
-только принадлежащую ему БД. Порт 18830 должен быть свободен.
+только принадлежащую ему БД. При локальном последовательном прогоне порт 18830
+должен быть свободен.
 
 ```sh
 npm ci
@@ -17,6 +18,13 @@ STAND_ADMIN_URL=postgresql://pytest:pytest@127.0.0.1:5432/postgres npm run test:
 Локально используется `.venv/bin/python`; `BROWSER_PYTHON=python` — для CI.
 На Linux для установки системных зависимостей: `npx playwright install --with-deps chromium`.
 Нет implicit skip при отсутствии БД/браузера. Retries выключены, workers=1.
+Локальный полный прогон остаётся последовательным. В CI runtime-набор делится
+Playwright на четыре shard; каждый shard работает на отдельном runner со своим
+PostgreSQL, поэтому фиксированные порты и временные БД между ними не пересекаются.
+Остальные browser-spec выполняются отдельным fast lane параллельно с runtime и
+backend integration. Новый `tests/browser/*.spec.mjs` автоматически включается в
+fast lane. Для тяжёлого набора, которому требуется шардирование, нужно явное
+решение о включении в runtime-контур; молчаливого исключения нового spec нет.
 
 Основные A/B/C и positive T11 идут через реальный UI, cookie auth, HTTP, PostgreSQL,
 workers и экспорт PDF. Подменяется только AI-граница явным техническим gateway;
@@ -33,7 +41,8 @@ N3/N4 — явно отделённые редкие fixtures **после** з�
 исхода/версии проверяются существующим backend/HTTP/integration набором.
 
 Артефакты: `.test-stand/browser-output/` и `.test-stand/browser-results.json`;
-CI прикладывает их как `browser-acceptance`. Вложения содержат только synthetic
+CI прикладывает их отдельно для fast lane и каждого runtime shard как
+`full-verification-browser-*`. Вложения содержат только synthetic
 Report/PDF/screenshots, серверный лог и assessment HTTP-ответы. Auth trace/cookies/
 пароли не записываются. Не публиковать каталоги со `state.json` или `prepare.log`.
 Успех browser suite подтверждает техническую интеграцию указанного gateway,
