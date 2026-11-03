@@ -944,6 +944,53 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await rows.first().locator('[data-action="delete-member"]').click();
 });
 
+test('ADM-STATUS-01 keeps superadmin participant cards readable on narrow viewports', async ({ page }) => {
+  const longEmail = 'very.long.participant.name.for.superadmin.layout@example.invalid';
+  const organization = {
+    ...adminOrganization,
+    members: [{ ...adminOrganization.members[0], email: longEmail,
+      full_name: 'Очень длинное имя участника для мобильной карточки суперадмина',
+      raw_position: 'Руководитель направления корпоративных внедрений',
+      invitation_delivery_status: 'accepted' }],
+  };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization, null, true);
+  const row = page.locator('.admin-organization-member').first();
+
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const layout = await row.evaluate((member) => {
+      const main = member.querySelector('.admin-organization-member-main').getBoundingClientRect();
+      const name = member.querySelector('.admin-organization-member-name').getBoundingClientRect();
+      const stage = member.querySelector('.admin-organization-member-stage').getBoundingClientRect();
+      const menu = member.querySelector('.admin-organization-member-menu').getBoundingClientRect();
+      return {
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: document.documentElement.clientWidth,
+        rowWidth: member.getBoundingClientRect().width,
+        mainWidth: main.width,
+        nameWidth: name.width,
+        mainRight: main.right,
+        mainBottom: main.bottom,
+        stageX: stage.x,
+        stageY: stage.y,
+        menuWidth: menu.width,
+        menuHeight: menu.height,
+      };
+    });
+    expect(layout.documentWidth, JSON.stringify(layout)).toBeLessThanOrEqual(layout.viewportWidth + 1);
+    expect(layout.rowWidth, JSON.stringify(layout)).toBeGreaterThanOrEqual(width <= 390 ? 190 : 400);
+    expect(layout.mainWidth, JSON.stringify(layout)).toBeGreaterThanOrEqual(width <= 390 ? 150 : 180);
+    expect(layout.nameWidth, JSON.stringify(layout)).toBeGreaterThanOrEqual(width <= 390 ? 150 : 180);
+    if (layout.stageY < layout.mainBottom - 1) {
+      expect(layout.mainRight, JSON.stringify(layout)).toBeLessThanOrEqual(layout.stageX + 1);
+    } else {
+      expect(layout.stageY, JSON.stringify(layout)).toBeGreaterThanOrEqual(layout.mainBottom - 1);
+    }
+    expect(layout.menuWidth).toBeGreaterThanOrEqual(44);
+    expect(layout.menuHeight).toBeGreaterThanOrEqual(44);
+  }
+});
+
 test('ADM19-01 exposes three keyboard-operable management blocks without horizontal overflow', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
 

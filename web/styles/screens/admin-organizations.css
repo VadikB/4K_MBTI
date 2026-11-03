@@ -1005,6 +1005,23 @@
     .admin-subject-confirmation-actions button { width: 100%; }
 }
 
+@media (max-width: 480px) {
+    .admin-organizations-panel[data-superadmin="true"] .admin-organizations-shell,
+    .admin-organizations-panel[data-superadmin="true"] .admin-organizations-list-card,
+    .admin-organizations-panel[data-superadmin="true"] .admin-organization-card {
+        padding: var(--space-3);
+    }
+
+    .admin-organizations-panel[data-superadmin="true"] .admin-organization-member-main {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .admin-organizations-panel[data-superadmin="true"] .admin-organization-member-stage { grid-row: 3; }
+    .admin-organizations-panel[data-superadmin="true"] .admin-organization-member-actions > button { grid-row: 4; }
+    .admin-organizations-panel[data-superadmin="true"] .admin-organization-transfer-form { grid-row: 5; }
+}
+
 /* Org-admin composition follows the approved v3 workspace, without nested
    page cards consuming the usable width on narrow screens. */
 .admin-organizations-panel[data-superadmin="false"] .admin-organizations-shell {
