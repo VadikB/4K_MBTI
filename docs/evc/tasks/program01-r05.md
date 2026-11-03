@@ -44,9 +44,14 @@
   `r05_integration_pytest`; `pytest tests/integration/test_m8_report_access_db.py
   --run-integration -q`: `2 passed`. Контейнер остановлен и удалён через `--rm`.
 - PASS — `git diff --check`.
+- PASS — Draft CI для `df58ef2`: `frontend`, `pytest`; `full-verification`
+  и `deploy-test` корректно skipped, конфликтов с `main` нет.
+- PASS — `npm run ready:prepare -- --candidate 2.0.57`: актуальная база
+  `origin/main@d5d13c379238eb7543deed43cec8a912467eea79`, PATCH
+  `2.0.56 → 2.0.57`, frontend пересобран, release gate пройден.
 - NOT_RUN — реальные LLM-вызовы: изменение их не затрагивает.
-- NOT_RUN — CI для актуального head: выполняется после публикации Draft PR;
-  локальные результаты CI не подменяют.
+- NOT_RUN — Ready CI для будущего head release candidate: запускается только
+  после commit/push и перевода PR в Ready; Draft CI старого head его не заменяет.
 
 `npm run test:backend` в изолированном worktree не использован напрямую, потому
 что в нём нет отдельной `.venv`; выполнена эквивалентная команда из общей venv.
