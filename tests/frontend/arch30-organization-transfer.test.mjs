@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const organizations = readFileSync('web/js/screens/admin/organizations.js', 'utf8');
 const wiring = readFileSync('web/js/wiring.js', 'utf8');
+const entry = readFileSync('web/js/entries/admin-organizations.js', 'utf8');
 
 test('ARCH30 renders superadmin transfer control and sends explicit source, target and role', () => {
   assert.match(organizations, /data-action="transfer-member"/);
@@ -12,6 +13,7 @@ test('ARCH30 renders superadmin transfer control and sends explicit source, targ
   assert.match(organizations, /target_role: targetRole === 'admin' \? 'admin' : 'member'/);
   assert.match(wiring, /form\.dataset\.action === 'transfer-member'/);
   assert.match(wiring, /Старые назначения и приглашения будут отозваны/);
+  assert.match(entry, /transferAdminOrganizationMember/);
 });
 
 test('ARCH30 explains every protected transfer conflict', () => {
