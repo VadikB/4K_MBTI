@@ -40,6 +40,22 @@ test('known invitation provider configuration error remains actionable', async (
       error.message.includes('Сервис приглашений не настроен') && error.outcomeUnknown === false,
   );
 });
+for (const [code, expected] of [
+  ['INVITATION_ALREADY_USED', 'уже использовано'],
+  ['INVITATION_NOT_FOUND', 'больше не найдено'],
+  ['INVITATION_STATE_CHANGED', 'Состояние участника изменилось'],
+]) {
+  test(`invitation conflict ${code} remains safe and actionable`, async () => {
+    await assert.rejects(
+      readApiResponse(new Response(JSON.stringify({ detail: code }), {
+        status: code === 'INVITATION_NOT_FOUND' ? 404 : 409,
+        headers: { 'content-type': 'application/json' },
+      }), 'Не удалось отозвать приглашение.'),
+      (error) => error instanceof ApiResponseError && error.code === code &&
+        error.message.includes(expected) && !/SQL|traceback|token_hash/i.test(error.message),
+    );
+  });
+}
 test('membership conflict preserves the already scope-filtered server action', async () => {
   await assert.rejects(
     readApiResponse(new Response(JSON.stringify({

@@ -4800,7 +4800,7 @@ def revoke_personal_organization_invitation(
     with get_connection() as connection:
         _require_organization_admin(connection, current_user, organization_id)
         invitation = connection.execute(
-            """SELECT id,used_at,revoked_at
+            """SELECT id,used_at,revoked_at,recipient_email
                FROM organization_invitations
                WHERE id=%s AND organization_id=%s AND purpose='personal_registration'
                FOR UPDATE""",
@@ -4812,6 +4812,24 @@ def revoke_personal_organization_invitation(
             raise HTTPException(status_code=409, detail="INVITATION_ALREADY_USED")
         if invitation["revoked_at"] is not None:
             return {"ok": True}
+        recipient = connection.execute(
+            """SELECT id FROM users
+               WHERE LOWER(email)=LOWER(%s)
+               LIMIT 1
+               FOR UPDATE""",
+            (invitation["recipient_email"],),
+        ).fetchone()
+        if recipient is not None:
+            acquaintance_started = connection.execute(
+                """SELECT 1 FROM participant_acquaintance_states
+                   WHERE user_id=%s AND organization_id=%s
+                     AND (status <> 'not_started' OR current_step > 0)
+                   LIMIT 1
+                   FOR UPDATE""",
+                (int(recipient["id"]), organization_id),
+            ).fetchone()
+            if acquaintance_started is not None:
+                raise HTTPException(status_code=409, detail="INVITATION_STATE_CHANGED")
         row = connection.execute(
             """
             UPDATE organization_invitations SET revoked_at=NOW()
