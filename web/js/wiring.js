@@ -841,8 +841,6 @@ const applyAuthResponse = async (data) => {
     }
     if (journey?.next_action === 'resume_assessment') {
       if (state.assessmentRuntimeKind === 'cycle' && state.productCycleId) {
-        const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(state.productCycleId) + '/runtime', { credentials: 'same-origin' });
-        if (!response.ok) throw new Error('Cycle runtime is not available');
         const module = await import('./screen-loaders.js');
         (await module.loadInterview()).openInterview();
         return;

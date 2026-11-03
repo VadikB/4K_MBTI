@@ -321,8 +321,6 @@ const bootApp = async () => {
           return;
         }
         if (journey?.next_action === 'resume_assessment' && state.assessmentRuntimeKind === 'cycle' && state.productCycleId) {
-          const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(state.productCycleId) + '/runtime', { credentials: 'same-origin' });
-          if (!response.ok) throw new Error('Cycle runtime is not available');
           (await loadInterview()).openInterview();
           return;
         }

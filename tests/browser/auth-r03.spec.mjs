@@ -2365,6 +2365,7 @@ test('R03 fresh login persists journey assessment identifiers', async ({ page })
 
 test('P03 return card hides stopped AS and keeps explicit continue in the same chat', async ({ page }) => {
   const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  let runtimeReads = 0;
   await page.route('**/users/**', (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/version') return fulfillJson(route, { version: 'p03-test' });
@@ -2373,12 +2374,10 @@ test('P03 return card hides stopped AS and keeps explicit continue in the same c
       next_action: 'resume_assessment', profile: { status: 'complete' }, onboarding: { status: 'completed' },
       assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: 'cycle-p03', cycle_session_id: 'session-p03', assessment_situation_id: 'as-old' },
     });
-    if (pathname === '/users/assessment/cycles/cycle-p03/runtime') return fulfillJson(route, {
-      cycle_id: 'cycle-p03', status: { collection_status: 'active', remaining_seconds: 1200 },
-      return_policy_enabled: true,
-      current_situation: { assessment_situation_id: 'as-old', status: 'active', participant_payload: { title: 'Скрытая ситуация', content: 'Нельзя показывать до Continue' } },
-      situations: [], plan: { plan: { route: [{}] } }, trace: { turns: [], events: [] },
-    });
+    if (pathname === '/users/assessment/cycles/cycle-p03/runtime') {
+      runtimeReads += 1;
+      return fulfillJson(route, { detail: 'M7_RETURN_EXPLICIT_CONTINUE_REQUIRED' }, 409);
+    }
     if (pathname === '/users/assessment/m7/cycles/cycle-p03/presence') return fulfillJson(route, {
       cycle_id: 'cycle-p03', assessment_situation_id: 'as-old',
       heartbeat_interval_seconds: 30, presence_lease_seconds: 60,
@@ -2399,6 +2398,43 @@ test('P03 return card hides stopped AS and keeps explicit continue in the same c
   await expect(page.locator('#interview-timer-badge')).toContainText('Пауза');
   await expect(page.getByRole('button', { name: 'Продолжить', exact: true })).toBeVisible();
   await expect(page.locator('#interview-textarea')).toBeDisabled();
+  expect(runtimeReads).toBe(0);
+});
+
+test('P03 fresh login opens explicit return card without reading blocked runtime', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  let runtimeReads = 0;
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'p03-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: false });
+    if (pathname === '/users/auth/email/request-link') return fulfillJson(route, { email: user.email, auth_mode: 'password' });
+    if (pathname === '/users/auth/email/password-login') return fulfillJson(route, { exists: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'resume_assessment', profile: { status: 'complete' }, onboarding: { status: 'completed' },
+      assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: 'cycle-p03', cycle_session_id: 'session-p03', assessment_situation_id: 'as-old' },
+    });
+    if (pathname === '/users/assessment/cycles/cycle-p03/runtime') {
+      runtimeReads += 1;
+      return fulfillJson(route, { detail: 'M7_RETURN_EXPLICIT_CONTINUE_REQUIRED' }, 409);
+    }
+    if (pathname === '/users/assessment/m7/cycles/cycle-p03/return-state') return fulfillJson(route, {
+      cycle_id: 'cycle-p03', position_no: 1, current_assessment_situation_id: 'as-old', current_assessment_situation_status: 'active',
+      allowed_action: 'continue_current', recognized_absence_seconds: 180, remaining_seconds: 1200,
+      progress: { completed_positions: 2, total_positions: 4 }, provider_config_ref: null,
+    });
+    return fulfillJson(route, {}, 404);
+  });
+
+  await page.goto(base);
+  await page.locator('#email-input').fill(user.email);
+  await page.locator('#request-magic-link-button').click();
+  await page.locator('#magic-token-input').fill('legacy-password');
+  await page.locator('#verify-magic-link-button').click();
+  await expect(page.locator('.interview-return-card')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Продолжить', exact: true })).toBeVisible();
+  await expect(page.locator('#auth-error')).toBeHidden();
+  expect(runtimeReads).toBe(0);
 });
 
 test('E01 renders accepted active assessment copy, colors and AS-scoped draft', async ({ page }) => {
