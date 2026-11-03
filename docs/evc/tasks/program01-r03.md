@@ -162,7 +162,7 @@ readback, PostgreSQL/HTTP/browser acceptance и deployed SHA как отдель
 - `pr=true`
 - `merge=false`
 - `deploy=false`
-- `version_bump=false`
+- `version_bump=true` (`2.0.54 → 2.0.55`, штатный patch candidate перед Ready)
 - `artifact_publish=false`
 
 Флаги меняются только явно после локальной проверки. В частности, публикация
@@ -214,6 +214,10 @@ ProgramDefinition не следует из merge кода.
   Повтор job сохранил исходный event payload и повторил тот же результат;
   следующий `synchronize` запускается уже с `draft=true`, где REL-VERSION-02
   откладывает version bump до Ready for review.
+- После успешного Draft CI штатный ready-preflight подтвердил актуальный
+  `origin/main@eafb0f9` и подготовил единственного допустимого patch-кандидата
+  `2.0.55`. `npm run lint:js` — PASS; полный frontend unit-набор — PASS 125/125;
+  address browser-набор `REL-VERSION-01` + два P03-сценария — PASS 3/3.
 
 ## Откат
 
