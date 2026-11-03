@@ -1551,6 +1551,45 @@ if (adminOrganizationSelect) {
   });
 }
 
+let adminSubjectDialogSequence = 0;
+
+const openAdminSubjectConfirmation = ({
+  trigger, title, subject, consequences, cancelLabel, confirmLabel, onConfirm,
+}) => {
+  const dialog = document.createElement('dialog');
+  const sequence = ++adminSubjectDialogSequence;
+  const titleId = 'admin-subject-confirmation-title-' + sequence;
+  const descriptionId = 'admin-subject-confirmation-description-' + sequence;
+  dialog.className = 'admin-member-card-dialog admin-subject-confirmation-dialog';
+  dialog.setAttribute('aria-labelledby', titleId);
+  dialog.setAttribute('aria-describedby', descriptionId);
+  dialog.innerHTML = '<form method="dialog">' +
+    '<div><h3></h3><button type="submit" value="cancel" class="dialog-close" aria-label="Закрыть диалог">×</button></div>' +
+    '<p class="admin-subject-confirmation-subject"></p>' +
+    '<p class="admin-subject-confirmation-description"></p>' +
+    '<div class="admin-subject-confirmation-actions">' +
+      '<button type="submit" value="cancel" class="ghost-button" data-dialog-cancel></button>' +
+      '<button type="submit" value="confirm" class="primary-button danger-button" data-dialog-confirm></button>' +
+    '</div></form>';
+  dialog.querySelector('h3').id = titleId;
+  dialog.querySelector('h3').textContent = title;
+  dialog.querySelector('.admin-subject-confirmation-subject').textContent = subject;
+  dialog.querySelector('.admin-subject-confirmation-description').id = descriptionId;
+  dialog.querySelector('.admin-subject-confirmation-description').textContent = consequences;
+  const cancelButton = dialog.querySelector('[data-dialog-cancel]');
+  cancelButton.textContent = cancelLabel;
+  dialog.querySelector('[data-dialog-confirm]').textContent = confirmLabel;
+  document.body.append(dialog);
+  dialog.addEventListener('close', () => {
+    const confirmed = dialog.returnValue === 'confirm';
+    dialog.remove();
+    if (trigger?.isConnected) trigger.focus();
+    if (confirmed) onConfirm();
+  }, { once: true });
+  dialog.showModal();
+  cancelButton.focus();
+};
+
 if (adminOrganizationsList) {
   adminOrganizationsList.addEventListener('submit', (event) => {
     const form = event.target instanceof HTMLFormElement ? event.target : null;
@@ -2051,8 +2090,16 @@ if (adminOrganizationsList) {
       const invitationId = Number(button.getAttribute('data-invitation-id'));
       if (!invitationId) return;
       const participantName = button.dataset.participantName || value;
-      if (!window.confirm('Отозвать приглашение для «' + participantName + '»? Ссылка перестанет действовать, но участник и его история сохранятся.')) return;
-      withScreen(loadAdminOrganizations, (module) => module.revokeAdminOrganizationMemberInvitation(organizationId, invitationId));
+      openAdminSubjectConfirmation({
+        trigger: button,
+        title: 'Отозвать приглашение?',
+        subject: participantName + ' · ' + value,
+        consequences: 'Персональная ссылка перестанет действовать. Назначение оценки, участие в организации, аккаунт и обычный вход сохранятся.',
+        cancelLabel: 'Оставить приглашение',
+        confirmLabel: 'Отозвать приглашение',
+        onConfirm: () => withScreen(loadAdminOrganizations, (module) =>
+          module.revokeAdminOrganizationMemberInvitation(organizationId, invitationId)),
+      });
       return;
     }
     if (button.dataset.action === 'cancel-member-assignment') {
@@ -2060,11 +2107,20 @@ if (adminOrganizationsList) {
       const participantName = button.dataset.participantName || value;
       const assessmentRef = button.dataset.assessmentRef || 'выбранная оценка';
       if (!assignmentId) return;
-      if (!window.confirm('Отменить назначение оценки «' + assessmentRef + '» для «' + participantName + '»? Участник и история сохранятся. Отменить можно только до начала прохождения.')) return;
-      button.disabled = true;
-      withScreen(loadAdminOrganizations, (module) => module.cancelAdminOrganizationAssessment(
-        organizationId, assignmentId, assessmentRef,
-      ));
+      openAdminSubjectConfirmation({
+        trigger: button,
+        title: 'Отменить назначение?',
+        subject: participantName + ' · «' + assessmentRef + '»',
+        consequences: 'Участник больше не сможет начать эту оценку. Для нового прохождения потребуется новое назначение. Аккаунт, участие в организации и история сохранятся.',
+        cancelLabel: 'Оставить назначение',
+        confirmLabel: 'Отменить назначение',
+        onConfirm: () => {
+          button.disabled = true;
+          withScreen(loadAdminOrganizations, (module) => module.cancelAdminOrganizationAssessment(
+            organizationId, assignmentId, assessmentRef,
+          ));
+        },
+      });
       return;
     }
     if (button.dataset.action === 'prepare-member-assessment') {

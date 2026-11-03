@@ -974,6 +974,15 @@
 .admin-member-card-dialog dt { color: var(--text-muted); }
 .admin-member-card-dialog dd { margin: 0; overflow-wrap: anywhere; }
 .admin-member-card-dialog .dialog-close { width: 44px; height: 44px; border: 0; border-radius: 50%; font-size: 24px; cursor: pointer; }
+.admin-subject-confirmation-dialog { width: min(560px, calc(100vw - 32px)); }
+.admin-subject-confirmation-dialog p { margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
+.admin-subject-confirmation-subject { font-weight: 600; color: var(--text-main); }
+.admin-subject-confirmation-description { color: var(--text-muted); }
+.admin-subject-confirmation-dialog .admin-subject-confirmation-actions {
+    display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.admin-subject-confirmation-actions button { min-height: 44px; }
+.admin-subject-confirmation-actions .danger-button { background: var(--palette-error); border-color: var(--palette-error); }
 
 @media (min-width: 861px) {
     .admin-organization-members-section[data-admin-view="people"] > .admin-people-context,
@@ -992,6 +1001,8 @@
     .admin-organization-transfer-form { grid-column: 1 / -1; }
     .admin-member-card-dialog dl { grid-template-columns: minmax(0, 1fr); gap: 4px; }
     .admin-member-card-dialog dd + dt { margin-top: 8px; }
+    .admin-subject-confirmation-dialog .admin-subject-confirmation-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+    .admin-subject-confirmation-actions button { width: 100%; }
 }
 
 /* Org-admin composition follows the approved v3 workspace, without nested
