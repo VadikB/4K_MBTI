@@ -628,7 +628,11 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
   };
   let cancelled = false;
   let revoked = false;
-  await openAdminOrganizations(page, (route) => { revoked = true; return fulfillJson(route, { ok: true }); }, organization);
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  await page.route('**/users/admin/organizations/3/personal-invitations/1', (route) => {
+    revoked = true;
+    return fulfillJson(route, { ok: true });
+  });
   await page.route('**/users/admin/organizations/3/assessment-assignments/41/cancel', (route) => {
     cancelled = true;
     return fulfillJson(route, { assignment_id: 41, status: 'cancelled' });
@@ -640,19 +644,32 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
   await expect(page.locator('[data-selected-count]')).toHaveText('1');
   const menu = page.locator('.admin-organization-member-menu');
   await menu.locator('summary').click();
-  page.once('dialog', async (dialog) => {
-    expect(dialog.message()).toContain('Ссылка перестанет действовать');
-    await dialog.dismiss();
-  });
-  await menu.getByRole('menuitem', { name: 'Отозвать приглашение' }).click();
+  const revokeTrigger = menu.getByRole('menuitem', { name: 'Отозвать приглашение' });
+  await revokeTrigger.click();
+  let dialog = page.getByRole('dialog', { name: 'Отозвать приглашение?' });
+  await expect(dialog).toContainText('Иван Иванов · person@example.test');
+  await expect(dialog).toContainText('Персональная ссылка перестанет действовать');
+  await expect(dialog).toContainText('Назначение оценки, участие в организации, аккаунт и обычный вход сохранятся');
+  await expect(dialog.getByRole('button', { name: 'Оставить приглашение' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(revokeTrigger).toBeFocused();
   expect(revoked).toBe(false);
-  page.once('dialog', async (dialog) => {
-    expect(dialog.message()).toContain('Участник и история сохранятся');
-    await dialog.accept();
-  });
-  await menu.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+  await menu.getByRole('menuitem', { name: 'Отозвать приглашение' }).click();
+  dialog = page.getByRole('dialog', { name: 'Отозвать приглашение?' });
+  await dialog.getByRole('button', { name: 'Отозвать приглашение', exact: true }).click();
+  await expect.poll(() => revoked).toBe(true);
+  await page.locator('input[name="invitation_email"]').check();
+  await menu.locator('summary').click();
+  const cancelTrigger = menu.getByRole('menuitem', { name: 'Отменить назначение оценки' });
+  await cancelTrigger.click();
+  dialog = page.getByRole('dialog', { name: 'Отменить назначение?' });
+  await expect(dialog).toContainText('Иван Иванов · «competencies_4k»');
+  await expect(dialog).toContainText('Для нового прохождения потребуется новое назначение');
+  await expect(dialog).toContainText('Аккаунт, участие в организации и история сохранятся');
+  await dialog.getByRole('button', { name: 'Отменить назначение', exact: true }).click();
   await expect.poll(() => cancelled).toBe(true);
-  await expect(page.locator('input[name="invitation_email"]')).toBeChecked();
+  await expect(page.locator('input[name="invitation_email"]')).toBeVisible();
 });
 
 test('PROGRAM01 R06 marks a confirmed cancellation stale when readback fails and restores the action', async ({ page }) => {
@@ -673,8 +690,9 @@ test('PROGRAM01 R06 marks a confirmed cancellation stale when readback fails and
   await page.route('**/users/admin/organizations', (route) => route.abort('connectionreset'));
   const cancel = page.getByRole('menuitem', { name: 'Отменить назначение оценки' });
   await page.locator('.admin-organization-member-menu summary').click();
-  page.once('dialog', (dialog) => dialog.accept());
   await cancel.click();
+  await page.getByRole('dialog', { name: 'Отменить назначение?' })
+    .getByRole('button', { name: 'Отменить назначение', exact: true }).click();
   await expect(page.locator('[data-organizations-stale]')).toContainText('последнее подтверждённое состояние');
   await expect(page.getByRole('button', { name: 'Обновить безопасно' })).toBeVisible();
   await page.locator('.admin-organization-member-menu summary').click();
@@ -700,8 +718,9 @@ test('PROGRAM01 R06 refreshes an exact assignment after 409 and removes an inval
     return fulfillJson(route, { detail: 'ASSESSMENT_ALREADY_STARTED' }, 409);
   });
   await page.locator('.admin-organization-member-menu summary').click();
-  page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+  await page.getByRole('dialog', { name: 'Отменить назначение?' })
+    .getByRole('button', { name: 'Отменить назначение', exact: true }).click();
   await expect(page.locator('[data-operation-status]')).toContainText('больше не может быть отменено');
   await page.locator('.admin-organization-member-menu summary').click();
   await expect(page.getByRole('menuitem', { name: 'Отменить назначение оценки' })).toHaveCount(0);
@@ -730,8 +749,9 @@ test('PROGRAM01 R06 resolves a lost cancellation response by exact readback with
     return route.abort('connectionreset');
   });
   await page.locator('.admin-organization-member-menu summary').click();
-  page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+  await page.getByRole('dialog', { name: 'Отменить назначение?' })
+    .getByRole('button', { name: 'Отменить назначение', exact: true }).click();
   await expect(page.locator('[data-operation-status]')).toContainText('после потери ответа команды');
   expect(posts).toBe(1);
   expect(operationId).toMatch(/^[0-9a-f-]{16,}$/i);
@@ -754,8 +774,9 @@ test('PROGRAM01 R06 does not render an old cancellation result after identity ch
     return fulfillJson(route, { assignment_id: 41, status: 'cancelled' });
   });
   await page.locator('.admin-organization-member-menu summary').click();
-  page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+  await page.getByRole('dialog', { name: 'Отменить назначение?' })
+    .getByRole('button', { name: 'Отменить назначение', exact: true }).click();
   await page.locator('#admin-organizations-logout-button').click();
   await expect(page.locator('#auth-panel')).toBeVisible();
   release();
@@ -780,9 +801,11 @@ for (const [status, detail] of [[403, 'Недостаточно прав.'], [50
       return fulfillJson(route, { detail }, status);
     });
     await page.locator('.admin-organization-member-menu summary').click();
-    page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+    await page.getByRole('dialog', { name: 'Отменить назначение?' })
+      .getByRole('button', { name: 'Отменить назначение', exact: true }).click();
     await expect(page.locator('[data-operation-status]')).toBeVisible();
+    await page.locator('.admin-organization-member-menu summary').click();
     await expect(page.getByRole('menuitem', { name: 'Отменить назначение оценки' })).toBeEnabled();
     expect(posts).toBe(1);
   });

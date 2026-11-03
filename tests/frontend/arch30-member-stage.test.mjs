@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const organizations = readFileSync('web/js/screens/admin/organizations.js', 'utf8');
+const wiring = readFileSync('web/js/wiring.js', 'utf8');
 const routes = readFileSync('Api/routes.py', 'utf8');
 const styles = readFileSync('web/styles/screens/admin-organizations.css', 'utf8');
 
@@ -41,6 +42,16 @@ test('ADM-STATUS-01 keeps destructive participant operations separate and explic
   assert.match(organizations, /data-assignment-id/);
   assert.match(organizations, /cancelAdminOrganizationAssessment/);
   assert.match(routes, /assessment-assignments\/\{assignment_id\}\/cancel/);
+});
+
+test('PROGRAM01 R07 uses accessible subject-specific dialogs for invitation and assignment actions', () => {
+  assert.match(wiring, /openAdminSubjectConfirmation/);
+  assert.match(wiring, /Оставить приглашение/);
+  assert.match(wiring, /Оставить назначение/);
+  assert.match(wiring, /Персональная ссылка перестанет действовать/);
+  assert.match(wiring, /Для нового прохождения потребуется новое назначение/);
+  assert.doesNotMatch(wiring, /window\.confirm\('Отозвать приглашение/);
+  assert.doesNotMatch(wiring, /window\.confirm\('Отменить назначение оценки/);
 });
 
 test('ADM-STATUS-01 scopes preserved participant selection by organization and assessment', () => {
