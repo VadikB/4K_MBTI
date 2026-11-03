@@ -46,13 +46,14 @@
 
 - Завершено: разведка, параллельный граф, CI-регрессия, документация и локальные
   структурные проверки.
-- Активный шаг: commit/PR и измерение GitHub Actions.
-- Следующий шаг: проверить фактическое покрытие и длительность jobs для head PR.
-- Ветка: `codex/full-verification-shards`.
+- Активный шаг: повторный CI после фиксации фактического результата в отчёте.
+- Следующий шаг: человеческое review и merge владельцем после зелёного CI head SHA.
+- Ветка: `codex/full-verification-shards`; PR
+  [#159](https://github.com/VadikB/4K_MBTI/pull/159).
 
 ## Действия выпуска
 
-- `branch_push=false`, `pr=false`, `merge=false`, `deploy=false`.
+- `branch_push=true`, `pr=true`, `merge=false`, `deploy=false`.
 - `version_bump=false`, `artifact_publish=false`.
 - Изменение флагов требует отдельного фактического действия; CI-оптимизация не
   является product-изменением и не требует нового номера версии.
@@ -73,7 +74,8 @@
 - [x] Остальные 83 browser-теста выполняются fast lane без исключений.
 - [x] Итоговый `full-verification` требует success обоих обязательных jobs.
 - [x] Browser evidence публикуется отдельно для каждого lane/shard.
-- [ ] Фактический CI для актуального SHA проходит; целевое время 4–6 минут измерено.
+- [x] Первый фактический CI `e64e207` прошёл за 4:10; integration — 4:00,
+  браузерные lanes завершились раньше.
 
 ## План проверки
 
@@ -102,4 +104,7 @@ Revert PR возвращает последовательный workflow. Produc
   дополнительно проверит GitHub Actions на head PR.
 - Полный browser/integration локально → NOT_RUN: изменение не затрагивает тестовый
   runtime, а доказательство параллелизма и целевого времени возможно только на
-  GitHub-hosted runners. Обязательный фактический CI остаётся открытым критерием.
+  GitHub-hosted runners.
+- [GitHub Actions run 41638207277](https://github.com/VadikB/4K_MBTI/actions/runs/41638207277)
+  для `e64e207` → PASS, 4:10 total; integration 4:00; пять browser artifacts.
+  Повторный CI требуется для head после добавления этого доказательства в отчёт.
