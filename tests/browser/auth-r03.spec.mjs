@@ -672,6 +672,31 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
   await expect(page.locator('input[name="invitation_email"]')).toBeVisible();
 });
 
+test('PROGRAM01 R08 refreshes actions and explains a revoke conflict after acquaintance starts', async ({ page }) => {
+  const organization = structuredClone(adminOrganization);
+  organization.members[0].full_name = 'Иван Иванов';
+  await openAdminOrganizations(page, (route) => {
+    return fulfillJson(route, { items: [] });
+  }, organization);
+  await page.route('**/users/admin/organizations/3/personal-invitations/1', (route) => {
+    organization.members[0].invitation_status = 'used';
+    organization.members[0].invitation_link_status = 'used';
+    return fulfillJson(route, { detail: 'INVITATION_STATE_CHANGED' }, 409);
+  });
+
+  const menu = page.locator('.admin-organization-member-menu');
+  await menu.locator('summary').click();
+  await menu.getByRole('menuitem', { name: 'Отозвать приглашение' }).click();
+  await page.getByRole('dialog', { name: 'Отозвать приглашение?' })
+    .getByRole('button', { name: 'Отозвать приглашение', exact: true }).click();
+
+  await expect(page.locator('#admin-organizations-status'))
+    .toContainText('приглашение нельзя отозвать после начала знакомства');
+  await menu.locator('summary').click();
+  await expect(menu.getByRole('menuitem', { name: 'Отозвать приглашение' })).toHaveCount(0);
+  await expect(page.locator('.admin-organization-member-invitation')).toContainText('использована');
+});
+
 test('PROGRAM01 R06 marks a confirmed cancellation stale when readback fails and restores the action', async ({ page }) => {
   const organization = {
     ...adminOrganization,

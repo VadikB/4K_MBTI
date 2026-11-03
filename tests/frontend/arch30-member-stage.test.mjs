@@ -6,6 +6,7 @@ const organizations = readFileSync('web/js/screens/admin/organizations.js', 'utf
 const wiring = readFileSync('web/js/wiring.js', 'utf8');
 const routes = readFileSync('Api/routes.py', 'utf8');
 const styles = readFileSync('web/styles/screens/admin-organizations.css', 'utf8');
+const api = readFileSync('web/js/api.js', 'utf8');
 
 test('ADM-STATUS-01 shows one current participant stage and keeps secondary signals in the card', () => {
   for (const label of ['Оценка назначена', 'Оценка не назначена', 'Подготовка заблокирована']) {
@@ -52,6 +53,16 @@ test('PROGRAM01 R07 uses accessible subject-specific dialogs for invitation and 
   assert.match(wiring, /Для нового прохождения потребуется новое назначение/);
   assert.doesNotMatch(wiring, /window\.confirm\('Отозвать приглашение/);
   assert.doesNotMatch(wiring, /window\.confirm\('Отменить назначение оценки/);
+});
+
+test('PROGRAM01 R08 explains invitation revoke conflicts and refreshes applicable actions', () => {
+  for (const code of ['INVITATION_ALREADY_USED', 'INVITATION_NOT_FOUND', 'INVITATION_STATE_CHANGED']) {
+    assert.match(organizations, new RegExp(code));
+    assert.match(api, new RegExp(code));
+  }
+  assert.match(organizations, /нельзя отозвать после начала знакомства/);
+  assert.match(organizations, /const message = invitationRevokeErrorMessage\(error\);[\s\S]*await loadAdminOrganizations\(\);[\s\S]*setStatus\(message, 'error'\)/);
+  assert.match(routes, /participant_acquaintance_states[\s\S]*status <> 'not_started'[\s\S]*current_step > 0/);
 });
 
 test('ADM-STATUS-01 scopes preserved participant selection by organization and assessment', () => {

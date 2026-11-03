@@ -136,6 +136,18 @@ const transferErrorMessage = (error) => {
   return code ? labels[code] : membershipErrorMessage(error, 'Не удалось перенести участника.');
 };
 
+const invitationRevokeErrorMessage = (error) => {
+  const message = String(error?.message || '');
+  const errorCode = String(error?.code || '');
+  const labels = {
+    INVITATION_ALREADY_USED: 'Приглашение уже использовано. Обычный вход и назначение участника сохранены.',
+    INVITATION_NOT_FOUND: 'Приглашение больше не найдено. Список участников обновлён.',
+    INVITATION_STATE_CHANGED: 'Состояние участника изменилось: приглашение нельзя отозвать после начала знакомства. Список участников обновлён.',
+  };
+  const code = Object.keys(labels).find((item) => errorCode === item || message.includes(item));
+  return code ? labels[code] : (message || 'Не удалось отозвать приглашение.');
+};
+
 const captureFormDraft = (organizationId, form, { assessmentRef: assessmentOverride = null, updateSelected = true } = {}) => {
   const fields = editableFields(form);
   const assignmentField = form.querySelector('[name="assignment_ref"]');
@@ -1032,7 +1044,13 @@ export const revokeAdminOrganizationMemberInvitation = async (organizationId, in
     await loadAdminOrganizations();
     setStatus('Приглашение отозвано.', 'success');
   } catch (error) {
-    setStatus(error.message || 'Не удалось отозвать приглашение.', 'error');
+    const message = invitationRevokeErrorMessage(error);
+    try {
+      await loadAdminOrganizations();
+    } catch (_refreshError) {
+      // Preserve the command result even when the follow-up read is unavailable.
+    }
+    setStatus(message, 'error');
   }
 };
 
