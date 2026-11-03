@@ -504,7 +504,7 @@ const adminOrganization = {
     invitation_delivery_status: 'queued', invitation_link_status: 'active' }],
 };
 
-async function openAdminOrganizations(page, invitationHandler, organization = adminOrganization, questionnaireResponse = null) {
+async function openAdminOrganizations(page, invitationHandler, organization = adminOrganization, questionnaireResponse = null, isSuperadmin = false) {
   await page.route('**/users/**', (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: false });
@@ -516,7 +516,7 @@ async function openAdminOrganizations(page, invitationHandler, organization = ad
       admin_dashboard: { metrics: [], insights: [], activity_series: [], competency_average: [] },
     });
     if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') {
-      return fulfillJson(route, { is_superadmin: false, items: [organization] });
+      return fulfillJson(route, { is_superadmin: isSuperadmin, items: [organization] });
     }
     if (pathname === '/users/admin/organizations/3/questionnaire') {
       const fallback = { items: [{ id: 11, assignment_ref: 'competencies_4k',
@@ -653,6 +653,29 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
   await menu.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
   await expect.poll(() => cancelled).toBe(true);
   await expect(page.locator('input[name="invitation_email"]')).toBeChecked();
+});
+
+test('PROGRAM01 R05 keeps privileged password reset in the card and exposes only an authorized exact report', async ({ page }) => {
+  const reportId = '11111111-1111-4111-8111-111111111111';
+  const organization = {
+    ...adminOrganization,
+    members: [{ ...adminOrganization.members[0], has_password: true,
+      invitation_created_at: '2026-11-01T10:00:00Z', invitation_expires_at: '2026-11-04T10:00:00Z',
+      assessment_assignments: ['competencies_4k'], assessment_stages: {
+        competencies_4k: { code: 'report_ready', label: 'Отчёт готов', action: 'open_report',
+          assignment_id: 41, cycle_id: '22222222-2222-4222-8222-222222222222',
+          report_id: reportId, report_access: 'customer' },
+      } }],
+  };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization, null, true);
+  const row = page.locator('.admin-organization-member').first();
+  await expect(row.getByRole('button', { name: 'Открыть отчёт' })).toHaveAttribute('data-report-id', reportId);
+  await row.locator('.admin-organization-member-menu summary').click();
+  await expect(row.getByRole('menuitem', { name: 'Сбросить пароль' })).toHaveCount(0);
+  await row.locator('[data-action="open-member-card"]').click();
+  const card = page.locator('.admin-member-card-dialog');
+  await expect(card).toContainText('Создано: 2026-11-01T10:00:00Z');
+  await expect(card.getByRole('button', { name: 'Сбросить пароль' })).toHaveCount(1);
 });
 
 test('ARCH30 offers an explicit one-way legacy profile copy into an empty C01 draft', async ({ page }) => {

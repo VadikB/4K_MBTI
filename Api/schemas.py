@@ -942,6 +942,9 @@ class AdminOrganizationMemberItem(BaseModel):
     invitation_delivery_status: str = "not_sent"
     invitation_link_status: str = "not_created"
     invitation_expires_at: datetime | None = None
+    invitation_created_at: datetime | None = None
+    invitation_used_at: datetime | None = None
+    invitation_revoked_at: datetime | None = None
     assessment_assignments: list[str] = Field(default_factory=list)
     assessment_stages: dict[str, dict] = Field(default_factory=dict)
 

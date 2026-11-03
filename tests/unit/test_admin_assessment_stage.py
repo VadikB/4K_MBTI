@@ -70,3 +70,18 @@ def test_processing_failed_and_report_ready_keep_precedence():
     assert _project_admin_assessment_stage(row(cycle_status="calculation_pending"))["code"] == "processing"
     assert _project_admin_assessment_stage(row(cycle_status="calculated", pipeline_status="failed"))["code"] == "failed"
     assert _project_admin_assessment_stage(row(cycle_status="failed", report_ready=True))["code"] == "report_ready"
+
+
+def test_report_action_requires_exact_authorized_report():
+    denied = _project_admin_assessment_stage(row(
+        cycle_status="calculated", report_ready=True, report_id="33333333-3333-4333-8333-333333333333",
+        report_access=False, report_access_kind="customer",
+    ))
+    allowed = _project_admin_assessment_stage(row(
+        cycle_status="calculated", report_ready=True, report_id="33333333-3333-4333-8333-333333333333",
+        report_access=True, report_access_kind="customer",
+    ))
+    assert denied["action"] is None and denied["report_id"] is None
+    assert allowed["action"] == "open_report"
+    assert allowed["report_id"] == "33333333-3333-4333-8333-333333333333"
+    assert allowed["report_access"] == "customer"

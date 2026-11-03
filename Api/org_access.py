@@ -15,6 +15,7 @@ EXPLICIT_MEMBER_ADMISSION_SOURCES = frozenset({"admin_add", "csv_import", "super
 class AdminScope:
     is_superadmin: bool = False
     organization_ids: tuple[int, ...] = ()
+    actor_user_id: int | None = None
 
     @property
     def can_admin(self) -> bool:

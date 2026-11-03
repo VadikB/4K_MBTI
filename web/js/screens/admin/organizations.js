@@ -1553,11 +1553,6 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
           : '<button class="admin-organization-remove-button" type="button" data-action="delete-member" data-value="' +
             escapeHtml(email) +
             '" title="Аккаунт сохранится; повторная регистрация не потребуется" aria-label="Убрать из участников">Убрать из участников</button>';
-        const passwordButton = !isSuperadmin ? '' : hasPassword
-          ? '<button class="admin-organization-password-button" type="button" data-action="reset-member-password" data-value="' +
-            escapeHtml(email) +
-            '" title="Сбросить пароль" aria-label="Сбросить пароль">Сбросить пароль</button>'
-          : '<span class="admin-organization-password-state" title="Пользователь еще не задавал пароль">Пароль не задан</span>';
         const invitationStatus = String(item.invitation_status || 'not_sent');
         const invitationLabels = { not_sent: 'Письмо не отправлено', queued: 'Письмо в очереди', sending: 'Исход отправки уточняется', accepted: 'Письмо принято провайдером', error: 'Ошибка отправки', revoked: 'Ссылка отозвана', expired: 'Ссылка истекла', used: 'Регистрация завершена' };
         const deliveryLabels = { not_sent: 'Письмо: не отправлено', queued: 'Письмо: в очереди', sending: 'Письмо: исход неизвестен', accepted: 'Письмо: принято провайдером', error: 'Письмо: ошибка' };
@@ -1590,9 +1585,13 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
         const cancelButton = scopedStage?.assignment_id && cancellableStage
           ? '<button type="button" role="menuitem" data-action="cancel-member-assignment" data-assignment-id="' + Number(scopedStage.assignment_id) + '" data-participant-name="' + escapeHtml(participantName) + '" data-assessment-ref="' + escapeHtml(selectedAssessmentRef) + '" data-value="' + escapeHtml(email) + '">Отменить назначение оценки</button>'
           : '';
-        const primaryAction = !hasAssignment && ['not_sent', 'error', 'revoked', 'expired'].includes(invitationStatus)
-          ? invitationButton : '';
-        const menuActions = (primaryAction ? '' : invitationButton) + revokeButton + cancelButton + preparationButton + passwordButton + removeButton;
+        const reportButton = scopedStage?.action === 'open_report' && scopedStage?.report_id
+          ? '<button type="button" data-action="open-member-report" data-report-id="' + escapeHtml(scopedStage.report_id) +
+            '" data-cycle-id="' + escapeHtml(scopedStage.cycle_id || '') + '" data-report-access="' +
+            escapeHtml(scopedStage.report_access || '') + '">Открыть отчёт</button>' : '';
+        const primaryAction = reportButton || (!hasAssignment && ['not_sent', 'error', 'revoked', 'expired'].includes(invitationStatus)
+          ? invitationButton : '');
+        const menuActions = (primaryAction === invitationButton ? '' : invitationButton) + revokeButton + cancelButton + preparationButton + removeButton;
         const transferForm = !isSuperadmin || !transferTargets.length ? '' :
           '<form class="admin-organization-transfer-form" data-action="transfer-member" data-user-id="' + Number(item.user_id) + '">' +
           '<label><span>Перенести в</span><select name="target_organization_id" required><option value="">Выберите организацию</option>' +
@@ -1602,7 +1601,7 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
         return (
           '<article class="admin-organization-member">' +
           '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>' +
-          '<div class="admin-organization-member-main"><button type="button" class="admin-organization-member-name" data-action="open-member-card" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) + '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(currentStage) + '" data-stage-description="' + escapeHtml(stageDescription) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') + '" data-registration="' + escapeHtml(registrationLabel) + '">' + escapeHtml(participantName) + '</button>' +
+          '<div class="admin-organization-member-main"><button type="button" class="admin-organization-member-name" data-action="open-member-card" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) + '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(currentStage) + '" data-stage-description="' + escapeHtml(stageDescription) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') + '" data-registration="' + escapeHtml(registrationLabel) + '" data-invitation="' + escapeHtml(deliveryLabel + ' · ' + linkLabel) + '" data-invitation-created="' + escapeHtml(item.invitation_created_at || '') + '" data-invitation-expires="' + escapeHtml(item.invitation_expires_at || '') + '" data-can-reset-password="' + (isSuperadmin && hasPassword ? 'true' : 'false') + '">' + escapeHtml(participantName) + '</button>' +
           '<span class="admin-organization-member-email">' + escapeHtml(email) + '</span>' +
           (details ? '<span class="admin-organization-member-position">' + escapeHtml(details) + '</span>' : '') +
           '<span class="admin-organization-member-invitation" title="' + escapeHtml(invitationLabel) + '">' +

@@ -1959,13 +1959,24 @@ if (adminOrganizationsList) {
         module.selectAdminOrganizationView(organizationId, button.dataset.view));
       return;
     }
+    if (button.dataset.action === 'open-member-report') {
+      const reportId = button.dataset.reportId;
+      if (!reportId) return;
+      withScreen(loadReport, (module) => module.openReport({
+        returnTarget: 'admin-organizations',
+        m8CycleId: button.dataset.cycleId || null,
+        m8ReportId: reportId,
+        customerAccess: button.dataset.reportAccess === 'customer',
+      }));
+      return;
+    }
     if (button.dataset.action === 'open-member-card') {
       const dialog = document.createElement('dialog');
       dialog.className = 'admin-member-card-dialog';
       dialog.setAttribute('aria-labelledby', 'admin-member-card-title');
       dialog.innerHTML = '<form method="dialog"><div><h3 id="admin-member-card-title"></h3><button type="submit" class="dialog-close" aria-label="Закрыть карточку">×</button></div>' +
-        '<dl><dt>Email</dt><dd data-card-email></dd><dt>Должность</dt><dd data-card-position></dd><dt>Основной этап</dt><dd data-card-stage></dd><dt>Пояснение</dt><dd data-card-description></dd><dt>Допуск</dt><dd data-card-admission></dd><dt>Регистрация</dt><dd data-card-registration></dd></dl>' +
-        '<button type="submit" class="primary-button">Закрыть</button></form>';
+        '<dl><dt>Email</dt><dd data-card-email></dd><dt>Должность</dt><dd data-card-position></dd><dt>Основной этап</dt><dd data-card-stage></dd><dt>Пояснение</dt><dd data-card-description></dd><dt>Допуск</dt><dd data-card-admission></dd><dt>Регистрация</dt><dd data-card-registration></dd><dt>Письмо и ссылка</dt><dd data-card-invitation></dd><dt>История приглашения</dt><dd data-card-invitation-history></dd></dl>' +
+        '<div data-card-actions></div><button type="submit" class="primary-button">Закрыть</button></form>';
       dialog.querySelector('#admin-member-card-title').textContent = button.dataset.participantName || value;
       dialog.querySelector('[data-card-email]').textContent = button.dataset.email || 'Не указан';
       dialog.querySelector('[data-card-position]').textContent = button.dataset.position || 'Не указана';
@@ -1973,6 +1984,22 @@ if (adminOrganizationsList) {
       dialog.querySelector('[data-card-description]').textContent = button.dataset.stageDescription || 'Нет пояснения';
       dialog.querySelector('[data-card-admission]').textContent = button.dataset.admission || 'Нет данных';
       dialog.querySelector('[data-card-registration]').textContent = button.dataset.registration || 'Нет данных';
+      dialog.querySelector('[data-card-invitation]').textContent = button.dataset.invitation || 'Неизвестно';
+      dialog.querySelector('[data-card-invitation-history]').textContent = button.dataset.invitationCreated
+        ? 'Создано: ' + button.dataset.invitationCreated + (button.dataset.invitationExpires ? '. Действует до: ' + button.dataset.invitationExpires : '')
+        : 'История приглашения неизвестна';
+      if (button.dataset.canResetPassword === 'true') {
+        const reset = document.createElement('button');
+        reset.type = 'button';
+        reset.className = 'ghost-button';
+        reset.textContent = 'Сбросить пароль';
+        reset.addEventListener('click', () => {
+          if (!window.confirm('Сбросить пароль пользователя ' + (button.dataset.email || '') + '? При следующем входе он задаст новый пароль.')) return;
+          dialog.close();
+          withScreen(loadAdminOrganizations, (module) => module.resetAdminOrganizationMemberPassword(organizationId, button.dataset.email));
+        });
+        dialog.querySelector('[data-card-actions]').append(reset);
+      }
       document.body.append(dialog);
       dialog.addEventListener('close', () => { dialog.remove(); button.focus(); }, { once: true });
       dialog.showModal();
