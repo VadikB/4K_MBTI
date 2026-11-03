@@ -559,7 +559,7 @@ test('ADM-STATUS-01 shows the current participant stage and opens known facts in
   const baseMember = { ...adminOrganization.members[0], assessment_assignments: ['competencies_4k'] };
   const organization = {
     ...adminOrganization,
-    members_count: 4,
+    members_count: 8,
     members: [
       { ...baseMember, user_id: 8, email: 'not-sent@example.test', invitation_delivery_status: 'not_sent' },
       { ...baseMember, user_id: 9, email: 'started@example.test', assessment_stages: {
@@ -572,6 +572,18 @@ test('ADM-STATUS-01 shows the current participant stage and opens known facts in
       { ...baseMember, user_id: 11, email: 'failed@example.test', assessment_stages: {
         competencies_4k: { code: 'preparation_failed', label: 'Подготовка завершилась с ошибкой' },
       } },
+      { ...baseMember, user_id: 12, email: 'active@example.test', assessment_stages: {
+        competencies_4k: { code: 'active', label: 'Оценка выполняется', description: 'Прогресс: 1 из 3 AS плана.' },
+      } },
+      { ...baseMember, user_id: 13, email: 'paused@example.test', assessment_stages: {
+        competencies_4k: { code: 'paused', label: 'Оценка приостановлена', description: 'Ответственный: Участник.' },
+      } },
+      { ...baseMember, user_id: 14, email: 'interrupted@example.test', assessment_stages: {
+        competencies_4k: { code: 'interrupted', label: 'Оценка прервана', description: 'Для продолжения требуется восстановить сессию.' },
+      } },
+      { ...baseMember, user_id: 15, email: 'blocked@example.test', assessment_stages: {
+        competencies_4k: { code: 'start_blocked', label: 'Старт оценки заблокирован', description: 'Для Cycle не найден допустимый маршрут. Ответственный: Организатор оценки.' },
+      } },
     ],
   };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
@@ -581,6 +593,13 @@ test('ADM-STATUS-01 shows the current participant stage and opens known facts in
   await expect(rows.nth(2).locator('.admin-organization-current-stage')).toHaveText('Идёт подготовка оценки');
   await expect(rows.nth(3).locator('.admin-organization-current-stage')).toHaveText('Подготовка завершилась с ошибкой');
   await expect(rows.nth(3).locator('.admin-organization-current-stage')).toHaveClass(/is-critical/);
+  await expect(rows.nth(4).locator('.admin-organization-current-stage')).toHaveText('Оценка выполняется');
+  await expect(rows.nth(5).locator('.admin-organization-current-stage')).toHaveText('Оценка приостановлена');
+  await expect(rows.nth(6).locator('.admin-organization-current-stage')).toHaveText('Оценка прервана');
+  await expect(rows.nth(7).locator('.admin-organization-current-stage')).toHaveText('Старт оценки заблокирован');
+  await rows.nth(7).locator('[data-action="open-member-card"]').click();
+  await expect(page.locator('.admin-member-card-dialog')).toContainText('Организатор оценки');
+  await page.locator('.admin-member-card-dialog').getByRole('button', { name: 'Закрыть', exact: true }).click();
   await rows.nth(1).locator('[data-action="open-member-card"]').click();
   const dialog = page.locator('.admin-member-card-dialog');
   await expect(dialog).toBeVisible();
