@@ -45,6 +45,8 @@
 - `tests/integration/test_path29_participant_owned_stand.py`: **1 passed** на disposable БД через разрешённую maintenance DB.
 - Playwright `ADM-STATUS-01 shows`: **1 passed**.
 - `node --test tests/frontend/*.test.mjs`: **125 passed** после синхронизации статического контракта ADM-STATUS-01 с новыми раздельными статусами.
+- Ready preflight: база `origin/main@fb80f214e40019d04aa17031ec05a13a5aa7095e` актуальна; PATCH-кандидат **2.0.56**, release check и сборка **PASS**.
+- После version bump: адресные frontend-контракты статуса и версии — **6 passed**, `git diff --check` — **PASS**.
 - `npm run build:web`: **PASS**.
 - ESLint изменённого JS и `git diff --check`: **PASS**.
 
@@ -54,5 +56,5 @@
 
 ## Флаги передачи
 
-- `branch_push=true`, `pr=true` после локального PASS.
-- `version_bump=false`, `merge=false`, `deploy=false`, `artifact_publish=false` до отдельного решения владельца.
+- `branch_push=true`, `pr=true`, `version_bump=true` для release candidate 2.0.56.
+- `merge=false`, `deploy=false`, `artifact_publish=false` до отдельного решения владельца.
