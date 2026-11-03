@@ -209,6 +209,11 @@ ProgramDefinition не следует из merge кода.
 - `git diff --check` — PASS.
 - Test acceptance исправления — NOT_RUN до merge/deploy; текущий deployed
   `2.0.54` закономерно сохраняет воспроизведённый дефект.
+- Draft PR: `#155`. Первый CI event был создан GitHub как Open до немедленного
+  перевода в Draft, поэтому release guard корректно потребовал новую версию.
+  Повтор job сохранил исходный event payload и повторил тот же результат;
+  следующий `synchronize` запускается уже с `draft=true`, где REL-VERSION-02
+  откладывает version bump до Ready for review.
 
 ## Откат
 
