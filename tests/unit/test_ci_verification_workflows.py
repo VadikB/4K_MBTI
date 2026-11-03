@@ -80,6 +80,8 @@ def test_browser_lanes_keep_all_specs_and_separate_evidence() -> None:
     assert "tests/browser/path29-participant.spec.mjs" not in FULL
     assert "browserSuite === 'runtime' ? 'runtime.spec.mjs' : '*.spec.mjs'" in PLAYWRIGHT_CI
     assert "browserSuite === 'fast' ? 'runtime.spec.mjs' : undefined" in PLAYWRIGHT_CI
+    assert "path.resolve(process.cwd(), '.test-stand/browser-output')" in PLAYWRIGHT_CI
+    assert "path.resolve(process.cwd(), '.test-stand/browser-results.json')" in PLAYWRIGHT_CI
     assert "--config tests/browser/playwright.ci.config.mjs" in FULL
     assert "full-verification-browser-${{ matrix.lane }}" in FULL
     assert "playwright-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}" in FULL

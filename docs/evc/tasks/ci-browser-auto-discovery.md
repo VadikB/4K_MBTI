@@ -75,3 +75,7 @@
   корректно классифицирован release-gate как product change без новой версии.
   Исправление: selection вынесен в `tests/browser/playwright.ci.config.mjs`;
   release-контракт и версия не ослабляются.
+- Второй CI `07d1523`: frontend/release-gate → PASS; runtime shard 3 завершил
+  browser step, но evidence upload → FAIL, потому что относительные output/reporter
+  пути разрешились от каталога CI-config. Исправление: оба пути закреплены абсолютно
+  от workspace root; отсутствие evidence по-прежнему считается ошибкой.

@@ -12,4 +12,9 @@ export default defineConfig({
   testDir: path.resolve(process.cwd(), 'tests/browser'),
   testMatch: browserSuite === 'runtime' ? 'runtime.spec.mjs' : '*.spec.mjs',
   testIgnore: browserSuite === 'fast' ? 'runtime.spec.mjs' : undefined,
+  outputDir: path.resolve(process.cwd(), '.test-stand/browser-output'),
+  reporter: [
+    ['list'],
+    ['json', { outputFile: path.resolve(process.cwd(), '.test-stand/browser-results.json') }],
+  ],
 });
