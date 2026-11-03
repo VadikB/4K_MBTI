@@ -1,6 +1,7 @@
 # PROGRAM01 R08 — отзыв приглашения после начала знакомства
 
-Статус: реализация и локальная проверка завершены; ожидает Draft PR и CI.
+Статус: Draft PR #163, быстрый CI успешен; release candidate `2.0.60`
+подготовлен и ожидает CI актуального head.
 
 ## Основание и границы
 
@@ -50,6 +51,8 @@ revoke остаётся идемпотентным. Публичные коды 
   блокировка, replay, scope и конкурентный accept/revoke.
 - `tests/frontend/arch30-member-stage.test.mjs`, `tests/browser/auth-r03.spec.mjs` —
   frontend/browser-регрессии.
+- `pyproject.toml`, `uv.lock`, `web/js/config.js`, `web/index.html` — release
+  candidate `2.0.60`.
 - `web/dist/*` — собранный frontend.
 
 ## Проверки
@@ -65,6 +68,12 @@ revoke остаётся идемпотентным. Публичные коды 
 - `npm run build:web` → PASS.
 - `npx playwright test tests/browser/auth-r03.spec.mjs --grep "PROGRAM01 R08"
   --workers=1` → 1 passed.
+- Draft CI head `78b3200786682beaa10fe89b4773cad0a3e06a51`: `frontend`,
+  `pytest` → PASS; `full-verification` в Draft → skipped по принятому процессу.
+- `python scripts/prepare_release.py patch --candidate 2.0.60` → PASS.
+- `python scripts/check_release_version.py` → `Release check passed: 2.0.60`.
+- `python -m pytest tests/unit/test_release_version.py -q` → 11 passed.
+- `node --test tests/frontend/release-version.test.mjs` → 3 passed.
 - `git diff --check` → PASS.
 
 Первый integration/browser запуск внутри sandbox не получил loopback (`Operation
@@ -73,10 +82,11 @@ not permitted` / `listen EPERM`); тот же набор повторён с р�
 
 ## Непроверенное и следующий шаг
 
-Полный `frontend`, `pytest` и `full-verification` точного head ещё не запускались;
-они выполняются в PR. Живые приглашения и персональные данные не использовались.
-Следующий шаг: review diff, коммит, push и Draft PR; после быстрых проверок — отдельное
-решение владельца о release candidate и `Ready for review`.
+Полный `full-verification` release candidate ещё не запускался; по принятому процессу
+он запускается после перевода PR в `Ready for review`. Живые приглашения и
+персональные данные не использовались. Следующий шаг: commit/push release candidate,
+проверка быстрого CI актуального head и отдельное решение владельца о
+`Ready for review`.
 
 ## Риски и откат
 
