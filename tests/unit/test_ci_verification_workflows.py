@@ -28,13 +28,14 @@ def test_draft_defers_release_gate_until_ready_for_review() -> None:
 def test_full_verification_runs_only_for_ready_pull_request_heads() -> None:
     assert "pull_request:" in FULL
     assert "types: [opened, reopened, synchronize, ready_for_review]" in FULL
-    assert "full-verification:\n    if: github.event.pull_request.draft == false" in FULL
+    assert "integration:\n    if: github.event.pull_request.draft == false" in FULL
+    assert "browser:\n    if: github.event.pull_request.draft == false" in FULL
     assert "converted_to_draft" not in FULL
     assert "run-full-verification" not in FULL
     assert "Require run-full-verification label" not in FULL
     assert "labeled" not in FULL
     assert "workflow_dispatch:" not in FULL
-    for step in ("Integration tests", "Browser acceptance (isolated bootstrap 10.2)"):
+    for step in ("Integration tests", "Browser acceptance — fast lane"):
         assert f"- name: {step}" in FULL
     assert "- name: Unit tests" not in FULL
     assert "- name: HTTP contract smoke tests" not in FULL
@@ -49,6 +50,37 @@ def test_fast_suites_are_not_duplicated_by_full_verification() -> None:
     for step in ("Unit tests", "HTTP contract smoke tests"):
         assert f"- name: {step}" in CI
         assert f"- name: {step}" not in FULL
+
+
+def test_full_verification_parallelizes_integration_and_browser_runtime() -> None:
+    assert "integration:" in FULL
+    assert "browser:" in FULL
+    assert "fail-fast: false" in FULL
+    for shard in ("1/4", "2/4", "3/4", "4/4"):
+        assert f'shard: "{shard}"' in FULL
+    assert "tests/browser/runtime.spec.mjs" in FULL
+    assert "--fully-parallel" in FULL
+    assert "--shard=${{ matrix.shard }}" in FULL
+
+
+def test_full_verification_preserves_required_aggregate_check() -> None:
+    aggregate = FULL.split("  full-verification:", 1)[1]
+    assert "if: always() && github.event.pull_request.draft == false" in aggregate
+    assert "needs: [integration, browser]" in aggregate
+    assert 'test "$INTEGRATION_RESULT" = "success"' in aggregate
+    assert 'test "$BROWSER_RESULT" = "success"' in aggregate
+
+
+def test_browser_lanes_keep_all_specs_and_separate_evidence() -> None:
+    for spec in (
+        "auth-r03.spec.mjs",
+        "adm28-real.spec.mjs",
+        "path29-participant.spec.mjs",
+        "runtime.spec.mjs",
+    ):
+        assert f"tests/browser/{spec}" in FULL
+    assert "full-verification-browser-${{ matrix.lane }}" in FULL
+    assert "playwright-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}" in FULL
 
 
 def test_main_push_deploys_without_repeating_pre_merge_checks() -> None:
