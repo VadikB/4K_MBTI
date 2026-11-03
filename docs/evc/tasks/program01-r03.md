@@ -22,7 +22,8 @@ assignment, binding и readiness; штатный выпуск уже согла�
   `START.txt`, `REMAINING_TASKS.txt` R03 и уточнение M02/M03.
 - Исходный base: `main@7d8e2717fb5b0a26394106bfc7d377807c7dfffa` после
   squash merge PR #151. Перед PR ветка перебазирована на актуальный
-  `origin/main@eafb0f9` (PR #152–154 включены).
+  `origin/main@eafb0f9` (PR #152–154 включены), затем повторно — на
+  `origin/main@9f48bc5` после процессного PR #156.
 - Прочитано: `README.md`, `CONTRIBUTING.md`, `docs/evc/agent-workflow.md`,
   `docs/evc/verification-matrix.md`, Change 01 README/manifest, ADR-002,
   `docs/evc/change01-traceability.md`, release/binding scripts и применимые
@@ -205,7 +206,8 @@ ProgramDefinition не следует из merge кода.
 - `npx playwright test tests/browser/auth-r03.spec.mjs --grep "P03 (return card|fresh login)" --workers=1`
   — PASS, 2/2.
 - `npx playwright test tests/browser/auth-r03.spec.mjs --workers=1` — PASS,
-  80/80 до rebase и 80/80 после rebase на `origin/main@eafb0f9`.
+  80/80 до первого rebase, 80/80 после rebase на `origin/main@eafb0f9` и
+  80/80 после итогового rebase на `origin/main@9f48bc5`.
 - `git diff --check` — PASS.
 - Test acceptance исправления — NOT_RUN до merge/deploy; текущий deployed
   `2.0.54` закономерно сохраняет воспроизведённый дефект.
@@ -218,6 +220,11 @@ ProgramDefinition не следует из merge кода.
   `origin/main@eafb0f9` и подготовил единственного допустимого patch-кандидата
   `2.0.55`. `npm run lint:js` — PASS; полный frontend unit-набор — PASS 125/125;
   address browser-набор `REL-VERSION-01` + два P03-сценария — PASS 3/3.
+- После merge PR #156 ветка повторно перебазирована на `origin/main@9f48bc5`;
+  версия базы осталась `2.0.54`, поэтому ранее подготовленный единственный
+  patch-кандидат `2.0.55` сохраняет корректную последовательность. Повторно:
+  адресные frontend 9/9 PASS, build PASS, browser 80/80 PASS,
+  `git diff --check` PASS.
 
 ## Откат
 
