@@ -139,7 +139,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await admin.reload();
       await expect(card).toBeVisible();
       await card.getByRole('button', { name: 'Организация и участники', exact: true }).click();
-      await expect(card.locator('.admin-questionnaire-load-state.error')).toBeVisible();
+      await expect(card.locator('.admin-questionnaire-load-state.error:visible')).toBeVisible();
       const readiness = card.locator('.admin-assignment-readiness');
       save('ps02-read-error', { organization_id: state.path29.organization_id,
         assignment_ref: state.path29.assignment_ref, confirmed_before_reload: true,
