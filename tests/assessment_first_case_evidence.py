@@ -128,6 +128,10 @@ def functional_receipt(trace):
         'admission_status': aggregation.get('status'),
         'blocking_failures': aggregation.get('blocking_failures'),
         'deterministic_failures': aggregation.get('deterministic_failures'),
+        'incomplete_checks': [{key: item.get(key) for key in
+            ('check_id', 'status', 'reason', 'evidence_paths', 'aggregation_error')}
+            for item in aggregation.get('incomplete_checks', [])],
+        'deterministic_protocol_errors': aggregation.get('deterministic_protocol_errors') or [],
         'repair_used': bool(repair), 'final_generation_operation_id': stages['generation']['operation_id'],
         'repair_operation_id': (repair.get('repair_generation_operation') or {}).get('operation_id'),
         'stages': stages, 'calls': calls, 'unique_operation_count': len(calls),

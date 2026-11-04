@@ -63,6 +63,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   const fullPath = process.env.P4K_FULL_PATH === '1';
   const realProvider = process.env.P4K_REAL_PROVIDER === '1';
   if (fullPath && !realProvider) throw new Error('FULL_PATH_REQUIRES_EXPLICIT_REAL_PROVIDER');
+  if (realProvider) test.info().annotations.push({ type: 'llm', description: 'Explicit real DeepSeek synthetic diagnostic' });
   const run = (script, args) => {
     const result = spawnSync(python, [script, ...args], { encoding: 'utf8', timeout: 180000 });
     if (result.status !== 0) throw new Error(script + ': ' + result.stderr + result.stdout);
@@ -417,12 +418,19 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     }
     console.log('PATH29 owned screenshots and server log:', dir);
   } catch (error) {
-    save('failure', { step, expected: 'Согласованный шаг завершён штатно', actual: error.message,
-      classification: 'diagnostic_failure; inspect receipt for provider/admission/product cause' });
+    let failureReceipt;
     try {
-      if (server && server.exitCode === null) save('failure-receipt',
-        await (await page.request.get(base + '/__pytest__/path-receipt')).json());
+      if (server && server.exitCode === null) {
+        failureReceipt = await (await page.request.get(base + '/__pytest__/path-receipt')).json();
+        save('failure-receipt', failureReceipt);
+        await page.screenshot({ path: path.join(dir, 'failure.png'), fullPage: true });
+      }
     } catch { /* Startup failures may have no HTTP endpoint. */ }
+    const preparationError = failureReceipt?.preparation_operation?.error_message;
+    save('failure', { step,
+      expected: step === 'real_llm_preparation' ? 'Admission конечного кандидата и сохранённая AS' : 'Согласованный шаг завершён штатно',
+      actual: preparationError || error.message.replace(/\u001b\[[0-9;]*m/g, ''),
+      classification: preparationError ? 'product_preparation_blocker' : 'diagnostic_assertion_or_environment_failure' });
     throw error;
   } finally {
     try {

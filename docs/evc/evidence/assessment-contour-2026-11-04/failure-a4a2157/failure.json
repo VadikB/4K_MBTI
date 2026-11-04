@@ -1,0 +1,6 @@
+{
+  "step": "real_llm_preparation",
+  "expected": "Согласованный шаг завершён штатно",
+  "actual": "\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"e576edfa812ecf9277ff598d9cbf171627c97c97100aadfb6bbb665542e3f728\"\u001b[39m\nReceived: \u001b[31m\"3e463f784a5b3b56049395dc862172e8cc14a747ef5b625a59df7fa3b1b4db8b\"\u001b[39m",
+  "classification": "diagnostic_failure; inspect receipt for provider/admission/product cause"
+}

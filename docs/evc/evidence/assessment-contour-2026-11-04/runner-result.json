@@ -1,0 +1,93 @@
+{
+  "profile": "assessment-first-case/1.1",
+  "scope": "synthetic_diagnostic",
+  "exit_code": 1,
+  "runs": [
+    {
+      "run": {
+        "run_id": "f2735772affe47b2a3b49dddb2e4fa4e",
+        "database": "product4k_pytest_f2735772affe47b2a3b49dddb2e4fa4e",
+        "port": "18861",
+        "provider_mode": "real",
+        "code": {
+          "sha": "4bab7230d8fa484fb8d922ee7d8b49b63674268d",
+          "branch": "",
+          "origin_main": "053d1a58b46b5cfa7784d3d9ba6fd4785efed769",
+          "worktree_status": "",
+          "files": {
+            "scripts/test_stand.py": "d3522324fc322bc35e98abf96475f2e6ca6133d16146ed506fa9d438d4601a81",
+            "scripts/assessment_first_case.py": "b8299bb622054b7299029d9e774b4c40fafd8b23093b452ffd95a34b101eac57",
+            "tests/path29_browser_inputs.py": "a98987529677f33190bc18f762786589c8807ffe97900f9ce03d03d051f2f328",
+            "tests/path29_browser_app.py": "c72d21b4ae1b43c27a59615b4d0b2e8656f7a4ea485dfaf9f1547e526828e680",
+            "tests/assessment_first_case_evidence.py": "4c460132388df1299267270411e5005955d1c31c483d1cd5e6377a2370b8c417",
+            "tests/browser/path29-participant.spec.mjs": "d3b4974b319d3680f3026f3563979c0ea585fbd7984b588dab70e01ac8737f12"
+          }
+        }
+      },
+      "cleanup": {
+        "run_id": "f2735772affe47b2a3b49dddb2e4fa4e",
+        "database": "product4k_pytest_f2735772affe47b2a3b49dddb2e4fa4e",
+        "owner_verified": true,
+        "database_absent": true,
+        "state_absent": true,
+        "force": false
+      },
+      "result": "FAIL",
+      "evidence_directory": "/home/vadim_bogachev/evidence/assessment-contour-complete/ac36bc45-2da5-4abe-8875-104c65f4f37f",
+      "failure": {
+        "step": "real_llm_preparation",
+        "expected": "Согласованный шаг завершён штатно",
+        "actual": "\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"\u001b[7mМожно приступать к\u001b[27m оценк\u001b[7mе\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"\u001b[7mНе удалось подготовить\u001b[27m оценк\u001b[7mу\u001b[27m\"\u001b[39m",
+        "classification": "diagnostic_failure; inspect receipt for provider/admission/product cause"
+      },
+      "provider_completed_requests": 11,
+      "provider_completions": [
+        {
+          "duration_ms": 52616.41,
+          "routing_key": "c570a030-a47a-4eed-81f9-37c92e1441d8:generation:76fce3190efb"
+        },
+        {
+          "duration_ms": 12993.15,
+          "routing_key": "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:01:d0ed044218b3"
+        },
+        {
+          "duration_ms": 13044.91,
+          "routing_key": "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:02:d49e5bd9af77"
+        },
+        {
+          "duration_ms": 14628.15,
+          "routing_key": "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:03:1e57089d8d80"
+        },
+        {
+          "duration_ms": 12421.08,
+          "routing_key": "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:04:8c7886f22957"
+        },
+        {
+          "duration_ms": 14495.8,
+          "routing_key": "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:04:8c7886f22957:json-retry"
+        },
+        {
+          "duration_ms": 4517.92,
+          "routing_key": "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:05:747d03365020"
+        },
+        {
+          "duration_ms": 9798.19,
+          "routing_key": "c570a030-a47a-4eed-81f9-37c92e1441d8:challenger:01:94313c6ceea6"
+        },
+        {
+          "duration_ms": 7228.45,
+          "routing_key": "c570a030-a47a-4eed-81f9-37c92e1441d8:challenger:02:8811f29ef75f"
+        },
+        {
+          "duration_ms": 12168.54,
+          "routing_key": "c570a030-a47a-4eed-81f9-37c92e1441d8:challenger:03:20b9415bac83"
+        },
+        {
+          "duration_ms": 12217.87,
+          "routing_key": "c570a030-a47a-4eed-81f9-37c92e1441d8:challenger:04:40f771ce5878"
+        }
+      ],
+      "usage_note": "Receipt totals count unique retained operations; JSON retries have separate completions, but earlier malformed-response usage is not retained by product trace."
+    }
+  ]
+}

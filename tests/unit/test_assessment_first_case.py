@@ -73,3 +73,14 @@ def test_candidate_checksum_uses_generator_contract_not_snapshot_contract():
     assert expected != snapshot_checksum(candidate)
     receipt = functional_receipt({'accepted_as': candidate, 'candidate_checksum': expected})
     assert receipt['candidate_recomputed_checksum'] == expected
+
+
+def test_incomplete_admission_preserves_check_id_and_technical_reason():
+    from tests.assessment_first_case_evidence import functional_receipt
+    receipt = functional_receipt({'tester': {'aggregation': {'status': 'INCOMPLETE',
+        'incomplete_checks': [{'check_id': 'common.authority', 'status': 'NOT_RUN',
+            'reason': 'Tester не вернул обязательный результат.', 'evidence_paths': []}]}},
+        'admitted_for_participant': False})
+    assert receipt['admission_status'] == 'INCOMPLETE'
+    assert receipt['incomplete_checks'][0]['check_id'] == 'common.authority'
+    assert receipt['incomplete_checks'][0]['status'] == 'NOT_RUN'

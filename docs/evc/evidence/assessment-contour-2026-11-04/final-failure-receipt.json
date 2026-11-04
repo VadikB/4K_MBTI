@@ -1,0 +1,538 @@
+{
+  "program_definition": {
+    "id": 1,
+    "code": "path29-browser-specialist",
+    "version": "1.0",
+    "status": "published",
+    "definition_checksum": "50ac188a25becdcebdd48f363dcdab513b4757a98929faf395789ff5051252af",
+    "assessment_configuration_id": 3,
+    "catalog_version_id": 1,
+    "source_refs_json": {
+      "scenario_version_id": 1,
+      "methodology_version_id": 2,
+      "prompt_bundle_checksum": "9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688"
+    }
+  },
+  "assessment_configuration": {
+    "id": 3,
+    "code": "path29_browser_explicit_second",
+    "status": "published",
+    "methodology_version_id": 2,
+    "scenario_version_id": 1,
+    "catalog_version_id": 1,
+    "prompt_bundle_checksum": "9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688"
+  },
+  "catalog": {
+    "id": 1,
+    "catalog_id": "path-start-functional-diagnostic",
+    "catalog_version": "1.0",
+    "status": "published",
+    "usage_scope": "assessment",
+    "organization_id": null,
+    "manifest_checksum": "2c798ab2eb27748de6127f32aeba8393d6934f811d1e5d237c455f799ede744b",
+    "decision_basis": "PATH-START-01 v1.1 disposable diagnostic admission of exact functional package content; not normative/GC publication",
+    "package_db_id": 1,
+    "package_id": "m5-functional-personalization-cases",
+    "package_version": "0.5",
+    "package_checksum": "b9e2889b5a7b19dda6b88ebec30bffba87cf76afc3df4cb14df10de0036eb7b0",
+    "source_checksum": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
+  },
+  "case_versions": [
+    {
+      "id": 2,
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.6",
+      "status": "FROZEN",
+      "base_role": "specialist_expert",
+      "content_checksum": "179fa0f8192862bee6af3190c8560f9c5ed133cc2fe07d6f5b6a98e6e3c9b729",
+      "runtime_rule_version_id": 1
+    }
+  ],
+  "preparation_operation": {
+    "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8",
+    "status": "failed",
+    "attempts": 1,
+    "request_checksum": "a3586706c3f3869adea59d843d29f2a17f4e209cc7b0cdd03d71911312a397f0",
+    "error_code": "ValueError",
+    "error_message": "M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE"
+  },
+  "cycle": {
+    "id": 1,
+    "cycle_id": "571381f8-bc3b-41fb-8e3a-d921923dd10f",
+    "status": "prepared",
+    "started_at": null,
+    "catalog_ref_json": {
+      "id": "path-start-functional-diagnostic",
+      "db_id": 1,
+      "version": "1.0",
+      "checksum": "2c798ab2eb27748de6127f32aeba8393d6934f811d1e5d237c455f799ede744b",
+      "m2_checksum": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+      "package_checksum": "b9e2889b5a7b19dda6b88ebec30bffba87cf76afc3df4cb14df10de0036eb7b0"
+    },
+    "execution_manifest_checksum": "e407c2b8a63fa052edff7d8a722ba861238a50b94b174df0bf73ef12758fb85d",
+    "personalized_profile_id": 1,
+    "owner_user_id": 3,
+    "organization_id": 1
+  },
+  "sessions": [
+    {
+      "session_id": "d87b6910-a47b-486b-b41f-668c1cd6d0d5",
+      "status": "prepared",
+      "started_at": null
+    }
+  ],
+  "assessment_answers": 0,
+  "assessment_situation": null,
+  "saved_checksums": {
+    "snapshot_recomputed": null,
+    "case_ref": null,
+    "execution_payload_ref": null,
+    "execution_payload_recomputed": null,
+    "participant_payload": null
+  },
+  "functional_generation": {
+    "present": true,
+    "candidate_checksum": "5754161d86d31192ce1eca6c0f20d7fd3eb6b0884730379953675d4f370f1fad",
+    "candidate_recomputed_checksum": "5754161d86d31192ce1eca6c0f20d7fd3eb6b0884730379953675d4f370f1fad",
+    "canonicalization": {
+      "candidate": "compact sorted UTF-8 JSON without LF",
+      "compiled_case_and_as": "compact sorted UTF-8 JSON + LF"
+    },
+    "input_snapshot_checksum": "08cf1fa2635feabb61dfcca722580bcdae142c69738b87d56483451439aa23c2",
+    "compiled_case_checksum": null,
+    "admitted_for_participant": false,
+    "admission_status": "INCOMPLETE",
+    "blocking_failures": [],
+    "deterministic_failures": [],
+    "repair_used": false,
+    "final_generation_operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:generation:76fce3190efb",
+    "repair_operation_id": null,
+    "stages": {
+      "generation": {
+        "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:generation:76fce3190efb",
+        "kind": "generation",
+        "batch_count": 0,
+        "batch_operation_ids": [],
+        "required_check_ids": []
+      },
+      "tester": {
+        "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:batched",
+        "kind": "independent_tester_v2_batched",
+        "batch_count": 5,
+        "batch_operation_ids": [
+          "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:01:d0ed044218b3",
+          "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:02:d49e5bd9af77",
+          "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:03:1e57089d8d80",
+          "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:04:8c7886f22957",
+          "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:05:747d03365020"
+        ],
+        "required_check_ids": [
+          "common.target_integrity",
+          "common.professional_consistency",
+          "common.authority",
+          "common.confidentiality",
+          "common.scenario_executability",
+          "common.no_premature_assessment",
+          "quality.clarity",
+          "invariant:CASE.SPEC.02.I01",
+          "invariant:CASE.SPEC.02.I02",
+          "invariant:CASE.SPEC.02.I03",
+          "invariant:CASE.SPEC.02.I04",
+          "invariant:CASE.SPEC.02.I05",
+          "invariant:CASE.SPEC.02.I06",
+          "invariant:CASE.SPEC.02.I07",
+          "indicator:K4.I03",
+          "indicator:K4.I05",
+          "indicator:K4.I12",
+          "indicator:K4.I13",
+          "indicator:K4.I14",
+          "indicator:K4.I16",
+          "indicator:K4.I17",
+          "indicator:K1.I06",
+          "indicator:K1.I09",
+          "critical_prohibition:01",
+          "critical_prohibition:02",
+          "critical_prohibition:03",
+          "critical_prohibition:04",
+          "critical_prohibition:05",
+          "critical_prohibition:06",
+          "critical_prohibition:07",
+          "critical_prohibition:08",
+          "critical_prohibition:09",
+          "case02.attractive_feature"
+        ]
+      },
+      "challenger": {
+        "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:challenger:batched",
+        "kind": "independent_tester_v2_challenger_batched",
+        "batch_count": 4,
+        "batch_operation_ids": [
+          "c570a030-a47a-4eed-81f9-37c92e1441d8:challenger:01:94313c6ceea6",
+          "c570a030-a47a-4eed-81f9-37c92e1441d8:challenger:02:8811f29ef75f",
+          "c570a030-a47a-4eed-81f9-37c92e1441d8:challenger:03:20b9415bac83",
+          "c570a030-a47a-4eed-81f9-37c92e1441d8:challenger:04:40f771ce5878"
+        ],
+        "required_check_ids": [
+          "common.target_integrity",
+          "common.professional_consistency",
+          "common.authority",
+          "common.confidentiality",
+          "common.scenario_executability",
+          "common.no_premature_assessment",
+          "invariant:CASE.SPEC.02.I01",
+          "invariant:CASE.SPEC.02.I02",
+          "invariant:CASE.SPEC.02.I03",
+          "invariant:CASE.SPEC.02.I04",
+          "invariant:CASE.SPEC.02.I05",
+          "invariant:CASE.SPEC.02.I06",
+          "invariant:CASE.SPEC.02.I07",
+          "indicator:K4.I03",
+          "indicator:K4.I05",
+          "indicator:K4.I12",
+          "indicator:K4.I13",
+          "indicator:K4.I14",
+          "indicator:K4.I16",
+          "indicator:K4.I17",
+          "indicator:K1.I06",
+          "indicator:K1.I09",
+          "critical_prohibition:01",
+          "critical_prohibition:02",
+          "critical_prohibition:03",
+          "critical_prohibition:04",
+          "critical_prohibition:05",
+          "critical_prohibition:06",
+          "critical_prohibition:07",
+          "critical_prohibition:08",
+          "critical_prohibition:09",
+          "case02.attractive_feature"
+        ]
+      }
+    },
+    "calls": [
+      {
+        "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:01:d0ed044218b3",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "d0ed044218b3065d2b0bf61b1f96600a29f9a0bf438b3b7e8d9c572aba62e357",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 69470,
+          "prompt_tokens": 67039,
+          "completion_tokens": 2431,
+          "prompt_tokens_details": {
+            "cached_tokens": 41216
+          },
+          "prompt_cache_hit_tokens": 41216,
+          "prompt_cache_miss_tokens": 25823
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 12993.28
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:02:d49e5bd9af77",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "d49e5bd9af7781040e1f30f3aec167b22d4804524bcb0410b7b3fa349282f09d",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 70409,
+          "prompt_tokens": 67879,
+          "completion_tokens": 2530,
+          "prompt_tokens_details": {
+            "cached_tokens": 66304
+          },
+          "prompt_cache_hit_tokens": 66304,
+          "prompt_cache_miss_tokens": 1575
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 13045.04
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:03:1e57089d8d80",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "1e57089d8d80e331abd1ce046dcc48207f775297596934eda10c800aeb62e016",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 71624,
+          "prompt_tokens": 68600,
+          "completion_tokens": 3024,
+          "prompt_tokens_details": {
+            "cached_tokens": 66304
+          },
+          "prompt_cache_hit_tokens": 66304,
+          "prompt_cache_miss_tokens": 2296
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 14628.29
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:04:8c7886f22957",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "8c7886f229572fa19a412c692eaa0c7c1cb693a7c4582e96fb8c17f6d9f3319a",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 70240,
+          "prompt_tokens": 67462,
+          "completion_tokens": 2778,
+          "prompt_tokens_details": {
+            "cached_tokens": 67328
+          },
+          "prompt_cache_hit_tokens": 67328,
+          "prompt_cache_miss_tokens": 134
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 14495.95
+          }
+        ],
+        "json_parse_failures": [
+          {
+            "code": "PROVIDER_JSON_INVALID",
+            "attempt": 1,
+            "position": 4147,
+            "finish_reason": "stop",
+            "response_characters": 8138
+          }
+        ]
+      },
+      {
+        "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:tester:05:747d03365020",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "747d03365020575a08c2b4e4f1f6ed4cf3daeefb0ee09549e9a1140c6521766f",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 67238,
+          "prompt_tokens": 66563,
+          "completion_tokens": 675,
+          "prompt_tokens_details": {
+            "cached_tokens": 66304
+          },
+          "prompt_cache_hit_tokens": 66304,
+          "prompt_cache_miss_tokens": 259
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 4518.03
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:challenger:01:94313c6ceea6",
+        "kind": "independent_tester_v2_challenger_batch",
+        "input_checksum": "94313c6ceea609b648354f05dc31305031a4120788afb6b24e736dd33e5075dd",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 79910,
+          "prompt_tokens": 78080,
+          "completion_tokens": 1830,
+          "prompt_tokens_details": {
+            "cached_tokens": 52992
+          },
+          "prompt_cache_hit_tokens": 52992,
+          "prompt_cache_miss_tokens": 25088
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 9798.31
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:challenger:02:8811f29ef75f",
+        "kind": "independent_tester_v2_challenger_batch",
+        "input_checksum": "8811f29ef75f511d55f59ef7691ba1c991fc9ce1e1563861a1ac7ad36ef12d79",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 80677,
+          "prompt_tokens": 78959,
+          "completion_tokens": 1718,
+          "prompt_tokens_details": {
+            "cached_tokens": 76800
+          },
+          "prompt_cache_hit_tokens": 76800,
+          "prompt_cache_miss_tokens": 2159
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 7228.57
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:challenger:03:20b9415bac83",
+        "kind": "independent_tester_v2_challenger_batch",
+        "input_checksum": "20b9415bac83c2bceb1107c4b1878ccf01005ee09cacf6d5c929108126cb5537",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 81873,
+          "prompt_tokens": 79443,
+          "completion_tokens": 2430,
+          "prompt_tokens_details": {
+            "cached_tokens": 76800
+          },
+          "prompt_cache_hit_tokens": 76800,
+          "prompt_cache_miss_tokens": 2643
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 12168.66
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:challenger:04:40f771ce5878",
+        "kind": "independent_tester_v2_challenger_batch",
+        "input_checksum": "40f771ce5878d2d2531da0b69e69721b556304925b0a2fe6eb1edd88d8fc46a6",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 80629,
+          "prompt_tokens": 78337,
+          "completion_tokens": 2292,
+          "prompt_tokens_details": {
+            "cached_tokens": 76800
+          },
+          "prompt_cache_hit_tokens": 76800,
+          "prompt_cache_miss_tokens": 1537
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 12217.99
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8:generation:76fce3190efb",
+        "kind": "generation",
+        "input_checksum": "76fce3190efbcdcba64140e666e277f49d672098801023d912b5d82586edec03",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 75757,
+          "prompt_tokens": 58956,
+          "completion_tokens": 16801,
+          "prompt_tokens_details": {
+            "cached_tokens": 58752
+          },
+          "prompt_cache_hit_tokens": 58752,
+          "prompt_cache_miss_tokens": 204
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 52616.55
+          }
+        ],
+        "json_parse_failures": []
+      }
+    ],
+    "unique_operation_count": 10,
+    "usage": {
+      "prompt_tokens": 711318,
+      "completion_tokens": 36509,
+      "total_tokens": 747827
+    }
+  }
+}

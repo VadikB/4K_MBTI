@@ -7,9 +7,17 @@
 - Область — настройка runner/fixtures/профиля; PATH-START-01 не передан в исполнение.
 - Минимальный seed и lifecycle новой owned-БД проверены без LLM, cleanup PASS.
   Причина старого hash: изменены два status-поля; package hash использует import envelope.
-- Backend 701 PASS; адресные source/evidence/generation тесты 49 PASS.
-- Следующий шаг: один реальный диагностический прогон с полной выгрузкой после start;
-  затем итоговый отчёт и безопасные evidence. Старые DB удалены, дополнить их readback нельзя.
+- Реализация: a4a2157; исправление канонизации/учёта: 4bab723. Финальная диагностика
+  на чистом 4bab723 остановлена штатным `M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE`.
+  Generation + 5 tester + 4 challenger, 10 operations/11 completed HTTP requests;
+  AS/start отсутствуют, ответов 0; cleanup PASS. PREP-DIAG-01 зарегистрирован.
+- Backend 703 PASS, HTTP 106 PASS, stand/evidence 19 PASS; бесплатная legacy PATH29
+  browser regression PASS (27.2s). Новые платные повторы ради PASS не выполняются.
+- Evidence и соответствие всем пунктам первоначального запроса:
+  `docs/evc/tasks/assessment-first-case-contour.md`,
+  `docs/evc/evidence/assessment-contour-2026-11-04/`.
+- Следующий шаг: приёмка постоянной настройки владельцем; продуктовый отказ и PATH —
+  последующий пакет. Последние изменения — только полнота failure export и отчёт.
 - Merge/deploy/version_bump/artifact_publish=false. Продуктовые исправления отложены.
 
 # Исторический STATE — ARCH30
