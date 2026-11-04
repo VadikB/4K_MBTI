@@ -1,0 +1,6 @@
+{
+  "step": "real_llm_preparation",
+  "expected": "Admission конечного кандидата и сохранённая AS",
+  "actual": "PLAN_NOT_READY\n\n'LIMITED' !== 'READY'\n",
+  "classification": "diagnostic_assertion_or_environment_failure"
+}

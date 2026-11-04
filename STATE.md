@@ -1,5 +1,22 @@
 # STATE — PATH-START-2DC
 
+## Итог 05.11.2026
+
+Один разрешённый paid run выполнен на clean exact2dc98c6 / 2.0.64:
+run96abd1c7e28e4316bcceb069520273e6, operation1d994d19-9ada-4dcb-92b9-4f4e41a096e0.
+Generation1/tester5/challenger4, admission PASS, AS9aedb9b7… сохранена; repair не
+понадобился, его реальное исполнение не проверено. 10 операций / 747550 tokens.
+Итог PATH FAIL_PLAN_NOT_READY: LIMITED вместо READY в assertion runner до start.
+Start/presentation NOT_RUN, оценочных ответов0. Фактический отказ продукта на start
+не доказан. Source coverage61→39/минимум22 gaps, полный frozen plan не экспортирован.
+Отчёт/остаток PATH-PLAN-01: docs/evc/reports/path-start-2dc98c6-run.md.
+14 primary files + lifecycle audit + offline VERIFY PASS сохранены, owned cleanup
+PASS после terminal fsync/readback. Второго прогона нет. Следующий отдельный шаг:
+бесплатная сверка контракта READY/LIMITED/NO_ROUTE/API/UI/validator и safe plan export,
+без нового смысла/смены target set/admission/prompts. PREP-DIAG-01 UNKNOWN.
+Main/test2dc98c6 / 2.0.64 неизменны, active/readiness200; отчётная ветка local-only,
+новый CI NOT_RUN/PR нет, все release flags false. История допуска ниже.
+
 ## Один согласованный real-provider прогон — 04.11.2026
 
 Владелец: «Да, один контролируемый прогон». База exact main/test

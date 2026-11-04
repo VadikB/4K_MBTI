@@ -55,11 +55,11 @@ squash releases: актуальная база подтверждена Git и t
 1. DONE: проверка main/test SHA и бесплатный machine preflight — 8/8 READY,
    включая Chromium, maintenance PostgreSQL connect/CREATEDB privilege и порт18861.
    Provider configuration проверена на наличие, не вызовом. LLM_CALLS=0 до запуска.
-2. ACTIVE: чистый отдельный server checkout; существующий частный test venv и
+2. DONE: чистый отдельный server checkout; существующий частный test venv и
    node dependencies того же lock; один существующий runner, новая evidence dir.
-3. WAIT: первый результат → сохранить safe receipts/check IDs/статусы/причины/
+3. DONE: первый результат → сохранить safe receipts/check IDs/статусы/причины/
    candidate links/unique operations/tokens; проверить terminal export до cleanup.
-4. WAIT: независимо сверить lineage, допустимый admission, actual explicit start/
+4. DONE: независимо сверить lineage, допустимый admission, actual explicit start/
    presentation и 0 answers либо отрицательный шаг; безопасная передача evidence.
 
 Команда из server worktree (не из checkout сервиса):
@@ -99,6 +99,22 @@ readback переиспользуются в их области. Настоящ
 
 ## Итог
 
-RUNNING/PENDING. Единственный реальный запуск ещё не завершён. Здесь будут
-зафиксированы фактические run/operation/AS IDs, итог, tokens, cleanup, первичные
-evidence и непроверенное. Любой второй платный запуск требует нового решения.
+COMPLETED_NEGATIVE, отчёт 05.11.2026. Единственный реальный run
+`96abd1c7e28e4316bcceb069520273e6`, operation
+`1d994d19-9ada-4dcb-92b9-4f4e41a096e0`. LLM/admission PASS; AS сохранена,
+repair не понадобился, 10 уникальных операций / 747550 tokens. Весь runner FAIL,
+exit1: `PLAN_NOT_READY` при plan LIMITED. Start POST/предъявление NOT_RUN,
+Cycle/Session/AS started_at=null, answers0. Остановила assertion harness,
+фактический отказ продукта на start не проверен. Гейт не ослаблялся.
+
+14 primary files и lifecycle hash/mtime audit сохранены; export до cleanup,
+owned database_absent/state_absent=true, force=false. Offline VERIFY.mjs PASS
+подтверждает **отрицательный** диагностический результат и связи evidence,
+не PATH PASS. Source analysis: full targets61, catalog union39, минимум22 gaps;
+полный старый frozen plan не экспортирован и не реконструируется.
+
+Полный [отчёт и PATH-PLAN-01](../reports/path-start-2dc98c6-run.md).
+Следующая отдельная работа — бесплатная сверка контракта READY/LIMITED/NO_ROUTE
+и причин плана/экспортёра/validator, без изменения норм и LLM. Main/test2dc98c6 /
+2.0.64 неизменны, новый CI NOT_RUN, local-only отчётная ветка; flags прежние false.
+Любой второй платный запуск требует нового решения. PREP-DIAG-01 UNKNOWN.

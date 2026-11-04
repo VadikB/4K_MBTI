@@ -1,0 +1,16 @@
+{
+  "audit_kind": "read-only server stat/hash after run; not reconstructed database content",
+  "run_id": "96abd1c7e28e4316bcceb069520273e6",
+  "files": {
+    "source-to-runtime-receipt.json": {"sha256":"a6ebace530e69d3f0efb33b0f95e89b0c743d8ae30d8baa471705e8109004d05","mtime_ms":1793825814086.1987,"mode":"600"},
+    "failure-receipt.json": {"sha256":"a6ebace530e69d3f0efb33b0f95e89b0c743d8ae30d8baa471705e8109004d05","mtime_ms":1793825814392.1997,"mode":"600"},
+    "failure.json": {"sha256":"08d981d8712e49f793c69a70e3bdae18f2d43acf189025ed6991bc6eafc9a3ed","mtime_ms":1793825814533.2,"mode":"600"},
+    "cleanup.json": {"sha256":"fa6dedc76556dcf4a939a1aa23396801003e51c97a55b9e0fd71c168a27850e5","mtime_ms":1793825814923.2012,"mode":"600"},
+    "completion.json": {"sha256":"1e0e87cc4640343f7a5b4c6a148494e9a9e0b91f5baadb4aa8294174298dd864","mtime_ms":1793825815170.2021,"mode":"600"},
+    "process-result.json": {"sha256":"b622036109bca1f92aef534ac76cf9c6c908ec6ec0b808fa4db9686873e1d75d","mtime_ms":1793825815307.2024,"mode":"600"}
+  },
+  "terminal_receipts_before_cleanup": true,
+  "state_absent": true,
+  "receipt_persistence_implementation": "persistReceipt: write, fsync, close, byte-for-byte readback before terminal flag",
+  "cleanup_implementation": "owned marker and exact target check, DROP without FORCE, database absence query, state removal, cleanup receipt"
+}
