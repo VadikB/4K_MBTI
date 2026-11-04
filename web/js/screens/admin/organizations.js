@@ -13,6 +13,7 @@ import {
 import { hideAllPanels, syncUrlState } from '../../router.js';
 import { persistAssessmentContext, setCurrentScreen, state, safeStorage } from '../../state.js';
 import { createAdminOrganizationDraftKey } from './organization-draft-key.js';
+import { questionnaireAssignmentState } from './questionnaire-assignment-state.js';
 
 let selectedOrganizationId = null;
 const invitationRequestsInFlight = new Set();
@@ -32,6 +33,7 @@ const selectedAssessmentRefs = new Map();
 const questionnaireConfirmRequestGenerations = new Map();
 const questionnaireConfirmRequestsInFlight = new Set();
 const questionnaireLoadStates = new Map();
+const questionnaireLoadGenerations = new Map();
 const questionnaireConfirmOutcomes = new Map();
 let operationAnchor = null;
 let restoredManagementIdentity = null;
@@ -489,6 +491,8 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
   const identityEpoch = context.identityEpoch ?? state.identityEpoch;
   const identityKey = context.identityKey ?? currentIdentityKey();
   const key = organizationKey(organizationId);
+  const generation = (questionnaireLoadGenerations.get(key) || 0) + 1;
+  questionnaireLoadGenerations.set(key, generation);
   questionnaireLoadStates.set(key, { status: 'loading' });
   if (context.render !== false) renderAdminOrganizations();
   try {
@@ -496,7 +500,8 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
       credentials: 'same-origin',
     });
     const result = await readApiResponse(response, 'Не удалось загрузить сохранённые анкеты.');
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
+        questionnaireLoadGenerations.get(key) !== generation) return null;
     const items = Array.isArray(result?.items) ? result.items : [];
     const merged = new Map(items.map((item) => [item.assignment_ref, item]));
     for (const cached of questionnaireRevisions.get(key) || []) {
@@ -508,7 +513,8 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
     if (context.render !== false) renderAdminOrganizations();
     return items;
   } catch (error) {
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
+        questionnaireLoadGenerations.get(key) !== generation) return null;
     const accessDenied = error?.status === 401 || error?.status === 403;
     if (accessDenied) {
       questionnaireRevisions.delete(key);
@@ -1838,6 +1844,7 @@ export const renderAdminOrganizations = () => {
       const roleCapabilities = Array.isArray(currentProgram?.role_capabilities)
         ? currentProgram.role_capabilities : allowedRoles.map((role) => ({ ...role, is_available: true }));
       const publishedRevision = revisions.find((item) => item.assignment_ref === selectedRef && item.status === 'confirmed');
+      const questionnaireAssignment = questionnaireAssignmentState(questionnaireLoadState, Boolean(publishedRevision));
       const assignmentBlockers = [];
       if (!currentProgram) {
         assignmentBlockers.push('Программа оценки не подключена. Обратитесь к суперадминистратору.');
@@ -1847,8 +1854,8 @@ export const renderAdminOrganizations = () => {
       } else if (currentProgram?.assignment_ref && currentProgram.assignment_ref !== selectedRef) {
         assignmentBlockers.push('Выбранная оценка не соответствует подключённой программе.');
       }
-      if (selectedRef && !publishedRevision) {
-        assignmentBlockers.push('Анкета для выбранной оценки не подтверждена. Подтвердите сведения перед назначением.');
+      if (selectedRef && !questionnaireAssignment.canAssign) {
+        assignmentBlockers.push(questionnaireAssignment.blocker);
       }
       if (currentProgram && !allowedRoles.length) {
         assignmentBlockers.push('В подключённой программе нет доступной роли для назначения.');
@@ -1862,7 +1869,7 @@ export const renderAdminOrganizations = () => {
           ? escapeHtml(allowedRoles.map((role) => role.name || role.code).join(', '))
           : 'недоступна') + '</dd>' +
         '<dt>Оценка</dt><dd>' + escapeHtml(selectedRef || 'не выбрана') + '</dd>' +
-        '<dt>Анкета</dt><dd>' + (publishedRevision ? 'подтверждена' : 'не подтверждена') + '</dd></dl>' +
+        '<dt>Анкета</dt><dd>' + escapeHtml(questionnaireAssignment.label) + '</dd></dl>' +
         (assignmentBlockers.length
           ? '<div class="form-status error" role="alert"><strong>Назначение пока недоступно</strong><ul>' +
             assignmentBlockers.map((blocker) => '<li>' + escapeHtml(blocker) + '</li>').join('') + '</ul></div>'

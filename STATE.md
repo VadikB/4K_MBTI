@@ -18,8 +18,11 @@
   сверяет исходные QA/checksum, не подменяет human review. Product Api/web неизменны.
   Локально: backend 743 PASS (после исправления пути новой fixture), HTTP 106 PASS,
   Node receipt 27 PASS, frontend 131 PASS, lint/build/diff PASS. Это не browser PASS.
-- Активно: первый owned bootstrap/исходный UI run на target release; PG-R2 read-error
-  проверяется до LLM. Затем адресные PS-01…05 и полный повтор.
+- Bootstrap 1efe5c7 PASS (LLM=0/cleanup PASS). Исходный UI run eb3c762 подтвердил
+  PG-R2: GET 503 после подтверждения → ложное «анкета не подтверждена» в назначении.
+  Первичные safe receipts/скриншот сохранены в `docs/evc/evidence/path-start-01/initial-eb3c762/`.
+- Исправлен PG-R2 (UI projection/read generations); frontend 139 PASS, lint/build/diff
+  PASS. Активно: повтор actual entry и продолжение PS-03/04 на новой owned-БД.
 - Дальше: точный approved release в owned-БД → исходный run/первый разрыв →
   адресные PS-01…05/регрессии → полный повтор/evidence. PREP-DIAG-01 UNKNOWN,
   DB-PERSIST-01 не переоткрывается. Cleanup guards и terminal export сохраняются.

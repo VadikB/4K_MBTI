@@ -154,3 +154,25 @@ ProgramDefinition. Fixture теперь резервирует ещё не за�
 catalog/configuration, без создания подставных исторических строк. Операция имеет
 whitelist таблиц и запрет постоянной/неизолированной/занятой БД; регрессии добавлены.
 Published содержание/QA не изменяется. Это исправление тестового входа, не дефект продукта.
+
+## PS-02 / PG-R2 — исходный дефект и исправление
+
+Исходный run `54c1ca2e33714a5d8e9805589e1349c7` на clean `eb3c762` (продукт
+побайтово от main 7221671) создал org/подключение/admin и подтвердил анкету
+`specialist-pilot` штатным UI. После reload искусственно потеряно только чтение
+GET questionnaire (503), без записи. Renderer назначения показал «Анкета для
+выбранной оценки не подтверждена. Подтвердите сведения…» вместо UNKNOWN/read error.
+Первый потерянный переход: `questionnaireLoadStates.error` → assignment readiness.
+Причина: renderer проверял только отсутствие локального `publishedRevision`, игнорируя
+статус чтения. Evidence: `docs/evc/evidence/path-start-01/initial-eb3c762/`, исходный
+read-error JSON/скриншот/run/code-identity/runner-result/completion/process-result/
+cleanup/source-provenance. Подготовки/LLM/start/оценочных ответов нет, dependent PS-03…05
+в этом run NOT_RUN; cleanup marker/absence подтверждены. Отдельный предыдущий run
+1efe5c7 остановился на неоднозначном locator hidden-разделов; это harness, не продукт.
+
+Исправление: отдельная pure UI projection отличает loading/error/unknown от
+действительного отсутствия подтверждения после успешного чтения. Сохранённая
+confirmed revision не отрицается, UNKNOWN не разрешает назначение; retry остаётся
+штатным. Per-organization read generation отсекает запоздалые ответы/ошибки.
+Предметный admission/backend/API не менялись. Регрессии 8 PASS, весь frontend
+139 PASS; lint/build/diff PASS. Повтор actual entry на новой owned-БД — следующий шаг.

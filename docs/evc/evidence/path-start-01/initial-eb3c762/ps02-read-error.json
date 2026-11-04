@@ -1,0 +1,7 @@
+{
+  "organization_id": 1,
+  "assignment_ref": "specialist-pilot",
+  "confirmed_before_reload": true,
+  "injected_failure": "GET questionnaire HTTP 503; no write",
+  "actual_readiness": "Готовность назначения\nПрограмма\nПилот 4К · 9 кейсов · 1.1\nРоль\nСпециалист / эксперт\nОценка\nspecialist-pilot\nАнкета\nне подтверждена\nНазначение пока недоступно\nАнкета для выбранной оценки не подтверждена. Подтвердите сведения перед назначением."
+}
