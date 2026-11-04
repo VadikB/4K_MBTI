@@ -176,3 +176,56 @@ confirmed revision не отрицается, UNKNOWN не разрешает н
 штатным. Per-organization read generation отсекает запоздалые ответы/ошибки.
 Предметный admission/backend/API не менялись. Регрессии 8 PASS, весь frontend
 139 PASS; lint/build/diff PASS. Повтор actual entry на новой owned-БД — следующий шаг.
+
+## Новый admission run (не PREP-DIAG-01)
+
+Clean a8d8fcff36eb81ff118c82676af6f9885bbbd4b7; run
+`aa2cbb221fdd458a8bb75e9a0faeb8b2`, operation
+`687295f9-7635-4fa6-b083-4db724749e92`. PS-02 error/read retry прошёл и процесс
+достиг автоматической подготовки после знакомства. Planner выбрал CASE.SPEC.02 v0.6
+из целевого nine-case catalog, без подстановки готового участника/profile/AS.
+Конечный кандидат `56c303d1ed93170082eacabe3e75a84c5ea662d6499e749276e729488549543d`
+отклонён после штатного единственного repair: FAIL, пять blocking checks
+`indicator:K4.I13`, `indicator:K4.I14`, `indicator:K4.I16`, `indicator:K4.I17`,
+`critical_prohibition:02`. Причины/JSON paths в terminal receipt: вариант B стал
+подходить по всем существенным условиям, нарушив обязательную остаточную неопределённость.
+Deterministic/protocol errors и incomplete checks пусты. Это установленный
+содержательный отказ конечного кандидата, не доказательство дефекта исходного Case
+или причины исторического INCOMPLETE. Почему генератор не исправил содержание за
+разрешённый repair — отдельная дальнейшая диагностика; технический дефект пока не доказан.
+
+20 unique operations/20 HTTP completions, prompt 1 429 582, completion 75 859,
+total 1 505 441 tokens. No JSON retry. Admission/методология/источники/repair не
+меняются ради PASS; случайный платный rerun не оправдан. Candidate → AS обрывается
+на штатном admission: AS нет. Cycle f80c40bc-d45e-4e39-8b31-17019f27b023 и Session
+fe4425cf-51a2-4017-9f30-4009c56ce635 prepared, оба started_at=null, ответов 0.
+PS-05 start/presentation NOT_RUN/BLOCKED admission, а не PASS.
+
+Evidence `docs/evc/evidence/path-start-01/preparation-a8d8fcf/`: первичные code/run/
+runner-result/source-to-runtime/completion/process-result/cleanup/read-error JSON,
+failure screenshot. Terminal export выполнен до удаления owned-БД, cleanup PASS.
+User history/state/secrets/raw prompts/provider responses в передаче отсутствуют.
+PREP-DIAG-01 по-прежнему UNKNOWN, без причинного объединения с новым FAIL.
+
+## Независимые ST-R1 / ST-R4 / PG-R1
+
+- ST-R1: local Chromium на dist a8d8fcf, синтетические API responses. Открытие
+  карточки и отказ от отмены: HTTP mutations=0, но «Выполняем действие…» осталось.
+  Причина — capture click выставлял mutation loading до локальной карточки/диалога.
+  Эти локальные actions больше не инициируют busy; настоящая команда отмены начинает
+  своё состояние только после подтверждения. Browser before 2 FAIL → after 2 PASS.
+- ST-R4: при `action=check_preparation` renderer не показывал разрешённую проверку.
+  Добавлена кнопка, использующая только существующий authorized organizations GET.
+  Без прав чужого preparation endpoint, retry/prepare/start. Browser FAIL → PASS,
+  mutations=0. Логи `docs/evc/evidence/path-start-01/st-initial-a8d8fcf/`.
+- PG-R1: пять технических unit fixtures до исправления показали generic organization
+  wait при отсутствующей должности/ФИО/email, потерю exact questionnaire blocker через
+  legacy fallback и перезапись установленной причины общим W02. Исправлены сообщения,
+  optional readiness title и сохранение причины. Exact assignment не подменяется
+  organization-wide legacy context. Новые statuses/права/схема не вводятся.
+  Before 5 FAIL, адресный after 19 PASS; backend 752 PASS, HTTP 106 PASS,
+  frontend 139 PASS, lint/build PASS. Исходный лог `pgr1-initial-a8d8fcf/unit.log.gz`.
+  Логи gzip без изменения исходных bytes (включая trailing spaces тестового reporter).
+- Активна отдельная real PostgreSQL negative fixture ST-R3 (не seed основного E2E):
+  две assignment refs одной configuration, разные questionnaire/profile bindings,
+  более поздний чужой job; actual production SQL, synthetic schema, LLM=0.

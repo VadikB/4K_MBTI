@@ -555,6 +555,51 @@ test('QA19-03 keeps the participant section available with no members', async ({
   await expect(page.locator('.admin-organization-members-section').first()).toBeVisible();
 });
 
+for (const action of ['card', 'cancel-dialog']) {
+  test(`PATH-START ST-R1 ${action}: local view or refusal is not a pending mutation`, async ({ page }, testInfo) => {
+    const organization = { ...adminOrganization,
+      assessment_program: { program_definition_id: 7, program_name: 'Synthetic PATH program',
+        program_version: '1.0', assignment_ref: 'competencies_4k', roles: [] },
+      members: [{ ...adminOrganization.members[0], assessment_assignments: ['competencies_4k'],
+        assessment_stages: { competencies_4k: { code: 'assigned', assignment_id: 41 } } }] };
+    await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+    let mutations = 0;
+    page.on('request', (request) => {
+      if (request.url().includes('/users/admin/organizations/') && request.method() !== 'GET') mutations += 1;
+    });
+    if (action === 'card') {
+      await page.locator('[data-action="open-member-card"]').click();
+      await page.locator('.admin-member-card-dialog').getByRole('button', { name: 'Закрыть', exact: true }).click();
+    } else {
+      await page.locator('.admin-organization-member-menu summary').click();
+      await page.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+      await page.getByRole('dialog', { name: 'Отменить назначение?' })
+        .getByRole('button', { name: 'Оставить назначение', exact: true }).click();
+    }
+    const statuses = await page.locator('[data-operation-status]:visible').allTextContents();
+    await testInfo.attach('local-action-result', { body: JSON.stringify({ action, mutations, statuses }),
+      contentType: 'application/json' });
+    expect(mutations).toBe(0);
+    expect(statuses.join(' ')).not.toContain('Выполняем действие…');
+  });
+}
+
+test('PATH-START ST-R4: authorized read-only preparation action survives renderer', async ({ page }) => {
+  const organization = { ...adminOrganization,
+    members: [{ ...adminOrganization.members[0], assessment_assignments: ['competencies_4k'],
+      assessment_stages: { competencies_4k: { code: 'preparing', label: 'Идёт подготовка оценки',
+        action: 'check_preparation', assignment_id: 41, operation_id: 'synthetic-current-operation' } } }] };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  await expect(page.getByRole('button', { name: 'Проверить подготовку', exact: true })).toBeVisible();
+  let mutations = 0;
+  page.on('request', (request) => {
+    if (request.url().includes('/users/admin/organizations/') && request.method() !== 'GET') mutations += 1;
+  });
+  await page.getByRole('button', { name: 'Проверить подготовку', exact: true }).click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('обновлено');
+  expect(mutations).toBe(0);
+});
+
 test('ADM-STATUS-01 shows the current participant stage and opens known facts in the participant card', async ({ page }) => {
   const baseMember = { ...adminOrganization.members[0], assessment_assignments: ['competencies_4k'] };
   const organization = {

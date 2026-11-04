@@ -393,7 +393,9 @@ const trackOperation = (event) => {
   const target = event.target instanceof Element ? event.target : null;
   const form = event.type === 'submit' ? target?.closest('form[data-action]') : null;
   const button = event.type === 'click' ? target?.closest('button[data-action]') : null;
-  if (!form && (!button || ['show-admin-view', 'refresh-questionnaire-preview', 'use-legacy-profile'].includes(button.dataset.action))) return;
+  if (!form && (!button || ['show-admin-view', 'refresh-questionnaire-preview', 'use-legacy-profile',
+    'open-member-card', 'open-member-report', 'cancel-member-assignment',
+    'revoke-member-invitation', 'delete-member'].includes(button.dataset.action))) return;
   const root = form || button.closest('.admin-questionnaire-preview') || button.parentElement;
   const card = root?.closest('[data-organization-id]');
   if (!card) return;
@@ -1718,7 +1720,9 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
           ? '<button type="button" data-action="open-member-report" data-report-id="' + escapeHtml(scopedStage.report_id) +
             '" data-cycle-id="' + escapeHtml(scopedStage.cycle_id || '') + '" data-report-access="' +
             escapeHtml(scopedStage.report_access || '') + '">Открыть отчёт</button>' : '';
-        const primaryAction = reportButton || (!hasAssignment && ['not_sent', 'error', 'revoked', 'expired'].includes(invitationStatus)
+        const checkPreparationButton = scopedStage?.action === 'check_preparation'
+          ? '<button type="button" data-action="check-member-preparation">Проверить подготовку</button>' : '';
+        const primaryAction = reportButton || checkPreparationButton || (!hasAssignment && ['not_sent', 'error', 'revoked', 'expired'].includes(invitationStatus)
           ? invitationButton : '');
         const menuActions = (primaryAction === invitationButton ? '' : invitationButton) + revokeButton + cancelButton + preparationButton + removeButton;
         const transferForm = !isSuperadmin || !transferTargets.length ? '' :

@@ -22,7 +22,17 @@
   PG-R2: GET 503 после подтверждения → ложное «анкета не подтверждена» в назначении.
   Первичные safe receipts/скриншот сохранены в `docs/evc/evidence/path-start-01/initial-eb3c762/`.
 - Исправлен PG-R2 (UI projection/read generations); frontend 139 PASS, lint/build/diff
-  PASS. Активно: повтор actual entry и продолжение PS-03/04 на новой owned-БД.
+  PASS. Run a8d8fcf прошёл PS-02/retry и дошёл до настоящей подготовки.
+- Новый run aa2cbb221fdd458a8bb75e9a0faeb8b2 / op 687295f9-7635-4fa6-b083-4db724749e92:
+  конечный FAIL после штатного repair, 20 unique provider operations / 1 505 441 tokens.
+  Пять содержательных blocking checks, protocol errors/incomplete пусты. AS нет,
+  Cycle/Session prepared, started_at=null, ответов 0. Terminal receipt сохранён,
+  owned cleanup PASS. Evidence `docs/evc/evidence/path-start-01/preparation-a8d8fcf/`.
+- ST-R1/ST-R4: исходно browser 3 FAIL, адресные исправления actual dist → 3 PASS.
+  PG-R1: исходно 5 unit FAIL; точная причина/сообщение и запрет чужого legacy fallback
+  исправлены → адресно 19 PASS; backend 752 PASS, HTTP 106 PASS, frontend 139 PASS.
+- Активно: PostgreSQL initial ST-R3 с двумя назначениями одной конфигурации и
+  более поздним чужим job. Повтор LLM без новой доказанной технической причины не запускается.
 - Дальше: точный approved release в owned-БД → исходный run/первый разрыв →
   адресные PS-01…05/регрессии → полный повтор/evidence. PREP-DIAG-01 UNKNOWN,
   DB-PERSIST-01 не переоткрывается. Cleanup guards и terminal export сохраняются.

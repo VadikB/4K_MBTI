@@ -119,6 +119,12 @@ def early_readiness(connection, *, user_id: int) -> dict:
                 "responsible_contact": str(briefing.get("responsible_contact") or "").strip() or None,
                 "briefing": safe_briefing, "briefing_checksum": _checksum(safe_briefing),
             }
+        # An exact assignment's known blocker must not be replaced by an
+        # organization-wide legacy context (which may belong to another scope).
+        waiting = _waiting(str(assignment['reason']), university=False, organization=organization)
+        waiting.update(assignment_ref=str(assignment_rows[0]['assignment_ref']),
+                       missing=assignment.get('missing') or [])
+        return waiting
     elif len(assignment_rows) > 1:
         return _waiting("assessment_assignment", university=False, organization=organization)
     row = connection.execute(
@@ -181,13 +187,32 @@ def early_readiness(connection, *, user_id: int) -> dict:
 
 def _waiting(reason: str, *, university: bool, organization: dict | None = None) -> dict:
     subject = "Университет" if university else "Организация"
+    title = 'Данные для оценки готовятся'
+    message = (f"{subject} ещё готовит данные для вашей оценки. "
+               "Когда подготовка будет завершена, здесь можно будет начать знакомство")
+    if reason.startswith('participant_fields:'):
+        labels = {'position': 'должность', 'full_name': 'ФИО', 'email': 'email'}
+        missing = [labels.get(key, key) for key in reason.split(':', 1)[1].split(',')]
+        title = 'Нужно уточнить сведения участника'
+        message = ('В карточке участника не заполнены: ' + ', '.join(missing) +
+                   '. Обратитесь к администратору организации. Подтверждённая анкета и ваши ответы сохраняются.')
+    elif reason == 'confirmed_questionnaire':
+        title = 'Анкета назначения пока не подтверждена'
+        message = ('Для назначенной оценки не найдена подтверждённая анкета. '
+                   'Обратитесь к администратору организации; повторно отвечать на вопросы не нужно.')
+    elif reason == 'early_minimum':
+        title = 'Нужно дополнить анкету назначения'
+        message = ('В анкете назначенной оценки отсутствуют обязательные сведения. '
+                   'Обратитесь к администратору организации.')
+    elif reason == 'assessment_assignment':
+        title = 'Нужно уточнить назначение оценки'
+        message = ('Найдено несколько назначений: нельзя безопасно выбрать одно автоматически. '
+                   'Обратитесь к уполномоченному назначающему.')
     return {
         "status": "waiting_for_organization",
         "reason": reason,
-        "message": (
-            f"{subject} ещё готовит данные для вашей оценки. "
-            "Когда подготовка будет завершена, здесь можно будет начать знакомство"
-        ),
+        "title": title,
+        "message": message,
         "organization_id": int(organization["id"]) if organization else None,
         "organization_name": str(organization["name"]) if organization else None,
         "organization_kind": "university" if university else "organization",
@@ -221,7 +246,7 @@ def read_state(connection, *, user_id: int) -> dict:
         "status": "not_started", "current_step": 0, "answers_json": {},
         "answers_confirmed_at": None, "consent_accepted_at": None,
     }
-    if not mandatory_complete(readiness, state):
+    if readiness['status'] == 'ready' and not mandatory_complete(readiness, state):
         late = {'status': 'waiting_for_assessment_data', 'reason': 'W02_MANDATORY_STEPS_REQUIRED',
                 'personalized_profile_id': None}
     profile_id = late.get("personalized_profile_id")
