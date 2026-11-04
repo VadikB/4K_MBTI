@@ -1,4 +1,83 @@
-# STATE — ARCH30
+# STATE — постоянный синтетический контур
+
+## Checkpoint 04.11.2026
+
+- Новый активный шаг после технической приёмки: владелец разрешил merge в main
+  и обновление test; отдельно подтвердил PATCH 2.0.62. Флаги branch_push/pr/merge/
+  deploy/version_bump=true, artifact_publish=false. Исторические NOT_RUN/false
+  ниже относятся к приёмке до этого разрешения.
+- Свежий origin/main — 053d1a58 / 2.0.61; ready preflight 2.0.62 PASS.
+  Дальше PR через авторизованный браузер, обязательный CI без bypass, squash merge,
+  deploy-test и readback. До этого main/test не считаются обновлёнными.
+- Принятый ZIP 2f0a5a0 не меняется. LLM/PATH/публикация программы не запускаются;
+  PREP-DIAG-01 UNKNOWN и защита постоянной БД остаются без изменений.
+
+- Текущая задача `docs/evc/tasks/assessment-first-case-contour.md` технически
+  **ACCEPTED / завершена владельцем**: независимая проверка пакета 2f0a5a018473,
+  VERIFY.py PASS, Python 49 PASS, Node 27 PASS; оба дефекта harness закрыты.
+- Принятый код и обязательная база следующего задания:
+  `2f0a5a018473679cd9ff57605c83f08640f95b0b`, `codex/assessment-first-case`.
+  Профиль/runner находятся здесь, а НЕ автоматически в текущем main. Docs-коммит
+  закрытия следует после этого SHA и не меняет инструмент/принятый ZIP.
+- Передача: `docs/evc/assessment-first-case-handoff.md`; принятый пакет и bundle
+  в Downloads `4K_Synthetic_Contour_2f0a5a018473*` остаются неизменными.
+- Статусы раздельны: ветка — локальная, технически принята; CI — NOT_RUN, PR нет;
+  main — `053d1a58b46b5cfa7784d3d9ba6fd4785efed769`, без merge этой ветки;
+  развёртывание — не изменялось, последняя read-only проверка 053d1a58 / 2.0.61.
+- PREP-DIAG-01 остаётся продуктовым остатком с root_cause=UNKNOWN, без доказанной
+  связи с ошибками harness. PATH-START-01 и публикация программы — отдельные задания.
+  Восстановление БД решено отдельно; защита постоянной БД от cleanup сохраняется.
+  Новая платная генерация для закрытия не нужна и не выполняется.
+- Следующий минимальный шаг: владелец задаёт отдельную работу; её исполнитель
+  проверяет базу 2f0a5a0 и использует готовый профиль без повторной настройки.
+  Интеграция в main/release не включается приёмкой технического инструмента.
+
+## История настройки до приёмки (записи ниже не являются текущими ожиданиями)
+
+- Завершающая доработка после независимо проверенного cf6175e: устранены ложный
+  PASS summarize_runs и отклонение допустимого PASS_WITH_WARNINGS. Общий validator
+  browser/summary сохраняет stages/final candidate/repair/checksum/start/presentation
+  проверки; добавлены completion/hash, фактический process exit и fail-closed summary.
+- Текущая область не включает восстановление БД или его расследование. Cleanup
+  guards постоянной БД, Api/, методология/admission/repair не менялись. PREP-DIAG-01
+  остаётся UNKNOWN; причинной связи с ошибками harness не установлено. PATH не начат.
+- На clean `cccf24ae223eb7a0b92235d27538cf4f85340300`: Python targeted 49 PASS,
+  backend 734 PASS / 318 deselected, Node 27 PASS, frontend 131 PASS, lint/build/
+  syntax/discovery/diff PASS. Output и before/after двух дефектов сохранены в
+  `docs/evc/evidence/assessment-contour-2026-11-04/harness-regression/verification.json`.
+  Бесплатные регрессии используют явную synthetic success fixture, не LLM PASS.
+- Новая передача включает diff после cf6175e и 4bab723, manifest, Git bundle и
+  самостоятельный VERIFY.py с проверкой source/evidence/runner hashes. Финальный SHA
+  задан MANIFEST/HANDOFF. Main и read-only deployment — 053d1a58 / 2.0.61;
+  CI NOT_RUN, push/PR/merge/deploy не выполнялись. Следующий шаг — приёмка владельцем.
+
+- Активная задача: `docs/evc/tasks/assessment-first-case-contour.md`;
+  ветка `codex/assessment-first-case`, base/main `053d1a58b46b5cfa7784d3d9ba6fd4785efed769`.
+- Область — настройка runner/fixtures/профиля; PATH-START-01 не передан в исполнение.
+- Минимальный seed и lifecycle новой owned-БД проверены без LLM, cleanup PASS.
+  Причина старого hash: изменены два status-поля; package hash использует import envelope.
+- Реализация: a4a2157; исправление канонизации/учёта: 4bab723. Финальная диагностика
+  на чистом 4bab723 остановлена штатным `M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE`.
+  Generation + 5 tester + 4 challenger, 10 operations/11 completed HTTP requests;
+  AS/start отсутствуют, ответов 0; cleanup PASS. PREP-DIAG-01 зарегистрирован.
+- Backend 703 PASS, HTTP 106 PASS, stand/evidence 19 PASS; бесплатная legacy PATH29
+  browser regression PASS (27.2s). Новые платные повторы ради PASS не выполняются.
+- Evidence и соответствие всем пунктам первоначального запроса:
+  `docs/evc/tasks/assessment-first-case-contour.md`,
+  `docs/evc/evidence/assessment-contour-2026-11-04/`.
+- Следующий шаг: приёмка постоянной настройки владельцем; продуктовый отказ и PATH —
+  последующий пакет. Последние изменения — только полнота failure export и отчёт.
+- Завершение передачи: clean `9e659bd` прошёл бесплатную DB-регрессию collector →
+  check IDs/status/reasons/candidate refs → fsync/readback → owned DROP → чтение
+  того же receipt. LLM_CALLS=0, hash `163083b768dbdcdf2599934bfc4784909244c59d099c7f569a475ad8aed6160a`.
+  Backend 704 PASS; Node persistence test PASS. PREP-DIAG-01 остаётся UNKNOWN по
+  конкретному check/первопричине; синтетическая регрессия его не реконструирует.
+- Передача независимо от worktree: `scripts/package_assessment_contour.py` создаёт
+  ZIP из committed HEAD: профиль/runner, первичные JSON, diff после 4bab723,
+  Git bundle, SHA-256 manifest и автономный VERIFY.py; копия передаётся в Downloads.
+- Merge/deploy/version_bump/artifact_publish=false. Продуктовые исправления отложены.
+
+# Исторический STATE — ARCH30
 
 ## Текущий checkpoint ARCH30, 30.10.2026
 

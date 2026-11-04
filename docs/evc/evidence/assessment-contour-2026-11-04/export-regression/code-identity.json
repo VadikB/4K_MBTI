@@ -1,0 +1,15 @@
+{
+  "sha": "9e659bdc09b38c1bc5c6751edaea25769d90be7e",
+  "branch": "",
+  "origin_main": "053d1a58b46b5cfa7784d3d9ba6fd4785efed769",
+  "worktree_status": "",
+  "files": {
+    "scripts/test_stand.py": "d3522324fc322bc35e98abf96475f2e6ca6133d16146ed506fa9d438d4601a81",
+    "scripts/assessment_first_case.py": "fb0108374fde911af8cea37099d1b22b34babf63c67a0e6cf3ebf2d15b3a4baa",
+    "tests/path29_browser_inputs.py": "a98987529677f33190bc18f762786589c8807ffe97900f9ce03d03d051f2f328",
+    "tests/path29_browser_app.py": "c72d21b4ae1b43c27a59615b4d0b2e8656f7a4ea485dfaf9f1547e526828e680",
+    "tests/assessment_first_case_evidence.py": "eb54fc95bf245929c04b44382b7fe4c7f200ddfe5b66daa1b8110b2f80fc25af",
+    "tests/browser/path29-participant.spec.mjs": "fee441c1cad1baf49257eafa820692c479ccb9e446a3ec2fb73e30eb34e73489",
+    "tests/browser/fixtures/receipt-file.mjs": "71b454be2fb1dc09800f3f33be1d1e31692f512c3ac6ba657069937bb70ce627"
+  }
+}
