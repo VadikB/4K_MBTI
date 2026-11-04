@@ -6,10 +6,61 @@ on:
       - main
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
+  merge_group:
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
+  coordination:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test coordination policy
+        run: node --test tests/process/pr_coordination.test.cjs
+
+      - name: Classify paths and detect overlaps
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const policy = require('./.github/scripts/pr_coordination.cjs');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const currentNumber = context.payload.pull_request.number;
+            const currentFiles = await github.paginate(
+              github.rest.pulls.listFiles,
+              { owner, repo, pull_number: currentNumber, per_page: 100 },
+              (response) => response.data.map((file) => file.filename),
+            );
+            const openPulls = await github.paginate(
+              github.rest.pulls.list,
+              { owner, repo, state: 'open', base: context.payload.pull_request.base.ref, per_page: 100 },
+            );
+            const candidates = [];
+            for (const pullRequest of openPulls) {
+              if (pullRequest.number === currentNumber) continue;
+              const paths = await github.paginate(
+                github.rest.pulls.listFiles,
+                { owner, repo, pull_number: pullRequest.number, per_page: 100 },
+                (response) => response.data.map((file) => file.filename),
+              );
+              candidates.push({ number: pullRequest.number, title: pullRequest.title, paths });
+            }
+            const risk = policy.classifyPaths(currentFiles);
+            const overlaps = policy.findOverlaps(currentFiles, candidates);
+            const summary = policy.formatSummary({ risk, overlaps });
+            await core.summary.addRaw(summary).write();
+            for (const overlap of overlaps) {
+              core.warning(`PR #${overlap.number}: пересекаются ${overlap.paths.join(', ')}`);
+            }
+
   frontend:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -23,7 +74,7 @@ jobs:
           python-version: "3.12"
 
       - name: Verify application release
-        if: github.event.pull_request.draft == false
+        if: github.event_name == 'merge_group' || github.event.pull_request.draft == false
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             git fetch origin main
@@ -33,7 +84,7 @@ jobs:
           fi
 
       - name: Explain deferred draft release
-        if: github.event.pull_request.draft == true
+        if: github.event_name == 'pull_request' && github.event.pull_request.draft == true
         run: echo "Release version is assigned when the pull request is ready for review."
 
       - uses: actions/setup-node@v4
@@ -60,7 +111,7 @@ jobs:
         run: git diff --exit-code -- web/dist
 
   pytest:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -68,13 +119,13 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: agent4k_pytest
+          POSTGRES_DB: agent4k_pytest_${{ github.run_id }}_${{ github.run_attempt }}
           POSTGRES_USER: pytest
           POSTGRES_PASSWORD: pytest
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U pytest -d agent4k_pytest"
+          --health-cmd "pg_isready -U pytest"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -82,7 +133,7 @@ jobs:
     env:
       DB_POOL_MIN_SIZE: "0"
       DEEPSEEK_API_KEYS: ""
-      TEST_DATABASE_URL: postgresql://pytest:pytest@127.0.0.1:5432/agent4k_pytest
+      TEST_DATABASE_URL: postgresql://pytest:pytest@127.0.0.1:5432/agent4k_pytest_${{ github.run_id }}_${{ github.run_attempt }}
 
     steps:
       - uses: actions/checkout@v4

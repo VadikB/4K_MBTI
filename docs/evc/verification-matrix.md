@@ -7,6 +7,12 @@
 Его повторяют, если изменилось проверенное основание, разрешён конфликт или обнаружена
 ошибка. Больше проверок нужно при новых сбоях или обоснованном риске.
 
+Класс риска путей помогает выбрать ранний локальный набор, но не отменяет строки
+матрицы и обязательный CI: `low` — только docs без runtime-содержания; `medium` —
+frontend, tooling и изолированная прикладная логика; `high` — БД, auth/права,
+публикация/snapshot, CI/release/deploy и критические runtime-контракты. При сочетании
+применяется максимальный класс и объединение проверок.
+
 | Тип изменения | Локальный минимум перед PR |
 | --- | --- |
 | Только Markdown / docs | `git diff --check`; проверка локальных ссылок, путей и существования описанных команд; содержательное review согласованности |
@@ -45,7 +51,8 @@
 ## Обязательный CI перед слиянием
 
 Локальный минимум не отключает [GitHub workflow](../../.github/workflows/backend-tests.yml).
-В текущем CI для каждого PR обязательны успешные jobs `frontend` и `pytest`:
+В текущем CI для каждого PR и кандидата merge queue обязательны успешные jobs
+`coordination`, `frontend`, `pytest` и `full-verification`:
 
 - frontend: аудит зависимостей, lint, frontend regression tests, сборка и совпадение `web/dist`;
 - pytest на событии `pull_request`: быстрые unit- и HTTP-контракты на отдельном
@@ -55,7 +62,8 @@
 запускается при создании PR сразу не в draft либо при переходе draft PR в
 `Ready for review`, затем — после каждого нового commit, пока PR остаётся Ready.
 Job выполняет integration и browser acceptance на изолированной БД в
-`pull_request`-контексте. Unit и HTTP выполняются один раз быстрым job `pytest`.
+`pull_request`- или `merge_group`-контексте. Unit и HTTP выполняются один раз быстрым
+job `pytest`.
 Новый commit после успешного полного прогона Ready PR делает доказательство
 устаревшим и запускает workflow для нового head; незавершённый прогон прежнего
 head отменяется. Активный ruleset не разрешает merge без checks `frontend`,
@@ -68,15 +76,16 @@ head отменяется. Активный ruleset не разрешает merg
 Для `main` действует ruleset `Protect main and require full verification` (ID
 `26191885`) без bypass, только со squash merge и обязательным актуальным head.
 
-Workflow `CI` запускается на `pull_request` и push в `main`: на PR выполняются
-`frontend` и быстрый `pytest`, а на push в `main` — только `deploy-test`.
+Workflow `CI` запускается на `pull_request`, `merge_group` и push в `main`: на PR и
+кандидате очереди выполняются `coordination`, `frontend` и быстрый `pytest`, а на push
+в `main` — только `coordination` и `deploy-test`.
 В draft job `frontend` выполняет весь набор, кроме отложенного шага
 `Verify application release`. Переход в `Ready for review` повторно запускает
 быстрые jobs `frontend` и `pytest` для того же head, включает release gate и
 запускает `full-verification`. Merge без нового согласованного номера продукта
-остаётся запрещён. Workflow `Full verification` реагирует на события `opened`,
-`reopened`, `synchronize` и `ready_for_review`, но job выполняется только при
-`draft == false`; ручная метка не требуется.
+остаётся запрещён. Workflow `Full verification` реагирует на `merge_group` и события
+PR `opened`, `reopened`, `synchronize`, `ready_for_review`; для PR job выполняется
+только при `draft == false`. Ручная метка не требуется.
 
 ## Отчёт и сбои
 
