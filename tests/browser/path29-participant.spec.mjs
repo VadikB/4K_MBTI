@@ -10,7 +10,8 @@ function canonical(value) {
     .map((key) => JSON.stringify(key) + ':' + canonical(value[key])).join(',') + '}';
   return JSON.stringify(value);
 }
-const checksum = (value) => createHash('sha256').update(canonical(value)).digest('hex');
+// Participant payload/snapshot refs use m5_case_runtime's JSON + LF contract.
+const checksum = (value) => createHash('sha256').update(canonical(value) + '\n').digest('hex');
 
 function verifyPreparation(receipt) {
   const generated = receipt.functional_generation;

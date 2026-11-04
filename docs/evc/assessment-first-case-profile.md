@@ -105,6 +105,8 @@ PASS входных fixtures не заменяет его admission.
   `AS.case_ref`; snapshot с пересчитанным snapshot checksum; execution payload с
   execution ref; participant payload с предъявленным payload. Разные объекты не
   обязаны иметь одинаковый hash.
+  Контракт генератора хеширует compact sorted UTF-8 JSON без завершающего LF;
+  Case/package/QA/snapshot/participant payload используют `m5_case_runtime` с LF.
 - После start HTTP 201 сохраняются Cycle/Session/AS start times, AS ID, тот же
   candidate/snapshot, независимый owner runtime GET, совпадение introduction с DOM,
   screenshot и фактические 0 assessee turns в БД.
@@ -119,6 +121,11 @@ Evidence: `run.json`, `source-provenance.json`, pre-start receipt,
 `first-case-receipt.json` либо failure, screenshots и `cleanup.json`.
 `code-identity.json` фиксирует HEAD/branch/main/status и SHA-256 исполняемых файлов;
 `runner-result.json` — итог, exit code и пути.
+`--summarize-only` пересобирает `runner-result.normalized.json` по сохранённым
+evidence без доступа к БД/LLM. Сводка отдельно считает уникальные операции и
+завершённые HTTP-вызовы из безопасных строк server log. Tokens доступны для
+сохранённых ответов; расход предыдущего malformed JSON-ответа продуктовый trace
+не сохраняет, поэтому при JSON retry общая стоимость не заявляется полной.
 
 После сохранения evidence runner останавливает только свой server, вызывает
 `test_stand.py destroy`, проверяет точный owner marker и отсутствие БД, удаляет state.

@@ -1,6 +1,6 @@
 """Preflight and entrypoint for the superadmin-to-first-case synthetic run."""
 from __future__ import annotations
-import argparse,hashlib,json,os,shutil,socket,subprocess,sys,urllib.parse
+import argparse,hashlib,json,os,re,shutil,socket,subprocess,sys,urllib.parse
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -74,10 +74,44 @@ def check_bootstrap(directory, port, python, env):
         cli('destroy')
     print('PASS bootstrap_repeat; sources verified; LLM_CALLS=0; owned database removed', flush=True)
 
+
+def summarize_runs(directory, exit_code):
+    runs = []
+    for run_path in sorted(directory.glob('*/run.json')):
+        run_directory = run_path.parent
+        def read(name):
+            file = run_directory / (name + '.json')
+            return json.loads(file.read_text()) if file.exists() else None
+        run, cleanup = read('run'), read('cleanup')
+        clean = bool(cleanup and cleanup.get('owner_verified') and cleanup.get('database_absent')
+                     and cleanup.get('state_absent'))
+        bootstrap = run.get('scope') == 'bootstrap_repeat'
+        success = clean and (run_directory / ('source-provenance.json' if bootstrap else 'first-case-receipt.json')).exists()
+        log = run_directory / 'server.log'
+        completions = [{'duration_ms': float(match[0]), 'routing_key': match[1]}
+            for match in re.findall(
+                r'DeepSeek request completed duration_ms=([0-9.]+)[^\n]*routing_key=([a-f0-9-]{36}:[a-zA-Z0-9:_-]+)',
+                log.read_text() if log.exists() else '')]
+        runs.append({'run': run, 'cleanup': cleanup,
+            'result': ('PASS_BOOTSTRAP_ONLY' if bootstrap else 'PASS') if success else 'FAIL',
+            'evidence_directory': str(run_directory), 'failure': read('failure'),
+            'provider_completed_requests': len(completions),
+            'provider_completions': completions,
+            'usage_note': 'Receipt totals count unique retained operations; JSON retries have separate completions, but earlier malformed-response usage is not retained by product trace.'})
+    return {'profile': 'assessment-first-case/1.1', 'scope': 'synthetic_diagnostic',
+        'exit_code': exit_code, 'runs': runs}
+
 def main()->int:
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--directory',type=Path,default=ROOT/'.test-stand/assessment-first-case');p.add_argument('--port',type=int,default=18861);p.add_argument('--preflight-only',action='store_true');p.add_argument('--env-file',type=Path);p.add_argument('--python',default=str(ROOT/'.venv/bin/python'));p.add_argument('--db-admin-port',type=int,default=55432)
     p.add_argument('--check-bootstrap', action='store_true', help='Repeat create/bootstrap/minimal seed/destroy without LLM')
+    p.add_argument('--summarize-only', action='store_true', help='Rebuild normalized summary from existing evidence; no credentials or LLM')
     a=p.parse_args()
+    if a.summarize_only:
+        original = json.loads((a.directory / 'runner-result.json').read_text())
+        summary = summarize_runs(a.directory, original['exit_code'])
+        (a.directory / 'runner-result.normalized.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        return original['exit_code']
     env=os.environ.copy()
     if a.env_file:
         from dotenv import dotenv_values
@@ -94,23 +128,15 @@ def main()->int:
     (a.directory / 'code-identity.json').write_text(json.dumps(identity, ensure_ascii=False, indent=2) + '\n')
     if a.check_bootstrap:
         check_bootstrap(a.directory, a.port, a.python, env)
+        (a.directory / 'runner-result.json').write_text(json.dumps(
+            summarize_runs(a.directory, 0), ensure_ascii=False, indent=2) + '\n')
         return 0
     env.update(BROWSER_PYTHON=a.python,P4K_FULL_PATH='1',P4K_REAL_PROVIDER='1',
                P4K_EVIDENCE_DIRECTORY=str(a.directory.resolve()),P4K_PORT=str(a.port),
                P4K_CODE_IDENTITY=json.dumps(identity))
     completed = subprocess.run(['npx','playwright','test','tests/browser/path29-participant.spec.mjs',
         '--workers=1','--reporter=line'],cwd=ROOT,env=env)
-    runs = []
-    for run_path in sorted(a.directory.glob('*/run.json')):
-        directory = run_path.parent
-        def read(name):
-            file = directory / (name + '.json')
-            return json.loads(file.read_text()) if file.exists() else None
-        runs.append({'run': read('run'), 'cleanup': read('cleanup'),
-            'result': 'PASS' if (directory / 'first-case-receipt.json').exists() else 'FAIL',
-            'evidence_directory': str(directory), 'failure': read('failure')})
-    summary = {'profile': 'assessment-first-case/1.1', 'scope': 'synthetic_diagnostic',
-        'exit_code': completed.returncode, 'runs': runs}
+    summary = summarize_runs(a.directory, completed.returncode)
     (a.directory / 'runner-result.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return completed.returncode

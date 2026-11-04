@@ -49,3 +49,27 @@ def test_duplicate_operation_with_different_usage_is_rejected():
             {'operation_id': 'same', 'sent': {}, 'provider': {'usage': {'total_tokens': 1}}},
             {'operation_id': 'same', 'sent': {}, 'provider': {'usage': {'total_tokens': 2}}},
         ])
+
+
+def test_summary_separates_bootstrap_scope_and_requires_cleanup(tmp_path):
+    import json
+    from scripts.assessment_first_case import summarize_runs
+    directory = tmp_path / 'run'
+    directory.mkdir()
+    (directory / 'run.json').write_text(json.dumps({'scope': 'bootstrap_repeat'}))
+    (directory / 'source-provenance.json').write_text('{}')
+    assert summarize_runs(tmp_path, 0)['runs'][0]['result'] == 'FAIL'
+    (directory / 'cleanup.json').write_text(json.dumps({
+        'owner_verified': True, 'database_absent': True, 'state_absent': True}))
+    assert summarize_runs(tmp_path, 0)['runs'][0]['result'] == 'PASS_BOOTSTRAP_ONLY'
+
+
+def test_candidate_checksum_uses_generator_contract_not_snapshot_contract():
+    from Api.m5_functional_generation_service import checksum as candidate_checksum
+    from Api.m5_case_runtime import checksum as snapshot_checksum
+    from tests.assessment_first_case_evidence import functional_receipt
+    candidate = {'CaseID': 'CASE.SPEC.02', 'synthetic': True}
+    expected = candidate_checksum(candidate)
+    assert expected != snapshot_checksum(candidate)
+    receipt = functional_receipt({'accepted_as': candidate, 'candidate_checksum': expected})
+    assert receipt['candidate_recomputed_checksum'] == expected

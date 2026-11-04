@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from Api.m5_case_runtime import checksum
+from Api.m5_functional_generation_service import checksum as candidate_checksum
 
 ROOT = Path(__file__).resolve().parents[1]
 FUNCTIONAL = ROOT / 'assessment_definitions/cases/competencies_4k/functional-personalization/0.5'
@@ -38,7 +39,7 @@ def source_provenance(connection, catalog_id):
     outer_frozen['status'] = 'FROZEN'
     from Api.m5_catalog_integrity import case_admission
     return {
-        'canonicalization': 'sha256-canonical-json-v1',
+        'canonicalization': 'sha256 of compact sorted UTF-8 JSON + LF (m5_case_runtime)',
         'source_files': {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in (FUNCTIONAL / 'case-package.json', FUNCTIONAL / 'manifest.json',
                 ROOT / 'assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.2.0/manifest.json',
@@ -84,7 +85,8 @@ def provider_calls(value):
                 call.update(provider=sent.get('provider'), endpoint=sent.get('endpoint'),
                     requested_model=sent.get('model'), actual_model=provider.get('model'),
                     contract=sent.get('contract'), usage=provider.get('usage'),
-                    transport_attempts=provider.get('transport_attempts'))
+                    transport_attempts=provider.get('transport_attempts'),
+                    json_parse_failures=node.get('parse_failures') or [])
                 previous = unique.setdefault(call['operation_id'], call)
                 if previous != call:
                     raise ValueError('PROVIDER_OPERATION_ID_CONTENT_CONFLICT')
@@ -117,7 +119,9 @@ def functional_receipt(trace):
     candidate = trace.get('accepted_as') or trace.get('candidate_as')
     return {
         'present': bool(trace), 'candidate_checksum': trace.get('candidate_checksum'),
-        'candidate_recomputed_checksum': checksum(candidate) if candidate else None,
+        'candidate_recomputed_checksum': candidate_checksum(candidate) if candidate else None,
+        'canonicalization': {'candidate': 'compact sorted UTF-8 JSON without LF',
+                             'compiled_case_and_as': 'compact sorted UTF-8 JSON + LF'},
         'input_snapshot_checksum': trace.get('input_snapshot_checksum'),
         'compiled_case_checksum': trace.get('compiled_case_checksum'),
         'admitted_for_participant': trace.get('admitted_for_participant'),
