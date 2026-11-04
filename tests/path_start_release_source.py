@@ -52,6 +52,12 @@ def validate_release(source):
             assert evidence['origin']['type'] == 'human_review'
             assert not evidence['origin'].get('synthetic')
             assert evidence['origin']['actor_ref'] == 'user:4:' + DECISION_BASIS
+    readback = source['artifact_readback']
+    expected = {'prompt_bundle', 'methodology', 'scenario', 'role', 'package', 'runtime_rules'} | {
+        case['case_id'] for case in cases}
+    assert len(readback) == len(expected) and {check['kind'] for check in readback} == expected
+    assert all(check['match'] is True and check['stored_checksum'] == check['recomputed_checksum']
+               for check in readback), 'STORED_ARTIFACT_CHECKSUM_MISMATCH'
 
 
 def collect(connection):
@@ -95,8 +101,44 @@ def collect(connection):
         'target': {**target, 'configured_port': settings.db_port, 'read_only': True},
         'program': program, 'configuration': config, 'catalog': catalog, 'roles': roles, 'cases': cases,
         'contains_user_history': False, 'new_methodology_approval': False}
+    source['artifact_readback'] = recompute_artifacts(connection, source)
     validate_release(source)
     return source
+
+
+def recompute_artifacts(connection, source):
+    """Compute over stored definitions, but export only technical hashes, not JSON bodies."""
+    from Api.assessment_configuration import definition_checksum
+    from Api.m5_case_runtime import checksum
+    checks = []
+    def add(kind, db_id, expected, actual):
+        checks.append({'kind': kind, 'db_id': db_id, 'stored_checksum': expected,
+                       'recomputed_checksum': actual, 'match': expected == actual})
+    config = source['configuration']
+    row = connection.execute('SELECT prompt_bundle_json,prompt_bundle_checksum FROM assessment_configurations WHERE id=%s',
+                             (config['id'],)).fetchone()
+    add('prompt_bundle', config['id'], row['prompt_bundle_checksum'], definition_checksum(row['prompt_bundle_json']))
+    for kind, table, version_id in (
+        ('methodology', 'assessment_methodology_versions', config['methodology_version_id']),
+        ('scenario', 'assessment_scenario_versions', config['scenario_version_id']),
+        ('role', 'assessment_role_profile_versions', source['roles'][0]['id']),
+    ):
+        row = connection.execute('SELECT checksum,definition_json FROM ' + table + ' WHERE id=%s', (version_id,)).fetchone()
+        add(kind, version_id, row['checksum'], definition_checksum(row['definition_json']))
+    for case in source['cases']:
+        row = connection.execute('SELECT content_json,content_checksum FROM m5_case_versions WHERE id=%s',
+                                 (case['id'],)).fetchone()
+        add(case['case_id'], case['id'], row['content_checksum'], checksum(row['content_json']))
+    row = connection.execute('SELECT package_json,manifest_json,package_checksum FROM m5_packages WHERE id=%s',
+                             (source['catalog']['package_db_id'],)).fetchone()
+    add('package', source['catalog']['package_db_id'], row['package_checksum'],
+        checksum({'package': row['package_json'], 'manifest': row['manifest_json']}))
+    runtime_id = source['cases'][0]['runtime_rule_version_id']
+    row = connection.execute('SELECT rules_json,rules_checksum FROM m5_runtime_rule_versions WHERE id=%s',
+                             (runtime_id,)).fetchone()
+    add('runtime_rules', runtime_id, row['rules_checksum'], checksum(row['rules_json']))
+    assert all(check['match'] for check in checks), 'STORED_ARTIFACT_CHECKSUM_MISMATCH'
+    return checks
 
 
 if __name__ == '__main__':

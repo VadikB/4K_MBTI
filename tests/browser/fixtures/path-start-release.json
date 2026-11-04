@@ -1420,5 +1420,112 @@
     }
   ],
   "contains_user_history": false,
-  "new_methodology_approval": false
+  "new_methodology_approval": false,
+  "artifact_readback": [
+    {
+      "kind": "prompt_bundle",
+      "db_id": 11,
+      "stored_checksum": "9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688",
+      "recomputed_checksum": "9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688",
+      "match": true
+    },
+    {
+      "kind": "methodology",
+      "db_id": 2,
+      "stored_checksum": "e6c88944af318033fbd76b18cc1b8eecb27b6a379df5fcdcdc82b9fa66f54c2c",
+      "recomputed_checksum": "e6c88944af318033fbd76b18cc1b8eecb27b6a379df5fcdcdc82b9fa66f54c2c",
+      "match": true
+    },
+    {
+      "kind": "scenario",
+      "db_id": 1,
+      "stored_checksum": "07c9a47f17da3a2f58f9f2752297c9ce337ffd453ff005af0bfaab373378666e",
+      "recomputed_checksum": "07c9a47f17da3a2f58f9f2752297c9ce337ffd453ff005af0bfaab373378666e",
+      "match": true
+    },
+    {
+      "kind": "role",
+      "db_id": 2,
+      "stored_checksum": "c5c2234f9fdd237e14024ea6939e3bc5561fd27bf4fac416a52196dec79cbe8f",
+      "recomputed_checksum": "c5c2234f9fdd237e14024ea6939e3bc5561fd27bf4fac416a52196dec79cbe8f",
+      "match": true
+    },
+    {
+      "kind": "CASE.SPEC.01",
+      "db_id": 6,
+      "stored_checksum": "d662b0d4a61e81c9c1005337174cba3c0ebd4a37568f3265f3c27bd8c3453b42",
+      "recomputed_checksum": "d662b0d4a61e81c9c1005337174cba3c0ebd4a37568f3265f3c27bd8c3453b42",
+      "match": true
+    },
+    {
+      "kind": "CASE.SPEC.02",
+      "db_id": 7,
+      "stored_checksum": "179fa0f8192862bee6af3190c8560f9c5ed133cc2fe07d6f5b6a98e6e3c9b729",
+      "recomputed_checksum": "179fa0f8192862bee6af3190c8560f9c5ed133cc2fe07d6f5b6a98e6e3c9b729",
+      "match": true
+    },
+    {
+      "kind": "CASE.SPEC.03",
+      "db_id": 8,
+      "stored_checksum": "6b496c20a8b0f6532d3552d1ca65c78fd37982c12671ce9c8a77d6d6cb3d73c5",
+      "recomputed_checksum": "6b496c20a8b0f6532d3552d1ca65c78fd37982c12671ce9c8a77d6d6cb3d73c5",
+      "match": true
+    },
+    {
+      "kind": "CASE.SPEC.04",
+      "db_id": 9,
+      "stored_checksum": "1993c17b7b6ca5bce040750f8aae7efabd3e46d69d42e99ea184a17ae4da47f4",
+      "recomputed_checksum": "1993c17b7b6ca5bce040750f8aae7efabd3e46d69d42e99ea184a17ae4da47f4",
+      "match": true
+    },
+    {
+      "kind": "CASE.SPEC.05",
+      "db_id": 10,
+      "stored_checksum": "1847b023c3f0d027553ba271e2a1b6c2f863b9b07f3229266aae2f35ce44108d",
+      "recomputed_checksum": "1847b023c3f0d027553ba271e2a1b6c2f863b9b07f3229266aae2f35ce44108d",
+      "match": true
+    },
+    {
+      "kind": "CASE.SPEC.06",
+      "db_id": 11,
+      "stored_checksum": "26d59939198365a48b1171498783a7e37fb6ddcb5efdd39d019a453b1afb6de8",
+      "recomputed_checksum": "26d59939198365a48b1171498783a7e37fb6ddcb5efdd39d019a453b1afb6de8",
+      "match": true
+    },
+    {
+      "kind": "CASE.SPEC.07",
+      "db_id": 12,
+      "stored_checksum": "d59ffa2e2a9e62924e00e433e2d43c7ccc4f0b46166b21a9d0f62bab8eddff44",
+      "recomputed_checksum": "d59ffa2e2a9e62924e00e433e2d43c7ccc4f0b46166b21a9d0f62bab8eddff44",
+      "match": true
+    },
+    {
+      "kind": "CASE.SPEC.08",
+      "db_id": 13,
+      "stored_checksum": "a2bf9ce336c357153e435f1d3fb95c227db81d6389197ed9877a725277c4413d",
+      "recomputed_checksum": "a2bf9ce336c357153e435f1d3fb95c227db81d6389197ed9877a725277c4413d",
+      "match": true
+    },
+    {
+      "kind": "CASE.SPEC.09",
+      "db_id": 14,
+      "stored_checksum": "183925e9405662e3a4f95bedc0117e98fc8012abac9432350ee8c60cbaae5259",
+      "recomputed_checksum": "183925e9405662e3a4f95bedc0117e98fc8012abac9432350ee8c60cbaae5259",
+      "match": true
+    },
+    {
+      "kind": "package",
+      "db_id": 2,
+      "stored_checksum": "b9e2889b5a7b19dda6b88ebec30bffba87cf76afc3df4cb14df10de0036eb7b0",
+      "recomputed_checksum": "b9e2889b5a7b19dda6b88ebec30bffba87cf76afc3df4cb14df10de0036eb7b0",
+      "match": true
+    },
+    {
+      "kind": "runtime_rules",
+      "db_id": 1,
+      "stored_checksum": "85900c2b9955c4f85996f55679f5d67cbc79c252c3bf570166cdef444ea1f757",
+      "recomputed_checksum": "85900c2b9955c4f85996f55679f5d67cbc79c252c3bf570166cdef444ea1f757",
+      "match": true
+    }
+  ]
 }

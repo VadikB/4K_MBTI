@@ -39,6 +39,12 @@
 - Следующий шаг: real PostgreSQL repeat/full integration, viewport browser и
   передача фактического остатка. Владелец получил вопрос о границе дальнейшей PM-03
   доработки; независимые проверки продолжаются. Случайный LLM rerun не запускается.
+- Повтор ST-R3 real PG: 3 PASS. Full integration: 205 PASS / 4 environment FAIL
+  (pytest отсутствовал в child interpreter). Исправлено только test environment:
+  частная копия runtime/pytest в ignored worktree venv, не в venv сервиса.
+- UI entry: 15 PASS включая R10/PG-R1/viewport4; warning на 320 визуально исправлен
+  scoped CSS, до/после сохранены. Новые HTTP 2 PASS; 15/15 stored artifact checksum
+  readbacks match. Активно: финальная бесплатная EVC проверка в исправленном test env.
 - Дальше: точный approved release в owned-БД → исходный run/первый разрыв →
   адресные PS-01…05/регрессии → полный повтор/evidence. PREP-DIAG-01 UNKNOWN,
   DB-PERSIST-01 не переоткрывается. Cleanup guards и terminal export сохраняются.

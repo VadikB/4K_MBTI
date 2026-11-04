@@ -255,3 +255,30 @@ plan без допущенной первой AS (FAIL до исправлени
 за предварительно созданным планом. Это отражение существующего admission/start gate,
 не изменение admission/правил времени. Backend 755 PASS, HTTP 106 PASS, stage units
 8 PASS, diff PASS; actual PostgreSQL повтор — активный следующий шаг.
+
+## Проверки следующего checkpoint
+
+- На de23f47 real PostgreSQL ST-R3 повтор 3 PASS. Полный `tests/integration`, явно
+  `-m 'integration and not llm'`: 205 PASS / 4 FAIL; все четыре child processes не
+  нашли pytest, поскольку изолированный environment не переносит внешний PYTHONPATH.
+  Это setup окружения, не доказательство продуктовой регрессии. Owned DB удалена;
+  fixture environment не ослаблялся. В частной копии runtime в worktree установлен
+  pytest; рабочий venv сервиса не изменён. Повтор всего набора ещё ожидается.
+- Actual entry/browser: 15 PASS — новые ST-R1/R4, PG-R1, widths 1440/320/390/768,
+  прежние R10 (pending questionnaire/null/lost PUT/reopen/logout), assignment blockers.
+  API в этих UI negative/geometry проверках явно mocked, не девять новых LLM runs.
+  Main owned run до admission остаётся отдельным фактом a8d8fcf.
+- Визуальный QA обнаружил сжатие текста warning на 320 при общем inline-flex `.error`.
+  Scoped CSS grid сохраняет иконку и одну читаемую колонку, без новых цветов/redesign.
+  До/после: `viewports-before/admin-320.png`, `viewports-after/` (4 PNG + browser log).
+  Browser дополнительно проверяет ширину пояснения >150 px и отсутствие overflow.
+- Новые HTTP regressions PG-R1: 2 PASS, с реальным router/readiness projection,
+  synthetic SQL/source stubs, owner 200 / anonymous 401 / foreign user 403.
+- Дополнительный read-only test readback пересчитал 15 stored definitions: prompt
+  bundle, M2 methodology, scenario, role, 9 Cases, package и runtime rules — все match.
+  Receipt дополнен `artifact_readback`; исходное содержание/refs/QA не менялись.
+  В старых run сохраняется прежний receipt hash, его evidence не переписан.
+
+Текущий шаг не является завершением PATH. PM-03 content FAIL после repair остаётся
+конкретным ограничением первого старта; следующий платный запуск требует доказанного
+основания, не случайного повторения. Развилка дальнейшей генерации направлена владельцу.

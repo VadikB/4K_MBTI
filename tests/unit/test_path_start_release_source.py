@@ -40,6 +40,7 @@ def test_exact_published_sources_match_repository(release):
     lambda s: s['cases'][0]['qa_evidence'][0]['evidence_json']['origin'].update(synthetic=True),
     lambda s: s['cases'][0]['admission'].update(admitted=False),
     lambda s: s['cases'][0].update(content_checksum='0' * 64),
+    lambda s: s['artifact_readback'][0].update(recomputed_checksum='0' * 64),
 ])
 def test_changed_or_synthetic_source_is_rejected(release, mutation):
     changed = copy.deepcopy(release)
