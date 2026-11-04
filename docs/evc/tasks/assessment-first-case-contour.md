@@ -190,6 +190,36 @@ PREP-DIAG-01: доказательства такой связи отсутст�
 Применимость прежних проверок: provenance/seed/DB export/lifecycle и их первичные
 факты переиспользованы без изменений; логика summary/validator проверяется заново.
 
+Проверенный clean SHA: `cccf24ae223eb7a0b92235d27538cf4f85340300`. Финальный
+SHA передачи — в MANIFEST/HANDOFF/bundle; после проверенного SHA добавлены только
+эти evidence/итоги и offline семантические проверки упаковщика, исполняемые при
+сборке. Хеши всех runner/collector/validator/persistence файлов из verification.json
+должны совпасть с финальным пакетом; VERIFY.py проверяет это автоматически.
+
+| Проверка на cccf24a | Фактический итог | Применимость |
+| --- | --- | --- |
+| Адресный Python: first_case + test_stand + run_summary | PASS 49, 7.83s | 19 прежних + 30 новых, без БД/LLM |
+| Node: preparation_receipt + receipt_file | PASS 27 | PASS/WARNINGS с/без repair; запреты статусов/недопуска; стадии/refs; durable persistence |
+| `python -m pytest -q -m 'not integration and not e2e and not llm'` | PASS 734, 318 deselected, 69.78s | Эквивалент `npm run test:backend`, общий локальный venv указан в evidence |
+| `npm run lint:js`; `node --test tests/frontend/*.test.mjs`; `npm run build:web` | PASS; 131 PASS; PASS | web/dist byte-identical; frontend не менялся |
+| Node syntax + Playwright `--list` для изменённого spec | PASS, 1 test обнаружен | Не считается выполненным browser-сценарием |
+| Diff/guard scope | PASS | Api/definitions/test_stand/conftest неизменны относительно cf6175e |
+| Отдельное воспроизведение на cf6175e | Два дефекта подтверждены; новый код исправляет оба | Точные before/after в verification.json, никакого LLM |
+
+Неблокирующие предупреждения прежних зависимостей: Starlette/httpx deprecation и
+Node MODULE_TYPELESS_PACKAGE_JSON; не подавлялись и видны в сохранённых output.
+Новые DB/browser integration и платный LLM NOT_RUN: изменение ограничено offline
+harness, DB/runtime/admission не менялись; владелец прямо не требует платный повтор.
+Прежние HTTP 106 PASS, gateway browser и export DB regression применимы только к
+своим неизменённым путям, не объявляются новым успешным real-provider прогоном.
+
+Main повторно fetched: `053d1a58b46b5cfa7784d3d9ba6fd4785efed769`; локальный
+main тот же. Read-only SSH подтвердил deployed checkout того же SHA и публичный
+`/users/version`: `2.0.61`, public_origin `https://test.4k-assistant.ru`.
+Рабочая ветка не merged/pushed, PR не создан, CI нового SHA NOT_RUN. Развёртывание
+не изменялось. Это завершённая локальная сдача инструмента с доступным пакетом,
+не заявление о готовности к merge без обязательного CI/человеческого review.
+
 ## Проверки
 
 - `/Users/vadim_bogachev/Developer/4K/.venv/bin/python -m pytest -q -m "not integration and not e2e and not llm"`:

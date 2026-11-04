@@ -60,7 +60,18 @@ assert [c['status'] for c in checks]==before['statuses']
 assert all(isinstance(c['reason'],str) and c['reason'] for c in checks)
 assert f['candidate_checksum']==f['candidate_ref']['checksum']==before['candidate_checksum']
 assert f['final_generation_operation_id'].startswith(exported['preparation_operation']['operation_id']+':')
-print('PASS',len(manifest['files']),'file hashes, source/QA checksums, incident UNKNOWN, export links and cleanup; implementation',manifest['implementation_sha'])
+h=load(e+'harness-regression/verification.json')
+assert h['code_identity']['worktree_status']==''
+assert h['new_paid_llm_calls']==h['new_database_lifecycle_runs']==0
+assert h['historical_incident']['root_cause']=='UNKNOWN'
+assert h['historical_incident']['harness_defects_causal_link']=='NOT_ESTABLISHED'
+assert h['reproductions']['summary']['before']=='PASS' and h['reproductions']['summary']['after']=='FAIL'
+assert h['reproductions']['warnings']['before']=='REJECTED' and h['reproductions']['warnings']['after']=='ACCEPTED'
+assert all(check['exit_code']==0 for check in h['checks'].values())
+for relative,digest in h['code_identity']['files'].items():
+    assert hashlib.sha256((root/'repository'/relative).read_bytes()).hexdigest()==digest, relative
+assert h['protected_paths_unchanged_against']==manifest['previous_delivery_sha']
+print('PASS',len(manifest['files']),'file hashes, source/QA checksums, incident UNKNOWN, export/cleanup and harness regression links; implementation',manifest['implementation_sha'])
 '''
 
 

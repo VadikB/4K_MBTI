@@ -9,8 +9,15 @@
 - Текущая область не включает восстановление БД или его расследование. Cleanup
   guards постоянной БД, Api/, методология/admission/repair не менялись. PREP-DIAG-01
   остаётся UNKNOWN; причинной связи с ошибками harness не установлено. PATH не начат.
-- Идёт адресная/EVC проверка и сборка новой независимой передачи; бесплатные
-  регрессии используют явную synthetic success fixture, не выдают её за LLM PASS.
+- На clean `cccf24ae223eb7a0b92235d27538cf4f85340300`: Python targeted 49 PASS,
+  backend 734 PASS / 318 deselected, Node 27 PASS, frontend 131 PASS, lint/build/
+  syntax/discovery/diff PASS. Output и before/after двух дефектов сохранены в
+  `docs/evc/evidence/assessment-contour-2026-11-04/harness-regression/verification.json`.
+  Бесплатные регрессии используют явную synthetic success fixture, не LLM PASS.
+- Новая передача включает diff после cf6175e и 4bab723, manifest, Git bundle и
+  самостоятельный VERIFY.py с проверкой source/evidence/runner hashes. Финальный SHA
+  задан MANIFEST/HANDOFF. Main и read-only deployment — 053d1a58 / 2.0.61;
+  CI NOT_RUN, push/PR/merge/deploy не выполнялись. Следующий шаг — приёмка владельцем.
 
 - Активная задача: `docs/evc/tasks/assessment-first-case-contour.md`;
   ветка `codex/assessment-first-case`, base/main `053d1a58b46b5cfa7784d3d9ba6fd4785efed769`.
