@@ -1,6 +1,6 @@
 # STATE — PM03-REPAIR-CONTRACT
 
-## Завершённый локальный шаг 04.11.2026
+## Штатная передача 04.11.2026
 
 - Владелец явно разрешил передать repair тот же frozen generation contract и
   добавить регрессии. Prompts/admission/лимит repair/платный LLM неизменны.
@@ -12,15 +12,21 @@
   763 PASS/323 deselected, HTTP108 PASS/12 deselected. Self-review/diff/links PASS.
   Primary logs/identity: `docs/evc/evidence/pm03-repair-contract-2026-11-04/`.
   Последующий docs/evidence commit не меняет проверенный Api/tests.
-- Push/новый PR/merge/deploy/version bump/artifact publication — false.
+- По продолжению владельца «идем дальше» после локальной сдачи 04fcfdc:
+  branch_push/pr=true для отдельного draft PR поверх `codex/path-start-01` / #168.
+  Merge/deploy/version bump/artifact publication=false; реальный LLM не запускается.
+  Включён только обычный следующий шаг передачи по CONTRIBUTING.
 - PATH BLOCKED_PM03, пять содержательных FAIL не объясняются этим расхождением
   без доказательства; PREP-DIAG-01 UNKNOWN. История ниже относится к передаче PATH.
 - Новых LLM calls/DB lifecycle runs = 0. Нормы/артефакты/queue/admission/лимит
   repair неизменны. Main/test не обновлялись, PR #168 не изменён.
-- Следующий шаг: человеческое review узкого diff и отдельное решение о публикации
-  ветки/выпуске либо обоснованном real-provider эксперименте. Не заявлять качество
+- Активно: push/draft PR → fast CI и фиксация статусов. Далее человеческое review,
+  отдельное решение выпуска либо обоснованного real-provider эксперимента. Не заявлять качество
   AS или полный PATH PASS по синтетическим unit fixtures. Новая база с fix —
   `codex/pm03-repair-contract` (d97625d + docs/evidence commit), не main/PR #168.
+- Перед push remote main7221671, PATH11b2a94 подтверждены read-only. После squash
+  #168 перед отдельным выпуском PM03 перенести только PM03 changes на фактический
+  main и повторить проверки; не ограничиваться автоматическим retarget PR.
 
 # Исторический STATE — PATH-START-01
 

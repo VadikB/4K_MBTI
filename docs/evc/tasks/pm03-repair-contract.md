@@ -77,7 +77,8 @@ Case. Новая регрессия не реконструирует удалё
 и контрактные тесты с подставным gateway; дополнительно `npm run test:backend:http`.
 Ни БД, ни очереди, ни endpoints не меняются: отдельный integration lifecycle N/A.
 Frontend/lint/build N/A — web не меняется. LLM tests/платные вызовы NOT_RUN по области.
-CI NOT_RUN — push/новый PR не разрешались; это не готовность к merge.
+При локальной фиксации CI был NOT_RUN. Текущий план передачи ниже включает
+push/draft PR; это не готовность к merge.
 
 Критерии: точное одно system message с тем же контрактом, что generate; использование
 snapshot ref, не default/current; checksum/missing dependency fail до gateway;
@@ -85,9 +86,11 @@ snapshot ref, не default/current; checksum/missing dependency fail до gatewa
 admission/compiled Case после повторного blocking FAIL. Синтетические ответы не
 доказывают реальную функциональную эквивалентность AS.
 
-Флаги: `branch_push=false`, `pr=false`, `merge=false`, `deploy=false`,
-`version_bump=false`, `artifact_publish=false`. Самостоятельные рабочие commit
-допустимы; публикация/выпуск отдельно. Откат — адресный revert двух строк сборки
+Флаги текущей передачи: `branch_push=true`, `pr=true`, `merge=false`, `deploy=false`,
+`version_bump=false`, `artifact_publish=false`. По продолжению владельца «идем дальше»
+04.11.2026 выполняется штатная передача уже согласованного исправления в отдельный
+draft PR. Это обычный план передачи по CONTRIBUTING, не разрешение выпуска или LLM.
+Откат — адресный revert двух строк сборки
 и тестов; данные/сохранённые snapshots не удалять и не переписывать.
 
 ## Отчёт
@@ -138,11 +141,36 @@ gateway, как уже блокировал generation; fallback на current/de
 test cleanup не запускался, защита постоянной БД не затрагивалась.
 
 Откат — адресный revert implementation и регрессий, без удаления сохранённых
-данных/snapshots. Main/test не обновлялись; новая ветка только локальная, CI не
-заменяется локальными PASS. Для review/выпуска понадобится отдельный допуск
-branch_push/pr и затем Ready/version/обязательный CI/merge/deploy.
+данных/snapshots. На момент локальной фиксации main/test не обновлялись, ветка была
+только локальной. Текущая передача push/draft PR описана ниже; CI не заменяется
+локальными PASS. Ready/version/обязательный полный CI/merge/deploy остаются отдельно.
 
 Следующая база с исправлением — `codex/pm03-repair-contract`, implementation d97625d
 и docs/evidence commit передачи. Для качества AS и полного PATH остаются прежние
 пять содержательных FAIL, отсутствие AS/start/оценочных ответов; причинная связь
 с добавленным system message NOT_ESTABLISHED. PREP-DIAG-01 остаётся UNKNOWN.
+
+## Штатная передача в draft PR
+
+Владелец продолжил работу командой «идем дальше» после локальной сдачи 04fcfdc.
+Следующий ограниченный шаг: push `codex/pm03-repair-contract` и отдельный draft PR
+с base `codex/path-start-01` / PR #168, exact base
+`11b2a94e164b97b95a0ef8f9a806ab2becf2b1a9`. Такой stacked diff содержит только
+PM03-REPAIR-CONTRACT, а не повторяет весь PATH. Две строки runtime и tests/evidence
+после d97625d неизменны; выполненные backend763/HTTP108/targeted23 применимы.
+Новый commit передачи меняет только эту запись и STATE; Markdown links/diff/identity
+повторно проверяются. Branch push сам по себе CI не запускает; draft PR запустит
+fast frontend/pytest, full-verification ожидаемо skipped по draft policy.
+
+Read-only remote refs перед push: main `7221671…`, base PATH `11b2a94…`; удалённая
+PM03-ветка ещё отсутствует. PR #168/source branch не меняются, main не переписывается.
+Секреты/доступы/PII/state/provider raw messages не передаются. Документальные
+CI NOT_RUN в предыдущем срезе verification.json — историческое состояние проверки,
+не утверждение о результате будущего CI; текущие checks фиксируются ссылкой в PR.
+
+Зависимость: сначала отдельно принимается PR #168. После его squash merge для
+выпуска PM03 синхронизировать ветку с фактическим новым main, перенеся только PM03
+изменения, и повторить проверки актуального head/base. Простого retarget старой
+ветки при несовпавшей squash ancestry недостаточно. Это не разрешение делать merge
+в PATH или main сейчас. Новый номер приложения, Ready/полный CI, deploy и real LLM
+не включены; PATH остаётся BLOCKED_PM03, качество AS не объявляется исправленным.
