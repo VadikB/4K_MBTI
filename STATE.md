@@ -1,4 +1,18 @@
-# STATE — ARCH30
+# STATE — постоянный синтетический контур
+
+## Checkpoint 04.11.2026
+
+- Активная задача: `docs/evc/tasks/assessment-first-case-contour.md`;
+  ветка `codex/assessment-first-case`, base/main `053d1a58b46b5cfa7784d3d9ba6fd4785efed769`.
+- Область — настройка runner/fixtures/профиля; PATH-START-01 не передан в исполнение.
+- Минимальный seed и lifecycle новой owned-БД проверены без LLM, cleanup PASS.
+  Причина старого hash: изменены два status-поля; package hash использует import envelope.
+- Backend 701 PASS; адресные source/evidence/generation тесты 49 PASS.
+- Следующий шаг: один реальный диагностический прогон с полной выгрузкой после start;
+  затем итоговый отчёт и безопасные evidence. Старые DB удалены, дополнить их readback нельзя.
+- Merge/deploy/version_bump/artifact_publish=false. Продуктовые исправления отложены.
+
+# Исторический STATE — ARCH30
 
 ## Текущий checkpoint ARCH30, 30.10.2026
 

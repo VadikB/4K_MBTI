@@ -1,5 +1,8 @@
 # Тесты backend
 
+Постоянный синтетический контур «суперадмин → первый Case» и его текущие границы
+описаны в [`docs/evc/assessment-first-case-profile.md`](../docs/evc/assessment-first-case-profile.md).
+
 Тесты разделены по уровню:
 
 - `unit` — быстрые проверки без PostgreSQL, HTTP и реального LLM;

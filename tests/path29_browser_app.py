@@ -4,8 +4,7 @@ import json
 import threading
 from pathlib import Path
 
-if (os.getenv('AGENT4K_ISOLATED_STAND') != '1' or os.getenv('AGENT4K_BROWSER_TEST_GATEWAY') != '1'
-        or os.getenv('AGENT4K_PATH29_TEST_APP') != '1'):
+if (os.getenv('AGENT4K_ISOLATED_STAND') != '1' or os.getenv('AGENT4K_PATH29_TEST_APP') != '1'):
     raise RuntimeError('PATH29_HARNESS_REQUIRES_OWNED_ISOLATED_STAND')
 
 from scripts.test_stand import owned
@@ -32,6 +31,9 @@ def deliver(**payload):
 
 routes.send_auth_action_email = deliver
 auth_module.send_auth_action_email = deliver
+def deliver_magic(*, email, login_url, expires_at):
+    deliver(email=email, action_url=login_url, expires_at=expires_at, purpose='magic_link')
+auth_module.send_magic_link_email = deliver_magic
 preparation_gate = threading.Event()
 original_process = product_cycle_preparation_queue._process_current_attempt
 
@@ -73,3 +75,79 @@ def participant_state():
             'started': 'SELECT COUNT(*) AS n FROM m5_cycles WHERE owner_user_id=%s AND started_at IS NOT NULL',
             'operations': 'SELECT COUNT(*) AS n FROM product_cycle_preparation_operations WHERE user_id=%s',
         }.items()}
+
+
+@app.get('/__pytest__/path-receipt')
+def path_receipt():
+    """Safe source-to-runtime trace; excludes prompts, responses and credentials."""
+    from Api.database import get_connection
+    from Api.m5_case_runtime import checksum
+    from tests.assessment_first_case_evidence import functional_receipt
+    with get_connection() as c:
+        program = c.execute("""SELECT p.id,p.code,p.version,p.status,p.definition_checksum,
+                p.assessment_configuration_id,p.catalog_version_id,p.source_refs_json
+            FROM assessment_program_definitions p WHERE p.code='path29-browser-specialist'""").fetchone()
+        configuration = c.execute("""SELECT id,code,status,methodology_version_id,
+                scenario_version_id,catalog_version_id,prompt_bundle_checksum
+            FROM assessment_configurations WHERE id=%s""",
+            (program['assessment_configuration_id'],)).fetchone()
+        catalog = c.execute("""SELECT c.id,c.catalog_id,c.catalog_version,c.status,c.usage_scope,
+                c.organization_id,c.manifest_checksum,c.decision_basis,c.package_db_id,
+                p.package_id,p.package_version,p.package_checksum,p.source_checksum
+            FROM m5_catalogs c JOIN m5_packages p ON p.id=c.package_db_id WHERE c.id=%s""",
+            (program['catalog_version_id'],)).fetchone()
+        cases = c.execute("""SELECT cv.id,cv.case_id,cv.case_version,cv.status,cv.base_role,
+                cv.content_checksum,member.runtime_rule_version_id
+            FROM m5_catalog_case_versions member
+            JOIN m5_case_versions cv ON cv.id=member.case_version_id
+            WHERE member.catalog_db_id=%s ORDER BY cv.case_id""", (catalog['id'],)).fetchall()
+        participant = c.execute("SELECT id FROM users WHERE email='path29-new@example.test'").fetchone()
+        operation = situation = cycle = None
+        sessions = []
+        assessment_answers = 0
+        if participant:
+            operation = c.execute("""SELECT operation_id,status,attempts,request_checksum,
+                    result_json,error_code,error_message
+                FROM product_cycle_preparation_operations WHERE user_id=%s
+                ORDER BY id DESC LIMIT 1""", (participant['id'],)).fetchone()
+            cycle = c.execute("""SELECT id,cycle_id,status,started_at,catalog_ref_json,
+                    execution_manifest_checksum,personalized_profile_id,owner_user_id,organization_id
+                FROM m5_cycles WHERE owner_user_id=%s ORDER BY id DESC LIMIT 1""",
+                (participant['id'],)).fetchone()
+            if cycle:
+                sessions = [dict(row) for row in c.execute('''SELECT session_id,status,started_at
+                    FROM m5_cycle_sessions WHERE cycle_db_id=%s ORDER BY ordinal''', (cycle['id'],)).fetchall()]
+                assessment_answers = c.execute('''SELECT count(*) AS n FROM m5_dialogue_turns t
+                    JOIN m5_assessment_situations s ON s.id=t.assessment_situation_db_id
+                    WHERE s.cycle_db_id=%s AND t.speaker_type='assessee' ''', (cycle['id'],)).fetchone()['n']
+                situation = c.execute("""SELECT assessment_situation_id,status,snapshot_checksum,
+                        snapshot_json,execution_payload_json,started_at
+                    FROM m5_assessment_situations WHERE cycle_db_id=%s ORDER BY id DESC LIMIT 1""",
+                    (cycle['id'],)).fetchone()
+        situation_value = dict(situation) if situation else {}
+        persisted_functional = ((situation_value.get('execution_payload_json') or {})
+                                .get('ai_operations') or {}).get('functional_personalization') or {}
+        failed_generated = ((((dict(operation).get('result_json') or {}) if operation else {})
+                            .get('generated')) or {})
+        functional = persisted_functional or failed_generated
+        snapshot = situation_value.get('snapshot_json') or {}
+        payload = situation_value.get('execution_payload_json') or {}
+        return {
+            'program_definition': dict(program), 'assessment_configuration': dict(configuration),
+            'catalog': dict(catalog), 'case_versions': [dict(item) for item in cases],
+            'preparation_operation': ({key: operation[key] for key in
+                ('operation_id', 'status', 'attempts', 'request_checksum', 'error_code', 'error_message')}
+                if operation else None),
+            'cycle': dict(cycle) if cycle else None,
+            'sessions': sessions, 'assessment_answers': assessment_answers,
+            'assessment_situation': ({key: situation[key] for key in
+                ('assessment_situation_id', 'status', 'snapshot_checksum', 'started_at')} if situation else None),
+            'saved_checksums': {
+                'snapshot_recomputed': checksum(snapshot) if snapshot else None,
+                'case_ref': snapshot.get('case_ref'),
+                'execution_payload_ref': snapshot.get('execution_payload_ref'),
+                'execution_payload_recomputed': checksum(payload) if payload else None,
+                'participant_payload': checksum(snapshot['participant_payload']) if snapshot else None,
+            },
+            'functional_generation': functional_receipt(functional),
+        }

@@ -2,43 +2,148 @@ import { test, expect } from '@playwright/test';
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+
+function canonical(value) {
+  if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
+  if (value !== null && typeof value === 'object') return '{' + Object.keys(value).sort()
+    .map((key) => JSON.stringify(key) + ':' + canonical(value[key])).join(',') + '}';
+  return JSON.stringify(value);
+}
+const checksum = (value) => createHash('sha256').update(canonical(value)).digest('hex');
+
+function verifyPreparation(receipt) {
+  const generated = receipt.functional_generation;
+  expect(receipt.preparation_operation.status).toBe('completed');
+  expect(receipt.program_definition.catalog_version_id).toBe(receipt.catalog.id);
+  expect(receipt.assessment_configuration.catalog_version_id).toBe(receipt.catalog.id);
+  expect(receipt.program_definition.source_refs_json.prompt_bundle_checksum)
+    .toBe(receipt.assessment_configuration.prompt_bundle_checksum);
+  expect(receipt.assessment_configuration.prompt_bundle_checksum).toMatch(/^[a-f0-9]{64}$/);
+  expect(receipt.cycle.catalog_ref_json.checksum).toBe(receipt.catalog.manifest_checksum);
+  expect(generated.admission_status).toBe('PASS');
+  expect(generated.admitted_for_participant).toBe(true);
+  expect(generated.candidate_checksum).toBe(generated.candidate_recomputed_checksum);
+  expect(generated.compiled_case_checksum).toBe(receipt.saved_checksums.case_ref.checksum);
+  expect(receipt.assessment_situation.snapshot_checksum).toBe(receipt.saved_checksums.snapshot_recomputed);
+  expect(receipt.saved_checksums.execution_payload_ref.checksum)
+    .toBe(receipt.saved_checksums.execution_payload_recomputed);
+  const calls = generated.calls;
+  expect(calls.some((call) => call.kind === 'generation')).toBe(true);
+  expect(new Set(calls.map((call) => call.operation_id)).size).toBe(calls.length);
+  const generation = calls.find((call) => call.operation_id === generated.final_generation_operation_id);
+  expect(generation).toBeTruthy();
+  expect(generation.kind).toBe(generated.repair_used ? 'generation_repair' : 'generation');
+  if (generated.repair_used) expect(generated.final_generation_operation_id).toBe(generated.repair_operation_id);
+  for (const stage of ['tester', 'challenger']) {
+    expect(generated.stages[stage].batch_count).toBeGreaterThan(0);
+    expect(generated.stages[stage].required_check_ids.length).toBeGreaterThan(0);
+    for (const id of generated.stages[stage].batch_operation_ids) {
+      expect(calls.some((call) => call.operation_id === id)).toBe(true);
+    }
+  }
+  for (const call of calls) {
+    expect(call.operation_id.startsWith(receipt.preparation_operation.operation_id + ':')).toBe(true);
+    expect(call.provider).toBe('deepseek');
+    expect(call.requested_model).toBe('deepseek-flash');
+    expect(call.actual_model).toBe('deepseek-flash');
+  }
+}
 
 test('PATH29 owned backend: invitation → scoped chat → durable preparation → explicit first case', async ({ browser }) => {
-  test.setTimeout(240000);
+  test.setTimeout(process.env.P4K_REAL_PROVIDER === '1' ? 900000 : 240000);
   if (!process.env.STAND_ADMIN_URL) throw new Error('Explicit isolated STAND_ADMIN_URL required');
   const root = process.cwd(), python = process.env.BROWSER_PYTHON || path.join(root, '.venv/bin/python');
-  const dir = path.join(root, '.test-stand/path29', randomUUID());
+  const evidenceRoot = process.env.P4K_EVIDENCE_DIRECTORY || path.join(root, '.test-stand/path29');
+  const dir = path.join(evidenceRoot, randomUUID());
   fs.mkdirSync(dir, { recursive: true });
-  const statePath = path.join(dir, 'state.json'), base = 'http://127.0.0.1:18859';
+  const port = process.env.P4K_PORT || '18859';
+  const statePath = path.join(dir, 'state.json'), base = 'http://127.0.0.1:' + port;
+  const fullPath = process.env.P4K_FULL_PATH === '1';
+  const realProvider = process.env.P4K_REAL_PROVIDER === '1';
+  if (fullPath && !realProvider) throw new Error('FULL_PATH_REQUIRES_EXPLICIT_REAL_PROVIDER');
   const run = (script, args) => {
     const result = spawnSync(python, [script, ...args], { encoding: 'utf8', timeout: 180000 });
     if (result.status !== 0) throw new Error(script + ': ' + result.stderr + result.stdout);
   };
-  const cli = (action) => run('scripts/test_stand.py', [action, '--state', statePath, '--port', '18859', '--gateway', '1']);
-  const adminContext = await browser.newContext(), participantContext = await browser.newContext();
+  const cli = (action) => run('scripts/test_stand.py', [action, '--state', statePath, '--port', port,
+    '--gateway', realProvider ? '0' : '1', '--provider', realProvider ? 'real' : 'disabled']);
+  const superContext = await browser.newContext(), adminContext = await browser.newContext(), participantContext = await browser.newContext();
   const extraContexts = [];
-  const admin = await adminContext.newPage(), page = await participantContext.newPage();
+  const superPage = await superContext.newPage(), admin = await adminContext.newPage(), page = await participantContext.newPage();
   let server;
+  let finalReceipt;
+  let step = 'create_owned_database';
+  const save = (name, value) => fs.writeFileSync(path.join(dir, name + '.json'),
+    JSON.stringify(value, null, 2) + '\n', { mode: 0o600 });
   cli('create');
   try {
     const initialState = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+    save('run', { run_id: initialState.run_id, database: initialState.database, port,
+      provider_mode: initialState.provider_mode,
+      code: process.env.P4K_CODE_IDENTITY ? JSON.parse(process.env.P4K_CODE_IDENTITY) : null });
     initialState.browser_case = 'specialist';
     fs.writeFileSync(statePath, JSON.stringify(initialState));
     cli('bootstrap');
     run('tests/path29_browser_inputs.py', ['--state', statePath]);
     const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+    step = 'superadmin_create_organization';
     const fd = fs.openSync(path.join(dir, 'server.log'), 'a');
     server = spawn(python, ['tests/path29_browser_server.py', '--state', statePath], { stdio: ['ignore', fd, fd] });
     fs.closeSync(fd);
     await expect.poll(async () => { try { return (await fetch(base + '/health/ready')).status; } catch { return 0; } }, { timeout: 30000 }).toBe(200);
     const snapshot = async () => (await page.request.get(base + '/__pytest__/participant-state')).json();
     expect(await snapshot()).toEqual({ profiles: 0, cycles: 0, started: 0, operations: 0 });
+    if (fullPath) {
+      await superPage.goto(base);
+      await superPage.locator('#email-input').fill('superadmin@example.test');
+      await superPage.locator('#request-magic-link-button').click();
+      await superPage.locator('#magic-token-input').fill(state.password);
+      await superPage.locator('#verify-magic-link-button').click();
+      await superPage.getByRole('button', { name: 'Организации', exact: true }).click();
+      await expect(superPage.locator('#admin-organizations-panel')).toBeVisible();
+      await superPage.locator('#admin-organization-name-input').fill('Сквозная организация PATH29');
+      await superPage.locator('#admin-organization-code-input').fill('path29_full_' + state.run_id.slice(0, 8));
+      const created = superPage.waitForResponse((response) => response.request().method() === 'POST' && response.url().endsWith('/users/admin/organizations'));
+      await superPage.locator('#admin-organization-create-button').click();
+      expect((await created).status()).toBe(200);
+      const organizations = await (await superPage.request.get(base + '/users/admin/organizations')).json();
+      const target = organizations.items.find((item) => item.code === 'path29_full_' + state.run_id.slice(0, 8));
+      expect(target).toBeTruthy(); state.path29.organization_id = target.id;
+      await superPage.locator('#admin-organization-select').selectOption(String(target.id));
+      const superCard = superPage.locator(`[data-organization-id="${target.id}"]`);
+      await expect(superCard).toBeVisible();
+      await superCard.locator('select[name="program_definition_id"]').selectOption(String(state.path29.program_id));
+      await superCard.locator('form[data-action="connect-assessment-program"]').getByRole('button', { name: 'Подключить' }).click();
+      await expect(superCard.locator('form[data-action="connect-assessment-program"]')).toContainText('Подключено:');
+      const addAdmin = superCard.locator('form[data-action="add-admin"]');
+      await addAdmin.locator('input[type="email"]').fill(state.path29.admin_email);
+      await addAdmin.getByRole('button', { name: 'Добавить' }).click();
+      await expect(superCard).toContainText(state.path29.admin_email);
+    }
+    step = 'admin_login_questionnaire_and_assignment';
     await admin.goto(base);
     await admin.locator('#email-input').fill(state.path29.admin_email);
     await admin.locator('#request-magic-link-button').click();
-    await admin.locator('#magic-token-input').fill(state.password);
-    await admin.locator('#verify-magic-link-button').click();
+    if (fullPath) {
+      await expect.poll(async () => (await (await superPage.request.get(base + '/__pytest__/mailbox', {
+        params: { email: state.path29.admin_email, purpose: 'email_verification' },
+      })).json()).item !== null).toBe(true);
+      const adminMail = await (await superPage.request.get(base + '/__pytest__/mailbox', {
+        params: { email: state.path29.admin_email, purpose: 'email_verification' },
+      })).json();
+      const login = new URL(adminMail.item.action_url);
+      await admin.goto(base + '/' + login.search);
+      await expect(admin.locator('#magic-token-input')).toBeVisible();
+      await admin.locator('#magic-token-input').fill(state.password);
+      await admin.locator('#verify-magic-link-button').click();
+      await expect(admin.locator('#auth-credential-step-indicator')).toHaveText('Шаг 2 из 2');
+      await admin.locator('#magic-token-input').fill(state.password);
+      await admin.locator('#verify-magic-link-button').click();
+    } else {
+      await admin.locator('#magic-token-input').fill(state.password);
+      await admin.locator('#verify-magic-link-button').click();
+    }
     await expect(admin.locator('#admin-organizations-panel')).toBeVisible();
     const card = admin.locator(`[data-organization-id="${state.path29.organization_id}"]`);
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
@@ -80,6 +185,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     const invitation = new URL(mail.item.action_url);
     expect(invitation.origin).toBe('https://test.example.com');
     await page.goto(base + '/' + invitation.search);
+    step = 'participant_login_and_acquaintance';
     await expect(page.locator('#magic-token-input')).toBeVisible();
     await page.locator('#magic-token-input').fill(state.password);
     await page.locator('#verify-magic-link-button').click();
@@ -182,7 +288,23 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect(second.locator('#onboarding-title')).toHaveText('Готовим вашу оценку');
     expect((await snapshot()).operations).toBe(1);
     await page.request.post(base + '/__pytest__/release-preparation');
-    await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке', { timeout: 45000 });
+    step = 'real_llm_preparation';
+    await expect.poll(
+      async () => page.locator('#onboarding-title').innerText(),
+      { timeout: realProvider ? 600000 : 45000 },
+    ).toMatch(/^(Можно приступать к оценке|Не удалось подготовить оценку)$/);
+    const preparationReceipt = fullPath
+      ? await (await page.request.get(base + '/__pytest__/path-receipt')).json()
+      : null;
+    if (fullPath) {
+      fs.writeFileSync(path.join(dir, 'source-to-runtime-receipt.json'),
+        JSON.stringify(preparationReceipt, null, 2) + '\n', { mode: 0o600 });
+      await test.info().attach('superadmin-to-preparation-receipt', {
+        path: path.join(dir, 'source-to-runtime-receipt.json'), contentType: 'application/json',
+      });
+    }
+    expect(await page.locator('#onboarding-title').innerText()).toBe('Можно приступать к оценке');
+    if (fullPath) verifyPreparation(preparationReceipt);
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
     await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
     const freshContext = await browser.newContext(); extraContexts.push(freshContext);
@@ -209,11 +331,67 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
     await page.screenshot({ path: path.join(dir, 'ready.png'), fullPage: true });
+    step = 'explicit_start_and_first_as';
+    const startResponse = page.waitForResponse((response) => response.request().method() === 'POST'
+      && response.url().endsWith('/users/assessment/cycles/start'));
     await next.dblclick();
+    const started = await startResponse;
+    expect(started.status()).toBe(201);
     await expect(page.locator('#interview-panel')).toBeVisible();
     await expect(page.locator('.interview-message--situation').first()).toBeVisible();
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 1, operations: 1 });
     await page.screenshot({ path: path.join(dir, 'first-case.png'), fullPage: true });
+    if (fullPath) {
+      const receipt = await (await page.request.get(base + '/__pytest__/path-receipt')).json();
+      const runtimeResponse = await page.request.get(base + '/users/assessment/cycles/' + receipt.cycle.cycle_id + '/runtime');
+      expect(runtimeResponse.status()).toBe(200);
+      const runtime = await runtimeResponse.json();
+      verifyPreparation(receipt);
+      expect(receipt.cycle.started_at).toBeTruthy();
+      expect(receipt.sessions[0].started_at).toBeTruthy();
+      expect(receipt.assessment_situation.started_at).toBeTruthy();
+      expect(receipt.assessment_answers).toBe(0);
+      expect(receipt.assessment_situation.assessment_situation_id)
+        .toBe(preparationReceipt.assessment_situation.assessment_situation_id);
+      expect(receipt.functional_generation.candidate_checksum)
+        .toBe(preparationReceipt.functional_generation.candidate_checksum);
+      expect(receipt.assessment_situation.snapshot_checksum)
+        .toBe(preparationReceipt.assessment_situation.snapshot_checksum);
+      expect(runtime.current_situation.assessment_situation_id)
+        .toBe(receipt.assessment_situation.assessment_situation_id);
+      expect(checksum(runtime.current_situation.participant_payload))
+        .toBe(receipt.saved_checksums.participant_payload);
+      const introduction = runtime.current_situation.participant_payload.introduction;
+      expect(introduction).toBeTruthy();
+      await expect(page.locator('.interview-message--situation').first()).toContainText(introduction);
+      finalReceipt = { ...receipt, browser: browser.version(), http_start_status: started.status(),
+        participant_state: await snapshot(), presented_as: {
+          assessment_situation_id: runtime.current_situation.assessment_situation_id,
+          participant_payload_checksum: checksum(runtime.current_situation.participant_payload),
+          dom_introduction_matched: true, screenshot: 'first-case.png',
+        } };
+      save('first-case-receipt', finalReceipt);
+      expect(state.path29.input_mode).toBe('functional-diagnostic');
+      expect(receipt.program_definition.id).toBe(state.path29.program_id);
+      expect(receipt.program_definition.assessment_configuration_id).toBe(state.path29.configuration_id);
+      expect(receipt.program_definition.catalog_version_id).toBe(receipt.catalog.id);
+      expect(receipt.assessment_configuration.catalog_version_id).toBe(receipt.catalog.id);
+      expect(receipt.case_versions).toHaveLength(1);
+      expect(receipt.case_versions[0].case_id).toBe('CASE.SPEC.02');
+      expect(receipt.functional_generation.present).toBe(true);
+      expect(receipt.functional_generation.admitted_for_participant).toBe(true);
+      expect(receipt.functional_generation.candidate_checksum).toMatch(/^[a-f0-9]{64}$/);
+      await test.info().attach('superadmin-to-first-case-readback', {
+        body: JSON.stringify({ browser: browser.version(), organization_id: state.path29.organization_id,
+          program_id: state.path29.program_id, participant_state: await snapshot(), assessment_answers: 0,
+          source_to_runtime_receipt: finalReceipt }),
+        contentType: 'application/json',
+      });
+      await test.info().attach('superadmin-to-first-case-first-case', {
+        path: path.join(dir, 'first-case.png'), contentType: 'image/png',
+      });
+      return;
+    }
     const ownAnswer = 'Синтетический первый ответ: уточню условия и согласую следующий шаг.';
     await page.locator('#interview-textarea').fill(ownAnswer);
     const sent = page.waitForResponse((response) => response.request().method() === 'POST' && response.url().endsWith('/turns'));
@@ -237,6 +415,14 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await test.info().attach(`path29-${name}`, { path: path.join(dir, `${name}.png`), contentType: 'image/png' });
     }
     console.log('PATH29 owned screenshots and server log:', dir);
+  } catch (error) {
+    save('failure', { step, expected: 'Согласованный шаг завершён штатно', actual: error.message,
+      classification: 'diagnostic_failure; inspect receipt for provider/admission/product cause' });
+    try {
+      if (server && server.exitCode === null) save('failure-receipt',
+        await (await page.request.get(base + '/__pytest__/path-receipt')).json());
+    } catch { /* Startup failures may have no HTTP endpoint. */ }
+    throw error;
   } finally {
     try {
       if (server && server.exitCode === null) {
@@ -246,7 +432,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       }
     } finally {
       try { cli('destroy'); }
-      finally { await Promise.allSettled([adminContext.close(), participantContext.close(), ...extraContexts.map((context) => context.close())]); }
+      finally { await Promise.allSettled([superContext.close(), adminContext.close(), participantContext.close(), ...extraContexts.map((context) => context.close())]); }
     }
   }
 });

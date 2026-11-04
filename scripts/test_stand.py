@@ -50,6 +50,14 @@ def environment(state):
     if state.get('qa_orchestration') is True and state.get('browser_scenario') == 'acceptance-v1':
         env['AGENT4K_BROWSER_SCENARIO']='acceptance-v1'
         env['AGENT4K_QA_ORCHESTRATION']='1'
+    if state.get('provider_mode') == 'real':
+        # Explicit opt-in only. Values stay in the process environment and are
+        # never copied to state.json, logs or evidence.
+        for key in ('DEEPSEEK_API_KEYS','DEEPSEEK_API_KEY','DEEPSEEK_API_KEY_2',
+                    'DEEPSEEK_API_KEY_3','DEEPSEEK_BASE_URL','DEEPSEEK_MODEL',
+                    'DEEPSEEK_MAX_CONCURRENCY'):
+            if key in os.environ:
+                env[key]=os.environ[key]
     return env
 
 
@@ -110,6 +118,7 @@ def main():
     parser.add_argument('--state',type=Path,required=True)
     parser.add_argument('--port',type=int,default=18520)
     parser.add_argument('--gateway',choices=['0','1'],default='0')
+    parser.add_argument('--provider',choices=['disabled','real'],default='disabled')
     args=parser.parse_args();path=args.state.resolve()
     if args.action.startswith('_'):
         if os.getenv('AGENT4K_ISOLATED_STAND')!='1':raise ValueError('ISOLATED_STAND_REQUIRED')
@@ -133,7 +142,8 @@ def main():
         run=uuid4().hex;name='product4k_pytest_'+run;marker='stand-10.2:'+secrets.token_hex(24)
         path.parent.mkdir(parents=True,exist_ok=True)
         state={'run_id':run,'database':name,'owner_marker':marker,'connection':p,'state_path':str(path),
-            'port':args.port,'gateway':int(args.gateway),'password':secrets.token_urlsafe(22)+'A1!'}
+            'port':args.port,'gateway':int(args.gateway),'provider_mode':args.provider,
+            'password':secrets.token_urlsafe(22)+'A1!'}
         with psycopg.connect(**p,autocommit=True) as c:
             c.execute(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(name)))
             c.execute(sql.SQL('COMMENT ON DATABASE {} IS {}').format(sql.Identifier(name),sql.Literal(marker)))
@@ -150,7 +160,16 @@ def main():
             from psycopg import sql
             # No FORCE: active app connections must be stopped first.
             c.execute(sql.SQL('DROP DATABASE {}').format(sql.Identifier(state['database'])))
-            path.unlink();print('Owned stand removed');return
+            absent = c.execute('SELECT 1 FROM pg_database WHERE datname=%s', (state['database'],)).fetchone() is None
+            if not absent:
+                raise RuntimeError('OWNED_DATABASE_STILL_PRESENT')
+            path.unlink()
+            (path.parent / 'cleanup.json').write_text(json.dumps({
+                'run_id': state['run_id'], 'database': state['database'],
+                'owner_verified': True, 'database_absent': absent,
+                'state_absent': not path.exists(), 'force': False,
+            }, indent=2) + '\n')
+            print('Owned stand removed');return
     if args.action == 'smoke' and state.get('qa_orchestration') is True:
         state['browser_scenario']='acceptance-v1'
         path.write_text(json.dumps(state))
