@@ -119,6 +119,8 @@ def functional_receipt(trace):
     candidate = trace.get('accepted_as') or trace.get('candidate_as')
     return {
         'present': bool(trace), 'candidate_checksum': trace.get('candidate_checksum'),
+        'candidate_ref': ({'case_id': candidate.get('CaseID'), 'case_version': candidate.get('CaseVersion'),
+                           'checksum': trace.get('candidate_checksum')} if candidate else None),
         'candidate_recomputed_checksum': candidate_checksum(candidate) if candidate else None,
         'canonicalization': {'candidate': 'compact sorted UTF-8 JSON without LF',
                              'compiled_case_and_as': 'compact sorted UTF-8 JSON + LF'},
@@ -131,6 +133,8 @@ def functional_receipt(trace):
         'incomplete_checks': [{key: item.get(key) for key in
             ('check_id', 'status', 'reason', 'evidence_paths', 'aggregation_error')}
             for item in aggregation.get('incomplete_checks', [])],
+        'incomplete_details_availability': ('PRESENT' if 'incomplete_checks' in aggregation
+            else 'UNKNOWN_NOT_IN_TRACE' if aggregation.get('status') == 'INCOMPLETE' else 'NOT_APPLICABLE'),
         'deterministic_protocol_errors': aggregation.get('deterministic_protocol_errors') or [],
         'repair_used': bool(repair), 'final_generation_operation_id': stages['generation']['operation_id'],
         'repair_operation_id': (repair.get('repair_generation_operation') or {}).get('operation_id'),

@@ -3,6 +3,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
+import { persistReceipt, isTerminalPreparationReceipt } from './fixtures/receipt-file.mjs';
 
 function canonical(value) {
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
@@ -76,8 +77,9 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   let server;
   let finalReceipt;
   let step = 'create_owned_database';
-  const save = (name, value) => fs.writeFileSync(path.join(dir, name + '.json'),
-    JSON.stringify(value, null, 2) + '\n', { mode: 0o600 });
+  let preparationReceiptRequired = false;
+  let terminalPreparationReceiptSaved = false;
+  const save = (name, value) => persistReceipt(path.join(dir, name + '.json'), value);
   cli('create');
   try {
     const initialState = JSON.parse(fs.readFileSync(statePath, 'utf8'));
@@ -289,6 +291,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     const second = await participantContext.newPage(); await second.goto(base);
     await expect(second.locator('#onboarding-title')).toHaveText('Готовим вашу оценку');
     expect((await snapshot()).operations).toBe(1);
+    preparationReceiptRequired = fullPath;
     await page.request.post(base + '/__pytest__/release-preparation');
     step = 'real_llm_preparation';
     await expect.poll(
@@ -299,8 +302,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       ? await (await page.request.get(base + '/__pytest__/path-receipt')).json()
       : null;
     if (fullPath) {
-      fs.writeFileSync(path.join(dir, 'source-to-runtime-receipt.json'),
-        JSON.stringify(preparationReceipt, null, 2) + '\n', { mode: 0o600 });
+      save('source-to-runtime-receipt', preparationReceipt);
+      terminalPreparationReceiptSaved = isTerminalPreparationReceipt(preparationReceipt);
       await test.info().attach('superadmin-to-preparation-receipt', {
         path: path.join(dir, 'source-to-runtime-receipt.json'), contentType: 'application/json',
       });
@@ -423,6 +426,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       if (server && server.exitCode === null) {
         failureReceipt = await (await page.request.get(base + '/__pytest__/path-receipt')).json();
         save('failure-receipt', failureReceipt);
+        terminalPreparationReceiptSaved ||= isTerminalPreparationReceipt(failureReceipt);
         await page.screenshot({ path: path.join(dir, 'failure.png'), fullPage: true });
       }
     } catch { /* Startup failures may have no HTTP endpoint. */ }
@@ -440,7 +444,14 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
         if (server.exitCode === null) { server.kill('SIGKILL'); await exited; }
       }
     } finally {
-      try { cli('destroy'); }
+      try {
+        if (preparationReceiptRequired && !terminalPreparationReceiptSaved) {
+          save('cleanup-deferred', { reason: 'TERMINAL_PREPARATION_RECEIPT_NOT_PERSISTED',
+            state_path: statePath, database_preserved: true });
+          throw new Error('Cleanup deferred: preserve owned DB until diagnostic receipt is saved');
+        }
+        cli('destroy');
+      }
       finally { await Promise.allSettled([superContext.close(), adminContext.close(), participantContext.close(), ...extraContexts.map((context) => context.close())]); }
     }
   }

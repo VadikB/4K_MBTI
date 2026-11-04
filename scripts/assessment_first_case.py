@@ -44,7 +44,8 @@ def code_identity():
         return subprocess.check_output(['git', *args], cwd=ROOT, text=True).strip()
     paths = ['scripts/test_stand.py', 'scripts/assessment_first_case.py',
         'tests/path29_browser_inputs.py', 'tests/path29_browser_app.py',
-        'tests/assessment_first_case_evidence.py', 'tests/browser/path29-participant.spec.mjs']
+        'tests/assessment_first_case_evidence.py', 'tests/browser/path29-participant.spec.mjs',
+        'tests/browser/fixtures/receipt-file.mjs']
     return {'sha': git('rev-parse', 'HEAD'), 'branch': git('branch', '--show-current'),
         'origin_main': git('rev-parse', 'origin/main'),
         'worktree_status': git('status', '--short'),

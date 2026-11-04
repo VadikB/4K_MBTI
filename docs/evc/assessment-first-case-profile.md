@@ -133,5 +133,25 @@ evidence без доступа к БД/LLM. Сводка отдельно счи
 не считается чистым успехом; сохранённый state используется штатным destroy после
 устранения причины.
 
+Для уже начатой подготовки cleanup разрешён только после записи и readback terminal
+receipt (`completed`/`failed`). Общий модуль `tests/browser/fixtures/receipt-file.mjs`
+выполняет write/fsync/readback до удаления БД. Если выгрузка не сохранена или операция
+ещё running, приложение останавливается, но owned-БД/state сохраняются;
+`cleanup-deferred.json` содержит причину и путь к state без его секретного содержимого.
+
+Бесплатная регрессия экспортёра:
+
+```sh
+STAND_ADMIN_URL='<localhost maintenance URL из защищённого окружения>' \
+  /path/to/python tests/assessment_first_case_export_regression.py \
+  --directory /path/to/new/export-regression
+```
+
+Регрессия создаёт новую owned-БД и явно вставляет синтетическую failed operation:
+это подстановка отрицательного результата только для проверки DB collector →
+check IDs/statuses/safe reasons/candidate refs → общий write/fsync/readback → DROP →
+повторное чтение того же файла. Реальный LLM и продуктовая генерация здесь не
+исполняются. Результаты этой регрессии не объясняют причину PREP-DIAG-01.
+
 Откат — возврат адресных изменений runner/tests/ссылок; схемы и опубликованные
 источники не мигрируются. Отчёт: `docs/evc/tasks/assessment-first-case-contour.md`.
