@@ -18,6 +18,14 @@
   `docs/evc/evidence/assessment-contour-2026-11-04/`.
 - Следующий шаг: приёмка постоянной настройки владельцем; продуктовый отказ и PATH —
   последующий пакет. Последние изменения — только полнота failure export и отчёт.
+- Завершение передачи: clean `9e659bd` прошёл бесплатную DB-регрессию collector →
+  check IDs/status/reasons/candidate refs → fsync/readback → owned DROP → чтение
+  того же receipt. LLM_CALLS=0, hash `163083b768dbdcdf2599934bfc4784909244c59d099c7f569a475ad8aed6160a`.
+  Backend 704 PASS; Node persistence test PASS. PREP-DIAG-01 остаётся UNKNOWN по
+  конкретному check/первопричине; синтетическая регрессия его не реконструирует.
+- Передача независимо от worktree: `scripts/package_assessment_contour.py` создаёт
+  ZIP из committed HEAD: профиль/runner, первичные JSON, diff после 4bab723,
+  Git bundle, SHA-256 manifest и автономный VERIFY.py; копия передаётся в Downloads.
 - Merge/deploy/version_bump/artifact_publish=false. Продуктовые исправления отложены.
 
 # Исторический STATE — ARCH30

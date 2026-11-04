@@ -23,6 +23,11 @@ PATH-START-01 не передан в исполнение. Продуктовы�
 - Основная реализация: `a4a215755da32edb5fc8ed0898994bb0d7bf4e58`.
 - Исправленная реализация/export:
   `4bab7230d8fa484fb8d922ee7d8b49b63674268d`.
+- До текущей сдачи: `694f9c8de3265f5fb83b78c6cfeadd230fc7cd7c`.
+- Бесплатная DB-регрессия collector/persistence/cleanup выполнена на чистом
+  `9e659bdc09b38c1bc5c6751edaea25769d90be7e`. Финальный SHA пакета автоматически
+  записан в MANIFEST.json/HANDOFF.md/Git bundle. После 9e659bd добавлены только
+  сборка пакета, отчёт и первичные evidence передачи.
 - Чистый remote checkout: `/home/vadim_bogachev/worktrees/assessment-contour-final`,
   detached HEAD на SHA диагностического прогона; `worktree_status=""` фиксируется
   в code-identity.json вместе с SHA-256 исполняемых файлов.
@@ -99,7 +104,8 @@ case_ref `CASE.SPEC.02/v0.6/179fa0f8…`, base_role `specialist_expert`, result 
 Обычный product flow имеет usage scope assessment; политика допускает там только
 origin.type human_review. Fixture явно указывает
 `synthetic-fixture:assessment-first-case/1.1`, `synthetic=true`,
-`methodology_approval=false`. Это технические assertions тестовой установки,
+`methodology_approval=false`. Исходный Case QA — **явная тестовая подстановка**.
+Это технические assertions тестовой установки,
 не свидетельство реального человеческого review и не методологическое согласование.
 Ограничение этого моделирования раскрыто; policy и продукт ради теста не менялись.
 Реальный tester/challenger выполняют новый независимый допуск сгенерированной AS.
@@ -130,13 +136,13 @@ checksum, но ProgramDefinition построили по устаревшему 
 | 5. Реальный LLM | DeepSeekGateway; generation + все final tester/challenger batches + конечный repair admission | unique operations, provider contract/model/usage; запрет статического fallback | Tokens malformed JSON retry доступны не полностью |
 | 6. Повторяемая команда | scripts/assessment_first_case.py; env-file, preflight, итог/failure, штатный destroy | run/runner-result/cleanup JSON; step и точный API error в failure receipt | Последняя диагностика дошла до admission INCOMPLETE |
 | 7. Честные статусы | READY машины отдельно; failure шаг/ожидание/факт; один hash для однотипной ссылки | source→candidate→snapshot→runtime/DOM; исторический FAIL сохранён | PATH-START-01 не исполнялся |
-| 8. Сдача настройки | профиль/код/тесты/evidence/откат в одной ветке | рабочие commits и отчёт | CI/review/merge/deploy отдельно |
+| 8. Сдача настройки | профиль/код/тесты/evidence/откат в одной ветке и ZIP-пакете | commits.bundle, оба diff, MANIFEST.json и автономный VERIFY.py | CI/review/merge/deploy отдельно |
 
 ## Проверки
 
 - `/Users/vadim_bogachev/Developer/4K/.venv/bin/python -m pytest -q -m "not integration and not e2e and not llm"`:
-  PASS 703, 317 deselected, 60.61s; после дополнительного поля incomplete-check
-  выполнен адресный повтор (ни продуктовый код, ни прежние потребители не менялись).
+  PASS 704, 318 deselected, 65.74s на 9e659bd; применим к финальному коду runner,
+  collector и общему модулю persistence (после этого они не менялись).
 - `… -m pytest -q -m e2e tests/e2e`: PASS 106, 12 deselected, 27.94s.
 - Адресные stand/evidence tests после всех исправлений выгрузки: PASS 19.
 - `node --check tests/browser/path29-participant.spec.mjs`, py_compile изменённых
@@ -153,6 +159,57 @@ checksum, но ProgramDefinition построили по устаревшему 
   PASS 1, 27.2s; проверены явный start и дальнейший legacy flow. Это не real-LLM
   доказательство нового полного сценария и не заменяет его отказ admission.
 - Полный CI NOT_RUN: ветка не передавалась в PR, merge/deploy не выполнялись.
+
+## Заключительная регрессия достаточности диагностики перед cleanup
+
+Новых платных вызовов нет. На SHA 9e659bd выполнена команда
+`/home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python tests/assessment_first_case_export_regression.py --directory /home/vadim_bogachev/evidence/assessment-export-regression-9e659bd`
+с STAND_ADMIN_URL из защищённого окружения. Это отдельная отрицательная fixture:
+в новую owned-БД вставлена синтетическая failed operation, реальные generation,
+admission и browser onboarding не исполняются. Причины этой fixture не переносятся
+на PREP-DIAG-01.
+
+Результат PASS, LLM_CALLS=0. Последовательность проверена фактически:
+
+1. Создана `product4k_pytest_1a8fadedc38a434ba26cac9ff9367e56`.
+2. Штатный handler `tests.path29_browser_app.path_receipt()` прочитал из БД
+   отрицательный результат и выполнил исправленный collector.
+3. Общий с browser runner `receipt-file.mjs` выполнил write/fsync/readback.
+4. При существующей БД сверены candidate checksum/ref, input snapshot checksum,
+   preparation/generation operation ID, три check ID, статусы и безопасные причины.
+   Сырые prompt/response/key sentinel-поля не попали в JSON.
+5. Выполнен штатный `test_stand.py destroy` после проверки owner marker, без FORCE.
+6. После DROP JSON читается с тем же SHA-256
+   `163083b768dbdcdf2599934bfc4784909244c59d099c7f569a475ad8aed6160a`.
+
+Сохранённые статусы fixture: NOT_RUN, TECHNICAL_ERROR, INDETERMINATE; причины
+полностью видны в `export-regression/export-receipt.json`. Первичные доказательства:
+`export-before-cleanup.json`, `regression-result.json`, `run.json`, `cleanup.json`,
+`code-identity.json` в том же каталоге. Это подтверждает persistence, не причину
+исторического отказа. Старая выгрузка не переписывается и не дополняется домыслами.
+
+Дополнительно `node --test tests/unit/test_assessment_receipt_file.mjs` — PASS 1:
+terminal/running distinction, ошибка записи, file mode 0600, readback. Python
+stand/evidence subset — PASS 19. В full-path runner при отсутствии сохранённого
+terminal receipt cleanup откладывается, а owned-БД/state сохраняются для разбора.
+
+## Diff после 4bab723 и доступный пакет передачи
+
+Все изменения после реального прогона относятся к настройке и доказательствам:
+в 694f9c8 — completeness export/failure screenshot/llm annotation и отчёт;
+в 9e659bd — candidate_ref, явная UNKNOWN-метка отсутствующих details, общий durable
+persistence, guard перед cleanup и бесплатная DB-регрессия; далее — упаковщик и
+первичные результаты. `Api/`, методология, admission, repair, M0–M8 не менялись.
+Полный машинный diff хранится в пакете как `diff/after-4bab723.patch` и `.stat.txt`.
+
+`scripts/package_assessment_contour.py` строит пакет только из committed Git bytes
+чистого HEAD. ZIP содержит профиль, runner/fixtures/tests, первичные source-provenance,
+code-identity/run/runner-result/cleanup, оригинальный отрицательный receipt,
+бесплатную регрессию, точные исходные JSON, Git bundle и diff к main/4bab723.
+MANIFEST.json содержит final SHA и hashes файлов. VERIFY.py проверяет пакет
+стандартным Python без проекта, БД или секретов. Внешний .zip.sha256 контролирует ZIP.
+Пакет и краткая инструкция передаются в «Загрузки» владельца, отдельно от worktree.
+State/env/passwords/keys и сырые prompts/responses в allowlist упаковщика не входят.
 
 ## Диагностические результаты и очистка
 
@@ -249,6 +306,8 @@ seed и продуктовая подготовка относительно п�
   утраченное содержимое удалённой БД не реконструируется. Корневая причина
   неполноты конкретной проверки остаётся задачей следующего пакета, а не
   доказанным дефектом алгоритма admission. Повторный платный прогон ради PASS не сделан.
+  Машинная карточка `PREP-DIAG-01.json` фиксирует `root_cause=UNKNOWN`, null для
+  конкретных check ID/status/reasons, фактический operation/candidate и no-start.
 - Ранее CASE.SPEC.01 не прошёл independent admission после предусмотренного repair
   (`M5_FUNCTIONAL_AS_NOT_ADMITTED:FAIL`, 18 операций). Причина качества требует
   отдельного анализа; fail-closed поведение исправным runtime не опровергается.
