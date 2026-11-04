@@ -1,4 +1,19 @@
-# STATE — PATH-START-01
+# STATE — PM03-REPAIR-CONTRACT
+
+## Активный шаг 04.11.2026
+
+- Владелец явно разрешил передать repair тот же frozen generation contract и
+  добавить регрессии. Prompts/admission/лимит repair/платный LLM неизменны.
+- База `11b2a94e164b97b95a0ef8f9a806ab2becf2b1a9` из draft PR #168;
+  отдельная локальная ветка `codex/pm03-repair-contract`. Исходная ветка/PR не меняются.
+- Задача: [PM03-REPAIR-CONTRACT](docs/evc/tasks/pm03-repair-contract.md).
+  Before: новые проверки 5 FAIL/1 PASS; после двух строк fix адресный service/snapshot
+  набор 23 PASS. Активно: полный backend/HTTP/review для зафиксированного commit.
+- Push/новый PR/merge/deploy/version bump/artifact publication — false.
+- PATH BLOCKED_PM03, пять содержательных FAIL не объясняются этим расхождением
+  без доказательства; PREP-DIAG-01 UNKNOWN. История ниже относится к передаче PATH.
+
+# Исторический STATE — PATH-START-01
 
 ## Активный выпуск 04.11.2026
 

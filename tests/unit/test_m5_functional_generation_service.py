@@ -3,6 +3,8 @@ from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from Api import m5_functional_generation_service as service
 
 
@@ -184,6 +186,109 @@ def test_repair_receives_concrete_projection_and_two_layer_requirements():
     assert requirements["required_fields_per_adapted_target"] == list(service.ADAPTED_TARGET_FIELDS)
     assert requirements["preserve_existing_valid_references"] is True
     assert repaired["deterministic_validation"]["status"] == "PASS"
+
+
+@pytest.mark.parametrize("case_id", ["CASE.SPEC.01", "CASE.SPEC.02"])
+def test_repair_receives_same_frozen_content_contract_as_generation(case_id):
+    class CaptureGateway(Gateway):
+        def __init__(self):
+            super().__init__()
+            self.messages = []
+
+        def chat_with_trace(self, messages, **kwargs):
+            self.messages.append(deepcopy(messages))
+            return super().chat_with_trace(messages, **kwargs)
+
+    snapshot = service.build_input_snapshot(case_id=case_id, profile=profile("synthetic tasks"),
+        operation_id="repair-contract", synthetic=True)
+    gateway = CaptureGateway()
+    generation = service.generate(snapshot, gateway)
+    tested = {"aggregation": {"blocking_failures": [{"code": "SYNTHETIC_FAILURE"}],
+                              "deterministic_failures": []}}
+    repaired = service.repair_candidate(snapshot, generation, tested, gateway)
+    contract_message = {"role": "system", "content": "Содержательный контракт:\n" +
+        service._frozen_file(snapshot, "generation_contract").read_text(encoding="utf-8")}
+
+    assert gateway.messages[0].count(contract_message) == 1
+    assert gateway.messages[1].count(contract_message) == 1
+    assert json.loads(gateway.messages[1][-1]["content"])["blocking_failures"] == tested["aggregation"]["blocking_failures"]
+    operation = repaired["provider_operation"]
+    assert operation["input_checksum"] == service.checksum(gateway.messages[1])
+    assert operation["operation_id"] == "repair-contract:generation:repair:" + operation["input_checksum"][:12]
+
+
+def test_repair_reads_contract_from_snapshot_ref_not_default_package(tmp_path):
+    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.02", profile=profile("synthetic tasks"),
+        operation_id="repair-frozen-contract", synthetic=True)
+    generation = service.generate(snapshot, Gateway())
+    # Technical snapshot fixture: whitespace differs, normative content is unchanged.
+    contract = service._frozen_file(snapshot, "generation_contract").read_bytes() + b"\n"
+    frozen = tmp_path / "frozen-contract.json"
+    frozen.write_bytes(contract)
+    snapshot["refs"]["generation_contract"] = {"path": str(frozen), "sha256": service.checksum(contract)}
+    captured = []
+
+    class RepairGateway(Gateway):
+        def chat_with_trace(self, messages, **kwargs):
+            captured.extend(messages)
+            return super().chat_with_trace(messages, **kwargs)
+
+    service.repair_candidate(snapshot, generation,
+        {"aggregation": {"blocking_failures": [], "deterministic_failures": []}}, RepairGateway())
+
+    assert {"role": "system", "content": "Содержательный контракт:\n" + contract.decode()} in captured
+
+
+@pytest.mark.parametrize("failure", ["checksum", "unavailable"])
+def test_repair_rejects_broken_frozen_contract_before_gateway(failure):
+    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.02", profile=profile("synthetic tasks"),
+        operation_id="repair-invalid-contract", synthetic=True)
+    generation = service.generate(snapshot, Gateway())
+    if failure == "checksum":
+        snapshot["refs"]["generation_contract"]["sha256"] = "0" * 64
+        expected = "CYCLE_DEPENDENCY_CHECKSUM_MISMATCH:generation_contract"
+    else:
+        snapshot["refs"]["generation_contract"]["path"] += ".missing"
+        expected = "CYCLE_DEPENDENCY_UNAVAILABLE:generation_contract"
+    gateway = Gateway()
+
+    with pytest.raises(ValueError, match=expected):
+        service.repair_candidate(snapshot, generation,
+            {"aggregation": {"blocking_failures": [], "deterministic_failures": []}}, gateway)
+    assert gateway.profiles == []
+
+
+def test_repeated_blocking_failure_is_not_admitted_after_single_repair():
+    class AlwaysRejectedGateway(Gateway):
+        def __init__(self):
+            super().__init__()
+            self.operations = []
+
+        def chat_with_trace(self, messages, **kwargs):
+            self.operations.append(kwargs["routing_key"])
+            response = super().chat_with_trace(messages, **kwargs)
+            if ":tester:" in kwargs["routing_key"]:
+                raw = json.loads(response.content)
+                for check in raw["checks"]:
+                    if check["check_id"] == "critical_prohibition:02":
+                        check.update(status="FAIL", reason="Synthetic persistent blocking failure",
+                            findings=[{"code": "SYNTHETIC_BLOCKING", "severity": "blocking",
+                                "paths": ["candidate_as"], "reason": "Synthetic fixture",
+                                "requirement_ref": check["check_id"]}])
+                response.content = json.dumps(raw)
+            return response
+
+    gateway = AlwaysRejectedGateway()
+    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.02", profile=profile("synthetic tasks"),
+        operation_id="repair-remains-rejected", synthetic=True)
+    result = service.prepare(snapshot, gateway)
+
+    assert result["repair"]["original_tester"]["aggregation"]["status"] == "FAIL"
+    assert result["tester"]["aggregation"]["status"] == "FAIL"
+    assert result["admitted_for_participant"] is False
+    assert result["compiled_case"] is None and result["execution_rules"] is None
+    assert sum(":generation:repair:" in operation for operation in gateway.operations) == 1
+    assert sum(":generation:" in operation for operation in gateway.operations) == 2
 
 
 def test_author_binding_does_not_recreate_missing_indicator_target():
