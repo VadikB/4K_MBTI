@@ -1,5 +1,18 @@
 # STATE — PATH-START-01
 
+## Активный выпуск 04.11.2026
+
+Владелец подтвердил последовательные PATCH: PR #168 → 2.0.63, затем PM03-only
+PR #169 → 2.0.64 на фактическом новом main. `branch_push/pr/merge/deploy/
+version_bump=true`, `artifact_publish=false`; deploy только test и после CI.
+База main/test перед началом — 7221671 / 2.0.62, readiness 200; PATH head 11b2a94.
+Активно: canonical preflight 2.0.63 → commit/push/Ready → обязательный полный CI
+→ squash merge → deploy-test/readback. Затем обновление базы PM03, его отдельные
+preflight/CI/merge/deploy. Старые false/NOT_RUN ниже — история до согласования.
+Новых LLM-вызовов, нормативной публикации или изменений постоянной БД нет.
+Полный PATH остаётся BLOCKED_PM03; пять content FAIL и PREP-DIAG-01 UNKNOWN
+не объявляются устранёнными техническим исправлением входа repair.
+
 ## Текущий checkpoint 04.11.2026 — PATH 1.3
 
 Итог текущей передачи: **BLOCKED_PM03**, не PATH PASS. Владелец выбрал:

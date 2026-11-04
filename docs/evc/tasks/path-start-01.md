@@ -1,5 +1,39 @@
 # PATH-START-01 — от новой организации до первого Case
 
+## Выпуск независимых исправлений — 04.11.2026
+
+Владелец ответом «да» в текущем чате явно согласовал последовательный выпуск:
+2.0.63 для PR #168, затем 2.0.64 для PM03-REPAIR-CONTRACT / PR #169 после
+переноса на фактический main. Это приёмка и выпуск независимых исправлений,
+не признание полного PATH успешным и не допуск нового LLM-прогона.
+Текущие флаги: `branch_push=true`, `pr=true`, `merge=true`, `deploy=true`
+(только test), `version_bump=true` (PATCH 2.0.63), `artifact_publish=false`.
+Прежние false/NOT_RUN ниже сохраняют историю передачи до этого решения.
+
+База перед выпуском: свежий main `7221671fbd9b16192a86b04b6eec36773f2dbf99`,
+2.0.62; clean PATH head `11b2a94e164b97b95a0ef8f9a806ab2becf2b1a9`.
+Read-only test: тот же SHA/версия, tracked clean, service active, readiness HTTP 200.
+Шаги: canonical `npm run ready:prepare -- --candidate 2.0.63`; commit/push;
+Ready; обязательные frontend/pytest/full-verification точного head; squash merge
+без bypass; штатный deploy-test и серверный/public readback. До их выполнения
+CI/main/deploy отдельно не объявляются успешными. При изменении базы — новый
+preflight и актуальные проверки. Pilot, схемы, предметные артефакты и постоянная
+БД не изменяются; автотесты — только CI/owned isolated test DB.
+
+Проверенное поведение Api/web на 136b858/11b2a94 переиспользуется побайтово;
+release-подготовка меняет только номер и производный dist, запись разрешения и
+STATE. Дополнительно выполняются diff/links, lint, frontend и release gate;
+полный CI повторяется на конечном head. Исторический пакет 11b2a94 не переписывается.
+Откат: штатный deploy-script восстанавливает предыдущий commit/assets/config при
+неуспешном smoke; после успешного выпуска — отдельный revert PR, не rollback БД.
+Нормы, admission/repair и защита cleanup сохраняются; PREP-DIAG-01 UNKNOWN.
+
+Локальная подготовка 2.0.63: canonical preflight PASS (exit 0), `npm run lint:js`
+PASS, `node --test tests/frontend/*.test.mjs` — 139 PASS / 0 FAIL. Версии
+pyproject/uv.lock/frontend/index согласованы, dist пересобран штатно. Api/tests/
+исходный UI-код после принятого 11b2a94 не менялись; backend757/HTTP108/PG209
+и адресные collector4 применимы в ранее указанной области, не заменяют новый CI.
+
 ## Результат, основание и область
 
 Статус: BLOCKED_PM03; независимые исправления передаются отдельно от полного PATH.
