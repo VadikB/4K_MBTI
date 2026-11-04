@@ -1,5 +1,59 @@
 # PM03-REPAIR-CONTRACT — frozen содержательный контракт во входе repair
 
+## Выпуск 2.0.64 — 04.11.2026
+
+Владелец ответом «да» явно согласовал последовательный выпуск PATCH 2.0.63
+из PR #168, затем PATCH 2.0.64 из PR #169 с обязательным CI каждого head и
+штатным deploy test. Текущие флаги `branch_push/pr/merge/deploy/version_bump=true`,
+`artifact_publish=false`; pilot и реальные LLM-вызовы не входят. Прежние Draft/
+false/NOT_RUN ниже — историческая передача, не текущий запрет согласованного выпуска.
+
+PR #168 принят squash commit `2ba7c02a509b050eeeb43d2c6279b6f845e4a6be`, 2.0.63:
+fast CI [41903653105](https://github.com/VadikB/4K_MBTI/actions/runs/41903653105)
+PASS, [полный CI 41903653030](https://github.com/VadikB/4K_MBTI/actions/runs/41903653030)
+PASS (integration/browser5/full-verification). Первый CI FAIL 41902176961 не скрыт:
+собственная ST-R1 local-status регрессия исправлена в be7b9b0, auth/admin browser98
+и frontend139 PASS; source/admission/prompts не затронуты.
+
+PM03 перенесён `git rebase --onto origin/main 11b2a94…`: ровно четыре собственных
+коммита на actual main 2ba7c02, без конфликтов. Backup
+`codex/pm03-before-release-3152c5e` сохраняет исходный head
+`3152c5e6b2406de6909291abcb439fc031532cd6`. Rebased head до подготовки выпуска —
+`86cbff2fe49b6819eb28c738ed2ac3bd9aee8693`; implementation теперь 2ffd968.
+`git range-diff` подтверждает те же patches; изменение контекста только в STATE.
+Api, unit tests и первичные PM03 evidence побайтово совпадают с 3152c5e. Diff к
+новому main содержит только PM03: две строки runtime, tests и docs/evidence.
+
+План: повтор backend/HTTP на новой базе; canonical `npm run ready:prepare --
+--candidate 2.0.64`; diff/links и версия/dist; обновление PR #169 с base main;
+Ready и весь обязательный CI нового head; squash merge и deploy/readback test.
+Перезапись только собственной PM03 remote-ветки выполняется с точным
+`--force-with-lease=refs/heads/codex/pm03-repair-contract:3152c5e…`, не main.
+Новый main/test не объявляется обновлённым до соответствующего факта.
+Откат — штатный smoke rollback deployment, после успешного выпуска отдельный
+revert PR, без удаления данных/snapshots. Защита permanent DB не меняется.
+Схема/миграции/нормативная публикация N/A; PREP-DIAG-01 UNKNOWN, качество AS и
+полный PATH всё ещё не доказаны. Реальный content FAIL не приписывается пропуску
+system message без доказательства; платный repeat не производится.
+
+Повтор на actual main + тех же PM03 source/tests: backend `python -m pytest -m
+'not integration and not e2e and not llm'` — 763 PASS / 323 deselected, exit 0,
+80.83 s; HTTP `python -m pytest -m e2e tests/e2e` — 108 PASS / 12 deselected,
+exit 0, 32.09 s. Executable — прежний root `.venv/bin/python` (Python 3.12.13);
+новой установки/доступов нет. `ready:prepare --candidate 2.0.64` — PASS; назначен
+ровно один PATCH 2.0.63→2.0.64, штатный dist собран. Lint/frontend139/diff PASS.
+Frontend dependencies переиспользованы из PATH node_modules с тем же lock SHA
+`456b862b3ec25e171be63566091026c97de9c47dad9aa6c2fe1e926fa6f159ce`;
+временная локальная ссылка не входит в commit. API/tests/артефакты после rebase
+не менялись; синтетические gateway fixtures не доказывают реальную AS.
+
+Предшествующий deploy 2.0.63 [41904412114](https://github.com/VadikB/4K_MBTI/actions/runs/41904412114)
+PASS. Read-only permanent test: HEAD 2ba7c02…, tracked clean, service active,
+readiness HTTP 200, `/users/version` = 2.0.63 и public_origin = test. Публичный
+main.js и серверный файл имеют SHA-256
+`4dd6cee55553e6a48ef8e6a380a34f58e076a2a65b437d37d6cb84cf24763905`.
+БД не читалась и не очищалась. Развёртывание 2.0.64 до своего merge — NOT_RUN.
+
 ## Результат и область
 
 Статус: DRAFT_REVIEW / техническое исправление завершено и передано, не выпущено.

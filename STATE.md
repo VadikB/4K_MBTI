@@ -1,5 +1,23 @@
 # STATE — PM03-REPAIR-CONTRACT
 
+## Активный выпуск 04.11.2026 — 2.0.64
+
+- Владелец подтвердил оба PATCH/merge/test-deploy после CI: 2.0.63 (#168), затем
+  2.0.64 (#169). branch_push/pr/merge/deploy/version_bump=true; artifact_publish=false.
+- #168 merged: main 2ba7c02 / 2.0.63; fast CI41903653105 и full41903653030 PASS.
+  Исходный fast browser FAIL41902176961 локализован и исправлен (ST-R1 anchor),
+  auth/admin browser98/frontend139 PASS. Исторические записи ниже не текущий статус.
+- PM03-only четыре коммита перенесены на actual main2ba7c02 без конфликтов;
+  head до выпуска86cbff2, source/tests/evidence идентичны3152c5e. Backup-ветка
+  codex/pm03-before-release-3152c5e сохранена. Активно: повтор backend/HTTP,
+  preflight2.0.64, PR169→main/Ready, полный CI → merge → deploy/readback.
+- Повтор на actual base: backend763/HTTP108 PASS, frontend139/lint/diff PASS;
+  canonical preflight2.0.64 PASS. Предыдущий test-deploy41904412114 PASS:
+  сервер2ba7c02/2.0.63, service active/readiness200, public main.js hash совпал.
+  2.0.64 ещё не merged/deployed; следующий шаг — обновить PR169 и обязательный CI.
+- Никаких новых LLM-вызовов/артефактов/потерь данных. PATH BLOCKED_PM03,
+  PREP-DIAG-01 UNKNOWN; реальное качество генерации техническим fix не доказано.
+
 ## Штатная передача 04.11.2026
 
 - Владелец явно разрешил передать repair тот же frozen generation contract и
