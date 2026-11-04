@@ -6,10 +6,25 @@ this is no new methodology approval or publication to a persistent environment.
 """
 import hashlib
 import json
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RECEIPT = ROOT / 'tests/browser/fixtures/path-start-release.json'
+
+
+def reserve_release_ids(connection, table, first_id):
+    """Published checksums include physical refs; reserve unused IDs, not fake rows.
+
+    Only the empty/initial owned fixture is eligible. Fail instead of rewriting
+    existing IDs or silently changing the catalog/program checksum.
+    """
+    assert table in {'m5_case_versions', 'm5_catalogs', 'assessment_configurations'}
+    assert os.getenv('AGENT4K_ISOLATED_STAND') == '1'
+    assert connection.execute('SELECT current_database() AS name').fetchone()['name'].startswith('product4k_pytest_')
+    maximum = connection.execute('SELECT COALESCE(MAX(id),0) AS n FROM ' + table).fetchone()['n']
+    assert maximum < first_id, 'RELEASE_ID_ALREADY_OCCUPIED:' + table
+    connection.execute('SELECT setval(pg_get_serial_sequence(%s,%s),%s,false)', (table, 'id', first_id))
 
 
 def seed_release(connection, actor):
@@ -26,6 +41,9 @@ def seed_release(connection, actor):
     from Api.m5_runtime_rules import import_runtime_rule_version
     from Api.m5_catalog_integrity import publish_catalog
     from scripts.build_m5_sales_package import build_execution_rules
+    case_ids = [case['id'] for case in source['cases']]
+    assert case_ids == list(range(case_ids[0], case_ids[0] + 9)), 'RELEASE_NONCONTIGUOUS_IDS'
+    reserve_release_ids(connection, 'm5_case_versions', case_ids[0])
     imported = import_package(connection, package=package,
         manifest=json.loads((PACKAGE_DIR / 'manifest.json').read_text()),
         execution_rules=json.loads((PACKAGE_DIR / 'execution-rules.json').read_text()))
@@ -44,6 +62,7 @@ def seed_release(connection, actor):
                 (case_version_id,scope,result,evidence_json,evidence_checksum)
                 VALUES(%s,%s,%s,%s::jsonb,%s)''', (local['id'], qa['scope'], qa['result'],
                     json.dumps(qa['evidence_json'], ensure_ascii=False), qa['evidence_checksum']))
+    reserve_release_ids(connection, 'm5_catalogs', source['catalog']['id'])
     catalog = publish_catalog(connection, catalog_id=source['catalog']['catalog_id'],
         catalog_version=source['catalog']['catalog_version'], package_db_id=imported['package_db_id'],
         case_version_ids=[row['id'] for row in local_cases], usage_scope='assessment',
@@ -53,6 +72,7 @@ def seed_release(connection, actor):
     assert catalog['catalog_db_id'] == source['catalog']['id'], 'RELEASE_CATALOG_ID_MISMATCH'
     from Api.assessment_authoring_service import assessment_authoring_service
     config = source['configuration']
+    reserve_release_ids(connection, 'assessment_configurations', config['id'])
     other = assessment_authoring_service.create_configuration(connection,
         code=config['code'], name=config['name'], methodology_version_id=config['methodology_version_id'],
         scenario_version_id=config['scenario_version_id'], catalog_version_id=catalog['catalog_db_id'],

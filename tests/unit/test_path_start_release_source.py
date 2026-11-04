@@ -46,3 +46,24 @@ def test_changed_or_synthetic_source_is_rejected(release, mutation):
     mutation(changed)
     with pytest.raises(AssertionError):
         validate_release(changed)
+
+
+@pytest.mark.parametrize('isolated,database,maximum,table', [
+    ('0', 'product4k_pytest_example', 0, 'm5_catalogs'),
+    ('1', 'agent4k_test', 0, 'm5_catalogs'),
+    ('1', 'product4k_pytest_example', 2, 'm5_catalogs'),
+    ('1', 'product4k_pytest_example', 0, 'users'),
+])
+def test_id_reservation_refuses_nonowned_or_occupied_target(monkeypatch, isolated, database, maximum, table):
+    from tests.path_start_release_inputs import reserve_release_ids
+    monkeypatch.setenv('AGENT4K_ISOLATED_STAND', isolated)
+    statements = []
+    class Connection:
+        def execute(self, sql, params=None):
+            statements.append(sql)
+            return self
+        def fetchone(self):
+            return {'name': database, 'n': maximum}
+    with pytest.raises(AssertionError):
+        reserve_release_ids(Connection(), table, 2)
+    assert not any('setval' in sql for sql in statements)

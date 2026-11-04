@@ -146,3 +146,11 @@ Node receipts 27 PASS; frontend 131 PASS; lint/build/diff PASS. Первый з�
 
 Следующий шаг — owned bootstrap и исходный UI run: негативный GET уже подтверждённой
 анкеты проверяется до LLM. Это ещё не PATH PASS и не итоговый кандидат.
+
+Первый bootstrap 9cefe53 (`ce02e158ef8b470ab68472ba91a36769`) остановился на
+RELEASE_CASE_MISMATCH до browser/provider; cleanup подтвердил удаление owned-БД.
+Причина: пустая БД иначе выдаёт физические IDs, включённые в checksums каталога и
+ProgramDefinition. Fixture теперь резервирует ещё не занятые release IDs для Case,
+catalog/configuration, без создания подставных исторических строк. Операция имеет
+whitelist таблиц и запрет постоянной/неизолированной/занятой БД; регрессии добавлены.
+Published содержание/QA не изменяется. Это исправление тестового входа, не дефект продукта.
