@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "result": "LOCAL_VERIFIED_NOT_RELEASED",
+  "code_identity": {
+    "sha": "d97625d7d6b1dba214890d8165791c3e2a9850b6",
+    "base": "11b2a94e164b97b95a0ef8f9a806ab2becf2b1a9",
+    "branch": "codex/pm03-repair-contract",
+    "worktree_status_before_evidence": "",
+    "files": {
+      "Api/m5_functional_generation_service.py": "14fdedf1f0e12eb1c5f0e740fece0a03b49a18070edb94ce59fcaae4193836f6",
+      "tests/unit/test_m5_functional_generation_service.py": "a95de1fd5f9ffd780c156f0e9f92f5c20b452cf8e52c60fc2e6b59b871b48939",
+      "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/sources/functional-v0.2/07_generation/Generation_contract_v0.2.json": "4fc3cd1dd14e9f5a548266179e28706732cb9fd6034493b432fd67cad5718d2b",
+      "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/sources/functional-v0.2/07_generation/Generator_instruction_v0.2.txt": "409e81a393ace10d83f35a96d15cb3cbc064266af80eeb71c142563ad5cedebf",
+      "assessment_definitions/prompts/m5_functional_repair/v1/prompt.md": "d0b424cbff9000dfd3aa55341f89c63f20964c254a0077dc65cf95d90c77ccf0",
+      "assessment_definitions/prompts/m5_functional_repair/v1/manifest.json": "f645307cf426baab87b5638f996e7d90415a4b923135ea3fb8d5882785f3c8c9"
+    }
+  },
+  "checks": {
+    "regression-before": {
+      "exit_code": 1,
+      "log": "regression-before.log.gz",
+      "uncompressed_log_sha256": "1cf00082192a2e12484f2f2bdf5f491f32b1fa36db92e0a2cc595430da0c4c1e"
+    },
+    "targeted-after": {
+      "exit_code": 0,
+      "log": "targeted-after.log.gz",
+      "uncompressed_log_sha256": "bcc46c3401715eab82cb12af047480daea5e612721e6962a435e09416a7195e9"
+    },
+    "backend": {
+      "exit_code": 0,
+      "log": "backend.log.gz",
+      "uncompressed_log_sha256": "ba0b6b9c7079e3796be89d03051057dfcd3a0063df30ca23d15cf20d155032e0"
+    },
+    "http": {
+      "exit_code": 0,
+      "log": "http.log.gz",
+      "uncompressed_log_sha256": "1f7ed8000bff2dca77cb0a63c196dbf229447768a4cd8e67e88ccf500179a2f3"
+    }
+  },
+  "commands": {
+    "regression-before": "<python> -m pytest -q --tb=short tests/unit/test_m5_functional_generation_service.py -k 'same_frozen_content_contract or contract_from_snapshot_ref or broken_frozen_contract or repeated_blocking_failure'",
+    "targeted-after": "<python> -m pytest -q --tb=short tests/unit/test_m5_functional_generation_service.py tests/unit/test_m5_functional_snapshot_composition.py",
+    "backend": "<python> -m pytest -m 'not integration and not e2e and not llm'",
+    "http": "<python> -m pytest -m e2e tests/e2e"
+  },
+  "python": "/Users/vadim_bogachev/Developer/4K/.venv/bin/python",
+  "new_paid_llm_calls": 0,
+  "new_database_lifecycle_runs": 0,
+  "fixtures": "synthetic gateway responses; not a replay of the deleted real candidate",
+  "protected_paths_unchanged_against_base": [
+    "assessment_definitions",
+    "docs/methodology",
+    "Api/m5_functional_tester.py",
+    "Api/product_cycle_preparation_queue.py",
+    "Api/cycle_execution_manifest.py"
+  ],
+  "product_runtime_diff": "two lines: read frozen generation_contract and append its system message to repair",
+  "quality_of_real_generation": "NOT_VERIFIED",
+  "causal_link_to_five_failures": "NOT_ESTABLISHED",
+  "historical_prep_diag_01_root_cause": "UNKNOWN",
+  "ci": "NOT_RUN_LOCAL_BRANCH",
+  "push": false,
+  "pr": false,
+  "merge": false,
+  "deploy": false,
+  "version_bump": false,
+  "artifact_publish": false
+}

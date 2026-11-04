@@ -2,7 +2,8 @@
 
 ## Результат и область
 
-Статус: IN_PROGRESS. Основание — явный ответ владельца 04.11.2026:
+Статус: LOCAL_VERIFIED / техническое исправление завершено, не выпущено.
+Основание — явный ответ владельца 04.11.2026:
 «Да, исправить сборку входа repair». Разрешена отдельная техническая доработка:
 передать repair тот же зафиксированный Generation_contract_v0.2 и добавить
 регрессии. Нет разрешения на новые prompts, изменение admission/числа repair,
@@ -68,7 +69,9 @@ Case. Новая регрессия не реконструирует удалё
 1. DONE: диагностика и разрешение владельца; новая изолированная ветка от exact base.
 2. DONE: новая регрессия до исправления — 5 FAIL/1 PASS; затем две строки сборки
    frozen contract в repair; generation service + snapshot composition — 23 PASS.
-3. Активно: полный backend/HTTP → review/diff/отчёт и STATE.
+3. DONE: полный backend/HTTP, self-review/diff; первичные логи и отчёт сохранены.
+   Следующий шаг — человеческое review и отдельный допуск публикации/выпуска либо
+   обоснованного real-provider эксперимента, не случайное повторение PATH.
 
 Локальный минимум EVC: backend-логика/сборка LLM-входов — `npm run test:backend`
 и контрактные тесты с подставным gateway; дополнительно `npm run test:backend:http`.
@@ -89,4 +92,57 @@ admission/compiled Case после повторного blocking FAIL. Синт�
 
 ## Отчёт
 
-Команды/фактические результаты, точные SHA и следующий шаг дополняются после проверок.
+Implementation commit: `d97625d7d6b1dba214890d8165791c3e2a9850b6`.
+Последующая запись отчёта/evidence не меняет проверенные Api/tests.
+Рабочее дерево на старте итоговых наборов clean. Использован Python существующего
+локального test venv `/Users/vadim_bogachev/Developer/4K/.venv/bin/python`; пакеты
+или доступы не переустанавливались. Команды ниже эквивалентны backend scripts
+package.json, cwd — новый worktree; подстановка `<python>` — указанный executable.
+
+| Проверка | Фактический результат |
+| --- | --- |
+| `<python> -m pytest -q --tb=short tests/unit/test_m5_functional_generation_service.py -k 'same_frozen_content_contract or contract_from_snapshot_ref or broken_frozen_contract or repeated_blocking_failure'` до fix | 5 FAIL, 1 PASS, 13 deselected, exit 1; отсутствует contract system message и проверки frozen dependency; policy closure уже PASS |
+| `<python> -m pytest -q --tb=short tests/unit/test_m5_functional_generation_service.py tests/unit/test_m5_functional_snapshot_composition.py` | 23 PASS, exit 0, 3.32 s; технические gateway fixtures, LLM=0 |
+| `<python> -m pytest -m 'not integration and not e2e and not llm'` | 763 PASS, 323 deselected, exit 0, 87.09 s |
+| `<python> -m pytest -m e2e tests/e2e` | 108 PASS, 12 deselected, exit 0, 35.94 s |
+| `git diff --check 11b2a94..HEAD` и локальные Markdown links | PASS |
+| Diff protected paths к базе | `assessment_definitions`, `docs/methodology`, tester/admission, product queue и Cycle dependency resolver побайтово неизменны |
+| CI / frontend / integration / реальный LLM | CI NOT_RUN (локальная ветка), frontend и integration N/A по области; real LLM NOT_RUN по прямому ограничению |
+
+Backend/HTTP имеют прежний StarletteDeprecationWarning о httpx adapter; это не
+FAIL и не основание расширять задачу обновлением зависимостей.
+
+Первичные evidence: [verification.json](../evidence/pm03-repair-contract-2026-11-04/verification.json)
+и четыре `.log.gz` в том же каталоге. SHA-256 распакованных логов и кода/источников
+зафиксированы. Before относится к тем же новым tests на неизменённом source базы,
+after/backend/HTTP — к implementation d97625d; в before новые 6 параметризованных
+проверок не являются нормативным или реальным LLM-прогоном.
+
+Изменённые файлы: две строки `Api/m5_functional_generation_service.py`; шесть новых
+unit cases в существующем `tests/unit/test_m5_functional_generation_service.py`;
+эта задача, STATE и локальные evidence. Новая абстракция/runtime не создавались.
+Файлы методологии, prompts, manifests, source package, web/dist и версия приложения
+не менялись. В branch `codex/path-start-01` и PR #168 новых commits нет.
+
+Self-review: считывается именно snapshot ref через прежний fail-closed reader,
+один и тот же текст контракта передаётся ровно один раз, checksum/routing key
+учитывают новое сообщение; findings/два слоя и прежняя policy admission сохранены.
+Это review агента, не человеческая приёмка и не methodological admission.
+
+Совместимость: публичный API/схема/данные/права не меняются; старые traces и AS
+не переписываются. Неполный/битый snapshot contract теперь блокирует repair до
+gateway, как уже блокировал generation; fallback на current/default не добавлен.
+Размер одного repair input увеличивается на существующий текст контракта;
+число попыток, max_tokens, temperature, transport и таймауты прежние. Платная
+стоимость/качество в этой задаче не измерялись. Данные БД не читались/не изменялись,
+test cleanup не запускался, защита постоянной БД не затрагивалась.
+
+Откат — адресный revert implementation и регрессий, без удаления сохранённых
+данных/snapshots. Main/test не обновлялись; новая ветка только локальная, CI не
+заменяется локальными PASS. Для review/выпуска понадобится отдельный допуск
+branch_push/pr и затем Ready/version/обязательный CI/merge/deploy.
+
+Следующая база с исправлением — `codex/pm03-repair-contract`, implementation d97625d
+и docs/evidence commit передачи. Для качества AS и полного PATH остаются прежние
+пять содержательных FAIL, отсутствие AS/start/оценочных ответов; причинная связь
+с добавленным system message NOT_ESTABLISHED. PREP-DIAG-01 остаётся UNKNOWN.
