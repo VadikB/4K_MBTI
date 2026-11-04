@@ -22,7 +22,44 @@ actual={str(p.relative_to(root)) for p in root.rglob('*') if p.is_file()}
 assert actual==expected, 'Unexpected or missing files'
 for name,digest in manifest['files'].items():
     assert hashlib.sha256((root/name).read_bytes()).hexdigest()==digest, name
-print('PASS',len(manifest['files']),'files; implementation',manifest['implementation_sha'])
+def load(relative):
+    return json.loads((root/relative).read_text())
+def digest(value,lf=True):
+    raw=json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+    return hashlib.sha256((raw+('\\n' if lf else '')).encode()).hexdigest()
+e='repository/docs/evc/evidence/assessment-contour-2026-11-04/'
+source=load(e+'source-provenance.json')
+assert digest(source['case']['imported_json'])==source['case']['imported_checksum']
+for row in source['qa_evidence']:
+    assert digest(row['evidence_json'])==row['evidence_checksum']
+    assert row['evidence_json']['origin']['synthetic'] is True
+    assert row['evidence_json']['origin']['methodology_approval'] is False
+p='source-inputs/assessment_definitions/cases/competencies_4k/functional-personalization/0.5/'
+package=load(p+'case-package.json'); source_manifest=load(p+'manifest.json')
+assert digest(package)==source['package']['source_package_only_checksum']
+for case in package['cases']:
+    case['status']='FROZEN'; case['author_case']['Status']='FROZEN'
+assert digest({'package':package,'manifest':source_manifest})==source['package']['imported_checksum']
+assert next(c for c in package['cases'] if c['case_id']=='CASE.SPEC.02')==source['case']['imported_json']
+original=load(e+'final-failure-receipt.json'); incident=load(e+'PREP-DIAG-01.json')
+assert original['preparation_operation']['error_message']=='M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE'
+assert original['assessment_situation'] is None and original['cycle']['started_at'] is None
+assert original['assessment_answers']==0 and incident['root_cause']=='UNKNOWN'
+assert incident['failed_check_ids'] is None and incident['individual_check_reasons'] is None
+r=e+'export-regression/'; exported=load(r+'export-receipt.json')
+before=load(r+'export-before-cleanup.json'); cleanup=load(r+'cleanup.json'); result=load(r+'regression-result.json')
+actual=hashlib.sha256((root/(r+'export-receipt.json')).read_bytes()).hexdigest()
+assert actual==before['receipt_sha256']==result['receipt_sha256']
+assert result['result']=='PASS' and result['llm_calls']==before['llm_calls']==0
+assert cleanup['owner_verified'] and cleanup['database_absent'] and cleanup['state_absent']
+assert cleanup['run_id']==result['run_id']
+f=exported['functional_generation']; checks=f['incomplete_checks']
+assert [c['check_id'] for c in checks]==before['check_ids']
+assert [c['status'] for c in checks]==before['statuses']
+assert all(isinstance(c['reason'],str) and c['reason'] for c in checks)
+assert f['candidate_checksum']==f['candidate_ref']['checksum']==before['candidate_checksum']
+assert f['final_generation_operation_id'].startswith(exported['preparation_operation']['operation_id']+':')
+print('PASS',len(manifest['files']),'file hashes, source/QA checksums, incident UNKNOWN, export links and cleanup; implementation',manifest['implementation_sha'])
 '''
 
 
