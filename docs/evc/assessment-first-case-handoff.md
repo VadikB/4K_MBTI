@@ -2,6 +2,19 @@
 
 ## Текущее состояние после выпуска PR #167
 
+Дополнение передачи PATH 04.11.2026: target `--program-source published-pilot`,
+точный nine-case seed, расширенный безопасный collector и независимые PG/ST fixes
+находятся **только в `codex/path-start-01`**, implementation
+`136b8587346c2728014570f755fa98321a223b25` + docs/evidence commits передачи.
+Final immutable SHA указан в MANIFEST пакета и head draft PR. Для согласованного
+продолжения PM-03 использовать этот head, не один main. Полный PATH BLOCKED_PM03;
+решение владельца — передать fixes, генерацию согласовать отдельным заданием.
+[EVC/AC01…18](tasks/path-start-01.md), [точный блокер](reports/path-start-01-pm03-blocker.md).
+Новых LLM-вызовов при оформлении передачи нет; CI/merge/deploy не объединяются.
+
+Ниже «профиль/runner уже в main/test» означает базовый принятый SYN-профиль, а не
+новые PATH target inputs и исправления. Main/test по-прежнему 7221671 / 2.0.62.
+
 Обновлено при старте PATH-START-01 редакции 1.3, 04.11.2026. Настройка принята,
 PR #167 squash merged; актуальный main —
 `7221671fbd9b16192a86b04b6eec36773f2dbf99`, приложение 2.0.62. Обязательные

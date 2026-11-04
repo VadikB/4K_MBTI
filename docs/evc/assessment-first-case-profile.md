@@ -106,6 +106,18 @@ PASS входных fixtures не заменяет его admission.
 
 ## Обязательные доказательства
 
+PATH collector дополнительно сохраняет allowlisted assignment/binding/questionnaire/
+profile refs/checksums/frozen_at, program connection, числовые IDs акторов,
+preparation request → profile, plan revision/checksum и effective times/source refs.
+Validator связывает assignment/profile/request/Cycle и оба времени, не приравнивая
+checksum разных объектов. UNKNOWN_OR_AMBIGUOUS не превращается в success.
+Это расширение будущих receipts; после cleanup старые недоступные refs не достраиваются.
+
+Бесплатно проверено на `136b858`: export regression actual collector → fsync/readback
+→ owned cleanup PASS и новый minimal `published-pilot` bootstrap PASS. Полный PATH
+остаётся BLOCKED_PM03; следующая генерация требует отдельного согласованного задания.
+Завершённый отрицательный run не следует случайно повторять ради PASS.
+
 - Generation, все final tester и challenger batches принадлежат одной preparation
   operation; после repair проверяются конечный кандидат и его новый admission
   PASS либо PASS_WITH_WARNINGS при `admitted_for_participant=true` — по существующему

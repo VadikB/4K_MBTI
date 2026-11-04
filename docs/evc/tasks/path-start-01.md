@@ -62,17 +62,19 @@ checks. Сначала сохраняется исходный разрыв це
 
 ## План и состояние
 
-1. Активно: read-only сверка test/публикации/QA/release refs и DB target/ownership;
-   обновление текущего handoff/STATE. Не создавать конкурирующую программу.
-2. Адаптация существующего runner/seed/assertions к exact nine-case release;
+1. DONE: read-only сверка test/публикации/QA/release refs и DB target/ownership;
+   обновление handoff/STATE. Конкурирующая программа не создавалась.
+2. DONE: адаптация существующего runner/seed/assertions к exact nine-case release;
    минимальный bootstrap, безопасные terminal export/completion/cleanup. Без готовых
    org/admin/member/questionnaire/assignment/profile/AS/start в начальной загрузке.
-3. Исходная диагностика PS-01…05 и отрицательные UI/HTTP/DB проверки: сохранить первый
+3. DONE до admission FAIL: исходная диагностика PS-01…05 и отрицательные UI/HTTP/DB проверки; сохранён первый
    разрыв до исправления соответствующего продукта; независимые части не блокировать.
-4. Адресные исправления PG-R1/R2/R3, ST-R1/R3/R4 и связанных замечаний только при
+4. DONE для доказанных PG-R1/R2, ST-R1/R3/R4: адресные исправления и регрессии. PG-R3 — сквозной остаток. Исправления только при
    подтверждённом текущем поведении; регрессии; не переделывать R01/R02/R03/R10.
-5. Полный итоговый run на новых owned-данных, уровни проверок/evidence/остаток в
-   таблице ниже; draft PR после локального минимума. Deployed acceptance отдельно.
+5. BLOCKED: полный итоговый run/start на новых owned-данных. Решение владельца:
+   передать независимые исправления с точным PM-03 blocker, генерацию согласовать
+   отдельным заданием. Активно только оформление передачи/draft PR после локального
+   минимума. Deployed acceptance отдельно.
 
 ## Флаги, стоп-условия, безопасность и откат
 
@@ -104,28 +106,32 @@ metadata readback постоянной БД; все автотесты/прог�
 
 ## Единая матрица AC01…18
 
-До фактических проверок статусы не заимствуются из SYN/PR #167.
+Статусы не заимствуются из SYN/PR #167. Код передачи — `136b858` и последующие
+документальные/evidence-коммиты этой ветки; `a8d8fcf` — единственный real LLM run,
+`2c813f2` — full integration. Область каждой проверки указана отдельно.
+Сокращения evidence: `E` = `docs/evc/evidence/path-start-01/`; `P` =
+`E/preparation-a8d8fcf/`; `V` = `E/verification/`. Это пути внутри доступного пакета.
 
 | AC / PS и источник PATH 1.3 | Реализация/путь/SHA | Проверка/run/подмены | Evidence | Статус / остаток / владелец |
 | --- | --- | --- | --- | --- |
-| AC01 / все: minimal bootstrap, ownership | Existing stand/seed, target delta pending | NOT_RUN | — | NOT_RUN; точный source seed, архитектор |
-| AC02 / PS-01: org create/reload/repeat | UI/entry/API, 7221671 | NOT_RUN | — | NOT_RUN; основной run |
-| AC03 / PS-01: approved program/catalog/roles | Existing release receipt; current readback pending | NOT_RUN | Root publication receipt (не PATH) | NOT_RUN; проверить exact refs/QA |
-| AC04 / PS-01: exact connection GET/reload | R10 существующий, 7221671 | NOT_RUN | — | NOT_RUN; не переделывать без дефекта |
-| AC05 / PS-01: slow/error/null/foreign/lost reply | Entry/dist + HTTP | NOT_RUN | — | NOT_RUN; отрицательные сценарии |
-| AC06 / PS-01: admin own scope/auth | Existing auth/routes | NOT_RUN | — | NOT_RUN; browser + HTTP |
-| AC07 / PS-02: confirmed scope/revision/read states | questionnaire sources + renderer | NOT_RUN | — | NOT_RUN; PG-R2 |
-| AC08 / PS-03: member/job/BaseRoles | Existing R01/source capabilities | NOT_RUN | — | NOT_RUN; 6 ролей/пилот |
-| AC09 / PS-03: atomic assignment/idempotency | Existing assignment/bindings | NOT_RUN | — | NOT_RUN; HTTP/DB |
-| AC10 / PS-03/04: exact denial/rollback | Readiness/binding routes | NOT_RUN | — | NOT_RUN; PG-R1 |
-| AC11 / PS-04: participant-owned identity | Existing auth/ownership | NOT_RUN | — | NOT_RUN; browser/HTTP |
-| AC12 / PS-04: acquaintance persistence/reasons | Existing auto-trigger/R03 | NOT_RUN | — | NOT_RUN; не подставлять ответы |
-| AC13 / PS-04: frozen profile/provenance/no PII | PM-02 → C-23/24 | NOT_RUN | — | NOT_RUN; DB/trace |
-| AC14 / PS-04: real LLM/admission/UI; PREP-DIAG | PM-03 → C-34; strict validator retained | NOT_RUN | Historical PREP remains UNKNOWN | NOT_RUN; новая адресная диагностика |
-| AC15 / PS-03/04: assignment/job lineage | Admin projection + participant path | NOT_RUN; technical negative fixture planned | — | NOT_RUN; ST-R3 |
-| AC16 / PS-04/05: plan/time before explicit start | M7 §§2.4/5.1, start gate | NOT_RUN | — | NOT_RUN; no calendar window yet |
-| AC17 / PS-05: start/same AS/zero answers/repeat | Cycle/Session/AS + browser | NOT_RUN | — | NOT_RUN; full final run |
-| AC18 / все: final SHA/full run/viewport/evidence | Existing runner, adapted source selection | NOT_RUN | — | NOT_RUN; code/main/CI/deploy отдельно |
+| AC01 / все: minimal bootstrap, ownership | Existing stand + exact release seed; 136b858 | Bootstrap repeat LLM=0, пустая owned-БД/маркер/cleanup; safeguards unit | E/free-136b858; V/backend.log.gz | PASS в owned scope; постоянная БД не seed/cleanup target |
+| AC02 / PS-01: org create/reload/repeat | Existing UI/entry/API | a8d8fcf создал новую org; технические organization tests; полный final UI repeat не выполнен | P/run.json; V/integration.log.gz | BLOCKED для полной финальной приёмки; повтор создания org в целевом run отдельно не доказан |
+| AC03 / PS-01: approved program/catalog/roles | path_start_release_source/inputs; fixture | READ ONLY + 15/15 recompute; 9 Cases/27 original QA; bootstrap проверяет exact hashes | tests/browser/fixtures/path-start-release.json; E/free-136b858 | PASS техническая идентичность/происхождение; не новый human review/CURRENT |
+| AC04 / PS-01: exact connection GET/reload | Existing R10, без переиздания | a8d8fcf подключение + reload; R10 browser и program DB tests | P/ps02-read-error.json; V/browser.log.gz; V/integration.log.gz | PASS проверенный путь, без новой публикации |
+| AC05 / PS-01: slow/error/null/foreign/lost reply | Existing R10 entry/dist/contracts | Browser mock pending/null/lost reply/reopen/logout; frontend/HTTP contract regressions; не реальные сбои permanent test | V/browser.log.gz; V/frontend.log.gz; V/http.log.gz | BLOCKED полной приёмки AC; перечисленные адресные регрессии PASS, не весь final PATH |
+| AC06 / PS-01: admin own scope/auth | Existing auth/routes, separate contexts | a8d8fcf admin login; HTTP/owned integration authorization | P/run.json; V/http.log.gz; V/integration.log.gz | PASS проверенный scope; внешняя почтовая доставка не проверяется |
+| AC07 / PS-02: confirmed scope/revision/read states | PG-R2 projection + stale read guard | initial actual 503 FAIL → a8 actual retry PASS; unit/HTTP/PG stale/foreign checks | E/initial-eb3c762; P/ps02-read-error.json; V | PASS адресное исправление; read error не отменяет подтверждение |
+| AC08 / PS-03: member/job/BaseRoles | Existing R01/source capabilities | a8 UI member/job/specialist_expert; source/role contracts в regression; явная полная UI-проверка шести ролей не предъявлена | P/run.json; fixture; V/integration.log.gz | BLOCKED для целого AC; specialist_expert проверен, шесть BaseRoles требуют отдельного полного readback |
+| AC09 / PS-03: atomic assignment/idempotency | Existing R02 assignment/bindings | a8 назначение; owned path29/assignment contracts + real PG tests, synthetic negative fixtures | P/run.json; V/integration.log.gz; E/free-136b858 | PASS в проверенном API/DB scope; не повтор full final UI |
+| AC10 / PS-03/04: exact denial/rollback | PG-R1 Api/acquaintance/router; existing assignment API | before 5 FAIL → unit/HTTP PASS; scoped/source negatives в PG | E/pgr1-initial-a8d8fcf; V/backend.log.gz; V/http.log.gz; V/integration.log.gz | PASS адресные причины/запреты, без изменения норм |
+| AC11 / PS-04: participant-owned identity | Existing auth/ownership | a8 own invitation/session; HTTP foreign access 403; owned path29 | P/run.json; V/http.log.gz; V/integration.log.gz | PASS выбранный путь; три session contexts/контролируемый mail sink |
+| AC12 / PS-04: acquaintance persistence/reasons | PG-R1 + unchanged R03 | a8 reload/acquaintance/auto-trigger; negative UI reason + HTTP regressions | P/run.json; V/browser.log.gz; V/http.log.gz | PASS адресная сохранность/объяснение; не финальная новая AS |
+| AC13 / PS-04: frozen profile/provenance/no PII | PM-02, new allowlisted lineage collector | a8 profile → Cycle refs; новая owned API→profile lineage regression; privacy assertions | P/source-to-runtime-receipt.json; E/free-136b858; V/node.log.gz | BLOCKED для полного целевого readback: старый run не содержит всех refs/времён; не реконструируются |
+| AC14 / PS-04: real LLM/admission/UI; PREP-DIAG | PM-03 существующий, strict validator сохранён; ST-R1/R4 fixes | a8 real 20 operations; final candidate FAIL после repair; checks сохранены, AS нет; Node PASS_WITH_WARNINGS регрессии | P/source-to-runtime-receipt.json; P/runner-result.json; E/st-initial-a8d8fcf; V/node.log.gz | FAIL фактический admission / BLOCKED AS; отдельная задача PM-03 владельца. PREP-DIAG-01 UNKNOWN |
+| AC15 / PS-03/04: assignment/job lineage | ST-R3 actual admin SQL/compatibility projection | initial PG 3 FAIL → full integration и адресный repeat PASS; two scopes/same config/foreign newer job/unknown | E/lineage-initial-9f9b7b8; V/integration.log.gz; E/free-136b858 | PASS техническая negative fixture, не preseed главного E2E |
+| AC16 / PS-04/05: plan/time before explicit start | M7 existing gate; no-AS projection fix; timing collector | a8 prepared/start null; unit ready-plan-without-AS FAIL→PASS; будущие time refs validated; старых effective times нет | P/source-to-runtime-receipt.json; E/start-gate-initial-9f9b7b8; V/node.log.gz | BLOCKED целевые оба времени/READY route с admitted AS; не запускать таймер ради отчёта |
+| AC17 / PS-05: start/same AS/zero answers/repeat | Existing explicit start/strict validator | AS отсутствует; start/presentation NOT_RUN; DB assessment_answers=0, started_at=null | P/source-to-runtime-receipt.json | BLOCKED_PM03; не выдаётся за PASS, владелец отдельной генерации |
+| AC18 / все: final SHA/full run/viewport/evidence | 136b858 + docs/evidence commits; packet metadata фиксирует final SHA | Backend/HTTP/front/integration/browser/Node; viewports4 mocked; full final real-provider повтор NOT_RUN по решению владельца | E/verification; E/viewports-after; пакет diff/bundle/MANIFEST/VERIFY | BLOCKED полной PATH приёмки; независимые fixes переданы, CI/main/deploy раздельно |
 
 ## Checkpoint источников и runner (до изменения продукта)
 
@@ -303,3 +309,84 @@ checksums трёх источников профиля, frozen_at, связью 
 owned cleanup PASS. Предыдущие 4 environment FAIL не скрыты, причина устранена
 частным test interpreter, повтор успешен. Продуктовый Api/web после этого SHA
 не меняется; для нового collector выполняется отдельная адресная регрессия.
+
+## Итог независимого блока и применимость проверок
+
+Передаётся код `136b8587346c2728014570f755fa98321a223b25` + финальная запись
+отчёта/evidence, без новых продуктовых изменений после проверенного SHA. Final
+immutable SHA фиксируют head draft PR и MANIFEST пакета; это база, не EVC baseline.
+
+| Этап | Реализация и проверка | Остаток |
+| --- | --- | --- |
+| PS-01 | Read-only точная публикация; mirror seed; org/program/admin через реальный UI, R10 переиспользован | Финальный целый repeat не выполнен; повтор org и полный AC05 не выводятся из одного happy path |
+| PS-02 | Scoped confirmed questionnaire; PG-R2 первоначально воспроизведён, исправлен; actual 503/retry и unit/UI/HTTP regressions | Общий test с новым кодом не развёртывался |
+| PS-03 | Реальное добавление участника с должностью/assessment role и назначение; exact bindings; ST-R3 SQL исправлен/PG проверен | Полный six-BaseRoles UI readback в передаче не заявляется |
+| PS-04 | Собственная сессия, знакомство/auto-trigger, реальный LLM и final checks; PG-R1/ST-R1/ST-R4 исправлены | PM-03 содержательный FAIL после repair; генерация — отдельное согласование |
+| PS-05 | Строгий explicit start validator сохранён; false-ready проекция исправлена; start null/answers0 доказаны | Admission → AS → start/presentation BLOCKED, не PASS |
+
+Команды и первичные логи — `evidence/path-start-01/verification/verification.json`
+и `.log.gz`. Gzip сохраняет исходные bytes; SHA-256 распакованных логов записаны
+в verification.json. Проверки не заменены собственным текстовым резюме.
+
+| Проверка | Точное основание / результат |
+| --- | --- |
+| `npm run test:backend` | 136b858: 757 PASS, 323 deselected, exit 0; warning deprecated httpx adapter, не FAIL |
+| `npm run test:backend:http` | 2c813f2: 108 PASS, 12 deselected, exit 0; Api/web побайтово совпадают с 136b858 |
+| `node --test tests/frontend/*.test.mjs` | 139 PASS, exit 0; неизменённый набор/JS после 2c813f2 |
+| `npm run lint:js`, `npm run build:web`, `git diff --exit-code -- web/dist` | 136b858: PASS/exit 0; dist соответствует сборке, нет потерянных пользовательских файлов |
+| PostgreSQL `pytest --run-integration -m 'integration and not llm' tests/integration -q` | 2c813f2: 209 PASS, exit 0; новая owned-БД/cleanup PASS; product runtime идентичен 136b858 |
+| Новый collector + actual SQL, два integration файла | 136b858: 4 PASS / exit 0, 13.85 s; fixtures технические, provider disabled |
+| Node receipt/persistence | 136b858: 38 PASS / exit 0; обязательные stages, final candidate, PASS_WITH_WARNINGS, refs/timing |
+| Python runner/source/collector адресно | 136b858: 52 PASS / exit 0 |
+| Actual entry/dist browser filtered `auth-r03.spec.mjs` | 15 PASS / exit 0, 16.4 s; mocked HTTP, не real-provider PASS |
+| Actual exporter regression / bootstrap repeat | 136b858: оба PASS, LLM=0, owned cleanup PASS; первичные JSON в `free-136b858/` |
+| Real-provider целевой процесс | a8d8fcf: FAIL admission после repair, 20 unique calls; не финальный whole-path repeat |
+| Новый CI / full-verification / deployed acceptance | На момент commit передачи NOT_RUN; draft PR запускает fast checks, полный CI/Ready и выпуск требуют отдельного допуска |
+
+При первой бесплатной адресной попытке новый profile collector **прошёл**, а три
+SQL fixtures заблокировала защита `TEST_DATABASE_URL must not point to DB_NAME`.
+Попытка убрать DB_NAME была отклонена `ISOLATED_STAND_CONFIGURATION_REQUIRED` ещё
+при collection. Исправлен только внешний task-wrapper: выделены две настоящие
+owned-БД для runtime и TEST_DATABASE_URL. Итог 4 PASS, обе БД штатно удалены.
+Код защит не менялся. Все три результата/логи/cleanup сохранены в
+`free-136b858/{initial-wrapper,repeat-wrapper,final-wrapper}/`.
+
+### Review, риски и передача
+
+- Изменения: `Api/acquaintance.py` (W02/exact readiness), `Api/routes.py`
+  (admin assignment/job projection), web router/organizations/wiring/CSS/dist;
+  existing runner/source fixture/collector и технические unit/HTTP/PG/browser tests;
+  task/profile/handoff/STATE и safe primary evidence. Несвязанный рефакторинг не включён.
+- PM-02 источники/PersonalizedProfile и PM-04 admin readiness/start projection
+  затронуты; PM-03 admission/repair/generator/опубликованные prompts неизменны.
+  LU локализованы существующими функциями `read_state`, `_build_admin_organizations`,
+  questionnaire assignment UI projection; новые LU/схема не вводятся.
+- Совместимость: API endpoints/status enums и DB schema прежние; optional readiness
+  title только добавляет точное сообщение, legacy неоднозначные поля fail-closed.
+  Миграция N/A. Опубликованные `assessment_definitions`, M0–M8 и snapshots не правились.
+- Безопасность: deny/ownership guards сохранены; роли не расширены. Автотесты только
+  isolated owned DB, permanent test — read-only source metadata. Контролируемая почта
+  synthetic `@example.test`, без реальной доставки людям. Нет secrets/PII/raw provider
+  inputs/responses/state в Git или пакете. Защита постоянной БД от cleanup сохранена.
+- Self-review: согласованность контракта/источников, локальных ссылок, границ fixtures,
+  failure-before/fix/after и применимости SHA проверена. Это не human review/приёмка.
+- Откат: адресный revert этого блока, без удаления bindings/profiles/истории/snapshots;
+  новый деплой не делался. Owned cleanup уже выполнен только для своих run IDs,
+  с проверкой marker и отсутствия DB/state, без FORCE. Не расследовать DB recovery.
+- Ветка push разрешён/выполнен; main `7221671…`, приложение 2.0.62; permanent test
+  остался на том же SHA. PATH merge/deploy/version bump/artifact publication — не выполнялись.
+  Базовый принятый SYN уже в main; target published-pilot и fixes есть только в этой ветке.
+- Следующий минимальный шаг владельца — согласовать отдельную задачу PM-03 по
+  [точному блокеру](../reports/path-start-01-pm03-blocker.md), не изменять методологию
+  или admission ради PASS. Затем обоснованный whole-path repeat и отдельный выпуск.
+  PREP-DIAG-01 остаётся UNKNOWN; причинная связь с новым FAIL не установлена.
+
+### Независимый пакет
+
+ZIP `4K_PATH_START_01_<final SHA12>.zip`: профиль/runner/fixtures, changed source,
+полный binary diff к main 7221671, Git bundle (prerequisite тот же main), первичные
+source/run/runner-result/checks/cleanup и SHA-256 MANIFEST с offline VERIFY.py.
+Пакет не является PASS PATH: verifier проверяет целостность и именно отрицательный
+admission/start-null/zero-answers результат, происхождение source QA и cleanup.
+Финальные SHA/CI-ссылки — в его HANDOFF/MANIFEST и PR; приватный server checkout
+для независимого чтения не нужен. Принятый старый пакет 2f0a5a0 не переписывается.

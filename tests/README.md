@@ -3,6 +3,13 @@
 Постоянный синтетический контур «суперадмин → первый Case» и его текущие границы
 описаны в [`docs/evc/assessment-first-case-profile.md`](../docs/evc/assessment-first-case-profile.md).
 
+Для отдельно согласованного целевого PATH существующий runner принимает
+`--program-source published-pilot` (точный опубликованный nine-case release).
+`--check-bootstrap` проверяет минимальные источники/ownership/cleanup без LLM.
+Default `functional-diagnostic` остаётся исторической synthetic QA подстановкой,
+не доказательством допуска пилота. Текущий PATH BLOCKED_PM03; случайный платный
+rerun не требуется. [Передача/AC-матрица](../docs/evc/tasks/path-start-01.md).
+
 Бесплатные адресные проверки harness (без БД, credentials и LLM):
 
 ```bash

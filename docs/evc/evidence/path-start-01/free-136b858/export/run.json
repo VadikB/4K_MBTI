@@ -1,0 +1,7 @@
+{
+  "run_id": "81d7c4cf4bbc4c708f25def7534eef03",
+  "database": "product4k_pytest_81d7c4cf4bbc4c708f25def7534eef03",
+  "scope": "synthetic_negative_export_fixture",
+  "provider_mode": "disabled",
+  "llm_calls": 0
+}

@@ -1,0 +1,21 @@
+{
+  "scope": "synthetic_negative_export_fixture",
+  "llm_calls": 0,
+  "operation_id": "b6e57e61-5db1-4111-9493-0243afc62ead",
+  "candidate_checksum": "9e68781064e8744598411bfb375abf2a16df65d5a7891323293eb4165cfca74a",
+  "receipt_sha256": "b614a1232d03c14dc34ca9adf6e647a56b08523fe847bde125071a3f0e9d1915",
+  "check_count": 3,
+  "check_ids": [
+    "common.authority",
+    "indicator:K1.I06",
+    "case02.attractive_feature"
+  ],
+  "statuses": [
+    "NOT_RUN",
+    "TECHNICAL_ERROR",
+    "INDETERMINATE"
+  ],
+  "safe_reasons_preserved": true,
+  "raw_prompts_responses_keys_excluded": true,
+  "phase": "RECEIPT_PERSISTED_WHILE_DATABASE_EXISTS"
+}

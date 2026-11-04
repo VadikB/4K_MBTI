@@ -1,0 +1,14 @@
+{
+  "sha": "136b8587346c2728014570f755fa98321a223b25",
+  "checks": [
+    {
+      "check": "integration-lineage-collector",
+      "exit_code": 0,
+      "log_sha256": "174be3433ba04560727c80c7792bb61a3ad0d63a6560f91e0c6aa42dd11391a9"
+    }
+  ],
+  "llm_calls": 0,
+  "scope": "new collector and exact source bootstrap; not a full PATH repeat",
+  "integration_database": "product4k_pytest_e77396d8bed34fe99b5ecaa3647dd718",
+  "run_id": "e77396d8bed34fe99b5ecaa3647dd718"
+}

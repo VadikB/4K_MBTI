@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "scope": "synthetic_negative_export_fixture",
+  "llm_calls": 0,
+  "order": [
+    "DATABASE_CREATED",
+    "SYNTHETIC_FAILED_OPERATION_STORED",
+    "ACTUAL_COLLECTOR_READ",
+    "RECEIPT_FSYNC_AND_READBACK",
+    "DATABASE_EXISTENCE_CHECKED",
+    "OWNED_DATABASE_DROPPED",
+    "SAME_RECEIPT_READ_AFTER_CLEANUP"
+  ],
+  "receipt_sha256": "b614a1232d03c14dc34ca9adf6e647a56b08523fe847bde125071a3f0e9d1915",
+  "run_id": "81d7c4cf4bbc4c708f25def7534eef03"
+}

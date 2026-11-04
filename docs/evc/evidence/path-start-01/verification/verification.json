@@ -1,0 +1,97 @@
+{
+  "implementation_sha": "136b8587346c2728014570f755fa98321a223b25",
+  "base_main": "7221671fbd9b16192a86b04b6eec36773f2dbf99",
+  "product_runtime_unchanged_after": "2c813f2583fe144c29b72dfb684e92f92829181d",
+  "new_llm_calls_during_handoff": 0,
+  "full_final_path_repeat": "NOT_RUN_BLOCKED_PM03",
+  "checks": {
+    "backend": {
+      "sha": "136b8587346c2728014570f755fa98321a223b25",
+      "command": "npm run test:backend",
+      "passed": 757,
+      "exit_code": 0,
+      "log_file": "backend.log.gz",
+      "uncompressed_log_sha256": "56aae95ed1070188c1e45f3e252245b27579a45d59b10a551880b93c348bc473"
+    },
+    "http": {
+      "sha": "2c813f2583fe144c29b72dfb684e92f92829181d",
+      "command": "npm run test:backend:http",
+      "passed": 108,
+      "exit_code": 0,
+      "log_file": "http.log.gz",
+      "uncompressed_log_sha256": "1effc18ac7376c53f8d388f1649c64115da172895a77737ab1c38abb1df5f2d7"
+    },
+    "frontend": {
+      "scope": "same web source as 2c813f2",
+      "command": "node --test tests/frontend/*.test.mjs",
+      "passed": 139,
+      "exit_code": 0,
+      "log_file": "frontend.log.gz",
+      "uncompressed_log_sha256": "03d9c17462c8d844ab5f14c125eba9064cee0a976001f5457571761c145205d6"
+    },
+    "browser": {
+      "scope": "actual dist, mocked HTTP, widths 1440/320/390/768; not full PATH",
+      "command": "npx playwright test tests/browser/auth-r03.spec.mjs --grep \"PROGRAM01 R10|PATH-START|UX-ADM28-02 reports questionnaire load failure|PILOT31-03 explains\" --workers=1 --reporter=line",
+      "passed": 15,
+      "exit_code": 0,
+      "log_file": "browser.log.gz",
+      "uncompressed_log_sha256": "7aaccf45d106e0e21103bbbd3d3b7ad8ddb2f2546b4f30c59bb85f78e7af01ac"
+    },
+    "node": {
+      "sha": "136b8587346c2728014570f755fa98321a223b25",
+      "command": "node --test tests/unit/test_assessment_receipt_file.mjs tests/unit/test_assessment_preparation_receipt.mjs",
+      "passed": 38,
+      "exit_code": 0,
+      "log_file": "node.log.gz",
+      "uncompressed_log_sha256": "d11c47a1ac4e3ca06c55b6270a1736deff6b358953a279ef9d460376e4732806"
+    },
+    "targeted": {
+      "sha": "136b8587346c2728014570f755fa98321a223b25",
+      "command": ".venv/bin/python -m pytest -q tests/unit/test_assessment_first_case.py tests/unit/test_assessment_run_summary.py tests/unit/test_path_start_release_source.py",
+      "passed": 52,
+      "exit_code": 0,
+      "log_file": "targeted.log.gz",
+      "uncompressed_log_sha256": "ff6a0786feca7c508b03e5357235be1b438dad90db76f24300fa0c1ad83992ed"
+    },
+    "integration": {
+      "sha": "2c813f2583fe144c29b72dfb684e92f92829181d",
+      "command": "TEST_DATABASE_URL=<owned pytest DB, distinct from DB_NAME> .venv/bin/python -m pytest --run-integration -m \"integration and not llm\" tests/integration -q",
+      "passed": 209,
+      "exit_code": 0,
+      "log_file": "integration.log.gz",
+      "uncompressed_log_sha256": "ac35bbca35bee5f639bcf891024519f5a788586df531c54e14dbb49806e977af"
+    },
+    "collector_integration": {
+      "sha": "136b8587346c2728014570f755fa98321a223b25",
+      "passed": 4,
+      "exit_code": 0,
+      "evidence": "../free-136b858/final-wrapper/result.json"
+    },
+    "export_regression": {
+      "sha": "136b8587346c2728014570f755fa98321a223b25",
+      "exit_code": 0,
+      "llm_calls": 0,
+      "evidence": "../free-136b858/export/regression-result.json"
+    },
+    "bootstrap_repeat": {
+      "sha": "136b8587346c2728014570f755fa98321a223b25",
+      "exit_code": 0,
+      "llm_calls": 0,
+      "evidence": "../free-136b858/bootstrap/runner-result.json"
+    }
+  },
+  "files": {
+    "Api/acquaintance.py": "2ef5ba7e75f1dc47565b8ac4d757f4cd4d5d88d33c9a055ee493226aacbf0867",
+    "Api/routes.py": "286d56a303a377d6767ff60d6d08c7acee91bb3327f701de192209cf9b7ab2d2",
+    "web/js/router.js": "d6ea11731d1c9b396a64b8cd28ed933e3f3ec23c5d10b2ff63d0918dd2dea8cc",
+    "web/js/wiring.js": "996144312622bf38b57360368ea31885af98c4ce29729b4fe9fff8ef65f3dbd6",
+    "web/js/screens/admin/organizations.js": "88d97e33975b470c169af82e401c5549caf57d3ec1418108cef0abc7df7a62e1",
+    "web/js/screens/admin/questionnaire-assignment-state.js": "624a9201fca4883bc78d3f6f6e5559c4768a6f533df9754a066e76b3c689daa6",
+    "web/styles/screens/admin-organizations.css": "54b8a264c6d51404654160297e719c751e90553355fbcfe14462dc76e765ab8d",
+    "tests/assessment_first_case_evidence.py": "9b121e0488967bb99f207738b9352ca13b0fa0c7d87368c1d5c2c55e3937065c",
+    "tests/path29_browser_app.py": "a8e321f4204b7f3af5bc94a6c7023ae38c11381ff2d8270ef88af68f78f110ec",
+    "tests/browser/fixtures/preparation-receipt.mjs": "1920a02d757f250023abba8225938a569177dd0053f0dcb8198c31f4defa2516",
+    "scripts/assessment_first_case.py": "187bd1cd04fa066ac6660a40807f6f2842e43a2fe2df6bf8bac6b9e3f5517e28",
+    "tests/browser/fixtures/path-start-release.json": "a3175dda9675c476ae8636d26449e5ed17e0ef7940ea0412b7431882933ae1e6"
+  }
+}

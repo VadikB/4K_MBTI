@@ -2,6 +2,35 @@
 
 ## Текущий checkpoint 04.11.2026 — PATH 1.3
 
+Итог текущей передачи: **BLOCKED_PM03**, не PATH PASS. Владелец выбрал:
+«Передать исправления PATH с точным блокером; доработку генерации согласовать
+отдельным заданием». Последующие пункты ниже — история checkpoint, не новый план
+платного повторения.
+
+- База следующего согласованного задания: `codex/path-start-01`, implementation
+  `136b8587346c2728014570f755fa98321a223b25` плюс документальные/evidence-коммиты
+  передачи. Точный final SHA — head PR и MANIFEST пакета. Target runner/seed и fixes
+  находятся в этой ветке; main автоматически их не получил.
+- Backend 757 PASS; HTTP 108 PASS; frontend 139 PASS; Node 38 PASS; targeted Python
+  52 PASS. Full real PostgreSQL на clean 2c813f2: 209 PASS; новый collector + exact
+  lineage на 136b858: 4 PASS. Api/web между этими SHA побайтово неизменны.
+- Export regression и новый published-pilot minimal bootstrap на 136b858 PASS,
+  LLM=0, terminal fsync/readback и owned cleanup PASS. Две промежуточные ошибки
+  task-wrapper защит окружения сохранены; конечный repeat — 4 PASS без ослаблений.
+- Actual entry/dist browser 15 PASS с mocked HTTP, viewports 1440/320/390/768;
+  это не full final PATH. Evidence/команды/границы — в единой AC-матрице задачи.
+- PM-03 blocker: run aa2cbb221fdd458a8bb75e9a0faeb8b2 на a8d8fcf, final repair
+  candidate FAIL по K4.I13/I14/I16/I17 и critical_prohibition:02. AS нет, start null,
+  answers 0. Предметные prompts/admission/repair не изменены. PREP-DIAG-01 UNKNOWN.
+- Main и permanent test остаются `7221671fbd9b16192a86b04b6eec36773f2dbf99` /
+  2.0.62; нового merge/deploy/version bump нет. PR передаётся draft, CI отдельно;
+  full-verification/Ready и deployed PATH acceptance NOT_RUN до допуска выпуска.
+- Следующий шаг только после отдельного согласования: исследование качества PM-03
+  по [блокеру](docs/evc/reports/path-start-01-pm03-blocker.md), затем обоснованный
+  полный PATH repeat. Исправления не назначаются причиной исторического INCOMPLETE.
+
+### История промежуточных checkpoint PATH
+
 - Основание: команда владельца «делаем» и задание PATH-START-01 редакции 1.3,
   SHA-256 29ada88402576a5cb36a89df12039f1a45bcfc58c41385a733ffef3c7b933749.
 - Новая ветка `codex/path-start-01`, base/fetched main

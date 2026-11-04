@@ -1,0 +1,40 @@
+{
+  "profile": "assessment-first-case/1.1",
+  "scope": "synthetic_diagnostic",
+  "process_exit_code": 0,
+  "exit_code": 0,
+  "result": "PASS",
+  "runs": [
+    {
+      "run": {
+        "run_id": "0f65b927ea204a678b59db3d7397acb1",
+        "database": "product4k_pytest_0f65b927ea204a678b59db3d7397acb1",
+        "scope": "bootstrap_repeat",
+        "llm_calls": 0
+      },
+      "cleanup": {
+        "run_id": "0f65b927ea204a678b59db3d7397acb1",
+        "database": "product4k_pytest_0f65b927ea204a678b59db3d7397acb1",
+        "owner_verified": true,
+        "database_absent": true,
+        "state_absent": true,
+        "force": false
+      },
+      "result": "PASS_BOOTSTRAP_ONLY",
+      "completion": {
+        "run_id": "0f65b927ea204a678b59db3d7397acb1",
+        "status": "completed",
+        "exit_code": 0,
+        "receipt_file": "source-provenance.json",
+        "receipt_sha256": "d4e42fcff1cac5bb7aac70a18c91d04e0e5cacefeaee173680d62b6e59ca6d26"
+      },
+      "process_exit_code": 0,
+      "validation_errors": [],
+      "evidence_directory": "/home/vadim_bogachev/evidence/path-start-01/free-136b858/bootstrap/8f032312373c42c5ad1c57f86bfaa8d1",
+      "failure": null,
+      "provider_completed_requests": 0,
+      "provider_completions": [],
+      "usage_note": "Receipt totals count unique retained operations; JSON retries have separate completions, but earlier malformed-response usage is not retained by product trace."
+    }
+  ]
+}
