@@ -1,4 +1,18 @@
-# STATE — PM03-REPAIR-CONTRACT
+# STATE — PATH-START-2DC
+
+## Один согласованный real-provider прогон — 04.11.2026
+
+Владелец: «Да, один контролируемый прогон». База exact main/test
+2dc98c6b5b2637c6c505a90686e82f5e4274e763 / 2.0.64. Новый clean server checkout,
+новая owned-БД, exact published-pilot, штатные generation/tester/challenger/repair;
+при допуске explicit first start/AS/0 answers, при отказе evidence/stop без rerun.
+План: docs/evc/tasks/path-start-2dc98c6-run.md. Активно: запуск существующего runner.
+Preflight8/8 READY, до запуска LLM0. Source/prompts/admission/repair/перманентная
+БД неизменны. branch_push/pr/merge/deploy/version_bump/artifact_publish=false.
+Локальная ветка codex/path-start-2dc98c6-run — только план/отчёт/evidence;
+исполняемый code SHA2dc98c6 не меняется. PREP-DIAG-01 UNKNOWN. Ниже история выпуска.
+
+# Исторический STATE — PM03-REPAIR-CONTRACT
 
 ## Активный выпуск 04.11.2026 — 2.0.64
 
