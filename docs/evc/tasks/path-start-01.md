@@ -20,9 +20,10 @@ CI/main/deploy отдельно не объявляются успешными. 
 preflight и актуальные проверки. Pilot, схемы, предметные артефакты и постоянная
 БД не изменяются; автотесты — только CI/owned isolated test DB.
 
-Проверенное поведение Api/web на 136b858/11b2a94 переиспользуется побайтово;
-release-подготовка меняет только номер и производный dist, запись разрешения и
-STATE. Дополнительно выполняются diff/links, lint, frontend и release gate;
+При первой release-подготовке поведение Api/web на 136b858/11b2a94
+переиспользовалось побайтово; менялись только номер, производный dist, разрешение
+и STATE. Найденная в CI регрессия и её адресное исправление описаны ниже.
+Дополнительно выполняются diff/links, lint, frontend и release gate;
 полный CI повторяется на конечном head. Исторический пакет 11b2a94 не переписывается.
 Откат: штатный deploy-script восстанавливает предыдущий commit/assets/config при
 неуспешном smoke; после успешного выпуска — отдельный revert PR, не rollback БД.
@@ -33,6 +34,34 @@ PASS, `node --test tests/frontend/*.test.mjs` — 139 PASS / 0 FAIL. Верси�
 pyproject/uv.lock/frontend/index согласованы, dist пересобран штатно. Api/tests/
 исходный UI-код после принятого 11b2a94 не менялись; backend757/HTTP108/PG209
 и адресные collector4 применимы в ранее указанной области, не заменяют новый CI.
+
+### Регрессия ST-R1, найденная обязательным CI
+
+На release head `32c0b28e6687c70de2aa6be248b8dedb25fbf3c5`:
+[Full verification 41902176961](https://github.com/VadikB/4K_MBTI/actions/runs/41902176961)
+FAIL; integration PASS, четыре runtime browser полосы PASS, fast browser 95 PASS /
+4 FAIL. Все четыре — существующие PROGRAM01 R06 проверки локального статуса
+отмены после 409, потери ответа, 403/500. Это собственная регрессия ST-R1:
+исключение dialog actions из capture tracker убрало не только ранний loading,
+но и `operationAnchor`; сообщения отображались глобально, а не рядом с действием.
+Не является причиной PM-03 content FAIL или PREP-DIAG-01.
+
+Новая проверка dialog → подтверждённая команда с задержанным synthetic 500 и
+усиление отказа проверяют отсутствие раннего busy, локальные loading/terminal,
+ровно один POST и восстановление кнопки. До исправления на dist 32c0b28 команда
+`npx playwright test tests/browser/auth-r03.spec.mjs --grep 'PATH-START ST-R1|PROGRAM01 R06'`
+дала 5 FAIL / 4 PASS, exit 1. Fixtures/HTTP полностью синтетические; БД и LLM нет.
+
+Адресное исправление: для cancel/revoke/delete capture сохраняет anchor без
+loading; loading начинается только в подтверждённом command handler. Карточка/
+открытие отчёта остаются local-only. Существующие cancellation idempotency,
+readback, identity guards и серверные права не меняются. Версия остаётся 2.0.63,
+повторный preflight идемпотентен (PASS, без нового bump). Весь auth/admin browser
+набор проверен заново: `npx playwright test tests/browser/auth-r03.spec.mjs` —
+98 PASS / 0 FAIL, exit 0, 1.4 min. Lint и frontend139 PASS, diff PASS. Backend и
+DB source после 32c0b28 неизменны; их предыдущие проверки применимы, новый полный
+CI всё равно обязателен. Safe summary и точные file SHA:
+`docs/evc/evidence/path-start-01/release-2.0.63/st-r1-regression.json`.
 
 ## Результат, основание и область
 

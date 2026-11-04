@@ -9,6 +9,12 @@ version_bump=true`, `artifact_publish=false`; deploy только test и пос
 Активно: canonical preflight 2.0.63 → commit/push/Ready → обязательный полный CI
 → squash merge → deploy-test/readback. Затем обновление базы PM03, его отдельные
 preflight/CI/merge/deploy. Старые false/NOT_RUN ниже — история до согласования.
+Первый Ready head 32c0b28: fast frontend/pytest PASS; full CI 41902176961 FAIL
+из-за четырёх R06 local-status browser регрессий ST-R1; integration и runtime4 PASS.
+Слияния нет. Исправляется только собственная регрессия anchor/loading;
+before новая+существующие регрессии 5 FAIL/4 PASS, без БД/LLM. После fix весь
+auth/admin browser98 PASS, frontend139/lint/preflight/diff PASS. Перед merge
+требуется новый успешный обязательный CI; source Api/DB не менялся.
 Новых LLM-вызовов, нормативной публикации или изменений постоянной БД нет.
 Полный PATH остаётся BLOCKED_PM03; пять content FAIL и PREP-DIAG-01 UNKNOWN
 не объявляются устранёнными техническим исправлением входа repair.

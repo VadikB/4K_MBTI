@@ -581,8 +581,43 @@ for (const action of ['card', 'cancel-dialog']) {
       contentType: 'application/json' });
     expect(mutations).toBe(0);
     expect(statuses.join(' ')).not.toContain('Выполняем действие…');
+    await expect(page.locator('#admin-organizations-status')).not.toContainText('Выполняем действие…');
   });
 }
+
+test('PATH-START ST-R1: confirmed cancellation has local loading and a terminal error', async ({ page }) => {
+  const organization = { ...adminOrganization,
+    assessment_program: { program_definition_id: 7, program_name: 'Synthetic PATH program',
+      program_version: '1.0', assignment_ref: 'competencies_4k', roles: [] },
+    members: [{ ...adminOrganization.members[0], assessment_assignments: ['competencies_4k'],
+      assessment_stages: { competencies_4k: { code: 'assigned', assignment_id: 41 } } }] };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  let release;
+  let posts = 0;
+  const delayed = new Promise((resolve) => { release = resolve; });
+  await page.route('**/users/admin/organizations/3/assessment-assignments/41/cancel', async (route) => {
+    posts += 1;
+    await delayed;
+    return fulfillJson(route, { detail: 'synthetic service failure' }, 500);
+  });
+  await page.locator('.admin-organization-member-menu summary').click();
+  await page.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+  await expect(page.locator('#admin-organizations-status')).not.toContainText('Выполняем действие…');
+  expect(posts).toBe(0);
+  try {
+    await page.getByRole('dialog', { name: 'Отменить назначение?' })
+      .getByRole('button', { name: 'Отменить назначение', exact: true }).click();
+    await expect(page.locator('[data-operation-status]')).toContainText('Выполняем действие…');
+    expect(posts).toBe(1);
+  } finally {
+    release();
+  }
+  await expect(page.locator('[data-operation-status]')).toBeVisible();
+  await expect(page.locator('[data-operation-status]')).not.toContainText('Выполняем действие…');
+  await page.locator('.admin-organization-member-menu summary').click();
+  await expect(page.getByRole('menuitem', { name: 'Отменить назначение оценки' })).toBeEnabled();
+  expect(posts).toBe(1);
+});
 
 test('PATH-START ST-R4: authorized read-only preparation action survives renderer', async ({ page }) => {
   const organization = { ...adminOrganization,

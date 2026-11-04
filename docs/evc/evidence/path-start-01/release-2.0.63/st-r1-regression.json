@@ -1,0 +1,40 @@
+{
+  "schema": "path-start-release-regression/1",
+  "date": "2026-11-04",
+  "release": "2.0.63",
+  "before_head": "32c0b28e6687c70de2aa6be248b8dedb25fbf3c5",
+  "ci_before": {
+    "url": "https://github.com/VadikB/4K_MBTI/actions/runs/41902176961",
+    "result": "FAIL",
+    "integration": "PASS",
+    "runtime_browser_lanes": {"passed": 4, "failed": 0},
+    "fast_browser": {"passed": 95, "failed": 4},
+    "failure_job": "https://github.com/VadikB/4K_MBTI/actions/runs/41902176961/job/126827223516"
+  },
+  "cause": "ST-R1 excluded confirmation actions from capture tracking, losing operationAnchor as well as premature loading; terminal cancellation messages were global instead of local.",
+  "local_before": {
+    "command": "npx playwright test tests/browser/auth-r03.spec.mjs --grep 'PATH-START ST-R1|PROGRAM01 R06'",
+    "product_dist_head": "32c0b28e6687c70de2aa6be248b8dedb25fbf3c5",
+    "includes_new_regression": true,
+    "passed": 4, "failed": 5, "exit_code": 1
+  },
+  "local_after": {
+    "command": "npx playwright test tests/browser/auth-r03.spec.mjs",
+    "passed": 98, "failed": 0, "exit_code": 0,
+    "frontend_tests": {"passed": 139, "failed": 0, "exit_code": 0},
+    "lint_exit_code": 0,
+    "canonical_preflight": "PASS; same candidate 2.0.63, no second bump",
+    "diff_check_exit_code": 0,
+    "file_sha256": {
+      "web/js/screens/admin/organizations.js": "ada774b13a64f0c919286f104648cd7b671236ae66fd0d659bca45894919b653",
+      "tests/browser/auth-r03.spec.mjs": "a2292c1df2edfbbabd1c4d75a2142d5823094a07c5467c7c47272b7598b5e935",
+      "web/dist/main.js": "4dd6cee55553e6a48ef8e6a380a34f58e076a2a65b437d37d6cb84cf24763905"
+    }
+  },
+  "scope": {"http": "synthetic routes", "database": "NOT_USED", "llm_calls": 0},
+  "ci_after": "PENDING_NEW_HEAD",
+  "merge": "NOT_RUN",
+  "deploy": "NOT_RUN",
+  "prep_diag_01_root_cause": "UNKNOWN",
+  "pm03_content_failure_causal_link": "NOT_ESTABLISHED"
+}

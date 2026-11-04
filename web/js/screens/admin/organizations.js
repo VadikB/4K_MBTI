@@ -394,8 +394,7 @@ const trackOperation = (event) => {
   const form = event.type === 'submit' ? target?.closest('form[data-action]') : null;
   const button = event.type === 'click' ? target?.closest('button[data-action]') : null;
   if (!form && (!button || ['show-admin-view', 'refresh-questionnaire-preview', 'use-legacy-profile',
-    'open-member-card', 'open-member-report', 'cancel-member-assignment',
-    'revoke-member-invitation', 'delete-member'].includes(button.dataset.action))) return;
+    'open-member-card', 'open-member-report'].includes(button.dataset.action))) return;
   const root = form || button.closest('.admin-questionnaire-preview') || button.parentElement;
   const card = root?.closest('[data-organization-id]');
   if (!card) return;
@@ -404,7 +403,10 @@ const trackOperation = (event) => {
       ? '.admin-questionnaire-preview[data-questionnaire-revision-id="' + root.dataset.questionnaireRevisionId + '"]'
       : '[data-admin-view="' + CSS.escape(root.closest('[data-admin-view]')?.dataset.adminView || 'people') + '"]';
   operationAnchor = { identity: currentIdentityKey(), organizationId: Number(card.dataset.organizationId), selector };
-  setStatus('Выполняем действие…', 'loading');
+  // Keep the result anchor, but a confirmation dialog is not a running command.
+  if (!['cancel-member-assignment', 'revoke-member-invitation', 'delete-member'].includes(button?.dataset.action)) {
+    setStatus('Выполняем действие…', 'loading');
+  }
 };
 adminOrganizationsPanel?.addEventListener('submit', trackOperation, true);
 adminOrganizationsPanel?.addEventListener('click', trackOperation, true);
@@ -766,6 +768,7 @@ export const addAdminOrganizationMember = async (organizationId, payload) => {
 };
 
 export const deleteAdminOrganizationMember = async (organizationId, email) => {
+  setStatus('Выполняем действие…', 'loading');
   try {
     const result = await requestOrganizations(
       '/users/admin/organizations/' + organizationId + '/members?email=' + encodeURIComponent(email),
@@ -939,6 +942,7 @@ export const cancelAdminOrganizationAssessment = async (organizationId, assignme
   cancellationOperationIds.set(key, operationId);
   if (cancellationRequestsInFlight.has(key)) return false;
   cancellationRequestsInFlight.add(key);
+  setStatus('Выполняем действие…', 'loading');
   const contextIsCurrent = () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey &&
     Number(selectedOrganizationId) === selectedOrganization && selectedOrganization === Number(organizationId) &&
     String(getSelectedAdminOrganizationAssessment(organizationId) || '').trim() === assessmentRef;
@@ -1043,6 +1047,7 @@ const offerAssessmentDataNavigation = (organizationId, assessmentRef) => {
 };
 
 export const revokeAdminOrganizationMemberInvitation = async (organizationId, invitationId) => {
+  setStatus('Выполняем действие…', 'loading');
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/personal-invitations/' + invitationId, {
       method: 'DELETE',
