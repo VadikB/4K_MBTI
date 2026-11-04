@@ -17,6 +17,28 @@ export function verifyPreparation(receipt) {
   same(receipt.program_definition.source_refs_json.prompt_bundle_checksum,
     receipt.assessment_configuration.prompt_bundle_checksum, 'PROMPT_REF');
   hash(receipt.assessment_configuration.prompt_bundle_checksum);
+  if (Object.hasOwn(receipt, 'assignment_lineage')) {
+    const lineage = receipt.assignment_lineage, cycle = receipt.cycle;
+    assert.equal(lineage?.status, 'LINKED', 'ASSIGNMENT_LINEAGE_REQUIRED');
+    same(lineage.assessment_configuration_id, receipt.assessment_configuration.id, 'LINEAGE_CONFIG_REF');
+    same(lineage.assignment_id, cycle.assignment_id, 'CYCLE_ASSIGNMENT_REF');
+    same(lineage.personalized_profile_id, cycle.personalized_profile_id, 'CYCLE_PROFILE_REF');
+    same(String(lineage.personalized_profile_id), receipt.preparation_operation.requested_profile_id, 'OPERATION_PROFILE_REF');
+    same(lineage.profile_checksum, receipt.preparation_operation.requested_profile_checksum, 'OPERATION_PROFILE_CHECKSUM');
+    same(lineage.profile_checksum, cycle.profile_ref_json?.checksum, 'CYCLE_PROFILE_CHECKSUM');
+    required(lineage.frozen_at, 'PROFILE_NOT_FROZEN');
+    assert.equal(lineage.assigned_timing?.status, 'resolved', 'TIMING_NOT_RESOLVED');
+    for (const [field, source] of [['time_budget_seconds', 'time_budget'], ['calendar_window_seconds', 'calendar_window']]) {
+      assert.ok(Number.isInteger(cycle[field]) && cycle[field] > 0, 'INVALID_EFFECTIVE_TIME');
+      same(cycle[field], lineage.assigned_timing[field], 'EFFECTIVE_TIME_REF');
+      required(cycle.parameter_sources_json?.[source], 'TIME_SOURCE_MISSING');
+      assert.deepEqual(cycle.parameter_sources_json[source], lineage.assigned_timing.sources[field], 'TIME_SOURCE_REF');
+    }
+    same(cycle.parameter_sources_json.resolution_checksum, lineage.assigned_timing.resolved_checksum, 'TIME_RESOLUTION_REF');
+    assert.equal(receipt.plan?.status, 'READY', 'PLAN_NOT_READY');
+    required(receipt.plan?.revision_id, 'PLAN_REVISION_MISSING');
+    hash(receipt.plan?.content_checksum);
+  }
   same(receipt.cycle.catalog_ref_json.checksum, receipt.catalog.manifest_checksum, 'CATALOG_CHECKSUM');
   hash(receipt.catalog.manifest_checksum);
   assert.equal(generated.present, true, 'GENERATION_MISSING');

@@ -1,0 +1,9 @@
+{
+  "sha": "9f9b7b8646ba6eca97334cb0864cec83bf78c518",
+  "run_id": "d667721a6c474f04b269a12f109cab2d",
+  "database": "product4k_pytest_d667721a6c474f04b269a12f109cab2d",
+  "llm_calls": 0,
+  "scope": "negative_assignment_lineage_fixture",
+  "exit_code": 1,
+  "log_sha256": "b7d1af34ba5c34b12195a7eefc6a65e1dbfbc056f8f281adc2fb586e1bd32143"
+}

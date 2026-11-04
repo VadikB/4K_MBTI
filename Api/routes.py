@@ -1043,7 +1043,13 @@ def _project_admin_assessment_stage(row: dict) -> dict:
     elif cycle_status == "interrupted":
         code, label, action = "interrupted", "Оценка прервана", "resume_assessment"
         blocker = {"reason": "Для продолжения требуется восстановить сессию.", "responsible": "Участник"}
-    elif cycle_status == "prepared" and plan_status == "READY" and planned > 0:
+    elif preparation_status == "failed":
+        code, label, action = "preparation_failed", "Подготовка завершилась с ошибкой", "retry_preparation"
+        blocker = {"reason": "Подготовка оценки не завершена.", "responsible": "Организатор оценки"}
+    elif preparation_status in {"queued", "running"}:
+        code, label, action = "preparing", "Идёт подготовка оценки", "check_preparation"
+    elif (cycle_status == "prepared" and plan_status == "READY" and planned > 0
+          and row.get('admitted_situation') is True):
         code, label, action = "ready_to_start", "Готов к прохождению оценки", "start_assessment"
     elif cycle_status == "prepared":
         code, label, action = "start_blocked", "Старт оценки заблокирован", None
@@ -1052,12 +1058,9 @@ def _project_admin_assessment_stage(row: dict) -> dict:
             reason = "План ограничен и не разрешает старт полного маршрута."
         elif plan_status == "NO_ROUTE":
             reason = "Для Cycle не найден допустимый маршрут."
+        elif not row.get('admitted_situation'):
+            reason = "Первая оценочная ситуация ещё не допущена для участника."
         blocker = {"reason": reason, "responsible": "Организатор оценки"}
-    elif preparation_status == "failed":
-        code, label, action = "preparation_failed", "Подготовка завершилась с ошибкой", "retry_preparation"
-        blocker = {"reason": "Подготовка оценки не завершена.", "responsible": "Организатор оценки"}
-    elif preparation_status in {"queued", "running"}:
-        code, label, action = "preparing", "Идёт подготовка оценки", "check_preparation"
     elif preparation_status == "completed":
         code, label, action = "preparation_complete", "Подготовка завершена, старт ещё не подтверждён", None
         blocker = {"reason": "Точный Cycle и исполнимый план ещё не подтверждены.", "responsible": "Организатор оценки"}
@@ -1095,11 +1098,25 @@ def _project_admin_assessment_stage(row: dict) -> dict:
         "code": code, "label": label, "action": action,
         "cycle_id": str(row["cycle_id"]) if row.get("cycle_id") else None,
         "operation_id": row.get("preparation_operation_id"),
+        "preparation_status": preparation_status,
+        "acquaintance_status": acquaintance_status,
         "report_id": str(row["report_id"]) if row.get("report_id") and row.get("report_access") else None,
         "report_access": row.get("report_access_kind") if row.get("report_access") else None,
         "assignment_id": int(row["assignment_id"]),
         "progress": progress, "blocker": blocker, "result_summary": result_summary,
         "description": " ".join(description_parts) or None,
+    }
+
+
+def _project_member_scope_compatibility(stages: dict) -> dict:
+    """Legacy flat fields are truthful only when one exact assignment is known."""
+    stage = next(iter(stages.values())) if len(stages) == 1 else {}
+    return {
+        'assessment_preparation_operation_id': stage.get('operation_id'),
+        'assessment_preparation_status': stage.get('preparation_status'),
+        'assessment_prepared': stage.get('code') in {'ready_to_start', 'active', 'paused',
+            'interrupted', 'processing', 'report_ready'},
+        'acquaintance_status': stage.get('acquaintance_status') or 'unknown',
     }
 
 
@@ -1165,9 +1182,12 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                    assignment.id AS assignment_id, assignment.assignment_ref,
                    assignment.status AS assignment_status, assignment.revoked_at,
                    acquaintance.status AS acquaintance_status,
-                   preparation.operation_id AS preparation_operation_id,
-                   preparation.status AS preparation_status,
+                   COALESCE(product_preparation.operation_id,preparation.operation_id) AS preparation_operation_id,
+                   COALESCE(product_preparation.status,preparation.status) AS preparation_status,
                    cycle.cycle_id, cycle.status AS cycle_status,
+                   EXISTS (SELECT 1 FROM m5_assessment_situations first_situation
+                           WHERE first_situation.cycle_db_id=cycle.id
+                             AND first_situation.status='admitted') AS admitted_situation,
                    plan.status AS plan_status,
                    COALESCE(plan_progress.planned_positions, 0) AS planned_positions,
                    COALESCE(plan_progress.completed_positions, 0) AS completed_positions,
@@ -1181,14 +1201,39 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                    )) AS report_access,
                    'customer' AS report_access_kind
             FROM organization_assessment_assignments assignment
-            JOIN organization_assessment_source_bindings binding
-              ON binding.assignment_id=assignment.id
+            JOIN LATERAL (
+                SELECT b.* FROM organization_assessment_source_bindings b
+                WHERE b.assignment_id=assignment.id ORDER BY b.id DESC LIMIT 1
+            ) binding ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT runtime.id,runtime.cycle_id,runtime.status,runtime.personalized_profile_id
+                FROM m5_cycles runtime
+                WHERE runtime.owner_user_id=assignment.recipient_user_id
+                  AND runtime.organization_id=assignment.organization_id
+                  AND runtime.assignment_id=assignment.id
+                  AND runtime.usage_scope='assessment'
+                ORDER BY runtime.created_at DESC,runtime.id DESC
+                LIMIT 1
+            ) cycle ON TRUE
             LEFT JOIN LATERAL (
                 SELECT profile.id
                 FROM assessment_personalized_profiles profile
+                JOIN questionnaire_response_revisions revision
+                  ON revision.id=binding.questionnaire_revision_id
+                 AND revision.organization_context_version_id=profile.organization_context_version_id
                 WHERE profile.user_id=assignment.recipient_user_id
                   AND profile.organization_id=assignment.organization_id
                   AND profile.assessment_configuration_id=binding.assessment_configuration_id
+                  AND profile.role_profile_version_id=binding.role_profile_version_id
+                  AND profile.status='ready'
+                  AND (profile.id=cycle.personalized_profile_id OR (cycle.id IS NULL AND EXISTS (
+                      SELECT 1 FROM participant_acquaintance_confirmations confirmation
+                      WHERE confirmation.user_id=assignment.recipient_user_id
+                        AND confirmation.organization_id=assignment.organization_id
+                        AND confirmation.assignment_ref=assignment.assignment_ref
+                        AND confirmation.questionnaire_revision_id=binding.questionnaire_revision_id
+                        AND confirmation.personalized_profile_id=profile.id
+                  )))
                 ORDER BY profile.frozen_at DESC, profile.id DESC
                 LIMIT 1
             ) profile ON TRUE
@@ -1201,15 +1246,16 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                 LIMIT 1
             ) preparation ON TRUE
             LEFT JOIN LATERAL (
-                SELECT runtime.id,runtime.cycle_id,runtime.status
-                FROM m5_cycles runtime
-                WHERE runtime.owner_user_id=assignment.recipient_user_id
-                  AND runtime.organization_id=assignment.organization_id
-                  AND runtime.assignment_id=assignment.id
-                  AND runtime.usage_scope='assessment'
-                ORDER BY runtime.created_at DESC,runtime.id DESC
+                SELECT job.operation_id,job.status
+                FROM product_cycle_preparation_operations job
+                WHERE job.user_id=assignment.recipient_user_id
+                  AND job.request_json->>'personalized_profile_id'=profile.id::text
+                  AND job.request_json->>'organization_id'=assignment.organization_id::text
+                  AND job.request_json->>'assignment_ref'=assignment.assignment_ref
+                  AND job.request_json->>'questionnaire_revision_id'=binding.questionnaire_revision_id::text
+                ORDER BY job.created_at DESC,job.id DESC
                 LIMIT 1
-            ) cycle ON TRUE
+            ) product_preparation ON TRUE
             LEFT JOIN LATERAL (
                 SELECT report.id
                 FROM m8_results result
@@ -1284,9 +1330,6 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                 c.user_id IS NOT NULL AS has_password,
                 p.raw_position,
                 p.raw_duties,
-                prep.operation_id AS assessment_preparation_operation_id,
-                prep.status AS assessment_preparation_status,
-                COALESCE(acquaintance_state.status, 'not_started') AS acquaintance_status,
                 personal_invitation.id AS invitation_id,
                 personal_invitation.expires_at AS invitation_expires_at,
                 personal_invitation.created_at AS invitation_created_at,
@@ -1307,28 +1350,11 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                     WHEN personal_invitation.used_at IS NOT NULL THEN 'used'
                     WHEN personal_invitation.expires_at <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') THEN 'expired'
                     ELSE personal_invitation.delivery_status
-                END AS invitation_status,
-                EXISTS (
-                    SELECT 1
-                    FROM user_sessions us
-                    WHERE us.user_id = u.id
-                      AND us.assessment_code = 'competencies_4k'
-                      AND us.status IN ('created', 'active')
-                ) AS assessment_prepared
+                END AS invitation_status
             FROM organization_memberships om
             JOIN users u ON u.id = om.user_id
             LEFT JOIN auth_password_credentials c ON c.user_id = u.id OR LOWER(c.email) = LOWER(u.email)
             LEFT JOIN user_role_profiles p ON p.id = u.active_profile_id
-            LEFT JOIN LATERAL (
-                SELECT operation_id, status
-                FROM assessment_preparation_jobs
-                WHERE user_id = u.id
-                ORDER BY created_at DESC
-                LIMIT 1
-            ) prep ON TRUE
-            LEFT JOIN participant_acquaintance_states acquaintance_state
-              ON acquaintance_state.user_id = u.id
-             AND acquaintance_state.organization_id = om.organization_id
             LEFT JOIN LATERAL (
                 SELECT id, created_at, expires_at, revoked_at, used_at, delivery_status
                 FROM organization_invitations oi
@@ -1368,10 +1394,8 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                     "job_description": row["job_description"],
                     "raw_position": row["raw_position"],
                     "raw_duties": row["raw_duties"],
-                    "assessment_preparation_operation_id": row["assessment_preparation_operation_id"],
-                    "assessment_preparation_status": row["assessment_preparation_status"],
-                    "assessment_prepared": bool(row["assessment_prepared"]),
-                    "acquaintance_status": row.get("acquaintance_status") or "not_started",
+                    **_project_member_scope_compatibility(assessment_stages.get(
+                        (int(row['organization_id']), int(row['user_id'])), {})),
                     "assessment_profile_ready": bool(
                         row["role_id"]
                         and row["active_profile_id"]

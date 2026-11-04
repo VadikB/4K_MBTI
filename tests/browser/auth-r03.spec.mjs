@@ -555,6 +555,155 @@ test('QA19-03 keeps the participant section available with no members', async ({
   await expect(page.locator('.admin-organization-members-section').first()).toBeVisible();
 });
 
+for (const action of ['card', 'cancel-dialog']) {
+  test(`PATH-START ST-R1 ${action}: local view or refusal is not a pending mutation`, async ({ page }, testInfo) => {
+    const organization = { ...adminOrganization,
+      assessment_program: { program_definition_id: 7, program_name: 'Synthetic PATH program',
+        program_version: '1.0', assignment_ref: 'competencies_4k', roles: [] },
+      members: [{ ...adminOrganization.members[0], assessment_assignments: ['competencies_4k'],
+        assessment_stages: { competencies_4k: { code: 'assigned', assignment_id: 41 } } }] };
+    await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+    let mutations = 0;
+    page.on('request', (request) => {
+      if (request.url().includes('/users/admin/organizations/') && request.method() !== 'GET') mutations += 1;
+    });
+    if (action === 'card') {
+      await page.locator('[data-action="open-member-card"]').click();
+      await page.locator('.admin-member-card-dialog').getByRole('button', { name: 'Закрыть', exact: true }).click();
+    } else {
+      await page.locator('.admin-organization-member-menu summary').click();
+      await page.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+      await page.getByRole('dialog', { name: 'Отменить назначение?' })
+        .getByRole('button', { name: 'Оставить назначение', exact: true }).click();
+    }
+    const statuses = await page.locator('[data-operation-status]:visible').allTextContents();
+    await testInfo.attach('local-action-result', { body: JSON.stringify({ action, mutations, statuses }),
+      contentType: 'application/json' });
+    expect(mutations).toBe(0);
+    expect(statuses.join(' ')).not.toContain('Выполняем действие…');
+    await expect(page.locator('#admin-organizations-status')).not.toContainText('Выполняем действие…');
+  });
+}
+
+test('PATH-START ST-R1: confirmed cancellation has local loading and a terminal error', async ({ page }) => {
+  const organization = { ...adminOrganization,
+    assessment_program: { program_definition_id: 7, program_name: 'Synthetic PATH program',
+      program_version: '1.0', assignment_ref: 'competencies_4k', roles: [] },
+    members: [{ ...adminOrganization.members[0], assessment_assignments: ['competencies_4k'],
+      assessment_stages: { competencies_4k: { code: 'assigned', assignment_id: 41 } } }] };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  let release;
+  let posts = 0;
+  const delayed = new Promise((resolve) => { release = resolve; });
+  await page.route('**/users/admin/organizations/3/assessment-assignments/41/cancel', async (route) => {
+    posts += 1;
+    await delayed;
+    return fulfillJson(route, { detail: 'synthetic service failure' }, 500);
+  });
+  await page.locator('.admin-organization-member-menu summary').click();
+  await page.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
+  await expect(page.locator('#admin-organizations-status')).not.toContainText('Выполняем действие…');
+  expect(posts).toBe(0);
+  try {
+    await page.getByRole('dialog', { name: 'Отменить назначение?' })
+      .getByRole('button', { name: 'Отменить назначение', exact: true }).click();
+    await expect(page.locator('[data-operation-status]')).toContainText('Выполняем действие…');
+    expect(posts).toBe(1);
+  } finally {
+    release();
+  }
+  await expect(page.locator('[data-operation-status]')).toBeVisible();
+  await expect(page.locator('[data-operation-status]')).not.toContainText('Выполняем действие…');
+  await page.locator('.admin-organization-member-menu summary').click();
+  await expect(page.getByRole('menuitem', { name: 'Отменить назначение оценки' })).toBeEnabled();
+  expect(posts).toBe(1);
+});
+
+test('PATH-START ST-R4: authorized read-only preparation action survives renderer', async ({ page }) => {
+  const organization = { ...adminOrganization,
+    members: [{ ...adminOrganization.members[0], assessment_assignments: ['competencies_4k'],
+      assessment_stages: { competencies_4k: { code: 'preparing', label: 'Идёт подготовка оценки',
+        action: 'check_preparation', assignment_id: 41, operation_id: 'synthetic-current-operation' } } }] };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  await expect(page.getByRole('button', { name: 'Проверить подготовку', exact: true })).toBeVisible();
+  let mutations = 0;
+  page.on('request', (request) => {
+    if (request.url().includes('/users/admin/organizations/') && request.method() !== 'GET') mutations += 1;
+  });
+  await page.getByRole('button', { name: 'Проверить подготовку', exact: true }).click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('обновлено');
+  expect(mutations).toBe(0);
+});
+
+for (const width of [1440, 320, 390, 768]) {
+  test(`PATH-START viewport ${width}: long facts, unknown questionnaire, read-only action`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    const organization = { ...adminOrganization,
+      name: 'Синтетическая организация с очень длинным названием для проверки переноса важных сведений',
+      assessment_program: { program_definition_id: 7, program_name: 'Пилот 4К · 9 кейсов',
+        program_version: '1.1', assignment_ref: 'specialist-pilot',
+        roles: [{ version_id: 2, code: 'specialist_expert', name: 'Специалист / эксперт' }] },
+      members: [{ ...adminOrganization.members[0],
+        full_name: 'Синтетический участник с очень длинным именем для проверки переноса строк',
+        job_description: 'Специалист по согласованию сложных неоднозначных задач нескольких подразделений',
+        assessment_assignments: ['specialist-pilot'], assessment_stages: { 'specialist-pilot': {
+          code: 'preparing', label: 'Идёт подготовка оценки', action: 'check_preparation', assignment_id: 41,
+          description: 'Подготовка выполняется автоматически. Проверка только обновляет состояние; время оценки не началось.',
+        } } }] };
+    await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization,
+      { body: { detail: 'Synthetic read unavailable' }, status: 503 });
+    const card = page.locator('[data-organization-id="3"]');
+    await expect(card.locator('.admin-assignment-readiness')).toContainText('Не удалось проверить сохранённую анкету');
+    const explanation = await card.locator('.admin-assignment-readiness .form-status li').boundingBox();
+    expect(explanation.width).toBeGreaterThan(150);
+    const action = card.getByRole('button', { name: 'Проверить подготовку', exact: true });
+    await expect(action).toBeVisible();
+    await expect(page.locator('body')).toHaveJSProperty('scrollWidth', width);
+    const box = await action.boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(width);
+    expect(box.height).toBeGreaterThan(20);
+    await fs.mkdir(path.join(root, '.test-stand/path-start-viewports'), { recursive: true });
+    await page.screenshot({ path: path.join(root, `.test-stand/path-start-viewports/admin-${width}.png`), fullPage: true });
+    await card.locator('[data-action="open-member-card"]').click();
+    const dialog = page.locator('.admin-member-card-dialog');
+    await expect(dialog).toContainText('Синтетический участник');
+    await expect(dialog).toContainText('Подготовка выполняется автоматически');
+    await dialog.getByRole('button', { name: 'Закрыть', exact: true }).click();
+    expect((await page.locator('[data-operation-status]:visible').allTextContents()).join(' '))
+      .not.toContain('Выполняем действие…');
+  });
+}
+
+test('PATH-START PG-R1: participant sees the exact missing-position reason and can recheck', async ({ page }) => {
+  const user = { id: 8, email: 'synthetic@example.test', full_name: 'Synthetic participant' };
+  let checks = 0;
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, {
+      authenticated: true, user, is_admin: false, dashboard: {},
+    });
+    if (pathname === '/users/8/journey-state') {
+      checks += 1;
+      return fulfillJson(route, { next_action: 'wait_for_acquaintance_data', profile: { status: 'incomplete' },
+        onboarding: { status: 'not_started' }, assessment: { status: 'not_started' },
+        acquaintance: { readiness: { status: 'waiting_for_organization', reason: 'participant_fields:position',
+          title: 'Нужно уточнить сведения участника',
+          message: 'В карточке участника не заполнена должность. Обратитесь к администратору организации. Ваши ответы сохраняются.',
+        } } });
+    }
+    if (pathname === '/users/version') return fulfillJson(route, { version: appRelease });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(base);
+  await expect(page.locator('#auth-complete-title')).toHaveText('Нужно уточнить сведения участника');
+  await expect(page.locator('#auth-complete-description')).toContainText('должность');
+  await expect(page.locator('#auth-complete-description')).not.toContainText('ещё готовит данные');
+  const before = checks;
+  await page.getByRole('button', { name: 'Проверить готовность', exact: true }).click();
+  await expect.poll(() => checks).toBeGreaterThan(before);
+});
+
 test('ADM-STATUS-01 shows the current participant stage and opens known facts in the participant card', async ({ page }) => {
   const baseMember = { ...adminOrganization.members[0], assessment_assignments: ['competencies_4k'] };
   const organization = {

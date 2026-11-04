@@ -1107,6 +1107,15 @@
 .admin-assignment-readiness dt { min-width: 0; color: var(--text-muted); }
 .admin-assignment-readiness dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .admin-assignment-readiness .form-status ul { margin: 8px 0 0; padding-left: 20px; }
+.admin-assignment-readiness .form-status.error {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr);
+    gap: 8px;
+    text-align: left;
+}
+.admin-assignment-readiness .form-status.error::before { grid-column: 1; grid-row: 1 / span 2; align-self: start; }
+.admin-assignment-readiness .form-status.error > strong,
+.admin-assignment-readiness .form-status.error > ul { grid-column: 2; min-width: 0; overflow-wrap: anywhere; }
 
 @media (min-width: 861px) {
     .admin-organizations-panel[data-superadmin="false"] [data-admin-view="people"] > .admin-organization-members { grid-row: auto; }

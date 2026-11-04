@@ -2014,6 +2014,11 @@ if (adminOrganizationsList) {
       }));
       return;
     }
+    if (button.dataset.action === 'check-member-preparation') {
+      // Reuse the authorized tenant projection; never prepare/start as the member.
+      withScreen(loadAdminOrganizations, (module) => module.refreshAdminOrganizationsSafely());
+      return;
+    }
     if (button.dataset.action === 'open-member-card') {
       const dialog = document.createElement('dialog');
       dialog.className = 'admin-member-card-dialog';

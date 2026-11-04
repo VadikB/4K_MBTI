@@ -1,4 +1,105 @@
-# STATE — постоянный синтетический контур
+# STATE — PATH-START-01
+
+## Активный выпуск 04.11.2026
+
+Владелец подтвердил последовательные PATCH: PR #168 → 2.0.63, затем PM03-only
+PR #169 → 2.0.64 на фактическом новом main. `branch_push/pr/merge/deploy/
+version_bump=true`, `artifact_publish=false`; deploy только test и после CI.
+База main/test перед началом — 7221671 / 2.0.62, readiness 200; PATH head 11b2a94.
+Активно: canonical preflight 2.0.63 → commit/push/Ready → обязательный полный CI
+→ squash merge → deploy-test/readback. Затем обновление базы PM03, его отдельные
+preflight/CI/merge/deploy. Старые false/NOT_RUN ниже — история до согласования.
+Первый Ready head 32c0b28: fast frontend/pytest PASS; full CI 41902176961 FAIL
+из-за четырёх R06 local-status browser регрессий ST-R1; integration и runtime4 PASS.
+Слияния нет. Исправляется только собственная регрессия anchor/loading;
+before новая+существующие регрессии 5 FAIL/4 PASS, без БД/LLM. После fix весь
+auth/admin browser98 PASS, frontend139/lint/preflight/diff PASS. Перед merge
+требуется новый успешный обязательный CI; source Api/DB не менялся.
+Новых LLM-вызовов, нормативной публикации или изменений постоянной БД нет.
+Полный PATH остаётся BLOCKED_PM03; пять content FAIL и PREP-DIAG-01 UNKNOWN
+не объявляются устранёнными техническим исправлением входа repair.
+
+## Текущий checkpoint 04.11.2026 — PATH 1.3
+
+Итог текущей передачи: **BLOCKED_PM03**, не PATH PASS. Владелец выбрал:
+«Передать исправления PATH с точным блокером; доработку генерации согласовать
+отдельным заданием». Последующие пункты ниже — история checkpoint, не новый план
+платного повторения.
+
+- База следующего согласованного задания: `codex/path-start-01`, implementation
+  `136b8587346c2728014570f755fa98321a223b25` плюс документальные/evidence-коммиты
+  передачи. Точный final SHA — head PR и MANIFEST пакета. Target runner/seed и fixes
+  находятся в этой ветке; main автоматически их не получил.
+- Backend 757 PASS; HTTP 108 PASS; frontend 139 PASS; Node 38 PASS; targeted Python
+  52 PASS. Full real PostgreSQL на clean 2c813f2: 209 PASS; новый collector + exact
+  lineage на 136b858: 4 PASS. Api/web между этими SHA побайтово неизменны.
+- Export regression и новый published-pilot minimal bootstrap на 136b858 PASS,
+  LLM=0, terminal fsync/readback и owned cleanup PASS. Две промежуточные ошибки
+  task-wrapper защит окружения сохранены; конечный repeat — 4 PASS без ослаблений.
+- Actual entry/dist browser 15 PASS с mocked HTTP, viewports 1440/320/390/768;
+  это не full final PATH. Evidence/команды/границы — в единой AC-матрице задачи.
+- PM-03 blocker: run aa2cbb221fdd458a8bb75e9a0faeb8b2 на a8d8fcf, final repair
+  candidate FAIL по K4.I13/I14/I16/I17 и critical_prohibition:02. AS нет, start null,
+  answers 0. Предметные prompts/admission/repair не изменены. PREP-DIAG-01 UNKNOWN.
+- Main и permanent test остаются `7221671fbd9b16192a86b04b6eec36773f2dbf99` /
+  2.0.62; нового merge/deploy/version bump нет. PR передаётся draft, CI отдельно;
+  full-verification/Ready и deployed PATH acceptance NOT_RUN до допуска выпуска.
+- Следующий шаг только после отдельного согласования: исследование качества PM-03
+  по [блокеру](docs/evc/reports/path-start-01-pm03-blocker.md), затем обоснованный
+  полный PATH repeat. Исправления не назначаются причиной исторического INCOMPLETE.
+
+### История промежуточных checkpoint PATH
+
+- Основание: команда владельца «делаем» и задание PATH-START-01 редакции 1.3,
+  SHA-256 29ada88402576a5cb36a89df12039f1a45bcfc58c41385a733ffef3c7b933749.
+- Новая ветка `codex/path-start-01`, base/fetched main
+  `7221671fbd9b16192a86b04b6eec36773f2dbf99`, 2.0.62. Root untracked документы
+  не трогаются; ветка настройки не восстанавливается.
+- Выпуск инструмента PR #167 / CI / deploy/readback PASS подтверждён предыдущим
+  результатом; profile/runner уже в main/test. Handoff обновлён адресно, история
+  приёмки/2f0a5a0 сохранена. Это не PATH PASS.
+- План/AC01…18: `docs/evc/tasks/path-start-01.md`. Read-only test readback подтвердил
+  specialist_pilot@1.1, program 1 / config 11 / catalog 2, исходные 9 Cases и 27 QA.
+  Receipt: `tests/browser/fixtures/path-start-release.json`; permanent target
+  agent4k_test через 55432, internal 5432; runtime SHA 7221671. Новая публикация не нужна.
+- Existing runner расширен explicit `--program-source published-pilot`; новый seed
+  сверяет исходные QA/checksum, не подменяет human review. Product Api/web неизменны.
+  Локально: backend 743 PASS (после исправления пути новой fixture), HTTP 106 PASS,
+  Node receipt 27 PASS, frontend 131 PASS, lint/build/diff PASS. Это не browser PASS.
+- Bootstrap 1efe5c7 PASS (LLM=0/cleanup PASS). Исходный UI run eb3c762 подтвердил
+  PG-R2: GET 503 после подтверждения → ложное «анкета не подтверждена» в назначении.
+  Первичные safe receipts/скриншот сохранены в `docs/evc/evidence/path-start-01/initial-eb3c762/`.
+- Исправлен PG-R2 (UI projection/read generations); frontend 139 PASS, lint/build/diff
+  PASS. Run a8d8fcf прошёл PS-02/retry и дошёл до настоящей подготовки.
+- Новый run aa2cbb221fdd458a8bb75e9a0faeb8b2 / op 687295f9-7635-4fa6-b083-4db724749e92:
+  конечный FAIL после штатного repair, 20 unique provider operations / 1 505 441 tokens.
+  Пять содержательных blocking checks, protocol errors/incomplete пусты. AS нет,
+  Cycle/Session prepared, started_at=null, ответов 0. Terminal receipt сохранён,
+  owned cleanup PASS. Evidence `docs/evc/evidence/path-start-01/preparation-a8d8fcf/`.
+- ST-R1/ST-R4: исходно browser 3 FAIL, адресные исправления actual dist → 3 PASS.
+  PG-R1: исходно 5 unit FAIL; точная причина/сообщение и запрет чужого legacy fallback
+  исправлены → адресно 19 PASS; backend 752 PASS, HTTP 106 PASS, frontend 139 PASS.
+- Активно: PostgreSQL initial ST-R3 с двумя назначениями одной конфигурации и
+  более поздним чужим job выполнен: 3 FAIL на 9f9b7b8. Исправлена exact lineage/
+  product job projection, flat ambiguous metadata → unknown, без новой схемы.
+  Проекция start также больше не считает READY plan без admitted AS готовностью.
+  Unit before FAIL → after 8 PASS; backend 755 PASS, HTTP 106 PASS.
+- Следующий шаг: real PostgreSQL repeat/full integration, viewport browser и
+  передача фактического остатка. Владелец получил вопрос о границе дальнейшей PM-03
+  доработки; независимые проверки продолжаются. Случайный LLM rerun не запускается.
+- Повтор ST-R3 real PG: 3 PASS. Full integration: 205 PASS / 4 environment FAIL
+  (pytest отсутствовал в child interpreter). Исправлено только test environment:
+  частная копия runtime/pytest в ignored worktree venv, не в venv сервиса.
+- UI entry: 15 PASS включая R10/PG-R1/viewport4; warning на 320 визуально исправлен
+  scoped CSS, до/после сохранены. Новые HTTP 2 PASS; 15/15 stored artifact checksum
+  readbacks match. Активно: финальная бесплатная EVC проверка в исправленном test env.
+- Дальше: точный approved release в owned-БД → исходный run/первый разрыв →
+  адресные PS-01…05/регрессии → полный повтор/evidence. PREP-DIAG-01 UNKNOWN,
+  DB-PERSIST-01 не переоткрывается. Cleanup guards и terminal export сохраняются.
+- branch_push/pr=true после локального минимума; merge/deploy/version_bump=false;
+  artifact_publish=false для PATH. Схема/нормы/admission/repair не ослабляются.
+
+# Исторический STATE — настройка синтетического контура
 
 ## Checkpoint 04.11.2026
 

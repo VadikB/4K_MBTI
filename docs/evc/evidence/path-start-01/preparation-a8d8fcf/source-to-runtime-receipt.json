@@ -1,0 +1,1207 @@
+{
+  "program_definition": {
+    "id": 1,
+    "code": "specialist_pilot",
+    "version": "1.1",
+    "status": "published",
+    "definition_checksum": "07576484b6c6467fd5fc7047cb1686a2f952532a893660375984373bab87f58c",
+    "assessment_configuration_id": 11,
+    "catalog_version_id": 2,
+    "source_refs_json": {
+      "scenario_version_id": 1,
+      "methodology_version_id": 2,
+      "prompt_bundle_checksum": "9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688"
+    }
+  },
+  "assessment_configuration": {
+    "id": 11,
+    "code": "specialist_pilot_v1",
+    "status": "published",
+    "methodology_version_id": 2,
+    "scenario_version_id": 1,
+    "catalog_version_id": 2,
+    "prompt_bundle_checksum": "9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688"
+  },
+  "catalog": {
+    "id": 2,
+    "catalog_id": "specialist-pilot",
+    "catalog_version": "1.0",
+    "status": "published",
+    "usage_scope": "assessment",
+    "organization_id": null,
+    "manifest_checksum": "0008d020cbeb8b06ef5d38ad1eaf136fab8dc42728d98c2d5ec275476a6c25a0",
+    "decision_basis": "owner_decision_2026-10-30_specialist_cases",
+    "package_db_id": 1,
+    "package_id": "m5-functional-personalization-cases",
+    "package_version": "0.5",
+    "package_checksum": "b9e2889b5a7b19dda6b88ebec30bffba87cf76afc3df4cb14df10de0036eb7b0",
+    "source_checksum": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
+  },
+  "case_versions": [
+    {
+      "id": 6,
+      "case_id": "CASE.SPEC.01",
+      "case_version": "v0.5",
+      "status": "FROZEN",
+      "base_role": "specialist_expert",
+      "content_checksum": "d662b0d4a61e81c9c1005337174cba3c0ebd4a37568f3265f3c27bd8c3453b42",
+      "runtime_rule_version_id": 1
+    },
+    {
+      "id": 7,
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.6",
+      "status": "FROZEN",
+      "base_role": "specialist_expert",
+      "content_checksum": "179fa0f8192862bee6af3190c8560f9c5ed133cc2fe07d6f5b6a98e6e3c9b729",
+      "runtime_rule_version_id": 1
+    },
+    {
+      "id": 8,
+      "case_id": "CASE.SPEC.03",
+      "case_version": "v0.4",
+      "status": "FROZEN",
+      "base_role": "specialist_expert",
+      "content_checksum": "6b496c20a8b0f6532d3552d1ca65c78fd37982c12671ce9c8a77d6d6cb3d73c5",
+      "runtime_rule_version_id": 1
+    },
+    {
+      "id": 9,
+      "case_id": "CASE.SPEC.04",
+      "case_version": "v0.5",
+      "status": "FROZEN",
+      "base_role": "specialist_expert",
+      "content_checksum": "1993c17b7b6ca5bce040750f8aae7efabd3e46d69d42e99ea184a17ae4da47f4",
+      "runtime_rule_version_id": 1
+    },
+    {
+      "id": 10,
+      "case_id": "CASE.SPEC.05",
+      "case_version": "v0.5",
+      "status": "FROZEN",
+      "base_role": "specialist_expert",
+      "content_checksum": "1847b023c3f0d027553ba271e2a1b6c2f863b9b07f3229266aae2f35ce44108d",
+      "runtime_rule_version_id": 1
+    },
+    {
+      "id": 11,
+      "case_id": "CASE.SPEC.06",
+      "case_version": "v0.4",
+      "status": "FROZEN",
+      "base_role": "specialist_expert",
+      "content_checksum": "26d59939198365a48b1171498783a7e37fb6ddcb5efdd39d019a453b1afb6de8",
+      "runtime_rule_version_id": 1
+    },
+    {
+      "id": 12,
+      "case_id": "CASE.SPEC.07",
+      "case_version": "v0.4",
+      "status": "FROZEN",
+      "base_role": "specialist_expert",
+      "content_checksum": "d59ffa2e2a9e62924e00e433e2d43c7ccc4f0b46166b21a9d0f62bab8eddff44",
+      "runtime_rule_version_id": 1
+    },
+    {
+      "id": 13,
+      "case_id": "CASE.SPEC.08",
+      "case_version": "v0.4",
+      "status": "FROZEN",
+      "base_role": "specialist_expert",
+      "content_checksum": "a2bf9ce336c357153e435f1d3fb95c227db81d6389197ed9877a725277c4413d",
+      "runtime_rule_version_id": 1
+    },
+    {
+      "id": 14,
+      "case_id": "CASE.SPEC.09",
+      "case_version": "v0.4",
+      "status": "FROZEN",
+      "base_role": "specialist_expert",
+      "content_checksum": "183925e9405662e3a4f95bedc0117e98fc8012abac9432350ee8c60cbaae5259",
+      "runtime_rule_version_id": 1
+    }
+  ],
+  "preparation_operation": {
+    "operation_id": "687295f9-7635-4fa6-b083-4db724749e92",
+    "status": "failed",
+    "attempts": 1,
+    "request_checksum": "a9d55fc38a9da25aa9cc475e4a6ea3f4e53ea67392d078e007b7693c0cd95be0",
+    "error_code": "ValueError",
+    "error_message": "M5_FUNCTIONAL_AS_NOT_ADMITTED:FAIL"
+  },
+  "cycle": {
+    "id": 1,
+    "cycle_id": "f80c40bc-d45e-4e39-8b31-17019f27b023",
+    "status": "prepared",
+    "started_at": null,
+    "catalog_ref_json": {
+      "id": "specialist-pilot",
+      "db_id": 2,
+      "version": "1.0",
+      "checksum": "0008d020cbeb8b06ef5d38ad1eaf136fab8dc42728d98c2d5ec275476a6c25a0",
+      "m2_checksum": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+      "package_checksum": "b9e2889b5a7b19dda6b88ebec30bffba87cf76afc3df4cb14df10de0036eb7b0"
+    },
+    "execution_manifest_checksum": "e4c8245c389ef3855c822d97bc44ef1646504e4019e38de87de2baad7664f58b",
+    "personalized_profile_id": 1,
+    "owner_user_id": 3,
+    "organization_id": 1
+  },
+  "sessions": [
+    {
+      "session_id": "fe4425cf-51a2-4017-9f30-4009c56ce635",
+      "status": "prepared",
+      "started_at": null
+    }
+  ],
+  "assessment_answers": 0,
+  "assessment_situation": null,
+  "saved_checksums": {
+    "snapshot_recomputed": null,
+    "case_ref": null,
+    "execution_payload_ref": null,
+    "execution_payload_recomputed": null,
+    "participant_payload": null
+  },
+  "functional_generation": {
+    "present": true,
+    "candidate_checksum": "56c303d1ed93170082eacabe3e75a84c5ea662d6499e749276e729488549543d",
+    "candidate_ref": {
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.6",
+      "checksum": "56c303d1ed93170082eacabe3e75a84c5ea662d6499e749276e729488549543d"
+    },
+    "candidate_recomputed_checksum": "56c303d1ed93170082eacabe3e75a84c5ea662d6499e749276e729488549543d",
+    "canonicalization": {
+      "candidate": "compact sorted UTF-8 JSON without LF",
+      "compiled_case_and_as": "compact sorted UTF-8 JSON + LF"
+    },
+    "input_snapshot_checksum": "b5d2b721f6ebef523f9df11df7ceb45c14a55542a3b214cb31b3551ca7ee2641",
+    "compiled_case_checksum": null,
+    "admitted_for_participant": false,
+    "admission_status": "FAIL",
+    "blocking_failures": [
+      {
+        "reason": "Требование K4.I13 опирается на I02/I03/I05: у A должно быть проверяемое плановое преимущество, коллега переходит от него к общей пригодности, а B остаётся частично неподтверждённым или не выполняет существенное требование. В candidate_as преимущество A (40 операторов) и переход коллеги есть, но условие I05 нарушено: B фактически удовлетворяет всем существенным требованиям, кроме срока, а срок B (день 19) укладывается в дедлайн дня 20.",
+        "status": "FAIL",
+        "category": "indicator_observability",
+        "check_id": "indicator:K4.I13",
+        "findings": [
+          {
+            "code": "I05_NOT_PRESERVED_B_DOMINATES",
+            "paths": [
+              "candidate_as.Материалы[1].Текст",
+              "candidate_as.Материалы[3].Текст",
+              "candidate_as.Материалы[2].Текст",
+              "candidate_as.Соответствие инвариантам[4]"
+            ],
+            "reason": "B удовлетворяет сроку, совместимости, охвату и сопровождению; A не удовлетворяет сроку и совместимости. Это нарушает I05 и лишает K4.I13 предусмотренной неопределённости/сравнения.",
+            "severity": "blocking",
+            "requirement_ref": "indicator:K4.I13/CASE.SPEC.02.I05"
+          }
+        ],
+        "mandatory": true,
+        "protected": true,
+        "source_ref": {
+          "field": "22",
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.6",
+          "indicator_id": "K4.I13"
+        },
+        "requirement": {
+          "materials": [
+            "M01",
+            "M06"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой.",
+          "designed_condition": [
+            "У A есть реальное или явно обозначенное плановое преимущество по одному понятному признаку. Единицы, период, объект сравнения и статус данных заданы; преимущество не выдумано системой.",
+            "Коллега явно переходит от этого преимущества к общей пригодности. Переход можно проверить по материалам, а не только по мнению оцениваемого.",
+            "A имеет содержательное расхождение между версиями; B остаётся частично неподтверждённым или не выполняет существенное требование. Безусловно правильный вариант не задан."
+          ],
+          "functional_conditions": [
+            "CASE.SPEC.02.I02",
+            "CASE.SPEC.02.I03",
+            "CASE.SPEC.02.I05"
+          ]
+        },
+        "evidence_paths": [
+          "candidate_as.Материалы[5].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.IndicatorObservability[3].Конкретное условие"
+        ],
+        "adversarial_review": {
+          "resolution": "Конфликт не разрешён: B не остаётся частично неподтверждённым по существенному требованию и не нарушает срок; безусловно доминирующий вариант B делает проверку перехода коллеги к «A — лучший» неполной по заявленному условию I05.",
+          "candidate_conflicts": [
+            "candidate_as.Материалы[3].Текст: B — готовность к запуску день 19, совместимость проверена на тестовом контуре, сопровождение включено, охват 30 при требовании не менее 30.",
+            "candidate_as.Материалы[1].Текст: дедлайн — не позднее дня 20; требование охвата — не менее 30 операторов.",
+            "candidate_as.Материалы[2].Текст: A — запуск не ранее дня 30, совместимость не проверена.",
+            "candidate_as.Соответствие инвариантам[4]: автор сам утверждает PASS для I05, но подтверждение «B — день 19, но без гарантии охвата и без проверки на рабочей среде» не является существенным невыполнением требования."
+          ]
+        }
+      },
+      {
+        "reason": "K4.I14 требует ограниченной рекомендации при неполной определённости и отсутствии безусловно правильного варианта. В candidate_as B доминирует по всем существенным требованиям, а A явно не соответствует сроку и совместимости; условие I05 «безусловно правильный вариант не задан» не выполнено.",
+        "status": "FAIL",
+        "category": "indicator_observability",
+        "check_id": "indicator:K4.I14",
+        "findings": [
+          {
+            "code": "NO_RESIDUAL_UNCERTAINTY_FOR_LIMITED_RECOMMENDATION",
+            "paths": [
+              "candidate_as.Материалы[1].Текст",
+              "candidate_as.Материалы[3].Текст",
+              "candidate_as.Материалы[2].Текст"
+            ],
+            "reason": "B безусловно пригоден по заданным требованиям, A безусловно непригоден по сроку; условие I05/I06 для ограниченной рекомендации не сохраняется.",
+            "severity": "blocking",
+            "requirement_ref": "indicator:K4.I14/CASE.SPEC.02.I05"
+          }
+        ],
+        "mandatory": true,
+        "protected": true,
+        "source_ref": {
+          "field": "22",
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.6",
+          "indicator_id": "K4.I14"
+        },
+        "requirement": {
+          "materials": [
+            "M01",
+            "M02",
+            "M03",
+            "M04",
+            "M05",
+            "M06"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой.",
+          "designed_condition": [
+            "Два варианта сопоставляются по нескольким независимым требованиям заказчика; один признак не равен общей пригодности.",
+            "A имеет содержательное расхождение между версиями; B остаётся частично неподтверждённым или не выполняет существенное требование. Безусловно правильный вариант не задан.",
+            "Есть рекомендация с основаниями и отдельный короткий текст заказчику. Достаточно данных для ограниченной позиции, но отказ от твёрдого обязательства допустим."
+          ],
+          "functional_conditions": [
+            "CASE.SPEC.02.I01",
+            "CASE.SPEC.02.I05",
+            "CASE.SPEC.02.I06"
+          ]
+        },
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.IndicatorObservability[4].Конкретное условие"
+        ],
+        "adversarial_review": {
+          "resolution": "Конфликт не разрешён: при таких данных рекомендация сводится к очевидному выбору B, а не к ограниченной позиции при остаточной неопределённости.",
+          "candidate_conflicts": [
+            "candidate_as.Материалы[3].Текст: B — день 19, проверенная совместимость, охват 30, сопровождение.",
+            "candidate_as.Материалы[1].Текст: дедлайн день 20, охват не менее 30.",
+            "candidate_as.Материалы[2].Текст: A — день 30 и непроверенная совместимость."
+          ]
+        }
+      },
+      {
+        "reason": "K4.I16 требует сравнения альтернатив при остаточной неопределённости и отсутствии безусловно правильного варианта. В candidate_as B удовлетворяет всем существенным требованиям, включая срок, а A — нет; сравнение превращается в выбор единственного пригодного варианта.",
+        "status": "FAIL",
+        "category": "indicator_observability",
+        "check_id": "indicator:K4.I16",
+        "findings": [
+          {
+            "code": "COMPARISON_COLLAPSES_TO_SINGLE_VIABLE_OPTION",
+            "paths": [
+              "candidate_as.Материалы[1].Текст",
+              "candidate_as.Материалы[3].Текст",
+              "candidate_as.Материалы[2].Текст"
+            ],
+            "reason": "B доминирует по всем существенным требованиям; A не соответствует сроку и совместимости. Это нарушает I05 и требование K4.I16 о сравнении при остаточной неопределённости.",
+            "severity": "blocking",
+            "requirement_ref": "indicator:K4.I16/CASE.SPEC.02.I05"
+          }
+        ],
+        "mandatory": true,
+        "protected": true,
+        "source_ref": {
+          "field": "22",
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.6",
+          "indicator_id": "K4.I16"
+        },
+        "requirement": {
+          "materials": [
+            "M01",
+            "M02",
+            "M03",
+            "M04",
+            "M05"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой.",
+          "designed_condition": [
+            "Два варианта сопоставляются по нескольким независимым требованиям заказчика; один признак не равен общей пригодности.",
+            "У A есть реальное или явно обозначенное плановое преимущество по одному понятному признаку. Единицы, период, объект сравнения и статус данных заданы; преимущество не выдумано системой.",
+            "A имеет содержательное расхождение между версиями; B остаётся частично неподтверждённым или не выполняет существенное требование. Безусловно правильный вариант не задан."
+          ],
+          "functional_conditions": [
+            "CASE.SPEC.02.I01",
+            "CASE.SPEC.02.I02",
+            "CASE.SPEC.02.I05"
+          ]
+        },
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.IndicatorObservability[5].Конкретное условие"
+        ],
+        "adversarial_review": {
+          "resolution": "Конфликт не разрешён: условие I05 не выполнено, поэтому сравнение по критериям не сохраняет требуемую неопределённость.",
+          "candidate_conflicts": [
+            "candidate_as.Материалы[3].Текст: B — день 19, проверенная совместимость, охват 30, сопровождение.",
+            "candidate_as.Материалы[1].Текст: дедлайн день 20, охват не менее 30.",
+            "candidate_as.Материалы[2].Текст: A — день 30, совместимость не проверена."
+          ]
+        }
+      },
+      {
+        "reason": "K4.I17 требует оценки рисков и последствий альтернатив при остаточной неопределённости. В candidate_as риск A очевиден (срок день 30, совместимость не проверена), а B удовлетворяет всем существенным требованиям; условие I05 «безусловно правильный вариант не задан» не выполнено.",
+        "status": "FAIL",
+        "category": "indicator_observability",
+        "check_id": "indicator:K4.I17",
+        "findings": [
+          {
+            "code": "RISK_COMPARISON_DEGENERATES",
+            "paths": [
+              "candidate_as.Материалы[1].Текст",
+              "candidate_as.Материалы[3].Текст",
+              "candidate_as.Материалы[2].Текст"
+            ],
+            "reason": "B безусловно пригоден, A безусловно непригоден по сроку; условие I05 не сохраняется, риск-анализ альтернатив теряет предусмотренную неопределённость.",
+            "severity": "blocking",
+            "requirement_ref": "indicator:K4.I17/CASE.SPEC.02.I05"
+          }
+        ],
+        "mandatory": true,
+        "protected": true,
+        "source_ref": {
+          "field": "22",
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.6",
+          "indicator_id": "K4.I17"
+        },
+        "requirement": {
+          "materials": [
+            "M01",
+            "M03",
+            "M04",
+            "M05"
+          ],
+          "opportunity": "Условие запроектировано; фактическое возникновение зависит от траектории. При раннем завершении не восполнять подсказкой.",
+          "designed_condition": [
+            "Два варианта сопоставляются по нескольким независимым требованиям заказчика; один признак не равен общей пригодности.",
+            "A имеет содержательное расхождение между версиями; B остаётся частично неподтверждённым или не выполняет существенное требование. Безусловно правильный вариант не задан.",
+            "Есть рекомендация с основаниями и отдельный короткий текст заказчику. Достаточно данных для ограниченной позиции, но отказ от твёрдого обязательства допустим."
+          ],
+          "functional_conditions": [
+            "CASE.SPEC.02.I01",
+            "CASE.SPEC.02.I05",
+            "CASE.SPEC.02.I06"
+          ]
+        },
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.IndicatorObservability[6].Конкретное условие"
+        ],
+        "adversarial_review": {
+          "resolution": "Конфликт не разрешён: оценка рисков сводится к очевидному отказу от A, а не к сравнению альтернатив при остаточной неопределённости.",
+          "candidate_conflicts": [
+            "candidate_as.Материалы[3].Текст: B — день 19, проверенная совместимость, охват 30, сопровождение.",
+            "candidate_as.Материалы[1].Текст: дедлайн день 20, охват не менее 30.",
+            "candidate_as.Материалы[2].Текст: A — день 30, совместимость не проверена."
+          ]
+        }
+      },
+      {
+        "reason": "Запрещено делать вариант с меньшим охватом гарантированно подходящим по всем требованиям. В candidate_as B с меньшим охватом (30) удовлетворяет сроку (день 19 ≤ 20), совместимости (проверена на тестовом контуре), охвату (30 ≥ 30) и сопровождению; A с большим охватом не удовлетворяет сроку и совместимости. Это фактически делает B гарантированно подходящим по всем требованиям.",
+        "status": "FAIL",
+        "category": "invariant",
+        "check_id": "critical_prohibition:02",
+        "findings": [
+          {
+            "code": "SMALLER_SCOPE_OPTION_GUARANTEED_FIT",
+            "paths": [
+              "candidate_as.Материалы[1].Текст",
+              "candidate_as.Материалы[3].Текст",
+              "candidate_as.Материалы[2].Текст"
+            ],
+            "reason": "B с меньшим охватом гарантированно подходит по всем требованиям, A с большим охватом — нет; это запрещённая конструкция critical_prohibition:02.",
+            "severity": "blocking",
+            "requirement_ref": "critical_prohibition:02/CASE.SPEC.02.field18.index2"
+          }
+        ],
+        "mandatory": true,
+        "protected": true,
+        "source_ref": {
+          "field": "18",
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.6",
+          "critical_prohibition_index": 2
+        },
+        "requirement": "AS не реализует критически запрещённую конструкцию: Сменить цену на охват и сделать вариант с меньшим охватом гарантированно подходящим по всем требованиям: Пропадает неопределённость и сравнение превращается в угадывание готового ответа.",
+        "evidence_paths": [
+          "candidate_as.Материалы[1].Текст",
+          "candidate_as.Материалы[3].Текст",
+          "candidate_as.Материалы[2].Текст",
+          "candidate_as.Соответствие инвариантам[4]"
+        ],
+        "adversarial_review": {
+          "resolution": "Конфликт не разрешён: B доминирует по всем существенным требованиям, что прямо соответствует запрещённой конструкции.",
+          "candidate_conflicts": [
+            "candidate_as.Материалы[3].Текст: B — день 19, проверенная совместимость, охват 30, сопровождение.",
+            "candidate_as.Материалы[1].Текст: дедлайн день 20, охват не менее 30.",
+            "candidate_as.Материалы[2].Текст: A — день 30, совместимость не проверена."
+          ]
+        }
+      }
+    ],
+    "deterministic_failures": [],
+    "incomplete_checks": [],
+    "incomplete_details_availability": "PRESENT",
+    "deterministic_protocol_errors": [],
+    "repair_used": true,
+    "final_generation_operation_id": "687295f9-7635-4fa6-b083-4db724749e92:generation:repair:c7f75705b545",
+    "repair_operation_id": "687295f9-7635-4fa6-b083-4db724749e92:generation:repair:c7f75705b545",
+    "stages": {
+      "generation": {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:generation:repair:c7f75705b545",
+        "kind": "generation_repair",
+        "batch_count": 0,
+        "batch_operation_ids": [],
+        "required_check_ids": []
+      },
+      "tester": {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:tester:batched",
+        "kind": "independent_tester_v2_batched",
+        "batch_count": 5,
+        "batch_operation_ids": [
+          "687295f9-7635-4fa6-b083-4db724749e92:tester:01:6365e2b5f60c",
+          "687295f9-7635-4fa6-b083-4db724749e92:tester:02:614565029107",
+          "687295f9-7635-4fa6-b083-4db724749e92:tester:03:7386217eda8a",
+          "687295f9-7635-4fa6-b083-4db724749e92:tester:04:88fe762effef",
+          "687295f9-7635-4fa6-b083-4db724749e92:tester:05:2525910088a0"
+        ],
+        "required_check_ids": [
+          "common.target_integrity",
+          "common.professional_consistency",
+          "common.authority",
+          "common.confidentiality",
+          "common.scenario_executability",
+          "common.no_premature_assessment",
+          "quality.clarity",
+          "invariant:CASE.SPEC.02.I01",
+          "invariant:CASE.SPEC.02.I02",
+          "invariant:CASE.SPEC.02.I03",
+          "invariant:CASE.SPEC.02.I04",
+          "invariant:CASE.SPEC.02.I05",
+          "invariant:CASE.SPEC.02.I06",
+          "invariant:CASE.SPEC.02.I07",
+          "indicator:K4.I03",
+          "indicator:K4.I05",
+          "indicator:K4.I12",
+          "indicator:K4.I13",
+          "indicator:K4.I14",
+          "indicator:K4.I16",
+          "indicator:K4.I17",
+          "indicator:K1.I06",
+          "indicator:K1.I09",
+          "critical_prohibition:01",
+          "critical_prohibition:02",
+          "critical_prohibition:03",
+          "critical_prohibition:04",
+          "critical_prohibition:05",
+          "critical_prohibition:06",
+          "critical_prohibition:07",
+          "critical_prohibition:08",
+          "critical_prohibition:09",
+          "case02.attractive_feature"
+        ]
+      },
+      "challenger": {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:challenger:batched",
+        "kind": "independent_tester_v2_challenger_batched",
+        "batch_count": 4,
+        "batch_operation_ids": [
+          "687295f9-7635-4fa6-b083-4db724749e92:challenger:01:dcdfcde0f7aa",
+          "687295f9-7635-4fa6-b083-4db724749e92:challenger:02:afd1174c4828",
+          "687295f9-7635-4fa6-b083-4db724749e92:challenger:03:2b338de27c1f",
+          "687295f9-7635-4fa6-b083-4db724749e92:challenger:04:63631bc23a77"
+        ],
+        "required_check_ids": [
+          "common.target_integrity",
+          "common.professional_consistency",
+          "common.authority",
+          "common.confidentiality",
+          "common.scenario_executability",
+          "common.no_premature_assessment",
+          "invariant:CASE.SPEC.02.I01",
+          "invariant:CASE.SPEC.02.I02",
+          "invariant:CASE.SPEC.02.I03",
+          "invariant:CASE.SPEC.02.I04",
+          "invariant:CASE.SPEC.02.I05",
+          "invariant:CASE.SPEC.02.I06",
+          "invariant:CASE.SPEC.02.I07",
+          "indicator:K4.I03",
+          "indicator:K4.I05",
+          "indicator:K4.I12",
+          "indicator:K4.I13",
+          "indicator:K4.I14",
+          "indicator:K4.I16",
+          "indicator:K4.I17",
+          "indicator:K1.I06",
+          "indicator:K1.I09",
+          "critical_prohibition:01",
+          "critical_prohibition:02",
+          "critical_prohibition:03",
+          "critical_prohibition:04",
+          "critical_prohibition:05",
+          "critical_prohibition:06",
+          "critical_prohibition:07",
+          "critical_prohibition:08",
+          "critical_prohibition:09",
+          "case02.attractive_feature"
+        ]
+      }
+    },
+    "calls": [
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:tester:01:54990ee8d67f",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "54990ee8d67fd499754b9f8db5d0932540b981feccf32d5591ed00be15494a48",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 68229,
+          "prompt_tokens": 66061,
+          "completion_tokens": 2168,
+          "prompt_tokens_details": {
+            "cached_tokens": 40832
+          },
+          "prompt_cache_hit_tokens": 40832,
+          "prompt_cache_miss_tokens": 25229
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 10729.34
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:tester:02:726cd91ab904",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "726cd91ab904813e3b7b9de21bec872795092c86967e7bb32f38d317b0c9f9a5",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 70459,
+          "prompt_tokens": 66901,
+          "completion_tokens": 3558,
+          "prompt_tokens_details": {
+            "cached_tokens": 65280
+          },
+          "prompt_cache_hit_tokens": 65280,
+          "prompt_cache_miss_tokens": 1621
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 15288.3
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:tester:03:f574d6bb58f5",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "f574d6bb58f53e35f9529e4f24b6dac19c7c9d733e978255260f1fd312ce2fe0",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 69999,
+          "prompt_tokens": 67622,
+          "completion_tokens": 2377,
+          "prompt_tokens_details": {
+            "cached_tokens": 65280
+          },
+          "prompt_cache_hit_tokens": 65280,
+          "prompt_cache_miss_tokens": 2342
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 10898.59
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:tester:04:5dadd544e403",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "5dadd544e403107f47e78dc69af6986f07b8e77c1e7ae3ba448e5a37ee5922fd",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 69056,
+          "prompt_tokens": 66441,
+          "completion_tokens": 2615,
+          "prompt_tokens_details": {
+            "cached_tokens": 65280
+          },
+          "prompt_cache_hit_tokens": 65280,
+          "prompt_cache_miss_tokens": 1161
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 12255.93
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:tester:05:2cc50f3eceb0",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "2cc50f3eceb0aede3ed5ad84ce5a53ea53fc3bd1e6be23b92aebc908a58b59eb",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 66451,
+          "prompt_tokens": 65585,
+          "completion_tokens": 866,
+          "prompt_tokens_details": {
+            "cached_tokens": 65280
+          },
+          "prompt_cache_hit_tokens": 65280,
+          "prompt_cache_miss_tokens": 305
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 4974.91
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:challenger:01:e36678a8d844",
+        "kind": "independent_tester_v2_challenger_batch",
+        "input_checksum": "e36678a8d844794aad0ee0fadcec1ab939680e91910b0eca14a5d1bbb4a01c43",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 80143,
+          "prompt_tokens": 77101,
+          "completion_tokens": 3042,
+          "prompt_tokens_details": {
+            "cached_tokens": 52864
+          },
+          "prompt_cache_hit_tokens": 52864,
+          "prompt_cache_miss_tokens": 24237
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 14057.5
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:challenger:02:f9fff74a0559",
+        "kind": "independent_tester_v2_challenger_batch",
+        "input_checksum": "f9fff74a05595f30918e18dee34c2b57161fe94c0848713c0f48a9d3415807bf",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 80328,
+          "prompt_tokens": 77980,
+          "completion_tokens": 2348,
+          "prompt_tokens_details": {
+            "cached_tokens": 75776
+          },
+          "prompt_cache_hit_tokens": 75776,
+          "prompt_cache_miss_tokens": 2204
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 11341.35
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:challenger:03:6483e1cd8849",
+        "kind": "independent_tester_v2_challenger_batch",
+        "input_checksum": "6483e1cd88490804273b94d9c0f5d5b8f712533611ab4c721f5b81a0ae0458c8",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 82156,
+          "prompt_tokens": 78464,
+          "completion_tokens": 3692,
+          "prompt_tokens_details": {
+            "cached_tokens": 75776
+          },
+          "prompt_cache_hit_tokens": 75776,
+          "prompt_cache_miss_tokens": 2688
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 15144.45
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:challenger:04:d26cf88fe991",
+        "kind": "independent_tester_v2_challenger_batch",
+        "input_checksum": "d26cf88fe99124629c2aefb6736e8347d051d0c83cf5a3baa72b0f7937dba777",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 79656,
+          "prompt_tokens": 77358,
+          "completion_tokens": 2298,
+          "prompt_tokens_details": {
+            "cached_tokens": 75776
+          },
+          "prompt_cache_hit_tokens": 75776,
+          "prompt_cache_miss_tokens": 1582
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 10984.1
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:generation:repair:c7f75705b545",
+        "kind": "generation_repair",
+        "input_checksum": "c7f75705b54568d2756696e3cca291965cc4ac2d22a1cc0eefd2b4c384f8c536",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 99865,
+          "prompt_tokens": 83599,
+          "completion_tokens": 16266,
+          "prompt_tokens_details": {
+            "cached_tokens": 3584
+          },
+          "prompt_cache_hit_tokens": 3584,
+          "prompt_cache_miss_tokens": 80015
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 47497.08
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:generation:d0356d85c699",
+        "kind": "generation",
+        "input_checksum": "d0356d85c69936973cca246b85daac4dedb68e7ff442f663856fae1d2d8d877b",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 73378,
+          "prompt_tokens": 58957,
+          "completion_tokens": 14421,
+          "prompt_tokens_details": {
+            "cached_tokens": 5888
+          },
+          "prompt_cache_hit_tokens": 5888,
+          "prompt_cache_miss_tokens": 53069
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 48054.87
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:tester:01:6365e2b5f60c",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "6365e2b5f60ca84d32105989087273a2fca59482dd41e06d0631812c4bd896a8",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 68196,
+          "prompt_tokens": 66061,
+          "completion_tokens": 2135,
+          "prompt_tokens_details": {
+            "cached_tokens": 40960
+          },
+          "prompt_cache_hit_tokens": 40960,
+          "prompt_cache_miss_tokens": 25101
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 9830.89
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:tester:02:614565029107",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "6145650291072fe9fc21a9c2cabc6116cadb234fdf5f29dd231aa410449e2650",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 69773,
+          "prompt_tokens": 66901,
+          "completion_tokens": 2872,
+          "prompt_tokens_details": {
+            "cached_tokens": 65280
+          },
+          "prompt_cache_hit_tokens": 65280,
+          "prompt_cache_miss_tokens": 1621
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 13003.13
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:tester:03:7386217eda8a",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "7386217eda8a8f40c799b0d66169757b1f9ec09559826d39854bf1d10be901c9",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 70349,
+          "prompt_tokens": 67622,
+          "completion_tokens": 2727,
+          "prompt_tokens_details": {
+            "cached_tokens": 65280
+          },
+          "prompt_cache_hit_tokens": 65280,
+          "prompt_cache_miss_tokens": 2342
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 12910.62
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:tester:04:88fe762effef",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "88fe762effef1d6c3a437f6f33d761f4b30f6c1a4f5b42fdc76ccb495fa34c13",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 69407,
+          "prompt_tokens": 66441,
+          "completion_tokens": 2966,
+          "prompt_tokens_details": {
+            "cached_tokens": 65280
+          },
+          "prompt_cache_hit_tokens": 65280,
+          "prompt_cache_miss_tokens": 1161
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 13922.27
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:tester:05:2525910088a0",
+        "kind": "independent_tester_v2_batch",
+        "input_checksum": "2525910088a02b7074eb7d343c38e3ff93e48e1a276dd7f408327a9384bd9b0b",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 66505,
+          "prompt_tokens": 65585,
+          "completion_tokens": 920,
+          "prompt_tokens_details": {
+            "cached_tokens": 65280
+          },
+          "prompt_cache_hit_tokens": 65280,
+          "prompt_cache_miss_tokens": 305
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 5542.66
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:challenger:01:dcdfcde0f7aa",
+        "kind": "independent_tester_v2_challenger_batch",
+        "input_checksum": "dcdfcde0f7aaead4c471ddca9912529da076ef63945ccfb2b680cbf621587b98",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 79372,
+          "prompt_tokens": 77101,
+          "completion_tokens": 2271,
+          "prompt_tokens_details": {
+            "cached_tokens": 52864
+          },
+          "prompt_cache_hit_tokens": 52864,
+          "prompt_cache_miss_tokens": 24237
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 10649.67
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:challenger:02:afd1174c4828",
+        "kind": "independent_tester_v2_challenger_batch",
+        "input_checksum": "afd1174c4828312fe9801ac0a1828582ce6d38244d695f7f443c185e78d0cc47",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 80452,
+          "prompt_tokens": 77980,
+          "completion_tokens": 2472,
+          "prompt_tokens_details": {
+            "cached_tokens": 75776
+          },
+          "prompt_cache_hit_tokens": 75776,
+          "prompt_cache_miss_tokens": 2204
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 11623.58
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:challenger:03:2b338de27c1f",
+        "kind": "independent_tester_v2_challenger_batch",
+        "input_checksum": "2b338de27c1f6a0a89b2bb8b4538c0a05dd779928b85f11e1e0a243cf2383d3b",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 81617,
+          "prompt_tokens": 78464,
+          "completion_tokens": 3153,
+          "prompt_tokens_details": {
+            "cached_tokens": 75776
+          },
+          "prompt_cache_hit_tokens": 75776,
+          "prompt_cache_miss_tokens": 2688
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 13642.19
+          }
+        ],
+        "json_parse_failures": []
+      },
+      {
+        "operation_id": "687295f9-7635-4fa6-b083-4db724749e92:challenger:04:63631bc23a77",
+        "kind": "independent_tester_v2_challenger_batch",
+        "input_checksum": "63631bc23a7782a0921a86213102dcc2a182a6da5e21d7a083799d7fc8bf7bb5",
+        "provider": "deepseek",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "requested_model": "deepseek-flash",
+        "actual_model": "deepseek-flash",
+        "contract": {
+          "version": "1.0.0",
+          "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c"
+        },
+        "usage": {
+          "total_tokens": 80050,
+          "prompt_tokens": 77358,
+          "completion_tokens": 2692,
+          "prompt_tokens_details": {
+            "cached_tokens": 75776
+          },
+          "prompt_cache_hit_tokens": 75776,
+          "prompt_cache_miss_tokens": 1582
+        },
+        "transport_attempts": [
+          {
+            "attempt": 1,
+            "outcome": "completed",
+            "duration_ms": 12389.39
+          }
+        ],
+        "json_parse_failures": []
+      }
+    ],
+    "unique_operation_count": 20,
+    "usage": {
+      "prompt_tokens": 1429582,
+      "completion_tokens": 75859,
+      "total_tokens": 1505441
+    }
+  }
+}

@@ -82,11 +82,12 @@ def path_receipt():
     """Safe source-to-runtime trace; excludes prompts, responses and credentials."""
     from Api.database import get_connection
     from Api.m5_case_runtime import checksum
-    from tests.assessment_first_case_evidence import functional_receipt
+    from tests.assessment_first_case_evidence import functional_receipt, assignment_lineage
     with get_connection() as c:
-        program = c.execute("""SELECT p.id,p.code,p.version,p.status,p.definition_checksum,
+        state = json.loads(Path(os.environ['STAND_STATE']).read_text())
+        program = c.execute("""SELECT p.id,p.code,p.version,p.assignment_ref,p.status,p.definition_checksum,
                 p.assessment_configuration_id,p.catalog_version_id,p.source_refs_json
-            FROM assessment_program_definitions p WHERE p.code='path29-browser-specialist'""").fetchone()
+            FROM assessment_program_definitions p WHERE p.id=%s""", (state['path29']['program_id'],)).fetchone()
         configuration = c.execute("""SELECT id,code,status,methodology_version_id,
                 scenario_version_id,catalog_version_id,prompt_bundle_checksum
             FROM assessment_configurations WHERE id=%s""",
@@ -105,16 +106,28 @@ def path_receipt():
         operation = situation = cycle = None
         sessions = []
         assessment_answers = 0
+        lineage = None
+        plan = None
         if participant:
+            lineage = assignment_lineage(c, user_id=participant['id'], assignment_ref=program['assignment_ref'],
+                configuration_id=program['assessment_configuration_id'])
             operation = c.execute("""SELECT operation_id,status,attempts,request_checksum,
+                    request_json->>'personalized_profile_id' AS requested_profile_id,
+                    request_json->>'profile_checksum' AS requested_profile_checksum,
                     result_json,error_code,error_message
                 FROM product_cycle_preparation_operations WHERE user_id=%s
                 ORDER BY id DESC LIMIT 1""", (participant['id'],)).fetchone()
             cycle = c.execute("""SELECT id,cycle_id,status,started_at,catalog_ref_json,
-                    execution_manifest_checksum,personalized_profile_id,owner_user_id,organization_id
+                    execution_manifest_checksum,personalized_profile_id,owner_user_id,organization_id,
+                    assignment_id,profile_ref_json,time_budget_seconds,calendar_window_seconds,parameter_sources_json
                 FROM m5_cycles WHERE owner_user_id=%s ORDER BY id DESC LIMIT 1""",
                 (participant['id'],)).fetchone()
             if cycle:
+                plan = c.execute('''SELECT p.id,p.status,revision.id AS revision_id,
+                    revision.revision_no,revision.content_checksum
+                    FROM m7_cycle_plans p JOIN LATERAL (SELECT r.id,r.revision_no,r.content_checksum
+                        FROM m7_plan_revisions r WHERE r.plan_id=p.id ORDER BY r.revision_no DESC LIMIT 1) revision ON TRUE
+                    WHERE p.cycle_db_id=%s''', (cycle['id'],)).fetchone()
                 sessions = [dict(row) for row in c.execute('''SELECT session_id,status,started_at
                     FROM m5_cycle_sessions WHERE cycle_db_id=%s ORDER BY ordinal''', (cycle['id'],)).fetchall()]
                 assessment_answers = c.execute('''SELECT count(*) AS n FROM m5_dialogue_turns t
@@ -136,9 +149,11 @@ def path_receipt():
             'program_definition': dict(program), 'assessment_configuration': dict(configuration),
             'catalog': dict(catalog), 'case_versions': [dict(item) for item in cases],
             'preparation_operation': ({key: operation[key] for key in
-                ('operation_id', 'status', 'attempts', 'request_checksum', 'error_code', 'error_message')}
+                ('operation_id', 'status', 'attempts', 'request_checksum', 'requested_profile_id',
+                 'requested_profile_checksum', 'error_code', 'error_message')}
                 if operation else None),
             'cycle': dict(cycle) if cycle else None,
+            'assignment_lineage': lineage, 'plan': dict(plan) if plan else None,
             'sessions': sessions, 'assessment_answers': assessment_answers,
             'assessment_situation': ({key: situation[key] for key in
                 ('assessment_situation_id', 'status', 'snapshot_checksum', 'started_at')} if situation else None),

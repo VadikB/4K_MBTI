@@ -1,0 +1,74 @@
+{
+  "profile": "assessment-first-case/1.1",
+  "scope": "synthetic_diagnostic",
+  "process_exit_code": 1,
+  "exit_code": 1,
+  "result": "FAIL",
+  "runs": [
+    {
+      "run": {
+        "run_id": "54c1ca2e33714a5d8e9805589e1349c7",
+        "database": "product4k_pytest_54c1ca2e33714a5d8e9805589e1349c7",
+        "port": "18863",
+        "provider_mode": "real",
+        "code": {
+          "sha": "eb3c762a98c54eb7a6234e1ed5ef14f17b8176d5",
+          "branch": "",
+          "origin_main": "7221671fbd9b16192a86b04b6eec36773f2dbf99",
+          "worktree_status": "",
+          "files": {
+            "scripts/test_stand.py": "d3522324fc322bc35e98abf96475f2e6ca6133d16146ed506fa9d438d4601a81",
+            "scripts/assessment_first_case.py": "187bd1cd04fa066ac6660a40807f6f2842e43a2fe2df6bf8bac6b9e3f5517e28",
+            "tests/path29_browser_inputs.py": "e7bd646bef298b5a20605e9971f2d4e775fec48b88a3f80ec1dcc536b90a4d31",
+            "tests/path29_browser_app.py": "6622442cff1e6fe0ea32ebb81c33c4d9a9fbbbb5cfafa1ef4eeaa2f60a8eeeae",
+            "tests/assessment_first_case_evidence.py": "eb54fc95bf245929c04b44382b7fe4c7f200ddfe5b66daa1b8110b2f80fc25af",
+            "tests/browser/path29-participant.spec.mjs": "aae245f0628610c1b3661057639cff3070308b6b1146bdc9b022d0b66a5221f0",
+            "tests/browser/fixtures/receipt-file.mjs": "71b454be2fb1dc09800f3f33be1d1e31692f512c3ac6ba657069937bb70ce627",
+            "tests/browser/fixtures/preparation-receipt.mjs": "72b48601bf8012ad2502719a5d88e59a0a09a46e211329092c4762a427d5adf4",
+            "tests/path_start_release_source.py": "6642b7736f2e4247cffe1da75340fc09467a51c87022fb14c8d487c7f26c641c",
+            "tests/path_start_release_inputs.py": "ad587d40b93aa9e6d7dd4db1d2936148d9f794d62879755b7c29fec134663159",
+            "tests/browser/fixtures/path-start-release.json": "0094e10b7c5a5b6bc7501bfe8e326977b52186612985fa038970ba2f5cd9b624"
+          }
+        }
+      },
+      "cleanup": {
+        "run_id": "54c1ca2e33714a5d8e9805589e1349c7",
+        "database": "product4k_pytest_54c1ca2e33714a5d8e9805589e1349c7",
+        "owner_verified": true,
+        "database_absent": true,
+        "state_absent": true,
+        "force": false
+      },
+      "result": "FAIL",
+      "completion": {
+        "run_id": "54c1ca2e33714a5d8e9805589e1349c7",
+        "status": "failed",
+        "exit_code": 1,
+        "receipt_file": "first-case-receipt.json",
+        "receipt_sha256": null
+      },
+      "process_exit_code": 1,
+      "validation_errors": [
+        "PROCESS_EXIT_NOT_ZERO",
+        "RUN_NOT_COMPLETED",
+        "FAILURE_ARTIFACT:failure",
+        "FAILURE_ARTIFACT:failure-receipt",
+        "MISSING_OR_INVALID:first-case-receipt",
+        "COMPLETION_RECEIPT_MISMATCH",
+        "MISSING_OR_INVALID:source-to-runtime-receipt",
+        "FIRST_CASE_EVIDENCE_INVALID",
+        "PRESENTATION_SCREENSHOT_MISSING"
+      ],
+      "evidence_directory": "/home/vadim_bogachev/evidence/path-start-01/initial-eb3c762/675328ae-578a-45ef-ac39-03a6e7bf5ac9",
+      "failure": {
+        "step": "ps02_confirmed_questionnaire_read_error",
+        "expected": "Согласованный шаг завершён штатно",
+        "actual": "expect(locator).not.toContainText(expected) failed\n\nLocator: locator('[data-organization-id=\"1\"]').locator('.admin-assignment-readiness')\nExpected substring: not \"Анкета для выбранной оценки не подтверждена\"\nReceived string: \"Готовность назначенияПрограммаПилот 4К · 9 кейсов · 1.1РольСпециалист / экспертОценкаspecialist-pilotАнкетане подтвержденаНазначение пока недоступноАнкета для выбранной оценки не подтверждена. Подтвердите сведения перед назначением.\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"not toContainText\" locator('[data-organization-id=\"1\"]').locator('.admin-assignment-readiness') with timeout 5000ms\n  - waiting for locator('[data-organization-id=\"1\"]').locator('.admin-assignment-readiness')\n    14 × locator resolved to <section class=\"admin-assignment-readiness\" aria-label=\"Готовность назначения\">…</section>\n       - unexpected value \"Готовность назначенияПрограммаПилот 4К · 9 кейсов · 1.1РольСпециалист / экспертОценкаspecialist-pilotАнкетане подтвержденаНазначение пока недоступноАнкета для выбранной оценки не подтверждена. Подтвердите сведения перед назначением.\"\n",
+        "classification": "diagnostic_assertion_or_environment_failure"
+      },
+      "provider_completed_requests": 0,
+      "provider_completions": [],
+      "usage_note": "Receipt totals count unique retained operations; JSON retries have separate completions, but earlier malformed-response usage is not retained by product trace."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "sha": "136b8587346c2728014570f755fa98321a223b25",
+  "checks": [
+    {
+      "check": "integration-lineage-collector",
+      "exit_code": 1,
+      "log_sha256": "daea4de23c4683ab455fbc3495a1f4292cd88d7068b17179b487c8f671cf794e"
+    },
+    {
+      "check": "export-regression",
+      "exit_code": 0,
+      "log_sha256": "e126d8459aff6f80713af1119a7e4d833c5b41f2038dcf5a539bef8988e2dde0"
+    },
+    {
+      "check": "bootstrap",
+      "exit_code": 0,
+      "log_sha256": "0020191871153e45ba80b29f22563a25eae27532de39bf92a73b3c54cbd6b89b"
+    }
+  ],
+  "llm_calls": 0,
+  "scope": "new collector and exact source bootstrap; not a full PATH repeat",
+  "integration_database": "product4k_pytest_9640e8b716294948a54cdcbe4e153e52",
+  "run_id": "9640e8b716294948a54cdcbe4e153e52"
+}

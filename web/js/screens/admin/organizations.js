@@ -13,6 +13,7 @@ import {
 import { hideAllPanels, syncUrlState } from '../../router.js';
 import { persistAssessmentContext, setCurrentScreen, state, safeStorage } from '../../state.js';
 import { createAdminOrganizationDraftKey } from './organization-draft-key.js';
+import { questionnaireAssignmentState } from './questionnaire-assignment-state.js';
 
 let selectedOrganizationId = null;
 const invitationRequestsInFlight = new Set();
@@ -32,6 +33,7 @@ const selectedAssessmentRefs = new Map();
 const questionnaireConfirmRequestGenerations = new Map();
 const questionnaireConfirmRequestsInFlight = new Set();
 const questionnaireLoadStates = new Map();
+const questionnaireLoadGenerations = new Map();
 const questionnaireConfirmOutcomes = new Map();
 let operationAnchor = null;
 let restoredManagementIdentity = null;
@@ -391,7 +393,8 @@ const trackOperation = (event) => {
   const target = event.target instanceof Element ? event.target : null;
   const form = event.type === 'submit' ? target?.closest('form[data-action]') : null;
   const button = event.type === 'click' ? target?.closest('button[data-action]') : null;
-  if (!form && (!button || ['show-admin-view', 'refresh-questionnaire-preview', 'use-legacy-profile'].includes(button.dataset.action))) return;
+  if (!form && (!button || ['show-admin-view', 'refresh-questionnaire-preview', 'use-legacy-profile',
+    'open-member-card', 'open-member-report'].includes(button.dataset.action))) return;
   const root = form || button.closest('.admin-questionnaire-preview') || button.parentElement;
   const card = root?.closest('[data-organization-id]');
   if (!card) return;
@@ -400,7 +403,10 @@ const trackOperation = (event) => {
       ? '.admin-questionnaire-preview[data-questionnaire-revision-id="' + root.dataset.questionnaireRevisionId + '"]'
       : '[data-admin-view="' + CSS.escape(root.closest('[data-admin-view]')?.dataset.adminView || 'people') + '"]';
   operationAnchor = { identity: currentIdentityKey(), organizationId: Number(card.dataset.organizationId), selector };
-  setStatus('Выполняем действие…', 'loading');
+  // Keep the result anchor, but a confirmation dialog is not a running command.
+  if (!['cancel-member-assignment', 'revoke-member-invitation', 'delete-member'].includes(button?.dataset.action)) {
+    setStatus('Выполняем действие…', 'loading');
+  }
 };
 adminOrganizationsPanel?.addEventListener('submit', trackOperation, true);
 adminOrganizationsPanel?.addEventListener('click', trackOperation, true);
@@ -489,6 +495,8 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
   const identityEpoch = context.identityEpoch ?? state.identityEpoch;
   const identityKey = context.identityKey ?? currentIdentityKey();
   const key = organizationKey(organizationId);
+  const generation = (questionnaireLoadGenerations.get(key) || 0) + 1;
+  questionnaireLoadGenerations.set(key, generation);
   questionnaireLoadStates.set(key, { status: 'loading' });
   if (context.render !== false) renderAdminOrganizations();
   try {
@@ -496,7 +504,8 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
       credentials: 'same-origin',
     });
     const result = await readApiResponse(response, 'Не удалось загрузить сохранённые анкеты.');
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
+        questionnaireLoadGenerations.get(key) !== generation) return null;
     const items = Array.isArray(result?.items) ? result.items : [];
     const merged = new Map(items.map((item) => [item.assignment_ref, item]));
     for (const cached of questionnaireRevisions.get(key) || []) {
@@ -508,7 +517,8 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
     if (context.render !== false) renderAdminOrganizations();
     return items;
   } catch (error) {
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
+        questionnaireLoadGenerations.get(key) !== generation) return null;
     const accessDenied = error?.status === 401 || error?.status === 403;
     if (accessDenied) {
       questionnaireRevisions.delete(key);
@@ -758,6 +768,7 @@ export const addAdminOrganizationMember = async (organizationId, payload) => {
 };
 
 export const deleteAdminOrganizationMember = async (organizationId, email) => {
+  setStatus('Выполняем действие…', 'loading');
   try {
     const result = await requestOrganizations(
       '/users/admin/organizations/' + organizationId + '/members?email=' + encodeURIComponent(email),
@@ -931,6 +942,7 @@ export const cancelAdminOrganizationAssessment = async (organizationId, assignme
   cancellationOperationIds.set(key, operationId);
   if (cancellationRequestsInFlight.has(key)) return false;
   cancellationRequestsInFlight.add(key);
+  setStatus('Выполняем действие…', 'loading');
   const contextIsCurrent = () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey &&
     Number(selectedOrganizationId) === selectedOrganization && selectedOrganization === Number(organizationId) &&
     String(getSelectedAdminOrganizationAssessment(organizationId) || '').trim() === assessmentRef;
@@ -1035,6 +1047,7 @@ const offerAssessmentDataNavigation = (organizationId, assessmentRef) => {
 };
 
 export const revokeAdminOrganizationMemberInvitation = async (organizationId, invitationId) => {
+  setStatus('Выполняем действие…', 'loading');
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/personal-invitations/' + invitationId, {
       method: 'DELETE',
@@ -1712,7 +1725,9 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
           ? '<button type="button" data-action="open-member-report" data-report-id="' + escapeHtml(scopedStage.report_id) +
             '" data-cycle-id="' + escapeHtml(scopedStage.cycle_id || '') + '" data-report-access="' +
             escapeHtml(scopedStage.report_access || '') + '">Открыть отчёт</button>' : '';
-        const primaryAction = reportButton || (!hasAssignment && ['not_sent', 'error', 'revoked', 'expired'].includes(invitationStatus)
+        const checkPreparationButton = scopedStage?.action === 'check_preparation'
+          ? '<button type="button" data-action="check-member-preparation">Проверить подготовку</button>' : '';
+        const primaryAction = reportButton || checkPreparationButton || (!hasAssignment && ['not_sent', 'error', 'revoked', 'expired'].includes(invitationStatus)
           ? invitationButton : '');
         const menuActions = (primaryAction === invitationButton ? '' : invitationButton) + revokeButton + cancelButton + preparationButton + removeButton;
         const transferForm = !isSuperadmin || !transferTargets.length ? '' :
@@ -1838,6 +1853,7 @@ export const renderAdminOrganizations = () => {
       const roleCapabilities = Array.isArray(currentProgram?.role_capabilities)
         ? currentProgram.role_capabilities : allowedRoles.map((role) => ({ ...role, is_available: true }));
       const publishedRevision = revisions.find((item) => item.assignment_ref === selectedRef && item.status === 'confirmed');
+      const questionnaireAssignment = questionnaireAssignmentState(questionnaireLoadState, Boolean(publishedRevision));
       const assignmentBlockers = [];
       if (!currentProgram) {
         assignmentBlockers.push('Программа оценки не подключена. Обратитесь к суперадминистратору.');
@@ -1847,8 +1863,8 @@ export const renderAdminOrganizations = () => {
       } else if (currentProgram?.assignment_ref && currentProgram.assignment_ref !== selectedRef) {
         assignmentBlockers.push('Выбранная оценка не соответствует подключённой программе.');
       }
-      if (selectedRef && !publishedRevision) {
-        assignmentBlockers.push('Анкета для выбранной оценки не подтверждена. Подтвердите сведения перед назначением.');
+      if (selectedRef && !questionnaireAssignment.canAssign) {
+        assignmentBlockers.push(questionnaireAssignment.blocker);
       }
       if (currentProgram && !allowedRoles.length) {
         assignmentBlockers.push('В подключённой программе нет доступной роли для назначения.');
@@ -1862,7 +1878,7 @@ export const renderAdminOrganizations = () => {
           ? escapeHtml(allowedRoles.map((role) => role.name || role.code).join(', '))
           : 'недоступна') + '</dd>' +
         '<dt>Оценка</dt><dd>' + escapeHtml(selectedRef || 'не выбрана') + '</dd>' +
-        '<dt>Анкета</dt><dd>' + (publishedRevision ? 'подтверждена' : 'не подтверждена') + '</dd></dl>' +
+        '<dt>Анкета</dt><dd>' + escapeHtml(questionnaireAssignment.label) + '</dd></dl>' +
         (assignmentBlockers.length
           ? '<div class="form-status error" role="alert"><strong>Назначение пока недоступно</strong><ul>' +
             assignmentBlockers.map((blocker) => '<li>' + escapeHtml(blocker) + '</li>').join('') + '</ul></div>'

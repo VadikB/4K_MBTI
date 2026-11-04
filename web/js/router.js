@@ -91,7 +91,7 @@ export const openAcquaintanceWaiting = (readiness = {}) => {
   }
   state.currentScreen = 'auth-complete';
   persistAssessmentContext();
-  if (authCompleteTitle) authCompleteTitle.textContent = assignmentMissing ? 'Оценка пока не назначена' : 'Данные для оценки готовятся';
+  if (authCompleteTitle) authCompleteTitle.textContent = readiness.title || (assignmentMissing ? 'Оценка пока не назначена' : 'Данные для оценки готовятся');
   if (authCompleteDescription) {
     authCompleteDescription.textContent = readiness.message
       || 'Организация ещё готовит данные для вашей оценки. Когда подготовка будет завершена, здесь можно будет начать знакомство';

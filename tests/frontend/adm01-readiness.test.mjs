@@ -5,6 +5,7 @@ import test from 'node:test';
 const organizations = await readFile('web/js/screens/admin/organizations.js', 'utf8');
 const wiring = await readFile('web/js/wiring.js', 'utf8');
 const styles = await readFile('web/styles/screens/admin-organizations.css', 'utf8');
+const questionnaire = await readFile('web/js/screens/admin/questionnaire-assignment-state.js', 'utf8');
 
 test('ADM01 keeps participant invitations bound to the selected assessment', () => {
   assert.match(organizations, /assignment_ref: assessment/);
@@ -27,7 +28,8 @@ test('PILOT31-03 shows exact assignment readiness and blocks an invalid submit',
   assert.match(organizations, /Готовность назначения/);
   assert.match(organizations, /Программа оценки не подключена/);
   assert.match(organizations, /Выбранная оценка не соответствует подключённой программе/);
-  assert.match(organizations, /Анкета для выбранной оценки не подтверждена/);
+  assert.match(organizations, /questionnaireAssignmentState\(questionnaireLoadState, Boolean\(publishedRevision\)\)/);
+  assert.match(questionnaire, /Анкета для выбранной оценки не подтверждена/);
   assert.match(organizations, /нет доступной роли для назначения/);
   assert.match(organizations, /assignmentBlockers\.length \? ' disabled' : ''/);
   assert.match(organizations, /назначение не запускает оценку/);

@@ -1,0 +1,172 @@
+{
+  "program_definition": {
+    "id": 1,
+    "code": "path29-browser-specialist",
+    "version": "1.0",
+    "assignment_ref": "PATH29 browser",
+    "status": "published",
+    "definition_checksum": "50ac188a25becdcebdd48f363dcdab513b4757a98929faf395789ff5051252af",
+    "assessment_configuration_id": 3,
+    "catalog_version_id": 1,
+    "source_refs_json": {
+      "scenario_version_id": 1,
+      "methodology_version_id": 2,
+      "prompt_bundle_checksum": "9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688"
+    }
+  },
+  "assessment_configuration": {
+    "id": 3,
+    "code": "path29_browser_explicit_second",
+    "status": "published",
+    "methodology_version_id": 2,
+    "scenario_version_id": 1,
+    "catalog_version_id": 1,
+    "prompt_bundle_checksum": "9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688"
+  },
+  "catalog": {
+    "id": 1,
+    "catalog_id": "path-start-functional-diagnostic",
+    "catalog_version": "1.0",
+    "status": "published",
+    "usage_scope": "assessment",
+    "organization_id": null,
+    "manifest_checksum": "2c798ab2eb27748de6127f32aeba8393d6934f811d1e5d237c455f799ede744b",
+    "decision_basis": "PATH-START-01 v1.1 disposable diagnostic admission of exact functional package content; not normative/GC publication",
+    "package_db_id": 1,
+    "package_id": "m5-functional-personalization-cases",
+    "package_version": "0.5",
+    "package_checksum": "b9e2889b5a7b19dda6b88ebec30bffba87cf76afc3df4cb14df10de0036eb7b0",
+    "source_checksum": "86e5d3ba15856949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a"
+  },
+  "case_versions": [
+    {
+      "id": 2,
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.6",
+      "status": "FROZEN",
+      "base_role": "specialist_expert",
+      "content_checksum": "179fa0f8192862bee6af3190c8560f9c5ed133cc2fe07d6f5b6a98e6e3c9b729",
+      "runtime_rule_version_id": 1
+    }
+  ],
+  "preparation_operation": {
+    "operation_id": "b6e57e61-5db1-4111-9493-0243afc62ead",
+    "status": "failed",
+    "attempts": 1,
+    "request_checksum": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "requested_profile_id": null,
+    "requested_profile_checksum": null,
+    "error_code": "ValueError",
+    "error_message": "M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE"
+  },
+  "cycle": null,
+  "assignment_lineage": {
+    "status": "UNKNOWN_OR_AMBIGUOUS",
+    "matching_assignments": 0
+  },
+  "plan": null,
+  "sessions": [],
+  "assessment_answers": 0,
+  "assessment_situation": null,
+  "saved_checksums": {
+    "snapshot_recomputed": null,
+    "case_ref": null,
+    "execution_payload_ref": null,
+    "execution_payload_recomputed": null,
+    "participant_payload": null
+  },
+  "functional_generation": {
+    "present": true,
+    "candidate_checksum": "9e68781064e8744598411bfb375abf2a16df65d5a7891323293eb4165cfca74a",
+    "candidate_ref": {
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.6",
+      "checksum": "9e68781064e8744598411bfb375abf2a16df65d5a7891323293eb4165cfca74a"
+    },
+    "candidate_recomputed_checksum": "9e68781064e8744598411bfb375abf2a16df65d5a7891323293eb4165cfca74a",
+    "canonicalization": {
+      "candidate": "compact sorted UTF-8 JSON without LF",
+      "compiled_case_and_as": "compact sorted UTF-8 JSON + LF"
+    },
+    "input_snapshot_checksum": "e6a474264d6bd7d56d3ed1122fc6be25f07dbcc4da11013251b1962a69d88912",
+    "compiled_case_checksum": null,
+    "admitted_for_participant": false,
+    "admission_status": "INCOMPLETE",
+    "blocking_failures": [],
+    "deterministic_failures": [],
+    "incomplete_checks": [
+      {
+        "check_id": "common.authority",
+        "status": "NOT_RUN",
+        "reason": "Tester не вернул обязательный результат.",
+        "evidence_paths": [],
+        "aggregation_error": null
+      },
+      {
+        "check_id": "indicator:K1.I06",
+        "status": "TECHNICAL_ERROR",
+        "reason": "PASS защищённой проверки без adversarial review не допускается.",
+        "evidence_paths": [
+          "/IndicatorObservability/0"
+        ],
+        "aggregation_error": null
+      },
+      {
+        "check_id": "case02.attractive_feature",
+        "status": "INDETERMINATE",
+        "reason": "Синтетическая проверка не определена; требуется последующий разбор.",
+        "evidence_paths": [],
+        "aggregation_error": null
+      }
+    ],
+    "incomplete_details_availability": "PRESENT",
+    "deterministic_protocol_errors": [],
+    "repair_used": false,
+    "final_generation_operation_id": "b6e57e61-5db1-4111-9493-0243afc62ead:generation:fixture",
+    "repair_operation_id": null,
+    "stages": {
+      "generation": {
+        "operation_id": "b6e57e61-5db1-4111-9493-0243afc62ead:generation:fixture",
+        "kind": "generation",
+        "batch_count": 0,
+        "batch_operation_ids": [],
+        "required_check_ids": []
+      },
+      "tester": {
+        "operation_id": null,
+        "kind": null,
+        "batch_count": 0,
+        "batch_operation_ids": [],
+        "required_check_ids": []
+      },
+      "challenger": {
+        "operation_id": null,
+        "kind": null,
+        "batch_count": 0,
+        "batch_operation_ids": [],
+        "required_check_ids": []
+      }
+    },
+    "calls": [
+      {
+        "operation_id": "b6e57e61-5db1-4111-9493-0243afc62ead:generation:fixture",
+        "kind": "generation",
+        "input_checksum": "d980490da6b40224d1bf4c5a04aeb9cd00045594800e3eec2a08f625713460e0",
+        "provider": "fixture",
+        "endpoint": null,
+        "requested_model": null,
+        "actual_model": null,
+        "contract": null,
+        "usage": {},
+        "transport_attempts": null,
+        "json_parse_failures": []
+      }
+    ],
+    "unique_operation_count": 1,
+    "usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0
+    }
+  }
+}

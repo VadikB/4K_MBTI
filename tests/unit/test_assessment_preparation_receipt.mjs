@@ -55,3 +55,39 @@ test('pre-start chain cannot change after start', () => {
   initial.assessment_situation.assessment_situation_id = 'different-as';
   assert.throws(() => verifyFirstCase(value, initial), /PRE_START_CHAIN_CHANGED/);
 });
+
+function linkedFixture() {
+  const r = fixture(), checksum = '7'.repeat(64);
+  r.preparation_operation.requested_profile_id = '101';
+  r.preparation_operation.requested_profile_checksum = checksum;
+  r.assignment_lineage = { status: 'LINKED', assignment_id: 41, personalized_profile_id: 101,
+    assessment_configuration_id: 2, profile_checksum: checksum, frozen_at: '2026-11-04T00:00:00Z',
+    assigned_timing: { status: 'resolved', time_budget_seconds: 3600, calendar_window_seconds: 259200,
+      sources: { time_budget_seconds: { source: 'synthetic-default' }, calendar_window_seconds: { source: 'synthetic-default' } },
+      resolved_checksum: '8'.repeat(64) } };
+  Object.assign(r.cycle, { assignment_id: 41, personalized_profile_id: 101, profile_ref_json: { checksum },
+    time_budget_seconds: 3600, calendar_window_seconds: 259200,
+    parameter_sources_json: { time_budget: { source: 'synthetic-default' }, calendar_window: { source: 'synthetic-default' },
+      resolution_checksum: '8'.repeat(64) } });
+  r.plan = { status: 'READY', revision_id: 'synthetic-revision', content_checksum: '9'.repeat(64) };
+  return r;
+}
+test('PATH linked profile/assignment/plan/timing retains PASS_WITH_WARNINGS', () => {
+  const r = linkedFixture(); r.functional_generation.admission_status = 'PASS_WITH_WARNINGS';
+  assert.doesNotThrow(() => verifyFirstCase(r, before(r)));
+});
+for (const [name, corrupt] of Object.entries({
+  'unknown lineage': r => { r.assignment_lineage.status = 'UNKNOWN_OR_AMBIGUOUS'; },
+  'foreign assignment': r => { r.cycle.assignment_id = 99; },
+  'foreign profile': r => { r.cycle.personalized_profile_id = 99; },
+  'wrong operation profile': r => { r.preparation_operation.requested_profile_id = '99'; },
+  'wrong profile checksum': r => { r.cycle.profile_ref_json.checksum = '0'.repeat(64); },
+  'unfrozen profile': r => { r.assignment_lineage.frozen_at = null; },
+  'missing time source': r => { delete r.cycle.parameter_sources_json.time_budget; },
+  'invalid time': r => { r.cycle.calendar_window_seconds = 0; },
+  'wrong time source': r => { r.cycle.parameter_sources_json.time_budget = { source: 'foreign' }; },
+  'missing plan revision': r => { delete r.plan.revision_id; },
+})) test(`PATH rejects ${name}`, () => {
+  const r = linkedFixture(); corrupt(r);
+  assert.throws(() => verifyFirstCase(r, before(r)));
+});

@@ -1,8 +1,9 @@
 # Постоянный профиль синтетических прогонов Codex
 
 Версия `assessment-first-case/1.1`, 04.11.2026. Область — настройка и диагностика
-пути «суперадмин → первый Case» в новой owned-БД. PATH-START-01 не передан в
-исполнение. Методологическое согласование, CURRENT, приёмка пилотной программы,
+пути «суперадмин → первый Case» в новой owned-БД. PATH-START-01 редакции 1.3
+передан в исполнение отдельно 04.11.2026; статус — в [задаче](tasks/path-start-01.md).
+Методологическое согласование, CURRENT, приёмка пилотной программы,
 merge и deploy этим профилем не объявляются.
 
 ## Подключение к заданиям
@@ -55,6 +56,14 @@ BLOCKED сохраняет причины в `preflight.json` и возвращ�
 минимальный seed, выгружает источники и штатно удаляет БД без LLM. Этот режим
 проверяет повторяемость lifecycle и не заявляет прохождение browser-пути.
 
+Для продуктового PATH к этой же команде добавляется
+`--program-source published-pilot --db-admin-port 55432` и новая evidence directory.
+Это exact mirror `specialist_pilot@1.1` / `specialist-pilot@1.0`, девять Cases:
+read-only receipt `tests/browser/fixtures/path-start-release.json` проверен на test
+7221671. Сохраняются оригинальные QA JSON/checksum/owner decision, не используется
+synthetic human_review. Source mismatch останавливает seed до LLM. Default без
+параметра сохраняет историческую однокейсовую диагностику и её ограничения ниже.
+
 ## Сценарий и границы подмен
 
 Runner переиспользует `scripts/test_stand.py` и PATH29 browser-сценарий.
@@ -96,6 +105,18 @@ admission. Контракт `m5_catalog_integrity/1.0.0` требует scopes `
 PASS входных fixtures не заменяет его admission.
 
 ## Обязательные доказательства
+
+PATH collector дополнительно сохраняет allowlisted assignment/binding/questionnaire/
+profile refs/checksums/frozen_at, program connection, числовые IDs акторов,
+preparation request → profile, plan revision/checksum и effective times/source refs.
+Validator связывает assignment/profile/request/Cycle и оба времени, не приравнивая
+checksum разных объектов. UNKNOWN_OR_AMBIGUOUS не превращается в success.
+Это расширение будущих receipts; после cleanup старые недоступные refs не достраиваются.
+
+Бесплатно проверено на `136b858`: export regression actual collector → fsync/readback
+→ owned cleanup PASS и новый minimal `published-pilot` bootstrap PASS. Полный PATH
+остаётся BLOCKED_PM03; следующая генерация требует отдельного согласованного задания.
+Завершённый отрицательный run не следует случайно повторять ради PASS.
 
 - Generation, все final tester и challenger batches принадлежат одной preparation
   operation; после repair проверяются конечный кандидат и его новый admission
