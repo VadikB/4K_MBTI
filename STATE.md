@@ -1,4 +1,55 @@
-# STATE — PATH-START-01
+# STATE — PM03-REPAIR-CONTRACT
+
+## Активный выпуск 04.11.2026 — 2.0.64
+
+- Владелец подтвердил оба PATCH/merge/test-deploy после CI: 2.0.63 (#168), затем
+  2.0.64 (#169). branch_push/pr/merge/deploy/version_bump=true; artifact_publish=false.
+- #168 merged: main 2ba7c02 / 2.0.63; fast CI41903653105 и full41903653030 PASS.
+  Исходный fast browser FAIL41902176961 локализован и исправлен (ST-R1 anchor),
+  auth/admin browser98/frontend139 PASS. Исторические записи ниже не текущий статус.
+- PM03-only четыре коммита перенесены на actual main2ba7c02 без конфликтов;
+  head до выпуска86cbff2, source/tests/evidence идентичны3152c5e. Backup-ветка
+  codex/pm03-before-release-3152c5e сохранена. Активно: повтор backend/HTTP,
+  preflight2.0.64, PR169→main/Ready, полный CI → merge → deploy/readback.
+- Повтор на actual base: backend763/HTTP108 PASS, frontend139/lint/diff PASS;
+  canonical preflight2.0.64 PASS. Предыдущий test-deploy41904412114 PASS:
+  сервер2ba7c02/2.0.63, service active/readiness200, public main.js hash совпал.
+  2.0.64 ещё не merged/deployed; следующий шаг — обновить PR169 и обязательный CI.
+- Никаких новых LLM-вызовов/артефактов/потерь данных. PATH BLOCKED_PM03,
+  PREP-DIAG-01 UNKNOWN; реальное качество генерации техническим fix не доказано.
+
+## Штатная передача 04.11.2026
+
+- Владелец явно разрешил передать repair тот же frozen generation contract и
+  добавить регрессии. Prompts/admission/лимит repair/платный LLM неизменны.
+- База `11b2a94e164b97b95a0ef8f9a806ab2becf2b1a9` из draft PR #168;
+  отдельная локальная ветка `codex/pm03-repair-contract`. Исходная ветка/PR не меняются.
+- Задача: [PM03-REPAIR-CONTRACT](docs/evc/tasks/pm03-repair-contract.md).
+  Implementation `d97625d7d6b1dba214890d8165791c3e2a9850b6`: две строки сборки.
+  Before: новые проверки 5 FAIL/1 PASS; after service/snapshot 23 PASS, backend
+  763 PASS/323 deselected, HTTP108 PASS/12 deselected. Self-review/diff/links PASS.
+  Primary logs/identity: `docs/evc/evidence/pm03-repair-contract-2026-11-04/`.
+  Последующий docs/evidence commit не меняет проверенный Api/tests.
+- По продолжению владельца «идем дальше» после локальной сдачи 04fcfdc:
+  branch_push/pr=true для отдельного draft PR поверх `codex/path-start-01` / #168.
+  Merge/deploy/version bump/artifact publication=false; реальный LLM не запускается.
+  Включён только обычный следующий шаг передачи по CONTRIBUTING.
+- PATH BLOCKED_PM03, пять содержательных FAIL не объясняются этим расхождением
+  без доказательства; PREP-DIAG-01 UNKNOWN. История ниже относится к передаче PATH.
+- Новых LLM calls/DB lifecycle runs = 0. Нормы/артефакты/queue/admission/лимит
+  repair неизменны. Main/test не обновлялись, PR #168 не изменён.
+- Передача выполнена: ветка опубликована, отдельный [draft PR #169](https://github.com/VadikB/4K_MBTI/pull/169)
+  с base `codex/path-start-01` / #168 создан. В diff только 9 PM03 файлов, runtime
+  две строки. Fast CI проверяется на окончательном head PR и фиксируется итоговым
+  комментарием; эта документальная запись Api/tests не меняет. Далее человеческое review,
+  отдельное решение выпуска либо обоснованного real-provider эксперимента. Не заявлять качество
+  AS или полный PATH PASS по синтетическим unit fixtures. Новая база с fix —
+  `codex/pm03-repair-contract` (d97625d + docs/evidence commit), не main/PR #168.
+- Перед push remote main7221671, PATH11b2a94 подтверждены read-only. После squash
+  #168 перед отдельным выпуском PM03 перенести только PM03 changes на фактический
+  main и повторить проверки; не ограничиваться автоматическим retarget PR.
+
+# Исторический STATE — PATH-START-01
 
 ## Активный выпуск 04.11.2026
 

@@ -594,6 +594,7 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
                      gateway: Any) -> dict[str, Any]:
     """Ask PM-03 for one complete corrected AS; never patch or admit it server-side."""
     instruction = _frozen_file(snapshot, "generator_prompt").read_text(encoding="utf-8")
+    contract = _frozen_file(snapshot, "generation_contract").read_text(encoding="utf-8")
     repair_instruction, repair_prompt_ref = _load_repair_instruction(ROOT / snapshot["refs"]["repair_package"]["path"])
     payload = {
         "profile": snapshot["profile"], "case": snapshot["case"],
@@ -626,6 +627,7 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
                            if "indicator_adaptation_contract" in snapshot["refs"] else None)
     messages = [
         {"role": "system", "content": instruction},
+        {"role": "system", "content": "Содержательный контракт:\n" + contract},
         {"role": "system", "content": repair_instruction},
         *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
           if adaptation_contract else []),
