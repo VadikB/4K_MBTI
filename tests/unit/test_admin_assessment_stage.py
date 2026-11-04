@@ -1,4 +1,4 @@
-from Api.routes import _project_admin_assessment_stage
+from Api.routes import _project_admin_assessment_stage, _project_member_scope_compatibility
 
 
 def row(**changes):
@@ -12,6 +12,7 @@ def row(**changes):
         "planned_positions": 3,
         "completed_positions": 0,
         "preparation_status": "completed",
+        "admitted_situation": True,
         "acquaintance_status": "completed",
         "report_ready": False,
         "pipeline_status": None,
@@ -31,6 +32,32 @@ def test_start_requires_exact_cycle_and_ready_non_empty_plan():
     prepared_job_only = _project_admin_assessment_stage(row(cycle_id=None, cycle_status=None, plan_status=None, planned_positions=0))
     assert prepared_job_only["code"] == "preparation_complete"
     assert prepared_job_only["action"] is None
+
+
+def test_prepared_plan_without_admitted_first_as_is_not_ready_to_start():
+    projected = _project_admin_assessment_stage(row(admitted_situation=False))
+    assert projected['code'] == 'start_blocked'
+    assert projected['action'] is None
+
+
+def test_real_preparation_status_precedes_unstarted_plan_readiness():
+    for status in ('queued', 'running'):
+        stage = _project_admin_assessment_stage(row(preparation_status=status, admitted_situation=False))
+        assert stage['code'] == 'preparing' and stage['action'] == 'check_preparation'
+        assert stage['preparation_status'] == status
+    assert _project_admin_assessment_stage(row(preparation_status='failed', admitted_situation=False))['code'] == 'preparation_failed'
+
+
+def test_flat_compatibility_fields_never_guess_between_assignments():
+    a = _project_admin_assessment_stage(row(preparation_operation_id='job-A'))
+    b = _project_admin_assessment_stage(row(preparation_operation_id='job-B'))
+    assert _project_member_scope_compatibility({'A': a})['assessment_preparation_operation_id'] == 'job-A'
+    for stages in ({}, {'A': a, 'B': b}):
+        projected = _project_member_scope_compatibility(stages)
+        assert projected['assessment_preparation_operation_id'] is None
+        assert projected['assessment_preparation_status'] is None
+        assert projected['assessment_prepared'] is False
+        assert projected['acquaintance_status'] == 'unknown'
 
 
 def test_runtime_states_stay_distinct_and_keep_progress():

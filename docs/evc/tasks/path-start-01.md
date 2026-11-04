@@ -229,3 +229,29 @@ PREP-DIAG-01 по-прежнему UNKNOWN, без причинного объе
 - Активна отдельная real PostgreSQL negative fixture ST-R3 (не seed основного E2E):
   две assignment refs одной configuration, разные questionnaire/profile bindings,
   более поздний чужой job; actual production SQL, synthetic schema, LLM=0.
+
+## ST-R3 / start-readiness: initial PostgreSQL и адресное исправление
+
+Clean 9f9b7b8646ba6eca97334cb0864cec83bf78c518, owned run
+d667721a6c474f04b269a12f109cab2d: actual stage SQL на PostgreSQL, 3 FAIL.
+Для A возвращался job-B/failed вместо job-A/completed. При отсутствии scoped
+confirmation также угадывался профиль. Причина: profile выбирался по latest frozen
+user/org/configuration, без assignment/questionnaire/role binding. Product preparation
+operations вообще не участвовали в этой проекции. Связь Cycle.assignment_id уже
+существует, новую не вводим. Primary result/log/cleanup — `lineage-initial-9f9b7b8/`.
+Первый технический запуск не выполнил тесты из-за отсутствия pytest в venv сервиса;
+он не доказывает дефект. Test tools установлены отдельно, service venv не менялся.
+
+Исправление: latest binding только внутри exact assignment; профиль — по точному
+Cycle pointer либо scoped confirmation, с совпадением role/configuration/context.
+Product job дополнительно совпадает по user/profile/organization/assignment/questionnaire;
+чужой более поздний job не подставляется. Flat compatibility fields получают значение
+только при одном доказанном scoped stage; при неоднозначности null/unknown, без
+latest-user legacy job/session и без дублирования членов через чужую acquaintance.
+
+Адресная unit-проверка также показала ложный ready_to_start у prepared Cycle/READY
+plan без допущенной первой AS (FAIL до исправления, `start-gate-initial-9f9b7b8/`).
+Проекция теперь требует admitted AS и не скрывает queued/running/failed подготовки
+за предварительно созданным планом. Это отражение существующего admission/start gate,
+не изменение admission/правил времени. Backend 755 PASS, HTTP 106 PASS, stage units
+8 PASS, diff PASS; actual PostgreSQL повтор — активный следующий шаг.

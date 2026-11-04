@@ -32,7 +32,13 @@
   PG-R1: исходно 5 unit FAIL; точная причина/сообщение и запрет чужого legacy fallback
   исправлены → адресно 19 PASS; backend 752 PASS, HTTP 106 PASS, frontend 139 PASS.
 - Активно: PostgreSQL initial ST-R3 с двумя назначениями одной конфигурации и
-  более поздним чужим job. Повтор LLM без новой доказанной технической причины не запускается.
+  более поздним чужим job выполнен: 3 FAIL на 9f9b7b8. Исправлена exact lineage/
+  product job projection, flat ambiguous metadata → unknown, без новой схемы.
+  Проекция start также больше не считает READY plan без admitted AS готовностью.
+  Unit before FAIL → after 8 PASS; backend 755 PASS, HTTP 106 PASS.
+- Следующий шаг: real PostgreSQL repeat/full integration, viewport browser и
+  передача фактического остатка. Владелец получил вопрос о границе дальнейшей PM-03
+  доработки; независимые проверки продолжаются. Случайный LLM rerun не запускается.
 - Дальше: точный approved release в owned-БД → исходный run/первый разрыв →
   адресные PS-01…05/регрессии → полный повтор/evidence. PREP-DIAG-01 UNKNOWN,
   DB-PERSIST-01 не переоткрывается. Cleanup guards и terminal export сохраняются.
