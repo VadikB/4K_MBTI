@@ -119,7 +119,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
     const form = card.locator('[data-action="preview-early-data"]');
     await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
-    await expect(form.locator('[name="assignment_ref"]')).toHaveValue('PATH29 browser');
+    await expect(form.locator('[name="assignment_ref"]')).toHaveValue(state.path29.assignment_ref || 'PATH29 browser');
     const values = { source_author: 'Синтетический заказчик',
       organization_name: 'Синтетическая организация PATH29', organization_type: 'Компания', industry: 'ИТ',
       activity_description: 'Синтетическая проверка пути участника', purpose: 'Синтетическая цель развития',
@@ -129,6 +129,29 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
     await card.locator('.admin-questionnaire-preview').getByRole('button', { name: 'Подтвердить сведения' }).click();
     await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
+    if (state.path29.input_mode === 'published-pilot') {
+      // A failed GET is not evidence that the already committed questionnaire
+      // became unconfirmed. Exercise the actual built entry before any LLM cost.
+      step = 'ps02_confirmed_questionnaire_read_error';
+      const questionnaireUrl = `**/users/admin/organizations/${state.path29.organization_id}/questionnaire`;
+      await admin.route(questionnaireUrl, (route) => route.fulfill({ status: 503,
+        contentType: 'application/json', body: JSON.stringify({ detail: 'Synthetic readback temporarily unavailable' }) }));
+      await admin.reload();
+      await expect(card).toBeVisible();
+      await card.getByRole('button', { name: 'Организация и участники', exact: true }).click();
+      await expect(card.locator('.admin-questionnaire-load-state.error')).toBeVisible();
+      const readiness = card.locator('.admin-assignment-readiness');
+      save('ps02-read-error', { organization_id: state.path29.organization_id,
+        assignment_ref: state.path29.assignment_ref, confirmed_before_reload: true,
+        injected_failure: 'GET questionnaire HTTP 503; no write',
+        actual_readiness: await readiness.innerText() });
+      await admin.screenshot({ path: path.join(dir, 'ps02-read-error.png'), fullPage: true });
+      await expect(readiness).not.toContainText('Анкета для выбранной оценки не подтверждена');
+      await expect(readiness).not.toContainText('Можно назначать');
+      await admin.unroute(questionnaireUrl);
+      await card.getByRole('button', { name: 'Повторить', exact: true }).click();
+      await expect(readiness).toContainText('Можно назначать');
+    }
     await card.getByRole('button', { name: 'Организация и участники', exact: true }).click();
     const add = card.locator('[data-action="add-member"]');
     const fullName = 'Синтетический Участник С Очень Длинным Именем Для Проверки Переноса Строк';
@@ -343,13 +366,20 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
         } };
       save('first-case-receipt', finalReceipt);
       verifyFirstCase(finalReceipt, preparationReceipt);
-      expect(state.path29.input_mode).toBe('functional-diagnostic');
+      expect(['functional-diagnostic', 'published-pilot']).toContain(state.path29.input_mode);
       expect(receipt.program_definition.id).toBe(state.path29.program_id);
       expect(receipt.program_definition.assessment_configuration_id).toBe(state.path29.configuration_id);
       expect(receipt.program_definition.catalog_version_id).toBe(receipt.catalog.id);
       expect(receipt.assessment_configuration.catalog_version_id).toBe(receipt.catalog.id);
-      expect(receipt.case_versions).toHaveLength(1);
-      expect(receipt.case_versions[0].case_id).toBe('CASE.SPEC.02');
+      if (state.path29.input_mode === 'published-pilot') {
+        expect(receipt.program_definition.code).toBe('specialist_pilot');
+        expect(receipt.program_definition.version).toBe('1.1');
+        expect(receipt.case_versions.map((item) => item.case_id)).toEqual(
+          Array.from({ length: 9 }, (_, i) => 'CASE.SPEC.' + String(i + 1).padStart(2, '0')));
+      } else {
+        expect(receipt.case_versions).toHaveLength(1);
+        expect(receipt.case_versions[0].case_id).toBe('CASE.SPEC.02');
+      }
       expect(receipt.functional_generation.present).toBe(true);
       expect(receipt.functional_generation.admitted_for_participant).toBe(true);
       expect(receipt.functional_generation.candidate_checksum).toMatch(/^[a-f0-9]{64}$/);

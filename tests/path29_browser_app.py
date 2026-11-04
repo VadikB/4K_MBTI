@@ -84,9 +84,10 @@ def path_receipt():
     from Api.m5_case_runtime import checksum
     from tests.assessment_first_case_evidence import functional_receipt
     with get_connection() as c:
+        state = json.loads(Path(os.environ['STAND_STATE']).read_text())
         program = c.execute("""SELECT p.id,p.code,p.version,p.status,p.definition_checksum,
                 p.assessment_configuration_id,p.catalog_version_id,p.source_refs_json
-            FROM assessment_program_definitions p WHERE p.code='path29-browser-specialist'""").fetchone()
+            FROM assessment_program_definitions p WHERE p.id=%s""", (state['path29']['program_id'],)).fetchone()
         configuration = c.execute("""SELECT id,code,status,methodology_version_id,
                 scenario_version_id,catalog_version_id,prompt_bundle_checksum
             FROM assessment_configurations WHERE id=%s""",

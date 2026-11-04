@@ -1,4 +1,32 @@
-# STATE — постоянный синтетический контур
+# STATE — PATH-START-01
+
+## Текущий checkpoint 04.11.2026 — PATH 1.3
+
+- Основание: команда владельца «делаем» и задание PATH-START-01 редакции 1.3,
+  SHA-256 29ada88402576a5cb36a89df12039f1a45bcfc58c41385a733ffef3c7b933749.
+- Новая ветка `codex/path-start-01`, base/fetched main
+  `7221671fbd9b16192a86b04b6eec36773f2dbf99`, 2.0.62. Root untracked документы
+  не трогаются; ветка настройки не восстанавливается.
+- Выпуск инструмента PR #167 / CI / deploy/readback PASS подтверждён предыдущим
+  результатом; profile/runner уже в main/test. Handoff обновлён адресно, история
+  приёмки/2f0a5a0 сохранена. Это не PATH PASS.
+- План/AC01…18: `docs/evc/tasks/path-start-01.md`. Read-only test readback подтвердил
+  specialist_pilot@1.1, program 1 / config 11 / catalog 2, исходные 9 Cases и 27 QA.
+  Receipt: `tests/browser/fixtures/path-start-release.json`; permanent target
+  agent4k_test через 55432, internal 5432; runtime SHA 7221671. Новая публикация не нужна.
+- Existing runner расширен explicit `--program-source published-pilot`; новый seed
+  сверяет исходные QA/checksum, не подменяет human review. Product Api/web неизменны.
+  Локально: backend 743 PASS (после исправления пути новой fixture), HTTP 106 PASS,
+  Node receipt 27 PASS, frontend 131 PASS, lint/build/diff PASS. Это не browser PASS.
+- Активно: первый owned bootstrap/исходный UI run на target release; PG-R2 read-error
+  проверяется до LLM. Затем адресные PS-01…05 и полный повтор.
+- Дальше: точный approved release в owned-БД → исходный run/первый разрыв →
+  адресные PS-01…05/регрессии → полный повтор/evidence. PREP-DIAG-01 UNKNOWN,
+  DB-PERSIST-01 не переоткрывается. Cleanup guards и terminal export сохраняются.
+- branch_push/pr=true после локального минимума; merge/deploy/version_bump=false;
+  artifact_publish=false для PATH. Схема/нормы/admission/repair не ослабляются.
+
+# Исторический STATE — настройка синтетического контура
 
 ## Checkpoint 04.11.2026
 

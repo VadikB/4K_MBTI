@@ -61,6 +61,29 @@ def seed(state_path, state):
                 VALUES(%s,'email_magic_link','path29-admin@example.test',TRUE,TRUE,NOW())""", (actor,))
             source = c.execute("SELECT * FROM assessment_configurations WHERE code='e102_controlled_catalog'").fetchone()
         catalog_version_id = source['catalog_version_id']
+        if full_path and state.get('path29_program_source') == 'published-pilot':
+            from tests.path_start_release_inputs import seed_release
+            other, role_id, program_id, provenance = seed_release(c, actor)
+            counts = {name: c.execute('SELECT count(*) AS n FROM ' + table).fetchone()['n']
+                for name, table in {
+                    'users': 'users', 'organizations': 'organizations',
+                    'memberships': 'organization_memberships', 'profiles': 'assessment_personalized_profiles',
+                    'cycles': 'm5_cycles', 'assignments': 'organization_assessment_assignments',
+                }.items()}
+            if counts != {'users': 1, 'organizations': 0, 'memberships': 0,
+                          'profiles': 0, 'cycles': 0, 'assignments': 0}:
+                raise RuntimeError('FULL_PATH_BOOTSTRAP_NOT_MINIMAL:' + json.dumps(counts))
+            provenance['initial_counts'] = counts
+            (state_path.parent / 'source-provenance.json').write_text(
+                json.dumps(provenance, ensure_ascii=False, indent=2) + '\n')
+            state['path29'] = {'organization_id': None, 'configuration_id': other['id'],
+                'program_id': program_id, 'program_code': 'specialist_pilot', 'assignment_ref': 'specialist-pilot',
+                'role_version_id': role_id, 'input_mode': 'published-pilot',
+                'admin_email': 'path29-admin@example.test', 'participant_email': 'path29-new@example.test'}
+            c.commit()
+            state_path.write_text(json.dumps(state))
+            print('PATH-START exact published nine-case mirror ready; only synthetic superadmin pre-created')
+            return
         if full_path:
             # PATH-START-01 diagnostic input: use the existing functional PM-03
             # preparation contract. The repository package remains immutable;
@@ -199,6 +222,7 @@ if __name__ == '__main__':
     else:
         if os.getenv('P4K_FULL_PATH') == '1':
             state['path29_full_path'] = True
+            state['path29_program_source'] = os.getenv('P4K_PROGRAM_SOURCE', 'functional-diagnostic')
             args.state.write_text(json.dumps(state))
         subprocess.run([sys.executable, __file__, '--state', str(args.state), '--child'],
                        env=environment(state), cwd=ROOT, check=True)

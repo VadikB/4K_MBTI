@@ -45,7 +45,9 @@ def code_identity():
     paths = ['scripts/test_stand.py', 'scripts/assessment_first_case.py',
         'tests/path29_browser_inputs.py', 'tests/path29_browser_app.py',
         'tests/assessment_first_case_evidence.py', 'tests/browser/path29-participant.spec.mjs',
-        'tests/browser/fixtures/receipt-file.mjs', 'tests/browser/fixtures/preparation-receipt.mjs']
+        'tests/browser/fixtures/receipt-file.mjs', 'tests/browser/fixtures/preparation-receipt.mjs',
+        'tests/path_start_release_source.py', 'tests/path_start_release_inputs.py',
+        'tests/browser/fixtures/path-start-release.json']
     return {'sha': git('rev-parse', 'HEAD'), 'branch': git('branch', '--show-current'),
         'origin_main': git('rev-parse', 'origin/main'),
         'worktree_status': git('status', '--short'),
@@ -187,6 +189,8 @@ def record_process_result(directory, previous, exit_code):
 def main()->int:
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--directory',type=Path,default=ROOT/'.test-stand/assessment-first-case');p.add_argument('--port',type=int,default=18861);p.add_argument('--preflight-only',action='store_true');p.add_argument('--env-file',type=Path);p.add_argument('--python',default=str(ROOT/'.venv/bin/python'));p.add_argument('--db-admin-port',type=int,default=55432)
     p.add_argument('--check-bootstrap', action='store_true', help='Repeat create/bootstrap/minimal seed/destroy without LLM')
+    p.add_argument('--program-source', choices=('functional-diagnostic', 'published-pilot'),
+        default='functional-diagnostic', help='Explicit approved nine-case PATH release, or historical one-case diagnostic')
     p.add_argument('--summarize-only', action='store_true', help='Rebuild normalized summary from existing evidence; no credentials or LLM')
     a=p.parse_args()
     if a.summarize_only:
@@ -196,6 +200,7 @@ def main()->int:
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return summary['exit_code']
     env=os.environ.copy()
+    env['P4K_PROGRAM_SOURCE'] = a.program_source
     if a.env_file:
         from dotenv import dotenv_values
         values=dotenv_values(a.env_file)
