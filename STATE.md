@@ -20,7 +20,10 @@
   без доказательства; PREP-DIAG-01 UNKNOWN. История ниже относится к передаче PATH.
 - Новых LLM calls/DB lifecycle runs = 0. Нормы/артефакты/queue/admission/лимит
   repair неизменны. Main/test не обновлялись, PR #168 не изменён.
-- Активно: push/draft PR → fast CI и фиксация статусов. Далее человеческое review,
+- Передача выполнена: ветка опубликована, отдельный [draft PR #169](https://github.com/VadikB/4K_MBTI/pull/169)
+  с base `codex/path-start-01` / #168 создан. В diff только 9 PM03 файлов, runtime
+  две строки. Fast CI проверяется на окончательном head PR и фиксируется итоговым
+  комментарием; эта документальная запись Api/tests не меняет. Далее человеческое review,
   отдельное решение выпуска либо обоснованного real-provider эксперимента. Не заявлять качество
   AS или полный PATH PASS по синтетическим unit fixtures. Новая база с fix —
   `codex/pm03-repair-contract` (d97625d + docs/evidence commit), не main/PR #168.
