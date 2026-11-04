@@ -2,6 +2,16 @@
 
 ## Checkpoint 04.11.2026
 
+- Новый активный шаг после технической приёмки: владелец разрешил merge в main
+  и обновление test; отдельно подтвердил PATCH 2.0.62. Флаги branch_push/pr/merge/
+  deploy/version_bump=true, artifact_publish=false. Исторические NOT_RUN/false
+  ниже относятся к приёмке до этого разрешения.
+- Свежий origin/main — 053d1a58 / 2.0.61; ready preflight 2.0.62 PASS.
+  Дальше PR через авторизованный браузер, обязательный CI без bypass, squash merge,
+  deploy-test и readback. До этого main/test не считаются обновлёнными.
+- Принятый ZIP 2f0a5a0 не меняется. LLM/PATH/публикация программы не запускаются;
+  PREP-DIAG-01 UNKNOWN и защита постоянной БД остаются без изменений.
+
 - Текущая задача `docs/evc/tasks/assessment-first-case-contour.md` технически
   **ACCEPTED / завершена владельцем**: независимая проверка пакета 2f0a5a018473,
   VERIFY.py PASS, Python 49 PASS, Node 27 PASS; оба дефекта harness закрыты.
