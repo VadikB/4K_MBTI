@@ -2,6 +2,16 @@
 
 ## Checkpoint 04.11.2026
 
+- Завершающая доработка после независимо проверенного cf6175e: устранены ложный
+  PASS summarize_runs и отклонение допустимого PASS_WITH_WARNINGS. Общий validator
+  browser/summary сохраняет stages/final candidate/repair/checksum/start/presentation
+  проверки; добавлены completion/hash, фактический process exit и fail-closed summary.
+- Текущая область не включает восстановление БД или его расследование. Cleanup
+  guards постоянной БД, Api/, методология/admission/repair не менялись. PREP-DIAG-01
+  остаётся UNKNOWN; причинной связи с ошибками harness не установлено. PATH не начат.
+- Идёт адресная/EVC проверка и сборка новой независимой передачи; бесплатные
+  регрессии используют явную synthetic success fixture, не выдают её за LLM PASS.
+
 - Активная задача: `docs/evc/tasks/assessment-first-case-contour.md`;
   ветка `codex/assessment-first-case`, base/main `053d1a58b46b5cfa7784d3d9ba6fd4785efed769`.
 - Область — настройка runner/fixtures/профиля; PATH-START-01 не передан в исполнение.

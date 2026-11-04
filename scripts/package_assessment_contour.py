@@ -11,6 +11,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 BASE = '053d1a58b46b5cfa7784d3d9ba6fd4785efed769'
 DIAGNOSTIC = '4bab7230d8fa484fb8d922ee7d8b49b63674268d'
+PREVIOUS_DELIVERY = 'cf6175e454a28b7e7a658a4d1305b2091135bd88'
 
 VERIFY = '''"""Verify the unpacked packet using Python's standard library only."""
 import hashlib,json
@@ -100,6 +101,8 @@ def build(directory):
     put('diff/main-to-final.patch', git('diff', '--binary', BASE, head))
     put('diff/after-4bab723.patch', git('diff', '--binary', DIAGNOSTIC, head))
     put('diff/after-4bab723.stat.txt', git('diff', '--stat', DIAGNOSTIC, head))
+    put('diff/after-cf6175e.patch', git('diff', '--binary', PREVIOUS_DELIVERY, head))
+    put('diff/after-cf6175e.stat.txt', git('diff', '--stat', PREVIOUS_DELIVERY, head))
     bundle = packet / 'git' / 'commits.bundle'
     bundle.parent.mkdir()
     subprocess.run(['git', 'bundle', 'create', str(bundle), BASE + '..HEAD'], cwd=ROOT, check=True)
@@ -128,6 +131,8 @@ PATH-START-01 не исполнялся. Новых платных LLM-вызо�
   real-provider receipt, screenshot и отдельная бесплатная регрессия экспортёра.
 - `source-inputs/` — точные неизменённые JSON-источники для независимого пересчёта.
 - `diff/after-4bab723.patch` и `.stat.txt` — все изменения после реального прогона.
+- `diff/after-cf6175e.patch` и `.stat.txt` — только доработка двух дефектов harness
+  и её проверки/документация после независимо проверенной передачи.
 - `diff/main-to-final.patch` — полный diff настройки к main.
 - `git/commits.bundle` — коммиты настройки с prerequisite main `{BASE}`.
 
@@ -144,6 +149,16 @@ PREP-DIAG-01 сохранён для следующего пакета; конк
 отказа UNKNOWN, потому что старая выгрузка их не сохранила, а БД уже удалена.
 Синтетическая negative-export regression не реконструирует этот отказ.
 
+Исправлены ложный PASS сводки и отклонение PASS_WITH_WARNINGS. Общий validator
+используется browser и сводкой: обязательные stages, final candidate/repair refs,
+сохранённая/предъявленная AS и нулевые ответы остаются обязательными. PASS требует
+завершения сценария, нулевого exit, отсутствия failure, валидного receipt с привязкой
+к completion и подтверждённого cleanup. Новые адресные результаты и применимость
+EVC — в task report и `evidence/assessment-contour-2026-11-04/harness-regression/`.
+Техническая success fixture — только подстановка для unit-тестов, не новый LLM PASS.
+Ошибки harness не объявляются причиной PREP-DIAG-01. Восстановление БД вне задачи;
+защита постоянной БД и продуктовые admission/repair не изменялись.
+
 Исходный Case QA в seed — ЯВНАЯ ТЕСТОВАЯ ПОДСТАНОВКА. Она не доказывает
 реальный human review, методологическое согласование или допуск целевой пилотной
 программы. Методология/admission/repair/M0–M8 не изменены.
@@ -154,7 +169,7 @@ CI текущей ветки NOT_RUN (PR/push не выполнялись). Main
 не обновлялись; наблюдавшаяся версия test — 2.0.61.
 ''')
     manifest = {'schema_version': 1, 'implementation_sha': head, 'branch': 'codex/assessment-first-case',
-        'base_main_sha': BASE, 'real_diagnostic_sha': DIAGNOSTIC,
+        'base_main_sha': BASE, 'real_diagnostic_sha': DIAGNOSTIC, 'previous_delivery_sha': PREVIOUS_DELIVERY,
         'diagnostic_result': 'FAIL_INCOMPLETE', 'root_cause': 'UNKNOWN', 'new_paid_llm_calls': 0,
         'files': {str(file.relative_to(packet)): hashlib.sha256(file.read_bytes()).hexdigest()
                   for file in sorted(packet.rglob('*')) if file.is_file()}}

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { persistReceipt, isTerminalPreparationReceipt } from './fixtures/receipt-file.mjs';
+import { verifyPreparation, verifyFirstCase } from './fixtures/preparation-receipt.mjs';
 
 function canonical(value) {
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
@@ -13,44 +14,6 @@ function canonical(value) {
 }
 // Participant payload/snapshot refs use m5_case_runtime's JSON + LF contract.
 const checksum = (value) => createHash('sha256').update(canonical(value) + '\n').digest('hex');
-
-function verifyPreparation(receipt) {
-  const generated = receipt.functional_generation;
-  expect(receipt.preparation_operation.status).toBe('completed');
-  expect(receipt.program_definition.catalog_version_id).toBe(receipt.catalog.id);
-  expect(receipt.assessment_configuration.catalog_version_id).toBe(receipt.catalog.id);
-  expect(receipt.program_definition.source_refs_json.prompt_bundle_checksum)
-    .toBe(receipt.assessment_configuration.prompt_bundle_checksum);
-  expect(receipt.assessment_configuration.prompt_bundle_checksum).toMatch(/^[a-f0-9]{64}$/);
-  expect(receipt.cycle.catalog_ref_json.checksum).toBe(receipt.catalog.manifest_checksum);
-  expect(generated.admission_status).toBe('PASS');
-  expect(generated.admitted_for_participant).toBe(true);
-  expect(generated.candidate_checksum).toBe(generated.candidate_recomputed_checksum);
-  expect(generated.compiled_case_checksum).toBe(receipt.saved_checksums.case_ref.checksum);
-  expect(receipt.assessment_situation.snapshot_checksum).toBe(receipt.saved_checksums.snapshot_recomputed);
-  expect(receipt.saved_checksums.execution_payload_ref.checksum)
-    .toBe(receipt.saved_checksums.execution_payload_recomputed);
-  const calls = generated.calls;
-  expect(calls.some((call) => call.kind === 'generation')).toBe(true);
-  expect(new Set(calls.map((call) => call.operation_id)).size).toBe(calls.length);
-  const generation = calls.find((call) => call.operation_id === generated.final_generation_operation_id);
-  expect(generation).toBeTruthy();
-  expect(generation.kind).toBe(generated.repair_used ? 'generation_repair' : 'generation');
-  if (generated.repair_used) expect(generated.final_generation_operation_id).toBe(generated.repair_operation_id);
-  for (const stage of ['tester', 'challenger']) {
-    expect(generated.stages[stage].batch_count).toBeGreaterThan(0);
-    expect(generated.stages[stage].required_check_ids.length).toBeGreaterThan(0);
-    for (const id of generated.stages[stage].batch_operation_ids) {
-      expect(calls.some((call) => call.operation_id === id)).toBe(true);
-    }
-  }
-  for (const call of calls) {
-    expect(call.operation_id.startsWith(receipt.preparation_operation.operation_id + ':')).toBe(true);
-    expect(call.provider).toBe('deepseek');
-    expect(call.requested_model).toBe('deepseek-flash');
-    expect(call.actual_model).toBe('deepseek-flash');
-  }
-}
 
 test('PATH29 owned backend: invitation → scoped chat → durable preparation → explicit first case', async ({ browser }) => {
   test.setTimeout(process.env.P4K_REAL_PROVIDER === '1' ? 900000 : 240000);
@@ -76,6 +39,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   const superPage = await superContext.newPage(), admin = await adminContext.newPage(), page = await participantContext.newPage();
   let server;
   let finalReceipt;
+  let runId;
+  let scenarioCompleted = false;
   let step = 'create_owned_database';
   let preparationReceiptRequired = false;
   let terminalPreparationReceiptSaved = false;
@@ -83,6 +48,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   cli('create');
   try {
     const initialState = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+    runId = initialState.run_id;
     save('run', { run_id: initialState.run_id, database: initialState.database, port,
       provider_mode: initialState.provider_mode,
       code: process.env.P4K_CODE_IDENTITY ? JSON.parse(process.env.P4K_CODE_IDENTITY) : null });
@@ -376,6 +342,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
           dom_introduction_matched: true, screenshot: 'first-case.png',
         } };
       save('first-case-receipt', finalReceipt);
+      verifyFirstCase(finalReceipt, preparationReceipt);
       expect(state.path29.input_mode).toBe('functional-diagnostic');
       expect(receipt.program_definition.id).toBe(state.path29.program_id);
       expect(receipt.program_definition.assessment_configuration_id).toBe(state.path29.configuration_id);
@@ -395,6 +362,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await test.info().attach('superadmin-to-first-case-first-case', {
         path: path.join(dir, 'first-case.png'), contentType: 'image/png',
       });
+      scenarioCompleted = true;
       return;
     }
     const ownAnswer = 'Синтетический первый ответ: уточню условия и согласую следующий шаг.';
@@ -453,6 +421,10 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
         cli('destroy');
       }
       finally { await Promise.allSettled([superContext.close(), adminContext.close(), participantContext.close(), ...extraContexts.map((context) => context.close())]); }
+      if (fullPath) save('completion', { run_id: runId, status: scenarioCompleted ? 'completed' : 'failed',
+        exit_code: scenarioCompleted ? 0 : 1, receipt_file: 'first-case-receipt.json',
+        receipt_sha256: scenarioCompleted
+          ? createHash('sha256').update(fs.readFileSync(path.join(dir, 'first-case-receipt.json'))).digest('hex') : null });
     }
   }
 });

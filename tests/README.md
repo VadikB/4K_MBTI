@@ -3,6 +3,19 @@
 Постоянный синтетический контур «суперадмин → первый Case» и его текущие границы
 описаны в [`docs/evc/assessment-first-case-profile.md`](../docs/evc/assessment-first-case-profile.md).
 
+Бесплатные адресные проверки harness (без БД, credentials и LLM):
+
+```bash
+.venv/bin/python -m pytest -q tests/unit/test_assessment_first_case.py tests/unit/test_test_stand.py tests/unit/test_assessment_run_summary.py
+node --test tests/unit/test_assessment_receipt_file.mjs tests/unit/test_assessment_preparation_receipt.mjs
+```
+
+`first-case-success.json` — явно синтетическая техническая подстановка для
+validator/unit-тестов. Она не доказывает продуктовый LLM PASS, human review или
+допуск программы. Проверяется настоящий общий browser/summary validator, а не его
+копия. INCOMPLETE/FAIL и недопущенная AS не принимаются; PASS_WITH_WARNINGS
+принимается только с `admitted_for_participant=true` и всеми обязательными связями.
+
 Тесты разделены по уровню:
 
 - `unit` — быстрые проверки без PostgreSQL, HTTP и реального LLM;

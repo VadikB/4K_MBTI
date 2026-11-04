@@ -98,7 +98,10 @@ PASS входных fixtures не заменяет его admission.
 ## Обязательные доказательства
 
 - Generation, все final tester и challenger batches принадлежат одной preparation
-  operation; после repair проверяются конечный кандидат и его новый admission PASS.
+  operation; после repair проверяются конечный кандидат и его новый admission
+  PASS либо PASS_WITH_WARNINGS при `admitted_for_participant=true` — по существующему
+  продуктовому контракту. INCOMPLETE, FAIL, REVIEW_REQUIRED и недопущенная AS
+  запрещают успешный результат. Продуктовые правила admission не меняются.
 - Operations считаются по уникальному `operation_id`: повторная ссылка на repair
   не удваивает tokens/число вызовов. Лимиты продукта не расширяются.
 - Сравниваются однотипные объекты: candidate с accepted candidate; compiled Case с
@@ -121,11 +124,32 @@ Evidence: `run.json`, `source-provenance.json`, pre-start receipt,
 `first-case-receipt.json` либо failure, screenshots и `cleanup.json`.
 `code-identity.json` фиксирует HEAD/branch/main/status и SHA-256 исполняемых файлов;
 `runner-result.json` — итог, exit code и пути.
+После всех browser assertions и штатного cleanup записывается `completion.json`:
+run ID, status, exit code и SHA-256 конкретного финального receipt. Родительский
+runner отдельно записывает `process-result.json` с фактическим exit дочернего
+процесса только для созданных этим вызовом run ID. Ошибка teardown/timeout не
+превращается в PASS из-за уже существующего receipt.
+
+Сводка допускает PASS только при нулевом exit, успешном completion с совпадающим
+run ID/hash, отсутствии failure/failure-receipt/cleanup-deferred, валидных pre-start
+и first-case receipts, screenshot и cleanup именно этой owned-БД. Browser и сводка
+используют один `preparation-receipt.mjs`: стадии, admission конечного кандидата,
+однотипные hashes, цепочка candidate → saved AS → presented AS, start и 0 ответов.
+Пустые/повреждённые JSON и недоступный validator дают FAIL с безопасными
+`validation_errors`. Нулевой exit процесса без доказанного результата тоже даёт
+ненулевой exit runner. Пустой набор запусков — FAIL; bootstrap остаётся отдельным
+`PASS_BOOTSTRAP_ONLY`, не browser PASS. Для offline summary также нужен Node.
+
 `--summarize-only` пересобирает `runner-result.normalized.json` по сохранённым
 evidence без доступа к БД/LLM. Сводка отдельно считает уникальные операции и
 завершённые HTTP-вызовы из безопасных строк server log. Tokens доступны для
 сохранённых ответов; расход предыдущего malformed JSON-ответа продуктовый trace
 не сохраняет, поэтому при JSON retry общая стоимость не заявляется полной.
+Исторические evidence не переписываются. Старый receipt без completion/process
+record не получает новый PASS при нормализации: завершение не доказано по новому
+контракту. Прежние факты lifecycle/export проверяются по сохранённым первичным
+доказательствам, а не дорисованным completion. Исторический PREP-DIAG-01 — UNKNOWN;
+ошибки harness не доказывают причину его INCOMPLETE.
 
 После сохранения evidence runner останавливает только свой server, вызывает
 `test_stand.py destroy`, проверяет точный owner marker и отсутствие БД, удаляет state.

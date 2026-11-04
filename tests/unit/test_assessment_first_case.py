@@ -52,15 +52,22 @@ def test_duplicate_operation_with_different_usage_is_rejected():
 
 
 def test_summary_separates_bootstrap_scope_and_requires_cleanup(tmp_path):
+    import hashlib
     import json
+    from pathlib import Path
     from scripts.assessment_first_case import summarize_runs
     directory = tmp_path / 'run'
     directory.mkdir()
-    (directory / 'run.json').write_text(json.dumps({'scope': 'bootstrap_repeat'}))
-    (directory / 'source-provenance.json').write_text('{}')
+    run = {'scope': 'bootstrap_repeat', 'run_id': 'synthetic', 'database': 'product4k_pytest_synthetic'}
+    (directory / 'run.json').write_text(json.dumps(run))
+    source = Path(__file__).resolve().parents[2] / 'docs/evc/evidence/assessment-contour-2026-11-04/source-provenance.json'
+    (directory / 'source-provenance.json').write_bytes(source.read_bytes())
+    (directory / 'completion.json').write_text(json.dumps({'run_id': 'synthetic', 'status': 'completed',
+        'exit_code': 0, 'receipt_file': 'source-provenance.json',
+        'receipt_sha256': hashlib.sha256(source.read_bytes()).hexdigest()}))
     assert summarize_runs(tmp_path, 0)['runs'][0]['result'] == 'FAIL'
     (directory / 'cleanup.json').write_text(json.dumps({
-        'owner_verified': True, 'database_absent': True, 'state_absent': True}))
+        **run, 'owner_verified': True, 'database_absent': True, 'state_absent': True}))
     assert summarize_runs(tmp_path, 0)['runs'][0]['result'] == 'PASS_BOOTSTRAP_ONLY'
 
 

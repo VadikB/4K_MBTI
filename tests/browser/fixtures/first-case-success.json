@@ -1,0 +1,44 @@
+{
+  "fixture_scope": "synthetic_harness_validation_only_not_product_evidence",
+  "program_definition": {"id": 1, "assessment_configuration_id": 2, "catalog_version_id": 3,
+    "source_refs_json": {"prompt_bundle_checksum": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}},
+  "assessment_configuration": {"id": 2, "catalog_version_id": 3,
+    "prompt_bundle_checksum": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+  "catalog": {"id": 3, "manifest_checksum": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"},
+  "preparation_operation": {"operation_id": "synthetic-prepare", "status": "completed"},
+  "cycle": {"cycle_id": "synthetic-cycle", "started_at": "2026-11-04T00:00:00Z",
+    "catalog_ref_json": {"checksum": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}},
+  "sessions": [{"session_id": "synthetic-session", "started_at": "2026-11-04T00:00:00Z"}],
+  "assessment_situation": {"assessment_situation_id": "synthetic-as", "started_at": "2026-11-04T00:00:00Z",
+    "snapshot_checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},
+  "assessment_answers": 0,
+  "saved_checksums": {
+    "snapshot_recomputed": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "case_ref": {"id": "CASE.SPEC.02", "version": "v0.6", "checksum": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"},
+    "execution_payload_ref": {"checksum": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"},
+    "execution_payload_recomputed": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "participant_payload": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  },
+  "functional_generation": {
+    "present": true, "admission_status": "PASS", "admitted_for_participant": true,
+    "candidate_checksum": "1111111111111111111111111111111111111111111111111111111111111111",
+    "candidate_recomputed_checksum": "1111111111111111111111111111111111111111111111111111111111111111",
+    "candidate_ref": {"case_id": "CASE.SPEC.02", "case_version": "v0.6", "checksum": "1111111111111111111111111111111111111111111111111111111111111111"},
+    "compiled_case_checksum": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "repair_used": false, "repair_operation_id": null, "final_generation_operation_id": "synthetic-prepare:generation",
+    "stages": {
+      "generation": {"operation_id": "synthetic-prepare:generation"},
+      "tester": {"batch_count": 1, "required_check_ids": ["synthetic.check"], "batch_operation_ids": ["synthetic-prepare:tester"]},
+      "challenger": {"batch_count": 1, "required_check_ids": ["synthetic.check"], "batch_operation_ids": ["synthetic-prepare:challenger"]}
+    },
+    "calls": [
+      {"operation_id": "synthetic-prepare:generation", "kind": "generation", "provider": "deepseek", "requested_model": "deepseek-flash", "actual_model": "deepseek-flash"},
+      {"operation_id": "synthetic-prepare:tester", "kind": "tester_batch", "provider": "deepseek", "requested_model": "deepseek-flash", "actual_model": "deepseek-flash"},
+      {"operation_id": "synthetic-prepare:challenger", "kind": "challenger_batch", "provider": "deepseek", "requested_model": "deepseek-flash", "actual_model": "deepseek-flash"}
+    ]
+  },
+  "http_start_status": 201,
+  "participant_state": {"profiles": 1, "cycles": 1, "started": 1, "operations": 1},
+  "presented_as": {"assessment_situation_id": "synthetic-as", "participant_payload_checksum": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "dom_introduction_matched": true, "screenshot": "first-case.png"}
+}

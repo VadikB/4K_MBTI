@@ -45,7 +45,7 @@ def code_identity():
     paths = ['scripts/test_stand.py', 'scripts/assessment_first_case.py',
         'tests/path29_browser_inputs.py', 'tests/path29_browser_app.py',
         'tests/assessment_first_case_evidence.py', 'tests/browser/path29-participant.spec.mjs',
-        'tests/browser/fixtures/receipt-file.mjs']
+        'tests/browser/fixtures/receipt-file.mjs', 'tests/browser/fixtures/preparation-receipt.mjs']
     return {'sha': git('rev-parse', 'HEAD'), 'branch': git('branch', '--show-current'),
         'origin_main': git('rev-parse', 'origin/main'),
         'worktree_status': git('status', '--short'),
@@ -73,6 +73,10 @@ def check_bootstrap(directory, port, python, env):
             cwd=ROOT, env={**env, 'P4K_FULL_PATH': '1'}, check=True, timeout=180)
     finally:
         cli('destroy')
+    receipt = run_directory / 'source-provenance.json'
+    (run_directory / 'completion.json').write_text(json.dumps({
+        'run_id': state['run_id'], 'status': 'completed', 'exit_code': 0,
+        'receipt_file': receipt.name, 'receipt_sha256': hashlib.sha256(receipt.read_bytes()).hexdigest()}) + '\n')
     print('PASS bootstrap_repeat; sources verified; LLM_CALLS=0; owned database removed', flush=True)
 
 
@@ -80,27 +84,105 @@ def summarize_runs(directory, exit_code):
     runs = []
     for run_path in sorted(directory.glob('*/run.json')):
         run_directory = run_path.parent
+        errors = []
         def read(name):
             file = run_directory / (name + '.json')
-            return json.loads(file.read_text()) if file.exists() else None
+            try:
+                value = json.loads(file.read_text())
+                if not isinstance(value, dict):
+                    raise ValueError('JSON_OBJECT_REQUIRED')
+                return value
+            except (OSError, ValueError):
+                errors.append('MISSING_OR_INVALID:' + name)
+                return {}
         run, cleanup = read('run'), read('cleanup')
-        clean = bool(cleanup and cleanup.get('owner_verified') and cleanup.get('database_absent')
-                     and cleanup.get('state_absent'))
+        completion = read('completion')
+        process_file = run_directory / 'process-result.json'
+        process = read('process-result') if process_file.exists() else None
+        process_exit = process.get('exit_code') if process is not None else exit_code
+        if type(process_exit) is not int or process_exit != 0:
+            errors.append('PROCESS_EXIT_NOT_ZERO')
+        if process is not None and process.get('run_id') != run.get('run_id'):
+            errors.append('PROCESS_RUN_MISMATCH')
+        if (completion.get('status') != 'completed' or type(completion.get('exit_code')) is not int
+                or completion.get('exit_code') != 0 or not run.get('run_id')
+                or completion.get('run_id') != run.get('run_id')):
+            errors.append('RUN_NOT_COMPLETED')
+        if (not all(cleanup.get(key) is True for key in ('owner_verified', 'database_absent', 'state_absent'))
+                or not run.get('database') or cleanup.get('run_id') != run.get('run_id')
+                or cleanup.get('database') != run.get('database')):
+            errors.append('CLEANUP_NOT_VERIFIED')
+        for name in ('failure', 'failure-receipt', 'cleanup-deferred'):
+            if (run_directory / (name + '.json')).exists():
+                errors.append('FAILURE_ARTIFACT:' + name)
         bootstrap = run.get('scope') == 'bootstrap_repeat'
-        success = clean and (run_directory / ('source-provenance.json' if bootstrap else 'first-case-receipt.json')).exists()
+        receipt_name = 'source-provenance' if bootstrap else 'first-case-receipt'
+        receipt_path = run_directory / (receipt_name + '.json')
+        receipt = read(receipt_name)
+        try:
+            receipt_digest = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
+        except OSError:
+            receipt_digest = None
+        if (completion.get('receipt_file') != receipt_path.name or not receipt_digest
+                or completion.get('receipt_sha256') != receipt_digest):
+            errors.append('COMPLETION_RECEIPT_MISMATCH')
+        if bootstrap:
+            case = receipt.get('case') if isinstance(receipt.get('case'), dict) else {}
+            def digest(value):
+                raw = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')) + '\n'
+                return hashlib.sha256(raw.encode()).hexdigest()
+            qa = receipt.get('qa_evidence') or []
+            if (not re.fullmatch('[a-f0-9]{64}', str(case.get('imported_checksum', '')))
+                    or case.get('imported_checksum') != case.get('imported_recomputed_checksum')
+                    or digest(case.get('imported_json')) != case.get('imported_checksum')
+                    or not isinstance(qa, list) or not qa
+                    or any(not isinstance(row, dict) or digest(row.get('evidence_json')) != row.get('evidence_checksum')
+                           for row in qa)):
+                errors.append('SOURCE_PROVENANCE_INVALID')
+        else:
+            before = read('source-to-runtime-receipt')
+            if receipt and before:
+                try:
+                    checked = subprocess.run(['node', str(ROOT / 'tests/browser/fixtures/preparation-receipt.mjs'),
+                        str(receipt_path), str(run_directory / 'source-to-runtime-receipt.json')],
+                        capture_output=True, timeout=30)
+                    if checked.returncode:
+                        errors.append('FIRST_CASE_EVIDENCE_INVALID')
+                except (OSError, subprocess.TimeoutExpired):
+                    errors.append('EVIDENCE_VALIDATOR_UNAVAILABLE')
+            else:
+                errors.append('FIRST_CASE_EVIDENCE_INVALID')
+            if not (run_directory / 'first-case.png').is_file():
+                errors.append('PRESENTATION_SCREENSHOT_MISSING')
         log = run_directory / 'server.log'
         completions = [{'duration_ms': float(match[0]), 'routing_key': match[1]}
             for match in re.findall(
                 r'DeepSeek request completed duration_ms=([0-9.]+)[^\n]*routing_key=([a-f0-9-]{36}:[a-zA-Z0-9:_-]+)',
                 log.read_text() if log.exists() else '')]
         runs.append({'run': run, 'cleanup': cleanup,
-            'result': ('PASS_BOOTSTRAP_ONLY' if bootstrap else 'PASS') if success else 'FAIL',
-            'evidence_directory': str(run_directory), 'failure': read('failure'),
+            'result': ('PASS_BOOTSTRAP_ONLY' if bootstrap else 'PASS') if not errors else 'FAIL',
+            'completion': completion, 'process_exit_code': process_exit, 'validation_errors': errors,
+            'evidence_directory': str(run_directory),
+            'failure': read('failure') if (run_directory / 'failure.json').exists() else None,
             'provider_completed_requests': len(completions),
             'provider_completions': completions,
             'usage_note': 'Receipt totals count unique retained operations; JSON retries have separate completions, but earlier malformed-response usage is not retained by product trace.'})
+    success = exit_code == 0 and bool(runs) and all(run['result'] != 'FAIL' for run in runs)
     return {'profile': 'assessment-first-case/1.1', 'scope': 'synthetic_diagnostic',
-        'exit_code': exit_code, 'runs': runs}
+        'process_exit_code': exit_code, 'exit_code': exit_code if exit_code else (0 if success else 1),
+        'result': 'PASS' if success else 'FAIL', 'runs': runs}
+
+
+def record_process_result(directory, previous, exit_code):
+    """Bind the actual child exit only to runs created by this invocation."""
+    for file in set(directory.glob('*/run.json')) - previous:
+        try:
+            run = json.loads(file.read_text())
+            (file.parent / 'process-result.json').write_text(json.dumps({
+                'run_id': run['run_id'], 'exit_code': exit_code}) + '\n')
+        except (OSError, ValueError, KeyError, TypeError):
+            # Summary fails closed on malformed/missing evidence.
+            continue
 
 def main()->int:
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--directory',type=Path,default=ROOT/'.test-stand/assessment-first-case');p.add_argument('--port',type=int,default=18861);p.add_argument('--preflight-only',action='store_true');p.add_argument('--env-file',type=Path);p.add_argument('--python',default=str(ROOT/'.venv/bin/python'));p.add_argument('--db-admin-port',type=int,default=55432)
@@ -109,10 +191,10 @@ def main()->int:
     a=p.parse_args()
     if a.summarize_only:
         original = json.loads((a.directory / 'runner-result.json').read_text())
-        summary = summarize_runs(a.directory, original['exit_code'])
+        summary = summarize_runs(a.directory, original.get('process_exit_code', original['exit_code']))
         (a.directory / 'runner-result.normalized.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
         print(json.dumps(summary, ensure_ascii=False, indent=2))
-        return original['exit_code']
+        return summary['exit_code']
     env=os.environ.copy()
     if a.env_file:
         from dotenv import dotenv_values
@@ -128,18 +210,27 @@ def main()->int:
     identity = code_identity()
     (a.directory / 'code-identity.json').write_text(json.dumps(identity, ensure_ascii=False, indent=2) + '\n')
     if a.check_bootstrap:
-        check_bootstrap(a.directory, a.port, a.python, env)
+        previous = set(a.directory.glob('*/run.json'))
+        try:
+            check_bootstrap(a.directory, a.port, a.python, env)
+            exit_code = 0
+        except (OSError, ValueError, subprocess.SubprocessError):
+            exit_code = 1
+        record_process_result(a.directory, previous, exit_code)
+        summary = summarize_runs(a.directory, exit_code)
         (a.directory / 'runner-result.json').write_text(json.dumps(
-            summarize_runs(a.directory, 0), ensure_ascii=False, indent=2) + '\n')
-        return 0
+            summary, ensure_ascii=False, indent=2) + '\n')
+        return summary['exit_code']
     env.update(BROWSER_PYTHON=a.python,P4K_FULL_PATH='1',P4K_REAL_PROVIDER='1',
                P4K_EVIDENCE_DIRECTORY=str(a.directory.resolve()),P4K_PORT=str(a.port),
                P4K_CODE_IDENTITY=json.dumps(identity))
+    previous = set(a.directory.glob('*/run.json'))
     completed = subprocess.run(['npx','playwright','test','tests/browser/path29-participant.spec.mjs',
         '--workers=1','--reporter=line'],cwd=ROOT,env=env)
+    record_process_result(a.directory, previous, completed.returncode)
     summary = summarize_runs(a.directory, completed.returncode)
     (a.directory / 'runner-result.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps(summary, ensure_ascii=False, indent=2))
-    return completed.returncode
+    return summary['exit_code']
 
 if __name__=='__main__':raise SystemExit(main())

@@ -26,8 +26,9 @@ PATH-START-01 не передан в исполнение. Продуктовы�
 - До текущей сдачи: `694f9c8de3265f5fb83b78c6cfeadd230fc7cd7c`.
 - Бесплатная DB-регрессия collector/persistence/cleanup выполнена на чистом
   `9e659bdc09b38c1bc5c6751edaea25769d90be7e`. Финальный SHA пакета автоматически
-  записан в MANIFEST.json/HANDOFF.md/Git bundle. После 9e659bd добавлены только
-  сборка пакета, отчёт и первичные evidence передачи.
+  записан в MANIFEST.json/HANDOFF.md/Git bundle. После 9e659bd сначала добавлены
+  сборка пакета, отчёт и первичные evidence; после cf6175e исправлены два дефекта
+  harness, подтверждённые независимой проверкой владельца (раздел ниже).
 - Чистый remote checkout: `/home/vadim_bogachev/worktrees/assessment-contour-final`,
   detached HEAD на SHA диагностического прогона; `worktree_status=""` фиксируется
   в code-identity.json вместе с SHA-256 исполняемых файлов.
@@ -138,11 +139,63 @@ checksum, но ProgramDefinition построили по устаревшему 
 | 7. Честные статусы | READY машины отдельно; failure шаг/ожидание/факт; один hash для однотипной ссылки | source→candidate→snapshot→runtime/DOM; исторический FAIL сохранён | PATH-START-01 не исполнялся |
 | 8. Сдача настройки | профиль/код/тесты/evidence/откат в одной ветке и ZIP-пакете | commits.bundle, оба diff, MANIFEST.json и автономный VERIFY.py | CI/review/merge/deploy отдельно |
 
+## Завершение после независимой проверки cf6175e
+
+Основание: владелец подтвердил VERIFY.py (50 файлов), восстановление Git bundle,
+19 адресных Python и Node persistence test; поручил исправить только два дефекта
+harness. Это не разрешение исполнять PATH-START-01 или исправлять продукт.
+Восстановление БД и расследование исключены. Все восемь стоп-условий workflow —
+«нет»: нет изменения предметного смысла/API/схемы/публикаций/прав/границ deploy,
+нет новых операций удаления, миграций или неподтверждённых норм. Откат — revert
+только доработки harness; прежние evidence и guards сохраняются.
+
+Прочитаны: прежний отчёт/профиль и тесты на cf6175e, README/CONTRIBUTING,
+workflow/matrix/artifact recipe/review checklist, архитектурный context 1.0,
+Registry/Change 01 README и task manifest (выбранный комплект не изменяется).
+Применимый технический источник допуска —
+`Api/m5_functional_tester.py::aggregate` (PASS и PASS_WITH_WARNINGS допускают
+участника), `Api/m5_functional_generation_service.py::prepare` (конечные
+generation/tester после repair). Источники продукта только прочитаны, не изменены.
+Неизвестное: первопричина исторического INCOMPLETE — по-прежнему UNKNOWN.
+
+1. `summarize_runs`: наличие receipt больше не равно завершению. Проверяются
+   actual process exit (отдельный `process-result.json` для новых run ID), completion
+   после всех assertions/cleanup, run ID/hash receipt, отсутствие любых failure
+   artifacts, структура/связи pre-start и final receipts, screenshot и ownership
+   cleanup. Пустые/повреждённые данные, отсутствие completion, nonzero exit,
+   недоступность validator и пустой набор runs дают FAIL. Общий runner exit тоже
+   ненулевой, даже если child завершился 0, но evidence недостаточно. В смешанном
+   наборе индивидуальные process records сохраняют разные результаты прогонов.
+2. `verifyPreparation` вынесен в общий чистый Node-модуль, используемый без копий
+   browser и Python summary. Принимаются только PASS/PASS_WITH_WARNINGS и boolean
+   `admitted_for_participant=true`. Обязательные generation/tester/challenger,
+   final repair/generation ID, ownership операций, candidate/compiled Case/snapshot/
+   execution/participant refs сохранены; отсутствующие hashes не сравниваются как
+   «undefined равно undefined». Pre-start → saved/presented AS проверяется тем же
+   модулем. INCOMPLETE/FAIL/REVIEW_REQUIRED и недопущенная AS запрещены.
+
+Регрессии не используют БД или LLM. `first-case-success.json` содержит явно
+синтетические технические значения и служит только проверке validator. Это не
+реальное предъявление AS, human review, методологический допуск или LLM PASS.
+Исторические JSON/receipt/cleanup не переписываются; старым прогоном не добавляется
+выдуманный completion. Текущие ошибки harness **не объявляются причиной**
+PREP-DIAG-01: доказательства такой связи отсутствуют.
+
+Изменены только runner, browser validator/completion, его fixtures/unit-регрессии,
+профиль/tests README/отчёт/STATE и упаковщик (добавлен diff после cf6175e).
+`scripts/test_stand.py`, `tests/conftest.py`, `Api/`, `assessment_definitions/`
+остаются byte-identical cf6175e; защита постоянной БД от cleanup сохранена.
+Новые результаты и SHA проверенного кода фиксируются в
+`evidence/assessment-contour-2026-11-04/harness-regression/verification.json`.
+Применимость прежних проверок: provenance/seed/DB export/lifecycle и их первичные
+факты переиспользованы без изменений; логика summary/validator проверяется заново.
+
 ## Проверки
 
 - `/Users/vadim_bogachev/Developer/4K/.venv/bin/python -m pytest -q -m "not integration and not e2e and not llm"`:
-  PASS 704, 318 deselected, 65.74s на 9e659bd; применим к финальному коду runner,
-  collector и общему модулю persistence (после этого они не менялись).
+  PASS 704, 318 deselected, 65.74s на 9e659bd; переиспользуется для неизменённых
+  collector/persistence/seed. Runner и preparation validator после cf6175e
+  проверяются новым набором ниже; прежний PASS не подменяет их регрессии.
 - `… -m pytest -q -m e2e tests/e2e`: PASS 106, 12 deselected, 27.94s.
 - Адресные stand/evidence tests после всех исправлений выгрузки: PASS 19.
 - `node --check tests/browser/path29-participant.spec.mjs`, py_compile изменённых
@@ -200,6 +253,8 @@ terminal receipt cleanup откладывается, а owned-БД/state сох�
 в 9e659bd — candidate_ref, явная UNKNOWN-метка отсутствующих details, общий durable
 persistence, guard перед cleanup и бесплатная DB-регрессия; далее — упаковщик и
 первичные результаты. `Api/`, методология, admission, repair, M0–M8 не менялись.
+После cf6175e добавлены исправления итогов/validator harness; дополнительный diff
+`diff/after-cf6175e.patch` отделяет их от уже принятой независимо части настройки.
 Полный машинный diff хранится в пакете как `diff/after-4bab723.patch` и `.stat.txt`.
 
 `scripts/package_assessment_contour.py` строит пакет только из committed Git bytes
