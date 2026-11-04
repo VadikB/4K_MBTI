@@ -91,3 +91,23 @@ def test_incomplete_admission_preserves_check_id_and_technical_reason():
     assert receipt['admission_status'] == 'INCOMPLETE'
     assert receipt['incomplete_checks'][0]['check_id'] == 'common.authority'
     assert receipt['incomplete_checks'][0]['status'] == 'NOT_RUN'
+
+
+def test_lineage_export_never_guesses_missing_or_ambiguous_assignments():
+    from tests.assessment_first_case_evidence import assignment_lineage
+    class Connection:
+        def __init__(self, count):
+            self.count = count
+            self.queries = 0
+        def execute(self, sql, params):
+            self.queries += 1
+            assert params == (3, 'specialist-pilot', 11)
+            assert 'identity_json' not in sql and 'answers_json' not in sql
+            return self
+        def fetchall(self):
+            return [{} for _ in range(self.count)]
+    for count in (0, 2):
+        connection = Connection(count)
+        assert assignment_lineage(connection, user_id=3, assignment_ref='specialist-pilot', configuration_id=11) == {
+            'status': 'UNKNOWN_OR_AMBIGUOUS', 'matching_assignments': count}
+        assert connection.queries == 1

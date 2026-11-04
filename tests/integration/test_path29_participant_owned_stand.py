@@ -179,6 +179,17 @@ def internal():
             assert c.execute('SELECT COUNT(*) AS n FROM assessment_personalized_profiles WHERE user_id=%s', (uid,)).fetchone()['n'] == 1
             profile = c.execute('SELECT * FROM assessment_personalized_profiles WHERE id=%s', (profile_id,)).fetchone()
             assert profile['assessment_configuration_id'] == other['id']
+            from tests.assessment_first_case_evidence import assignment_lineage
+            audit = assignment_lineage(c, user_id=uid, assignment_ref='path29-flow', configuration_id=other['id'])
+            assert audit['status'] == 'LINKED' and audit['personalized_profile_id'] == profile_id
+            assert audit['profile_checksum'] == profile['checksum']
+            assert audit['role_profile_version_id'] == role_id
+            assert audit['questionnaire_revision_id'] == revision
+            assert audit['assigned_timing']['status'] == 'resolved'
+            assert audit['assigned_timing']['time_budget_seconds'] > 0
+            assert audit['assigned_timing']['calendar_window_seconds'] > 0
+            assert all(audit[key] for key in ('organization_context_checksum', 'role_checksum', 'user_context_checksum'))
+            assert 'full_name' not in audit and 'email' not in audit and 'answers_json' not in audit
             professional = profile['content_json']['user_context']
             assert professional['position_or_status'] == 'Synthetic actual position'
             assert [item['raw_answer'] for item in professional['acquaintance_answers']['items']] == list(answers.values())

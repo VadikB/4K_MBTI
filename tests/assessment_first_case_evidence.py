@@ -97,6 +97,57 @@ def provider_calls(value):
     return list(unique.values())
 
 
+def assignment_lineage(connection, *, user_id, assignment_ref, configuration_id):
+    """Owned-fixture refs only: no names, contacts, professional answers or prompts."""
+    rows = connection.execute('''SELECT a.id AS assignment_id,a.organization_id,a.recipient_user_id,
+        a.assignment_ref,a.created_by_user_id AS assigning_actor_id,b.id AS binding_id,
+        b.assessment_configuration_id,b.role_profile_version_id,b.questionnaire_revision_id,
+        q.status AS questionnaire_status,q.organization_context_version_id,
+        confirmation.id AS acquaintance_confirmation_id,confirmation.answers_checksum,
+        p.id AS personalized_profile_id,p.checksum AS profile_checksum,p.status AS profile_status,
+        p.frozen_at,p.user_context_version_id,
+        org.checksum AS organization_context_checksum,role.checksum AS role_checksum,
+        professional.checksum AS user_context_checksum
+        FROM organization_assessment_assignments a
+        JOIN LATERAL (SELECT * FROM organization_assessment_source_bindings binding
+            WHERE binding.assignment_id=a.id ORDER BY binding.id DESC LIMIT 1) b ON TRUE
+        JOIN questionnaire_response_revisions q ON q.id=b.questionnaire_revision_id
+            AND q.organization_id=a.organization_id AND q.assignment_ref=a.assignment_ref
+        LEFT JOIN LATERAL (SELECT * FROM participant_acquaintance_confirmations item
+            WHERE item.user_id=a.recipient_user_id AND item.organization_id=a.organization_id
+              AND item.assignment_ref=a.assignment_ref AND item.questionnaire_revision_id=q.id
+            ORDER BY item.confirmed_at DESC,item.id DESC LIMIT 1) confirmation ON TRUE
+        LEFT JOIN assessment_personalized_profiles p ON p.id=confirmation.personalized_profile_id
+            AND p.user_id=a.recipient_user_id AND p.organization_id=a.organization_id
+            AND p.assessment_configuration_id=b.assessment_configuration_id
+            AND p.role_profile_version_id=b.role_profile_version_id
+            AND p.organization_context_version_id=q.organization_context_version_id
+        LEFT JOIN assessment_organization_context_versions org ON org.id=p.organization_context_version_id
+        LEFT JOIN assessment_role_profile_versions role ON role.id=p.role_profile_version_id
+        LEFT JOIN assessment_user_context_versions professional ON professional.id=p.user_context_version_id
+        WHERE a.recipient_user_id=%s AND a.assignment_ref=%s AND b.assessment_configuration_id=%s
+          AND a.status='active' AND a.revoked_at IS NULL''',
+        (user_id, assignment_ref, configuration_id)).fetchall()
+    if len(rows) != 1:
+        return {'status': 'UNKNOWN_OR_AMBIGUOUS', 'matching_assignments': len(rows)}
+    result = dict(rows[0])
+    linked = connection.execute('''SELECT link.id AS connection_id,link.program_definition_id,
+        program.definition_checksum FROM organization_assessment_program_connections link
+        JOIN assessment_program_definitions program ON program.id=link.program_definition_id
+        WHERE link.organization_id=%s AND link.is_current=TRUE
+          AND program.assessment_configuration_id=%s AND program.assignment_ref=%s''',
+        (result['organization_id'], configuration_id, assignment_ref)).fetchone()
+    result['program_connection'] = dict(linked) if linked else None
+    result['administrator_user_ids'] = [row['user_id'] for row in connection.execute(
+        "SELECT user_id FROM organization_memberships WHERE organization_id=%s AND role='admin' ORDER BY user_id",
+        (result['organization_id'],)).fetchall()]
+    result['status'] = 'LINKED' if result['personalized_profile_id'] is not None else 'PROFILE_NOT_BOUND'
+    from Api.acquaintance import resolve_display_timing
+    result['assigned_timing'] = resolve_display_timing(connection,
+        personalized_profile_id=result['personalized_profile_id'])
+    return result
+
+
 def functional_receipt(trace):
     tester = trace.get('tester') or {}
     repair = trace.get('repair') or {}
