@@ -1,0 +1,4564 @@
+{
+  "contract": "path-pilot-schema-readback/1",
+  "observed_at_utc": "2026-11-05T12:02:05.765047+00:00",
+  "transaction_read_only": true,
+  "transaction_rolled_back": true,
+  "application_imported": false,
+  "business_rows_read": false,
+  "schema_or_data_writes": false,
+  "target_kind": "owned_empty_bootstrap",
+  "server_version_num": "160015",
+  "metadata_checksum": "c18922b95d6223262d23cc6edf1c060ac66b9f84243feee076d32baae586a065",
+  "metadata": {
+    "requested_tables": [
+      "assessment_configurations",
+      "assessment_organization_context_versions",
+      "assessment_personalized_profiles",
+      "assessment_program_allowed_roles",
+      "assessment_program_definitions",
+      "assessment_role_profile_versions",
+      "assessment_role_profiles",
+      "assessment_user_context_versions",
+      "m5_assessment_situations",
+      "m5_case_versions",
+      "m5_catalog_case_versions",
+      "m5_catalogs",
+      "m5_cycle_sessions",
+      "m5_cycle_time_intervals",
+      "m5_cycles",
+      "m5_dialogue_turns",
+      "m5_qa_evidence",
+      "m7_cycle_plans",
+      "m7_parameter_revisions",
+      "m7_plan_revisions",
+      "m7_route_assignments",
+      "m7_route_decisions",
+      "m7_route_position_as_history",
+      "m7_route_positions",
+      "organization_assessment_assignments",
+      "organization_assessment_program_connections",
+      "organization_assessment_source_bindings",
+      "organizations",
+      "participant_acquaintance_confirmations",
+      "product_cycle_preparation_operations",
+      "questionnaire_response_revisions",
+      "users"
+    ],
+    "columns": [
+      {
+        "table_name": "assessment_configurations",
+        "name": "catalog_version_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "code",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "created_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('assessment_configurations_id_seq'::regclass)"
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "is_default",
+        "type": "boolean",
+        "not_null": true,
+        "default_expression": "false"
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "methodology_version_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "name",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "prompt_bundle_checksum",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "prompt_bundle_json",
+        "type": "jsonb",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "published_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "scenario_version_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "confirmed_at",
+        "type": "timestamp without time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "confirmed_by_user_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "created_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "definition_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('assessment_organization_context_versions_id_seq'::regclass)"
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "organization_context_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "source_manifest_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": "'{}'::jsonb"
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "version",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "assessment_configuration_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "conflicts_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": "'[]'::jsonb"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "content_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "frozen_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('assessment_personalized_profiles_id_seq'::regclass)"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "organization_context_version_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "organization_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "provenance_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "role_profile_version_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "user_context_version_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "user_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_program_allowed_roles",
+        "name": "display_order",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": "0"
+      },
+      {
+        "table_name": "assessment_program_allowed_roles",
+        "name": "program_definition_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_program_allowed_roles",
+        "name": "role_profile_version_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "assessment_configuration_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "assignment_ref",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "catalog_version_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "code",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "created_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "definition_checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('assessment_program_definitions_id_seq'::regclass)"
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "mode",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "name",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "published_at",
+        "type": "timestamp without time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "published_by_user_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "source_refs_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": "'{}'::jsonb"
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "version",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "base_role_version_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "created_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "definition_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('assessment_role_profile_versions_id_seq'::regclass)"
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "methodology_version",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "published_at",
+        "type": "timestamp without time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "role_profile_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "source_manifest_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "version",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_role_profiles",
+        "name": "code",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_role_profiles",
+        "name": "created_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "assessment_role_profiles",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('assessment_role_profiles_id_seq'::regclass)"
+      },
+      {
+        "table_name": "assessment_role_profiles",
+        "name": "name",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_role_profiles",
+        "name": "organization_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_role_profiles",
+        "name": "scope",
+        "type": "text",
+        "not_null": true,
+        "default_expression": "'base'::text"
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "confirmed_at",
+        "type": "timestamp without time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "confirmed_by_user_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "created_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('assessment_user_context_versions_id_seq'::regclass)"
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "identity_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "professional_context_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": "'{}'::jsonb"
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "user_context_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "version",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "assessment_situation_id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "case_version_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "closed_at",
+        "type": "timestamp with time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "cycle_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "execution_payload_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('m5_assessment_situations_id_seq'::regclass)"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "personalized_profile_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "scenario_ended_at",
+        "type": "timestamp with time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "session_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "snapshot_checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "snapshot_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "started_at",
+        "type": "timestamp with time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "usage_scope",
+        "type": "text",
+        "not_null": true,
+        "default_expression": "'assessment'::text"
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "base_role",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "case_id",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "case_version",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "content_checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "content_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('m5_case_versions_id_seq'::regclass)"
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "package_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalog_case_versions",
+        "name": "case_version_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalog_case_versions",
+        "name": "catalog_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalog_case_versions",
+        "name": "runtime_rule_version_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "catalog_id",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "catalog_version",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "decision_basis",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('m5_catalogs_id_seq'::regclass)"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "idempotency_key",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "manifest_checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "manifest_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "organization_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "package_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "published_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "published_by",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "request_hash",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "usage_scope",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "close_reason",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "created_by",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "cycle_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "ended_at",
+        "type": "timestamp with time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('m5_cycle_sessions_id_seq'::regclass)"
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "ordinal",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "session_id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "started_at",
+        "type": "timestamp with time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "cycle_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "ended_at",
+        "type": "timestamp with time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('m5_cycle_time_intervals_id_seq'::regclass)"
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "interval_type",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "operation_ref",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "reason",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "session_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "started_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "assignment_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "calendar_window_seconds",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "catalog_ref_json",
+        "type": "jsonb",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "close_reason",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "collection_closed_at",
+        "type": "timestamp with time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "created_by",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "cycle_id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "execution_manifest_checksum",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "execution_manifest_json",
+        "type": "jsonb",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('m5_cycles_id_seq'::regclass)"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "organization_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "owner_user_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "parameter_sources_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "personalized_profile_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "profile_ref_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "selected_role_ref_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "started_at",
+        "type": "timestamp with time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "target_set_checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "target_set_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "time_budget_seconds",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "usage_scope",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "assessment_situation_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "content_text",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('m5_dialogue_turns_id_seq'::regclass)"
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "request_id",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "sequence_no",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "speaker_id",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "speaker_type",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "turn_id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "assessment_situation_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "case_version_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "evidence_checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "evidence_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('m5_qa_evidence_id_seq'::regclass)"
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "result",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "scope",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "created_by",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "cycle_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "full_target_set_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "observation_requirements_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "planned_target_set_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "profile_ref_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "rules_checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "rules_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "assessment_configuration_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "created_by",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "organization_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "published_at",
+        "type": "timestamp with time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "revision_no",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "source_scope",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "values_checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "values_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "content_checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "content_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "cycle_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "plan_id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "reason",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "revision_no",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_assignments",
+        "name": "assessment_situation_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_assignments",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m7_route_assignments",
+        "name": "decision_id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_assignments",
+        "name": "presented_at",
+        "type": "timestamp with time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "considered_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "cycle_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "expected_targets_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "explanation_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "facts_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "plan_revision_id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "revision_no",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": "1"
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "selected_case_id",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "selected_case_version",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "session_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "trigger_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "assessment_situation_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "attached_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "disposition",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "exclusion_reason",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "ordinal",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "position_id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "replaced_at",
+        "type": "timestamp with time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "replacement_operation_id",
+        "type": "uuid",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "case_id",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "case_version",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "current_as_db_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "cycle_db_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "expected_targets_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "plan_revision_id",
+        "type": "uuid",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "position_no",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "state",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "assignment_ref",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "created_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "created_by_user_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('organization_assessment_assignments_id_seq'::regclass)"
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "operation_id",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "organization_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "questionnaire_revision_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "recipient_user_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "request_fingerprint",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "revoked_at",
+        "type": "timestamp without time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": "'active'::text"
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "connected_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "connected_by_user_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('organization_assessment_program_connections_id_seq'::regclass)"
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "is_current",
+        "type": "boolean",
+        "not_null": true,
+        "default_expression": "true"
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "operation_id",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "organization_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "program_definition_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "request_fingerprint",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "superseded_at",
+        "type": "timestamp without time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "assessment_configuration_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "assigned_by_user_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "assignment_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "created_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('organization_assessment_source_bindings_id_seq'::regclass)"
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "operation_id",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "questionnaire_revision_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "role_profile_version_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organizations",
+        "name": "code",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organizations",
+        "name": "created_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "organizations",
+        "name": "employee_count",
+        "type": "integer",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "organizations",
+        "name": "founded_year",
+        "type": "integer",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "organizations",
+        "name": "headquarters",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "organizations",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('organizations_id_seq'::regclass)"
+      },
+      {
+        "table_name": "organizations",
+        "name": "industry",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "organizations",
+        "name": "invitation_intro",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "organizations",
+        "name": "is_active",
+        "type": "boolean",
+        "not_null": true,
+        "default_expression": "true"
+      },
+      {
+        "table_name": "organizations",
+        "name": "name",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "organizations",
+        "name": "notes",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "organizations",
+        "name": "profile",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "organizations",
+        "name": "updated_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "organizations",
+        "name": "website",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "answers_checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "answers_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "assignment_ref",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "confirmed_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('participant_acquaintance_confirmations_id_seq'::regclass)"
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "organization_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "personalized_profile_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "question_schema_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "questionnaire_revision_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "user_context_version_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "user_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "attempt_token",
+        "type": "uuid",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "attempts",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": "0"
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "completed_at",
+        "type": "timestamp without time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "created_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "error_code",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "error_message",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('product_cycle_preparation_operations_id_seq'::regclass)"
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "locked_at",
+        "type": "timestamp without time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "operation_id",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "request_checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "request_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "result_json",
+        "type": "jsonb",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": "'queued'::text"
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "updated_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "user_id",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "worker_id",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "answers_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "assignment_ref",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "briefing_json",
+        "type": "jsonb",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "channel",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "confirmed_at",
+        "type": "timestamp with time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "confirmed_by_user_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": "nextval('questionnaire_response_revisions_id_seq'::regclass)"
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "idempotency_key",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "organization_context_version_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "organization_id",
+        "type": "bigint",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "raw_source_text",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "recipient_mapping_json",
+        "type": "jsonb",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "request_hash",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "source_author",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "source_checksum",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "status",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "template_variant",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "template_version",
+        "type": "text",
+        "not_null": true,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "uploaded_by_user_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "validation_json",
+        "type": "jsonb",
+        "not_null": true,
+        "default_expression": "'{}'::jsonb"
+      },
+      {
+        "table_name": "users",
+        "name": "active_profile_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "users",
+        "name": "avatar_data_url",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "users",
+        "name": "company_industry",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "users",
+        "name": "created_at",
+        "type": "timestamp without time zone",
+        "not_null": true,
+        "default_expression": "now()"
+      },
+      {
+        "table_name": "users",
+        "name": "email",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "users",
+        "name": "full_name",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "users",
+        "name": "id",
+        "type": "integer",
+        "not_null": true,
+        "default_expression": "nextval('users_id_seq'::regclass)"
+      },
+      {
+        "table_name": "users",
+        "name": "job_description",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "users",
+        "name": "personal_data_consent_accepted_at",
+        "type": "timestamp without time zone",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "users",
+        "name": "personal_data_consent_text",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "users",
+        "name": "personal_data_consent_version",
+        "type": "integer",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "users",
+        "name": "phone",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "users",
+        "name": "role_id",
+        "type": "integer",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "users",
+        "name": "selected_role_profile_version_id",
+        "type": "bigint",
+        "not_null": false,
+        "default_expression": null
+      },
+      {
+        "table_name": "users",
+        "name": "telegram",
+        "type": "text",
+        "not_null": false,
+        "default_expression": null
+      }
+    ],
+    "constraints": [
+      {
+        "table_name": "assessment_configurations",
+        "name": "assessment_configurations_code_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (code)"
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "assessment_configurations_methodology_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (methodology_version_id) REFERENCES assessment_methodology_versions(id)"
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "assessment_configurations_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "assessment_configurations_scenario_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (scenario_version_id) REFERENCES assessment_scenario_versions(id)"
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "assessment_configurations_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])))"
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "fk_assessment_configuration_catalog",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (catalog_version_id) REFERENCES m5_catalogs(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "assessment_organization_conte_organization_context_id_versi_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (organization_context_id, version)"
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "assessment_organization_context_ve_organization_context_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (organization_context_id) REFERENCES assessment_organization_contexts(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "assessment_organization_context_versi_confirmed_by_user_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (confirmed_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "assessment_organization_context_versions_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "assessment_organization_context_versions_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['draft'::text, 'ready_for_review'::text, 'published'::text, 'retired'::text])))"
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "assessment_organization_context_versions_version_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((version > 0))"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "assessment_personalized_profi_organization_context_version_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (organization_context_version_id) REFERENCES assessment_organization_context_versions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "assessment_personalized_profi_user_id_assessment_configurat_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (user_id, assessment_configuration_id, checksum)"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "assessment_personalized_profil_assessment_configuration_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (assessment_configuration_id) REFERENCES assessment_configurations(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "assessment_personalized_profiles_organization_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "assessment_personalized_profiles_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "assessment_personalized_profiles_role_profile_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (role_profile_version_id) REFERENCES assessment_role_profile_versions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "assessment_personalized_profiles_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['ready'::text, 'blocked'::text])))"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "assessment_personalized_profiles_user_context_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (user_context_version_id) REFERENCES assessment_user_context_versions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "assessment_personalized_profiles_user_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_program_allowed_roles",
+        "name": "assessment_program_allowed_roles_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (program_definition_id, role_profile_version_id)"
+      },
+      {
+        "table_name": "assessment_program_allowed_roles",
+        "name": "assessment_program_allowed_roles_program_definition_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (program_definition_id) REFERENCES assessment_program_definitions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_program_allowed_roles",
+        "name": "assessment_program_allowed_roles_role_profile_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (role_profile_version_id) REFERENCES assessment_role_profile_versions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "assessment_program_catalog_version_fk",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (catalog_version_id) REFERENCES m5_catalogs(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "assessment_program_definitions_assessment_configuration_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (assessment_configuration_id) REFERENCES assessment_configurations(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "assessment_program_definitions_catalog_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (catalog_version_id) REFERENCES m5_catalogs(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "assessment_program_definitions_code_version_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (code, version)"
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "assessment_program_definitions_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "assessment_program_definitions_published_by_user_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (published_by_user_id) REFERENCES users(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "assessment_program_definitions_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])))"
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "assessment_role_profile_versions_base_role_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (base_role_version_id) REFERENCES assessment_role_profile_versions(id)"
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "assessment_role_profile_versions_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "assessment_role_profile_versions_role_profile_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (role_profile_id) REFERENCES assessment_role_profiles(id)"
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "assessment_role_profile_versions_role_profile_id_version_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (role_profile_id, version)"
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "assessment_role_profile_versions_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['draft'::text, 'ready_for_review'::text, 'published'::text, 'retired'::text])))"
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "assessment_role_profile_versions_version_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((version > 0))"
+      },
+      {
+        "table_name": "assessment_role_profiles",
+        "name": "assessment_role_profiles_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((((scope = 'base'::text) AND (organization_id IS NULL)) OR ((scope = 'organization'::text) AND (organization_id IS NOT NULL))))"
+      },
+      {
+        "table_name": "assessment_role_profiles",
+        "name": "assessment_role_profiles_organization_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_role_profiles",
+        "name": "assessment_role_profiles_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "assessment_role_profiles",
+        "name": "assessment_role_profiles_scope_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((scope = ANY (ARRAY['base'::text, 'organization'::text])))"
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "assessment_user_context_versions_confirmed_by_user_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (confirmed_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "assessment_user_context_versions_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "assessment_user_context_versions_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['draft'::text, 'needs_clarification'::text, 'confirmed'::text, 'archived'::text])))"
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "assessment_user_context_versions_user_context_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (user_context_id) REFERENCES assessment_user_contexts(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "assessment_user_context_versions_user_context_id_version_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (user_context_id, version)"
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "assessment_user_context_versions_version_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((version > 0))"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "fk_m5_as_cycle",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (cycle_db_id) REFERENCES m5_cycles(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "fk_m5_as_session",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (session_db_id) REFERENCES m5_cycle_sessions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "m5_assessment_situations_assessment_situation_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (assessment_situation_id)"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "m5_assessment_situations_case_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (case_version_id) REFERENCES m5_case_versions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "m5_assessment_situations_cycle_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (cycle_db_id) REFERENCES m5_cycles(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "m5_assessment_situations_personalized_profile_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (personalized_profile_id) REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "m5_assessment_situations_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "m5_assessment_situations_session_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (session_db_id) REFERENCES m5_cycle_sessions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "m5_assessment_situations_snapshot_checksum_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (snapshot_checksum)"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "m5_assessment_situations_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['prepared'::text, 'admitted'::text, 'rejected'::text, 'active'::text, 'paused'::text, 'scenario_ended'::text, 'terminated'::text, 'closed'::text])))"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "m5_assessment_situations_usage_scope_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((usage_scope = ANY (ARRAY['assessment'::text, 'qa'::text])))"
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "m5_case_versions_package_id_case_id_case_version_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (package_id, case_id, case_version)"
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "m5_case_versions_package_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (package_id) REFERENCES m5_packages(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "m5_case_versions_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "m5_catalog_case_versions",
+        "name": "m5_catalog_case_versions_case_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (case_version_id) REFERENCES m5_case_versions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_catalog_case_versions",
+        "name": "m5_catalog_case_versions_catalog_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (catalog_db_id) REFERENCES m5_catalogs(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_catalog_case_versions",
+        "name": "m5_catalog_case_versions_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (catalog_db_id, case_version_id)"
+      },
+      {
+        "table_name": "m5_catalog_case_versions",
+        "name": "m5_catalog_case_versions_runtime_rule_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (runtime_rule_version_id) REFERENCES m5_runtime_rule_versions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "m5_catalogs_catalog_id_catalog_version_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (catalog_id, catalog_version)"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "m5_catalogs_manifest_checksum_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (manifest_checksum)"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "m5_catalogs_package_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (package_db_id) REFERENCES m5_packages(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "m5_catalogs_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "m5_catalogs_published_by_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (published_by) REFERENCES users(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "m5_catalogs_published_by_idempotency_key_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (published_by, idempotency_key)"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "m5_catalogs_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['published'::text, 'retired'::text])))"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "m5_catalogs_usage_scope_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((usage_scope = ANY (ARRAY['assessment'::text, 'qa'::text])))"
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "m5_cycle_sessions_created_by_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "m5_cycle_sessions_cycle_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (cycle_db_id) REFERENCES m5_cycles(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "m5_cycle_sessions_cycle_db_id_ordinal_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (cycle_db_id, ordinal)"
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "m5_cycle_sessions_ordinal_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((ordinal > 0))"
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "m5_cycle_sessions_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "m5_cycle_sessions_session_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (session_id)"
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "m5_cycle_sessions_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['prepared'::text, 'active'::text, 'paused'::text, 'interrupted'::text, 'completed'::text])))"
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "m5_cycle_time_intervals_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK (((ended_at IS NULL) OR (ended_at >= started_at)))"
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "m5_cycle_time_intervals_cycle_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (cycle_db_id) REFERENCES m5_cycles(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "m5_cycle_time_intervals_interval_type_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((interval_type = ANY (ARRAY['collecting'::text, 'authorized_pause'::text, 'blocking_system_wait'::text])))"
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "m5_cycle_time_intervals_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "m5_cycle_time_intervals_session_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (session_db_id) REFERENCES m5_cycle_sessions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "ck_m5_cycle_execution_manifest_pair",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK (((execution_manifest_json IS NULL) = (execution_manifest_checksum IS NULL)))"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "m5_cycles_assignment_id_fk",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (assignment_id) REFERENCES organization_assessment_assignments(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "m5_cycles_calendar_window_seconds_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((calendar_window_seconds > 0))"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "m5_cycles_created_by_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "m5_cycles_cycle_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (cycle_id)"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "m5_cycles_owner_user_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "m5_cycles_personalized_profile_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (personalized_profile_id) REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "m5_cycles_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "m5_cycles_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['prepared'::text, 'active'::text, 'paused'::text, 'interrupted'::text, 'collection_closed'::text, 'calculation_pending'::text, 'calculated'::text, 'failed'::text])))"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "m5_cycles_time_budget_seconds_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((time_budget_seconds > 0))"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "m5_cycles_usage_scope_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((usage_scope = ANY (ARRAY['assessment'::text, 'qa'::text])))"
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "m5_dialogue_turns_assessment_situation_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (assessment_situation_db_id) REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "m5_dialogue_turns_assessment_situation_db_id_request_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (assessment_situation_db_id, request_id)"
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "m5_dialogue_turns_assessment_situation_db_id_sequence_no_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (assessment_situation_db_id, sequence_no)"
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "m5_dialogue_turns_assessment_situation_db_id_turn_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (assessment_situation_db_id, turn_id)"
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "m5_dialogue_turns_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "m5_dialogue_turns_sequence_no_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((sequence_no > 0))"
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "m5_dialogue_turns_speaker_type_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((speaker_type = ANY (ARRAY['assessee'::text, 'character'::text, 'assessment'::text])))"
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "fk_m5_qa_as",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (assessment_situation_id) REFERENCES m5_assessment_situations(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "m5_qa_evidence_case_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (case_version_id) REFERENCES m5_case_versions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "m5_qa_evidence_evidence_checksum_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (evidence_checksum)"
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "m5_qa_evidence_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "m5_qa_evidence_result_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((result = ANY (ARRAY['PASS'::text, 'FAIL'::text, 'NOT_RUN'::text])))"
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "m7_cycle_plans_created_by_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (created_by) REFERENCES users(id)"
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "m7_cycle_plans_cycle_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (cycle_db_id) REFERENCES m5_cycles(id)"
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "m7_cycle_plans_cycle_db_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (cycle_db_id)"
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "m7_cycle_plans_id_cycle_db_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (id, cycle_db_id)"
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "m7_cycle_plans_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "m7_cycle_plans_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['READY'::text, 'LIMITED'::text, 'NO_ROUTE'::text])))"
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "m7_parameter_revisions_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((((source_scope = 'organization'::text) AND (assessment_configuration_id IS NULL)) OR ((source_scope = 'program'::text) AND (assessment_configuration_id IS NOT NULL))))"
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "m7_parameter_revisions_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "m7_parameter_revisions_revision_no_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((revision_no > 0))"
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "m7_parameter_revisions_source_scope_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((source_scope = ANY (ARRAY['organization'::text, 'program'::text])))"
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "m7_parameter_revisions_source_scope_organization_id_assessm_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (source_scope, organization_id, assessment_configuration_id, revision_no)"
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "m7_parameter_revisions_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])))"
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "m7_plan_revisions_id_cycle_db_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (id, cycle_db_id)"
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "m7_plan_revisions_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "m7_plan_revisions_plan_id_cycle_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (plan_id, cycle_db_id) REFERENCES m7_cycle_plans(id, cycle_db_id)"
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "m7_plan_revisions_plan_id_revision_no_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (plan_id, revision_no)"
+      },
+      {
+        "table_name": "m7_route_assignments",
+        "name": "m7_route_assignments_assessment_situation_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (assessment_situation_db_id) REFERENCES m5_assessment_situations(id)"
+      },
+      {
+        "table_name": "m7_route_assignments",
+        "name": "m7_route_assignments_assessment_situation_db_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (assessment_situation_db_id)"
+      },
+      {
+        "table_name": "m7_route_assignments",
+        "name": "m7_route_assignments_decision_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (decision_id) REFERENCES m7_route_decisions(id)"
+      },
+      {
+        "table_name": "m7_route_assignments",
+        "name": "m7_route_assignments_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (decision_id)"
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "m7_route_decisions_cycle_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (cycle_db_id) REFERENCES m5_cycles(id)"
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "m7_route_decisions_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "m7_route_decisions_plan_revision_id_cycle_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (plan_revision_id, cycle_db_id) REFERENCES m7_plan_revisions(id, cycle_db_id)"
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "m7_route_decisions_session_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (session_db_id) REFERENCES m5_cycle_sessions(id)"
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "m7_route_decisions_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['SELECTED'::text, 'WAITING_CURRENT_AS'::text, 'NO_ADMISSIBLE_CASE'::text, 'OUT_OF_TIME'::text, 'COLLECTION_CLOSED'::text])))"
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "fk_m7_position_replacement",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (replacement_operation_id) REFERENCES m7_as_replacement_operations(id)"
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "m7_route_position_as_history_assessment_situation_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (assessment_situation_db_id) REFERENCES m5_assessment_situations(id)"
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "m7_route_position_as_history_assessment_situation_db_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (assessment_situation_db_id)"
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "m7_route_position_as_history_disposition_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((disposition = ANY (ARRAY['current'::text, 'replaced'::text])))"
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "m7_route_position_as_history_ordinal_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((ordinal > 0))"
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "m7_route_position_as_history_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (position_id, ordinal)"
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "m7_route_position_as_history_position_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (position_id) REFERENCES m7_route_positions(id)"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "m7_route_positions_current_as_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (current_as_db_id) REFERENCES m5_assessment_situations(id)"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "m7_route_positions_current_as_db_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (current_as_db_id)"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "m7_route_positions_cycle_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (cycle_db_id) REFERENCES m5_cycles(id)"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "m7_route_positions_cycle_db_id_position_no_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (cycle_db_id, position_no)"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "m7_route_positions_id_cycle_db_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (id, cycle_db_id)"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "m7_route_positions_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "m7_route_positions_plan_revision_id_cycle_db_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (plan_revision_id, cycle_db_id) REFERENCES m7_plan_revisions(id, cycle_db_id)"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "m7_route_positions_position_no_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((position_no > 0))"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "m7_route_positions_state_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((state = ANY (ARRAY['not_presented'::text, 'in_progress'::text, 'awaiting_replacement'::text, 'completed'::text])))"
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "organization_assessment_assig_organization_id_created_by_us_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (organization_id, created_by_user_id, operation_id, recipient_user_id)"
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "organization_assessment_assignments_created_by_user_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "organization_assessment_assignments_organization_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "organization_assessment_assignments_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "organization_assessment_assignments_recipient_user_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (recipient_user_id) REFERENCES users(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "organization_assessment_progra_organization_id_operation_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (organization_id, operation_id)"
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "organization_assessment_program_conn_program_definition_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (program_definition_id) REFERENCES assessment_program_definitions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "organization_assessment_program_conne_connected_by_user_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (connected_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "organization_assessment_program_connection_organization_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "organization_assessment_program_connections_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "organization_assessment_source_assessment_configuration_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (assessment_configuration_id) REFERENCES assessment_configurations(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "organization_assessment_source_b_assignment_id_operation_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (assignment_id, operation_id)"
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "organization_assessment_source_b_questionnaire_revision_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (questionnaire_revision_id) REFERENCES questionnaire_response_revisions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "organization_assessment_source_bin_role_profile_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (role_profile_version_id) REFERENCES assessment_role_profile_versions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "organization_assessment_source_binding_assigned_by_user_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (assigned_by_user_id) REFERENCES users(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "organization_assessment_source_bindings_assignment_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (assignment_id) REFERENCES organization_assessment_assignments(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "organization_assessment_source_bindings_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "organizations",
+        "name": "organizations_code_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (code)"
+      },
+      {
+        "table_name": "organizations",
+        "name": "organizations_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "participant_acquaintance_conf_user_id_organization_id_assig_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (user_id, organization_id, assignment_ref, answers_checksum)"
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "participant_acquaintance_confirmat_personalized_profile_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (personalized_profile_id) REFERENCES assessment_personalized_profiles(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "participant_acquaintance_confirmat_user_context_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (user_context_version_id) REFERENCES assessment_user_context_versions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "participant_acquaintance_confirmations_organization_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "participant_acquaintance_confirmations_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "participant_acquaintance_confirmations_user_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "product_cycle_preparation_operations_operation_id_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (operation_id)"
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "product_cycle_preparation_operations_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "product_cycle_preparation_operations_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'completed'::text, 'failed'::text])))"
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "product_cycle_preparation_operations_user_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "questionnaire_response_revisi_organization_context_version_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (organization_context_version_id) REFERENCES assessment_organization_context_versions(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "questionnaire_response_revisi_uploaded_by_user_id_idempoten_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (uploaded_by_user_id, idempotency_key)"
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "questionnaire_response_revisions_channel_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((channel = ANY (ARRAY['csv'::text, 'product_form'::text, 'external_form'::text])))"
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "questionnaire_response_revisions_confirmed_by_user_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (confirmed_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "questionnaire_response_revisions_organization_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "questionnaire_response_revisions_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "questionnaire_response_revisions_status_check",
+        "type": "c",
+        "validated": true,
+        "definition": "CHECK ((status = ANY (ARRAY['invalid'::text, 'draft'::text, 'ready_for_confirmation'::text, 'confirmed'::text])))"
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "questionnaire_response_revisions_uploaded_by_user_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (uploaded_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+      },
+      {
+        "table_name": "users",
+        "name": "users_active_profile_fk",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (active_profile_id) REFERENCES user_role_profiles(id)"
+      },
+      {
+        "table_name": "users",
+        "name": "users_email_key",
+        "type": "u",
+        "validated": true,
+        "definition": "UNIQUE (email)"
+      },
+      {
+        "table_name": "users",
+        "name": "users_pkey",
+        "type": "p",
+        "validated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "users",
+        "name": "users_role_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (role_id) REFERENCES roles(id)"
+      },
+      {
+        "table_name": "users",
+        "name": "users_selected_role_profile_version_id_fkey",
+        "type": "f",
+        "validated": true,
+        "definition": "FOREIGN KEY (selected_role_profile_version_id) REFERENCES assessment_role_profile_versions(id)"
+      }
+    ],
+    "indexes": [
+      {
+        "table_name": "assessment_configurations",
+        "name": "assessment_configurations_code_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_configurations_code_key ON public.assessment_configurations USING btree (code)"
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "assessment_configurations_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_configurations_pkey ON public.assessment_configurations USING btree (id)"
+      },
+      {
+        "table_name": "assessment_configurations",
+        "name": "idx_assessment_configurations_single_default",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX idx_assessment_configurations_single_default ON public.assessment_configurations USING btree (is_default) WHERE (is_default = true)"
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "assessment_organization_conte_organization_context_id_versi_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_organization_conte_organization_context_id_versi_key ON public.assessment_organization_context_versions USING btree (organization_context_id, version)"
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "assessment_organization_context_versions_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_organization_context_versions_pkey ON public.assessment_organization_context_versions USING btree (id)"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "assessment_personalized_profi_user_id_assessment_configurat_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_personalized_profi_user_id_assessment_configurat_key ON public.assessment_personalized_profiles USING btree (user_id, assessment_configuration_id, checksum)"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "assessment_personalized_profiles_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_personalized_profiles_pkey ON public.assessment_personalized_profiles USING btree (id)"
+      },
+      {
+        "table_name": "assessment_program_allowed_roles",
+        "name": "assessment_program_allowed_roles_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_program_allowed_roles_pkey ON public.assessment_program_allowed_roles USING btree (program_definition_id, role_profile_version_id)"
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "assessment_program_definitions_code_version_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_program_definitions_code_version_key ON public.assessment_program_definitions USING btree (code, version)"
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "assessment_program_definitions_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_program_definitions_pkey ON public.assessment_program_definitions USING btree (id)"
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "assessment_role_profile_versions_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_role_profile_versions_pkey ON public.assessment_role_profile_versions USING btree (id)"
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "assessment_role_profile_versions_role_profile_id_version_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_role_profile_versions_role_profile_id_version_key ON public.assessment_role_profile_versions USING btree (role_profile_id, version)"
+      },
+      {
+        "table_name": "assessment_role_profiles",
+        "name": "assessment_role_profiles_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_role_profiles_pkey ON public.assessment_role_profiles USING btree (id)"
+      },
+      {
+        "table_name": "assessment_role_profiles",
+        "name": "uq_base_role_profile_code",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX uq_base_role_profile_code ON public.assessment_role_profiles USING btree (code) WHERE (scope = 'base'::text)"
+      },
+      {
+        "table_name": "assessment_role_profiles",
+        "name": "uq_organization_role_profile_code",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX uq_organization_role_profile_code ON public.assessment_role_profiles USING btree (organization_id, code) WHERE (scope = 'organization'::text)"
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "assessment_user_context_versions_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_user_context_versions_pkey ON public.assessment_user_context_versions USING btree (id)"
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "assessment_user_context_versions_user_context_id_version_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX assessment_user_context_versions_user_context_id_version_key ON public.assessment_user_context_versions USING btree (user_context_id, version)"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "ix_m5_as_cycle_session",
+        "valid": true,
+        "unique": false,
+        "definition": "CREATE INDEX ix_m5_as_cycle_session ON public.m5_assessment_situations USING btree (cycle_db_id, session_db_id)"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "m5_assessment_situations_assessment_situation_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_assessment_situations_assessment_situation_id_key ON public.m5_assessment_situations USING btree (assessment_situation_id)"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "m5_assessment_situations_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_assessment_situations_pkey ON public.m5_assessment_situations USING btree (id)"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "m5_assessment_situations_snapshot_checksum_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_assessment_situations_snapshot_checksum_key ON public.m5_assessment_situations USING btree (snapshot_checksum)"
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "m5_case_versions_package_id_case_id_case_version_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_case_versions_package_id_case_id_case_version_key ON public.m5_case_versions USING btree (package_id, case_id, case_version)"
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "m5_case_versions_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_case_versions_pkey ON public.m5_case_versions USING btree (id)"
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "uq_m5_case_version_package_identity",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX uq_m5_case_version_package_identity ON public.m5_case_versions USING btree (package_id, case_id, case_version)"
+      },
+      {
+        "table_name": "m5_catalog_case_versions",
+        "name": "m5_catalog_case_versions_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_catalog_case_versions_pkey ON public.m5_catalog_case_versions USING btree (catalog_db_id, case_version_id)"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "m5_catalogs_catalog_id_catalog_version_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_catalogs_catalog_id_catalog_version_key ON public.m5_catalogs USING btree (catalog_id, catalog_version)"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "m5_catalogs_manifest_checksum_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_catalogs_manifest_checksum_key ON public.m5_catalogs USING btree (manifest_checksum)"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "m5_catalogs_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_catalogs_pkey ON public.m5_catalogs USING btree (id)"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "m5_catalogs_published_by_idempotency_key_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_catalogs_published_by_idempotency_key_key ON public.m5_catalogs USING btree (published_by, idempotency_key)"
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "m5_cycle_sessions_cycle_db_id_ordinal_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_cycle_sessions_cycle_db_id_ordinal_key ON public.m5_cycle_sessions USING btree (cycle_db_id, ordinal)"
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "m5_cycle_sessions_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_cycle_sessions_pkey ON public.m5_cycle_sessions USING btree (id)"
+      },
+      {
+        "table_name": "m5_cycle_sessions",
+        "name": "m5_cycle_sessions_session_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_cycle_sessions_session_id_key ON public.m5_cycle_sessions USING btree (session_id)"
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "m5_cycle_time_intervals_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_cycle_time_intervals_pkey ON public.m5_cycle_time_intervals USING btree (id)"
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "uq_m5_open_blocking_operation",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX uq_m5_open_blocking_operation ON public.m5_cycle_time_intervals USING btree (cycle_db_id, operation_ref) WHERE (interval_type = 'blocking_system_wait'::text)"
+      },
+      {
+        "table_name": "m5_cycle_time_intervals",
+        "name": "uq_m5_open_time_interval",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX uq_m5_open_time_interval ON public.m5_cycle_time_intervals USING btree (cycle_db_id) WHERE (ended_at IS NULL)"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "idx_m5_cycles_assignment",
+        "valid": true,
+        "unique": false,
+        "definition": "CREATE INDEX idx_m5_cycles_assignment ON public.m5_cycles USING btree (assignment_id) WHERE (assignment_id IS NOT NULL)"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "m5_cycles_cycle_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_cycles_cycle_id_key ON public.m5_cycles USING btree (cycle_id)"
+      },
+      {
+        "table_name": "m5_cycles",
+        "name": "m5_cycles_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_cycles_pkey ON public.m5_cycles USING btree (id)"
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "m5_dialogue_turns_assessment_situation_db_id_request_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_dialogue_turns_assessment_situation_db_id_request_id_key ON public.m5_dialogue_turns USING btree (assessment_situation_db_id, request_id)"
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "m5_dialogue_turns_assessment_situation_db_id_sequence_no_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_dialogue_turns_assessment_situation_db_id_sequence_no_key ON public.m5_dialogue_turns USING btree (assessment_situation_db_id, sequence_no)"
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "m5_dialogue_turns_assessment_situation_db_id_turn_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_dialogue_turns_assessment_situation_db_id_turn_id_key ON public.m5_dialogue_turns USING btree (assessment_situation_db_id, turn_id)"
+      },
+      {
+        "table_name": "m5_dialogue_turns",
+        "name": "m5_dialogue_turns_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_dialogue_turns_pkey ON public.m5_dialogue_turns USING btree (id)"
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "m5_qa_evidence_evidence_checksum_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_qa_evidence_evidence_checksum_key ON public.m5_qa_evidence USING btree (evidence_checksum)"
+      },
+      {
+        "table_name": "m5_qa_evidence",
+        "name": "m5_qa_evidence_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m5_qa_evidence_pkey ON public.m5_qa_evidence USING btree (id)"
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "m7_cycle_plans_cycle_db_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_cycle_plans_cycle_db_id_key ON public.m7_cycle_plans USING btree (cycle_db_id)"
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "m7_cycle_plans_id_cycle_db_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_cycle_plans_id_cycle_db_id_key ON public.m7_cycle_plans USING btree (id, cycle_db_id)"
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "m7_cycle_plans_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_cycle_plans_pkey ON public.m7_cycle_plans USING btree (id)"
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "m7_parameter_revisions_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_parameter_revisions_pkey ON public.m7_parameter_revisions USING btree (id)"
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "m7_parameter_revisions_source_scope_organization_id_assessm_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_parameter_revisions_source_scope_organization_id_assessm_key ON public.m7_parameter_revisions USING btree (source_scope, organization_id, assessment_configuration_id, revision_no)"
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "uq_m7_active_parameter_revision",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX uq_m7_active_parameter_revision ON public.m7_parameter_revisions USING btree (source_scope, organization_id, COALESCE(assessment_configuration_id, (0)::bigint)) WHERE (status = 'published'::text)"
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "m7_plan_revisions_id_cycle_db_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_plan_revisions_id_cycle_db_id_key ON public.m7_plan_revisions USING btree (id, cycle_db_id)"
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "m7_plan_revisions_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_plan_revisions_pkey ON public.m7_plan_revisions USING btree (id)"
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "m7_plan_revisions_plan_id_revision_no_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_plan_revisions_plan_id_revision_no_key ON public.m7_plan_revisions USING btree (plan_id, revision_no)"
+      },
+      {
+        "table_name": "m7_route_assignments",
+        "name": "m7_route_assignments_assessment_situation_db_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_route_assignments_assessment_situation_db_id_key ON public.m7_route_assignments USING btree (assessment_situation_db_id)"
+      },
+      {
+        "table_name": "m7_route_assignments",
+        "name": "m7_route_assignments_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_route_assignments_pkey ON public.m7_route_assignments USING btree (decision_id)"
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "m7_route_decisions_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_route_decisions_pkey ON public.m7_route_decisions USING btree (id)"
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "m7_route_position_as_history_assessment_situation_db_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_route_position_as_history_assessment_situation_db_id_key ON public.m7_route_position_as_history USING btree (assessment_situation_db_id)"
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "m7_route_position_as_history_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_route_position_as_history_pkey ON public.m7_route_position_as_history USING btree (position_id, ordinal)"
+      },
+      {
+        "table_name": "m7_route_position_as_history",
+        "name": "uq_m7_position_one_current",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX uq_m7_position_one_current ON public.m7_route_position_as_history USING btree (position_id) WHERE (disposition = 'current'::text)"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "m7_route_positions_current_as_db_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_route_positions_current_as_db_id_key ON public.m7_route_positions USING btree (current_as_db_id)"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "m7_route_positions_cycle_db_id_position_no_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_route_positions_cycle_db_id_position_no_key ON public.m7_route_positions USING btree (cycle_db_id, position_no)"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "m7_route_positions_id_cycle_db_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_route_positions_id_cycle_db_id_key ON public.m7_route_positions USING btree (id, cycle_db_id)"
+      },
+      {
+        "table_name": "m7_route_positions",
+        "name": "m7_route_positions_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX m7_route_positions_pkey ON public.m7_route_positions USING btree (id)"
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "idx_org_assessment_assignments_recipient",
+        "valid": true,
+        "unique": false,
+        "definition": "CREATE INDEX idx_org_assessment_assignments_recipient ON public.organization_assessment_assignments USING btree (recipient_user_id, organization_id, status)"
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "organization_assessment_assig_organization_id_created_by_us_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX organization_assessment_assig_organization_id_created_by_us_key ON public.organization_assessment_assignments USING btree (organization_id, created_by_user_id, operation_id, recipient_user_id)"
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "organization_assessment_assignments_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX organization_assessment_assignments_pkey ON public.organization_assessment_assignments USING btree (id)"
+      },
+      {
+        "table_name": "organization_assessment_assignments",
+        "name": "uq_org_assessment_assignment_active",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX uq_org_assessment_assignment_active ON public.organization_assessment_assignments USING btree (organization_id, recipient_user_id, assignment_ref) WHERE ((status = 'active'::text) AND (revoked_at IS NULL))"
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "organization_assessment_progra_organization_id_operation_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX organization_assessment_progra_organization_id_operation_id_key ON public.organization_assessment_program_connections USING btree (organization_id, operation_id)"
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "organization_assessment_program_connections_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX organization_assessment_program_connections_pkey ON public.organization_assessment_program_connections USING btree (id)"
+      },
+      {
+        "table_name": "organization_assessment_program_connections",
+        "name": "uq_org_assessment_program_current",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX uq_org_assessment_program_current ON public.organization_assessment_program_connections USING btree (organization_id) WHERE is_current"
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "organization_assessment_source_b_assignment_id_operation_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX organization_assessment_source_b_assignment_id_operation_id_key ON public.organization_assessment_source_bindings USING btree (assignment_id, operation_id)"
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "organization_assessment_source_bindings_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX organization_assessment_source_bindings_pkey ON public.organization_assessment_source_bindings USING btree (id)"
+      },
+      {
+        "table_name": "organizations",
+        "name": "organizations_code_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX organizations_code_key ON public.organizations USING btree (code)"
+      },
+      {
+        "table_name": "organizations",
+        "name": "organizations_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX organizations_pkey ON public.organizations USING btree (id)"
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "participant_acquaintance_conf_user_id_organization_id_assig_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX participant_acquaintance_conf_user_id_organization_id_assig_key ON public.participant_acquaintance_confirmations USING btree (user_id, organization_id, assignment_ref, answers_checksum)"
+      },
+      {
+        "table_name": "participant_acquaintance_confirmations",
+        "name": "participant_acquaintance_confirmations_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX participant_acquaintance_confirmations_pkey ON public.participant_acquaintance_confirmations USING btree (id)"
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "product_cycle_preparation_operations_operation_id_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX product_cycle_preparation_operations_operation_id_key ON public.product_cycle_preparation_operations USING btree (operation_id)"
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "product_cycle_preparation_operations_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX product_cycle_preparation_operations_pkey ON public.product_cycle_preparation_operations USING btree (id)"
+      },
+      {
+        "table_name": "product_cycle_preparation_operations",
+        "name": "uq_product_cycle_preparation_active_user",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX uq_product_cycle_preparation_active_user ON public.product_cycle_preparation_operations USING btree (user_id) WHERE (status = ANY (ARRAY['queued'::text, 'running'::text]))"
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "idx_questionnaire_response_org_assignment",
+        "valid": true,
+        "unique": false,
+        "definition": "CREATE INDEX idx_questionnaire_response_org_assignment ON public.questionnaire_response_revisions USING btree (organization_id, assignment_ref, created_at DESC)"
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "questionnaire_response_revisi_uploaded_by_user_id_idempoten_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX questionnaire_response_revisi_uploaded_by_user_id_idempoten_key ON public.questionnaire_response_revisions USING btree (uploaded_by_user_id, idempotency_key)"
+      },
+      {
+        "table_name": "questionnaire_response_revisions",
+        "name": "questionnaire_response_revisions_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX questionnaire_response_revisions_pkey ON public.questionnaire_response_revisions USING btree (id)"
+      },
+      {
+        "table_name": "users",
+        "name": "users_email_key",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)"
+      },
+      {
+        "table_name": "users",
+        "name": "users_pkey",
+        "valid": true,
+        "unique": true,
+        "definition": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)"
+      }
+    ],
+    "triggers": [
+      {
+        "table_name": "assessment_configurations",
+        "name": "trg_configuration_prompts_immutable",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER trg_configuration_prompts_immutable BEFORE UPDATE ON public.assessment_configurations FOR EACH ROW EXECUTE FUNCTION prevent_published_configuration_prompt_update()",
+        "function_definition_md5": "5e6fbcdd328a78a519b64c85d85c1d27"
+      },
+      {
+        "table_name": "assessment_organization_context_versions",
+        "name": "trg_assessment_organization_context_versions_immutable",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER trg_assessment_organization_context_versions_immutable BEFORE DELETE OR UPDATE ON public.assessment_organization_context_versions FOR EACH ROW WHEN ((old.status = ANY (ARRAY['published'::text, 'retired'::text]))) EXECUTE FUNCTION prevent_frozen_m4_change()",
+        "function_definition_md5": "8cf51a026557e4be4b44b4523f3c85a2"
+      },
+      {
+        "table_name": "assessment_personalized_profiles",
+        "name": "trg_assessment_personalized_profiles_immutable",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER trg_assessment_personalized_profiles_immutable BEFORE DELETE OR UPDATE ON public.assessment_personalized_profiles FOR EACH ROW EXECUTE FUNCTION prevent_frozen_m4_change()",
+        "function_definition_md5": "8cf51a026557e4be4b44b4523f3c85a2"
+      },
+      {
+        "table_name": "assessment_program_allowed_roles",
+        "name": "trg_assessment_program_role_immutable",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER trg_assessment_program_role_immutable BEFORE INSERT OR DELETE OR UPDATE ON public.assessment_program_allowed_roles FOR EACH ROW EXECUTE FUNCTION protect_published_assessment_program_role()",
+        "function_definition_md5": "b01d7183999047eaada6260eac30fb46"
+      },
+      {
+        "table_name": "assessment_program_definitions",
+        "name": "trg_assessment_program_immutable",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER trg_assessment_program_immutable BEFORE DELETE OR UPDATE ON public.assessment_program_definitions FOR EACH ROW EXECUTE FUNCTION protect_published_assessment_program()",
+        "function_definition_md5": "dcd1565dcaefd65068aa9ab87616eeb5"
+      },
+      {
+        "table_name": "assessment_role_profile_versions",
+        "name": "trg_role_profile_version_immutable",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER trg_role_profile_version_immutable BEFORE DELETE OR UPDATE ON public.assessment_role_profile_versions FOR EACH ROW EXECUTE FUNCTION prevent_published_role_profile_change()",
+        "function_definition_md5": "f96066f3aeca1837eebc5d508494a856"
+      },
+      {
+        "table_name": "assessment_user_context_versions",
+        "name": "trg_assessment_user_context_versions_immutable",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER trg_assessment_user_context_versions_immutable BEFORE DELETE OR UPDATE ON public.assessment_user_context_versions FOR EACH ROW WHEN ((old.status = ANY (ARRAY['confirmed'::text, 'archived'::text]))) EXECUTE FUNCTION prevent_frozen_m4_change()",
+        "function_definition_md5": "8cf51a026557e4be4b44b4523f3c85a2"
+      },
+      {
+        "table_name": "m5_assessment_situations",
+        "name": "trg_m5_as_immutable",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER trg_m5_as_immutable BEFORE DELETE OR UPDATE ON public.m5_assessment_situations FOR EACH ROW EXECUTE FUNCTION prevent_m5_snapshot_change()",
+        "function_definition_md5": "59d59dbc113eecd182d6696c4bab52ee"
+      },
+      {
+        "table_name": "m5_case_versions",
+        "name": "trg_m5_case_versions_referenced_immutable",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER trg_m5_case_versions_referenced_immutable BEFORE DELETE OR UPDATE ON public.m5_case_versions FOR EACH ROW EXECUTE FUNCTION prevent_m5_referenced_case_change()",
+        "function_definition_md5": "d6cf6fd1f3ad3f9352aa1c3080e3d5e7"
+      },
+      {
+        "table_name": "m5_catalog_case_versions",
+        "name": "immutable_m5_catalog_membership",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER immutable_m5_catalog_membership BEFORE DELETE OR UPDATE ON public.m5_catalog_case_versions FOR EACH ROW EXECUTE FUNCTION prevent_m5_catalog_membership_change()",
+        "function_definition_md5": "f29464f20907829bc75f7ea594ec6beb"
+      },
+      {
+        "table_name": "m5_catalogs",
+        "name": "immutable_m5_catalog",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER immutable_m5_catalog BEFORE DELETE OR UPDATE ON public.m5_catalogs FOR EACH ROW EXECUTE FUNCTION prevent_published_m5_catalog_change()",
+        "function_definition_md5": "ceefac23379a166711fb86fb54bc832f"
+      },
+      {
+        "table_name": "m7_cycle_plans",
+        "name": "immutable_m7_planning",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER immutable_m7_planning BEFORE DELETE OR UPDATE ON public.m7_cycle_plans FOR EACH ROW EXECUTE FUNCTION prevent_m7_planning_history_change()",
+        "function_definition_md5": "40dd4b83532b9d59604e7a283527dde2"
+      },
+      {
+        "table_name": "m7_parameter_revisions",
+        "name": "immutable_published_m7_parameters",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER immutable_published_m7_parameters BEFORE DELETE OR UPDATE ON public.m7_parameter_revisions FOR EACH ROW EXECUTE FUNCTION prevent_published_m7_parameter_change()",
+        "function_definition_md5": "a73ed5b69ac6fcee7089dad045d1dbfa"
+      },
+      {
+        "table_name": "m7_plan_revisions",
+        "name": "immutable_m7_planning",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER immutable_m7_planning BEFORE DELETE OR UPDATE ON public.m7_plan_revisions FOR EACH ROW EXECUTE FUNCTION prevent_m7_planning_history_change()",
+        "function_definition_md5": "40dd4b83532b9d59604e7a283527dde2"
+      },
+      {
+        "table_name": "m7_route_decisions",
+        "name": "immutable_m7_planning",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER immutable_m7_planning BEFORE DELETE OR UPDATE ON public.m7_route_decisions FOR EACH ROW EXECUTE FUNCTION prevent_m7_planning_history_change()",
+        "function_definition_md5": "40dd4b83532b9d59604e7a283527dde2"
+      },
+      {
+        "table_name": "organization_assessment_source_bindings",
+        "name": "assignment_source_binding_immutable",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER assignment_source_binding_immutable BEFORE DELETE OR UPDATE ON public.organization_assessment_source_bindings FOR EACH ROW EXECUTE FUNCTION prevent_assignment_source_binding_change()",
+        "function_definition_md5": "2814455cc3533a29cdb97be71664121e"
+      }
+    ]
+  }
+}

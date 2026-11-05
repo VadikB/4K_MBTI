@@ -1,5 +1,21 @@
 # STATE — PATH-PLAN-DIAGNOSTICS
 
+## Финальный schema preflight05.11 — PASS, без изменений рабочей БД
+
+После handoff38dd551 владелец разрешил продолжить ранее согласованную READ ONLY
+сверку серверного Agent4K-Test/.env. EXACT_SCOPED_SCHEMA_MATCH:32 таблицы,
+353 колонки/191 constraint/84 index/16 trigger; missing/changed/extra0.
+Primary metadata/comparison/regression/cleanup:
+docs/evc/evidence/path-pilot-schema-readback/README.md.1 позитив/11 mutations/4
+invalid-record negatives PASS. Новый эталон получен штатным bootstrap в owned
+локальной pytest-БД без seed/LLM; штатно удалён после сохранения metadata.
+Рабочая БД только pg_catalog SELECT/SHOW в READ ONLY/rollback; бизнес-строк не читали.
+Миграция для этого изменения не требуется. Runtime38dd551/tested199e7c3 прежний,
+пакет38dd551 сохранён. Fresh remote main и server checkout2dc98c6/2.0.64.
+CI NOT_RUN; публикации/активации/paid PATH/push/PR/merge/deploy не выполнялись.
+Следующий шаг требует R1: release version и полномочия на PR/CI/main/test отдельно.
+Ниже — история прежней передачи, где schema check ещё был отложен.
+
 ## PATH-PILOT-02 — локальная реализация и проверка завершены
 
 Код679cc2f + исправление ревью199e7c351a2d985c0173f845574c4de5dc80775a.
