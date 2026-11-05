@@ -1,0 +1,19 @@
+{
+  "sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "branch": "",
+  "origin_main": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "worktree_status": "",
+  "files": {
+    "scripts/test_stand.py": "d3522324fc322bc35e98abf96475f2e6ca6133d16146ed506fa9d438d4601a81",
+    "scripts/assessment_first_case.py": "ef0d6f690dce6c60d4a7bba95dded7dcf17b27ba1ae744d054a820faada36d5a",
+    "tests/path29_browser_inputs.py": "cf947cf38aa33ab301e3d0bcf1f55325db6095e4d55d38e87d4d862fd3de4b2e",
+    "tests/path29_browser_app.py": "66583a4c7abf4fa6bccc0da24c93d8efca977e0681b3df31f5fd98555214713c",
+    "tests/assessment_first_case_evidence.py": "36b1cbb9b29c8107f0557278546fe3e4f270d6c9f9f2886ad06deaa301408d70",
+    "tests/browser/path29-participant.spec.mjs": "fe94269df616b5cff8b229cdbee18ab78506333c8136babd28befe7f9c4fcf9c",
+    "tests/browser/fixtures/receipt-file.mjs": "71b454be2fb1dc09800f3f33be1d1e31692f512c3ac6ba657069937bb70ce627",
+    "tests/browser/fixtures/preparation-receipt.mjs": "5ffa75e9ab37b114c95747fd2e3ac12c3bf8c2ac4f38037603e50bad42903905",
+    "tests/path_start_release_source.py": "feae3518fb700e96e47f4c5b3553da2c5301d2d91f20809a6ad1b49cb3767d06",
+    "tests/path_start_release_inputs.py": "cd1bfd41d3300575d217c63277e4bcbb4d3ddaeece3b5e0f6a6d2e368e86f1f3",
+    "tests/browser/fixtures/path-start-release.json": "a3175dda9675c476ae8636d26449e5ed17e0ef7940ea0412b7431882933ae1e6"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "result": "READY_FOR_ONE_AUTHORIZED_PAID_PATH",
+  "prepared_at_utc": "2026-11-05T18:38:45.001843+00:00",
+  "checkout": "/home/vadim_bogachev/worktrees/path-pilot-1.2-48afa8a7874c4ba48141b4621b6c52bd",
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "checkout_status": "",
+  "directory": "/home/vadim_bogachev/evidence/path-pilot-1.2-run-qxzr56r9",
+  "argv": [
+    "/home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python",
+    "scripts/assessment_first_case.py",
+    "--env-file",
+    "/home/vadim_bogachev/projects/Agent4K-Test/.env",
+    "--python",
+    "/home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python",
+    "--program-source",
+    "published-pilot",
+    "--program-receipt",
+    "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json",
+    "--program-receipt-sha256",
+    "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+    "--program-version",
+    "1.2",
+    "--db-admin-port",
+    "55432",
+    "--port",
+    "18861",
+    "--directory",
+    "/home/vadim_bogachev/evidence/path-pilot-1.2-run-qxzr56r9/run"
+  ],
+  "environment_overrides": {
+    "PYTHONPATH": "/home/vadim_bogachev/worktrees/path-pilot-1.2-48afa8a7874c4ba48141b4621b6c52bd",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "DB_POOL_MIN_SIZE": "0"
+  },
+  "dependency_mode": "Ignored real node_modules directory with links to installed read-only dependencies; no .env copied",
+  "selected": {
+    "path": "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json",
+    "sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+    "program": {
+      "id": 2,
+      "code": "specialist_pilot",
+      "version": "1.2",
+      "assignment_ref": "specialist-pilot",
+      "status": "published",
+      "definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+      "assessment_configuration_id": 11,
+      "catalog_version_id": 2
+    }
+  },
+  "machine_preflight": "READY",
+  "working_db_writes": false,
+  "provider_calls": 0,
+  "paid_runner_invocations": 0,
+  "playwright_retries": 0
+}

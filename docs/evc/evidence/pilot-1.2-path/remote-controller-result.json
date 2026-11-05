@@ -1,0 +1,19 @@
+{
+  "state": "RUNNER_FINISHED",
+  "exit_code": 0,
+  "elapsed_seconds": 376.508,
+  "authorized_runner_invocations": 1,
+  "retry": false,
+  "directory": "/home/vadim_bogachev/evidence/path-pilot-1.2-run-qxzr56r9",
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "raw_controller_output_not_exported": true,
+  "runner_result": "PASS",
+  "runs": [
+    {
+      "run_id": "2ff983f12c67494b990b0f85284b8d70",
+      "result": "PASS",
+      "validation_errors": [],
+      "provider_completed_requests": 21
+    }
+  ]
+}

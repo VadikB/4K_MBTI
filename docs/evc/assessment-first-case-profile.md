@@ -19,7 +19,11 @@ Validator требует серверный `m7_start_readiness/1`, точный
 После отдельного решения владельца опубликована только новая ProgramDefinition
 `specialist_pilot@1.2`, id2, publisher4; exact receipt и readback проверены
 [PATH-PILOT-PROGRAM-01](tasks/pilot-program-release-preparation.md).
-Новый paid PATH не запускался. PREP-DIAG-01 отдельно UNKNOWN.
+Отдельно разрешённый paid PATH1.2 выполнен: **PASS**, run2ff983f1…,
+реальные generation/tester/challenger и штатный repair, admission PASS,
+start201/первая AS/0 ответов. [Итог и первичные evidence](tasks/pilot-1.2-path.md).
+Это один ограниченный пилотный маршрут до первого Case, не полная оценка.
+PREP-DIAG-01 отдельно UNKNOWN.
 Рабочая БД — серверный Agent4K-Test/.env: свежая scoped schema сверка PASS,
 единственная разрешённая предметная запись — новая программа и её role link;
 подключения организаций не менялись. Рабочая БД никогда не цель cleanup/tests.
@@ -105,7 +109,8 @@ paid PATH или подключение существующих организ�
 selector. Бесплатный bootstrap именно этих published bytes выполнен:
 `PASS_BOOTSTRAP_ONLY`, run `5d4f68db1fae48bf9c82be26b2bee390`, minimal counts1/0,
 точные источники и cleanup PASS; [evidence](evidence/pilot-program-1.2-bootstrap/remote-result.json).
-Новый PATH ещё NOT_RUN. Первая операционная попытка без `PYTHONPATH=.` остановилась
+Новый PATH после отдельного разрешения выполнен: PASS (см. итог выше).
+Первая операционная попытка free bootstrap без `PYTHONPATH=.` остановилась
 до preflight/БД; после исправления команды выполнен один actual bootstrap, без LLM.
 
 Выбранные version/id/code/assignment/status/config/catalog/definition checksum

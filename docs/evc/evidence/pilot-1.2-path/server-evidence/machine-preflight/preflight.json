@@ -1,0 +1,45 @@
+{
+  "status": "READY",
+  "checks": [
+    {
+      "code": "isolated_database_admin",
+      "status": "READY",
+      "detail": "STAND_ADMIN_URL is set"
+    },
+    {
+      "code": "python_environment",
+      "status": "READY",
+      "detail": "/home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python"
+    },
+    {
+      "code": "browser",
+      "status": "READY",
+      "detail": "/home/vadim_bogachev/worktrees/path-pilot-1.2-48afa8a7874c4ba48141b4621b6c52bd/node_modules/.bin/playwright"
+    },
+    {
+      "code": "real_provider",
+      "status": "READY",
+      "detail": "provider credentials and model are set"
+    },
+    {
+      "code": "localhost_port",
+      "status": "READY",
+      "detail": "127.0.0.1:18861 is available"
+    },
+    {
+      "code": "node",
+      "status": "READY",
+      "detail": "/usr/local/bin/node"
+    },
+    {
+      "code": "postgresql_connect_and_createdb",
+      "status": "READY",
+      "detail": "verified"
+    },
+    {
+      "code": "chromium_launch",
+      "status": "READY",
+      "detail": "verified"
+    }
+  ]
+}

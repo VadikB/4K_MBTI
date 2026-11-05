@@ -1,0 +1,12 @@
+{
+  "observed_at_utc": "2026-11-05T18:52:42.272343+00:00",
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "read_only": true,
+  "rollback": true,
+  "same_published_source": true,
+  "published_source_canonical_sha256": "be662b3cf28fecbd72b8731be07ca585afd35898a9639fcbbcff962da8c5be37",
+  "target_program_connections": 0,
+  "schema_metadata_checksum": "c18922b95d6223262d23cc6edf1c060ac66b9f84243feee076d32baae586a065",
+  "schema_unchanged": true,
+  "writes_by_this_operation": false
+}

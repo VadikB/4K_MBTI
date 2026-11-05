@@ -27,7 +27,10 @@ Runner требует `m7_start_readiness/1` и exact frozen binding, обяза
 После отдельного разрешения опубликована только новая `specialist_pilot@1.2`, id2,
 без подключений организаций;
 [exact receipt/readback](../docs/evc/evidence/pilot-program-publication-execution/publication-result.json).
-Новый paid PATH не запускался; разрешение публикации не является разрешением прогона.
+После отдельного разрешения один paid PATH1.2 выполнен: **PASS**, real LLM + штатный
+repair, explicit start201/та же первая AS/0 ответов, owned cleanup и offline CHECK PASS.
+[Итог](../docs/evc/tasks/pilot-1.2-path.md). Разрешение этого run использовано;
+публикация или прежний PASS не разрешают автоматический повтор.
 Исторический PREP-DIAG-01 остаётся UNKNOWN и не отождествляется с покрытием.
 
 Harness теперь допускает явный внешний published receipt только полным selector

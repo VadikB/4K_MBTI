@@ -1,0 +1,36 @@
+{
+  "task": "PATH-PILOT-RUN-01",
+  "owner_basis": "Пользователь ответил «идем дальше» на явный вопрос об одном платном PATH из чистого checkout/новой owned-БД, со штатной подготовкой; при допуске start/первая AS/0 ответов, при отказе evidence и остановка без повторов.",
+  "approved_scope": "ONE_CONTROLLED_PAID_PATH_INVOCATION",
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "app_version": "2.0.66",
+  "program": {
+    "id": 2,
+    "code": "specialist_pilot",
+    "version": "1.2",
+    "definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+    "receipt_sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b"
+  },
+  "historical_usage_reference": {
+    "provider_operations": 20,
+    "tokens_approximate": 1505000,
+    "guaranteed_ceiling": false
+  },
+  "constraints": {
+    "runner_invocations": 1,
+    "playwright_retries": 0,
+    "provider_retries_and_repair": "Existing product limits unchanged; not separate manual run",
+    "new_owned_database_only": true,
+    "working_database_read_only_preflight_only": true,
+    "existing_org_activation": false,
+    "new_publication": false,
+    "prompts_admission_repair_changes": false,
+    "push_pr_merge_deploy": false
+  },
+  "outcomes": {
+    "success": "All stages/final AS admission and exact binding/time gates; explicit start/server+DOM first AS/0 answers; primary evidence before cleanup",
+    "failure": "Keep actual failed step/check IDs/statuses/safe reasons/lineage and stop; no paid rerun",
+    "uncertain_terminal_export": "Preserve owned DB; no forced cleanup"
+  },
+  "PREP_DIAG_01": "UNKNOWN_SEPARATE_HISTORICAL_ITEM"
+}

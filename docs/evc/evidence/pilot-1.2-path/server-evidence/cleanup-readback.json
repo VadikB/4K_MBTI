@@ -1,0 +1,12 @@
+{
+  "observed_at_utc": "2026-11-05T18:52:41.721801+00:00",
+  "run_id": "2ff983f12c67494b990b0f85284b8d70",
+  "database": "product4k_pytest_2ff983f12c67494b990b0f85284b8d70",
+  "database_absent": true,
+  "state_absent": true,
+  "active_connections": 0,
+  "marker_verified_by_existing_destroy": true,
+  "force": false,
+  "maintenance_read_only": true,
+  "working_database_cleanup": false
+}

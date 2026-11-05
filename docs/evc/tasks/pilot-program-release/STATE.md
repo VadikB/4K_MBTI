@@ -2,8 +2,9 @@
 
 - Текущая неизменяемая база runtime: `e63eba67d77fb73f7fb9bb219bc3fe5d3807a909` /2.0.66.
   PR171 принят/merged/deployed; [release closure](https://github.com/VadikB/4K_MBTI/pull/171#issuecomment-6660961795).
-- Текущая ветка: `codex/pilot-program-publication`; publication/readback/free bootstrap,
-  не продолжение закрытой remote-ветки PR171. Подготовка f211e71 и harness bd2af6d/a60200d сохранены.
+- Текущая ветка: `codex/pilot-1.2-path` от1ee2ec4; actual paid PATH/evidence.
+  Предыдущая `codex/pilot-program-publication` сохранена на1ee2ec4, не продолжение
+  закрытой remote-ветки PR171. Подготовка f211e71 и harness bd2af6d/a60200d сохранены.
 - Завершено: offline рецепт1.2/checksum, паспорт выпуска/run, 72 unit PASS,
   оба CLI help exit0, воспроизведение SEED-01 без SQL, найден browser pin1.1.
 - Завершена [PATH-PILOT-HARNESS-01](../pilot-program-harness.md): бесплатный fix seed,
@@ -25,7 +26,8 @@
   checksum `b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718`,
   snapshot `daa715b153f16e9ebc4ea6744a1c8541c5e269e248bba4b5c37723571e6ccfce`.
   Новая программа и один role link; старые program/role/source и org connections
-  неизменны. У1.2 подключений0. Activation/retirement/LLM/PATH отсутствуют.
+  неизменны. У1.2 подключений0. На этапе публикации activation/retirement/LLM/PATH
+  отсутствовали; последующий owned PATH описан ниже, не подключал рабочие организации.
 - Exact receipt229612 bytes, SHA256
   `09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b`.
   Сервер: `/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json`.
@@ -64,10 +66,31 @@
  1203 прежних untracked web/dist assets и1 env-backup path; содержимое backup не читалось,
   файлы не удалялись/перемещались. Bootstrap не использует web/dist. Перед paid PATH —
   отдельный чистый execution checkout того же SHA; не cleanup deploy checkout.
-- Следующий шаг требует отдельного разрешения **одного** paid PATH: fresh read-only
+- Исторический следующий шаг после bootstrap требовал отдельного разрешения **одного** paid PATH: fresh read-only
   status/preflight, exact1.2 selector, чистый execution checkout e63, новая owned-БД,
   штатные generation/tester/challenger/repair и gate; при допуске start/AS/0 ответов,
-  при отказе evidence и остановка без платного повтора. Paid PATH пока NOT_RUN.
+  при отказе evidence и остановка без платного повтора.
+- Получено отдельное разрешение владельца «идем дальше» на один такой run.
+  Завершённая карточка [PATH-PILOT-RUN-01](../pilot-1.2-path.md), ветка
+  `codex/pilot-1.2-path` от1ee2ec4; прежняя publication/boot ветка сохранена.
+  Read-only live source/schema и machine preflight PASS; отдельный чистый execution
+  checkout e63, full status пуст. Server evidence `path-pilot-1.2-run-qxzr56r9`.
+  Runner **PASS**, exit0,376.508s; run `2ff983f12c67494b990b0f85284b8d70`, cleanup
+  есть/state отсутствует. Paid runner invocations1; PID2719052/tool session33301 завершены.
+  Независимая проверка завершена:34 primary files hashes/11 runtime byte hashes,
+  настоящий Node validator и повторная local summary PASS, visual first AS PASS.
+  Конечная admission PASS после штатного repair, tester5/challenger4 batches;
+  can_start=true до start, HTTP201/та же AS c89539de…/0 оценочных ответов.
+  Candidate→compiled Case→saved/presented AS exact refs; полный M2=61/план39/вне22,
+  accepted LIMITED binding,7200/259200s сохранены. Никакого общего допуска LIMITED нет.
+  20 unique operations/21 completed HTTP/1 JSON retry; retained1,523,716 tokens,
+  usage первого malformed JSON неизвестен — не полный биллинговый итог.
+  Working source/schema/target connections0 read-only post-match; owned DB/state
+  отсутствуют, active connections0, DROP без FORCE. Fresh unit110/Node66 PASS.
+  [Итог](../../evidence/pilot-1.2-path/server-evidence/outcome.json),
+  [verification](../../evidence/pilot-1.2-path/verification.json).
+  Следующий шаг — человеческая приёмка. Допуск paid run использован, повтор запрещён;
+  не все негативные ветви AC/шесть BaseRoles UI проверялись этим positive run.
 - PREP-DIAG-01: UNKNOWN, отдельный продуктовый остаток.
 - Полная задача: [pilot-program-release-preparation.md](../pilot-program-release-preparation.md).
 - Паспорт: [pilot-program-1.2-release-plan.md](../../reports/pilot-program-1.2-release-plan.md).
