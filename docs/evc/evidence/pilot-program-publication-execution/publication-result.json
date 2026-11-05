@@ -1,0 +1,76 @@
+{
+  "contract": "pilot-program-publication/1",
+  "result": "PUBLISHED_READBACK_VERIFIED",
+  "observed_at_utc": "2026-11-05T17:40:31.103491+00:00",
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "application_version": "2.0.66",
+  "program": {
+    "id": 2,
+    "code": "specialist_pilot",
+    "version": "1.2",
+    "status": "published",
+    "definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+    "published_at": "2026-11-05 17:40:30.345813",
+    "assessment_configuration_id": 11,
+    "catalog_version_id": 2
+  },
+  "publisher_user_id": 4,
+  "allowed_role_profile_version_ids": [
+    2
+  ],
+  "snapshot_checksum": "daa715b153f16e9ebc4ea6744a1c8541c5e269e248bba4b5c37723571e6ccfce",
+  "source_ref": {
+    "path": "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json",
+    "sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+    "program": {
+      "id": 2,
+      "code": "specialist_pilot",
+      "version": "1.2",
+      "assignment_ref": "specialist-pilot",
+      "status": "published",
+      "definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+      "assessment_configuration_id": 11,
+      "catalog_version_id": 2
+    }
+  },
+  "preserved_legacy_1_1": true,
+  "unchanged_source_objects": [
+    "configuration",
+    "catalog",
+    "roles",
+    "cases",
+    "artifact_readback"
+  ],
+  "other_program_rows_unchanged": true,
+  "other_allowed_role_rows_unchanged": true,
+  "org_connections_unchanged": true,
+  "new_program_org_connections": 0,
+  "schema_metadata_checksum": "c18922b95d6223262d23cc6edf1c060ac66b9f84243feee076d32baae586a065",
+  "schema_unchanged": true,
+  "publisher_invocations": 1,
+  "provider_calls_by_operation": 0,
+  "retirement_performed": false,
+  "activation_performed": false,
+  "path_performed": false,
+  "PREP_DIAG_01_root_cause": "UNKNOWN",
+  "files": [
+    {
+      "name": "prepublication.json",
+      "path": "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/prepublication.json",
+      "bytes": 2617,
+      "sha256": "936cd326adf8f25cf9e3e49fe117608ab97ebc32e8c31b7a851fe73c3a73b915"
+    },
+    {
+      "name": "publisher-invocation.json",
+      "path": "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/publisher-invocation.json",
+      "bytes": 789,
+      "sha256": "69d86307ae94873a07015b7c1c8a1da679d750db58ae71908206429b4011ab6b"
+    },
+    {
+      "name": "published-release-source.json",
+      "path": "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json",
+      "bytes": 229612,
+      "sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b"
+    }
+  ]
+}

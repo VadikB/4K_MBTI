@@ -1,0 +1,15 @@
+{
+  "run_id": "ff18386ec2424ad2a3697784577f613b",
+  "database": "product4k_pytest_ff18386ec2424ad2a3697784577f613b",
+  "owner_verified": true,
+  "database_absent": true,
+  "state_absent": true,
+  "force": false,
+  "remaining_owned_databases": 0,
+  "remaining_owned_connections": 0,
+  "container_id": "42ae35976343361310b812d36ddfb960de880c5de8f5b052bcc7c890db587a3c",
+  "container_label_verified": true,
+  "container_stopped": true,
+  "container_auto_removed": true,
+  "permanent_database_touched": false
+}

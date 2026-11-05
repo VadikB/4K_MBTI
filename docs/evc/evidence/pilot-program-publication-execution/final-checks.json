@@ -1,0 +1,31 @@
+{
+  "result": "PASS_FINAL_DOCUMENTATION_AND_IDENTITY",
+  "runtime_remote_main": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "command": "git ls-remote https://github.com/VadikB/4K_MBTI.git refs/heads/main",
+  "remote_main_exit_code": 0,
+  "docs_local_links": 52,
+  "docs_files": 5,
+  "python_ast_files": 4,
+  "diff_check": "PASS",
+  "historical_preflight_evidence_regression": {
+    "positive": 1,
+    "negative_mutations_rejected": 11,
+    "optimized_mode_rejected": true,
+    "result": "PASS",
+    "scope": "Historical prepublication receipt only; historical PENDING/NOT_RUN fields do not describe current operation"
+  },
+  "fresh_publication_evidence_regression": {
+    "positive": 1,
+    "negative_mutations_rejected": 8,
+    "optimized_mode_rejected": true,
+    "result": "PASS"
+  },
+  "authorizations": {
+    "push": false,
+    "pr": false,
+    "merge": false,
+    "deploy": false,
+    "activation": false,
+    "paid_path": false
+  }
+}

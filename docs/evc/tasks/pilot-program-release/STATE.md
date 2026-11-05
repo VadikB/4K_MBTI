@@ -12,28 +12,45 @@
   её отрицательный VERIFY остаётся историческим evidence базы3385145.
 - R1/2.0.66 завершён: review a60200d, отдельное разрешение merge/test, squash e63eba6;
   точные head/base tree совпали, server/public readback и45 assets PASS.
-- Активно: бесплатная подготовка публикации по «идем дальше»; publication/activation/paid PATH
-  не разрешены. Working DB прочитана только в двух READ ONLY транзакциях с rollback.
-- Свежий preflight 05.11.2026 19:14 МСК:32 таблицы/353 колонки/191 constraints/84 indexes/16 triggers
-  совпали; legacy1.1/config/catalog/roles/9 Cases/27 QA и15 artifact checks совпали с источником.
-  Версия1.2 свободна; candidate checksum b4e8270f… и snapshot daa715b1… сохранены.
-- user_id4 найден как прежний publisher, configured superadmin, not suppressed; это техническая
-  проверка, НЕ назначение владельцем издателя нового выпуска. Номер1.2 и publisher4 ждут решения.
-- Retirement: переход published→retired и запрет resolution/start есть и проверены CI171;
-  готового retire CLI/endpoint нет. Предложен узкий guarded administrative SQL только для новой
-  версии без подключений, с quiescence/точным ID/checksum; его free guard regression ещё NOT_RUN.
-  Сначала требуется решение об операционной процедуре; тест и его PASS обязательны до публикации.
+- Завершено по отдельному «идем дальше» владельца:1.2/publisher4, free retirement
+  regression и при её PASS/свежем preflight — новая ProgramDefinition и exact export.
+  [Решение](../../evidence/pilot-program-publication-execution/owner-decision.json).
+- Free owned SQL:17 новых guard +5 lifecycle +7 start/readiness =29 PASS; synthetic,
+  provider disabled. Evidence сохранено до marker-guarded cleanup без FORCE;
+ 0 owned DB/connections, task-контейнер удалён. Постоянная БД не цель cleanup.
+- Повторный preflight 05.11.2026 17:40:30 UTC:32 таблицы/353 колонки/191 constraints/
+ 84 indexes/16 triggers EXACT MATCH; legacy1.1/config/catalog/roles/9 Cases/27 QA/
+ 15 artifacts без drift;1.2 свободна, publisher4 authorized/configured/not suppressed.
+- Один штатный publisher call, exit0: `specialist_pilot@1.2`, **id2**, published,
+  checksum `b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718`,
+  snapshot `daa715b153f16e9ebc4ea6744a1c8541c5e269e248bba4b5c37723571e6ccfce`.
+  Новая программа и один role link; старые program/role/source и org connections
+  неизменны. У1.2 подключений0. Activation/retirement/LLM/PATH отсутствуют.
+- Exact receipt229612 bytes, SHA256
+  `09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b`.
+  Сервер: `/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json`.
+  [Post-readback](../../evidence/pilot-program-publication-execution/publication-result.json).
+- Independent offline CHECK/REGRESSION: actual selector1.2 PASS,8 tamper negatives и
+  reject `-O` PASS, network/DB/LLM0. Backend908 PASS/351 deselected; новый CI NOT_RUN.
+- Retirement: exact SQL guards/immutability/rollback проверены в owned-БД, но это
+  не race-proof и не готовый runtime CLI. Постоянный retirement не выполнялся;
+  при необходимости точный id/checksum/no-connections/quiescence и отдельное решение.
 - Известные источники не менялись: M2=61, план39/22 вне,55 условий,02→03→04→07→05→01→06→08,
   7200/259200, без SPEC.09 fallback; exact P/M checksum883c025c… принят ранее.
 - CI неизменённого runtime: PR171 PASS (unit908/HTTP108/Node66/integration220,
   два explicit llm skip, пять browser lanes PASS); deploy42047619768 PASS.
   Новый docs/evidence commit не выдан за новый CI; push/PR здесь не разрешены.
-- Main/test:e63eba6 /2.0.66; preflight сверил server SHA/версию заново.
-  Нового merge/deploy в подготовке публикации нет.
-- Постоянная БД: только READ ONLY metadata/source,0 writes. Provider calls0;
-  публикация/активация/новые owned DB в этой подготовке не выполнялись.
-- Новое evidence: [readback](../../evidence/pilot-program-publication-preflight/readback.json),
-  [операционный проект](../../evidence/pilot-program-publication-preflight/operations-proposal.json).
+- Main/test:e63eba6 /2.0.66; pre/post сверили server SHA/версию заново.
+  Нового push/PR/merge/deploy нет. Локальная ветка содержит новые tests/docs/evidence,
+  runtime/Api/scripts/assessment_definitions неизменны; три чужих файла main сохранены.
+- Постоянная БД: публикация только новой1.2 и role link по разрешению; схема неизменна.
+  Предварительные PENDING/0-write receipts сохранены как история, не текущий статус.
+- Полный [набор evidence](../../evidence/pilot-program-publication-execution/verification.json),
+  [исторический preflight](../../evidence/pilot-program-publication-preflight/readback.json),
+  [прежний операционный проект](../../evidence/pilot-program-publication-preflight/operations-proposal.json).
+- Следующий шаг: free bootstrap этих published bytes через full selector на новой
+  owned-БД; затем отдельное разрешение одного paid PATH. Ни bootstrap1.2, ни новый
+  paid PATH пока не выполнены; результат первой AS/start/0 ответов не заявляется.
 - PREP-DIAG-01: UNKNOWN, отдельный продуктовый остаток.
 - Полная задача: [pilot-program-release-preparation.md](../pilot-program-release-preparation.md).
 - Паспорт: [pilot-program-1.2-release-plan.md](../../reports/pilot-program-1.2-release-plan.md).

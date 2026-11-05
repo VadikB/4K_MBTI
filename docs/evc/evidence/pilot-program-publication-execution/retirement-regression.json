@@ -1,0 +1,43 @@
+{
+  "contract": "pilot-publication-retirement-regression/1",
+  "runtime_base": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "task_base": "e24255f6c8a0ace843a0a418dbd53f52b4fb5782",
+  "scope": "FREE_SYNTHETIC_RETIREMENT_GUARDS_NOT_PATH",
+  "command": "python -m pytest --run-integration -m integration -q tests/integration/test_program_publication_retirement_db.py tests/integration/test_arch30_program_definition_db.py tests/integration/test_pilot_start_admission_db.py",
+  "environment": "Sanitized subprocess; exact TEST_DATABASE_URL from owned state; DB_NAME=product4k_pytest_unbound sentinel; provider disabled; no developer/server .env",
+  "test_counts": {
+    "new_retirement_guards": 17,
+    "existing_lifecycle": 5,
+    "existing_pilot_start_readiness": 7,
+    "total_passed": 29
+  },
+  "exit_code": 0,
+  "stdout": ".............................                                            [100%]\n=============================== warnings summary ===============================\ntests/integration/test_pilot_start_admission_db.py::test_http_start_uses_same_sql_decision_and_does_not_expose_review_material\n  /Users/vadim_bogachev/Developer/4K/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n29 passed, 1 warning in 38.07s\n{\"scope\": \"FREE_SYNTHETIC_RETIREMENT_GUARDS_NOT_PATH\", \"run_id\": \"ff18386ec2424ad2a3697784577f613b\", \"database\": \"product4k_pytest_ff18386ec2424ad2a3697784577f613b\", \"owner_verified\": true, \"provider_calls\": 0, \"exit_code\": 0}\n",
+  "ownership_before_cleanup": {
+    "run_id": "ff18386ec2424ad2a3697784577f613b",
+    "database": "product4k_pytest_ff18386ec2424ad2a3697784577f613b",
+    "owner_verified": true,
+    "owner_marker_sha256": "10f637af3590e22c7e2f2755bfe89e86e3376322e8b046b8f437578d51dd82b2",
+    "database_count": 1,
+    "active_owned_database_connections": 0,
+    "provider_mode": "disabled",
+    "gateway": 0
+  },
+  "container": {
+    "name": "4k-pilotpub-e24255f",
+    "id": "42ae35976343361310b812d36ddfb960de880c5de8f5b052bcc7c890db587a3c",
+    "label": "codex.task=pilot-program-publication-e24255f",
+    "image_id": "sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d",
+    "localhost_port": 63759,
+    "tmpfs_data": true,
+    "auto_remove": true
+  },
+  "initial_application_tables": 0,
+  "provider_calls": 0,
+  "permanent_database_touched": false,
+  "limitations": [
+    "Synthetic SQL regression, not human review/admission of any Case",
+    "Not LLM/PATH result",
+    "No concurrent-operator race proof or permission for automatic retirement"
+  ]
+}

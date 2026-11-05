@@ -22,9 +22,12 @@ Default `functional-diagnostic` остаётся исторической synthe
 [контракт](../docs/architecture/pilot-plan-start-admission-contract.md).
 Полный M2=61 сохраняется, план=39/22 вне; любой LIMITED автоматически не допускается.
 Runner требует `m7_start_readiness/1` и exact frozen binding, обязательные стадии,
-конечную допущенную AS и lineage. Новая программа пока не опубликована, прежний
-release fixture1.1 не заменён. Код T1 выпущен main3385145/2.0.65 (PR170), но новая
-программа и новый paid PATH не запускались; нынешняя доработка harness пока локальная.
+конечную допущенную AS и lineage. Прежний release fixture1.1 не заменён.
+Код T1 выпущен в2.0.65 (PR170), harness — main/test e63eba6 /2.0.66 (PR171).
+После отдельного разрешения опубликована только новая `specialist_pilot@1.2`, id2,
+без подключений организаций;
+[exact receipt/readback](../docs/evc/evidence/pilot-program-publication-execution/publication-result.json).
+Новый paid PATH не запускался; разрешение публикации не является разрешением прогона.
 Исторический PREP-DIAG-01 остаётся UNKNOWN и не отождествляется с покрытием.
 
 Harness теперь допускает явный внешний published receipt только полным selector

@@ -1,6 +1,102 @@
 # PATH-PILOT-PROGRAM-01 — подготовка выпуска программы
 
-## Продолжение после выпуска harness — 05.11.2026
+## Текущий итог: публикация выполнена — 05.11.2026
+
+Владелец ответил «идем дальше» на конкретные три шага:1.2/publisher4, бесплатная
+изолированная retirement-регрессия и только при её PASS/свежем preflight —
+публикация новой ProgramDefinition и exact export. Это решение записано в
+[owner-decision](../evidence/pilot-program-publication-execution/owner-decision.json);
+исторические PENDING ниже и в прежних receipts не переписываются задним числом.
+
+Результат: **PUBLISHED_READBACK_VERIFIED**, `specialist_pilot@1.2`, DB id **2**,
+publisher4, configuration11, catalog2, role2, status published.
+Серверный наблюдаемый момент —2026-11-05T17:40:31.103491+00:00;
+raw published_at —`2026-11-05 17:40:30.345813` (поле timestamp без timezone).
+Definition checksum `b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718`;
+snapshot `daa715b153f16e9ebc4ea6744a1c8541c5e269e248bba4b5c37723571e6ccfce`.
+Проверенный exact [source receipt](../evidence/pilot-program-publication-execution/published-release-source.json),
+229612 bytes, SHA256 `09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b`.
+Он существует также на сервере:
+`/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json`.
+Default fixture1.1 не заменялся; программе/receipt нового latest не присваивается.
+
+### Реализация и первичные доказательства
+
+- Новый [SQL test](../../../tests/integration/test_program_publication_retirement_db.py)
+  использует точный SQL прежнего операционного проекта и существующий lifecycle.
+  17 новых guards +5 lifecycle +7 start/readiness =**29 PASS** в owned localhost
+  PostgreSQL16; данные исключительно SYNTHETIC, provider disabled.
+- [Регрессия](../evidence/pilot-program-publication-execution/retirement-regression.json)
+  сохранена до [cleanup](../evidence/pilot-program-publication-execution/cleanup.json):
+  marker/имя проверены,0 active connections, DROP без FORCE, DB/state отсутствуют,
+ 0 owned DB/connections, точный task-контейнер auto-removed. Постоянная БД не цель cleanup.
+- [Свежий preflight](../evidence/pilot-program-publication-execution/prepublication.json):
+  main/test e63eba6 /2.0.66, tracked clean; exact32 tables/353 columns/191 constraints/
+ 84 indexes/16 triggers; legacy1.1/config/catalog/roles/Cases/QA/artifacts совпали.
+ 1.2 свободна, publisher4 configured superadmin/not suppressed, role resolution id2.
+- Выполнен **один** вызов существующего `scripts/publish_assessment_program.py --publish`
+  с версией1.2/publisher4; exit0. [argv/итог](../evidence/pilot-program-publication-execution/publisher-invocation.json).
+  Одноразовый [операционный driver](../evidence/pilot-program-publication-execution/EXECUTE_APPROVED.py)
+  передан через SSH stdin; не установлен на сервер, не новый runtime/API/retire CLI.
+  Он не выполняет retry или automatic retirement; до publisher все gates read-only.
+- [Post-readback](../evidence/pilot-program-publication-execution/publication-result.json):
+  прежние полные program rows/role links сохранены, новая программа и один role link,
+  config/catalog/roles/9 Cases/27 исходных QA/15 artifacts без изменений, схема прежняя.
+  Полные org connection rows сравнивались только в памяти: неизменны, для1.2 их **0**.
+  Подключения, активация, retirement, новая AS/start/ответы/платный PATH не выполнялись.
+- Четыре серверных JSON скопированы побайтово, все bytes/SHA совпали. Независимые
+  `CHECK.py`/`REGRESSION.py`: actual published selector1.2 PASS,8 испорченных копий
+  отклонены, запуск с `-O` запрещён; sockets/DB/LLM0. Пересчитаны Case/QA/artifacts
+  существующим validator, полный snapshot равен принятому builder output.
+- Backend на текущих неизменённых runtime sources: **908 PASS**,351 deselected,
+  exit0; интеграционные17 новых тестов входят в29 выше, не в908. Единственное
+  предупреждение — прежнее Starlette/httpx deprecation. [Проверки](../evidence/pilot-program-publication-execution/verification.json).
+
+### Сопоставление шагов и ограничения
+
+| Шаг | Факт | Остаток |
+| --- | --- | --- |
+| Подтвердить номер/издателя/узкий scope | Решение владельца1.2/publisher4 записано | Нет |
+| Проверить восстановление до публикации |29 SQL PASS, guarded retirement/rollback/immutability, cleanup PASS | Не race-proof; retirement не автоматический и не выполнен |
+| Повторить свежий preflight | Точный scoped schema/source/publisher/version PASS | Не проверка всей БД или всех функций продукта |
+| Опубликовать новую программу | ID2, published, checksum/snapshot точны, один CLI call | Не подключение существующих организаций |
+| Экспортировать точные источники |229612 bytes, independent loader/checksum PASS | Не новый human review и не приёмка качества AS |
+| Подготовить следующий PATH | Профиль/README содержат полный exact selector; harness уже в main2.0.66 | Free bootstrap этих published bytes ещё NOT_RUN; paid run требует отдельного разрешения |
+
+Полный M2=61 сохранён; принятый план39/22 вне,55 условий, маршрут и7200/259200
+не менялись. Новая программа хранит ранее принятый exact P1–P3/M1–M4 snapshot;
+публикация не приравнивается к допуску любой AS, LIMITED либо фактическим наблюдениям.
+Не менялись M0–M8/CURRENT, исходные QA, prompts, admission и repair.
+PREP-DIAG-01 остаётся отдельно с исторической причиной **UNKNOWN**.
+
+### Ветка, CI, main, развёртывание и откат
+
+Локальная `codex/pilot-program-publication`, входящий commit e24255f от e63eba6;
+итоговый commit указан в Git/пакете. Изменены только EVC evidence/task/state,
+описание профиля/README и новый integration test. Api/scripts/assessment_definitions
+и приложение2.0.66 не менялись. Main/test —e63eba67d77fb73f7fb9bb219bc3fe5d3807a909.
+Три чужих untracked файла корневого checkout сохранены. Push/PR/merge/deploy здесь нет.
+CI/review выпущенного runtime —PR171 PASS (review a60200d, identical tree squash e63);
+deploy42047619768 PASS. Для локального evidence/test commit нового CI нет;
+он не выдан за CI-проверенный кандидат следующего merge. При будущем PR обязательный
+CI/review сохраняются, полномочий на такой PR сейчас нет.
+
+Схема/конфиг/deploy: миграций, смены конфигурации и новой выкладки нет.
+Безопасность: секреты/.env/PII не экспортированы; DB настройки только в памяти,
+тесты не используют рабочую БД. Scoped readback не доказывает глобального отсутствия
+параллельных действий других пользователей; сравниваемые program/role/connection/source
+объекты совпали. В собственном publisher нет вызовов LLM, provider operations0.
+Published1.2 не удаляется/редактируется; её retirement допустим только по точному
+ID/checksum, при отсутствии любых подключений, контролируемом окне и отдельном
+проверенном решении при необходимости. Автоматический откат не запускался.
+Исторический операционный проект не обещает обратного unretire.
+
+Следующий минимальный шаг — бесплатный bootstrap1.2 с полным selector на новой
+owned-БД. После него отдельное решение владельца об одном paid PATH с остановкой
+при содержательном отказе, без повторов/изменения правил. В этой операции PATH NOT_RUN;
+приёмка первой AS/старта/0 ответов пока не заявляется.
+
+## Историческое продолжение после выпуска harness — 05.11.2026
 
 Исторический отчёт ниже относится к3385145/f211e71, не подменяет дальнейшие решения.
 По «идем дальше» выполнен бесплатный read-only preflight на main/test
