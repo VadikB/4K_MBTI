@@ -1,0 +1,5 @@
+command: env -i PATH="$PATH" AGENT4K_ISOLATED_STAND=1 AGENT4K_STAND_MARKER=stand-10.2:release DB_HOST=127.0.0.1 DB_NAME=product4k_pytest_release_offline DB_USER=offline DB_PASSWORD=unused DB_POOL_MIN_SIZE=0 PYTHONPATH="$PWD" /Users/vadim_bogachev/Developer/4K/.venv/bin/python -m pytest -q tests/unit/test_ci_verification_workflows.py tests/unit/test_release_version.py
+exit_code: 0
+
+......................                                                   [100%]
+22 passed in 1.28s

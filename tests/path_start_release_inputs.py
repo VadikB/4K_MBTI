@@ -4,13 +4,8 @@ The original human_review evidence is copied byte-for-canonical-byte, not
 manufactured by a synthetic reviewer. The local publishing actor is technical;
 this is no new methodology approval or publication to a persistent environment.
 """
-import hashlib
 import json
 import os
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-RECEIPT = ROOT / 'tests/browser/fixtures/path-start-release.json'
 
 
 def reserve_release_ids(connection, table, first_id):
@@ -19,7 +14,8 @@ def reserve_release_ids(connection, table, first_id):
     Only the empty/initial owned fixture is eligible. Fail instead of rewriting
     existing IDs or silently changing the catalog/program checksum.
     """
-    assert table in {'m5_case_versions', 'm5_catalogs', 'assessment_configurations'}
+    assert table in {'m5_case_versions', 'm5_catalogs', 'assessment_configurations',
+                     'assessment_program_definitions'}
     assert os.getenv('AGENT4K_ISOLATED_STAND') == '1'
     assert connection.execute('SELECT current_database() AS name').fetchone()['name'].startswith('product4k_pytest_')
     maximum = connection.execute('SELECT COALESCE(MAX(id),0) AS n FROM ' + table).fetchone()['n']
@@ -27,13 +23,13 @@ def reserve_release_ids(connection, table, first_id):
     connection.execute('SELECT setval(pg_get_serial_sequence(%s,%s),%s,false)', (table, 'id', first_id))
 
 
-def seed_release(connection, actor):
-    from tests.path_start_release_source import validate_release
+def seed_release(connection, actor, *, receipt_reference=None):
+    from tests.path_start_release_source import load_release_receipt, load_release_reference
     from scripts.plan_specialist_program_release import build_admitted_materials, PACKAGE_DIR
 
     # DECISION_BASIS is taken from the verified release, never from CLI guesses.
-    source = json.loads(RECEIPT.read_text())
-    validate_release(source)
+    source, selected = (load_release_receipt() if receipt_reference is None
+                        else load_release_reference(receipt_reference))
     basis = source['catalog']['decision_basis']
     package, runtime, evidence_refs = build_admitted_materials(basis)
     from Api.m5_case_runtime import checksum
@@ -104,7 +100,8 @@ def seed_release(connection, actor):
     connection.execute("UPDATE assessment_program_definitions SET status='published',published_at=NOW() WHERE id=%s", (program_id,))
     from tests.assessment_first_case_evidence import source_provenance
     provenance = source_provenance(connection, catalog['catalog_db_id'])
-    provenance.update(release=source, release_receipt_sha256=hashlib.sha256(RECEIPT.read_bytes()).hexdigest(),
+    provenance.update(release=source, release_receipt_sha256=selected['sha256'],
+        published_release_ref=selected,
         origin_contract_note='Original published QA origins preserved; no synthetic human_review substitution',
         methodology_approval='NO_NEW_APPROVAL; reused owner decision and existing published QA')
     return other, role['id'], program_id, provenance

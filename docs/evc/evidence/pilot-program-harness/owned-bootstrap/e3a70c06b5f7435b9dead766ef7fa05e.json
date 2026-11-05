@@ -1,0 +1,37 @@
+{
+  "scope": "FREE_OWNED_BOOTSTRAP_NOT_PATH_NOT_LLM_OR_PERSISTENT_PUBLICATION",
+  "provider_calls": 0,
+  "status": "ASSERTIONS_COMPLETED",
+  "run_id": "e3a70c06b5f7435b9dead766ef7fa05e",
+  "database": "product4k_pytest_e3a70c06b5f7435b9dead766ef7fa05e",
+  "mode": "SYNTHETIC_FUTURE_METADATA",
+  "selected_program": {
+    "id": 3,
+    "code": "specialist_pilot",
+    "version": "synthetic-next-version",
+    "assignment_ref": "specialist-pilot",
+    "status": "published",
+    "definition_checksum": "860ca3798e0c9533d247fc6820587b822a0896e3fcfc039323da74c21af8d0fc",
+    "assessment_configuration_id": 11,
+    "catalog_version_id": 2
+  },
+  "source_receipt_sha256": "462ae714be8d0819d845fb6113ef1536a0df9f1704bfb90f2a0094c6c2318e2a",
+  "initial_counts": {
+    "users": 1,
+    "organizations": 0,
+    "memberships": 0,
+    "assignments": 0,
+    "profiles": 0,
+    "cycles": 0
+  },
+  "original_case_qa_count": 27,
+  "original_case_qa_unchanged": true,
+  "cleanup": {
+    "run_id": "e3a70c06b5f7435b9dead766ef7fa05e",
+    "database": "product4k_pytest_e3a70c06b5f7435b9dead766ef7fa05e",
+    "owner_verified": true,
+    "database_absent": true,
+    "state_absent": true,
+    "force": false
+  }
+}

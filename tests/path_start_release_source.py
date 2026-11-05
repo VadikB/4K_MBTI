@@ -7,11 +7,84 @@ module never connects to a database.
 from __future__ import annotations
 
 import json
+import hashlib
+import os
+from pathlib import Path
 import subprocess
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_RECEIPT = ROOT / 'tests/browser/fixtures/path-start-release.json'
+DEFAULT_RECEIPT_SHA256 = 'a3175dda9675c476ae8636d26449e5ed17e0ef7940ea0412b7431882933ae1e6'
+PROGRAM_REF_FIELDS = ('id', 'code', 'version', 'assignment_ref', 'status', 'definition_checksum',
+                      'assessment_configuration_id', 'catalog_version_id')
 
 PROGRAM_CHECKSUM = '07576484b6c6467fd5fc7047cb1686a2f952532a893660375984373bab87f58c'
 CATALOG_CHECKSUM = '0008d020cbeb8b06ef5d38ad1eaf136fab8dc42728d98c2d5ec275476a6c25a0'
 DECISION_BASIS = 'owner_decision_2026-10-30_specialist_cases'
+
+
+def load_release_receipt(*, path=None, sha256=None, version=None):
+    """Explicit byte/version pin; the historical default is never changed to latest.
+
+    Return validated source and a harness-only reference. No DB/provider access.
+    A future version is accepted only with a complete, explicit selector; this
+    verifies consistency, not that an offline file proves a real publication.
+    """
+    if not __debug__:
+        raise ValueError('RELEASE_RECEIPT_REQUIRES_ASSERTIONS')
+    if path is None and sha256 is None and version is None:
+        path, sha256, version = DEFAULT_RECEIPT, DEFAULT_RECEIPT_SHA256, '1.1'
+    if (path is None or not isinstance(sha256, str) or len(sha256) != 64
+            or any(char not in '0123456789abcdef' for char in sha256)
+            or not isinstance(version, str) or not version.strip()):
+        raise ValueError('RELEASE_RECEIPT_COMPLETE_SELECTOR_REQUIRED')
+    path = Path(path).resolve()
+    try:
+        data = path.read_bytes()
+    except OSError:
+        raise ValueError('RELEASE_RECEIPT_UNREADABLE') from None
+    if hashlib.sha256(data).hexdigest() != sha256:
+        raise ValueError('RELEASE_RECEIPT_SHA256_MISMATCH')
+    try:
+        source = json.loads(data)
+        validate_release(source)
+        if source.get('contains_user_history') is not False or source.get('new_methodology_approval') is not False:
+            raise ValueError('SOURCE_SCOPE_INVALID')
+        program_ref = {key: source['program'][key] for key in PROGRAM_REF_FIELDS}
+        if any(type(program_ref[key]) is not int or program_ref[key] <= 0
+               for key in ('id', 'assessment_configuration_id', 'catalog_version_id')):
+            raise ValueError('PROGRAM_ID_INVALID')
+    except (ValueError, AssertionError, KeyError, TypeError, AttributeError):
+        raise ValueError('RELEASE_RECEIPT_INVALID') from None
+    if source['program']['version'] != version:
+        raise ValueError('RELEASE_RECEIPT_VERSION_MISMATCH')
+    return source, {'path': str(path), 'sha256': sha256, 'program': program_ref}
+
+
+def load_release_reference(reference):
+    """Recheck a selected reference, including after cross-process/state transfer."""
+    try:
+        source, actual = load_release_receipt(path=reference['path'], sha256=reference['sha256'],
+                                             version=reference['program']['version'])
+    except (KeyError, TypeError):
+        raise ValueError('RELEASE_RECEIPT_REFERENCE_INVALID') from None
+    if reference != actual:
+        raise ValueError('RELEASE_RECEIPT_REFERENCE_MISMATCH')
+    return source, actual
+
+
+def stage_release_receipt(reference, directory):
+    """Preserve exact validated bytes for post-cleanup audit; never alter a source."""
+    _, actual = load_release_reference(reference)
+    data = Path(actual['path']).read_bytes()
+    if hashlib.sha256(data).hexdigest() != actual['sha256']:
+        raise ValueError('RELEASE_RECEIPT_SHA256_MISMATCH')
+    target = Path(directory) / 'published-release-source.json'
+    with target.open('xb') as stream:
+        stream.write(data)
+        stream.flush()
+        os.fsync(stream.fileno())
+    return load_release_receipt(path=target, sha256=actual['sha256'], version=actual['program']['version'])[1]
 
 
 def validate_release(source):

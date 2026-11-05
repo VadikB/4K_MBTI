@@ -1,0 +1,24 @@
+{
+  "scope": "COMPONENT_ONLY_NOT_REAL_PILOT_NOT_FULL_PATH",
+  "run": {
+    "run_id": "932caf9a826c4ccab57049552e16380d",
+    "database": "product4k_pytest_932caf9a826c4ccab57049552e16380d",
+    "port": "18879",
+    "provider_mode": "disabled",
+    "code": null
+  },
+  "component-boundary": {
+    "fixture": "browser-component-plan-boundary/1",
+    "product_admission_evidence": false,
+    "full_path": false,
+    "provider_mode": "disabled"
+  },
+  "cleanup": {
+    "run_id": "932caf9a826c4ccab57049552e16380d",
+    "database": "product4k_pytest_932caf9a826c4ccab57049552e16380d",
+    "owner_verified": true,
+    "database_absent": true,
+    "state_absent": true,
+    "force": false
+  }
+}

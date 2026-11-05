@@ -1,0 +1,26 @@
+{
+  "status": "PASS_OFFLINE_HARNESS_PROBE_NOT_PATH",
+  "base_sha": "3385145201d5d365e08e9e8a6a6fb7e12a0aa258",
+  "head_sha": "f211e7184e226b202529e14caf6e2f54478601fa",
+  "branch": "codex/pilot-program-release-plan",
+  "baseline_program_reservation": "REPRODUCED_REJECTION_BEFORE_SQL",
+  "fixed_program_reservation": "PASS_FAKE_CONNECTION_NO_SQL",
+  "legacy_receipt_sha256": "a3175dda9675c476ae8636d26449e5ed17e0ef7940ea0412b7431882933ae1e6",
+  "owned_bootstrap_runs": 3,
+  "permanent_database_writes": 0,
+  "provider_calls": 0,
+  "source_files_sha256": {
+    "scripts/assessment_first_case.py": "ef0d6f690dce6c60d4a7bba95dded7dcf17b27ba1ae744d054a820faada36d5a",
+    "tests/path_start_release_source.py": "feae3518fb700e96e47f4c5b3553da2c5301d2d91f20809a6ad1b49cb3767d06",
+    "tests/path_start_release_inputs.py": "cd1bfd41d3300575d217c63277e4bcbb4d3ddaeece3b5e0f6a6d2e368e86f1f3",
+    "tests/path29_browser_inputs.py": "cf947cf38aa33ab301e3d0bcf1f55325db6095e4d55d38e87d4d862fd3de4b2e",
+    "tests/browser/fixtures/preparation-receipt.mjs": "5ffa75e9ab37b114c95747fd2e3ac12c3bf8c2ac4f38037603e50bad42903905",
+    "tests/browser/path29-participant.spec.mjs": "fe94269df616b5cff8b229cdbee18ab78506333c8136babd28befe7f9c4fcf9c"
+  },
+  "PREP_DIAG_01_root_cause": "UNKNOWN",
+  "limitations": [
+    "Future metadata is SYNTHETIC, not a publication or new human QA",
+    "This script rechecks files and evidence, not live DB or paid PATH",
+    "Separate backend/Node/integration/browser logs carry actual execution results"
+  ]
+}

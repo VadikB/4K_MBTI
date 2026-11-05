@@ -1,9 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { verifyPreparation, verifyFirstCase } from '../browser/fixtures/preparation-receipt.mjs';
+import { verifyPreparation, verifyFirstCase, verifyPublishedProgram } from '../browser/fixtures/preparation-receipt.mjs';
 
-const fixture = () => JSON.parse(fs.readFileSync(new URL('../browser/fixtures/first-case-success.json', import.meta.url)));
+function selectedFixture(version = 'synthetic-next-version') {
+  const receipt = fixture();
+  Object.assign(receipt.program_definition, { code: 'specialist_pilot', version,
+    assignment_ref: 'specialist-pilot', status: 'published', definition_checksum: 'a'.repeat(64) });
+  return { receipt, selected: { program: structuredClone(receipt.program_definition) } };
+}
+for (const version of ['1.1', 'synthetic-next-version']) test(`exact selected program ${version}`, () => {
+  const { receipt, selected } = selectedFixture(version);
+  assert.doesNotThrow(() => verifyFirstCase(receipt, before(receipt), selected));
+});
+for (const field of ['id', 'code', 'version', 'assignment_ref', 'status', 'definition_checksum',
+  'assessment_configuration_id', 'catalog_version_id']) {
+  for (const phase of ['before', 'after']) test(`selected ${field} drift ${phase} blocks success`, () => {
+    const { receipt, selected } = selectedFixture();
+    const initial = before(receipt);
+    (phase === 'before' ? initial : receipt).program_definition[field] = 'different';
+    assert.throws(() => verifyFirstCase(receipt, initial, selected), /SELECTED_PROGRAM_/);
+  });
+}
+test('missing selected source is rejected, not inferred from actual program', () => {
+  assert.throws(() => verifyPublishedProgram(fixture(), {}), /SELECTED_PUBLISHED_PROGRAM_REQUIRED/);
+});
+
+function fixture() {
+  return JSON.parse(fs.readFileSync(new URL('../browser/fixtures/first-case-success.json', import.meta.url)));
+}
 function before(receipt) {
   const value = structuredClone(receipt);
   value.cycle.started_at = value.sessions[0].started_at = value.assessment_situation.started_at = null;

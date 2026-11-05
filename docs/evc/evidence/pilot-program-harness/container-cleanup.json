@@ -1,0 +1,12 @@
+{
+  "container_id": "065e9f99c803b59b7e55d65a564d8bb1f138f89c916b69cc91427bbbc39e9068",
+  "task_label": "path-pilot-harness-a472d6",
+  "localhost_port": 54382,
+  "auto_remove": true,
+  "pre_stop_readback": "\"065e9f99c803b59b7e55d65a564d8bb1f138f89c916b69cc91427bbbc39e9068\" {\"codex.task\":\"path-pilot-harness-a472d6\"} true\n{\"owned_databases_remaining\" : 0, \"application_connections_remaining\" : 0}\n",
+  "stop_and_absence_readback": "065e9f99c803b59b7e55d65a564d8bb1f138f89c916b69cc91427bbbc39e9068\n",
+  "container_absent": true,
+  "working_database_touched": false,
+  "other_containers_touched": false,
+  "temporary_data_reproducible_from_fixtures": true
+}

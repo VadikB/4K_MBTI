@@ -8,6 +8,17 @@ const required = (value, label) => assert.ok(value !== undefined && value !== nu
 const same = (left, right, label) => { required(left, label); required(right, label); assert.equal(left, right, label); };
 const hash = (value) => assert.match(value ?? '', /^[a-f0-9]{64}$/, 'CHECKSUM_REQUIRED');
 
+export function verifyPublishedProgram(receipt, selected) {
+  const expected = selected?.program;
+  required(expected, 'SELECTED_PUBLISHED_PROGRAM_REQUIRED');
+  assert.equal(expected.status, 'published', 'SELECTED_PROGRAM_NOT_PUBLISHED');
+  hash(expected.definition_checksum);
+  for (const field of ['id', 'code', 'version', 'assignment_ref', 'status', 'definition_checksum',
+    'assessment_configuration_id', 'catalog_version_id']) {
+    same(receipt.program_definition?.[field], expected[field], 'SELECTED_PROGRAM_' + field.toUpperCase());
+  }
+}
+
 export function verifyPreparation(receipt) {
   const generated = receipt.functional_generation;
   assert.equal(receipt.preparation_operation.status, 'completed', 'PREPARATION_NOT_COMPLETED');
@@ -112,7 +123,11 @@ export function verifyPreparation(receipt) {
   }
 }
 
-export function verifyFirstCase(receipt, before) {
+export function verifyFirstCase(receipt, before, selected) {
+  if (selected !== undefined) {
+    verifyPublishedProgram(before, selected);
+    verifyPublishedProgram(receipt, selected);
+  }
   verifyPreparation(before);
   verifyPreparation(receipt);
   if (Object.hasOwn(before, 'assignment_lineage')) {
@@ -149,7 +164,8 @@ export function verifyFirstCase(receipt, before) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     verifyFirstCase(JSON.parse(fs.readFileSync(process.argv[2], 'utf8')),
-      JSON.parse(fs.readFileSync(process.argv[3], 'utf8')));
+      JSON.parse(fs.readFileSync(process.argv[3], 'utf8')),
+      process.argv[4] ? JSON.parse(fs.readFileSync(process.argv[4], 'utf8')) : undefined);
   } catch {
     // No arbitrary receipt values, assertions, credentials or prompts in summary output.
     process.stderr.write('FIRST_CASE_EVIDENCE_INVALID\n');

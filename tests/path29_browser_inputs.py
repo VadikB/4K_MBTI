@@ -13,6 +13,10 @@ sys.path.insert(0, str(ROOT))
 
 def seed(state_path, state):
     full_path = state.get('path29_full_path') is True
+    release_reference = None
+    if full_path and state.get('path29_program_source') == 'published-pilot':
+        from tests.path_start_release_source import load_release_reference
+        _, release_reference = load_release_reference(state['path29_release_receipt'])
     if not full_path:
         from scripts.test_stand_seed import seed as source_seed
         source_seed(state)
@@ -63,7 +67,7 @@ def seed(state_path, state):
         catalog_version_id = source['catalog_version_id']
         if full_path and state.get('path29_program_source') == 'published-pilot':
             from tests.path_start_release_inputs import seed_release
-            other, role_id, program_id, provenance = seed_release(c, actor)
+            other, role_id, program_id, provenance = seed_release(c, actor, receipt_reference=release_reference)
             counts = {name: c.execute('SELECT count(*) AS n FROM ' + table).fetchone()['n']
                 for name, table in {
                     'users': 'users', 'organizations': 'organizations',
@@ -78,6 +82,7 @@ def seed(state_path, state):
                 json.dumps(provenance, ensure_ascii=False, indent=2) + '\n')
             state['path29'] = {'organization_id': None, 'configuration_id': other['id'],
                 'program_id': program_id, 'program_code': 'specialist_pilot', 'assignment_ref': 'specialist-pilot',
+                'published_release_ref': release_reference,
                 'role_version_id': role_id, 'input_mode': 'published-pilot',
                 'admin_email': 'path29-admin@example.test', 'participant_email': 'path29-new@example.test'}
             c.commit()
@@ -223,6 +228,11 @@ if __name__ == '__main__':
         if os.getenv('P4K_FULL_PATH') == '1':
             state['path29_full_path'] = True
             state['path29_program_source'] = os.getenv('P4K_PROGRAM_SOURCE', 'functional-diagnostic')
+            if state['path29_program_source'] == 'published-pilot':
+                from tests.path_start_release_source import load_release_receipt, stage_release_receipt
+                selected = os.getenv('P4K_PUBLISHED_RELEASE_REF')
+                reference = json.loads(selected) if selected else load_release_receipt()[1]
+                state['path29_release_receipt'] = stage_release_receipt(reference, args.state.parent)
             args.state.write_text(json.dumps(state))
         subprocess.run([sys.executable, __file__, '--state', str(args.state), '--child'],
                        env=environment(state), cwd=ROOT, check=True)

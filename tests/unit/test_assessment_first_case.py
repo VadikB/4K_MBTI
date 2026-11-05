@@ -1,5 +1,45 @@
 from scripts.assessment_first_case import preflight
 
+
+def test_source_selection_cannot_leak_into_functional_diagnostic():
+    import pytest
+    from scripts.assessment_first_case import select_release
+    assert select_release('functional-diagnostic') is None
+    with pytest.raises(ValueError, match='REQUIRES_PUBLISHED_PILOT'):
+        select_release('functional-diagnostic', version='1.2')
+
+
+def test_cli_bad_source_is_rejected_before_env_file_and_machine_checks(monkeypatch):
+    import sys
+    import pytest
+    import dotenv
+    from scripts import assessment_first_case as runner
+    monkeypatch.setattr(sys, 'argv', ['assessment_first_case.py', '--program-source', 'published-pilot',
+        '--program-version', '1.2', '--env-file', '/must-not-be-read.env'])
+    monkeypatch.setattr(dotenv, 'dotenv_values', lambda *a, **kw: pytest.fail('must not read credentials'))
+    monkeypatch.setattr(runner, 'preflight', lambda *a, **kw: pytest.fail('must not connect/probe'))
+    with pytest.raises(SystemExit) as stopped:
+        runner.main()
+    assert stopped.value.code == 2
+
+
+def test_cli_passes_selected_ref_not_ambient_override_to_bootstrap(tmp_path, monkeypatch):
+    import json
+    import sys
+    from scripts import assessment_first_case as runner
+    from tests.path_start_release_source import load_release_receipt
+    _, expected = load_release_receipt()
+    seen = []
+    monkeypatch.setenv('P4K_PUBLISHED_RELEASE_REF', 'must-not-inherit')
+    monkeypatch.setattr(sys, 'argv', ['assessment_first_case.py', '--program-source', 'published-pilot',
+        '--directory', str(tmp_path), '--check-bootstrap'])
+    monkeypatch.setattr(runner, 'preflight', lambda *a, **kw: {'status': 'READY'})
+    monkeypatch.setattr(runner, 'code_identity', lambda: {'scope': 'synthetic_unit_fixture'})
+    monkeypatch.setattr(runner, 'check_bootstrap', lambda d, p, py, env: seen.append(env))
+    monkeypatch.setattr(runner, 'summarize_runs', lambda *a: {'exit_code': 0})
+    assert runner.main() == 0
+    assert json.loads(seen[0]['P4K_PUBLISHED_RELEASE_REF']) == expected
+
 def test_preflight_reports_named_blockers_without_secret_values(monkeypatch):
     monkeypatch.delenv('STAND_ADMIN_URL',raising=False);monkeypatch.setenv('DEEPSEEK_API_KEYS','must-not-leak');monkeypatch.delenv('DEEPSEEK_MODEL',raising=False)
     result=preflight(0)

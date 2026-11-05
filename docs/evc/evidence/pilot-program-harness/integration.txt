@@ -1,0 +1,6 @@
+command: TEST_DATABASE_URL=<isolated reference on task-owned localhost:54382> STAND_ADMIN_URL=<maintenance postgres on same task-owned localhost> P4K_HARNESS_EVIDENCE_DIRECTORY=docs/evc/evidence/pilot-program-harness/owned-bootstrap .venv/bin/python -m pytest -q --run-integration tests/integration/test_published_release_seed_db.py
+exit_code: 0
+scope: Actual stdout from completed integration session 42752; inputs provider disabled; three distinct owned DBs. URLs have no production credentials.
+
+...                                                                      [100%]
+3 passed in 38.35s

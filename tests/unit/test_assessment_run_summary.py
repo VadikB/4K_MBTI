@@ -155,3 +155,85 @@ def test_summarize_cli_returns_failure_for_invalid_evidence_even_if_child_exited
     value = json.loads((tmp_path / 'runner-result.normalized.json').read_text())
     assert value['process_exit_code'] == 0 and value['exit_code'] == 1 and value['result'] == 'FAIL'
     capsys.readouterr()
+
+
+def published_successful_run(root, *, future=False):
+    """Synthetic AS/stages/start receipt, NOT evidence of actual LLM/PATH success."""
+    from tests.path_start_release_source import DEFAULT_RECEIPT, load_release_receipt, stage_release_receipt
+    from tests.unit.test_path_start_release_source import selected_fixture
+    source = json.loads(DEFAULT_RECEIPT.read_bytes())
+    if future:
+        inputs = root / 'input'; inputs.mkdir()
+        original, source, selected = selected_fixture(inputs, source)
+    else:
+        original = None
+        _, selected = load_release_receipt()
+    directory = successful_run(root)
+    staged = stage_release_receipt(selected, directory)
+    if original:
+        original.unlink()  # The summary must not depend on the original external path.
+    run = json.loads((directory / 'run.json').read_bytes())
+    run.update(program_source='published-pilot', published_release_ref=selected)
+    save(directory, 'run', run)
+    for name in ('source-to-runtime-receipt', 'first-case-receipt'):
+        receipt = json.loads((directory / (name + '.json')).read_bytes())
+        receipt.update(program_definition=copy.deepcopy(source['program']),
+                       assessment_configuration=source['configuration'], catalog=source['catalog'])
+        receipt['cycle']['catalog_ref_json']['checksum'] = source['catalog']['manifest_checksum']
+        save(directory, name, receipt)
+    complete(directory)
+    return directory, staged
+
+
+@pytest.mark.parametrize('future', [False, True])
+def test_selected_source_survives_original_removal_and_cleanup(tmp_path, future):
+    published_successful_run(tmp_path, future=future)
+    assert result(tmp_path) == 'PASS'
+
+
+@pytest.mark.parametrize('corrupt', ['missing_copy', 'changed_bytes', 'missing_ref', 'ref_checksum',
+    'before_version', 'after_version', 'after_program_id', 'after_checksum', 'unadmitted', 'missing_stage'])
+def test_selected_source_or_runtime_drift_never_passes_summary(tmp_path, corrupt):
+    directory, _ = published_successful_run(tmp_path)
+    if corrupt == 'missing_copy': (directory / 'published-release-source.json').unlink()
+    elif corrupt == 'changed_bytes':
+        path = directory / 'published-release-source.json'; path.write_bytes(path.read_bytes() + b'\n')
+    elif corrupt in ('missing_ref', 'ref_checksum'):
+        run = json.loads((directory / 'run.json').read_bytes())
+        if corrupt == 'missing_ref': run.pop('published_release_ref'); run.pop('program_source')
+        else: run['published_release_ref']['program']['definition_checksum'] = '0' * 64
+        save(directory, 'run', run)
+    else:
+        name = 'source-to-runtime-receipt' if corrupt == 'before_version' else 'first-case-receipt'
+        receipt = json.loads((directory / (name + '.json')).read_bytes())
+        if corrupt in ('before_version', 'after_version'): receipt['program_definition']['version'] = 'wrong'
+        if corrupt == 'after_program_id': receipt['program_definition']['id'] = 999
+        if corrupt == 'after_checksum': receipt['program_definition']['definition_checksum'] = '0' * 64
+        if corrupt == 'unadmitted': receipt['functional_generation']['admitted_for_participant'] = False
+        if corrupt == 'missing_stage': receipt['functional_generation']['stages']['challenger']['batch_count'] = 0
+        save(directory, name, receipt)
+        complete(directory)
+    assert result(tmp_path) == 'FAIL'
+
+
+@pytest.mark.parametrize('corrupt', [None, 'release', 'sha'])
+def test_bootstrap_summary_requires_matching_saved_published_source(tmp_path, corrupt):
+    from tests.path_start_release_source import load_release_receipt, stage_release_receipt
+    source, selected = load_release_receipt()
+    directory = tmp_path / 'run'; directory.mkdir()
+    stage_release_receipt(selected, directory)
+    run = {'run_id': 'run', 'database': 'product4k_pytest_run', 'scope': 'bootstrap_repeat',
+           'program_source': 'published-pilot', 'published_release_ref': selected}
+    save(directory, 'run', run)
+    save(directory, 'cleanup', {**run, 'owner_verified': True, 'database_absent': True, 'state_absent': True})
+    # Explicitly synthetic historic diagnostic provenance, not a real bootstrap here.
+    path = Path(__file__).resolve().parents[2] / 'docs/evc/evidence/assessment-contour-2026-11-04/source-provenance.json'
+    provenance = json.loads(path.read_bytes())
+    provenance.update(release=source, release_receipt_sha256=selected['sha256'])
+    if corrupt == 'release': provenance['release']['program']['version'] = 'wrong'
+    if corrupt == 'sha': provenance['release_receipt_sha256'] = '0' * 64
+    save(directory, 'source-provenance', provenance)
+    save(directory, 'completion', {'run_id': 'run', 'status': 'completed', 'exit_code': 0,
+        'receipt_file': 'source-provenance.json',
+        'receipt_sha256': hashlib.sha256((directory / 'source-provenance.json').read_bytes()).hexdigest()})
+    assert result(tmp_path) == ('PASS_BOOTSTRAP_ONLY' if corrupt is None else 'FAIL')

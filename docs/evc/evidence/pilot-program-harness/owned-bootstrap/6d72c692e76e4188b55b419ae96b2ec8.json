@@ -1,0 +1,19 @@
+{
+  "scope": "FREE_OWNED_BOOTSTRAP_NOT_PATH_NOT_LLM_OR_PERSISTENT_PUBLICATION",
+  "provider_calls": 0,
+  "status": "ASSERTIONS_COMPLETED",
+  "run_id": "6d72c692e76e4188b55b419ae96b2ec8",
+  "database": "product4k_pytest_6d72c692e76e4188b55b419ae96b2ec8",
+  "mode": "NEGATIVE_CHANGED_SOURCE",
+  "rejected_before_seed": true,
+  "users": 0,
+  "program_definitions": 0,
+  "cleanup": {
+    "run_id": "6d72c692e76e4188b55b419ae96b2ec8",
+    "database": "product4k_pytest_6d72c692e76e4188b55b419ae96b2ec8",
+    "owner_verified": true,
+    "database_absent": true,
+    "state_absent": true,
+    "force": false
+  }
+}

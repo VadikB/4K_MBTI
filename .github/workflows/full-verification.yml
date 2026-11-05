@@ -35,6 +35,7 @@ jobs:
       DB_POOL_MIN_SIZE: "0"
       DEEPSEEK_API_KEYS: ""
       TEST_DATABASE_URL: postgresql://pytest:pytest@127.0.0.1:5432/agent4k_pytest
+      STAND_ADMIN_URL: postgresql://pytest:pytest@127.0.0.1:5432/postgres
 
     steps:
       - uses: actions/checkout@v4

@@ -1,0 +1,5 @@
+command: env -i PATH="$PATH" AGENT4K_ISOLATED_STAND=1 AGENT4K_STAND_MARKER=stand-10.2:offline-plan DB_HOST=127.0.0.1 DB_NAME=product4k_pytest_offline_plan DB_USER=offline DB_PASSWORD=unused DB_POOL_MIN_SIZE=0 PYTHONPATH="$PWD" /Users/vadim_bogachev/Developer/4K/.venv/bin/python -m pytest -q tests/unit/test_pilot_plan_admission.py tests/unit/test_path_start_release_source.py tests/unit/test_assessment_start_readiness.py
+exit_code: 0
+
+........................................................................ [100%]
+72 passed in 2.09s
