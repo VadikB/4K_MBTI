@@ -1,5 +1,25 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- Завершён локальный [PATH-AC02/05](../path-ac02-ac05-coverage.md) от bb3b5cb:
+  AC02 browser3/real HTTP+PG2 PASS; новый AC05 unknown/disconnected defect
+  2 clean before FAIL →17 targeted PASS; полный контроль115 browser PASS,
+  frontend140/HTTP+M3 25/lint/build45/idempotency/hash/diff PASS. Первый полный
+  114/1 auth assertion FAIL сохранён, отдельно baseline5/current5 PASS,
+  первопричина единичного auth-сбоя UNKNOWN (не PREP-DIAG-01).
+  Новая owned PG очищена после evidence, state не создавался, постоянная БД/LLM0.
+  Ветка `codex/path-ac02-ac05-coverage`, локальная UI/tests/docs/dist дельта,
+  не новая сборка на сервере. Main/test по-прежнему bb3b5cb /2.0.67, их CI/deploy PASS;
+  нового PR/CI/review/release нет. Следующий gate — разрешение PATCH-кандидата
+  (предлагаемый2.0.68), затем штатные PR/CI/review; merge/deploy отдельно.
+- 06.11.2026: выпуск2.0.67 завершён — [PR172 / closure](https://github.com/VadikB/4K_MBTI/pull/172#issuecomment-6670022536),
+  owner review463e7e2 + отдельное разрешение merge/test; squash/main/test
+  `bb3b5cb34696af8a8a2bdaa1999dd8a795786085`, дерево4565dbf0 равно принятому head.
+  Mandatory PR CI/deploy-test PASS, server/public SHA/version/45 assets+HTML PASS.
+  Нижние WAITING/старые main/test — сохранённая история. Baseline не назначен.
+  По новому «идем дальше по списку задач» активна [PATH-AC02/05](../path-ac02-ac05-coverage.md):
+  отдельная ветка `codex/path-ac02-ac05-coverage` от bb3b5cb, только бесплатные
+  remaining browser проверки/подтверждённые PATH fixes. Новый release/PR/merge/deploy,
+  paid LLM/публикация/активация/рабочая БД не разрешены. PREP-DIAG-01 UNKNOWN отдельно.
 - Разрешён [PATH-AC05-R1](../path-ac05-release-2067.md): владелец подтвердил2.0.67
   PATCH → push/PR/CI/review. Реализация2509aa2 сохранена, активны preflight/кандидат.
   Human review нового head ещё нет; merge/deploy/активация/paid LLM не разрешены.

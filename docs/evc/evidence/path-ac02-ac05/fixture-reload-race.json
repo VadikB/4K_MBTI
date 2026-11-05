@@ -1,0 +1,620 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/node_modules/@playwright/test/cli.js",
+      "test",
+      "tests/browser/auth-r03.spec.mjs",
+      "--grep",
+      "PATH-START AC0[25]"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth-r03.spec.mjs",
+      "file": "auth-r03.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "PATH-START AC02 repeats organization creation after confirmed response without a duplicate",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 6051,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-organization-id=\"3\"]')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" locator('[data-organization-id=\"3\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-organization-id=\"3\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-organization-id=\"3\"]')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" locator('[data-organization-id=\"3\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-organization-id=\"3\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:334:62",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 62,
+                      "line": 334
+                    },
+                    "snippet": "  332 |       await page.locator('#admin-open-organizations-button').click();\n  333 |     }\n> 334 |     await expect(page.locator('[data-organization-id=\"3\"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);\n      |                                                              ^\n  335 |     await name.fill('Owned synthetic AC02');\n  336 |     await code.fill('owned-ac02');\n  337 |     await button.click();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 62,
+                        "line": 334
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-organization-id=\"3\"]')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" locator('[data-organization-id=\"3\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-organization-id=\"3\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\n\n  332 |       await page.locator('#admin-open-organizations-button').click();\n  333 |     }\n> 334 |     await expect(page.locator('[data-organization-id=\"3\"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);\n      |                                                              ^\n  335 |     await name.fill('Owned synthetic AC02');\n  336 |     await code.fill('owned-ac02');\n  337 |     await button.click();\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:334:62"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:35:34.751Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-e149c-esponse-without-a-duplicate/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-e149c-esponse-without-a-duplicate/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-e149c-esponse-without-a-duplicate/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 62,
+                    "line": 334
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-81e150b80df84e18a34f",
+          "file": "auth-r03.spec.mjs",
+          "line": 278,
+          "column": 3
+        },
+        {
+          "title": "PATH-START AC02 repeats organization creation after lost response without a duplicate",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 6007,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-organization-id=\"3\"]')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" locator('[data-organization-id=\"3\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-organization-id=\"3\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-organization-id=\"3\"]')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" locator('[data-organization-id=\"3\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-organization-id=\"3\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:334:62",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 62,
+                      "line": 334
+                    },
+                    "snippet": "  332 |       await page.locator('#admin-open-organizations-button').click();\n  333 |     }\n> 334 |     await expect(page.locator('[data-organization-id=\"3\"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);\n      |                                                              ^\n  335 |     await name.fill('Owned synthetic AC02');\n  336 |     await code.fill('owned-ac02');\n  337 |     await button.click();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 62,
+                        "line": 334
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-organization-id=\"3\"]')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" locator('[data-organization-id=\"3\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-organization-id=\"3\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\n\n  332 |       await page.locator('#admin-open-organizations-button').click();\n  333 |     }\n> 334 |     await expect(page.locator('[data-organization-id=\"3\"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);\n      |                                                              ^\n  335 |     await name.fill('Owned synthetic AC02');\n  336 |     await code.fill('owned-ac02');\n  337 |     await button.click();\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:334:62"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:35:42.295Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-b2c01-esponse-without-a-duplicate/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-b2c01-esponse-without-a-duplicate/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-b2c01-esponse-without-a-duplicate/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 62,
+                    "line": 334
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-10311d55e9a8ddec390a",
+          "file": "auth-r03.spec.mjs",
+          "line": 278,
+          "column": 3
+        },
+        {
+          "title": "PATH-START AC02 repeats organization creation after service-error response without a duplicate",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "interrupted",
+                  "duration": 38144,
+                  "error": {
+                    "message": "Error: locator.fill: Test ended.\nCall log:\n\u001b[2m  - waiting for locator('#admin-organization-name-input')\u001b[22m\n\u001b[2m    - locator resolved to <input type=\"text\" autocomplete=\"off\" placeholder=\"Например, ACME\" id=\"admin-organization-name-input\"/>\u001b[22m\n\u001b[2m    - fill(\"Owned synthetic AC02\")\u001b[22m\n\u001b[2m  - attempting fill action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and editable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying fill action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and editable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying fill action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    74 × waiting for element to be visible, enabled and editable\u001b[22m\n\u001b[2m       - element is not visible\u001b[22m\n\u001b[2m     - retrying fill action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n",
+                    "stack": "Error: locator.fill: Test ended.\nCall log:\n\u001b[2m  - waiting for locator('#admin-organization-name-input')\u001b[22m\n\u001b[2m    - locator resolved to <input type=\"text\" autocomplete=\"off\" placeholder=\"Например, ACME\" id=\"admin-organization-name-input\"/>\u001b[22m\n\u001b[2m    - fill(\"Owned synthetic AC02\")\u001b[22m\n\u001b[2m  - attempting fill action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and editable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying fill action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and editable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying fill action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    74 × waiting for element to be visible, enabled and editable\u001b[22m\n\u001b[2m       - element is not visible\u001b[22m\n\u001b[2m     - retrying fill action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:335:16",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 16,
+                      "line": 335
+                    },
+                    "snippet": "  333 |     }\n  334 |     await expect(page.locator('[data-organization-id=\"3\"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);\n> 335 |     await name.fill('Owned synthetic AC02');\n      |                ^\n  336 |     await code.fill('owned-ac02');\n  337 |     await button.click();\n  338 |     await expect.poll(() => posts.length).toBe(2);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 16,
+                        "line": 335
+                      },
+                      "message": "Error: locator.fill: Test ended.\nCall log:\n\u001b[2m  - waiting for locator('#admin-organization-name-input')\u001b[22m\n\u001b[2m    - locator resolved to <input type=\"text\" autocomplete=\"off\" placeholder=\"Например, ACME\" id=\"admin-organization-name-input\"/>\u001b[22m\n\u001b[2m    - fill(\"Owned synthetic AC02\")\u001b[22m\n\u001b[2m  - attempting fill action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and editable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying fill action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and editable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying fill action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    74 × waiting for element to be visible, enabled and editable\u001b[22m\n\u001b[2m       - element is not visible\u001b[22m\n\u001b[2m     - retrying fill action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n\n  333 |     }\n  334 |     await expect(page.locator('[data-organization-id=\"3\"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);\n> 335 |     await name.fill('Owned synthetic AC02');\n      |                ^\n  336 |     await code.fill('owned-ac02');\n  337 |     await button.click();\n  338 |     await expect.poll(() => posts.length).toBe(2);\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:335:16"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:35:49.547Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-6c677-esponse-without-a-duplicate/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-6c677-esponse-without-a-duplicate/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-6c677-esponse-without-a-duplicate/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 16,
+                    "line": 335
+                  }
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-cfeb199d66a6936ece75",
+          "file": "auth-r03.spec.mjs",
+          "line": 278,
+          "column": 3
+        },
+        {
+          "title": "PATH-START AC05 deadline GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-f427f13dae51a0946130",
+          "file": "auth-r03.spec.mjs",
+          "line": 356,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 http503 GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-1b6e686f2b1484e7aab0",
+          "file": "auth-r03.spec.mjs",
+          "line": 356,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 network GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-893a1a676e4b1ce8e74c",
+          "file": "auth-r03.spec.mjs",
+          "line": 356,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 invalid-json GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-63d8bdc9a0c7b3cb478d",
+          "file": "auth-r03.spec.mjs",
+          "line": 356,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 null GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-6cf82cebba8f08b7db3e",
+          "file": "auth-r03.spec.mjs",
+          "line": 356,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 foreign-program GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-c32617845276948fdc6c",
+          "file": "auth-r03.spec.mjs",
+          "line": 356,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 deadline GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-0421b9f2f323cc9fdc7a",
+          "file": "auth-r03.spec.mjs",
+          "line": 356,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 http503 GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-adfa5bc11710dddaffc7",
+          "file": "auth-r03.spec.mjs",
+          "line": 356,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 network GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-9b7aa3d2196b5cb029a1",
+          "file": "auth-r03.spec.mjs",
+          "line": 356,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 invalid-json GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-913f662337fcbfde1a3f",
+          "file": "auth-r03.spec.mjs",
+          "line": 356,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 null GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-ce2c39b45d68b80865ee",
+          "file": "auth-r03.spec.mjs",
+          "line": 356,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 foreign-program GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-b6472c42046c70cc5a12",
+          "file": "auth-r03.spec.mjs",
+          "line": 356,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 rejects a foreign organization readback after confirmed command",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-97459b8728421dde5172",
+          "file": "auth-r03.spec.mjs",
+          "line": 522,
+          "column": 3
+        },
+        {
+          "title": "PATH-START AC05 rejects a foreign organization readback after lost command",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-9a914905ba6b0e3e54e0",
+          "file": "auth-r03.spec.mjs",
+          "line": 522,
+          "column": 3
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-05T21:35:33.412Z",
+    "duration": 54810.661,
+    "expected": 0,
+    "skipped": 15,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

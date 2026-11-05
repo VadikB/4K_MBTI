@@ -274,6 +274,174 @@ test('ADM28 superadmin still restores its global dashboard', async ({ page }) =>
   await expect(page.locator('#admin-open-methodology-button')).toBeVisible();
 });
 
+async function reloadSuperadminOrganizations(page) {
+  await page.reload();
+  await expect(page.locator('#admin-panel:not(.hidden), #admin-organizations-panel:not(.hidden)')).toHaveCount(1);
+  if (await page.locator('#admin-open-organizations-button').isVisible()) {
+    await page.locator('#admin-open-organizations-button').click();
+  }
+  await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+}
+
+for (const firstReply of ['confirmed', 'lost', 'service-error']) {
+  test(`PATH-START AC02 repeats organization creation after ${firstReply} response without a duplicate`, async ({ page }, testInfo) => {
+    testInfo.annotations.push({ type: 'synthetic_http', description: 'Stateful HTTP fixture; real entry/dist; no DB/provider.' });
+    const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+    const items = [];
+    const posts = [];
+    let releaseCreate;
+    const pendingCreate = new Promise((resolve) => { releaseCreate = resolve; });
+    const listing = () => ({ is_superadmin: true, items, assessment_programs: [] });
+    await page.route('**/users/**', async (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      if (['/users/session/restore', '/users/18/session-bootstrap'].includes(pathname)) return fulfillJson(route, {
+        authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
+      });
+      if (pathname === '/users/version') return fulfillJson(route, { version: 'ac02-test' });
+      if (pathname === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+      if (pathname === '/users/admin/organizations') {
+        if (route.request().method() === 'GET') return fulfillJson(route, listing());
+        const payload = route.request().postDataJSON();
+        posts.push(payload);
+        if (posts.length === 1) {
+          await pendingCreate;
+          if (firstReply === 'service-error') return fulfillJson(route, { detail: 'Synthetic create unavailable' }, 503);
+        }
+        if (items.some((item) => item.code === payload.code)) {
+          return fulfillJson(route, { detail: 'Organization with this code already exists' }, 409);
+        }
+        items.push({ ...payload, id: 3, is_active: true, domains: [], admins: [],
+          members_count: 0, reports_count: 0, members: [], assessment_program: null });
+        if (posts.length === 1 && firstReply === 'lost') return route.abort('connectionreset');
+        return fulfillJson(route, listing());
+      }
+      if (pathname === '/users/admin/organizations/3/questionnaire') return fulfillJson(route, { items: [] });
+      return fulfillJson(route, {}, 404);
+    });
+    await page.goto(base);
+    await page.locator('#admin-open-organizations-button').click();
+    const name = page.locator('#admin-organization-name-input');
+    const code = page.locator('#admin-organization-code-input');
+    const button = page.locator('#admin-organization-create-button');
+    const status = page.locator('#admin-organizations-status');
+    await name.fill('Owned synthetic AC02');
+    await code.fill('owned-ac02');
+    await button.click();
+    try {
+      await expect.poll(() => posts.length).toBe(1);
+      await expect(button).toBeDisabled();
+      // A real keyboard repeat while the command is pending must not issue another POST.
+      await name.press('Enter');
+      expect(posts).toHaveLength(1);
+    } finally { releaseCreate(); }
+    await expect(status).toHaveAttribute('data-tone', firstReply === 'confirmed' ? 'success' : 'error');
+    await expect(button).toBeEnabled();
+    await reloadSuperadminOrganizations(page);
+    await expect(page.locator('[data-organization-id="3"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);
+    await name.fill('Owned synthetic AC02');
+    await code.fill('owned-ac02');
+    await button.click();
+    await expect.poll(() => posts.length).toBe(2);
+    await expect(status).toHaveAttribute('data-tone', firstReply === 'service-error' ? 'success' : 'error');
+    if (firstReply !== 'service-error') await expect(status).toContainText('Organization with this code already exists');
+    expect(items).toHaveLength(1);
+    expect(posts[1]).toEqual(posts[0]);
+    await expect(button).toBeEnabled();
+    await reloadSuperadminOrganizations(page);
+    await expect(page.locator('[data-organization-id="3"]')).toHaveCount(1);
+    await expect(page.locator('[data-organization-id="3"]')).toContainText('Owned synthetic AC02');
+    await page.screenshot({ path: testInfo.outputPath('ac02-result.png') });
+  });
+}
+
+for (const lostCommandResponse of [false, true]) {
+  for (const readbackFailure of ['deadline', 'http503', 'network', 'invalid-json', 'null', 'foreign-program']) {
+    test(`PATH-START AC05 ${readbackFailure} GET after ${lostCommandResponse ? 'lost' : 'confirmed'} PUT is finite, unknown and safely repeatable`, async ({ page }, testInfo) => {
+      testInfo.annotations.push({ type: 'synthetic_http', description: 'Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.' });
+      const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+      const connection = { organization_id: 3, program_definition_id: 11,
+        program_name: 'Owned AC05 pilot', program_version: 'synthetic-v1', assignment_ref: 'ac05',
+        roles: [], role_capabilities: [] };
+      const organization = { id: 3, code: 'owned-ac05', name: 'Owned AC05 organization',
+        is_active: true, domains: [], admins: [], members_count: 0, reports_count: 0,
+        members: [], assessment_program: null };
+      const operationIds = [];
+      let getCount = 0;
+      let releaseReadback;
+      const stalledReadback = new Promise((resolve) => { releaseReadback = resolve; });
+      await page.route('**/users/**', async (route) => {
+        const pathname = new URL(route.request().url()).pathname;
+        if (['/users/session/restore', '/users/18/session-bootstrap'].includes(pathname)) return fulfillJson(route, {
+          authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
+        });
+        if (pathname === '/users/version') return fulfillJson(route, { version: 'ac05-test' });
+        if (pathname === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+        if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') {
+          return fulfillJson(route, { is_superadmin: true, items: [organization],
+            assessment_programs: [{ id: 11, name: connection.program_name, version: connection.program_version }] });
+        }
+        if (pathname === '/users/admin/organizations/3/questionnaire') return fulfillJson(route, { items: [] });
+        if (pathname === '/users/admin/organizations/3/assessment-program') {
+          if (route.request().method() === 'PUT') {
+            operationIds.push(route.request().postDataJSON().operation_id);
+            organization.assessment_program = connection; // Fixture models a committed command, even if its response is lost.
+            return lostCommandResponse ? route.abort('connectionreset') : fulfillJson(route, { connection });
+          }
+          getCount += 1;
+          if (getCount > 1) return fulfillJson(route, { connection });
+          if (readbackFailure === 'deadline') { await stalledReadback; return fulfillJson(route, { connection }); }
+          if (readbackFailure === 'http503') return fulfillJson(route, { detail: 'Synthetic readback unavailable' }, 503);
+          if (readbackFailure === 'network') return route.abort('connectionreset');
+          if (readbackFailure === 'invalid-json') return route.fulfill({ status: 200, contentType: 'application/json', body: '{' });
+          if (readbackFailure === 'null') return fulfillJson(route, { connection: null });
+          return fulfillJson(route, { connection: { ...connection, program_definition_id: 999, program_name: 'Foreign program' } });
+        }
+        return fulfillJson(route, {}, 404);
+      });
+      await page.goto(base);
+      await page.locator('#admin-open-organizations-button').click();
+      const form = page.locator('[data-action="connect-assessment-program"]');
+      const button = form.getByRole('button', { name: 'Подключить', exact: true });
+      await form.locator('[name="program_definition_id"]').selectOption('11');
+      await button.click();
+      const status = form.locator('[data-operation-status]');
+      try {
+        await expect(status).toHaveAttribute('data-tone', 'error', { timeout: 22000 });
+        await expect(status).not.toContainText('Выполняем действие');
+        await expect(status).toContainText('Результат подключения не подтверждён');
+        await expect(button).toBeEnabled();
+        await expect(page.locator('[data-organization-id="3"]')).not.toContainText(/не подключена/i);
+        await expect(form.locator('[data-program-connection-state]')).toContainText('пока не подтверждён');
+        await expect(form).not.toContainText('Foreign program');
+        await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });
+      } finally { releaseReadback(); }
+      if (readbackFailure === 'http503' && !lostCommandResponse) {
+        await page.locator('#admin-organizations-back-button').click();
+        await page.locator('#admin-open-organizations-button').click();
+        await expect(form.locator('[data-program-connection-state]')).toContainText('пока не подтверждён');
+        for (const width of [1440, 320, 390, 768]) {
+          await page.setViewportSize({ width, height: 1000 });
+          await button.scrollIntoViewIfNeeded();
+          await expect(button).toBeVisible();
+          const box = await form.boundingBox();
+          expect(box.x).toBeGreaterThanOrEqual(0);
+          expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+          await page.screenshot({ path: testInfo.outputPath(`ac05-unknown-${width}.png`) });
+        }
+      }
+      await button.click();
+      await expect(form.locator('[data-operation-status]')).toHaveAttribute('data-tone', 'success');
+      await expect(form).toContainText('Подключено: Owned AC05 pilot · synthetic-v1');
+      expect(operationIds).toHaveLength(2);
+      expect(operationIds[1]).toBe(operationIds[0]);
+      expect(new Set(operationIds).size).toBe(1);
+      expect(getCount).toBe(2);
+      await reloadSuperadminOrganizations(page);
+      await expect(form).toContainText('Подключено: Owned AC05 pilot · synthetic-v1');
+    });
+  }
+}
+
 test('PROGRAM01 R10 finishes exact program connection while questionnaire refresh is pending', async ({ page }) => {
   const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
   const connection = {
