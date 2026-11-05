@@ -1,0 +1,10 @@
+
+Running 5 tests using 1 worker
+
+  ✓  1 tests/browser/auth-r03.spec.mjs:2352:1 › R03 successful password response reports a missing browser session as auth failure (625ms)
+  ✓  2 tests/browser/auth-r03.spec.mjs:2352:1 › R03 successful password response reports a missing browser session as auth failure (623ms)
+  ✓  3 tests/browser/auth-r03.spec.mjs:2352:1 › R03 successful password response reports a missing browser session as auth failure (716ms)
+  ✓  4 tests/browser/auth-r03.spec.mjs:2352:1 › R03 successful password response reports a missing browser session as auth failure (617ms)
+  ✓  5 tests/browser/auth-r03.spec.mjs:2352:1 › R03 successful password response reports a missing browser session as auth failure (743ms)
+
+  5 passed (9.5s)

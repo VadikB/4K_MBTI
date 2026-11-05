@@ -1,0 +1,1416 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/node_modules/@playwright/test/cli.js",
+      "test",
+      "tests/browser/auth-r03.spec.mjs",
+      "--grep",
+      "PATH-START AC0[25]"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth-r03.spec.mjs",
+      "file": "auth-r03.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "PATH-START AC02 repeats organization creation after confirmed response without a duplicate",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 6104,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#admin-panel')\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('#admin-panel') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#admin-panel')\u001b[22m\n\u001b[2m    14 × locator resolved to <section id=\"admin-panel\" class=\"panel admin-panel hidden\">…</section>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#admin-panel')\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('#admin-panel') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#admin-panel')\u001b[22m\n\u001b[2m    14 × locator resolved to <section id=\"admin-panel\" class=\"panel admin-panel hidden\">…</section>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:331:48",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 48,
+                      "line": 331
+                    },
+                    "snippet": "  329 |     await expect(button).toBeEnabled();\n  330 |     await page.reload();\n> 331 |     await expect(page.locator('#admin-panel')).toBeVisible();\n      |                                                ^\n  332 |     await page.locator('#admin-open-organizations-button').click();\n  333 |     await expect(page.locator('[data-organization-id=\"3\"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);\n  334 |     await name.fill('Owned synthetic AC02');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 48,
+                        "line": 331
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#admin-panel')\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('#admin-panel') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#admin-panel')\u001b[22m\n\u001b[2m    14 × locator resolved to <section id=\"admin-panel\" class=\"panel admin-panel hidden\">…</section>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n\n\n  329 |     await expect(button).toBeEnabled();\n  330 |     await page.reload();\n> 331 |     await expect(page.locator('#admin-panel')).toBeVisible();\n      |                                                ^\n  332 |     await page.locator('#admin-open-organizations-button').click();\n  333 |     await expect(page.locator('[data-organization-id=\"3\"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);\n  334 |     await name.fill('Owned synthetic AC02');\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:331:48"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:37:04.105Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-e149c-esponse-without-a-duplicate/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-e149c-esponse-without-a-duplicate/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-e149c-esponse-without-a-duplicate/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 48,
+                    "line": 331
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-81e150b80df84e18a34f",
+          "file": "auth-r03.spec.mjs",
+          "line": 278,
+          "column": 3
+        },
+        {
+          "title": "PATH-START AC02 repeats organization creation after lost response without a duplicate",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5885,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#admin-panel')\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('#admin-panel') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#admin-panel')\u001b[22m\n\u001b[2m    14 × locator resolved to <section id=\"admin-panel\" class=\"panel admin-panel hidden\">…</section>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#admin-panel')\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('#admin-panel') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#admin-panel')\u001b[22m\n\u001b[2m    14 × locator resolved to <section id=\"admin-panel\" class=\"panel admin-panel hidden\">…</section>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:331:48",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 48,
+                      "line": 331
+                    },
+                    "snippet": "  329 |     await expect(button).toBeEnabled();\n  330 |     await page.reload();\n> 331 |     await expect(page.locator('#admin-panel')).toBeVisible();\n      |                                                ^\n  332 |     await page.locator('#admin-open-organizations-button').click();\n  333 |     await expect(page.locator('[data-organization-id=\"3\"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);\n  334 |     await name.fill('Owned synthetic AC02');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 48,
+                        "line": 331
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#admin-panel')\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('#admin-panel') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#admin-panel')\u001b[22m\n\u001b[2m    14 × locator resolved to <section id=\"admin-panel\" class=\"panel admin-panel hidden\">…</section>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n\n\n  329 |     await expect(button).toBeEnabled();\n  330 |     await page.reload();\n> 331 |     await expect(page.locator('#admin-panel')).toBeVisible();\n      |                                                ^\n  332 |     await page.locator('#admin-open-organizations-button').click();\n  333 |     await expect(page.locator('[data-organization-id=\"3\"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);\n  334 |     await name.fill('Owned synthetic AC02');\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:331:48"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:37:11.509Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-b2c01-esponse-without-a-duplicate/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-b2c01-esponse-without-a-duplicate/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-b2c01-esponse-without-a-duplicate/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 48,
+                    "line": 331
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-10311d55e9a8ddec390a",
+          "file": "auth-r03.spec.mjs",
+          "line": 278,
+          "column": 3
+        },
+        {
+          "title": "PATH-START AC02 repeats organization creation after service-error response without a duplicate",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5795,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#admin-panel')\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('#admin-panel') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#admin-panel')\u001b[22m\n\u001b[2m    14 × locator resolved to <section id=\"admin-panel\" class=\"panel admin-panel hidden\">…</section>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#admin-panel')\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('#admin-panel') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#admin-panel')\u001b[22m\n\u001b[2m    14 × locator resolved to <section id=\"admin-panel\" class=\"panel admin-panel hidden\">…</section>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:331:48",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 48,
+                      "line": 331
+                    },
+                    "snippet": "  329 |     await expect(button).toBeEnabled();\n  330 |     await page.reload();\n> 331 |     await expect(page.locator('#admin-panel')).toBeVisible();\n      |                                                ^\n  332 |     await page.locator('#admin-open-organizations-button').click();\n  333 |     await expect(page.locator('[data-organization-id=\"3\"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);\n  334 |     await name.fill('Owned synthetic AC02');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 48,
+                        "line": 331
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#admin-panel')\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('#admin-panel') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#admin-panel')\u001b[22m\n\u001b[2m    14 × locator resolved to <section id=\"admin-panel\" class=\"panel admin-panel hidden\">…</section>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n\n\n  329 |     await expect(button).toBeEnabled();\n  330 |     await page.reload();\n> 331 |     await expect(page.locator('#admin-panel')).toBeVisible();\n      |                                                ^\n  332 |     await page.locator('#admin-open-organizations-button').click();\n  333 |     await expect(page.locator('[data-organization-id=\"3\"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);\n  334 |     await name.fill('Owned synthetic AC02');\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:331:48"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:37:18.707Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-6c677-esponse-without-a-duplicate/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-6c677-esponse-without-a-duplicate/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC02-r-6c677-esponse-without-a-duplicate/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 48,
+                    "line": 331
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-cfeb199d66a6936ece75",
+          "file": "auth-r03.spec.mjs",
+          "line": 278,
+          "column": 3
+        },
+        {
+          "title": "PATH-START AC05 deadline GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 21178,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mСервер не ответил вовремя. Проверьте результат операции.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Сервер не ответил вовремя. Проверьте результат операции.\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mСервер не ответил вовремя. Проверьте результат операции.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Сервер не ответил вовремя. Проверьте результат операции.\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 407
+                    },
+                    "snippet": "  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 407
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mСервер не ответил вовремя. Проверьте результат операции.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Сервер не ответил вовремя. Проверьте результат операции.\"\u001b[22m\n\n\n  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:37:25.959Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-d-9de82-known-and-safely-repeatable/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-d-9de82-known-and-safely-repeatable/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-d-9de82-known-and-safely-repeatable/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 407
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-f427f13dae51a0946130",
+          "file": "auth-r03.spec.mjs",
+          "line": 354,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 http503 GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5742,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mСервис не смог выполнить операцию. Повторная отправка может быть небезопасна — сначала обновите состояние.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Сервис не смог выполнить операцию. Повторная отправка может быть небезопасна — сначала обновите состояние.\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mСервис не смог выполнить операцию. Повторная отправка может быть небезопасна — сначала обновите состояние.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Сервис не смог выполнить операцию. Повторная отправка может быть небезопасна — сначала обновите состояние.\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 407
+                    },
+                    "snippet": "  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 407
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mСервис не смог выполнить операцию. Повторная отправка может быть небезопасна — сначала обновите состояние.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Сервис не смог выполнить операцию. Повторная отправка может быть небезопасна — сначала обновите состояние.\"\u001b[22m\n\n\n  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:37:48.328Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-h-5088b-known-and-safely-repeatable/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-h-5088b-known-and-safely-repeatable/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-h-5088b-known-and-safely-repeatable/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 407
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-1b6e686f2b1484e7aab0",
+          "file": "auth-r03.spec.mjs",
+          "line": 354,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 network GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5853,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 407
+                    },
+                    "snippet": "  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 407
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n\n  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:37:55.383Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-n-a7e5b-known-and-safely-repeatable/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-n-a7e5b-known-and-safely-repeatable/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-n-a7e5b-known-and-safely-repeatable/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 407
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-893a1a676e4b1ce8e74c",
+          "file": "auth-r03.spec.mjs",
+          "line": 354,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 invalid-json GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5928,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mНе удалось проверить подключённую версию программы.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Не удалось проверить подключённую версию программы.\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mНе удалось проверить подключённую версию программы.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Не удалось проверить подключённую версию программы.\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 407
+                    },
+                    "snippet": "  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 407
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mНе удалось проверить подключённую версию программы.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Не удалось проверить подключённую версию программы.\"\u001b[22m\n\n\n  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:38:02.554Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-i-a139f-known-and-safely-repeatable/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-i-a139f-known-and-safely-repeatable/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-i-a139f-known-and-safely-repeatable/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 407
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-63d8bdc9a0c7b3cb478d",
+          "file": "auth-r03.spec.mjs",
+          "line": 354,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 null GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5765,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mКоманда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Команда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mКоманда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Команда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 407
+                    },
+                    "snippet": "  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 407
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mКоманда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Команда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.\"\u001b[22m\n\n\n  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:38:09.673Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-n-f3111-known-and-safely-repeatable/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-n-f3111-known-and-safely-repeatable/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-n-f3111-known-and-safely-repeatable/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 407
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-6cf82cebba8f08b7db3e",
+          "file": "auth-r03.spec.mjs",
+          "line": 354,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 foreign-program GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5709,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mКоманда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Команда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mКоманда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Команда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 407
+                    },
+                    "snippet": "  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 407
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mКоманда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Команда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.\"\u001b[22m\n\n\n  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:38:16.642Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-f-a4886-known-and-safely-repeatable/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-f-a4886-known-and-safely-repeatable/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-f-a4886-known-and-safely-repeatable/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 407
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-c32617845276948fdc6c",
+          "file": "auth-r03.spec.mjs",
+          "line": 354,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 deadline GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 21362,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 407
+                    },
+                    "snippet": "  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 407
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n\n  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:38:23.773Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-d-45a0a-known-and-safely-repeatable/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-d-45a0a-known-and-safely-repeatable/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-d-45a0a-known-and-safely-repeatable/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 407
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-0421b9f2f323cc9fdc7a",
+          "file": "auth-r03.spec.mjs",
+          "line": 354,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 http503 GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 10,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5804,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 407
+                    },
+                    "snippet": "  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 407
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n\n  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:38:46.492Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-h-81dd0-known-and-safely-repeatable/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-h-81dd0-known-and-safely-repeatable/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-h-81dd0-known-and-safely-repeatable/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 407
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-adfa5bc11710dddaffc7",
+          "file": "auth-r03.spec.mjs",
+          "line": 354,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 network GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 11,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5663,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 407
+                    },
+                    "snippet": "  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 407
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n\n  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:38:53.657Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-n-7612b-known-and-safely-repeatable/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-n-7612b-known-and-safely-repeatable/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-n-7612b-known-and-safely-repeatable/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 407
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-9b7aa3d2196b5cb029a1",
+          "file": "auth-r03.spec.mjs",
+          "line": 354,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 invalid-json GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 12,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5762,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 407
+                    },
+                    "snippet": "  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 407
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n\n  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:39:00.559Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-i-78d1d-known-and-safely-repeatable/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-i-78d1d-known-and-safely-repeatable/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-i-78d1d-known-and-safely-repeatable/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 407
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-913f662337fcbfde1a3f",
+          "file": "auth-r03.spec.mjs",
+          "line": 354,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 null GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 13,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5776,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 407
+                    },
+                    "snippet": "  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 407
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n\n  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:39:07.513Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-n-d2e34-known-and-safely-repeatable/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-n-d2e34-known-and-safely-repeatable/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-n-d2e34-known-and-safely-repeatable/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 407
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-ce2c39b45d68b80865ee",
+          "file": "auth-r03.spec.mjs",
+          "line": 354,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 foreign-program GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 14,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5808,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 407
+                    },
+                    "snippet": "  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 407
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-action=\"connect-assessment-program\"]')\nExpected substring: not \u001b[32m\"Программа ещё не подключена.\"\u001b[39m\nReceived string: \u001b[31m\"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1Подключить\u001b[7mПрограмма ещё не подключена.\u001b[27mFailed to fetch\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"not toContainText\" locator('[data-action=\"connect-assessment-program\"]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to <form data-action=\"connect-assessment-program\" class=\"admin-organization-inline-form admin-organization-program-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"Программа оценкиВыберите опубликованную версиюOwned AC05 pilot · synthetic-v1ПодключитьПрограмма ещё не подключена.Failed to fetch\"\u001b[22m\n\n\n  405 |         await expect(status).not.toContainText('Выполняем действие');\n  406 |         await expect(button).toBeEnabled();\n> 407 |         await expect(form).not.toContainText('Программа ещё не подключена.');\n      |                                ^\n  408 |         await expect(form).not.toContainText('Foreign program');\n  409 |         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });\n  410 |       } finally { releaseReadback(); }\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs:407:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:39:14.502Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-f-3953e-known-and-safely-repeatable/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-f-3953e-known-and-safely-repeatable/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output/auth-r03-PATH-START-AC05-f-3953e-known-and-safely-repeatable/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 407
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-b6472c42046c70cc5a12",
+          "file": "auth-r03.spec.mjs",
+          "line": 354,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 rejects a foreign organization readback after confirmed command",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 15,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 826,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:39:21.571Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-97459b8728421dde5172",
+          "file": "auth-r03.spec.mjs",
+          "line": 519,
+          "column": 3
+        },
+        {
+          "title": "PATH-START AC05 rejects a foreign organization readback after lost command",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 15,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 835,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:39:22.728Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-9a914905ba6b0e3e54e0",
+          "file": "auth-r03.spec.mjs",
+          "line": 519,
+          "column": 3
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-05T21:37:02.607Z",
+    "duration": 140956.062,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 15,
+    "flaky": 0
+  }
+}

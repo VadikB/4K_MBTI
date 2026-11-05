@@ -23,6 +23,7 @@ const assignmentOperationIds = new Map();
 const cancellationOperationIds = new Map();
 const cancellationRequestsInFlight = new Set();
 const programConnectionOperationIds = new Map();
+const unverifiedProgramConnections = new Set();
 const questionnairePreviews = new Map();
 const questionnaireRevisions = new Map();
 const staleQuestionnairePreviews = new Set();
@@ -277,6 +278,7 @@ const clearAdminOrganizationsSessionState = () => {
   cancellationOperationIds.clear();
   cancellationRequestsInFlight.clear();
   programConnectionOperationIds.clear();
+  unverifiedProgramConnections.clear();
   questionnairePreviews.clear();
   questionnaireRevisions.clear();
   staleQuestionnairePreviews.clear();
@@ -316,6 +318,9 @@ const clearInaccessibleOrganizationState = (organizations) => {
   }
   for (const organizationId of organizationViews.keys()) {
     if (!organizations.some((org) => Number(org.id) === Number(organizationId))) organizationViews.delete(organizationId);
+  }
+  for (const key of unverifiedProgramConnections) {
+    if (!allowed.has(key)) unverifiedProgramConnections.delete(key);
   }
 };
 
@@ -1537,12 +1542,22 @@ const isExactProgramConnection = (connection, organizationId, programDefinitionI
   Number(connection?.organization_id) === Number(organizationId) &&
   Number(connection?.program_definition_id) === Number(programDefinitionId);
 
+const programConnectionStateMarkup = (organizationId, connection) =>
+  '<p data-program-connection-state>' + (unverifiedProgramConnections.has(organizationKey(organizationId))
+    ? 'Результат подключения пока не подтверждён. После завершения проверки можно безопасно повторить запрос подключения.'
+    : connection ? 'Подключено: <strong>' + escapeHtml(connection.program_name) + ' · ' +
+      escapeHtml(connection.program_version) + '</strong>' : 'Программа ещё не подключена.') + '</p>';
+
 export const connectAdminOrganizationProgram = async (organizationId, programDefinitionId) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   const operationKey = organizationKey(organizationId) + ':' + Number(programDefinitionId);
   const operationId = programConnectionOperationIds.get(operationKey) || createOperationId();
   programConnectionOperationIds.set(operationKey, operationId);
+  captureAdminOrganizationsDraft();
+  unverifiedProgramConnections.add(organizationKey(organizationId));
+  renderAdminOrganizations();
+  setStatus('Проверяем результат подключения…', 'loading');
   let commandConfirmed = false;
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-program', {
@@ -1560,6 +1575,7 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
     if (!isExactProgramConnection(readback, organizationId, programDefinitionId)) {
       throw new Error('Команда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.');
     }
+    unverifiedProgramConnections.delete(organizationKey(organizationId));
     applyAdminOrganizationProgramReadback(organizationId, readback);
     programConnectionOperationIds.delete(operationKey);
     setStatus('Опубликованная версия программы подключена к организации.', 'success');
@@ -1572,6 +1588,7 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
         const readback = await readAdminOrganizationProgram(organizationId, identityEpoch, identityKey);
         if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
         if (isExactProgramConnection(readback, organizationId, programDefinitionId)) {
+          unverifiedProgramConnections.delete(organizationKey(organizationId));
           applyAdminOrganizationProgramReadback(organizationId, readback);
           programConnectionOperationIds.delete(operationKey);
           setStatus('Подключение подтверждено повторным чтением после потери ответа команды.', 'success');
@@ -1580,7 +1597,10 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
         }
       } catch { /* The original command error remains the actionable outcome. */ }
     }
-    setStatus(error.message || 'Не удалось подключить программу оценки.', 'error');
+    captureAdminOrganizationsDraft();
+    renderAdminOrganizations();
+    setStatus('Результат подключения не подтверждён. ' +
+      (error.message || 'Не удалось подключить программу оценки.'), 'error');
     return false;
   }
 };
@@ -1829,6 +1849,7 @@ export const renderAdminOrganizations = () => {
       const batchIsRunning = activeBatch?.status === 'in_progress';
       const revisions = questionnaireRevisions.get(organizationKey(orgId)) || [];
       const currentProgram = org.assessment_program || null;
+      const programConnectionUnverified = unverifiedProgramConnections.has(organizationKey(orgId));
       const connectedRef = String(currentProgram?.assignment_ref || '').trim();
       const storedRef = selectedAssessmentRefs.get(organizationKey(orgId)) || '';
       const selectedRef = connectedRef || storedRef || revisions[0]?.assignment_ref || '';
@@ -1858,7 +1879,9 @@ export const renderAdminOrganizations = () => {
       const publishedRevision = revisions.find((item) => item.assignment_ref === selectedRef && item.status === 'confirmed');
       const questionnaireAssignment = questionnaireAssignmentState(questionnaireLoadState, Boolean(publishedRevision));
       const assignmentBlockers = [];
-      if (!currentProgram) {
+      if (programConnectionUnverified) {
+        assignmentBlockers.push('Результат подключения программы не подтверждён. Сначала проверьте подключение.');
+      } else if (!currentProgram) {
         assignmentBlockers.push('Программа оценки не подключена. Обратитесь к суперадминистратору.');
       }
       if (!selectedRef) {
@@ -1874,7 +1897,7 @@ export const renderAdminOrganizations = () => {
       }
       const assignmentReadinessMarkup = '<section class="admin-assignment-readiness" aria-label="Готовность назначения">' +
         '<h5>Готовность назначения</h5><dl>' +
-        '<dt>Программа</dt><dd>' + (currentProgram
+        '<dt>Программа</dt><dd>' + (programConnectionUnverified ? 'подключение не подтверждено' : currentProgram
           ? escapeHtml(currentProgram.program_name) + ' · ' + escapeHtml(currentProgram.program_version)
           : 'не подключена') + '</dd>' +
         '<dt>Роль</dt><dd>' + (allowedRoles.length
@@ -1905,7 +1928,9 @@ export const renderAdminOrganizations = () => {
           '<input name="assignment_ref" type="hidden" value="' + escapeHtml(connectedRef) + '"></section>'
         : '<label><span>Оценка</span><input name="assignment_ref" type="text" value="' +
           escapeHtml(selectedRef) + '" placeholder="Подключите программу или укажите исторический ключ" required></label>' +
-          '<p class="form-status error">Программа оценки не подключена. Для нового программного назначения сначала обратитесь к суперадминистратору.</p>';
+          '<p class="form-status error">' + (programConnectionUnverified
+            ? 'Результат подключения программы не подтверждён. Проверьте подключение перед назначением.'
+            : 'Программа оценки не подключена. Для нового программного назначения сначала обратитесь к суперадминистратору.') + '</p>';
       const programMarkup = isSuperadmin ? '<form class="admin-organization-inline-form admin-organization-program-form" data-action="connect-assessment-program">' +
         '<label><span>Программа оценки</span><select name="program_definition_id" required>' +
         '<option value="">Выберите опубликованную версию</option>' + availablePrograms.map((program) =>
@@ -1913,8 +1938,7 @@ export const renderAdminOrganizations = () => {
           (Number(currentProgram?.program_definition_id) === Number(program.id) ? ' selected' : '') + '>' +
           escapeHtml(program.name) + ' · ' + escapeHtml(program.version) + '</option>').join('') +
         '</select></label><button class="ghost-button compact-ghost" type="submit">Подключить</button>' +
-        (currentProgram ? '<p>Подключено: <strong>' + escapeHtml(currentProgram.program_name) +
-          ' · ' + escapeHtml(currentProgram.program_version) + '</strong></p>' : '<p>Программа ещё не подключена.</p>') +
+        programConnectionStateMarkup(orgId, currentProgram) +
         '</form>' : '';
       const revisionAnswers = currentRevision?.answers_json || {};
       const answer = (questionId, field) => escapeHtml(revisionAnswers?.[questionId]?.[field] || '');
@@ -2046,7 +2070,7 @@ export const renderAdminOrganizations = () => {
         viewButton('organization-data', 'Данные организации') +
         viewButton('questionnaire', 'Анкета') + '</nav>' +
         '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people"><h4>Организация и участники</h4>' +
-        '<dl class="admin-people-context"><div><dt>Выбранная оценка</dt><dd>' + escapeHtml(selectedRef || 'Не выбрана') + '</dd></div><div><dt>Подключённая программа</dt><dd>' + (currentProgram ? escapeHtml(currentProgram.program_name) + ' · ' + escapeHtml(currentProgram.program_version) : 'Не подключена') + '</dd></div></dl>' +
+        '<dl class="admin-people-context"><div><dt>Выбранная оценка</dt><dd>' + escapeHtml(selectedRef || 'Не выбрана') + '</dd></div><div><dt>Подключённая программа</dt><dd>' + (programConnectionUnverified ? 'Подключение не подтверждено' : currentProgram ? escapeHtml(currentProgram.program_name) + ' · ' + escapeHtml(currentProgram.program_version) : 'Не подключена') + '</dd></div></dl>' +
         '<p>Назначение не запускает оценку.</p>' +
         assignmentReadinessMarkup +
         '<div class="admin-organization-selection"><label><input type="checkbox" name="select_all_participants"> Выбрать всех</label><strong aria-live="polite"><span data-selected-count>0</span> выбрано</strong></div>' +

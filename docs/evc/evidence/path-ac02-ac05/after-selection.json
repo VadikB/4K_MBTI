@@ -1,0 +1,816 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/node_modules/@playwright/test/cli.js",
+      "test",
+      "tests/browser/auth-r03.spec.mjs",
+      "--grep",
+      "PATH-START AC0[25]"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/.test-stand/browser-output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac02-ac05-coverage/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth-r03.spec.mjs",
+      "file": "auth-r03.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "PATH-START AC02 repeats organization creation after confirmed response without a duplicate",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1494,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:43:27.457Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-81e150b80df84e18a34f",
+          "file": "auth-r03.spec.mjs",
+          "line": 287,
+          "column": 3
+        },
+        {
+          "title": "PATH-START AC02 repeats organization creation after lost response without a duplicate",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1264,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:43:29.486Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-10311d55e9a8ddec390a",
+          "file": "auth-r03.spec.mjs",
+          "line": 287,
+          "column": 3
+        },
+        {
+          "title": "PATH-START AC02 repeats organization creation after service-error response without a duplicate",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1246,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:43:30.766Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Stateful HTTP fixture; real entry/dist; no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-cfeb199d66a6936ece75",
+          "file": "auth-r03.spec.mjs",
+          "line": 287,
+          "column": 3
+        },
+        {
+          "title": "PATH-START AC05 deadline GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 16429,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:43:32.029Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-f427f13dae51a0946130",
+          "file": "auth-r03.spec.mjs",
+          "line": 359,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 http503 GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1583,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:43:48.471Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-1b6e686f2b1484e7aab0",
+          "file": "auth-r03.spec.mjs",
+          "line": 359,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 network GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1033,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:43:50.068Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-893a1a676e4b1ce8e74c",
+          "file": "auth-r03.spec.mjs",
+          "line": 359,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 invalid-json GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 983,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:43:51.113Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-63d8bdc9a0c7b3cb478d",
+          "file": "auth-r03.spec.mjs",
+          "line": 359,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 null GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 996,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:43:52.110Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-6cf82cebba8f08b7db3e",
+          "file": "auth-r03.spec.mjs",
+          "line": 359,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 foreign-program GET after confirmed PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1308,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:43:53.122Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-c32617845276948fdc6c",
+          "file": "auth-r03.spec.mjs",
+          "line": 359,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 deadline GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 16762,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:43:54.451Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-0421b9f2f323cc9fdc7a",
+          "file": "auth-r03.spec.mjs",
+          "line": 359,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 http503 GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1003,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:44:11.232Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-adfa5bc11710dddaffc7",
+          "file": "auth-r03.spec.mjs",
+          "line": 359,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 network GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1120,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:44:12.246Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-9b7aa3d2196b5cb029a1",
+          "file": "auth-r03.spec.mjs",
+          "line": 359,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 invalid-json GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1061,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:44:13.382Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-913f662337fcbfde1a3f",
+          "file": "auth-r03.spec.mjs",
+          "line": 359,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 null GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1009,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:44:14.455Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-ce2c39b45d68b80865ee",
+          "file": "auth-r03.spec.mjs",
+          "line": 359,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 foreign-program GET after lost PUT is finite, unknown and safely repeatable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1077,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:44:15.476Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-b6472c42046c70cc5a12",
+          "file": "auth-r03.spec.mjs",
+          "line": 359,
+          "column": 5
+        },
+        {
+          "title": "PATH-START AC05 rejects a foreign organization readback after confirmed command",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 697,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:44:16.566Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-97459b8728421dde5172",
+          "file": "auth-r03.spec.mjs",
+          "line": 538,
+          "column": 3
+        },
+        {
+          "title": "PATH-START AC05 rejects a foreign organization readback after lost command",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 713,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T21:44:17.275Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-9a914905ba6b0e3e54e0",
+          "file": "auth-r03.spec.mjs",
+          "line": 538,
+          "column": 3
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-05T21:43:25.959Z",
+    "duration": 52137.833000000006,
+    "expected": 17,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
