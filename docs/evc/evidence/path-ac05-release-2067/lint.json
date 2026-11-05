@@ -1,0 +1,8 @@
+{
+  "command": "npm run lint:js",
+  "chunk_id": "118da3",
+  "wall_time_seconds": 3.000530554,
+  "exit_code": 0,
+  "original_token_count": 12,
+  "output": "\n> lint:js\n> eslint web/js/*.js web/js/**/*.js\n\n"
+}

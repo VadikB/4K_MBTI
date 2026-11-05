@@ -1,5 +1,13 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- Разрешён [PATH-AC05-R1](../path-ac05-release-2067.md): владелец подтвердил2.0.67
+  PATCH → push/PR/CI/review. Реализация2509aa2 сохранена, активны preflight/кандидат.
+  Human review нового head ещё нет; merge/deploy/активация/paid LLM не разрешены.
+  Historical CHECK2509aa2 не менять ради новой версии/assets, replay только на его
+  immutable checkout. Main/test пока e63/2.0.66; статусы текущего CI будут в PR.
+  Preflight+повтор2.0.67 PASS, lint/140 frontend/22 release+CI/100 browser PASS,
+ 45 assets; активны commit/push/PR/обязательный CI. Точная remote передача — в PR
+  этой ветки; после CI не добавлять новый commit только ради смены WAITING на PASS.
 - Последний шаг: [PATH-AC-AUDIT-01](../path-final-acceptance.md), бесплатная сверка
   после a7d7a9d. Подтверждён foreign readback другой организации с тем же program ID:
  2 browser FAIL before →2 PASS after. Локальный JS predicate сверяет оба ID в command,
