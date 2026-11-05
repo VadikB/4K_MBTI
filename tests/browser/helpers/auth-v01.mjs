@@ -414,7 +414,8 @@ export function registerAuthV01Tests({ test, expect, baseRoutes, base, fulfillJs
       await expect(page.locator('#auth-error')).toBeHidden();
       expect(writes).toEqual([]);
       await button.click();
-      await expect(page.locator('#auth-error')).toHaveText('Синтетический отказ TC-14');
+      // The API boundary intentionally normalizes a mutating 503 instead of exposing detail.
+      await expect(page.locator('#auth-error')).toHaveText('Сервис не смог выполнить операцию. Повторная отправка может быть небезопасна — сначала обновите состояние.');
       await expect(button).toBeEnabled();
       expect(writes).toHaveLength(1);
       expect(writes[0].pathname).toBe(submitEndpoint);
