@@ -1,0 +1,50 @@
+{
+  "kind": "offline_program_release_recipe_not_runtime_definition_or_receipt",
+  "task": "PATH-PILOT-PROGRAM-01",
+  "prepared_on": "2026-11-05",
+  "source_code_sha": "3385145201d5d365e08e9e8a6a6fb7e12a0aa258",
+  "release_decision": "PENDING_EXPLICIT_VERSION_AND_PUBLICATION_AUTHORIZATION",
+  "runtime_activation": false,
+  "database_id_assigned": false,
+  "published_at": null,
+  "baseline_program": {
+    "id": 1,
+    "code": "specialist_pilot",
+    "version": "1.1",
+    "definition_checksum": "07576484b6c6467fd5fc7047cb1686a2f952532a893660375984373bab87f58c"
+  },
+  "baseline_receipt": {
+    "path": "tests/browser/fixtures/path-start-release.json",
+    "sha256": "a3175dda9675c476ae8636d26449e5ed17e0ef7940ea0412b7431882933ae1e6",
+    "source_code_sha": "7221671fbd9b16192a86b04b6eec36773f2dbf99",
+    "current_database_readback": "NOT_RUN"
+  },
+  "program_fields": {
+    "code": "specialist_pilot",
+    "name": "Пилот 4К · 9 кейсов",
+    "assignment_ref": "specialist-pilot",
+    "mode": "dialogue",
+    "assessment_configuration_id": 11,
+    "catalog_version_id": 2,
+    "version": "1.2",
+    "status": "draft"
+  },
+  "role_profile_version_ids": [
+    2
+  ],
+  "source_refs_without_pilot_plan_admission": {
+    "scenario_version_id": 1,
+    "methodology_version_id": 2,
+    "prompt_bundle_checksum": "9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688"
+  },
+  "pilot_plan_snapshot_build": {
+    "package": "assessment_definitions/planning/specialist_pilot_admission/v0.1",
+    "builder": "Api.pilot_plan_admission.build_snapshot",
+    "contract": "m7_pilot_plan_admission/1",
+    "source_manifest_sha256": "c76b118e605d7479f85671f52695f2a189537d03dcc6c69443bfb2f9d1392d66",
+    "snapshot_checksum": "daa715b153f16e9ebc4ea6744a1c8541c5e269e248bba4b5c37723571e6ccfce",
+    "proposal_payload_checksum": "883c025cfa0ea43ad17922bc4818f05a0aaaa62bf02817690a3d07f171cfec06"
+  },
+  "definition_checksum_when_materialized": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+  "checksum_algorithm": "Api.assessment_programs.definition_checksum; complete snapshot inserted as source_refs_json.pilot_plan_admission"
+}

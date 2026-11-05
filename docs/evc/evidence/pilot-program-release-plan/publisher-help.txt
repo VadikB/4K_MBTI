@@ -1,0 +1,27 @@
+command: env -i PATH="$PATH" AGENT4K_ISOLATED_STAND=1 AGENT4K_STAND_MARKER=stand-10.2:offline-plan DB_HOST=127.0.0.1 DB_NAME=product4k_pytest_offline_plan DB_USER=offline DB_PASSWORD=unused DB_POOL_MIN_SIZE=0 PYTHONPATH="$PWD" /Users/vadim_bogachev/Developer/4K/.venv/bin/python scripts/publish_assessment_program.py --help
+exit_code: 0
+
+usage: publish_assessment_program.py [-h] --code CODE --version VERSION --name
+                                     NAME --assignment-ref ASSIGNMENT_REF
+                                     --mode MODE --configuration-code
+                                     CONFIGURATION_CODE --role-code ROLE_CODE
+                                     --publisher-user-id PUBLISHER_USER_ID
+                                     [--publish]
+                                     [--pilot-plan-package PILOT_PLAN_PACKAGE]
+
+Validate or publish an assessment program version.
+
+options:
+  -h, --help            show this help message and exit
+  --code CODE
+  --version VERSION
+  --name NAME
+  --assignment-ref ASSIGNMENT_REF
+  --mode MODE
+  --configuration-code CONFIGURATION_CODE
+  --role-code ROLE_CODE
+  --publisher-user-id PUBLISHER_USER_ID
+  --publish
+  --pilot-plan-package PILOT_PLAN_PACKAGE
+                        Explicit draft source package for a new version; never
+                        inferred from main/current.

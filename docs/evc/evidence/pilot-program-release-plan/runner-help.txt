@@ -1,0 +1,28 @@
+command: env -i PATH="$PATH" AGENT4K_ISOLATED_STAND=1 AGENT4K_STAND_MARKER=stand-10.2:offline-plan DB_HOST=127.0.0.1 DB_NAME=product4k_pytest_offline_plan DB_USER=offline DB_PASSWORD=unused DB_POOL_MIN_SIZE=0 PYTHONPATH="$PWD" /Users/vadim_bogachev/Developer/4K/.venv/bin/python scripts/assessment_first_case.py --help
+exit_code: 0
+
+usage: assessment_first_case.py [-h] [--directory DIRECTORY] [--port PORT]
+                                [--preflight-only] [--env-file ENV_FILE]
+                                [--python PYTHON]
+                                [--db-admin-port DB_ADMIN_PORT]
+                                [--check-bootstrap]
+                                [--program-source {functional-diagnostic,published-pilot}]
+                                [--summarize-only]
+
+Preflight and entrypoint for the superadmin-to-first-case synthetic run.
+
+options:
+  -h, --help            show this help message and exit
+  --directory DIRECTORY
+  --port PORT
+  --preflight-only
+  --env-file ENV_FILE
+  --python PYTHON
+  --db-admin-port DB_ADMIN_PORT
+  --check-bootstrap     Repeat create/bootstrap/minimal seed/destroy without
+                        LLM
+  --program-source {functional-diagnostic,published-pilot}
+                        Explicit approved nine-case PATH release, or
+                        historical one-case diagnostic
+  --summarize-only      Rebuild normalized summary from existing evidence; no
+                        credentials or LLM

@@ -1,0 +1,72 @@
+{
+  "status": "OFFLINE_PROPOSAL_VALIDATED_EXECUTION_BLOCKED",
+  "runtime_base_sha": "3385145201d5d365e08e9e8a6a6fb7e12a0aa258",
+  "document_head_sha": "3385145201d5d365e08e9e8a6a6fb7e12a0aa258",
+  "branch": "codex/pilot-program-release-plan",
+  "proposed_program": "specialist_pilot@1.2",
+  "program_definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+  "admission_snapshot_checksum": "daa715b153f16e9ebc4ea6744a1c8541c5e269e248bba4b5c37723571e6ccfce",
+  "full_m2_count": 61,
+  "planned_count": 39,
+  "outside_count": 22,
+  "observation_rows": 55,
+  "route": [
+    "CASE.SPEC.02",
+    "CASE.SPEC.03",
+    "CASE.SPEC.04",
+    "CASE.SPEC.07",
+    "CASE.SPEC.05",
+    "CASE.SPEC.01",
+    "CASE.SPEC.06",
+    "CASE.SPEC.08"
+  ],
+  "timing": {
+    "time_budget_seconds": 7200,
+    "calendar_window_seconds": 259200
+  },
+  "execution_blockers": [
+    {
+      "id": "SEED-01",
+      "status": "REPRODUCED_WITH_NO_SQL",
+      "reason": "seed_release reserves program IDs, but reserve_release_ids allowlist rejects the program table"
+    },
+    {
+      "id": "SOURCE-01",
+      "status": "EXPECTED_NOT_YET_RELEASED",
+      "reason": "published-pilot receipt still pins 1.1; no authorized 1.2 publication/readback exists"
+    },
+    {
+      "id": "BROWSER-01",
+      "status": "STATIC_PIN_CONFIRMED",
+      "reason": "browser assertion pins 1.1, not the exact version of a future verified receipt"
+    },
+    {
+      "id": "AUTH-01",
+      "status": "NOT_AUTHORIZED",
+      "reason": "version/publication, persistent activation and paid PATH need separate explicit decisions"
+    }
+  ],
+  "source_files_sha256": {
+    "tests/browser/fixtures/path-start-release.json": "a3175dda9675c476ae8636d26449e5ed17e0ef7940ea0412b7431882933ae1e6",
+    "assessment_definitions/planning/specialist_pilot_admission/v0.1/manifest.json": "c76b118e605d7479f85671f52695f2a189537d03dcc6c69443bfb2f9d1392d66",
+    "Api/pilot_plan_admission.py": "81611cc4950185f0e225f841cd449ecf47e706733ae20e8c9de137e39e4e4324",
+    "Api/pilot_plan_binding.py": "7fd230391b61c5fcdefb8d71fe9f31772b70c1056b1a62d43e6658a1db1057bb",
+    "Api/assessment_programs.py": "21b4a8748143050252908e0e396682d5d73e24002c34dca8581c2c3bf5c1319e",
+    "scripts/publish_assessment_program.py": "8f5e722246bdf10e571ab18683316f8fd5ffd6aae2b68ecb9ec77f02a529668b",
+    "scripts/assessment_first_case.py": "187bd1cd04fa066ac6660a40807f6f2842e43a2fe2df6bf8bac6b9e3f5517e28",
+    "tests/path_start_release_source.py": "be22a5722b6196aca0eeb47ed95ffaa410d3e177fc96c3f1d98ba190b0e6010d",
+    "tests/path_start_release_inputs.py": "688f5cc89a5c51781a1956c6bf0f5f2327e016252ae4f785754d243289dd73c1",
+    "tests/browser/path29-participant.spec.mjs": "723dff6d4813b3fe5d7f8b927f83a9154dbf7c6d8f2b771b530bbfbdd500df44"
+  },
+  "database_connections": 0,
+  "database_writes": 0,
+  "provider_calls": 0,
+  "publication_performed": false,
+  "permanent_activation_performed": false,
+  "historical_PREP_DIAG_01_root_cause": "UNKNOWN",
+  "limitations": [
+    "No fresh persistent DB readback; baseline receipt is historical",
+    "Offline projection supplies eligibility=True, not new human QA or AS admission",
+    "Expected seed failure is diagnosis, not a successful bootstrap or PATH"
+  ]
+}
