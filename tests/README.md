@@ -10,10 +10,15 @@ Default `functional-diagnostic` остаётся исторической synthe
 не доказательством допуска пилота. Текущий PATH BLOCKED_PM03; случайный платный
 rerun не требуется. [Передача/AC-матрица](../docs/evc/tasks/path-start-01.md).
 
+Уточнение 05.11.2026: на main 2dc98c6 / 2.0.64 единственный разрешённый real run
+получил admission PASS, но остановился **до start** на `PLAN_NOT_READY` (LIMITED).
+Это не полный PATH PASS и не доказанный отказ HTTP start. Разбор контракта и
+бесплатная доработка collector — [PATH-PLAN-01](../docs/evc/tasks/path-plan-diagnostics.md).
+
 Бесплатные адресные проверки harness (без БД, credentials и LLM):
 
 ```bash
-.venv/bin/python -m pytest -q tests/unit/test_assessment_first_case.py tests/unit/test_test_stand.py tests/unit/test_assessment_run_summary.py
+.venv/bin/python -m pytest -q tests/unit/test_assessment_first_case.py tests/unit/test_test_stand.py tests/unit/test_assessment_run_summary.py tests/unit/test_assessment_plan_receipt.py
 node --test tests/unit/test_assessment_receipt_file.mjs tests/unit/test_assessment_preparation_receipt.mjs
 ```
 

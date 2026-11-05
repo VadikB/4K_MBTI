@@ -113,6 +113,17 @@ Validator связывает assignment/profile/request/Cycle и оба врем
 checksum разных объектов. UNKNOWN_OR_AMBIGUOUS не превращается в success.
 Это расширение будущих receipts; после cleanup старые недоступные refs не достраиваются.
 
+Дополнение PATH-PLAN-01 от 05.11.2026: tests-only collector читает именно сохранённую
+последнюю revision, а не заново вычисленный план. В `plan.diagnostics` остаются
+allowlisted цели M2, плановые цели, uncovered IDs, route/catalog с eligibility/reasons,
+известные ограничения, времена и source refs. `content_checksum` и
+`content_recomputed_checksum` относятся к полному исходному saved JSON;
+`diagnostics_checksum` — отдельно к экспортированной проекции. Равенство хешей
+разных объектов не требуется. Raw profile/план с неизвестными полями не передаются.
+Отсутствующие сведения отмечаются UNKNOWN/PARTIAL, без превращения пустого JSON
+в полный план. Это не расширение допуска: READY gate и admission не меняются.
+Подробности: [задача](tasks/path-plan-diagnostics.md).
+
 Бесплатно проверено на `136b858`: export regression actual collector → fsync/readback
 → owned cleanup PASS и новый minimal `published-pilot` bootstrap PASS. Полный PATH
 остаётся BLOCKED_PM03; следующая генерация требует отдельного согласованного задания.

@@ -148,6 +148,63 @@ def assignment_lineage(connection, *, user_id, assignment_ref, configuration_id)
     return result
 
 
+def _plan_projection(value, shape):
+    """Technical allowlist, not a plan/admission policy. Never copy unknown subtrees."""
+    if isinstance(shape, dict):
+        return ({key: _plan_projection(value[key], child) for key, child in shape.items()
+                 if key in value} if isinstance(value, dict) else None)
+    if isinstance(shape, list):
+        return ([_plan_projection(item, shape[0]) for item in value]
+                if isinstance(value, list) else None)
+    return value if value is None or type(value) in (str, int, float, bool) else None
+
+
+def plan_receipt(connection, *, cycle_db_id):
+    """Read the saved latest revision, not a recomputed route or an active profile."""
+    row = connection.execute('''SELECT p.id,p.status,revision.id AS revision_id,
+        revision.revision_no,revision.content_checksum,revision.content_json
+        FROM m7_cycle_plans p JOIN LATERAL (SELECT r.id,r.revision_no,r.content_checksum,r.content_json
+            FROM m7_plan_revisions r WHERE r.plan_id=p.id ORDER BY r.revision_no DESC LIMIT 1) revision ON TRUE
+        WHERE p.cycle_db_id=%s''', (cycle_db_id,)).fetchone()
+    if row is None:
+        return None
+    result = dict(row)
+    content = result.pop('content_json')
+    target = dict.fromkeys(('indicator_id', 'm2_version', 'skill_id', 'component_id'))
+    case = {**dict.fromkeys(('case_id', 'case_version', 'base_role', 'planned_min_minutes',
+                            'planned_max_minutes', 'eligible', 'duration_source', 'conditional')),
+            **{key: [None] for key in ('target_ids', 'contribution_target_ids', 'purpose_target_ids',
+                                      'reasons', 'reserve_for')}}
+    source = dict.fromkeys(('kind', 'artifact_id', 'version', 'checksum', 'revision_id',
+                           'revision_no', 'organization_id', 'assessment_configuration_id', 'authorized_scope'))
+    shape = {
+        **dict.fromkeys(('schema_version', 'status', 'planned_max_seconds', 'time_budget_seconds',
+                         'calendar_window_seconds', 'parameter_resolution_checksum',
+                         'duration_semantics', 'algorithm_version')),
+        'goal': {'kind': None, 'selected_skills': [None]},
+        'full_target_set': [target], 'planned_target_set': [target],
+        'uncovered_target_ids': [None], 'route': [case], 'reserves': [case], 'catalog': [case],
+        'known_limitations': [None],
+        'catalog_ref': dict.fromkeys(('id', 'version', 'checksum', 'package_checksum', 'm2_checksum')),
+        'parameter_sources': {'time_budget_seconds': source, 'calendar_window_seconds': source},
+    }
+    diagnostics = _plan_projection(content, shape)
+    required_fields = ('status', 'full_target_set', 'planned_target_set', 'route', 'catalog', 'uncovered_target_ids')
+    missing = [key for key in required_fields
+               if not isinstance(diagnostics, dict) or key not in diagnostics or diagnostics[key] is None]
+    recomputed = checksum(content)
+    result.update(
+        snapshot_export='ALLOWLISTED_DIAGNOSTIC_PROJECTION',
+        diagnostics_availability=('UNKNOWN' if not isinstance(content, dict) else 'PARTIAL' if missing else 'PRESENT'),
+        missing_diagnostic_fields=missing,
+        content_recomputed_checksum=recomputed,
+        content_checksum_matches=recomputed == result['content_checksum'],
+        status_matches_revision=isinstance(content, dict) and content.get('status') == result['status'],
+        diagnostics=diagnostics, diagnostics_checksum=checksum(diagnostics),
+    )
+    return result
+
+
 def functional_receipt(trace):
     tester = trace.get('tester') or {}
     repair = trace.get('repair') or {}

@@ -1,4 +1,23 @@
-# STATE — PATH-START-2DC
+# STATE — PATH-PLAN-DIAGNOSTICS
+
+## Checkpoint 05.11.2026 — бесплатное продолжение
+
+Отдельная `codex/path-plan-diagnostics` от b5b7ba3; runtime/main2dc98c6 / 2.0.64.
+Tests-only plan export: revision/hash readback и отдельная allowlisted диагностика
+targets/gaps/route/catalog/reasons, без active profile/ответов/prompts/секретов.
+Изменения ещё uncommitted. Новые unit7 before FAIL → after PASS; harness Python45,
+Node38, backend770 PASS/324 deselected. Actual PostgreSQL export/cleanup regression,
+HTTP и финальное review ещё NOT_RUN. Локально нет postgres server, Docker socket
+недоступен; можно использовать существующий owned remote test stand без LLM.
+Задача: docs/evc/tasks/path-plan-diagnostics.md. Следующий шаг: завершить бесплатную
+SQL/persistence/cleanup проверку и отчёт. Новых LLM calls=0, все release flags false,
+CI NOT_RUN/PR нет/main и deployed test не изменены. READY gate не ослаблялся.
+Зависимое изменение старта BLOCKED_DECISION: M7 требует допустимый начальный маршрут
+и предварительное обоснование сокращённого состава; для этого LIMITED pilot плана
+такое решение не найдено. Не выбирать политику по одному только поведению кода.
+Ниже сохранена история завершённого отрицательного paid run.
+
+# Исторический STATE — PATH-START-2DC
 
 ## Итог 05.11.2026
 
