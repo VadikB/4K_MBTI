@@ -47,12 +47,12 @@ M7 сохраняет известные ограничения условных
 ## План
 
 1. DONE: read-only сверка статусов и источников; полный PATH по-прежнему не PASS.
-2. ACTIVE: регрессии и additive safe plan export: refs/revision, сохранённый checksum
+2. DONE: регрессии и additive safe plan export: refs/revision, сохранённый checksum
    и его readback, отдельный checksum диагностической проекции, targets/gaps,
    route/catalog eligibility/reasons. Без UserContext/ответов/prompts/credentials.
-3. Проверки: новые regressions до/после, backend, HTTP, Node receipt/validator,
+3. DONE: новые regressions до/после, backend, HTTP, Node receipt/validator,
    actual SQL на новой isolated test DB, persistence перед owned cleanup, diff/review.
-4. Передать результат/неизвестное и конкретное решение по составу. Не менять
+4. DONE техническая передача; WAIT_OWNER решение по составу. Не менять
    исторический отрицательный receipt и PREP-DIAG-01 (root_cause=UNKNOWN).
 
 Все release flags false: branch_push/pr/merge/deploy/version_bump/artifact_publish.
@@ -100,3 +100,20 @@ server start не содержит отдельного запрета LIMITED. 
 SQL regressions, fsync/readback через общий Node helper и owned destroy только после
 доказанной выгрузки. Это воспроизводитель проверки, не новый runtime подготовки.
 Изменённые Python требуют повторного backend/HTTP на окончательном implementation.
+
+## Итог 05.11.2026
+
+Implementation1bc9d36834262ee9ad4591227d5ec876fea8e648. Backend773 PASS/324 deselected,
+HTTP108 PASS/12 deselected, targeted Python48, Node38; реальный PostgreSQL43 PASS.
+Run43d5ca0ac39e4b098ef5e7ea4d8829bc: provider disabled, LLM0, latest revision2
+readback + durable export до cleanup, exact owner database_absent/state_absent,
+force=false, тот же receipt после cleanup. Primary JSON/logs переданы allowlist.
+Отчёт: [результат и остаток](../reports/path-plan-diagnostics.md).
+
+Tests-only диагностика завершена, ограничения admission/READY сохранены. Для
+зависимого исправления контракта старта остаётся BLOCKED_DECISION: владелец выбирает
+полный M2/доработку каталога либо отдельное обоснование точного сокращённого пилота.
+Вопрос явно передан владельцу; молчание не считается разрешением. Исторические
+PATH FAIL_PLAN_NOT_READY и PREP-DIAG-01 UNKNOWN не переклассифицируются.
+Main/test остаются2dc98c6 / 2.0.64 (post-cleanup readback ready/active); новый
+CI NOT_RUN, branch local-only, все release flags false. Откат/данные без изменений.

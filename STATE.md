@@ -2,6 +2,17 @@
 
 ## Checkpoint 05.11.2026 — бесплатное продолжение
 
+Финал технической диагностики: implementation1bc9d36834262ee9ad4591227d5ec876fea8e648,
+backend773/HTTP108/targeted Python48/Node38 и actual PostgreSQL43 PASS.
+Run43d5ca0…: provider disabled/LLM0, revision2 export сохранён до exact owned cleanup,
+тот же файл после удаления DB/state, без FORCE. Primary evidence/отчёт:
+docs/evc/reports/path-plan-diagnostics.md. Все новые runtime changes отсутствуют.
+Новая база усиленного collector — эта ветка, не автоматически main. Зависимое
+исправление старта BLOCKED_DECISION; вопрос о полном M2 либо точном сокращённом
+пилотном составе передан владельцу. READY не ослаблен, новый paid PATH не разрешён.
+Main/test2dc98c6 / 2.0.64, active/public ready после cleanup; CI новой ветки NOT_RUN,
+PR/push/merge/deploy/version/artifact publication=false. Ниже история checkpoint.
+
 Отдельная `codex/path-plan-diagnostics` от b5b7ba3; runtime/main2dc98c6 / 2.0.64.
 Tests-only plan export: revision/hash readback и отдельная allowlisted диагностика
 targets/gaps/route/catalog/reasons, без active profile/ответов/prompts/секретов.
