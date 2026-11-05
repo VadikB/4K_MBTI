@@ -32,3 +32,15 @@ test('all visible release targets update together as text', () => {
   renderReleaseVersion(root, 'invalid');
   assert.deepEqual(targets.map((target) => target.textContent), ['2.0.1', '2.0.1']);
 });
+
+test('auth badge hides when the frontend release is unknown and recovers with a valid build', () => {
+  const badge = { hidden: false };
+  const target = { textContent: '' };
+  const root = { querySelectorAll: (selector) => selector === '[data-app-release-badge]' ? [badge] : [target] };
+  renderReleaseVersion(root, resolveReleaseVersion('2.0.7', null));
+  assert.equal(badge.hidden, true);
+  assert.equal(target.textContent, '');
+  renderReleaseVersion(root, '2.0.1');
+  assert.equal(badge.hidden, false);
+  assert.equal(target.textContent, '2.0.1');
+});

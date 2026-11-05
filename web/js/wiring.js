@@ -867,6 +867,9 @@ const applyAuthResponse = async (data) => {
   }
 };
 
+const EMAIL_REQUIRED_ERROR = 'Введите рабочий email';
+const EMAIL_FORMAT_ERROR = 'Введите email в формате name@company.ru';
+
 const handleEmailMagicLinkRequest = async () => {
   if (authRequestInFlight) return;
   showError(authError, '');
@@ -874,13 +877,13 @@ const handleEmailMagicLinkRequest = async () => {
 
   const email = emailInput.value.trim();
   if (!email) {
-    showError(authError, 'Введите рабочий email');
+    showError(authError, EMAIL_REQUIRED_ERROR);
     emailInput.setAttribute('aria-invalid', 'true');
     emailInput.focus();
     return;
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    showError(authError, 'Введите email в формате name@company.ru');
+    showError(authError, EMAIL_FORMAT_ERROR);
     emailInput.setAttribute('aria-invalid', 'true');
     emailInput.focus();
     return;
@@ -1106,7 +1109,7 @@ const submitEmailPassword = async () => {
         verifyMagicLinkButton.removeAttribute('aria-busy');
         verifyMagicLinkButton.textContent = (isReset || isRegistration) && authCredentialStep === 2
           ? isReset ? 'Сохранить пароль' : 'Создать пароль'
-          : (isReset || isRegistration) ? 'Продолжить' : 'Войти';
+          : 'Продолжить';
       }
       [magicTokenInput, authPasswordToggleButton, authChangeCredentialEmailButton, authPasswordGenerateButton, forgotPasswordCredentialButton]
         .filter(Boolean)
@@ -1238,6 +1241,14 @@ window.addEventListener('storage', (event) => {
     startAuthResendCountdown({ deadline });
   } catch (_error) {
     startAuthResendCountdown({ deadline: 0 });
+  }
+});
+
+emailInput?.addEventListener('input', () => {
+  const hadEmailError = emailInput.getAttribute('aria-invalid') === 'true';
+  emailInput.removeAttribute('aria-invalid');
+  if (hadEmailError && [EMAIL_REQUIRED_ERROR, EMAIL_FORMAT_ERROR].includes(authError?.textContent)) {
+    showError(authError, '');
   }
 });
 

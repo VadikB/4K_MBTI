@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
+import { registerAuthF01Tests } from './helpers/auth-f01.mjs';
+import { registerAuthV01Tests } from './helpers/auth-v01.mjs';
 
 const root = process.cwd();
 const port = 18764;
@@ -46,9 +48,13 @@ async function baseRoutes(page, restore = { authenticated: false }) {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/session/restore') return fulfillJson(route, restore);
     if (pathname === '/users/version') return fulfillJson(route, { version: 'r03-test' });
+    test.info().annotations.push({ type: 'unmocked-api', description: `${route.request().method()} ${pathname}` });
     return fulfillJson(route, {}, 404);
   });
 }
+
+registerAuthF01Tests({ test, expect, baseRoutes, base, fulfillJson });
+registerAuthV01Tests({ test, expect, baseRoutes, base, fulfillJson, appRelease });
 
 const adminUser = { id: 18, email: 'admin@example.test', full_name: 'Admin' };
 
@@ -234,7 +240,8 @@ test('ADM28 temporary restore failure offers retry and does not show login crede
   await expect(page.locator('#session-restore-title')).toHaveText('Не удалось восстановить сессию');
   await expect(page.locator('#session-restore-retry')).toBeVisible();
   await expect(page.locator('#email-input')).toBeHidden();
-  await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
+  await expect(page.locator('.auth-release-badge')).toHaveText(`Релиз ${appRelease}`);
+  await expect(page.locator('.app-footer-release')).toBeHidden();
 });
 
 test('ADM28 initial HTML has a complete frontend version before JavaScript', async ({ browser }) => {
@@ -243,7 +250,8 @@ test('ADM28 initial HTML has a complete frontend version before JavaScript', asy
     const page = await context.newPage();
     await page.goto(base);
     await expect(page.locator('#session-restore-panel')).toBeVisible();
-    await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
+    await expect(page.locator('.auth-release-badge')).toHaveText(`Релиз ${appRelease}`);
+    await expect(page.locator('.app-footer-release')).toBeHidden();
     await expect(page.locator('#email-input')).toBeHidden();
   } finally { await context.close(); }
 });
@@ -2082,12 +2090,12 @@ test('REL-VERSION-01 shows one build number on auth and common areas, with a saf
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('#auth-panel .auth-external-brand')).toHaveText('4К Ассистент');
-  await expect(page.locator('#auth-panel .auth-external-brand')).toBeVisible();
-  await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
-  await expect(page.locator('.app-footer-release')).toBeVisible();
+  await expect(page.locator('.auth-header-brand')).toHaveText('4К Ассистент');
+  await expect(page.locator('.auth-header-brand')).toBeVisible();
+  await expect(page.locator('.auth-release-badge')).toHaveText(`Релиз ${appRelease}`);
+  await expect(page.locator('.app-footer-release')).toBeHidden();
   await page.setViewportSize({ width: 360, height: 760 });
-  await expect(page.locator('.app-footer-release')).toBeInViewport();
+  await expect(page.locator('.auth-release-badge')).toBeInViewport();
   await page.locator('#auth-panel').evaluate((panel) => panel.classList.add('hidden'));
   await page.locator('#auth-complete-panel').evaluate((panel) => panel.classList.remove('hidden'));
   await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
