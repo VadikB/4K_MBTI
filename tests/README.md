@@ -22,9 +22,15 @@ Default `functional-diagnostic` остаётся исторической synthe
 [контракт](../docs/architecture/pilot-plan-start-admission-contract.md).
 Полный M2=61 сохраняется, план=39/22 вне; любой LIMITED автоматически не допускается.
 Runner требует `m7_start_readiness/1` и exact frozen binding, обязательные стадии,
-конечную допущенную AS и lineage. Новая программа пока не опубликована, прежний
-release fixture1.1 не заменён. Код T1 выпущен main3385145/2.0.65 (PR170), но новая
-программа и новый paid PATH не запускались; нынешняя доработка harness пока локальная.
+конечную допущенную AS и lineage. Прежний release fixture1.1 не заменён.
+Код T1 выпущен в2.0.65 (PR170), harness — main/test e63eba6 /2.0.66 (PR171).
+После отдельного разрешения опубликована только новая `specialist_pilot@1.2`, id2,
+без подключений организаций;
+[exact receipt/readback](../docs/evc/evidence/pilot-program-publication-execution/publication-result.json).
+После отдельного разрешения один paid PATH1.2 выполнен: **PASS**, real LLM + штатный
+repair, explicit start201/та же первая AS/0 ответов, owned cleanup и offline CHECK PASS.
+[Итог](../docs/evc/tasks/pilot-1.2-path.md). Разрешение этого run использовано;
+публикация или прежний PASS не разрешают автоматический повтор.
 Исторический PREP-DIAG-01 остаётся UNKNOWN и не отождествляется с покрытием.
 
 Harness теперь допускает явный внешний published receipt только полным selector
@@ -35,6 +41,13 @@ receipt публикации. Подробности в [профиле](../docs
 реализация/проверки — [PATH-PILOT-HARNESS-01](../docs/evc/tasks/pilot-program-harness.md).
 Saved exact bytes и program refs перепроверяются после cleanup в summary.
 Согласование нового selector не разрешает publication/активацию/paid run.
+
+Actual published receipt1.2 проверен существующим `--check-bootstrap` на test
+e63eba6 /2.0.66: **PASS_BOOTSTRAP_ONLY**, новая owned-БД и marker-guarded cleanup,
+минимальные counts1/0,9 Cases/27 исходных QA, LLM0.
+[Первичные evidence](../docs/evc/evidence/pilot-program-1.2-bootstrap/remote-result.json).
+Команда из repo root требует `PYTHONPATH=.`; это исправлено в профиле. Bootstrap
+не доказывает новый human review/качество AS, first start или полный PATH.
 
 Бесплатные SQL-регрессии самого release seed:
 

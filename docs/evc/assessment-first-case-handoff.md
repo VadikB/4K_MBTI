@@ -1,6 +1,27 @@
 # Передача принятого синтетического контура
 
-## Текущее состояние после выпуска PR #167
+## Текущее состояние05.11.2026: runtime2.0.66, PATH1.2 PASS
+
+Main/test `e63eba67d77fb73f7fb9bb219bc3fe5d3807a909` /2.0.66 уже содержат профиль,
+runner, исправления PATH/T1/repair input и exact receipt selector (PR168–171).
+Заново переносить их из старых веток не нужно. ProgramDefinition1.2/id2 опубликована
+отдельно; default receipt1.1 не заменялся, для1.2 требуется полный explicit selector.
+Один отдельно разрешённый платный run `2ff983f12c67494b990b0f85284b8d70` — **PASS**:
+generation/tester/challenger/repair, конечная admission PASS, start201,
+AS `c89539de-2d53-4a70-b887-7a5a217df64a`,0 оценочных ответов. Новая owned-БД/state
+удалены после сохранения primary; независимый offline CHECK PASS.
+[Отчёт/AC scope/остаток](tasks/pilot-1.2-path.md).
+
+Новая EVC/evidence ветка `codex/pilot-1.2-path` от1ee2ec4; её итоговый SHA в Git/пакете.
+CI runtime PR171 и deploy42047619768 — прежние PASS; для новых docs/evidence нового
+CI/PR/merge/deploy нет. Это не публикация новой версии кода или подключение рабочей
+организации. Постоянные source/schema/target connections после run совпали (read-only).
+Paid разрешение использовано, повторного запуска нет; будущий run требует нового допуска.
+PREP-DIAG-01 остаётся UNKNOWN, не исправлен задним числом успешным новым запуском.
+
+## Историческое состояние после выпуска PR #167
+
+Ниже прежние базы/статусы/инструкции сохранены как история; текущая база и статус выше.
 
 Дополнение передачи PATH 04.11.2026: target `--program-source published-pilot`,
 точный nine-case seed, расширенный безопасный collector и независимые PG/ST fixes

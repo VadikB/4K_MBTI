@@ -1,0 +1,30 @@
+{
+  "result": "PASS",
+  "runtime_base": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "source": "readback.json + existing historical source/expected schema; no new methodology approval",
+  "commands": [
+    "/Users/vadim_bogachev/Developer/4K/.venv/bin/python docs/evc/evidence/pilot-program-publication-preflight/REGRESSION.py",
+    "python3.12 docs/evc/evidence/path-pilot-schema-readback/CHECK.py",
+    "git diff --check"
+  ],
+  "exit_code": 0,
+  "stdout": "{\"result\": \"PASS_OFFLINE_PREFLIGHT_EVIDENCE\", \"source_objects_compared\": 6, \"cases\": 9, \"original_qa\": 27, \"recomputed_artifacts\": 15, \"schema_tables\": 32, \"candidate_checksum\": \"b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718\", \"docs_local_links_checked\": 13, \"socket_attempts\": 0, \"db_connections\": 0, \"provider_calls\": 0, \"publication\": false, \"retirement_guard_execution_test\": \"NOT_RUN_OWNER_OPERATIONAL_CHOICE_PENDING\"}\n{\"result\": \"PASS_PREFLIGHT_EVIDENCE_REGRESSION\", \"positive\": 1, \"negative_mutations_rejected\": 11, \"optimized_mode_rejected\": true, \"evidence_file_mutations\": 0, \"database_calls\": 0, \"llm_calls\": 0}\n{\"result\": \"PASS_OFFLINE_SCHEMA_REGRESSION\", \"positive_comparison\": 1, \"negative_schema_mutations\": 11, \"invalid_record_rejections\": 4, \"read_only_sql_literals_checked\": 7, \"database_calls\": 0}\n",
+  "initial_probe": {
+    "result": "FAILED_VERIFICATION_PROBE_SETUP",
+    "exit_code": 1,
+    "reason": "Replacing socket.socket with a function broke ssl.SSLSocket class declaration; corrected verification guard to NoSocket subclass. Not a product/harness defect; live read-only preflight was unaffected."
+  },
+  "not_run": {
+    "retirement_operational_guard_in_owned_db": "Owner method decision pending; required before any permanent publication",
+    "backend_ci": "No runtime/consumer change; existing PR171 CI applies only to unchanged runtime",
+    "publication": "NOT_AUTHORIZED",
+    "activation": "NOT_AUTHORIZED",
+    "paid_path": "NOT_AUTHORIZED"
+  },
+  "writes": {
+    "permanent_db": 0,
+    "program_publications": 0,
+    "provider_calls": 0
+  },
+  "scope": "LOCAL_DOCS_AND_EVIDENCE_ONLY; NO_PUSH_PR_MERGE_DEPLOY"
+}

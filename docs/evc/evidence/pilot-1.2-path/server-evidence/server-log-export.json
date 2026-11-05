@@ -1,0 +1,14 @@
+{
+  "contract": "provider-completion-log-projection/1",
+  "original_remote_path": "/home/vadim_bogachev/evidence/path-pilot-1.2-run-qxzr56r9/run/6364c771-80c7-4013-bad0-6fd7cc2db545/server.log",
+  "original_sha256": "65567ea20689ca57619a6f58153762c07d35cd74f0dbc28e336155d8587363a6",
+  "original_bytes": 121063,
+  "export_sha256": "db22331105eaaeaacf44b0f416ec061189de5811a03f36d2dfb87b25e0596d0a",
+  "allowed_fields": [
+    "duration_ms",
+    "routing_key"
+  ],
+  "provider_completed_requests": 21,
+  "raw_log_exported": false,
+  "scope": "Sanitized copy; original remote log unchanged"
+}

@@ -13,14 +13,20 @@ merge и deploy этим профилем не объявляются.
 сам он не является runtime config. Новый draft собирается offline в snapshot
 **новой** ProgramDefinition; опубликованная1.1 и Case QA не меняются.
 Validator требует серверный `m7_start_readiness/1`, точный plan binding и остальные
-условия старта, а не просто READY или LIMITED. Источник published-pilot пока
-зеркалит прежний release1.1 и не получает этот допуск автоматически: после отдельно
-разрешённой публикации требуется новый проверенный exact-version source receipt.
-Код T1 выпущен в main3385145/2.0.65 (PR170); публикация новой программы и новый
-paid PATH не выполнялись. Текущий harness fix передаётся отдельно, не находится
-в main автоматически. PREP-DIAG-01 отдельно UNKNOWN.
-Рабочая БД — серверный Agent4K-Test/.env: по указанию владельца только read-only
-сверка схемы в конце, перед возможным main; не активация и не цель cleanup/tests.
+условия старта, а не просто READY или LIMITED. Default published-pilot сохраняет
+прежний receipt1.1 и не получает новый допуск автоматически.
+Код T1 выпущен в2.0.65 (PR170), harness — main/test e63eba6 /2.0.66 (PR171).
+После отдельного решения владельца опубликована только новая ProgramDefinition
+`specialist_pilot@1.2`, id2, publisher4; exact receipt и readback проверены
+[PATH-PILOT-PROGRAM-01](tasks/pilot-program-release-preparation.md).
+Отдельно разрешённый paid PATH1.2 выполнен: **PASS**, run2ff983f1…,
+реальные generation/tester/challenger и штатный repair, admission PASS,
+start201/первая AS/0 ответов. [Итог и первичные evidence](tasks/pilot-1.2-path.md).
+Это один ограниченный пилотный маршрут до первого Case, не полная оценка.
+PREP-DIAG-01 отдельно UNKNOWN.
+Рабочая БД — серверный Agent4K-Test/.env: свежая scoped schema сверка PASS,
+единственная разрешённая предметная запись — новая программа и её role link;
+подключения организаций не менялись. Рабочая БД никогда не цель cleanup/tests.
 Старые статусы ниже — история.
 
 ## Подключение к заданиям
@@ -57,7 +63,7 @@ Owner-only файл доступа (`0600`) передаётся через `--e
 Из checkout с реализацией профиля:
 
 ```sh
-/home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python \
+PYTHONPATH=. /home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python \
   scripts/assessment_first_case.py \
   --env-file /home/vadim_bogachev/projects/Agent4K-Test/.env \
   --python /home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python \
@@ -84,12 +90,13 @@ synthetic human_review. Source mismatch останавливает seed до LLM
 ### Явный выбор следующей опубликованной версии
 
 После отдельной разрешённой публикации и независимого read-only экспорта новой
-версии существующий `published-pilot` принимает **все три** параметра:
+версии существующий `published-pilot` принимает **все три** параметра. Для
+опубликованной на test версии1.2 exact selector:
 
 ```sh
---program-receipt /absolute/path/to/verified-published-release.json \
---program-receipt-sha256 <RECEIPT_BYTES_SHA256> \
---program-version <EXACT_PROGRAM_VERSION>
+--program-receipt /home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json \
+--program-receipt-sha256 09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b \
+--program-version 1.2
 ```
 
 Это дополнение к существующей команде, не команда публикации или разрешение LLM.
@@ -97,7 +104,14 @@ synthetic human_review. Source mismatch останавливает seed до LLM
 env-файла и открытия БД. Значения проверяются снова в seed; default остаётся
 неизменённым byte-pinned receipt1.1, автоматического `latest` нет.
 В `functional-diagnostic` эти параметры запрещены. Рецепт proposed1.2 не является
-published source receipt и не заменяет его; отдельного разрешения на1.2 пока нет.
+published source receipt и не заменяет его. Разрешение публикации1.2 не разрешает
+paid PATH или подключение существующих организаций. Это проверенный offline
+selector. Бесплатный bootstrap именно этих published bytes выполнен:
+`PASS_BOOTSTRAP_ONLY`, run `5d4f68db1fae48bf9c82be26b2bee390`, minimal counts1/0,
+точные источники и cleanup PASS; [evidence](evidence/pilot-program-1.2-bootstrap/remote-result.json).
+Новый PATH после отдельного разрешения выполнен: PASS (см. итог выше).
+Первая операционная попытка free bootstrap без `PYTHONPATH=.` остановилась
+до preflight/БД; после исправления команды выполнен один actual bootstrap, без LLM.
 
 Выбранные version/id/code/assignment/status/config/catalog/definition checksum
 передаются в state/run; точные байты сохраняются с fsync/readback в

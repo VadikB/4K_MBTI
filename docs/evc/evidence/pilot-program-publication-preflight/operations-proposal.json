@@ -1,0 +1,59 @@
+{
+  "status": "PROPOSED_NOT_EXECUTED_OWNER_DECISION_REQUIRED",
+  "scope": "Existing ProgramDefinition lifecycle; no new runtime/API or schema",
+  "target": {
+    "code": "specialist_pilot",
+    "version": "1.2",
+    "definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+    "database_id": "Only from verified successful publication readback; never guessed"
+  },
+  "publication": {
+    "publisher_user_id": 4,
+    "version_owner_approval": "PENDING",
+    "publisher_owner_authorization": "PENDING",
+    "published_by_technical_scope": "Configured superadmin and not suppressed, read-only verified",
+    "command": "PYTHONPATH=. .venv/bin/python scripts/publish_assessment_program.py --code specialist_pilot --version 1.2 --name 'Пилот 4К · 9 кейсов' --assignment-ref specialist-pilot --mode dialogue --configuration-code specialist_pilot_v1 --role-code specialist_expert --publisher-user-id 4 --pilot-plan-package assessment_definitions/planning/specialist_pilot_admission/v0.1 --publish",
+    "not_executed": true
+  },
+  "retirement": {
+    "existing_transition": "published -> retired only; cannot delete, edit snapshot, change roles, or republish retired version",
+    "runtime_cli": "No existing retirement CLI/endpoint found; do not invent one",
+    "proposed_method": "Explicitly authorized guarded administrative SQL through existing DB trigger, only for the newly published version; not a generic runtime tool",
+    "preconditions": [
+      "Owner explicitly approves this limited operational method before publication.",
+      "Free isolated test of guard predicates and exact old/new column/role preservation passes before permanent publication.",
+      "Exact code/version/checksum/id verified; publication and export source drift absent.",
+      "No organization has ever connected to this new program; no participant history/AS is to be altered.",
+      "No concurrent operator/publication/connect action for this new version during the controlled release window; if quiescence cannot be established, STOP and request a separate recovery plan.",
+      "If any connection/history or unexpected source drift is present, do not retire/delete/rebind automatically."
+    ],
+    "sql_template": "UPDATE assessment_program_definitions p SET status='retired' WHERE p.id=%s AND p.code='specialist_pilot' AND p.version='1.2' AND p.status='published' AND p.definition_checksum=%s AND NOT EXISTS(SELECT 1 FROM organization_assessment_program_connections c WHERE c.program_definition_id=p.id) RETURNING p.id,p.code,p.version,p.status,p.definition_checksum",
+    "transaction": "Explicit BEGIN, lock and read target row, assert exact identity and no connections; UPDATE must affect exactly 1 row; compare unchanged definition/roles; COMMIT then readback. Any failure -> ROLLBACK. Not a promise of inverse retirement or downgrade.",
+    "existing_test_evidence": [
+      {
+        "file": "tests/integration/test_arch30_program_definition_db.py",
+        "test": "test_retired_program_stops_new_resolution_without_rewriting_connection"
+      },
+      {
+        "file": "tests/integration/test_pilot_start_admission_db.py",
+        "test": "test_real_sql_revocation_scope_and_publication_fail_closed_before_start"
+      }
+    ],
+    "evidence_scope": "Existing status transition/refusal tests passed in PR171 integration; new administrative guard procedure has NOT_RUN isolated regression and is not yet declared verified.",
+    "free_guard_regression": "REQUIRED_BEFORE_ANY_PUBLICATION; NOT_RUN pending owner acceptance of operational method",
+    "execution_now": false
+  },
+  "post_publication": [
+    "Read-only export exact program-version 1.2, no latest/fallback.",
+    "Independently verify source receipt bytes and definition/snapshot/case/QA/artifact checksums.",
+    "Confirm no org connections were made by this task; preserve old1.1.",
+    "Do not run paid PATH or activate/connect existing organizations."
+  ],
+  "forbidden": [
+    "Permanent test DB cleanup/drop",
+    "Published definition mutation/delete",
+    "New prompts/admission/repair rules",
+    "Existing organization activation",
+    "Paid LLM/PATH without separate permission"
+  ]
+}

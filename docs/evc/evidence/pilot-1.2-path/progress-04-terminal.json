@@ -1,0 +1,52 @@
+{
+  "sequence": 4,
+  "terminal": true,
+  "observation": {
+    "scope": "READ_ONLY_OWNED_PATH_MONITOR",
+    "runs": [
+      {
+        "run_id": "2ff983f12c67494b990b0f85284b8d70",
+        "database": "product4k_pytest_2ff983f12c67494b990b0f85284b8d70",
+        "completion_present": true,
+        "cleanup_present": true,
+        "cleanup_deferred": false,
+        "failure_present": false,
+        "state_present": false,
+        "provider_completed_requests": 21,
+        "last_provider_completions": [
+          {
+            "duration_ms": 12407.23,
+            "routing_key": "9d99628f-6e6a-4292-b5b5-4055eb7c6b11:challenger:02:365fb5733b8d"
+          },
+          {
+            "duration_ms": 12058.22,
+            "routing_key": "9d99628f-6e6a-4292-b5b5-4055eb7c6b11:challenger:03:dfe81a2dc0d0"
+          },
+          {
+            "duration_ms": 14900.74,
+            "routing_key": "9d99628f-6e6a-4292-b5b5-4055eb7c6b11:challenger:04:e42ca9979763"
+          }
+        ]
+      }
+    ],
+    "controller": {
+      "state": "RUNNER_FINISHED",
+      "exit_code": 0,
+      "elapsed_seconds": 376.508,
+      "authorized_runner_invocations": 1,
+      "retry": false,
+      "directory": "/home/vadim_bogachev/evidence/path-pilot-1.2-run-qxzr56r9",
+      "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+      "raw_controller_output_not_exported": true,
+      "runner_result": "PASS",
+      "runs": [
+        {
+          "run_id": "2ff983f12c67494b990b0f85284b8d70",
+          "result": "PASS",
+          "validation_errors": [],
+          "provider_completed_requests": 21
+        }
+      ]
+    }
+  }
+}

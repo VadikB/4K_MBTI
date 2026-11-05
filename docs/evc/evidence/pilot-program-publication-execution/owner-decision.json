@@ -1,0 +1,30 @@
+{
+  "task": "PATH-PILOT-PROGRAM-01",
+  "decision": "OWNER_APPROVED_CONDITIONAL_PUBLICATION",
+  "basis": "Owner replied идем дальше to the exact three-step proposal: version1.2/publisher4, isolated retirement guard test, only on PASS and repeat preflight publish new ProgramDefinition in test and export exact receipt.",
+  "runtime_base": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "app_version": "2.0.66",
+  "program": {
+    "code": "specialist_pilot",
+    "version": "1.2",
+    "publisher_user_id": 4,
+    "definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718"
+  },
+  "scope": {
+    "isolated_retirement_test": true,
+    "artifact_publish": "ONLY_NEW_ProgramDefinition_AND_ALLOWED_ROLE_LINKS_IF_ALL_GATES_PASS",
+    "source_export": true,
+    "permanent_organization_connections": false,
+    "old_1_1_changes": false,
+    "methodology_admission_repair_prompt_changes": false,
+    "paid_path": false,
+    "push_pr_merge_deploy": false
+  },
+  "stop_conditions": [
+    "Isolated regression failed",
+    "Runtime/source/schema/publisher/version drift",
+    "Unexpected org/history connection",
+    "Publication outcome not proven; no retry to force success"
+  ],
+  "historical_PREP_DIAG_01": "UNKNOWN"
+}

@@ -1,0 +1,45 @@
+{
+  "command": "ssh ... PYTHONDONTWRITEBYTECODE=1 DB_POOL_MIN_SIZE=0 .venv/bin/python - --execute-approved-publication < EXECUTE_APPROVED.py",
+  "exit_code": 0,
+  "stdout": {
+    "result": "PUBLISHED_READBACK_VERIFIED",
+    "directory": "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10",
+    "program": {
+      "id": 2,
+      "code": "specialist_pilot",
+      "version": "1.2",
+      "status": "published",
+      "definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+      "published_at": "2026-11-05 17:40:30.345813",
+      "assessment_configuration_id": 11,
+      "catalog_version_id": 2
+    },
+    "files": [
+      {
+        "name": "prepublication.json",
+        "path": "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/prepublication.json",
+        "bytes": 2617,
+        "sha256": "936cd326adf8f25cf9e3e49fe117608ab97ebc32e8c31b7a851fe73c3a73b915"
+      },
+      {
+        "name": "publisher-invocation.json",
+        "path": "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/publisher-invocation.json",
+        "bytes": 789,
+        "sha256": "69d86307ae94873a07015b7c1c8a1da679d750db58ae71908206429b4011ab6b"
+      },
+      {
+        "name": "published-release-source.json",
+        "path": "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json",
+        "bytes": 229612,
+        "sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b"
+      },
+      {
+        "name": "publication-result.json",
+        "path": "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/publication-result.json",
+        "bytes": 2714,
+        "sha256": "41660c2b278d19cb57433da83bc58b08b9d0c1e45bb829aeefcdd09216c937a1"
+      }
+    ]
+  },
+  "driver_sha256": "d11ebbc59ce4e1f9fb83a36f1fab2834bffd3d59da7b39418f8a8892310732b1"
+}

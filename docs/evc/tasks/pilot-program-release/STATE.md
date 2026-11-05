@@ -1,25 +1,116 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
-- База runtime: `3385145201d5d365e08e9e8a6a6fb7e12a0aa258` /2.0.65, PR170 merged.
-- Ветка: `codex/pilot-program-release-plan`; подготовка docs/evidence сохранена f211e71.
+- Разрешён [PATH-AC05-R1](../path-ac05-release-2067.md): владелец подтвердил2.0.67
+  PATCH → push/PR/CI/review. Реализация2509aa2 сохранена, активны preflight/кандидат.
+  Human review нового head ещё нет; merge/deploy/активация/paid LLM не разрешены.
+  Historical CHECK2509aa2 не менять ради новой версии/assets, replay только на его
+  immutable checkout. Main/test пока e63/2.0.66; статусы текущего CI будут в PR.
+  Preflight+повтор2.0.67 PASS, lint/140 frontend/22 release+CI/100 browser PASS,
+ 45 assets; активны commit/push/PR/обязательный CI. Точная remote передача — в PR
+  этой ветки; после CI не добавлять новый commit только ради смены WAITING на PASS.
+- Последний шаг: [PATH-AC-AUDIT-01](../path-final-acceptance.md), бесплатная сверка
+  после a7d7a9d. Подтверждён foreign readback другой организации с тем же program ID:
+ 2 browser FAIL before →2 PASS after. Локальный JS predicate сверяет оба ID в command,
+ normal/recovery GET; реальные нормы/backend/источники/БД не менялись.
+  Итоговый auth/admin100 PASS, frontend140 PASS, HTTP+M3 25 PASS,lint/build/idempotency
+  и4 viewport assertions PASS. Прежний fixture-name mismatch сохранён (99/1) и
+  исправлен чтением M3 source; все6 options проверены. Старый paid PASS только e63.
+  Новый UI candidate локальный: release number/PR/CI/review/merge/deploy пока нет;
+  предлагаемый2.0.67 не согласован. Main свежий e63; test — последний подтверждённый e63.
+  Остатки AC02 repeat org/полный AC05 slow-error browser matrix не выданы за PASS.
+  Новой генерации, рабочей активации, DB/cleanup/публикации не было.
+  Следующий шаг — решение владельца о выпуске candidate/PR/CI/review.
+- Текущая неизменяемая база runtime: `e63eba67d77fb73f7fb9bb219bc3fe5d3807a909` /2.0.66.
+  PR171 принят/merged/deployed; [release closure](https://github.com/VadikB/4K_MBTI/pull/171#issuecomment-6660961795).
+- Текущая ветка: `codex/pilot-1.2-path` от1ee2ec4; actual paid PATH/evidence.
+  Предыдущая `codex/pilot-program-publication` сохранена на1ee2ec4, не продолжение
+  закрытой remote-ветки PR171. Подготовка f211e71 и harness bd2af6d/a60200d сохранены.
 - Завершено: offline рецепт1.2/checksum, паспорт выпуска/run, 72 unit PASS,
   оба CLI help exit0, воспроизведение SEED-01 без SQL, найден browser pin1.1.
 - Завершена [PATH-PILOT-HARNESS-01](../pilot-program-harness.md): бесплатный fix seed,
   receipt+SHA256+version selector, browser/summary exact refs; backend906, Node66,
   isolated bootstrap3, component browser1 PASS. Подготовка f211e71 сохранена;
   её отрицательный VERIFY остаётся историческим evidence базы3385145.
-- Активен [R1/2.0.66](../pilot-harness-release-2066.md): владелец разрешил
-  PR/CI/review и PATCH2.0.66; merge/deploy/publication/paid PATH запрещены.
-- Публикация/подключение рабочей БД/paid run пока запрещены, не PATH PASS.
-- Открыто: номер программы1.2 предложен, не утверждён; свободность в БД UNKNOWN;
-  полномочный publisher и проверенная процедура retirement до будущей публикации.
+- R1/2.0.66 завершён: review a60200d, отдельное разрешение merge/test, squash e63eba6;
+  точные head/base tree совпали, server/public readback и45 assets PASS.
+- Завершено по отдельному «идем дальше» владельца:1.2/publisher4, free retirement
+  regression и при её PASS/свежем preflight — новая ProgramDefinition и exact export.
+  [Решение](../../evidence/pilot-program-publication-execution/owner-decision.json).
+- Free owned SQL:17 новых guard +5 lifecycle +7 start/readiness =29 PASS; synthetic,
+  provider disabled. Evidence сохранено до marker-guarded cleanup без FORCE;
+ 0 owned DB/connections, task-контейнер удалён. Постоянная БД не цель cleanup.
+- Повторный preflight 05.11.2026 17:40:30 UTC:32 таблицы/353 колонки/191 constraints/
+ 84 indexes/16 triggers EXACT MATCH; legacy1.1/config/catalog/roles/9 Cases/27 QA/
+ 15 artifacts без drift;1.2 свободна, publisher4 authorized/configured/not suppressed.
+- Один штатный publisher call, exit0: `specialist_pilot@1.2`, **id2**, published,
+  checksum `b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718`,
+  snapshot `daa715b153f16e9ebc4ea6744a1c8541c5e269e248bba4b5c37723571e6ccfce`.
+  Новая программа и один role link; старые program/role/source и org connections
+  неизменны. У1.2 подключений0. На этапе публикации activation/retirement/LLM/PATH
+  отсутствовали; последующий owned PATH описан ниже, не подключал рабочие организации.
+- Exact receipt229612 bytes, SHA256
+  `09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b`.
+  Сервер: `/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json`.
+  [Post-readback](../../evidence/pilot-program-publication-execution/publication-result.json).
+- Independent offline CHECK/REGRESSION: actual selector1.2 PASS,8 tamper negatives и
+  reject `-O` PASS, network/DB/LLM0. Backend908 PASS/351 deselected; новый CI NOT_RUN.
+- Retirement: exact SQL guards/immutability/rollback проверены в owned-БД, но это
+  не race-proof и не готовый runtime CLI. Постоянный retirement не выполнялся;
+  при необходимости точный id/checksum/no-connections/quiescence и отдельное решение.
 - Известные источники не менялись: M2=61, план39/22 вне,55 условий,02→03→04→07→05→01→06→08,
   7200/259200, без SPEC.09 fallback; exact P/M checksum883c025c… принят ранее.
-- CI: новый NOT_RUN (нет push/PR). Последний runtime CI — PASS по PR170.
-- Main:3385145, последний test readback2.0.65/3385145 из release closure;
-  новое развёртывание/свежий remote readback здесь не выполнялись.
-- Постоянная БД:0 connections/writes; provider calls0. Бесплатные SQL — только
-  новые owned test/pytest DB, все удалены после evidence; task Docker удалён.
+- CI неизменённого runtime: PR171 PASS (unit908/HTTP108/Node66/integration220,
+  два explicit llm skip, пять browser lanes PASS); deploy42047619768 PASS.
+  Новый docs/evidence commit не выдан за новый CI; push/PR здесь не разрешены.
+- Main/test:e63eba6 /2.0.66; pre/post сверили server SHA/версию заново.
+  Нового push/PR/merge/deploy нет. Локальная ветка содержит новые tests/docs/evidence,
+  runtime/Api/scripts/assessment_definitions неизменны; три чужих файла main сохранены.
+- Постоянная БД: публикация только новой1.2 и role link по разрешению; схема неизменна.
+  Предварительные PENDING/0-write receipts сохранены как история, не текущий статус.
+- Полный [набор evidence](../../evidence/pilot-program-publication-execution/verification.json),
+  [исторический preflight](../../evidence/pilot-program-publication-preflight/readback.json),
+  [прежний операционный проект](../../evidence/pilot-program-publication-preflight/operations-proposal.json).
+- Free bootstrap actual published1.2 завершён: **PASS_BOOTSTRAP_ONLY**, process exit0,
+  run `5d4f68db1fae48bf9c82be26b2bee390`, каталог9 Cases/27 original QA;
+  users1, organizations/memberships/assignments/profiles/cycles0. Exact receipt bytes
+  сохранены до cleanup, completion/provenance hash связаны; после cleanup offline
+  summary и независимый CHECK PASS. Owned DB/state отсутствуют, active connections0.
+  [Результат](../../evidence/pilot-program-1.2-bootstrap/remote-result.json),
+  [cleanup readback](../../evidence/pilot-program-1.2-bootstrap/server-evidence/bootstrap/cleanup-readback.json).
+- Первая попытка: ModuleNotFoundError:tests до preflight/БД из-за отсутствия
+  PYTHONPATH в моей операционной команде. Сохранены исходный launcher/exit1/диагностика;
+  исправлено только окружение команды и описание профиля, не runtime/admission.
+- Адресные harness/source/summary/ownership unit110 PASS. Runtime sources e63 неизменны;
+  прежние908 backend и29 SQL применимы к тем же файлам, заново не выдаются за новые.
+- Server tracked clean/11 runtime file hashes равны e63. Но полный status НЕ clean:
+ 1203 прежних untracked web/dist assets и1 env-backup path; содержимое backup не читалось,
+  файлы не удалялись/перемещались. Bootstrap не использует web/dist. Перед paid PATH —
+  отдельный чистый execution checkout того же SHA; не cleanup deploy checkout.
+- Исторический следующий шаг после bootstrap требовал отдельного разрешения **одного** paid PATH: fresh read-only
+  status/preflight, exact1.2 selector, чистый execution checkout e63, новая owned-БД,
+  штатные generation/tester/challenger/repair и gate; при допуске start/AS/0 ответов,
+  при отказе evidence и остановка без платного повтора.
+- Получено отдельное разрешение владельца «идем дальше» на один такой run.
+  Завершённая карточка [PATH-PILOT-RUN-01](../pilot-1.2-path.md), ветка
+  `codex/pilot-1.2-path` от1ee2ec4; прежняя publication/boot ветка сохранена.
+  Read-only live source/schema и machine preflight PASS; отдельный чистый execution
+  checkout e63, full status пуст. Server evidence `path-pilot-1.2-run-qxzr56r9`.
+  Runner **PASS**, exit0,376.508s; run `2ff983f12c67494b990b0f85284b8d70`, cleanup
+  есть/state отсутствует. Paid runner invocations1; PID2719052/tool session33301 завершены.
+  Независимая проверка завершена:34 primary files hashes/11 runtime byte hashes,
+  настоящий Node validator и повторная local summary PASS, visual first AS PASS.
+  Конечная admission PASS после штатного repair, tester5/challenger4 batches;
+  can_start=true до start, HTTP201/та же AS c89539de…/0 оценочных ответов.
+  Candidate→compiled Case→saved/presented AS exact refs; полный M2=61/план39/вне22,
+  accepted LIMITED binding,7200/259200s сохранены. Никакого общего допуска LIMITED нет.
+  20 unique operations/21 completed HTTP/1 JSON retry; retained1,523,716 tokens,
+  usage первого malformed JSON неизвестен — не полный биллинговый итог.
+  Working source/schema/target connections0 read-only post-match; owned DB/state
+  отсутствуют, active connections0, DROP без FORCE. Fresh unit110/Node66 PASS.
+  [Итог](../../evidence/pilot-1.2-path/server-evidence/outcome.json),
+  [verification](../../evidence/pilot-1.2-path/verification.json).
+  Следующий шаг — человеческая приёмка. Допуск paid run использован, повтор запрещён;
+  не все негативные ветви AC/шесть BaseRoles UI проверялись этим positive run.
 - PREP-DIAG-01: UNKNOWN, отдельный продуктовый остаток.
 - Полная задача: [pilot-program-release-preparation.md](../pilot-program-release-preparation.md).
 - Паспорт: [pilot-program-1.2-release-plan.md](../../reports/pilot-program-1.2-release-plan.md).

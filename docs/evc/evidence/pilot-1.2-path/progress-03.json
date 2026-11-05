@@ -1,0 +1,52 @@
+{
+  "sequence": 3,
+  "terminal": false,
+  "observation": {
+    "scope": "READ_ONLY_OWNED_PATH_MONITOR",
+    "runs": [
+      {
+        "run_id": "2ff983f12c67494b990b0f85284b8d70",
+        "database": "product4k_pytest_2ff983f12c67494b990b0f85284b8d70",
+        "completion_present": false,
+        "cleanup_present": false,
+        "cleanup_deferred": false,
+        "failure_present": false,
+        "state_present": true,
+        "provider_completed_requests": 13,
+        "last_provider_completions": [
+          {
+            "duration_ms": 51124.16,
+            "routing_key": "9d99628f-6e6a-4292-b5b5-4055eb7c6b11:generation:repair:069c924b9bb7"
+          },
+          {
+            "duration_ms": 12083.73,
+            "routing_key": "9d99628f-6e6a-4292-b5b5-4055eb7c6b11:tester:01:6a69c4fcd5c7"
+          },
+          {
+            "duration_ms": 12011.95,
+            "routing_key": "9d99628f-6e6a-4292-b5b5-4055eb7c6b11:tester:01:6a69c4fcd5c7:json-retry"
+          }
+        ],
+        "operation": {
+          "operation_id": "9d99628f-6e6a-4292-b5b5-4055eb7c6b11",
+          "status": "running",
+          "attempts": 1,
+          "error_code": null
+        },
+        "cycle": {
+          "id": 1,
+          "status": "prepared",
+          "started_at": null
+        },
+        "assessment_answers": 0,
+        "start_readiness": {
+          "can_start": false,
+          "reasons": [
+            "PILOT_PLAN_PREPARATION_SCOPE_MISMATCH"
+          ]
+        }
+      }
+    ]
+  },
+  "interpretation": "Existing repair and transport JSON retry inside the same operation; no runner rerun. Interim scope mismatch reflects operation.status=running, not a proven terminal product defect."
+}

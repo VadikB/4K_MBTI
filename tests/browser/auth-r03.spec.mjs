@@ -366,6 +366,54 @@ test('PROGRAM01 R10 shows a terminal error when exact readback is null', async (
   expect(operationIds[1]).toBe(operationIds[0]);
 });
 
+for (const lostCommandResponse of [false, true]) {
+  test(`PATH-START AC05 rejects a foreign organization readback after ${lostCommandResponse ? 'lost' : 'confirmed'} command`, async ({ page }) => {
+    const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+    const organization = { id: 3, code: 'ac05-foreign', name: 'Owned synthetic organization',
+      is_active: true, domains: [], admins: [], members_count: 0, reports_count: 0,
+      members: [], assessment_program: null };
+    const connection = { organization_id: 3, program_definition_id: 11,
+      program_name: 'Owned pilot', program_version: '1.1', assignment_ref: 'pilot-4k-9',
+      roles: [], role_capabilities: [] };
+    const operationIds = [];
+    await page.route('**/users/**', (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      if (pathname === '/users/session/restore') return fulfillJson(route, {
+        authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
+      });
+      if (pathname === '/users/version') return fulfillJson(route, { version: 'ac05-test' });
+      if (pathname === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+      if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') {
+        return fulfillJson(route, { is_superadmin: true, items: [organization],
+          assessment_programs: [{ id: 11, name: connection.program_name, version: connection.program_version }] });
+      }
+      if (pathname === '/users/admin/organizations/3/questionnaire') return fulfillJson(route, { items: [] });
+      if (pathname === '/users/admin/organizations/3/assessment-program') {
+        if (route.request().method() === 'PUT') {
+          operationIds.push(route.request().postDataJSON().operation_id);
+          return lostCommandResponse ? route.abort('connectionreset') : fulfillJson(route, { connection });
+        }
+        return fulfillJson(route, { connection: { ...connection, organization_id: 999,
+          program_name: 'Foreign organization pilot' } });
+      }
+      return fulfillJson(route, {}, 404);
+    });
+    await page.goto(base);
+    await page.locator('#admin-open-organizations-button').click();
+    const form = page.locator('[data-action="connect-assessment-program"]');
+    await form.locator('[name="program_definition_id"]').selectOption('11');
+    await form.getByRole('button', { name: 'Подключить' }).click();
+    const status = form.locator('[data-operation-status]');
+    await expect(status).toHaveAttribute('data-tone', 'error');
+    await expect(form).not.toContainText('Foreign organization pilot');
+    await expect(form.getByRole('button', { name: 'Подключить' })).toBeEnabled();
+    await form.getByRole('button', { name: 'Подключить' }).click();
+    await expect.poll(() => operationIds.length).toBe(2);
+    expect(operationIds[1]).toBe(operationIds[0]);
+    await expect(status).toHaveAttribute('data-tone', 'error');
+  });
+}
+
 test('PROGRAM01 R10 confirms a committed connection after the PUT response is lost', async ({ page }) => {
   const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
   const connection = {
@@ -1751,24 +1799,18 @@ test('ADM19-01 adds a participant with only email, name and role', async ({ page
 });
 
 test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague', async ({ page }) => {
+  const rolePackage = JSON.parse(await fs.readFile(path.join(root,
+    'assessment_definitions/role_profiles/competencies_4k/1.1/base_roles.json'), 'utf8'));
   const organization = {
     ...adminOrganization,
     assessment_program: {
       program_definition_id: 7, program_name: 'Специалист 4К', program_version: '1.0',
       assignment_ref: 'competencies_4k', roles: [{ version_id: 92, code: 'specialist', name: 'Специалист' }],
-      role_capabilities: [
-        { version_id: null, code: 'operational_employee', name: 'Операционный сотрудник', is_available: false,
-          unavailable_reason: 'Недоступно в пилоте' },
-        { version_id: 92, code: 'specialist_expert', name: 'Специалист / эксперт', is_available: true },
-        { version_id: null, code: 'team_lead', name: 'Руководитель команды', is_available: false,
-          unavailable_reason: 'Недоступно в пилоте' },
-        { version_id: null, code: 'project_product_process_manager', name: 'Менеджер проекта, продукта или процесса', is_available: false,
-          unavailable_reason: 'Недоступно в пилоте' },
-        { version_id: null, code: 'direction_system_leader', name: 'Руководитель направления или системы', is_available: false,
-          unavailable_reason: 'Недоступно в пилоте' },
-        { version_id: null, code: 'student', name: 'Студент', is_available: false,
-          unavailable_reason: 'Недоступно в пилоте' },
-      ],
+      role_capabilities: rolePackage.base_roles.map((role) => ({
+        version_id: role.code === 'specialist_expert' ? 92 : null,
+        code: role.code, name: role.description.name, is_available: role.code === 'specialist_expert',
+        unavailable_reason: role.code === 'specialist_expert' ? null : 'Недоступно в пилоте',
+      })),
     },
     members_count: 2,
     members: [
@@ -1799,8 +1841,20 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
   await page.locator('input[name="invitation_email"]').nth(1).check();
   const roleOptions = page.locator('[name="role_profile_version_id"] option');
   await expect(roleOptions).toHaveCount(7);
-  await expect(roleOptions.filter({ hasText: 'Операционный сотрудник' })).toHaveAttribute('disabled', '');
-  await expect(roleOptions.filter({ hasText: 'Операционный сотрудник' })).toHaveAttribute('value', '');
+  expect(organization.assessment_program.role_capabilities.map((role) => role.code))
+    .toEqual(rolePackage.base_roles.map((role) => role.code));
+  for (const role of rolePackage.base_roles) {
+    const option = roleOptions.filter({ hasText: role.description.name });
+    await expect(option).toHaveCount(1);
+    if (role.code === 'specialist_expert') {
+      await expect(option).toBeEnabled();
+      await expect(option).toHaveAttribute('value', '92');
+    } else {
+      await expect(option).toHaveAttribute('disabled', '');
+      await expect(option).toHaveAttribute('value', '');
+      await expect(option).toContainText('Недоступно в пилоте');
+    }
+  }
   await expect(page.locator('[name="role_profile_version_id"]')).toHaveValue('92');
   await page.getByRole('button', { name: 'Данные организации', exact: true }).click();
   const assessmentIdentity = page.locator('[data-action="preview-early-data"] .admin-assessment-identity');

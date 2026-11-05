@@ -1,0 +1,20 @@
+{
+  "result": "PASS_FINAL_LOCAL_CHECKS",
+  "input_commit": "b6b9f365bd080d3fe627fb20c3bbdb41ee1dcf3f",
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "docs": {
+    "result": "PASS_DOCS_LINKS_AND_AST",
+    "docs": 5,
+    "links": 62,
+    "python_files": 3
+  },
+  "diff_check": "PASS",
+  "runtime_source_diff": "EMPTY",
+  "paid_path": "NOT_RUN_NO_AUTHORIZATION",
+  "push_pr_merge_deploy": false,
+  "primary_zip": {
+    "filename": "PILOT-1.2-BOOTSTRAP-PRIMARY_5d4f68db.zip",
+    "bytes": 142887,
+    "sha256": "65ce025b2df4c3e9d64f30c10602d519f84e3146400d0ebe9c8ce6a33b6a2c12"
+  }
+}

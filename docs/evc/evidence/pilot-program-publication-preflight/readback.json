@@ -1,0 +1,1662 @@
+{
+  "contract": "pilot-program-publication-preflight/1",
+  "observed_at_utc": "2026-11-05T16:14:00.214909+00:00",
+  "status": "READ_ONLY_PREFLIGHT_PASS_DECISIONS_PENDING",
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "application_version": "2.0.66",
+  "transaction_read_only": "on",
+  "transaction_rolled_back": true,
+  "schema_or_data_writes": false,
+  "provider_calls": 0,
+  "publication_performed": false,
+  "schema_comparison": {
+    "contract": "path-pilot-schema-comparison/1",
+    "result": "EXACT_SCOPED_SCHEMA_MATCH",
+    "expected_metadata_checksum": "c18922b95d6223262d23cc6edf1c060ac66b9f84243feee076d32baae586a065",
+    "actual_metadata_checksum": "c18922b95d6223262d23cc6edf1c060ac66b9f84243feee076d32baae586a065",
+    "working_server_checkout_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+    "scope_table_count": 32,
+    "missing_tables": [],
+    "counts": {
+      "columns": {
+        "expected": 353,
+        "actual": 353
+      },
+      "constraints": {
+        "expected": 191,
+        "actual": 191
+      },
+      "indexes": {
+        "expected": 84,
+        "actual": 84
+      },
+      "triggers": {
+        "expected": 16,
+        "actual": 16
+      }
+    },
+    "missing": [],
+    "changed": [],
+    "extra": [],
+    "program_activation_checked": false,
+    "schema_or_data_writes": false,
+    "business_rows_read": false,
+    "runtime_or_llm_pass": false
+  },
+  "schema_observed_at_utc": "2026-11-05T16:13:59.723040+00:00",
+  "read_schema_source_sha256": "626b9184980881a367abd3335ec265290b711edc536f4665dda5800f9501e1f9",
+  "expected_schema_file_sha256": "4bf401c551f0cae3c630997668170dc5f894f11b99b24c3901c01fba618e34be",
+  "historical_source_file_sha256": "a3175dda9675c476ae8636d26449e5ed17e0ef7940ea0412b7431882933ae1e6",
+  "source_comparison": {
+    "program": {
+      "historical_sha256": "acad5385f9a6c61fa6aabf7c6964d22aabee6414ecb96259e15d210ae8c6fe0d",
+      "actual_sha256": "acad5385f9a6c61fa6aabf7c6964d22aabee6414ecb96259e15d210ae8c6fe0d",
+      "match": true
+    },
+    "configuration": {
+      "historical_sha256": "b895bf8a4661a44c31cc40074fbd5f1397a1d00378af0af51e6985bc1f200510",
+      "actual_sha256": "b895bf8a4661a44c31cc40074fbd5f1397a1d00378af0af51e6985bc1f200510",
+      "match": true
+    },
+    "catalog": {
+      "historical_sha256": "2b32f588235204b57e768ef0e3f03dfa78bf1315c56d1c18c93d632077133064",
+      "actual_sha256": "2b32f588235204b57e768ef0e3f03dfa78bf1315c56d1c18c93d632077133064",
+      "match": true
+    },
+    "roles": {
+      "historical_sha256": "fa7cad069e0a0dd5b47df2fe20c5a518be12eab18b6826cea508807856bb5c09",
+      "actual_sha256": "fa7cad069e0a0dd5b47df2fe20c5a518be12eab18b6826cea508807856bb5c09",
+      "match": true
+    },
+    "cases": {
+      "historical_sha256": "ca6095437393b35bb1b5cab76e015dc1bd7d52c031a58dcad128fe0a8cdc0de3",
+      "actual_sha256": "ca6095437393b35bb1b5cab76e015dc1bd7d52c031a58dcad128fe0a8cdc0de3",
+      "match": true
+    },
+    "artifact_readback": {
+      "historical_sha256": "ccfe41da4a7b786aaab08819cc01e7b26764e43dc94a8fe6650068a152e1b58e",
+      "actual_sha256": "ccfe41da4a7b786aaab08819cc01e7b26764e43dc94a8fe6650068a152e1b58e",
+      "match": true
+    }
+  },
+  "legacy_1_1_source": {
+    "schema_version": 1,
+    "purpose": "PATH-START-01 exact published release mirror",
+    "source_code_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+    "target": {
+      "database": "agent4k_test",
+      "internal_port": 5432,
+      "configured_port": 55432,
+      "read_only": true
+    },
+    "program": {
+      "id": 1,
+      "code": "specialist_pilot",
+      "version": "1.1",
+      "name": "Пилот 4К · 9 кейсов",
+      "assignment_ref": "specialist-pilot",
+      "mode": "dialogue",
+      "status": "published",
+      "assessment_configuration_id": 11,
+      "catalog_version_id": 2,
+      "source_refs_json": {
+        "scenario_version_id": 1,
+        "methodology_version_id": 2,
+        "prompt_bundle_checksum": "9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688"
+      },
+      "definition_checksum": "07576484b6c6467fd5fc7047cb1686a2f952532a893660375984373bab87f58c",
+      "published_at": "2026-11-04 12:20:35.860196"
+    },
+    "configuration": {
+      "id": 11,
+      "code": "specialist_pilot_v1",
+      "name": "Пилотная оценка 4К — Специалист",
+      "status": "published",
+      "methodology_version_id": 2,
+      "scenario_version_id": 1,
+      "catalog_version_id": 2,
+      "prompt_bundle_checksum": "9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688"
+    },
+    "catalog": {
+      "id": 2,
+      "catalog_id": "specialist-pilot",
+      "catalog_version": "1.0",
+      "status": "published",
+      "package_db_id": 2,
+      "usage_scope": "assessment",
+      "organization_id": null,
+      "manifest_json": {
+        "catalog_id": "specialist-pilot",
+        "m2_checksum": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+        "package_ref": {
+          "id": "m5-functional-personalization-cases",
+          "version": "0.5",
+          "checksum": "b9e2889b5a7b19dda6b88ebec30bffba87cf76afc3df4cb14df10de0036eb7b0"
+        },
+        "usage_scope": "assessment",
+        "schema_version": 1,
+        "catalog_version": "1.0",
+        "organization_id": null,
+        "case_version_ids": [
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "runtime_rule_ref": {
+          "artifact_id": "m5-functional-personalization-runtime",
+          "rules_checksum": "85900c2b9955c4f85996f55679f5d67cbc79c252c3bf570166cdef444ea1f757",
+          "artifact_version": "1.2.0",
+          "manifest_checksum": "8e2077bf27a87748102951cb6a1a444139134f6aba5901f339b7169ea60d4d56"
+        }
+      },
+      "manifest_checksum": "0008d020cbeb8b06ef5d38ad1eaf136fab8dc42728d98c2d5ec275476a6c25a0",
+      "decision_basis": "owner_decision_2026-10-30_specialist_cases"
+    },
+    "roles": [
+      {
+        "id": 2,
+        "code": "specialist_expert",
+        "version": 1,
+        "checksum": "c5c2234f9fdd237e14024ea6939e3bc5561fd27bf4fac416a52196dec79cbe8f"
+      }
+    ],
+    "cases": [
+      {
+        "id": 6,
+        "case_id": "CASE.SPEC.01",
+        "case_version": "v0.5",
+        "status": "FROZEN",
+        "base_role": "specialist_expert",
+        "content_checksum": "d662b0d4a61e81c9c1005337174cba3c0ebd4a37568f3265f3c27bd8c3453b42",
+        "runtime_rule_version_id": 1,
+        "qa_evidence": [
+          {
+            "scope": "assessment_situation",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "assessment_situation",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.01",
+                "version": "v0.5",
+                "checksum": "d662b0d4a61e81c9c1005337174cba3c0ebd4a37568f3265f3c27bd8c3453b42"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/scenario-v2-executed/summary.json",
+                "sha256": "044cd98def9f76c6bbca1c9b6ed724742fa96f01b722cd17df64e80ca4561ccc"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "7984a229025a01b35689bef303d2487263daf05f235ecaa7be1a5d8507bb039b"
+          },
+          {
+            "scope": "case_dialogue",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_dialogue",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.01",
+                "version": "v0.5",
+                "checksum": "d662b0d4a61e81c9c1005337174cba3c0ebd4a37568f3265f3c27bd8c3453b42"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/protocol-v2-final-summary.json",
+                "sha256": "ed588b0f9c88f06a7ca7eb7bd85567f303e855e6ef18cab880c5ffb11f99f3ab"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "42d9fcf6db6cabd0ed0dc9795317ecc0e228ee750606ba4d7350fcd5f5f0b40b"
+          },
+          {
+            "scope": "case_format",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_format",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.01",
+                "version": "v0.5",
+                "checksum": "d662b0d4a61e81c9c1005337174cba3c0ebd4a37568f3265f3c27bd8c3453b42"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/verification-report.json",
+                "sha256": "1efe60a09d7bf2d8af669c684a8f05bc7bc5e4f65e435fec9ccb9d555910e13e"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "43fcbf76490f3db9456eeea0b495321c60471cbbc18b49a194578ecfb71f358a"
+          }
+        ],
+        "admission": {
+          "admitted": true,
+          "code": "ADMITTED",
+          "reasons": [],
+          "evidence": [
+            {
+              "id": 7,
+              "scope": "case_format",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:7",
+              "checksum": "43fcbf76490f3db9456eeea0b495321c60471cbbc18b49a194578ecfb71f358a"
+            },
+            {
+              "id": 8,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:8",
+              "checksum": "42d9fcf6db6cabd0ed0dc9795317ecc0e228ee750606ba4d7350fcd5f5f0b40b"
+            },
+            {
+              "id": 9,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:9",
+              "checksum": "7984a229025a01b35689bef303d2487263daf05f235ecaa7be1a5d8507bb039b"
+            }
+          ],
+          "evidence_considered": [
+            {
+              "id": 7,
+              "scope": "case_format",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 8,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 9,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "reasons": []
+            }
+          ],
+          "policy_ref": {
+            "id": "m5_catalog_integrity",
+            "version": "1.0.0",
+            "checksum": "3e8e242ffab96f89e88b7974f9b51bcbd70f8acfe79f96b9de741554619c4691"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "case_id": "CASE.SPEC.02",
+        "case_version": "v0.6",
+        "status": "FROZEN",
+        "base_role": "specialist_expert",
+        "content_checksum": "179fa0f8192862bee6af3190c8560f9c5ed133cc2fe07d6f5b6a98e6e3c9b729",
+        "runtime_rule_version_id": 1,
+        "qa_evidence": [
+          {
+            "scope": "assessment_situation",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "assessment_situation",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.02",
+                "version": "v0.6",
+                "checksum": "179fa0f8192862bee6af3190c8560f9c5ed133cc2fe07d6f5b6a98e6e3c9b729"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/scenario-v2-executed/summary.json",
+                "sha256": "044cd98def9f76c6bbca1c9b6ed724742fa96f01b722cd17df64e80ca4561ccc"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "337c34b066864b4efc2d40a92269d656a3030b81a9de1c8a7ba25e9ac903f95f"
+          },
+          {
+            "scope": "case_dialogue",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_dialogue",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.02",
+                "version": "v0.6",
+                "checksum": "179fa0f8192862bee6af3190c8560f9c5ed133cc2fe07d6f5b6a98e6e3c9b729"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/protocol-v2-final-summary.json",
+                "sha256": "ed588b0f9c88f06a7ca7eb7bd85567f303e855e6ef18cab880c5ffb11f99f3ab"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "5bbb8d400b4df690c1aa7b343c20964ab02ccff988d3b925d2a6cc0f26632da5"
+          },
+          {
+            "scope": "case_format",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_format",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.02",
+                "version": "v0.6",
+                "checksum": "179fa0f8192862bee6af3190c8560f9c5ed133cc2fe07d6f5b6a98e6e3c9b729"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/verification-report.json",
+                "sha256": "1efe60a09d7bf2d8af669c684a8f05bc7bc5e4f65e435fec9ccb9d555910e13e"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "bf0f9ffd472952e61372fa2a9a70c5f2559d21bac51fff6aa192a94abb5082cb"
+          }
+        ],
+        "admission": {
+          "admitted": true,
+          "code": "ADMITTED",
+          "reasons": [],
+          "evidence": [
+            {
+              "id": 10,
+              "scope": "case_format",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:10",
+              "checksum": "bf0f9ffd472952e61372fa2a9a70c5f2559d21bac51fff6aa192a94abb5082cb"
+            },
+            {
+              "id": 11,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:11",
+              "checksum": "5bbb8d400b4df690c1aa7b343c20964ab02ccff988d3b925d2a6cc0f26632da5"
+            },
+            {
+              "id": 12,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:12",
+              "checksum": "337c34b066864b4efc2d40a92269d656a3030b81a9de1c8a7ba25e9ac903f95f"
+            }
+          ],
+          "evidence_considered": [
+            {
+              "id": 10,
+              "scope": "case_format",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 11,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 12,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "reasons": []
+            }
+          ],
+          "policy_ref": {
+            "id": "m5_catalog_integrity",
+            "version": "1.0.0",
+            "checksum": "3e8e242ffab96f89e88b7974f9b51bcbd70f8acfe79f96b9de741554619c4691"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "case_id": "CASE.SPEC.03",
+        "case_version": "v0.4",
+        "status": "FROZEN",
+        "base_role": "specialist_expert",
+        "content_checksum": "6b496c20a8b0f6532d3552d1ca65c78fd37982c12671ce9c8a77d6d6cb3d73c5",
+        "runtime_rule_version_id": 1,
+        "qa_evidence": [
+          {
+            "scope": "assessment_situation",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "assessment_situation",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.03",
+                "version": "v0.4",
+                "checksum": "6b496c20a8b0f6532d3552d1ca65c78fd37982c12671ce9c8a77d6d6cb3d73c5"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/scenario-v2-executed/summary.json",
+                "sha256": "044cd98def9f76c6bbca1c9b6ed724742fa96f01b722cd17df64e80ca4561ccc"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "ae54122ad48cf9684286f9e355ba1a7a3d42176cfabc97fc901dc60669d6adad"
+          },
+          {
+            "scope": "case_dialogue",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_dialogue",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.03",
+                "version": "v0.4",
+                "checksum": "6b496c20a8b0f6532d3552d1ca65c78fd37982c12671ce9c8a77d6d6cb3d73c5"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/protocol-v2-final-summary.json",
+                "sha256": "ed588b0f9c88f06a7ca7eb7bd85567f303e855e6ef18cab880c5ffb11f99f3ab"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "674a42472e6134cbfd789d746e79e93f817d90dedda7d1905e7f47d6680a6ce5"
+          },
+          {
+            "scope": "case_format",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_format",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.03",
+                "version": "v0.4",
+                "checksum": "6b496c20a8b0f6532d3552d1ca65c78fd37982c12671ce9c8a77d6d6cb3d73c5"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/verification-report.json",
+                "sha256": "1efe60a09d7bf2d8af669c684a8f05bc7bc5e4f65e435fec9ccb9d555910e13e"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "d67617d49218d947d71ff41f0380e59278ad9d6873daa121ed842b9cf812c5ec"
+          }
+        ],
+        "admission": {
+          "admitted": true,
+          "code": "ADMITTED",
+          "reasons": [],
+          "evidence": [
+            {
+              "id": 13,
+              "scope": "case_format",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:13",
+              "checksum": "d67617d49218d947d71ff41f0380e59278ad9d6873daa121ed842b9cf812c5ec"
+            },
+            {
+              "id": 14,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:14",
+              "checksum": "674a42472e6134cbfd789d746e79e93f817d90dedda7d1905e7f47d6680a6ce5"
+            },
+            {
+              "id": 15,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:15",
+              "checksum": "ae54122ad48cf9684286f9e355ba1a7a3d42176cfabc97fc901dc60669d6adad"
+            }
+          ],
+          "evidence_considered": [
+            {
+              "id": 13,
+              "scope": "case_format",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 14,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 15,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "reasons": []
+            }
+          ],
+          "policy_ref": {
+            "id": "m5_catalog_integrity",
+            "version": "1.0.0",
+            "checksum": "3e8e242ffab96f89e88b7974f9b51bcbd70f8acfe79f96b9de741554619c4691"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "case_id": "CASE.SPEC.04",
+        "case_version": "v0.5",
+        "status": "FROZEN",
+        "base_role": "specialist_expert",
+        "content_checksum": "1993c17b7b6ca5bce040750f8aae7efabd3e46d69d42e99ea184a17ae4da47f4",
+        "runtime_rule_version_id": 1,
+        "qa_evidence": [
+          {
+            "scope": "assessment_situation",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "assessment_situation",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.04",
+                "version": "v0.5",
+                "checksum": "1993c17b7b6ca5bce040750f8aae7efabd3e46d69d42e99ea184a17ae4da47f4"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/scenario-v2-executed/summary.json",
+                "sha256": "044cd98def9f76c6bbca1c9b6ed724742fa96f01b722cd17df64e80ca4561ccc"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "eda7031639419464a3b0cef0da3841c1b698c29f980d60a0db7d2c7bfac0b862"
+          },
+          {
+            "scope": "case_dialogue",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_dialogue",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.04",
+                "version": "v0.5",
+                "checksum": "1993c17b7b6ca5bce040750f8aae7efabd3e46d69d42e99ea184a17ae4da47f4"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/protocol-v2-final-summary.json",
+                "sha256": "ed588b0f9c88f06a7ca7eb7bd85567f303e855e6ef18cab880c5ffb11f99f3ab"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "c489fc25f54f58f2f4af714b17ee6fbd6420034cd9a21074d2d0ffd0cae4300c"
+          },
+          {
+            "scope": "case_format",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_format",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.04",
+                "version": "v0.5",
+                "checksum": "1993c17b7b6ca5bce040750f8aae7efabd3e46d69d42e99ea184a17ae4da47f4"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/verification-report.json",
+                "sha256": "1efe60a09d7bf2d8af669c684a8f05bc7bc5e4f65e435fec9ccb9d555910e13e"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "e0e9d43de4fc670ce9b913acce21cfa44c02d018209c593b01bff077d4f80c9c"
+          }
+        ],
+        "admission": {
+          "admitted": true,
+          "code": "ADMITTED",
+          "reasons": [],
+          "evidence": [
+            {
+              "id": 16,
+              "scope": "case_format",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:16",
+              "checksum": "e0e9d43de4fc670ce9b913acce21cfa44c02d018209c593b01bff077d4f80c9c"
+            },
+            {
+              "id": 17,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:17",
+              "checksum": "c489fc25f54f58f2f4af714b17ee6fbd6420034cd9a21074d2d0ffd0cae4300c"
+            },
+            {
+              "id": 18,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:18",
+              "checksum": "eda7031639419464a3b0cef0da3841c1b698c29f980d60a0db7d2c7bfac0b862"
+            }
+          ],
+          "evidence_considered": [
+            {
+              "id": 16,
+              "scope": "case_format",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 17,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 18,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "reasons": []
+            }
+          ],
+          "policy_ref": {
+            "id": "m5_catalog_integrity",
+            "version": "1.0.0",
+            "checksum": "3e8e242ffab96f89e88b7974f9b51bcbd70f8acfe79f96b9de741554619c4691"
+          }
+        }
+      },
+      {
+        "id": 10,
+        "case_id": "CASE.SPEC.05",
+        "case_version": "v0.5",
+        "status": "FROZEN",
+        "base_role": "specialist_expert",
+        "content_checksum": "1847b023c3f0d027553ba271e2a1b6c2f863b9b07f3229266aae2f35ce44108d",
+        "runtime_rule_version_id": 1,
+        "qa_evidence": [
+          {
+            "scope": "assessment_situation",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "assessment_situation",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.05",
+                "version": "v0.5",
+                "checksum": "1847b023c3f0d027553ba271e2a1b6c2f863b9b07f3229266aae2f35ce44108d"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/scenario-v2-executed/summary.json",
+                "sha256": "044cd98def9f76c6bbca1c9b6ed724742fa96f01b722cd17df64e80ca4561ccc"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "c62fdc000240f76a014dbe8c3e6f68767f9899236a881c246abb3f7cb82c523f"
+          },
+          {
+            "scope": "case_dialogue",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_dialogue",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.05",
+                "version": "v0.5",
+                "checksum": "1847b023c3f0d027553ba271e2a1b6c2f863b9b07f3229266aae2f35ce44108d"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/protocol-v2-final-summary.json",
+                "sha256": "ed588b0f9c88f06a7ca7eb7bd85567f303e855e6ef18cab880c5ffb11f99f3ab"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "489ea2cb7a49eb277b7b482bdb02a3de4d45bf6dcdf4019d1fa6ae1bdf8e31bd"
+          },
+          {
+            "scope": "case_format",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_format",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.05",
+                "version": "v0.5",
+                "checksum": "1847b023c3f0d027553ba271e2a1b6c2f863b9b07f3229266aae2f35ce44108d"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/verification-report.json",
+                "sha256": "1efe60a09d7bf2d8af669c684a8f05bc7bc5e4f65e435fec9ccb9d555910e13e"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "28ff2f24786365727bcdcd8ddd11f0d8231b8dde61c6e16b797d93debdbd80b0"
+          }
+        ],
+        "admission": {
+          "admitted": true,
+          "code": "ADMITTED",
+          "reasons": [],
+          "evidence": [
+            {
+              "id": 19,
+              "scope": "case_format",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:19",
+              "checksum": "28ff2f24786365727bcdcd8ddd11f0d8231b8dde61c6e16b797d93debdbd80b0"
+            },
+            {
+              "id": 20,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:20",
+              "checksum": "489ea2cb7a49eb277b7b482bdb02a3de4d45bf6dcdf4019d1fa6ae1bdf8e31bd"
+            },
+            {
+              "id": 21,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:21",
+              "checksum": "c62fdc000240f76a014dbe8c3e6f68767f9899236a881c246abb3f7cb82c523f"
+            }
+          ],
+          "evidence_considered": [
+            {
+              "id": 19,
+              "scope": "case_format",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 20,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 21,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "reasons": []
+            }
+          ],
+          "policy_ref": {
+            "id": "m5_catalog_integrity",
+            "version": "1.0.0",
+            "checksum": "3e8e242ffab96f89e88b7974f9b51bcbd70f8acfe79f96b9de741554619c4691"
+          }
+        }
+      },
+      {
+        "id": 11,
+        "case_id": "CASE.SPEC.06",
+        "case_version": "v0.4",
+        "status": "FROZEN",
+        "base_role": "specialist_expert",
+        "content_checksum": "26d59939198365a48b1171498783a7e37fb6ddcb5efdd39d019a453b1afb6de8",
+        "runtime_rule_version_id": 1,
+        "qa_evidence": [
+          {
+            "scope": "assessment_situation",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "assessment_situation",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.06",
+                "version": "v0.4",
+                "checksum": "26d59939198365a48b1171498783a7e37fb6ddcb5efdd39d019a453b1afb6de8"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/scenario-v2-executed/summary.json",
+                "sha256": "044cd98def9f76c6bbca1c9b6ed724742fa96f01b722cd17df64e80ca4561ccc"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "1c55870d3b05e4eff9c8bb2ae3f1fba13802d3733584d45c60b204fc1a033a90"
+          },
+          {
+            "scope": "case_dialogue",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_dialogue",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.06",
+                "version": "v0.4",
+                "checksum": "26d59939198365a48b1171498783a7e37fb6ddcb5efdd39d019a453b1afb6de8"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/protocol-v2-final-summary.json",
+                "sha256": "ed588b0f9c88f06a7ca7eb7bd85567f303e855e6ef18cab880c5ffb11f99f3ab"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "2c8d10220320d6a193877469fce0c31bfefd1ea9f5e4cc7ea27ae92b4b752432"
+          },
+          {
+            "scope": "case_format",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_format",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.06",
+                "version": "v0.4",
+                "checksum": "26d59939198365a48b1171498783a7e37fb6ddcb5efdd39d019a453b1afb6de8"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/verification-report.json",
+                "sha256": "1efe60a09d7bf2d8af669c684a8f05bc7bc5e4f65e435fec9ccb9d555910e13e"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "16d839a6b36e846dac15fa8bb9d05e78fda4aa012797fb09dcb519771039609b"
+          }
+        ],
+        "admission": {
+          "admitted": true,
+          "code": "ADMITTED",
+          "reasons": [],
+          "evidence": [
+            {
+              "id": 22,
+              "scope": "case_format",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:22",
+              "checksum": "16d839a6b36e846dac15fa8bb9d05e78fda4aa012797fb09dcb519771039609b"
+            },
+            {
+              "id": 23,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:23",
+              "checksum": "2c8d10220320d6a193877469fce0c31bfefd1ea9f5e4cc7ea27ae92b4b752432"
+            },
+            {
+              "id": 24,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:24",
+              "checksum": "1c55870d3b05e4eff9c8bb2ae3f1fba13802d3733584d45c60b204fc1a033a90"
+            }
+          ],
+          "evidence_considered": [
+            {
+              "id": 22,
+              "scope": "case_format",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 23,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 24,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "reasons": []
+            }
+          ],
+          "policy_ref": {
+            "id": "m5_catalog_integrity",
+            "version": "1.0.0",
+            "checksum": "3e8e242ffab96f89e88b7974f9b51bcbd70f8acfe79f96b9de741554619c4691"
+          }
+        }
+      },
+      {
+        "id": 12,
+        "case_id": "CASE.SPEC.07",
+        "case_version": "v0.4",
+        "status": "FROZEN",
+        "base_role": "specialist_expert",
+        "content_checksum": "d59ffa2e2a9e62924e00e433e2d43c7ccc4f0b46166b21a9d0f62bab8eddff44",
+        "runtime_rule_version_id": 1,
+        "qa_evidence": [
+          {
+            "scope": "assessment_situation",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "assessment_situation",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.07",
+                "version": "v0.4",
+                "checksum": "d59ffa2e2a9e62924e00e433e2d43c7ccc4f0b46166b21a9d0f62bab8eddff44"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/scenario-v2-executed/summary.json",
+                "sha256": "044cd98def9f76c6bbca1c9b6ed724742fa96f01b722cd17df64e80ca4561ccc"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "25d0dcf72dba99481b7a43a2f514b609e89d84a05dfa8c159ca07c23fce6960b"
+          },
+          {
+            "scope": "case_dialogue",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_dialogue",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.07",
+                "version": "v0.4",
+                "checksum": "d59ffa2e2a9e62924e00e433e2d43c7ccc4f0b46166b21a9d0f62bab8eddff44"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/protocol-v2-final-summary.json",
+                "sha256": "ed588b0f9c88f06a7ca7eb7bd85567f303e855e6ef18cab880c5ffb11f99f3ab"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "18778fa909203c85ffc3b10c745ebecd38a727939a52ba999bb15ac8133f7baa"
+          },
+          {
+            "scope": "case_format",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_format",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.07",
+                "version": "v0.4",
+                "checksum": "d59ffa2e2a9e62924e00e433e2d43c7ccc4f0b46166b21a9d0f62bab8eddff44"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/verification-report.json",
+                "sha256": "1efe60a09d7bf2d8af669c684a8f05bc7bc5e4f65e435fec9ccb9d555910e13e"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "75552590dea7fcdd724f2c31f6495509051419d68b3c3e4fb877f0972f299def"
+          }
+        ],
+        "admission": {
+          "admitted": true,
+          "code": "ADMITTED",
+          "reasons": [],
+          "evidence": [
+            {
+              "id": 25,
+              "scope": "case_format",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:25",
+              "checksum": "75552590dea7fcdd724f2c31f6495509051419d68b3c3e4fb877f0972f299def"
+            },
+            {
+              "id": 26,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:26",
+              "checksum": "18778fa909203c85ffc3b10c745ebecd38a727939a52ba999bb15ac8133f7baa"
+            },
+            {
+              "id": 27,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:27",
+              "checksum": "25d0dcf72dba99481b7a43a2f514b609e89d84a05dfa8c159ca07c23fce6960b"
+            }
+          ],
+          "evidence_considered": [
+            {
+              "id": 25,
+              "scope": "case_format",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 26,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 27,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "reasons": []
+            }
+          ],
+          "policy_ref": {
+            "id": "m5_catalog_integrity",
+            "version": "1.0.0",
+            "checksum": "3e8e242ffab96f89e88b7974f9b51bcbd70f8acfe79f96b9de741554619c4691"
+          }
+        }
+      },
+      {
+        "id": 13,
+        "case_id": "CASE.SPEC.08",
+        "case_version": "v0.4",
+        "status": "FROZEN",
+        "base_role": "specialist_expert",
+        "content_checksum": "a2bf9ce336c357153e435f1d3fb95c227db81d6389197ed9877a725277c4413d",
+        "runtime_rule_version_id": 1,
+        "qa_evidence": [
+          {
+            "scope": "assessment_situation",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "assessment_situation",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.08",
+                "version": "v0.4",
+                "checksum": "a2bf9ce336c357153e435f1d3fb95c227db81d6389197ed9877a725277c4413d"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/scenario-v2-executed/summary.json",
+                "sha256": "044cd98def9f76c6bbca1c9b6ed724742fa96f01b722cd17df64e80ca4561ccc"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "066efdffb3070d871966dea9ac8026277a4f34d1aca99d286f8070301aee8022"
+          },
+          {
+            "scope": "case_dialogue",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_dialogue",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.08",
+                "version": "v0.4",
+                "checksum": "a2bf9ce336c357153e435f1d3fb95c227db81d6389197ed9877a725277c4413d"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/protocol-v2-final-summary.json",
+                "sha256": "ed588b0f9c88f06a7ca7eb7bd85567f303e855e6ef18cab880c5ffb11f99f3ab"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "ec74f03e7333672ea0daf6ec100ee53714ae6318c19056937424dcebbb54bed7"
+          },
+          {
+            "scope": "case_format",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_format",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.08",
+                "version": "v0.4",
+                "checksum": "a2bf9ce336c357153e435f1d3fb95c227db81d6389197ed9877a725277c4413d"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/verification-report.json",
+                "sha256": "1efe60a09d7bf2d8af669c684a8f05bc7bc5e4f65e435fec9ccb9d555910e13e"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "9e4e38a173e7307ae327a3a25edd8e93d66c0edcf58bee4fbb7581a31f4e6608"
+          }
+        ],
+        "admission": {
+          "admitted": true,
+          "code": "ADMITTED",
+          "reasons": [],
+          "evidence": [
+            {
+              "id": 28,
+              "scope": "case_format",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:28",
+              "checksum": "9e4e38a173e7307ae327a3a25edd8e93d66c0edcf58bee4fbb7581a31f4e6608"
+            },
+            {
+              "id": 29,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:29",
+              "checksum": "ec74f03e7333672ea0daf6ec100ee53714ae6318c19056937424dcebbb54bed7"
+            },
+            {
+              "id": 30,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:30",
+              "checksum": "066efdffb3070d871966dea9ac8026277a4f34d1aca99d286f8070301aee8022"
+            }
+          ],
+          "evidence_considered": [
+            {
+              "id": 28,
+              "scope": "case_format",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 29,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 30,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "reasons": []
+            }
+          ],
+          "policy_ref": {
+            "id": "m5_catalog_integrity",
+            "version": "1.0.0",
+            "checksum": "3e8e242ffab96f89e88b7974f9b51bcbd70f8acfe79f96b9de741554619c4691"
+          }
+        }
+      },
+      {
+        "id": 14,
+        "case_id": "CASE.SPEC.09",
+        "case_version": "v0.4",
+        "status": "FROZEN",
+        "base_role": "specialist_expert",
+        "content_checksum": "183925e9405662e3a4f95bedc0117e98fc8012abac9432350ee8c60cbaae5259",
+        "runtime_rule_version_id": 1,
+        "qa_evidence": [
+          {
+            "scope": "assessment_situation",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "assessment_situation",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.09",
+                "version": "v0.4",
+                "checksum": "183925e9405662e3a4f95bedc0117e98fc8012abac9432350ee8c60cbaae5259"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/scenario-v2-executed/summary.json",
+                "sha256": "044cd98def9f76c6bbca1c9b6ed724742fa96f01b722cd17df64e80ca4561ccc"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "83dc72e29a77390bb73600ca3277b86909cd810bebf576dc5552db23b7557abe"
+          },
+          {
+            "scope": "case_dialogue",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_dialogue",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.09",
+                "version": "v0.4",
+                "checksum": "183925e9405662e3a4f95bedc0117e98fc8012abac9432350ee8c60cbaae5259"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "docs/evc/evidence/pers-functional-personalization/protocol-v2-final-summary.json",
+                "sha256": "ed588b0f9c88f06a7ca7eb7bd85567f303e855e6ef18cab880c5ffb11f99f3ab"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "a21934e61141eb9af9866fd5d6f4e1b2952c78b87e15e25d2e5c5bab97c19261"
+          },
+          {
+            "scope": "case_format",
+            "result": "PASS",
+            "evidence_json": {
+              "scope": "case_format",
+              "origin": {
+                "type": "human_review",
+                "actor_ref": "user:4:owner_decision_2026-10-30_specialist_cases"
+              },
+              "result": "PASS",
+              "case_ref": {
+                "id": "CASE.SPEC.09",
+                "version": "v0.4",
+                "checksum": "183925e9405662e3a4f95bedc0117e98fc8012abac9432350ee8c60cbaae5259"
+              },
+              "base_role": "specialist_expert",
+              "eligibility": "user_admission",
+              "evidence_ref": {
+                "path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/verification-report.json",
+                "sha256": "1efe60a09d7bf2d8af669c684a8f05bc7bc5e4f65e435fec9ccb9d555910e13e"
+              },
+              "usage_scopes": [
+                "assessment"
+              ],
+              "schema_version": 1
+            },
+            "evidence_checksum": "f85b36e2d13f09ad3abe388782112b636b0787e2895e6725465ef95e6794a270"
+          }
+        ],
+        "admission": {
+          "admitted": true,
+          "code": "ADMITTED",
+          "reasons": [],
+          "evidence": [
+            {
+              "id": 31,
+              "scope": "case_format",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:31",
+              "checksum": "f85b36e2d13f09ad3abe388782112b636b0787e2895e6725465ef95e6794a270"
+            },
+            {
+              "id": 32,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:32",
+              "checksum": "a21934e61141eb9af9866fd5d6f4e1b2952c78b87e15e25d2e5c5bab97c19261"
+            },
+            {
+              "id": 33,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "artifact_ref": "db:m5_qa_evidence:33",
+              "checksum": "83dc72e29a77390bb73600ca3277b86909cd810bebf576dc5552db23b7557abe"
+            }
+          ],
+          "evidence_considered": [
+            {
+              "id": 31,
+              "scope": "case_format",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 32,
+              "scope": "case_dialogue",
+              "result": "PASS",
+              "reasons": []
+            },
+            {
+              "id": 33,
+              "scope": "assessment_situation",
+              "result": "PASS",
+              "reasons": []
+            }
+          ],
+          "policy_ref": {
+            "id": "m5_catalog_integrity",
+            "version": "1.0.0",
+            "checksum": "3e8e242ffab96f89e88b7974f9b51bcbd70f8acfe79f96b9de741554619c4691"
+          }
+        }
+      }
+    ],
+    "contains_user_history": false,
+    "new_methodology_approval": false,
+    "artifact_readback": [
+      {
+        "kind": "prompt_bundle",
+        "db_id": 11,
+        "stored_checksum": "9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688",
+        "recomputed_checksum": "9b572bee4b990052f03909822aa995666245e6155170a0eb04547381206a4688",
+        "match": true
+      },
+      {
+        "kind": "methodology",
+        "db_id": 2,
+        "stored_checksum": "e6c88944af318033fbd76b18cc1b8eecb27b6a379df5fcdcdc82b9fa66f54c2c",
+        "recomputed_checksum": "e6c88944af318033fbd76b18cc1b8eecb27b6a379df5fcdcdc82b9fa66f54c2c",
+        "match": true
+      },
+      {
+        "kind": "scenario",
+        "db_id": 1,
+        "stored_checksum": "07c9a47f17da3a2f58f9f2752297c9ce337ffd453ff005af0bfaab373378666e",
+        "recomputed_checksum": "07c9a47f17da3a2f58f9f2752297c9ce337ffd453ff005af0bfaab373378666e",
+        "match": true
+      },
+      {
+        "kind": "role",
+        "db_id": 2,
+        "stored_checksum": "c5c2234f9fdd237e14024ea6939e3bc5561fd27bf4fac416a52196dec79cbe8f",
+        "recomputed_checksum": "c5c2234f9fdd237e14024ea6939e3bc5561fd27bf4fac416a52196dec79cbe8f",
+        "match": true
+      },
+      {
+        "kind": "CASE.SPEC.01",
+        "db_id": 6,
+        "stored_checksum": "d662b0d4a61e81c9c1005337174cba3c0ebd4a37568f3265f3c27bd8c3453b42",
+        "recomputed_checksum": "d662b0d4a61e81c9c1005337174cba3c0ebd4a37568f3265f3c27bd8c3453b42",
+        "match": true
+      },
+      {
+        "kind": "CASE.SPEC.02",
+        "db_id": 7,
+        "stored_checksum": "179fa0f8192862bee6af3190c8560f9c5ed133cc2fe07d6f5b6a98e6e3c9b729",
+        "recomputed_checksum": "179fa0f8192862bee6af3190c8560f9c5ed133cc2fe07d6f5b6a98e6e3c9b729",
+        "match": true
+      },
+      {
+        "kind": "CASE.SPEC.03",
+        "db_id": 8,
+        "stored_checksum": "6b496c20a8b0f6532d3552d1ca65c78fd37982c12671ce9c8a77d6d6cb3d73c5",
+        "recomputed_checksum": "6b496c20a8b0f6532d3552d1ca65c78fd37982c12671ce9c8a77d6d6cb3d73c5",
+        "match": true
+      },
+      {
+        "kind": "CASE.SPEC.04",
+        "db_id": 9,
+        "stored_checksum": "1993c17b7b6ca5bce040750f8aae7efabd3e46d69d42e99ea184a17ae4da47f4",
+        "recomputed_checksum": "1993c17b7b6ca5bce040750f8aae7efabd3e46d69d42e99ea184a17ae4da47f4",
+        "match": true
+      },
+      {
+        "kind": "CASE.SPEC.05",
+        "db_id": 10,
+        "stored_checksum": "1847b023c3f0d027553ba271e2a1b6c2f863b9b07f3229266aae2f35ce44108d",
+        "recomputed_checksum": "1847b023c3f0d027553ba271e2a1b6c2f863b9b07f3229266aae2f35ce44108d",
+        "match": true
+      },
+      {
+        "kind": "CASE.SPEC.06",
+        "db_id": 11,
+        "stored_checksum": "26d59939198365a48b1171498783a7e37fb6ddcb5efdd39d019a453b1afb6de8",
+        "recomputed_checksum": "26d59939198365a48b1171498783a7e37fb6ddcb5efdd39d019a453b1afb6de8",
+        "match": true
+      },
+      {
+        "kind": "CASE.SPEC.07",
+        "db_id": 12,
+        "stored_checksum": "d59ffa2e2a9e62924e00e433e2d43c7ccc4f0b46166b21a9d0f62bab8eddff44",
+        "recomputed_checksum": "d59ffa2e2a9e62924e00e433e2d43c7ccc4f0b46166b21a9d0f62bab8eddff44",
+        "match": true
+      },
+      {
+        "kind": "CASE.SPEC.08",
+        "db_id": 13,
+        "stored_checksum": "a2bf9ce336c357153e435f1d3fb95c227db81d6389197ed9877a725277c4413d",
+        "recomputed_checksum": "a2bf9ce336c357153e435f1d3fb95c227db81d6389197ed9877a725277c4413d",
+        "match": true
+      },
+      {
+        "kind": "CASE.SPEC.09",
+        "db_id": 14,
+        "stored_checksum": "183925e9405662e3a4f95bedc0117e98fc8012abac9432350ee8c60cbaae5259",
+        "recomputed_checksum": "183925e9405662e3a4f95bedc0117e98fc8012abac9432350ee8c60cbaae5259",
+        "match": true
+      },
+      {
+        "kind": "package",
+        "db_id": 2,
+        "stored_checksum": "b9e2889b5a7b19dda6b88ebec30bffba87cf76afc3df4cb14df10de0036eb7b0",
+        "recomputed_checksum": "b9e2889b5a7b19dda6b88ebec30bffba87cf76afc3df4cb14df10de0036eb7b0",
+        "match": true
+      },
+      {
+        "kind": "runtime_rules",
+        "db_id": 1,
+        "stored_checksum": "85900c2b9955c4f85996f55679f5d67cbc79c252c3bf570166cdef444ea1f757",
+        "recomputed_checksum": "85900c2b9955c4f85996f55679f5d67cbc79c252c3bf570166cdef444ea1f757",
+        "match": true
+      }
+    ]
+  },
+  "program_versions": [
+    {
+      "id": 1,
+      "code": "specialist_pilot",
+      "version": "1.1",
+      "status": "published",
+      "definition_checksum": "07576484b6c6467fd5fc7047cb1686a2f952532a893660375984373bab87f58c",
+      "published_by_user_id": 4,
+      "published_at": "2026-11-04 12:20:35.860196"
+    }
+  ],
+  "candidate_1_2_free": true,
+  "publisher_candidates_from_prior_publications": [
+    {
+      "id": 4,
+      "configured_superadmin": true,
+      "not_suppressed": true
+    }
+  ],
+  "publisher_owner_authorization": "PENDING_NOT_INFERRED_FROM_DB_ROLE",
+  "publisher_role_resolution": [
+    {
+      "id": 2,
+      "code": "specialist_expert",
+      "version": 1,
+      "status": "published",
+      "checksum": "c5c2234f9fdd237e14024ea6939e3bc5561fd27bf4fac416a52196dec79cbe8f"
+    }
+  ],
+  "candidate": {
+    "code": "specialist_pilot",
+    "version": "1.2",
+    "status": "draft",
+    "configuration_id": 11,
+    "catalog_version_id": 2,
+    "role_version_ids": [
+      2
+    ],
+    "definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+    "snapshot_checksum": "daa715b153f16e9ebc4ea6744a1c8541c5e269e248bba4b5c37723571e6ccfce",
+    "accepted_payload_checksum": "883c025cfa0ea43ad17922bc4818f05a0aaaa62bf02817690a3d07f171cfec06",
+    "full_m2_count": 61
+  },
+  "PREP_DIAG_01_root_cause": "UNKNOWN",
+  "limits": [
+    "No program publication/activation or paid PATH authorized by this preflight.",
+    "No new human Case QA/admission inferred; only existing exact evidence read.",
+    "Version availability and publisher scope must be rechecked in authorized publication transaction."
+  ]
+}

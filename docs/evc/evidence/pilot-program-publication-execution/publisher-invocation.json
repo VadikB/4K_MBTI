@@ -1,0 +1,31 @@
+{
+  "argv": [
+    ".venv/bin/python",
+    "scripts/publish_assessment_program.py",
+    "--code",
+    "specialist_pilot",
+    "--version",
+    "1.2",
+    "--name",
+    "Пилот 4К · 9 кейсов",
+    "--assignment-ref",
+    "specialist-pilot",
+    "--mode",
+    "dialogue",
+    "--configuration-code",
+    "specialist_pilot_v1",
+    "--role-code",
+    "specialist_expert",
+    "--publisher-user-id",
+    "4",
+    "--pilot-plan-package",
+    "assessment_definitions/planning/specialist_pilot_admission/v0.1",
+    "--publish"
+  ],
+  "exit_code": 0,
+  "timed_out": false,
+  "stdout_sha256": "551e9a0efb9cce36550e504489566d64bd474ee8916c31748034102515faf58e",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "invocations": 1,
+  "retry": false
+}

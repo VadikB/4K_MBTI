@@ -1,0 +1,17 @@
+{
+  "result": "PASS",
+  "run_id": "2ff983f12c67494b990b0f85284b8d70",
+  "admission_status": "PASS",
+  "as_id": "c89539de-2d53-4a70-b887-7a5a217df64a",
+  "unique_provider_operations": 20,
+  "provider_completed_http_requests": 21,
+  "usage": {
+    "prompt_tokens": 1447496,
+    "completion_tokens": 76220,
+    "total_tokens": 1523716
+  },
+  "archive": "/home/vadim_bogachev/evidence/path-pilot-1.2-run-qxzr56r9/path-evidence.zip",
+  "archive_bytes": 926711,
+  "archive_sha256": "4077a3e2b8f6193aec7f92fc78d7bf344a91b1d6ef55c2745fc46378a94a6f64",
+  "files": 34
+}

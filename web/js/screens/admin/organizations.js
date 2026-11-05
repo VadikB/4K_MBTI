@@ -1533,6 +1533,10 @@ const refreshAdminOrganizationQuestionnaireInBackground = (organizationId, ident
   void loadQuestionnaireRevisions(organizationId, { identityEpoch, identityKey, render: false });
 };
 
+const isExactProgramConnection = (connection, organizationId, programDefinitionId) =>
+  Number(connection?.organization_id) === Number(organizationId) &&
+  Number(connection?.program_definition_id) === Number(programDefinitionId);
+
 export const connectAdminOrganizationProgram = async (organizationId, programDefinitionId) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
@@ -1547,14 +1551,13 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
     });
     const result = await readApiResponse(response, 'Не удалось подключить программу оценки.');
     const commandConnection = result?.connection;
-    if (Number(commandConnection?.organization_id) !== Number(organizationId) ||
-        Number(commandConnection?.program_definition_id) !== Number(programDefinitionId)) {
+    if (!isExactProgramConnection(commandConnection, organizationId, programDefinitionId)) {
       throw new Error('Сервер не подтвердил точную версию подключённой программы. Обновите список перед повтором.');
     }
     commandConfirmed = true;
     const readback = await readAdminOrganizationProgram(organizationId, identityEpoch, identityKey);
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
-    if (Number(readback?.program_definition_id) !== Number(programDefinitionId)) {
+    if (!isExactProgramConnection(readback, organizationId, programDefinitionId)) {
       throw new Error('Команда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.');
     }
     applyAdminOrganizationProgramReadback(organizationId, readback);
@@ -1568,7 +1571,7 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
       try {
         const readback = await readAdminOrganizationProgram(organizationId, identityEpoch, identityKey);
         if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
-        if (Number(readback?.program_definition_id) === Number(programDefinitionId)) {
+        if (isExactProgramConnection(readback, organizationId, programDefinitionId)) {
           applyAdminOrganizationProgramReadback(organizationId, readback);
           programConnectionOperationIds.delete(operationKey);
           setStatus('Подключение подтверждено повторным чтением после потери ответа команды.', 'success');

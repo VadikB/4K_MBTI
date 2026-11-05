@@ -1,0 +1,52 @@
+{
+  "contract": "pilot-program-publication-verification/1",
+  "checked_on": "2026-11-05",
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "task_input_commit": "e24255f6c8a0ace843a0a418dbd53f52b4fb5782",
+  "integration": {
+    "command": "python -m pytest --run-integration -m integration -q tests/integration/test_program_publication_retirement_db.py tests/integration/test_arch30_program_definition_db.py tests/integration/test_pilot_start_admission_db.py",
+    "result": "PASS",
+    "passed": 29,
+    "exit_code": 0,
+    "evidence": "retirement-regression.json",
+    "cleanup": "cleanup.json"
+  },
+  "backend": {
+    "command": "/Users/vadim_bogachev/Developer/4K/.venv/bin/python -m pytest -m 'not integration and not e2e and not llm'",
+    "environment": "Sanitized child environment; AGENT4K_ISOLATED_STAND=1; DB_HOST127.0.0.1/DB_PORT9; provider keys empty; no .env loaded",
+    "collected": 1259,
+    "passed": 908,
+    "deselected": 351,
+    "exit_code": 0,
+    "elapsed_seconds": 82.54,
+    "stdout_tail": "...              [ 97%]\ntests/unit/test_test_stand.py ............                               [ 98%]\ntests/unit/test_universal_indicator_evaluator.py ....                    [ 99%]\ntests/unit/test_user_journey.py ......                                   [100%]\n\n=============================== warnings summary ===============================\n../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1\n  /Users/vadim_bogachev/Developer/4K/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n========== 908 passed, 351 deselected, 1 warning in 82.54s (0:01:22) ===========\n",
+    "log_scope": "Retained final chunk and counts, not full per-test stdout"
+  },
+  "offline_regression": {
+    "chunk_id": "0f50c2",
+    "wall_time_seconds": 1.448636354,
+    "exit_code": 0,
+    "original_token_count": 180,
+    "output": "{\"result\": \"PASS_PUBLICATION_EVIDENCE_REGRESSION\", \"positive\": {\"result\": \"PASS_OFFLINE_PUBLISHED_RECEIPT\", \"program_id\": 2, \"program_version\": \"1.2\", \"receipt_sha256\": \"09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b\", \"source_objects_preserved\": 5, \"cases\": 9, \"original_qa\": 27, \"recomputed_artifacts\": 15, \"socket_attempts\": 0, \"db_connections\": 0, \"provider_calls\": 0, \"path_result\": \"NOT_RUN_NOT_AUTHORIZED\"}, \"tamper_cases_rejected\": [\"empty_receipt\", \"wrong_program_id\", \"unexpected_activation\", \"wrong_publisher_scope\", \"failed_test\", \"unowned_cleanup\", \"repeated_publisher\", \"no_owner_approval\"], \"optimized_assertions_disabled_rejected\": true, \"database_connections\": 0, \"provider_calls\": 0}\n"
+  },
+  "source_receipt": {
+    "name": "published-release-source.json",
+    "bytes": 229612,
+    "sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b"
+  },
+  "transport": {
+    "all_four_local_byte_hashes_match_remote": true,
+    "partial_async_read_retry": "Initial read transport was retried after the client treated a running read-only SSH process as incomplete; corrected by polling. No publisher retry or DB action."
+  },
+  "deployment": {
+    "new_ci": "NOT_RUN_NO_NEW_PR_OR_RUNTIME_CHANGE",
+    "runtime_ci": "PR171 frontend/pytest/full-verification PASS for reviewed a60200d; deployed squash e63eba6 has identical tree",
+    "deployment": "Existing deploy-test42047619768 PASS; no new deploy"
+  },
+  "limitations": [
+    "No paid LLM/PATH, no new AS or start",
+    "Published source export is not new human review or quality acceptance",
+    "Bootstrap of these exact new published bytes has not yet run",
+    "Historical PREP-DIAG-01 root cause UNKNOWN"
+  ]
+}

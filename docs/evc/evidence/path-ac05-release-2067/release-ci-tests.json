@@ -1,0 +1,8 @@
+{
+  "command": "isolated python -m pytest -q tests/unit/test_ci_verification_workflows.py tests/unit/test_release_version.py",
+  "chunk_id": "1c5f0b",
+  "wall_time_seconds": 2.122010375,
+  "exit_code": 0,
+  "original_token_count": 25,
+  "output": "......................                                                   [100%]\n22 passed in 0.98s\n"
+}
