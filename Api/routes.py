@@ -723,6 +723,11 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         if cycle['status'] == 'prepared':
             label, description, action, button = (
                 'Можно начать', 'Ваша оценка подготовлена.', 'start', 'Приступить к оценке')
+            from Api.assessment_start_readiness import read as read_start_readiness
+            start_decision = read_start_readiness(connection, cycle_id=cycle_id, user_id=int(user.id))
+            if not start_decision['can_start']:
+                label, description, action, button = (
+                    'Старт заблокирован', 'Не подтверждены условия старта оценки. Обратитесь к организатору.', None, None)
         else:
             label, description, action, button = (
                 'Оценка начата', 'Продолжите с того же места.', 'continue', 'Продолжить')
@@ -1020,6 +1025,7 @@ def _project_admin_assessment_stage(row: dict) -> dict:
     preparation_status = row.get("preparation_status")
     acquaintance_status = row.get("acquaintance_status") or "not_started"
     plan_status = row.get("plan_status")
+    admission = row.get('start_readiness') if isinstance(row.get('start_readiness'), dict) else {}
     planned = int(row.get("planned_positions") or 0)
     completed = int(row.get("completed_positions") or 0)
     progress = {"completed": completed, "planned": planned} if planned else None
@@ -1048,8 +1054,10 @@ def _project_admin_assessment_stage(row: dict) -> dict:
         blocker = {"reason": "Подготовка оценки не завершена.", "responsible": "Организатор оценки"}
     elif preparation_status in {"queued", "running"}:
         code, label, action = "preparing", "Идёт подготовка оценки", "check_preparation"
-    elif (cycle_status == "prepared" and plan_status == "READY" and planned > 0
-          and row.get('admitted_situation') is True):
+    elif (cycle_status == "prepared" and plan_status in {"READY", "LIMITED"} and planned > 0
+          and row.get('admitted_situation') is True
+          and admission.get('contract') == 'm7_start_readiness/1' and admission.get('can_start') is True
+          and admission.get('cycle_id') == str(row.get('cycle_id')) and admission.get('reasons') == []):
         code, label, action = "ready_to_start", "Готов к прохождению оценки", "start_assessment"
     elif cycle_status == "prepared":
         code, label, action = "start_blocked", "Старт оценки заблокирован", None
@@ -1060,6 +1068,8 @@ def _project_admin_assessment_stage(row: dict) -> dict:
             reason = "Для Cycle не найден допустимый маршрут."
         elif not row.get('admitted_situation'):
             reason = "Первая оценочная ситуация ещё не допущена для участника."
+        if admission.get('reasons'):
+            reason = "Сервер не подтвердил условия старта: " + ", ".join(admission['reasons']) + "."
         blocker = {"reason": reason, "responsible": "Организатор оценки"}
     elif preparation_status == "completed":
         code, label, action = "preparation_complete", "Подготовка завершена, старт ещё не подтверждён", None
@@ -1099,6 +1109,7 @@ def _project_admin_assessment_stage(row: dict) -> dict:
         "cycle_id": str(row["cycle_id"]) if row.get("cycle_id") else None,
         "operation_id": row.get("preparation_operation_id"),
         "preparation_status": preparation_status,
+        "start_readiness": row.get('start_readiness'),
         "acquaintance_status": acquaintance_status,
         "report_id": str(row["report_id"]) if row.get("report_id") and row.get("report_access") else None,
         "report_access": row.get("report_access_kind") if row.get("report_access") else None,
@@ -1310,6 +1321,11 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
             (int(actor_user_id or (scope.actor_user_id if scope else None) or -1), org_ids),
         ).fetchall()
         for row in stage_rows:
+            row = dict(row)
+            if row.get('cycle_status') == 'prepared':
+                from Api.assessment_start_readiness import read as read_start_readiness
+                row['start_readiness'] = read_start_readiness(
+                    connection, cycle_id=str(row['cycle_id']), user_id=int(row['recipient_user_id']))
             assessment_stages.setdefault(
                 (int(row["organization_id"]), int(row["recipient_user_id"])), {}
             )[str(row["assignment_ref"])] = _project_admin_assessment_stage(dict(row))
@@ -4247,7 +4263,8 @@ def get_admin_assessment_programs(request: Request) -> dict:
     user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     with get_connection() as connection:
         _require_superadmin(connection, user)
-        return {'items': assessment_programs.list_published(connection)}
+        return {'items': [assessment_programs.public_program(item)
+                          for item in assessment_programs.list_published(connection)]}
 
 
 @router.get('/admin/organizations/{organization_id}/assessment-program')
@@ -4255,8 +4272,8 @@ def get_admin_organization_assessment_program(organization_id: int, request: Req
     user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     with get_connection() as connection:
         _require_organization_admin(connection, user, organization_id)
-        return {'connection': assessment_programs.current_connection(
-            connection, organization_id=organization_id)}
+        return {'connection': assessment_programs.public_program(assessment_programs.current_connection(
+            connection, organization_id=organization_id))}
 
 
 @router.put('/admin/organizations/{organization_id}/assessment-program')
@@ -4276,7 +4293,7 @@ def connect_admin_organization_assessment_program(
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         connection.commit()
-        return {'connection': result}
+        return {'connection': assessment_programs.public_program(result)}
 
 
 @router.get(

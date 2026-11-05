@@ -11,6 +11,31 @@ from Api.m5_case_runtime import checksum
 ROOT = Path(__file__).resolve().parents[2]
 
 
+@pytest.mark.parametrize('failed', [False, True])
+def test_start_readback_failure_preserves_other_evidence_and_hides_exception(monkeypatch, failed):
+    from tests.assessment_first_case_evidence import start_readiness_receipt
+    class SavepointConnection:
+        def __init__(self):
+            self.commands = []
+        def execute(self, sql):
+            self.commands.append(sql)
+    connection = SavepointConnection()
+    def read(*args, **kwargs):
+        if failed:
+            raise RuntimeError('sensitive diagnostic text must not be exported')
+        return {'can_start': True, 'reasons': []}
+    monkeypatch.setattr('Api.assessment_start_readiness.read', read)
+    result = start_readiness_receipt(connection, cycle_id='synthetic-cycle', user_id=99)
+    assert result['can_start'] is not failed
+    assert connection.commands[0].startswith('SAVEPOINT ')
+    assert connection.commands[-1].startswith('RELEASE SAVEPOINT ')
+    assert any(command.startswith('ROLLBACK TO') for command in connection.commands) is failed
+    if failed:
+        assert result['availability'] == 'UNKNOWN'
+        assert result['reasons'] == ['START_READBACK_UNAVAILABLE']
+    assert 'sensitive' not in str(result)
+
+
 def source(status='LIMITED'):
     content = {
         'schema_version': 1, 'status': status,

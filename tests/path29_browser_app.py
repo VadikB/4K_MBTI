@@ -124,6 +124,8 @@ def path_receipt():
                 (participant['id'],)).fetchone()
             if cycle:
                 plan = plan_receipt(c, cycle_db_id=cycle['id'])
+                from tests.assessment_first_case_evidence import start_readiness_receipt
+                start_readiness = start_readiness_receipt(c, cycle_id=str(cycle['cycle_id']), user_id=participant['id'])
                 sessions = [dict(row) for row in c.execute('''SELECT session_id,status,started_at
                     FROM m5_cycle_sessions WHERE cycle_db_id=%s ORDER BY ordinal''', (cycle['id'],)).fetchall()]
                 assessment_answers = c.execute('''SELECT count(*) AS n FROM m5_dialogue_turns t
@@ -150,6 +152,7 @@ def path_receipt():
                 if operation else None),
             'cycle': dict(cycle) if cycle else None,
             'assignment_lineage': lineage, 'plan': dict(plan) if plan else None,
+            'start_readiness': start_readiness if cycle else None,
             'sessions': sessions, 'assessment_answers': assessment_answers,
             'assessment_situation': ({key: situation[key] for key in
                 ('assessment_situation_id', 'status', 'snapshot_checksum', 'started_at')} if situation else None),

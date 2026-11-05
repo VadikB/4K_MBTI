@@ -35,9 +35,38 @@ export function verifyPreparation(receipt) {
       assert.deepEqual(cycle.parameter_sources_json[source], lineage.assigned_timing.sources[field], 'TIME_SOURCE_REF');
     }
     same(cycle.parameter_sources_json.resolution_checksum, lineage.assigned_timing.resolved_checksum, 'TIME_RESOLUTION_REF');
-    assert.equal(receipt.plan?.status, 'READY', 'PLAN_NOT_READY');
+    assert.ok(['READY', 'LIMITED'].includes(receipt.plan?.status), 'PLAN_NOT_READY');
     required(receipt.plan?.revision_id, 'PLAN_REVISION_MISSING');
     hash(receipt.plan?.content_checksum);
+    const admission = receipt.start_readiness;
+    required(admission, 'SERVER_START_ADMISSION_REQUIRED');
+    assert.equal(admission.contract, 'm7_start_readiness/1', 'START_CONTRACT');
+    same(admission.cycle_id, cycle.cycle_id, 'START_CYCLE_REF');
+    // Start readiness is a current-state decision, not a sticky PASS after start.
+    if (!cycle.started_at) {
+      assert.equal(admission.can_start, true, 'SERVER_START_NOT_ADMITTED');
+      assert.deepEqual(admission.reasons, [], 'START_BLOCKERS_PRESENT');
+      same(admission.plan_revision_id, receipt.plan.revision_id, 'START_PLAN_REVISION_REF');
+      same(admission.plan_checksum, receipt.plan.content_checksum, 'START_PLAN_CHECKSUM_REF');
+      same(admission.assessment_situation_id, receipt.assessment_situation.assessment_situation_id, 'START_AS_REF');
+      same(admission.as_snapshot_checksum, receipt.assessment_situation.snapshot_checksum, 'START_AS_CHECKSUM_REF');
+      same(admission.profile_checksum, lineage.profile_checksum, 'START_PROFILE_REF');
+      same(admission.preparation_operation_id, receipt.preparation_operation.operation_id, 'START_OPERATION_REF');
+      if (receipt.plan.status === 'LIMITED') {
+        const saved = receipt.plan.diagnostics?.pilot_plan_binding;
+        required(saved, 'APPROVED_PILOT_BINDING_REQUIRED');
+        const pilot = admission.pilot_admission;
+        required(pilot, 'EXACT_PILOT_ADMISSION_REQUIRED');
+        hash(pilot.snapshot_checksum); hash(pilot.proposal_checksum); hash(pilot.binding_checksum);
+        same(pilot.binding_checksum, saved.binding_checksum, 'PILOT_BINDING_REF');
+        same(pilot.snapshot_checksum, saved.admission_snapshot?.snapshot_checksum, 'PILOT_SNAPSHOT_REF');
+        same(pilot.proposal_checksum, saved.admission_snapshot?.review?.proposal_payload_checksum, 'PILOT_PROPOSAL_REF');
+        same(pilot.human_decision_id, saved.admission_snapshot?.owner_decision?.decision_id, 'PILOT_DECISION_REF');
+        same(pilot.program_ref?.checksum, receipt.program_definition.definition_checksum, 'PILOT_PROGRAM_REF');
+        assert.deepEqual(pilot.program_ref, saved.program_ref, 'PILOT_PROGRAM_BINDING_REF');
+        assert.deepEqual(receipt.plan.diagnostics?.uncovered_planned_target_ids, [], 'PILOT_PLANNED_GAP');
+      }
+    }
   }
   same(receipt.cycle.catalog_ref_json.checksum, receipt.catalog.manifest_checksum, 'CATALOG_CHECKSUM');
   hash(receipt.catalog.manifest_checksum);
@@ -86,6 +115,12 @@ export function verifyPreparation(receipt) {
 export function verifyFirstCase(receipt, before) {
   verifyPreparation(before);
   verifyPreparation(receipt);
+  if (Object.hasOwn(before, 'assignment_lineage')) {
+    same(receipt.plan?.revision_id, before.plan?.revision_id, 'PRE_START_PLAN_CHANGED');
+    same(receipt.plan?.content_checksum, before.plan?.content_checksum, 'PRE_START_PLAN_CHANGED');
+    assert.deepEqual(receipt.plan?.diagnostics?.pilot_plan_binding,
+      before.plan?.diagnostics?.pilot_plan_binding, 'PRE_START_PILOT_BINDING_CHANGED');
+  }
   assert.equal(receipt.http_start_status, 201, 'START_HTTP_STATUS');
   assert.equal(receipt.assessment_answers, 0, 'ASSESSMENT_ANSWERS_NOT_ZERO');
   assert.deepEqual(receipt.participant_state, { profiles: 1, cycles: 1, started: 1, operations: 1 }, 'PARTICIPANT_STATE');

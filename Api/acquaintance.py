@@ -336,11 +336,16 @@ def _prepared_plan_snapshot(connection, *, personalized_profile_id: int | None) 
         return None
     from Api.m7_cycle_planner import read_plan
     snapshot = read_plan(connection, str(row["cycle_id"]))
+    from Api.assessment_start_readiness import read as start_readiness
+    owner = connection.execute("SELECT owner_user_id FROM m5_cycles WHERE cycle_id=%s",
+                               (row["cycle_id"],)).fetchone()
+    from Api.m10_product_flow import participant_plan
     return {
         "cycle_id": str(snapshot["cycle_id"]),
         "revision_id": str(snapshot["revision_id"]),
         "revision_no": int(snapshot["revision_no"]),
-        "plan": snapshot["plan"],
+        "plan": participant_plan(snapshot)["plan"],
+        "start_readiness": start_readiness(connection, cycle_id=str(row["cycle_id"]), user_id=int(owner["owner_user_id"])),
     }
 
 

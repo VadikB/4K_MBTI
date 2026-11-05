@@ -118,6 +118,22 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
         if value is not None}
     resolved=resolve_parameters(connection,personalized_profile_id=personalized_profile_id,
                                 usage_scope=usage_scope,qa_overrides=overrides or None)
+    # Only a published, explicitly opted-in new ProgramDefinition can select a
+    # reduced plan. A local draft file and an arbitrary LIMITED route cannot.
+    from Api import pilot_plan_binding
+    from Api.pilot_plan_admission import project_plan
+    program = pilot_plan_binding.program_for_profile(connection, profile) if usage_scope == "assessment" else None
+    admission = None
+    planned_targets = targets
+    projection = None
+    if program and (program.get("source_refs_json") or {}).get("pilot_plan_admission") is not None:
+        admission = pilot_plan_binding.validate_published_program(connection, program)
+        pilot_plan_binding.validate_case_sources(connection, admission, catalog_ref["db_id"])
+        projection = project_plan(admission, targets=targets, catalog=catalog,
+                                  catalog_ref=catalog_ref, role_ref=role_ref)
+        planned_targets = projection["planned_targets"]
+        route = projection["route"]
+        uncovered = target_ids - set().union(*(set(row["target_ids"]) for row in route))
     budget=resolved["values"]["time_budget_seconds"]
     calendar=resolved["values"]["calendar_window_seconds"]
     profile_ref={"id":f"assessment_personalized_profiles:{personalized_profile_id}","version":"1","checksum":profile["checksum"]}
@@ -132,9 +148,9 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
     total=sum(x["planned_max_minutes"]*60 for x in route)
     status="READY" if not uncovered else ("LIMITED" if route else "NO_ROUTE")
     requirements=[{"indicator_id":x["indicator_id"],"m2_version":x["m2_version"],"required_final_ia_count":1,
-                   "distinct_as_required":1} for x in targets]
-    content={"schema_version":1,"status":status,"goal":{"kind":"skills","selected_skills":request["selected_skills"]},
-        "full_target_set":targets,"planned_target_set":targets,"route":route,"reserves":[],
+                   "distinct_as_required":1} for x in planned_targets]
+    content={"schema_version":2 if admission else 1,"status":status,"goal":{"kind":"skills","selected_skills":request["selected_skills"]},
+        "full_target_set":targets,"planned_target_set":planned_targets,"route":route,"reserves":[],
         "uncovered_target_ids":sorted(uncovered),"planned_max_seconds":total,"time_budget_seconds":budget,
         "calendar_window_seconds":calendar,"parameter_sources":resolved["sources"],
         "parameter_resolution_checksum":resolved["resolved_checksum"],
@@ -143,7 +159,12 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
         "known_limitations":["Cases are conditional opportunities; not guaranteed Evidence"],
         "duration_semantics":"planned case durations do not constrain selection; the Cycle budget limits actual elapsed collection time",
         "catalog":catalog,"algorithm_version":rules["algorithm_version"]}
-    repo.save_plan(connection,cycle=cycle,profile_ref=profile_ref,full_targets=targets,planned_targets=targets,
+    if admission:
+        content.update(pilot_plan_binding=pilot_plan_binding.freeze(
+            connection, program=program, profile=profile, cycle=cycle, snapshot=admission, resolved=resolved),
+            outside_plan_target_ids=projection["outside_plan_target_ids"],
+            uncovered_planned_target_ids=sorted(uncovered & {row["indicator_id"] for row in planned_targets}))
+    repo.save_plan(connection,cycle=cycle,profile_ref=profile_ref,full_targets=targets,planned_targets=planned_targets,
                    requirements=requirements,rules=rules,content=content,created_by=created_by,key=key,request_hash=request_hash)
     return read_plan(connection,str(cycle["cycle_id"]))
 
@@ -279,7 +300,12 @@ def present(connection, *, decision_id:str, expected_revision:int) -> dict:
     decision=repo.read_decision(connection,decision_id)
     if decision["revision_no"]!=expected_revision:raise ValueError("M7_STALE_DECISION")
     if decision["status"]!="SELECTED" or not decision["assigned_as_db_id"]:raise ValueError("M7_DECISION_NOT_PRESENTABLE")
-    cycle=read_cycle(connection,str(connection.execute("SELECT cycle_id FROM m5_cycles WHERE id=%s",(decision["cycle_db_id"],)).fetchone()["cycle_id"]))
+    cycle_row=connection.execute("SELECT cycle_id,owner_user_id,assignment_id,status,usage_scope FROM m5_cycles WHERE id=%s FOR UPDATE",
+                                 (decision["cycle_db_id"],)).fetchone()
+    if cycle_row["status"] == "prepared" and cycle_row["usage_scope"] == "assessment":
+        from Api.assessment_start_readiness import require as require_start
+        require_start(connection, cycle_id=str(cycle_row["cycle_id"]), user_id=int(cycle_row["owner_user_id"]))
+    cycle=read_cycle(connection,str(cycle_row["cycle_id"]))
     if cycle["started_at"] and (cycle["remaining_seconds"]<=0 or datetime.now(timezone.utc)>=cycle["calendar_deadline"]):
         raise ValueError("M7_TIME_LIMIT_REACHED")
     if cycle["status"] in {"prepared","interrupted"}:
@@ -299,7 +325,8 @@ def read_plan(connection, cycle_id:str) -> dict:
     row=repo.read_plan(connection,cycle_id)
     decisions=connection.execute("SELECT id FROM m7_route_decisions WHERE cycle_db_id=%s ORDER BY created_at",(row["cycle_db_id"],)).fetchall()
     return {"cycle_id":row["cycle_id"],"cycle_status":row["cycle_status"],"plan_id":row["id"],"revision_id":row["revision_id"],
-            "revision_no":row["revision_no"],"plan":row["content_json"],"profile_ref":row["profile_ref_json"],
+            "revision_no":row["revision_no"],"content_checksum":row["content_checksum"],
+            "plan":row["content_json"],"profile_ref":row["profile_ref_json"],
             "rules_ref":{"checksum":row["rules_checksum"],"algorithm_version":row["rules_json"]["algorithm_version"]},
             "decisions":[repo.read_decision(connection,x["id"]) for x in decisions]}
 

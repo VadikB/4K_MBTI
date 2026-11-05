@@ -112,6 +112,9 @@ const readinessStep = () => {
   if (status === 'access') return { title: 'Нет доступа к подготовке',
     description: 'Права или область назначения изменились. Обновите состояние; если доступ не восстановится, обратитесь к ответственному.',
     body: reference, action: 'refresh', button: 'Обновить состояние' };
+  if (status === 'plan_blocked') return { title: 'Старт оценки пока заблокирован',
+    description: 'Подготовка не подтверждает все условия старта. Обратитесь к организатору оценки.',
+    body: reference, action: 'refresh', button: 'Обновить состояние' };
   if (status === 'plan_missing') return { title: 'Подготовленный план пока недоступен',
     description: 'Сервер сообщил о завершении операции, но допустимый подготовленный план не получен. Время оценки ещё не началось.',
     body: reference, action: 'refresh', button: 'Проверить состояние' };
@@ -131,7 +134,8 @@ const readinessStep = () => {
   if (status === 'ready') {
     const plan = timing();
     return { title: 'Можно приступать к оценке',
-      description: 'Подготовлены план и первая ситуация. Следующие ситуации подготавливаются по ходу оценки. Время начнётся после вашего явного действия.',
+      description: 'Подготовлены план и первая ситуация. Следующие ситуации подготавливаются по ходу оценки. Время начнётся после вашего явного действия.' +
+        (plan?.participant_notice ? '\n\n' + plan.participant_notice : ''),
       body: '<div class="onboarding-metrics"><div><strong>' +
         Number(Array.isArray(plan?.route) ? plan.route.length : 0) + '</strong>Ситуации в плане</div><div><strong>' +
         Math.ceil(Number(plan?.time_budget_seconds || 0) / 60) + ' мин.</strong>Время на выполнение</div></div>',

@@ -159,6 +159,22 @@ def _plan_projection(value, shape):
     return value if value is None or type(value) in (str, int, float, bool) else None
 
 
+def start_readiness_receipt(connection, *, cycle_id, user_id):
+    """A missing new readback must not destroy the older diagnostic receipt."""
+    from Api.assessment_start_readiness import read
+    connection.execute('SAVEPOINT first_case_start_readback')
+    try:
+        value = read(connection, cycle_id=str(cycle_id), user_id=user_id)
+    except Exception:
+        connection.execute('ROLLBACK TO SAVEPOINT first_case_start_readback')
+        value = {'contract': 'm7_start_readiness/1', 'cycle_id': str(cycle_id),
+                 'can_start': False, 'availability': 'UNKNOWN',
+                 'reasons': ['START_READBACK_UNAVAILABLE']}
+    finally:
+        connection.execute('RELEASE SAVEPOINT first_case_start_readback')
+    return value
+
+
 def plan_receipt(connection, *, cycle_db_id):
     """Read the saved latest revision, not a recomputed route or an active profile."""
     row = connection.execute('''SELECT p.id,p.status,revision.id AS revision_id,
@@ -184,6 +200,18 @@ def plan_receipt(connection, *, cycle_db_id):
         'goal': {'kind': None, 'selected_skills': [None]},
         'full_target_set': [target], 'planned_target_set': [target],
         'uncovered_target_ids': [None], 'route': [case], 'reserves': [case], 'catalog': [case],
+        'outside_plan_target_ids': [None], 'uncovered_planned_target_ids': [None],
+        'pilot_plan_binding': {
+            'contract': None, 'binding_checksum': None,
+            'program_ref': dict.fromkeys(('id', 'code', 'version', 'checksum', 'connection_id')),
+            'profile_ref': {'id': None, 'checksum': None},
+            'assignment_scope': dict.fromkeys(('assignment_id', 'organization_id', 'recipient_user_id',
+                                              'binding_id', 'questionnaire_revision_id',
+                                              'assigning_actor_id', 'source_actor_id')),
+            'admission_snapshot': {'snapshot_checksum': None,
+                                   'review': {'proposal_payload_checksum': None},
+                                   'owner_decision': {'decision_id': None}},
+        },
         'known_limitations': [None],
         'catalog_ref': dict.fromkeys(('id', 'version', 'checksum', 'package_checksum', 'm2_checksum')),
         'parameter_sources': {'time_budget_seconds': source, 'calendar_window_seconds': source},

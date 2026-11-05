@@ -1,0 +1,23 @@
+{
+  "contract": "m7_pilot_plan_admission/1",
+  "id": "specialist_pilot_admission",
+  "version": "0.1",
+  "status": "draft",
+  "scope": "offline_source_for_new_program_definition_not_runtime_activation",
+  "owner": "PM-04; продуктовый и методологический владелец — подтверждение текущего пользователя",
+  "participant_notice": "Ограниченный пилот собирает материал по отдельным сторонам навыков в рабочих ситуациях. Результат отражает только фактически полученные и допустимые основания; полнота и отсутствующие цели показываются отдельно. Полная оценка всего конструкта не гарантируется",
+  "notice_source": {
+    "path": "docs/evc/reports/path-pilot-admission-proposal.md",
+    "sha256": "1b7f4dde1e9c30a6fa473aefc08719b2d9685cdc5da9830001bce81183a3a83a"
+  },
+  "sources": {
+    "review": {
+      "path": "docs/evc/evidence/path-plan-diagnostics/pilot-plan-draft-v0.1.json",
+      "sha256": "73e363899e702fa2ec96780d6c0a419c0ef07acc523bef4d38df93724790cc65"
+    },
+    "owner_decision": {
+      "path": "docs/evc/evidence/path-pilot-owner-decision-2026-11-05.json",
+      "sha256": "3e1293c6978fc042b2461d301cfc78f3b7995445a83599bc583f5f4cf808a04b"
+    }
+  }
+}

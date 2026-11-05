@@ -1,5 +1,21 @@
 # STATE — PATH-PLAN-DIAGNOSTICS
 
+## PATH-PILOT-02 — активная локальная реализация T1
+
+Владелец: «принимаем идем дальше» после передачи T1/запроса реализации.
+T1 принят, бесплатная локальная реализация разрешена. Отдельная ветка/worktree
+codex/path-pilot-start-admission от2a9ef94f6d306a036dc123930b4d2dbefa7d1507;
+диагностическая codex/path-plan-diagnostics сохранена. Реализованы draft snapshot
+новой ProgramDefinition, exact plan binding и server start readiness, UI/admin/runner,
+privacy projection; legacy first-start не обходит gate. Исторические Cycles/источники
+не переписываются, M2 полный61/план39/вне22. Активно: проверки/ревью/локальная передача.
+Новые SQL/HTTP6 и прежние SQL62 PASS на owned контейнере33e6f86… PostgreSQL16;
+backend828/HTTP108/frontend140 промежуточные PASS, final exact-SHA ещё ожидает фиксации.
+Реального LLM0, постоянная БД не трогалась, все release flags=false.
+Новый CI NOT_RUN; main/test по последнему наблюдению2dc98c6/2.0.64.
+Карточка: docs/evc/tasks/path-pilot-start-admission.md. PREP-DIAG-01 отдельно UNKNOWN.
+Ниже история, не текущий блокер P/M или T1.
+
 ## Принятие проекта05.11.2026 — актуальный статус
 
 После передачи exact8c900f9727bae75c5dd78aedc4201a2dbd0bffbe владелец ответил

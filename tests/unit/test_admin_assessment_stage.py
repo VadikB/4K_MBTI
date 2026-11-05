@@ -8,6 +8,8 @@ def row(**changes):
         "revoked_at": None,
         "cycle_id": "11111111-1111-1111-1111-111111111111",
         "cycle_status": "prepared",
+        "start_readiness": {"contract": "m7_start_readiness/1", "can_start": True, "reasons": [],
+                            "cycle_id": "11111111-1111-1111-1111-111111111111"},
         "plan_status": "READY",
         "planned_positions": 3,
         "completed_positions": 0,
@@ -35,9 +37,17 @@ def test_start_requires_exact_cycle_and_ready_non_empty_plan():
 
 
 def test_prepared_plan_without_admitted_first_as_is_not_ready_to_start():
-    projected = _project_admin_assessment_stage(row(admitted_situation=False))
+    projected = _project_admin_assessment_stage(row(admitted_situation=False, start_readiness={"can_start": False}))
     assert projected['code'] == 'start_blocked'
     assert projected['action'] is None
+
+
+def test_limited_requires_exact_authoritative_decision_not_status_or_boolean_only():
+    accepted = row(plan_status='LIMITED')
+    assert _project_admin_assessment_stage(accepted)['code'] == 'ready_to_start'
+    for decision in (None, {'can_start': True}, {**accepted['start_readiness'], 'can_start': False},
+                     {**accepted['start_readiness'], 'cycle_id': 'other'}):
+        assert _project_admin_assessment_stage(row(plan_status='LIMITED', start_readiness=decision))['code'] == 'start_blocked'
 
 
 def test_real_preparation_status_precedes_unstarted_plan_readiness():

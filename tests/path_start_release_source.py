@@ -20,17 +20,26 @@ def validate_release(source):
 
     program, catalog = source['program'], source['catalog']
     configuration, roles = source['configuration'], source['roles']
-    assert (program['code'], program['version'], program['status']) == ('specialist_pilot', '1.1', 'published')
+    assert (program['code'], program['status']) == ('specialist_pilot', 'published')
+    pilot_snapshot = (program.get('source_refs_json') or {}).get('pilot_plan_admission')
+    if pilot_snapshot is None:
+        assert program['version'] == '1.1'
+    else:
+        from Api.pilot_plan_admission import validate_program
+        design = validate_program(program, [role['id'] for role in roles], pilot_snapshot)
+        assert design['program']['definition_checksum'] == PROGRAM_CHECKSUM
     assert (catalog['catalog_id'], catalog['catalog_version'], catalog['status']) == ('specialist-pilot', '1.0', 'published')
     assert catalog['decision_basis'] == DECISION_BASIS
     assert catalog['manifest_checksum'] == CATALOG_CHECKSUM == checksum(catalog['manifest_json'])
     assert program['assessment_configuration_id'] == configuration['id']
     assert program['catalog_version_id'] == configuration['catalog_version_id'] == catalog['id']
     assert configuration['code'] == 'specialist_pilot_v1' and configuration['status'] == 'published'
-    assert program['source_refs_json'] == {key: configuration[key] for key in
+    assert {key: value for key, value in program['source_refs_json'].items() if key != 'pilot_plan_admission'} == {key: configuration[key] for key in
         ('methodology_version_id', 'scenario_version_id', 'prompt_bundle_checksum')}
     assert [(role['code'], str(role['version'])) for role in roles] == [('specialist_expert', '1')]
-    assert program['definition_checksum'] == PROGRAM_CHECKSUM == definition_checksum(
+    if pilot_snapshot is None:
+        assert program['definition_checksum'] == PROGRAM_CHECKSUM
+    assert program['definition_checksum'] == definition_checksum(
         code=program['code'], version=program['version'], name=program['name'],
         assignment_ref=program['assignment_ref'], mode=program['mode'],
         configuration_id=configuration['id'], catalog_version_id=catalog['id'],
@@ -60,7 +69,7 @@ def validate_release(source):
                for check in readback), 'STORED_ARTIFACT_CHECKSUM_MISMATCH'
 
 
-def collect(connection):
+def collect(connection, *, program_version='1.1'):
     from Api.config import settings
     from Api.m5_catalog_integrity import case_admission
 
@@ -72,7 +81,7 @@ def collect(connection):
     program = dict(connection.execute("""SELECT id,code,version,name,assignment_ref,mode,status,
         assessment_configuration_id,catalog_version_id,source_refs_json,definition_checksum,
         published_at FROM assessment_program_definitions WHERE code='specialist_pilot'
-        AND version='1.1'""").fetchone())
+        AND version=%s""", (program_version,)).fetchone())
     config = dict(connection.execute('''SELECT id,code,name,status,methodology_version_id,
         scenario_version_id,catalog_version_id,prompt_bundle_checksum FROM assessment_configurations
         WHERE id=%s''', (program['assessment_configuration_id'],)).fetchone())
@@ -142,7 +151,11 @@ def recompute_artifacts(connection, source):
 
 
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='Read-only exact published release export; never chooses latest.')
+    parser.add_argument('--program-version', default='1.1')
+    args = parser.parse_args()
     from Api.database import get_connection
     with get_connection() as connection:
-        receipt = collect(connection)
+        receipt = collect(connection, program_version=args.program_version)
     print(json.dumps(receipt, ensure_ascii=False, indent=2, default=str))

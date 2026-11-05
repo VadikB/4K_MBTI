@@ -46,6 +46,14 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture
 def product_db(test_database_url, monkeypatch):
+    # This older component fixture has two static Cases and intentionally does
+    # not model a human-accepted complete/limited program. Its upstream start
+    # permission is a SYNTHETIC substitution, not evidence of product admission.
+    # Actual fail-closed readiness + SQL/HTTP start are exercised independently
+    # by test_pilot_start_admission_db with the real predicate restored.
+    monkeypatch.setattr("Api.assessment_start_readiness.require", lambda *args, **kwargs: {
+        "contract": "m7_start_readiness/1", "can_start": True,
+        "basis": "SYNTHETIC_UPSTREAM_START_PERMISSION_NOT_HUMAN_ADMISSION"})
     schema = "m10_product_pytest_" + uuid4().hex
     with psycopg.connect(test_database_url) as connection:
         connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))

@@ -9,6 +9,11 @@ const model = (answers = {}, extra = {}) => ({
   mandatory_complete: false, ...extra,
 });
 
+const serverReady = () => ({ cycle_id: 'synthetic-cycle', revision_id: 'synthetic-revision',
+  start_readiness: { contract: 'm7_start_readiness/1', cycle_id: 'synthetic-cycle',
+    plan_revision_id: 'synthetic-revision', can_start: true, reasons: [] },
+  plan: { route: [{}], time_budget_seconds: 1, calendar_window_seconds: 2 } });
+
 test('resume uses actual consent and saved answers rather than legacy skipped/current_step', () => {
   assert.equal(resumeOnboardingIndex(model({}, { state: {} }), { status: 'skipped', current_step: 99 }), 1);
   assert.equal(resumeOnboardingIndex(model()), 2);
@@ -36,9 +41,7 @@ test('prepared plan survives reload even when a stale briefing projection disagr
     mandatory_complete: true,
     state: { consent_version: 1, consent_accepted_at: 'synthetic-accepted', answers_json: {} },
     late_readiness: { status: 'ready_to_prepare' },
-    prepared_plan: { cycle_id: 'synthetic-cycle', plan: {
-      route: [{}], time_budget_seconds: 1, calendar_window_seconds: 2,
-    } },
+    prepared_plan: serverReady(),
   });
   assert.equal(resumeOnboardingIndex(prepared, { status: 'completed', current_step: 0 }), 8);
 });
@@ -56,10 +59,26 @@ test('readiness distinguishes organizational waiting, job status, network and ad
   assert.equal(preparationView(current, { kind: 'service' }), 'service');
   current.preparation_operation.status = 'completed';
   assert.equal(preparationView(current), 'plan_missing');
-  current.prepared_plan = { cycle_id: 'synthetic-cycle', plan: { route: [{}], time_budget_seconds: 1, calendar_window_seconds: 2 } };
+  current.prepared_plan = serverReady();
   assert.equal(preparationView(current), 'ready');
   for (const status of ['queued', 'running', 'unknown']) {
     current.preparation_operation.status = status;
     assert.equal(preparationView(current), 'preparing');
+  }
+});
+
+test('nonempty READY or LIMITED route never substitutes for server admission', () => {
+  for (const status of ['READY', 'LIMITED']) {
+    const current = model({}, { late_readiness: { status: 'ready_to_prepare' }, prepared_plan: serverReady() });
+    current.prepared_plan.plan.status = status;
+    assert.equal(preparationView(current), 'ready');
+    delete current.prepared_plan.start_readiness;
+    assert.equal(preparationView(current), 'plan_blocked');
+    current.prepared_plan = serverReady();
+    current.prepared_plan.start_readiness.can_start = false;
+    assert.equal(preparationView(current), 'plan_blocked');
+    current.prepared_plan.start_readiness.can_start = true;
+    current.prepared_plan.start_readiness.plan_revision_id = 'stale';
+    assert.equal(preparationView(current), 'plan_blocked');
   }
 });
