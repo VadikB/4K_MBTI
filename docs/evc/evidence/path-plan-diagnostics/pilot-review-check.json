@@ -1,0 +1,10 @@
+{
+  "result": "PASS_OFFLINE_REVIEW_STRUCTURE_NOT_ADMISSION",
+  "source_replay": "PASS",
+  "matrix_replay": "PASS",
+  "negative_mutations_rejected": 10,
+  "proposal_payload_checksum": "883c025cfa0ea43ad17922bc4818f05a0aaaa62bf02817690a3d07f171cfec06",
+  "human_approval": "PENDING",
+  "llm_calls": 0,
+  "database_writes": 0
+}

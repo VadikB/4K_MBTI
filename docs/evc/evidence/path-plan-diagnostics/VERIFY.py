@@ -1,5 +1,7 @@
 """Offline evidence audit (stdlib only). PASS here never means PATH PASS."""
 import hashlib
+import gzip
+import importlib.util
 import json
 from pathlib import Path
 
@@ -49,7 +51,45 @@ assert historical['functional_generation']['admission_status'] == 'PASS'
 assert historical['assessment_answers'] == 0 and historical['cycle']['started_at'] is None
 assert historical['assessment_situation']['started_at'] is None
 assert 'diagnostics' not in historical['plan']
+
+prior = json.loads((HERE / 'prior-basis-applicability.json').read_text())
+old_bytes = (ROOT / prior['arch_a05_package_path']).read_bytes()
+new_bytes = (ROOT / prior['current_package_path']).read_bytes()
+assert hashlib.sha256(old_bytes).hexdigest() == prior['arch_a05_package_bytes_sha256']
+assert hashlib.sha256(new_bytes).hexdigest() == prior['current_package_bytes_sha256']
+old_cases = {case['case_id']: case for case in json.loads(old_bytes)['cases']}
+for case in json.loads(new_bytes)['cases']:
+    previous = old_cases[case['case_id']]
+    assert previous['version'] == case['version']
+    assert previous['author_case'] == case['author_case']
+    assert previous['author_assessment_situation'] == case['author_assessment_situation']
+    pairs = lambda row: sorted((target['indicator_id'], target['m2_version']) for target in row['indicator_targets'])
+    assert pairs(previous) == pairs(case)
+for entry in prior['entries'].values():
+    assert entry['bytes_equal'] is True
+    assert hashlib.sha256((ROOT / entry['replica_path']).read_bytes()).hexdigest() == entry['sha256']
+
+spec = importlib.util.spec_from_file_location('pilot_review_builder', HERE / 'BUILD_PILOT_REVIEW.py')
+builder = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(builder)
+proposal = json.loads((HERE / 'pilot-plan-draft-v0.1.json').read_text())
+assert builder.build() == proposal
+builder.validate_review(proposal)
+assert builder.markdown(proposal).rstrip() + '\n' == (HERE / 'pilot-opportunity-matrix.md').read_text()
+preserved = json.loads((HERE / 'preservation-since-de3b831.json').read_text())
+for relative, expected in preserved['unchanged_primary_evidence'].items():
+    assert hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() == expected
+for relative, expected in preserved['uncompressed_patch_sha256'].items():
+    assert hashlib.sha256(gzip.decompress((ROOT / relative).read_bytes())).hexdigest() == expected
+bundle_metadata = ROOT / 'BUNDLE.json'
+if bundle_metadata.is_file():
+    for relative, expected in json.loads(bundle_metadata.read_text())['files'].items():
+        assert not Path(relative).is_absolute() and '..' not in Path(relative).parts
+        assert hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() == expected
 print(json.dumps({'result': 'PASS_OFFLINE_DIAGNOSTICS_AUDIT_NOT_PATH',
     'verified_files': len(manifest['files']), 'implementation_sha': run['sha'],
     'sql_regressions': 43, 'new_llm_calls': 0, 'owned_cleanup': 'PASS',
-    'historical_path': 'FAIL_PLAN_NOT_READY', 'historical_full_plan': 'UNKNOWN_NOT_EXPORTED'}, indent=2))
+    'historical_path': 'FAIL_PLAN_NOT_READY', 'historical_full_plan': 'UNKNOWN_NOT_EXPORTED',
+    'pilot_proposal_checksum': proposal['proposal_payload_checksum'],
+    'pilot_full_m2': 61, 'proposed_targets': 39, 'source_observation_rows': 55,
+    'pilot_approval': 'PENDING_NOT_RUNTIME_ADMISSION'}, indent=2))

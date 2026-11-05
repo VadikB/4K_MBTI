@@ -1,5 +1,34 @@
 # STATE — PATH-PLAN-DIAGNOSTICS
 
+## Действующее поручение05.11.2026 — PATH-PILOT-01
+
+Владелец возобновил ограниченную работу: девять существующих Cases, M2 остаётся61,
+расширение каталога исключено. Старый выбор CAT-COVERAGE-01 заменён; карточка
+SUPERSEDED_NOT_STARTED, исходные uncommitted edits vs de3b831 сохранены resume patches.
+Это решения о направлении, НЕ методологический допуск конкретного плана.
+Найдены ARCH-A05/PILOT-120 (120 минут/72 часа) и ARCH30-ADD01; проверена
+преемственность авторских Case/AS и target pairs0.3→0.5, hashes published release.
+Подготовлен DRAFT_FOR_REVIEW docs/evc/reports/path-pilot-admission-proposal.md:
+восемь позиций-кандидатов, все61 Indicator/55 условий,39 предлагаемых целей/22 вне
+каталога. Approvals=PENDING/runtime_authorization=NONE, любые LIMITED не разрешены.
+Подготовка проекта завершена: offline replay источников/матрицы и10 negative
+mutations PASS;21 primary evidence file и оба uncompressed patch hashes сохранены.
+Пакет включает MANIFEST/verifier и Git diff/bundle exact handoff SHA. Следующий
+зависимый шаг — рассмотрение конкретного проекта, а не автоматический старт.
+Main2dc98c6/2.0.64,
+implementation1bc9d36 прежние; DB/LLM/publication/push/merge/deploy не выполняются.
+PREP-DIAG-01 UNKNOWN отдельно. Ниже история, не действующее направление расширения.
+
+## Решение владельца 05.11.2026
+
+«Сохранить полный M2; отдельно доработать покрытие каталога». Вопрос направления
+закрыт; сокращение целей и разрешение LIMITED не согласованы. Текущая бесплатная
+доработка диагностики завершена. Следующая постановка docs/evc/tasks/catalog-coverage-01.md
+сохранена как DRAFT_NEXT_TASK_NOT_STARTED; не исполнялась, LLM/публикаций нет.
+Прежний BLOCKED_DECISION ниже — история до ответа; текущий PATH ждёт отдельного
+задания по каталогу, а не уменьшения требований. Проверенный collector implementation
+1bc9d36, новый итоговый SHA — docs/evidence commits этой ветки. Main/test/CI прежние.
+
 ## Checkpoint 05.11.2026 — бесплатное продолжение
 
 Финал технической диагностики: implementation1bc9d36834262ee9ad4591227d5ec876fea8e648,

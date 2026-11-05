@@ -15,6 +15,11 @@ rerun не требуется. [Передача/AC-матрица](../docs/evc/
 Это не полный PATH PASS и не доказанный отказ HTTP start. Разбор контракта и
 бесплатная доработка collector — [PATH-PLAN-01](../docs/evc/tasks/path-plan-diagnostics.md).
 
+Ограниченный пилот на тех же девяти Cases вынесен в
+[неутверждённый проект PATH-PILOT-01](../docs/evc/reports/path-pilot-admission-proposal.md).
+Он сохраняет полный M2=61 и не разрешает автоматически LIMITED. Платные вызовы,
+публикация и изменение стартового контракта по этому проекту ещё не разрешены.
+
 Бесплатные адресные проверки harness (без БД, credentials и LLM):
 
 ```bash

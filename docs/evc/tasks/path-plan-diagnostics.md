@@ -1,5 +1,14 @@
 # PATH-PLAN-01 — бесплатная сверка и сохранение диагностики
 
+## Действующее продолжение05.11.2026
+
+После остановки владелец разрешил только проверку прежнего основания и подготовку
+ограниченного пилота на существующих девяти Cases. Полный M2=61 сохраняется;
+расширение каталога исключено. Промежуточный незакоммиченный выбор расширения
+сохранён как история, не методологический допуск. Новое поручение и план работ:
+[PATH-PILOT-01](path-pilot-admission-proposal.md). Исторические checkpoints ниже
+не отменяют эти границы. Никаких LLM/публикаций/изменений постоянной БД/merge/deploy.
+
 Дата: 05.11.2026. Основание: продолжение владельца «идем дальше» после одного
 контролируемого PATH и предложения бесплатной сверки READY/LIMITED.
 
@@ -52,7 +61,7 @@ M7 сохраняет известные ограничения условных
    route/catalog eligibility/reasons. Без UserContext/ответов/prompts/credentials.
 3. DONE: новые regressions до/после, backend, HTTP, Node receipt/validator,
    actual SQL на новой isolated test DB, persistence перед owned cleanup, diff/review.
-4. DONE техническая передача; WAIT_OWNER решение по составу. Не менять
+4. DONE техническая передача и решение владельца по составу. Не менять
    исторический отрицательный receipt и PREP-DIAG-01 (root_cause=UNKNOWN).
 
 Все release flags false: branch_push/pr/merge/deploy/version_bump/artifact_publish.
@@ -111,9 +120,10 @@ force=false, тот же receipt после cleanup. Primary JSON/logs пере�
 Отчёт: [результат и остаток](../reports/path-plan-diagnostics.md).
 
 Tests-only диагностика завершена, ограничения admission/READY сохранены. Для
-зависимого исправления контракта старта остаётся BLOCKED_DECISION: владелец выбирает
-полный M2/доработку каталога либо отдельное обоснование точного сокращённого пилота.
-Вопрос явно передан владельцу; молчание не считается разрешением. Исторические
+следующей работы владелец 05.11.2026 явно выбрал: «Сохранить полный M2; отдельно
+доработать покрытие каталога». Выбор закрыт; новая постановка
+[CAT-COVERAGE-01](catalog-coverage-01.md) сохранена как NOT_STARTED, не исполняется
+внутри этой доработки. Целевой состав, READY/admission не ослабляются. Исторические
 PATH FAIL_PLAN_NOT_READY и PREP-DIAG-01 UNKNOWN не переклассифицируются.
 Main/test остаются2dc98c6 / 2.0.64 (post-cleanup readback ready/active); новый
 CI NOT_RUN, branch local-only, все release flags false. Откат/данные без изменений.
