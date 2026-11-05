@@ -1,6 +1,15 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- Разрешён [PATH-AC02/05-R1](../path-ac02-ac05-release-2068.md):2.0.68 PATCH →
+  push/Ready PR/CI/human review, пока без merge/deploy/активации/paid LLM/рабочей БД.
+  Working ffca29c от main bb3b5cb /2.0.67; preflight + повтор2.0.68 PASS,
+  lint/140 frontend/22 release+CI/115 browser PASS,45 assets,54 code hashes.
+  Активны commit/push/Ready PR/mandatory CI; новый human review NOT_DONE.
+  Точные head/CI после commit передаются в PR без дополнительного status-only commit.
+  Исторические manifests ffca29c не менять ради bump2.0.68, replay на immutable.
+  Неизвестный единичный auth FAIL и PREP-DIAG-01 UNKNOWN сохраняются раздельно.
 - Завершён локальный [PATH-AC02/05](../path-ac02-ac05-coverage.md) от bb3b5cb:
+  Следующие пункты сохраняют состояние предыдущих этапов, не отменяют допуск R1 выше.
   AC02 browser3/real HTTP+PG2 PASS; новый AC05 unknown/disconnected defect
   2 clean before FAIL →17 targeted PASS; полный контроль115 browser PASS,
   frontend140/HTTP+M3 25/lint/build45/idempotency/hash/diff PASS. Первый полный
