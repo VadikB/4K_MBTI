@@ -11,6 +11,34 @@ push/PR/merge/deploy/version bump по-прежнему не разрешены.
 883c025cfa0ea43ad17922bc4818f05a0aaaa62bf02817690a3d07f171cfec06 и отдельная P/M запись.
 PREP-DIAG-01 остаётся отдельно UNKNOWN.
 
+## R1 — выпуск приложения2.0.65 разрешён
+
+05.11.2026 владелец явно ответил «Да, 2.0.65: PR/CI → review → main/test»
+на вопрос о PATCH-выпуске с отдельной границей: публикация/активация программы
+и новый paid PATH не входят. Текущие разрешения: branch_push=true, pr=true,
+version_bump=true (только2.0.65 PATCH), merge=true/deploy=true **после** успешных
+обязательных CI актуального head/base и человеческого review. artifact_publish=false,
+program_activation=false, paid_llm_run=false. Прежние false ниже — история до R1.
+
+План R1: штатный `npm run ready:prepare -- --candidate 2.0.65` со fresh main →
+локальные применимые release-проверки и snapshot/recovery review → commit/push/PR →
+frontend/pytest/full-verification → человеческое review → squash merge/test deploy →
+readback версии/SHA/assets. Нет прямого push main или ручной загрузки runtime файлов.
+Источник runtime38dd551/tested199e7c3 и schema preflightd8ae403 сохранены; payload,
+prompts/admission/repair и published1.1 не меняются. При изменении head/base CI
+повторяется. Слепой downgrade после будущих v2 Cycles не допускается; в этом выпуске
+новая программа не публикуется/не активируется, source receipt остаётся1.1.
+Human review нового PR пока NOT_DONE, CI NOT_RUN. Эти условия не заменяются
+самоотчётом агента. Полный ранее проверенный runtime не переделывается ради выпуска.
+
+R1 preflight PASS: fresh origin/main2dc98c6, подготовлен ровно2.0.65; совпадают
+pyproject/uv.lock/config/index и пересобранный web/dist. Адресные Python111 PASS
+(release/config + snapshot/start/collector/summary), frontend140 PASS, Node47 PASS,
+lint/diff-check PASS. Api/scripts/tests/assessment_definitions/database не менялись
+после d8ae403; backend835/HTTP108/integration217/browser98 на199e7c3 применимы к
+предметной логике. Release/front-end версия дополнительно проверена; обязательный
+CI нового commit всё равно выполняется полностью. Paid LLM0, БД не используются.
+
 ## После передачи38dd551 — читающая сверка рабочей схемы
 
 После объяснения границ владелец ответил «ок спасибо идем дальше»: выполняется

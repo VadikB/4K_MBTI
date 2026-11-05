@@ -1,5 +1,15 @@
 # STATE — PATH-PLAN-DIAGNOSTICS
 
+## R1 — активная подготовка приложения2.0.65
+
+Владелец: «Да, 2.0.65: PR/CI → review → main/test». Разрешены push/PR и PATCH2.0.65;
+merge/deploy только после обязательного CI актуального head/base и человеческого
+review. Публикация/активация программы и paid PATH запрещены этим этапом.
+Ветка codex/path-pilot-start-admission; исходный handoff38dd551, schema sidecard8ae403.
+Активно: release preflight → адресная release проверка → PR/CI. GitHub CLI не
+авторизован; при необходимости PR ведётся через уже открытый браузер, без передачи
+токенов. Human review/CI нового PR пока NOT_DONE/NOT_RUN. Старые статусы ниже — история.
+
 ## Финальный schema preflight05.11 — PASS, без изменений рабочей БД
 
 После handoff38dd551 владелец разрешил продолжить ранее согласованную READ ONLY
