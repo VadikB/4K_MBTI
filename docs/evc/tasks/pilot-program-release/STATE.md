@@ -1,5 +1,18 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- Текущий [PATH-FINAL-AUDIT-01](../path-final-audit.md) после выпуска2.0.68:
+  ветка `codex/path-final-audit` от946a46c; [единая матрица18 AC](../../reports/path-final-audit-2068.md),
+  13 PASS в оговорённом накопленном scope /5 NOT_RUN(06/07/09/10/18), не human acceptance.
+  Whole final-SHA/post-deploy PATH NOT_RUN; новый paid run не разрешён.
+  [PREP review](../prep-diag-01-review.md) завершён по сохранившимся данным,
+  root UNKNOWN/BLOCKED missing primary details, без нового product defect.
+  [AUTH-DIAG-01](../path-auth-diagnostic.md) reproduced:1 opt-in FAIL, lazy resetChat
+  стирает error после401; старый auth114/1 root UNKNOWN/causality NOT_ESTABLISHED.
+  Продукт не менялся; fix отдельно. Offline actual PATH34/11 PASS, unit11+17 PASS.
+  Новые PR/CI/version/merge/deploy/публикация/активация/рабочая БД/LLM не запускались.
+  Main/test946a46c /2.0.68, обязательный CI/deploy/readback завершённого выпуска PASS.
+  [Закрытие PR173](https://github.com/VadikB/4K_MBTI/pull/173#issuecomment-6671510137)
+  — актуальная точка выпуска; нижние прежние WAITING/NOT_DONE/main/test — история.
 - Разрешён [PATH-AC02/05-R1](../path-ac02-ac05-release-2068.md):2.0.68 PATCH →
   push/Ready PR/CI/human review, пока без merge/deploy/активации/paid LLM/рабочей БД.
   Working ffca29c от main bb3b5cb /2.0.67; preflight + повтор2.0.68 PASS,

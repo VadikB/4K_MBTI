@@ -1,0 +1,32 @@
+{
+  "scope": "PATH-START-01/1.3 accumulated evidence audit; not human acceptance",
+  "code_sha": "946a46cb71e5ca5cc99778f036807d6c193188dc",
+  "real_path_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "real_run_id": "2ff983f12c67494b990b0f85284b8d70",
+  "final_sha_whole_path": "NOT_RUN",
+  "post_deploy_whole_path": "NOT_RUN",
+  "overall": "NOT_READY_FOR_COMPLETE_PATH_ACCEPTANCE",
+  "human_acceptance": "NOT_GRANTED_BY_THIS_AUDIT",
+  "new_paid_calls": 0,
+  "working_database_access": false,
+  "rows": [
+    {"id":"AC01","ps":"PS01","status":"PASS","basis":"Real run minimal1/0;34 primary hashes; marker-owned cleanup; unchanged runner11 hashes","remaining":"Not a new final-SHA whole run; see AC18","owner":"technical"},
+    {"id":"AC02","ps":"PS01","status":"PASS","basis":"Real positive org creation plus3 stateful browser and2 actual HTTP/PostgreSQL duplicate regressions","remaining":"SQL auth/list projection synthetic, not a second whole PATH","owner":"technical"},
+    {"id":"AC03","ps":"PS01","status":"PASS","basis":"Exact published specialist_pilot1.2/id2/config11/catalog2/role2 receipt;9 Cases/27 original QA; independent checksum validation","remaining":"No new source human review, CURRENT or normative publication","owner":"product/methodologist"},
+    {"id":"AC04","ps":"PS01","status":"PASS","basis":"Owned real connection and GET/reload; absent questionnaire does not block connection; current entry/readback regressions","remaining":"No working-organization activation","owner":"technical"},
+    {"id":"AC05","ps":"PS01","status":"PASS","basis":"12 fault combinations and2 foreign-org cases;17 targeted; candidate115 browser PASS; real entry/dist/deadline15s/same operation_id","remaining":"HTTP synthetic, not real outages of permanent test","owner":"technical"},
+    {"id":"AC06","ps":"PS02","status":"NOT_RUN","basis":"Real separate admin login/scoped organization PASS; related membership/role scope tests REUSED","remaining":"Exact negative direct program-connect HTTP by ordinary admin plus foreign-org mutation not independently evidenced in selected primary set","owner":"technical: targeted HTTP audit/test"},
+    {"id":"AC07","ps":"PS02","status":"NOT_RUN","basis":"Real confirmed questionnaire; error/loading/retry browser PASS; PostgreSQL confirmation/idempotency test REUSED","remaining":"Exact stale and foreign revision rejection for this confirmation route not independently evidenced in selected primary set","owner":"technical: targeted confirmation regression"},
+    {"id":"AC08","ps":"PS03","status":"PASS","basis":"Participant required fields and specialist_expert in real run;6 options from exact M3 fixture asserted by later browser/source tests","remaining":"5 unavailable roles not enabled or newly admitted","owner":"technical"},
+    {"id":"AC09","ps":"PS03","status":"NOT_RUN","basis":"Real exact assignment/binding positive; HTTP idempotency/replay substitution and non-member denial PASS with fake connection","remaining":"Full assignment double-click/lost-response/reload and real PostgreSQL atomicity/no extra Cycle are not proven by mocked connection alone","owner":"technical: assignment negative integration/browser"},
+    {"id":"AC10","ps":"PS03","status":"NOT_RUN","basis":"HTTP exact errors/no fake rows for invalid program, role, questionnaire; actual positive binding REUSED","remaining":"Real SQL absence of partial records for the complete negative source/scope/questionnaire matrix not independently evidenced here","owner":"technical: negative integration"},
+    {"id":"AC11","ps":"PS04","status":"PASS","basis":"Real own participant context/re-login; owner/foreign profile HTTP+owned SQL and AS foreign-session contracts REUSED","remaining":"AUTH-DIAG-01 is an additional confirmed error-display defect, not evidence of unauthorized access; final-SHA whole run remains AC18","owner":"technical"},
+    {"id":"AC12","ps":"PS04","status":"PASS","basis":"Real acquaintance save/confirm/reload/edit/lost prepare response/two tabs; exact missing-data readiness contracts","remaining":"No assessment answers were entered; whole final-SHA sequence not repeated","owner":"technical"},
+    {"id":"AC13","ps":"PS04","status":"PASS","basis":"Frozen profile before preparation and exact refs; identity-excluding M4 contract tests; source/profile input boundary unchanged","remaining":"Raw full prompts/profile bodies intentionally not exported; privacy proof combines contract/source checks, not independent raw prompt inspection","owner":"technical/methodologist"},
+    {"id":"AC14","ps":"PS04","status":"PASS","basis":"Real20 unique provider operations/repair/tester5/challenger4/admission PASS and final AS; read-only UI action; PREP historical evidence and exporter reviewed","remaining":"PREP-DIAG-01 root UNKNOWN; old lost checks cannot be reconstructed; not a reliability claim for all generations or a new current-SHA LLM run","owner":"technical; new paid diagnostics only after owner decision"},
+    {"id":"AC15","ps":"PS04","status":"PASS","basis":"3 actual SQL lineage tests cover same configuration/different revisions/foreign later job/unknown legacy; CI integration selected existing tests","remaining":"Synthetic schema and rows are explicit negative fixtures, not pre-created whole PATH objects","owner":"technical"},
+    {"id":"AC16","ps":"PS05","status":"PASS","basis":"Actual before-start receipt can_start=true exact admitted binding; LIMITED61/39/22;7200/259200; no start before explicit command","remaining":"Not blanket admission of LIMITED or39 observed indicators","owner":"technical/methodologist"},
+    {"id":"AC17","ps":"PS05","status":"PASS","basis":"Real HTTP201, same saved/presented AS/candidate, Cycle/Session times and0 assessment answers; runner double-click/reload assertions","remaining":"No subsequent scoring, results or current-SHA whole PATH claim","owner":"technical"},
+    {"id":"AC18","ps":"PS01-05","status":"NOT_RUN","basis":"CI/review/deploy946/2.0.68 PASS; current HTML+45 assets;4 widths admin assertions; independent archival PATH replay PASS","remaining":"Whole process on final code and after deploy not run. Real-provider run is e63/2.0.66. Known AUTH-DIAG-01 requires resolution/review before final acceptance","owner":"technical + product owner for scope/run authorization and final acceptance"}
+  ]
+}
