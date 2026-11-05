@@ -19,6 +19,10 @@ if __name__ == '__main__':
     check_port(state['port'])
     env = environment(state)
     env['AGENT4K_PATH29_TEST_APP'] = '1'
+    if state.get('component_plan_fixture'):
+        from tests.browser_component_app import FIXTURE, validate_activation
+        env['AGENT4K_COMPONENT_PLAN_FIXTURE'] = FIXTURE
+        validate_activation(state, env)
     os.chdir(ROOT)
     os.execve(sys.executable, [sys.executable, '-m', 'uvicorn', 'tests.path29_browser_app:app',
         '--host', '127.0.0.1', '--port', str(state['port']), '--no-access-log'], env)

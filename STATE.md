@@ -6,9 +6,22 @@
 merge/deploy только после обязательного CI актуального head/base и человеческого
 review. Публикация/активация программы и paid PATH запрещены этим этапом.
 Ветка codex/path-pilot-start-admission; исходный handoff38dd551, schema sidecard8ae403.
-Активно: release preflight → адресная release проверка → PR/CI. GitHub CLI не
-авторизован; при необходимости PR ведётся через уже открытый браузер, без передачи
-токенов. Human review/CI нового PR пока NOT_DONE/NOT_RUN. Старые статусы ниже — история.
+Release preflight/проверки PASS; ветка отправлена, PR170 открыт через браузер.
+Первый headb75d155: frontend/pytest/integration PASS, browser fast/runtime FAIL
+на старых неподтверждённых LIMITED component-входах. Merge/deploy не выполнялись.
+Tests-only исправление сохраняет downstream-покрытие явной synthetic upstream
+plan-policy границей, не продуктовым допуском; real provider/full PATH исключены.
+Отдельный настоящий assessment browser gate без подстановки: UI block/HTTP409,
+prepared/calendar_deadline=null PASS. Guards+seed-order+start/stages57 Python PASS,
+legacy PATH29 component PASS. Локальный runtime13PASS/2FAIL сохранён; после
+исправления порядка seed (лимит до AS, не новая revision после AS) C1/C2 отдельно2PASS.
+Api/схема/методология/admission/repair не менялись; это harness-only исправление.
+Финальный backend862 PASS; HTTP108 PASS применим (его источники не менялись).
+Ready preflight2.0.65 повторно PASS; owned-БД/контейнер удалены после evidence.
+Новый полный CI выполняется после push исправленного кандидата.
+Evidence: docs/evc/evidence/path-pilot-release-2065/README.md. Далее новый head/full CI
+и человеческое review (пока NOT_DONE). Main2dc98c6/2.0.64 и test этим R1 не изменены;
+свежий deployment readback ещё NOT_RUN. Старые статусы ниже — история.
 
 ## Финальный schema preflight05.11 — PASS, без изменений рабочей БД
 

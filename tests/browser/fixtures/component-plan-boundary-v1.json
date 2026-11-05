@@ -1,0 +1,10 @@
+{
+  "id": "browser-component-plan-boundary/1",
+  "kind": "SYNTHETIC_UPSTREAM_SUBSTITUTION_NOT_HUMAN_OR_PILOT_ADMISSION",
+  "scope": "Only old static browser component fixtures on an explicitly owned disposable stand. Not full PATH, published-pilot, real provider or product runtime.",
+  "catalog": {"id": "e102-controlled", "version": "1.0"},
+  "sources": [
+    {"path": "assessment_definitions/cases/competencies_4k/1.1/case-package.json", "sha256": "6f03b19640cf9dfc0bc6fc80ad7435ef47a1a13076a48e130be1bc6a6dde6527", "case_ids": ["CASE-TDISC-01", "CASE-TDISC-02", "CASE-TDISC-03"]},
+    {"path": "tests/browser/fixtures/sources/character-case-v1.json", "sha256": "754870d8ef1ef550cc40f65a7a4886f5755361d709f10600f4fb7938c082ec47", "case_ids": ["CASE-BROWSER-CHARACTER-01"]}
+  ]
+}

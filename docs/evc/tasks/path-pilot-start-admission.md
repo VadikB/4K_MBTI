@@ -39,6 +39,22 @@ lint/diff-check PASS. Api/scripts/tests/assessment_definitions/database не м�
 предметной логике. Release/front-end версия дополнительно проверена; обязательный
 CI нового commit всё равно выполняется полностью. Paid LLM0, БД не используются.
 
+R1 PR создан: [#170](https://github.com/VadikB/4K_MBTI/pull/170), первый headb75d155,
+base2dc98c6. Quick frontend/pytest и full integration PASS; browser fast/runtime
+FAIL на старых неподтверждённых LIMITED component-входах. Воспроизведено локально.
+Ни merge, ни deploy не выполнялись. Harness-only исправление: явная узкая
+synthetic upstream plan-policy граница для прежних downstream component-сценариев
+и отдельный настоящий assessment UI/HTTP negative gate без подстановки.
+Никакого допуска новой программы, нового runtime fallback или изменения admission.
+[Первичные CI refs и границы](../evidence/path-pilot-release-2065/README.md).
+После нового head обязательный полный CI повторяется; человеческое review ожидается.
+Локальный итог исправления harness: backend862 PASS, HTTP108 PASS применим,
+guards/seed-order/stages57 PASS; legacy PATH29 component1 PASS; runtime13PASS/2FAIL
+сохранён, после исправления порядка коротких time inputs C1/C2 отдельно2PASS.
+Цельный локальный runtime15PASS не заявляется; финальный commit получает полный CI.
+Лимиты задаются до подготовки AS через существующий create_plan, AS revision/time
+проверки не ослаблены. Owned-БД и только task-owned контейнер удалены после evidence.
+
 ## После передачи38dd551 — читающая сверка рабочей схемы
 
 После объяснения границ владелец ответил «ок спасибо идем дальше»: выполняется

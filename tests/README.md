@@ -40,6 +40,12 @@ SQL suite использует **синтетические** записи пр�
 `STAND_ADMIN_URL` на maintenance `postgres` того же owned PostgreSQL; рабочая БД
 из серверного `.env` никогда не является автотестовой БД.
 
+Старые статические browser component-сценарии после нового first-start gate
+используют отдельную **явную синтетическую upstream plan-policy подстановку**,
+не допуск программы: [границы/guards и реальный negative browser gate](browser/README.md).
+Они не заменяют положительную SQL/HTTP проверку пилотного контракта или будущий
+разрешённый paid PATH. В real-provider/full-PATH эта подстановка запрещена.
+
 Бесплатные адресные проверки harness (без БД, credentials и LLM):
 
 ```bash

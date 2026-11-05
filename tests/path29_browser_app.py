@@ -11,6 +11,10 @@ from scripts.test_stand import owned
 with owned(json.loads(Path(os.environ['STAND_STATE']).read_text())):
     pass
 
+if os.getenv('AGENT4K_COMPONENT_PLAN_FIXTURE'):
+    from tests.browser_component_app import install
+    install(json.loads(Path(os.environ['STAND_STATE']).read_text()))
+
 from main import app
 from Api import routes, auth_service as auth_module
 from Api.product_cycle_preparation_queue import product_cycle_preparation_queue
