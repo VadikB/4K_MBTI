@@ -82,3 +82,12 @@ revocation и две concurrent first-start). Полный итог повтор
 кода; эти числа не подменяют final exact-SHA проверку. LLM0, постоянная БД не читалась.
 Старые S10 component fixtures явно подставляют upstream start permission; новая
 SQL suite восстанавливает реальный predicate и отдельно проверяет legacy bypass denial.
+
+Ревью679cc2f: полный integration215PASS/1FAIL — старый10.5/M4 fixture ожидает
+start неподтверждённого LIMITED. Теперь отдельно проверяет реальный409, а только
+два старта для M4/history получают явную SYNTHETIC upstream подстановку, не admission.
+Независимая SQL-регрессия воспроизвела lock timeout на DROP TRIGGER при подключении
+следующей программы с открытым readiness transaction. В normal connect устранён
+schema bootstrap, сохранён existing lifecycle; порядок connection→timing согласован
+с start. Старые callers save_revision по умолчанию не изменены. Новый кандидат
+повторно проходит полный применимый набор; первичный FAIL сохраняется в evidence.

@@ -280,6 +280,10 @@ def connect(connection, *, organization_id: int, program_definition_id: int,
     if current and int(current['program_definition_id']) == program_definition_id:
         return current
     if (program.get('source_refs_json') or {}).get('pilot_plan_admission') is not None:
+        # Same authority order as first start: connection -> timing. No schema
+        # bootstrap/ACCESS EXCLUSIVE locks inside this normal product write.
+        connection.execute("""SELECT id FROM organization_assessment_program_connections
+            WHERE organization_id=%s AND is_current=TRUE FOR UPDATE""", (organization_id,)).fetchall()
         # Explicit program connection is configuration, not runtime fallback.
         # Scope/two values come from the accepted published program; old Cycles
         # retain their own frozen sources. Replay above never reconfigures time.
@@ -291,7 +295,7 @@ def connect(connection, *, organization_id: int, program_definition_id: int,
             assessment_configuration_id=program['assessment_configuration_id'],
             values={name: accepted['timing_basis'][name]
                     for name in ('time_budget_seconds', 'calendar_window_seconds')},
-            created_by=actor_user_id)
+            created_by=actor_user_id, bootstrap_schema=False)
     connection.execute("""UPDATE organization_assessment_program_connections
         SET is_current=FALSE,superseded_at=NOW()
         WHERE organization_id=%s AND is_current=TRUE""", (organization_id,))

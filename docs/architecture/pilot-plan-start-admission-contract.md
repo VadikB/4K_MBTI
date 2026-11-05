@@ -45,6 +45,9 @@ offline команда. В этой задаче CLI не запускается
 точных organization/configuration. Это часть транзакции подключения, не fallback
 при подготовке/старте. Повтор подключения не пересоздаёт revision и не сбрасывает
 время. В этой задаче подключение выполнено только в owned synthetic SQL fixture.
+Подключение использует уже подготовленную схему без вызова DDL; порядок блокировок
+connection→timing согласован с first start. SQL-регрессия удерживает реальный
+readiness transaction открытым во время подключения следующей synthetic программы.
 В API выбора/подключения программы полный admission snapshot заменяется отдельным
 `pilot_plan_ref`; `source_refs_projection=PUBLIC_REFS_NOT_EXECUTION_DEFINITION`
 предупреждает, что это не полный объект для пересчёта definition_checksum.
@@ -112,6 +115,8 @@ first-start gate: legacy/admin точка входа не получает об�
 
 SQL/HTTP tests имитируют принятие плана и LLM-стадии как SYNTHETIC boundary fixtures;
 не подтверждают реальную генерацию/GC, новый human review или итоговый PATH.
-Старые component tests S10 явно подставляют upstream start permission, а отдельные
+Старые component tests S10 и10.5/M4 явно подставляют upstream start permission, а отдельные
 новые SQL tests восстанавливают реальный gate и проверяют start/refusal/конкуренцию.
+10.5 сначала отдельно проверяет фактический отказ неизвестного LIMITED; подстановка
+ограничена двумя стартами для проверки frozen M4/history, не отрицательными правами.
 PREP-DIAG-01 сохраняет историческую причину UNKNOWN независимо от этих изменений.

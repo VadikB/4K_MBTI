@@ -224,6 +224,46 @@ def test_readiness_has_no_bootstrap_or_schema_writes(pilot_db):
         assert ready["can_start"] is True, ready
 
 
+def test_program_connection_does_not_run_ddl_behind_an_open_readiness_transaction(pilot_db):
+    from concurrent.futures import ThreadPoolExecutor
+    factory, cid, _, program_id = pilot_db
+    with factory() as c:
+        old = c.execute("SELECT * FROM assessment_program_definitions WHERE id=%s", (program_id,)).fetchone()
+        roles = [row['role_profile_version_id'] for row in c.execute(
+            "SELECT role_profile_version_id FROM assessment_program_allowed_roles WHERE program_definition_id=%s",
+            (program_id,)).fetchall()]
+        digest = assessment_programs.definition_checksum(code=old['code'], version='synthetic-next',
+            name=old['name'], assignment_ref=old['assignment_ref'], mode=old['mode'],
+            configuration_id=old['assessment_configuration_id'], role_version_ids=roles,
+            catalog_version_id=old['catalog_version_id'], source_refs=old['source_refs_json'])
+        next_id = c.execute("""INSERT INTO assessment_program_definitions(code,version,name,assignment_ref,mode,
+            status,assessment_configuration_id,catalog_version_id,source_refs_json,definition_checksum)
+            SELECT code,'synthetic-next',name,assignment_ref,mode,'draft',assessment_configuration_id,
+                catalog_version_id,source_refs_json,%s FROM assessment_program_definitions WHERE id=%s RETURNING id""",
+            (digest, program_id)).fetchone()['id']
+        c.execute("""INSERT INTO assessment_program_allowed_roles SELECT %s,role_profile_version_id,display_order
+            FROM assessment_program_allowed_roles WHERE program_definition_id=%s""", (next_id, program_id))
+        c.execute("UPDATE assessment_program_definitions SET status='published' WHERE id=%s", (next_id,))
+        c.commit()
+
+    def switch_program():
+        with factory() as c:
+            c.execute("SET LOCAL lock_timeout='2s'")
+            connected = assessment_programs.connect(c, organization_id=10, program_definition_id=next_id,
+                actor_user_id=99, operation_id='synthetic-next-connect')
+            c.commit()
+            return connected['program_definition_id']
+
+    with factory() as reader:
+        assert start_readiness(reader, cycle_id=cid, user_id=99)['can_start'] is True
+        # Keep the actual metadata/readback transaction open, not a mocked lock.
+        # Connecting a new program must not need ACCESS EXCLUSIVE schema locks.
+        with ThreadPoolExecutor(max_workers=1) as workers:
+            assert workers.submit(switch_program).result(timeout=10) == next_id
+        after = start_readiness(reader, cycle_id=cid, user_id=99)
+        assert after['can_start'] is False and after['reasons'] == ['PILOT_PLAN_PROGRAM_SCOPE_MISMATCH']
+
+
 def test_two_concurrent_explicit_starts_present_once_without_resetting_time(pilot_db):
     from concurrent.futures import ThreadPoolExecutor
     from threading import Barrier

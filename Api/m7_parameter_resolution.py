@@ -55,9 +55,12 @@ def _values(value: object) -> dict:
 
 def save_revision(connection, *, source_scope: str, organization_id: int,
                   assessment_configuration_id: int | None, values: dict,
-                  created_by: int, publish: bool = True) -> dict:
+                  created_by: int, publish: bool = True, bootstrap_schema: bool = True) -> dict:
     """Technical write seam; a full administrative editor is intentionally out of scope."""
-    ensure_schema(connection)
+    # A normal program connection runs against the bootstrapped schema. DDL in
+    # that transaction would conflict with an otherwise read-only start readback.
+    if bootstrap_schema:
+        ensure_schema(connection)
     if source_scope not in {"organization", "program"}:
         raise ValueError("M7_PARAMETER_SCOPE_INVALID")
     if (source_scope == "organization") != (assessment_configuration_id is None):
