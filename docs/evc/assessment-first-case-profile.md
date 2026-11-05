@@ -59,7 +59,7 @@ Owner-only файл доступа (`0600`) передаётся через `--e
 Из checkout с реализацией профиля:
 
 ```sh
-/home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python \
+PYTHONPATH=. /home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python \
   scripts/assessment_first_case.py \
   --env-file /home/vadim_bogachev/projects/Agent4K-Test/.env \
   --python /home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python \
@@ -102,7 +102,11 @@ env-файла и открытия БД. Значения проверяются
 В `functional-diagnostic` эти параметры запрещены. Рецепт proposed1.2 не является
 published source receipt и не заменяет его. Разрешение публикации1.2 не разрешает
 paid PATH или подключение существующих организаций. Это проверенный offline
-selector; бесплатный bootstrap именно этих published bytes и новый PATH ещё NOT_RUN.
+selector. Бесплатный bootstrap именно этих published bytes выполнен:
+`PASS_BOOTSTRAP_ONLY`, run `5d4f68db1fae48bf9c82be26b2bee390`, minimal counts1/0,
+точные источники и cleanup PASS; [evidence](evidence/pilot-program-1.2-bootstrap/remote-result.json).
+Новый PATH ещё NOT_RUN. Первая операционная попытка без `PYTHONPATH=.` остановилась
+до preflight/БД; после исправления команды выполнен один actual bootstrap, без LLM.
 
 Выбранные version/id/code/assignment/status/config/catalog/definition checksum
 передаются в state/run; точные байты сохраняются с fsync/readback в

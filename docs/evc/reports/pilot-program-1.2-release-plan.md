@@ -8,7 +8,11 @@ exact receipt independent validation PASS. Backend908 PASS.
 [Полный итог](../tasks/pilot-program-release-preparation.md) и
 [первичный readback](../evidence/pilot-program-publication-execution/publication-result.json).
 Подключений1.2 —0; activation/retirement/paid PATH нет. Free bootstrap именно нового
-published receipt ещё NOT_RUN; следующее разрешение paid run остаётся отдельным.
+published receipt теперь **PASS_BOOTSTRAP_ONLY**, run5d4f68db…; exact sources/minimal
+counts/cleanup/повторная offline summary PASS.110 unit PASS. Первая операционная
+попытка без PYTHONPATH остановилась до БД и сохранена; исправлена только команда.
+Следующее разрешение paid run остаётся отдельным; исполнение из чистого checkout
+того же e63, не из deploy checkout с сохранёнными untracked assets/env-backup.
 Ниже сохранён исторический проект3385145/f211e71; его прежние PENDING/BLOCKED
 не являются текущим статусом публикации и не подменяют новый exact receipt.
 

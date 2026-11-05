@@ -1,0 +1,14 @@
+{
+  "exit_code": 0,
+  "stdout_sha256": "f61210e9ea184df01f0a1a7e4755f91926864606d0a73956f8981e05c69e3193",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "safe_stdout_lines": [
+    "Created empty owned stand: product4k_pytest_5d4f68db1fae48bf9c82be26b2bee390 application_tables=0",
+    "bootstrap ready",
+    "PATH-START exact published nine-case mirror ready; only synthetic superadmin pre-created",
+    "Owned stand removed",
+    "PASS bootstrap_repeat; sources verified; LLM_CALLS=0; owned database removed"
+  ],
+  "raw_output_not_exported": true,
+  "invocations": 1
+}

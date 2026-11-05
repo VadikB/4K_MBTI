@@ -39,6 +39,13 @@ receipt публикации. Подробности в [профиле](../docs
 Saved exact bytes и program refs перепроверяются после cleanup в summary.
 Согласование нового selector не разрешает publication/активацию/paid run.
 
+Actual published receipt1.2 проверен существующим `--check-bootstrap` на test
+e63eba6 /2.0.66: **PASS_BOOTSTRAP_ONLY**, новая owned-БД и marker-guarded cleanup,
+минимальные counts1/0,9 Cases/27 исходных QA, LLM0.
+[Первичные evidence](../docs/evc/evidence/pilot-program-1.2-bootstrap/remote-result.json).
+Команда из repo root требует `PYTHONPATH=.`; это исправлено в профиле. Bootstrap
+не доказывает новый human review/качество AS, first start или полный PATH.
+
 Бесплатные SQL-регрессии самого release seed:
 
 ```sh

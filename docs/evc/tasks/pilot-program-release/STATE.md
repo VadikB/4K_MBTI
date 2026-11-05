@@ -2,7 +2,7 @@
 
 - Текущая неизменяемая база runtime: `e63eba67d77fb73f7fb9bb219bc3fe5d3807a909` /2.0.66.
   PR171 принят/merged/deployed; [release closure](https://github.com/VadikB/4K_MBTI/pull/171#issuecomment-6660961795).
-- Текущая ветка: `codex/pilot-program-publication`; локальный read-only preflight,
+- Текущая ветка: `codex/pilot-program-publication`; publication/readback/free bootstrap,
   не продолжение закрытой remote-ветки PR171. Подготовка f211e71 и harness bd2af6d/a60200d сохранены.
 - Завершено: offline рецепт1.2/checksum, паспорт выпуска/run, 72 unit PASS,
   оба CLI help exit0, воспроизведение SEED-01 без SQL, найден browser pin1.1.
@@ -48,9 +48,26 @@
 - Полный [набор evidence](../../evidence/pilot-program-publication-execution/verification.json),
   [исторический preflight](../../evidence/pilot-program-publication-preflight/readback.json),
   [прежний операционный проект](../../evidence/pilot-program-publication-preflight/operations-proposal.json).
-- Следующий шаг: free bootstrap этих published bytes через full selector на новой
-  owned-БД; затем отдельное разрешение одного paid PATH. Ни bootstrap1.2, ни новый
-  paid PATH пока не выполнены; результат первой AS/start/0 ответов не заявляется.
+- Free bootstrap actual published1.2 завершён: **PASS_BOOTSTRAP_ONLY**, process exit0,
+  run `5d4f68db1fae48bf9c82be26b2bee390`, каталог9 Cases/27 original QA;
+  users1, organizations/memberships/assignments/profiles/cycles0. Exact receipt bytes
+  сохранены до cleanup, completion/provenance hash связаны; после cleanup offline
+  summary и независимый CHECK PASS. Owned DB/state отсутствуют, active connections0.
+  [Результат](../../evidence/pilot-program-1.2-bootstrap/remote-result.json),
+  [cleanup readback](../../evidence/pilot-program-1.2-bootstrap/server-evidence/bootstrap/cleanup-readback.json).
+- Первая попытка: ModuleNotFoundError:tests до preflight/БД из-за отсутствия
+  PYTHONPATH в моей операционной команде. Сохранены исходный launcher/exit1/диагностика;
+  исправлено только окружение команды и описание профиля, не runtime/admission.
+- Адресные harness/source/summary/ownership unit110 PASS. Runtime sources e63 неизменны;
+  прежние908 backend и29 SQL применимы к тем же файлам, заново не выдаются за новые.
+- Server tracked clean/11 runtime file hashes равны e63. Но полный status НЕ clean:
+ 1203 прежних untracked web/dist assets и1 env-backup path; содержимое backup не читалось,
+  файлы не удалялись/перемещались. Bootstrap не использует web/dist. Перед paid PATH —
+  отдельный чистый execution checkout того же SHA; не cleanup deploy checkout.
+- Следующий шаг требует отдельного разрешения **одного** paid PATH: fresh read-only
+  status/preflight, exact1.2 selector, чистый execution checkout e63, новая owned-БД,
+  штатные generation/tester/challenger/repair и gate; при допуске start/AS/0 ответов,
+  при отказе evidence и остановка без платного повтора. Paid PATH пока NOT_RUN.
 - PREP-DIAG-01: UNKNOWN, отдельный продуктовый остаток.
 - Полная задача: [pilot-program-release-preparation.md](../pilot-program-release-preparation.md).
 - Паспорт: [pilot-program-1.2-release-plan.md](../../reports/pilot-program-1.2-release-plan.md).

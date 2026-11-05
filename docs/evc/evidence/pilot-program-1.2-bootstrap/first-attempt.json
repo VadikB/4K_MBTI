@@ -1,0 +1,23 @@
+{
+  "launcher_sha256": "d136c70fb28c4ad0c402df3976ee5d85814436d5a79bf44eced758439a9e0ae6",
+  "exit_code": 1,
+  "remote_result": {
+    "process_exit_code": 1,
+    "directory": "/home/vadim_bogachev/evidence/path-pilot-1.2-bootstrap-4py6fs6k",
+    "summary_result": "UNAVAILABLE",
+    "runs": [],
+    "files": [
+      {
+        "name": "launch-guard.json",
+        "bytes": 1504,
+        "sha256": "37606c265c96b31cb0d6a5ea7d9dfcbb97da448156b917c997d8e97bcdde4935"
+      },
+      {
+        "name": "process-invocation.json",
+        "bytes": 277,
+        "sha256": "2f91331c124b1bd043e23e65339fcaf322559eb0230eb85c1a1320a9280ad7b7"
+      }
+    ]
+  },
+  "result": "NOT_PASS_STOPPED_BEFORE_PREFLIGHT_OR_RUN_JSON"
+}

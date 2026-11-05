@@ -1,5 +1,80 @@
 # PATH-PILOT-PROGRAM-01 — подготовка выпуска программы
 
+## Бесплатный bootstrap опубликованной1.2 — завершён05.11.2026
+
+Входящая база ветки `b6b9f365bd080d3fe627fb20c3bbdb41ee1dcf3f`; пользователь
+ответил «делаем» именно на бесплатный bootstrap нового receipt. Scope/исключения —
+[owner-decision](../evidence/pilot-program-1.2-bootstrap/owner-decision.json).
+Повторно использованы неизменённые README/CONTRIBUTING/EVC workflow/matrix/recipe,
+принятый P/M/T1, профиль1.1 и sources e63. Адресно прочитаны полный runner,
+seed/source collector/loader и existing bootstrap SQL tests. Нового runtime,
+предметного допуска, product rule или опубликованного источника не вводилось.
+
+Факт: **PASS_BOOTSTRAP_ONLY**, process exit0, run `5d4f68db1fae48bf9c82be26b2bee390`.
+Evidence directory UUID `4ba078c5e16040c4bdfaa3ae1d927d88` — отдельный технический ID,
+не run_id. Новая БД `product4k_pytest_5d4f68db1fae48bf9c82be26b2bee390` создана
+пустой (application tables0), bootstrap/minimal seed выполнены существующим механизмом.
+Source — exact published1.2/id2, receipt SHA256 `09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b`.
+Сохранены9 Cases/27 original QA, snapshot и source checksums, synthetic human_review
+не подставлялся. Это повторное использование исходных QA, не новый human review.
+SQL seed проверил users1, organizations/memberships/assignments/profiles/cycles0.
+Preparation/AS/start/оценочные ответы не создавались; provider operations0.
+
+Точная команда/окружение —
+[launch guard](../evidence/pilot-program-1.2-bootstrap/server-evidence/bootstrap/launch-guard.json),
+safe stdout/exit —[invocation](../evidence/pilot-program-1.2-bootstrap/server-evidence/bootstrap/process-invocation.json).
+Machine preflight READY, profile `assessment-first-case/1.1`, runtime e63/2.0.66.
+Первичная неуспешная попытка **не скрыта**: exit1, `ModuleNotFoundError:tests`,
+пустой stdout, до preflight/БД из-за пропущенного мной `PYTHONPATH=.` в операционном
+launcher. Отдельный read-only preflight-only воспроизвёл ту же ошибку/хеш stderr.
+Сохранены [первая попытка](../evidence/pilot-program-1.2-bootstrap/first-attempt.json),
+initial launcher и безопасные traceback refs. Исправлено окружение команды и
+документация профиля; runtime/harness/admission не менялись. Это не причина
+PREP-DIAG-01 либо содержательного отказа AS. После исправления — один actual bootstrap.
+
+До штатного destroy сохранены run/source-provenance и fsync/readback exact source bytes;
+после него — completion с hash provenance, process-result и runner-result.
+Все refs/exit/completion/hash перепроверены после удаления: aggregate PASS содержит
+ровно один **PASS_BOOTSTRAP_ONLY**, а не browser/PATH PASS. Дополнительный maintenance
+[readback](../evidence/pilot-program-1.2-bootstrap/server-evidence/bootstrap/cleanup-readback.json)
+подтвердил DB/state absent и active connections0; DROP без FORCE, marker verified.
+Working DB не использовалась тестом, постоянные program/connections/schema не менялись
+этой операцией. Env settings только в памяти для explicit localhost55432 maintenance,
+секреты/state/сырой stderr не экспортированы.
+
+Архив16 первичных JSON скопирован побайтово:142887 bytes,
+SHA256 `65ce025b2df4c3e9d64f30c10602d519f84e3146400d0ebe9c8ce6a33b6a2c12`.
+Сервер: `/home/vadim_bogachev/evidence/path-pilot-1.2-bootstrap-x12etu58`.
+Локальные сохранённые bytes/manifest совпали. Независимый offline
+[CHECK.py](../evidence/pilot-program-1.2-bootstrap/CHECK.py) повторил настоящий summary
+на локальной копии:16 files/11 runtime source bytes/initial counts/QA/checksums/cleanup PASS;
+socket/DB/LLM0. Disabled assertions `-O` отвергнуты. Адресные pytest
+first-case/source/summary/test_stand —**110 PASS**,12.71s; полный908 backend и29 SQL
+из b6b9f36 переиспользуются только для неизменённых runtime/test sources.
+Новый полный CI/интеграционный набор/browser/LLM здесь NOT_RUN: нет runtime change,
+нового PR или допуска paid PATH. Bootstrap сам является проверенным реальным
+isolated lifecycle; не подменяется ранее синтетической future metadata fixture.
+
+Ограничение identity: tracked source чист и exact runtime hashes равны e63, но
+deploy checkout целиком **не clean** —1203 прежних untracked web/dist assets и
+один env-backup path. Backup не открывался, ни один файл не удалён/перемещён.
+Bootstrap не использует dist; для следующего paid PATH нужен отдельный чистый
+execution checkout e63 с теми же pinned files, а не очистка рабочего deploy checkout.
+CI/main/test остаются прежними: PR171 PASS, main/test e63eba6 /2.0.66,
+deploy42047619768 PASS, нового push/PR/merge/deploy нет. Локальная ветка содержит
+только docs/evidence продолжения; итоговый SHA — в Git и handoff пакете.
+
+Следующий шаг: отдельное разрешение одного paid PATH после fresh read-only
+status/preflight и чистого checkout, только в новой owned-БД с exact1.2 selector.
+На допуске — explicit start/первая AS/server readback/0 ответов; на отказе — точные
+checks/lineage/evidence и остановка без платного повтора. Не менять prompts/admission/
+repair, не активировать существующие организации. Исторический ориентир20 provider
+operations/около1.505 млн tokens — не потолок и не новое разрешение расхода.
+PREP-DIAG-01 остаётся **UNKNOWN**. Сама бесплатная проверка завершена, paid PATH NOT_RUN.
+Откат этого шага — только собственные docs/evidence; повторный DB destroy не нужен,
+marker-owned DB уже отсутствует. Значимые стоп-условия для текущего free scope сняты;
+расход LLM/активация/новые release-действия остаются за его границей.
+
 ## Текущий итог: публикация выполнена — 05.11.2026
 
 Владелец ответил «идем дальше» на конкретные три шага:1.2/publisher4, бесплатная
@@ -61,7 +136,7 @@ Default fixture1.1 не заменялся; программе/receipt ново�
 | Повторить свежий preflight | Точный scoped schema/source/publisher/version PASS | Не проверка всей БД или всех функций продукта |
 | Опубликовать новую программу | ID2, published, checksum/snapshot точны, один CLI call | Не подключение существующих организаций |
 | Экспортировать точные источники |229612 bytes, independent loader/checksum PASS | Не новый human review и не приёмка качества AS |
-| Подготовить следующий PATH | Профиль/README содержат полный exact selector; harness уже в main2.0.66 | Free bootstrap этих published bytes ещё NOT_RUN; paid run требует отдельного разрешения |
+| Подготовить следующий PATH | Профиль/README содержат полный exact selector; harness уже в main2.0.66; actual bootstrap1.2 PASS_BOOTSTRAP_ONLY (см. продолжение выше) | Paid run требует отдельного разрешения и чистого execution checkout |
 
 Полный M2=61 сохранён; принятый план39/22 вне,55 условий, маршрут и7200/259200
 не менялись. Новая программа хранит ранее принятый exact P1–P3/M1–M4 snapshot;
@@ -91,10 +166,10 @@ ID/checksum, при отсутствии любых подключений, ко
 проверенном решении при необходимости. Автоматический откат не запускался.
 Исторический операционный проект не обещает обратного unretire.
 
-Следующий минимальный шаг — бесплатный bootstrap1.2 с полным selector на новой
-owned-БД. После него отдельное решение владельца об одном paid PATH с остановкой
-при содержательном отказе, без повторов/изменения правил. В этой операции PATH NOT_RUN;
-приёмка первой AS/старта/0 ответов пока не заявляется.
+Бесплатный bootstrap1.2 с полным selector на новой owned-БД выполнен в продолжении
+выше. Следующее решение владельца — один paid PATH из чистого execution checkout
+с остановкой при содержательном отказе, без повторов/изменения правил.
+PATH NOT_RUN; приёмка первой AS/старта/0 ответов пока не заявляется.
 
 ## Историческое продолжение после выпуска harness — 05.11.2026
 

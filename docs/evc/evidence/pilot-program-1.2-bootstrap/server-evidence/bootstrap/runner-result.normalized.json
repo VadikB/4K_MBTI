@@ -1,0 +1,55 @@
+{
+  "profile": "assessment-first-case/1.1",
+  "scope": "synthetic_diagnostic",
+  "process_exit_code": 0,
+  "exit_code": 0,
+  "result": "PASS",
+  "runs": [
+    {
+      "run": {
+        "run_id": "5d4f68db1fae48bf9c82be26b2bee390",
+        "database": "product4k_pytest_5d4f68db1fae48bf9c82be26b2bee390",
+        "scope": "bootstrap_repeat",
+        "program_source": "published-pilot",
+        "published_release_ref": {
+          "path": "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json",
+          "sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+          "program": {
+            "id": 2,
+            "code": "specialist_pilot",
+            "version": "1.2",
+            "assignment_ref": "specialist-pilot",
+            "status": "published",
+            "definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+            "assessment_configuration_id": 11,
+            "catalog_version_id": 2
+          }
+        },
+        "llm_calls": 0
+      },
+      "cleanup": {
+        "run_id": "5d4f68db1fae48bf9c82be26b2bee390",
+        "database": "product4k_pytest_5d4f68db1fae48bf9c82be26b2bee390",
+        "owner_verified": true,
+        "database_absent": true,
+        "state_absent": true,
+        "force": false
+      },
+      "result": "PASS_BOOTSTRAP_ONLY",
+      "completion": {
+        "run_id": "5d4f68db1fae48bf9c82be26b2bee390",
+        "status": "completed",
+        "exit_code": 0,
+        "receipt_file": "source-provenance.json",
+        "receipt_sha256": "7e9a96c67e284cdf4be4ab4797b24f21c04ed92b8e3af6a12f94e9610a944d3d"
+      },
+      "process_exit_code": 0,
+      "validation_errors": [],
+      "evidence_directory": "/home/vadim_bogachev/evidence/path-pilot-1.2-bootstrap-x12etu58/4ba078c5e16040c4bdfaa3ae1d927d88",
+      "failure": null,
+      "provider_completed_requests": 0,
+      "provider_completions": [],
+      "usage_note": "Receipt totals count unique retained operations; JSON retries have separate completions, but earlier malformed-response usage is not retained by product trace."
+    }
+  ]
+}
