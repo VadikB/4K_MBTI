@@ -1,5 +1,62 @@
 # PATH-PILOT-PROGRAM-01 — подготовка выпуска программы
 
+## Продолжение после выпуска harness — 05.11.2026
+
+Исторический отчёт ниже относится к3385145/f211e71, не подменяет дальнейшие решения.
+По «идем дальше» выполнен бесплатный read-only preflight на main/test
+e63eba67d77fb73f7fb9bb219bc3fe5d3807a909 /2.0.66. Профиль/runner уже в main;
+повторно не создаются. [Актуальное состояние](pilot-program-release/STATE.md).
+
+Прочитаны текущий паспорт, publisher/source-export/schema collector и compare,
+program lifecycle/binding, contract docs/architecture/pilot-plan-start-admission-contract.md,
+существующие retirement/first-start SQL tests. Неизменённые README/CONTRIBUTING/EVC
+recipe/matrix/context/Registry/Change01 повторно использованы из выполненного выпуска.
+Нового смысла M2/плана/P1–P3/M1–M4, API, runtime, prompt или repair нет.
+
+Свежая схема EXACT_SCOPED_SCHEMA_MATCH; все шесть однотипных source objects1.1
+(program/configuration/catalog/roles/cases/artifact_readback) совпали с историческим
+receipt. Девять Cases,27 исходных QA и15 пересчитанных artifacts без изменений.
+1.2 свободна; checksum кандидата b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718.
+Publisher user_id4 технически является configured superadmin без suppression,
+но полномочие на новую публикацию ожидает решения владельца. Новых PII не выгружали:
+email использован только внутри SQL boolean-проверки, в evidence лишь ID/два bool.
+
+Две отдельные транзакции read-only с rollback: существующий READ_SCHEMA и exact
+collect(program_version='1.1') через прямой psycopg с default_transaction_read_only=on,
+repeatable read/timeouts. .env/ключи не печатались; ensure/bootstrap/publish не вызывались.
+Рабочая БД не менялась; новых test DB/cleanup/LLM нет. Первичный
+[readback](../evidence/pilot-program-publication-preflight/readback.json) сохранён полностью.
+Offline проверки collector/source/builder и ссылки/diff выполняются на этом evidence;
+старые historical VERIFY не ослабляются и не запускаются как current harness proof.
+
+Блокеры до исполнения: утверждение номера1.2, назначение publisher4 и разрешение
+публикации только новой ProgramDefinition; отдельное решение по
+[операционной процедуре retirement](../evidence/pilot-program-publication-preflight/operations-proposal.json).
+Существующий переход/запреты подтверждены прежним CI171, но готового retire CLI нет;
+новый guarded administrative SQL ещё не объявлен проверенной командой. При выборе
+этой процедуры сначала бесплатная изолированная регрессия guard-предикатов/immutability,
+и лишь при её PASS и свежем preflight возможна разрешённая публикация. Если quiescence,
+отсутствие подключений или exact refs не доказаны — STOP без записи/самовольного отката.
+
+Флаги этого продолжения: branch_push=false,pr=false,merge=false,deploy=false,
+version_bump=false,artifact_publish=false,paid_llm_run=false,permanent_database_write=false.
+Локальная ветка codex/pilot-program-publication от e63eba6; main и три пользовательских
+untracked файла не затронуты. Откат подготовки — отдельный revert только docs/evidence;
+не published1.1/снимков. Paid PATH/активация существующих организаций — отдельные разрешения.
+PREP-DIAG-01 по-прежнему UNKNOWN, не связан агентом с coverage/harness.
+
+Проверка evidence: `CHECK.py` и `REGRESSION.py` — PASS; однотипные source hashes
+пересчитаны по свежим/историческим JSON,15 artifacts и candidate checksum проверены
+независимо; локальные docs links,11 negative mutations и fail-closed при `-O`.
+Прежний schema CHECK —1 positive/11 schema mutations/4 unsafe records PASS.
+Первая inline проверка имела TypeError в setup запретительного socket stub (function
+мешала ssl subclass); исправлена только проверка на NoSocket subclass, не продукт
+или harness. Точные команды/stdout/exit и ограничения —
+[verification.json](../evidence/pilot-program-publication-preflight/verification.json).
+Полный backend/новый CI не повторялся: runtime/артефакты/потребители не менялись.
+
+## Историческая подготовка на3385145/f211e71
+
 05.11.2026. Статус: PREPARED_WITH_EXECUTION_BLOCKERS. Только docs/evidence;
 не публикация, не изменение runtime и не итоговый PATH.
 
