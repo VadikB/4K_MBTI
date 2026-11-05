@@ -1,0 +1,38 @@
+{
+  "result": "PASS_SYNTHETIC_SQL_NOT_PATH_NOT_LLM_ADMISSION",
+  "scope": "owned test/pytest database; synthetic plan acceptance and LLM stage records",
+  "new_provider_calls": 0,
+  "full_m2": 61,
+  "planned_targets": 39,
+  "outside_plan": 22,
+  "before_start": {
+    "contract": "m7_start_readiness/1",
+    "can_start": true,
+    "reasons": [],
+    "cycle_id": "b6b8625d-f476-458e-ab27-ef6d5d65db82",
+    "plan_revision_id": "2803f457-3e76-44aa-a812-26a440a9c6a0",
+    "plan_checksum": "e9b3a69f9ef14a7b99bfbf114358b479aa9deaeaac19c5a4ec3c21ecd73d1856",
+    "coverage_status": "LIMITED",
+    "preparation_operation_id": "synthetic",
+    "pilot_admission": {
+      "snapshot_checksum": "05962e3fb9637732337366a996e834c0a60bab3dcc65d5e8a317fabf7689d0cd",
+      "proposal_checksum": "453b26241f5211893e060d55f5c95654fc3320babb0ae8c5178d613a4f7551a9",
+      "human_decision_id": "SYNTHETIC-SQL-PM",
+      "binding_checksum": "607c1ab38bd0c938e4cd9394ec00c253ad7ef9776049bbf3a3f82ac96bb46a07",
+      "program_ref": {
+        "id": 1,
+        "code": "synthetic-pilot",
+        "version": "1.1",
+        "checksum": "06153b9d0f70cd32a4ecffeb53f373c789aec34217265f901ac797d4aea96911",
+        "connection_id": 1
+      }
+    },
+    "assessment_situation_id": "91922141-ed39-4ed6-a6b7-f7a9c2969a4a",
+    "as_snapshot_checksum": "2e8a2c07505090269fe645853562b57717977f1ab590c0edc10d80ebb65adee4",
+    "profile_checksum": "1676a02201bcdef3ab709ea6b0439317215932a68fe99038d0a63fa455687363"
+  },
+  "before_started_at": null,
+  "after_started_at": "2026-11-05 11:03:08.603031+00:00",
+  "presented_as": "91922141-ed39-4ed6-a6b7-f7a9c2969a4a",
+  "assessment_answers": 0
+}

@@ -1,5 +1,26 @@
 # STATE — PATH-PLAN-DIAGNOSTICS
 
+## PATH-PILOT-02 — локальная реализация и проверка завершены
+
+Код679cc2f + исправление ревью199e7c351a2d985c0173f845574c4de5dc80775a.
+Для199e7c3 backend835/HTTP108/integration217 PASS; адресные SQL18 PASS, browser98 PASS.
+Frontend140/receipt46/persistence1/lint/build/dist PASS переиспользуются с679cc2f:
+git diff подтверждает byte-identical frontend/Node consumers. Первичные логи/JUnit,
+readbacks и cleanup: docs/evc/evidence/path-pilot-start-admission. Owned контейнер
+33e6f86… штатно удалён после сохранения/проверки evidence, tmpfs test data удалены.
+Собственная .venv-ссылка убрана, общий root .venv сохранён.
+На ревью воспроизведён и исправлен DDL lock timeout в connect; старый10.5/M4 fixture
+теперь сначала проверяет реальный отказ, затем явно подставляет upstream permission
+только для M4 component starts. Полный gate проверяется отдельной SQL suite без подмены.
+Сверка схемы серверной Agent4K-Test/.env разрешена только READ ONLY и по указанию
+владельца отложена до финального pre-merge. Сейчас рабочая БД не читалась/не менялась.
+Публикация/активация/paid PATH/push/PR/merge/deploy не выполняются; CI NOT_RUN,
+main/test по последнему наблюдению2dc98c6/2.0.64. Старые снимки/QA/M0–M8 сохранены.
+Отчёт: docs/evc/reports/path-pilot-start-admission.md. Реализация T1 передана локально;
+следующий зависимый шаг R1/согласование выпуска и CI, затем публикация и отдельно
+разрешённый платный PATH. Не считать автоматическим разрешением этих действий.
+Ниже история реализации и промежуточных проверок.
+
 ## PATH-PILOT-02 — активная локальная реализация T1
 
 Владелец: «принимаем идем дальше» после передачи T1/запроса реализации.

@@ -1,0 +1,41 @@
+{
+  "task": "PATH-PILOT-02",
+  "result": "PASS_LOCAL_SYNTHETIC_CONTRACTS_NOT_PATH",
+  "tested_sha": "199e7c351a2d985c0173f845574c4de5dc80775a",
+  "checks": [
+    {"command": "npm run test:backend -- --tb=short --junitxml=backend-final.xml", "exit_code": 0, "passed": 835, "deselected": 331, "junit": "backend-final.xml"},
+    {"command": "npm run test:backend:http -- --tb=short --junitxml=http-final.xml", "exit_code": 0, "passed": 108, "deselected": 12, "junit": "http-final.xml"},
+    {"command": ".venv/bin/python -m pytest --run-integration -m 'integration and not llm' --tb=short --junitxml=integration-final.xml", "exit_code": 0, "passed": 217, "deselected": 949, "junit": "integration-final.xml"},
+    {"command": "npx playwright test tests/browser/auth-r03.spec.mjs", "exit_code": 0, "passed": 98, "log": "browser-final.log"},
+    {"command": "node --test tests/frontend/*.test.mjs", "exit_code": 0, "passed": 140, "log": "frontend.log", "reused_from_sha": "679cc2f116a0db46bfd78a3bff527331c2cb5d03", "consumers_unchanged": true},
+    {"command": "node --test tests/unit/test_assessment_preparation_receipt.mjs", "exit_code": 0, "passed": 46, "log": "frontend.log", "reused_from_sha": "679cc2f116a0db46bfd78a3bff527331c2cb5d03", "consumers_unchanged": true},
+    {"command": "node --test tests/unit/test_assessment_receipt_file.mjs", "exit_code": 0, "passed": 1, "log": "receipt-persistence.log", "consumers_unchanged": true},
+    {"command": "npm run lint:js && npm run build:web && git diff --exit-code -- web/dist && git diff --check", "exit_code": 0, "log": "frontend.log", "reused_from_sha": "679cc2f116a0db46bfd78a3bff527331c2cb5d03", "consumers_unchanged": true},
+    {"command": "targeted integration: pilot_start_admission + m7_parameter_resolution + profile_to_m4_owned_stand", "exit_code": 0, "passed": 18, "log": "connection-lock-fixed-targeted.log"}
+  ],
+  "test_environment": {
+    "TEST_DATABASE_URL": "postgresql://pytest@127.0.0.1:55772/product4k_pytest_pilot_t1_8ac4c319",
+    "STAND_ADMIN_URL": "postgresql://pytest@127.0.0.1:55772/postgres",
+    "DB_HOST": "127.0.0.1",
+    "DB_PORT": "55772",
+    "DB_NAME": "product4k_pytest_unused_pilot_t1",
+    "DB_POOL_MIN_SIZE": "0",
+    "DEEPSEEK_BASE_URL": "explicitly unset for frozen provider contract compatibility",
+    "empty_keys": ["DEEPSEEK_API_KEYS", "DEEPSEEK_API_KEY", "DEEPSEEK_API_KEY_2", "DEEPSEEK_API_KEY_3"],
+    "working_env_file_used": false,
+    "new_provider_calls": 0
+  },
+  "sql_start_proof": "server-readback.json",
+  "sql_start_proof_scope": "SYNTHETIC plan acceptance and provider-stage records; actual SQL gate/start/time/presentation; not LLM quality or human review",
+  "prior_failures": [
+    {"result": "3 failed / 832 passed", "cause": "mistaken loopback provider endpoint override in command; corrected without product contract changes"},
+    {"result": "61 passed / 8 failed / interrupted exit2", "cause": "missing explicit maintenance URL plus mistaken endpoint override"},
+    {"result": "215 passed / 1 failed", "log": "integration-corrected.log.gz", "cause": "legacy M4 component expected start for unapproved LIMITED; now real refusal asserted before explicit synthetic component substitution"},
+    {"result": "1 failed", "log": "connection-lock-reproduction.log", "cause": "reproduced DDL lock timeout behind open readiness transaction; fixed and regressed"}
+  ],
+  "known_warning": "existing Starlette TestClient httpx deprecation; JS MODULE_TYPELESS_PACKAGE_JSON / NO_COLOR warnings",
+  "ci": "NOT_RUN",
+  "working_database_schema_check": "DEFERRED_READ_ONLY_PRE_MERGE",
+  "paid_path": "NOT_RUN",
+  "historical_prep_diag_01_root_cause": "UNKNOWN"
+}

@@ -2,9 +2,10 @@
 
 05.11.2026. Задача: [PATH-PILOT-02](../tasks/path-pilot-start-admission.md).
 Это локальная реализация и бесплатные проверки, **не выпуск и не PATH PASS**.
-Кандидат реализации: `679cc2f116a0db46bfd78a3bff527331c2cb5d03`;
-итоговое ревью/проверка подключения ещё выполняются. Точный handoff SHA фиксируется
-после завершения проверки и обновления этого отчёта.
+Проверенный кандидат реализации: `199e7c351a2d985c0173f845574c4de5dc80775a`
+(основной код679cc2f + исправление ревью). После него меняются только STATE/docs/evidence;
+код, тесты, артефакт и web/dist побайтово прежние. Точный handoff SHA — HEAD
+документальной передачи, отдельно указан в Handoff.json доступного пакета.
 
 ## Результат и прослеживаемость
 
@@ -43,17 +44,22 @@ ProgramDefinition может включить snapshot. `specialist_pilot@1.1`, 
 
 ## Проверки и их применимость
 
-На679cc2f: backend835 PASS/330deselected; HTTP108 PASS/12deselected;
-frontend140 PASS, receipt46 PASS, persistence1 PASS; browser12 PASS;
-lint/build/dist equality/diff-check PASS. Полный integration на этом кандидате:
-215PASS/1FAIL — legacy10.5/M4 fixture ожидал start неподтверждённого LIMITED.
+На199e7c3: backend835 PASS/331deselected, HTTP108 PASS/12deselected,
+**полный integration217 PASS/949deselected**, browser98 PASS. Адресные SQL18 PASS.
+Frontend140 PASS, receipt46 PASS, persistence1 PASS, lint/build/dist equality PASS
+переиспользуются с679cc2f: соответствующие consumer files и web tree не менялись,
+проверено Git diff. Известные предупреждения Starlette/httpx и Node не скрыты.
+Полный integration на промежуточном679cc2f:215PASS/1FAIL — legacy10.5/M4 fixture ожидал start неподтверждённого LIMITED.
 Реальный409 сохранён как отдельный assert; два M4 component старта теперь явно
 SYNTHETIC upstream permission.
-Все успешные команды и первичные логи/JUnit должны войти в handoff package.
+Команды/параметры: [verification.json](../evidence/path-pilot-start-admission/verification.json).
+Первичные логи/JUnit, server readback и export/cleanup receipts сохранены рядом
+и входят в handoff package. Результаты проверены не по наличию файла, а по exit0,
+числу tests и нулю failures/errors/skips, точным AS/checksum refs и нулю ответов.
 На ревью исправлен воспроизведённый lock timeout на DROP TRIGGER в connect при
 открытом readback: normal connection больше не запускает schema DDL, порядок
 connection→timing общий со start. Новая регрессия: первичный FAIL воспроизведён,
-исправление проверяется. Для нового кандидата полный набор повторяется.
+исправленный адресный и полный наборы PASS на199e7c3.
 
 Неудачные попытки не скрыты: первая full backend832PASS/3FAIL из-за ошибочно
 подставленного `DEEPSEEK_BASE_URL=loopback/disabled`, несовместимого с frozen
@@ -75,7 +81,7 @@ Raw failed traceback с repr окружения не включается в в�
 
 | Контур | Состояние |
 | --- | --- |
-| Рабочая ветка | codex/path-pilot-start-admission, локальная; base2a9ef94, реализации/отчёт отдельно |
+| Рабочая ветка | codex/path-pilot-start-admission, локальная; base2a9ef94, tested code199e7c3, docs/evidence handoff отдельно |
 | Диагностическая ветка | codex/path-plan-diagnostics сохранена на2a9ef94 |
 | CI | NOT_RUN для нового кандидата; обязательные checks перед merge сохраняются |
 | main / origin-main | Локальные refs2dc98c6/2.0.64; свежая удалённая проверка не выполнялась |
@@ -93,7 +99,7 @@ columns/types/constraints/indexes/triggers без bootstrap/ensure/import/seed �
 обязательного CI/review, публикации новой ProgramDefinition/точных org/actor refs,
 scoped timing/readback, нового source receipt и совместимого recovery для v2 Cycles.
 Новый платный PATH требует отдельного разрешения после этого; сейчас не запускался.
-Main автоматически не получает локальный профиль/runner/новый gate из этой ветки.
+Main автоматически не получает изменения профиля/runner/новый gate из этой ветки.
 Следующая задача должна брать точный handoff commit, не просто текущий main.
 
 ## Безопасность и откат
@@ -109,3 +115,10 @@ reader и начатые snapshots; слепой downgrade к2.0.64 не зая�
 Подробности в контракте. Все release flags=false; paid_llm_run=false;
 permanent_database_write=false. Baseline и человеческая приёмка этой реализации
 самоотчётом агента не объявляются.
+
+Owned контейнер33e6f86… штатно остановлен/AutoRemove; tmpfs synthetic SQL данные
+удалены и не восстанавливаются (воспроизводятся fixtures). Перед удалением сохранены
+достаточные readbacks/проверки и отрицательная диагностика; их SHA совпадают после
+cleanup. [Cleanup receipt](../evidence/path-pilot-start-admission/cleanup.json).
+Временная собственная .venv-ссылка удалена, общий root .venv сохранён. Другие БД,
+исторические screenshots и пользовательские файлы не удалялись.

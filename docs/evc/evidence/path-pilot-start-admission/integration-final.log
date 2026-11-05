@@ -1,0 +1,64 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-7.1.0, anyio-4.13.0
+collected 1166 items / 949 deselected / 217 selected
+
+tests/integration/test_adm_layout_31_cancellation_db.py ................ [  7%]
+                                                                         [  7%]
+tests/integration/test_arch30_membership_db.py .                         [  7%]
+tests/integration/test_arch30_program_definition_db.py .....             [ 10%]
+tests/integration/test_arch30_transfer_db.py .....                       [ 12%]
+tests/integration/test_assessment_analysis_queue_db.py ........          [ 16%]
+tests/integration/test_assessment_authoring_workflow_db.py .......       [ 19%]
+tests/integration/test_assessment_evaluation_material_repository_db.py . [ 19%]
+                                                                         [ 19%]
+tests/integration/test_assessment_first_case_export_db.py .              [ 20%]
+tests/integration/test_assessment_indicator_repository_db.py ..          [ 21%]
+tests/integration/test_assessment_queue_db.py ......                     [ 23%]
+tests/integration/test_assessment_shadow_aggregate_db.py ..              [ 24%]
+tests/integration/test_clean_bootstrap_db.py ...                         [ 26%]
+tests/integration/test_f05_runtime_matrix_db.py .                        [ 26%]
+tests/integration/test_integrated_acceptance_db.py .....                 [ 29%]
+tests/integration/test_m10_product_path_db.py ................           [ 36%]
+tests/integration/test_m3_role_profiles_db.py .                          [ 36%]
+tests/integration/test_m4_contexts_db.py .                               [ 37%]
+tests/integration/test_m5_catalog_integrity_db.py .                      [ 37%]
+tests/integration/test_m5_cycle_runtime_db.py ...                        [ 39%]
+tests/integration/test_m5_functional_package_db.py ...                   [ 40%]
+tests/integration/test_m5_generation_lab_db.py .                         [ 41%]
+tests/integration/test_m5_runtime_db.py ...                              [ 42%]
+tests/integration/test_m5_sales_package_db.py ..                         [ 43%]
+tests/integration/test_m6_evidence_db.py .........................       [ 54%]
+tests/integration/test_m6_substantive_admission_db.py ......             [ 57%]
+tests/integration/test_m7_cycle_planner_db.py .......................... [ 69%]
+.....                                                                    [ 71%]
+tests/integration/test_m7_parameter_resolution_db.py ..........          [ 76%]
+tests/integration/test_m8_recommendation_basis_db.py ......              [ 79%]
+tests/integration/test_m8_report_access_db.py ..                         [ 80%]
+tests/integration/test_path29_participant_owned_stand.py .               [ 80%]
+tests/integration/test_path29_scope_states_db.py .                       [ 81%]
+tests/integration/test_path_start_assignment_lineage_db.py ...           [ 82%]
+tests/integration/test_pilot_start_admission_db.py .......               [ 85%]
+tests/integration/test_profile_access_owned_stand.py .                   [ 86%]
+tests/integration/test_profile_to_m4_owned_stand.py .                    [ 86%]
+tests/integration/test_program01_invitation_revoke_db.py ..              [ 87%]
+tests/integration/test_purge_test_organization_db.py ......              [ 90%]
+tests/integration/test_questionnaire_sources_db.py .                     [ 90%]
+tests/integration/test_r03_auth_full_flow_db.py .                        [ 91%]
+tests/integration/test_r03_auth_invitation_db.py ..............          [ 97%]
+tests/integration/test_removed_personality_schema_cleanup_db.py .        [ 98%]
+tests/integration/test_review_m4_confirmation_db.py .                    [ 98%]
+tests/integration/test_review_report_history_db.py .                     [ 99%]
+tests/integration/test_w02_acquaintance_db.py ..                         [100%]
+
+=============================== warnings summary ===============================
+../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/vadim_bogachev/Developer/4K/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /private/tmp/4k-pilot-t1-verify.HWvEXn/integration-final.xml -
+========== 217 passed, 949 deselected, 1 warning in 482.86s (0:08:02) ==========

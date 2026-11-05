@@ -1,0 +1,286 @@
+✔ ADM01 keeps participant invitations bound to the selected assessment (4.133971ms)
+✔ ADM01 admin surface uses the accepted readiness and control colors (0.628656ms)
+✔ PILOT31-03 shows exact assignment readiness and blocks an invalid submit (0.528578ms)
+✔ registered members can receive an organization assessment invitation (11.80328ms)
+✔ member form resets only after confirmed success (0.535987ms)
+✔ manual questionnaire draft fields are not blocked by publish required attributes (0.995818ms)
+✔ selected members can receive an explicit assessment assignment (0.539606ms)
+(node:7827) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/web/js/api.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ known domain codes provide actionable messages (249.009433ms)
+✔ assignment blocker ASSIGNMENT_QUESTIONNAIRE_NOT_CONFIRMED keeps its exact next action (2.266718ms)
+✔ assignment blocker PROGRAM_ASSIGNMENT_REF_MISMATCH keeps its exact next action (1.897706ms)
+✔ assignment blocker PROGRAM_NOT_AVAILABLE_FOR_NEW_ASSIGNMENTS keeps its exact next action (1.309545ms)
+✔ assignment blocker PROGRAM_CONFIGURATION_NOT_AVAILABLE keeps its exact next action (0.744383ms)
+✔ assignment blocker PROGRAM_CATALOG_SCOPE_MISMATCH keeps its exact next action (0.796854ms)
+✔ assignment blocker PROGRAM_SOURCE_SELECTION_STALE keeps its exact next action (0.892367ms)
+✔ known invitation provider configuration error remains actionable (0.74866ms)
+✔ invitation conflict INVITATION_ALREADY_USED remains safe and actionable (1.075489ms)
+✔ invitation conflict INVITATION_NOT_FOUND remains safe and actionable (1.106331ms)
+✔ invitation conflict INVITATION_STATE_CHANGED remains safe and actionable (0.607645ms)
+✔ membership conflict preserves the already scope-filtered server action (0.680907ms)
+✔ unknown 500 json detail is sanitized (1.533051ms)
+✔ unknown 500 plain text is sanitized (0.656387ms)
+✔ unknown 500 html is sanitized (1.112723ms)
+✔ unknown 500 invalid json is sanitized (0.375418ms)
+✔ stale purge preview tells the operator to refresh without claiming deletion (0.453152ms)
+(node:7828) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/web/js/api.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ journey authentication failure explains a lost session without misreporting the product stage (4.847136ms)
+✔ a rejected login preserves the server error without expired-session recovery (223.364539ms)
+✔ a protected API 401 starts expired-session recovery and preserves the status (1.093871ms)
+✔ concurrent 401 responses trigger only one recovery flow (13.900459ms)
+✔ a late 401 from an earlier session generation does not recover the current session (1.861993ms)
+✔ a late successful response cannot overwrite a newer session (6.041366ms)
+✔ an unfinished old recovery does not suppress recovery for the current generation (1.553755ms)
+✔ ADD01 requires email, name and position in the administrative member form (3.791056ms)
+✔ ADD01 keeps the desktop member form in the measured right-hand geometry (0.956392ms)
+✔ ARCH30 logout reset covers every current logout and exit button by contract (3.599605ms)
+✔ ADM-STATUS-01 shows one current participant stage and keeps secondary signals in the card (7.434223ms)
+✔ ADM-STATUS-01 keeps destructive participant operations separate and explicit (0.49102ms)
+✔ PROGRAM01 R07 uses accessible subject-specific dialogs for invitation and assignment actions (1.954909ms)
+✔ PROGRAM01 R08 explains invitation revoke conflicts and refreshes applicable actions (7.007621ms)
+✔ ADM-STATUS-01 scopes preserved participant selection by organization and assessment (0.555848ms)
+✔ ARCH30 membership errors hide stable server code and distinguish recovery states (3.515046ms)
+✔ ARCH30 removes the duplicate legacy organization profile field from both admin forms (5.811479ms)
+✔ ARCH30 exposes a legacy profile as an explicit C01 migration draft without automatic overwrite (8.458537ms)
+✔ ARCH30 renders superadmin transfer control and sends explicit source, target and role (3.659944ms)
+✔ ARCH30 explains every protected transfer conflict (0.434575ms)
+✔ ARCH30 keeps deactivation reversible through an explicit restore action (0.476895ms)
+✔ ARCH30 connects an exact published program version from the superadmin UI (4.948289ms)
+✔ PROGRAM01 rejects incomplete assignment batches and preserves role-scoped idempotency (0.768002ms)
+✔ PROGRAM01 restores the bulk selection projection and rejects stale organization reads (0.339401ms)
+✔ PROGRAM01 R06 scopes cancellation and exposes stale readback recovery (0.902316ms)
+✔ PROGRAM01 R02 binds questionnaire forms to the exact connected program key (0.567106ms)
+✔ auth forms expose password-manager fields and an explicit way to change email (4.128959ms)
+✔ registration and repeat login route through the existing journey without auth-complete (0.462624ms)
+✔ server dashboard journey preserves safe profile and reports subroutes on reload (0.943851ms)
+✔ mutating auth actions guard repeated submissions and expose busy state (0.496053ms)
+✔ new passwords use two in-memory steps and the accepted ASCII policy (1.917007ms)
+✔ auth surface exposes the R04 mail state and non-interactive shared footer (1.557608ms)
+✔ resend timing is server-driven and survives reload, background time and another tab (0.450879ms)
+✔ CMP01 has an explicit comparison entry and exact columns (4.402745ms)
+✔ CMP01 renders non-comparable values as separate slices without delta (0.420323ms)
+✔ E01 names assessment positions as situations and separates sending from completion (5.159788ms)
+✔ E01 keeps the absolute deadline outside assessment and marks only server-confirmed pauses (0.653715ms)
+✔ E01 scopes editable drafts to cycle and assessment situation (0.369563ms)
+✔ E01 protects supplied materials without blocking own text or pasted answers (0.553425ms)
+✔ E01 applies accepted conversation tokens and mobile layout (0.483113ms)
+✔ E01 ADD01 presents the admitted situation once inside the chat without raw JSON or a route column (2.055576ms)
+✔ E02 exposes the accepted completion, waiting, ready and failure copy (4.935348ms)
+✔ E02 does not expose pipeline stages, invented percentages or participant recovery (1.233339ms)
+✔ E02 keeps calculated results waiting until an owned assessee report is ready (0.722711ms)
+✔ E02 restores an explicit M8 report after URL identifiers become strings (0.398109ms)
+✔ E02 polling is cancellable, visibility-aware and ignores stale responses (1.477637ms)
+✔ E02 uses accepted visual tokens and mobile actions (0.439181ms)
+✔ F22-06 prefers a scoped draft and otherwise restores the confirmed revision (4.984371ms)
+✔ F22-04 keeps newer server revisions and post-submit drafts (4.759928ms)
+(node:7843) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/web/js/state.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ F22-01 ignores a late members import after identity changes (282.151772ms)
+(node:7844) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/web/js/screens/admin/organization-draft-key.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ F22-02 scopes questionnaire recipient drafts by assignment and revision (6.054052ms)
+✔ F22-05 shows the server projection for the recipients selected for confirm (4.628018ms)
+✔ F22-03 rejects obsolete preview generations and stale input signatures (3.653758ms)
+(node:7847) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/web/js/api.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ HTTP deadline bounds a stalled response body and aborts transport (36.959501ms)
+✔ HTTP deadline retains status/body and rejects invalid JSON without hanging (211.889979ms)
+✔ LK01 renders server-owned current and completed Cycle cards (3.520305ms)
+✔ LK01 has explicit Cycle actions and no catalogue or repeat action (0.575505ms)
+✔ LK01 keeps accessible mobile actions and accepted visual tokens (5.802263ms)
+✔ confirmed server answers discard the scoped local draft (3.836201ms)
+(node:7850) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/web/js/onboarding-flow.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ resume uses actual consent and saved answers rather than legacy skipped/current_step (12.170954ms)
+✔ local operation key separates account, tenant, assignment and questionnaire revision (4.789181ms)
+✔ prepared plan survives reload even when a stale briefing projection disagrees on consent (0.756121ms)
+✔ readiness distinguishes organizational waiting, job status, network and admitted prepared plan (0.509269ms)
+✔ nonempty READY or LIMITED route never substitutes for server admission (0.621205ms)
+✔ full deletion preview is shown to superadmin (4.222143ms)
+✔ full deletion shows exact preview and keeps production execution gated (1.020403ms)
+✔ removing a member preserves their account for another organization (0.339297ms)
+✔ physical purge request includes all backend confirmations (6.641794ms)
+✔ detached accounts remain visible when no organizations exist (1.233644ms)
+✔ purge preview explains protected accounts (0.397577ms)
+✔ P03 confirms server presence independently of typing and requires explicit continue (5.172535ms)
+✔ P03 blocks stopped AS input and uses admitted equivalent candidate for replacement (0.390597ms)
+(node:7853) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/web/js/screens/admin/questionnaire-assignment-state.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ questionnaire undefined, cached confirmed=false: unknown is not unconfirmed (4.541908ms)
+✔ questionnaire undefined, cached confirmed=true: unknown is not unconfirmed (0.334707ms)
+✔ questionnaire loading, cached confirmed=false: unknown is not unconfirmed (0.251115ms)
+✔ questionnaire loading, cached confirmed=true: unknown is not unconfirmed (0.672824ms)
+✔ questionnaire error, cached confirmed=false: unknown is not unconfirmed (0.306651ms)
+✔ questionnaire error, cached confirmed=true: unknown is not unconfirmed (0.248399ms)
+✔ questionnaire successful ready read: retain actual confirmation (0.319644ms)
+✔ questionnaire successful empty read: retain actual confirmation (0.233911ms)
+✔ product Cycle preparation polls the operation and exposes only completed result (5.425069ms)
+✔ functional next situation waits for durable generation and admission (0.562537ms)
+(node:7855) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/web/js/state.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ ending an account context clears profile caches even before lazy UI cleanup (10.898087ms)
+✔ server journey replaces and removes the complete runtime identity tuple (1.49838ms)
+(node:7856) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/web/js/utils/report-radar.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ RAD01 preserves real zero and keeps null out of the chart (12.891786ms)
+✔ RAD01 never joins a radar line across missing values (9.078831ms)
+✔ RAD01 exposes fill, outline and bars with a permanent text list (1.931425ms)
+✔ REL01 keeps participant mandatory and selects concrete organization admins (8.015092ms)
+✔ UX-FIX20-03 routes invitations through the shared selected assessment (0.828656ms)
+✔ REL01 customer report uses protected read and PDF endpoints (0.99268ms)
+(node:7858) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/web/js/release-version.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ release format accepts three numeric parts only (13.561032ms)
+✔ backend outage or mismatch keeps frontend build version (0.791756ms)
+✔ all visible release targets update together as text (6.15913ms)
+✔ REP01 presents the four M8 outcomes without derived levels or competency scores (25.969096ms)
+✔ REP01 groups saved skills and hides technical trace identifiers from participant markup (0.795793ms)
+✔ REP02 presents saved descriptions and explicit non-blocking states without advice (0.697856ms)
+✔ REP01 keeps exact report binding and handles PDF failure locally (0.713348ms)
+✔ A05 separates catalog, assessment tasks and factual coverage from the score (1.466829ms)
+(node:7860) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/web/js/components/app-footer.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ shared footer is visible on common panels and hidden on chat panels (6.277684ms)
+✔ footer has one non-interactive document block and a runtime year (3.353839ms)
+✔ footer uses shared Onest and palette tokens with responsive flow layout (2.705034ms)
+✔ UI02 maps waiting statuses to the exact owner palette pair (7.879814ms)
+✔ UI02 measures real radar labels and keeps them inside a safe area (2.045277ms)
+✔ UI02 preserves readable overview access on narrow screens (0.689724ms)
+✔ UI03 exposes the owner palette and semantic aliases from one token source (17.184795ms)
+✔ QA19-02 resolves every palette token and rejects retired undefined names (60.209351ms)
+✔ UI03 keeps participant and admin primary actions semantically distinct (5.78585ms)
+✔ UI03 prevents local six-digit hex colors outside the owner palette (69.184727ms)
+✔ UI03 keeps embedded SVG fills inside the owner palette (3.976545ms)
+✔ UI03 invalidates cached CSS and JavaScript entrypoints (0.544619ms)
+✔ W02 uses server briefing, saves each answer and confirms all three before 4K (10.214956ms)
+✔ W02 keeps preparation separate from explicit assessment start (0.620718ms)
+✔ W02 displays server-resolved assignment timing and restores the prepared snapshot (0.479908ms)
+✔ UX-AUD29-05 explains return from the saved policy instead of snapshot truthiness (0.395404ms)
+✔ W02 closes one situation and requires an explicit start for the next one (0.345285ms)
+✔ Cycle progress is based on route positions rather than generated situations (0.399917ms)
+ℹ tests 140
+ℹ suites 0
+ℹ pass 140
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2337.474179
+✔ PASS, final repair=false (8.265522ms)
+✔ PASS, final repair=true (0.801373ms)
+✔ PASS_WITH_WARNINGS, final repair=false (0.741539ms)
+✔ PASS_WITH_WARNINGS, final repair=true (0.540142ms)
+✔ reject admission INCOMPLETE (1.482764ms)
+✔ reject admission FAIL (0.430292ms)
+✔ reject admission REVIEW_REQUIRED (0.49073ms)
+✔ reject admission null (0.37597ms)
+✔ warnings do not bypass unadmitted (2.050876ms)
+✔ warnings do not bypass missing generation (1.196845ms)
+✔ warnings do not bypass missing tester (0.881229ms)
+✔ warnings do not bypass missing challenger (0.803713ms)
+✔ warnings do not bypass missing batch (1.01343ms)
+✔ warnings do not bypass foreign operation (0.74375ms)
+✔ warnings do not bypass wrong final candidate (0.840688ms)
+✔ warnings do not bypass wrong final generation (0.507327ms)
+✔ warnings do not bypass wrong repair ref (0.580159ms)
+✔ warnings do not bypass wrong compiled ref (0.615094ms)
+✔ warnings do not bypass wrong snapshot (0.564396ms)
+✔ warnings do not bypass wrong execution ref (0.892761ms)
+✔ warnings do not bypass missing checksums (0.991578ms)
+✔ warnings do not bypass wrong presented AS (2.727674ms)
+✔ warnings do not bypass wrong presented payload (1.568761ms)
+✔ warnings do not bypass not started (1.015994ms)
+✔ warnings do not bypass assessment answer (0.970232ms)
+✔ pre-start chain cannot change after start (1.003167ms)
+✔ PATH linked profile/assignment/plan/timing retains PASS_WITH_WARNINGS (1.675938ms)
+✔ PATH rejects unknown lineage (0.812329ms)
+✔ PATH rejects foreign assignment (0.851584ms)
+✔ PATH rejects foreign profile (0.932967ms)
+✔ PATH rejects wrong operation profile (0.754606ms)
+✔ PATH rejects wrong profile checksum (0.772655ms)
+✔ PATH rejects unfrozen profile (0.553603ms)
+✔ PATH rejects missing time source (0.699659ms)
+✔ PATH rejects invalid time (1.11384ms)
+✔ PATH rejects wrong time source (3.181221ms)
+✔ PATH rejects missing plan revision (0.701812ms)
+✔ pre-start rejects missing server decision (0.535666ms)
+✔ pre-start rejects server denied (0.471011ms)
+✔ pre-start rejects foreign server cycle (0.565412ms)
+✔ pre-start rejects stale server revision (0.874518ms)
+✔ pre-start rejects wrong server hash (0.467081ms)
+✔ pre-start rejects foreign server AS (0.569976ms)
+✔ pre-start rejects blockers despite true (0.910059ms)
+✔ pre-start rejects LIMITED without exact admission (0.502179ms)
+✔ exact LIMITED admission retains stages and final AS checks (0.794493ms)
+ℹ tests 46
+ℹ suites 0
+ℹ pass 46
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 421.797954
+
+> lint:js
+> eslint web/js/*.js web/js/**/*.js
+
+
+> prebuild:web
+> npm run clean:web
+
+
+> clean:web
+> node scripts/clean_web_dist.mjs
+
+
+> build:web
+> esbuild web/js/main.js --outdir=web/dist --target=es2020 --format=esm --splitting --public-path=/web/dist/ --entry-names=[name] --chunk-names=[name]-[hash] --bundle --minify
+
+
+  web/dist/chunk-7T5HOCRS.js                   234.3kb
+  web/dist/chunk-F4BJUFXB.js                   134.4kb
+  web/dist/main.js                              98.7kb
+  web/dist/admin-methodology-KWHVC55T.js        67.4kb
+  web/dist/admin-prompt-lab-64H6G623.js         45.5kb
+  web/dist/chunk-HYRFTB5G.js                    40.8kb
+  web/dist/chunk-JNXYSQRG.js                    33.5kb
+  web/dist/chunk-HT5ZVD3R.js                    24.0kb
+  web/dist/chunk-KX44Y7RV.js                    21.5kb
+  web/dist/chunk-3YGFGG2N.js                    20.0kb
+  web/dist/admin-reports-UH7IEZVX.js            12.8kb
+  web/dist/admin-regression-tests-KXESJWRL.js   12.8kb
+  web/dist/chunk-7ASTLGBR.js                    11.8kb
+  web/dist/chunk-5XKLRMKF.js                    11.8kb
+  web/dist/chunk-YXRX5FYX.js                     8.7kb
+  web/dist/chunk-CLSEU4UD.js                     5.6kb
+  web/dist/chunk-MZR64ZDU.js                     4.0kb
+  web/dist/chunk-IHDYDG6V.js                     3.8kb
+  web/dist/chunk-NJ2UHP6K.js                     3.1kb
+  web/dist/chunk-GAT6J624.js                     2.7kb
+  ...and 25 more output files...
+
+⚡ Done in 68ms

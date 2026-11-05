@@ -1,0 +1,43 @@
+{
+  "task": "PATH-PILOT-02",
+  "branch": "codex/path-pilot-start-admission",
+  "base_sha": "2a9ef94f6d306a036dc123930b4d2dbefa7d1507",
+  "tested_implementation_sha": "199e7c351a2d985c0173f845574c4de5dc80775a",
+  "implementation_commits": [
+    "679cc2f116a0db46bfd78a3bff527331c2cb5d03",
+    "199e7c351a2d985c0173f845574c4de5dc80775a"
+  ],
+  "tested_git_objects": {
+    "Api": "d144722790fe463dae60e5f31f47ea6b63499da9",
+    "tests": "25b96a330f464be7ff969bb1466b0a616f589a74",
+    "web": "0de52e30316bedc3e8eef0dc607a8f0c614d3cf1",
+    "assessment_definitions": "a2087e38dbd517e9362920fa4d54e29ab84ff959",
+    "scripts": "6888c362949796cb824597ba8e22ea13b45c0b95"
+  },
+  "python": "3.12.13",
+  "node": "25.5.0",
+  "npm": "11.12.1",
+  "app_version_unchanged": "2.0.64",
+  "main_local_ref": "2dc98c6b5b2637c6c505a90686e82f5e4274e763",
+  "origin_main_cached_ref": "2dc98c6b5b2637c6c505a90686e82f5e4274e763",
+  "fresh_remote_identity": "NOT_RUN",
+  "ci_for_candidate": "NOT_RUN",
+  "deployment": {
+    "last_known_sha": "2dc98c6b5b2637c6c505a90686e82f5e4274e763",
+    "fresh_readback": "NOT_RUN",
+    "new_deploy": false
+  },
+  "permanent_database_read": false,
+  "permanent_database_write": false,
+  "new_provider_calls": 0,
+  "working_database_schema_check": "DEFERRED_READ_ONLY_SERVER_ENV_PRE_MERGE_BY_OWNER",
+  "release_flags": {
+    "branch_push": false,
+    "pr": false,
+    "merge": false,
+    "deploy": false,
+    "version_bump": false,
+    "artifact_publish": false,
+    "paid_llm_run": false
+  }
+}

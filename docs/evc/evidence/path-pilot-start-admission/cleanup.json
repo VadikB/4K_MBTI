@@ -1,0 +1,26 @@
+{
+  "task": "PATH-PILOT-02",
+  "verified_at_utc": "2026-11-05 11:05:50 UTC",
+  "container_id": "33e6f86c58f3e48c311b1a83dbb745a448dd3663228d1b4031d6e01a8d0049b8",
+  "container_name": "4k-pytest-pilot-t1-8ac4c319",
+  "owner_labels_verified": {"codex.task": "PATH-PILOT-02", "codex.owner": "8ac4c319"},
+  "test_database": "product4k_pytest_pilot_t1_8ac4c319",
+  "listen": "127.0.0.1:55772",
+  "storage": "tmpfs /var/lib/postgresql/data",
+  "final_database_inventory_before_stop": ["postgres", "product4k_pytest_pilot_t1_8ac4c319"],
+  "primary_evidence_saved_and_verified_before_stop": true,
+  "primary_sha256_before_and_after_cleanup": {
+    "server-readback.json": "69cb4d0f85b0beebd7cedbf9f5131a43f419abff3283f6a478e1474e3ed6b7c0",
+    "integration-final.xml": "818023af485de29fae8f393b972a8781dde87bb0459d3769cf6ec17062ad877b",
+    "export-receipt.json": "c7579b24ebad716a6155ba4c2de9c1a68f3e2c1a80eed1256a64ac35931a8492"
+  },
+  "stop_exact_container_exit_code": 0,
+  "auto_remove": true,
+  "final_container_absent": true,
+  "force": false,
+  "recoverability": "tmpfs synthetic SQL data removed; fixtures reproduce it; primary evidence retained",
+  "permanent_database_access": false,
+  "own_temporary_venv_symlink_removed": true,
+  "shared_root_venv_preserved": true,
+  "historical_screenshot_bytes_restored_after_browser_generated_outputs_saved": true
+}

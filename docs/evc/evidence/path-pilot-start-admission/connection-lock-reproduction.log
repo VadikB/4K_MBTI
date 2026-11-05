@@ -1,0 +1,28 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_program_connection_does_not_run_ddl_behind_an_open_readiness_transaction _
+tests/integration/test_pilot_start_admission_db.py:262: in test_program_connection_does_not_run_ddl_behind_an_open_readiness_transaction
+    assert workers.submit(switch_program).result(timeout=10) == next_id
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/local/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/usr/local/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/integration/test_pilot_start_admission_db.py:252: in switch_program
+    connected = assessment_programs.connect(c, organization_id=10, program_definition_id=next_id,
+Api/assessment_programs.py:290: in connect
+    save_revision(connection, source_scope='program', organization_id=organization_id,
+Api/m7_parameter_resolution.py:60: in save_revision
+    ensure_schema(connection)
+Api/m7_parameter_resolution.py:38: in ensure_schema
+    connection.execute("DROP TRIGGER IF EXISTS immutable_published_m7_parameters ON m7_parameter_revisions")
+../../.venv/lib/python3.12/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.LockNotAvailable: canceling statement due to lock timeout
+=========================== short test summary info ============================
+FAILED tests/integration/test_pilot_start_admission_db.py::test_program_connection_does_not_run_ddl_behind_an_open_readiness_transaction
+1 failed in 7.80s

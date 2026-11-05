@@ -54,7 +54,11 @@ snapshot опубликованной ProgramDefinition, закреплённы�
 
 Шаги1–3 реализованы локально. Контракт и совместимость:
 [pilot-plan-start-admission-contract](../../architecture/pilot-plan-start-admission-contract.md).
-Активно: шаг4, итоговая проверка/передача. Все новые предметные значения только в артефакте, не Python/JS.
+Шаг4 завершён локально: tested implementation199e7c351a2d985c0173f845574c4de5dc80775a,
+backend835/HTTP108/integration217/browser98 PASS, frontend140/receipt46/persistence1
+и lint/build/dist PASS. Evidence сохранено, owned контейнер штатно удалён, рабочая
+БД не затронута. [Итоговый отчёт](../reports/path-pilot-start-admission.md).
+Все новые предметные значения только в артефакте, не Python/JS.
 AS generation/tester/challenger, PASS_WITH_WARNINGS+admitted, repair и prompts
 сохраняют существующие правила. Синтетические fixtures — не human review/реальный PATH.
 
