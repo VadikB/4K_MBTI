@@ -8,7 +8,8 @@
   receipt+SHA256+version selector, browser/summary exact refs; backend906, Node66,
   isolated bootstrap3, component browser1 PASS. Подготовка f211e71 сохранена;
   её отрицательный VERIFY остаётся историческим evidence базы3385145.
-- Следующий шаг: отдельный допуск на PR/CI/review harness; новый CI NOT_RUN.
+- Активен [R1/2.0.66](../pilot-harness-release-2066.md): владелец разрешил
+  PR/CI/review и PATCH2.0.66; merge/deploy/publication/paid PATH запрещены.
 - Публикация/подключение рабочей БД/paid run пока запрещены, не PATH PASS.
 - Открыто: номер программы1.2 предложен, не утверждён; свободность в БД UNKNOWN;
   полномочный publisher и проверенная процедура retirement до будущей публикации.

@@ -95,3 +95,15 @@ def test_main_push_deploys_without_repeating_pre_merge_checks() -> None:
     assert "- name: Verify merged application release" in deploy
     assert "python scripts/check_release_version.py --base-ref HEAD^" in deploy
     assert deploy.index("Verify merged application release") < deploy.index("Configure SSH")
+
+
+def test_integration_has_explicit_owned_stand_admin_on_same_ci_postgres() -> None:
+    integration = FULL.split('  integration:', 1)[1].split('  browser:', 1)[0]
+    assert 'TEST_DATABASE_URL: postgresql://pytest:pytest@127.0.0.1:5432/agent4k_pytest' in integration
+    assert 'STAND_ADMIN_URL: postgresql://pytest:pytest@127.0.0.1:5432/postgres' in integration
+
+
+def test_frontend_ci_runs_harness_receipt_regressions_once() -> None:
+    command = 'node --test tests/unit/test_assessment_preparation_receipt.mjs tests/unit/test_assessment_receipt_file.mjs'
+    assert CI.count(command) == 1
+    assert '- name: Harness receipt regressions' in CI

@@ -53,6 +53,9 @@ jobs:
       - name: Frontend regression tests
         run: node --test tests/frontend/*.test.mjs
 
+      - name: Harness receipt regressions
+        run: node --test tests/unit/test_assessment_preparation_receipt.mjs tests/unit/test_assessment_receipt_file.mjs
+
       - name: Build frontend
         run: npm run build:web
 

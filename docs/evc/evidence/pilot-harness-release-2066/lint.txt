@@ -1,0 +1,6 @@
+command: npm run lint:js
+exit_code: 0
+
+
+> lint:js
+> eslint web/js/*.js web/js/**/*.js
