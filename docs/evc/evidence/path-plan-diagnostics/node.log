@@ -1,0 +1,46 @@
+✔ PASS, final repair=false (6.222748ms)
+✔ PASS, final repair=true (0.432185ms)
+✔ PASS_WITH_WARNINGS, final repair=false (0.357536ms)
+✔ PASS_WITH_WARNINGS, final repair=true (0.38076ms)
+✔ reject admission INCOMPLETE (1.118887ms)
+✔ reject admission FAIL (0.307558ms)
+✔ reject admission REVIEW_REQUIRED (0.290756ms)
+✔ reject admission null (0.280602ms)
+✔ warnings do not bypass unadmitted (1.102831ms)
+✔ warnings do not bypass missing generation (0.470866ms)
+✔ warnings do not bypass missing tester (0.417525ms)
+✔ warnings do not bypass missing challenger (0.52778ms)
+✔ warnings do not bypass missing batch (0.712736ms)
+✔ warnings do not bypass foreign operation (0.439434ms)
+✔ warnings do not bypass wrong final candidate (0.822379ms)
+✔ warnings do not bypass wrong final generation (0.360645ms)
+✔ warnings do not bypass wrong repair ref (0.359336ms)
+✔ warnings do not bypass wrong compiled ref (0.355784ms)
+✔ warnings do not bypass wrong snapshot (0.366797ms)
+✔ warnings do not bypass wrong execution ref (0.351483ms)
+✔ warnings do not bypass missing checksums (0.33155ms)
+✔ warnings do not bypass wrong presented AS (0.417548ms)
+✔ warnings do not bypass wrong presented payload (1.406485ms)
+✔ warnings do not bypass not started (0.449856ms)
+✔ warnings do not bypass assessment answer (0.541407ms)
+✔ pre-start chain cannot change after start (0.490421ms)
+✔ PATH linked profile/assignment/plan/timing retains PASS_WITH_WARNINGS (0.607412ms)
+✔ PATH rejects unknown lineage (0.408365ms)
+✔ PATH rejects foreign assignment (0.313761ms)
+✔ PATH rejects foreign profile (0.293043ms)
+✔ PATH rejects wrong operation profile (0.296967ms)
+✔ PATH rejects wrong profile checksum (0.311844ms)
+✔ PATH rejects unfrozen profile (0.296149ms)
+✔ PATH rejects missing time source (0.328501ms)
+✔ PATH rejects invalid time (0.329895ms)
+✔ PATH rejects wrong time source (1.640411ms)
+✔ PATH rejects missing plan revision (0.383706ms)
+✔ only a durable terminal preparation receipt permits cleanup (36.529654ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 294.794622

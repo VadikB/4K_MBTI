@@ -31,6 +31,36 @@ def test_exact_published_sources_match_repository(release):
     assert runtime['manifest_checksum'] == release['catalog']['manifest_json']['runtime_rule_ref']['manifest_checksum']
 
 
+def future_release_fixture(release):
+    """Metadata model only; no new program is actually published by this test."""
+    import copy
+    from Api.assessment_programs import definition_checksum
+    from tests.unit.test_pilot_plan_admission import snapshot
+    value = copy.deepcopy(release)
+    program = value['program']
+    program['version'] = 'synthetic-next-version'
+    program['source_refs_json']['pilot_plan_admission'] = snapshot()
+    program['definition_checksum'] = definition_checksum(code=program['code'], version=program['version'],
+        name=program['name'], assignment_ref=program['assignment_ref'], mode=program['mode'],
+        configuration_id=program['assessment_configuration_id'], catalog_version_id=program['catalog_version_id'],
+        role_version_ids=[role['id'] for role in value['roles']], source_refs=program['source_refs_json'])
+    return value
+
+
+def test_new_exact_program_snapshot_can_be_verified_without_switching_current_fixture(release):
+    future = future_release_fixture(release)
+    validate_release(future)
+    assert release['program']['version'] == '1.1'
+    assert 'pilot_plan_admission' not in release['program']['source_refs_json']
+
+
+def test_future_program_cannot_lose_human_plan_decision(release):
+    future = future_release_fixture(release)
+    future['program']['source_refs_json']['pilot_plan_admission']['owner_decision']['methodologist']['status'] = 'PENDING'
+    with pytest.raises(ValueError, match='PILOT_PLAN_'):
+        validate_release(future)
+
+
 @pytest.mark.parametrize('mutation', [
     lambda s: s['program'].update(version='1.2'),
     lambda s: s['configuration'].update(catalog_version_id=99),

@@ -1,0 +1,114 @@
+{
+  "profile": "assessment-first-case/1.1",
+  "scope": "synthetic_diagnostic",
+  "process_exit_code": 1,
+  "exit_code": 1,
+  "result": "FAIL",
+  "runs": [
+    {
+      "run": {
+        "run_id": "96abd1c7e28e4316bcceb069520273e6",
+        "database": "product4k_pytest_96abd1c7e28e4316bcceb069520273e6",
+        "port": "18861",
+        "provider_mode": "real",
+        "code": {
+          "sha": "2dc98c6b5b2637c6c505a90686e82f5e4274e763",
+          "branch": "",
+          "origin_main": "2dc98c6b5b2637c6c505a90686e82f5e4274e763",
+          "worktree_status": "",
+          "files": {
+            "scripts/test_stand.py": "d3522324fc322bc35e98abf96475f2e6ca6133d16146ed506fa9d438d4601a81",
+            "scripts/assessment_first_case.py": "187bd1cd04fa066ac6660a40807f6f2842e43a2fe2df6bf8bac6b9e3f5517e28",
+            "tests/path29_browser_inputs.py": "e7bd646bef298b5a20605e9971f2d4e775fec48b88a3f80ec1dcc536b90a4d31",
+            "tests/path29_browser_app.py": "a8e321f4204b7f3af5bc94a6c7023ae38c11381ff2d8270ef88af68f78f110ec",
+            "tests/assessment_first_case_evidence.py": "9b121e0488967bb99f207738b9352ca13b0fa0c7d87368c1d5c2c55e3937065c",
+            "tests/browser/path29-participant.spec.mjs": "aae245f0628610c1b3661057639cff3070308b6b1146bdc9b022d0b66a5221f0",
+            "tests/browser/fixtures/receipt-file.mjs": "71b454be2fb1dc09800f3f33be1d1e31692f512c3ac6ba657069937bb70ce627",
+            "tests/browser/fixtures/preparation-receipt.mjs": "1920a02d757f250023abba8225938a569177dd0053f0dcb8198c31f4defa2516",
+            "tests/path_start_release_source.py": "ef86af1bc243ca2d04026ec252e4e8c413475e34da6eaf163d0bb2a3c3f126b4",
+            "tests/path_start_release_inputs.py": "ad587d40b93aa9e6d7dd4db1d2936148d9f794d62879755b7c29fec134663159",
+            "tests/browser/fixtures/path-start-release.json": "a3175dda9675c476ae8636d26449e5ed17e0ef7940ea0412b7431882933ae1e6"
+          }
+        }
+      },
+      "cleanup": {
+        "run_id": "96abd1c7e28e4316bcceb069520273e6",
+        "database": "product4k_pytest_96abd1c7e28e4316bcceb069520273e6",
+        "owner_verified": true,
+        "database_absent": true,
+        "state_absent": true,
+        "force": false
+      },
+      "result": "FAIL",
+      "completion": {
+        "run_id": "96abd1c7e28e4316bcceb069520273e6",
+        "status": "failed",
+        "exit_code": 1,
+        "receipt_file": "first-case-receipt.json",
+        "receipt_sha256": null
+      },
+      "process_exit_code": 1,
+      "validation_errors": [
+        "PROCESS_EXIT_NOT_ZERO",
+        "RUN_NOT_COMPLETED",
+        "FAILURE_ARTIFACT:failure",
+        "FAILURE_ARTIFACT:failure-receipt",
+        "MISSING_OR_INVALID:first-case-receipt",
+        "COMPLETION_RECEIPT_MISMATCH",
+        "FIRST_CASE_EVIDENCE_INVALID",
+        "PRESENTATION_SCREENSHOT_MISSING"
+      ],
+      "evidence_directory": "/home/vadim_bogachev/evidence/path-start-2dc98c6-controlled/04e09d64-c7a8-4226-a511-f4a0168b6d53",
+      "failure": {
+        "step": "real_llm_preparation",
+        "expected": "Admission конечного кандидата и сохранённая AS",
+        "actual": "PLAN_NOT_READY\n\n'LIMITED' !== 'READY'\n",
+        "classification": "diagnostic_assertion_or_environment_failure"
+      },
+      "provider_completed_requests": 10,
+      "provider_completions": [
+        {
+          "duration_ms": 48907.87,
+          "routing_key": "1d994d19-9ada-4dcb-92b9-4f4e41a096e0:generation:d0356d85c699"
+        },
+        {
+          "duration_ms": 14172.48,
+          "routing_key": "1d994d19-9ada-4dcb-92b9-4f4e41a096e0:tester:01:75ed6ffabcda"
+        },
+        {
+          "duration_ms": 12164.7,
+          "routing_key": "1d994d19-9ada-4dcb-92b9-4f4e41a096e0:tester:02:9e47bd4d2b20"
+        },
+        {
+          "duration_ms": 12934.15,
+          "routing_key": "1d994d19-9ada-4dcb-92b9-4f4e41a096e0:tester:03:717283d3494a"
+        },
+        {
+          "duration_ms": 11422.29,
+          "routing_key": "1d994d19-9ada-4dcb-92b9-4f4e41a096e0:tester:04:8a80a25f5a70"
+        },
+        {
+          "duration_ms": 4753.1,
+          "routing_key": "1d994d19-9ada-4dcb-92b9-4f4e41a096e0:tester:05:65dd00797aa6"
+        },
+        {
+          "duration_ms": 10017.69,
+          "routing_key": "1d994d19-9ada-4dcb-92b9-4f4e41a096e0:challenger:01:2e984e49d388"
+        },
+        {
+          "duration_ms": 10604.68,
+          "routing_key": "1d994d19-9ada-4dcb-92b9-4f4e41a096e0:challenger:02:df6e75bd3481"
+        },
+        {
+          "duration_ms": 9852.8,
+          "routing_key": "1d994d19-9ada-4dcb-92b9-4f4e41a096e0:challenger:03:aa9c5c355b15"
+        },
+        {
+          "duration_ms": 10393.19,
+          "routing_key": "1d994d19-9ada-4dcb-92b9-4f4e41a096e0:challenger:04:5e159261248c"
+        }
+      ],
+      "usage_note": "Receipt totals count unique retained operations; JSON retries have separate completions, but earlier malformed-response usage is not retained by product trace."
+    }
+  ]
+}

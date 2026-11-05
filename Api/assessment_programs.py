@@ -257,7 +257,7 @@ def validate_questionnaire_assignment(connection, *, organization_id: int,
 def connect(connection, *, organization_id: int, program_definition_id: int,
             actor_user_id: int, operation_id: str) -> dict:
     connection.execute("SELECT id FROM organizations WHERE id=%s FOR UPDATE", (organization_id,))
-    program = connection.execute("""SELECT id,status FROM assessment_program_definitions
+    program = connection.execute("""SELECT * FROM assessment_program_definitions
         WHERE id=%s""", (program_definition_id,)).fetchone()
     if not program or program['status'] != 'published':
         raise ValueError('PROGRAM_NOT_AVAILABLE')
@@ -279,6 +279,23 @@ def connect(connection, *, organization_id: int, program_definition_id: int,
     current = current_connection(connection, organization_id=organization_id)
     if current and int(current['program_definition_id']) == program_definition_id:
         return current
+    if (program.get('source_refs_json') or {}).get('pilot_plan_admission') is not None:
+        # Same authority order as first start: connection -> timing. No schema
+        # bootstrap/ACCESS EXCLUSIVE locks inside this normal product write.
+        connection.execute("""SELECT id FROM organization_assessment_program_connections
+            WHERE organization_id=%s AND is_current=TRUE FOR UPDATE""", (organization_id,)).fetchall()
+        # Explicit program connection is configuration, not runtime fallback.
+        # Scope/two values come from the accepted published program; old Cycles
+        # retain their own frozen sources. Replay above never reconfigures time.
+        from Api.pilot_plan_binding import validate_published_program
+        from Api.pilot_plan_admission import validate_snapshot
+        from Api.m7_parameter_resolution import save_revision
+        accepted = validate_snapshot(validate_published_program(connection, dict(program)))
+        save_revision(connection, source_scope='program', organization_id=organization_id,
+            assessment_configuration_id=program['assessment_configuration_id'],
+            values={name: accepted['timing_basis'][name]
+                    for name in ('time_budget_seconds', 'calendar_window_seconds')},
+            created_by=actor_user_id, bootstrap_schema=False)
     connection.execute("""UPDATE organization_assessment_program_connections
         SET is_current=FALSE,superseded_at=NOW()
         WHERE organization_id=%s AND is_current=TRUE""", (organization_id,))
@@ -287,6 +304,21 @@ def connect(connection, *, organization_id: int, program_definition_id: int,
         VALUES(%s,%s,%s,%s,%s)""",
         (organization_id, program_definition_id, actor_user_id, operation_id, fingerprint))
     return current_connection(connection, organization_id=organization_id)
+
+
+def public_program(value: dict | None) -> dict | None:
+    """Program choice/connection APIs expose a ref, not hidden plan conditions."""
+    if value is None:
+        return None
+    sources = dict(value.get('source_refs_json') or {})
+    snapshot = sources.get('pilot_plan_admission')
+    if not isinstance(snapshot, dict):
+        return dict(value)
+    sources.pop('pilot_plan_admission')
+    return {**value, 'source_refs_json': sources,
+            'source_refs_projection': 'PUBLIC_REFS_NOT_EXECUTION_DEFINITION',
+            'pilot_plan_ref': {key: snapshot.get(key) for key in
+                ('contract', 'artifact_id', 'artifact_version', 'snapshot_checksum')}}
 
 
 def resolve(connection, *, organization_id: int, assignment_ref: str,

@@ -1,4 +1,188 @@
-# STATE — PM03-REPAIR-CONTRACT
+# STATE — PATH-PLAN-DIAGNOSTICS
+
+## R1 — активная подготовка приложения2.0.65
+
+Владелец: «Да, 2.0.65: PR/CI → review → main/test». Разрешены push/PR и PATCH2.0.65;
+merge/deploy только после обязательного CI актуального head/base и человеческого
+review. Публикация/активация программы и paid PATH запрещены этим этапом.
+Ветка codex/path-pilot-start-admission; исходный handoff38dd551, schema sidecard8ae403.
+Release preflight/проверки PASS; ветка отправлена, PR170 открыт через браузер.
+Первый headb75d155: frontend/pytest/integration PASS, browser fast/runtime FAIL
+на старых неподтверждённых LIMITED component-входах. Merge/deploy не выполнялись.
+Tests-only исправление сохраняет downstream-покрытие явной synthetic upstream
+plan-policy границей, не продуктовым допуском; real provider/full PATH исключены.
+Отдельный настоящий assessment browser gate без подстановки: UI block/HTTP409,
+prepared/calendar_deadline=null PASS. Guards+seed-order+start/stages57 Python PASS,
+legacy PATH29 component PASS. Локальный runtime13PASS/2FAIL сохранён; после
+исправления порядка seed (лимит до AS, не новая revision после AS) C1/C2 отдельно2PASS.
+Api/схема/методология/admission/repair не менялись; это harness-only исправление.
+Финальный backend862 PASS; HTTP108 PASS применим (его источники не менялись).
+Ready preflight2.0.65 повторно PASS; owned-БД/контейнер удалены после evidence.
+Новый полный CI выполняется после push исправленного кандидата.
+Evidence: docs/evc/evidence/path-pilot-release-2065/README.md. Далее новый head/full CI
+и человеческое review (пока NOT_DONE). Main2dc98c6/2.0.64 и test этим R1 не изменены;
+свежий deployment readback ещё NOT_RUN. Старые статусы ниже — история.
+
+## Финальный schema preflight05.11 — PASS, без изменений рабочей БД
+
+После handoff38dd551 владелец разрешил продолжить ранее согласованную READ ONLY
+сверку серверного Agent4K-Test/.env. EXACT_SCOPED_SCHEMA_MATCH:32 таблицы,
+353 колонки/191 constraint/84 index/16 trigger; missing/changed/extra0.
+Primary metadata/comparison/regression/cleanup:
+docs/evc/evidence/path-pilot-schema-readback/README.md.1 позитив/11 mutations/4
+invalid-record negatives PASS. Новый эталон получен штатным bootstrap в owned
+локальной pytest-БД без seed/LLM; штатно удалён после сохранения metadata.
+Рабочая БД только pg_catalog SELECT/SHOW в READ ONLY/rollback; бизнес-строк не читали.
+Миграция для этого изменения не требуется. Runtime38dd551/tested199e7c3 прежний,
+пакет38dd551 сохранён. Fresh remote main и server checkout2dc98c6/2.0.64.
+CI NOT_RUN; публикации/активации/paid PATH/push/PR/merge/deploy не выполнялись.
+Следующий шаг требует R1: release version и полномочия на PR/CI/main/test отдельно.
+Ниже — история прежней передачи, где schema check ещё был отложен.
+
+## PATH-PILOT-02 — локальная реализация и проверка завершены
+
+Код679cc2f + исправление ревью199e7c351a2d985c0173f845574c4de5dc80775a.
+Для199e7c3 backend835/HTTP108/integration217 PASS; адресные SQL18 PASS, browser98 PASS.
+Frontend140/receipt46/persistence1/lint/build/dist PASS переиспользуются с679cc2f:
+git diff подтверждает byte-identical frontend/Node consumers. Первичные логи/JUnit,
+readbacks и cleanup: docs/evc/evidence/path-pilot-start-admission. Owned контейнер
+33e6f86… штатно удалён после сохранения/проверки evidence, tmpfs test data удалены.
+Собственная .venv-ссылка убрана, общий root .venv сохранён.
+На ревью воспроизведён и исправлен DDL lock timeout в connect; старый10.5/M4 fixture
+теперь сначала проверяет реальный отказ, затем явно подставляет upstream permission
+только для M4 component starts. Полный gate проверяется отдельной SQL suite без подмены.
+Сверка схемы серверной Agent4K-Test/.env разрешена только READ ONLY и по указанию
+владельца отложена до финального pre-merge. Сейчас рабочая БД не читалась/не менялась.
+Публикация/активация/paid PATH/push/PR/merge/deploy не выполняются; CI NOT_RUN,
+main/test по последнему наблюдению2dc98c6/2.0.64. Старые снимки/QA/M0–M8 сохранены.
+Отчёт: docs/evc/reports/path-pilot-start-admission.md. Реализация T1 передана локально;
+следующий зависимый шаг R1/согласование выпуска и CI, затем публикация и отдельно
+разрешённый платный PATH. Не считать автоматическим разрешением этих действий.
+Ниже история реализации и промежуточных проверок.
+
+## PATH-PILOT-02 — активная локальная реализация T1
+
+Владелец: «принимаем идем дальше» после передачи T1/запроса реализации.
+T1 принят, бесплатная локальная реализация разрешена. Отдельная ветка/worktree
+codex/path-pilot-start-admission от2a9ef94f6d306a036dc123930b4d2dbefa7d1507;
+диагностическая codex/path-plan-diagnostics сохранена. Реализованы draft snapshot
+новой ProgramDefinition, exact plan binding и server start readiness, UI/admin/runner,
+privacy projection; legacy first-start не обходит gate. Исторические Cycles/источники
+не переписываются, M2 полный61/план39/вне22. Активно: проверки/ревью/локальная передача.
+Новые SQL/HTTP6 и прежние SQL62 PASS на owned контейнере33e6f86… PostgreSQL16;
+backend828/HTTP108/frontend140 промежуточные PASS, final exact-SHA ещё ожидает фиксации.
+Реального LLM0, постоянная БД не трогалась, все release flags=false.
+Новый CI NOT_RUN; main/test по последнему наблюдению2dc98c6/2.0.64.
+Карточка: docs/evc/tasks/path-pilot-start-admission.md. PREP-DIAG-01 отдельно UNKNOWN.
+Ниже история, не текущий блокер P/M или T1.
+
+## Принятие проекта05.11.2026 — актуальный статус
+
+После передачи exact8c900f9727bae75c5dd78aedc4201a2dbd0bffbe владелец ответил
+«все подтверждаю» на раздельный вопрос P1–P3/M1–M4, включая принятие им
+методологической части. P/M по v0.1 приняты; повторного вопроса нет.
+Payload883c025cfa0ea43ad17922bc4818f05a0aaaa62bf02817690a3d07f171cfec06;
+исходный draft/матрица/отчёт и прежний пакет не переписаны. Запись:
+docs/evc/evidence/path-pilot-owner-decision-2026-11-05.json.
+Полный M2=61, утверждённый план39/22 вне; маршрут02→03→04→07→05→01→06→08,
+SPEC09 неавтоматический пул; исходные условия/ограничения приняты без новых норм.
+T1 подготовлен для технического review, НЕ принят человеком; R1 не дан.
+Карточка передачи: docs/evc/tasks/path-pilot-approved-design.md.
+Runtime authorization=NONE; реализация gate, DB/LLM/publication/push/PR/merge/deploy
+не выполняются. Code implementation1bc9d36, local main/origin-main2dc98c6/2.0.64;
+новый CI NOT_RUN, test по последнему readback прежний. PREP-DIAG-01 UNKNOWN отдельно.
+Следующий зависимый шаг — T1 и отдельное разрешение реализации, затем R1/прогон.
+PENDING ниже относится к исторической подготовке проекта, не текущим решениям.
+
+## Действующее поручение05.11.2026 — PATH-PILOT-01
+
+Владелец возобновил ограниченную работу: девять существующих Cases, M2 остаётся61,
+расширение каталога исключено. Старый выбор CAT-COVERAGE-01 заменён; карточка
+SUPERSEDED_NOT_STARTED, исходные uncommitted edits vs de3b831 сохранены resume patches.
+Это решения о направлении, НЕ методологический допуск конкретного плана.
+Найдены ARCH-A05/PILOT-120 (120 минут/72 часа) и ARCH30-ADD01; проверена
+преемственность авторских Case/AS и target pairs0.3→0.5, hashes published release.
+Подготовлен DRAFT_FOR_REVIEW docs/evc/reports/path-pilot-admission-proposal.md:
+восемь позиций-кандидатов, все61 Indicator/55 условий,39 предлагаемых целей/22 вне
+каталога. Approvals=PENDING/runtime_authorization=NONE, любые LIMITED не разрешены.
+Подготовка проекта завершена: offline replay источников/матрицы и10 negative
+mutations PASS;21 primary evidence file и оба uncompressed patch hashes сохранены.
+Пакет включает MANIFEST/verifier и Git diff/bundle exact handoff SHA. Следующий
+зависимый шаг — рассмотрение конкретного проекта, а не автоматический старт.
+Main2dc98c6/2.0.64,
+implementation1bc9d36 прежние; DB/LLM/publication/push/merge/deploy не выполняются.
+PREP-DIAG-01 UNKNOWN отдельно. Ниже история, не действующее направление расширения.
+
+## Решение владельца 05.11.2026
+
+«Сохранить полный M2; отдельно доработать покрытие каталога». Вопрос направления
+закрыт; сокращение целей и разрешение LIMITED не согласованы. Текущая бесплатная
+доработка диагностики завершена. Следующая постановка docs/evc/tasks/catalog-coverage-01.md
+сохранена как DRAFT_NEXT_TASK_NOT_STARTED; не исполнялась, LLM/публикаций нет.
+Прежний BLOCKED_DECISION ниже — история до ответа; текущий PATH ждёт отдельного
+задания по каталогу, а не уменьшения требований. Проверенный collector implementation
+1bc9d36, новый итоговый SHA — docs/evidence commits этой ветки. Main/test/CI прежние.
+
+## Checkpoint 05.11.2026 — бесплатное продолжение
+
+Финал технической диагностики: implementation1bc9d36834262ee9ad4591227d5ec876fea8e648,
+backend773/HTTP108/targeted Python48/Node38 и actual PostgreSQL43 PASS.
+Run43d5ca0…: provider disabled/LLM0, revision2 export сохранён до exact owned cleanup,
+тот же файл после удаления DB/state, без FORCE. Primary evidence/отчёт:
+docs/evc/reports/path-plan-diagnostics.md. Все новые runtime changes отсутствуют.
+Новая база усиленного collector — эта ветка, не автоматически main. Зависимое
+исправление старта BLOCKED_DECISION; вопрос о полном M2 либо точном сокращённом
+пилотном составе передан владельцу. READY не ослаблен, новый paid PATH не разрешён.
+Main/test2dc98c6 / 2.0.64, active/public ready после cleanup; CI новой ветки NOT_RUN,
+PR/push/merge/deploy/version/artifact publication=false. Ниже история checkpoint.
+
+Отдельная `codex/path-plan-diagnostics` от b5b7ba3; runtime/main2dc98c6 / 2.0.64.
+Tests-only plan export: revision/hash readback и отдельная allowlisted диагностика
+targets/gaps/route/catalog/reasons, без active profile/ответов/prompts/секретов.
+Изменения ещё uncommitted. Новые unit7 before FAIL → after PASS; harness Python45,
+Node38, backend770 PASS/324 deselected. Actual PostgreSQL export/cleanup regression,
+HTTP и финальное review ещё NOT_RUN. Локально нет postgres server, Docker socket
+недоступен; можно использовать существующий owned remote test stand без LLM.
+Задача: docs/evc/tasks/path-plan-diagnostics.md. Следующий шаг: завершить бесплатную
+SQL/persistence/cleanup проверку и отчёт. Новых LLM calls=0, все release flags false,
+CI NOT_RUN/PR нет/main и deployed test не изменены. READY gate не ослаблялся.
+Зависимое изменение старта BLOCKED_DECISION: M7 требует допустимый начальный маршрут
+и предварительное обоснование сокращённого состава; для этого LIMITED pilot плана
+такое решение не найдено. Не выбирать политику по одному только поведению кода.
+Ниже сохранена история завершённого отрицательного paid run.
+
+# Исторический STATE — PATH-START-2DC
+
+## Итог 05.11.2026
+
+Один разрешённый paid run выполнен на clean exact2dc98c6 / 2.0.64:
+run96abd1c7e28e4316bcceb069520273e6, operation1d994d19-9ada-4dcb-92b9-4f4e41a096e0.
+Generation1/tester5/challenger4, admission PASS, AS9aedb9b7… сохранена; repair не
+понадобился, его реальное исполнение не проверено. 10 операций / 747550 tokens.
+Итог PATH FAIL_PLAN_NOT_READY: LIMITED вместо READY в assertion runner до start.
+Start/presentation NOT_RUN, оценочных ответов0. Фактический отказ продукта на start
+не доказан. Source coverage61→39/минимум22 gaps, полный frozen plan не экспортирован.
+Отчёт/остаток PATH-PLAN-01: docs/evc/reports/path-start-2dc98c6-run.md.
+14 primary files + lifecycle audit + offline VERIFY PASS сохранены, owned cleanup
+PASS после terminal fsync/readback. Второго прогона нет. Следующий отдельный шаг:
+бесплатная сверка контракта READY/LIMITED/NO_ROUTE/API/UI/validator и safe plan export,
+без нового смысла/смены target set/admission/prompts. PREP-DIAG-01 UNKNOWN.
+Main/test2dc98c6 / 2.0.64 неизменны, active/readiness200; отчётная ветка local-only,
+новый CI NOT_RUN/PR нет, все release flags false. История допуска ниже.
+
+## Один согласованный real-provider прогон — 04.11.2026
+
+Владелец: «Да, один контролируемый прогон». База exact main/test
+2dc98c6b5b2637c6c505a90686e82f5e4274e763 / 2.0.64. Новый clean server checkout,
+новая owned-БД, exact published-pilot, штатные generation/tester/challenger/repair;
+при допуске explicit first start/AS/0 answers, при отказе evidence/stop без rerun.
+План: docs/evc/tasks/path-start-2dc98c6-run.md. Активно: запуск существующего runner.
+Preflight8/8 READY, до запуска LLM0. Source/prompts/admission/repair/перманентная
+БД неизменны. branch_push/pr/merge/deploy/version_bump/artifact_publish=false.
+Локальная ветка codex/path-start-2dc98c6-run — только план/отчёт/evidence;
+исполняемый code SHA2dc98c6 не меняется. PREP-DIAG-01 UNKNOWN. Ниже история выпуска.
+
+# Исторический STATE — PM03-REPAIR-CONTRACT
 
 ## Активный выпуск 04.11.2026 — 2.0.64
 

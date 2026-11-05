@@ -1,0 +1,70 @@
+{
+  "kind": "human_decision_evidence_not_runtime_artifact",
+  "decision_id": "PATH-PILOT-01-PM-2026-11-05",
+  "date": "2026-11-05",
+  "human_owner": "Пользователь — владелец текущей задачи; подтвердил продуктовую часть и принятие методологической части в ответ на раздельный вопрос о двух ролях",
+  "origin": {
+    "type": "current_chat_user_message",
+    "user_reply_verbatim": "все подтверждаю",
+    "preceding_question_scope": "Продуктовые P1–P3 и методологические M1–M4 проекта пилота v0.1; отдельно задан вопрос, принимает ли методологическую часть сам пользователь",
+    "message_id": null,
+    "message_id_reason": "Машинный ID сообщения не предоставлен; не восстанавливается предположением"
+  },
+  "reviewed_commit": "8c900f9727bae75c5dd78aedc4201a2dbd0bffbe",
+  "proposal_id": "PATH-PILOT-01",
+  "proposal_version": "0.1",
+  "proposal_payload_checksum": "883c025cfa0ea43ad17922bc4818f05a0aaaa62bf02817690a3d07f171cfec06",
+  "reviewed_files_sha256": {
+    "docs/evc/evidence/path-plan-diagnostics/pilot-plan-draft-v0.1.json": "73e363899e702fa2ec96780d6c0a419c0ef07acc523bef4d38df93724790cc65",
+    "docs/evc/evidence/path-plan-diagnostics/pilot-opportunity-matrix.md": "12dc01f1f6af13a67beb85d90aa14c380554c9240c33b39199cb79f67d2cdc63",
+    "docs/evc/reports/path-pilot-admission-proposal.md": "1b7f4dde1e9c30a6fa473aefc08719b2d9685cdc5da9830001bce81183a3a83a"
+  },
+  "productologist": {
+    "status": "APPROVED_FOR_EXACT_PROPOSAL",
+    "decision_ids": ["P1", "P2", "P3"],
+    "scope": "Цель, ограниченное продуктовое обещание и аудитория; точный исходный scope программы/config/catalog; предложенный маршрут и роль SPEC.09. Конкретные org/config/actor IDs нового запуска назначаются позднее в отдельно разрешённой настройке"
+  },
+  "methodologist": {
+    "status": "APPROVED_FOR_EXACT_PROPOSAL",
+    "decision_ids": ["M1", "M2", "M3", "M4"],
+    "scope": "39 плановых целей при полном M2=61, 22 отсутствующие цели, исходные 55 условий/рисков наблюдения, условные ветви и ограничения результата из точного проекта v0.1; не повторный human review неизменённых Cases и не допуск сгенерированной AS"
+  },
+  "accepted_plan_summary": {
+    "full_m2_count": 61,
+    "planned_target_count": 39,
+    "outside_plan_target_count": 22,
+    "catalog_case_count": 9,
+    "source_observation_row_count": 55,
+    "primary_route": [
+      "CASE.SPEC.02", "CASE.SPEC.03", "CASE.SPEC.04", "CASE.SPEC.07",
+      "CASE.SPEC.05", "CASE.SPEC.01", "CASE.SPEC.06", "CASE.SPEC.08"
+    ],
+    "nonautomatic_alternative": "CASE.SPEC.09",
+    "time_budget_seconds": 7200,
+    "calendar_window_seconds": 259200,
+    "all_route_cases_within_budget_guaranteed": false,
+    "full_construct_assessment_guaranteed": false,
+    "actual_opportunities_or_ia_confirmed": false
+  },
+  "historical_review_package": {
+    "name": "4K_PATH_PILOT_REVIEW_8c900f9727ba.zip",
+    "sha256": "4b16567744f365ae02cde26506085570d24de25cc3e4c2ac33cdc5061dc2235c",
+    "manifest_sha256_at_review": "90ed3f47ca4bf931f15e633237f22f24ad5ebf28bb2ba82bdc353385c2ff47a3",
+    "historical_pending_status_preserved": true
+  },
+  "technical_decision_T1": "PROPOSED_NOT_HUMAN_APPROVED",
+  "release_and_run_decision_R1": "NOT_GRANTED",
+  "runtime_authorization": "NONE",
+  "actions_authorized_by_this_confirmation": ["record_exact_product_and_methodology_decision", "prepare_technical_design_for_review"],
+  "release_flags": {
+    "branch_push": false,
+    "pr": false,
+    "merge": false,
+    "deploy": false,
+    "version_bump": false,
+    "artifact_publish": false,
+    "paid_llm_run": false,
+    "permanent_database_write": false
+  },
+  "historical_PREP_DIAG_01_root_cause": "UNKNOWN"
+}

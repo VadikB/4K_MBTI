@@ -11,6 +11,10 @@ from scripts.test_stand import owned
 with owned(json.loads(Path(os.environ['STAND_STATE']).read_text())):
     pass
 
+if os.getenv('AGENT4K_COMPONENT_PLAN_FIXTURE'):
+    from tests.browser_component_app import install
+    install(json.loads(Path(os.environ['STAND_STATE']).read_text()))
+
 from main import app
 from Api import routes, auth_service as auth_module
 from Api.product_cycle_preparation_queue import product_cycle_preparation_queue
@@ -82,7 +86,7 @@ def path_receipt():
     """Safe source-to-runtime trace; excludes prompts, responses and credentials."""
     from Api.database import get_connection
     from Api.m5_case_runtime import checksum
-    from tests.assessment_first_case_evidence import functional_receipt, assignment_lineage
+    from tests.assessment_first_case_evidence import functional_receipt, assignment_lineage, plan_receipt
     with get_connection() as c:
         state = json.loads(Path(os.environ['STAND_STATE']).read_text())
         program = c.execute("""SELECT p.id,p.code,p.version,p.assignment_ref,p.status,p.definition_checksum,
@@ -123,11 +127,9 @@ def path_receipt():
                 FROM m5_cycles WHERE owner_user_id=%s ORDER BY id DESC LIMIT 1""",
                 (participant['id'],)).fetchone()
             if cycle:
-                plan = c.execute('''SELECT p.id,p.status,revision.id AS revision_id,
-                    revision.revision_no,revision.content_checksum
-                    FROM m7_cycle_plans p JOIN LATERAL (SELECT r.id,r.revision_no,r.content_checksum
-                        FROM m7_plan_revisions r WHERE r.plan_id=p.id ORDER BY r.revision_no DESC LIMIT 1) revision ON TRUE
-                    WHERE p.cycle_db_id=%s''', (cycle['id'],)).fetchone()
+                plan = plan_receipt(c, cycle_db_id=cycle['id'])
+                from tests.assessment_first_case_evidence import start_readiness_receipt
+                start_readiness = start_readiness_receipt(c, cycle_id=str(cycle['cycle_id']), user_id=participant['id'])
                 sessions = [dict(row) for row in c.execute('''SELECT session_id,status,started_at
                     FROM m5_cycle_sessions WHERE cycle_db_id=%s ORDER BY ordinal''', (cycle['id'],)).fetchall()]
                 assessment_answers = c.execute('''SELECT count(*) AS n FROM m5_dialogue_turns t
@@ -154,6 +156,7 @@ def path_receipt():
                 if operation else None),
             'cycle': dict(cycle) if cycle else None,
             'assignment_lineage': lineage, 'plan': dict(plan) if plan else None,
+            'start_readiness': start_readiness if cycle else None,
             'sessions': sessions, 'assessment_answers': assessment_answers,
             'assessment_situation': ({key: situation[key] for key in
                 ('assessment_situation_id', 'status', 'snapshot_checksum', 'started_at')} if situation else None),

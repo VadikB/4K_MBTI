@@ -1,0 +1,107 @@
+{
+  "source_archive_name": "P4K_Case_AS_Cycle_Plan_2026-10-23 (1).zip",
+  "source_archive_sha256": "6eb1247a9ed93e44e80c186fa2dc6caf0485b94ec2d07e17f169a371658139f6",
+  "entries": {
+    "02_Task_Order_and_Decisions.txt": {
+      "sha256": "cda9ddf4141d03433462d97dbef28d1f0b11d23aa2da310c3678a05aaf217ba0",
+      "replica_path": "docs/evc/evidence/path-plan-diagnostics/prior-02-decisions.txt",
+      "replica_sha256": "cda9ddf4141d03433462d97dbef28d1f0b11d23aa2da310c3678a05aaf217ba0",
+      "bytes_equal": true,
+      "purpose": "historical_decision_source_not_new_execution_authority"
+    },
+    "07_A05_Coverage_and_Pilot.txt": {
+      "sha256": "f582276cfc780c21746df61d9ac4f615c6eef3f333b626a00a2116a9778a1cfd",
+      "replica_path": "docs/evc/evidence/path-plan-diagnostics/prior-07-a05.txt",
+      "replica_sha256": "f582276cfc780c21746df61d9ac4f615c6eef3f333b626a00a2116a9778a1cfd",
+      "bytes_equal": true,
+      "purpose": "historical_decision_source_not_new_execution_authority"
+    }
+  },
+  "arch_a05_merge_sha": "c9c7c5a488c34003cb2fb8f55e54b630f25c0506",
+  "arch_a05_package_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.3/case-package.json",
+  "arch_a05_package_bytes_sha256": "4ecab66c7396795b1d5b61efffc809c849274404f25eba842cb1edf4c9c8601f",
+  "current_package_path": "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/case-package.json",
+  "current_package_bytes_sha256": "f6e6c11c2e84ddf5c429b2631b57318530606de30d4ee46388b7634f8b83ef9d",
+  "a05_vs_current_cases": [
+    {
+      "case_id": "CASE.SPEC.01",
+      "a05_case_version": "v0.5",
+      "current_case_version": "v0.5",
+      "exact_target_pairs_equal": true,
+      "author_case_content_equal": true,
+      "author_as_content_equal": true
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "a05_case_version": "v0.6",
+      "current_case_version": "v0.6",
+      "exact_target_pairs_equal": true,
+      "author_case_content_equal": true,
+      "author_as_content_equal": true
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "a05_case_version": "v0.4",
+      "current_case_version": "v0.4",
+      "exact_target_pairs_equal": true,
+      "author_case_content_equal": true,
+      "author_as_content_equal": true
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "a05_case_version": "v0.5",
+      "current_case_version": "v0.5",
+      "exact_target_pairs_equal": true,
+      "author_case_content_equal": true,
+      "author_as_content_equal": true
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "a05_case_version": "v0.5",
+      "current_case_version": "v0.5",
+      "exact_target_pairs_equal": true,
+      "author_case_content_equal": true,
+      "author_as_content_equal": true
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "a05_case_version": "v0.4",
+      "current_case_version": "v0.4",
+      "exact_target_pairs_equal": true,
+      "author_case_content_equal": true,
+      "author_as_content_equal": true
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "a05_case_version": "v0.4",
+      "current_case_version": "v0.4",
+      "exact_target_pairs_equal": true,
+      "author_case_content_equal": true,
+      "author_as_content_equal": true
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "a05_case_version": "v0.4",
+      "current_case_version": "v0.4",
+      "exact_target_pairs_equal": true,
+      "author_case_content_equal": true,
+      "author_as_content_equal": true
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "a05_case_version": "v0.4",
+      "current_case_version": "v0.4",
+      "exact_target_pairs_equal": true,
+      "author_case_content_equal": true,
+      "author_as_content_equal": true
+    }
+  ],
+  "same_normalized_package_bytes": false,
+  "current_package_verification_checksum": "4c127cbb8ed3573885cccdadfc9ae8199b6f266bd3f8077644b45a3d7c8e486c",
+  "arch30_owner_accepted_package_checksum": "4c127cbb8ed3573885cccdadfc9ae8199b6f266bd3f8077644b45a3d7c8e486c",
+  "matches_arch30_checksum": true,
+  "current_main": "2dc98c6b5b2637c6c505a90686e82f5e4274e763",
+  "plan_specific_approval": "NOT_ESTABLISHED_BY_THESE_SOURCES",
+  "database_writes": 0,
+  "new_llm_calls": 0
+}

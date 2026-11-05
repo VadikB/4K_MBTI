@@ -1,0 +1,23 @@
+{
+  "scope": "exact accepted pilot design; not runtime publication or new Case review",
+  "reviewed_proposal_commit": "8c900f9727bae75c5dd78aedc4201a2dbd0bffbe",
+  "proposal_payload_checksum": "883c025cfa0ea43ad17922bc4818f05a0aaaa62bf02817690a3d07f171cfec06",
+  "proposal_raw_sha256": "73e363899e702fa2ec96780d6c0a419c0ef07acc523bef4d38df93724790cc65",
+  "owner_decision_path": "docs/evc/evidence/path-pilot-owner-decision-2026-11-05.json",
+  "owner_decision_raw_sha256": "3e1293c6978fc042b2461d301cfc78f3b7995445a83599bc583f5f4cf808a04b",
+  "owner_decision_content_checksum": "3553c7c41f411201742ec6b4d53967ab5c2f114c0d70bb5bdfff395d996e693c",
+  "manifest_path": "assessment_definitions/planning/specialist_pilot_admission/v0.1/manifest.json",
+  "manifest_raw_sha256": "c76b118e605d7479f85671f52695f2a189537d03dcc6c69443bfb2f9d1392d66",
+  "offline_snapshot_checksum": "daa715b153f16e9ebc4ea6744a1c8541c5e269e248bba4b5c37723571e6ccfce",
+  "status": "draft_source_for_new_program_definition",
+  "published_program_1_1_changed": false,
+  "published_cases_or_qa_changed": false,
+  "m0_m8_changed": false,
+  "full_m2": 61,
+  "planned": 39,
+  "outside_plan": 22,
+  "source_observation_conditions": 55,
+  "new_runtime_publication": false,
+  "sql_proofs_use_synthetic_approval_and_provider_stage_records": true,
+  "historical_prep_diag_01_root_cause": "UNKNOWN"
+}

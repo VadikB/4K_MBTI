@@ -74,6 +74,44 @@ def test_plan_keeps_full_goal_and_explains_unadmitted_pool(db):
         assert result['cycle_status']=='prepared'
 
 
+def test_owned_plan_diagnostics_are_read_from_saved_revision_without_provider(db, tmp_path):
+    import subprocess
+    from pathlib import Path
+    from tests.assessment_first_case_evidence import plan_receipt
+    from Api import m7_planning_repository as planning_repo
+
+    with db() as c:
+        case = setup(c, admitted=True)
+        admit_case(c, case)  # synthetic fixture, not real human review
+        plan = create_plan(c, personalized_profile_id=7, selected_skills=['K1','K2','K3','K4'],
+                           created_by=99, key='diagnostic-readback')
+        saved = planning_repo.read_plan(c, str(plan['cycle_id']))
+        content = deepcopy(saved['content_json'])
+        content['known_limitations'].append('Synthetic second revision readback fixture')
+        planning_repo.save_parameter_revision(c, plan=saved, content=content, reason='synthetic_export_revision')
+        plan = read_plan(c, str(plan['cycle_id']))
+        assert plan['revision_no'] == 2
+        cycle_db_id = c.execute('SELECT id FROM m5_cycles WHERE cycle_id=%s',
+                                (plan['cycle_id'],)).fetchone()['id']
+        receipt = plan_receipt(c, cycle_db_id=cycle_db_id)
+        assert receipt['status'] == 'LIMITED'
+        assert receipt['revision_id'] == plan['revision_id']
+        assert receipt['content_checksum'] == receipt['content_recomputed_checksum'] == checksum(plan['plan'])
+        assert receipt['content_checksum_matches'] is True
+        for field in ('full_target_set', 'planned_target_set', 'route', 'catalog', 'uncovered_target_ids'):
+            assert receipt['diagnostics'][field] == plan['plan'][field]
+        assert receipt['diagnostics']['uncovered_target_ids']
+        assert any(item['reasons'] for item in receipt['diagnostics']['catalog'])
+        c.commit()
+    root = Path(__file__).resolve().parents[2]
+    output = tmp_path / 'failure-receipt.json'
+    subprocess.run(['node', str(root / 'tests/browser/fixtures/receipt-file.mjs'), str(output)],
+                   input=json.dumps(receipt, default=str), text=True, check=True, capture_output=True)
+    exported = json.loads(output.read_text())
+    assert exported['diagnostics_checksum'] == checksum(exported['diagnostics'])
+    assert exported['status'] == 'LIMITED'  # export never promotes readiness
+
+
 def test_same_latest_fail_blocks_planner_and_direct_as(db):
     with db() as c:
         case = setup(c, admitted=True)

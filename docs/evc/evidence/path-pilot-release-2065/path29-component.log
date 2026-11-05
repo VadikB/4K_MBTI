@@ -1,0 +1,9 @@
+
+Running 1 test using 1 worker
+
+(node:90418) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+PATH29 owned screenshots and server log: /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/.test-stand/path29/9fe88f04-180d-48a1-bbc4-849049253b1b
+  ✓  1 tests/browser/path29-participant.spec.mjs:18:1 › PATH29 owned backend: invitation → scoped chat → durable preparation → explicit first case (42.5s)
+
+  1 passed (43.8s)

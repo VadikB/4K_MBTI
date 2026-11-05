@@ -1,0 +1,16 @@
+{
+  "observed_on": "2026-11-05",
+  "scope": "read_only_after_free_owned_cleanup_no_business_data",
+  "sha": "2dc98c6b5b2637c6c505a90686e82f5e4274e763",
+  "version": "2.0.64",
+  "tracked_clean": true,
+  "service": "agent4k-test.service",
+  "service_state": "active",
+  "public_readiness_url": "https://test.4k-assistant.ru/health/ready",
+  "public_readiness": "ready",
+  "database_readiness": "ready",
+  "assessment_queue": {"queued": 0, "running": 0, "failed": 0},
+  "analysis_queue": {"queued": 0, "running": 0, "failed": 0},
+  "new_deploy": false,
+  "llm_calls_by_this_readback": 0
+}

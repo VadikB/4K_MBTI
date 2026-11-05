@@ -1,0 +1,40 @@
+{
+  "scope": "read_only_synthetic_projection_observation_not_admission",
+  "runtime_base": "2dc98c6b5b2637c6c505a90686e82f5e4274e763",
+  "matrix": [
+    {
+      "plan_status": "READY",
+      "admin_code": "ready_to_start",
+      "admin_action": "start_assessment",
+      "participant_view": "ready"
+    },
+    {
+      "plan_status": "LIMITED",
+      "admin_code": "start_blocked",
+      "admin_action": null,
+      "participant_view": "ready"
+    },
+    {
+      "plan_status": "NO_ROUTE",
+      "admin_code": "start_blocked",
+      "admin_action": null,
+      "participant_view": "plan_missing"
+    }
+  ],
+  "historical_validator": "PLAN_NOT_READY",
+  "http_start_calls": 0,
+  "llm_calls": 0,
+  "actual_historical_start_refusal": "NOT_PROVEN_REQUEST_NOT_MADE",
+  "methodological_approval_for_limited_pilot": "NOT_FOUND",
+  "files": {
+    "Api/m7_cycle_planner.py": "9a3d0cf62ccdf2c966d2475c74f52a6787ab1a66e2433d834df784f2a5d7a7ca",
+    "Api/m10_product_flow.py": "a7d328da4b0f93d579cddee59119408e6f8234d43c91653685f6175a2e2aa7ea",
+    "Api/routes.py": "286d56a303a377d6767ff60d6d08c7acee91bb3327f701de192209cf9b7ab2d2",
+    "Api/acquaintance.py": "2ef5ba7e75f1dc47565b8ac4d757f4cd4d5d88d33c9a055ee493226aacbf0867",
+    "web/js/onboarding-flow.js": "7dd36cd707f93ae225f88d4c7fb691d8aa5b82735e592c4104b5101c8257ea51",
+    "web/js/screens/onboarding.js": "4c7a2c75ce50128c5d28586db93defea3cc2bdec20f9b15f1811302dfd59fac7",
+    "tests/browser/fixtures/preparation-receipt.mjs": "1920a02d757f250023abba8225938a569177dd0053f0dcb8198c31f4defa2516",
+    "docs/architecture/m7-cycle-planning-contract.md": "8ff9021f5cdfe995c58369e996938ce0927abb2eceab78f4b0c6d7a8ceb182bf",
+    "docs/methodology/source-sets/2026-10-01/derived/M7-v1.3.md": "9b65a8eee1520fed57286b209a28ce73e33cd394ba8c9353c240673867483ec8"
+  }
+}

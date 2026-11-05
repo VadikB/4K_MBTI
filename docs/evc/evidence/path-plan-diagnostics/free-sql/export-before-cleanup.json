@@ -1,0 +1,7 @@
+{
+  "receipt_sha256": "98a0531241a715d5692f68946d76e039676ee7afcb79db4052cc4e5e95603d6e",
+  "phase": "DURABLE_RECEIPT_READ_WHILE_OWNED_DB_EXISTS",
+  "plan_status": "LIMITED",
+  "revision_no": 2,
+  "llm_calls": 0
+}

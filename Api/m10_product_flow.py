@@ -138,7 +138,7 @@ def start_prepared(connection, *, user_id: int, cycle_id: str, key: str) -> dict
     connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(user_id),))
     plan = m7_cycle_planner.read_plan(connection, cycle_id)
     cycle = connection.execute(
-        "SELECT owner_user_id,personalized_profile_id,assignment_id,status,started_at FROM m5_cycles WHERE cycle_id=%s FOR UPDATE",
+        "SELECT owner_user_id,personalized_profile_id,assignment_id,status,started_at,usage_scope FROM m5_cycles WHERE cycle_id=%s FOR UPDATE",
         (cycle_id,),
     ).fetchone()
     if not cycle or int(cycle["owner_user_id"]) != int(user_id):
@@ -155,6 +155,11 @@ def start_prepared(connection, *, user_id: int, cycle_id: str, key: str) -> dict
     participant_profile.profile_for_start(
         connection, user_id=user_id, profile_id=int(cycle["personalized_profile_id"]),
     )
+    # A released compatibility endpoint must not bypass first-start admission.
+    # Active/paused snapshots keep their existing continuation semantics.
+    if cycle["status"] == "prepared" and cycle["usage_scope"] == "assessment":
+        from Api.assessment_start_readiness import require as require_start
+        require_start(connection, cycle_id=cycle_id, user_id=user_id)
     open_as = connection.execute(
         """SELECT s.id,s.assessment_situation_id,s.status,d.id AS decision_id,d.revision_no
            FROM m5_assessment_situations s
@@ -337,7 +342,7 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
     visible_situations = [x for x in situations
                           if not route["positions"] or str(x["assessment_situation_id"]) in attached_ids]
     return {
-        "runtime_kind": "cycle", "cycle_id": cycle_id, "plan": plan, "status": status,
+        "runtime_kind": "cycle", "cycle_id": cycle_id, "plan": participant_plan(plan), "status": status,
         "between_situations": between_situations,
         "return_policy_enabled": bool(plan.get("plan", {}).get("return_policy_snapshot")),
         "route": route,
@@ -367,9 +372,27 @@ def participant_trace(trace: dict) -> dict:
                   for x in trace['events'] if x['event_type'] in ('material_disclosed','mandatory_update')]}
 
 
+def participant_plan(plan: dict) -> dict:
+    """Do not disclose the accepted design's hidden observability/source material."""
+    content = dict(plan.get('plan') or {})
+    binding = content.pop('pilot_plan_binding', None)
+    if binding:
+        snapshot = binding['admission_snapshot']
+        content['pilot_plan_ref'] = {
+            'id': snapshot['artifact_id'], 'version': snapshot['artifact_version'],
+            'snapshot_checksum': snapshot['snapshot_checksum'], 'binding_checksum': binding['binding_checksum'],
+            'full_target_count': len(content['full_target_set']),
+            'planned_target_count': len(content['planned_target_set']),
+        }
+        content['participant_notice'] = snapshot['participant_notice']
+    return {**plan, 'plan': content}
+
+
 def participant_presentation(result: dict) -> dict:
     """Projection of a start/next response; internal execution stays server-side."""
     presentation = result.get('presentation')
+    if isinstance(result.get('plan'), dict) and isinstance(result['plan'].get('plan'), dict):
+        result = {**result, 'plan': participant_plan(result['plan'])}
     if not presentation:
         return result
     return {**result, 'presentation': {k: v for k, v in presentation.items()

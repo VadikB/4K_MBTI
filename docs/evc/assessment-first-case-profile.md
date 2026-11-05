@@ -6,6 +6,21 @@
 Методологическое согласование, CURRENT, приёмка пилотной программы,
 merge и deploy этим профилем не объявляются.
 
+Статус05.11: диагностика сохранена; точный PATH-PILOT-01 v0.1 принят отдельно
+[P1–P3/M1–M4](evidence/path-pilot-owner-decision-2026-11-05.json).
+Реализация принятого T1 — [PATH-PILOT-02](tasks/path-pilot-start-admission.md).
+Полный M2=61 и план39/22 вне различаются. Исторический JSON проекта сохранён,
+сам он не является runtime config. Новый draft собирается offline в snapshot
+**новой** ProgramDefinition; опубликованная1.1 и Case QA не меняются.
+Validator требует серверный `m7_start_readiness/1`, точный plan binding и остальные
+условия старта, а не просто READY или LIMITED. Источник published-pilot пока
+зеркалит прежний release1.1 и не получает этот допуск автоматически: после отдельно
+разрешённой публикации требуется новый проверенный exact-version source receipt.
+Новый paid PATH и публикация/выпуск не выполняются. PREP-DIAG-01 отдельно UNKNOWN.
+Рабочая БД — серверный Agent4K-Test/.env: по указанию владельца только read-only
+сверка схемы в конце, перед возможным main; не активация и не цель cleanup/tests.
+Старые статусы ниже — история.
+
 ## Подключение к заданиям
 
 Профиль подключён из `AGENTS.md` и `tests/README.md`. Для явно согласованного
@@ -112,6 +127,17 @@ preparation request → profile, plan revision/checksum и effective times/sourc
 Validator связывает assignment/profile/request/Cycle и оба времени, не приравнивая
 checksum разных объектов. UNKNOWN_OR_AMBIGUOUS не превращается в success.
 Это расширение будущих receipts; после cleanup старые недоступные refs не достраиваются.
+
+Дополнение PATH-PLAN-01 от 05.11.2026: tests-only collector читает именно сохранённую
+последнюю revision, а не заново вычисленный план. В `plan.diagnostics` остаются
+allowlisted цели M2, плановые цели, uncovered IDs, route/catalog с eligibility/reasons,
+известные ограничения, времена и source refs. `content_checksum` и
+`content_recomputed_checksum` относятся к полному исходному saved JSON;
+`diagnostics_checksum` — отдельно к экспортированной проекции. Равенство хешей
+разных объектов не требуется. Raw profile/план с неизвестными полями не передаются.
+Отсутствующие сведения отмечаются UNKNOWN/PARTIAL, без превращения пустого JSON
+в полный план. Это не расширение допуска: READY gate и admission не меняются.
+Подробности: [задача](tasks/path-plan-diagnostics.md).
 
 Бесплатно проверено на `136b858`: export regression actual collector → fsync/readback
 → owned cleanup PASS и новый minimal `published-pilot` bootstrap PASS. Полный PATH

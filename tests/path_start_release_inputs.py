@@ -91,6 +91,7 @@ def seed_release(connection, actor):
         name=program['name'], assignment_ref=program['assignment_ref'], mode=program['mode'],
         configuration_id=other['id'], catalog_version_id=catalog['catalog_db_id'],
         role_version_ids=[role['id']], source_refs=program['source_refs_json'])
+    reserve_release_ids(connection, 'assessment_program_definitions', program['id'])
     program_id = connection.execute('''INSERT INTO assessment_program_definitions
         (code,version,name,assignment_ref,mode,status,assessment_configuration_id,catalog_version_id,
          source_refs_json,definition_checksum,published_by_user_id)

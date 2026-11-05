@@ -1,0 +1,1 @@
+{"result": "PASS_OFFLINE_SCHEMA_REGRESSION", "positive_comparison": 1, "negative_schema_mutations": 11, "invalid_record_rejections": 4, "read_only_sql_literals_checked": 7, "database_calls": 0}

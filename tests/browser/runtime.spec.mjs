@@ -18,6 +18,14 @@ const test=base.extend({context:async({browser},use)=>{
   try{
     cli('bootstrap');
     {const inputs=JSON.parse(fs.readFileSync(statePath));inputs.qa_orchestration=true;inputs.browser_scenario='acceptance-v1';fs.writeFileSync(statePath,JSON.stringify(inputs));}
+    if(!info.title.includes('Unapproved LIMITED')){
+      const inputs=JSON.parse(fs.readFileSync(statePath));inputs.component_plan_fixture='browser-component-plan-boundary/1';fs.writeFileSync(statePath,JSON.stringify(inputs));
+      info.annotations.push({type:'synthetic_upstream',description:'Static component plan-policy fixture only; NOT pilot/human admission. Real AS/start/time checks remain.'});
+    }else{
+      // Exercise assessment first-start admission, not the pre-existing QA-only
+      // component continuation path (which is not a product admission claim).
+      const inputs=JSON.parse(fs.readFileSync(statePath));inputs.qa_orchestration=false;fs.writeFileSync(statePath,JSON.stringify(inputs));
+    }
     if(info.title.includes('character')){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_case='character';fs.writeFileSync(statePath,JSON.stringify(inputs));}
     if((info.title.includes('REV-02') || info.title.includes('P10.5') || info.title.includes('G10.7'))){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_profile='unprepared';fs.writeFileSync(statePath,JSON.stringify(inputs));}
     if(info.title.includes('no admitted catalog')){const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_catalog='unavailable';fs.writeFileSync(statePath,JSON.stringify(inputs));}
@@ -26,7 +34,8 @@ const test=base.extend({context:async({browser},use)=>{
     const prep=spawnSync(python,['scripts/browser_stand.py','--state',statePath,'--variant',variant],{encoding:'utf8'});
     if(prep.status!==0)throw new Error(prep.stderr);
     const fd=fs.openSync(path.join(dir,'app.log'),'a');
-    server=spawn(python,['scripts/test_stand.py','serve','--state',statePath],{stdio:['ignore',fd,fd]});fs.closeSync(fd);
+    const component=JSON.parse(fs.readFileSync(statePath)).component_plan_fixture;
+    server=spawn(python,component?['tests/browser_component_server.py','--state',statePath]:['scripts/test_stand.py','serve','--state',statePath],{stdio:['ignore',fd,fd]});fs.closeSync(fd);
     const url=`http://127.0.0.1:${port}`;
     await expect.poll(async()=>{try{return (await fetch(url+'/health/ready')).status}catch{return 0}},{timeout:30000}).toBe(200);
     const state=JSON.parse(fs.readFileSync(statePath,'utf8'));
@@ -144,7 +153,7 @@ async function start(page,expected='готовности'){
  await expect(page.locator('#interview-messages')).toContainText(expected);
  await test.info().attach('interview-start',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
 }
-async function completeAcquaintance(page){
+async function completeAcquaintance(page,{expectBlocked=false}={}){
  const panel=page.locator('#onboarding-panel');
  const answers=[
   'Синтетические задачи: анализировать материалы и согласовывать рабочие решения.',
@@ -153,6 +162,7 @@ async function completeAcquaintance(page){
  ];
  let answerIndex=0;
  for(let step=0;step<16 && await panel.isVisible();step+=1){
+  if(expectBlocked && await page.locator('#onboarding-title').textContent()==='Старт оценки пока заблокирован')return;
   const input=panel.locator('.onboarding-answer');
   if(await input.isVisible())await input.fill(answers[answerIndex++]||`Синтетический ответ ${answerIndex}.`);
   const next=page.locator('#onboarding-next');
@@ -171,6 +181,33 @@ async function completeAcquaintance(page){
  }
  await expect(panel).toBeHidden();
 }
+test('Unapproved LIMITED is blocked by the real server and UI without a component substitution',async({page,stand},info)=>{
+ await login(page,stand);
+ await page.locator('#dashboard-panel:not(.hidden) #assessment-action-button, #ai-welcome-panel:not(.hidden) #start-first-assessment').click();
+ await expect(page.locator('#onboarding-panel')).toBeVisible();
+ await completeAcquaintance(page,{expectBlocked:true});
+ await expect(page.locator('#onboarding-title')).toHaveText('Старт оценки пока заблокирован');
+ await expect(page.getByRole('button',{name:'Приступить к оценке',exact:true})).toHaveCount(0);
+ const uid=await page.evaluate(()=>JSON.parse(localStorage.getItem('agent4k.pendingUser')).id);
+ const model=await (await page.request.get(`${stand.url}/users/${uid}/acquaintance`)).json();
+ const prepared=model.prepared_plan;
+ expect(prepared.plan.status).toBe('LIMITED');
+ expect(prepared.start_readiness.can_start).toBe(false);
+ expect(prepared.start_readiness.reasons).toContain('PILOT_PLAN_PLANNED_TARGET_GAP');
+ const denied=await page.request.post(`${stand.url}/users/assessment/cycles/start`,{
+  data:{idempotency_key:randomUUID(),cycle_id:prepared.cycle_id,selected_skills:['K1','K2','K3','K4']}});
+ expect(denied.status()).toBe(409);
+ expect((await denied.json()).detail).toContain('M7_START_NOT_ADMITTED:PILOT_PLAN_PLANNED_TARGET_GAP');
+ const statusResponse=await page.request.get(`${stand.url}/users/assessment/m7/cycles/${prepared.cycle_id}`);
+ expect(statusResponse.ok()).toBe(true);
+ const status=await statusResponse.json();
+ expect(status.collection_status).toBe('prepared');
+ expect(status.calendar_deadline).toBeNull();
+ await expect(page.locator('#interview-panel')).toBeHidden();
+ await info.attach('real-limited-denial',{body:JSON.stringify({start_readiness:prepared.start_readiness,
+  http_start_status:denied.status(),response:await denied.json(),cycle_status:status,
+  component_substitution:false}),contentType:'application/json'});
+});
 async function startIndependentCycle(page,stand,expected='готовности'){
  const response=await page.request.post(`${stand.url}/users/assessment/cycles/start`,{
   data:{idempotency_key:randomUUID(),selected_skills:['K1','K2','K3','K4']},

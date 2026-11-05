@@ -1,0 +1,8 @@
+{
+  "run_id": "43d5ca0ac39e4b098ef5e7ea4d8829bc",
+  "database": "product4k_pytest_43d5ca0ac39e4b098ef5e7ea4d8829bc",
+  "scope": "synthetic_plan_export_regression",
+  "llm_calls": 0,
+  "provider_mode": "disabled",
+  "sha": "1bc9d36834262ee9ad4591227d5ec876fea8e648"
+}

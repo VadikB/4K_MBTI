@@ -1,0 +1,37 @@
+{
+  "base_sha": "de3b831a07a48cf20b304dd8debd506b1820a7c0",
+  "implementation_sha": "1bc9d36834262ee9ad4591227d5ec876fea8e648",
+  "current_scope": "DRAFT_LIMITED_PILOT_DIRECTION_NOT_ADMISSION",
+  "unchanged_primary_evidence": {
+    "docs/evc/evidence/path-plan-diagnostics/backend.log": "6f28219c9f962d3d46e9bdbbfb478ae132c2428e4fabd7832dda96241cb8c4e1",
+    "docs/evc/evidence/path-plan-diagnostics/free-sql/cleanup.json": "f560a551ec67c800fd74534de4bf88dac42bc6a2d2131bd869ccf8336708eefa",
+    "docs/evc/evidence/path-plan-diagnostics/free-sql/export-before-cleanup.json": "c95a33f82de35cf50be495a6c8fc67dcb45d490585181b5925487eff2ecd226e",
+    "docs/evc/evidence/path-plan-diagnostics/free-sql/plan-receipt.json": "98a0531241a715d5692f68946d76e039676ee7afcb79db4052cc4e5e95603d6e",
+    "docs/evc/evidence/path-plan-diagnostics/free-sql/pytest.log": "532972243e7ae2a5d417cabf6c27f36529aa3ae0ca8501a19da406728a6c778f",
+    "docs/evc/evidence/path-plan-diagnostics/free-sql/regression-result.json": "5d4d3f783eebffd79036fab56849419acd613b01899e626cc6b23247d283b1da",
+    "docs/evc/evidence/path-plan-diagnostics/free-sql/run.json": "69d2f0c288461ce605b282c0585a1c8af2db8d3d720c557d003a2531c13229ab",
+    "docs/evc/evidence/path-plan-diagnostics/http.log": "19efea5eef01f8491730bc6c0fb75e07c666985e8dc91244310a6871716a8e80",
+    "docs/evc/evidence/path-plan-diagnostics/node.log": "6385e45eff3233914361977b116edf8d1f3da412bd96f6d4e615705245cc25c9",
+    "docs/evc/evidence/path-plan-diagnostics/targeted-python.log": "2e5b345eca3f1e5d103004bec95578d720f07680ea68ca6eee9776a656077bd4",
+    "docs/evc/evidence/path-start-2dc98c6-run/run/cleanup.json": "fa6dedc76556dcf4a939a1aa23396801003e51c97a55b9e0fd71c168a27850e5",
+    "docs/evc/evidence/path-start-2dc98c6-run/run/completion.json": "1e0e87cc4640343f7a5b4c6a148494e9a9e0b91f5baadb4aa8294174298dd864",
+    "docs/evc/evidence/path-start-2dc98c6-run/run/failure-receipt.json": "a6ebace530e69d3f0efb33b0f95e89b0c743d8ae30d8baa471705e8109004d05",
+    "docs/evc/evidence/path-start-2dc98c6-run/run/failure.json": "08d981d8712e49f793c69a70e3bdae18f2d43acf189025ed6991bc6eafc9a3ed",
+    "docs/evc/evidence/path-start-2dc98c6-run/run/failure.png": "75e8888f7b798db65414824124009aa652f4afb6e9d72e282c1b79e42df2d286",
+    "docs/evc/evidence/path-start-2dc98c6-run/run/process-result.json": "b622036109bca1f92aef534ac76cf9c6c908ec6ec0b808fa4db9686873e1d75d",
+    "docs/evc/evidence/path-start-2dc98c6-run/run/ps02-read-error.json": "15b2860d9b4c73b1c80f4893af0d9e5e6c6b94cbedc30a88eb57323353eb09b1",
+    "docs/evc/evidence/path-start-2dc98c6-run/run/ps02-read-error.png": "ef85d8f08be248c63a71f13db0794b69b37b396aa240a51fce7ef7ece5b3e77e",
+    "docs/evc/evidence/path-start-2dc98c6-run/run/run.json": "c1557945cecfafb29d9946ae893710dc94146ed0d46014e179d3c567a38cc9c1",
+    "docs/evc/evidence/path-start-2dc98c6-run/run/source-provenance.json": "d4e42fcff1cac5bb7aac70a18c91d04e0e5cacefeaee173680d62b6e59ca6d26",
+    "docs/evc/evidence/path-start-2dc98c6-run/run/source-to-runtime-receipt.json": "a6ebace530e69d3f0efb33b0f95e89b0c743d8ae30d8baa471705e8109004d05"
+  },
+  "preserved_preexisting_changes": [
+    "docs/evc/evidence/path-plan-diagnostics/resume-preexisting-vs-de3b831.patch.gz",
+    "docs/evc/evidence/path-plan-diagnostics/resume-catalog-draft.patch.gz"
+  ],
+  "uncompressed_patch_sha256": {
+    "docs/evc/evidence/path-plan-diagnostics/resume-preexisting-vs-de3b831.patch.gz": "be840cfe1075acb3c77a7ae913959e14b2c284dc3e4c47cb89ef7fa9fc30bc74",
+    "docs/evc/evidence/path-plan-diagnostics/resume-catalog-draft.patch.gz": "265e0b81459f9d9e13f05615705066a4dd4c1b02add28e1ae991a7c6c51af5a4"
+  },
+  "interpretation": "Old uncommitted full-catalog direction superseded; full M2 remains61; no methodological plan admission is claimed"
+}

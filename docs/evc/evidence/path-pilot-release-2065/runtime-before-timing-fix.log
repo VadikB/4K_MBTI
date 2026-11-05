@@ -1,0 +1,106 @@
+
+Running 15 tests using 1 worker
+
+(node:90354) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/browser/runtime.spec.mjs:114:1 › Same-domain email outside the exact allowlist is denied (13.9s)
+  ✓   2 tests/browser/runtime.spec.mjs:124:1 › Organization invitation keeps context and cannot admit a member of another organization (18.5s)
+  ✓   3 tests/browser/runtime.spec.mjs:184:1 › Unapproved LIMITED is blocked by the real server and UI without a component substitution (25.0s)
+  ✓   4 tests/browser/runtime.spec.mjs:286:1 › S10-A and T11-10 positive, clarification and saved Report/PDF (1.1m)
+  ✓   5 tests/browser/runtime.spec.mjs:358:1 › S10-B interruption and Additional Session preserve Cycle and deadline (38.0s)
+  ✘   6 tests/browser/runtime.spec.mjs:386:35 › S10-C1 background time closure without another Turn (30.0s)
+(node:93731) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   7 tests/browser/runtime.spec.mjs:386:35 › S10-C2 background time closure without another Turn (29.1s)
+(node:94131) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   8 tests/browser/runtime.spec.mjs:416:1 › Recovery: lost response, unaccepted request, two tabs and owner boundaries (28.4s)
+  ✓   9 tests/browser/runtime.spec.mjs:448:1 › Late 401 in another tab must not revoke a newly authenticated owner (34.7s)
+  ✓  10 tests/browser/runtime.spec.mjs:482:1 › S10-A character branch: actual character Turn, order and no invented recommendation (33.4s)
+  ✓  11 tests/browser/runtime.spec.mjs:514:1 › REV-02 fresh M4 confirmation, canonical context and saved history after login (59.7s)
+  ✓  12 tests/browser/runtime.spec.mjs:581:1 › S10.4 owner profile, 403, logout, late response and account switch (19.2s)
+  ✓  13 tests/browser/runtime.spec.mjs:657:1 › P10.5 fresh profile, lost confirmation response, reload and first AS (33.3s)
+  ✓  14 tests/browser/runtime.spec.mjs:699:1 › P10.5 ready profile with no admitted catalog (31.4s)
+  ✓  15 tests/browser/runtime.spec.mjs:717:1 › G10.7 fresh participant, immutable M4, logout history and independent Cycle (1.2m)
+
+
+  1) tests/browser/runtime.spec.mjs:386:35 › S10-C1 background time closure without another Turn ───
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: 'Продолжить', exact: true }).visible().or(getByRole('button', { name: 'Подтвердить профиль', exact: true }).visible()).or(getByRole('button', { name: 'Пропустить', exact: true }).visible()).or(locator('#assessment-action-button').visible()).or(locator('#start-first-assessment').visible()).first()
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('button', { name: 'Продолжить', exact: true }).visible().or(getByRole('button', { name: 'Подтвердить профиль', exact: true }).visible()).or(getByRole('button', { name: 'Пропустить', exact: true }).visible()).or(locator('#assessment-action-button').visible()).or(locator('#start-first-assessment').visible()).first() with timeout 15000ms
+      - waiting for getByRole('button', { name: 'Продолжить', exact: true }).visible().or(getByRole('button', { name: 'Подтвердить профиль', exact: true }).visible()).or(getByRole('button', { name: 'Пропустить', exact: true }).visible()).or(locator('#assessment-action-button').visible()).or(locator('#start-first-assessment').visible()).first()
+
+
+      85 |  let routeReady=continueButton.or(confirm).or(onboardingSkip).or(assessmentAction).or(welcomeAction);
+      86 |  if(allowDashboard)routeReady=routeReady.or(dashboard).or(completedDashboardAction);
+    > 87 |  await expect(routeReady.first()).toBeVisible({timeout:15000});
+         |                                   ^
+      88 |  await page.waitForTimeout(1000);
+      89 |  if(allowDashboard&&await completedDashboardAction.isVisible()){
+      90 |    await completedDashboardAction.click();
+        at login (/Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/tests/browser/runtime.spec.mjs:87:35)
+        at /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/tests/browser/runtime.spec.mjs:388:2
+
+    attachment #1: browser-version (text/plain) ────────────────────────────────────────────────────
+    153.0.8010.12
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #5: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/attachments/server-log-baf7269b693dcad01418955419057ae63fbed944.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-S10-C1-background-time-closure-without-another-Turn/error-context.md
+
+  2) tests/browser/runtime.spec.mjs:386:35 › S10-C2 background time closure without another Turn ───
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: 'Продолжить', exact: true }).visible().or(getByRole('button', { name: 'Подтвердить профиль', exact: true }).visible()).or(getByRole('button', { name: 'Пропустить', exact: true }).visible()).or(locator('#assessment-action-button').visible()).or(locator('#start-first-assessment').visible()).first()
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('button', { name: 'Продолжить', exact: true }).visible().or(getByRole('button', { name: 'Подтвердить профиль', exact: true }).visible()).or(getByRole('button', { name: 'Пропустить', exact: true }).visible()).or(locator('#assessment-action-button').visible()).or(locator('#start-first-assessment').visible()).first() with timeout 15000ms
+      - waiting for getByRole('button', { name: 'Продолжить', exact: true }).visible().or(getByRole('button', { name: 'Подтвердить профиль', exact: true }).visible()).or(getByRole('button', { name: 'Пропустить', exact: true }).visible()).or(locator('#assessment-action-button').visible()).or(locator('#start-first-assessment').visible()).first()
+
+
+      85 |  let routeReady=continueButton.or(confirm).or(onboardingSkip).or(assessmentAction).or(welcomeAction);
+      86 |  if(allowDashboard)routeReady=routeReady.or(dashboard).or(completedDashboardAction);
+    > 87 |  await expect(routeReady.first()).toBeVisible({timeout:15000});
+         |                                   ^
+      88 |  await page.waitForTimeout(1000);
+      89 |  if(allowDashboard&&await completedDashboardAction.isVisible()){
+      90 |    await completedDashboardAction.click();
+        at login (/Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/tests/browser/runtime.spec.mjs:87:35)
+        at /Users/vadim_bogachev/Developer/4K/worktrees/path-pilot-start-admission/tests/browser/runtime.spec.mjs:388:2
+
+    attachment #1: browser-version (text/plain) ────────────────────────────────────────────────────
+    153.0.8010.12
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C2-background-time-closure-without-another-Turn/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #5: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-S10-C2-background-time-closure-without-another-Turn/attachments/server-log-2c7662f02b6bf85855d39686e010af28a68b16a4.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-S10-C2-background-time-closure-without-another-Turn/error-context.md
+
+  2 failed
+    tests/browser/runtime.spec.mjs:386:35 › S10-C1 background time closure without another Turn ────
+    tests/browser/runtime.spec.mjs:386:35 › S10-C2 background time closure without another Turn ────
+  13 passed (8.9m)

@@ -53,6 +53,13 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       provider_mode: initialState.provider_mode,
       code: process.env.P4K_CODE_IDENTITY ? JSON.parse(process.env.P4K_CODE_IDENTITY) : null });
     initialState.browser_case = 'specialist';
+    if (!fullPath && !realProvider) {
+      initialState.component_plan_fixture = 'browser-component-plan-boundary/1';
+      test.info().annotations.push({type:'synthetic_upstream',description:
+        'Static component only: upstream plan policy substituted, NOT human/pilot admission or full PATH; AS/start/time checks remain real'});
+      save('component-boundary', {fixture:initialState.component_plan_fixture,
+        product_admission_evidence:false, full_path:false, provider_mode:'disabled'});
+    }
     fs.writeFileSync(statePath, JSON.stringify(initialState));
     cli('bootstrap');
     run('tests/path29_browser_inputs.py', ['--state', statePath]);

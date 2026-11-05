@@ -7,13 +7,49 @@
 `--program-source published-pilot` (точный опубликованный nine-case release).
 `--check-bootstrap` проверяет минимальные источники/ownership/cleanup без LLM.
 Default `functional-diagnostic` остаётся исторической synthetic QA подстановкой,
-не доказательством допуска пилота. Текущий PATH BLOCKED_PM03; случайный платный
-rerun не требуется. [Передача/AC-матрица](../docs/evc/tasks/path-start-01.md).
+не доказательством допуска пилота. История PATH, включая прежний содержательный
+отказ PM-03: [передача/AC-матрица](../docs/evc/tasks/path-start-01.md).
+
+Уточнение 05.11.2026: на main 2dc98c6 / 2.0.64 единственный разрешённый real run
+получил admission PASS, но остановился **до start** на `PLAN_NOT_READY` (LIMITED).
+Это не полный PATH PASS и не доказанный отказ HTTP start. Разбор контракта и
+бесплатная доработка collector — [PATH-PLAN-01](../docs/evc/tasks/path-plan-diagnostics.md).
+
+Проект ограниченного пилота PATH-PILOT-01 v0.1 принят отдельно по exact checksum:
+[запись P1–P3/M1–M4](../docs/evc/evidence/path-pilot-owner-decision-2026-11-05.json).
+Последующая локальная реализация принятого T1 —
+[PATH-PILOT-02](../docs/evc/tasks/path-pilot-start-admission.md),
+[контракт](../docs/architecture/pilot-plan-start-admission-contract.md).
+Полный M2=61 сохраняется, план=39/22 вне; любой LIMITED автоматически не допускается.
+Runner требует `m7_start_readiness/1` и exact frozen binding, обязательные стадии,
+конечную допущенную AS и lineage. Новая программа пока не опубликована, прежний
+release fixture 1.1 не заменён. Новый paid PATH, публикация и выпуск не выполнялись.
+Исторический PREP-DIAG-01 остаётся UNKNOWN и не отождествляется с покрытием.
+
+Бесплатные проверки нового контракта:
+
+```bash
+.venv/bin/python -m pytest -q tests/unit/test_pilot_plan_admission.py tests/unit/test_assessment_start_readiness.py
+# Только собственная изолированная test/pytest БД; ключи LLM пусты:
+.venv/bin/python -m pytest --run-integration -m 'integration and not llm' tests/integration/test_pilot_start_admission_db.py
+```
+
+SQL suite использует **синтетические** записи принятия плана и LLM-стадий. Она
+проверяет настоящий серверный gate/start/AS/time, но не новый human review или
+качество генерации. Для полного integration нужны `TEST_DATABASE_URL` и отдельный
+`STAND_ADMIN_URL` на maintenance `postgres` того же owned PostgreSQL; рабочая БД
+из серверного `.env` никогда не является автотестовой БД.
+
+Старые статические browser component-сценарии после нового first-start gate
+используют отдельную **явную синтетическую upstream plan-policy подстановку**,
+не допуск программы: [границы/guards и реальный negative browser gate](browser/README.md).
+Они не заменяют положительную SQL/HTTP проверку пилотного контракта или будущий
+разрешённый paid PATH. В real-provider/full-PATH эта подстановка запрещена.
 
 Бесплатные адресные проверки harness (без БД, credentials и LLM):
 
 ```bash
-.venv/bin/python -m pytest -q tests/unit/test_assessment_first_case.py tests/unit/test_test_stand.py tests/unit/test_assessment_run_summary.py
+.venv/bin/python -m pytest -q tests/unit/test_assessment_first_case.py tests/unit/test_test_stand.py tests/unit/test_assessment_run_summary.py tests/unit/test_assessment_plan_receipt.py
 node --test tests/unit/test_assessment_receipt_file.mjs tests/unit/test_assessment_preparation_receipt.mjs
 ```
 

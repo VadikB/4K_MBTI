@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 
 from Api import assessment_programs
 from Api.database import get_connection
@@ -19,6 +20,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--role-code', action='append', required=True)
     parser.add_argument('--publisher-user-id', type=int, required=True)
     parser.add_argument('--publish', action='store_true')
+    parser.add_argument('--pilot-plan-package', type=Path,
+                        help='Explicit draft source package for a new version; never inferred from main/current.')
     return parser.parse_args()
 
 
@@ -51,6 +54,15 @@ def main() -> int:
             'scenario_version_id': int(configuration['scenario_version_id']),
             'prompt_bundle_checksum': configuration['prompt_bundle_checksum'],
         }
+        if args.pilot_plan_package is not None:
+            from Api.pilot_plan_admission import build_snapshot, validate_program
+            snapshot = build_snapshot(args.pilot_plan_package)
+            source_refs['pilot_plan_admission'] = snapshot
+            validate_program({'code': args.code, 'version': args.version, 'name': args.name,
+                'assignment_ref': args.assignment_ref, 'mode': args.mode,
+                'assessment_configuration_id': int(configuration['id']),
+                'catalog_version_id': int(configuration['catalog_version_id']),
+                'source_refs_json': source_refs}, role_ids, snapshot)
         checksum = assessment_programs.definition_checksum(code=args.code, version=args.version,
             name=args.name, assignment_ref=args.assignment_ref, mode=args.mode,
             configuration_id=int(configuration['id']), role_version_ids=role_ids,

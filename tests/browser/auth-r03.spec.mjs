@@ -3154,7 +3154,9 @@ test('R08 shows the frozen program budget instead of the planned duration sum', 
     mandatory_complete: true, onboarding: { status: 'completed', current_step: 8 },
     late_readiness: { status: 'ready_to_prepare', personalized_profile_id: 4 },
     assigned_timing: { status: 'resolved', time_budget_seconds: 7200, calendar_window_seconds: 259200 },
-    prepared_plan: { cycle_id: 'cycle-r08', revision_id: 'revision-r08', revision_no: 1, plan: {
+    prepared_plan: { cycle_id: 'cycle-r08', revision_id: 'revision-r08', revision_no: 1,
+      start_readiness: { contract: 'm7_start_readiness/1', cycle_id: 'cycle-r08',
+        plan_revision_id: 'revision-r08', can_start: true, reasons: [] }, plan: {
       status: 'READY', route: [{ case_id: 'CASE.SPEC.01' }], planned_max_seconds: 11340,
       time_budget_seconds: 7200, calendar_window_seconds: 259200,
     } },

@@ -70,6 +70,11 @@ function linkedFixture() {
     parameter_sources_json: { time_budget: { source: 'synthetic-default' }, calendar_window: { source: 'synthetic-default' },
       resolution_checksum: '8'.repeat(64) } });
   r.plan = { status: 'READY', revision_id: 'synthetic-revision', content_checksum: '9'.repeat(64) };
+  r.start_readiness = { contract: 'm7_start_readiness/1', can_start: true, reasons: [],
+    cycle_id: r.cycle.cycle_id, plan_revision_id: r.plan.revision_id, plan_checksum: r.plan.content_checksum,
+    assessment_situation_id: r.assessment_situation.assessment_situation_id,
+    as_snapshot_checksum: r.assessment_situation.snapshot_checksum, profile_checksum: checksum,
+    preparation_operation_id: r.preparation_operation.operation_id };
   return r;
 }
 test('PATH linked profile/assignment/plan/timing retains PASS_WITH_WARNINGS', () => {
@@ -90,4 +95,36 @@ for (const [name, corrupt] of Object.entries({
 })) test(`PATH rejects ${name}`, () => {
   const r = linkedFixture(); corrupt(r);
   assert.throws(() => verifyFirstCase(r, before(r)));
+});
+
+for (const [name, corrupt] of Object.entries({
+  'missing server decision': r => { delete r.start_readiness; },
+  'server denied': r => { r.start_readiness.can_start = false; },
+  'foreign server cycle': r => { r.start_readiness.cycle_id = 'other'; },
+  'stale server revision': r => { r.start_readiness.plan_revision_id = 'old'; },
+  'wrong server hash': r => { r.start_readiness.plan_checksum = '0'.repeat(64); },
+  'foreign server AS': r => { r.start_readiness.assessment_situation_id = 'other'; },
+  'blockers despite true': r => { r.start_readiness.reasons.push('BLOCKED'); },
+  'LIMITED without exact admission': r => { r.plan.status = 'LIMITED'; },
+})) test(`pre-start rejects ${name}`, () => {
+  const r = before(linkedFixture()); corrupt(r);
+  assert.throws(() => verifyPreparation(r));
+});
+
+test('exact LIMITED admission retains stages and final AS checks', () => {
+  const r = before(linkedFixture());
+  r.plan.status = 'LIMITED';
+  const pilot = { snapshot_checksum: 'a'.repeat(64), proposal_checksum: 'b'.repeat(64),
+    binding_checksum: 'c'.repeat(64), human_decision_id: 'synthetic-PM',
+    program_ref: { checksum: 'd'.repeat(64) } };
+  r.program_definition.definition_checksum = pilot.program_ref.checksum;
+  r.start_readiness.pilot_admission = pilot;
+  r.plan.diagnostics = { uncovered_planned_target_ids: [], pilot_plan_binding: {
+    binding_checksum: pilot.binding_checksum, program_ref: pilot.program_ref,
+    admission_snapshot: { snapshot_checksum: pilot.snapshot_checksum,
+      review: { proposal_payload_checksum: pilot.proposal_checksum }, owner_decision: { decision_id: pilot.human_decision_id } },
+  } };
+  assert.doesNotThrow(() => verifyPreparation(r));
+  r.functional_generation.admitted_for_participant = false;
+  assert.throws(() => verifyPreparation(r), /AS_NOT_ADMITTED/);
 });

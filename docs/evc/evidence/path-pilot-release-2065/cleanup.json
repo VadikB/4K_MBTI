@@ -1,0 +1,15 @@
+{
+  "scope": "R1 browser component regression only; not working database",
+  "container_id": "a951a4cf2908bac10ea64deaf4d665b1f27624b57e3af9a9ff51d49f2dbdc9de",
+  "ownership_label": "path-pilot-2065-c8d31a",
+  "auto_remove_verified": true,
+  "owned_stand_databases_remaining_before_stop": 0,
+  "owned_stand_connections_remaining_before_stop": 0,
+  "evidence_saved_before_stop": true,
+  "stop_exit_code": 0,
+  "container_lookup_exit_code": 0,
+  "container_lookup_stdout_empty": true,
+  "permanent_database_used": false,
+  "foreign_containers_touched": false,
+  "llm_calls": 0
+}

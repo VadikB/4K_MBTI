@@ -140,7 +140,18 @@ def internal(destination):
             foreign_id = c.execute('SELECT id FROM assessment_personalized_profiles WHERE user_id<>%s LIMIT 1',(owner,)).fetchone()['id']
         foreign = http.post('/users/assessment/cycles/start',json={'idempotency_key':'foreign','personalized_profile_id':foreign_id})
         assert foreign.status_code == 409 and 'SCOPE_MISMATCH' in foreign.text
-        started = http.post('/users/assessment/cycles/start',json={'idempotency_key':'start','personalized_profile_id':profile_id})
+        # This old M4 component scenario has an incomplete static catalog, not
+        # an approved pilot plan. Prove the actual product refuses its start.
+        refused = http.post('/users/assessment/cycles/start',json={'idempotency_key':'not-admitted','personalized_profile_id':profile_id})
+        assert refused.status_code == 409 and 'M7_START_NOT_ADMITTED' in refused.text
+        def start_for_m4_component(body):
+            # Explicit upstream boundary substitution ONLY for the M4 snapshot /
+            # history/continuation component checks below; not PATH admission.
+            with patch('Api.assessment_start_readiness.require', return_value={
+                'contract': 'm7_start_readiness/1', 'can_start': True,
+                'basis': 'SYNTHETIC_UPSTREAM_PERMISSION_NOT_PILOT_ADMISSION'}):
+                return http.post('/users/assessment/cycles/start', json=body)
+        started = start_for_m4_component({'idempotency_key':'start','personalized_profile_id':profile_id})
         assert started.status_code == 201, started.text
         cycle_id = started.json()['plan']['cycle_id']
         history = http.get('/users/assessment/m8/history')
@@ -245,7 +256,7 @@ def internal(destination):
                 'context':generation['input']['context'], 'descriptive':saved_report['c67']['descriptive'],
                 'same_historical_input_after_live_change':True},ensure_ascii=False,indent=2)+'\n')
         new_id = final_id
-        next_cycle = http.post('/users/assessment/cycles/start',json={'idempotency_key':'new-cycle','personalized_profile_id':new_id})
+        next_cycle = start_for_m4_component({'idempotency_key':'new-cycle','personalized_profile_id':new_id})
         assert next_cycle.status_code == 201, next_cycle.text
         assert next_cycle.json()['plan']['cycle_id'] != cycle_id
         as_id = next_cycle.json()['runtime']['current_situation']['assessment_situation_id']
@@ -404,6 +415,8 @@ def internal(destination):
         for suffix in ('','/pdf'):
             assert http.get(f"/users/assessment/m8/reports/{saved_report['id']}"+suffix).status_code == 403
     destination.write_text(json.dumps({'status':'PASS','zero_M4_before_confirmation':True,
+        'actual_unapproved_start_refused':True,
+        'upstream_start_permission':'SYNTHETIC_COMPONENT_BOUNDARY_NOT_PILOT_ADMISSION',
         'unconfirmed_and_bad_checksum_rejected':True,'missing_sources_rejected':True,
         'atomic_rejection':True,'rollback_after_M4_write':True,'concurrent_repeat':True,
         'ready_profile_id':profile_id,'new_profile_id':new_id,'source_checksums':contexts_snapshot['sources'],
